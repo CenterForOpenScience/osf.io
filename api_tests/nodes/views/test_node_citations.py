@@ -7,7 +7,7 @@ from osf.utils.permissions import WRITE, READ
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
-    OSFGroupFactory
+    OSFGroupFactory,
 )
 
 
@@ -46,20 +46,24 @@ def public_project(admin_contributor):
 @pytest.fixture()
 def private_project(
         admin_contributor, write_contrib,
-        read_contrib, disabled_contrib):
+        read_contrib, disabled_contrib,
+):
     private_project = ProjectFactory(creator=admin_contributor)
     private_project.add_contributor(
         write_contrib,
         permissions=WRITE,
-        auth=Auth(admin_contributor))
+        auth=Auth(admin_contributor),
+    )
     private_project.add_contributor(
         read_contrib,
         permissions=READ,
-        auth=Auth(admin_contributor))
+        auth=Auth(admin_contributor),
+    )
     private_project.add_contributor(
         disabled_contrib,
         permissions=READ,
-        auth=Auth(admin_contributor))
+        auth=Auth(admin_contributor),
+    )
     private_project.custom_citation = 'Test Citation Text'
     private_project.save()
     return private_project
@@ -83,9 +87,9 @@ def custom_citation_payload(private_project):
             'attributes': {
                 'title': private_project.title,
                 'category': private_project.category,
-                'custom_citation': 'My Custom Citation'
-            }
-        }
+                'custom_citation': 'My Custom Citation',
+            },
+        },
     }
 
 @pytest.mark.django_db
@@ -94,7 +98,7 @@ class NodeCitationsMixin:
     def test_node_citations(
             self, app, admin_contributor, private_project,
             write_contrib, read_contrib,
-            non_contrib, private_url, public_url
+            non_contrib, private_url, public_url,
     ):
 
         #   test_admin_can_view_private_project_citations
@@ -134,17 +138,20 @@ class NodeCitationsMixin:
         post_res = app.post_json_api(
             public_url, {},
             auth=admin_contributor.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert post_res.status_code == 405
         put_res = app.put_json_api(
             public_url, {},
             auth=admin_contributor.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert put_res.status_code == 405
         delete_res = app.delete_json_api(
             public_url,
             auth=admin_contributor.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert delete_res.status_code == 405
 
 
@@ -165,7 +172,8 @@ class TestNodeCitationsStyle(NodeCitationsMixin):
     @pytest.fixture()
     def private_url(self, private_project):
         return '/{}nodes/{}/citation/apa/'.format(
-            API_BASE, private_project._id)
+            API_BASE, private_project._id,
+        )
 
 
 @pytest.mark.django_db

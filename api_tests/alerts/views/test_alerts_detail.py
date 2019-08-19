@@ -20,7 +20,8 @@ class TestDismissedAlertDetail:
         DismissedAlertFactory(
             user=user,
             location=alert_location,
-            _id=alert_id)
+            _id=alert_id,
+        )
 
         # test_alerts_get_success
         res = app.get(url_alerts_detail, auth=user.auth)

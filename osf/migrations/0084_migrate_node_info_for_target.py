@@ -27,7 +27,7 @@ def set_basefilenode_target(apps, schema_editor):
                 .filter(target_content_type_id__isnull=True)
                 .update(
                     target_content_type_id=target_content_type_id,
-                    target_object_id=models.F('node_id')
+                    target_object_id=models.F('node_id'),
                 )
             )
             end = offset + BATCHSIZE
@@ -38,7 +38,7 @@ def set_basefilenode_target(apps, schema_editor):
                     end,
                     max_pk,
                     percent,
-                )
+                ),
             )
 
 

@@ -71,7 +71,7 @@ class TestMeetingFormView(AdminTestCase):
             'admins': self.user.emails.first().address,
             'location': 'Timbuktu, Mali',
             'start date': 'Dec 11 2014',
-            'end_date': 'Jan 12 2013'
+            'end_date': 'Jan 12 2013',
         })
         self.form = MeetingForm(data=mod_data)
         self.form.is_valid()
@@ -79,14 +79,18 @@ class TestMeetingFormView(AdminTestCase):
         self.url = reverse('meetings:detail', kwargs={'endpoint': self.conf.endpoint})
 
     def test_dispatch_raise_404(self):
-        view = setup_form_view(self.view(), self.request, self.form,
-                               endpoint='meh')
+        view = setup_form_view(
+            self.view(), self.request, self.form,
+            endpoint='meh',
+        )
         with nt.assert_raises(Http404):
             view.dispatch(self.request, endpoint='meh')
 
     def test_get_context(self):
-        view = setup_form_view(self.view(), self.request, self.form,
-                               endpoint=self.conf.endpoint)
+        view = setup_form_view(
+            self.view(), self.request, self.form,
+            endpoint=self.conf.endpoint,
+        )
         view.conf = self.conf
         res = view.get_context_data()
         nt.assert_is_instance(res, dict)
@@ -94,8 +98,10 @@ class TestMeetingFormView(AdminTestCase):
         nt.assert_equal(res['endpoint'], self.conf.endpoint)
 
     def test_get_initial(self):
-        view = setup_form_view(self.view(), self.request, self.form,
-                               endpoint=self.conf.endpoint)
+        view = setup_form_view(
+            self.view(), self.request, self.form,
+            endpoint=self.conf.endpoint,
+        )
         view.conf = self.conf
         res = view.get_initial()
         nt.assert_is_instance(res, dict)
@@ -103,8 +109,10 @@ class TestMeetingFormView(AdminTestCase):
         nt.assert_in('submission2_plural', res)
 
     def test_form_valid(self):
-        view = setup_form_view(self.view(), self.request, self.form,
-                               endpoint=self.conf.endpoint)
+        view = setup_form_view(
+            self.view(), self.request, self.form,
+            endpoint=self.conf.endpoint,
+        )
         view.conf = self.conf
         view.form_valid(self.form)
         self.conf.reload()
@@ -149,8 +157,10 @@ class TestMeetingCreateFormView(AdminTestCase):
     def test_get_initial(self):
         self.view().get_initial()
         nt.assert_equal(self.view().initial['edit'], False)
-        nt.assert_equal(self.view.initial['submission1'],
-                        DEFAULT_FIELD_NAMES['submission1'])
+        nt.assert_equal(
+            self.view.initial['submission1'],
+            DEFAULT_FIELD_NAMES['submission1'],
+        )
 
     def test_form_valid(self):
         view = setup_form_view(self.view(), self.request, self.form)

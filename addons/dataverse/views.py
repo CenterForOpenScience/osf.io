@@ -21,7 +21,7 @@ from osf.utils.permissions import WRITE
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
-    must_be_contributor_or_public
+    must_be_contributor_or_public,
 )
 from website.util import rubeus, api_url_for
 
@@ -30,21 +30,21 @@ FULL_NAME = 'Dataverse'
 
 dataverse_account_list = generic_views.account_list(
     SHORT_NAME,
-    DataverseSerializer
+    DataverseSerializer,
 )
 
 dataverse_import_auth = generic_views.import_auth(
     SHORT_NAME,
-    DataverseSerializer
+    DataverseSerializer,
 )
 
 dataverse_deauthorize_node = generic_views.deauthorize_node(
-    SHORT_NAME
+    SHORT_NAME,
 )
 
 dataverse_get_config = generic_views.get_config(
     SHORT_NAME,
-    DataverseSerializer
+    DataverseSerializer,
 )
 
 ## Auth ##
@@ -101,7 +101,7 @@ def dataverse_add_user_account(auth, **kwargs):
         # ... or get the old one
         provider.account = ExternalAccount.objects.get(
             provider=provider.short_name,
-            provider_id=api_token
+            provider_id=api_token,
         )
 
     if not user.external_accounts.filter(id=provider.account.id).exists():
@@ -214,7 +214,7 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
 
     permissions = {
         'edit': can_edit and not node.is_registration,
-        'view': node.can_view(auth)
+        'view': node.can_view(auth),
     }
 
     try:

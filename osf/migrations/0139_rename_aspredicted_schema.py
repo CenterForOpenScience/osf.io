@@ -34,5 +34,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(rename_aspredicted_schema, undo_aspredicted_rename)
+        migrations.RunPython(rename_aspredicted_schema, undo_aspredicted_rename),
     ]

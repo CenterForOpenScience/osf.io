@@ -46,7 +46,7 @@ class Command(BaseCommand):
             '--i-am-really-sure-about-this',
             action='store_true',
             dest='really_delete',
-            help='Actually delete data'
+            help='Actually delete data',
         )
 
     def handle(self, *args, **options):

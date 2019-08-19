@@ -38,7 +38,7 @@ class NodeRequestTestMixin(object):
             contributor=write_contrib,
             permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
             send_email='access_request',
-            save=True
+            save=True,
         )
         return proj
 
@@ -48,7 +48,7 @@ class NodeRequestTestMixin(object):
             creator=requester,
             target=project,
             request_type=RequestTypes.ACCESS.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.value,
         )
         node_request.run_submit(requester)
         return node_request
@@ -59,7 +59,7 @@ class NodeRequestTestMixin(object):
         project.add_contributor(
             contributor=second_admin,
             permissions=permissions.CREATOR_PERMISSIONS,
-            save=True
+            save=True,
         )
         return second_admin
 
@@ -108,14 +108,14 @@ class PreprintRequestTestMixin(object):
             creator=admin,
             provider=pre_mod_provider,
             is_published=False,
-            machine_state='pending'
+            machine_state='pending',
         )
         pre.ever_public = True
         pre.save()
         pre.add_contributor(
             contributor=write_contrib,
             permissions=permissions.WRITE,
-            save=True
+            save=True,
         )
         pre.is_public = True
         pre.save()
@@ -127,13 +127,13 @@ class PreprintRequestTestMixin(object):
             creator=admin,
             provider=pre_mod_provider,
             is_published=False,
-            machine_state='pending'
+            machine_state='pending',
         )
         pre.save()
         pre.add_contributor(
             contributor=write_contrib,
             permissions=permissions.WRITE,
-            save=True
+            save=True,
         )
         return pre
 
@@ -147,7 +147,7 @@ class PreprintRequestTestMixin(object):
         post.add_contributor(
             contributor=write_contrib,
             permissions=permissions.WRITE,
-            save=True
+            save=True,
         )
         return post
 
@@ -161,7 +161,7 @@ class PreprintRequestTestMixin(object):
         preprint.add_contributor(
             contributor=write_contrib,
             permissions=permissions.WRITE,
-            save=True
+            save=True,
         )
         return preprint
 
@@ -171,7 +171,7 @@ class PreprintRequestTestMixin(object):
             creator=admin,
             target=pre_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.value,
         )
         request.run_submit(admin)
         return request
@@ -182,7 +182,7 @@ class PreprintRequestTestMixin(object):
             creator=admin,
             target=post_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.value,
         )
         request.run_submit(admin)
         return request
@@ -193,7 +193,7 @@ class PreprintRequestTestMixin(object):
             creator=admin,
             target=none_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.value,
         )
         request.run_submit(admin)
         return request
@@ -204,7 +204,7 @@ class PreprintRequestTestMixin(object):
             creator=admin,
             target=auto_withdrawable_pre_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.value,
         )
         request.run_submit(admin)
         return request
@@ -215,7 +215,7 @@ class PreprintRequestTestMixin(object):
             creator=requester,
             target=pre_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.value,
         )
         request.run_submit(requester)
         return request
@@ -226,7 +226,7 @@ class PreprintRequestTestMixin(object):
             creator=requester,
             target=post_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.value,
         )
         request.run_submit(requester)
         return request
@@ -237,7 +237,7 @@ class PreprintRequestTestMixin(object):
             creator=requester,
             target=none_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.value,
         )
         request.run_submit(requester)
         return request
@@ -248,7 +248,7 @@ class PreprintRequestTestMixin(object):
             creator=requester,
             target=auto_withdrawable_pre_mod_preprint,
             request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value
+            machine_state=DefaultStates.INITIAL.value,
         )
         request.run_submit(requester)
         return request

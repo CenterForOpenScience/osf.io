@@ -48,26 +48,30 @@ class ApiSearchTestCase:
 
     @pytest.fixture()
     def collection_public(self, user):
-        return CollectionFactory(creator=user, provider=CollectionProviderFactory(), is_public=True,
-                                 status_choices=['', 'asdf', 'lkjh'], collected_type_choices=['', 'asdf', 'lkjh'],
-                                 issue_choices=['', '0', '1', '2'], volume_choices=['', '0', '1', '2'],
-                                 program_area_choices=['', 'asdf', 'lkjh'])
+        return CollectionFactory(
+            creator=user, provider=CollectionProviderFactory(), is_public=True,
+            status_choices=['', 'asdf', 'lkjh'], collected_type_choices=['', 'asdf', 'lkjh'],
+            issue_choices=['', '0', '1', '2'], volume_choices=['', '0', '1', '2'],
+            program_area_choices=['', 'asdf', 'lkjh'],
+        )
 
     @pytest.fixture()
     def registration_collection(self, user):
-        return CollectionFactory(creator=user, provider=RegistrationProviderFactory(), is_public=True,
-                                 status_choices=['', 'asdf', 'lkjh'], collected_type_choices=['', 'asdf', 'lkjh'])
+        return CollectionFactory(
+            creator=user, provider=RegistrationProviderFactory(), is_public=True,
+            status_choices=['', 'asdf', 'lkjh'], collected_type_choices=['', 'asdf', 'lkjh'],
+        )
 
     @pytest.fixture()
     def user_one(self):
         user_one = AuthUserFactory(fullname='Kanye Omari West')
         user_one.schools = [{
             'degree': 'English',
-            'institution': 'Chicago State University'
+            'institution': 'Chicago State University',
         }]
         user_one.jobs = [{
             'title': 'Producer',
-            'institution': 'GOOD Music, Inc.'
+            'institution': 'GOOD Music, Inc.',
         }]
         user_one.save()
         return user_one
@@ -84,7 +88,8 @@ class ApiSearchTestCase:
         project = ProjectFactory(
             title='Graduation',
             creator=user_one,
-            is_public=True)
+            is_public=True,
+        )
         project.update_search()
         return project
 
@@ -93,11 +98,13 @@ class ApiSearchTestCase:
         project_public = ProjectFactory(
             title='The Life of Pablo',
             creator=user_one,
-            is_public=True)
+            is_public=True,
+        )
         project_public.set_description(
             'Name one genius who ain\'t crazy',
             auth=Auth(user_one),
-            save=True)
+            save=True,
+        )
         project_public.add_tag('Yeezus', auth=Auth(user_one), save=True)
         return project_public
 
@@ -112,7 +119,8 @@ class ApiSearchTestCase:
             title='Highlights',
             description='',
             creator=user_one,
-            is_public=True)
+            is_public=True,
+        )
 
     @pytest.fixture()
     def component_public(self, user_two, project_public):
@@ -120,11 +128,13 @@ class ApiSearchTestCase:
             parent=project_public,
             title='Ultralight Beam',
             creator=user_two,
-            is_public=True)
+            is_public=True,
+        )
         component_public.set_description(
             'This is my part, nobody else speak',
             auth=Auth(user_two),
-            save=True)
+            save=True,
+        )
         component_public.add_tag('trumpets', auth=Auth(user_two), save=True)
         return component_public
 
@@ -134,24 +144,28 @@ class ApiSearchTestCase:
             parent=project_public,
             description='',
             title='Wavves',
-            creator=user_one)
+            creator=user_one,
+        )
 
     @pytest.fixture()
     def file_component(self, component, user_one):
         return utils.create_test_file(
-            component, user_one, filename='Highlights.mp3')
+            component, user_one, filename='Highlights.mp3',
+        )
 
     @pytest.fixture()
     def file_public(self, component_public, user_one):
         return utils.create_test_file(
             component_public,
             user_one,
-            filename='UltralightBeam.mp3')
+            filename='UltralightBeam.mp3',
+        )
 
     @pytest.fixture()
     def file_private(self, component_private, user_one):
         return utils.create_test_file(
-            component_private, user_one, filename='Wavves.mp3')
+            component_private, user_one, filename='Wavves.mp3',
+        )
 
 
 class TestSearch(ApiSearchTestCase):
@@ -164,7 +178,8 @@ class TestSearch(ApiSearchTestCase):
             self, app, url_search, user, user_one, user_two,
             institution, component, component_private,
             component_public, file_component, file_private,
-            file_public, project, project_public, project_private):
+            file_public, project, project_public, project_private,
+    ):
 
         # test_search_no_auth
         res = app.get(url_search)
@@ -215,9 +230,11 @@ class TestSearch(ApiSearchTestCase):
         assert '/{}search/files/?q=%2A'.format(API_BASE) in files_link
         assert '/{}search/projects/?q=%2A'.format(API_BASE) in projects_link
         assert '/{}search/components/?q=%2A'.format(
-            API_BASE) in components_link
+            API_BASE,
+        ) in components_link
         assert '/{}search/registrations/?q=%2A'.format(
-            API_BASE) in registrations_link
+            API_BASE,
+        ) in registrations_link
 
         # test_search_fields_links_with_query
         url = '{}?q=science'.format(url_search)
@@ -234,11 +251,14 @@ class TestSearch(ApiSearchTestCase):
         assert '/{}search/users/?q=science'.format(API_BASE) in users_link
         assert '/{}search/files/?q=science'.format(API_BASE) in files_link
         assert '/{}search/projects/?q=science'.format(
-            API_BASE) in projects_link
+            API_BASE,
+        ) in projects_link
         assert '/{}search/components/?q=science'.format(
-            API_BASE) in components_link
+            API_BASE,
+        ) in components_link
         assert '/{}search/registrations/?q=science'.format(
-            API_BASE) in registrations_link
+            API_BASE,
+        ) in registrations_link
 
 
 class TestSearchComponents(ApiSearchTestCase):
@@ -249,7 +269,8 @@ class TestSearchComponents(ApiSearchTestCase):
 
     def test_search_components(
             self, app, url_component_search, user, user_one, user_two,
-            component, component_public, component_private):
+            component, component_public, component_private,
+    ):
 
         # test_search_public_component_no_auth
         res = app.get(url_component_search)
@@ -348,7 +369,8 @@ class TestSearchComponents(ApiSearchTestCase):
         # test_search_component_bad_query
         url = '{}?q={}'.format(
             url_component_search,
-            'www.spam.com/help/twitter/')
+            'www.spam.com/help/twitter/',
+        )
         res = app.get(url, expect_errors=True)
         assert res.status_code == 400
 
@@ -361,7 +383,8 @@ class TestSearchFiles(ApiSearchTestCase):
 
     def test_search_files(
             self, app, url_file_search, user, user_one,
-            file_public, file_component, file_private):
+            file_public, file_component, file_private,
+    ):
 
         # test_search_public_file_no_auth
         res = app.get(url_file_search)
@@ -427,7 +450,8 @@ class TestSearchProjects(ApiSearchTestCase):
 
     def test_search_projects(
             self, app, url_project_search, user, user_one,
-            user_two, project, project_public, project_private):
+            user_two, project, project_public, project_private,
+    ):
 
         # test_search_public_project_no_auth
         res = app.get(url_project_search)
@@ -527,7 +551,8 @@ class TestSearchProjects(ApiSearchTestCase):
         # test_search_project_bad_query
         url = '{}?q={}'.format(
             url_project_search,
-            'www.spam.com/help/facebook/')
+            'www.spam.com/help/facebook/',
+        )
         res = app.get(url, expect_errors=True)
         assert res.status_code == 400
 
@@ -543,7 +568,8 @@ class TestSearchRegistrations(ApiSearchTestCase):
     def schema(self):
         schema = RegistrationSchema.objects.filter(
             name='Replication Recipe (Brandt et al., 2013): Post-Completion',
-            schema_version=SCHEMA_VERSION).first()
+            schema_version=SCHEMA_VERSION,
+        ).first()
         return schema
 
     @pytest.fixture()
@@ -568,7 +594,8 @@ class TestSearchRegistrations(ApiSearchTestCase):
 
     def test_search_registrations(
             self, app, url_registration_search, user, user_one, user_two,
-            registration, registration_public, registration_private):
+            registration, registration_public, registration_private,
+    ):
 
         # test_search_public_registration_no_auth
         res = app.get(url_registration_search)
@@ -668,7 +695,8 @@ class TestSearchRegistrations(ApiSearchTestCase):
         # test_search_registration_bad_query
         url = '{}?q={}'.format(
             url_registration_search,
-            'www.spam.com/help/snapchat/')
+            'www.spam.com/help/snapchat/',
+        )
         res = app.get(url, expect_errors=True)
         assert res.status_code == 400
 
@@ -758,7 +786,8 @@ class TestSearchInstitutions(ApiSearchTestCase):
         return '/{}search/institutions/'.format(API_BASE)
 
     def test_search_institutions(
-            self, app, url_institution_search, user, institution):
+            self, app, url_institution_search, user, institution,
+    ):
 
         # test_search_institutions_no_auth
         res = app.get(url_institution_search)
@@ -796,9 +825,9 @@ class TestSearchCollections(ApiSearchTestCase):
     def post_payload(self, *args, **kwargs):
         return {
             'data': {
-                'attributes': kwargs
+                'attributes': kwargs,
             },
-            'type': 'search'
+            'type': 'search',
         }
 
     @pytest.fixture()
@@ -835,7 +864,8 @@ class TestSearchCollections(ApiSearchTestCase):
         node_with_abstract.set_description(
             'Sambolera by Khadja Nin',
             auth=Auth(user),
-            save=True)
+            save=True,
+        )
         return node_with_abstract
 
     @pytest.fixture()
@@ -845,7 +875,8 @@ class TestSearchCollections(ApiSearchTestCase):
     def test_search_collections(
             self, app, url_collection_search, user, node_one, node_two, collection_public,
             node_with_abstract, node_private, registration_collection, registration_one, registration_two,
-            registration_private, reg_with_abstract):
+            registration_private, reg_with_abstract,
+    ):
 
         collection_public.collect_object(node_one, user)
         collection_public.collect_object(node_two, user)
@@ -906,7 +937,8 @@ class TestSearchCollections(ApiSearchTestCase):
     def test_POST_search_collections(
             self, app, url_collection_search, user, node_one, node_two, collection_public,
             node_with_abstract, node_private, registration_collection, registration_one,
-            registration_two, registration_private, reg_with_abstract):
+            registration_two, registration_private, reg_with_abstract,
+    ):
         collection_public.collect_object(node_one, user, status='asdf', issue='0', volume='1', program_area='asdf')
         collection_public.collect_object(node_two, user, collected_type='asdf', status='lkjh')
         collection_public.collect_object(node_with_abstract, user, status='asdf')

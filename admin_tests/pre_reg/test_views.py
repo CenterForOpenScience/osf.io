@@ -15,7 +15,7 @@ from osf_tests.factories import (
     DraftRegistrationFactory,
     AuthUserFactory,
     ProjectFactory,
-    UserFactory
+    UserFactory,
 )
 from osf.models.registrations import DraftRegistration
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode
@@ -48,20 +48,20 @@ class TestDraftListView(AdminTestCase):
         self.dr1 = DraftRegistrationFactory(
             initiator=self.user,
             registration_schema=self.schema,
-            registration_metadata=utils.SCHEMA_DATA
+            registration_metadata=utils.SCHEMA_DATA,
         )
         self.dr1.submit_for_review(self.user, {}, save=True)
         self.dr2 = DraftRegistrationFactory(
             initiator=self.user,
             registration_schema=self.schema,
-            registration_metadata=utils.SCHEMA_DATA
+            registration_metadata=utils.SCHEMA_DATA,
         )
         self.dr2.submit_for_review(self.user, {}, save=True)
         # Simply here to NOT be returned when get_queryset is called
         self.unsubmitted_prereg = DraftRegistrationFactory(
             initiator=self.user,
             registration_schema=self.schema,
-            registration_metadata=utils.SCHEMA_DATA
+            registration_metadata=utils.SCHEMA_DATA,
         )
         self.unsubmitted_prereg.register(Auth(self.user), save=True)
         self.request = RequestFactory().get('/fake_path')
@@ -80,13 +80,13 @@ class TestDraftListView(AdminTestCase):
         created_first_submitted_second = DraftRegistrationFactory(
             initiator=self.user,
             registration_schema=self.schema,
-            registration_metadata=utils.SCHEMA_DATA
+            registration_metadata=utils.SCHEMA_DATA,
         )
 
         created_second_submitted_first = DraftRegistrationFactory(
             initiator=self.user,
             registration_schema=self.schema,
-            registration_metadata=utils.SCHEMA_DATA
+            registration_metadata=utils.SCHEMA_DATA,
         )
 
         nt.assert_greater(created_second_submitted_first.datetime_initiated, created_first_submitted_second.datetime_initiated)
@@ -133,7 +133,7 @@ class TestDraftDetailView(AdminTestCase):
         self.dr1 = DraftRegistrationFactory(
             initiator=self.user,
             registration_schema=schema,
-            registration_metadata=utils.SCHEMA_DATA
+            registration_metadata=utils.SCHEMA_DATA,
         )
         self.dr1.submit_for_review(self.user, {}, save=True)
         self.request = RequestFactory().get('/fake_path')
@@ -175,7 +175,7 @@ class TestDraftFormView(AdminTestCase):
         self.dr1 = DraftRegistrationFactory(
             initiator=self.user,
             registration_schema=utils.draft_reg_util(),
-            registration_metadata=utils.SCHEMA_DATA
+            registration_metadata=utils.SCHEMA_DATA,
         )
         self.dr1.submit_for_review(self.user, {}, save=True)
         self.dr1.flags  # sets flags if there aren't any yet.
@@ -205,8 +205,10 @@ class TestDraftFormView(AdminTestCase):
         nt.assert_equal(res['notes'], self.dr1.notes)
         nt.assert_equal(res['assignee'], self.dr1.flags['assignee'])
         nt.assert_equal(res['payment_sent'], self.dr1.flags['payment_sent'])
-        nt.assert_equal(res['proof_of_publication'],
-                        self.dr1.flags['proof_of_publication'])
+        nt.assert_equal(
+            res['proof_of_publication'],
+            self.dr1.flags['proof_of_publication'],
+        )
 
     def test_get_context_data(self):
         self.view.draft = self.dr1
@@ -219,8 +221,10 @@ class TestDraftFormView(AdminTestCase):
     def test_form_valid_notes(self):
         form = DraftRegistrationForm(data=self.form_data)
         nt.assert_true(form.is_valid())
-        view = setup_form_view(self.post_view, self.post, form,
-                               draft_pk=self.dr1._id)
+        view = setup_form_view(
+            self.post_view, self.post, form,
+            draft_pk=self.dr1._id,
+        )
         view.draft = self.dr1
         count = AdminLogEntry.objects.count()
         with transaction.atomic():
@@ -235,8 +239,10 @@ class TestDraftFormView(AdminTestCase):
         self.form_data.update(approve_reject='approve')
         form = DraftRegistrationForm(data=self.form_data)
         nt.assert_true(form.is_valid())
-        view = setup_form_view(self.post_view, self.post, form,
-                               draft_pk=self.dr1._id)
+        view = setup_form_view(
+            self.post_view, self.post, form,
+            draft_pk=self.dr1._id,
+        )
         view.draft = self.dr1
         count = AdminLogEntry.objects.count()
         with transaction.atomic():
@@ -250,8 +256,10 @@ class TestDraftFormView(AdminTestCase):
         self.form_data.update(approve_reject='reject')
         form = DraftRegistrationForm(data=self.form_data)
         nt.assert_true(form.is_valid())
-        view = setup_form_view(self.post_view, self.post, form,
-                               draft_pk=self.dr1._id)
+        view = setup_form_view(
+            self.post_view, self.post, form,
+            draft_pk=self.dr1._id,
+        )
         view.draft = self.dr1
         count = AdminLogEntry.objects.count()
         with transaction.atomic():
@@ -296,7 +304,7 @@ class TestCommentUpdateView(AdminTestCase):
         self.dr1 = DraftRegistrationFactory(
             initiator=self.user,
             registration_schema=utils.draft_reg_util(),
-            registration_metadata=utils.SCHEMA_DATA
+            registration_metadata=utils.SCHEMA_DATA,
         )
         self.dr1.submit_for_review(self.user, {}, save=True)
         self.request = RequestFactory().post('/fake_path', data={'blah': 'arg'})
@@ -336,7 +344,7 @@ class TestPreregFiles(AdminTestCase):
             'q12': OsfStorageFile(target=self.node, name='12'),
             'q13': OsfStorageFile(target=self.node, name='13'),
             'q19': OsfStorageFile(target=self.node, name='19'),
-            'q26': OsfStorageFile(target=self.node, name='26')
+            'q26': OsfStorageFile(target=self.node, name='26'),
         }
         data = {}
         for q, f in self.d_of_qs.items():
@@ -354,8 +362,8 @@ class TestPreregFiles(AdminTestCase):
                             },
                             'fileId': guid,
                             'nodeId': self.node._id,
-                        }
-                    ]
+                        },
+                    ],
                 }
                 continue
             data[q] = {
@@ -369,16 +377,16 @@ class TestPreregFiles(AdminTestCase):
                                 },
                                 'fileId': guid,
                                 'nodeId': self.node._id,
-                            }
-                        ]
-                    }
-                }
+                            },
+                        ],
+                    },
+                },
             }
         self.draft = DraftRegistrationFactory(
             initiator=self.user,
             branched_from=self.node,
             registration_schema=prereg_schema,
-            registration_metadata=data
+            registration_metadata=data,
         )
 
         self.prereg_user.save()
@@ -392,8 +400,10 @@ class TestPreregFiles(AdminTestCase):
         self.draft.submit_for_review(self.user, {}, save=True)
         request = RequestFactory().get('/fake_path')
         view = DraftDetailView()
-        view = setup_user_view(view, request, self.admin_user,
-                               draft_pk=self.draft._id)
+        view = setup_user_view(
+            view, request, self.admin_user,
+            draft_pk=self.draft._id,
+        )
         view.checkout_files(self.draft)
         for q, f in self.d_of_qs.items():
             f.refresh_from_db()
@@ -423,8 +433,10 @@ class TestPreregFiles(AdminTestCase):
 
         request = RequestFactory().get('/fake_path')
         view = DraftDetailView()
-        view = setup_user_view(view, request, self.admin_user,
-                               draft_pk=self.draft._id)
+        view = setup_user_view(
+            view, request, self.admin_user,
+            draft_pk=self.draft._id,
+        )
         view.checkout_files(self.draft)
 
         for q, f in self.d_of_qs.items():
@@ -437,8 +449,10 @@ class TestPreregFiles(AdminTestCase):
 
         request = RequestFactory().get('/fake_path')
         view = DraftDetailView()
-        view = setup_user_view(view, request, self.admin_user,
-                               draft_pk=self.draft._id)
+        view = setup_user_view(
+            view, request, self.admin_user,
+            draft_pk=self.draft._id,
+        )
         view.checkout_files(self.draft)
 
         for q, f in self.d_of_qs.items():
@@ -452,8 +466,10 @@ class TestPreregFiles(AdminTestCase):
 
         request = RequestFactory().get('/fake_path')
         view = DraftDetailView()
-        view = setup_user_view(view, request, self.admin_user,
-                               draft_pk=self.draft._id)
+        view = setup_user_view(
+            view, request, self.admin_user,
+            draft_pk=self.draft._id,
+        )
         view.checkout_files(self.draft)
 
         for q, f in self.d_of_qs.items():
@@ -521,9 +537,9 @@ class TestPreregFiles(AdminTestCase):
                 (u'q13', u'Indices'),
                 (u'q16', u'Study design'),
                 (u'q19', u'Statistical models'),
-                (u'q26', u'Upload an analysis script with clear comments')
+                (u'q26', u'Upload an analysis script with clear comments'),
             ],
-            questions
+            questions,
         )
 
     def test_file_id_missing(self):

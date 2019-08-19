@@ -45,7 +45,7 @@ class NodeRequestAction(BaseAction):
     permissions = models.CharField(
         max_length=5,
         choices=[(permission, permission.title()) for permission in permissions.API_CONTRIBUTOR_PERMISSIONS],
-        default=permissions.READ
+        default=permissions.READ,
     )
     visible = models.BooleanField(default=True)
 

@@ -38,7 +38,7 @@ def update_admin_log(user_id, object_id, object_repr, message, action_flag=UNKNO
         object_id=object_id,
         object_repr=object_repr,
         change_message=message,
-        action_flag=action_flag
+        action_flag=action_flag,
     )
 
 

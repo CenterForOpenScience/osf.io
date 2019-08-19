@@ -59,7 +59,8 @@ class TestThrottling:
         assert res.status_code == 200
 
     def test_user_rate_throttle_with_incorrect_throttle_token(
-            self, app, url, user):
+            self, app, url, user,
+    ):
         headers = {'X-THROTTLE-TOKEN': 'fake-token'}
         res = app.get(url, auth=user.auth, headers=headers)
         assert res.status_code == 200

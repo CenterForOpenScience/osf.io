@@ -33,5 +33,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(remove_invalid_social_entries)
+        migrations.RunPython(remove_invalid_social_entries),
     ]

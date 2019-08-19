@@ -96,9 +96,9 @@ def build_update_payload(group_id, user_id, role):
             'id': '{}-{}'.format(group_id, user_id),
             'type': 'group-members',
             'attributes': {
-                'role': role
-            }
-        }
+                'role': role,
+            },
+        },
     }
 
 @pytest.mark.django_db
@@ -141,9 +141,9 @@ class TestOSFGroupMembersUpdate:
                 'data': {
                     'type': 'group-members',
                     'attributes': {
-                        'role': MEMBER
-                    }
-                }
+                        'role': MEMBER,
+                    },
+                },
             }
             res = app.patch_json_api(url, payload, auth=manager.auth, expect_errors=True)
             assert res.status_code == 400

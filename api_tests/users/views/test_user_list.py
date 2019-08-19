@@ -58,7 +58,8 @@ class TestUsers:
         assert user_two._id in ids
 
     def test_merged_user_is_not_in_user_list_after_2point3(
-            self, app, user_one, user_two):
+            self, app, user_one, user_two,
+    ):
         user_two.merge_user(user_one)
         res = app.get('/{}users/?version=2.3'.format(API_BASE))
         user_son = res.json['data']
@@ -69,7 +70,8 @@ class TestUsers:
         assert user_one._id not in ids
 
     def test_merged_user_is_returned_before_2point3(
-            self, app, user_one, user_two):
+            self, app, user_one, user_two,
+    ):
         user_two.merge_user(user_one)
         res = app.get('/{}users/'.format(API_BASE))
         user_son = res.json['data']
@@ -114,14 +116,14 @@ class TestUsers:
         project1.add_contributor(
             contributor=user_two,
             permissions=CREATOR_PERMISSIONS,
-            auth=Auth(user=user_one)
+            auth=Auth(user=user_one),
         )
         project1.save()
         project2 = ProjectFactory(creator=user_one)
         project2.add_contributor(
             contributor=user_two,
             permissions=CREATOR_PERMISSIONS,
-            auth=Auth(user=user_one)
+            auth=Auth(user=user_one),
         )
         project2.save()
 
@@ -136,7 +138,8 @@ class TestUsers:
         RegistrationFactory(
             project=project1,
             creator=user_one,
-            is_public=True)
+            is_public=True,
+        )
 
         url = '/{}users/?show_projects_in_common=true'.format(API_BASE)
         res = app.get(url, auth=user_two.auth)
@@ -159,16 +162,18 @@ class TestUsers:
             assert meta['projects_in_common'] == 0
 
     def test_users_projects_in_common_with_embed_and_right_query(
-            self, app, user_one, user_two):
+            self, app, user_one, user_two,
+    ):
         project = ProjectFactory(creator=user_one)
         project.add_contributor(
             contributor=user_two,
             permissions=CREATOR_PERMISSIONS,
-            auth=Auth(user=user_one)
+            auth=Auth(user=user_one),
         )
         project.save()
         url = '/{}users/{}/nodes/?embed=contributors&show_projects_in_common=true'.format(
-            API_BASE, user_two._id)
+            API_BASE, user_two._id,
+        )
         res = app.get(url, auth=user_two.auth)
         user_json = res.json['data'][0]['embeds']['contributors']['data']
         for user in user_json:
@@ -177,14 +182,15 @@ class TestUsers:
             assert meta['projects_in_common'] == 1
 
     def test_users_projects_in_common_exclude_deleted_projects(
-            self, app, user_one, user_two):
+            self, app, user_one, user_two,
+    ):
         project_list = []
         for x in range(1, 10):
             project = ProjectFactory(creator=user_one)
             project.add_contributor(
                 contributor=user_two,
                 permissions=CREATOR_PERMISSIONS,
-                auth=Auth(user=user_one)
+                auth=Auth(user=user_one),
             )
             project.save()
             project_list.append(project)
@@ -193,7 +199,8 @@ class TestUsers:
             project.reload()
             project.remove_node(auth=Auth(user=user_one))
         url = '/{}users/{}/nodes/?embed=contributors&show_projects_in_common=true'.format(
-            API_BASE, user_two._id)
+            API_BASE, user_two._id,
+        )
         res = app.get(url, auth=user_two.auth)
         user_json = res.json['data'][0]['embeds']['contributors']['data']
         for user in user_json:
@@ -202,16 +209,18 @@ class TestUsers:
             assert meta['projects_in_common'] == 5
 
     def test_users_projects_in_common_with_embed_without_right_query(
-            self, app, user_one, user_two):
+            self, app, user_one, user_two,
+    ):
         project = ProjectFactory(creator=user_one)
         project.add_contributor(
             contributor=user_two,
             permissions=CREATOR_PERMISSIONS,
-            auth=Auth(user=user_one)
+            auth=Auth(user=user_one),
         )
         project.save()
         url = '/{}users/{}/nodes/?embed=contributors'.format(
-            API_BASE, user_two._id)
+            API_BASE, user_two._id,
+        )
         res = app.get(url, auth=user_two.auth)
         user_json = res.json['data'][0]['embeds']['contributors']['data']
         for user in user_json:
@@ -219,11 +228,13 @@ class TestUsers:
             assert 'projects_in_common' not in meta
 
     def test_users_no_projects_in_common_with_wrong_query(
-            self, app, user_one, user_two):
+            self, app, user_one, user_two,
+    ):
         user_one.fullname = 'hello'
         user_one.save()
         url = '/{}users/?filter[full_name]={}'.format(
-            API_BASE, user_one.fullname)
+            API_BASE, user_one.fullname,
+        )
         res = app.get(url, auth=user_two.auth)
         user_json = res.json['data']
         for user in user_json:
@@ -231,7 +242,8 @@ class TestUsers:
             assert 'projects_in_common' not in meta
 
     def test_users_no_projects_in_common_without_filter(
-            self, app, user_one, user_two):
+            self, app, user_one, user_two,
+    ):
         user_one.fullname = 'hello'
         user_one.save()
         url = '/{}users/'.format(API_BASE)
@@ -242,7 +254,8 @@ class TestUsers:
             assert 'projects_in_common' not in meta
 
     def test_users_list_takes_profile_image_size_param(
-            self, app, user_one, user_two):
+            self, app, user_one, user_two,
+    ):
         size = 42
         url = '/{}users/?profile_image_size={}'.format(API_BASE, size)
         res = app.get(url)
@@ -250,7 +263,8 @@ class TestUsers:
         for user in user_json:
             profile_image_url = user['links']['profile_image']
             query_dict = urlparse.parse_qs(
-                urlparse.urlparse(profile_image_url).query)
+                urlparse.urlparse(profile_image_url).query,
+            )
             assert int(query_dict.get('s')[0]) == size
 
     def test_users_list_filter_multiple_field(self, app, user_one, user_two):
@@ -270,7 +284,8 @@ class TestUsers:
         assert len(data) == 2
 
     def test_users_list_filter_multiple_fields_with_additional_filters(
-            self, app, user_one, user_two):
+            self, app, user_one, user_two,
+    ):
         john_doe = UserFactory(fullname='John Doe')
         john_doe.given_name = 'John'
         john_doe.family_name = 'Doe'
@@ -282,13 +297,15 @@ class TestUsers:
         doe_jane.save()
 
         url = '/{}users/?filter[given_name,family_name]=Doe&filter[id]={}'.format(
-            API_BASE, john_doe._id)
+            API_BASE, john_doe._id,
+        )
         res = app.get(url)
         data = res.json['data']
         assert len(data) == 1
 
     def test_users_list_filter_multiple_fields_with_bad_filter(
-            self, app, user_one, user_two):
+            self, app, user_one, user_two,
+    ):
         url = '/{}users/?filter[given_name,not_a_filter]=Doe'.format(API_BASE)
         res = app.get(url, expect_errors=True)
         assert res.status_code == 400
@@ -316,9 +333,9 @@ class TestUsersCreate:
                 'type': 'users',
                 'attributes': {
                     'username': email_unconfirmed,
-                    'full_name': 'Test Account'
-                }
-            }
+                    'full_name': 'Test Account',
+                },
+            },
         }
 
     def tearDown(self, app):
@@ -328,13 +345,14 @@ class TestUsersCreate:
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_logged_in_user_with_basic_auth_cannot_create_other_user_or_send_mail(
-            self, mock_mail, app, user, email_unconfirmed, data, url_base):
+            self, mock_mail, app, user, email_unconfirmed, data, url_base,
+    ):
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
         res = app.post_json_api(
             '{}?send_email=true'.format(url_base),
             data,
             auth=user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
 
         assert res.status_code == 403
@@ -343,12 +361,13 @@ class TestUsersCreate:
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_logged_out_user_cannot_create_other_user_or_send_mail(
-            self, mock_mail, app, email_unconfirmed, data, url_base):
+            self, mock_mail, app, email_unconfirmed, data, url_base,
+    ):
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
         res = app.post_json_api(
             '{}?send_email=true'.format(url_base),
             data,
-            expect_errors=True
+            expect_errors=True,
         )
 
         assert res.status_code == 401
@@ -358,7 +377,8 @@ class TestUsersCreate:
     @pytest.mark.skip  # failing locally post converision
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_cookied_requests_can_create_and_email(
-            self, mock_mail, app, user, email_unconfirmed, data, url_base):
+            self, mock_mail, app, user, email_unconfirmed, data, url_base,
+    ):
         session = Session(data={'auth_user_id': user._id})
         session.save()
         cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(session._id)
@@ -367,7 +387,7 @@ class TestUsersCreate:
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
         res = app.post_json_api(
             '{}?send_email=true'.format(url_base),
-            data
+            data,
         )
         assert res.status_code == 201
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
@@ -379,13 +399,15 @@ class TestUsersCreate:
     # TODO: Remove when available outside of DEV_MODE
     @unittest.skipIf(
         not settings.DEV_MODE,
-        'DEV_MODE disabled, osf.users.create unavailable')
+        'DEV_MODE disabled, osf.users.create unavailable',
+    )
     def test_properly_scoped_token_can_create_and_send_email(
-            self, mock_auth, mock_mail, app, user, email_unconfirmed, data, url_base):
+            self, mock_auth, mock_mail, app, user, email_unconfirmed, data, url_base,
+    ):
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Authorized Token',
-            scopes='osf.users.create'
+            scopes='osf.users.create',
         )
 
         mock_cas_resp = CasResponse(
@@ -393,8 +415,8 @@ class TestUsersCreate:
             user=user._id,
             attributes={
                 'accessToken': token.token_id,
-                'accessTokenScope': [s for s in token.scopes.split(' ')]
-            }
+                'accessTokenScope': [s for s in token.scopes.split(' ')],
+            },
         )
         mock_auth.return_value = user, mock_cas_resp
 
@@ -402,7 +424,7 @@ class TestUsersCreate:
         res = app.post_json_api(
             '{}?send_email=true'.format(url_base),
             data,
-            headers={'Authorization': 'Bearer {}'.format(token.token_id)}
+            headers={'Authorization': 'Bearer {}'.format(token.token_id)},
         )
 
         assert res.status_code == 201
@@ -416,13 +438,15 @@ class TestUsersCreate:
     # TODO: Remove when available outside of DEV_MODE
     @unittest.skipIf(
         not settings.DEV_MODE,
-        'DEV_MODE disabled, osf.users.create unavailable')
+        'DEV_MODE disabled, osf.users.create unavailable',
+    )
     def test_properly_scoped_token_does_not_send_email_without_kwarg(
-            self, mock_auth, mock_mail, app, user, email_unconfirmed, data, url_base):
+            self, mock_auth, mock_mail, app, user, email_unconfirmed, data, url_base,
+    ):
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Authorized Token',
-            scopes='osf.users.create'
+            scopes='osf.users.create',
         )
 
         mock_cas_resp = CasResponse(
@@ -430,8 +454,8 @@ class TestUsersCreate:
             user=user._id,
             attributes={
                 'accessToken': token.token_id,
-                'accessTokenScope': [s for s in token.scopes.split(' ')]
-            }
+                'accessTokenScope': [s for s in token.scopes.split(' ')],
+            },
         )
         mock_auth.return_value = user, mock_cas_resp
 
@@ -440,7 +464,7 @@ class TestUsersCreate:
         res = app.post_json_api(
             url_base,
             data,
-            headers={'Authorization': 'Bearer {}'.format(token.token_id)}
+            headers={'Authorization': 'Bearer {}'.format(token.token_id)},
         )
 
         assert res.status_code == 201
@@ -454,13 +478,15 @@ class TestUsersCreate:
     # TODO: Remove when available outside of DEV_MODE
     @unittest.skipIf(
         not settings.DEV_MODE,
-        'DEV_MODE disabled, osf.users.create unavailable')
+        'DEV_MODE disabled, osf.users.create unavailable',
+    )
     def test_properly_scoped_token_can_create_without_username_but_not_send_email(
-            self, mock_auth, mock_mail, app, user, data, url_base):
+            self, mock_auth, mock_mail, app, user, data, url_base,
+    ):
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Authorized Token',
-            scopes='osf.users.create'
+            scopes='osf.users.create',
         )
 
         mock_cas_resp = CasResponse(
@@ -468,8 +494,8 @@ class TestUsersCreate:
             user=user._id,
             attributes={
                 'accessToken': token.token_id,
-                'accessTokenScope': [s for s in token.scopes.split(' ')]
-            }
+                'accessTokenScope': [s for s in token.scopes.split(' ')],
+            },
         )
         mock_auth.return_value = user, mock_cas_resp
 
@@ -479,7 +505,7 @@ class TestUsersCreate:
         res = app.post_json_api(
             '{}?send_email=true'.format(url_base),
             data,
-            headers={'Authorization': 'Bearer {}'.format(token.token_id)}
+            headers={'Authorization': 'Bearer {}'.format(token.token_id)},
         )
 
         assert res.status_code == 201
@@ -494,11 +520,12 @@ class TestUsersCreate:
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     def test_improperly_scoped_token_can_not_create_or_email(
-            self, mock_auth, mock_mail, app, user, email_unconfirmed, data, url_base):
+            self, mock_auth, mock_mail, app, user, email_unconfirmed, data, url_base,
+    ):
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Unauthorized Token',
-            scopes='osf.full_write'
+            scopes='osf.full_write',
         )
 
         mock_cas_resp = CasResponse(
@@ -506,8 +533,8 @@ class TestUsersCreate:
             user=user._id,
             attributes={
                 'accessToken': token.token_id,
-                'accessTokenScope': [s for s in token.scopes.split(' ')]
-            }
+                'accessTokenScope': [s for s in token.scopes.split(' ')],
+            },
         )
         mock_auth.return_value = user, mock_cas_resp
 
@@ -516,7 +543,7 @@ class TestUsersCreate:
             '{}?send_email=true'.format(url_base),
             data,
             headers={'Authorization': 'Bearer {}'.format(token.token_id)},
-            expect_errors=True
+            expect_errors=True,
         )
 
         assert res.status_code == 403
@@ -529,13 +556,15 @@ class TestUsersCreate:
     # TODO: Remove when available outside of DEV_MODE
     @unittest.skipIf(
         not settings.DEV_MODE,
-        'DEV_MODE disabled, osf.admin unavailable')
+        'DEV_MODE disabled, osf.admin unavailable',
+    )
     def test_admin_scoped_token_can_create_and_send_email(
-            self, mock_auth, mock_mail, app, user, email_unconfirmed, data, url_base):
+            self, mock_auth, mock_mail, app, user, email_unconfirmed, data, url_base,
+    ):
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Admin Token',
-            scopes='osf.admin'
+            scopes='osf.admin',
         )
 
         mock_cas_resp = CasResponse(
@@ -543,8 +572,8 @@ class TestUsersCreate:
             user=user._id,
             attributes={
                 'accessToken': token.token_id,
-                'accessTokenScope': [s for s in token.scopes.split(' ')]
-            }
+                'accessTokenScope': [s for s in token.scopes.split(' ')],
+            },
         )
         mock_auth.return_value = user, mock_cas_resp
 
@@ -552,7 +581,7 @@ class TestUsersCreate:
         res = app.post_json_api(
             '{}?send_email=true'.format(url_base),
             data,
-            headers={'Authorization': 'Bearer {}'.format(token.token_id)}
+            headers={'Authorization': 'Bearer {}'.format(token.token_id)},
         )
 
         assert res.status_code == 201

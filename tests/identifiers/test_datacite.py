@@ -44,7 +44,7 @@ def datacite_client(registration):
     return DataCiteClient(
         base_url = 'https://mds.fake.datacite.org',
         prefix=settings.DATACITE_PREFIX,
-        client=MockDataciteClient()
+        client=MockDataciteClient(),
     )
 
 @pytest.fixture()
@@ -153,7 +153,7 @@ class TestDataCiteViews(OsfTestCase):
                 self.client.base_url + '/metadata',
                 body='OK (10.70102/FK2osf.io/cq695)',
                 status=201,
-            )
+            ),
         )
         responses.add(
             responses.Response(
@@ -161,7 +161,7 @@ class TestDataCiteViews(OsfTestCase):
                 self.client.base_url + '/doi',
                 body='OK (10.70102/FK2osf.io/cq695)',
                 status=201,
-            )
+            ),
         )
         with mock.patch('osf.models.Registration.get_doi_client') as mock_get_doi:
             mock_get_doi.return_value = self.client

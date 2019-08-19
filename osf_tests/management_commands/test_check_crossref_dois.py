@@ -49,8 +49,8 @@ class TestCheckCrossrefDOIs:
                 responses.GET,
                 url='{}works?filter=doi:{}'.format(settings.CROSSREF_JSON_API_URL, doi),
                 json=crossref_response,
-                status=200
-            )
+                status=200,
+            ),
         )
 
         check_crossref_dois(dry_run=False)
@@ -70,5 +70,5 @@ class TestCheckCrossrefDOIs:
             time_since_published=2,
             mail=mails.CROSSREF_DOIS_PENDING,
             pending_doi_count=1,
-            to_addr=settings.OSF_SUPPORT_EMAIL
+            to_addr=settings.OSF_SUPPORT_EMAIL,
         )

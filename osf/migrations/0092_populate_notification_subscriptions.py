@@ -47,9 +47,11 @@ def populate_provider_notification_subscriptions(apps, schema_editor):
         except Group.DoesNotExist:
             logger.warn('Unable to find groups for provider "{}", assuming there are no subscriptions to create.'.format(provider._id))
             continue
-        instance, created = NotificationSubscription.objects.get_or_create(_id='{provider_id}_new_pending_submissions'.format(provider_id=provider._id),
-                                                                           event_name='new_pending_submissions',
-                                                                           provider=provider)
+        instance, created = NotificationSubscription.objects.get_or_create(
+            _id='{provider_id}_new_pending_submissions'.format(provider_id=provider._id),
+            event_name='new_pending_submissions',
+            provider=provider,
+        )
         for user in provider_admins | provider_moderators:
             # add user to subscription list but set their notification to none by default
             instance.add_user_to_subscription(user, 'email_transactional', save=True)

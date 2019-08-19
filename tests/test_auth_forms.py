@@ -22,7 +22,7 @@ class TestValidation(OsfTestCase):
         class MockForm(Form):
             username = Field(
                 'Username',
-                [forms.UniqueEmail(allow_unregistered=True)]
+                [forms.UniqueEmail(allow_unregistered=True)],
             )
         u = UnregUserFactory()
         f = MockForm(username=u.username)

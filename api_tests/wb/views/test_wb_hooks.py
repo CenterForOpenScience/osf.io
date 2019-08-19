@@ -8,7 +8,7 @@ from framework.auth import signing
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
-    PreprintFactory
+    PreprintFactory,
 )
 from api_tests.utils import create_test_file, create_test_preprint_file
 from osf.models import QuickFilesNode
@@ -89,7 +89,7 @@ class TestMove():
                 'parent': folder._id,
                 'target': folder.target._id,
                 'name': folder.name,
-            }
+            },
         }
 
     @pytest.fixture()
@@ -119,7 +119,7 @@ class TestMove():
                 'parent': folder_two._id,
                 'target': folder_two.target._id,
                 'name': folder_two.name,
-            }
+            },
         })
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
@@ -139,7 +139,7 @@ class TestMove():
                 'parent': folder_two._id,
                 'target': folder_two.target._id,
                 'name': folder_two.name,
-            }
+            },
         })
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
@@ -159,7 +159,7 @@ class TestMove():
                 'parent': folder_two._id,
                 'target': folder_two.target._id,
                 'name': folder_two.name,
-            }
+            },
         })
         res = app.post_json(move_url, signed_payload, expect_errors=False)
         assert res.status_code == 200
@@ -174,7 +174,7 @@ class TestMove():
                 'parent': dest_folder._id,
                 'target': node._id,
                 'name': quickfiles_file.name,
-            }
+            },
         })
         res = app.post_json(quickfiles_move_url, signed_payload, expect_errors=False)
         assert res.status_code == 200
@@ -190,7 +190,7 @@ class TestMove():
                 'parent': quickfiles_folder._id,
                 'target': quickfiles_node._id,
                 'name': new_name,
-            }
+            },
         })
 
         res = app.post_json(quickfiles_move_url, signed_payload, expect_errors=False)
@@ -209,8 +209,8 @@ class TestMove():
                     'parent': folder._id,
                     'target': folder.target._id,
                     'name': '',
-                }
-            }
+                },
+            },
         )
         res = app.post_json(move_url, signed_payload, expect_errors=False)
         assert res.status_code == 200
@@ -227,8 +227,8 @@ class TestMove():
                     'parent': folder._id,
                     'target': folder.target._id,
                     'name': 'hello.txt',
-                }
-            }
+                },
+            },
         )
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
@@ -243,8 +243,8 @@ class TestMove():
                 'destination': {
                     'target': folder.target._id,
                     'name': 'hello.txt',
-                }
-            }
+                },
+            },
         )
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
@@ -260,8 +260,8 @@ class TestMove():
                     'parent': folder._id,
                     'target': folder.target._id,
                     'name': 'new_file_name',
-                }
-            }
+                },
+            },
         )
         res = app.post_json(move_url, signed_payload, expect_errors=False)
         assert res.status_code == 200
@@ -270,7 +270,7 @@ class TestMove():
 
     def test_invalid_payload(self, app, move_url):
         signed_payload = {
-            'key': 'incorrectly_formed_payload'
+            'key': 'incorrectly_formed_payload',
         }
 
         res = app.post_json(move_url, signed_payload, expect_errors=True)
@@ -287,8 +287,8 @@ class TestMove():
                     'parent': folder._id,
                     'target': folder.target._id,
                     'name': 'test_file',
-                }
-            }
+                },
+            },
         )
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 404
@@ -303,8 +303,8 @@ class TestMove():
                     'parent': '12345',
                     'target': folder.target._id,
                     'name': 'test_file',
-                }
-            }
+                },
+            },
         )
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 404
@@ -320,8 +320,8 @@ class TestMove():
                     'parent': folder._id,
                     'target': folder.target._id,
                     'name': 'test_file',
-                }
-            }
+                },
+            },
         )
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 404
@@ -360,7 +360,7 @@ class TestMovePreprint():
                 'parent': folder._id,
                 'target': folder.target._id,
                 'name': folder.name,
-            }
+            },
         }
 
     @pytest.fixture()
@@ -390,7 +390,7 @@ class TestMovePreprint():
                 'parent': folder_two._id,
                 'target': folder_two.target._id,
                 'name': folder_two.name,
-            }
+            },
         })
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
@@ -410,7 +410,7 @@ class TestMovePreprint():
                 'parent': folder_two._id,
                 'target': folder_two.target._id,
                 'name': folder_two.name,
-            }
+            },
         })
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
@@ -430,7 +430,7 @@ class TestMovePreprint():
                 'parent': folder_two._id,
                 'target': folder_two.target._id,
                 'name': folder_two.name,
-            }
+            },
         })
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
@@ -450,7 +450,7 @@ class TestMovePreprint():
                 'parent': folder_two._id,
                 'target': folder_two.target._id,
                 'name': folder_two.name,
-            }
+            },
         })
         res = app.post_json(move_url, signed_payload, expect_errors=False)
         assert res.status_code == 200
@@ -466,7 +466,7 @@ class TestMovePreprint():
                 'parent': folder._id,
                 'target': folder.target._id,
                 'name': folder.name,
-            }
+            },
         })
         res = app.post_json(move_url, signed_payload, expect_errors=False)
         assert res.status_code == 200
@@ -481,8 +481,8 @@ class TestMovePreprint():
                     'parent': folder._id,
                     'target': folder.target._id,
                     'name': '',
-                }
-            }
+                },
+            },
         )
         res = app.post_json(move_url, signed_payload, expect_errors=False)
         assert res.status_code == 200
@@ -499,8 +499,8 @@ class TestMovePreprint():
                     'parent': folder._id,
                     'target': folder.target._id,
                     'name': 'hello.txt',
-                }
-            }
+                },
+            },
         )
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
@@ -515,8 +515,8 @@ class TestMovePreprint():
                 'destination': {
                     'target': folder.target._id,
                     'name': 'hello.txt',
-                }
-            }
+                },
+            },
         )
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
@@ -532,8 +532,8 @@ class TestMovePreprint():
                     'parent': folder._id,
                     'target': folder.target._id,
                     'name': 'new_file_name',
-                }
-            }
+                },
+            },
         )
         res = app.post_json(move_url, signed_payload, expect_errors=False)
         assert res.status_code == 200
@@ -542,7 +542,7 @@ class TestMovePreprint():
 
     def test_invalid_payload(self, app, move_url):
         signed_payload = {
-            'key': 'incorrectly_formed_payload'
+            'key': 'incorrectly_formed_payload',
         }
 
         res = app.post_json(move_url, signed_payload, expect_errors=True)
@@ -559,8 +559,8 @@ class TestMovePreprint():
                     'parent': folder._id,
                     'target': folder.target._id,
                     'name': 'test_file',
-                }
-            }
+                },
+            },
         )
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 404
@@ -575,8 +575,8 @@ class TestMovePreprint():
                     'parent': '12345',
                     'target': folder.target._id,
                     'name': 'test_file',
-                }
-            }
+                },
+            },
         )
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 404
@@ -592,8 +592,8 @@ class TestMovePreprint():
                     'parent': folder._id,
                     'target': folder.target._id,
                     'name': 'test_file',
-                }
-            }
+                },
+            },
         )
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 404
@@ -621,7 +621,7 @@ class TestCopy():
                 'parent': folder._id,
                 'target': folder.target._id,
                 'name': folder.name,
-            }
+            },
         }
 
     @pytest.fixture()
@@ -650,7 +650,7 @@ class TestCopy():
                 'parent': folder_two._id,
                 'target': folder_two.target._id,
                 'name': folder_two.name,
-            }
+            },
         })
         res = app.post_json(copy_url, signed_payload, expect_errors=True)
         assert res.status_code == 201
@@ -669,7 +669,7 @@ class TestCopy():
                 'parent': folder_two._id,
                 'target': folder_two.target._id,
                 'name': folder_two.name,
-            }
+            },
         })
         res = app.post_json(copy_url, signed_payload, expect_errors=True)
         assert res.status_code == 201
@@ -688,7 +688,7 @@ class TestCopy():
                 'parent': folder_two._id,
                 'target': folder_two.target._id,
                 'name': folder_two.name,
-            }
+            },
         })
         res = app.post_json(copy_url, signed_payload, expect_errors=True)
         assert res.status_code == 201
@@ -706,7 +706,7 @@ class TestCopy():
                 'parent': folder_two._id,
                 'target': folder_two.target._id,
                 'name': folder_two.name,
-            }
+            },
         })
         res = app.post_json(copy_url, signed_payload, expect_errors=False)
         assert res.status_code == 201
@@ -722,7 +722,7 @@ class TestCopy():
                 'parent': folder._id,
                 'target': folder.target._id,
                 'name': folder.name,
-            }
+            },
         })
         res = app.post_json(copy_url, signed_payload, expect_errors=False)
         assert res.status_code == 201
@@ -737,7 +737,7 @@ class TestCopy():
                 'parent': dest_folder._id,
                 'target': node._id,
                 'name': quickfiles_file.name,
-            }
+            },
         })
         res = app.post_json(quickfiles_copy_url, signed_payload, expect_errors=False)
         assert res.status_code == 201
@@ -752,8 +752,8 @@ class TestCopy():
                     'parent': folder._id,
                     'target': folder.target._id,
                     'name': '',
-                }
-            }
+                },
+            },
         )
         res = app.post_json(copy_url, signed_payload, expect_errors=False)
         assert res.status_code == 201
@@ -770,8 +770,8 @@ class TestCopy():
                     'parent': folder._id,
                     'target': folder.target._id,
                     'name': 'hello.txt',
-                }
-            }
+                },
+            },
         )
         res = app.post_json(copy_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
@@ -786,8 +786,8 @@ class TestCopy():
                 'destination': {
                     'target': folder.target._id,
                     'name': 'hello.txt',
-                }
-            }
+                },
+            },
         )
         res = app.post_json(copy_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
@@ -795,7 +795,7 @@ class TestCopy():
 
     def test_invalid_payload(self, app, copy_url):
         signed_payload = {
-            'key': 'incorrectly_formed_payload'
+            'key': 'incorrectly_formed_payload',
         }
 
         res = app.post_json(copy_url, signed_payload, expect_errors=True)
@@ -837,7 +837,7 @@ class TestCopyPreprint():
                 'parent': folder._id,
                 'target': folder.target._id,
                 'name': folder.name,
-            }
+            },
         }
 
     @pytest.fixture()
@@ -866,7 +866,7 @@ class TestCopyPreprint():
                 'parent': folder_two._id,
                 'target': folder_two.target._id,
                 'name': folder_two.name,
-            }
+            },
         })
         res = app.post_json(copy_url, signed_payload, expect_errors=True)
         assert res.status_code == 201
@@ -885,7 +885,7 @@ class TestCopyPreprint():
                 'parent': folder_two._id,
                 'target': folder_two.target._id,
                 'name': folder_two.name,
-            }
+            },
         })
         res = app.post_json(copy_url, signed_payload, expect_errors=True)
         assert res.status_code == 201
@@ -904,7 +904,7 @@ class TestCopyPreprint():
                 'parent': folder_two._id,
                 'target': folder_two.target._id,
                 'name': folder_two.name,
-            }
+            },
         })
         res = app.post_json(copy_url, signed_payload, expect_errors=True)
         assert res.status_code == 201
@@ -922,7 +922,7 @@ class TestCopyPreprint():
                 'parent': folder_two._id,
                 'target': folder_two.target._id,
                 'name': folder_two.name,
-            }
+            },
         })
         res = app.post_json(copy_url, signed_payload, expect_errors=False)
         assert res.status_code == 201
@@ -938,7 +938,7 @@ class TestCopyPreprint():
                 'parent': folder._id,
                 'target': folder.target._id,
                 'name': folder.name,
-            }
+            },
         })
         res = app.post_json(copy_url, signed_payload, expect_errors=False)
         assert res.status_code == 201
@@ -953,8 +953,8 @@ class TestCopyPreprint():
                     'parent': folder._id,
                     'target': folder.target._id,
                     'name': '',
-                }
-            }
+                },
+            },
         )
         res = app.post_json(copy_url, signed_payload, expect_errors=False)
         assert res.status_code == 201
@@ -971,8 +971,8 @@ class TestCopyPreprint():
                     'parent': folder._id,
                     'target': folder.target._id,
                     'name': 'hello.txt',
-                }
-            }
+                },
+            },
         )
         res = app.post_json(copy_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
@@ -987,8 +987,8 @@ class TestCopyPreprint():
                 'destination': {
                     'target': folder.target._id,
                     'name': 'hello.txt',
-                }
-            }
+                },
+            },
         )
         res = app.post_json(copy_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
@@ -996,7 +996,7 @@ class TestCopyPreprint():
 
     def test_invalid_payload(self, app, copy_url):
         signed_payload = {
-            'key': 'incorrectly_formed_payload'
+            'key': 'incorrectly_formed_payload',
         }
 
         res = app.post_json(copy_url, signed_payload, expect_errors=True)

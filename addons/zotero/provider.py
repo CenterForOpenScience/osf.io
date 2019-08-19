@@ -24,7 +24,7 @@ class ZoteroCitationsProvider(CitationsProvider):
         """
         ret = super(ZoteroCitationsProvider, self).widget(node_addon)
         ret.update({
-            'library_id': node_addon.library_id
+            'library_id': node_addon.library_id,
         })
         return ret
 
@@ -39,7 +39,7 @@ class ZoteroCitationsProvider(CitationsProvider):
         node_addon.user_settings.grant_oauth_access(
             node=node_addon.owner,
             external_account=node_addon.external_account,
-            metadata=metadata
+            metadata=metadata,
         )
         node_addon.user_settings.save()
 
@@ -57,7 +57,7 @@ class ZoteroCitationsProvider(CitationsProvider):
                     'project': node_addon.owner.parent_id,
                     'node': node_addon.owner._id,
                     'library_name': external_library_name,
-                    'library_id': external_library_id
+                    'library_id': external_library_id,
                 },
                 auth=auth,
             )
@@ -130,5 +130,5 @@ class ZoteroCitationsProvider(CitationsProvider):
                 ]
 
         return {
-            'contents': contents
+            'contents': contents,
         }

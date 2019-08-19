@@ -90,16 +90,18 @@ class RegistrationSchema(AbstractSchema):
     def get_prereg_schema(cls):
         return cls.objects.get(
             name='Prereg Challenge',
-            schema_version=2
+            schema_version=2,
         )
 
     def validate_metadata(self, metadata, reviewer=False, required_fields=False):
         """
         Validates registration_metadata field.
         """
-        schema = create_jsonschema_from_metaschema(self.schema,
-                                                   required_fields=required_fields,
-                                                   is_reviewer=reviewer)
+        schema = create_jsonschema_from_metaschema(
+            self.schema,
+            required_fields=required_fields,
+            is_reviewer=reviewer,
+        )
         try:
             jsonschema.validate(metadata, schema)
         except jsonschema.ValidationError as e:
@@ -107,11 +109,11 @@ class RegistrationSchema(AbstractSchema):
                 for question in page['questions']:
                     if e.relative_schema_path[0] == 'required':
                         raise ValidationError(
-                            'For your registration the \'{}\' field is required'.format(question['title'])
+                            'For your registration the \'{}\' field is required'.format(question['title']),
                         )
                     elif e.relative_schema_path[0] == 'additionalProperties':
                         raise ValidationError(
-                            'For your registration the \'{}\' field is extraneous and not permitted in your response.'.format(question['qid'])
+                            'For your registration the \'{}\' field is extraneous and not permitted in your response.'.format(question['qid']),
                         )
                     elif e.relative_path[0] == question['qid']:
                         if 'options' in question:

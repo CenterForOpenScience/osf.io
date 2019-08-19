@@ -1385,12 +1385,12 @@ class Migration(migrations.Migration):
                 """
                 CREATE UNIQUE INDEX one_bookmark_collection_per_user ON osf_abstractnode (creator_id, is_bookmark_collection, is_deleted)
                 WHERE is_bookmark_collection=TRUE AND is_deleted=FALSE;
-                """
+                """,
             ], [
                 """
                 DROP INDEX IF EXISTS one_bookmark_collection_per_user RESTRICT;
-                """
-            ]
+                """,
+            ],
         ),
         migrations.RunSQL(
             [
@@ -1399,7 +1399,7 @@ class Migration(migrations.Migration):
                 CREATE INDEX osf_abstractnode_registration_pub_del_type_index ON public.osf_abstractnode (is_public, is_deleted, type) WHERE is_public=TRUE and is_deleted=FALSE and type = 'osf.registration';
                 CREATE INDEX osf_abstractnode_node_pub_del_type_index ON public.osf_abstractnode (is_public, is_deleted, type) WHERE is_public=TRUE and is_deleted=FALSE and type = 'osf.node';
                 CREATE INDEX osf_abstractnode_collection_pub_del_type_index ON public.osf_abstractnode (is_public, is_deleted, type) WHERE is_public=TRUE and is_deleted=FALSE and type = 'osf.collection';
-                """
+                """,
             ],
             [
                 """
@@ -1407,8 +1407,8 @@ class Migration(migrations.Migration):
                 DROP INDEX public.osf_abstractnode_registration_pub_del_type_index RESTRICT;
                 DROP INDEX public.osf_abstractnode_node_pub_del_type_index RESTRICT;
                 DROP INDEX public.osf_abstractnode_collection_pub_del_type_index RESTRICT;
-                """
-            ]
+                """,
+            ],
         ),
         migrations.RunSQL(
             [
@@ -1422,7 +1422,7 @@ class Migration(migrations.Migration):
             [
                 """
                 DROP INDEX public.osf_basefilenode_non_trashed_unique_index RESTRICT;
-                """
-            ]
+                """,
+            ],
         ),
     ]

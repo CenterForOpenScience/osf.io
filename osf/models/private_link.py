@@ -36,10 +36,11 @@ class PrivateLink(ObjectIDMixin, BaseModel):
             'key': self.key,
             'name': unescape_entities(self.name),
             'creator': {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
-            'nodes': [{'title': x.title, 'url': x.url,
-                       'scale': str(self.node_scale(x)) + 'px', 'category': x.category}
-                      for x in self.nodes.filter(is_deleted=False)],
-            'anonymous': self.anonymous
+            'nodes': [{
+                'title': x.title, 'url': x.url,
+                'scale': str(self.node_scale(x)) + 'px', 'category': x.category,
+            } for x in self.nodes.filter(is_deleted=False)],
+            'anonymous': self.anonymous,
         }
 
 

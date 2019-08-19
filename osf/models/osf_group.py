@@ -36,11 +36,13 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
     """
 
     name = models.TextField(blank=False)
-    creator = models.ForeignKey(OSFUser,
-                                db_index=True,
-                                related_name='osfgroups_created',
-                                on_delete=models.SET_NULL,
-                                null=True, blank=True)
+    creator = models.ForeignKey(
+        OSFUser,
+        db_index=True,
+        related_name='osfgroups_created',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+    )
 
     groups = {
         'member': ('member_group',),
@@ -174,7 +176,8 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
                     'group': self._id,
                     'user': user._id,
                 },
-                auth=auth)
+                auth=auth,
+            )
         self.update_search()
 
         if adding_member:
@@ -199,7 +202,8 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
                     'group': self._id,
                     'user': user._id,
                 },
-                auth=auth)
+                auth=auth,
+            )
 
         else:
             self.add_role_updated_log(user, MANAGER, auth)
@@ -288,7 +292,8 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
                 'group': self._id,
                 'user': user._id,
             },
-            auth=auth)
+            auth=auth,
+        )
 
         self.update_search()
 
@@ -314,9 +319,10 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
             OSFGroupLog.EDITED_NAME,
             params={
                 'group': self._id,
-                'name_original': old_name
+                'name_original': old_name,
             },
-            auth=auth)
+            auth=auth,
+        )
         self.update_search()
         for node in self.nodes:
             node.update_search()
@@ -344,13 +350,14 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         params = {
             'group': self._id,
             'node': node._id,
-            'permission': permission
+            'permission': permission,
         }
 
         self.add_log(
             OSFGroupLog.NODE_CONNECTED,
             params=params,
-            auth=auth)
+            auth=auth,
+        )
 
         self.add_corresponding_node_log(node, NodeLog.GROUP_ADDED, params, auth)
         node.update_search()
@@ -376,12 +383,12 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         params = {
             'group': self._id,
             'node': node._id,
-            'permission': permission
+            'permission': permission,
         }
         self.add_log(
             OSFGroupLog.NODE_PERMS_UPDATED,
             params=params,
-            auth=auth
+            auth=auth,
         )
 
         self.add_corresponding_node_log(node, NodeLog.GROUP_UPDATED, params, auth)
@@ -402,7 +409,8 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         self.add_log(
             OSFGroupLog.NODE_DISCONNECTED,
             params=params,
-            auth=auth)
+            auth=auth,
+        )
 
         self.add_corresponding_node_log(node, NodeLog.GROUP_REMOVED, params, auth)
         node.update_search()
@@ -478,7 +486,8 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
                 'new_role': role,
                 'user': user._id,
             },
-            auth=auth)
+            auth=auth,
+        )
 
     def add_corresponding_node_log(self, node, action, params, auth):
         """ Used for logging OSFGroup-related action to nodes - for example,
@@ -492,7 +501,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
             action=action,
             params=params,
             auth=auth,
-            save=True
+            save=True,
         )
 
     def add_log(self, action, params, auth, log_date=None, save=True):
@@ -506,7 +515,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
 
         log = OSFGroupLog(
             action=action, user=user,
-            params=params, group=self
+            params=params, group=self,
         )
 
         log.save()

@@ -2,8 +2,10 @@ import logging
 import random
 
 import bson
-from django.contrib.contenttypes.fields import (GenericForeignKey,
-                                                GenericRelation)
+from django.contrib.contenttypes.fields import (
+    GenericForeignKey,
+    GenericRelation,
+)
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -150,8 +152,10 @@ class Guid(BaseModel):
     primary_identifier_name = '_id'
 
     id = models.AutoField(primary_key=True)
-    _id = LowercaseCharField(max_length=255, null=False, blank=False, default=generate_guid, db_index=True,
-                           unique=True)
+    _id = LowercaseCharField(
+        max_length=255, null=False, blank=False, default=generate_guid, db_index=True,
+        unique=True,
+    )
     referent = GenericForeignKey()
     content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField(null=True, blank=True)
@@ -269,7 +273,7 @@ class OptionalGuidMixin(BaseIDMixin):
             try:
                 guid, created = Guid.objects.get_or_create(
                     object_id=self.pk,
-                    content_type_id=ContentType.objects.get_for_model(self).pk
+                    content_type_id=ContentType.objects.get_for_model(self).pk,
                 )
             except MultipleObjectsReturned:
                 # lol, hacks
@@ -366,5 +370,7 @@ def ensure_guid(sender, instance, created, **kwargs):
         # Clear query cache of instance.guids
         if has_cached_guids:
             del instance._prefetched_objects_cache['guids']
-        Guid.objects.create(object_id=instance.pk, content_type=ContentType.objects.get_for_model(instance),
-                            _id=generate_guid(instance.__guid_min_length__))
+        Guid.objects.create(
+            object_id=instance.pk, content_type=ContentType.objects.get_for_model(instance),
+            _id=generate_guid(instance.__guid_min_length__),
+        )

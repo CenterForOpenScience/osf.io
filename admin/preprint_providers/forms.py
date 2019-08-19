@@ -4,8 +4,10 @@ from django import forms
 from django.contrib.auth.models import Group
 
 from osf.models import PreprintProvider, Subject
-from admin.base.utils import (get_subject_rules, get_toplevel_subjects,
-    get_nodelicense_choices, get_defaultlicense_choices, validate_slug)
+from admin.base.utils import (
+    get_subject_rules, get_toplevel_subjects,
+    get_nodelicense_choices, get_defaultlicense_choices, validate_slug,
+)
 
 
 class PreprintProviderForm(forms.ModelForm):
@@ -14,7 +16,7 @@ class PreprintProviderForm(forms.ModelForm):
     _id = forms.SlugField(
         required=True,
         help_text='URL Slug',
-        validators=[validate_slug]
+        validators=[validate_slug],
     )
 
     class Meta:
@@ -50,7 +52,7 @@ class PreprintProviderForm(forms.ModelForm):
             tags=['a', 'b', 'br', 'div', 'em', 'h2', 'h3', 'li', 'p', 'strong', 'ul'],
             attributes=['class', 'style', 'href', 'title', 'target'],
             styles=['text-align', 'vertical-align'],
-            strip=True
+            strip=True,
         )
 
     def clean_description(self, *args, **kwargs):
@@ -61,7 +63,7 @@ class PreprintProviderForm(forms.ModelForm):
             tags=['a', 'br', 'em', 'p', 'span', 'strong'],
             attributes=['class', 'style', 'href', 'title', 'target'],
             styles=['text-align', 'vertical-align'],
-            strip=True
+            strip=True,
         )
 
     def clean_footer_links(self, *args, **kwargs):
@@ -72,7 +74,7 @@ class PreprintProviderForm(forms.ModelForm):
             tags=['a', 'br', 'div', 'em', 'p', 'span', 'strong'],
             attributes=['class', 'style', 'href', 'title', 'target'],
             styles=['text-align', 'vertical-align'],
-            strip=True
+            strip=True,
         )
 
 
@@ -108,7 +110,7 @@ class PreprintProviderRegisterModeratorOrAdminForm(forms.Form):
         self.fields['group_perms'] = forms.ModelMultipleChoiceField(
             queryset=Group.objects.filter(name__startswith='reviews_preprint_{}'.format(provider_id)),
             required=False,
-            widget=forms.CheckboxSelectMultiple
+            widget=forms.CheckboxSelectMultiple,
         )
 
     user_id = forms.CharField(required=True, max_length=5, min_length=5)

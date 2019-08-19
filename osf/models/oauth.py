@@ -40,15 +40,19 @@ class ApiOAuth2Application(base.ObjectIDMixin, base.BaseModel):
     # Client ID and secret. Use separate ID field so ID format doesn't
     # have to be restricted to database internals.
     # Not *guaranteed* unique, but very unlikely
-    client_id = models.CharField(default=generate_client_id,
-                                 unique=True,
-                                 max_length=50,
-                                 db_index=True)
+    client_id = models.CharField(
+        default=generate_client_id,
+        unique=True,
+        max_length=50,
+        db_index=True,
+    )
 
     client_secret = models.CharField(default=generate_client_secret, max_length=40)
 
-    is_active = models.BooleanField(default=True,  # Set to False if application is deactivated
-                                    db_index=True)
+    is_active = models.BooleanField(
+        default=True,  # Set to False if application is deactivated
+        db_index=True,
+    )
 
     owner = models.ForeignKey('OSFUser', null=True, blank=True, on_delete=models.SET_NULL)
 
@@ -120,8 +124,10 @@ class ApiOAuth2PersonalToken(base.ObjectIDMixin, base.BaseModel):
     """
     # Name of the field being `token_id` is a CAS requirement.
     # This is the actual value of the token that's used to authenticate
-    token_id = models.CharField(max_length=70, default=generate_token_id,
-                                unique=True)
+    token_id = models.CharField(
+        max_length=70, default=generate_token_id,
+        unique=True,
+    )
 
     owner = models.ForeignKey('OSFUser', db_index=True, blank=True, null=True, on_delete=models.SET_NULL)
     name = models.CharField(max_length=100, blank=False, null=False, db_index=True)

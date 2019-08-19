@@ -17,15 +17,15 @@ class TestReviewActionCreateRoot(object):
             'data': {
                 'attributes': attrs,
                 'relationships': {},
-                'type': 'actions'
-            }
+                'type': 'actions',
+            },
         }
         if reviewable_id:
             payload['data']['relationships']['target'] = {
                 'data': {
                     'type': 'preprints',
-                    'id': reviewable_id
-                }
+                    'id': reviewable_id,
+                },
             }
         return payload
 
@@ -45,10 +45,10 @@ class TestReviewActionCreateRoot(object):
     def preprint(self, node_admin, provider):
         preprint = PreprintFactory(
             provider=provider,
-            is_published=False
+            is_published=False,
         )
         preprint.add_contributor(
-            node_admin, permissions=osf_permissions.ADMIN
+            node_admin, permissions=osf_permissions.ADMIN,
         )
         return preprint
 
@@ -59,7 +59,7 @@ class TestReviewActionCreateRoot(object):
         return moderator
 
     def test_create_permissions(
-            self, app, url, preprint, node_admin, moderator
+            self, app, url, preprint, node_admin, moderator,
     ):
         assert preprint.machine_state == 'initial'
 
@@ -74,7 +74,7 @@ class TestReviewActionCreateRoot(object):
         res = app.post_json_api(
             url, submit_payload,
             auth=some_rando.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 403
 
@@ -86,7 +86,7 @@ class TestReviewActionCreateRoot(object):
         assert not preprint.is_published
 
         accept_payload = self.create_payload(
-            preprint._id, trigger='accept', comment='This is good.'
+            preprint._id, trigger='accept', comment='This is good.',
         )
 
         # Unauthorized user can't accept
@@ -97,19 +97,19 @@ class TestReviewActionCreateRoot(object):
         res = app.post_json_api(
             url, accept_payload,
             auth=some_rando.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 403
 
         # Moderator from another provider can't accept
         another_moderator = AuthUserFactory()
         another_moderator.groups.add(
-            PreprintProviderFactory().get_group('moderator')
+            PreprintProviderFactory().get_group('moderator'),
         )
         res = app.post_json_api(
             url, accept_payload,
             auth=another_moderator.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 403
 
@@ -117,7 +117,7 @@ class TestReviewActionCreateRoot(object):
         res = app.post_json_api(
             url, accept_payload,
             auth=node_admin.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 403
 
@@ -134,7 +134,7 @@ class TestReviewActionCreateRoot(object):
         assert preprint.is_published
 
     def test_cannot_create_actions_for_unmoderated_provider(
-            self, app, url, preprint, provider, node_admin
+            self, app, url, preprint, provider, node_admin,
     ):
         provider.reviews_workflow = None
         provider.save()
@@ -142,7 +142,7 @@ class TestReviewActionCreateRoot(object):
         res = app.post_json_api(
             url, submit_payload,
             auth=node_admin.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 409
 
@@ -179,7 +179,7 @@ class TestReviewActionCreateRoot(object):
                 ('withdrawn', 'reject'),
                 ('withdrawn', 'edit_comment'),
                 ('withdrawn', 'withdraw'),
-            ]
+            ],
         }
         for workflow, transitions in invalid_transitions.items():
             provider.reviews_workflow = workflow
@@ -188,22 +188,22 @@ class TestReviewActionCreateRoot(object):
                 preprint.machine_state = state
                 preprint.save()
                 bad_payload = self.create_payload(
-                    preprint._id, trigger=trigger
+                    preprint._id, trigger=trigger,
                 )
                 res = app.post_json_api(
                     url, bad_payload,
-                    auth=moderator.auth, expect_errors=True
+                    auth=moderator.auth, expect_errors=True,
                 )
                 assert res.status_code == 409
 
         # test invalid trigger
         bad_payload = self.create_payload(
-            preprint._id, trigger='badtriggerbad'
+            preprint._id, trigger='badtriggerbad',
         )
         res = app.post_json_api(
             url, bad_payload,
             auth=moderator.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 400
 
@@ -212,12 +212,12 @@ class TestReviewActionCreateRoot(object):
         res = app.post_json_api(
             url, bad_payload,
             auth=moderator.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 400
 
     def test_valid_transitions(
-            self, app, url, preprint, provider, moderator
+            self, app, url, preprint, provider, moderator,
     ):
         valid_transitions = {
             'post-moderation': [

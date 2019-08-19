@@ -5,7 +5,7 @@ from addons.owncloud.settings import MAX_UPLOAD_SIZE
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(
     HERE,
-    'templates'
+    'templates',
 )
 
 owncloud_root_folder = generic_root_folder('owncloud')

@@ -29,7 +29,7 @@ class LogsTestCase:
             user_one,
             permissions=osf_permissions.READ,
             auth=Auth(node_private.creator),
-            log=True, save=True
+            log=True, save=True,
         )
         return node_private
 
@@ -40,7 +40,7 @@ class LogsTestCase:
             user_one,
             permissions=osf_permissions.READ,
             auth=Auth(node_public.creator),
-            log=True, save=True
+            log=True, save=True,
         )
         return node_public
 
@@ -98,7 +98,8 @@ class TestLogDetail(LogsTestCase):
 
     def test_log_detail_private(
             self, app, url_log_detail_private,
-            user_one, user_two, log_private):
+            user_one, user_two, log_private,
+    ):
         # test_log_detail_returns_data
         res = app.get(url_log_detail_private, auth=user_one.auth)
         assert res.status_code == 200
@@ -112,13 +113,14 @@ class TestLogDetail(LogsTestCase):
         # test_log_detail_private_non_contributor_cannot_access_logs
         res = app.get(
             url_log_detail_private,
-            auth=user_two.auth, expect_errors=True
+            auth=user_two.auth, expect_errors=True,
         )
         assert res.status_code == 403
 
     def test_log_detail_public(
             self, app, url_log_detail_public,
-            log_public, user_two, user_one):
+            log_public, user_two, user_one,
+    ):
         # test_log_detail_public_not_logged_in_can_access_logs
         res = app.get(url_log_detail_public, expect_errors=True)
         assert res.status_code == 200
@@ -128,7 +130,8 @@ class TestLogDetail(LogsTestCase):
         # test_log_detail_public_non_contributor_can_access_logs
         res = app.get(
             url_log_detail_public,
-            auth=user_two.auth, expect_errors=True)
+            auth=user_two.auth, expect_errors=True,
+        )
         assert res.status_code == 200
         data = res.json['data']
         assert data['id'] == log_public._id
@@ -136,7 +139,8 @@ class TestLogDetail(LogsTestCase):
         # test_log_detail_data_format_api
         res = app.get(
             '{}?format=api'.format(url_log_detail_public),
-            auth=user_one.auth)
+            auth=user_one.auth,
+        )
         assert res.status_code == 200
         assert log_public._id in unicode(res.body, 'utf-8')
 
@@ -191,7 +195,7 @@ class TestNodeFileLogDetail:
                         '_id': component._id,
                         'url': component.url,
                         'title': component.title,
-                    }
+                    },
                 },
                 'destination': {
                     'materialized': file_component.materialized_path,
@@ -200,8 +204,8 @@ class TestNodeFileLogDetail:
                         '_id': node._id,
                         'url': node.url,
                         'title': node.title,
-                    }
-                }
+                    },
+                },
             },
         )
         node.save()
@@ -226,8 +230,8 @@ class TestNodeFileLogDetail:
                         '_id': component._id,
                         'url': component.url,
                         'title': component.title,
-                    }
-                }
+                    },
+                },
             },
         )
         node.save()
@@ -235,7 +239,8 @@ class TestNodeFileLogDetail:
 
     def test_title_visibility_in_file_move(
             self, app, url_node_logs,
-            user_two, component, node_with_log):
+            user_two, component, node_with_log,
+    ):
         # test_title_not_hidden_from_contributor_in_file_move
         res = app.get(url_node_logs, auth=user_two.auth)
         assert res.status_code == 200
@@ -248,14 +253,14 @@ class TestNodeFileLogDetail:
         assert res.json['data'][0]['attributes']['params']['source']['node_title'] == 'Private Component'
 
     def test_file_log_keeps_url(
-            self, app, url_node_logs, user_two, node_with_log
+            self, app, url_node_logs, user_two, node_with_log,
     ):
         res = app.get(url_node_logs, auth=user_two.auth)
         assert res.status_code == 200
         assert res.json['data'][0]['attributes']['params'].get('urls')
 
     def test_folder_log_url_removal(
-            self, app, url_node_logs, user_two
+            self, app, url_node_logs, user_two,
     ):
         res = app.get(url_node_logs, auth=user_two.auth)
         assert res.status_code == 200

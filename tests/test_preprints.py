@@ -147,7 +147,7 @@ class TestPreprintProperties:
     def test_absolute_url(self, preprint):
         assert preprint.absolute_url == urlparse.urljoin(
             preprint.provider.domain if preprint.provider.domain_redirect_enabled else settings.DOMAIN,
-            preprint.url
+            preprint.url,
         )
 
     def test_absolute_api_v2_url(self, preprint):
@@ -293,7 +293,7 @@ class TestPreprintCreation:
         preprint = Preprint(
             title=fake.bs(),
             creator=user,
-            provider=PreprintProviderFactory()
+            provider=PreprintProviderFactory(),
         )
         preprint.save()
         assert preprint.is_contributor(user) is True
@@ -308,7 +308,7 @@ class TestPreprintCreation:
         preprint = Preprint(
             title=fake.bs,
             creator=user,
-            provider=PreprintProviderFactory()
+            provider=PreprintProviderFactory(),
         )
         preprint.save()
 
@@ -319,7 +319,7 @@ class TestPreprintCreation:
         preprint = Preprint(
             title=fake.bs,
             creator=user,
-            provider=PreprintProviderFactory()
+            provider=PreprintProviderFactory(),
         )
         preprint.save()
         assert preprint.root_folder is not None
@@ -348,9 +348,9 @@ class TestContributorMethods:
         preprint.add_contributors(
             [
                 {'user': user1, 'permissions': ADMIN, 'visible': True},
-                {'user': user2, 'permissions': WRITE, 'visible': False}
+                {'user': user2, 'permissions': WRITE, 'visible': False},
             ],
-            auth=auth
+            auth=auth,
         )
         last_log = preprint.logs.all().order_by('-created')[0]
         assert (
@@ -383,14 +383,16 @@ class TestContributorMethods:
         assert len(preprint.contributors) == 2
 
     def test_remove_unregistered_conributor_removes_unclaimed_record(self, preprint, auth):
-        new_user = preprint.add_unregistered_contributor(fullname='David Davidson',
-            email='david@davidson.com', auth=auth)
+        new_user = preprint.add_unregistered_contributor(
+            fullname='David Davidson',
+            email='david@davidson.com', auth=auth,
+        )
         preprint.save()
         assert preprint.is_contributor(new_user)  # sanity check
         assert preprint._primary_key in new_user.unclaimed_records
         preprint.remove_contributor(
             auth=auth,
-            contributor=new_user
+            contributor=new_user,
         )
         preprint.save()
         new_user.refresh_from_db()
@@ -483,9 +485,9 @@ class TestContributorMethods:
         preprint.add_contributors(
             [
                 {'user': user1, 'permissions': WRITE, 'visible': True},
-                {'user': user2, 'permissions': WRITE, 'visible': True}
+                {'user': user2, 'permissions': WRITE, 'visible': True},
             ],
-            auth=auth
+            auth=auth,
         )
         assert user1 in preprint.contributors
         assert user2 in preprint.contributors
@@ -538,7 +540,7 @@ class TestContributorMethods:
             new_contrib,
             READ,
             False,
-            auth=auth
+            auth=auth,
         )
         assert preprint.get_permissions(new_contrib) == [READ]
         assert preprint.get_visible(new_contrib) is False
@@ -548,14 +550,14 @@ class TestContributorMethods:
         preprint.add_contributor(
             non_admin,
             permissions=WRITE,
-            auth=auth
+            auth=auth,
         )
         with pytest.raises(PermissionsError):
             preprint.update_contributor(
                 non_admin,
                 None,
                 False,
-                auth=Auth(non_admin)
+                auth=Auth(non_admin),
             )
 
     def test_update_contributor_only_admin_raises_error(self, preprint, auth):
@@ -564,7 +566,7 @@ class TestContributorMethods:
                 auth.user,
                 WRITE,
                 True,
-                auth=auth
+                auth=auth,
             )
 
     def test_update_contributor_non_contrib_raises_error(self, preprint, auth):
@@ -574,7 +576,7 @@ class TestContributorMethods:
                 non_contrib,
                 ADMIN,
                 True,
-                auth=auth
+                auth=auth,
             )
 
 
@@ -763,7 +765,7 @@ class TestPermissionMethods:
     def test_add_permission_already_granted(self, preprint):
         user = UserFactory()
         PreprintContributor.objects.create(
-            preprint=preprint, user=user
+            preprint=preprint, user=user,
         )
         preprint.add_permission(user, ADMIN)
         with pytest.raises(ValueError):
@@ -775,7 +777,8 @@ class TestPermissionMethods:
         other_guy = UserFactory()
         other_guy_auth = Auth(user=other_guy)
         preprint.add_contributor(
-            contributor=contributor, auth=auth)
+            contributor=contributor, auth=auth,
+        )
         preprint.save()
         # write contribs can now edit preprints
         assert bool(preprint.can_edit(contributor_auth)) is True
@@ -803,7 +806,8 @@ class TestPermissionMethods:
         other_guy = UserFactory()
         other_guy_auth = Auth(user=other_guy)
         preprint.add_contributor(
-            contributor=contributor, auth=auth)
+            contributor=contributor, auth=auth,
+        )
         preprint.save()
         # Only creator and contributor can view
         assert preprint.can_view(auth)
@@ -830,7 +834,8 @@ class TestPermissionMethods:
         other_guy = UserFactory()
         other_guy_auth = Auth(user=other_guy)
         preprint.add_contributor(
-            contributor=contributor, auth=auth)
+            contributor=contributor, auth=auth,
+        )
         # Change preprint to public
         preprint.is_public = True
         preprint.save()
@@ -846,7 +851,8 @@ class TestPermissionMethods:
         other_guy = UserFactory()
         other_guy_auth = Auth(user=other_guy)
         preprint.add_contributor(
-            contributor=contributor, auth=auth)
+            contributor=contributor, auth=auth,
+        )
 
         # Change preprint to unpublished
         preprint.is_published = False
@@ -865,7 +871,7 @@ class TestAddUnregisteredContributor:
         preprint.add_unregistered_contributor(
             email='foo@bar.com',
             fullname='Weezy F. Baby',
-            auth=auth
+            auth=auth,
         )
         preprint.save()
         latest_contributor = PreprintContributor.objects.get(preprint=preprint, user__username='foo@bar.com').user
@@ -887,7 +893,7 @@ class TestAddUnregisteredContributor:
         new_user = preprint.add_unregistered_contributor(
             email=user.username,
             fullname=given_name,
-            auth=auth
+            auth=auth,
         )
         preprint.save()
         # new unclaimed record was added
@@ -901,7 +907,7 @@ class TestAddUnregisteredContributor:
             preprint.add_unregistered_contributor(
                 email=user.username,
                 fullname=user.fullname,
-                auth=auth
+                auth=auth,
             )
 
 
@@ -1028,7 +1034,7 @@ class TestManageContributors:
                 {'id': reg_user1._id, 'permissions': ADMIN, 'visible': False},
             ],
             auth=auth,
-            save=True
+            save=True,
         )
         preprint.manage_contributors(
             user_dicts=[
@@ -1036,7 +1042,7 @@ class TestManageContributors:
                 {'id': reg_user1._id, 'permissions': ADMIN, 'visible': True},
             ],
             auth=auth,
-            save=True
+            save=True,
         )
 
         assert len(preprint.visible_contributor_ids) == 1
@@ -1047,7 +1053,7 @@ class TestManageContributors:
             [
                 {'user': reg_user1, 'permissions': ADMIN, 'visible': True},
                 {'user': reg_user2, 'permissions': ADMIN, 'visible': False},
-            ]
+            ],
         )
         print(preprint.visible_contributor_ids)
         with pytest.raises(ValueError) as e:
@@ -1061,11 +1067,13 @@ class TestManageContributors:
         preprint.save()
         with pytest.raises(PreprintStateError) as excinfo:
             preprint.manage_contributors(
-                user_dicts=[{'id': user2._id,
-                             'permissions': WRITE,
-                             'visible': True}],
+                user_dicts=[{
+                    'id': user2._id,
+                    'permissions': WRITE,
+                    'visible': True,
+                }],
                 auth=auth,
-                save=True
+                save=True,
             )
         assert excinfo.value.args[0] == 'Must have at least one registered admin contributor'
 
@@ -1094,7 +1102,7 @@ class TestManageContributors:
                 },
             ],
             auth=auth,
-            save=True
+            save=True,
         )
         assert list(preprint.contributors.all()) == [user2, user3, user]
 
@@ -1116,7 +1124,7 @@ class TestManageContributors:
                 },
             ],
             auth=auth,
-            save=True
+            save=True,
         )
         latest_log = preprint.logs.latest()
         assert latest_log.action == PreprintLog.CONTRIB_REORDERED
@@ -1142,7 +1150,7 @@ class TestManageContributors:
                 },
             ],
             auth=auth,
-            save=True
+            save=True,
         )
         latest_log = preprint.logs.latest()
         assert latest_log.action == PreprintLog.PERMISSIONS_UPDATED
@@ -1158,7 +1166,7 @@ class TestManageContributors:
         ]
         with pytest.raises(ValueError) as excinfo:
             preprint.manage_contributors(
-                users, auth=auth, save=True
+                users, auth=auth, save=True,
             )
         assert excinfo.value.args[0] == 'User {0} not in contributors'.format(user.fullname)
 
@@ -1173,7 +1181,7 @@ class TestManageContributors:
         preprint.add_contributor(
             user,
             permissions=ADMIN,
-            save=True
+            save=True,
         )
         users = [
             {'id': preprint.creator._id, 'permissions': READ, 'visible': True},
@@ -1191,7 +1199,7 @@ class TestManageContributors:
             unregistered.email,
             auth=Auth(preprint.creator),
             permissions=ADMIN,
-            existing_user=unregistered
+            existing_user=unregistered,
         )
         users = [
             {'id': preprint.creator._id, 'permissions': READ, 'visible': True},
@@ -1217,7 +1225,7 @@ class TestManageContributors:
         nonactive_admin.save()
 
         result = list(preprint.get_admin_contributors([
-            read, write, admin, noncontrib, nonactive_admin
+            read, write, admin, noncontrib, nonactive_admin,
         ]))
 
         assert admin in result
@@ -1252,9 +1260,9 @@ class TestContributorOrdering:
         preprint.add_contributors(
             [
                 {'user': user1, 'permissions': WRITE, 'visible': True},
-                {'user': user2, 'permissions': WRITE, 'visible': True}
+                {'user': user2, 'permissions': WRITE, 'visible': True},
             ],
-            auth=auth
+            auth=auth,
         )
 
         user_contrib_id = preprint.preprintcontributor_set.get(user=user).id
@@ -1321,7 +1329,8 @@ class TestPreprintUpdate:
     def test_set_description(self, preprint, auth):
         old_desc = preprint.description
         preprint.set_description(
-            'new description', auth=auth)
+            'new description', auth=auth,
+        )
         preprint.save()
         assert preprint.description, 'new description'
         latest_log = preprint.logs.latest()
@@ -1368,14 +1377,16 @@ class TestSetPreprintFile(OsfTestCase):
             target=self.preprint,
             path='/panda.txt',
             name='panda.txt',
-            materialized_path='/panda.txt')
+            materialized_path='/panda.txt',
+        )
         self.file.save()
 
         self.file_two = OsfStorageFile.create(
             target=self.preprint,
             path='/pandapanda.txt',
             name='pandapanda.txt',
-            materialized_path='/pandapanda.txt')
+            materialized_path='/pandapanda.txt',
+        )
         self.file_two.save()
 
         self.preprint.add_contributor(self.read_write_user, permissions=WRITE)
@@ -1485,7 +1496,8 @@ class TestPreprintPermissions(OsfTestCase):
             target=self.preprint,
             path='/panda.txt',
             name='panda.txt',
-            materialized_path='/panda.txt')
+            materialized_path='/panda.txt',
+        )
         self.file.save()
 
     def test_noncontrib_cannot_set_subjects(self):
@@ -1547,7 +1559,8 @@ class TestPreprintPermissions(OsfTestCase):
             target=self.project,
             path='/panda.txt',
             name='panda.txt',
-            materialized_path='/panda.txt')
+            materialized_path='/panda.txt',
+        )
         file.save()
 
         with assert_raises(ValueError):
@@ -1885,12 +1898,12 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         update_or_enqueue_on_preprint_updated(
             self.preprint._id,
             old_subjects=second_subjects,
-            saved_fields={'title': 'Hello'}
+            saved_fields={'title': 'Hello'},
         )
 
         updated_task = get_task_from_postcommit_queue(
             'website.preprints.tasks.on_preprint_updated',
-            predicate=lambda task: task.kwargs['preprint_id'] == self.preprint._id
+            predicate=lambda task: task.kwargs['preprint_id'] == self.preprint._id,
         )
         assert 'title' in updated_task.kwargs['saved_fields']
         assert 'contributors' in  updated_task.kwargs['saved_fields']
@@ -1928,40 +1941,46 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert set(subject['name'] for subject in subjects) == set([s.text for s in self.preprint.subjects.all()] + [s.bepress_subject.text for s in self.preprint.subjects.filter(bepress_subject__isnull=False)])
 
         people = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'person'], key=lambda x: x['given_name'])
-        expected_people = sorted([{
-            '@type': 'person',
-            'given_name': u'BoJack',
-            'family_name': u'Horseman',
-        }, {
-            '@type': 'person',
-            'given_name': self.user.given_name,
-            'family_name': self.user.family_name,
-        }, {
-            '@type': 'person',
-            'given_name': self.preprint.creator.given_name,
-            'family_name': self.preprint.creator.family_name,
-        }], key=lambda x: x['given_name'])
+        expected_people = sorted(
+            [
+                {
+                    '@type': 'person',
+                    'given_name': u'BoJack',
+                    'family_name': u'Horseman',
+                }, {
+                    '@type': 'person',
+                    'given_name': self.user.given_name,
+                    'family_name': self.user.family_name,
+                }, {
+                    '@type': 'person',
+                    'given_name': self.preprint.creator.given_name,
+                    'family_name': self.preprint.creator.family_name,
+                },
+            ], key=lambda x: x['given_name'],
+        )
         for i, p in enumerate(expected_people):
             expected_people[i]['@id'] = people[i]['@id']
 
         assert people == expected_people
 
         creators = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creator'], key=lambda x: x['order_cited'])
-        assert creators == [{
-            '@id': creators[0]['@id'],
-            '@type': 'creator',
-            'order_cited': 0,
-            'cited_as': u'{}'.format(self.preprint.creator.fullname),
-            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == self.preprint.creator.given_name][0], '@type': 'person'},
-            'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
-        }, {
-            '@id': creators[1]['@id'],
-            '@type': 'creator',
-            'order_cited': 1,
-            'cited_as': u'BoJack Horseman',
-            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == u'BoJack'][0], '@type': 'person'},
-            'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
-        }]
+        assert creators == [
+            {
+                '@id': creators[0]['@id'],
+                '@type': 'creator',
+                'order_cited': 0,
+                'cited_as': u'{}'.format(self.preprint.creator.fullname),
+                'agent': {'@id': [p['@id'] for p in people if p['given_name'] == self.preprint.creator.given_name][0], '@type': 'person'},
+                'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
+            }, {
+                '@id': creators[1]['@id'],
+                '@type': 'creator',
+                'order_cited': 1,
+                'cited_as': u'BoJack Horseman',
+                'agent': {'@id': [p['@id'] for p in people if p['given_name'] == u'BoJack'][0], '@type': 'person'},
+                'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
+            },
+        ]
 
         contributors = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'contributor']
         assert contributors == [{
@@ -2034,40 +2053,46 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert preprint.get('date_published') is None
 
         people = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'person'], key=lambda x: x['given_name'])
-        expected_people = sorted([{
-            '@type': 'person',
-            'given_name': u'BoJack',
-            'family_name': u'Horseman',
-        }, {
-            '@type': 'person',
-            'given_name': self.user.given_name,
-            'family_name': self.user.family_name,
-        }, {
-            '@type': 'person',
-            'given_name': self.preprint.creator.given_name,
-            'family_name': self.preprint.creator.family_name,
-        }], key=lambda x: x['given_name'])
+        expected_people = sorted(
+            [
+                {
+                    '@type': 'person',
+                    'given_name': u'BoJack',
+                    'family_name': u'Horseman',
+                }, {
+                    '@type': 'person',
+                    'given_name': self.user.given_name,
+                    'family_name': self.user.family_name,
+                }, {
+                    '@type': 'person',
+                    'given_name': self.preprint.creator.given_name,
+                    'family_name': self.preprint.creator.family_name,
+                },
+            ], key=lambda x: x['given_name'],
+        )
         for i, p in enumerate(expected_people):
             expected_people[i]['@id'] = people[i]['@id']
 
         assert people == expected_people
 
         creators = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creator'], key=lambda x: x['order_cited'])
-        assert creators == [{
-            '@id': creators[0]['@id'],
-            '@type': 'creator',
-            'order_cited': 0,
-            'cited_as': self.preprint.creator.fullname,
-            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == self.preprint.creator.given_name][0], '@type': 'person'},
-            'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
-        }, {
-            '@id': creators[1]['@id'],
-            '@type': 'creator',
-            'order_cited': 1,
-            'cited_as': u'BoJack Horseman',
-            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == u'BoJack'][0], '@type': 'person'},
-            'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
-        }]
+        assert creators == [
+            {
+                '@id': creators[0]['@id'],
+                '@type': 'creator',
+                'order_cited': 0,
+                'cited_as': self.preprint.creator.fullname,
+                'agent': {'@id': [p['@id'] for p in people if p['given_name'] == self.preprint.creator.given_name][0], '@type': 'person'},
+                'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
+            }, {
+                '@id': creators[1]['@id'],
+                '@type': 'creator',
+                'order_cited': 1,
+                'cited_as': u'BoJack Horseman',
+                'agent': {'@id': [p['@id'] for p in people if p['given_name'] == u'BoJack'][0], '@type': 'person'},
+                'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
+            },
+        ]
 
         contributors = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'contributor']
         assert contributors == [{
@@ -2097,7 +2122,8 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             target=self.preprint,
             path='/panda.txt',
             name='panda.txt',
-            materialized_path='/panda.txt')
+            materialized_path='/panda.txt',
+        )
         self.file.save()
 
         CASES = {
@@ -2229,8 +2255,10 @@ class TestPreprintSaveShareHook(OsfTestCase):
         preprint.move_contributor(contributor=user, index=0, auth=self.auth, save=True)
         assert mock_on_preprint_updated.call_count == 7
 
-        data = [{'id': self.admin._id, 'permissions': ADMIN, 'visible': True},
-                {'id': user._id, 'permissions': WRITE, 'visible': False}]
+        data = [
+            {'id': self.admin._id, 'permissions': ADMIN, 'visible': True},
+            {'id': user._id, 'permissions': WRITE, 'visible': False},
+        ]
 
         preprint.manage_contributors(data, auth=self.auth, save=True)
         assert mock_on_preprint_updated.call_count == 9
@@ -2325,16 +2353,24 @@ class TestPreprintOsfStorage(OsfTestCase):
         )
         assert_equal(
             self.preprint.logs.latest().params['path'],
-            path
+            path,
         )
 
     def build_url(self, **kwargs):
-        options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
-            action='download',
-            nid=self.preprint._id,
-            provider='osfstorage'), **kwargs),
-            'exp': timezone.now() + datetime.timedelta(seconds=500),
-        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
+        options = {'payload': jwe.encrypt(
+            jwt.encode(
+                {
+                    'data': dict(
+                        dict(
+                        action='download',
+                        nid=self.preprint._id,
+                        provider='osfstorage',
+                        ), **kwargs
+                    ),
+                        'exp': timezone.now() + datetime.timedelta(seconds=500),
+                }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM,
+            ), self.JWE_KEY,
+        )}
         return self.preprint.api_url_for('get_auth', **options)
 
     def test_auth_download(self):
@@ -2419,7 +2455,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
             path='/testfile',
             _id='testfile',
             name='testfile',
-            materialized_path='/testfile'
+            materialized_path='/testfile',
         )
         self.file.save()
         self.session = Session(data={'auth_user_id': self.user._id})
@@ -2508,7 +2544,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
                 'path': 'foo',
                 'nid': self.preprint._id,
                 'materialized': 'foo',
-                'kind': 'file'
+                'kind': 'file',
             },
             source={
                 'materialized': 'foo',
@@ -2529,7 +2565,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         self.app.put_json(
             url,
             payload,
-            headers={'Content-Type': 'application/json'}
+            headers={'Content-Type': 'application/json'},
         )
         self.preprint.reload()
 
@@ -2543,11 +2579,15 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         download_actions=('download_file', 'download_zip')
         wb_url = settings.WATERBUTLER_URL + '?version=1'
         for action in download_actions:
-            payload = self.build_payload(metadata={'path': '/testfile',
-                                                   'nid': self.preprint._id},
-                                         action_meta={'is_mfr_render': False},
-                                         request_meta={'url': wb_url},
-                                         action=action)
+            payload = self.build_payload(
+                metadata={
+                    'path': '/testfile',
+                    'nid': self.preprint._id,
+                },
+                action_meta={'is_mfr_render': False},
+                request_meta={'url': wb_url},
+                action=action,
+            )
             nlogs = self.preprint.logs.count()
             res = self.app.put_json(
                 url,
@@ -2633,7 +2673,8 @@ class TestWithdrawnPreprint:
                         creator=user,
                         target=target,
                         request_type=RequestTypes.WITHDRAWAL.value,
-                        machine_state=DefaultStates.INITIAL.value)
+                        machine_state=DefaultStates.INITIAL.value,
+            )
             request.run_submit(user)
             return request
         return withdrawal_request

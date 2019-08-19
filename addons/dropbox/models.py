@@ -4,8 +4,10 @@ import os
 
 from oauthlib.common import generate_token
 
-from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
-                                BaseStorageAddon)
+from addons.base.models import (
+    BaseOAuthNodeSettings, BaseOAuthUserSettings,
+    BaseStorageAddon,
+)
 from django.db import models
 from dropbox.dropbox import Dropbox
 from dropbox.exceptions import ApiError, DropboxException
@@ -60,7 +62,7 @@ class Provider(ExternalProvider):
             session.data['oauth_states'] = {}
         if self.short_name not in session.data['oauth_states']:
             session.data['oauth_states'][self.short_name] = {
-                'state': generate_token()
+                'state': generate_token(),
             }
         return DropboxOAuth2Flow(
             self.client_id,
@@ -68,9 +70,9 @@ class Provider(ExternalProvider):
             redirect_uri=web_url_for(
                 'oauth_callback',
                 service_name=self.short_name,
-                _absolute=True
+                _absolute=True,
             ),
-            session=session.data['oauth_states'][self.short_name], csrf_token_session_key='state'
+            session=session.data['oauth_states'][self.short_name], csrf_token_session_key='state',
         )
 
     @property
@@ -103,7 +105,7 @@ class Provider(ExternalProvider):
                 'key': access_token,
                 'provider_id': info.account_id,
                 'display_name': info.name.display_name,
-            }
+            },
         )
 
 
@@ -171,10 +173,11 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'kind': 'folder',
                 'name': '/ (Full Dropbox)',
                 'urls': {
-                    'folders': api_v2_url('nodes/{}/addons/dropbox/folders/'.format(self.owner._id),
-                        params={'id': '/'}
-                    )
-                }
+                    'folders': api_v2_url(
+                        'nodes/{}/addons/dropbox/folders/'.format(self.owner._id),
+                        params={'id': '/'},
+                    ),
+                },
             }]
 
         client = Dropbox(self.external_account.oauth_key)
@@ -187,10 +190,12 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 list_folder = client.files_list_folder_continue(list_folder.cursor)
                 contents += [x for x in list_folder.entries]
         except ApiError as error:
-            raise HTTPError(http.BAD_REQUEST, data={
-                'message_short': error.user_message_text,
-                'message_long': error.user_message_text,
-            })
+            raise HTTPError(
+                http.BAD_REQUEST, data={
+                    'message_short': error.user_message_text,
+                    'message_long': error.user_message_text,
+                },
+            )
         except DropboxException:
             raise HTTPError(http.BAD_REQUEST)
 
@@ -202,10 +207,11 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'name': item.path_display.split('/')[-1],
                 'path': item.path_display,
                 'urls': {
-                    'folders': api_v2_url('nodes/{}/addons/dropbox/folders/'.format(self.owner._id),
-                        params={'id': item.path_display}
-                    )
-                }
+                    'folders': api_v2_url(
+                        'nodes/{}/addons/dropbox/folders/'.format(self.owner._id),
+                        params={'id': item.path_display},
+                    ),
+                },
             }
             for item in contents
             if isinstance(item, FolderMetadata)
@@ -238,9 +244,10 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return {'folder': self.folder}
 
     def create_waterbutler_log(self, auth, action, metadata):
-        url = self.owner.web_url_for('addon_view_or_download_file',
+        url = self.owner.web_url_for(
+            'addon_view_or_download_file',
             path=metadata['path'].strip('/'),
-            provider='dropbox'
+            provider='dropbox',
         )
         self.owner.add_log(
             'dropbox_{0}'.format(action),
@@ -252,7 +259,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'folder': self.folder,
                 'urls': {
                     'view': url,
-                    'download': url + '?action=download'
+                    'download': url + '?action=download',
                 },
             },
         )

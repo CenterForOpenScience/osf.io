@@ -44,7 +44,7 @@ class Migration(migrations.Migration):
                         offset,
                         offset + BATCHSIZE,
                         max_pk,
-                    )
+                    ),
                 )
 
     def unset_default_region(self, *args, **kwargs):
@@ -63,7 +63,7 @@ class Migration(migrations.Migration):
                         offset,
                         offset + BATCHSIZE,
                         max_pk,
-                    )
+                    ),
                 )
 
     operations = [

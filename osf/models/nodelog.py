@@ -14,7 +14,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
         # TODO: Find a better way
         'node': 'node__guids___id',
         'user': 'user__guids___id',
-        'original_node': 'original_node__guids___id'
+        'original_node': 'original_node__guids___id',
     }
 
     objects = IncludeManager()
@@ -132,44 +132,56 @@ class NodeLog(ObjectIDMixin, BaseModel):
     VIEW_ONLY_LINK_ADDED = 'view_only_link_added'
     VIEW_ONLY_LINK_REMOVED = 'view_only_link_removed'
 
-    actions = ([CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED,
-                PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED,
-                NODE_ACCESS_REQUESTS_ENABLED, NODE_ACCESS_REQUESTS_DISABLED,
-                NODE_LINK_CREATED, NODE_LINK_FORKED, NODE_LINK_REMOVED, WIKI_UPDATED,
-                WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC,
-                MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED,
-                PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE,
-                EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FILE_METADATA_UPDATED,
-                FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED,
-                ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, COMMENT_RESTORED,
-                MADE_CONTRIBUTOR_VISIBLE,
-                MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_TERMINATED,
-                EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED,
-                RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED,
-                REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED,
-                PREREG_REGISTRATION_INITIATED,
-                GROUP_ADDED, GROUP_UPDATED, GROUP_REMOVED,
-                AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED,
-                PREPRINT_FILE_UPDATED, PREPRINT_LICENSE_UPDATED, VIEW_ONLY_LINK_ADDED, VIEW_ONLY_LINK_REMOVED] + list(sum([
-                    config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')
-                ], tuple())))
+    actions = ([
+        CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED,
+        PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED,
+        NODE_ACCESS_REQUESTS_ENABLED, NODE_ACCESS_REQUESTS_DISABLED,
+        NODE_LINK_CREATED, NODE_LINK_FORKED, NODE_LINK_REMOVED, WIKI_UPDATED,
+        WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC,
+        MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED,
+        PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE,
+        EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FILE_METADATA_UPDATED,
+        FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED,
+        ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, COMMENT_RESTORED,
+        MADE_CONTRIBUTOR_VISIBLE,
+        MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_TERMINATED,
+        EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED,
+        RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED,
+        REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED,
+        PREREG_REGISTRATION_INITIATED,
+        GROUP_ADDED, GROUP_UPDATED, GROUP_REMOVED,
+        AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED,
+        PREPRINT_FILE_UPDATED, PREPRINT_LICENSE_UPDATED, VIEW_ONLY_LINK_ADDED, VIEW_ONLY_LINK_REMOVED,
+    ] + list(sum(
+        [
+            config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')
+        ], tuple(),
+    )))
     action_choices = [(action, action.upper()) for action in actions]
     date = NonNaiveDateTimeField(db_index=True, null=True, blank=True, default=timezone.now)
     # TODO build action choices on the fly with the addon stuff
     action = models.CharField(max_length=255, db_index=True)  # , choices=action_choices)
     params = DateTimeAwareJSONField(default=dict)
     should_hide = models.BooleanField(default=False)
-    user = models.ForeignKey('OSFUser', related_name='logs', db_index=True,
-                             null=True, blank=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        'OSFUser', related_name='logs', db_index=True,
+        null=True, blank=True, on_delete=models.CASCADE,
+    )
     foreign_user = models.CharField(max_length=255, null=True, blank=True)
-    node = models.ForeignKey('AbstractNode', related_name='logs',
-                             db_index=True, null=True, blank=True, on_delete=models.CASCADE)
-    original_node = models.ForeignKey('AbstractNode', db_index=True,
-                                      null=True, blank=True, on_delete=models.CASCADE)
+    node = models.ForeignKey(
+        'AbstractNode', related_name='logs',
+        db_index=True, null=True, blank=True, on_delete=models.CASCADE,
+    )
+    original_node = models.ForeignKey(
+        'AbstractNode', db_index=True,
+        null=True, blank=True, on_delete=models.CASCADE,
+    )
 
     def __unicode__(self):
-        return ('({self.action!r}, user={self.user!r},, node={self.node!r}, params={self.params!r}) '
-                'with id {self.id!r}').format(self=self)
+        return (
+            '({self.action!r}, user={self.user!r},, node={self.node!r}, params={self.params!r}) '
+            'with id {self.id!r}'
+        ).format(self=self)
 
     class Meta:
         ordering = ['-date']

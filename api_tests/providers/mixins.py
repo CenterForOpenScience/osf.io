@@ -65,25 +65,30 @@ class ProviderExistsMixin(ProviderMixinBase):
 
         licenses_res = app.get(
             '{}licenses/'.format(fake_url),
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert licenses_res.status_code == 404
 
         res = app.get(
             provider_list_url_fake,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 404
 
         taxonomies_res = app.get(
             '{}taxonomies/'.format(fake_url),
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert taxonomies_res.status_code == 404
 
     def test_has_highlighted_subjects_flag(
             self, app, provider,
-            provider_two, provider_url, provider_url_two):
+            provider_two, provider_url, provider_url_two,
+    ):
         SubjectFactory(
             provider=provider,
-            text='A', highlighted=True)
+            text='A', highlighted=True,
+        )
         SubjectFactory(provider=provider_two, text='B')
 
         res = app.get(provider_url)
@@ -198,7 +203,7 @@ class ProviderSubjectsMixin(ProviderMixinBase):
             ([subA._id, subB._id], False),
             ([subA._id, subD._id], True),
             ([subH._id, subI._id, subJ._id], True),
-            ([subL._id], True)
+            ([subL._id], True),
         ]
         #  This should allow: A, B, D, G, H, I, J, L, M, N and E
         #  This should not allow: C, F, K, O
@@ -272,7 +277,9 @@ class ProviderSubjectsMixin(ProviderMixinBase):
         res = app.get(
             lawless_url +
             'filter[parents]={}'.format(
-                subB._id))
+                subB._id,
+            ),
+        )
 
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == 1
@@ -281,7 +288,9 @@ class ProviderSubjectsMixin(ProviderMixinBase):
         res = app.get(
             lawless_url +
             'filter[parents]={}'.format(
-                subI._id))
+                subI._id,
+            ),
+        )
 
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == 2
@@ -289,7 +298,9 @@ class ProviderSubjectsMixin(ProviderMixinBase):
         res = app.get(
             lawless_url +
             'filter[parents]={}'.format(
-                subM._id))
+                subM._id,
+            ),
+        )
 
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == 2
@@ -298,7 +309,9 @@ class ProviderSubjectsMixin(ProviderMixinBase):
         res = app.get(
             ruled_url +
             'filter[parents]={}'.format(
-                subB._id))
+                subB._id,
+            ),
+        )
 
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == 0
@@ -308,7 +321,9 @@ class ProviderSubjectsMixin(ProviderMixinBase):
         res = app.get(
             ruled_url +
             'filter[parents]={}'.format(
-                subI._id))
+                subI._id,
+            ),
+        )
 
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == 1
@@ -319,13 +334,17 @@ class ProviderSubjectsMixin(ProviderMixinBase):
         res = app.get(
             ruled_url +
             'filter[parents]={}'.format(
-                subM._id))
+                subM._id,
+            ),
+        )
 
     def test_no_rules_with_parent_filter(self, app, lawless_url, subB, subI, subM):
         res = app.get(
             lawless_url +
             'filter[parent]={}'.format(
-                subB._id))
+                subB._id,
+            ),
+        )
 
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == 1
@@ -334,7 +353,9 @@ class ProviderSubjectsMixin(ProviderMixinBase):
         res = app.get(
             lawless_url +
             'filter[parent]={}'.format(
-                subI._id))
+                subI._id,
+            ),
+        )
 
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == 2
@@ -342,7 +363,9 @@ class ProviderSubjectsMixin(ProviderMixinBase):
         res = app.get(
             lawless_url +
             'filter[parent]={}'.format(
-                subM._id))
+                subM._id,
+            ),
+        )
 
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == 2
@@ -351,7 +374,9 @@ class ProviderSubjectsMixin(ProviderMixinBase):
         res = app.get(
             ruled_url +
             'filter[parent]={}'.format(
-                subB._id))
+                subB._id,
+            ),
+        )
 
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == 0
@@ -361,7 +386,9 @@ class ProviderSubjectsMixin(ProviderMixinBase):
         res = app.get(
             ruled_url +
             'filter[parent]={}'.format(
-                subI._id))
+                subI._id,
+            ),
+        )
 
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == 1
@@ -372,7 +399,9 @@ class ProviderSubjectsMixin(ProviderMixinBase):
         res = app.get(
             ruled_url +
             'filter[parent]={}'.format(
-                subM._id))
+                subM._id,
+            ),
+        )
 
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == 2
@@ -384,7 +413,9 @@ class ProviderSubjectsMixin(ProviderMixinBase):
         res = app.get(
             lawless_url +
             'filter[parents]={}'.format(
-                subA._id))
+                subA._id,
+            ),
+        )
 
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == 3
@@ -393,7 +424,9 @@ class ProviderSubjectsMixin(ProviderMixinBase):
         res = app.get(
             ruled_url +
             'filter[parents]={}'.format(
-                subA._id))
+                subA._id,
+            ),
+        )
 
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == 2
@@ -475,11 +508,15 @@ class ProviderSpecificSubjectsMixin(ProviderMixinBase):
         res_1 = app.get(
             url_1 +
             'filter[parent]={}'.format(
-                root_subject_1._id))
+                root_subject_1._id,
+            ),
+        )
         res_2 = app.get(
             url_2 +
             'filter[parent]={}'.format(
-                root_subject_2._id))
+                root_subject_2._id,
+            ),
+        )
 
         assert res_1.status_code == 200
         assert res_2.status_code == 200
@@ -498,11 +535,15 @@ class ProviderSpecificSubjectsMixin(ProviderMixinBase):
         res_1 = app.get(
             url_1 +
             'filter[parent]={}'.format(
-                root_subject_2))
+                root_subject_2,
+            ),
+        )
         res_2 = app.get(
             url_2 +
             'filter[parent]={}'.format(
-                root_subject_1))
+                root_subject_1,
+            ),
+        )
 
         assert res_1.status_code == 200
         assert res_2.status_code == 200
@@ -541,11 +582,15 @@ class ProviderCustomTaxonomyMixin(ProviderMixinBase):
         bepress_res = app.get(
             url.format(
                 API_BASE,
-                osf_provider._id))
+                osf_provider._id,
+            ),
+        )
         asdf_res = app.get(
             url.format(
                 API_BASE,
-                asdf_provider._id))
+                asdf_provider._id,
+            ),
+        )
 
         assert len(bepress_res.json['data']) == len(asdf_res.json['data']) == 1
         assert bepress_res.json['data'][0]['attributes']['share_title'] == osf_provider.share_title
@@ -579,11 +624,15 @@ class ProviderCustomSubjectMixin(ProviderMixinBase):
         bepress_res = app.get(
             url.format(
                 API_BASE,
-                osf_provider._id))
+                osf_provider._id,
+            ),
+        )
         asdf_res = app.get(
             url.format(
                 API_BASE,
-                asdf_provider._id))
+                asdf_provider._id,
+            ),
+        )
 
         assert len(bepress_res.json['data']) == len(asdf_res.json['data']) == 1
         assert bepress_res.json['data'][0]['attributes']['taxonomy_name'] == osf_provider.share_title
@@ -644,7 +693,8 @@ class ProviderListViewTestBaseMixin(ProviderMixinBase):
         return provider
 
     def test_provider_list(
-            self, app, url, user, provider_one, provider_two):
+            self, app, url, user, provider_one, provider_two,
+    ):
         # Test length and not auth
         res = app.get(url)
         assert res.status_code == 200
@@ -655,19 +705,23 @@ class ProviderListViewTestBaseMixin(ProviderMixinBase):
         assert res.status_code == 200
         assert len(res.json['data']) == 2
 
-    @pytest.mark.parametrize('filter_type,filter_value', [
-        ('allow_submissions', True),
-        ('description', 'spots%20not%20dots'),
-        ('domain', 'https://www.spotarxiv.com'),
-        ('domain_redirect_enabled', True),
-        ('id', 'spot'),
-        ('name', 'Spotarxiv'),
-    ])
+    @pytest.mark.parametrize(
+        'filter_type,filter_value', [
+            ('allow_submissions', True),
+            ('description', 'spots%20not%20dots'),
+            ('domain', 'https://www.spotarxiv.com'),
+            ('domain_redirect_enabled', True),
+            ('id', 'spot'),
+            ('name', 'Spotarxiv'),
+        ],
+    )
     def test_provider_list_filtering(
             self, filter_type, filter_value, app, url,
-            provider_one, provider_two):
+            provider_one, provider_two,
+    ):
         res = app.get('{}?filter[{}]={}'.format(
-            url, filter_type, filter_value))
+            url, filter_type, filter_value,
+        ))
         assert res.status_code == 200
         assert len(res.json['data']) == 1
 
@@ -689,17 +743,20 @@ class ProviderDetailViewTestBaseMixin(ProviderExistsMixin):
 
         licenses_res = app.get(
             '{}licenses/'.format(fake_url),
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert licenses_res.status_code == 404
 
         res = app.get(
             provider_list_url_fake,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 404
 
         taxonomies_res = app.get(
             '{}taxonomies/'.format(fake_url),
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert taxonomies_res.status_code == 404
 
 class ProviderSubmissionMixinBase(object):
@@ -769,13 +826,14 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
                 'data': {
                     'type': 'collected-metadata',
                     'attributes': attributes,
-                }
+                },
             }
         return make_collection_payload
 
     def test_no_permissions(
         self, app, primary_collection, submission_provider, collection_with_provider,
-            collection_without_provider, user_one, user_two, submission_two, url, payload):
+            collection_without_provider, user_one, user_two, submission_two, url, payload,
+    ):
         # Private
 
         # Sanity Check
@@ -791,14 +849,16 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
         res = app.post_json_api(
             url,
             payload(creator=user_two._id, guid=submission_two._id, status='asdf'),
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 401
 
         res = app.post_json_api(
             url,
             payload(creator=user_two._id, guid=submission_two._id, status='asdf'),
             auth=user_two.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
         # Public, accepting submissions
@@ -817,14 +877,16 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
         res = app.post_json_api(
             url,
             payload(creator=user_two._id, guid=submission_two._id, status='asdf'),
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 401
 
         res = app.post_json_api(
             url,
             payload(creator=user_two._id, guid=submission_two._id, status='asdf'),
             auth=user_two.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         # Neither collection perms nor project perms
         assert res.status_code == 403
 
@@ -834,7 +896,8 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
             url,
             payload(creator=user_two._id, guid=submission_three._id, status='asdf'),
             auth=user_two.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 201
 
         assert not (collection_with_provider.guid_links.all() | collection_without_provider.guid_links.all()).filter(_id=submission_three._id).exists()
@@ -848,7 +911,8 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
         res = app.post_json_api(
             url,
             payload(guid=submission_two._id, status='asdf', subjects=[[subject_one._id]]),
-            auth=user_one.auth)
+            auth=user_one.auth,
+        )
         assert res.status_code == 201
 
         submission_three = self.submission_class(creator=user_two)  # user_one does not have referent perm
@@ -856,7 +920,8 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
         res = app.post_json_api(
             url,
             payload(guid=submission_three._id, status='asdf', subjects=[[subject_one._id]]),
-            auth=user_one.auth)
+            auth=user_one.auth,
+        )
         assert res.status_code == 201
 
         res = app.get(url, auth=user_one.auth)
@@ -876,7 +941,8 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
             url,
             payload(guid=submission_two._id, status='one', subjects=[[subject_one._id]]),
             auth=user_one.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert 'not an acceptable "type"' in res.json['errors'][0]['detail']
 
@@ -885,7 +951,8 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
             url,
             payload(guid=submission_two._id, collected_type='asdf', subjects=[[subject_one._id]]),
             auth=user_one.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert 'not an acceptable "status"' in res.json['errors'][0]['detail']
 
@@ -894,7 +961,8 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
             url,
             payload(guid=submission_two._id, collected_type='asdf', status='asdf', subjects=[[subject_one._id]]),
             auth=user_one.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert 'not an acceptable "status"' in res.json['errors'][0]['detail']
 
@@ -903,7 +971,8 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
             url,
             payload(guid=submission_two._id, collected_type='one', status='one', subjects=[[subject_one._id]]),
             auth=user_one.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert 'not an acceptable "type"' in res.json['errors'][0]['detail']
 
@@ -911,7 +980,8 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
         res = app.post_json_api(
             url,
             payload(guid=submission_two._id, collected_type='asdf', status='two', subjects=[[subject_one._id]]),
-            auth=user_one.auth)
+            auth=user_one.auth,
+        )
         assert res.status_code == 201
 
     def test_filters(self, app, submission_provider, collection_with_provider, collection_without_provider, user_one, user_two, submission_one, submission_two, subject_one, url, payload):
@@ -937,7 +1007,8 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
         res = app.post_json_api(
             url,
             payload(guid=submission_two._id, collected_type='asdf', subjects=[[subject_one._id]]),
-            auth=user_one.auth)
+            auth=user_one.auth,
+        )
         assert res.status_code == 201
 
         res = app.get('{}?filter[subjects]={}'.format(url, subject_one._id), auth=user_one.auth)

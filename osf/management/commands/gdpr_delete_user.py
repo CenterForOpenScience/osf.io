@@ -31,7 +31,7 @@ class Command(BaseCommand):
         dry_run = options.get('dry_run', False)
 
         if not ask_for_confirmation(
-            'About to delete user(s): {}. yes or no?'.format(' '.join(guids))
+            'About to delete user(s): {}. yes or no?'.format(' '.join(guids)),
         ):
             print('Exiting...')
             sys.exit(1)

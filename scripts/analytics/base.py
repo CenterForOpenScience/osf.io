@@ -75,15 +75,15 @@ class SummaryAnalytics(BaseAnalytics):
         logger.info('Gathering {} analytics for the {} collection for {}'.format(
             self.analytic_type,
             self.collection_name,
-            date.isoformat()
+            date.isoformat(),
         ))
 
     def parse_args(self):
         parser = argparse.ArgumentParser(
             description='Enter the date to gather {} analytics for the {} collection'.format(
                 self.analytic_type,
-                self.collection_name
-            )
+                self.collection_name,
+            ),
         )
         parser.add_argument('-d', '--date', dest='date')
         parser.add_argument('-y', '--yesterday', dest='yesterday', action='store_true')
@@ -121,8 +121,8 @@ class EventAnalytics(SummaryAnalytics):
         else:
             logger.info(
                 'Keen not enabled - would otherwise be adding the following {} events to the {} collection'.format(
-                    len(events), self.collection_name
-                )
+                    len(events), self.collection_name,
+                ),
             )
             print(events)
 
@@ -140,7 +140,7 @@ class BaseAnalyticsHarness(object):
         parser = argparse.ArgumentParser(description='Populate keen analytics!')
         parser.add_argument(
             '-as', '--analytics_scripts', nargs='+', dest='analytics_scripts', required=False,
-            help='Enter the names of scripts inside scripts/analytics you would like to run separated by spaces (ex: -as user_summary node_summary)'
+            help='Enter the names of scripts inside scripts/analytics you would like to run separated by spaces (ex: -as user_summary node_summary)',
         )
         return parser.parse_args()
 
@@ -155,7 +155,7 @@ class BaseAnalyticsHarness(object):
                 logger.error(
                     'Error importing script - make sure the script specified is inside of scripts/analytics. '
                     'Also make sure the main analytics class name is the same as the script name but in camel case. '
-                    'For example, the script named  scripts/analytics/addon_snapshot.py has class AddonSnapshot'
+                    'For example, the script named  scripts/analytics/addon_snapshot.py has class AddonSnapshot',
                 )
 
             return imported_script_classes
@@ -179,7 +179,7 @@ class DateAnalyticsHarness(BaseAnalyticsHarness):
         parser = argparse.ArgumentParser(description='Populate keen analytics!')
         parser.add_argument(
             '-as', '--analytics_scripts', nargs='+', dest='analytics_scripts', required=False,
-            help='Enter the names of scripts inside scripts/analytics you would like to run separated by spaces (ex: -as user_summary node_summary)'
+            help='Enter the names of scripts inside scripts/analytics you would like to run separated by spaces (ex: -as user_summary node_summary)',
         )
         parser.add_argument('-d', '--date', dest='date', required=False)
         parser.add_argument('-y', '--yesterday', dest='yesterday', action='store_true')

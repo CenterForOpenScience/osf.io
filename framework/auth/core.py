@@ -96,7 +96,7 @@ def _get_current_user():
 
         return OSFUser.load(
             cas_auth_response.user,
-            select_for_update=check_select_for_update(request)
+            select_for_update=check_select_for_update(request),
         ) if cas_auth_response.authenticated else None
 
     else:
@@ -161,15 +161,19 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
 
 class Auth(object):
 
-    def __init__(self, user=None, api_node=None,
-                 private_key=None):
+    def __init__(
+        self, user=None, api_node=None,
+        private_key=None,
+    ):
         self.user = user
         self.api_node = api_node
         self.private_key = private_key
 
     def __repr__(self):
-        return ('<Auth(user="{self.user}", '
-                'private_key={self.private_key})>').format(self=self)
+        return (
+            '<Auth(user="{self.user}", '
+            'private_key={self.private_key})>'
+        ).format(self=self)
 
     @property
     def logged_in(self):

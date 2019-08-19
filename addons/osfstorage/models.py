@@ -197,7 +197,8 @@ class OsfStorageFileNode(BaseFileNode):
             if target.has_permission(user, permissions.ADMIN):
                 # But don't allow force check in for prereg admin checked out files
                 if self.checkout.has_perm('osf.view_prereg') and target.draft_registrations_active.filter(
-                        registration_schema__name='Prereg Challenge').exists():
+                        registration_schema__name='Prereg Challenge',
+                ).exists():
                     raise exceptions.FileNodeCheckedOutError()
             else:
                 raise exceptions.FileNodeCheckedOutError()
@@ -218,11 +219,14 @@ class OsfStorageFileNode(BaseFileNode):
                         'node': target._id,
                         'urls': {
                             # web_url_for unavailable -- called from within the API, so no flask app
-                            'download': '/project/{}/files/{}/{}/?action=download'.format(target._id,
-                                                                                          self.provider,
-                                                                                          self._id),
-                            'view': '/project/{}/files/{}/{}'.format(target._id, self.provider, self._id)},
-                        'path': self.materialized_path
+                            'download': '/project/{}/files/{}/{}/?action=download'.format(
+                                target._id,
+                                self.provider,
+                                self._id,
+                            ),
+                            'view': '/project/{}/files/{}/{}'.format(target._id, self.provider, self._id),
+                        },
+                        'path': self.materialized_path,
                     },
                     auth=Auth(user),
                 )
@@ -246,7 +250,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
         return {
             'sha1': last_version.metadata['sha1'],
             'sha256': last_version.metadata['sha256'],
-            'md5': last_version.metadata['md5']
+            'md5': last_version.metadata['md5'],
         }
 
     @property
@@ -260,7 +264,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
             'path': self.materialized_path,
             'hashes': self._hashes,
             'size': size,
-            'last_seen': self.modified
+            'last_seen': self.modified,
         }
 
     def touch(self, bearer, version=None, revision=None, **kwargs):
@@ -331,7 +335,8 @@ class OsfStorageFile(OsfStorageFileNode, File):
             params = {
                 'urls': {
                     'download': '/{}/files/osfstorage/{}/?action=download'.format(target._id, self._id),
-                    'view': '/{}/files/osfstorage/{}/'.format(target._id, self._id)},
+                    'view': '/{}/files/osfstorage/{}/'.format(target._id, self._id),
+                },
                 'path': self.materialized_path,
                 'tag': tag,
             }
@@ -561,16 +566,18 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         return clone, None
 
     def serialize_waterbutler_settings(self):
-        return dict(Region.objects.get(id=self.region_id).waterbutler_settings, **{
-            'nid': self.owner._id,
-            'rootId': self.root_node._id,
-            'baseUrl': api_url_for(
-                'osfstorage_get_metadata',
-                guid=self.owner._id,
-                _absolute=True,
-                _internal=True
-            ),
-        })
+        return dict(
+            Region.objects.get(id=self.region_id).waterbutler_settings, **{
+                'nid': self.owner._id,
+                'rootId': self.root_node._id,
+                'baseUrl': api_url_for(
+                    'osfstorage_get_metadata',
+                    guid=self.owner._id,
+                    _absolute=True,
+                    _internal=True,
+                ),
+            }
+        )
 
     def serialize_waterbutler_credentials(self):
         return Region.objects.get(id=self.region_id).waterbutler_credentials
@@ -588,14 +595,14 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
                 'addon_view_or_download_file',
                 guid=self.owner._id,
                 path=metadata['path'],
-                provider='osfstorage'
+                provider='osfstorage',
             )
             params['urls'] = {'view': url, 'download': url + '?action=download'}
 
         self.owner.add_log(
             'osf_storage_{0}'.format(action),
             auth=auth,
-            params=params
+            params=params,
         )
 
 

@@ -19,7 +19,7 @@ from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
     must_have_permission, must_be_contributor_and_not_group_member,
     must_not_be_registration, must_be_registration,
-    must_not_be_retracted_registration
+    must_not_be_retracted_registration,
 )
 from osf import features
 from osf.models import Identifier, RegistrationSchema
@@ -74,15 +74,19 @@ def node_registration_retraction_get(auth, node, **kwargs):
     """
 
     if not node.is_registration:
-        raise HTTPError(http.BAD_REQUEST, data={
-            'message_short': 'Invalid Request',
-            'message_long': 'Withdrawal of non-registrations is not permitted.'
-        })
+        raise HTTPError(
+            http.BAD_REQUEST, data={
+                'message_short': 'Invalid Request',
+                'message_long': 'Withdrawal of non-registrations is not permitted.',
+            },
+        )
     if node.is_pending_retraction:
-        raise HTTPError(http.BAD_REQUEST, data={
-            'message_short': 'Invalid Request',
-            'message_long': 'This registration is already pending withdrawal.'
-        })
+        raise HTTPError(
+            http.BAD_REQUEST, data={
+                'message_short': 'Invalid Request',
+                'message_long': 'This registration is already pending withdrawal.',
+            },
+        )
 
     return serialize_node(node, auth, primary=True)
 
@@ -96,21 +100,27 @@ def node_registration_retraction_post(auth, node, **kwargs):
     :return: Redirect URL for successful POST
     """
     if node.is_pending_retraction:
-        raise HTTPError(http.BAD_REQUEST, data={
-            'message_short': 'Invalid Request',
-            'message_long': 'This registration is already pending withdrawal'
-        })
+        raise HTTPError(
+            http.BAD_REQUEST, data={
+                'message_short': 'Invalid Request',
+                'message_long': 'This registration is already pending withdrawal',
+            },
+        )
     if not node.is_registration:
-        raise HTTPError(http.BAD_REQUEST, data={
-            'message_short': 'Invalid Request',
-            'message_long': 'Withdrawal of non-registrations is not permitted.'
-        })
+        raise HTTPError(
+            http.BAD_REQUEST, data={
+                'message_short': 'Invalid Request',
+                'message_long': 'Withdrawal of non-registrations is not permitted.',
+            },
+        )
 
     if node.root_id != node.id:
-        raise HTTPError(http.BAD_REQUEST, data={
-            'message_short': 'Invalid Request',
-            'message_long': 'Withdrawal of non-parent registrations is not permitted.'
-        })
+        raise HTTPError(
+            http.BAD_REQUEST, data={
+                'message_short': 'Invalid Request',
+                'message_long': 'Withdrawal of non-parent registrations is not permitted.',
+            },
+        )
 
     data = request.get_json()
     try:
@@ -137,15 +147,19 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
             # backwards compatability for old urls, lookup by name
             meta_schema = RegistrationSchema.objects.filter(name=_id_to_name(metaschema_id)).order_by('-schema_version').first()
             if not meta_schema:
-                raise HTTPError(http.NOT_FOUND, data={
-                    'message_short': 'Invalid schema name',
-                    'message_long': 'No registration schema with that name could be found.'
-                })
+                raise HTTPError(
+                    http.NOT_FOUND, data={
+                        'message_short': 'Invalid schema name',
+                        'message_long': 'No registration schema with that name could be found.',
+                    },
+                )
         if not node.registered_schema.filter(id=meta_schema.id).exists():
-            raise HTTPError(http.BAD_REQUEST, data={
-                'message_short': 'Invalid schema',
-                'message_long': 'This registration has no registration supplment with that name.'
-            })
+            raise HTTPError(
+                http.BAD_REQUEST, data={
+                    'message_short': 'Invalid schema',
+                    'message_long': 'This registration has no registration supplment with that name.',
+                },
+            )
 
         ret = _view_project(node, auth, primary=True)
         my_meta = serialize_meta_schema(meta_schema)
@@ -178,7 +192,7 @@ def project_before_register(auth, node, **kwargs):
         },
         'partial': {
             'addons': set(),
-            'message': 'The current version of the content in <strong>{0}</strong> will be copied to the registration, but version history will be lost.'
+            'message': 'The current version of the content in <strong>{0}</strong> will be copied to the registration, but version history will be lost.',
         },
         'none': {
             'addons': set(),
@@ -213,13 +227,13 @@ def project_before_register(auth, node, **kwargs):
     if node.has_pointers_recursive:
         prompts.append(
             language.BEFORE_REGISTER_HAS_POINTERS.format(
-                category=node.project_or_component
-            )
+                category=node.project_or_component,
+            ),
         )
 
     return {
         'prompts': prompts,
-        'errors': error_messages
+        'errors': error_messages,
     }
 
 

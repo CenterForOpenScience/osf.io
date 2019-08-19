@@ -32,11 +32,11 @@ OSF_USER_POLICY = json.dumps(
                 'Sid': 'Stmt1392138408000',
                 'Effect': 'Allow',
                 'Action': [
-                    's3:*'
+                    's3:*',
                 ],
                 'Resource': [
-                    '*'
-                ]
+                    '*',
+                ],
             },
             {
                 'Sid': 'Stmt1392138440000',
@@ -44,12 +44,12 @@ OSF_USER_POLICY = json.dumps(
                 'Action': [
                     'iam:DeleteAccessKey',
                     'iam:DeleteUser',
-                    'iam:DeleteUserPolicy'
+                    'iam:DeleteUserPolicy',
                 ],
                 'Resource': [
-                    '*'
-                ]
-            }
-        ]
-    }
+                    '*',
+                ],
+            },
+        ],
+    },
 )

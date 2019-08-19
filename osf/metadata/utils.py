@@ -19,7 +19,7 @@ DATACITE_RESOURCE_TYPE_MAP = {
     'Research Tool': 'Text',
     'Thesis': 'Text',
     'Other': 'Text',
-    '(:unas)': 'Other'
+    '(:unas)': 'Other',
 }
 
 
@@ -35,8 +35,8 @@ def datacite_format_contributors(contributors):
             {
                 'nameIdentifier': contributor.absolute_url,
                 'nameIdentifierScheme': 'OSF',
-                'schemeURI': settings.DOMAIN
-            }
+                'schemeURI': settings.DOMAIN,
+            },
         ]
 
         if contributor.external_identity.get('ORCID'):
@@ -45,16 +45,16 @@ def datacite_format_contributors(contributors):
                 name_identifiers.append({
                     'nameIdentifier': contributor.external_identity['ORCID'].keys()[0],
                     'nameIdentifierScheme': 'ORCID',
-                    'schemeURI': 'http://orcid.org/'
+                    'schemeURI': 'http://orcid.org/',
                 })
 
         creators.append({
             'creatorName': {
                 'creatorName': contributor.fullname,
                 'familyName': contributor.family_name,
-                'givenName': contributor.given_name
+                'givenName': contributor.given_name,
             },
-            'nameIdentifiers': name_identifiers
+            'nameIdentifiers': name_identifiers,
         })
 
     return creators
@@ -64,7 +64,7 @@ def datacite_format_subjects(subjects):
     return [
         {
             'subject': subject.bepress_subject.text if subject.bepress_subject else subject.text,
-            'subjectScheme': SUBJECT_SCHEME
+            'subjectScheme': SUBJECT_SCHEME,
         }
         for subject in subjects
     ]
@@ -75,12 +75,12 @@ def datacite_format_identifier(target):
     if identifier:
         return {
             'identifier': identifier.value,
-            'identifierType': 'DOI'
+            'identifierType': 'DOI',
         }
 
 
 def datacite_format_rights(license):
     return {
         'rights': license.name,
-        'rightsURI': license.url
+        'rightsURI': license.url,
     }

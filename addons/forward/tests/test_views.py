@@ -24,7 +24,7 @@ class TestForwardLogs(ForwardAddonTestCase, OsfTestCase):
         self.project.reload()
         assert_equal(
             self.project.logs.count(),
-            log_count + 1
+            log_count + 1,
         )
 
     def test_change_timeout_log_not_added(self):
@@ -38,5 +38,5 @@ class TestForwardLogs(ForwardAddonTestCase, OsfTestCase):
         self.project.reload()
         assert_equal(
             self.project.logs.count(),
-            log_count
+            log_count,
         )

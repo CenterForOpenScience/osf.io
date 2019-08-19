@@ -77,14 +77,14 @@ class Migration(migrations.Migration):
                 INSERT INTO osf_abstractprovider_licenses_acceptable (id, abstractprovider_id, nodelicense_id)
                     SELECT id, preprintprovider_id, nodelicense_id
                     FROM osf_preprintprovider_licenses_acceptable
-                """
+                """,
             ], [
                 """
                 INSERT INTO osf_preprintprovider_licenses_acceptable (id, preprintprovider_id, nodelicense_id)
                     SELECT id, abstractprovider_id, nodelicense_id
                     FROM osf_abstractprovider_licenses_acceptable
-                """
-            ]
+                """,
+            ],
         ),
         migrations.AlterField(
             model_name='subject',
@@ -106,8 +106,8 @@ class Migration(migrations.Migration):
                         footer_links, facebook_app_id, example, allow_submissions, share_publish_type, share_source, share_title, additional_providers,
                         access_token, preprint_word, subjects_acceptable, default_license_id
                     FROM osf_abstractprovider
-                """
-            ]
+                """,
+            ],
         ),
         migrations.RemoveField(
             model_name='preprintprovider',

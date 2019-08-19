@@ -30,7 +30,7 @@ class TestNodeBibliographicContributors:
     @pytest.fixture()
     def project(self, admin_contributor_bib, write_contributor_non_bib, read_contributor_bib):
         project = ProjectFactory(
-            creator=admin_contributor_bib
+            creator=admin_contributor_bib,
         )
         project.add_contributor(write_contributor_non_bib, WRITE, visible=False)
         project.add_contributor(read_contributor_bib, READ)
@@ -41,8 +41,10 @@ class TestNodeBibliographicContributors:
     def url(self, project):
         return '/{}nodes/{}/bibliographic_contributors/'.format(API_BASE, project._id)
 
-    def test_list_and_filter_bibliographic_contributors(self, app, url, project, admin_contributor_bib,
-            write_contributor_non_bib, read_contributor_bib, non_contributor):
+    def test_list_and_filter_bibliographic_contributors(
+        self, app, url, project, admin_contributor_bib,
+        write_contributor_non_bib, read_contributor_bib, non_contributor,
+    ):
 
         # Test GET unauthenticated
         res = app.get(url, expect_errors=True)

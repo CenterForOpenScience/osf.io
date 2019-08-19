@@ -44,5 +44,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(rekey_pagecounters, noop)
+        migrations.RunPython(rekey_pagecounters, noop),
     ]

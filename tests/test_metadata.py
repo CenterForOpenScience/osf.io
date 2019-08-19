@@ -24,14 +24,14 @@ class TestMetaData(OsfTestCase):
         RegistrationSchema.objects.all().delete()
         assert_equal(
             RegistrationSchema.objects.all().count(),
-            0
+            0,
         )
 
         ensure_schemas()
 
         assert_equal(
             RegistrationSchema.objects.all().count(),
-            len(OSF_META_SCHEMAS)
+            len(OSF_META_SCHEMAS),
         )
 
     def test_reigstrationschema_uniqueness_is_enforced_in_the_database(self):

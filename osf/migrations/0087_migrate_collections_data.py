@@ -107,7 +107,7 @@ class Migration(migrations.Migration):
                """, """
                 -- Update the collection id seq to avoid conflicts when more are made
                 SELECT setval('osf_collection_id_seq', max(id)) FROM osf_collection;
-                """
+                """,
             ], [
                 """
                 -- Undelete nodes
@@ -149,7 +149,7 @@ class Migration(migrations.Migration):
                 """, """
                 -- Reset collection id sequence
                 SELECT setval('osf_collection_id_seq', 1);
-                """
-            ]
+                """,
+            ],
         ),
     ]

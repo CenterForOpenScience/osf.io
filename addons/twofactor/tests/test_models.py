@@ -3,8 +3,10 @@ from urlparse import parse_qs, urlparse
 
 import pytest
 from addons.twofactor.tests.utils import _valid_code
-from nose.tools import (assert_equal, assert_false, assert_is_none,
-                        assert_is_not_none, assert_true)
+from nose.tools import (
+    assert_equal, assert_false, assert_is_none,
+    assert_is_not_none, assert_true,
+)
 from osf_tests.factories import UserFactory
 
 pytestmark = pytest.mark.django_db
@@ -78,7 +80,7 @@ class TestUserSettingsModel(unittest.TestCase):
         assert_equal(url.path, '/OSF:{}'.format(self.user.username))
         assert_equal(
             parse_qs(url.query),
-            {'secret': [self.TOTP_SECRET_B32]}
+            {'secret': [self.TOTP_SECRET_B32]},
         )
 
     def test_json(self):
@@ -96,20 +98,20 @@ class TestUserSettingsModel(unittest.TestCase):
                 'nodes': [],
                 'secret': self.TOTP_SECRET_B32,
                 'has_auth': False,
-            }
+            },
         )
 
     def test_verify_valid_code(self):
         assert_true(
-            self.user_settings.verify_code(_valid_code(self.TOTP_SECRET))
+            self.user_settings.verify_code(_valid_code(self.TOTP_SECRET)),
         )
 
     def test_verify_valid_core_drift(self):
         # use a code from 30 seconds in the future
         assert_true(
             self.user_settings.verify_code(
-                _valid_code(self.TOTP_SECRET, drift=1)
-            )
+                _valid_code(self.TOTP_SECRET, drift=1),
+            ),
         )
 
         # make sure drift is updated.
@@ -118,8 +120,8 @@ class TestUserSettingsModel(unittest.TestCase):
         # use a code from 60 seconds in the future
         assert_true(
             self.user_settings.verify_code(
-                _valid_code(self.TOTP_SECRET, drift=2)
-            )
+                _valid_code(self.TOTP_SECRET, drift=2),
+            ),
         )
 
         # make sure drift is updated.
@@ -127,5 +129,5 @@ class TestUserSettingsModel(unittest.TestCase):
 
         # use the current code (which is now 2 periods away from the drift)
         assert_false(
-            self.user_settings.verify_code(_valid_code(self.TOTP_SECRET))
+            self.user_settings.verify_code(_valid_code(self.TOTP_SECRET)),
         )

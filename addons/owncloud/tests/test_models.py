@@ -2,13 +2,15 @@ from nose.tools import assert_is_not_none, assert_equal
 import pytest
 import unittest
 
-from addons.base.tests.models import (OAuthAddonNodeSettingsTestSuiteMixin,
-                                      OAuthAddonUserSettingTestSuiteMixin)
+from addons.base.tests.models import (
+    OAuthAddonNodeSettingsTestSuiteMixin,
+    OAuthAddonUserSettingTestSuiteMixin,
+)
 
 from addons.owncloud.models import NodeSettings
 from addons.owncloud.tests.factories import (
     OwnCloudAccountFactory, OwnCloudNodeSettingsFactory,
-    OwnCloudUserSettingsFactory
+    OwnCloudUserSettingsFactory,
 )
 from addons.owncloud.settings import USE_SSL
 
@@ -35,7 +37,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         return {
             'user_settings': self.user_settings,
             'folder_id': '/Documents',
-            'owner': self.node
+            'owner': self.node,
         }
 
     def test_serialize_credentials(self):
@@ -45,7 +47,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         expected = {
             'host': self.node_settings.external_account.oauth_secret,
             'password': 'meoword',
-            'username': 'catname'
+            'username': 'catname',
         }
 
         assert_equal(credentials, expected)
@@ -54,6 +56,6 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         settings = self.node_settings.serialize_waterbutler_settings()
         expected = {
             'folder': self.node_settings.folder_id,
-            'verify_ssl': USE_SSL
+            'verify_ssl': USE_SSL,
         }
         assert_equal(settings, expected)

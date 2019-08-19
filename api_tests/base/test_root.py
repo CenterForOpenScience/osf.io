@@ -8,7 +8,7 @@ from django.utils import timezone
 import pytest
 from tests.base import ApiTestCase
 from osf_tests.factories import (
-    AuthUserFactory
+    AuthUserFactory,
 )
 
 from api.base.settings.defaults import API_BASE
@@ -42,7 +42,7 @@ class TestWelcomeToApi(ApiTestCase):
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(
             res.json['meta']['current_user']['data']['attributes']['given_name'],
-            self.user.given_name
+            self.user.given_name,
         )
 
     def test_current_user_accepted_tos(self):
@@ -51,7 +51,7 @@ class TestWelcomeToApi(ApiTestCase):
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(
             res.json['meta']['current_user']['data']['attributes']['accepted_terms_of_service'],
-            False
+            False,
         )
         self.user.accepted_terms_of_service = timezone.now()
         self.user.save()
@@ -60,7 +60,7 @@ class TestWelcomeToApi(ApiTestCase):
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(
             res.json['meta']['current_user']['data']['attributes']['accepted_terms_of_service'],
-            True
+            True,
         )
 
     def test_returns_302_redirect_for_base_url(self):
@@ -87,13 +87,13 @@ class TestWelcomeToApi(ApiTestCase):
     # TODO: Remove when available outside of DEV_MODE
     @unittest.skipIf(
         not settings.DEV_MODE,
-        'DEV_MODE disabled, osf.admin unavailable'
+        'DEV_MODE disabled, osf.admin unavailable',
     )
     def test_admin_scoped_token_has_admin(self, mock_auth):
         token = ApiOAuth2PersonalToken(
             owner=self.user,
             name='Admin Token',
-            scopes='osf.admin'
+            scopes='osf.admin',
         )
 
         mock_cas_resp = CasResponse(
@@ -101,15 +101,15 @@ class TestWelcomeToApi(ApiTestCase):
             user=self.user._id,
             attributes={
                 'accessToken': token.token_id,
-                'accessTokenScope': [s for s in token.scopes.split(' ')]
-            }
+                'accessTokenScope': [s for s in token.scopes.split(' ')],
+            },
         )
         mock_auth.return_value = self.user, mock_cas_resp
         res = self.app.get(
             self.url,
             headers={
-                'Authorization': 'Bearer {}'.format(token.token_id)
-            }
+                'Authorization': 'Bearer {}'.format(token.token_id),
+            },
         )
 
         assert_equal(res.status_code, 200)
@@ -120,7 +120,7 @@ class TestWelcomeToApi(ApiTestCase):
         token = ApiOAuth2PersonalToken(
             owner=self.user,
             name='Admin Token',
-            scopes=' '.join([key for key in public_scopes if key != 'osf.admin'])
+            scopes=' '.join([key for key in public_scopes if key != 'osf.admin']),
         )
 
         mock_cas_resp = CasResponse(
@@ -128,15 +128,15 @@ class TestWelcomeToApi(ApiTestCase):
             user=self.user._id,
             attributes={
                 'accessToken': token.token_id,
-                'accessTokenScope': [s for s in token.scopes.split(' ')]
-            }
+                'accessTokenScope': [s for s in token.scopes.split(' ')],
+            },
         )
         mock_auth.return_value = self.user, mock_cas_resp
         res = self.app.get(
             self.url,
             headers={
-                'Authorization': 'Bearer {}'.format(token.token_id)
-            }
+                'Authorization': 'Bearer {}'.format(token.token_id),
+            },
         )
 
         assert_equal(res.status_code, 200)

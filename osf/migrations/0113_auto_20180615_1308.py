@@ -11,7 +11,7 @@ logger = logging.getLogger(__file__)
 
 
 PREPRINT_DOI_NAMESPACE = {
-    'ecsarxiv': '10.1149'
+    'ecsarxiv': '10.1149',
 }
 
 def add_doi_prefix(*args, **kwargs):
@@ -43,5 +43,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_doi_prefix, remove_doi_prefix)
+        migrations.RunPython(add_doi_prefix, remove_doi_prefix),
     ]

@@ -97,7 +97,7 @@ class ArchiverTask(celery.Task):
             dst.archive_status = ARCHIVER_FILE_NOT_FOUND
             errors = {
                 'missing_files': exc.missing_files,
-                'draft': exc.draft_registration
+                'draft': exc.draft_registration,
             }
         else:
             dst.archive_status = ARCHIVER_UNCAUGHT_ERROR
@@ -230,7 +230,7 @@ def archive_node(stat_results, job_pk):
     stat_result = AggregateStatResult(
         dst._id,
         dst.title,
-        targets=stat_results
+        targets=stat_results,
     )
     if (NO_ARCHIVE_LIMIT not in job.initiator.system_tags) and (stat_result.disk_usage > settings.MAX_ARCHIVE_SIZE):
         raise ArchiverSizeExceeded(result=stat_result)
@@ -244,7 +244,7 @@ def archive_node(stat_results, job_pk):
             else:
                 archive_addon.delay(
                     addon_short_name=result['target_name'],
-                    job_pk=job_pk
+                    job_pk=job_pk,
                 )
         project_signals.archive_callback.send(dst)
 
@@ -272,9 +272,9 @@ def archive(job_pk):
                 for target in job.target_addons.all()
             ]),
             archive_node.s(
-                job_pk=job_pk
-            )
-        ]
+                job_pk=job_pk,
+            ),
+        ],
     )
 
 

@@ -7,14 +7,14 @@ from nose.tools import *  # noqa
 from tests.base import OsfTestCase
 from osf_tests.factories import (
     EmbargoFactory, ProjectFactory,
-    RegistrationFactory, UserFactory, DraftRegistrationFactory
+    RegistrationFactory, UserFactory, DraftRegistrationFactory,
 )
 
 from osf.utils import tokens
 
 
 DUMMY_TOKEN = tokens.encode({
-    'dummy': 'token'
+    'dummy': 'token',
 })
 
 
@@ -26,7 +26,7 @@ class DraftRegistrationApprovalTestCase(OsfTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.draft = DraftRegistrationFactory(
             branched_from=self.project,
-            initiator=self.user
+            initiator=self.user,
         )
         self.registration = RegistrationFactory(project=self.project)
         self.embargo = EmbargoFactory(user=self.user)

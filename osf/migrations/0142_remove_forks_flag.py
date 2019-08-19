@@ -13,5 +13,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        DeleteWaffleFlags([EMBER_PROJECT_FORKS])
+        DeleteWaffleFlags([EMBER_PROJECT_FORKS]),
     ]

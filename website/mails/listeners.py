@@ -21,7 +21,7 @@ def queue_no_addon_email(user):
         mail=NO_ADDON,
         send_at=timezone.now() + settings.NO_ADDON_WAIT_TIME,
         user=user,
-        fullname=user.fullname
+        fullname=user.fullname,
     )
 
 @project_signals.privacy_set_public.connect

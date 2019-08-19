@@ -34,13 +34,14 @@ class TestUserInstititutionRelationship:
     @pytest.fixture()
     def url(self, user):
         return '/{}users/{}/relationships/institutions/'.format(
-            API_BASE, user._id)
+            API_BASE, user._id,
+        )
 
     def test_get(self, app, user, institution_one, institution_two, url):
 
         #   test_get_relationship_institutions
         res = app.get(
-            url, auth=user.auth
+            url, auth=user.auth,
         )
 
         assert res.status_code == 200
@@ -56,20 +57,21 @@ class TestUserInstititutionRelationship:
 
     #   test_get_institutions_relationship_while_logged_out
         res = app.get(
-            url
+            url,
         )
         ids = [val['id'] for val in res.json['data']]
         assert institution_one._id in ids
         assert institution_two._id in ids
 
     def test_delete_one(
-            self, app, user, institution_one, institution_two, url):
+            self, app, user, institution_one, institution_two, url,
+    ):
         res = app.delete_json_api(
             url,
             {'data': [
-                {'type': 'institutions', 'id': institution_one._id}
+                {'type': 'institutions', 'id': institution_one._id},
             ]},
-            auth=user.auth
+            auth=user.auth,
         )
 
         assert res.status_code == 204
@@ -81,14 +83,15 @@ class TestUserInstititutionRelationship:
         assert institution_two._id in ids
 
     def test_delete_multiple(
-            self, app, user, institution_one, institution_two, url):
+            self, app, user, institution_one, institution_two, url,
+    ):
         res = app.delete_json_api(
             url,
             {'data': [
                 {'type': 'institutions', 'id': institution_one._id},
-                {'type': 'institutions', 'id': institution_two._id}
+                {'type': 'institutions', 'id': institution_two._id},
             ]},
-            auth=user.auth
+            auth=user.auth,
         )
 
         assert res.status_code == 204
@@ -100,13 +103,14 @@ class TestUserInstititutionRelationship:
         assert institution_two._id not in ids
 
     def test_delete_one_not_existing(
-            self, app, user, institution_one, institution_two, url):
+            self, app, user, institution_one, institution_two, url,
+    ):
         res = app.delete_json_api(
             url,
             {'data': [
-                {'type': 'institutions', 'id': 'not_an_id'}
+                {'type': 'institutions', 'id': 'not_an_id'},
             ]},
-            auth=user.auth
+            auth=user.auth,
         )
 
         assert res.status_code == 204
@@ -118,15 +122,16 @@ class TestUserInstititutionRelationship:
         assert institution_two._id in ids
 
     def test_institution_relationship_errors(
-            self, app, user, user_two, institution_one, institution_two, url):
+            self, app, user, user_two, institution_one, institution_two, url,
+    ):
 
         #   test_type_mistyped
         res = app.delete_json_api(
             url,
             {'data': [
-                {'type': 'wow', 'id': institution_one._id}
+                {'type': 'wow', 'id': institution_one._id},
             ]},
-            auth=user.auth, expect_errors=True
+            auth=user.auth, expect_errors=True,
         )
 
         assert res.status_code == 409
@@ -135,7 +140,7 @@ class TestUserInstititutionRelationship:
         res = app.post_json_api(
             url, {},
             auth=user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
 
         assert res.status_code == 405
@@ -144,21 +149,21 @@ class TestUserInstititutionRelationship:
         res = app.put_json_api(
             url, {},
             auth=user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
 
         assert res.status_code == 405
 
     #   test_post_without_auth
         res = app.post_json_api(
-            url, {}, expect_errors=True
+            url, {}, expect_errors=True,
         )
 
         assert res.status_code == 401
 
     #   test_put_without_auth
         res = app.put_json_api(
-            url, {}, expect_errors=True
+            url, {}, expect_errors=True,
         )
 
         assert res.status_code == 401
@@ -166,10 +171,12 @@ class TestUserInstititutionRelationship:
     #   test_delete_no_auth
         res = app.delete_json_api(
             url,
-            {'data': [
-                {'type': 'institutions', 'id': institution_one._id}
-            ]},
-            expect_errors=True
+            {
+                'data': [
+                    {'type': 'institutions', 'id': institution_one._id},
+                ],
+            },
+            expect_errors=True,
         )
 
         assert res.status_code == 401
@@ -177,10 +184,13 @@ class TestUserInstititutionRelationship:
     #   test_delete_wrong_auth
         res = app.delete_json_api(
             url,
-            {'data': [
-                {'type': 'institutions', 'id': institution_one._id}
-            ]},
-            auth=user_two.auth, expect_errors=True
+            {
+                'data': [
+                    {'type': 'institutions', 'id': institution_one._id},
+                ],
+            },
+            auth=user_two.auth,
+            expect_errors=True,
         )
 
         assert res.status_code == 403
@@ -188,10 +198,14 @@ class TestUserInstititutionRelationship:
     #   test_attempt_payload_not_in_array
         res = app.delete_json_api(
             url,
-            {'data':
-                {'type': 'institutions', 'id': institution_one._id}
-             },
-            auth=user.auth, expect_errors=True
+            {
+                'data': {
+                    'type': 'institutions',
+                    'id': institution_one._id,
+                },
+            },
+            auth=user.auth,
+            expect_errors=True,
         )
 
         assert res.status_code == 400
@@ -199,10 +213,13 @@ class TestUserInstititutionRelationship:
     #   test_attempt_with_no_type_field
         res = app.delete_json_api(
             url,
-            {'data': [
-                {'id': institution_one._id}
-            ]},
-            auth=user.auth, expect_errors=True
+            {
+                'data': [
+                    {'id': institution_one._id},
+                ],
+            },
+            auth=user.auth,
+            expect_errors=True,
         )
 
         assert res.status_code == 400
@@ -210,10 +227,13 @@ class TestUserInstititutionRelationship:
     #   test_attempt_with_no_id_field
         res = app.delete_json_api(
             url,
-            {'data': [
-                {'type': 'institutions'}
-            ]},
-            auth=user.auth, expect_errors=True
+            {
+                'data': [
+                    {'type': 'institutions'},
+                ],
+            },
+            auth=user.auth,
+            expect_errors=True,
         )
 
         assert res.status_code == 400

@@ -77,7 +77,7 @@ class CitationsNodeTestCase(OsfTestCase):
                     {
                         'given': user.given_name,
                         'family': user.family_name,
-                    }
+                    },
                 ],
                 'URL': self.node.display_absolute_url,
                 'issued': datetime_to_csl(self.node.logs.latest().date),
@@ -106,7 +106,7 @@ class CitationsUserTestCase(OsfTestCase):
     def test_registered_user_csl(self):
         # Tests the csl name for a registered user
         user = OSFUser.create_confirmed(
-            username=fake_email(), password='foobar', fullname=fake.name()
+            username=fake_email(), password='foobar', fullname=fake.name(),
         )
         if user.is_registered:
             assert bool(
@@ -114,7 +114,7 @@ class CitationsUserTestCase(OsfTestCase):
                 {
                     'given': user.csl_given_name,
                     'family': user.family_name,
-                }
+                },
             )
 
     def test_unregistered_user_csl(self):
@@ -122,9 +122,11 @@ class CitationsUserTestCase(OsfTestCase):
         referrer = UserFactory()
         project = NodeFactory(creator=referrer)
         user = UnregUserFactory()
-        user.add_unclaimed_record(project,
+        user.add_unclaimed_record(
+            project,
             given_name=user.fullname, referrer=referrer,
-            email=fake_email())
+            email=fake_email(),
+        )
         user.save()
         name = user.unclaimed_records[project._primary_key]['name'].split(' ')
         family_name = name[-1]
@@ -134,7 +136,7 @@ class CitationsUserTestCase(OsfTestCase):
             {
                 'given': given_name,
                 'family': family_name,
-            }
+            },
         )
 
     def test_disabled_user_csl(self):
@@ -149,7 +151,7 @@ class CitationsUserTestCase(OsfTestCase):
             {
                 'given': user.csl_given_name,
                 'family': user.family_name,
-            }
+            },
         )
 
 
@@ -174,7 +176,7 @@ class CitationsViewsTestCase(OsfTestCase):
                 [
                     style for style in response.json['styles']
                     if style.get('id') == 'bibtex'
-                ]
+                ],
             ),
             1,
         )
@@ -186,11 +188,11 @@ class CitationsViewsTestCase(OsfTestCase):
         assert_true(response.json)
 
         assert_equal(
-            len(response.json['styles']), 1
+            len(response.json['styles']), 1,
         )
 
         assert_equal(
-            response.json['styles'][0]['id'], 'bibtex'
+            response.json['styles'][0]['id'], 'bibtex',
         )
 
     def test_node_citation_view(self):

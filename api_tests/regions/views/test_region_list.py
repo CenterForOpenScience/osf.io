@@ -3,7 +3,7 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     AuthUserFactory,
-    RegionFactory
+    RegionFactory,
 )
 
 
@@ -16,7 +16,8 @@ class TestRegionList:
     @pytest.fixture()
     def regions_url(self):
         return '/{}regions/'.format(
-            API_BASE)
+            API_BASE,
+        )
 
     @pytest.fixture()
     def user(self):

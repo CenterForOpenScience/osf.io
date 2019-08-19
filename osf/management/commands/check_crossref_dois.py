@@ -40,7 +40,7 @@ def check_crossref_dois(dry_run=True):
 
     preprints_with_pending_dois = Preprint.objects.filter(
         preprint_doi_created__isnull=True,
-        is_published=True
+        is_published=True,
     ).exclude(date_published__gt=timezone.now() - time_since_published)
 
     if not preprints_with_pending_dois.exists():
@@ -78,9 +78,11 @@ def check_crossref_dois(dry_run=True):
 
 def report_stuck_dois(dry_run=True):
 
-    preprints_with_pending_dois = Preprint.objects.filter(preprint_doi_created__isnull=True,
-                                                          is_published=True,
-                                                          date_published__lt=timezone.now() - time_since_published)
+    preprints_with_pending_dois = Preprint.objects.filter(
+        preprint_doi_created__isnull=True,
+        is_published=True,
+        date_published__lt=timezone.now() - time_since_published,
+    )
 
     if preprints_with_pending_dois:
         guids = ', '.join(preprints_with_pending_dois.values_list('guids___id', flat=True))

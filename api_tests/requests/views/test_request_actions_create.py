@@ -19,15 +19,15 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
             'data': {
                 'attributes': attrs,
                 'relationships': {},
-                'type': 'node-request-actions'
-            }
+                'type': 'node-request-actions',
+            },
         }
         if _id:
             payload['data']['relationships']['target'] = {
                 'data': {
                     'type': 'node-requests',
-                    'id': _id
-                }
+                    'id': _id,
+                },
             }
         return payload
 
@@ -267,15 +267,15 @@ class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
             'data': {
                 'attributes': attrs,
                 'relationships': {},
-                'type': 'preprint-request-actions'
-            }
+                'type': 'preprint-request-actions',
+            },
         }
         if _id:
             payload['data']['relationships']['target'] = {
                 'data': {
                     'type': 'preprint-requests',
-                    'id': _id
-                }
+                    'id': _id,
+                },
             }
         return payload
 

@@ -110,8 +110,10 @@ class TestMeetingListFilter:
     def sort_url(self):
         return '/_/meetings/?sort='
 
-    def test_meeting_list_filter(self, app, meeting_one, meeting_two, meeting_three, filter_url, sort_url,
-            meeting_one_submission, meeting_three_submission_one, meeting_three_submission_two):
+    def test_meeting_list_filter(
+        self, app, meeting_one, meeting_two, meeting_three, filter_url, sort_url,
+        meeting_one_submission, meeting_three_submission_one, meeting_three_submission_two,
+    ):
         # Filter on name
         res = app.get('{}{}'.format(filter_url, '[name]=Science'))
         assert len(res.json['data']) == 2

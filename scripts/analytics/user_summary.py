@@ -56,14 +56,14 @@ class UserSummary(SummaryAnalytics):
             # beginning of yesterday - 29 days = 30 total days
             timeframe={'start': (time_one - timedelta(days=29)).isoformat(), 'end': time_two_iso},
             target_property='user.id',
-            timezone='UTC'
+            timezone='UTC',
         )
 
         last_one = client.count_unique(
             event_collection='pageviews',
             timeframe={'start': time_one.isoformat(), 'end': time_two_iso},
             target_property='user.id',
-            timezone='UTC'
+            timezone='UTC',
         )
 
         # avoid unlikely divide by 0 error
@@ -101,7 +101,7 @@ class UserSummary(SummaryAnalytics):
         new_users = OSFUser.objects.filter(is_active=True, date_confirmed__gte=timestamp_datetime, date_confirmed__lt=query_datetime)
         counts = {
             'keen': {
-                'timestamp': timestamp_datetime.isoformat()
+                'timestamp': timestamp_datetime.isoformat(),
             },
             'status': {
                 'active': active_users,
@@ -112,7 +112,7 @@ class UserSummary(SummaryAnalytics):
                 'deactivated': OSFUser.objects.filter(date_disabled__isnull=False, date_disabled__lt=query_datetime).count(),
                 'merged': OSFUser.objects.filter(date_registered__lt=query_datetime, merged_by__isnull=False).count(),
                 'profile_edited': profile_edited,
-            }
+            },
         }
 
         try:
@@ -128,8 +128,8 @@ class UserSummary(SummaryAnalytics):
                 counts['status']['unconfirmed'],
                 counts['status']['deactivated'],
                 counts['status']['merged'],
-                counts['status']['profile_edited']
-            )
+                counts['status']['profile_edited'],
+            ),
         )
         return [counts]
 

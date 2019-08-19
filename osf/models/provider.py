@@ -29,8 +29,10 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
         unique_together = ('_id', 'type')
         permissions = REVIEW_PERMISSIONS
 
-    primary_collection = models.ForeignKey('Collection', related_name='+',
-                                           null=True, blank=True, on_delete=models.SET_NULL)
+    primary_collection = models.ForeignKey(
+        'Collection', related_name='+',
+        null=True, blank=True, on_delete=models.SET_NULL,
+    )
     name = models.CharField(null=False, max_length=128)  # max length on prod: 22
     advisory_board = models.TextField(default='', blank=True)
     description = models.TextField(default='', blank=True)
@@ -46,14 +48,18 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
     facebook_app_id = models.BigIntegerField(blank=True, null=True)
     example = models.CharField(null=True, blank=True, max_length=20)  # max length on prod: 5
     licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True, related_name='licenses_acceptable')
-    default_license = models.ForeignKey(NodeLicense, related_name='default_license',
-                                        null=True, blank=True, on_delete=models.CASCADE)
+    default_license = models.ForeignKey(
+        NodeLicense, related_name='default_license',
+        null=True, blank=True, on_delete=models.CASCADE,
+    )
     allow_submissions = models.BooleanField(default=True)
     allow_commenting = models.BooleanField(default=False)
 
     def __repr__(self):
-        return ('(name={self.name!r}, default_license={self.default_license!r}, '
-                'allow_submissions={self.allow_submissions!r}) with id {self.id!r}').format(self=self)
+        return (
+            '(name={self.name!r}, default_license={self.default_license!r}, '
+            'allow_submissions={self.allow_submissions!r}) with id {self.id!r}'
+        ).format(self=self)
 
     def __unicode__(self):
         return '[{}] {} - {}'.format(self.readable_type, self.name, self.id)
@@ -145,16 +151,20 @@ class RegistrationProvider(AbstractProvider):
         return api_v2_url(path)
 
 class PreprintProvider(AbstractProvider):
-    PUSH_SHARE_TYPE_CHOICES = (('Preprint', 'Preprint'),
-                               ('Thesis', 'Thesis'),)
+    PUSH_SHARE_TYPE_CHOICES = (
+        ('Preprint', 'Preprint'),
+        ('Thesis', 'Thesis'),
+    )
     PUSH_SHARE_TYPE_HELP = 'This SHARE type will be used when pushing publications to SHARE'
 
     REVIEWABLE_RELATION_NAME = 'preprints'
 
-    share_publish_type = models.CharField(choices=PUSH_SHARE_TYPE_CHOICES,
-                                          default='Preprint',
-                                          help_text=PUSH_SHARE_TYPE_HELP,
-                                          max_length=32)
+    share_publish_type = models.CharField(
+        choices=PUSH_SHARE_TYPE_CHOICES,
+        default='Preprint',
+        help_text=PUSH_SHARE_TYPE_HELP,
+        max_length=32,
+    )
     share_source = models.CharField(blank=True, max_length=200)
     share_title = models.TextField(default='', blank=True)
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
@@ -166,7 +176,7 @@ class PreprintProvider(AbstractProvider):
         ('paper', 'Paper'),
         ('thesis', 'Thesis'),
         ('work', 'Work'),
-        ('none', 'None')
+        ('none', 'None'),
     )
     preprint_word = models.CharField(max_length=10, choices=PREPRINT_WORD_CHOICES, default='preprint')
     subjects_acceptable = DateTimeAwareJSONField(blank=True, default=list)
@@ -251,7 +261,7 @@ def create_provider_notification_subscriptions(sender, instance, created, **kwar
         NotificationSubscription.objects.get_or_create(
             _id='{provider_id}_new_pending_submissions'.format(provider_id=instance._id),
             event_name='new_pending_submissions',
-            provider=instance
+            provider=instance,
         )
 
 @receiver(post_save, sender=CollectionProvider)
@@ -266,7 +276,7 @@ def create_primary_collection_for_provider(sender, instance, created, **kwargs):
                 creator=user,
                 provider=instance,
                 is_promoted=True,
-                is_public=True
+                is_public=True,
             )
             c.save()
             instance.primary_collection = c

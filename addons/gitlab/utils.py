@@ -36,7 +36,7 @@ def verify_hook_signature(node_settings, data, headers):
     digest = hmac.new(
         str(node_settings.hook_secret),
         data,
-        digestmod=hashlib.sha1
+        digestmod=hashlib.sha1,
     ).hexdigest()
     signature = headers.get(HOOK_SIGNATURE_KEY, '').replace('sha1=', '')
     if digest != signature:

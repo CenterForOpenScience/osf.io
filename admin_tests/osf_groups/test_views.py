@@ -1,7 +1,7 @@
 from admin.osf_groups.views import (
     OSFGroupsView,
     OSFGroupsListView,
-    OSFGroupsFormView
+    OSFGroupsFormView,
 )
 from admin_tests.utilities import setup_log_view
 from nose import tools as nt

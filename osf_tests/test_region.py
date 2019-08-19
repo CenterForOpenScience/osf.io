@@ -7,7 +7,7 @@ from osf.models import RegistrationSchema, Registration
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
-    RegionFactory
+    RegionFactory,
 )
 
 
@@ -64,5 +64,7 @@ class TestRegion:
         assert regs.count() == len({reg.get_addon('osfstorage').region._id for reg in regs})
 
         # All registrations should have the same region as the node they are registered from.
-        assert all(reg.registered_from.get_addon('osfstorage').region ==
-            reg.get_addon('osfstorage').region for reg in regs)
+        assert all(
+            reg.registered_from.get_addon('osfstorage').region ==
+            reg.get_addon('osfstorage').region for reg in regs
+        )

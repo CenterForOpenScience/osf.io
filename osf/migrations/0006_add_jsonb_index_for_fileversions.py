@@ -18,12 +18,12 @@ class Migration(migrations.Migration):
                 CREATE INDEX fileversion_metadata_sha_arch_vault_index
                   ON osf_fileversion ((osf_fileversion.metadata -> 'sha256'), (osf_fileversion.metadata -> 'archive'), (
                     osf_fileversion.metadata -> 'vault'));
-                """
+                """,
             ],
             [
                 """
                 DROP INDEX fileversion_metadata_sha_arch_vault_index;
-                """
-            ]
-        )
+                """,
+            ],
+        ),
     ]

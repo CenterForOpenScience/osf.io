@@ -36,7 +36,7 @@ def main(dry_run=True):
 
             logger.warn(
                 'Retraction {0} approved. Retracting registration {1}'
-                .format(retraction._id, parent_registration._id)
+                .format(retraction._id, parent_registration._id),
             )
             if not dry_run:
                 with transaction.atomic():
@@ -58,7 +58,8 @@ def main(dry_run=True):
                     except Exception as err:
                         logger.error(
                             'Unexpected error raised when retracting '
-                            'registration {}. Continuing...'.format(parent_registration))
+                            'registration {}. Continuing...'.format(parent_registration),
+                        )
                         logger.exception(err)
 
 

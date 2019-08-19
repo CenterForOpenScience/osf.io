@@ -35,9 +35,9 @@ class TestSubscriptionDetail:
             'data': {
                 'type': 'user-provider-subscription',
                 'attributes': {
-                    'frequency': 'none'
-                }
-            }
+                    'frequency': 'none',
+                },
+            },
         }
 
     @pytest.fixture()
@@ -46,9 +46,9 @@ class TestSubscriptionDetail:
             'data': {
                 'type': 'user-provider-subscription',
                 'attributes': {
-                    'frequency': 'invalid-frequency'
-                }
-            }
+                    'frequency': 'invalid-frequency',
+                },
+            },
         }
 
     def test_subscription_detail(self, app, user, user_no_auth, global_user_notification, url, url_invalid, payload, payload_invalid):

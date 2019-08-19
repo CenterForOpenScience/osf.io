@@ -28,7 +28,7 @@ def get_campaigns():
                     'redirect_url': furl.furl(DOMAIN).add(path='prereg/').url,
                     'confirmation_email_template': mails.CONFIRM_EMAIL_PREREG,
                     'login_type': 'native',
-                    'logo': settings.OSF_PREREG_LOGO
+                    'logo': settings.OSF_PREREG_LOGO,
                 },
                 'erpc': {
                     'system_tag': 'erp_challenge_campaign',
@@ -71,7 +71,7 @@ def get_campaigns():
                         'login_type': 'proxy',
                         'provider': name,
                         'logo': provider._id if name != 'OSF' else settings.OSF_PREPRINTS_LOGO,
-                    }
+                    },
                 })
 
             # Proxy campaigns: Registries, OSF only
@@ -83,8 +83,8 @@ def get_campaigns():
                     'confirmation_email_template': mails.CONFIRM_EMAIL_REGISTRIES_OSF,
                     'login_type': 'proxy',
                     'provider': 'osf',
-                    'logo': settings.OSF_REGISTRIES_LOGO
-                }
+                    'logo': settings.OSF_REGISTRIES_LOGO,
+                },
             })
 
             newest_campaigns.update({
@@ -94,8 +94,8 @@ def get_campaigns():
                     'confirmation_email_template': mails.CONFIRM_EMAIL_REGISTRIES_OSF,
                     'login_type': 'proxy',
                     'provider': 'osf',
-                    'logo': settings.OSF_REGISTRIES_LOGO
-                }
+                    'logo': settings.OSF_REGISTRIES_LOGO,
+                },
             })
 
             CAMPAIGNS = newest_campaigns

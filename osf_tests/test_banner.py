@@ -17,7 +17,7 @@ class TestScheduledBanner:
     def current_banner(self, date):
         return ScheduledBannerFactory(
             start_date=date,
-            end_date=date + timedelta(days=4)
+            end_date=date + timedelta(days=4),
         )
 
     def test_create_overlapping_banners(self, current_banner, date):
@@ -25,7 +25,7 @@ class TestScheduledBanner:
         with pytest.raises(ValidationValueError) as e:
             ScheduledBannerFactory(
                 start_date=date + timedelta(days=3),
-                end_date=date + timedelta(days=6)
+                end_date=date + timedelta(days=6),
             )
         assert e.value.message == 'Banners dates cannot be overlapping.'
 
@@ -33,7 +33,7 @@ class TestScheduledBanner:
         with pytest.raises(ValidationValueError) as e:
             ScheduledBannerFactory(
                 start_date=date - timedelta(days=1),
-                end_date=date + timedelta(days=1)
+                end_date=date + timedelta(days=1),
             )
         assert e.value.message == 'Banners dates cannot be overlapping.'
 
@@ -41,7 +41,7 @@ class TestScheduledBanner:
         with pytest.raises(ValidationValueError) as e:
             ScheduledBannerFactory(
                 start_date=date + timedelta(days=1),
-                end_date=date + timedelta(days=2)
+                end_date=date + timedelta(days=2),
             )
         assert e.value.message == 'Banners dates cannot be overlapping.'
 
@@ -49,17 +49,17 @@ class TestScheduledBanner:
         with pytest.raises(ValidationValueError) as e:
             ScheduledBannerFactory(
                 start_date=date + timedelta(days=8),
-                end_date=date + timedelta(days=7)
+                end_date=date + timedelta(days=7),
             )
         assert e.value.message == 'Start date must be before end date.'
 
         # Banner ends right before next starts
         ScheduledBannerFactory(
             start_date=date - timedelta(days=3),
-            end_date=date - timedelta(days=1)
+            end_date=date - timedelta(days=1),
         )
 
         # Banner begins right after previous ends
         ScheduledBannerFactory(
-            start_date=date + timedelta(days=5)
+            start_date=date + timedelta(days=5),
         )

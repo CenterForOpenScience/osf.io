@@ -97,8 +97,8 @@ class InstitutionSummary(SummaryAnalytics):
                     'embargoed_v2_daily': registration_qs.filter(private_query & daily_query & embargo_v2_query).get_roots().count(),
                 },
                 'keen': {
-                    'timestamp': timestamp_datetime.isoformat()
-                }
+                    'timestamp': timestamp_datetime.isoformat(),
+                },
             }
 
             logger.info(
@@ -107,8 +107,8 @@ class InstitutionSummary(SummaryAnalytics):
                     count['nodes']['total'],
                     count['projects']['total'],
                     count['registered_nodes']['total'],
-                    count['registered_projects']['total']
-                )
+                    count['registered_projects']['total'],
+                ),
             )
 
             counts.append(count)

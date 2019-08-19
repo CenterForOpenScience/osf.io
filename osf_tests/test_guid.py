@@ -28,12 +28,14 @@ class TestGuid:
         obj = UserFactory()
         assert OSFUser.load(obj._id) == obj
 
-    @pytest.mark.parametrize('Factory',
-    [
-        UserFactory,
-        NodeFactory,
-        RegistrationFactory,
-    ])
+    @pytest.mark.parametrize(
+        'Factory',
+        [
+            UserFactory,
+            NodeFactory,
+            RegistrationFactory,
+        ],
+    )
     def test_short_guid_gets_generated_on_creation(self, Factory):
         obj = Factory()
         assert obj._id
@@ -42,21 +44,25 @@ class TestGuid:
 @pytest.mark.django_db
 class TestReferent:
 
-    @pytest.mark.parametrize('Factory',
-    [
-        UserFactory,
-        NodeFactory
-    ])
+    @pytest.mark.parametrize(
+        'Factory',
+        [
+            UserFactory,
+            NodeFactory,
+        ],
+    )
     def test_referent(self, Factory):
         obj = Factory()
         guid = Guid.objects.get(_id=obj._id)
         assert guid.referent == obj
 
-    @pytest.mark.parametrize('Factory',
-    [
-        UserFactory,
-        NodeFactory
-    ])
+    @pytest.mark.parametrize(
+        'Factory',
+        [
+            UserFactory,
+            NodeFactory,
+        ],
+    )
     def test_referent_can_be_set(self, Factory):
         obj = Factory()
         obj1 = Factory()
@@ -88,11 +94,13 @@ class TestReferent:
         assert user._id == guid._id
 
     @pytest.mark.skip('I don\'t actually think we do this anywhere')
-    @pytest.mark.parametrize('Factory',
-     [
-         UserFactory,
-         NodeFactory
-     ])
+    @pytest.mark.parametrize(
+        'Factory',
+        [
+            UserFactory,
+            NodeFactory,
+        ],
+    )
     def test_nulling_out_guid(self, Factory):
         obj = Factory()
 
@@ -110,11 +118,13 @@ class TestReferent:
 
         assert guid.guid != obj.guid.guid
 
-    @pytest.mark.parametrize('Factory',
-    [
-        UserFactory,
-        NodeFactory,
-    ])
+    @pytest.mark.parametrize(
+        'Factory',
+        [
+            UserFactory,
+            NodeFactory,
+        ],
+    )
     def test_querying_with_multiple_guids(self, Factory):
 
         obj = Factory()
@@ -179,7 +189,7 @@ class TestResolveGuid(OsfTestCase):
         pp.primary_file.create_version(
             creator=pp.creator,
             location={u'folder': u'osf', u'object': u'deadbe', u'service': u'cloud'},
-            metadata={u'contentType': u'img/png', u'size': 9001}
+            metadata={u'contentType': u'img/png', u'size': 9001},
         )
         pp.primary_file.save()
 
@@ -197,12 +207,14 @@ class TestResolveGuid(OsfTestCase):
         assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, unpub_pp._id, unpub_pp.primary_file.provider, unpub_pp.primary_file.path) in res.location
 
     @mock.patch('website.settings.USE_EXTERNAL_EMBER', True)
-    @mock.patch('website.settings.EXTERNAL_EMBER_APPS', {
-        'preprints': {
-            'server': 'http://localhost:4200',
-            'path': '/preprints/'
+    @mock.patch(
+        'website.settings.EXTERNAL_EMBER_APPS', {
+            'preprints': {
+                'server': 'http://localhost:4200',
+                'path': '/preprints/',
+            },
         },
-    })
+    )
     def test_resolve_guid_download_file_from_emberapp_preprints(self):
         provider = PreprintProviderFactory(_id='sockarxiv', name='Sockarxiv')
         pp = PreprintFactory(finish=True, provider=provider)
@@ -217,12 +229,14 @@ class TestResolveGuid(OsfTestCase):
         assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
     @mock.patch('website.settings.USE_EXTERNAL_EMBER', True)
-    @mock.patch('website.settings.EXTERNAL_EMBER_APPS', {
-        'preprints': {
-            'server': 'http://localhost:4200',
-            'path': '/preprints/'
+    @mock.patch(
+        'website.settings.EXTERNAL_EMBER_APPS', {
+            'preprints': {
+                'server': 'http://localhost:4200',
+                'path': '/preprints/',
+            },
         },
-    })
+    )
     def test_resolve_guid_download_file_from_emberapp_preprints_unpublished(self):
         # non-branded domains
         provider = PreprintProviderFactory(_id='sockarxiv', name='Sockarxiv', reviews_workflow='pre-moderation')
@@ -318,7 +332,7 @@ class TestResolveGuid(OsfTestCase):
         pp.primary_file.create_version(
             creator=pp.creator,
             location={u'folder': u'osf', u'object': u'deadbe', u'service': u'cloud'},
-            metadata={u'contentType': u'img/png', u'size': 9001}
+            metadata={u'contentType': u'img/png', u'size': 9001},
         )
         pp.primary_file.save()
 

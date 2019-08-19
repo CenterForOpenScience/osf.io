@@ -95,8 +95,8 @@ def ensure_licenses(*args, **kwargs):
     with open(
             os.path.join(
                 settings.APP_PATH,
-                'node_modules', '@centerforopenscience', 'list-of-licenses', 'dist', 'list-of-licenses.json'
-            )
+                'node_modules', '@centerforopenscience', 'list-of-licenses', 'dist', 'list-of-licenses.json',
+            ),
     ) as fp:
         licenses = json.loads(fp.read())
         for id, info in licenses.items():
@@ -121,7 +121,7 @@ def ensure_licenses(*args, **kwargs):
             logger.info('License {name} ({id}) added to the database.'.format(name=name, id=id))
 
     logger.info('{} licenses inserted into the database, {} licenses updated in the database.'.format(
-        ninserted, nupdated
+        ninserted, nupdated,
     ))
 
     return ninserted, nupdated
@@ -152,7 +152,7 @@ def ensure_schemas(*args):
             schema_version=schema.get('version', 1),
             defaults={
                 'schema': schema,
-            }
+            },
         )
         schema_count += 1
 
@@ -316,6 +316,6 @@ def batch_node_migrations(state, migrations):
             with connection.cursor() as cursor:
                 cursor.execute(migration['sql'].format(
                     start=page_start,
-                    end=page_end
+                    end=page_end,
                 ))
             page_start = page_end

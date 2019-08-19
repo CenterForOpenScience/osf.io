@@ -21,7 +21,8 @@ class TestJSONAPIPagination(ApiTestCase):
 
         self.url_version_2_0 = '/{}nodes/'.format(settings.API_BASE)
         self.url_version_2_1 = '/{}nodes/?version=2.1'.format(
-            settings.API_BASE)
+            settings.API_BASE,
+        )
         self.user = factories.AuthUserFactory()
 
         for i in range(0, 11):

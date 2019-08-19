@@ -93,7 +93,7 @@ class TestPreprintMetrics:
                         preprint=preprint_to_add,
                         user=user_to_use,
                         path=preprint_to_add.primary_file.path,
-                        timestamp=datetime.strptime(date + time, '%Y-%m-%dT%H:%M')
+                        timestamp=datetime.strptime(date + time, '%Y-%m-%dT%H:%M'),
                     )
 
     @pytest.fixture
@@ -108,9 +108,9 @@ class TestPreprintMetrics:
             'data': {
                 'type': 'preprint_metric',
                 'attributes': {
-                    'query': {'not_a_field': 'Yay!'}
-                }
-            }
+                    'query': {'not_a_field': 'Yay!'},
+                },
+            },
         }
         res = app.post_json_api(post_url, post_data, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
@@ -127,18 +127,20 @@ class TestPreprintMetrics:
             'data': {
                 'type': 'preprint_metrics',
                 'attributes': {
-                    'query': mock_return
-                }
-            }
+                    'query': mock_return,
+                },
+            },
         }
         res = app.post_json_api(post_url, post_data, auth=user.auth)
         assert res.json == mock_return
 
     @pytest.mark.parametrize('metric_name', ['downloads', 'views'])
     @mock.patch('api.metrics.utils.timezone.now')
-    def test_preprint_list_with_metrics_fails(self, mock_timezone, app, user, base_url, preprint, preprint_two,
-                                              preprint_three, metric_name, other_user, project, project_two,
-                                              other_admin_user, other_non_admin_user):
+    def test_preprint_list_with_metrics_fails(
+        self, mock_timezone, app, user, base_url, preprint, preprint_two,
+        preprint_three, metric_name, other_user, project, project_two,
+        other_admin_user, other_non_admin_user,
+    ):
         mock_timezone.return_value = datetime(2019, 1, 4, tzinfo=timezone.utc)
         url = '{}{}/'.format(base_url, metric_name)
 

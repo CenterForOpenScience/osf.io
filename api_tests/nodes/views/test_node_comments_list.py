@@ -46,7 +46,8 @@ class NodeCommentsListMixin(object):
     def test_return_comments(
             self, app, user, user_non_contrib,
             project_public_dict, project_private_dict,
-            registration_dict):
+            registration_dict,
+    ):
 
         #   test_return_public_node_comments_logged_out_user
         res = app.get(project_public_dict['url'])
@@ -73,7 +74,8 @@ class NodeCommentsListMixin(object):
         res = app.get(
             project_private_dict['url'],
             auth=user_non_contrib,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
@@ -94,11 +96,13 @@ class NodeCommentsListMixin(object):
         assert registration_dict['comment']._id in comment_ids
 
     def test_return_both_deleted_and_undeleted_comments(
-            self, app, user, project_private_dict, mock_update_search=None):
+            self, app, user, project_private_dict, mock_update_search=None,
+    ):
         deleted_comment = CommentFactory(
             node=project_private_dict['project'], user=user,
             target=project_private_dict['comment'].target,
-            is_deleted=True)
+            is_deleted=True,
+        )
         res = app.get(project_private_dict['url'], auth=user.auth)
         assert res.status_code == 200
         comment_json = res.json['data']
@@ -110,14 +114,16 @@ class NodeCommentsListMixin(object):
 
         #   test_node_comments_list_pagination
         url = '{}?filter[target]={}&related_counts=False'.format(
-            project_public_dict['url'], project_public_dict['project']._id)
+            project_public_dict['url'], project_public_dict['project']._id,
+        )
         res = app.get(url, user=user, auth=user.auth)
         assert res.status_code == 200
         assert res.json['links']['meta']['unread'] == 0
 
     #   test_node_comments_list_updated_pagination
         url = '{}?filter[target]={}&related_counts=False&version=2.1'.format(
-            project_public_dict['url'], project_public_dict['project']._id)
+            project_public_dict['url'], project_public_dict['project']._id,
+        )
         res = app.get(url, user=user, auth=user.auth)
         assert res.status_code == 200
         assert res.json['meta']['unread'] == 0
@@ -131,33 +137,39 @@ class TestNodeCommentsList(NodeCommentsListMixin):
         project_private = ProjectFactory(is_public=False, creator=user)
         comment_private = CommentFactory(node=project_private, user=user)
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            API_BASE, project_private._id,
+        )
         return {
             'project': project_private,
             'comment': comment_private,
-            'url': url_private}
+            'url': url_private,
+        }
 
     @pytest.fixture()
     def project_public_dict(self, user):
         project_public = ProjectFactory(is_public=True, creator=user)
         comment_public = CommentFactory(node=project_public, user=user)
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            API_BASE, project_public._id,
+        )
         return {
             'project': project_public,
             'comment': comment_public,
-            'url': url_public}
+            'url': url_public,
+        }
 
     @pytest.fixture()
     def registration_dict(self, user):
         registration = RegistrationFactory(creator=user)
         comment_registration = CommentFactory(node=registration, user=user)
         url_registration = '/{}registrations/{}/comments/'.format(
-            API_BASE, registration._id)
+            API_BASE, registration._id,
+        )
         return {
             'registration': registration,
             'comment': comment_registration,
-            'url': url_registration}
+            'url': url_registration,
+        }
 
 
 @pytest.mark.django_db
@@ -169,14 +181,17 @@ class TestNodeCommentsListFiles(NodeCommentsListMixin):
         file_private = test_utils.create_test_file(project_private, user)
         comment_private = CommentFactory(
             node=project_private, user=user,
-            target=file_private.get_guid(), page='files')
+            target=file_private.get_guid(), page='files',
+        )
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            API_BASE, project_private._id,
+        )
         return {
             'project': project_private,
             'file': file_private,
             'comment': comment_private,
-            'url': url_private}
+            'url': url_private,
+        }
 
     @pytest.fixture()
     def project_public_dict(self, user):
@@ -185,14 +200,17 @@ class TestNodeCommentsListFiles(NodeCommentsListMixin):
         comment_public = CommentFactory(
             node=project_public, user=user,
             target=file_public.get_guid(),
-            page='files')
+            page='files',
+        )
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            API_BASE, project_public._id,
+        )
         return {
             'project': project_public,
             'file': file_public,
             'comment': comment_public,
-            'url': url_public}
+            'url': url_public,
+        }
 
     @pytest.fixture()
     def registration_dict(self, user):
@@ -201,17 +219,21 @@ class TestNodeCommentsListFiles(NodeCommentsListMixin):
         comment_registration = CommentFactory(
             node=registration, user=user,
             target=file_registration.get_guid(),
-            page='files')
+            page='files',
+        )
         url_registration = '/{}registrations/{}/comments/'.format(
-            API_BASE, registration._id)
+            API_BASE, registration._id,
+        )
         return {
             'registration': registration,
             'file': file_registration,
             'comment': comment_registration,
-            'url': url_registration}
+            'url': url_registration,
+        }
 
     def test_comments_on_deleted_files_are_not_returned(
-            self, app, user, project_private_dict):
+            self, app, user, project_private_dict,
+    ):
         # Delete commented file
         osfstorage = project_private_dict['project'].get_addon('osfstorage')
         osfstorage.get_root()
@@ -232,14 +254,17 @@ class TestNodeCommentsListWiki(NodeCommentsListMixin):
         wiki_page_private = WikiFactory(node=project_private, user=user, page_name='Charmander')
         comment_private = CommentFactory(
             node=project_private, user=user, target=Guid.load(
-                wiki_page_private._id), page='wiki')
+                wiki_page_private._id,
+            ), page='wiki',
+        )
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            API_BASE, project_private._id,
+        )
         return {
             'project': project_private,
             'wiki': wiki_page_private,
             'comment': comment_private,
-            'url': url_private
+            'url': url_private,
         }
 
     @pytest.fixture()
@@ -249,14 +274,16 @@ class TestNodeCommentsListWiki(NodeCommentsListMixin):
         comment_public = CommentFactory(
             node=project_public, user=user,
             target=Guid.load(wiki_page_public._id),
-            page='wiki')
+            page='wiki',
+        )
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            API_BASE, project_public._id,
+        )
         return {
             'project': project_public,
             'wiki': wiki_page_public,
             'comment': comment_public,
-            'url': url_public
+            'url': url_public,
         }
 
     @pytest.fixture()
@@ -266,15 +293,16 @@ class TestNodeCommentsListWiki(NodeCommentsListMixin):
         comment_registration = CommentFactory(
             node=registration, user=user,
             target=Guid.load(wiki_page_registration._id),
-            page='wiki')
+            page='wiki',
+        )
         url_registration = '/{}registrations/{}/comments/'.format(
-            API_BASE, registration._id
+            API_BASE, registration._id,
         )
         return {
             'registration': registration,
             'wiki': wiki_page_registration,
             'comment': comment_registration,
-            'url': url_registration
+            'url': url_registration,
         }
 
     def test_comments_on_deleted_wikis_are_not_returned(self, app, user, project_private_dict, mock_update_search=None):
@@ -325,14 +353,16 @@ class NodeCommentsCreateMixin(object):
             project_private_comment_private,
             project_private_comment_public,
             project_public_comment_public,
-            project_public_comment_private):
+            project_public_comment_private,
+    ):
 
         #   test_private_node_private_comment_level_logged_in_admin_can_comment
         project_dict = project_private_comment_private
         res = app.post_json_api(
             project_dict['url'],
             project_dict['payload'],
-            auth=user.auth)
+            auth=user.auth,
+        )
         assert res.status_code == 201
         assert res.json['data']['attributes']['content'] == project_dict['payload']['data']['attributes']['content']
 
@@ -341,7 +371,8 @@ class NodeCommentsCreateMixin(object):
         res = app.post_json_api(
             project_dict['url'],
             project_dict['payload'],
-            auth=user_read_contrib.auth)
+            auth=user_read_contrib.auth,
+        )
         assert res.status_code == 201
         assert res.json['data']['attributes']['content'] == project_dict['payload']['data']['attributes']['content']
 
@@ -351,7 +382,8 @@ class NodeCommentsCreateMixin(object):
             project_dict['url'],
             project_dict['payload'],
             auth=user_non_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
@@ -364,7 +396,8 @@ class NodeCommentsCreateMixin(object):
             project_dict['url'],
             project_dict['payload'],
             auth=group_mem.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 201
 
     #   test_private_node_private_comment_level_logged_out_user_cannot_comment
@@ -372,7 +405,8 @@ class NodeCommentsCreateMixin(object):
         res = app.post_json_api(
             project_dict['url'],
             project_dict['payload'],
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
@@ -383,7 +417,8 @@ class NodeCommentsCreateMixin(object):
         res = app.post_json_api(
             project_dict['url'],
             project_dict['payload'],
-            auth=user.auth)
+            auth=user.auth,
+        )
         assert res.status_code == 201
         assert res.json['data']['attributes']['content'] == project_dict['payload']['data']['attributes']['content']
 
@@ -394,7 +429,8 @@ class NodeCommentsCreateMixin(object):
         res = app.post_json_api(
             project_dict['url'],
             project_dict['payload'],
-            auth=user_read_contrib.auth)
+            auth=user_read_contrib.auth,
+        )
         assert res.status_code == 201
         assert res.json['data']['attributes']['content'] == project_dict['payload']['data']['attributes']['content']
 
@@ -406,7 +442,8 @@ class NodeCommentsCreateMixin(object):
             project_dict['url'],
             project_dict['payload'],
             auth=user_non_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
     #   test_private_node_with_public_comment_level_logged_out_user_cannot_comment
@@ -416,7 +453,8 @@ class NodeCommentsCreateMixin(object):
         res = app.post_json_api(
             project_dict['url'],
             project_dict['payload'],
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
@@ -428,7 +466,8 @@ class NodeCommentsCreateMixin(object):
         res = app.post_json_api(
             project_dict['url'],
             project_dict['payload'],
-            auth=user.auth)
+            auth=user.auth,
+        )
         assert res.status_code == 201
         assert res.json['data']['attributes']['content'] == project_dict['payload']['data']['attributes']['content']
 
@@ -440,7 +479,8 @@ class NodeCommentsCreateMixin(object):
         res = app.post_json_api(
             project_dict['url'],
             project_dict['payload'],
-            auth=user_read_contrib.auth)
+            auth=user_read_contrib.auth,
+        )
         assert res.status_code == 201
         assert res.json['data']['attributes']['content'] == project_dict['payload']['data']['attributes']['content']
 
@@ -452,7 +492,8 @@ class NodeCommentsCreateMixin(object):
         res = app.post_json_api(
             project_dict['url'],
             project_dict['payload'],
-            auth=user_non_contrib.auth)
+            auth=user_non_contrib.auth,
+        )
         assert res.status_code == 201
         assert res.json['data']['attributes']['content'] == project_dict['payload']['data']['attributes']['content']
 
@@ -464,7 +505,8 @@ class NodeCommentsCreateMixin(object):
         res = app.post_json_api(
             project_dict['url'],
             project_dict['payload'],
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
@@ -476,7 +518,8 @@ class NodeCommentsCreateMixin(object):
         res = app.post_json_api(
             project_dict['url'],
             project_dict['payload'],
-            auth=user.auth)
+            auth=user.auth,
+        )
         assert res.status_code == 201
         assert res.json['data']['attributes']['content'] == project_dict['payload']['data']['attributes']['content']
 
@@ -485,7 +528,8 @@ class NodeCommentsCreateMixin(object):
         res = app.post_json_api(
             project_dict['url'],
             project_dict['payload'],
-            auth=user_read_contrib.auth)
+            auth=user_read_contrib.auth,
+        )
         assert res.status_code == 201
         assert res.json['data']['attributes']['content'] == project_dict['payload']['data']['attributes']['content']
 
@@ -495,7 +539,8 @@ class NodeCommentsCreateMixin(object):
             project_dict['url'],
             project_dict['payload'],
             auth=user_non_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
@@ -504,7 +549,8 @@ class NodeCommentsCreateMixin(object):
         res = app.post_json_api(
             project_dict['url'],
             project_dict['payload'],
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
@@ -519,49 +565,57 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
                 'data': {
                     'type': 'comments',
                     'attributes': {
-                        'content': 'This is a comment'
+                        'content': 'This is a comment',
                     },
                     'relationships': {
                         'target': {
                             'data': {
                                 'type': 'nodes',
-                                'id': target_id
-                            }
-                        }
-                    }
-                }
+                                'id': target_id,
+                            },
+                        },
+                    },
+                },
             }
         return make_payload
 
     @pytest.fixture()
     def project_private_comment_private(
-            self, user, user_read_contrib, payload):
+            self, user, user_read_contrib, payload,
+    ):
         project_private = ProjectFactory(
-            is_public=False, creator=user, comment_level='private')
+            is_public=False, creator=user, comment_level='private',
+        )
         project_private.add_contributor(
-            user_read_contrib, permissions=READ)
+            user_read_contrib, permissions=READ,
+        )
         project_private.save()
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            API_BASE, project_private._id,
+        )
         payload_private = payload(project_private._id)
         return {
             'project': project_private,
             'url': url_private,
-            'payload': payload_private}
+            'payload': payload_private,
+        }
 
     @pytest.fixture()
     def project_public_comment_private(self, user, user_read_contrib, payload):
         project_public = ProjectFactory(
-            is_public=True, creator=user, comment_level='private')
+            is_public=True, creator=user, comment_level='private',
+        )
         project_public.add_contributor(user_read_contrib, permissions=READ)
         project_public.save()
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            API_BASE, project_public._id,
+        )
         payload_public = payload(project_public._id)
         return {
             'project': project_public,
             'url': url_public,
-            'payload': payload_public}
+            'payload': payload_public,
+        }
 
     @pytest.fixture()
     def project_public_comment_public(self, user, user_read_contrib, payload):
@@ -570,30 +624,36 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
         project_public.add_contributor(user_read_contrib, permissions=READ)
         project_public.save()
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            API_BASE, project_public._id,
+        )
         payload_public = payload(project_public._id)
         return {
             'project': project_public,
             'url': url_public,
-            'payload': payload_public}
+            'payload': payload_public,
+        }
 
     @pytest.fixture()
     def project_private_comment_public(self, user, user_read_contrib, payload):
         project_private = ProjectFactory(is_public=False, creator=user)
         project_private.add_contributor(
-            user_read_contrib, permissions=READ)
+            user_read_contrib, permissions=READ,
+        )
         project_private.save()
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            API_BASE, project_private._id,
+        )
         payload_private = payload(project_private._id)
         return {
             'project': project_private,
             'url': url_private,
-            'payload': payload_private}
+            'payload': payload_private,
+        }
 
     def test_create_comment_errors(
             self, app, user, payload,
-            project_private_comment_private):
+            project_private_comment_private,
+    ):
 
         #   test_create_comment_invalid_data
         project_dict = project_private_comment_private
@@ -601,7 +661,8 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
             project_dict['url'],
             'Incorrect data',
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
 
     #   test_create_comment_no_relationships
@@ -610,15 +671,16 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': '4:44'
-                }
-            }
+                    'content': '4:44',
+                },
+            },
         }
         res = app.post_json_api(
             project_dict['url'],
             payload_req,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Request must include /data/relationships.'
         assert res.json['errors'][0]['source']['pointer'] == '/data/relationships'
@@ -629,16 +691,17 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'Center for Closed Logic'
+                    'content': 'Center for Closed Logic',
                 },
-                'relationships': {}
-            }
+                'relationships': {},
+            },
         }
         res = app.post_json_api(
             project_dict['url'],
             payload_req,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Request must include /data/relationships.'
         assert res.json['errors'][0]['source']['pointer'] == '/data/relationships'
@@ -649,16 +712,17 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment'
+                    'content': 'This is a comment',
                 },
-                'relationships': [{'id': project_dict['project']._id}]
-            }
+                'relationships': [{'id': project_dict['project']._id}],
+            },
         }
         res = app.post_json_api(
             project_dict['url'],
             payload_req,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == exceptions.ParseError.default_detail
 
@@ -668,18 +732,19 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment'
+                    'content': 'This is a comment',
                 },
                 'relationships': {
-                    'target': {}
-                }
-            }
+                    'target': {},
+                },
+            },
         }
         res = app.post_json_api(
             project_dict['url'],
             payload_req,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Request must include /data.'
         assert res.json['errors'][0]['source']['pointer'] == 'data/relationships/target/data'
@@ -690,21 +755,22 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment'
+                    'content': 'This is a comment',
                 },
                 'relationships': {
                     'data': {
                         'type': 'nodes',
-                        'id': project_dict['project']._id
-                    }
-                }
-            }
+                        'id': project_dict['project']._id,
+                    },
+                },
+            },
         }
         res = app.post_json_api(
             project_dict['url'],
             payload_req,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == exceptions.ParseError.default_detail
 
@@ -714,23 +780,24 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment'
+                    'content': 'This is a comment',
                 },
                 'relationships': {
                     'target': {
                         'data': {
                             'type': 'nodes',
-                            'id': ''
-                        }
-                    }
-                }
-            }
+                            'id': '',
+                        },
+                    },
+                },
+            },
         }
         res = app.post_json_api(
             project_dict['url'],
             payload_req,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Invalid comment target \'\'.'
 
@@ -742,7 +809,8 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
             project_dict['url'],
             payload_project,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Invalid comment target \'' + \
             str(project_id) + '\'.'
@@ -753,23 +821,24 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment'
+                    'content': 'This is a comment',
                 },
                 'relationships': {
                     'target': {
                         'data': {
                             'type': 'Invalid',
-                            'id': project_dict['project']._id
-                        }
-                    }
-                }
-            }
+                            'id': project_dict['project']._id,
+                        },
+                    },
+                },
+            },
         }
         res = app.post_json_api(
             project_dict['url'],
             payload_req,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 409
         assert res.json['errors'][0]['detail'] == 'The target resource has a type of "nodes", but you set the json body\'s type field to "Invalid".  You probably need to change the type field to match the target resource\'s type.'
 
@@ -779,22 +848,23 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment'
+                    'content': 'This is a comment',
                 },
                 'relationships': {
                     'target': {
                         'data': {
-                            'id': project_dict['project']._id
-                        }
-                    }
-                }
-            }
+                            'id': project_dict['project']._id,
+                        },
+                    },
+                },
+            },
         }
         res = app.post_json_api(
             project_dict['url'],
             payload_req,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Request must include /type.'
 
@@ -804,23 +874,24 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
             'data': {
                 'type': '',
                 'attributes': {
-                    'content': 'This is a comment'
+                    'content': 'This is a comment',
                 },
                 'relationships': {
                     'target': {
                         'data': {
                             'type': 'nodes',
-                            'id': project_dict['project']._id
-                        }
-                    }
-                }
-            }
+                            'id': project_dict['project']._id,
+                        },
+                    },
+                },
+            },
         }
         res = app.post_json_api(
             project_dict['url'],
             payload_req,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'This field may not be blank.'
         assert res.json['errors'][0]['source']['pointer'] == '/data/type'
@@ -831,23 +902,24 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': ''
+                    'content': '',
                 },
                 'relationships': {
                     'target': {
                         'data': {
                             'type': 'nodes',
-                            'id': project_dict['project']._id
-                        }
-                    }
-                }
-            }
+                            'id': project_dict['project']._id,
+                        },
+                    },
+                },
+            },
         }
         res = app.post_json_api(
             project_dict['url'],
             payload_req,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'This field may not be blank.'
         assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/content'
@@ -858,23 +930,24 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': '   '
+                    'content': '   ',
                 },
                 'relationships': {
                     'target': {
                         'data': {
                             'type': 'nodes',
-                            'id': project_dict['project']._id
-                        }
-                    }
-                }
-            }
+                            'id': project_dict['project']._id,
+                        },
+                    },
+                },
+            },
         }
         res = app.post_json_api(
             project_dict['url'],
             payload_req,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'This field may not be blank.'
 
@@ -884,54 +957,58 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': ('c' * (osf_settings.COMMENT_MAXLENGTH + 3))
+                    'content': ('c' * (osf_settings.COMMENT_MAXLENGTH + 3)),
                 },
                 'relationships': {
                     'target': {
                         'data': {
                             'type': 'nodes',
-                            'id': project_dict['project']._id
-                        }
-                    }
-                }
-            }
+                            'id': project_dict['project']._id,
+                        },
+                    },
+                },
+            },
         }
         res = app.post_json_api(
             project_dict['url'],
             payload_req,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Ensure this field has no more than {} characters.'.format(
-            str(osf_settings.COMMENT_MAXLENGTH))
+            str(osf_settings.COMMENT_MAXLENGTH),
+        )
 
     #   test_create_comment_invalid_target_node
         url_fake = '/{}nodes/{}/comments/'.format(API_BASE, 'abcde')
         payload_fake = payload('abcde')
         res = app.post_json_api(
             url_fake, payload_fake,
-            auth=user.auth, expect_errors=True)
+            auth=user.auth, expect_errors=True,
+        )
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == exceptions.NotFound.default_detail
 
     def test_create_comment_with_allowed_tags(
-            self, app, user, project_private_comment_private):
+            self, app, user, project_private_comment_private,
+    ):
         project_dict = project_private_comment_private
         payload = {
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': '<em>Logic</em> <strong>Reason</strong>'
+                    'content': '<em>Logic</em> <strong>Reason</strong>',
                 },
                 'relationships': {
                     'target': {
                         'data': {
                             'type': 'nodes',
-                            'id': project_dict['project']._id
-                        }
-                    }
-                }
-            }
+                            'id': project_dict['project']._id,
+                        },
+                    },
+                },
+            },
         }
         res = app.post_json_api(project_dict['url'], payload, auth=user.auth)
         assert res.status_code == 201
@@ -948,53 +1025,61 @@ class TestFileCommentCreate(NodeCommentsCreateMixin):
                 'data': {
                     'type': 'comments',
                     'attributes': {
-                        'content': 'This is a comment'
+                        'content': 'This is a comment',
                     },
                     'relationships': {
                         'target': {
                             'data': {
                                 'type': 'files',
-                                'id': target_id
-                            }
-                        }
-                    }
-                }
+                                'id': target_id,
+                            },
+                        },
+                    },
+                },
             }
         return make_payload
 
     @pytest.fixture()
     def project_private_comment_private(
-            self, user, user_read_contrib, payload):
+            self, user, user_read_contrib, payload,
+    ):
         project_private = ProjectFactory(
-            is_public=False, creator=user, comment_level='private')
+            is_public=False, creator=user, comment_level='private',
+        )
         project_private.add_contributor(
-            user_read_contrib, permissions=READ)
+            user_read_contrib, permissions=READ,
+        )
         project_private.save()
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            API_BASE, project_private._id,
+        )
         file_private = test_utils.create_test_file(project_private, user)
         payload_private = payload(file_private.get_guid()._id)
         return {
             'project': project_private,
             'url': url_private,
             'file': file_private,
-            'payload': payload_private}
+            'payload': payload_private,
+        }
 
     @pytest.fixture()
     def project_public_comment_private(self, user, user_read_contrib, payload):
         project_public = ProjectFactory(
-            is_public=True, creator=user, comment_level='private')
+            is_public=True, creator=user, comment_level='private',
+        )
         project_public.add_contributor(user_read_contrib, permissions=READ)
         project_public.save()
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            API_BASE, project_public._id,
+        )
         file_public = test_utils.create_test_file(project_public, user)
         payload_public = payload(file_public.get_guid()._id)
         return {
             'project': project_public,
             'url': url_public,
             'file': file_public,
-            'payload': payload_public}
+            'payload': payload_public,
+        }
 
     @pytest.fixture()
     def project_public_comment_public(self, user, user_read_contrib, payload):
@@ -1003,34 +1088,40 @@ class TestFileCommentCreate(NodeCommentsCreateMixin):
         project_public.add_contributor(user_read_contrib, permissions=READ)
         project_public.save()
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            API_BASE, project_public._id,
+        )
         file_public = test_utils.create_test_file(project_public, user)
         payload_public = payload(file_public.get_guid()._id)
         return {
             'project': project_public,
             'url': url_public,
             'file': file_public,
-            'payload': payload_public}
+            'payload': payload_public,
+        }
 
     @pytest.fixture()
     def project_private_comment_public(self, user, user_read_contrib, payload):
         project_private = ProjectFactory(is_public=False, creator=user)
         project_private.add_contributor(
-            user_read_contrib, permissions=READ)
+            user_read_contrib, permissions=READ,
+        )
         project_private.save()
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            API_BASE, project_private._id,
+        )
         file_private = test_utils.create_test_file(project_private, user)
         payload_private = payload(file_private.get_guid()._id)
         return {
             'project': project_private,
             'url': url_private,
             'file': file_private,
-            'payload': payload_private}
+            'payload': payload_private,
+        }
 
     def test_create_file_comment_errors(
             self, app, user, payload,
-            project_private_comment_private):
+            project_private_comment_private,
+    ):
 
         #   test_create_file_comment_invalid_target_id
         project_dict = project_private_comment_private
@@ -1038,7 +1129,8 @@ class TestFileCommentCreate(NodeCommentsCreateMixin):
         payload_req = payload(file._id)
         res = app.post_json_api(
             project_dict['url'], payload_req,
-            auth=user.auth, expect_errors=True)
+            auth=user.auth, expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Invalid comment target \'' + \
             str(file._id) + '\'.'
@@ -1049,21 +1141,22 @@ class TestFileCommentCreate(NodeCommentsCreateMixin):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment'
+                    'content': 'This is a comment',
                 },
                 'relationships': {
                     'target': {
                         'data': {
                             'type': 'Invalid',
-                            'id': project_dict['file'].get_guid()._id
-                        }
-                    }
-                }
-            }
+                            'id': project_dict['file'].get_guid()._id,
+                        },
+                    },
+                },
+            },
         }
         res = app.post_json_api(
             project_dict['url'], payload_req,
-            auth=user.auth, expect_errors=True)
+            auth=user.auth, expect_errors=True,
+        )
         assert res.status_code == 409
         assert res.json['errors'][0]['detail'] == 'The target resource has a type of "files", but you set the json body\'s type field to "Invalid".  You probably need to change the type field to match the target resource\'s type.'
 
@@ -1078,54 +1171,60 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin):
                 'data': {
                     'type': 'comments',
                     'attributes': {
-                        'content': 'This is a comment'
+                        'content': 'This is a comment',
                     },
                     'relationships': {
                         'target': {
                             'data': {
                                 'type': 'wiki',
-                                'id': target_id
-                            }
-                        }
-                    }
-                }
+                                'id': target_id,
+                            },
+                        },
+                    },
+                },
             }
         return make_payload
 
     @pytest.fixture()
     def project_private_comment_private(
-            self, user, user_read_contrib, payload):
+            self, user, user_read_contrib, payload,
+    ):
         project_private = ProjectFactory(
-            is_public=False, creator=user, comment_level='private')
+            is_public=False, creator=user, comment_level='private',
+        )
         project_private.add_contributor(
-            user_read_contrib, permissions=READ)
+            user_read_contrib, permissions=READ,
+        )
         project_private.save()
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            API_BASE, project_private._id,
+        )
         wiki_page_private = WikiFactory(node=project_private, user=user)
         payload_private = payload(wiki_page_private._id)
         return {
             'project': project_private,
             'url': url_private,
             'wiki': wiki_page_private,
-            'payload': payload_private
+            'payload': payload_private,
         }
 
     @pytest.fixture()
     def project_public_comment_private(self, user, user_read_contrib, payload):
         project_public = ProjectFactory(
-            is_public=True, creator=user, comment_level='private')
+            is_public=True, creator=user, comment_level='private',
+        )
         project_public.add_contributor(user_read_contrib, permissions=READ)
         project_public.save()
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            API_BASE, project_public._id,
+        )
         wiki_page_public = WikiFactory(node=project_public, user=user)
         payload_public = payload(wiki_page_public._id)
         return {
             'project': project_public,
             'url': url_public,
             'wiki': wiki_page_public,
-            'payload': payload_public
+            'payload': payload_public,
         }
 
     @pytest.fixture()
@@ -1135,36 +1234,40 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin):
         project_public.add_contributor(user_read_contrib, permissions=READ)
         project_public.save()
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            API_BASE, project_public._id,
+        )
         wiki_page_public = WikiFactory(node=project_public, user=user)
         payload_public = payload(wiki_page_public._id)
         return {
             'project': project_public,
             'url': url_public,
             'wiki': wiki_page_public,
-            'payload': payload_public
+            'payload': payload_public,
         }
 
     @pytest.fixture()
     def project_private_comment_public(self, user, user_read_contrib, payload):
         project_private = ProjectFactory(is_public=False, creator=user)
         project_private.add_contributor(
-            user_read_contrib, permissions=READ)
+            user_read_contrib, permissions=READ,
+        )
         project_private.save()
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            API_BASE, project_private._id,
+        )
         wiki_page_private = WikiFactory(node=project_private, user=user)
         payload_private = payload(wiki_page_private._id)
         return {
             'project': project_private,
             'url': url_private,
             'wiki': wiki_page_private,
-            'payload': payload_private
+            'payload': payload_private,
         }
 
     def test_create_wiki_comment_errors(
             self, app, user, payload,
-            project_private_comment_private):
+            project_private_comment_private,
+    ):
 
         #   test_create_wiki_comment_invalid_target_id
         project_dict = project_private_comment_private
@@ -1174,7 +1277,8 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin):
             project_dict['url'],
             payload_req,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Invalid comment target \'' + str(wiki_page._id) + '\'.'
 
@@ -1184,23 +1288,24 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment'
+                    'content': 'This is a comment',
                 },
                 'relationships': {
                     'target': {
                         'data': {
                             'type': 'Invalid',
-                            'id': project_dict['wiki']._id
-                        }
-                    }
-                }
-            }
+                            'id': project_dict['wiki']._id,
+                        },
+                    },
+                },
+            },
         }
         res = app.post_json_api(
             project_dict['url'],
             payload_req,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 409
         assert res.json['errors'][0]['detail'] == 'The target resource has a type of "wiki", but you set the json body\'s type field to "Invalid".  You probably need to change the type field to match the target resource\'s type.'
 
@@ -1215,101 +1320,120 @@ class TestCommentRepliesCreate(NodeCommentsCreateMixin):
                 'data': {
                     'type': 'comments',
                     'attributes': {
-                        'content': 'This is a comment'
+                        'content': 'This is a comment',
                     },
                     'relationships': {
                         'target': {
                             'data': {
                                 'type': 'comments',
-                                'id': comment_id
-                            }
-                        }
-                    }
-                }
+                                'id': comment_id,
+                            },
+                        },
+                    },
+                },
             }
         return make_payload
 
     @pytest.fixture()
     def project_private_comment_private(
-            self, user, user_read_contrib, payload):
+            self, user, user_read_contrib, payload,
+    ):
         project_private = ProjectFactory.create(
-            is_public=False, creator=user, comment_level='private')
+            is_public=False, creator=user, comment_level='private',
+        )
         project_private.add_contributor(
-            user_read_contrib, permissions=READ, save=True)
+            user_read_contrib, permissions=READ, save=True,
+        )
         comment_private = CommentFactory(node=project_private, user=user)
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            API_BASE, project_private._id,
+        )
         payload_private = payload(comment_private._id)
         return {
             'project': project_private,
             'comment': comment_private,
             'url': url_private,
-            'payload': payload_private}
+            'payload': payload_private,
+        }
 
     @pytest.fixture()
     def project_public_comment_private(self, user, user_read_contrib, payload):
         project_public = ProjectFactory.create(
-            is_public=True, creator=user, comment_level='private')
+            is_public=True, creator=user, comment_level='private',
+        )
         project_public.add_contributor(
-            user_read_contrib, permissions=READ, save=True)
+            user_read_contrib, permissions=READ, save=True,
+        )
         comment_public = CommentFactory(node=project_public, user=user)
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            API_BASE, project_public._id,
+        )
         payload_public = payload(comment_public._id)
         return {
             'project': project_public,
             'comment': comment_public,
             'url': url_public,
-            'payload': payload_public}
+            'payload': payload_public,
+        }
 
     @pytest.fixture()
     def project_private_comment_public(self, user, user_read_contrib, payload):
         project_private = ProjectFactory(is_public=False, creator=user)
         project_private.add_contributor(
-            user_read_contrib, permissions=READ, save=True)
+            user_read_contrib, permissions=READ, save=True,
+        )
         comment_private = CommentFactory(node=project_private, user=user)
         comment_reply = CommentFactory(
             node=project_private,
             target=Guid.load(comment_private._id),
-            user=user)
+            user=user,
+        )
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            API_BASE, project_private._id,
+        )
         payload_private = payload(comment_reply._id)
         return {
             'project': project_private,
             'comment': comment_private,
             'reply': comment_reply,
             'url': url_private,
-            'payload': payload_private}
+            'payload': payload_private,
+        }
 
     @pytest.fixture()
     def project_public_comment_public(self, user, user_read_contrib, payload):
         project_public = ProjectFactory(is_public=True, creator=user)
         project_public.add_contributor(
-            user_read_contrib, permissions=READ, save=True)
+            user_read_contrib, permissions=READ, save=True,
+        )
         comment_public = CommentFactory(node=project_public, user=user)
         comment_reply = CommentFactory(
             node=project_public,
             target=Guid.load(comment_public._id),
-            user=user)
+            user=user,
+        )
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            API_BASE, project_public._id,
+        )
         payload_public = payload(comment_reply._id)
         return {
             'project': project_public,
             'comment': comment_public,
             'reply': comment_reply,
             'url': url_public,
-            'payload': payload_public}
+            'payload': payload_public,
+        }
 
     def test_create_comment_reply_invalid_target_id(
-            self, app, user, payload, project_private_comment_private):
+            self, app, user, payload, project_private_comment_private,
+    ):
         project_dict = project_private_comment_private
         target_comment = CommentFactory(node=ProjectFactory(), user=user)
         payload_req = payload(target_comment._id)
         res = app.post_json_api(
             project_dict['url'], payload_req,
-            auth=user.auth, expect_errors=True)
+            auth=user.auth, expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Invalid comment target \'' + \
             str(target_comment._id) + '\'.'
@@ -1330,7 +1454,8 @@ class TestCommentFiltering:
     def comment_deleted(self, user, project):
         return CommentFactory(
             node=project, user=user,
-            is_deleted=True, page='node')
+            is_deleted=True, page='node',
+        )
 
     @pytest.fixture()
     def url_base(self, project):
@@ -1348,7 +1473,8 @@ class TestCommentFiltering:
     def test_filtering(
             self, app, user, project, comment,
             comment_deleted, date_created_formatted,
-            date_modified_formatted, url_base):
+            date_modified_formatted, url_base,
+    ):
 
         #   test_node_comments_with_no_filter_returns_all_comments
         res = app.get(url_base, auth=user.auth)
@@ -1443,17 +1569,20 @@ class TestCommentFiltering:
         assert 'node' == res.json['data'][1]['attributes']['page']
 
     def test_filtering_for_comment_replies(
-            self, app, user, project, comment, url_base):
+            self, app, user, project, comment, url_base,
+    ):
         CommentFactory(
             node=project, user=user,
-            target=Guid.load(comment._id))
+            target=Guid.load(comment._id),
+        )
         url = url_base + '?filter[target]=' + str(comment._id)
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 1
         assert comment._id in res.json['data'][0]['relationships']['target']['links']['related']['href']
 
     def test_filtering_by_target_file(
-            self, app, user, project, url_base):
+            self, app, user, project, url_base,
+    ):
         test_file = test_utils.create_test_file(project, user)
         target = test_file.get_guid()
         CommentFactory(node=project, user=user, target=target)
@@ -1467,19 +1596,22 @@ class TestCommentFiltering:
         CommentFactory(
             node=project, user=user,
             target=Guid.load(wiki_page._id),
-            page='wiki')
+            page='wiki',
+        )
         url = url_base + '?filter[target]=' + str(wiki_page._id)
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 1
         assert wiki_page.get_absolute_url() == res.json['data'][0]['relationships']['target']['links']['related']['href']
 
     def test_filtering_by_page_files(
-            self, app, user, project, url_base):
+            self, app, user, project, url_base,
+    ):
         test_file = test_utils.create_test_file(project, user)
         CommentFactory(
             node=project, user=user,
             target=test_file.get_guid(),
-            page='files')
+            page='files',
+        )
         url = url_base + '?filter[page]=files'
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 1
@@ -1490,7 +1622,8 @@ class TestCommentFiltering:
         CommentFactory(
             node=project,
             user=user,
-            target=Guid.load(wiki_page._id), page='wiki')
+            target=Guid.load(wiki_page._id), page='wiki',
+        )
         url = url_base + '?filter[page]=wiki'
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 1

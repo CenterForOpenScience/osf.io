@@ -26,8 +26,8 @@ class TestGetApprovalStatus:
         draft = DraftRegistrationFactory(initiator=user, registration_schema=get_prereg_schema())
         draft.approval = DraftRegistrationApproval(
             meta={
-                'registration_choice': 'immediate'
-            }
+                'registration_choice': 'immediate',
+            },
         )
         draft.approval.state = 'approved'
         draft.approval.save()
@@ -56,8 +56,8 @@ class TestGetApprovalStatus:
         draft = DraftRegistrationFactory(initiator=user, registration_schema=get_prereg_schema())
         draft.approval = DraftRegistrationApproval(
             meta={
-                'registration_choice': 'immediate'
-            }
+                'registration_choice': 'immediate',
+            },
         )
         draft.approval.state = 'approved'
         draft.approval.save()
@@ -69,8 +69,8 @@ class TestGetApprovalStatus:
         draft = DraftRegistrationFactory(initiator=user, registration_schema=get_prereg_schema())
         draft.approval = DraftRegistrationApproval(
             meta={
-                'registration_choice': 'immediate'
-            }
+                'registration_choice': 'immediate',
+            },
         )
         draft.approval.state = 'rejected'
         draft.approval.save()

@@ -64,7 +64,7 @@ class TestFileSerializer:
         req = make_drf_request_with_version(version='2.2')
         data = FileSerializer(file_one, context={'request': req}).data['data']
         assert datetime.strftime(
-            modified, new_format
+            modified, new_format,
         ) == data['attributes']['date_modified']
 
         # test_date_created_formats_to_old_format
@@ -76,7 +76,7 @@ class TestFileSerializer:
         req = make_drf_request_with_version(version='2.2')
         data = FileSerializer(file_one, context={'request': req}).data['data']
         assert datetime.strftime(
-            created, new_format
+            created, new_format,
         ) == data['attributes']['date_created']
 
         # check download file link with path

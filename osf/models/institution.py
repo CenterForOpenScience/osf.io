@@ -50,7 +50,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     contributors = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         through=InstitutionalContributor,
-        related_name='institutions'
+        related_name='institutions',
     )
 
     is_deleted = models.BooleanField(default=False, db_index=True)

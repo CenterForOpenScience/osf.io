@@ -135,18 +135,18 @@ def make_create_payload(role, user=None, full_name=None, email=None):
         'data': {
             'type': 'group-members',
             'attributes': {
-                'role': role
-            }
-        }
+                'role': role,
+            },
+        },
     }
     if user:
         base_payload['data']['relationships'] = {
             'users': {
                 'data': {
                     'id': user._id,
-                    'type': 'users'
-                }
-            }
+                    'type': 'users',
+                },
+            },
         }
     else:
         if full_name:
@@ -292,8 +292,8 @@ def make_bulk_create_payload(role, user=None, full_name=None, email=None):
     base_payload = {
         'type': 'group-members',
         'attributes': {
-            'role': role
-        }
+            'role': role,
+        },
     }
 
     if user:
@@ -301,9 +301,9 @@ def make_bulk_create_payload(role, user=None, full_name=None, email=None):
             'users': {
                 'data': {
                     'id': user._id,
-                    'type': 'users'
-                }
-            }
+                    'type': 'users',
+                },
+            },
         }
     else:
         if full_name:
@@ -456,8 +456,8 @@ def build_bulk_update_payload(group_id, user_id, role):
         'id': '{}-{}'.format(group_id, user_id),
         'type': 'group-members',
         'attributes': {
-            'role': role
-        }
+            'role': role,
+        },
     }
 
 
@@ -502,8 +502,8 @@ class TestOSFGroupMembersBulkUpdate:
             payload = {
                 'type': 'group-members',
                 'attributes': {
-                    'role': MEMBER
-                }
+                    'role': MEMBER,
+                },
             }
             bulk_payload = {'data': [payload]}
 
@@ -552,7 +552,7 @@ class TestOSFGroupMembersBulkUpdate:
 def create_bulk_delete_payload(group_id, user_id):
     return {
         'id': '{}-{}'.format(group_id, user_id),
-        'type': 'group-members'
+        'type': 'group-members',
     }
 
 @pytest.mark.django_db

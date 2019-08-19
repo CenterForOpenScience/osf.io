@@ -59,7 +59,8 @@ def migrate_preprints_to_direct_fks(state, schema):
             logger.info('Updating page {} / {}'.format(page_end / increment, total_pages))
 
         with connection.cursor() as cursor:
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO osf_preprintgroupobjectpermission (content_object_id, group_id, permission_id)
                 SELECT CAST(GO.object_pk AS INT), CAST(GO.group_id AS INT), CAST(GO.permission_id AS INT)
                 FROM guardian_groupobjectpermission GO, django_content_type CT
@@ -86,5 +87,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(migrate_preprints_to_direct_fks, reverse_migrate_preprints)
+        migrations.RunPython(migrate_preprints_to_direct_fks, reverse_migrate_preprints),
     ]

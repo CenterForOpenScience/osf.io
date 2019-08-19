@@ -221,14 +221,18 @@ class ComposedScopes(object):
 
     # Nodes collection.
     # Base node data includes node metadata, links, children, and preprints.
-    NODE_METADATA_READ = (CoreScopes.NODE_BASE_READ, CoreScopes.NODE_CHILDREN_READ, CoreScopes.NODE_LINKS_READ,
-                          CoreScopes.NODE_CITATIONS_READ, CoreScopes.NODE_COMMENTS_READ, CoreScopes.NODE_LOG_READ,
-                          CoreScopes.NODE_FORKS_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.LICENSE_READ,
-                          CoreScopes.IDENTIFIERS_READ, CoreScopes.NODE_PREPRINTS_READ, CoreScopes.PREPRINT_REQUESTS_READ)
+    NODE_METADATA_READ = (
+        CoreScopes.NODE_BASE_READ, CoreScopes.NODE_CHILDREN_READ, CoreScopes.NODE_LINKS_READ,
+        CoreScopes.NODE_CITATIONS_READ, CoreScopes.NODE_COMMENTS_READ, CoreScopes.NODE_LOG_READ,
+        CoreScopes.NODE_FORKS_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.LICENSE_READ,
+        CoreScopes.IDENTIFIERS_READ, CoreScopes.NODE_PREPRINTS_READ, CoreScopes.PREPRINT_REQUESTS_READ,
+    )
     NODE_METADATA_WRITE = NODE_METADATA_READ + \
-                    (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE, CoreScopes.IDENTIFIERS_WRITE,
-                     CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE, CoreScopes.NODE_FORKS_WRITE,
-                     CoreScopes.NODE_PREPRINTS_WRITE, CoreScopes.PREPRINT_REQUESTS_WRITE, CoreScopes.WIKI_BASE_WRITE)
+                    (
+                        CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE, CoreScopes.IDENTIFIERS_WRITE,
+                        CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE, CoreScopes.NODE_FORKS_WRITE,
+                        CoreScopes.NODE_PREPRINTS_WRITE, CoreScopes.PREPRINT_REQUESTS_WRITE, CoreScopes.WIKI_BASE_WRITE,
+                    )
 
     # Preprints collection
     # TODO: Move Metrics scopes to their own restricted composed scope once the Admin app can manage scopes on tokens/apps
@@ -251,13 +255,17 @@ class ComposedScopes(object):
                         (CoreScopes.PREPRINT_FILE_WRITE,)
 
     # Privileges relating to who can access a node (via contributors or registrations)
-    NODE_ACCESS_READ = (CoreScopes.NODE_CONTRIBUTORS_READ, CoreScopes.NODE_REGISTRATIONS_READ,
-                        CoreScopes.NODE_VIEW_ONLY_LINKS_READ, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ,
-                        CoreScopes.NODE_REQUESTS_READ, CoreScopes.NODE_SETTINGS_READ, CoreScopes.NODE_OSF_GROUPS_READ)
+    NODE_ACCESS_READ = (
+        CoreScopes.NODE_CONTRIBUTORS_READ, CoreScopes.NODE_REGISTRATIONS_READ,
+        CoreScopes.NODE_VIEW_ONLY_LINKS_READ, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ,
+        CoreScopes.NODE_REQUESTS_READ, CoreScopes.NODE_SETTINGS_READ, CoreScopes.NODE_OSF_GROUPS_READ,
+    )
     NODE_ACCESS_WRITE = NODE_ACCESS_READ + \
-                            (CoreScopes.NODE_CONTRIBUTORS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE,
-                             CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE,
-                             CoreScopes.NODE_REQUESTS_WRITE, CoreScopes.NODE_SETTINGS_WRITE, CoreScopes.NODE_OSF_GROUPS_WRITE)
+                            (
+                                CoreScopes.NODE_CONTRIBUTORS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE,
+                                CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE,
+                                CoreScopes.NODE_REQUESTS_WRITE, CoreScopes.NODE_SETTINGS_WRITE, CoreScopes.NODE_OSF_GROUPS_WRITE,
+                            )
 
     # Privileges relating to who can access a preprint via contributors
     PREPRINT_ACCESS_READ = (CoreScopes.PREPRINT_CONTRIBUTORS_READ,)
@@ -288,77 +296,107 @@ class ComposedScopes(object):
 #   Return as sets to enable fast comparisons of provided scopes vs those required by a given node
 # These are the ***only*** scopes that will be recognized from CAS
 public_scopes = {
-    'osf.full_read': scope(parts_=frozenset(ComposedScopes.FULL_READ),
-                           description='View all information associated with this account, including for '
-                                       'private projects.',
-                           is_public=True),
-    'osf.full_write': scope(parts_=frozenset(ComposedScopes.FULL_WRITE),
-                            description='View and edit all information associated with this account, including for '
-                                        'private projects.',
-                            is_public=True),
-    'osf.users.profile_read': scope(parts_=frozenset(ComposedScopes.USERS_READ),
-                                description='Read your profile data.',
-                                is_public=True),
-    'osf.users.email_read': scope(parts_=frozenset(ComposedScopes.USER_EMAIL_READ),
-                                        description='Read your primary email address.',
-                                        is_public=True),
+    'osf.full_read': scope(
+        parts_=frozenset(ComposedScopes.FULL_READ),
+        description='View all information associated with this account, including for '
+                    'private projects.',
+        is_public=True,
+    ),
+    'osf.full_write': scope(
+        parts_=frozenset(ComposedScopes.FULL_WRITE),
+        description='View and edit all information associated with this account, including for '
+                    'private projects.',
+        is_public=True,
+    ),
+    'osf.users.profile_read': scope(
+        parts_=frozenset(ComposedScopes.USERS_READ),
+        description='Read your profile data.',
+        is_public=True,
+    ),
+    'osf.users.email_read': scope(
+        parts_=frozenset(ComposedScopes.USER_EMAIL_READ),
+        description='Read your primary email address.',
+        is_public=True,
+    ),
 }
 
 if settings.DEV_MODE:
     public_scopes.update({
-        'osf.users.profile_write': scope(parts_=frozenset(ComposedScopes.USERS_WRITE),
-                                     description='Read and edit your profile data.',
-                                     is_public=True),
+        'osf.users.profile_write': scope(
+            parts_=frozenset(ComposedScopes.USERS_WRITE),
+            description='Read and edit your profile data.',
+            is_public=True,
+        ),
 
-        'osf.nodes.metadata_read': scope(parts_=frozenset(ComposedScopes.NODE_METADATA_READ),
-                                         description='Read a list of all public and private nodes accessible to this '
-                                                     'account, and view associated metadata such as project descriptions '
-                                                     'and titles.',
-                                         is_public=True),
-        'osf.nodes.metadata_write': scope(parts_=frozenset(ComposedScopes.NODE_METADATA_WRITE),
-                                          description='Read a list of all public and private nodes accessible to this '
-                                                      'account, and view and edit associated metadata such as project '
-                                                      'descriptions and titles.',
-                                          is_public=True),
+        'osf.nodes.metadata_read': scope(
+            parts_=frozenset(ComposedScopes.NODE_METADATA_READ),
+            description='Read a list of all public and private nodes accessible to this '
+                        'account, and view associated metadata such as project descriptions '
+                        'and titles.',
+            is_public=True,
+        ),
+        'osf.nodes.metadata_write': scope(
+            parts_=frozenset(ComposedScopes.NODE_METADATA_WRITE),
+            description='Read a list of all public and private nodes accessible to this '
+                        'account, and view and edit associated metadata such as project '
+                        'descriptions and titles.',
+            is_public=True,
+        ),
 
-        'osf.nodes.data_read': scope(parts_=frozenset(ComposedScopes.NODE_DATA_READ),
-                                     description='List and view files associated with any public or private projects '
-                                                 'accessible to this account.',
-                                     is_public=True),
-        'osf.nodes.data_write': scope(parts_=frozenset(ComposedScopes.NODE_DATA_WRITE),
-                                      description='List, view, and update files associated with any public or private '
-                                                  'projects accessible to this account.',
-                                      is_public=True),
+        'osf.nodes.data_read': scope(
+            parts_=frozenset(ComposedScopes.NODE_DATA_READ),
+            description='List and view files associated with any public or private projects '
+                        'accessible to this account.',
+            is_public=True,
+        ),
+        'osf.nodes.data_write': scope(
+            parts_=frozenset(ComposedScopes.NODE_DATA_WRITE),
+            description='List, view, and update files associated with any public or private '
+                        'projects accessible to this account.',
+            is_public=True,
+        ),
 
-        'osf.nodes.access_read': scope(parts_=frozenset(ComposedScopes.NODE_ACCESS_READ),
-                                       description='View the contributors list and any established registrations '
-                                                   'associated with public or private projects.',
-                                       is_public=True),
-        'osf.nodes.access_write': scope(parts_=frozenset(ComposedScopes.NODE_ACCESS_WRITE),
-                                        description='View and edit the contributors list associated with public or '
-                                                    'private projects accessible to this account. Also view and create '
-                                                    'registrations.',
-                                        is_public=True),  # TODO: Language: Does registrations endpoint allow creation of registrations? Is that planned?
+        'osf.nodes.access_read': scope(
+            parts_=frozenset(ComposedScopes.NODE_ACCESS_READ),
+            description='View the contributors list and any established registrations '
+                        'associated with public or private projects.',
+            is_public=True,
+        ),
+        'osf.nodes.access_write': scope(
+            parts_=frozenset(ComposedScopes.NODE_ACCESS_WRITE),
+            description='View and edit the contributors list associated with public or '
+                        'private projects accessible to this account. Also view and create '
+                        'registrations.',
+            is_public=True,
+        ),  # TODO: Language: Does registrations endpoint allow creation of registrations? Is that planned?
 
-        'osf.nodes.full_read': scope(parts_=frozenset(ComposedScopes.NODE_ALL_READ),
-                                    description='View all metadata, files, and access rights associated with all public '
-                                                'and private projects accessible to this account.',
-                                    is_public=True),
-        'osf.nodes.full_write': scope(parts_=frozenset(ComposedScopes.NODE_ALL_WRITE),
-                                     description='View and edit all metadata, files, and access rights associated with '
-                                                 'all public and private projects accessible to this account.',
-                                     is_public=True),
+        'osf.nodes.full_read': scope(
+            parts_=frozenset(ComposedScopes.NODE_ALL_READ),
+            description='View all metadata, files, and access rights associated with all public '
+                        'and private projects accessible to this account.',
+            is_public=True,
+        ),
+        'osf.nodes.full_write': scope(
+            parts_=frozenset(ComposedScopes.NODE_ALL_WRITE),
+            description='View and edit all metadata, files, and access rights associated with '
+                        'all public and private projects accessible to this account.',
+            is_public=True,
+        ),
 
         # Undocumented scopes that can not be requested by third parties (per CAS restriction)
-        'osf.users.create': scope(parts_=frozenset(ComposedScopes.USERS_CREATE),
-                           description='This permission should only be granted to OSF collaborators. Allows a site to '
-                                       'programmatically create new users with this account.',
-                           is_public=False),
+        'osf.users.create': scope(
+            parts_=frozenset(ComposedScopes.USERS_CREATE),
+            description='This permission should only be granted to OSF collaborators. Allows a site to '
+                        'programmatically create new users with this account.',
+            is_public=False,
+        ),
 
-        'osf.admin': scope(parts_=frozenset(ComposedScopes.ADMIN_LEVEL),
-                           description='This permission should only be granted to OSF administrators. Allows a site to '
-                                       'create, read, edit, and delete all information associated with this account.',
-                           is_public=False),
+        'osf.admin': scope(
+            parts_=frozenset(ComposedScopes.ADMIN_LEVEL),
+            description='This permission should only be granted to OSF administrators. Allows a site to '
+                        'create, read, edit, and delete all information associated with this account.',
+            is_public=False,
+        ),
     })
 
 
@@ -385,5 +423,7 @@ if __name__ == '__main__':
     # Print some data to console, to help audit what views/core scopes map to a given public/composed scope
     # Although represented internally as a set, print as a sorted list for readability.
     from pprint import pprint as pp
-    pp({k: sorted(v.parts)
-        for k, v in public_scopes.items()})
+    pp({
+        k: sorted(v.parts)
+        for k, v in public_scopes.items()
+    })

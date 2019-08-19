@@ -43,7 +43,7 @@ class TestClaimUser:
             'David Davidson',
             'david@david.son',
             auth=Auth(referrer),
-            save=True
+            save=True,
         )
 
     @pytest.fixture()
@@ -57,8 +57,8 @@ class TestClaimUser:
     def payload(self, **kwargs):
         payload = {
             'data': {
-                'attributes': {}
-            }
+                'attributes': {},
+            },
         }
         _id = kwargs.pop('id', None)
         if _id:
@@ -77,7 +77,7 @@ class TestClaimUser:
         res = app.post_json_api(
             _url,
             payload,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Must specify record "id".'
@@ -87,7 +87,7 @@ class TestClaimUser:
         res = app.post_json_api(
             _url,
             payload,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == 'Unable to find specified record.'
@@ -97,7 +97,7 @@ class TestClaimUser:
         res = app.post_json_api(
             _url,
             payload,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == 'Unable to find specified record.'
@@ -107,7 +107,7 @@ class TestClaimUser:
         res = app.post_json_api(
             _url,
             payload,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Must either be logged in or specify claim email.'
@@ -118,7 +118,7 @@ class TestClaimUser:
         res = app.post_json_api(
             _url,
             payload,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 401
 
@@ -133,7 +133,7 @@ class TestClaimUser:
     def test_claim_unauth_success_with_claimer_email(self, app, url, unreg_user, project, claimer, mock_mail):
         res = app.post_json_api(
             url.format(unreg_user._id),
-            self.payload(email=claimer.username, id=project._id)
+            self.payload(email=claimer.username, id=project._id),
         )
         assert res.status_code == 204
         assert mock_mail.call_count == 2
@@ -162,7 +162,7 @@ class TestClaimUser:
             _url,
             payload,
             auth=claimer.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Must specify record "id".'
@@ -173,7 +173,7 @@ class TestClaimUser:
             _url,
             payload,
             auth=claimer.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == 'Unable to find specified record.'
@@ -184,7 +184,7 @@ class TestClaimUser:
             _url,
             payload,
             auth=claimer.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == 'Unable to find specified record.'
@@ -195,7 +195,7 @@ class TestClaimUser:
             _url,
             payload,
             auth=referrer.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Referrer cannot claim user.'
@@ -207,7 +207,7 @@ class TestClaimUser:
             _url,
             payload,
             auth=claimer.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 403
 
@@ -218,7 +218,7 @@ class TestClaimUser:
             url.format(unreg_user._id),
             self.payload(id=project._id),
             auth=claimer.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'User account can only be claimed with an existing user once every 24 hours'
@@ -228,7 +228,7 @@ class TestClaimUser:
         res = app.post_json_api(
             url.format(unreg_user._id),
             self.payload(id=project._id),
-            auth=claimer.auth
+            auth=claimer.auth,
         )
         assert res.status_code == 204
         assert mock_mail.call_count == 2

@@ -8,8 +8,10 @@ import xml
 import urlparse
 
 from scripts import generate_sitemap
-from osf_tests.factories import (AuthUserFactory, ProjectFactory, RegistrationFactory, CollectionFactory,
-                                 PreprintFactory, PreprintProviderFactory, EmbargoFactory, UnconfirmedUserFactory)
+from osf_tests.factories import (
+    AuthUserFactory, ProjectFactory, RegistrationFactory, CollectionFactory,
+    PreprintFactory, PreprintProviderFactory, EmbargoFactory, UnconfirmedUserFactory,
+)
 from website import settings
 
 
@@ -69,15 +71,19 @@ class TestGenerateSitemap:
 
     @pytest.fixture(autouse=True)
     def registration_active(self, user_admin_project_public, project_registration_public):
-        return RegistrationFactory(project=project_registration_public,
-                                             creator=user_admin_project_public,
-                                             is_public=True)
+        return RegistrationFactory(
+            project=project_registration_public,
+            creator=user_admin_project_public,
+            is_public=True,
+        )
 
     @pytest.fixture(autouse=True)
     def registration_embargoed(self, user_admin_project_public, project_registration_public):
-        return RegistrationFactory(project=project_registration_public,
-                                             creator=user_admin_project_public,
-                                             embargo=EmbargoFactory(user=user_admin_project_public))
+        return RegistrationFactory(
+            project=project_registration_public,
+            creator=user_admin_project_public,
+            embargo=EmbargoFactory(user=user_admin_project_public),
+        )
 
     @pytest.fixture(autouse=True)
     def collection(self, user_admin_project_public):
@@ -94,21 +100,27 @@ class TestGenerateSitemap:
 
     @pytest.fixture(autouse=True)
     def preprint_osf(self, project_preprint_osf, user_admin_project_public, provider_osf):
-        return PreprintFactory(project=project_preprint_osf,
-                                             creator=user_admin_project_public,
-                                             provider=provider_osf)
+        return PreprintFactory(
+            project=project_preprint_osf,
+            creator=user_admin_project_public,
+            provider=provider_osf,
+        )
 
     @pytest.fixture(autouse=True)
     def preprint_other(self, project_preprint_other, user_admin_project_public, provider_other):
-        return PreprintFactory(project=project_preprint_other,
-                                             creator=user_admin_project_public,
-                                             provider=provider_other)
+        return PreprintFactory(
+            project=project_preprint_other,
+            creator=user_admin_project_public,
+            provider=provider_other,
+        )
 
     @pytest.fixture(autouse=True)
-    def all_included_links(self, user_admin_project_public, user_admin_project_private, project_registration_public,
-                             project_preprint_osf, project_preprint_other,
-                             registration_active, provider_other, preprint_osf,
-                             preprint_other):
+    def all_included_links(
+        self, user_admin_project_public, user_admin_project_private, project_registration_public,
+        project_preprint_osf, project_preprint_other,
+        registration_active, provider_other, preprint_osf,
+        preprint_other,
+    ):
         # Return urls of all fixtures
         urls_to_include = [item['loc'] for item in settings.SITEMAP_STATIC_URLS]
         urls_to_include.extend([
@@ -121,7 +133,7 @@ class TestGenerateSitemap:
             '/preprints/{}/'.format(preprint_osf._id),
             '/preprints/{}/{}/'.format(provider_other._id, preprint_other._id),
             '/{}/download/?format=pdf'.format(preprint_osf._id),
-            '/{}/download/?format=pdf'.format(preprint_other._id)
+            '/{}/download/?format=pdf'.format(preprint_other._id),
         ])
         urls_to_include = [urlparse.urljoin(settings.DOMAIN, item) for item in urls_to_include]
 

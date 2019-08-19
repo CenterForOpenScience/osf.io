@@ -8,7 +8,7 @@ from osf.models import BaseFileNode, Folder, File
 from osf_tests.factories import (
     UserFactory,
     ProjectFactory,
-    RegionFactory
+    RegionFactory,
 )
 
 pytestmark = pytest.mark.django_db
@@ -35,14 +35,16 @@ def create_test_file(fake):
         if create_guid:
             test_file.get_guid(create=True)
 
-        test_file.create_version(user, {
-            'object': '06d80e',
-            'service': 'cloud',
-            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
-        }, {
-            'size': 1337,
-            'contentType': 'img/png'
-        }).save()
+        test_file.create_version(
+            user, {
+                'object': '06d80e',
+                'service': 'cloud',
+                osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+            }, {
+                'size': 1337,
+                'contentType': 'img/png',
+            },
+        ).save()
         return test_file
     return _create_test_file
 
@@ -88,7 +90,7 @@ def test_file_update_respects_region(project, user, create_test_file):
             'object': '07d80a',
         }, {
             'sha256': 'existing',
-        }
+        },
     )
     assert new_region != original_region
     assert new_version.region == new_region

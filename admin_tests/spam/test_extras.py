@@ -30,5 +30,7 @@ class TestReverseTags:
         nt.assert_in('/spam/user/kzzab/?', res)
         nt.assert_in('page=2', res)
         nt.assert_in('status=4', res)
-        nt.assert_equal(len('/spam/user/kzzab/?page=2&status=4'),
-                        len(res))
+        nt.assert_equal(
+            len('/spam/user/kzzab/?page=2&status=4'),
+            len(res),
+        )

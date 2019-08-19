@@ -24,29 +24,29 @@ mock_responses = {
         'item_collection': {
             'entries': [
                 {
-                    'name': 'anything', 'type': 'file', 'id': 'anything'
+                    'name': 'anything', 'type': 'file', 'id': 'anything',
                 },
                 {
-                    'name': 'anything', 'type': 'folder', 'id': 'anything'
+                    'name': 'anything', 'type': 'folder', 'id': 'anything',
                 },
                 {
-                    'name': 'anything', 'type': 'anything', 'id': 'anything'
+                    'name': 'anything', 'type': 'anything', 'id': 'anything',
                 },
-            ]
+            ],
         },
         'path_collection': {
             'entries': [
                 {
-                    'name': 'anything', 'type': 'file', 'id': 'anything'
+                    'name': 'anything', 'type': 'file', 'id': 'anything',
                 },
                 {
-                    'name': 'anything', 'type': 'folder', 'id': 'anything'
+                    'name': 'anything', 'type': 'folder', 'id': 'anything',
                 },
                 {
-                    'name': 'anything', 'type': 'anything', 'id': 'anything'
+                    'name': 'anything', 'type': 'anything', 'id': 'anything',
                 },
-            ]
-        }
+            ],
+        },
     },
     'put_file': {
         'bytes': 77,
@@ -59,7 +59,7 @@ mock_responses = {
         'revision': 221922,
         'root': 'box',
         'size': '77 bytes',
-        'thumb_exists': False
+        'thumb_exists': False,
     },
     'metadata_list': {
         'size': '0 bytes',
@@ -85,7 +85,7 @@ mock_responses = {
                 'icon': 'page_white_text',
                 'root': 'box',
                 'mime_type': 'text/plain',
-                'revision': 220191
+                'revision': 220191,
             },
             {
                 u'bytes': 0,
@@ -97,10 +97,10 @@ mock_responses = {
                 u'revision': 67032351,
                 u'root': u'box',
                 u'size': u'0 bytes',
-                u'thumb_exists': False
-            }
+                u'thumb_exists': False,
+            },
         ],
-        'revision': 29007
+        'revision': 29007,
     },
     'metadata_single': {
         u'id': 'id',
@@ -115,33 +115,39 @@ mock_responses = {
         u'revision': 10,
         u'root': u'app_folder',
         u'size': u'74 bytes',
-        u'thumb_exists': False
+        u'thumb_exists': False,
     },
-    'revisions': [{u'bytes': 0,
-                   u'client_mtime': u'Wed, 31 Dec 1969 23:59:59 +0000',
-                   u'icon': u'page_white_picture',
-                   u'is_deleted': True,
-                   u'is_dir': False,
-                   u'mime_type': u'image/png',
-                   u'modified': u'Tue, 25 Mar 2014 03:39:13 +0000',
-                   u'path': u'/svs-v-barks.png',
-                   u'rev': u'3fed741002c12fc',
-                   u'revision': 67032897,
-                   u'root': u'box',
-                   u'size': u'0 bytes',
-                   u'thumb_exists': True},
-                  {u'bytes': 151164,
-                   u'client_mtime': u'Sat, 13 Apr 2013 21:56:36 +0000',
-                   u'icon': u'page_white_picture',
-                   u'is_dir': False,
-                   u'mime_type': u'image/png',
-                   u'modified': u'Tue, 25 Mar 2014 01:45:51 +0000',
-                   u'path': u'/svs-v-barks.png',
-                   u'rev': u'3fed61a002c12fc',
-                   u'revision': 67032602,
-                   u'root': u'box',
-                   u'size': u'147.6 KB',
-                   u'thumb_exists': True}]
+    'revisions': [
+        {
+            u'bytes': 0,
+            u'client_mtime': u'Wed, 31 Dec 1969 23:59:59 +0000',
+            u'icon': u'page_white_picture',
+            u'is_deleted': True,
+            u'is_dir': False,
+            u'mime_type': u'image/png',
+            u'modified': u'Tue, 25 Mar 2014 03:39:13 +0000',
+            u'path': u'/svs-v-barks.png',
+            u'rev': u'3fed741002c12fc',
+            u'revision': 67032897,
+            u'root': u'box',
+            u'size': u'0 bytes',
+            u'thumb_exists': True,
+        },
+        {
+            u'bytes': 151164,
+            u'client_mtime': u'Sat, 13 Apr 2013 21:56:36 +0000',
+            u'icon': u'page_white_picture',
+            u'is_dir': False,
+            u'mime_type': u'image/png',
+            u'modified': u'Tue, 25 Mar 2014 01:45:51 +0000',
+            u'path': u'/svs-v-barks.png',
+            u'rev': u'3fed61a002c12fc',
+            u'revision': 67032602,
+            u'root': u'box',
+            u'size': u'147.6 KB',
+            u'thumb_exists': True,
+        },
+    ],
 }
 
 
@@ -150,8 +156,10 @@ class MockBox(object):
     def put_file(self, full_path, file_obj, overwrite=False, parent_rev=None):
         return mock_responses['put_file']
 
-    def metadata(self, path, list=True, file_limit=25000, hash=None, rev=None,
-                 include_deleted=False):
+    def metadata(
+        self, path, list=True, file_limit=25000, hash=None, rev=None,
+        include_deleted=False,
+    ):
         if list:
             ret = mock_responses['metadata_list']
         else:

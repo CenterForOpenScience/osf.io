@@ -6,7 +6,7 @@ import pytest
 import httplib as http
 
 from addons.base.tests.views import (
-    OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin
+    OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin,
 )
 from addons.owncloud.models import OwnCloudProvider
 from tests.base import OsfTestCase
@@ -55,7 +55,8 @@ class TestConfigViews(OwnCloudAddonTestCase, OAuthAddonConfigViewsTestCaseMixin,
 
     def test_get_config(self):
         url = self.project.api_url_for(
-            '{0}_get_config'.format(self.ADDON_SHORT_NAME))
+            '{0}_get_config'.format(self.ADDON_SHORT_NAME),
+        )
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, http.OK)
         assert_in('result', res.json)

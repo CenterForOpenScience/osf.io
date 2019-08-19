@@ -47,8 +47,8 @@ class TestChronosSubmissionDetail:
             'data': {
                 'attributes': attrs,
                 'type': 'chronos-submissions',
-                'id': submission.publication_id
-            }
+                'id': submission.publication_id,
+            },
         }
 
     @mock.patch('api.chronos.serializers.ChronosClient.sync_manuscript')

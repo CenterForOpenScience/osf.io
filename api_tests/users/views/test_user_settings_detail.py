@@ -65,8 +65,8 @@ class TestUserSettingsUpdateTwoFactor:
             'data': {
                 'type': 'user_settings',
                 'id': user_one._id,
-                'attributes': {}
-            }
+                'attributes': {},
+            },
         }
 
     def test_user_settings_type(self, app, user_one, url, payload):
@@ -179,9 +179,9 @@ class TestUserSettingsUpdateMailingList:
                 'type': 'user_settings',
                 'attributes': {
                     'subscribe_osf_help_email': False,
-                    'subscribe_osf_general_email': True
-                }
-            }
+                    'subscribe_osf_general_email': True,
+                },
+            },
         }
 
     @pytest.fixture()
@@ -193,9 +193,9 @@ class TestUserSettingsUpdateMailingList:
                 'attributes': {
                     'subscribe_osf_help_email': False,
                     'subscribe_osf_general_email': '22',
-                }
+                },
 
-            }
+            },
         }
 
     @mock.patch('api.users.serializers.update_mailchimp_subscription')
@@ -234,9 +234,9 @@ class TestUpdateRequestedDeactivation:
                 'id': user_one._id,
                 'type': 'user_settings',
                 'attributes': {
-                    'deactivation_requested': True
-                }
-            }
+                    'deactivation_requested': True,
+                },
+            },
         }
 
     @mock.patch('framework.auth.views.mails.send_mail')

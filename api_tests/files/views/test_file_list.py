@@ -24,20 +24,23 @@ class TestNodeFileList:
     @pytest.fixture()
     def file(self, user, node):
         return api_utils.create_test_file(
-            node, user, filename='file_one')
+            node, user, filename='file_one',
+        )
 
     @pytest.fixture()
     def deleted_file(self, user, node):
         deleted_file = api_utils.create_test_file(
-            node, user, filename='file_two')
+            node, user, filename='file_two',
+        )
         deleted_file.delete(user=user, save=True)
         return deleted_file
 
     def test_does_not_return_trashed_files(
-            self, app, user, node, file, deleted_file):
+            self, app, user, node, file, deleted_file,
+    ):
         res = app.get(
             '/{}nodes/{}/files/osfstorage/'.format(API_BASE, node._id),
-            auth=user.auth
+            auth=user.auth,
         )
         data = res.json.get('data')
         assert len(data) == 1
@@ -53,30 +56,34 @@ class TestFileFiltering:
     @pytest.fixture()
     def file_one(self, user, node):
         return api_utils.create_test_file(
-            node, user, filename='file_one')
+            node, user, filename='file_one',
+        )
 
     @pytest.fixture()
     def file_two(self, user, node):
         return api_utils.create_test_file(
-            node, user, filename='file_two')
+            node, user, filename='file_two',
+        )
 
     @pytest.fixture()
     def file_three(self, user, node):
         return api_utils.create_test_file(
-            node, user, filename='file_three')
+            node, user, filename='file_three',
+        )
 
     @pytest.fixture()
     def file_four(self, user, node):
         return api_utils.create_test_file(
-            node, user, filename='file_four')
+            node, user, filename='file_four',
+        )
 
     def test_get_all_files(
             self, app, user, node, file_one, file_two,
-            file_three, file_four
+            file_three, file_four,
     ):
         res = app.get(
             '/{}nodes/{}/files/osfstorage/'.format(API_BASE, node._id),
-            auth=user.auth
+            auth=user.auth,
         )
         data = res.json.get('data')
         assert len(data) == 4
@@ -84,7 +91,7 @@ class TestFileFiltering:
     def test_filter_on_single_tag(
             self, app, user, node,
             file_one, file_two,
-            file_three, file_four
+            file_three, file_four,
     ):
         file_one.add_tag('new', Auth(user))
         file_two.add_tag('new', Auth(user))
@@ -93,9 +100,9 @@ class TestFileFiltering:
         # test_filter_on_tag
         res = app.get(
             '/{}nodes/{}/files/osfstorage/?filter[tags]=new'.format(
-                API_BASE, node._id
+                API_BASE, node._id,
             ),
-            auth=user.auth
+            auth=user.auth,
         )
         data = res.json.get('data')
         assert len(data) == 2
@@ -106,18 +113,18 @@ class TestFileFiltering:
         # test_filtering_tags_exact
         res = app.get(
             '/{}nodes/{}/files/osfstorage/?filter[tags]=news'.format(
-                API_BASE, node._id
+                API_BASE, node._id,
             ),
-            auth=user.auth
+            auth=user.auth,
         )
         assert len(res.json.get('data')) == 1
 
         # test_filtering_tags_capitalized_query
         res = app.get(
             '/{}nodes/{}/files/osfstorage/?filter[tags]=NEWS'.format(
-                API_BASE, node._id
+                API_BASE, node._id,
             ),
-            auth=user.auth
+            auth=user.auth,
         )
         assert len(res.json.get('data')) == 1
 
@@ -125,32 +132,36 @@ class TestFileFiltering:
         file_four.add_tag('CAT', Auth(user))
         res = app.get(
             '/{}nodes/{}/files/osfstorage/?filter[tags]=cat'.format(
-                API_BASE, node._id
+                API_BASE, node._id,
             ),
-            auth=user.auth
+            auth=user.auth,
         )
         assert len(res.json.get('data')) == 1
 
     def test_filtering_on_multiple_tags(
-            self, app, user, node, file_one
+            self, app, user, node, file_one,
     ):
         # test_filtering_on_multiple_tags_one_match
         file_one.add_tag('cat', Auth(user))
 
         res = app.get(
             '/{}nodes/{}/files/osfstorage/?filter[tags]=cat&filter[tags]=sand'.format(
-                API_BASE, node._id), auth=user.auth)
+                API_BASE, node._id,
+            ), auth=user.auth,
+        )
         assert len(res.json.get('data')) == 0
 
         # test_filtering_on_multiple_tags_both_match
         file_one.add_tag('sand', Auth(user))
         res = app.get(
             '/{}nodes/{}/files/osfstorage/?filter[tags]=cat&filter[tags]=sand'.format(
-                API_BASE, node._id), auth=user.auth)
+                API_BASE, node._id,
+            ), auth=user.auth,
+        )
         assert len(res.json.get('data')) == 1
 
     def test_filtering_by_tags_returns_distinct(
-            self, app, user, node, file_one
+            self, app, user, node, file_one,
     ):
         # regression test for returning multiple of the same file
         file_one.add_tag('cat', Auth(user))
@@ -159,8 +170,8 @@ class TestFileFiltering:
         file_one.add_tag('CAT', Auth(user))
         res = app.get(
             '/{}nodes/{}/files/osfstorage/?filter[tags]=cat'.format(
-                API_BASE, node._id
+                API_BASE, node._id,
             ),
-            auth=user.auth
+            auth=user.auth,
         )
         assert len(res.json.get('data')) == 1

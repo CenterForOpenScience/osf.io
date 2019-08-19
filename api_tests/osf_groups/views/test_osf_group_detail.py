@@ -14,10 +14,12 @@ from osf.features import OSF_GROUPS
 
 def build_member_relationship_payload(user_ids):
     return {
-        'data': [{
-            'type': 'users',
-            'id': user_id
-        } for user_id in user_ids]
+        'data': [
+            {
+                'type': 'users',
+                'id': user_id,
+            } for user_id in user_ids
+        ],
     }
 
 @pytest.fixture()
@@ -65,9 +67,9 @@ def name_payload(osf_group, new_name):
             'id': osf_group._id,
             'type': 'groups',
             'attributes': {
-                'name': new_name
-            }
-        }
+                'name': new_name,
+            },
+        },
     }
 
 

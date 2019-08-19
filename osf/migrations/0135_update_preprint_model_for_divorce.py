@@ -45,7 +45,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('visible', models.BooleanField(default=False)),
                 ('preprint', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.Preprint')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL))
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
         ),
         migrations.AlterModelOptions(
@@ -100,7 +100,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='preprint',
             name='article_doi',
-            field=models.CharField(blank=True, max_length=128, null=True, validators=[osf.models.validators.validate_doi])
+            field=models.CharField(blank=True, max_length=128, null=True, validators=[osf.models.validators.validate_doi]),
         ),
         migrations.AddField(
             model_name='preprint',

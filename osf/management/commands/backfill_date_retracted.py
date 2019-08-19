@@ -43,8 +43,8 @@ def set_date_retracted(*args):
         date_retracted = retraction_logs[0].date
         logger.info(
             'Setting date_retracted for retraction {} to be {}, from retraction_approved node log {}.'.format(
-                registration.retraction._id, date_retracted, retraction_logs[0]._id
-            )
+                registration.retraction._id, date_retracted, retraction_logs[0]._id,
+            ),
         )
         registration.retraction.date_retracted = date_retracted
         registration.retraction.save()
@@ -74,7 +74,7 @@ class Command(BaseCommand):
             '--reverse',
             action='store_true',
             dest='reverse',
-            help='Unsets date_retraction'
+            help='Unsets date_retraction',
         )
 
     def handle(self, *args, **options):

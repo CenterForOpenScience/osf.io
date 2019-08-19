@@ -24,7 +24,7 @@ from osf.models import (
     OSFUser,
     Preprint,
     Registration,
-    QuickFilesNode
+    QuickFilesNode,
 )
 from osf.utils.workflows import DefaultStates
 from scripts.utils import Progress
@@ -40,7 +40,7 @@ PREPRINT_EXPORT_FIELDS = [
     'is_published',
     'created',
     'modified',
-    'date_published'
+    'date_published',
 ]
 
 NODE_EXPORT_FIELDS = [
@@ -51,12 +51,12 @@ NODE_EXPORT_FIELDS = [
     'description',
     'forked_date',
     'created',
-    'modified'
+    'modified',
 ]
 
 REGISTRATION_EXPORT_FIELDS = NODE_EXPORT_FIELDS + [
     'registered_data',
-    'registered_meta'
+    'registered_meta',
 ]
 
 logging.getLogger('urllib3').setLevel(logging.WARNING)
@@ -94,8 +94,8 @@ def export_files(node, user, current_dir):
             provider='osfstorage',
             zip='',
             cookie=user.get_or_create_cookie(),
-            base_url=node.osfstorage_region.waterbutler_url
-        )
+            base_url=node.osfstorage_region.waterbutler_url,
+        ),
     )
     if response.status_code == 200:
         with open(os.path.join(files_dir, 'osfstorage-archive.zip'), 'wb') as f:
@@ -103,7 +103,7 @@ def export_files(node, user, current_dir):
     else:
         ERRORS.append(
             'Error exporting files for node {}. Waterbutler responded with a {} status code. Response: {}'
-            .format(node._id, response.status_code, response.json())
+            .format(node._id, response.status_code, response.json()),
         )
 
 def export_wikis(node, current_dir):
@@ -180,7 +180,7 @@ def get_preprints_to_export(user):
     return Preprint.objects.filter(
         Q(preprintcontributor__user_id=user.id) &
         Q(deleted__isnull=True) &
-        ~Q(machine_state=DefaultStates.INITIAL.value)
+        ~Q(machine_state=DefaultStates.INITIAL.value),
     )
 
 
@@ -244,14 +244,16 @@ def export_account(user_id, path, only_private=False, only_admin=False, export_f
 
     preprints_to_export = get_preprints_to_export(user)
 
-    projects_to_export = (user.nodes
-        .filter(is_deleted=False, type='osf.node')
-        .get_roots()
+    projects_to_export = (
+        user.nodes
+            .filter(is_deleted=False, type='osf.node')
+            .get_roots()
     )
 
-    registrations_to_export = (user.nodes
-        .filter(is_deleted=False, type='osf.registration', retraction__isnull=True)
-        .get_roots()
+    registrations_to_export = (
+        user.nodes
+            .filter(is_deleted=False, type='osf.registration', retraction__isnull=True)
+            .get_roots()
     )
 
     quickfiles_to_export = (
@@ -288,13 +290,13 @@ class Command(BaseCommand):
         parser.add_argument(
             'user',
             type=str,
-            help='GUID of the user account to export.'
+            help='GUID of the user account to export.',
         )
         parser.add_argument(
             '--path',
             type=str,
             required=True,
-            help='Path where to save the output file.'
+            help='Path where to save the output file.',
         )
 
     def handle(self, *args, **options):

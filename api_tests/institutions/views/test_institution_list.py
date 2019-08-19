@@ -21,7 +21,7 @@ class TestInstitutionList:
 
     def test_return_all_institutions(
             self, app, institution_one,
-            institution_two, url_institution
+            institution_two, url_institution,
     ):
         res_institutions = app.get(url_institution)
         data_institutions = res_institutions.json['data']
@@ -36,7 +36,8 @@ class TestInstitutionList:
         assert institution_two._id in ids
 
     def test_does_not_return_deleted_institution(
-            self, app, institution_one, institution_two, url_institution):
+            self, app, institution_one, institution_two, url_institution,
+    ):
         institution_one.is_deleted = True
         institution_one.save()
 

@@ -26,7 +26,8 @@ class TestDismissedAlertList:
             DismissedAlertFactory(
                 user=user_one,
                 location='solar/eclipse{}/'.format(i),
-                _id='solarEclipse{}'.format(i))
+                _id='solarEclipse{}'.format(i),
+            )
 
     def test_dismissed_alerts_list(self, app, user_one, user_two):
 
@@ -37,9 +38,9 @@ class TestDismissedAlertList:
                 'type': 'alerts',
                 'id': alert_id,
                 'attributes': {
-                    'location': alert_location
-                }
-            }
+                    'location': alert_location,
+                },
+            },
         }
 
         # test_user_dismiss_alert

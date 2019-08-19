@@ -37,7 +37,8 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
     @pytest.fixture()
     def withdrawn_registration_with_child(self, user, registration_with_child):
         withdrawn_registration = WithdrawnRegistrationFactory(
-            registration=registration_with_child, user=registration_with_child.creator)
+            registration=registration_with_child, user=registration_with_child.creator,
+        )
         withdrawn_registration.justification = 'We made a major error.'
         withdrawn_registration.save()
         return withdrawn_registration
@@ -45,7 +46,8 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
     @pytest.fixture()
     def withdrawn_registration(self, registration):
         withdrawn_registration = WithdrawnRegistrationFactory(
-            registration=registration, user=registration.creator)
+            registration=registration, user=registration.creator,
+        )
         withdrawn_registration.justification = 'We made a major error.'
         withdrawn_registration.save()
         return withdrawn_registration
@@ -57,34 +59,42 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
     @pytest.fixture()
     def pointer_public(self, user, project_public, project_pointer_public):
         return project_public.add_pointer(
-            project_pointer_public, auth=Auth(user), save=True)
+            project_pointer_public, auth=Auth(user), save=True,
+        )
 
     @pytest.fixture()
     def url_withdrawn(self, registration):
         return '/{}registrations/{}/?version=2.2'.format(
-            API_BASE, registration._id)
+            API_BASE, registration._id,
+        )
 
     def test_can_access_withdrawn_contributors(
-            self, app, user, registration, withdrawn_registration):
+            self, app, user, registration, withdrawn_registration,
+    ):
         url = '/{}registrations/{}/contributors/'.format(
-            API_BASE, registration._id)
+            API_BASE, registration._id,
+        )
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
 
     def test_can_access_withdrawn_contributor_detail(
-            self, app, user, registration):
+            self, app, user, registration,
+    ):
         url = '/{}registrations/{}/contributors/{}/'.format(
-            API_BASE, registration._id, user._id)
+            API_BASE, registration._id, user._id,
+        )
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
 
     def test_cannot_errors(
             self, app, user, project_public, registration,
-            withdrawn_registration, pointer_public):
+            withdrawn_registration, pointer_public,
+    ):
 
         #   test_cannot_access_withdrawn_children
         url = '/{}registrations/{}/children/'.format(
-            API_BASE, registration._id)
+            API_BASE, registration._id,
+        )
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
 
@@ -106,43 +116,50 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
 
     #   test_cannot_access_withdrawn_node_links_detail
         url = '/{}registrations/{}/node_links/{}/'.format(
-            API_BASE, registration._id, pointer_public._id)
+            API_BASE, registration._id, pointer_public._id,
+        )
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
 
     #   test_cannot_access_withdrawn_node_links_list
         url = '/{}registrations/{}/node_links/'.format(
-            API_BASE, registration._id)
+            API_BASE, registration._id,
+        )
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
 
     #   test_cannot_access_withdrawn_registrations_list
         registration.save()
         url = '/{}registrations/{}/registrations/'.format(
-            API_BASE, registration._id)
+            API_BASE, registration._id,
+        )
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
 
     def test_cannot_access_withdrawn_comments(
             self, app, user, project_public, pointer_public,
-            registration, withdrawn_registration):
+            registration, withdrawn_registration,
+    ):
         project_public = ProjectFactory(is_public=True, creator=user)
         CommentFactory(node=project_public, user=user)
         url = '/{}registrations/{}/comments/'.format(
-            API_BASE, registration._id)
+            API_BASE, registration._id,
+        )
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
 
     def test_cannot_access_withdrawn_node_logs(
             self, app, user, project_public, pointer_public,
-            registration, withdrawn_registration):
+            registration, withdrawn_registration,
+    ):
         ProjectFactory(is_public=True, creator=user)
         url = '/{}registrations/{}/logs/'.format(API_BASE, registration._id)
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
 
     def test_withdrawn_registrations_display_limited_attributes_fields(
-            self, app, user, registration, withdrawn_registration, url_withdrawn):
+            self, app, user, registration, withdrawn_registration, url_withdrawn,
+    ):
         registration = registration
         res = app.get(url_withdrawn, auth=user.auth)
         assert res.status_code == 200
@@ -153,16 +170,20 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
             'description': registration.description,
             'date_created': registration.created.isoformat().replace(
                 '+00:00',
-                'Z'),
+                'Z',
+            ),
             'date_registered': registration.registered_date.isoformat().replace(
                 '+00:00',
-                'Z'),
+                'Z',
+            ),
             'date_modified': registration.last_logged.isoformat().replace(
                 '+00:00',
-                'Z'),
+                'Z',
+            ),
             'date_withdrawn': registration.retraction.date_retracted.isoformat().replace(
                 '+00:00',
-                'Z'),
+                'Z',
+            ),
             'withdrawal_justification': registration.retraction.justification,
             'public': None,
             'registration': True,
@@ -176,18 +197,22 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
             'embargo_end_date': None,
             'registered_meta': None,
             'current_user_permissions': None,
-            'registration_supplement': registration.registered_schema.first().name}
+            'registration_supplement': registration.registered_schema.first().name,
+        }
 
         for attribute in expected_attributes:
             assert expected_attributes[attribute] == attributes[attribute]
 
         contributors = urlparse(
-            res.json['data']['relationships']['contributors']['links']['related']['href']).path
+            res.json['data']['relationships']['contributors']['links']['related']['href'],
+        ).path
         assert contributors == '/{}registrations/{}/contributors/'.format(
-            API_BASE, registration._id)
+            API_BASE, registration._id,
+        )
 
     def test_withdrawn_registrations_display_limited_relationship_fields(
-            self, app, user, registration, withdrawn_registration):
+            self, app, user, registration, withdrawn_registration,
+    ):
 
         url_withdrawn = '/{}registrations/{}/?version=2.14'.format(API_BASE, registration._id)
         res = app.get(url_withdrawn, auth=user.auth)
@@ -208,24 +233,29 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         assert 'identifiers' in res.json['data']['relationships']
 
     def test_field_specific_related_counts_ignored_if_hidden_field_on_withdrawn_registration(
-            self, app, user, registration, withdrawn_registration):
+            self, app, user, registration, withdrawn_registration,
+    ):
         url = '/{}registrations/{}/?related_counts=children'.format(
-            API_BASE, registration._id)
+            API_BASE, registration._id,
+        )
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert 'children' not in res.json['data']['relationships']
         assert 'contributors' in res.json['data']['relationships']
 
     def test_field_specific_related_counts_retrieved_if_visible_field_on_withdrawn_registration(
-            self, app, user, registration, withdrawn_registration):
+            self, app, user, registration, withdrawn_registration,
+    ):
         url = '/{}registrations/{}/?related_counts=contributors'.format(
-            API_BASE, registration._id)
+            API_BASE, registration._id,
+        )
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['relationships']['contributors']['links']['related']['meta']['count'] == 1
 
     def test_child_inherits_withdrawl_justication_and_date_withdrawn(
-            self, app, user, withdrawn_registration_with_child, registration_with_child):
+            self, app, user, withdrawn_registration_with_child, registration_with_child,
+    ):
 
         reg_child = registration_with_child.node_relations.first().child
         url = '/{}registrations/{}/?version=2.2'.format(API_BASE, reg_child._id)

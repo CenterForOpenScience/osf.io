@@ -24,14 +24,14 @@ class Command(BaseCommand):
             type=str,
             nargs='?',
             default=None,
-            help='Guid for user to list as creator for all fake actions (default to arbitrary user)'
+            help='Guid for user to list as creator for all fake actions (default to arbitrary user)',
         )
         parser.add_argument(
             '--num-actions',
             action='store',
             type=int,
             default=10,
-            help='Number of actions to create for each preprint which does not have one'
+            help='Number of actions to create for each preprint which does not have one',
         )
 
     def handle(self, *args, **options):

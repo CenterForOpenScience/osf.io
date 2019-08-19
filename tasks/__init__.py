@@ -251,21 +251,21 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, all=Fa
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
         ctx.run(
             pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
-            echo=True
+            echo=True,
         )
     else:
         if dev:  # then dev requirements
             req_file = os.path.join(HERE, 'requirements', 'dev.txt')
             ctx.run(
                 pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
-                echo=True
+                echo=True,
             )
 
         if base:  # then base requirements
             req_file = os.path.join(HERE, 'requirements.txt')
             ctx.run(
                 pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
-                echo=True
+                echo=True,
             )
     # fix URITemplate name conflict h/t @github
     ctx.run('pip uninstall uritemplate.py --yes || true')
@@ -548,7 +548,7 @@ def addon_requirements(ctx):
             print('Installing requirements for {0}'.format(directory))
             ctx.run(
                 pip_install(requirements_file, constraints_file=CONSTRAINTS_PATH),
-                echo=True
+                echo=True,
             )
 
     print('Finished installing addon requirements')
@@ -684,14 +684,15 @@ def latest_tag_info():
         # subprocess.check_output(["git", "update-index", "--refresh"])
 
         # get info about the latest tag in git
-        describe_out = subprocess.check_output([
-            'git',
-            'describe',
-            '--dirty',
-            '--tags',
-            '--long',
-            '--abbrev=40'
-        ], stderr=subprocess.STDOUT
+        describe_out = subprocess.check_output(
+            [
+                'git',
+                'describe',
+                '--dirty',
+                '--tags',
+                '--long',
+                '--abbrev=40',
+            ], stderr=subprocess.STDOUT,
         ).decode().split('-')
     except subprocess.CalledProcessError as err:
         raise err
@@ -726,7 +727,7 @@ def generate_key(ctx, domain, bits=2048):
 @task
 def generate_key_nopass(ctx, domain):
     cmd = 'openssl rsa -in {domain}.key -out {domain}.key.nopass'.format(
-        domain=domain
+        domain=domain,
     )
     ctx.run(cmd)
 
@@ -734,7 +735,7 @@ def generate_key_nopass(ctx, domain):
 @task
 def generate_csr(ctx, domain):
     cmd = 'openssl req -new -key {domain}.key.nopass -out {domain}.csr'.format(
-        domain=domain
+        domain=domain,
     )
     ctx.run(cmd)
 

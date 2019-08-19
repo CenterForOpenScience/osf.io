@@ -12,7 +12,8 @@ class NodeRelation(ObjectIDMixin, BaseModel):
         return '{}, parent={}, child={}'.format(
             'Node Link' if self.is_node_link else 'Component',
             self.parent.__unicode__(),
-            self.child.__unicode__())
+            self.child.__unicode__(),
+        )
 
     @property
     def node(self):

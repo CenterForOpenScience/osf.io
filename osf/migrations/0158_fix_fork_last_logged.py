@@ -43,6 +43,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunPython(
-            transfer_forked_date, untransfer_forked_date
+            transfer_forked_date, untransfer_forked_date,
         ),
     ]

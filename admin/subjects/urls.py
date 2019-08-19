@@ -8,6 +8,8 @@ app_name = 'admin'
 
 urlpatterns = [
     url(r'^$', views.SubjectListView.as_view(), name='list'),
-    url(r'^(?P<pk>[0-9]+)/$', views.SubjectUpdateView.as_view(),
-        name='update'),
+    url(
+        r'^(?P<pk>[0-9]+)/$', views.SubjectUpdateView.as_view(),
+        name='update',
+    ),
 ]

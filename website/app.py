@@ -68,8 +68,12 @@ def attach_handlers(app, settings):
     add_handlers(app, {'before_request': framework.sessions.prepare_private_key})
     # framework.session's before_request handler must go after
     # prepare_private_key, else view-only links won't work
-    add_handlers(app, {'before_request': framework.sessions.before_request,
-                       'after_request': framework.sessions.after_request})
+    add_handlers(
+        app, {
+            'before_request': framework.sessions.before_request,
+            'after_request': framework.sessions.after_request,
+        },
+    )
 
     return app
 
@@ -80,8 +84,10 @@ def setup_django():
     django.setup()
 
 
-def init_app(settings_module='website.settings', set_backends=True, routes=True,
-             attach_request_handlers=True):
+def init_app(
+    settings_module='website.settings', set_backends=True, routes=True,
+    attach_request_handlers=True,
+):
     """Initializes the OSF. A sort of pseudo-app factory that allows you to
     bind settings, set up routing, and set storage backends, but only acts on
     a single app instance (rather than creating multiple instances).
@@ -96,7 +102,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
         return app
 
     logger.info('Initializing the application from process {}, thread {}.'.format(
-        os.getpid(), thread.get_ident()
+        os.getpid(), thread.get_ident(),
     ))
     setup_django()
 

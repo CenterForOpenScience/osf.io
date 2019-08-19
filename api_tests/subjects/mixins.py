@@ -47,7 +47,8 @@ class SubjectsFilterMixin(object):
 
     def test_subject_filter_using_id_v_2_2(
             self, app, user, subject_one, subject_two, resource, resource_two,
-            has_subject):
+            has_subject,
+    ):
 
         resource.subjects.add(subject_one)
         resource_two.subjects.add(subject_two)
@@ -55,7 +56,7 @@ class SubjectsFilterMixin(object):
         expected = set([resource._id])
         res = app.get(
             '{}{}&version=2.2'.format(has_subject, subject_one._id),
-            auth=user.auth
+            auth=user.auth,
         )
         actual = set([obj['id'] for obj in res.json['data']])
         assert expected == actual
@@ -63,26 +64,28 @@ class SubjectsFilterMixin(object):
         expected = set([resource_two._id])
         res = app.get(
             '{}{}&version=2.2'.format(has_subject, subject_two._id),
-            auth=user.auth
+            auth=user.auth,
         )
         actual = set([obj['id'] for obj in res.json['data']])
         assert expected == actual
 
     def test_subject_filter_using_text_v_2_2(
             self, app, user, subject_two, resource, resource_two,
-            has_subject):
+            has_subject,
+    ):
         resource_two.subjects.add(subject_two)
         expected = set([resource_two._id])
         res = app.get(
             '{}{}&version=2.2'.format(has_subject, subject_two.text),
-            auth=user.auth
+            auth=user.auth,
         )
         actual = set([obj['id'] for obj in res.json['data']])
         assert expected == actual
 
     def test_subject_filter_using_id_v_2_16(
             self, app, user, subject_one, subject_two, resource, resource_two,
-            has_subject):
+            has_subject,
+    ):
 
         resource.subjects.add(subject_one)
         resource_two.subjects.add(subject_two)
@@ -90,7 +93,7 @@ class SubjectsFilterMixin(object):
         expected = set([resource._id])
         res = app.get(
             '{}{}&version={}'.format(has_subject, subject_one._id, subjects_as_relationships_version),
-            auth=user.auth
+            auth=user.auth,
         )
         actual = set([obj['id'] for obj in res.json['data']])
         assert expected == actual
@@ -98,19 +101,20 @@ class SubjectsFilterMixin(object):
         expected = set([resource_two._id])
         res = app.get(
             '{}{}&version={}'.format(has_subject, subject_two._id, subjects_as_relationships_version),
-            auth=user.auth
+            auth=user.auth,
         )
         actual = set([obj['id'] for obj in res.json['data']])
         assert expected == actual
 
     def test_subject_filter_using_text_v_2_16(
             self, app, user, subject_two, resource, resource_two,
-            has_subject):
+            has_subject,
+    ):
         resource_two.subjects.add(subject_two)
         expected = set([resource_two._id])
         res = app.get(
             '{}{}&version={}'.format(has_subject, subject_two.text, subjects_as_relationships_version),
-            auth=user.auth
+            auth=user.auth,
         )
         actual = set([obj['id'] for obj in res.json['data']])
         assert expected == actual
@@ -118,7 +122,8 @@ class SubjectsFilterMixin(object):
     def test_unknown_subject_filter(self, app, user, has_subject):
         res = app.get(
             '{}notActuallyASubjectIdOrTestMostLikely'.format(has_subject),
-            auth=user.auth)
+            auth=user.auth,
+        )
         assert len(res.json['data']) == 0
 
 
@@ -159,8 +164,10 @@ class SubjectsListMixin(object):
     def subject_two(self):
         return SubjectFactory()
 
-    def test_get_resource_subjects_permissions(self, app, user_write_contrib,
-            user_read_contrib, user_non_contrib, resource, url):
+    def test_get_resource_subjects_permissions(
+        self, app, user_write_contrib,
+        user_read_contrib, user_non_contrib, resource, url,
+    ):
         # test_unauthorized
         res = app.get(url, expect_errors=True)
         assert res.status_code == 401
@@ -177,8 +184,10 @@ class SubjectsListMixin(object):
         res = app. get(url, auth=user_read_contrib.auth, expect_errors=True)
         assert res.status_code == 200
 
-    def test_get_resource_subjects(self, app, url, resource, user_admin_contrib, subject,
-            subject_two):
+    def test_get_resource_subjects(
+        self, app, url, resource, user_admin_contrib, subject,
+        subject_two,
+    ):
         resource.subjects.add(subject)
         resource.subjects.add(subject_two)
 
@@ -236,7 +245,7 @@ class UpdateSubjectsMixin(object):
                 'data': {
                     'id': resource._id,
                     'type': resource_type_plural,
-                }
+                },
             }
 
             if attributes:
@@ -252,8 +261,10 @@ class UpdateSubjectsMixin(object):
     def subject(self):
         return SubjectFactory()
 
-    def test_set_subjects_as_attributes_perms(self, app, user_admin_contrib, resource, subject, resource_type_plural,
-            url, make_resource_payload, user_write_contrib, user_read_contrib, user_non_contrib, write_can_edit):
+    def test_set_subjects_as_attributes_perms(
+        self, app, user_admin_contrib, resource, subject, resource_type_plural,
+        url, make_resource_payload, user_write_contrib, user_read_contrib, user_non_contrib, write_can_edit,
+    ):
 
         update_subjects_payload = make_resource_payload(resource, resource_type_plural, attributes={'subjects': [[subject._id]]})
         assert not resource.subjects.filter(_id=subject._id).exists()
@@ -293,17 +304,21 @@ class UpdateSubjectsMixin(object):
             recent_log = resource.logs.first()
             assert recent_log.action == NodeLog.SUBJECTS_UPDATED
 
-    def test_set_subjects_as_relationships_perms(self, app, user_admin_contrib, resource, subject, resource_type_plural,
-            url, make_resource_payload, user_write_contrib, user_read_contrib, user_non_contrib, write_can_edit):
+    def test_set_subjects_as_relationships_perms(
+        self, app, user_admin_contrib, resource, subject, resource_type_plural,
+        url, make_resource_payload, user_write_contrib, user_read_contrib, user_non_contrib, write_can_edit,
+    ):
 
         url = '{}?version={}'.format(url, subjects_as_relationships_version)
-        update_subjects_payload = make_resource_payload(resource, resource_type_plural, relationships={
-            'subjects': {
-                'data': [
-                    {'id': subject._id, 'type': 'subjects'}
-                ]
-            }
-        })
+        update_subjects_payload = make_resource_payload(
+            resource, resource_type_plural, relationships={
+                'subjects': {
+                    'data': [
+                        {'id': subject._id, 'type': 'subjects'},
+                    ],
+                },
+            },
+        )
         assert not resource.subjects.filter(_id=subject._id).exists()
 
         # test_non_authenticated_cannot_set_subjects
@@ -341,8 +356,10 @@ class UpdateSubjectsMixin(object):
             recent_log = resource.logs.first()
             assert recent_log.action == NodeLog.SUBJECTS_UPDATED
 
-    def test_set_subjects_as_attributes_validation(self, app, user_admin_contrib, resource, subject, resource_type_plural,
-            url, make_resource_payload):
+    def test_set_subjects_as_attributes_validation(
+        self, app, user_admin_contrib, resource, subject, resource_type_plural,
+        url, make_resource_payload,
+    ):
 
         grandparent = SubjectFactory()
         parent = SubjectFactory(parent=grandparent)
@@ -388,8 +405,10 @@ class UpdateSubjectsMixin(object):
         assert grandparent in subjects
         assert subject in subjects
 
-    def test_set_subjects_as_relationships_validation(self, app, user_admin_contrib, resource, subject, resource_type_plural,
-            url, make_resource_payload):
+    def test_set_subjects_as_relationships_validation(
+        self, app, user_admin_contrib, resource, subject, resource_type_plural,
+        url, make_resource_payload,
+    ):
 
         grandparent = SubjectFactory()
         parent = SubjectFactory(parent=grandparent)
@@ -397,13 +416,15 @@ class UpdateSubjectsMixin(object):
         subject.save()
 
         url = '{}?version={}'.format(url, subjects_as_relationships_version)
-        update_subjects_payload = make_resource_payload(resource, resource_type_plural, relationships={
-            'subjects': {
-                'data': [
-                    {'id': 'bad_id', 'type': 'subjects'}
-                ]
-            }
-        })
+        update_subjects_payload = make_resource_payload(
+            resource, resource_type_plural, relationships={
+                'subjects': {
+                    'data': [
+                        {'id': 'bad_id', 'type': 'subjects'},
+                    ],
+                },
+            },
+        )
 
         # test_invalid_subject
         res = app.patch_json_api(url, update_subjects_payload, auth=user_admin_contrib.auth, expect_errors=True)
@@ -416,8 +437,10 @@ class UpdateSubjectsMixin(object):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Subjects are improperly formatted. Expecting a list of subjects.'
 
-    def test_set_subjects_as_relationships_hierarchies(self, app, user_admin_contrib, resource, subject, resource_type_plural,
-            url, make_resource_payload):
+    def test_set_subjects_as_relationships_hierarchies(
+        self, app, user_admin_contrib, resource, subject, resource_type_plural,
+        url, make_resource_payload,
+    ):
 
         grandparent = SubjectFactory()
         parent = SubjectFactory(parent=grandparent)
@@ -426,13 +449,15 @@ class UpdateSubjectsMixin(object):
 
         # Sent in level three only
         url = '{}?version={}'.format(url, subjects_as_relationships_version)
-        update_subjects_payload = make_resource_payload(resource, resource_type_plural, relationships={
-            'subjects': {
-                'data': [
-                    {'id': subject._id, 'type': 'subjects'},
-                ]
-            }
-        })
+        update_subjects_payload = make_resource_payload(
+            resource, resource_type_plural, relationships={
+                'subjects': {
+                    'data': [
+                        {'id': subject._id, 'type': 'subjects'},
+                    ],
+                },
+            },
+        )
 
         res = app.patch_json_api(url, update_subjects_payload, auth=user_admin_contrib.auth, expect_errors=True)
         assert res.status_code == 200
@@ -443,13 +468,15 @@ class UpdateSubjectsMixin(object):
         assert subject in subjects
 
         # Sent in level two only
-        update_subjects_payload = make_resource_payload(resource, resource_type_plural, relationships={
-            'subjects': {
-                'data': [
-                    {'id': parent._id, 'type': 'subjects'},
-                ]
-            }
-        })
+        update_subjects_payload = make_resource_payload(
+            resource, resource_type_plural, relationships={
+                'subjects': {
+                    'data': [
+                        {'id': parent._id, 'type': 'subjects'},
+                    ],
+                },
+            },
+        )
 
         res = app.patch_json_api(url, update_subjects_payload, auth=user_admin_contrib.auth, expect_errors=True)
         assert res.status_code == 200
@@ -459,14 +486,16 @@ class UpdateSubjectsMixin(object):
         assert grandparent in subjects
 
         # Sent in two items in hierarchy
-        update_subjects_payload = make_resource_payload(resource, resource_type_plural, relationships={
-            'subjects': {
-                'data': [
-                    {'id': parent._id, 'type': 'subjects'},
-                    {'id': grandparent._id, 'type': 'subjects'}
-                ]
-            }
-        })
+        update_subjects_payload = make_resource_payload(
+            resource, resource_type_plural, relationships={
+                'subjects': {
+                    'data': [
+                        {'id': parent._id, 'type': 'subjects'},
+                        {'id': grandparent._id, 'type': 'subjects'},
+                    ],
+                },
+            },
+        )
 
         res = app.patch_json_api(url, update_subjects_payload, auth=user_admin_contrib.auth, expect_errors=True)
         assert res.status_code == 200
@@ -518,12 +547,14 @@ class SubjectsRelationshipMixin(object):
         return {
             'data': [{
                 'type': 'subjects',
-                'id': subject._id
-            }]
+                'id': subject._id,
+            }],
         }
 
-    def test_update_subjects_relationship_permissions(self, app, user_write_contrib,
-            user_read_contrib, user_non_contrib, resource, url, payload):
+    def test_update_subjects_relationship_permissions(
+        self, app, user_write_contrib,
+        user_read_contrib, user_non_contrib, resource, url, payload,
+    ):
         # test_unauthorized
         res = app.patch_json_api(url, payload, expect_errors=True)
         assert res.status_code == 401
@@ -553,8 +584,8 @@ class SubjectsRelationshipMixin(object):
         payload = {
             'data': [{
                 'id': 'bad_id',
-                'type': 'subjects'
-            }]
+                'type': 'subjects',
+            }],
         }
 
         res = app.patch_json_api(url, payload, auth=user_admin_contrib.auth, expect_errors=True)
@@ -565,7 +596,7 @@ class SubjectsRelationshipMixin(object):
         resource.subjects.add(subject)
 
         payload = {
-            'data': []
+            'data': [],
         }
 
         res = app.patch_json_api(url, payload, auth=user_admin_contrib.auth)
@@ -578,8 +609,8 @@ class SubjectsRelationshipMixin(object):
         payload = {
             'data': [{
                 'id': subject_two._id,
-                'type': 'subjects'
-            }]
+                'type': 'subjects',
+            }],
         }
         res = app.patch_json_api(url, payload, auth=user_admin_contrib.auth)
         assert res.status_code == 200

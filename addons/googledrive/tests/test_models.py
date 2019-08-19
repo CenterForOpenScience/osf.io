@@ -5,15 +5,17 @@ import pytest
 import unittest
 
 from framework.auth import Auth
-from addons.base.tests.models import (OAuthAddonNodeSettingsTestSuiteMixin,
-                                      OAuthAddonUserSettingTestSuiteMixin)
+from addons.base.tests.models import (
+    OAuthAddonNodeSettingsTestSuiteMixin,
+    OAuthAddonUserSettingTestSuiteMixin,
+)
 
 from addons.googledrive.models import NodeSettings, GoogleDriveProvider
 from addons.googledrive.client import GoogleAuthClient
 from addons.googledrive.tests.factories import (
     GoogleDriveAccountFactory,
     GoogleDriveNodeSettingsFactory,
-    GoogleDriveUserSettingsFactory
+    GoogleDriveUserSettingsFactory,
 )
 
 pytestmark = pytest.mark.django_db
@@ -53,7 +55,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
     def setUp(self):
         self.mock_refresh = mock.patch.object(
             GoogleDriveProvider,
-            'refresh_oauth_key'
+            'refresh_oauth_key',
         )
         self.mock_refresh.return_value = True
         self.mock_refresh.start()
@@ -83,7 +85,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
 
         assert_equal(
             self.node_settings.selected_folder_name,
-            'Full Google Drive'
+            'Full Google Drive',
         )
 
     def test_selected_folder_name_empty(self):
@@ -91,7 +93,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
 
         assert_equal(
             self.node_settings.selected_folder_name,
-            ''
+            '',
         )
 
     ## Overrides ##
@@ -100,7 +102,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         folder = {
             'id': 'fake-folder-id',
             'name': 'fake-folder-name',
-            'path': 'fake_path'
+            'path': 'fake_path',
         }
         self.node_settings.set_folder(folder, auth=Auth(self.user))
         self.node_settings.save()
@@ -118,6 +120,6 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
                 'id': self.node_settings.folder_id,
                 'name': self.node_settings.folder_name,
                 'path': self.node_settings.folder_path,
-            }
+            },
         }
         assert_equal(settings, expected)

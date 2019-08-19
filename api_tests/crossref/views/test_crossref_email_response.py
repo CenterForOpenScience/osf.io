@@ -27,7 +27,7 @@ class TestCrossRefEmailResponse:
             'sender': ['test-admin@crossref.org'],
             'Content-Type': [u'text/plain; charset="UTF-8"'],
             'Subject': [u'CrossRef submission ID: 1390671938'],
-            'token': 'secret'
+            'token': 'secret',
         }
 
         # temporarily override MAILGUN_API_KEY
@@ -38,7 +38,7 @@ class TestCrossRefEmailResponse:
                 key=settings.MAILGUN_API_KEY,
                 msg='{}{}'.format(
                     mailgun_payload['timestamp'],
-                    mailgun_payload['token']
+                    mailgun_payload['token'],
                 ),
                 digestmod=hashlib.sha256,
             ).hexdigest(),

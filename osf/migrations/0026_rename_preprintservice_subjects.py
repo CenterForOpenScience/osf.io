@@ -19,6 +19,6 @@ class Migration(migrations.Migration):
         migrations.RenameField(
             model_name='preprintservice',
             old_name='_subjects',
-            new_name='subjects'
+            new_name='subjects',
         ),
     ]

@@ -13,7 +13,7 @@ from django.utils import timezone
 
 from osf.models.admin_log_entry import (
     update_admin_log,
-    EMBARGO_UPDATED
+    EMBARGO_UPDATED,
 )
 
 from website import settings
@@ -21,7 +21,7 @@ from website import settings
 validate_slug = RegexValidator(
     _lazy_re_compile(r'^[a-z]+\Z'),
     _("Enter a valid 'slug' consisting only of lowercase letters."),
-    'invalid'
+    'invalid',
 )
 
 def reverse_qs(view, urlconf=None, args=None, kwargs=None, current_app=None, query_kwargs=None):
@@ -118,7 +118,7 @@ def get_toplevel_subjects():
 def get_submitted_preregistrations(order='-approval__initiation_date'):
     return DraftRegistration.objects.filter(
         registration_schema=get_prereg_schema(),
-        approval__isnull=False
+        approval__isnull=False,
     ).order_by(order).select_related('initiator', 'registration_schema', 'approval')
 
 def validate_embargo_date(registration, user, end_date):
@@ -139,9 +139,11 @@ def change_embargo_date(registration, user, end_date):
 
     validate_embargo_date(registration, user, end_date)
 
-    registration._initiate_embargo(user, end_date,
-                                         for_existing_registration=True,
-                                         notify_initiator_on_complete=False)
+    registration._initiate_embargo(
+        user, end_date,
+        for_existing_registration=True,
+        notify_initiator_on_complete=False,
+    )
 
     if registration.is_public:
         registration.is_public = False
@@ -152,7 +154,7 @@ def change_embargo_date(registration, user, end_date):
         object_id=registration.id,
         object_repr='Registration',
         message='User {} changed the embargo end date of {} to {}.'.format(
-            user.pk, registration.pk, end_date
+            user.pk, registration.pk, end_date,
         ),
-        action_flag=EMBARGO_UPDATED
+        action_flag=EMBARGO_UPDATED,
     )

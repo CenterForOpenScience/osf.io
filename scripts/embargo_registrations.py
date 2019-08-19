@@ -33,12 +33,12 @@ def main(dry_run=True):
                 parent_registration = Registration.objects.get(embargo=embargo)
             except Registration.DoesNotExist:
                 logger.error(
-                    'Embargo {} is not attached to a registration'.format(embargo._id)
+                    'Embargo {} is not attached to a registration'.format(embargo._id),
                 )
                 continue
             logger.warn(
                 'Embargo {0} approved. Activating embargo for registration {1}'
-                .format(embargo._id, parent_registration._id)
+                .format(embargo._id, parent_registration._id),
             )
             if not dry_run:
                 if parent_registration.is_deleted:
@@ -63,7 +63,8 @@ def main(dry_run=True):
                     except Exception as err:
                         logger.error(
                             'Unexpected error raised when activating embargo for '
-                            'registration {}. Continuing...'.format(parent_registration))
+                            'registration {}. Continuing...'.format(parent_registration),
+                        )
                         logger.exception(err)
 
     active_embargoes = Embargo.objects.filter(state=Embargo.APPROVED)
@@ -74,7 +75,7 @@ def main(dry_run=True):
             parent_registration = Registration.objects.get(embargo=embargo)
             logger.warn(
                 'Embargo {0} complete. Making registration {1} public'
-                .format(embargo._id, parent_registration._id)
+                .format(embargo._id, parent_registration._id),
             )
             if not dry_run:
                 if parent_registration.is_deleted:
@@ -104,7 +105,8 @@ def main(dry_run=True):
                     except Exception as err:
                         logger.error(
                             'Unexpected error raised when completing embargo for '
-                            'registration {}. Continuing...'.format(parent_registration))
+                            'registration {}. Continuing...'.format(parent_registration),
+                        )
                         logger.exception(err)
 
 

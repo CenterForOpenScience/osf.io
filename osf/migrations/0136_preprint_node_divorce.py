@@ -55,7 +55,7 @@ def reverse_func(apps, schema_editor):
             node_id = Guid.objects.get(content_type=ContentType.objects.get_for_model(AbstractNode).id, object_id=node.id)._id
             preprint_id = Guid.objects.get(content_type=ContentType.objects.get_for_model(Preprint).id, object_id=preprint.id)._id
             PageCounter.objects.filter(Q(_id__contains=preprint_id) & Q(_id__contains=preprint_file._id)).update(
-                _id=Func(F('_id'), Value(preprint_id), Value(node_id), function='replace')
+                _id=Func(F('_id'), Value(preprint_id), Value(node_id), function='replace'),
             )
 
         node.preprint_file = preprint_file
@@ -418,7 +418,7 @@ class Migration(migrations.Migration):
                 UPDATE osf_preprint
                 SET migrated = current_timestamp
                 WHERE osf_preprint.node_id IS NOT NULL
-                """
-            ], []
-        )
+                """,
+            ], [],
+        ),
     ]

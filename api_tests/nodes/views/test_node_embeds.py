@@ -5,7 +5,7 @@ from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf_tests.factories import (
     ProjectFactory,
-    AuthUserFactory
+    AuthUserFactory,
 )
 from osf.utils.permissions import WRITE
 from rest_framework import exceptions
@@ -43,28 +43,34 @@ class TestNodeEmbeds:
     @pytest.fixture()
     def root_node(
             self, auth, write_contrib_one,
-            write_contrib_two, make_public_node):
+            write_contrib_two, make_public_node,
+    ):
         root_node = make_public_node()
         root_node.add_contributor(
             write_contrib_one, WRITE,
-            auth=auth, save=True)
+            auth=auth, save=True,
+        )
         root_node.add_contributor(
             write_contrib_two, WRITE,
-            auth=auth, save=True)
+            auth=auth, save=True,
+        )
         return root_node
 
     @pytest.fixture()
     def child_one(
             self, auth, write_contrib_one,
             write_contrib_two, make_public_node,
-            root_node):
+            root_node,
+    ):
         child_one = make_public_node(parent=root_node)
         child_one.add_contributor(
             write_contrib_one, WRITE,
-            auth=auth, save=True)
+            auth=auth, save=True,
+        )
         child_one.add_contributor(
             write_contrib_two, WRITE,
-            auth=auth, save=True)
+            auth=auth, save=True,
+        )
         return child_one
 
     @pytest.fixture()
@@ -78,7 +84,8 @@ class TestNodeEmbeds:
     def test_node_embeds(
             self, app, user, write_contrib_one,
             write_contribs, subchild, root_node,
-            child_one, child_two):
+            child_one, child_two,
+    ):
 
         #   test_embed_children
         url = '/{}nodes/{}/?embed=children'.format(API_BASE, root_node._id)
@@ -114,8 +121,9 @@ class TestNodeEmbeds:
         all_contribs = write_contribs + [user]
         formatted_ids = [
             '{}-{}'.format(
-                child_one._id, contrib._id
-            )for contrib in all_contribs]
+                child_one._id, contrib._id,
+            )for contrib in all_contribs
+        ]
         embed_contrib_ids = [
             contrib['id']for contrib in embeds['contributors']['data']
         ]
@@ -152,7 +160,8 @@ class TestNodeEmbeds:
 
     #   test_embed_contributors_updated_pagination
         url = '/{}nodes/{}/?version=2.1&embed=contributors'.format(
-            API_BASE, root_node._id)
+            API_BASE, root_node._id,
+        )
         res = app.get(url, auth=write_contrib_one.auth)
         assert res.status_code == 200
         assert res.json['data']['embeds']['contributors']['meta']['total_bibliographic'] == 3

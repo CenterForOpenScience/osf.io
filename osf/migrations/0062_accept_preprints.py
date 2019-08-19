@@ -24,6 +24,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunPython(
-            accept_all_published_preprints
+            accept_all_published_preprints,
         ),
     ]

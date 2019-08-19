@@ -61,9 +61,9 @@ def file_factory(name=None, sha256=None):
         'size': random.randint(4, 4000),
         'extra': {
             'hashes': {
-                'sha256': sha256 or sha256_factory()
-            }
-        }
+                'sha256': sha256 or sha256_factory(),
+            },
+        },
     }
 
 def folder_factory(depth, num_files, num_folders, path_above):
@@ -75,8 +75,8 @@ def folder_factory(depth, num_files, num_folders, path_above):
             file_factory()
             for i in range(num_files)
         ] + [
-            folder_factory(depth - 1, num_files, num_folders, new_path)
-        ] if depth > 0 else []
+            folder_factory(depth - 1, num_files, num_folders, new_path),
+        ] if depth > 0 else [],
     }
 
 def file_tree_factory(depth, num_files, num_folders):
@@ -87,8 +87,8 @@ def file_tree_factory(depth, num_files, num_folders):
             file_factory()
             for i in range(num_files)
         ] + [
-            folder_factory(depth - 1, num_files, num_folders, '/')
-        ] if depth > 0 else []
+            folder_factory(depth - 1, num_files, num_folders, '/'),
+        ] if depth > 0 else [],
     }
 
 def select_files_from_tree(file_tree):
@@ -133,9 +133,9 @@ FILE_TREE = {
                     'name': 'coolphoto.png',
                     'kind': 'file',
                     'size': '256',
-                }
+                },
             ],
-        }
+        },
     ],
 }
 
@@ -152,7 +152,7 @@ WB_FILE_TREE = {
                     'name': 'Afile.file',
                     'kind': 'file',
                     'size': '128',
-                }
+                },
             },
             {
                 'attributes': {
@@ -166,13 +166,13 @@ WB_FILE_TREE = {
                                 'name': 'coolphoto.png',
                                 'kind': 'file',
                                 'size': '256',
-                            }
-                        }
+                            },
+                        },
                     ],
-                }
-            }
+                },
+            },
         ],
-    }
+    },
 }
 
 
@@ -229,7 +229,7 @@ def use_fake_addons(func):
             mock.patch('osf.models.mixins.AddonModelMixin.add_addon', mock.Mock(side_effect=_mock_get_or_add)),
             mock.patch('osf.models.mixins.AddonModelMixin.get_addon', mock.Mock(side_effect=_mock_get_addon)),
             mock.patch('osf.models.mixins.AddonModelMixin.delete_addon', mock.Mock(side_effect=_mock_delete_addon)),
-            mock.patch('osf.models.mixins.AddonModelMixin.get_or_add_addon', mock.Mock(side_effect=_mock_get_or_add))
+            mock.patch('osf.models.mixins.AddonModelMixin.get_or_add_addon', mock.Mock(side_effect=_mock_get_or_add)),
         ):
             ret = func(*args, **kwargs)
             return ret
@@ -262,19 +262,19 @@ def generate_schema_from_data(data):
                 'properties': [
                     from_property(pid, sp)
                     for pid, sp in prop['value'].items()
-                ]
+                ],
             }
         else:
             return {
                 'id': id,
-                'type': 'osf-upload' if prop.get('extra') else 'string'
+                'type': 'osf-upload' if prop.get('extra') else 'string',
             }
 
     def from_question(qid, question):
         if q.get('extra'):
             return {
                 'qid': qid,
-                'type': 'osf-upload'
+                'type': 'osf-upload',
             }
         elif isinstance(q.get('value'), dict):
             return {
@@ -283,31 +283,31 @@ def generate_schema_from_data(data):
                 'properties': [
                     from_property(id, value)
                     for id, value in question.get('value').items()
-                ]
+                ],
             }
         else:
             return {
                 'qid': qid,
-                'type': 'string'
+                'type': 'string',
             }
     _schema = {
         'name': 'Test',
         'version': 2,
         'config': {
-            'hasFiles': True
+            'hasFiles': True,
         },
         'pages': [{
             'id': 'page1',
             'questions': [
                 from_question(qid, q)
                 for qid, q in data.items()
-            ]
-        }]
+            ],
+        }],
     }
     schema = RegistrationSchema(
         name=_schema['name'],
         schema_version=_schema['version'],
-        schema=_schema
+        schema=_schema,
     )
     try:
         schema.save()
@@ -332,11 +332,11 @@ def generate_metadata(file_trees, selected_files, node_index):
                 'sha256': sha256,
                 'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
                     node_index[sha256],
-                    selected_file['path']
+                    selected_file['path'],
                 ),
                 'selectedFileName': selected_file['name'],
-                'nodeId': node_index[sha256]
-            }]
+                'nodeId': node_index[sha256],
+            }],
         }
         for sha256, selected_file in selected_files.items()
     }
@@ -350,23 +350,23 @@ def generate_metadata(file_trees, selected_files, node_index):
                         'sha256': sha256,
                         'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
                             node_index[sha256],
-                            selected_file['path']
+                            selected_file['path'],
                         ),
                         'selectedFileName': selected_file['name'],
-                        'nodeId': node_index[sha256]
-                    }]
+                        'nodeId': node_index[sha256],
+                    }],
                 },
                 name_factory(): {
-                    'value': fake.word()
-                }
-            }
+                    'value': fake.word(),
+                },
+            },
         }
         for sha256, selected_file in selected_files.items()
     }
     data.update(object_types)
     other_questions = {
         'q{}'.format(i): {
-            'value': fake.word()
+            'value': fake.word(),
         }
         for i in range(5)
     }
@@ -414,15 +414,15 @@ class TestStorageAddonBase(ArchiverTestCase):
                 user=self.user,
                 view_only=True,
                 _internal=True,
-                base_url=self.src.osfstorage_region.waterbutler_url
+                base_url=self.src.osfstorage_region.waterbutler_url,
             )
             responses.add(
                 responses.Response(
                     responses.GET,
                     url,
                     json=self.get_resp(url),
-                    content_type='applcation/json'
-                )
+                    content_type='applcation/json',
+                ),
             )
         addon = self.src.get_or_add_addon(addon_short_name, auth=self.auth)
         root = {
@@ -468,8 +468,8 @@ class TestArchiverTasks(ArchiverTestCase):
                         job_pk=self.archive_job._id,
                     ) for addon in target_addons
                 ),
-                archive_node.s(job_pk=self.archive_job._id)
-            ]
+                archive_node.s(job_pk=self.archive_job._id),
+            ],
         )
 
     def test_stat_addon(self):
@@ -489,7 +489,7 @@ class TestArchiverTasks(ArchiverTestCase):
             archive_node(results, self.archive_job._id)
         archive_osfstorage_signature = archive_addon.si(
             'osfstorage',
-            self.archive_job._id
+            self.archive_job._id,
         )
         assert(mock_group.called_with(archive_osfstorage_signature))
 
@@ -511,7 +511,7 @@ class TestArchiverTasks(ArchiverTestCase):
                     'path': '/',
                     'kind': 'folder',
                     'name': 'Fake',
-                    'children': []
+                    'children': [],
                 }
             setattr(mock_addon, '_get_file_tree', empty_file_tree)
             mock_get_addon.return_value = mock_addon
@@ -533,7 +533,7 @@ class TestArchiverTasks(ArchiverTestCase):
             archive_node(results, self.archive_job._id)
         archive_dropbox_signature = archive_addon.si(
             'dropbox',
-            self.archive_job._id
+            self.archive_job._id,
         )
         assert(mock_group.called_with(archive_dropbox_signature))
 
@@ -559,7 +559,7 @@ class TestArchiverTasks(ArchiverTestCase):
                     path='/',
                 ),
                 rename='Archive of OSF Storage',
-            )
+            ),
         ))
 
     def test_archive_success(self):
@@ -568,7 +568,7 @@ class TestArchiverTasks(ArchiverTestCase):
         data = generate_metadata(
             file_trees,
             selected_files,
-            node_index
+            node_index,
         )
         schema = generate_schema_from_data(data)
         with test_utils.mock_archive(node, schema=schema, data=data, autocomplete=True, autoapprove=True) as registration:
@@ -605,12 +605,12 @@ class TestArchiverTasks(ArchiverTestCase):
                     'sha256': fake_file['extra']['hashes']['sha256'],
                     'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
                         node._id,
-                        fake_file['path']
+                        fake_file['path'],
                     ),
                     'selectedFileName': fake_file_name,
-                    'nodeId': node._id
-                }]
-            }
+                    'nodeId': node._id,
+                }],
+            },
         }
         schema = generate_schema_from_data(data)
         factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registered_metadata=data)
@@ -633,8 +633,8 @@ class TestArchiverTasks(ArchiverTestCase):
                     'selectedFileName': selected_file['name'],
                     'nodeId': node._id,
                     'sha256': sha256,
-                    'viewUrl': '/project/{0}/files/osfstorage{1}'.format(node._id, selected_file['path'])
-                }]
+                    'viewUrl': '/project/{0}/files/osfstorage{1}'.format(node._id, selected_file['path']),
+                }],
             }
             for sha256, selected_file in selected_files.items()
         }
@@ -669,7 +669,7 @@ class TestArchiverTasks(ArchiverTestCase):
         data = generate_metadata(
             file_trees,
             selected_files,
-            node_index
+            node_index,
         )
         schema = generate_schema_from_data(data)
 
@@ -692,11 +692,11 @@ class TestArchiverTasks(ArchiverTestCase):
                 if target:
                     node_id = re.search(
                         r'^/project/(?P<node_id>\w{5}).+$',
-                        target[0]['extra'][0]['viewUrl']
+                        target[0]['extra'][0]['viewUrl'],
                     ).groupdict()['node_id']
                     assert_in(
                         node_id,
-                        [r._id for r in registration.node_and_primary_descendants()]
+                        [r._id for r in registration.node_and_primary_descendants()],
                     )
                     if target[0]['extra'][0]['sha256'] in selected_files:
                         del selected_files[target[0]['extra'][0]['sha256']]
@@ -720,12 +720,12 @@ class TestArchiverTasks(ArchiverTestCase):
                     'sha256': fake_file['extra']['hashes']['sha256'],
                     'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
                         node._id,
-                        fake_file['path']
+                        fake_file['path'],
                     ),
                     'selectedFileName': fake_file['name'],
-                    'nodeId': node._id
-                }]
-            }
+                    'nodeId': node._id,
+                }],
+            },
         }
         schema = generate_schema_from_data(data)
 
@@ -750,12 +750,12 @@ class TestArchiverTasks(ArchiverTestCase):
                     'sha256': fake_file['extra']['hashes']['sha256'],
                     'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
                         node._id,
-                        fake_file['path']
+                        fake_file['path'],
                     ),
                     'selectedFileName': fake_file['name'],
-                    'nodeId': node._id
-                }]
-            }
+                    'nodeId': node._id,
+                }],
+            },
         }
         schema = generate_schema_from_data(data)
         draft = factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registered_metadata=data)
@@ -785,12 +785,12 @@ class TestArchiverTasks(ArchiverTestCase):
                     'sha256': selected['extra']['hashes']['sha256'],
                     'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
                         child._id,
-                        selected['path']
+                        selected['path'],
                     ),
                     'selectedFileName': selected['name'],
-                    'nodeId': child._id
-                }]
-            }
+                    'nodeId': child._id,
+                }],
+            },
         }
         schema = generate_schema_from_data(data)
 
@@ -813,7 +813,7 @@ class TestArchiverUtils(ArchiverTestCase):
             self.src,
             self.dst,
             self.user,
-            {}
+            {},
         )
         assert_equal(mock_send_mail.call_count, 2)
         assert_true(self.dst.is_deleted)
@@ -826,7 +826,7 @@ class TestArchiverUtils(ArchiverTestCase):
             self.src,
             self.dst,
             self.user,
-            {}
+            {},
         )
         args_user = dict(
             to_addr=self.user.username,
@@ -846,10 +846,12 @@ class TestArchiverUtils(ArchiverTestCase):
             can_change_preferences=False,
             url=url,
         )
-        mock_send_mail.assert_has_calls([
-            call(**args_user),
-            call(**args_desk),
-        ], any_order=True)
+        mock_send_mail.assert_has_calls(
+            [
+                call(**args_user),
+                call(**args_desk),
+            ], any_order=True,
+        )
 
     @mock.patch('website.mails.send_mail')
     def test_handle_archive_fail_size(self, mock_send_mail):
@@ -859,7 +861,7 @@ class TestArchiverUtils(ArchiverTestCase):
             self.src,
             self.dst,
             self.user,
-            {}
+            {},
         )
         args_user = dict(
             to_addr=self.user.username,
@@ -878,10 +880,12 @@ class TestArchiverUtils(ArchiverTestCase):
             can_change_preferences=False,
             url=url,
         )
-        mock_send_mail.assert_has_calls([
-            call(**args_user),
-            call(**args_desk),
-        ], any_order=True)
+        mock_send_mail.assert_has_calls(
+            [
+                call(**args_user),
+                call(**args_desk),
+            ], any_order=True,
+        )
 
     def test_aggregate_file_tree_metadata(self):
         a_stat_result = archiver_utils.aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user)
@@ -1014,11 +1018,11 @@ class TestArchiverListeners(ArchiverTestCase):
     def test_archive_callback_pending(self, mock_delay):
         self.archive_job.update_target(
             'osfstorage',
-            ARCHIVER_INITIATED
+            ARCHIVER_INITIATED,
         )
         self.dst.archive_job.update_target(
             'osfstorage',
-            ARCHIVER_SUCCESS
+            ARCHIVER_SUCCESS,
         )
         self.dst.archive_job.save()
         with mock.patch('website.mails.send_mail') as mock_send:
@@ -1044,7 +1048,7 @@ class TestArchiverListeners(ArchiverTestCase):
             'embargo_urls': {
                 contrib._id: None
                 for contrib in self.dst.contributors
-            }
+            },
         }
         self.dst.embargo_registration(self.user, end_date)
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
@@ -1209,7 +1213,7 @@ class TestArchiverDecorators(ArchiverTestCase):
         func(node=self.dst)
         mock_fail.assert_called_with(
             self.dst,
-            errors=[e.message]
+            errors=[e.message],
         )
 
 class TestArchiverBehavior(OsfTestCase):
@@ -1230,7 +1234,7 @@ class TestArchiverBehavior(OsfTestCase):
         reg.save()
         with nested(
             mock.patch('osf.models.ArchiveJob.archive_tree_finished', mock.Mock(return_value=True)),
-            mock.patch('osf.models.ArchiveJob.success', mock.PropertyMock(return_value=True))
+            mock.patch('osf.models.ArchiveJob.success', mock.PropertyMock(return_value=True)),
         ) as (mock_finished, mock_success):
             listeners.archive_callback(reg)
         assert_equal(mock_update_search.call_count, 1)
@@ -1244,7 +1248,7 @@ class TestArchiverBehavior(OsfTestCase):
         reg.save()
         with nested(
                 mock.patch('osf.models.archive.ArchiveJob.archive_tree_finished', mock.Mock(return_value=True)),
-                mock.patch('osf.models.archive.ArchiveJob.success', mock.PropertyMock(return_value=False))
+                mock.patch('osf.models.archive.ArchiveJob.success', mock.PropertyMock(return_value=False)),
         ) as (mock_finished, mock_success):
             listeners.archive_callback(reg)
         assert_true(mock_delete_index_node.called)

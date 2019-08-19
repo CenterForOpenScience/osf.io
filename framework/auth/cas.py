@@ -30,8 +30,10 @@ class CasHTTPError(CasError):
         self.content = content
 
     def __repr__(self):
-        return ('CasHTTPError({self.message!r}, {self.code}, '
-                'headers={self.headers}, content={self.content!r})').format(self=self)
+        return (
+            'CasHTTPError({self.message!r}, {self.code}, '
+            'headers={self.headers}, content={self.content!r})'
+        ).format(self=self)
 
     __str__ = __repr__
 
@@ -278,7 +280,7 @@ def make_response_from_ticket(ticket, service_url):
                 return redirect(get_logout_url(get_login_url(
                     service_url,
                     username=user.username,
-                    verification_key=user.verification_key
+                    verification_key=user.verification_key,
                 )))
 
             # if user is authenticated by CAS
@@ -286,7 +288,7 @@ def make_response_from_ticket(ticket, service_url):
             return authenticate(
                 user,
                 cas_resp.attributes.get('accessToken', ''),
-                redirect(service_furl.url)
+                redirect(service_furl.url),
             )
         # first time login from external identity provider
         if not user and external_credential and action == 'external_first_login':
@@ -303,7 +305,7 @@ def make_response_from_ticket(ticket, service_url):
             }
             return external_first_login_authenticate(
                 user,
-                redirect(web_url_for('external_login_email_get'))
+                redirect(web_url_for('external_login_email_get')),
             )
     # Unauthorized: ticket could not be validated, or user does not exist.
     return redirect(service_furl.url)
@@ -331,8 +333,10 @@ def get_user_from_cas_resp(cas_resp):
             if not external_credential:
                 return None, None, None
             # cas returns a valid external credential
-            user = get_user(external_id_provider=external_credential['provider'],
-                            external_id=external_credential['id'])
+            user = get_user(
+                external_id_provider=external_credential['provider'],
+                external_id=external_credential['id'],
+            )
             # existing user found
             if user:
                 return user, external_credential, 'authenticate'

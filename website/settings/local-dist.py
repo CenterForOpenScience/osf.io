@@ -27,7 +27,7 @@ API_DOMAIN = PROTOCOL + 'localhost:8000/'
 PREPRINT_PROVIDER_DOMAINS = {
     'enabled': False,
     'prefix': 'http://local.',
-    'suffix': ':4201/'
+    'suffix': ':4201/',
 }
 USE_EXTERNAL_EMBER = True
 PROXY_EMBER_APPS = True
@@ -44,15 +44,15 @@ EXTERNAL_EMBER_APPS = {
     },
     'preprints': {
         'server': 'http://{}:4201/'.format(EMBER_DOMAIN),
-        'path': '/preprints/'
+        'path': '/preprints/',
     },
     'registries': {
         'server': 'http://{}:4202/'.format(EMBER_DOMAIN),
-        'path': '/registries/'
+        'path': '/registries/',
     },
     'reviews': {
         'server': 'http://{}:4203/'.format(EMBER_DOMAIN),
-        'path': '/reviews/'
+        'path': '/reviews/',
     },
 }
 

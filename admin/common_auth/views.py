@@ -30,14 +30,14 @@ class LoginView(FormView):
     def form_valid(self, form):
         user = authenticate(
             username=form.cleaned_data.get('email').strip(),
-            password=form.cleaned_data.get('password').strip()
+            password=form.cleaned_data.get('password').strip(),
         )
         if user is not None:
             login(self.request, user)
         else:
             messages.error(
                 self.request,
-                'Email and/or Password incorrect. Please try again.'
+                'Email and/or Password incorrect. Please try again.',
             )
             return redirect('auth:login')
         return super(LoginView, self).form_valid(form)

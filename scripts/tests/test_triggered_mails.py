@@ -49,9 +49,11 @@ class TestTriggeredMails(OsfTestCase):
         user_active.save()
         user_inactive.save()
         user_already_received_mail.save()
-        mails.queue_mail(to_addr=user_already_received_mail.username,
-                         send_at=timezone.now(),
-                         user=user_already_received_mail,
-                         mail=mails.NO_LOGIN)
+        mails.queue_mail(
+            to_addr=user_already_received_mail.username,
+            send_at=timezone.now(),
+            user=user_already_received_mail,
+            mail=mails.NO_LOGIN,
+        )
         users = find_inactive_users_with_no_inactivity_email_sent_or_queued()
         assert_equal(len(users), 1)

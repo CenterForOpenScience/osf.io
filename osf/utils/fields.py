@@ -7,8 +7,10 @@ from osf.utils.functional import rapply
 
 from osf.exceptions import NaiveDatetimeException
 
-SENSITIVE_DATA_KEY = jwe.kdf(settings.SENSITIVE_DATA_SECRET.encode('utf-8'),
-                             settings.SENSITIVE_DATA_SALT.encode('utf-8'))
+SENSITIVE_DATA_KEY = jwe.kdf(
+    settings.SENSITIVE_DATA_SECRET.encode('utf-8'),
+    settings.SENSITIVE_DATA_SALT.encode('utf-8'),
+)
 
 
 def ensure_bytes(value):

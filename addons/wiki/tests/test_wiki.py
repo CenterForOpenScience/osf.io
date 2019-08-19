@@ -15,7 +15,7 @@ from nose.tools import *  # noqa
 from tests.base import OsfTestCase, fake
 from osf_tests.factories import (
     UserFactory, NodeFactory, ProjectFactory,
-    AuthUserFactory, RegistrationFactory
+    AuthUserFactory, RegistrationFactory,
 )
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 
@@ -27,7 +27,7 @@ from addons.wiki.exceptions import InvalidVersionError
 from addons.wiki.models import WikiPage, WikiVersion, render_content
 from addons.wiki.utils import (
     get_sharejs_uuid, generate_private_uuid, share_db, delete_share_doc,
-    migrate_uuid, format_wiki_version, serialize_wiki_settings, serialize_wiki_widget
+    migrate_uuid, format_wiki_version, serialize_wiki_settings, serialize_wiki_widget,
 )
 from framework.auth import Auth
 from django.utils import timezone
@@ -448,7 +448,7 @@ class TestWikiViews(OsfTestCase):
         registration = RegistrationFactory(project=self.project)
         res = self.app.get(
             registration.web_url_for('view_project'),
-            auth=self.user.auth
+            auth=self.user.auth,
         )
         assert_equal(res.status_code, 200)
         assert_not_in('Add important information, links, or images here to describe your project.', res.text)
@@ -499,13 +499,13 @@ class TestWikiDelete(OsfTestCase):
         assert_equal(page.deleted, None)
         url = self.project.api_url_for(
             'project_wiki_delete',
-            wname='Elephants'
+            wname='Elephants',
         )
         mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             self.app.delete(
                 url,
-                auth=self.auth
+                auth=self.auth,
             )
         self.project.reload()
         page.reload()
@@ -520,13 +520,13 @@ class TestWikiDelete(OsfTestCase):
         assert_equal(self.special_characters_wiki.page_name, SPECIAL_CHARACTERS_ALLOWED)
         url = self.project.api_url_for(
             'project_wiki_delete',
-            wname=SPECIAL_CHARACTERS_ALLOWED
+            wname=SPECIAL_CHARACTERS_ALLOWED,
         )
         mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             self.app.delete(
                 url,
-                auth=self.auth
+                auth=self.auth,
             )
         self.project.reload()
         self.special_characters_wiki.reload()
@@ -581,7 +581,7 @@ class TestWikiRename(OsfTestCase):
         self.app.put_json(
             self.url,
             {'value': new_name},
-            auth=self.auth
+            auth=self.auth,
         )
         self.project.reload()
 
@@ -621,8 +621,10 @@ class TestWikiRename(OsfTestCase):
 
     def test_rename_wiki_name_not_found(self):
         url = self.project.api_url_for('project_wiki_rename', wname='not_found_page_name')
-        res = self.app.put_json(url, {'value': 'new name'},
-            auth=self.auth, expect_errors=True)
+        res = self.app.put_json(
+            url, {'value': 'new name'},
+            auth=self.auth, expect_errors=True,
+        )
         assert_equal(res.status_code, 404)
 
     def test_cannot_rename_wiki_page_to_home(self):
@@ -648,7 +650,7 @@ class TestWikiRename(OsfTestCase):
             self.url,
             {'value': new_name},
             auth=self.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert_equal(res.status_code, 409)
 
@@ -662,7 +664,7 @@ class TestWikiRename(OsfTestCase):
             url,
             {'value': new_name},
             auth=self.auth,
-            expect_errors=False
+            expect_errors=False,
         )
         assert_equal(res.status_code, 200)
 
@@ -736,7 +738,7 @@ class TestWikiLinks(OsfTestCase):
         expected = render_content(content, node)
         assert_equal(
             '<p><span></span>&lt;iframe src="<a href="http://httpbin.org/" rel="nofollow">http://httpbin.org/</a>"&gt;&lt;/iframe&gt;</p>',
-            wiki.html(node)
+            wiki.html(node),
         )
 
 
@@ -836,7 +838,7 @@ class TestWikiUuid(OsfTestCase):
         # uuids are not copied over to forks
         assert_not_equal(
             self.project.wiki_private_uuids.get(self.wkey),
-            fork.wiki_private_uuids.get(self.wkey)
+            fork.wiki_private_uuids.get(self.wkey),
         )
 
         project_uuid = get_sharejs_uuid(self.project, self.wname)
@@ -970,11 +972,11 @@ class TestWikiShareJSMongo(OsfTestCase):
         new_sharejs_uuid = get_sharejs_uuid(self.project, self.wname)
         assert_equal(
             EXAMPLE_DOCS[0]['_data'],
-            self.db.docs.find_one({'_id': new_sharejs_uuid})['_data']
+            self.db.docs.find_one({'_id': new_sharejs_uuid})['_data'],
         )
         assert_equal(
             len([item for item in self.example_ops if item['name'] == self.sharejs_uuid]),
-            len([item for item in self.db.docs_ops.find({'name': new_sharejs_uuid})])
+            len([item for item in self.db.docs_ops.find({'name': new_sharejs_uuid})]),
         )
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
@@ -1056,8 +1058,8 @@ class TestWikiShareJSMongo(OsfTestCase):
             {'$set': {
                 '_v': new_version,
                 '_m.mtime': new_time,
-                '_data': new_content
-            }}
+                '_data': new_content,
+            }},
         )
         current_content = self.wiki_page.get_draft(self.project)
         assert_equals(current_content, new_content)
@@ -1210,7 +1212,8 @@ class TestPublicWiki(OsfTestCase):
     def test_serialize_wiki_settings(self):
         node = NodeFactory(parent=self.project, creator=self.user, is_public=True)
         node.get_addon('wiki').set_editing(
-            permissions=True, auth=self.consolidate_auth, log=True)
+            permissions=True, auth=self.consolidate_auth, log=True,
+        )
         data = serialize_wiki_settings(self.user, [node])
         expected = [{
             'node': {
@@ -1222,14 +1225,14 @@ class TestPublicWiki(OsfTestCase):
                 {
                     'select': {
                         'title': 'permission',
-                        'permission': 'public'
+                        'permission': 'public',
                     },
-                }
+                },
             ],
             'kind': 'folder',
             'nodeType': 'component',
             'category': 'hypothesis',
-            'permissions': {'view': True}
+            'permissions': {'view': True},
         }]
 
         assert_equal(data, expected)
@@ -1237,7 +1240,8 @@ class TestPublicWiki(OsfTestCase):
     def test_serialize_wiki_settings(self):
         node = NodeFactory(parent=self.project, creator=self.user, is_public=True)
         node.get_addon('wiki').set_editing(
-            permissions=True, auth=self.consolidate_auth, log=True)
+            permissions=True, auth=self.consolidate_auth, log=True,
+        )
         node.add_pointer(self.project, Auth(self.user))
         node.save()
         data = serialize_wiki_settings(self.user, [node])
@@ -1246,21 +1250,23 @@ class TestPublicWiki(OsfTestCase):
                 'id': node._id,
                 'title': node.title,
                 'url': node.url,
-                'is_public': True
+                'is_public': True,
             },
             'children': [
                 {
                     'select': {
                         'title': 'permission',
-                        'permission': 'public'
+                        'permission': 'public',
                     },
-                }
+                },
             ],
             'kind': 'folder',
             'nodeType': 'component',
             'category': 'hypothesis',
-            'permissions': {'view': True,
-                            ADMIN: True}
+            'permissions': {
+                'view': True,
+                ADMIN: True,
+            },
         }]
 
         assert_equal(data, expected)
@@ -1269,18 +1275,23 @@ class TestPublicWiki(OsfTestCase):
         node = NodeFactory(parent=self.project, creator=self.user)
         node.delete_addon('wiki', self.consolidate_auth)
         data = serialize_wiki_settings(self.user, [node])
-        expected = [{'node':
-                        {'url': node.url,
-                         'is_public': False,
-                         'id': node._id,
-                         'title': node.title},
-                    'category': 'hypothesis',
-                    'kind': 'folder',
-                    'nodeType': 'component',
-                    'children': [],
-                    'permissions': {ADMIN: True,
-                                    'view': True}
-                    }]
+        expected = [{
+            'node':
+                {
+                    'url': node.url,
+                    'is_public': False,
+                    'id': node._id,
+                    'title': node.title,
+                },
+            'category': 'hypothesis',
+            'kind': 'folder',
+            'nodeType': 'component',
+            'children': [],
+            'permissions': {
+                ADMIN: True,
+                'view': True,
+            },
+        }]
 
         assert_equal(data, expected)
 
@@ -1302,7 +1313,7 @@ class TestWikiMenu(OsfTestCase):
                 'url': self.project.web_url_for('project_wiki_home'),
                 'name': 'Home',
                 'id': 'None',
-            }
+            },
         }
         assert_equal(data, expected)
 
@@ -1316,15 +1327,15 @@ class TestWikiMenu(OsfTestCase):
                     'url': self.project.web_url_for('project_wiki_view', wname='home', _guid=True),
                     'name': 'Home',
                     'id': home_page._primary_key,
-                }
+                },
             },
             {
                 'page': {
                     'url': self.project.web_url_for('project_wiki_view', wname='zoo', _guid=True),
                     'name': 'zoo',
                     'id': zoo_page._primary_key,
-                }
-            }
+                },
+            },
         ]
         assert_equal(data, expected)
 
@@ -1339,8 +1350,8 @@ class TestWikiMenu(OsfTestCase):
                     'url': self.project.web_url_for('project_wiki_view', wname='home', _guid=True),
                     'name': 'Home',
                     'id': home_page.wiki_page._primary_key,
-                }
-            }
+                },
+            },
         ]
         assert_equal(data, expected)
 
@@ -1359,7 +1370,7 @@ class TestWikiMenu(OsfTestCase):
                             'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
                             'name': 'Home',
                             'id': self.component._primary_key,
-                        }
+                        },
                     },
                     {
                         'page': {
@@ -1367,12 +1378,12 @@ class TestWikiMenu(OsfTestCase):
                             'name': 'zoo',
                             'id': zoo_page._primary_key,
                         },
-                    }
+                    },
                 ],
                 'kind': 'component',
                 'category': self.component.category,
                 'pointer': False,
-            }
+            },
         ]
         data = views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
         assert_equal(data, expected)
@@ -1397,7 +1408,7 @@ class TestWikiMenu(OsfTestCase):
                 'title': 'Component Wiki Pages',
                 'kind': 'folder',
                 'type': 'heading',
-                'children': views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
-            }
+                'children': views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth),
+            },
         ]
         assert_equal(data, expected)

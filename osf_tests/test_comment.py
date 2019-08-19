@@ -64,8 +64,10 @@ def comment(user, project):
 def unreg_contributor(project):
     unreg_user = UnregUserFactory()
     unreg_user.save()
-    project.add_unregistered_contributor(unreg_user.fullname, unreg_user.email, Auth(project.creator),
-                                         permissions=permissions.READ, save=True)
+    project.add_unregistered_contributor(
+        unreg_user.fullname, unreg_user.email, Auth(project.creator),
+        permissions=permissions.READ, save=True,
+    )
     return unreg_user
 
 
@@ -289,11 +291,11 @@ class TestCommentModel:
             'comment_content': comment_mention_project_with_contributor,
             'expected_signals': {mention_added},
             'expected_error_msg': None,
-        }
+        },
     ]
     params = {
         'test_create_comment': create_and_edit_cases + create_cases,
-        'test_edit_comment': create_and_edit_cases + edit_cases
+        'test_edit_comment': create_and_edit_cases + edit_cases,
     }
 
     def test_create_comment(self, request, user, project, comment_content, expected_signals, expected_error_msg):
@@ -309,7 +311,7 @@ class TestCommentModel:
                     user=user,
                     node=project,
                     target=project.guids.all()[0],
-                    content=comment_content
+                    content=comment_content,
                 )
             except Exception as e:
                 error_msg = str(e)
@@ -342,7 +344,7 @@ class TestCommentModel:
         comment.edit(
             auth=auth,
             content='edited',
-            save=True
+            save=True,
         )
         assert comment.content == 'edited'
         assert comment.modified
@@ -360,7 +362,7 @@ class TestCommentModel:
                 user=user,
                 node=node,
                 target=node.guids.all()[0],
-                content='This is a comment with a group member mention [@Group Member](http://localhost:5000/' + manager._id + '/).'
+                content='This is a comment with a group member mention [@Group Member](http://localhost:5000/' + manager._id + '/).',
             )
         assert mock_signals.signals_sent() == ({comment_added, mention_added})
 
@@ -486,31 +488,35 @@ class FileCommentMoveRenameTestMixin(object):
         return path
 
     def _create_source_payload(self, path, node, provider, file_id=None):
-        return OrderedDict([('materialized', path),
-                            ('name', path.split('/')[-1]),
-                            ('nid', node._id),
-                            ('path', self._format_path(path, file_id)),
-                            ('provider', provider),
-                            ('url', '/project/{}/files/{}/{}/'.format(node._id, provider, path.strip('/'))),
-                            ('node', {'url': '/{}/'.format(node._id), '_id': node._id, 'title': node.title}),
-                            ('addon', provider)])
+        return OrderedDict([
+            ('materialized', path),
+            ('name', path.split('/')[-1]),
+            ('nid', node._id),
+            ('path', self._format_path(path, file_id)),
+            ('provider', provider),
+            ('url', '/project/{}/files/{}/{}/'.format(node._id, provider, path.strip('/'))),
+            ('node', {'url': '/{}/'.format(node._id), '_id': node._id, 'title': node.title}),
+            ('addon', provider),
+        ])
 
     def _create_destination_payload(self, path, node, provider, file_id, children=None):
         destination_path = PROVIDER_CLASS.get(provider)._format_path(path=path, file_id=file_id)
-        destination = OrderedDict([('contentType', ''),
-                            ('etag', 'abcdefghijklmnop'),
-                            ('extra', OrderedDict([('revisionId', '12345678910')])),
-                            ('kind', 'file'),
-                            ('materialized', path),
-                            ('modified', 'Tue, 02 Feb 2016 17:55:48 +0000'),
-                            ('name', path.split('/')[-1]),
-                            ('nid', node._id),
-                            ('path', destination_path),
-                            ('provider', provider),
-                            ('size', 1000),
-                            ('url', '/project/{}/files/{}/{}/'.format(node._id, provider, path.strip('/'))),
-                            ('node', {'url': '/{}/'.format(node._id), '_id': node._id, 'title': node.title}),
-                            ('addon', provider)])
+        destination = OrderedDict([
+            ('contentType', ''),
+            ('etag', 'abcdefghijklmnop'),
+            ('extra', OrderedDict([('revisionId', '12345678910')])),
+            ('kind', 'file'),
+            ('materialized', path),
+            ('modified', 'Tue, 02 Feb 2016 17:55:48 +0000'),
+            ('name', path.split('/')[-1]),
+            ('nid', node._id),
+            ('path', destination_path),
+            ('provider', provider),
+            ('size', 1000),
+            ('url', '/project/{}/files/{}/{}/'.format(node._id, provider, path.strip('/'))),
+            ('node', {'url': '/{}/'.format(node._id), '_id': node._id, 'title': node.title}),
+            ('addon', provider),
+        ])
         if children:
             destination_children = [self._create_destination_payload(child['path'], child['node'], child['provider'], file_id) for child in children]
             destination.update({'children': destination_children})
@@ -520,15 +526,19 @@ class FileCommentMoveRenameTestMixin(object):
         return OrderedDict([
             ('action', action),
             ('auth', OrderedDict([('email', user.username), ('id', user._id), ('name', user.fullname)])),
-            ('destination', self._create_destination_payload(path=destination['path'],
-                                                             node=destination['node'],
-                                                             provider=destination['provider'],
-                                                             file_id=destination_file_id or file_id,
-                                                             children=destination.get('children', []))),
+            (
+                'destination', self._create_destination_payload(
+                    path=destination['path'],
+                    node=destination['node'],
+                    provider=destination['provider'],
+                    file_id=destination_file_id or file_id,
+                    children=destination.get('children', []),
+                ),
+            ),
             ('source', self._create_source_payload(source['path'], source['node'], source['provider'], file_id=file_id)),
             ('time', 100000000),
             ('node', source['node']),
-            ('project', None)
+            ('project', None),
         ])
 
     def _create_file_with_comment(self, node, path, user):
@@ -536,7 +546,8 @@ class FileCommentMoveRenameTestMixin(object):
             target=node,
             path=path,
             name=path.strip('/'),
-            materialized_path=path)
+            materialized_path=path,
+        )
         self.file.save()
         self.guid = self.file.get_guid(create=True)
         self.comment = CommentFactory(user=user, node=node, target=self.guid)
@@ -545,12 +556,12 @@ class FileCommentMoveRenameTestMixin(object):
         source = {
             'path': '/file.txt',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         destination = {
             'path': '/file_renamed.txt',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         self._create_file_with_comment(node=source['node'], path=source['path'], user=user)
         payload = self._create_payload('move', user, source, destination, self.file._id)
@@ -565,12 +576,12 @@ class FileCommentMoveRenameTestMixin(object):
         source = {
             'path': '/subfolder1/',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         destination = {
             'path': '/subfolder2/',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         file_name = 'file.txt'
         self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), user=user)
@@ -587,12 +598,12 @@ class FileCommentMoveRenameTestMixin(object):
         source = {
             'path': '/subfolder1/',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         destination = {
             'path': '/subfolder2/',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         file_path = 'sub-subfolder/file.txt'
         self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_path), user=user)
@@ -609,12 +620,12 @@ class FileCommentMoveRenameTestMixin(object):
         source = {
             'path': '/file.txt',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         destination = {
             'path': '/subfolder/file.txt',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         self._create_file_with_comment(node=source['node'], path=source['path'], user=user)
         payload = self._create_payload('move', user, source, destination, self.file._id)
@@ -630,12 +641,12 @@ class FileCommentMoveRenameTestMixin(object):
         source = {
             'path': '/subfolder/file.txt',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         destination = {
             'path': '/file.txt',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         self._create_file_with_comment(node=source['node'], path=source['path'], user=user)
         payload = self._create_payload('move', user, source, destination, self.file._id)
@@ -651,12 +662,12 @@ class FileCommentMoveRenameTestMixin(object):
         source = {
             'path': '/file.txt',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         destination = {
             'path': '/file.txt',
             'node': component,
-            'provider': self.provider
+            'provider': self.provider,
         }
         self._create_file_with_comment(node=source['node'], path=source['path'], user=user)
         payload = self._create_payload('move', user, source, destination, self.file._id)
@@ -673,12 +684,12 @@ class FileCommentMoveRenameTestMixin(object):
         source = {
             'path': '/file.txt',
             'node': component,
-            'provider': self.provider
+            'provider': self.provider,
         }
         destination = {
             'path': '/file.txt',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         self._create_file_with_comment(node=source['node'], path=source['path'], user=user)
         payload = self._create_payload('move', user, source, destination, self.file._id)
@@ -695,12 +706,12 @@ class FileCommentMoveRenameTestMixin(object):
         source = {
             'path': '/subfolder/',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         destination = {
             'path': '/subfolder2/subfolder/',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         file_name = 'file.txt'
         self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), user=user)
@@ -717,12 +728,12 @@ class FileCommentMoveRenameTestMixin(object):
         source = {
             'path': '/subfolder2/subfolder/',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         destination = {
             'path': '/subfolder/',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         file_name = 'file.txt'
         self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), user=user)
@@ -739,12 +750,12 @@ class FileCommentMoveRenameTestMixin(object):
         source = {
             'path': '/subfolder/',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         destination = {
             'path': '/subfolder/',
             'node': component,
-            'provider': self.provider
+            'provider': self.provider,
         }
         file_name = 'file.txt'
         self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), user=user)
@@ -761,12 +772,12 @@ class FileCommentMoveRenameTestMixin(object):
         source = {
             'path': '/subfolder/',
             'node': component,
-            'provider': self.provider
+            'provider': self.provider,
         }
         destination = {
             'path': '/subfolder/',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         file_name = 'file.txt'
         self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), user=user)
@@ -783,25 +794,27 @@ class FileCommentMoveRenameTestMixin(object):
         osfstorage = project.get_addon('osfstorage')
         root_node = osfstorage.get_root()
         osf_file = root_node.append_file('file.txt')
-        osf_file.create_version(user, {
-            'object': '06d80e',
-            'service': 'cloud',
-            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
-        }, {
-            'size': 1337,
-            'contentType': 'img/png',
-            'etag': 'abcdefghijklmnop'
-        }).save()
+        osf_file.create_version(
+            user, {
+                'object': '06d80e',
+                'service': 'cloud',
+                osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+            }, {
+                'size': 1337,
+                'contentType': 'img/png',
+                'etag': 'abcdefghijklmnop',
+            },
+        ).save()
 
         source = {
             'path': '/file.txt',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         destination = {
             'path': osf_file.path,
             'node': project,
-            'provider': 'osfstorage'
+            'provider': 'osfstorage',
         }
         self._create_file_with_comment(node=source['node'], path=source['path'], user=user)
         payload = self._create_payload('move', user, source, destination, self.file._id, destination_file_id=destination['path'].strip('/'))
@@ -818,20 +831,22 @@ class FileCommentMoveRenameTestMixin(object):
         root_node = osfstorage.get_root()
         osf_folder = root_node.append_folder('subfolder')
         osf_file = osf_folder.append_file('file.txt')
-        osf_file.create_version(user, {
-            'object': '06d80e',
-            'service': 'cloud',
-            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
-        }, {
-            'size': 1337,
-            'contentType': 'img/png',
-            'etag': '1234567890abcde'
-        }).save()
+        osf_file.create_version(
+            user, {
+                'object': '06d80e',
+                'service': 'cloud',
+                osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+            }, {
+                'size': 1337,
+                'contentType': 'img/png',
+                'etag': '1234567890abcde',
+            },
+        ).save()
 
         source = {
             'path': '/subfolder/',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         destination = {
             'path': '/subfolder/',
@@ -840,8 +855,8 @@ class FileCommentMoveRenameTestMixin(object):
             'children': [{
                 'path': '/subfolder/file.txt',
                 'node': project,
-                'provider': 'osfstorage'
-            }]
+                'provider': 'osfstorage',
+            }],
         }
         file_name = 'file.txt'
         self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), user=user)
@@ -856,7 +871,7 @@ class FileCommentMoveRenameTestMixin(object):
 
     @pytest.mark.parametrize(
         ['destination_provider', 'destination_path'],
-        [('box', '/1234567890'), ('dropbox', '/file.txt'), ('github', '/file.txt'), ('googledrive', '/file.txt'), ('s3', '/file.txt')]
+        [('box', '/1234567890'), ('dropbox', '/file.txt'), ('github', '/file.txt'), ('googledrive', '/file.txt'), ('s3', '/file.txt')],
     )
     def test_comments_move_when_file_moved_to_different_provider(self, destination_provider, destination_path, project, user):
         if self.provider == destination_provider:
@@ -871,12 +886,12 @@ class FileCommentMoveRenameTestMixin(object):
         source = {
             'path': '/file.txt',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         destination = {
             'path': destination_path,
             'node': project,
-            'provider': destination_provider
+            'provider': destination_provider,
         }
         self._create_file_with_comment(node=source['node'], path=source['path'], user=user)
         payload = self._create_payload('move', user, source, destination, self.file._id)
@@ -890,7 +905,7 @@ class FileCommentMoveRenameTestMixin(object):
 
     @pytest.mark.parametrize(
         ['destination_provider', 'destination_path'],
-        [('box', '/1234567890'), ('dropbox', '/subfolder/file.txt'), ('github', '/subfolder/file.txt'), ('googledrive', '/subfolder/file.txt'), ('s3', '/subfolder/file.txt'), ]
+        [('box', '/1234567890'), ('dropbox', '/subfolder/file.txt'), ('github', '/subfolder/file.txt'), ('googledrive', '/subfolder/file.txt'), ('s3', '/subfolder/file.txt'), ],
     )
     def test_comments_move_when_folder_moved_to_different_provider(self, destination_provider, destination_path, project, user):
         if self.provider == destination_provider:
@@ -905,7 +920,7 @@ class FileCommentMoveRenameTestMixin(object):
         source = {
             'path': '/',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         destination = {
             'path': '/subfolder/',
@@ -914,8 +929,8 @@ class FileCommentMoveRenameTestMixin(object):
             'children': [{
                     'path': '/subfolder/file.txt',
                     'node': project,
-                    'provider': destination_provider
-            }]
+                    'provider': destination_provider,
+            }],
         }
         file_name = 'file.txt'
         self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), user=user)
@@ -944,15 +959,17 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         osfstorage = node.get_addon(self.provider)
         root_node = osfstorage.get_root()
         self.file = root_node.append_file('file.txt')
-        self.file.create_version(user, {
-            'object': '06d80e',
-            'service': 'cloud',
-            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
-        }, {
-            'size': 1337,
-            'contentType': 'img/png',
-            'etag': 'abcdefghijklmnop'
-        }).save()
+        self.file.create_version(
+            user, {
+                'object': '06d80e',
+                'service': 'cloud',
+                osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+            }, {
+                'size': 1337,
+                'contentType': 'img/png',
+                'etag': 'abcdefghijklmnop',
+            },
+        ).save()
         self.file.materialized_path = path
         self.guid = self.file.get_guid(create=True)
         self.comment = CommentFactory(user=user, node=node, target=self.guid)
@@ -961,12 +978,12 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         source = {
             'path': '/file.txt',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         destination = {
             'path': '/file.txt',
             'node': component,
-            'provider': self.provider
+            'provider': self.provider,
         }
         self._create_file_with_comment(node=source['node'], path=source['path'], user=user)
         self.file.move_under(destination['node'].get_addon(self.provider).get_root())
@@ -984,12 +1001,12 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         source = {
             'path': '/file.txt',
             'node': component,
-            'provider': self.provider
+            'provider': self.provider,
         }
         destination = {
             'path': '/file.txt',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         self._create_file_with_comment(node=source['node'], path=source['path'], user=user)
         self.file.move_under(destination['node'].get_addon(self.provider).get_root())
@@ -1007,12 +1024,12 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         source = {
             'path': '/subfolder/',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         destination = {
             'path': '/subfolder/',
             'node': component,
-            'provider': self.provider
+            'provider': self.provider,
         }
         file_name = 'file.txt'
         self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), user=user)
@@ -1030,12 +1047,12 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         source = {
             'path': '/subfolder/',
             'node': component,
-            'provider': self.provider
+            'provider': self.provider,
         }
         destination = {
             'path': '/subfolder/',
             'node': project,
-            'provider': self.provider
+            'provider': self.provider,
         }
         file_name = 'file.txt'
         self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), user=user)
@@ -1068,7 +1085,8 @@ class TestBoxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
             target=node,
             path=self._format_path(path),
             name=path.strip('/'),
-            materialized_path=path)
+            materialized_path=path,
+        )
         self.file.save()
         self.guid = self.file.get_guid(create=True)
         self.comment = CommentFactory(user=user, node=node, target=self.guid)
@@ -1089,7 +1107,8 @@ class TestDropboxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
             target=node,
             path='{}{}'.format(node.get_addon(self.provider).folder, path),
             name=path.strip('/'),
-            materialized_path=path)
+            materialized_path=path,
+        )
         self.file.save()
         self.guid = self.file.get_guid(create=True)
         self.comment = CommentFactory(user=user, node=node, target=self.guid)
@@ -1117,6 +1136,6 @@ PROVIDER_CLASS = {
     'dropbox': TestDropboxFileCommentMoveRename,
     'github': TestGithubFileCommentMoveRename,
     'googledrive': TestGoogleDriveFileCommentMoveRename,
-    's3': TestS3FileCommentMoveRename
+    's3': TestS3FileCommentMoveRename,
 
 }

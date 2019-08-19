@@ -33,8 +33,8 @@ def add_quickfiles(*args, **kwargs):
             quickfiles_to_create.append(
                 QuickFilesNode(
                     title=get_quickfiles_project_title(user),
-                    creator=user
-                )
+                    creator=user,
+                ),
             )
             total_created += 1
 
@@ -47,7 +47,7 @@ def add_quickfiles(*args, **kwargs):
         for quickfiles in all_quickfiles:
             ensure_guid(QuickFilesNode, quickfiles, True)
             osfs_folders_to_create.append(
-                OsfStorageFolder(provider='osfstorage', name='', node=quickfiles)
+                OsfStorageFolder(provider='osfstorage', name='', node=quickfiles),
             )
 
             contributors_to_create.append(
@@ -58,8 +58,8 @@ def add_quickfiles(*args, **kwargs):
                     read=True,
                     write=True,
                     admin=True,
-                    _order=0
-                )
+                    _order=0,
+                ),
             )
 
         Contributor.objects.bulk_create(contributors_to_create)
@@ -70,7 +70,7 @@ def add_quickfiles(*args, **kwargs):
         osfs_to_create = []
         for folder in osfs_folders_to_create:
             osfs_to_create.append(
-                OSFSNodeSettings(owner=folder.node, root_node=folder)
+                OSFSNodeSettings(owner=folder.node, root_node=folder),
             )
 
         OSFSNodeSettings.objects.bulk_create(osfs_to_create)
@@ -107,11 +107,11 @@ class Migration(migrations.Migration):
                 """
                 CREATE UNIQUE INDEX one_quickfiles_per_user ON osf_abstractnode (creator_id, type, is_deleted)
                 WHERE type='osf.quickfilesnode' AND is_deleted=FALSE;
-                """
+                """,
             ], [
                 """
                 DROP INDEX IF EXISTS one_quickfiles_per_user RESTRICT;
-                """
-            ]
+                """,
+            ],
         ),
     ]

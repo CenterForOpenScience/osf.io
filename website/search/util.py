@@ -18,8 +18,8 @@ def build_query(qs='*', start=0, size=10, sort=None):
     if sort:
         query['sort'] = [
             {
-                sort: 'desc'
-            }
+                sort: 'desc',
+            },
         ]
     return query
 
@@ -44,8 +44,8 @@ def build_query_string(qs):
             'fields': fields,
             'query': qs,
             'analyze_wildcard': True,
-            'lenient': True  # TODO, may not want to do this
-        }
+            'lenient': True,  # TODO, may not want to do this
+        },
     }
 
 def clean_splitters(text):

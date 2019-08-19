@@ -26,7 +26,8 @@ class TestSearchSerializer:
         context = {'request': make_drf_request_with_version(version='2.0')}
         schema = RegistrationSchema.objects.filter(
             name='Replication Recipe (Brandt et al., 2013): Post-Completion',
-            schema_version=SCHEMA_VERSION).first()
+            schema_version=SCHEMA_VERSION,
+        ).first()
 
         # test_search_serializer_mixed_model_project
         result = SearchSerializer(project, context=context).data

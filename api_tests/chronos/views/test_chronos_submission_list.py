@@ -85,10 +85,10 @@ class TestChronosSubmissionList:
                         'data': {
                             'id': journal.journal_id,
                             'type': 'chronos-journals',
-                        }
-                    }
-                }
-            }
+                        },
+                    },
+                },
+            },
         }
 
     @mock.patch('api.chronos.serializers.ChronosClient.submit_manuscript', wraps=ChronosSubmissionFactory.create)
@@ -118,8 +118,10 @@ class TestChronosSubmissionList:
         res = app.get(url, auth=submitter.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 3
-        submission_ids = [submission_submitted.publication_id, submission_accepted.publication_id,
-                          submission_published.publication_id]
+        submission_ids = [
+            submission_submitted.publication_id, submission_accepted.publication_id,
+            submission_published.publication_id,
+        ]
         assert res.json['data'][0]['id'] in submission_ids
         assert res.json['data'][1]['id'] in submission_ids
         assert res.json['data'][2]['id'] in submission_ids
@@ -132,8 +134,10 @@ class TestChronosSubmissionList:
         res = app.get(url, auth=preprint_contributor.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 3
-        submission_ids = [submission_submitted.publication_id, submission_accepted.publication_id,
-                          submission_published.publication_id]
+        submission_ids = [
+            submission_submitted.publication_id, submission_accepted.publication_id,
+            submission_published.publication_id,
+        ]
         assert res.json['data'][0]['id'] in submission_ids
         assert res.json['data'][1]['id'] in submission_ids
         assert res.json['data'][2]['id'] in submission_ids

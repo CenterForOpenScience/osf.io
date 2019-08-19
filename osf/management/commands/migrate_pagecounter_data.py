@@ -116,7 +116,7 @@ class Command(BaseCommand):
                 dry_run,
                 rows,
                 reverse,
-            )
+            ),
         )
         if dry_run:
             logger.info('DRY RUN')

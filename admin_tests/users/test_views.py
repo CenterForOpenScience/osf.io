@@ -23,7 +23,7 @@ from osf_tests.factories import (
     UserFactory,
     AuthUserFactory,
     ProjectFactory,
-    UnconfirmedUserFactory
+    UnconfirmedUserFactory,
 )
 from admin_tests.utilities import setup_view, setup_log_view, setup_form_view
 
@@ -478,7 +478,7 @@ class TestUserWorkshopFormView(AdminTestCase):
             csv,
             'reader',
             # parse data into the proper format handling None values as csv reader would
-            side_effect=(lambda values: [[item or '' for item in value] for value in values])
+            side_effect=(lambda values: [[item or '' for item in value] for value in values]),
         )
         self.mock_data.start()
 
@@ -647,7 +647,7 @@ class TestUserSearchView(AdminTestCase):
 
     def test_search_user_by_guid(self):
         form_data = {
-            'guid': self.user_1.guids.first()._id
+            'guid': self.user_1.guids.first()._id,
         }
         form = UserSearchForm(data=form_data)
         nt.assert_true(form.is_valid())
@@ -657,7 +657,7 @@ class TestUserSearchView(AdminTestCase):
 
     def test_search_user_by_name(self):
         form_data = {
-            'name': 'Hardy'
+            'name': 'Hardy',
         }
         form = UserSearchForm(data=form_data)
         nt.assert_true(form.is_valid())
@@ -667,7 +667,7 @@ class TestUserSearchView(AdminTestCase):
 
     def test_search_user_by_name_with_punctuation(self):
         form_data = {
-            'name': 'Dr. Sportello-Fay, PI @, #, $, %, ^, &, *, (, ), ~'
+            'name': 'Dr. Sportello-Fay, PI @, #, $, %, ^, &, *, (, ), ~',
         }
         form = UserSearchForm(data=form_data)
         nt.assert_true(form.is_valid())
@@ -677,7 +677,7 @@ class TestUserSearchView(AdminTestCase):
 
     def test_search_user_by_username(self):
         form_data = {
-            'email': self.user_1.username
+            'email': self.user_1.username,
         }
         form = UserSearchForm(data=form_data)
         nt.assert_true(form.is_valid())
@@ -687,7 +687,7 @@ class TestUserSearchView(AdminTestCase):
 
     def test_search_user_by_alternate_email(self):
         form_data = {
-            'email': self.user_2_alternate_email
+            'email': self.user_2_alternate_email,
         }
         form = UserSearchForm(data=form_data)
         nt.assert_true(form.is_valid())

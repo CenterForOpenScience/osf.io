@@ -51,6 +51,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(
             migrate_existing_registrations_into_osf_registries,
-            remove_existing_registrations_from_osf_registries
-        )
+            remove_existing_registrations_from_osf_registries,
+        ),
     ]

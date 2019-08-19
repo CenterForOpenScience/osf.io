@@ -41,20 +41,20 @@ def bitbucket_hgrid_data(node_settings, auth, **kwargs):
     ref = None if branch is None else ref_to_params(branch, sha)
 
     name_tpl = '{user}/{repo}'.format(
-        user=node_settings.user, repo=node_settings.repo
+        user=node_settings.user, repo=node_settings.repo,
     )
 
     permissions = {
         'edit': False,
         'view': True,
-        'private': node_settings.is_private
+        'private': node_settings.is_private,
     }
     urls = {
         'upload': None,
         'fetch': node_settings.owner.api_url + 'bitbucket/hgrid/' + (ref or ''),
         'branch': node_settings.owner.api_url + 'bitbucket/hgrid/root/',
         'zip': node_settings.owner.api_url + 'bitbucket/zipball/' + (ref or ''),
-        'repo': 'https://bitbucket.com/{0}/{1}/branch/'.format(node_settings.user, node_settings.repo)
+        'repo': 'https://bitbucket.com/{0}/{1}/branch/'.format(node_settings.user, node_settings.repo),
     }
 
     branch_names = [each['name'] for each in branches]
@@ -111,7 +111,8 @@ class BitbucketAddonConfig(BaseAddonAppConfig):
         NODE_AUTHORIZED,
         NODE_DEAUTHORIZED,
         NODE_DEAUTHORIZED_NO_USER,
-        REPO_LINKED)
+        REPO_LINKED,
+    )
 
     @property
     def routes(self):

@@ -23,7 +23,7 @@ def make_user(username, fullname):
 
 def make_payload(
         institution, username, fullname='Fake User',
-        given_name='', family_name=''
+        given_name='', family_name='',
 ):
     data = {
         'provider': {
@@ -34,14 +34,18 @@ def make_payload(
                 'givenName': given_name,
                 'fullname': fullname,
                 'suffix': '',
-                'username': username
-            }
-        }
+                'username': username,
+            },
+        },
     }
-    return jwe.encrypt(jwt.encode({
-        'sub': username,
-        'data': json.dumps(data)
-    }, settings.JWT_SECRET, algorithm='HS256'), settings.JWE_SECRET)
+    return jwe.encrypt(
+        jwt.encode(
+            {
+                'sub': username,
+                'data': json.dumps(data),
+            }, settings.JWT_SECRET, algorithm='HS256',
+        ), settings.JWE_SECRET,
+    )
 
 
 @pytest.mark.django_db
@@ -70,7 +74,7 @@ class TestInstitutionAuth:
         with capture_signals() as mock_signals:
             res = app.post(
                 url_auth_institution,
-                make_payload(institution, username)
+                make_payload(institution, username),
             )
 
         assert res.status_code == 204
@@ -90,7 +94,7 @@ class TestInstitutionAuth:
         with capture_signals() as mock_signals:
             res = app.post(
                 url_auth_institution,
-                make_payload(institution, username)
+                make_payload(institution, username),
             )
 
         assert res.status_code == 204
@@ -108,7 +112,7 @@ class TestInstitutionAuth:
 
         res = app.post(
             url_auth_institution,
-            make_payload(institution, username)
+            make_payload(institution, username),
         )
         assert res.status_code == 204
 
@@ -119,17 +123,18 @@ class TestInstitutionAuth:
         res = app.post(
             url_auth_institution,
             'al;kjasdfljadf',
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 403
 
     def test_user_names_guessed_if_not_provided(
-            self, app, institution, url_auth_institution):
+            self, app, institution, url_auth_institution,
+    ):
         # Regression for https://openscience.atlassian.net/browse/OSF-7212
         username = 'fake@user.edu'
         res = app.post(
             url_auth_institution,
-            make_payload(institution, username)
+            make_payload(institution, username),
         )
 
         assert res.status_code == 204
@@ -141,7 +146,8 @@ class TestInstitutionAuth:
         assert user.family_name == 'User'
 
     def test_user_names_used_when_provided(
-            self, app, institution, url_auth_institution):
+            self, app, institution, url_auth_institution,
+    ):
         # Regression for https://openscience.atlassian.net/browse/OSF-7212
         username = 'fake@user.edu'
         res = app.post(
@@ -150,8 +156,8 @@ class TestInstitutionAuth:
                 institution,
                 username,
                 family_name='West',
-                given_name='Kanye'
-            )
+                given_name='Kanye',
+            ),
         )
 
         assert res.status_code == 204

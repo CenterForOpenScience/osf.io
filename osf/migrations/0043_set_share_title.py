@@ -39,6 +39,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunPython(
-            set_share_titles, unset_share_titles
+            set_share_titles, unset_share_titles,
         ),
     ]

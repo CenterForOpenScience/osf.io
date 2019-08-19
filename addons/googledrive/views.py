@@ -11,12 +11,12 @@ FULL_NAME = 'Google Drive'
 
 googledrive_account_list = generic_views.account_list(
     SHORT_NAME,
-    GoogleDriveSerializer
+    GoogleDriveSerializer,
 )
 
 googledrive_get_config = generic_views.get_config(
     SHORT_NAME,
-    GoogleDriveSerializer
+    GoogleDriveSerializer,
 )
 
 def _set_folder(node_addon, folder, auth):
@@ -27,16 +27,16 @@ googledrive_set_config = generic_views.set_config(
     SHORT_NAME,
     FULL_NAME,
     GoogleDriveSerializer,
-    _set_folder
+    _set_folder,
 )
 
 googledrive_import_auth = generic_views.import_auth(
     SHORT_NAME,
-    GoogleDriveSerializer
+    GoogleDriveSerializer,
 )
 
 googledrive_deauthorize_node = generic_views.deauthorize_node(
-    SHORT_NAME
+    SHORT_NAME,
 )
 
 @must_have_addon(SHORT_NAME, 'node')

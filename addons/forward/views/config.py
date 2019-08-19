@@ -11,7 +11,8 @@ from website.project.decorators import (
     must_have_addon,
     must_have_permission,
     must_not_be_registration,
-    must_be_valid_project)
+    must_be_valid_project,
+)
 
 from addons.forward.utils import serialize_settings
 

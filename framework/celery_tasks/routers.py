@@ -23,5 +23,5 @@ class CeleryRouter(object):
         :returns dict:      Tells celery into which queue to route this task.
         """
         return {
-            'queue': match_by_module(task)
+            'queue': match_by_module(task),
         }

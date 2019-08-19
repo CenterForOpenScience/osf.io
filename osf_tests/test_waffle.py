@@ -5,7 +5,7 @@ from functools import wraps
 from osf_tests.factories import (
     AuthUserFactory,
     FlagFactory,
-    ProjectFactory
+    ProjectFactory,
 )
 from website.project.views.node import _view_project
 

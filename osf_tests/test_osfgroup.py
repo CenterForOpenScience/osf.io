@@ -18,7 +18,7 @@ from .factories import (
     NodeFactory,
     ProjectFactory,
     AuthUserFactory,
-    OSFGroupFactory
+    OSFGroupFactory,
 )
 
 pytestmark = pytest.mark.django_db
@@ -777,12 +777,14 @@ class TestNodeGroups:
         grandchild_two = NodeFactory(parent=child_two, creator=manager)  # Member has implicit admin perms on grandchild_two through osf_group
         can_view = Node.objects.can_view(member)
         assert len(can_view) == 6
-        assert set(list(can_view.values_list('id', flat=True))) == set((project.id,
-                                                                        child.id,
-                                                                        grandchild.id,
-                                                                        project_two.id,
-                                                                        child_two.id,
-                                                                        grandchild_two.id))
+        assert set(list(can_view.values_list('id', flat=True))) == set((
+            project.id,
+            child.id,
+            grandchild.id,
+            project_two.id,
+            child_two.id,
+            grandchild_two.id,
+        ))
 
         grandchild_two.is_deleted = True
         grandchild_two.save()
@@ -959,19 +961,22 @@ class TestRemovingContributorOrGroupMembers:
             target_content_type=ContentType.objects.get_for_model(project),
             path='/{}'.format(filename),
             name=filename,
-            materialized_path='/{}'.format(filename))
+            materialized_path='/{}'.format(filename),
+        )
 
         project_file.save()
         from addons.osfstorage import settings as osfstorage_settings
 
-        project_file.create_version(user_two, {
-            'object': '06d80e',
-            'service': 'cloud',
-            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
-        }, {
-            'size': 1337,
-            'contentType': 'img/png'
-        }).save
+        project_file.create_version(
+            user_two, {
+                'object': '06d80e',
+                'service': 'cloud',
+                osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+            }, {
+                'size': 1337,
+                'contentType': 'img/png',
+            },
+        ).save
         project_file.checkout = user_two
         project_file.save()
         return project_file

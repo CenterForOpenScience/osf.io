@@ -33,7 +33,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
         domain = urlparse('https://dinosaurs.sexy')
         factories.InstitutionFactory(
             domains=[domain.netloc.lower()],
-            name='Institute for Sexy Lizards'
+            name='Institute for Sexy Lizards',
         )
         settings.load_origins_whitelist()
         request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
@@ -48,7 +48,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
         domain = urlparse('https://dinoprints.sexy')
         factories.PreprintProviderFactory(
             domain=domain.geturl().lower(),
-            _id='DinoXiv'
+            _id='DinoXiv',
         )
         settings.load_origins_whitelist()
         request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
@@ -75,7 +75,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
         request = self.request_factory.get(
             url,
             HTTP_ORIGIN=domain.geturl(),
-            HTTP_AUTHORIZATION='Bearer aqweqweohuweglbiuwefq'
+            HTTP_AUTHORIZATION='Bearer aqweqweohuweglbiuwefq',
         )
         response = HttpResponse()
         self.middleware.process_request(request)
@@ -84,13 +84,14 @@ class TestCorsMiddleware(MiddlewareTestCase):
 
     @override_settings(CORS_ORIGIN_ALLOW_ALL=False)
     def test_cross_origin_request_with_Authorization_and_cookie_does_not_get_cors_headers(
-            self):
+            self,
+    ):
         url = api_v2_url('users/me/')
         domain = urlparse('https://dinosaurs.sexy')
         request = self.request_factory.get(
             url,
             HTTP_ORIGIN=domain.geturl(),
-            HTTP_AUTHORIZATION='Bearer aqweqweohuweglbiuwefq'
+            HTTP_AUTHORIZATION='Bearer aqweqweohuweglbiuwefq',
         )
         response = {}
         with mock.patch.object(request, 'COOKIES', True):
@@ -100,14 +101,15 @@ class TestCorsMiddleware(MiddlewareTestCase):
 
     @override_settings(CORS_ORIGIN_ALLOW_ALL=False)
     def test_non_institution_preflight_request_requesting_authorization_header_gets_cors_headers(
-            self):
+            self,
+    ):
         url = api_v2_url('users/me/')
         domain = urlparse('https://dinosaurs.sexy')
         request = self.request_factory.options(
             url,
             HTTP_ORIGIN=domain.geturl(),
             HTTP_ACCESS_CONTROL_REQUEST_METHOD='GET',
-            HTTP_ACCESS_CONTROL_REQUEST_HEADERS='authorization'
+            HTTP_ACCESS_CONTROL_REQUEST_HEADERS='authorization',
         )
         response = HttpResponse()
         self.middleware.process_request(request)

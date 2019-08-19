@@ -75,10 +75,12 @@ def assert_datetime_equal(dt1, dt2, allowance=500):
     assert abs(dt1 - dt2) < dt.timedelta(milliseconds=allowance)
 
 @contextlib.contextmanager
-def mock_archive(project, schema=None, auth=None, data=None, parent=None,
-                 embargo=False, embargo_end_date=None,
-                 retraction=False, justification=None, autoapprove_retraction=False,
-                 autocomplete=True, autoapprove=False, provider=None):
+def mock_archive(
+    project, schema=None, auth=None, data=None, parent=None,
+    embargo=False, embargo_end_date=None,
+    retraction=False, justification=None, autoapprove_retraction=False,
+    autocomplete=True, autoapprove=False, provider=None,
+):
     """ A context manager for registrations. When you want to call Node#register_node in
     a test but do not want to deal with any of this side effects of archiver, this
     helper allows for creating a registration in a safe fashion.
@@ -128,7 +130,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         )
         registration.embargo_registration(
             project.creator,
-            embargo_end_date
+            embargo_end_date,
         )
     else:
         registration.require_approval(project.creator)
@@ -141,7 +143,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         sanction = registration.sanction
         with contextlib.nested(
             mock.patch.object(root_job, 'archive_tree_finished', mock.Mock(return_value=True)),
-            mock.patch('website.archiver.tasks.archive_success.delay', mock.Mock())
+            mock.patch('website.archiver.tasks.archive_success.delay', mock.Mock()),
         ):
             archiver_listeners.archive_callback(registration)
     if autoapprove:

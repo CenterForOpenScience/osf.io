@@ -14,10 +14,12 @@ class AbstractBaseContributor(models.Model):
     user = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
 
     def __repr__(self):
-        return ('<{self.__class__.__name__}(user={self.user}, '
-                'visible={self.visible}, '
-                'permission={self.permission}'
-                ')>').format(self=self)
+        return (
+            '<{self.__class__.__name__}(user={self.user}, '
+            'visible={self.visible}, '
+            'permission={self.permission}'
+            ')>'
+        ).format(self=self)
 
     class Meta:
         abstract = True

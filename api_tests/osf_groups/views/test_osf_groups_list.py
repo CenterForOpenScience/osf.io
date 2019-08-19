@@ -107,9 +107,9 @@ class TestOSFGroupCreate:
             'data': {
                 'type': 'groups',
                 'attributes': {
-                    'name': 'My New Lab'
+                    'name': 'My New Lab',
                 },
-            }
+            },
         }
 
     def test_create_osf_group(self, app, url, manager, simple_payload):
@@ -143,8 +143,8 @@ class TestOSFGroupCreate:
             # Required name field
             payload = {
                 'data': {
-                    'type': 'groups'
-                }
+                    'type': 'groups',
+                },
             }
             res = app.post_json_api(url, payload, auth=manager.auth, expect_errors=True)
             assert res.status_code == 400

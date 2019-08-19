@@ -132,7 +132,8 @@ class TestAUser(OsfTestCase):
         project.add_contributor(
             self.user,
             permissions=permissions.ADMIN,
-            save=True)
+            save=True,
+        )
         res = self.app.get('/{0}/addons/'.format(project._primary_key), auth=self.auth, auto_follow=True)
         assert_in('OSF Storage', res)
 
@@ -148,7 +149,8 @@ class TestAUser(OsfTestCase):
         project.add_contributor(
             self.user,
             permissions=permissions.ADMIN,
-            save=True)
+            save=True,
+        )
         # User goes to the project page
         res = self.app.get(project.url, auth=self.auth).maybe_follow()
         assert_in('Make Public', res)
@@ -159,7 +161,8 @@ class TestAUser(OsfTestCase):
         project.add_contributor(
             self.user,
             permissions=permissions.WRITE,
-            save=True)
+            save=True,
+        )
         # User goes to the project page
         res = self.app.get(project.url, auth=self.auth).maybe_follow()
         assert_not_in('Make Public', res)
@@ -170,7 +173,8 @@ class TestAUser(OsfTestCase):
         project.add_contributor(
             self.user,
             permissions=permissions.ADMIN,
-            save=True)
+            save=True,
+        )
         # User goes to the project page
         res = self.app.get(project.url, auth=self.auth).maybe_follow()
         assert_in('Make Private', res)
@@ -181,7 +185,8 @@ class TestAUser(OsfTestCase):
         project.add_contributor(
             self.user,
             permissions=permissions.WRITE,
-            save=True)
+            save=True,
+        )
         # User goes to the project page
         res = self.app.get(project.url, auth=self.auth).maybe_follow()
         assert_not_in('Make Private', res)
@@ -212,12 +217,14 @@ class TestAUser(OsfTestCase):
         )
         wiki = WikiVersionFactory(
             wiki_page=wiki_page,
-            content=wiki_content
+            content=wiki_content,
         )
-        res = self.app.get('/{0}/wiki/{1}/'.format(
-            project._primary_key,
-            wiki_page_name,
-        ), auth=self.auth)
+        res = self.app.get(
+            '/{0}/wiki/{1}/'.format(
+                project._primary_key,
+                wiki_page_name,
+            ), auth=self.auth,
+        )
         assert_not_in('Add important information, links, or images here to describe your project.', res)
         assert_in(wiki_content, res)
         assert_in('panelsUsed: ["view", "menu"]', res)
@@ -240,10 +247,12 @@ class TestAUser(OsfTestCase):
 
     def test_wiki_does_not_exist(self):
         project = ProjectFactory(creator=self.user)
-        res = self.app.get('/{0}/wiki/{1}/'.format(
-            project._primary_key,
-            'not a real page yet',
-        ), auth=self.auth, expect_errors=True)
+        res = self.app.get(
+            '/{0}/wiki/{1}/'.format(
+                project._primary_key,
+                'not a real page yet',
+            ), auth=self.auth, expect_errors=True,
+        )
         assert_in('Add important information, links, or images here to describe your project.', res)
 
     def test_sees_own_profile(self):
@@ -290,11 +299,11 @@ class TestComponents(OsfTestCase):
     def test_delete_project(self):
         res = self.app.get(
             self.component.url + 'settings/',
-            auth=self.user.auth
+            auth=self.user.auth,
         ).maybe_follow()
         assert_in(
             'Delete {0}'.format(self.component.project_or_component),
-            res
+            res,
         )
 
     def test_cant_delete_project_if_not_admin(self):
@@ -307,11 +316,11 @@ class TestComponents(OsfTestCase):
         )
         res = self.app.get(
             self.component.url + 'settings/',
-            auth=non_admin.auth
+            auth=non_admin.auth,
         ).maybe_follow()
         assert_not_in(
             'Delete {0}'.format(self.component.project_or_component),
-            res
+            res,
         )
 
     def test_can_configure_comments_if_admin(self):
@@ -331,7 +340,7 @@ class TestComponents(OsfTestCase):
         )
         res = self.app.get(
             self.component.url + 'settings/',
-            auth=non_admin.auth
+            auth=non_admin.auth,
         ).maybe_follow()
         assert_not_in('Commenting', res)
 
@@ -370,13 +379,15 @@ class TestPrivateLinkView(OsfTestCase):
             permissions=permissions.READ,
             save=True,
         )
-        res = self.app.get(self.project_url, {'view_only': link2.key},
-                           auth=self.user.auth)
+        res = self.app.get(
+            self.project_url, {'view_only': link2.key},
+            auth=self.user.auth,
+        )
         assert_not_in(
             'is being viewed through a private, view-only link. '
             'Anyone with the link can view this project. Keep '
             'the link safe.',
-            res.body
+            res.body,
         )
 
     def test_no_warning_for_read_only_user_with_invalid_link(self):
@@ -385,13 +396,15 @@ class TestPrivateLinkView(OsfTestCase):
             permissions=permissions.READ,
             save=True,
         )
-        res = self.app.get(self.project_url, {'view_only': 'not_valid'},
-                           auth=self.user.auth)
+        res = self.app.get(
+            self.project_url, {'view_only': 'not_valid'},
+            auth=self.user.auth,
+        )
         assert_not_in(
             'is being viewed through a private, view-only link. '
             'Anyone with the link can view this project. Keep '
             'the link safe.',
-            res.body
+            res.body,
         )
 
 
@@ -461,7 +474,7 @@ class TestShortUrls(OsfTestCase):
     def _url_to_body(self, url):
         return self.app.get(
             url,
-            auth=self.auth
+            auth=self.auth,
         ).maybe_follow(
             auth=self.auth,
         ).normal_body
@@ -499,8 +512,10 @@ class TestClaiming(OsfTestCase):
         UnregUserFactory(fullname=name1, email=email)
         name2, email = fake.name(), fake_email()
         # Added with different name
-        self.project.add_unregistered_contributor(fullname=name2,
-            email=email, auth=Auth(self.referrer))
+        self.project.add_unregistered_contributor(
+            fullname=name2,
+            email=email, auth=Auth(self.referrer),
+        )
         self.project.save()
 
         res = self.app.get(self.project.url, auth=self.referrer.auth)
@@ -513,7 +528,7 @@ class TestClaiming(OsfTestCase):
         new_user = self.project.add_unregistered_contributor(
             email=email,
             fullname=name,
-            auth=Auth(self.referrer)
+            auth=Auth(self.referrer),
         )
         self.project.save()
         claim_url = new_user.get_claim_url(self.project._primary_key)
@@ -533,7 +548,7 @@ class TestClaiming(OsfTestCase):
         new_user = self.project.add_unregistered_contributor(
             email=email,
             fullname=name,
-            auth=Auth(self.referrer)
+            auth=Auth(self.referrer),
         )
         self.project.save()
         existing = AuthUserFactory()
@@ -549,13 +564,13 @@ class TestClaiming(OsfTestCase):
         self.project.add_unregistered_contributor(
             email=email,
             fullname=name1,
-            auth=Auth(self.referrer)
+            auth=Auth(self.referrer),
         )
         self.project.save()
         project2.add_unregistered_contributor(
             email=email,
             fullname=name2,
-            auth=Auth(self.referrer)
+            auth=Auth(self.referrer),
         )
         project2.save()
         self.app.authenticate(*self.referrer.auth)
@@ -573,7 +588,7 @@ class TestClaiming(OsfTestCase):
         new_user = self.project.add_unregistered_contributor(
             email=email,
             fullname=name,
-            auth=Auth(self.referrer)
+            auth=Auth(self.referrer),
         )
         self.project.save()
         # Goes to claim url and successfully claims account
@@ -589,7 +604,7 @@ class TestClaiming(OsfTestCase):
         res = form.submit().maybe_follow(expect_errors=True)
         assert_in(
             language.ALREADY_REGISTERED.format(email=reg_user.username),
-            res
+            res,
         )
 
     def test_correct_display_name_is_shown_at_claim_page(self):
@@ -619,7 +634,7 @@ class TestConfirmingEmail(OsfTestCase):
             external=False,
         )
         self.confirmation_token = self.user.get_confirmation_token(
-            self.user.username
+            self.user.username,
         )
 
     def test_cannot_remove_another_user_email(self):
@@ -637,10 +652,13 @@ class TestConfirmingEmail(OsfTestCase):
         user1.emails.create(address=email)
         user1.save()
         url = api_url_for('update_user')
-        header = {'id': user1.username,
-                  'emails': [{'address': user1.username, 'primary': False, 'confirmed': True},
-                            {'address': email, 'primary': True, 'confirmed': True}
-                  ]}
+        header = {
+            'id': user1.username,
+            'emails': [
+                {'address': user1.username, 'primary': False, 'confirmed': True},
+                          {'address': email, 'primary': True, 'confirmed': True},
+            ],
+        }
         res = self.app.put_json(url, header, auth=user2.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
@@ -649,10 +667,13 @@ class TestConfirmingEmail(OsfTestCase):
         user2 = AuthUserFactory()
         email = 'test@cos.io'
         url = api_url_for('update_user')
-        header = {'id': user1.username,
-                  'emails': [{'address': user1.username, 'primary': True, 'confirmed': True},
-                            {'address': email, 'primary': False, 'confirmed': False}
-                  ]}
+        header = {
+            'id': user1.username,
+            'emails': [
+                {'address': user1.username, 'primary': True, 'confirmed': True},
+                          {'address': email, 'primary': False, 'confirmed': False},
+            ],
+        }
         res = self.app.put_json(url, header, auth=user2.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
@@ -677,7 +698,7 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         self.user = self.project.add_unregistered_contributor(
             fullname=name,
             email=email,
-            auth=Auth(user=self.referrer)
+            auth=Auth(user=self.referrer),
         )
         self.project.save()
 
@@ -712,7 +733,7 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         unreg_user = preprint.add_unregistered_contributor(
             fullname=name,
             email=email,
-            auth=Auth(user=self.referrer)
+            auth=Auth(user=self.referrer),
         )
         reg_user = AuthUserFactory()  # NOTE: AuthUserFactory sets password as 'queenfan86'
         url = unreg_user.get_claim_url(preprint._id)

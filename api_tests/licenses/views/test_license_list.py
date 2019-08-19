@@ -23,7 +23,8 @@ class TestLicenseList:
 
         # test_license_list_name_filter
         url = '/{}licenses/?filter[name]={}'.format(
-            API_BASE, license_node.name)
+            API_BASE, license_node.name,
+        )
         res = app.get(url)
         data = res.json['data'][0]
         assert data['attributes']['name'] == license_node.name

@@ -37,24 +37,32 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
         try:
             instance = Model.objects.filter(pk_or_query).select_for_update().get() if select_for_update else Model.objects.get(pk_or_query)
         except Model.DoesNotExist:
-            raise HTTPError(http.NOT_FOUND, data=dict(
-                message_long='No {name} record matching that query could be found'.format(name=safe_name)
-            ))
+            raise HTTPError(
+                http.NOT_FOUND, data=dict(
+                    message_long='No {name} record matching that query could be found'.format(name=safe_name),
+                ),
+            )
         except Model.MultipleObjectsReturned:
-            raise HTTPError(http.BAD_REQUEST, data=dict(
-                message_long='The query must match exactly one {name} record'.format(name=safe_name)
-            ))
+            raise HTTPError(
+                http.BAD_REQUEST, data=dict(
+                    message_long='The query must match exactly one {name} record'.format(name=safe_name),
+                ),
+            )
     else:
         instance = Model.load(pk_or_query, select_for_update=select_for_update)
         if not instance:
-            raise HTTPError(http.NOT_FOUND, data=dict(
-                message_long='No {name} record with that primary key could be found'.format(name=safe_name)
-            ))
+            raise HTTPError(
+                http.NOT_FOUND, data=dict(
+                    message_long='No {name} record with that primary key could be found'.format(name=safe_name),
+                ),
+            )
     if getattr(instance, 'is_deleted', False) and getattr(instance, 'suspended', False):
-        raise HTTPError(451, data=dict(  # 451 - Unavailable For Legal Reasons
-            message_short='Content removed',
-            message_long='This content has been removed'
-        ))
+        raise HTTPError(
+            451, data=dict(  # 451 - Unavailable For Legal Reasons
+                message_short='Content removed',
+                message_long='This content has been removed',
+            ),
+        )
     if not allow_deleted and getattr(instance, 'is_deleted', False):
         raise HTTPError(http.GONE)
     return instance

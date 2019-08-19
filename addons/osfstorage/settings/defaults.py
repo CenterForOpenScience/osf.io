@@ -11,14 +11,14 @@ DEFAULT_REGION_NAME = 'United States'
 DEFAULT_REGION_ID = 'us'
 
 WATERBUTLER_CREDENTIALS = {
-    'storage': {}
+    'storage': {},
 }
 
 WATERBUTLER_SETTINGS = {
     'storage': {
         'provider': 'filesystem',
         'folder': os.path.join(settings.BASE_PATH, 'osfstoragecache'),
-    }
+    },
 }
 
 WATERBUTLER_RESOURCE = 'folder'

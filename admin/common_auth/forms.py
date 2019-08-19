@@ -12,7 +12,7 @@ class LoginForm(forms.Form):
     password = forms.CharField(
         label=u'Password',
         widget=forms.PasswordInput(render_value=False),
-        required=True
+        required=True,
     )
 
 
@@ -26,7 +26,7 @@ class UserRegistrationForm(forms.Form):
     group_perms = forms.ModelMultipleChoiceField(
         queryset=Group.objects.exclude(Q(name__startswith='collections_') | Q(name__startswith='reviews_') | Q(name__startswith='preprint_') | Q(name__startswith='node_') | Q(name__startswith='osfgroup_')),
         required=False,
-        widget=forms.CheckboxSelectMultiple
+        widget=forms.CheckboxSelectMultiple,
     )
 
 

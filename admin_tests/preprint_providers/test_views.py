@@ -71,7 +71,7 @@ class TestShareSourcePreprintProvider(AdminTestCase):
                     'token': token,
                 },
                 'type': 'ShareUser',
-            }]
+            }],
         }
 
         self.view.get(self.request)
@@ -114,12 +114,12 @@ class TestPreprintProviderChangeForm(AdminTestCase):
             'name': 'New Name',
             'share_publish_type': 'Preprint',
             'subjects_chosen': '{}, {}, {}, {}'.format(
-                self.parent_1.id, self.child_1.id, self.child_2.id, self.grandchild_1.id
+                self.parent_1.id, self.child_1.id, self.child_2.id, self.grandchild_1.id,
             ),
             'type': 'osf.preprintprovider',
             'toplevel_subjects': [self.parent_1.id],
             'subjects_acceptable': '[]',
-            'preprint_word': 'preprint'
+            'preprint_word': 'preprint',
         }
         form = PreprintProviderForm(data=new_data)
         nt.assert_true(form.is_valid())
@@ -134,7 +134,7 @@ class TestPreprintProviderChangeForm(AdminTestCase):
             'name': 'New Name',
             'share_publish_type': 'Preprint',
             'subjects_chosen': '{}, {}, {}, {}'.format(
-                self.parent_1.id, self.child_1.id, self.child_2.id, self.grandchild_1.id
+                self.parent_1.id, self.child_1.id, self.child_2.id, self.grandchild_1.id,
             ),
             'type': 'osf.preprintprovider',
             'toplevel_subjects': [self.parent_1.id],
@@ -142,7 +142,7 @@ class TestPreprintProviderChangeForm(AdminTestCase):
             'advisory_board': '<div><ul><li>Bill<i class="fa fa-twitter"></i> Nye</li></ul></div>',
             'description': '<span>Open Preprints <code>Open</code> Science<script></script></span>',
             'footer_links': '<p>Xiv: <script>Support</script> | <pre>Contact<pre> | <a href=""><span class="fa fa-facebook"></span></a></p>',
-            'preprint_word': 'preprint'
+            'preprint_word': 'preprint',
         }
 
         stripped_advisory_board = '<div><ul><li>Bill Nye</li></ul></div>'
@@ -251,8 +251,8 @@ class TestPreprintProviderExportImport(AdminTestCase):
         new_subject_data['custom'] = {
             'TestSubject1': {
                 'parent': '',
-                'bepress': 'Law'
-            }
+                'bepress': 'Law',
+            },
         }
 
         content_dict['fields']['subjects'] = json.dumps(new_subject_data)

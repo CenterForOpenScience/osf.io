@@ -95,19 +95,20 @@ class ProcessCustomTaxonomyMixinBase:
 
     def test_process_taxonomy_changes_subjects(
             self, provider, view, user, req, subject_one,
-            subject_one_a, subject_two, subject_two_a, subject_three_a):
+            subject_one_a, subject_two, subject_two_a, subject_three_a,
+    ):
 
         custom_taxonomy = {
             'include': [subject_one.text, subject_three_a.text],
             'exclude': [subject_one_a.text],
             'custom': {
                 'Changed Subject Name': {'parent': subject_two.text, 'bepress': subject_two_a.text},
-                subject_two.text: {'parent': '', 'bepress': subject_two.text}
-            }
+                subject_two.text: {'parent': '', 'bepress': subject_two.text},
+            },
         }
         req.POST = {
             'custom_taxonomy_json': json.dumps(custom_taxonomy),
-            'provider_id': provider.id
+            'provider_id': provider.id,
         }
 
         view.post(req)
@@ -124,11 +125,11 @@ class ProcessCustomTaxonomyMixinBase:
             'exclude': [],
             'custom': {
                 'Changed Subject Name': {'parent': subject_two.text, 'bepress': subject_two_a.text},
-            }
+            },
         }
         req.POST = {
             'custom_taxonomy_json': json.dumps(custom_taxonomy),
-            'provider_id': provider.id
+            'provider_id': provider.id,
         }
 
         with pytest.raises(AssertionError):

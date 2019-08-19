@@ -90,7 +90,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     groups = {
         'read': ('read_collection', ),
         'write': ('read_collection', 'write_collection', ),
-        'admin': ('read_collection', 'write_collection', 'admin_collection', )
+        'admin': ('read_collection', 'write_collection', 'admin_collection', ),
     }
     group_format = 'collections_{self.id}_{group}'
 
@@ -108,8 +108,9 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         'contenttypes.ContentType',
         related_name='+',
         limit_choices_to={
-            'model__in': ['abstractnode', 'basefilenode', 'collection', 'preprint']
-        })
+            'model__in': ['abstractnode', 'basefilenode', 'collection', 'preprint'],
+        },
+    )
     title = models.CharField(max_length=200, validators=[validate_title])
     collected_type_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)
     status_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)

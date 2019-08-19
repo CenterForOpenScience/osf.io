@@ -87,8 +87,8 @@ class TestDraftRegistrationApprovals:
         )
         approval = DraftRegistrationApproval(
             meta={
-                'registration_choice': 'immediate'
-            }
+                'registration_choice': 'immediate',
+            },
         )
         approval.save()
         draft.approval = approval
@@ -120,8 +120,8 @@ class TestDraftRegistrationApprovals:
         merger.merge_user(mergee)
         approval = DraftRegistrationApproval(
             meta={
-                'registration_choice': 'immediate'
-            }
+                'registration_choice': 'immediate',
+            },
         )
         approval.save()
         draft.approval = approval
@@ -139,8 +139,8 @@ class TestDraftRegistrationApprovals:
         approval = DraftRegistrationApproval(
             meta={
                 'registration_choice': 'embargo',
-                'embargo_end_date': end_date.isoformat()
-            }
+                'embargo_end_date': end_date.isoformat(),
+            },
         )
         approval.save()
         project = factories.ProjectFactory(creator=user)
@@ -163,7 +163,7 @@ class TestDraftRegistrationApprovals:
         approval = DraftRegistrationApproval(
             meta={
                 'registration_choice': 'immediate',
-            }
+            },
         )
         approval.save()
         with mock.patch.object(approval, '_on_complete') as mock_on_complete:
@@ -180,8 +180,8 @@ class TestDraftRegistrationApprovals:
         user = factories.UserFactory()
         approval = DraftRegistrationApproval(
             meta={
-                'registration_choice': 'immediate'
-            }
+                'registration_choice': 'immediate',
+            },
         )
         approval.save()
         project = factories.ProjectFactory(creator=user)

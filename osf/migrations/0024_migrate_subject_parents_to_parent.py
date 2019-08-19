@@ -47,12 +47,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='subject',
             name='provider',
-            field=models.ForeignKey(blank=True, null=True, on_delete=models.deletion.SET_NULL, to='osf.PreprintProvider', related_name='subjects')
+            field=models.ForeignKey(blank=True, null=True, on_delete=models.deletion.SET_NULL, to='osf.PreprintProvider', related_name='subjects'),
         ),
         migrations.AddField(
             model_name='subject',
             name='bepress_subject',
-            field=models.ForeignKey(blank=True, null=True, on_delete=models.deletion.CASCADE, to='osf.Subject', related_name='aliases')
+            field=models.ForeignKey(blank=True, null=True, on_delete=models.deletion.CASCADE, to='osf.Subject', related_name='aliases'),
         ),
         migrations.RunSQL(
             ["""
@@ -61,7 +61,7 @@ class Migration(migrations.Migration):
             """], ["""
             UPDATE osf_subject
             SET provider_id = NULL;
-            """]
+            """],
         ),
         migrations.RunSQL(
             ["""
@@ -74,14 +74,14 @@ class Migration(migrations.Migration):
             INSERT INTO osf_subject_parents (from_subject_id, to_subject_id)
             SELECT id, parent_id FROM osf_subject
             WHERE parent_id IS NOT NULL;
-            """]
+            """],
         ),
         migrations.RunPython(
-            add_custom_mapping_constraint, remove_custom_mapping_constraint
+            add_custom_mapping_constraint, remove_custom_mapping_constraint,
         ),
         migrations.RemoveField(
             model_name='subject',
-            name='parents'
+            name='parents',
         ),
         migrations.AlterField(
             model_name='subject',
@@ -91,6 +91,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='subject',
             name='provider',
-            field=models.ForeignKey(blank=False, null=False, on_delete=models.deletion.CASCADE, to='osf.PreprintProvider', related_name='subjects')
+            field=models.ForeignKey(blank=False, null=False, on_delete=models.deletion.CASCADE, to='osf.PreprintProvider', related_name='subjects'),
         ),
     ]

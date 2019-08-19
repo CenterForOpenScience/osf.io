@@ -49,7 +49,7 @@ from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode, Osf
 
 from framework.sentry import log_exception
 from osf.exceptions import (
-    PreprintStateError, InvalidTagError, TagNotFoundError
+    PreprintStateError, InvalidTagError, TagNotFoundError,
 )
 
 logger = logging.getLogger(__name__)
@@ -64,7 +64,8 @@ class PreprintManager(IncludeManager):
         is_public=True,
         deleted__isnull=True,
         primary_file__isnull=False,
-        primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value) \
+        primary_file__deleted_on__isnull=True,
+    ) & ~Q(machine_state=DefaultStates.INITIAL.value) \
         & (Q(date_withdrawn__isnull=True) | Q(ever_public=True))
 
     def preprint_permissions_query(self, user=None, allow_contribs=True, public_only=False):
@@ -95,7 +96,7 @@ class PreprintManager(IncludeManager):
                 user=user,
                 allow_contribs=allow_contribs,
                 public_only=public_only,
-            ) & Q(deleted__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value)
+            ) & Q(deleted__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value),
         )
         # The auth subquery currently results in duplicates returned
         # https://openscience.atlassian.net/browse/OSF-9058
@@ -103,8 +104,10 @@ class PreprintManager(IncludeManager):
         return ret.distinct('id', 'created') if include_non_public else ret
 
 
-class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel,
-        Loggable, Taggable, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin, ContributorMixin):
+class Preprint(
+    DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel,
+    Loggable, Taggable, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin, ContributorMixin,
+):
 
     objects = PreprintManager()
     # Preprint fields that trigger a check to the spam filter on save
@@ -127,18 +130,24 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         'tags',
     }
 
-    provider = models.ForeignKey('osf.PreprintProvider',
-                                 on_delete=models.SET_NULL,
-                                 related_name='preprints',
-                                 null=True, blank=True, db_index=True)
-    node = models.ForeignKey('osf.AbstractNode', on_delete=models.SET_NULL,
-                             related_name='preprints',
-                             null=True, blank=True, db_index=True)
+    provider = models.ForeignKey(
+        'osf.PreprintProvider',
+        on_delete=models.SET_NULL,
+        related_name='preprints',
+        null=True, blank=True, db_index=True,
+    )
+    node = models.ForeignKey(
+        'osf.AbstractNode', on_delete=models.SET_NULL,
+        related_name='preprints',
+        null=True, blank=True, db_index=True,
+    )
     is_published = models.BooleanField(default=False, db_index=True)
     date_published = NonNaiveDateTimeField(null=True, blank=True)
     original_publication_date = NonNaiveDateTimeField(null=True, blank=True)
-    license = models.ForeignKey('osf.NodeLicenseRecord',
-                                on_delete=models.SET_NULL, null=True, blank=True)
+    license = models.ForeignKey(
+        'osf.NodeLicenseRecord',
+        on_delete=models.SET_NULL, null=True, blank=True,
+    )
 
     identifiers = GenericRelation(Identifier, related_query_name='preprints')
     preprint_doi_created = NonNaiveDateTimeField(default=None, null=True, blank=True)
@@ -146,20 +155,26 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     withdrawal_justification = models.TextField(default='', blank=True)
     ever_public = models.BooleanField(default=False, blank=True)
     title = models.TextField(
-        validators=[validate_title]
+        validators=[validate_title],
     )  # this should be a charfield but data from mongo didn't fit in 255
     description = models.TextField(blank=True, default='')
-    creator = models.ForeignKey(OSFUser,
-                                db_index=True,
-                                related_name='preprints_created',
-                                on_delete=models.SET_NULL,
-                                null=True, blank=True)
-    _contributors = models.ManyToManyField(OSFUser,
-                                           through=PreprintContributor,
-                                           related_name='preprints')
-    article_doi = models.CharField(max_length=128,
-                                            validators=[validate_doi],
-                                            null=True, blank=True)
+    creator = models.ForeignKey(
+        OSFUser,
+        db_index=True,
+        related_name='preprints_created',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+    )
+    _contributors = models.ManyToManyField(
+        OSFUser,
+        through=PreprintContributor,
+        related_name='preprints',
+    )
+    article_doi = models.CharField(
+        max_length=128,
+        validators=[validate_doi],
+        null=True, blank=True,
+    )
     files = GenericRelation('osf.OsfStorageFile', object_id_field='target_object_id', content_type_field='target_content_type')
     primary_file = models.ForeignKey('osf.OsfStorageFile', null=True, blank=True, related_name='preprint')
     # (for legacy preprints), pull off of node
@@ -172,7 +187,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     groups = {
         'read': ('read_preprint',),
         'write': ('read_preprint', 'write_preprint',),
-        'admin': ('read_preprint', 'write_preprint', 'admin_preprint',)
+        'admin': ('read_preprint', 'write_preprint', 'admin_preprint',),
     }
     group_format = 'preprint_{self.id}_{group}'
 
@@ -219,7 +234,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         # Overrides ContributorMixin
         return OSFUser.objects.filter(
             preprintcontributor__preprint=self,
-            preprintcontributor__visible=True
+            preprintcontributor__visible=True,
         ).order_by('preprintcontributor___order')
 
     @property
@@ -236,7 +251,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     def contributor_kwargs(self):
         # Property needed for ContributorMixin
         return {
-            'preprint': self
+            'preprint': self,
         }
 
     @property
@@ -248,7 +263,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     def log_params(self):
         # Property needed for ContributorMixin
         return {
-            'preprint': self._id
+            'preprint': self._id,
         }
 
     @property
@@ -325,7 +340,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     def absolute_url(self):
         return urlparse.urljoin(
             self.provider.domain if self.provider.domain_redirect_enabled else settings.DOMAIN,
-            self.url
+            self.url,
         )
 
     @property
@@ -366,7 +381,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             ],
             'type': 'webpage',
             'URL': self.display_absolute_url,
-            'publisher': 'OSF Preprints' if self.provider.name == 'Open Science Framework' else self.provider.name
+            'publisher': 'OSF Preprints' if self.provider.name == 'Open Science Framework' else self.provider.name,
         }
 
         article_doi = self.article_doi
@@ -383,8 +398,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         return csl
 
     def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
-        return web_url_for(view_name, pid=self._id,
-                           _absolute=_absolute, _guid=_guid, *args, **kwargs)
+        return web_url_for(
+            view_name, pid=self._id,
+            _absolute=_absolute, _guid=_guid, *args, **kwargs
+        )
 
     def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
         return api_url_for(view_name, pid=self._id, _absolute=_absolute, *args, **kwargs)
@@ -403,7 +420,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
         log = PreprintLog(
             action=action, user=user, foreign_user=foreign_user,
-            params=params, preprint=self
+            params=params, preprint=self,
         )
 
         log.save()
@@ -431,7 +448,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             params={
                 'subjects': list(self.subjects.values('_id', 'text')),
                 'old_subjects': list(Subject.objects.filter(id__in=old_subjects).values('_id', 'text')),
-                'preprint': self._id
+                'preprint': self._id,
             },
             auth=auth,
             save=False,
@@ -460,10 +477,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                 action=PreprintLog.FILE_UPDATED,
                 params={
                     'preprint': self._id,
-                    'file': self.primary_file._id
+                    'file': self.primary_file._id,
                 },
                 auth=auth,
-                save=False
+                save=False,
             )
 
         if save:
@@ -502,7 +519,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             self.add_log(
                 action=PreprintLog.PUBLISHED,
                 params={
-                    'preprint': self._id
+                    'preprint': self._id,
                 },
                 auth=auth,
                 save=False,
@@ -520,10 +537,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                 action=PreprintLog.CHANGED_LICENSE,
                 params={
                     'preprint': self._id,
-                    'new_license': license_record.node_license.name
+                    'new_license': license_record.node_license.name,
                 },
                 auth=auth,
-                save=False
+                save=False,
             )
         if save:
             self.save()
@@ -597,7 +614,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             'workflow': self.provider.reviews_workflow,
             'provider_url': '{domain}preprints/{provider_id}'.format(
                             domain=self.provider.domain or settings.DOMAIN,
-                            provider_id=self.provider._id if not self.provider.domain else '').strip('/'),
+                            provider_id=self.provider._id if not self.provider.domain else '',
+            ).strip('/'),
             'provider_contact_email': self.provider.email_contact or settings.OSF_CONTACT_EMAIL,
             'provider_support_email': self.provider.email_support or settings.OSF_SUPPORT_EMAIL,
             'no_future_emails': user_subscriptions['none'],
@@ -636,10 +654,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             action=PreprintLog.TAG_ADDED,
             params={
                 'preprint': self._id,
-                'tag': tag.name
+                'tag': tag.name,
             },
             auth=auth,
-            save=False
+            save=False,
         )
 
     # Override Taggable
@@ -704,7 +722,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             action=PreprintLog.SUPPLEMENTAL_NODE_REMOVED,
             params={
                 'preprint': self._id,
-                'node': current_node_id
+                'node': current_node_id,
             },
             auth=auth,
             save=False,
@@ -765,7 +783,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             params={
                 'preprint': self._id,
                 'description_new': self.description,
-                'description_original': original
+                'description_original': original,
             },
             auth=auth,
             save=False,
@@ -776,7 +794,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     def get_spam_fields(self, saved_fields):
         return self.SPAM_CHECK_FIELDS if self.is_published and 'is_published' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
-            saved_fields)
+            saved_fields,
+        )
 
     def get_permissions(self, user):
         # Overrides guardian mixin - doesn't return view_preprint perms, and
@@ -826,11 +845,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if not auth.user:
             return self.verified_publishable
 
-        return (self.verified_publishable or
-            (self.is_public and auth.user.has_perm('view_submissions', self.provider)) or
-            self.has_permission(auth.user, ADMIN) or
-            (self.is_contributor(auth.user) and self.has_submitted_preprint)
-        )
+        is_contrib_and_submitted = self.is_contributor(auth.user) and self.has_submitted_preprint
+        is_public_and_view_submissions = self.is_public and auth.user.has_perm('view_submissions', self.provider)
+
+        return self.verified_publishable or is_public_and_view_submissions or self.has_permission(auth.user, ADMIN) or is_contrib_and_submitted
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this preprint.
@@ -881,16 +899,18 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         Since preprints don't have addons, this method has been pulled over from the
         OSFStorage addon
         """
-        return dict(Region.objects.get(id=self.region_id).waterbutler_settings, **{
-            'nid': self._id,
-            'rootId': self.root_folder._id,
-            'baseUrl': api_url_for(
-                'osfstorage_get_metadata',
-                guid=self._id,
-                _absolute=True,
-                _internal=True
-            )
-        })
+        return dict(
+            Region.objects.get(id=self.region_id).waterbutler_settings, **{
+                'nid': self._id,
+                'rootId': self.root_folder._id,
+                'baseUrl': api_url_for(
+                    'osfstorage_get_metadata',
+                    guid=self._id,
+                    _absolute=True,
+                    _internal=True,
+                ),
+            }
+        )
 
     def serialize_waterbutler_credentials(self, provider_name=None):
         """
@@ -915,14 +935,14 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                 'addon_view_or_download_file',
                 guid=self._id,
                 path=metadata['path'],
-                provider='osfstorage'
+                provider='osfstorage',
             )
             params['urls'] = {'view': url, 'download': url + '?action=download'}
 
         self.add_log(
             'osf_storage_{0}'.format(action),
             auth=Auth(user),
-            params=params
+            params=params,
         )
 
 

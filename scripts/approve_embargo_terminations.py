@@ -32,7 +32,7 @@ def get_pending_embargo_termination_requests():
 
     return models.EmbargoTerminationApproval.objects.filter(
         initiation_date__lt=auto_approve_time,
-        state=models.EmbargoTerminationApproval.UNAPPROVED
+        state=models.EmbargoTerminationApproval.UNAPPROVED,
     )
 
 def main():
@@ -43,20 +43,20 @@ def main():
             registration = models.Registration.objects.get(embargo_termination_approval=request)
         except models.Registration.DoesNotExist:
             logger.error(
-                'EmbargoTerminationApproval {} is not attached to a registration'.format(request._id)
+                'EmbargoTerminationApproval {} is not attached to a registration'.format(request._id),
             )
             continue
         if not registration.is_embargoed:
             logger.warning('Registration {0} associated with this embargo termination request ({0}) is not embargoed.'.format(
                 registration._id,
-                request._id
+                request._id,
             ))
             continue
         embargo = registration.embargo
         if not embargo:
             logger.warning('No Embargo associated with this embargo termination request ({0}) on Node: {1}'.format(
                 request._id,
-                registration._id
+                registration._id,
             ))
             continue
         else:

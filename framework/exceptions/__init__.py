@@ -15,32 +15,42 @@ class HTTPError(FrameworkError):
     error_msgs = {
         http.BAD_REQUEST: {
             'message_short': 'Bad request',
-            'message_long': ('If this should not have occurred and the issue persists, '
-                             + language.SUPPORT_LINK),
+            'message_long': (
+                'If this should not have occurred and the issue persists, '
+                + language.SUPPORT_LINK
+            ),
         },
         http.FORBIDDEN: {
             'message_short': 'Forbidden',
-            'message_long': ('You do not have permission to perform this action. '
-                             'If this should not have occurred and the issue persists, '
-                             + language.SUPPORT_LINK),
+            'message_long': (
+                'You do not have permission to perform this action. '
+                'If this should not have occurred and the issue persists, '
+                + language.SUPPORT_LINK
+            ),
         },
         http.NOT_FOUND: {
             'message_short': 'Page not found',
-            'message_long': ('The requested resource could not be found. If this '
-                             'should not have occurred and the issue persists, '
-                             + language.SUPPORT_LINK),
+            'message_long': (
+                'The requested resource could not be found. If this '
+                'should not have occurred and the issue persists, '
+                + language.SUPPORT_LINK
+            ),
         },
         http.GONE: {
             'message_short': 'Resource deleted',
-            'message_long': ('User has deleted this content. If this should '
-                             'not have occurred and the issue persists, '
-                             + language.SUPPORT_LINK),
+            'message_long': (
+                'User has deleted this content. If this should '
+                'not have occurred and the issue persists, '
+                + language.SUPPORT_LINK
+            ),
         },
         http.SERVICE_UNAVAILABLE: {
             'message_short': 'Service is currently unavailable',
-            'message_long': ('The requested service is unavailable. If this '
-                             'should not have occurred and the issue persists, '
-                             + language.SUPPORT_LINK),
+            'message_long': (
+                'The requested service is unavailable. If this '
+                'should not have occurred and the issue persists, '
+                + language.SUPPORT_LINK
+            ),
         },
         451: {
             'message_short': 'Content removed',
@@ -78,7 +88,7 @@ class HTTPError(FrameworkError):
         if self.code in self.error_msgs:
             data = {
                 'message_short': self.error_msgs[self.code]['message_short'],
-                'message_long': self.error_msgs[self.code]['message_long']
+                'message_long': self.error_msgs[self.code]['message_long'],
             }
         elif self.code == http.UNAUTHORIZED:
             data = {

@@ -22,6 +22,6 @@ class Migration(migrations.Migration):
         migrations.RenameField(
             model_name='comment',
             old_name='modified',
-            new_name='edited'
+            new_name='edited',
         ),
     ]

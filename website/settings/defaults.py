@@ -38,7 +38,7 @@ with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
 EXPIRATION_TIME_DICT = {
     'password': 24 * 60,    # 24 hours in minutes for forgot and reset password
     'confirm': 24 * 60,     # 24 hours in minutes for confirm account and email
-    'claim': 30 * 24 * 60   # 30 days in minutes for claim contributor-ship
+    'claim': 30 * 24 * 60,   # 30 days in minutes for claim contributor-ship
 }
 
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
@@ -85,7 +85,7 @@ API_DOMAIN = PROTOCOL + 'localhost:8000/'
 PREPRINT_PROVIDER_DOMAINS = {
     'enabled': False,
     'prefix': PROTOCOL,
-    'suffix': '/'
+    'suffix': '/',
 }
 # External Ember App Local Development
 USE_EXTERNAL_EMBER = False
@@ -224,7 +224,7 @@ WIKI_WHITELIST = {
         'top', 'left', 'width', 'height', 'position',
         'background', 'font-size', 'text-align', 'z-index',
         'list-style',
-    ]
+    ],
 }
 
 # Maps category identifier => Human-readable representation for use in
@@ -241,7 +241,7 @@ NODE_CATEGORY_MAP = OrderedDict([
     ('project', 'Project'),
     ('software', 'Software'),
     ('other', 'Other'),
-    ('', 'Uncategorized')
+    ('', 'Uncategorized'),
 ])
 
 # Add-ons
@@ -429,7 +429,7 @@ class CeleryConfig:
         'scripts.refresh_addon_tokens',
         'scripts.retract_registrations',
         'website.archiver.tasks',
-        'scripts.add_missing_identifiers_to_preprints'
+        'scripts.add_missing_identifiers_to_preprints',
     }
 
     try:
@@ -438,14 +438,22 @@ class CeleryConfig:
         pass
     else:
         task_queues = (
-            Queue(task_low_queue, Exchange(task_low_queue), routing_key=task_low_queue,
-                consumer_arguments={'x-priority': -1}),
-            Queue(task_default_queue, Exchange(task_default_queue), routing_key=task_default_queue,
-                consumer_arguments={'x-priority': 0}),
-            Queue(task_med_queue, Exchange(task_med_queue), routing_key=task_med_queue,
-                consumer_arguments={'x-priority': 1}),
-            Queue(task_high_queue, Exchange(task_high_queue), routing_key=task_high_queue,
-                consumer_arguments={'x-priority': 10}),
+            Queue(
+                task_low_queue, Exchange(task_low_queue), routing_key=task_low_queue,
+                consumer_arguments={'x-priority': -1},
+            ),
+            Queue(
+                task_default_queue, Exchange(task_default_queue), routing_key=task_default_queue,
+                consumer_arguments={'x-priority': 0},
+            ),
+            Queue(
+                task_med_queue, Exchange(task_med_queue), routing_key=task_med_queue,
+                consumer_arguments={'x-priority': 1},
+            ),
+            Queue(
+                task_high_queue, Exchange(task_high_queue), routing_key=task_high_queue,
+                consumer_arguments={'x-priority': 10},
+            ),
         )
 
         task_default_exchange_type = 'direct'
@@ -521,11 +529,13 @@ class CeleryConfig:
             'refresh_addons': {
                 'task': 'scripts.refresh_addon_tokens',
                 'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m
-                'kwargs': {'dry_run': False, 'addons': {
-                    'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
-                    'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
-                    'mendeley': 14      # http://dev.mendeley.com/reference/topics/authorization_overview.html
-                }},
+                'kwargs': {
+                    'dry_run': False, 'addons': {
+                        'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
+                        'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
+                        'mendeley': 14,      # http://dev.mendeley.com/reference/topics/authorization_overview.html
+                    },
+                },
             },
             'retract_registrations': {
                 'task': 'scripts.retract_registrations',
@@ -570,22 +580,22 @@ class CeleryConfig:
             'new-and-noteworthy': {
                 'task': 'scripts.populate_new_and_noteworthy_projects',
                 'schedule': crontab(minute=0, hour=7, day_of_week=6),  # Saturday 2:00 a.m.
-                'kwargs': {'dry_run': False}
+                'kwargs': {'dry_run': False},
             },
             'update_popular_nodes': {
                 'task': 'scripts.populate_popular_projects_and_registrations',
                 'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
-                'kwargs': {'dry_run': False}
+                'kwargs': {'dry_run': False},
             },
             'registration_schema_metrics': {
                 'task': 'management.commands.registration_schema_metrics',
                 'schedule': crontab(minute=45, hour=7, day_of_month=3),  # Third day of month 2:45 a.m.
-                'kwargs': {'dry_run': False}
+                'kwargs': {'dry_run': False},
             },
             'run_keen_summaries': {
                 'task': 'scripts.analytics.run_keen_summaries',
                 'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
-                'kwargs': {'yesterday': True}
+                'kwargs': {'yesterday': True},
             },
             # 'run_keen_snapshots': {
             #     'task': 'scripts.analytics.run_keen_snapshots',
@@ -594,7 +604,7 @@ class CeleryConfig:
             'run_keen_events': {
                 'task': 'scripts.analytics.run_keen_events',
                 'schedule': crontab(minute=0, hour=9),  # Daily 4:00 a.m.
-                'kwargs': {'yesterday': True}
+                'kwargs': {'yesterday': True},
             },
             # 'data_storage_usage': {
             #   'task': 'management.commands.data_storage_usage',
@@ -1889,7 +1899,7 @@ DO_NOT_INDEX_LIST = {
 CUSTOM_CITATIONS = {
     'bluebook-law-review': 'bluebook',
     'bluebook2': 'bluebook',
-    'bluebook-inline': 'bluebook'
+    'bluebook-inline': 'bluebook',
 }
 
 #Email templates logo

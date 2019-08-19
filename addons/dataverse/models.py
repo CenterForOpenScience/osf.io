@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 
-from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
-                                BaseStorageAddon)
+from addons.base.models import (
+    BaseOAuthNodeSettings, BaseOAuthUserSettings,
+    BaseStorageAddon,
+)
 from django.db import models
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
@@ -69,7 +71,7 @@ class DataverseProvider(object):
     def __repr__(self):
         return '<{name}: {status}>'.format(
             name=self.__class__.__name__,
-            status=self.account.provider_id if self.account else 'anonymous'
+            status=self.account.provider_id if self.account else 'anonymous',
         )
 
 
@@ -123,7 +125,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             auth = Auth(self.user_settings.owner)
         return DataverseNodeLogger(
             node=self.owner,
-            auth=auth
+            auth=auth,
         )
 
     def set_folder(self, dataverse, dataset, auth=None):
@@ -208,7 +210,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'filename': metadata['materialized'].strip('/'),
                 'urls': {
                     'view': url,
-                    'download': url + '?action=download'
+                    'download': url + '?action=download',
                 },
             },
         )

@@ -44,23 +44,23 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
             'creators': utils.datacite_format_contributors(target.visible_contributors),
             'titles': [
                 {
-                    'title': osfstorage_file.name
+                    'title': osfstorage_file.name,
                 },
                 {
                     'title': target.title,
-                    'titleType': 'AlternativeTitle'
-                }
+                    'titleType': 'AlternativeTitle',
+                },
             ],
             'publisher': 'Open Science Framework',
             'dates': [
                 {
                     'date': str(osfstorage_file.created),
-                    'dateType': 'Created'
+                    'dateType': 'Created',
                 },
                 {
                     'date': str(osfstorage_file.modified),
-                    'dateType': 'Updated'
-                }
+                    'dateType': 'Updated',
+                },
             ],
         }
 
@@ -69,8 +69,8 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
             doc['descriptions'] = [
                 {
                     'description': file_description,
-                    'descriptionType': 'Abstract'
-                }
+                    'descriptionType': 'Abstract',
+                },
             ]
 
         subject_list = []
@@ -86,7 +86,7 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
         resource_type = record.metadata.get('resource_type', '(:unas)')
         doc['resourceType'] = {
             'resourceType': resource_type,
-            'resourceTypeGeneral': utils.DATACITE_RESOURCE_TYPE_MAP.get(resource_type)
+            'resourceTypeGeneral': utils.DATACITE_RESOURCE_TYPE_MAP.get(resource_type),
         }
 
         doc['publicationYear'] = str(osfstorage_file.created.year)
@@ -97,16 +97,16 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
                 {
                     'relatedIdentifier': related_publication_doi,
                     'relatedIdentifierType': 'DOI',
-                    'relationType': 'IsSupplementTo'
-                }
+                    'relationType': 'IsSupplementTo',
+                },
             ]
 
         if osfstorage_file.guids.exists():
             doc['alternateIdentifiers'] = [
                 {
                     'alternateIdentifier': DOMAIN + osfstorage_file.guids.first()._id,
-                    'alternateIdentifierType': 'URL'
-                }
+                    'alternateIdentifierType': 'URL',
+                },
             ]
 
         funders = record.metadata.get('funders')

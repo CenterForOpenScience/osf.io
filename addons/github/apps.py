@@ -60,20 +60,20 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         can_edit = False
 
     name_tpl = '{user}/{repo}'.format(
-        user=node_settings.user, repo=node_settings.repo
+        user=node_settings.user, repo=node_settings.repo,
     )
 
     permissions = {
         'edit': can_edit,
         'view': True,
-        'private': node_settings.is_private
+        'private': node_settings.is_private,
     }
     urls = {
         'upload': node_settings.owner.api_url + 'github/file/' + (ref or ''),
         'fetch': node_settings.owner.api_url + 'github/hgrid/' + (ref or ''),
         'branch': node_settings.owner.api_url + 'github/hgrid/root/',
         'zip': node_settings.owner.api_url + 'github/zipball/' + (ref or ''),
-        'repo': 'https://github.com/{0}/{1}/tree/{2}'.format(node_settings.user, node_settings.repo, branch)
+        'repo': 'https://github.com/{0}/{1}/tree/{2}'.format(node_settings.user, node_settings.repo, branch),
     }
 
     branch_names = [each.name for each in branches]
@@ -131,7 +131,8 @@ class GitHubAddonConfig(BaseAddonAppConfig):
         NODE_AUTHORIZED,
         NODE_DEAUTHORIZED,
         NODE_DEAUTHORIZED_NO_USER,
-        REPO_LINKED)
+        REPO_LINKED,
+    )
 
     @property
     def routes(self):

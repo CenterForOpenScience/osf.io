@@ -41,7 +41,7 @@ def load_guid_as_target(func):
                 data={
                     'message_short': 'Guid not resolved',
                     'message_long': 'No object with that guid could be found',
-                }
+                },
             )
         kwargs['target'] = target
         return func(*args, **kwargs)
@@ -63,10 +63,12 @@ def autoload_filenode(must_be=None, default_root=False):
             else:
                 file_node = OsfStorageFileNode.get(kwargs.get('fid'), kwargs['target'])
             if must_be and file_node.kind != must_be:
-                raise HTTPError(httplib.BAD_REQUEST, data={
-                    'message_short': 'incorrect type',
-                    'message_long': 'FileNode must be of type {} not {}'.format(must_be, file_node.kind)
-                })
+                raise HTTPError(
+                    httplib.BAD_REQUEST, data={
+                        'message_short': 'incorrect type',
+                        'message_long': 'FileNode must be of type {} not {}'.format(must_be, file_node.kind),
+                    },
+                )
 
             kwargs['file_node'] = file_node
 

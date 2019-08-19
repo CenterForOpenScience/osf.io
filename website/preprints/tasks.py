@@ -58,7 +58,7 @@ def update_or_create_preprint_identifiers(preprint):
 def update_or_enqueue_on_preprint_updated(preprint_id, update_share=True, share_type=None, old_subjects=None, saved_fields=None):
     task = get_task_from_postcommit_queue(
         'website.preprints.tasks.on_preprint_updated',
-        predicate=lambda task: task.kwargs['preprint_id'] == preprint_id
+        predicate=lambda task: task.kwargs['preprint_id'] == preprint_id,
     )
     if task:
         old_subjects = old_subjects or []
@@ -72,7 +72,7 @@ def update_or_enqueue_on_preprint_updated(preprint_id, update_share=True, share_
             on_preprint_updated,
             (),
             {'preprint_id': preprint_id, 'old_subjects': old_subjects, 'update_share': update_share, 'share_type': share_type, 'saved_fields': saved_fields},
-            celery=True
+            celery=True,
         )
 
 def update_preprint_share(preprint, old_subjects=None, share_type=None):
@@ -111,7 +111,7 @@ def _async_update_preprint_share(self, preprint_id, old_subjects, share_type):
                 send_desk_share_preprint_error(preprint, resp, self.request.retries)
             raise self.retry(
                 exc=e,
-                countdown=(random.random() + 1) * min(60 + settings.CELERY_RETRY_BACKOFF_BASE ** self.request.retries, 60 * 10)
+                countdown=(random.random() + 1) * min(60 + settings.CELERY_RETRY_BACKOFF_BASE ** self.request.retries, 60 * 10),
             )
         else:
             send_desk_share_preprint_error(preprint, resp, self.request.retries)
@@ -123,9 +123,9 @@ def serialize_share_preprint_data(preprint, share_type, old_subjects):
             'attributes': {
                 'tasks': [],
                 'raw': None,
-                'data': {'@graph': format_preprint(preprint, share_type, old_subjects)}
-            }
-        }
+                'data': {'@graph': format_preprint(preprint, share_type, old_subjects)},
+            },
+        },
     }
 
 def send_share_preprint_data(preprint, data):
@@ -138,19 +138,21 @@ def format_preprint(preprint, share_type, old_subjects=None):
         old_subjects = []
     from osf.models import Subject
     old_subjects = [Subject.objects.get(id=s) for s in old_subjects]
-    preprint_graph = GraphNode(share_type, **{
-        'title': preprint.title,
-        'description': preprint.description or '',
-        'is_deleted': (
-            (not preprint.verified_publishable and not preprint.is_retracted) or
-            preprint.tags.filter(name='qatest').exists()
-        ),
-        'date_updated': preprint.modified.isoformat(),
-        'date_published': preprint.date_published.isoformat() if preprint.date_published else None
-    })
+    preprint_graph = GraphNode(
+        share_type, **{
+            'title': preprint.title,
+            'description': preprint.description or '',
+            'is_deleted': (
+                (not preprint.verified_publishable and not preprint.is_retracted) or
+                preprint.tags.filter(name='qatest').exists()
+            ),
+            'date_updated': preprint.modified.isoformat(),
+            'date_published': preprint.date_published.isoformat() if preprint.date_published else None,
+        }
+    )
     to_visit = [
         preprint_graph,
-        GraphNode('workidentifier', creative_work=preprint_graph, uri=urlparse.urljoin(settings.DOMAIN, preprint._id + '/'))
+        GraphNode('workidentifier', creative_work=preprint_graph, uri=urlparse.urljoin(settings.DOMAIN, preprint._id + '/')),
     ]
 
     if preprint.get_identifier('doi'):
@@ -204,5 +206,5 @@ def send_desk_share_preprint_error(preprint, resp, retries):
         resp=resp,
         retries=retries,
         can_change_preferences=False,
-        logo=settings.OSF_PREPRINTS_LOGO
+        logo=settings.OSF_PREPRINTS_LOGO,
     )

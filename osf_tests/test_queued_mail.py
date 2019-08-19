@@ -13,7 +13,7 @@ from .factories import UserFactory, NodeFactory, DraftRegistrationFactory
 from osf.features import DISABLE_ENGAGEMENT_EMAILS
 from osf.models.queued_mail import (
     queue_mail, WELCOME_OSF4M,
-    NO_LOGIN, NO_ADDON, NEW_PUBLIC_PROJECT
+    NO_LOGIN, NO_ADDON, NEW_PUBLIC_PROJECT,
 )
 from website.mails import mails
 from website.settings import DOMAIN
@@ -77,7 +77,7 @@ class TestQueuedMail:
             mail=NEW_PUBLIC_PROJECT,
             user=user,
             project_title='Oh yass',
-            nid=node._id
+            nid=node._id,
         )
         assert bool(mail.send_mail()) is True
 
@@ -90,7 +90,7 @@ class TestQueuedMail:
             user=user,
             conference='Buttjamz conference',
             fid='',
-            domain=DOMAIN
+            domain=DOMAIN,
         )
         assert bool(mail.send_mail()) is True
         assert mail.data['downloads'] == 0

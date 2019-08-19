@@ -43,7 +43,7 @@ CSRF_COOKIE_SECURE = osf_settings.SECURE_MODE
 CSRF_COOKIE_HTTPONLY = False
 
 ALLOWED_HOSTS = [
-    '.osf.io'
+    '.osf.io',
 ]
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -54,7 +54,7 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
         'OPTIONS': {
             'min_length': 5,
-        }
+        },
     },
 ]
 
@@ -144,9 +144,10 @@ RAVEN_CONFIG = {
 # Settings related to CORS Headers addon: allow API to receive authenticated requests from OSF
 # CORS plugin only matches based on "netloc" part of URL, so as workaround we add that to the list
 CORS_ORIGIN_ALLOW_ALL = False
-CORS_ORIGIN_WHITELIST = (urlparse(osf_settings.DOMAIN).netloc,
-                         osf_settings.DOMAIN,
-                         )
+CORS_ORIGIN_WHITELIST = (
+    urlparse(osf_settings.DOMAIN).netloc,
+    osf_settings.DOMAIN,
+)
 CORS_ALLOW_CREDENTIALS = True
 
 MIDDLEWARE = (
@@ -187,8 +188,9 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
-        }
-    }]
+        },
+    },
+]
 
 ROOT_URLCONF = 'admin.base.urls'
 WSGI_APPLICATION = 'admin.base.wsgi.application'
@@ -210,7 +212,7 @@ WEBPACK_LOADER = {
     'DEFAULT': {
         'BUNDLE_DIR_NAME': 'public/js/',
         'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats.json'),
-    }
+    },
 }
 
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
@@ -222,19 +224,21 @@ KEEN_READ_KEY = osf_settings.KEEN['private']['read_key']
 KEEN_WRITE_KEY = osf_settings.KEEN['private']['write_key']
 
 KEEN_CREDENTIALS = {
-    'keen_ready': False
+    'keen_ready': False,
 }
 
 if KEEN_CREDENTIALS['keen_ready']:
     KEEN_CREDENTIALS.update({
         'keen_project_id': KEEN_PROJECT_ID,
         'keen_read_key': KEEN_READ_KEY,
-        'keen_write_key': KEEN_WRITE_KEY
+        'keen_write_key': KEEN_WRITE_KEY,
     })
 
 
-ENTRY_POINTS = {'osf4m': 'osf4m', 'prereg_challenge_campaign': 'prereg',
-                'institution_campaign': 'institution'}
+ENTRY_POINTS = {
+    'osf4m': 'osf4m', 'prereg_challenge_campaign': 'prereg',
+    'institution_campaign': 'institution',
+}
 
 # Set in local.py
 DESK_KEY = ''
@@ -252,8 +256,8 @@ if DEBUG:
         'SHOW_TOOLBAR_CALLBACK': lambda(_): True,
         'DISABLE_PANELS': {
             'debug_toolbar.panels.templates.TemplatesPanel',
-            'debug_toolbar.panels.redirects.RedirectsPanel'
-        }
+            'debug_toolbar.panels.redirects.RedirectsPanel',
+        },
     }
 
 # If set to True, automated tests with extra queries will fail.

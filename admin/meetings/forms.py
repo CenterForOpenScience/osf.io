@@ -50,7 +50,7 @@ class MeetingForm(forms.Form):
     )
     info_url = forms.URLField(
         label='Info url',
-        required=False
+        required=False,
     )
     homepage_link_text = forms.CharField(
         label='Homepage link text (Default: "Conference homepage")',
@@ -63,11 +63,11 @@ class MeetingForm(forms.Form):
     )
     start_date = forms.DateField(
         required=False,
-        label='Start date (e.g. Nov 7 2016 or 11/7/2016)'
+        label='Start date (e.g. Nov 7 2016 or 11/7/2016)',
     )
     end_date = forms.DateField(
         required=False,
-        label='End date (e.g. Nov 9 2016 or 11/9/2016)'
+        label='End date (e.g. Nov 9 2016 or 11/9/2016)',
     )
     logo_url = forms.URLField(
         label='Logo url',
@@ -105,25 +105,25 @@ class MeetingForm(forms.Form):
         initial=True,
     )
     submission1 = forms.CharField(
-        label='Name for Submission 1 (poster)'
+        label='Name for Submission 1 (poster)',
     )
     submission2 = forms.CharField(
-        label='Name for Submission 2 (talk)'
+        label='Name for Submission 2 (talk)',
     )
     submission1_plural = forms.CharField(
-        label='Plural for submission 1'
+        label='Plural for submission 1',
     )
     submission2_plural = forms.CharField(
-        label='Plural for submission 2'
+        label='Plural for submission 2',
     )
     meeting_title_type = forms.CharField(
-        label='Title for the type of meeting'
+        label='Title for the type of meeting',
     )
     add_submission = forms.CharField(
-        label='Add submission'
+        label='Add submission',
     )
     mail_subject = forms.CharField(
-        label='Mail subject'
+        label='Mail subject',
     )
     mail_message_body = forms.CharField(
         label='Message body for mail',
@@ -151,12 +151,12 @@ class MeetingForm(forms.Form):
             Conference.get_by_endpoint(endpoint, False)
             if not edit:
                 raise forms.ValidationError(
-                    'A meeting with this endpoint exists already.'
+                    'A meeting with this endpoint exists already.',
                 )
         except ConferenceError:
             if edit:
                 raise forms.ValidationError(
-                    'Meeting not found with this endpoint to update'
+                    'Meeting not found with this endpoint to update',
                 )
         return endpoint
 
@@ -166,6 +166,6 @@ class MeetingForm(forms.Form):
             user = get_user(email=email)
             if not user or user is None:
                 raise forms.ValidationError(
-                    '{} does not have an OSF account'.format(email)
+                    '{} does not have an OSF account'.format(email),
                 )
         return emails

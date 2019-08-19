@@ -53,8 +53,8 @@ def main():
             .filter(
                 _id__startswith='download:{preprint_id}:{file_id}:'.format(
                     preprint_id=preprint_id,
-                    file_id=file_id
-                )
+                    file_id=file_id,
+                ),
             ).values_list('_id', 'date')
         )
         for page_counter in page_counters:
@@ -71,9 +71,9 @@ def main():
                         'provider_id': provider_id,
                         'timestamp': timestamp,
                         'user_id': None,  # Pagecounter never tracked this
-                        'version': int(version_num) + 1
+                        'version': int(version_num) + 1,
                     },
-                    '_type': 'doc'
+                    '_type': 'doc',
                 })
 
                 if len(batch_to_update) >= MAX_BATCH_SIZE:

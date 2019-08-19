@@ -36,5 +36,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(update_comment_root_target)
+        migrations.RunPython(update_comment_root_target),
     ]

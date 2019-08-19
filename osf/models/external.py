@@ -8,8 +8,10 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils import timezone
 from flask import request
-from oauthlib.oauth2 import (AccessDeniedError, InvalidGrantError,
-    TokenExpiredError, MissingTokenError)
+from oauthlib.oauth2 import (
+    AccessDeniedError, InvalidGrantError,
+    TokenExpiredError, MissingTokenError,
+)
 from requests.exceptions import HTTPError as RequestsHTTPError
 from requests_oauthlib import OAuth1Session, OAuth2Session
 
@@ -73,8 +75,10 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
     profile_url = EncryptedTextField(blank=True, null=True)
 
     def __repr__(self):
-        return '<ExternalAccount: {}/{}>'.format(self.provider,
-                                                 self.provider_id)
+        return '<ExternalAccount: {}/{}>'.format(
+            self.provider,
+            self.provider_id,
+        )
 
     def _natural_key(self):
         if self.pk:
@@ -83,7 +87,7 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
 
     class Meta:
         unique_together = [
-            ('provider', 'provider_id',)
+            ('provider', 'provider_id',),
         ]
 
 
@@ -128,7 +132,7 @@ class ExternalProvider(object):
     def __repr__(self):
         return '<{name}: {status}>'.format(
             name=self.__class__.__name__,
-            status=self.account.provider_id if self.account else 'anonymous'
+            status=self.account.provider_id if self.account else 'anonymous',
         )
 
     @abc.abstractproperty
@@ -162,7 +166,7 @@ class ExternalProvider(object):
                 redirect_uri = web_url_for(
                     'oauth_callback',
                     service_name=self.short_name,
-                    _absolute=True
+                    _absolute=True,
                 )
             # build the URL
             oauth = OAuth2Session(
@@ -272,7 +276,7 @@ class ExternalProvider(object):
                     redirect_uri = web_url_for(
                         'oauth_callback',
                         service_name=self.short_name,
-                        _absolute=True
+                        _absolute=True,
                     )
                 response = OAuth2Session(
                     self.client_id,
@@ -362,7 +366,7 @@ class ExternalProvider(object):
                 values['refresh_token'] = refresh_token
             if expires_at:
                 values['expires_at'] = dt.datetime.fromtimestamp(
-                    float(expires_at)
+                    float(expires_at),
                 )
 
             return values
@@ -383,8 +387,10 @@ class ExternalProvider(object):
         """
         pass
 
-    def refresh_oauth_key(self, force=False, extra=None, resp_auth_token_key='access_token',
-                          resp_refresh_token_key='refresh_token', resp_expiry_fn=None):
+    def refresh_oauth_key(
+        self, force=False, extra=None, resp_auth_token_key='access_token',
+        resp_refresh_token_key='refresh_token', resp_expiry_fn=None,
+    ):
         """Handles the refreshing of an oauth_key for account associated with this provider.
            Not all addons need to use this, as some do not have oauth_keys that expire.
 
@@ -427,12 +433,12 @@ class ExternalProvider(object):
                 'refresh_token': self.account.refresh_token,
                 'token_type': 'Bearer',
                 'expires_in': '-30',
-            }
+            },
         )
 
         extra.update({
             'client_id': self.client_id,
-            'client_secret': self.client_secret
+            'client_secret': self.client_secret,
         })
 
         try:
@@ -495,7 +501,7 @@ class BasicAuthProviderMixin(object):
                 provider_id='{}:{}'.format(host, username),
                 profile_url=host,
                 provider=self.short_name,
-                provider_name=self.name
+                provider_name=self.name,
             )
         else:
             self.account = None

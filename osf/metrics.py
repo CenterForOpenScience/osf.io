@@ -59,10 +59,12 @@ class MetricMixin(object):
         return super(MetricMixin, cls).search(using=using, index=index, *args, **kwargs)
 
     @classmethod
-    def get_top_by_count(cls, qs, model_field, metric_field,
-                         size, order_by=None,
-                         count_field='count',
-                         annotation='metric_count', after=None):
+    def get_top_by_count(
+        cls, qs, model_field, metric_field,
+        size, order_by=None,
+        count_field='count',
+        annotation='metric_count', after=None,
+    ):
         """Return a queryset annotated with the metric counts for each item.
 
         Example: ::
@@ -113,7 +115,7 @@ class MetricMixin(object):
         # By default order by annotation, desc
         order_by = order_by or '-{}'.format(annotation)
         return qs.annotate(**{
-            annotation: models.Case(*whens, default=0, output_field=models.IntegerField())
+            annotation: models.Case(*whens, default=0, output_field=models.IntegerField()),
         }).order_by(order_by)
 
 

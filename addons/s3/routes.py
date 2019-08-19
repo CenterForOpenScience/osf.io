@@ -73,7 +73,7 @@ api_routes = {
             ],
             'post',
             views.create_bucket,
-            json_renderer
+            json_renderer,
         ),
     ],
     'prefix': '/api/v1',

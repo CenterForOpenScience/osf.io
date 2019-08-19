@@ -41,35 +41,47 @@ class Registration(AbstractNode):
     ]
     provider = models.ForeignKey('RegistrationProvider', related_name='registrations', null=True)
     registered_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
-    registered_user = models.ForeignKey(OSFUser,
-                                        related_name='related_to',
-                                        on_delete=models.SET_NULL,
-                                        null=True, blank=True)
+    registered_user = models.ForeignKey(
+        OSFUser,
+        related_name='related_to',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+    )
 
     registered_schema = models.ManyToManyField(RegistrationSchema)
 
     registered_meta = DateTimeAwareJSONField(default=dict, blank=True)
-    registered_from = models.ForeignKey('self',
-                                        related_name='registrations',
-                                        on_delete=models.SET_NULL,
-                                        null=True, blank=True)
+    registered_from = models.ForeignKey(
+        'self',
+        related_name='registrations',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+    )
     # Sanctions
-    registration_approval = models.ForeignKey('RegistrationApproval',
-                                            related_name='registrations',
-                                            null=True, blank=True,
-                                            on_delete=models.SET_NULL)
-    retraction = models.ForeignKey('Retraction',
-                                related_name='registrations',
-                                null=True, blank=True,
-                                on_delete=models.SET_NULL)
-    embargo = models.ForeignKey('Embargo',
-                                related_name='registrations',
-                                null=True, blank=True,
-                                on_delete=models.SET_NULL)
-    embargo_termination_approval = models.ForeignKey('EmbargoTerminationApproval',
-                                                    related_name='registrations',
-                                                    null=True, blank=True,
-                                                    on_delete=models.SET_NULL)
+    registration_approval = models.ForeignKey(
+        'RegistrationApproval',
+        related_name='registrations',
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+    )
+    retraction = models.ForeignKey(
+        'Retraction',
+        related_name='registrations',
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+    )
+    embargo = models.ForeignKey(
+        'Embargo',
+        related_name='registrations',
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+    )
+    embargo_termination_approval = models.ForeignKey(
+        'EmbargoTerminationApproval',
+        related_name='registrations',
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+    )
     files_count = models.PositiveIntegerField(blank=True, null=True)
 
     @staticmethod
@@ -213,21 +225,23 @@ class Registration(AbstractNode):
     def withdrawal_justification(self):
         return getattr(self.root.retraction, 'justification', None)
 
-    def _initiate_embargo(self, user, end_date, for_existing_registration=False,
-                          notify_initiator_on_complete=False):
+    def _initiate_embargo(
+        self, user, end_date, for_existing_registration=False,
+        notify_initiator_on_complete=False,
+    ):
         """Initiates the retraction process for a registration
         :param user: User who initiated the retraction
         :param end_date: Date when the registration should be made public
         """
         end_date_midnight = datetime.datetime.combine(
             end_date,
-            datetime.datetime.min.time()
+            datetime.datetime.min.time(),
         ).replace(tzinfo=end_date.tzinfo)
         self.embargo = Embargo.objects.create(
             initiated_by=user,
             end_date=end_date_midnight,
             for_existing_registration=for_existing_registration,
-            notify_initiator_on_complete=notify_initiator_on_complete
+            notify_initiator_on_complete=notify_initiator_on_complete,
         )
         self.save()  # Set foreign field reference Node.embargo
         admins = self.get_admin_contributors_recursive(unique_users=True)
@@ -236,8 +250,10 @@ class Registration(AbstractNode):
         self.embargo.save()  # Save embargo's approval_state
         return self.embargo
 
-    def embargo_registration(self, user, end_date, for_existing_registration=False,
-                             notify_initiator_on_complete=False):
+    def embargo_registration(
+        self, user, end_date, for_existing_registration=False,
+        notify_initiator_on_complete=False,
+    ):
         """Enter registration into an embargo period at end of which, it will
         be made public
         :param user: User initiating the embargo
@@ -253,9 +269,11 @@ class Registration(AbstractNode):
                 raise ValidationError('Registrations can only be embargoed for up to four years.')
             raise ValidationError('Embargo end date must be at least three days in the future.')
 
-        embargo = self._initiate_embargo(user, end_date,
-                                         for_existing_registration=for_existing_registration,
-                                         notify_initiator_on_complete=notify_initiator_on_complete)
+        embargo = self._initiate_embargo(
+            user, end_date,
+            for_existing_registration=for_existing_registration,
+            notify_initiator_on_complete=notify_initiator_on_complete,
+        )
 
         self.registered_from.add_log(
             action=NodeLog.EMBARGO_INITIATED,
@@ -306,7 +324,7 @@ class Registration(AbstractNode):
                 'registration': self._id,
             },
             auth=None,
-            save=True
+            save=True,
         )
         self.embargo.mark_as_completed()
         for node in self.node_and_primary_descendants():
@@ -314,7 +332,7 @@ class Registration(AbstractNode):
                 self.PUBLIC,
                 auth=None,
                 log=False,
-                save=True
+                save=True,
             )
         return True
 
@@ -326,7 +344,7 @@ class Registration(AbstractNode):
         self.retraction = Retraction.objects.create(
             initiated_by=user,
             justification=justification or None,  # make empty strings None
-            state=Retraction.UNAPPROVED
+            state=Retraction.UNAPPROVED,
         )
         self.save()
         admins = self.get_admin_contributors_recursive(unique_users=True)
@@ -435,8 +453,10 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     """
     date = NonNaiveDateTimeField(default=timezone.now)
     action = models.CharField(max_length=255)
-    draft = models.ForeignKey('DraftRegistration', related_name='logs',
-                              null=True, blank=True, on_delete=models.CASCADE)
+    draft = models.ForeignKey(
+        'DraftRegistration', related_name='logs',
+        null=True, blank=True, on_delete=models.CASCADE,
+    )
     user = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
 
     SUBMITTED = 'submitted'
@@ -445,9 +465,11 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     REJECTED = 'rejected'
 
     def __repr__(self):
-        return ('<DraftRegistrationLog({self.action!r}, date={self.date!r}), '
-                'user={self.user!r} '
-                'with id {self._id!r}>').format(self=self)
+        return (
+            '<DraftRegistrationLog({self.action!r}, date={self.date!r}), '
+            'user={self.user!r} '
+            'with id {self._id!r}>'
+        ).format(self=self)
 
 
 class DraftRegistration(ObjectIDMixin, BaseModel):
@@ -458,8 +480,10 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     deleted = NonNaiveDateTimeField(null=True, blank=True)
 
     # Original Node a draft registration is associated with
-    branched_from = models.ForeignKey('Node', related_name='registered_draft',
-                                      null=True, on_delete=models.CASCADE)
+    branched_from = models.ForeignKey(
+        'Node', related_name='registered_draft',
+        null=True, on_delete=models.CASCADE,
+    )
 
     initiator = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
     provider = models.ForeignKey('RegistrationProvider', related_name='draft_registrations', null=True)
@@ -480,8 +504,10 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     # }
     registration_metadata = DateTimeAwareJSONField(default=dict, blank=True)
     registration_schema = models.ForeignKey('RegistrationSchema', null=True, on_delete=models.CASCADE)
-    registered_node = models.ForeignKey('Registration', null=True, blank=True,
-                                        related_name='draft_registration', on_delete=models.CASCADE)
+    registered_node = models.ForeignKey(
+        'Registration', null=True, blank=True,
+        related_name='draft_registration', on_delete=models.CASCADE,
+    )
 
     approval = models.ForeignKey('DraftRegistrationApproval', null=True, blank=True, on_delete=models.CASCADE)
 
@@ -493,8 +519,10 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     notes = models.TextField(blank=True)
 
     def __repr__(self):
-        return ('<DraftRegistration(branched_from={self.branched_from!r}) '
-                'with id {self._id!r}>').format(self=self)
+        return (
+            '<DraftRegistration(branched_from={self.branched_from!r}) '
+            'with id {self._id!r}>'
+        ).format(self=self)
 
     # lazily set flags
     @property
@@ -522,7 +550,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     def url(self):
         return self.URL_TEMPLATE.format(
             node_id=self.branched_from._id,
-            draft_id=self._id
+            draft_id=self._id,
         )
 
     @property
@@ -604,7 +632,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
                     old_comments.update(new_comments)
                     metadata[question_id]['comments'] = sorted(
                         old_comments.values(),
-                        key=lambda c: c['created']
+                        key=lambda c: c['created'],
                     )
                     if old_value.get('value') != value.get('value'):
                         changes.append(question_id)
@@ -615,7 +643,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
 
     def submit_for_review(self, initiated_by, meta, save=False):
         approval = DraftRegistrationApproval(
-            meta=meta
+            meta=meta,
         )
         approval.save()
         self.approval = approval
@@ -632,7 +660,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
             auth=auth,
             data=self.registration_metadata,
             child_ids=child_ids,
-            provider=self.provider
+            provider=self.provider,
         )
         self.registered_node = register
         self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)

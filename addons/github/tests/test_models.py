@@ -5,14 +5,18 @@ import pytest
 import unittest
 from json import dumps
 
-from addons.base.tests.models import (OAuthAddonNodeSettingsTestSuiteMixin,
-                                      OAuthAddonUserSettingTestSuiteMixin)
+from addons.base.tests.models import (
+    OAuthAddonNodeSettingsTestSuiteMixin,
+    OAuthAddonUserSettingTestSuiteMixin,
+)
 from addons.github.models import NodeSettings
 from addons.github.tests import factories
 from osf_tests.factories import ProjectFactory, UserFactory
 
-from nose.tools import (assert_equal, assert_false, assert_in, assert_is,
-                        assert_not_equal, assert_not_in, assert_true)
+from nose.tools import (
+    assert_equal, assert_false, assert_in, assert_is,
+    assert_not_equal, assert_not_in, assert_true,
+)
 
 from github3 import GitHubError
 from github3.repos import Repository
@@ -45,7 +49,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
             'user_settings': self.user_settings,
             'repo': 'mock',
             'user': 'abc',
-            'owner': self.node
+            'owner': self.node,
         }
 
     def test_set_folder(self):
@@ -62,7 +66,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
 
     @mock.patch(
         'addons.github.models.UserSettings.revoke_remote_oauth_access',
-        mock.PropertyMock()
+        mock.PropertyMock(),
     )
     def test_complete_has_auth_not_verified(self):
         super(TestNodeSettings, self).test_complete_has_auth_not_verified()
@@ -102,12 +106,14 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
     @mock.patch('addons.github.api.GitHubClient.repos')
     @mock.patch('addons.github.api.GitHubClient.check_authorization')
     def test_get_folders(self, mock_check_authorization, mock_repos):
-        mock_repos.return_value = [Repository.from_json(dumps({'name': 'test',
-                                                         'id': '12345',
-                                                         'owner':
-                                                             {'login': 'test name'}
-                                                         }))
-                                   ]
+        mock_repos.return_value = [
+            Repository.from_json(dumps({
+                'name': 'test',
+                'id': '12345',
+                'owner':
+                    {'login': 'test name'},
+            })),
+        ]
         result = self.node_settings.get_folders()
 
         assert_equal(len(result), 1)
@@ -120,12 +126,14 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
     @mock.patch('addons.github.api.GitHubClient.repos')
     @mock.patch('addons.github.api.GitHubClient.check_authorization')
     def test_get_folders_not_have_auth(self, mock_repos, mock_check_authorization):
-        mock_repos.return_value = [Repository.from_json(dumps({'name': 'test',
-                                                         'id': '12345',
-                                                         'owner':
-                                                             {'login': 'test name'}
-                                                         }))
-                                   ]
+        mock_repos.return_value = [
+            Repository.from_json(dumps({
+                'name': 'test',
+                'id': '12345',
+                'owner':
+                    {'login': 'test name'},
+            })),
+        ]
         self.node_settings.user_settings = None
         with pytest.raises(exceptions.InvalidAuthError):
             self.node_settings.get_folders()
@@ -235,23 +243,23 @@ class TestCallbacks(OsfTestCase):
 
     def test_before_remove_contributor_authenticator(self):
         message = self.node_settings.before_remove_contributor(
-            self.project, self.project.creator
+            self.project, self.project.creator,
         )
         assert_true(message)
 
     def test_before_remove_contributor_not_authenticator(self):
         message = self.node_settings.before_remove_contributor(
-            self.project, self.non_authenticator
+            self.project, self.non_authenticator,
         )
         assert_false(message)
 
     def test_after_remove_contributor_authenticator_self(self):
         message = self.node_settings.after_remove_contributor(
-            self.project, self.project.creator, self.consolidated_auth
+            self.project, self.project.creator, self.consolidated_auth,
         )
         assert_equal(
             self.node_settings.user_settings,
-            None
+            None,
         )
         assert_true(message)
         assert_not_in('You can re-authenticate', message)
@@ -259,18 +267,18 @@ class TestCallbacks(OsfTestCase):
     def test_after_remove_contributor_authenticator_not_self(self):
         auth = Auth(user=self.non_authenticator)
         message = self.node_settings.after_remove_contributor(
-            self.project, self.project.creator, auth
+            self.project, self.project.creator, auth,
         )
         assert_equal(
             self.node_settings.user_settings,
-            None
+            None,
         )
         assert_true(message)
         assert_in('You can re-authenticate', message)
 
     def test_after_remove_contributor_not_authenticator(self):
         self.node_settings.after_remove_contributor(
-            self.project, self.non_authenticator, self.consolidated_auth
+            self.project, self.non_authenticator, self.consolidated_auth,
         )
         assert_not_equal(
             self.node_settings.user_settings,

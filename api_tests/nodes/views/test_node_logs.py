@@ -57,7 +57,8 @@ class TestNodeLogList:
         return RegistrationFactory(
             creator=user,
             embargo=EmbargoFactory(user=user),
-            is_public=False)
+            is_public=False,
+        )
 
     @pytest.fixture()
     def private_project(self, user):
@@ -66,7 +67,8 @@ class TestNodeLogList:
     @pytest.fixture()
     def private_url(self, private_project):
         return '/{}nodes/{}/logs/?version=2.2'.format(
-            API_BASE, private_project._id)
+            API_BASE, private_project._id,
+        )
 
     @pytest.fixture()
     def public_project(self, user):
@@ -75,7 +77,8 @@ class TestNodeLogList:
     @pytest.fixture()
     def public_url(self, public_project):
         return '/{}nodes/{}/logs/?version=2.2'.format(
-            API_BASE, public_project._id)
+            API_BASE, public_project._id,
+        )
 
     def test_can_view_osf_group_log(self, app, private_project, private_url):
         group_mem = AuthUserFactory()
@@ -95,7 +98,8 @@ class TestNodeLogList:
 
     def test_remove_tag(
             self, app, user, user_auth,
-            public_project, public_url):
+            public_project, public_url,
+    ):
         public_project.add_tag('Rheisen', auth=user_auth)
         assert public_project.logs.latest().action == 'tag_added'
         public_project.remove_tag('Rheisen', auth=user_auth)
@@ -108,7 +112,8 @@ class TestNodeLogList:
 
     def test_project_creation(
             self, app, user, public_project, private_project,
-            public_url, private_url):
+            public_url, private_url,
+    ):
 
         #   test_project_created
         res = app.get(public_url)
@@ -124,8 +129,10 @@ class TestNodeLogList:
         assert len(res.json['data']) == public_project.logs.count()
         assert_datetime_equal(
             parse_date(
-                res.json['data'][API_FIRST]['attributes']['date']),
-            public_project.logs.first().date)
+                res.json['data'][API_FIRST]['attributes']['date'],
+            ),
+            public_project.logs.first().date,
+        )
         assert res.json['data'][API_FIRST]['attributes']['action'] == public_project.logs.first(
         ).action
 
@@ -135,8 +142,10 @@ class TestNodeLogList:
         assert len(res.json['data']) == public_project.logs.count()
         assert_datetime_equal(
             parse_date(
-                res.json['data'][API_FIRST]['attributes']['date']),
-            private_project.logs.first().date)
+                res.json['data'][API_FIRST]['attributes']['date'],
+            ),
+            private_project.logs.first().date,
+        )
         assert res.json['data'][API_FIRST]['attributes']['action'] == private_project.logs.first(
         ).action
 
@@ -150,7 +159,8 @@ class TestNodeLogList:
 
     def test_project_add_remove_contributor(
             self, app, user, contrib, user_auth,
-            public_project, public_url):
+            public_project, public_url,
+    ):
         public_project.add_contributor(contrib, auth=user_auth)
         assert public_project.logs.latest().action == 'contributor_added'
         # Disconnect contributor_removed so that we don't check in files
@@ -166,7 +176,8 @@ class TestNodeLogList:
 
     def test_remove_addon(
             self, app, user, user_auth,
-            public_project, public_url):
+            public_project, public_url,
+    ):
         public_project.add_addon('github', auth=user_auth)
         assert public_project.logs.latest().action == 'addon_added'
         old_log_length = len(list(public_project.logs.all()))
@@ -180,7 +191,8 @@ class TestNodeLogList:
 
     def test_pointers(
             self, app, user, user_auth, contrib,
-            public_project, pointer, public_url):
+            public_project, pointer, public_url,
+    ):
         public_project.add_pointer(pointer, auth=user_auth, save=True)
         assert public_project.logs.latest().action == 'pointer_created'
         res = app.get(public_url, auth=user.auth)
@@ -232,9 +244,11 @@ class TestNodeLogList:
 
     def test_registration_pointers(
             self, app, user, user_auth, non_contrib,
-            public_project, pointer_registration, public_url):
+            public_project, pointer_registration, public_url,
+    ):
         public_project.add_pointer(
-            pointer_registration, auth=user_auth, save=True)
+            pointer_registration, auth=user_auth, save=True,
+        )
         assert public_project.logs.latest().action == 'pointer_created'
         res = app.get(public_url, auth=user.auth)
         assert res.status_code == 200
@@ -270,7 +284,8 @@ class TestNodeLogList:
 
     def test_embargo_pointers(
             self, app, user, user_auth, non_contrib,
-            public_project, pointer_embargo, public_url):
+            public_project, pointer_embargo, public_url,
+    ):
         public_project.add_pointer(pointer_embargo, auth=user_auth, save=True)
         assert public_project.logs.latest().action == 'pointer_created'
         res = app.get(public_url, auth=user.auth)
@@ -310,11 +325,13 @@ class TestNodeLogList:
 class TestNodeLogFiltering(TestNodeLogList):
 
     def test_filter_action_not_equal(
-            self, app, user, user_auth, public_project):
+            self, app, user, user_auth, public_project,
+    ):
         public_project.add_tag('Rheisen', auth=user_auth)
         assert public_project.logs.latest().action == 'tag_added'
         url = '/{}nodes/{}/logs/?filter[action][ne]=tag_added'.format(
-            API_BASE, public_project._id)
+            API_BASE, public_project._id,
+        )
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 1
         assert res.json['data'][API_LATEST]['attributes']['action'] == 'project_created'
@@ -326,10 +343,12 @@ class TestNodeLogFiltering(TestNodeLogList):
 
         pointer_added_log = public_project.logs.get(action='pointer_created')
         date_pointer_added = str(pointer_added_log.date).split(
-            '+')[0].replace(' ', 'T')
+            '+',
+        )[0].replace(' ', 'T')
 
         url = '/{}nodes/{}/logs/?filter[date][ne]={}'.format(
-            API_BASE, public_project._id, date_pointer_added)
+            API_BASE, public_project._id, date_pointer_added,
+        )
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1

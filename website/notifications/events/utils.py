@@ -37,14 +37,14 @@ def compile_user_lists(files, user, source_node, node):
     # get the node subscription
     if len(files) == 0:
         move, warn, remove = categorize_users(
-            user, 'file_updated', source_node, 'file_updated', node
+            user, 'file_updated', source_node, 'file_updated', node,
         )
     # iterate through file subscriptions
     for file_path in files:
         path = file_path.strip('/')
         t_move, t_warn, t_remove = categorize_users(
             user, path + '_file_updated', source_node,
-            path + '_file_updated', node
+            path + '_file_updated', node,
         )
         # Add file subs to overall list of subscriptions
         for notification in constants.NOTIFICATION_TYPES:
@@ -113,7 +113,7 @@ def subscriptions_users_union(emails_1, emails_2):
     return {
         notification:
             list(
-                set(emails_1[notification]).union(set(emails_2[notification]))
+                set(emails_1[notification]).union(set(emails_2[notification])),
             )
         for notification in constants.NOTIFICATION_TYPES.keys()
     }
@@ -123,7 +123,7 @@ def subscriptions_users_difference(emails_1, emails_2):
     return {
         notification:
             list(
-                set(emails_1[notification]).difference(set(emails_2[notification]))
+                set(emails_1[notification]).difference(set(emails_2[notification])),
             )
         for notification in constants.NOTIFICATION_TYPES.keys()
     }
@@ -136,6 +136,6 @@ def subscriptions_users_remove_duplicates(emails_1, emails_2, remove_same=False)
         if notification_2 == notification_1 and not remove_same or notification_2 == 'none':
             continue
         emails_list[notification_1] = list(
-            set(emails_list[notification_1]).difference(set(emails_2[notification_2]))
+            set(emails_list[notification_1]).difference(set(emails_2[notification_2])),
         )
     return emails_list

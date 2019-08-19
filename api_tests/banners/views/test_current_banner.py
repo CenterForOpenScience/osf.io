@@ -19,13 +19,13 @@ class TestPreprintDetail:
     @pytest.fixture()
     def tomorrow_banner(self, date):
         return ScheduledBannerFactory(
-            start_date=date + timedelta(days=1)
+            start_date=date + timedelta(days=1),
         )
 
     @pytest.fixture()
     def yesterday_banner(self, date):
         return ScheduledBannerFactory(
-            start_date=date - timedelta(days=1)
+            start_date=date - timedelta(days=1),
         )
 
     @pytest.fixture()

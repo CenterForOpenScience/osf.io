@@ -21,7 +21,8 @@ class MendeleyAddonConfig(BaseAddonAppConfig):
     actions = (
         FOLDER_SELECTED,
         NODE_AUTHORIZED,
-        NODE_DEAUTHORIZED)
+        NODE_DEAUTHORIZED,
+    )
 
     @property
     def routes(self):

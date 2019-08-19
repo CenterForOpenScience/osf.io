@@ -37,7 +37,7 @@ def set_maintenance(message, level=1, start=None, end=None):
         level=level,
         start=start,
         end=end,
-        message=message
+        message=message,
     )
 
     return {'start': state.start, 'end': state.end}

@@ -168,11 +168,11 @@ class TestCampaignsAuthViews(OsfTestCase):
         self.campaigns = {
             'prereg': {
                 'title_register': 'Preregistration Challenge',
-                'title_landing': 'Welcome to the Prereg Challenge!'
+                'title_landing': 'Welcome to the Prereg Challenge!',
             },
             'erpc': {
                 'title_register': 'Election Research Preacceptance Competition',
-                'title_landing': 'The Election Research Preacceptance Competition is Now Closed'
+                'title_landing': 'The Election Research Preacceptance Competition is Now Closed',
             },
         }
         for key, value in self.campaigns.items():

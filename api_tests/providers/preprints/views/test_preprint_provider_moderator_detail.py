@@ -45,8 +45,8 @@ class TestPreprintProviderModeratorDetail:
                     'permission_group': permission_group,
                 },
                 'type': 'moderators',
-                'id': user_id
-            }
+                'id': user_id,
+            },
         }
         if full_name:
             data['data']['attributes']['full_name'] = full_name
@@ -62,23 +62,29 @@ class TestPreprintProviderModeratorDetail:
         assert res.status_code == 403
 
         # Must be admin to edit
-        res = app.patch_json_api(url.format(moderator._id),
-                                 self.update_payload(user_id=moderator._id, permission_group=permissions.ADMIN),
-                                 auth=nonmoderator.auth,
-                                 expect_errors=True)
+        res = app.patch_json_api(
+            url.format(moderator._id),
+            self.update_payload(user_id=moderator._id, permission_group=permissions.ADMIN),
+            auth=nonmoderator.auth,
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
         # Must be logged in
-        res = app.patch_json_api(url.format(moderator._id),
-                                 self.update_payload(user_id=moderator._id, permission_group=permissions.ADMIN),
-                                 expect_errors=True)
+        res = app.patch_json_api(
+            url.format(moderator._id),
+            self.update_payload(user_id=moderator._id, permission_group=permissions.ADMIN),
+            expect_errors=True,
+        )
         assert res.status_code == 401
 
         # Must be admin to edit
-        res = app.patch_json_api(url.format(moderator._id),
-                                 self.update_payload(user_id=moderator._id, permission_group=permissions.ADMIN),
-                                 auth=moderator.auth,
-                                 expect_errors=True)
+        res = app.patch_json_api(
+            url.format(moderator._id),
+            self.update_payload(user_id=moderator._id, permission_group=permissions.ADMIN),
+            auth=moderator.auth,
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
     def test_detail_successful_gets(self, app, url, moderator, admin, provider):
@@ -104,45 +110,57 @@ class TestPreprintProviderModeratorDetail:
 
     def test_detail_updates(self, app, url, nonmoderator, moderator, admin, provider):
         # Admin makes moderator a new admin
-        res = app.patch_json_api(url.format(moderator._id),
-                                 self.update_payload(user_id=moderator._id, permission_group=permissions.ADMIN),
-                                 auth=admin.auth)
+        res = app.patch_json_api(
+            url.format(moderator._id),
+            self.update_payload(user_id=moderator._id, permission_group=permissions.ADMIN),
+            auth=admin.auth,
+        )
         assert res.status_code == 200
         assert res.json['data']['attributes']['permission_group'] == permissions.ADMIN
 
         # Admin makes new admin a moderator again
-        res = app.patch_json_api(url.format(moderator._id),
-                                 self.update_payload(user_id=moderator._id, permission_group='moderator'),
-                                 auth=admin.auth)
+        res = app.patch_json_api(
+            url.format(moderator._id),
+            self.update_payload(user_id=moderator._id, permission_group='moderator'),
+            auth=admin.auth,
+        )
         assert res.status_code == 200
         assert res.json['data']['attributes']['permission_group'] == 'moderator'
 
         # Admin makes mod a mod -- No changes
-        res = app.patch_json_api(url.format(moderator._id),
-                                 self.update_payload(user_id=moderator._id, permission_group='moderator'),
-                                 auth=admin.auth)
+        res = app.patch_json_api(
+            url.format(moderator._id),
+            self.update_payload(user_id=moderator._id, permission_group='moderator'),
+            auth=admin.auth,
+        )
         assert res.status_code == 200
         assert res.json['data']['attributes']['permission_group'] == 'moderator'
 
         # Mod has no perm, even though request would make no changes
-        res = app.patch_json_api(url.format(moderator._id),
-                                 self.update_payload(user_id=moderator._id, permission_group='moderator'),
-                                 auth=moderator.auth,
-                                 expect_errors=True)
+        res = app.patch_json_api(
+            url.format(moderator._id),
+            self.update_payload(user_id=moderator._id, permission_group='moderator'),
+            auth=moderator.auth,
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
         # Admin can't patch non-mod
-        res = app.patch_json_api(url.format(nonmoderator._id),
-                                 self.update_payload(user_id=nonmoderator._id, permission_group='moderator'),
-                                 auth=admin.auth,
-                                 expect_errors=True)
+        res = app.patch_json_api(
+            url.format(nonmoderator._id),
+            self.update_payload(user_id=nonmoderator._id, permission_group='moderator'),
+            auth=admin.auth,
+            expect_errors=True,
+        )
         assert res.status_code == 404
 
     def test_detail_cannot_remove_last_admin(self, app, url, admin, provider):
-        res = app.patch_json_api(url.format(admin._id),
-                                 self.update_payload(user_id=admin._id, permission_group='moderator'),
-                                 auth=admin.auth,
-                                 expect_errors=True)
+        res = app.patch_json_api(
+            url.format(admin._id),
+            self.update_payload(user_id=admin._id, permission_group='moderator'),
+            auth=admin.auth,
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert 'last admin' in res.json['errors'][0]['detail']
 
@@ -171,9 +189,11 @@ class TestPreprintProviderModeratorDetail:
 
     def test_admin_delete_admin(self, app, url, moderator, admin, provider):
         # Make mod an admin
-        res = app.patch_json_api(url.format(moderator._id),
-                                 self.update_payload(user_id=moderator._id, permission_group=permissions.ADMIN),
-                                 auth=admin.auth)
+        res = app.patch_json_api(
+            url.format(moderator._id),
+            self.update_payload(user_id=moderator._id, permission_group=permissions.ADMIN),
+            auth=admin.auth,
+        )
         assert res.json['data']['attributes']['permission_group'] == permissions.ADMIN  # Sanity check
 
         # Admin delete admin

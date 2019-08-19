@@ -11,8 +11,10 @@ logger = logging.getLogger(__name__)
 
 
 @app.task
-def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True, login=True,
-                username=None, password=None, categories=None, attachment_name=None, attachment_content=None):
+def send_email(
+    from_addr, to_addr, subject, message, mimetype='html', ttls=True, login=True,
+    username=None, password=None, categories=None, attachment_name=None, attachment_content=None,
+):
     """Send email to specified destination.
     Email is sent from the email specified in FROM_EMAIL settings in the
     settings module.
@@ -81,7 +83,7 @@ def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=
     s.sendmail(
         from_addr=from_addr,
         to_addrs=[to_addr],
-        msg=msg.as_string()
+        msg=msg.as_string(),
     )
     s.quit()
     return True
@@ -112,10 +114,10 @@ def _send_with_sendgrid(from_addr, to_addr, subject, message, mimetype='html', c
                 'mimetype:  {}\n'.format(mimetype) +
                 'message:  {}\n'.format(message[:30]) +
                 'categories:  {}\n'.format(categories) +
-                'attachment_name:  {}\n'.format(attachment_name)
+                'attachment_name:  {}\n'.format(attachment_name),
             )
         return status < 400
     else:
         sentry.log_message(
-            'SENDGRID_WHITELIST_MODE is True. Failed to send emails to non-whitelisted recipient {}.'.format(to_addr)
+            'SENDGRID_WHITELIST_MODE is True. Failed to send emails to non-whitelisted recipient {}.'.format(to_addr),
         )

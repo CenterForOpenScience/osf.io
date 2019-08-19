@@ -44,7 +44,7 @@ def add_records_to_files_sql(state, schema):
         with connection.cursor() as cursor:
             cursor.execute(sql.format(
                 page_start,
-                page_end
+                page_end,
             ))
         page_start = page_end
 

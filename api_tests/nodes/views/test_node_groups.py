@@ -72,7 +72,7 @@ def make_node_group_payload():
             'data': {
                 'type': 'node-groups',
                 'attributes': attributes,
-            }
+            },
         }
         if relationships:
             payload_data['data']['relationships'] = relationships
@@ -183,8 +183,10 @@ class TestNodeGroupsList:
 @pytest.mark.django_db
 class TestNodeGroupCreate:
 
-    def test_create_node_groups(self, app, osf_group, public_url, non_contrib, member, manager,
-                                public_project, write_contrib, make_node_group_payload):
+    def test_create_node_groups(
+        self, app, osf_group, public_url, non_contrib, member, manager,
+        public_project, write_contrib, make_node_group_payload,
+    ):
         with override_flag(OSF_GROUPS, active=True):
             attributes = {'permission': permissions.WRITE}
             relationships = {
@@ -192,8 +194,8 @@ class TestNodeGroupCreate:
                     'data': {
                         'type': 'groups',
                         'id': osf_group._id,
-                    }
-                }
+                    },
+                },
             }
             payload = make_node_group_payload(attributes=attributes, relationships=relationships)
 
@@ -233,8 +235,8 @@ class TestNodeGroupCreate:
                     'data': {
                         'type': 'groups',
                         'id': '12345',
-                    }
-                }
+                    },
+                },
             }
             invalid_group = make_node_group_payload(attributes=attributes, relationships=relationships)
             res = app.post_json_api(public_url, invalid_group, auth=manager.auth, expect_errors=True)
@@ -252,7 +254,7 @@ class TestNodeGroupCreate:
             res = app.post_json_api(public_url, payload, auth=manager.auth, expect_errors=True)
             assert res.status_code == 400
             assert res.json['errors'][0]['detail'] == 'The group {} has already been added to the node {}'.format(
-                osf_group._id, public_project._id
+                osf_group._id, public_project._id,
             )
 
             # test incorrect permission string
@@ -334,8 +336,10 @@ class TestNodeGroupDetail:
 @pytest.mark.django_db
 class TestNodeGroupUpdate:
 
-    def test_update_permission(self, app, public_detail_url, osf_group, write_contrib, non_contrib,
-                                public_project, make_node_group_payload):
+    def test_update_permission(
+        self, app, public_detail_url, osf_group, write_contrib, non_contrib,
+        public_project, make_node_group_payload,
+    ):
         with override_flag(OSF_GROUPS, active=True):
             attributes = {'permission': permissions.WRITE}
             payload = make_node_group_payload(attributes=attributes)
@@ -398,8 +402,8 @@ class TestNodeGroupDelete:
             public_project.add_contributor(manager, permissions=permissions.ADMIN)
             payload = {
                 'data': [
-                    {'type': 'node-groups', 'id': '{}-{}'.format(public_project._id, osf_group._id)}
-                ]
+                    {'type': 'node-groups', 'id': '{}-{}'.format(public_project._id, osf_group._id)},
+                ],
             }
             # group has not been added to the node
             res = app.delete_json_api(public_detail_url, payload, auth=public_project.creator.auth, expect_errors=True)
@@ -441,8 +445,8 @@ class TestNodeGroupDelete:
             # test member with write cannot remove group
             second_payload = {
                 'data': [
-                    {'type': 'node-groups', 'id': '{}-{}'.format(public_project._id, second_group._id)}
-                ]
+                    {'type': 'node-groups', 'id': '{}-{}'.format(public_project._id, second_group._id)},
+                ],
             }
             second_url = '/{}nodes/{}/groups/{}/'.format(API_BASE, public_project._id, second_group._id)
             res = app.delete_json_api(second_url, second_payload, auth=member.auth, expect_errors=True)

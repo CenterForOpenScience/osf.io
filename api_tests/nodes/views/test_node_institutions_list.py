@@ -71,6 +71,6 @@ class TestNodeInstitutionList:
         node_one.save()
         res = app.get(
             node_one_url, auth=user_two.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 403

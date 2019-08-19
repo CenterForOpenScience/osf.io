@@ -20,6 +20,8 @@ class TestGuidForm(AdminTestCase):
     def test_blank_data(self):
         form = GuidForm({})
         assert_false(form.is_valid())
-        assert_equal(form.errors, {
-            'guid': [u'This field is required.'],
-        })
+        assert_equal(
+            form.errors, {
+                'guid': [u'This field is required.'],
+            },
+        )

@@ -70,7 +70,7 @@ class Migration(migrations.Migration):
                     model_name='abstractnode',
                     name='access_requests_enabled',
                     field=models.NullBooleanField(default=True, db_index=True),
-                )
+                ),
             ],
         ),
         migrations.AddField(

@@ -9,7 +9,7 @@ from osf.models import ChronosSubmission
 from osf.utils.workflows import ChronosSubmissionStatus, ReviewStates
 from website.settings import (
     CHRONOS_USE_FAKE_FILE, CHRONOS_FAKE_FILE_URL,
-    CHRONOS_API_KEY, CHRONOS_USERNAME, CHRONOS_PASSWORD, CHRONOS_HOST, VERIFY_CHRONOS_SSL_CERT
+    CHRONOS_API_KEY, CHRONOS_USERNAME, CHRONOS_PASSWORD, CHRONOS_HOST, VERIFY_CHRONOS_SSL_CERT,
 )
 
 
@@ -59,7 +59,7 @@ class ChronosSerializer(object):
                 for contrib in preprint.contributor_set.filter(visible=True).select_related('user')
             ],
             'MANUSCRIPT_FILES': [
-                cls.serialize_file(preprint, preprint.primary_file)
+                cls.serialize_file(preprint, preprint.primary_file),
             ],
             'STATUS_CODE': status,
             'ABSTRACT': preprint.description,
@@ -75,7 +75,7 @@ class ChronosSerializer(object):
                     'DATA_NAME': 'Provider',
                     'DATA_TYPE': 'string',
                     'DATA_VALUE': preprint.provider.name,
-                }
+                },
             ],
             'UNDERLYING_DATASET_URL': preprint.node.absolute_url if preprint.node else '',
             'LICENSE': preprint.license.node_license.name.upper() if preprint.license and preprint.license.node_license.name != 'No license' else 'NL',
@@ -156,24 +156,26 @@ class ChronosClient(object):
     def sync_journals(self):
         journals = []
         for journal in self._client.get_journals():
-            journals.append(ChronosJournal.objects.update_or_create(journal_id=journal['JOURNAL_ID'], defaults={
-                'raw_response': journal,
-                'title': journal['TITLE'],
-                'name': journal['PUBLISHER_NAME'],
-                # Other Available fields: (Not currently used for anything so they are not parsed)
-                # 'E_ISSN':
-                # 'ISSN':
-                # 'JOURNAL_ID':
-                # 'JOURNAL_URL':
-                # 'PUBLISHER_ID':
-                # 'PUBLISHER_NAME':
-            })[0])
+            journals.append(ChronosJournal.objects.update_or_create(
+                journal_id=journal['JOURNAL_ID'], defaults={
+                    'raw_response': journal,
+                    'title': journal['TITLE'],
+                    'name': journal['PUBLISHER_NAME'],
+                    # Other Available fields: (Not currently used for anything so they are not parsed)
+                    # 'E_ISSN':
+                    # 'ISSN':
+                    # 'JOURNAL_ID':
+                    # 'JOURNAL_URL':
+                    # 'PUBLISHER_ID':
+                    # 'PUBLISHER_NAME':
+                },
+            )[0])
         return journals
 
     def sync_manuscript(self, submission):
         return self._sync_manuscript(
             submission,
-            self._client.get_manuscript(submission.publication_id)
+            self._client.get_manuscript(submission.publication_id),
         )
 
     def get_journals(self):
@@ -300,7 +302,7 @@ class ChronosRestClient(object):
             headers={
                 'api_key': self._api_key,
                 'auth_key': self._auth_key,
-            }
+            },
         )
 
         resp.raise_for_status()

@@ -48,13 +48,16 @@ def private_node_one(admin, read_contrib, write_contrib):
     private_node_one = RegistrationFactory(
         is_public=False,
         creator=admin,
-        title='Private One')
+        title='Private One',
+    )
     private_node_one.add_contributor(
-        read_contrib, permissions=permissions.READ, save=True)
+        read_contrib, permissions=permissions.READ, save=True,
+    )
     private_node_one.add_contributor(
         write_contrib,
         permissions=permissions.WRITE,
-        save=True)
+        save=True,
+    )
     return private_node_one
 
 
@@ -84,13 +87,16 @@ def private_node_two(admin, read_contrib, write_contrib):
     private_node_two = RegistrationFactory(
         is_public=False,
         creator=admin,
-        title='Private Two')
+        title='Private Two',
+    )
     private_node_two.add_contributor(
-        read_contrib, permissions=permissions.READ, save=True)
+        read_contrib, permissions=permissions.READ, save=True,
+    )
     private_node_two.add_contributor(
         write_contrib,
         permissions=permissions.WRITE,
-        save=True)
+        save=True,
+    )
     return private_node_two
 
 
@@ -102,13 +108,16 @@ def private_node_two_url(private_node_two):
 @pytest.fixture()
 def public_node_one(admin, read_contrib, write_contrib):
     public_node_one = RegistrationFactory(
-        is_public=True, creator=admin, title='Public One')
+        is_public=True, creator=admin, title='Public One',
+    )
     public_node_one.add_contributor(
-        read_contrib, permissions=permissions.READ, save=True)
+        read_contrib, permissions=permissions.READ, save=True,
+    )
     public_node_one.add_contributor(
         write_contrib,
         permissions=permissions.WRITE,
-        save=True)
+        save=True,
+    )
     return public_node_one
 
 
@@ -136,13 +145,16 @@ def public_node_one_url(public_node_one):
 @pytest.fixture()
 def public_node_two(admin, read_contrib, write_contrib):
     public_node_two = RegistrationFactory(
-        is_public=True, creator=admin, title='Public Two')
+        is_public=True, creator=admin, title='Public Two',
+    )
     public_node_two.add_contributor(
-        read_contrib, permissions=permissions.READ, save=True)
+        read_contrib, permissions=permissions.READ, save=True,
+    )
     public_node_two.add_contributor(
         write_contrib,
         permissions=permissions.WRITE,
-        save=True)
+        save=True,
+    )
     return public_node_two
 
 
@@ -164,13 +176,13 @@ class TestRegistrationDetailViewOnlyLinks(TestNodeDetailViewOnlyLinks):
             'q1': {
                 'comments': [],
                 'extra': [],
-                'value': 'This is the answer to a question'
+                'value': 'This is the answer to a question',
             },
             'q2': {
                 'comments': [],
                 'extra': [],
-                'value': 'Grapes McGee'
-            }
+                'value': 'Grapes McGee',
+            },
 
         }
         registration.save()
@@ -193,9 +205,11 @@ class TestRegistrationDetailViewOnlyLinks(TestNodeDetailViewOnlyLinks):
         assert 'q2' in meta
 
         # Anonymous view only link has q2 (author response) removed
-        res = app.get(url, {
-            'view_only': reg_report_anonymous_link.key
-        })
+        res = app.get(
+            url, {
+                'view_only': reg_report_anonymous_link.key,
+            },
+        )
         assert res.status_code == 200
         meta = res.json['data']['attributes']['registered_meta']
         assert 'q1' in meta

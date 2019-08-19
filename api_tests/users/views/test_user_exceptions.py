@@ -24,8 +24,8 @@ class TestExceptionFormatting:
                 linkedIn='userOneLinkedIn',
                 impactStory='userOneImpactStory',
                 orcid='userOneOrcid',
-                researcherId='userOneResearcherId'
-            )
+                researcherId='userOneResearcherId',
+            ),
         )
 
     @pytest.fixture()
@@ -39,16 +39,21 @@ class TestExceptionFormatting:
     def test_user_errors(self, app, user, user_two, url):
 
         #   test_updates_user_with_no_fullname
-        res = app.put_json_api(url,
-                               {'data': {'id': user._id,
-                                         'type': 'users',
-                                         'attributes': {}}},
-                               auth=user.auth,
-                               expect_errors=True)
+        res = app.put_json_api(
+            url,
+            {'data': {
+                'id': user._id,
+                'type': 'users',
+                'attributes': {},
+            }},
+            auth=user.auth,
+            expect_errors=True,
+        )
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert res.json['errors'][0]['source'] == {
-            'pointer': '/data/attributes/full_name'}
+            'pointer': '/data/attributes/full_name',
+        }
         assert res.json['errors'][0]['detail'] == 'This field is required.'
 
     #   test_updates_user_unauthorized
@@ -56,14 +61,16 @@ class TestExceptionFormatting:
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert errors[0] == {
-            'detail': exceptions.NotAuthenticated.default_detail}
+            'detail': exceptions.NotAuthenticated.default_detail,
+        }
 
     #   test_updates_user_forbidden
         res = app.put_json_api(url, auth=user_two.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert errors[0] == {
-            'detail': exceptions.PermissionDenied.default_detail}
+            'detail': exceptions.PermissionDenied.default_detail,
+        }
 
     #   test_user_does_not_exist_formatting
         url = '/{}users/{}/'.format(API_BASE, '12345')
@@ -77,5 +84,6 @@ class TestExceptionFormatting:
         res = app.get(
             url,
             auth=(user.username, 'nottherightone'),
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 401

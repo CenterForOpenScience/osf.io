@@ -33,10 +33,10 @@ class QueuedMail(ObjectIDMixin, BaseModel):
     def __repr__(self):
         if self.sent_at is not None:
             return '<QueuedMail {} of type {} sent to {} at {}>'.format(
-                self._id, self.email_type, self.to_addr, self.sent_at
+                self._id, self.email_type, self.to_addr, self.sent_at,
             )
         return '<QueuedMail {} of type {} to be sent to {} on {}>'.format(
-            self._id, self.email_type, self.to_addr, self.send_at
+            self._id, self.email_type, self.to_addr, self.send_at,
         )
 
     def send_mail(self):
@@ -52,7 +52,7 @@ class QueuedMail(ObjectIDMixin, BaseModel):
         mail = Mail(
             mail_struct['template'],
             subject=mail_struct['subject'],
-            categories=mail_struct.get('categories', None)
+            categories=mail_struct.get('categories', None),
         )
         self.data['osf_url'] = osf_settings.DOMAIN
         if presend and self.user.is_active and self.user.osf_mailing_lists.get(osf_settings.OSF_HELP_LIST):
@@ -98,7 +98,7 @@ def queue_mail(to_addr, mail, send_at, user, **context):
         to_addr=to_addr,
         send_at=send_at,
         email_type=mail['template'],
-        data=context
+        data=context,
     )
     new_mail.save()
     return new_mail
@@ -119,7 +119,7 @@ NO_ADDON = {
     'subject': 'Link an add-on to your OSF project',
     'presend': presends.no_addon,
     'categories': ['engagement', 'engagement-no-addon'],
-    'engagement': True
+    'engagement': True,
 }
 
 NO_LOGIN = {
@@ -127,7 +127,7 @@ NO_LOGIN = {
     'subject': 'What you\'re missing on the OSF',
     'presend': presends.no_login,
     'categories': ['engagement', 'engagement-no-login'],
-    'engagement': True
+    'engagement': True,
 }
 
 NEW_PUBLIC_PROJECT = {
@@ -135,7 +135,7 @@ NEW_PUBLIC_PROJECT = {
     'subject': 'Now, public. Next, impact.',
     'presend': presends.new_public_project,
     'categories': ['engagement', 'engagement-new-public-project'],
-    'engagement': True
+    'engagement': True,
 }
 
 
@@ -144,7 +144,7 @@ WELCOME_OSF4M = {
     'subject': 'The benefits of sharing your presentation',
     'presend': presends.welcome_osf4m,
     'categories': ['engagement', 'engagement-welcome-osf4m'],
-    'engagement': True
+    'engagement': True,
 }
 
 NO_ADDON_TYPE = 'no_addon'
@@ -158,5 +158,5 @@ queue_mail_types = {
     NO_ADDON_TYPE: NO_ADDON,
     NO_LOGIN_TYPE: NO_LOGIN,
     NEW_PUBLIC_PROJECT_TYPE: NEW_PUBLIC_PROJECT,
-    WELCOME_OSF4M_TYPE: WELCOME_OSF4M
+    WELCOME_OSF4M_TYPE: WELCOME_OSF4M,
 }

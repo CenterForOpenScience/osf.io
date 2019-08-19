@@ -32,5 +32,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_preprint_type_to_collections, reverse_func)
+        migrations.RunPython(add_preprint_type_to_collections, reverse_func),
     ]

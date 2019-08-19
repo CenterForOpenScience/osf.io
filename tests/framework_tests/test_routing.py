@@ -12,10 +12,12 @@ def error_view():
     raise HTTPError(400)
 
 def error_with_msg():
-    raise HTTPError(400, data={
-        'message_short': 'Invalid',
-        'message_long': 'Invalid request'
-    })
+    raise HTTPError(
+        400, data={
+            'message_short': 'Invalid',
+            'message_long': 'Invalid request',
+        },
+    )
 
 class TestJSONRenderer(unittest.TestCase):
 

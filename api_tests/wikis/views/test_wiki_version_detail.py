@@ -10,8 +10,10 @@ from api.base.settings.defaults import API_BASE
 from addons.wiki.models import WikiVersion, WikiPage
 
 from tests.base import ApiWikiTestCase
-from osf_tests.factories import (ProjectFactory, RegistrationFactory,
-                                 PrivateLinkFactory)
+from osf_tests.factories import (
+    ProjectFactory, RegistrationFactory,
+    PrivateLinkFactory,
+)
 
 
 class TestWikiVersionDetailView(ApiWikiTestCase):

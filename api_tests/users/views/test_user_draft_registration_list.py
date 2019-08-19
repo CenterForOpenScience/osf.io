@@ -29,14 +29,15 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
     def schema(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
-            schema_version=SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION,
+        )
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
         return DraftRegistrationFactory(
             initiator=user,
             registration_schema=schema,
-            branched_from=project_public
+            branched_from=project_public,
         )
 
     @pytest.fixture()
@@ -49,7 +50,8 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
     def test_view_permissions(
             self, app, user, other_admin, draft_registration,
             user_write_contrib, user_read_contrib, user_non_contrib,
-            schema, url_draft_registrations):
+            schema, url_draft_registrations,
+    ):
         res = app.get(url_draft_registrations, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']
@@ -69,19 +71,22 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         #   test_read_only_contributor_cannot_view_draft_list
         res = app.get(
             url_draft_registrations,
-            auth=user_read_contrib.auth)
+            auth=user_read_contrib.auth,
+        )
         assert len(res.json['data']) == 0
 
         #   test_read_write_contributor_cannot_view_draft_list
         res = app.get(
             url_draft_registrations,
-            auth=user_write_contrib.auth)
+            auth=user_write_contrib.auth,
+        )
         assert len(res.json['data']) == 0
 
         #   test_logged_in_non_contributor_cannot_view_draft_list
         res = app.get(
             url_draft_registrations,
-            auth=user_non_contrib.auth)
+            auth=user_non_contrib.auth,
+        )
         assert len(res.json['data']) == 0
 
         #   test_unauthenticated_user_cannot_view_draft_list
@@ -89,7 +94,8 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         assert res.status_code == 401
 
     def test_deleted_draft_registration_does_not_show_up_in_draft_list(
-            self, app, user, draft_registration, url_draft_registrations):
+            self, app, user, draft_registration, url_draft_registrations,
+    ):
         draft_registration.deleted = timezone.now()
         draft_registration.save()
         res = app.get(url_draft_registrations, auth=user.auth)
@@ -98,7 +104,8 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         assert len(data) == 0
 
     def test_draft_with_registered_node_does_not_show_up_in_draft_list(
-            self, app, user, project_public, draft_registration, url_draft_registrations):
+            self, app, user, project_public, draft_registration, url_draft_registrations,
+    ):
         reg = RegistrationFactory(project=project_public)
         draft_registration.registered_node = reg
         draft_registration.save()
@@ -110,7 +117,8 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
     def test_draft_with_deleted_registered_node_shows_up_in_draft_list(
             self, app, user, project_public,
             draft_registration, schema,
-            url_draft_registrations):
+            url_draft_registrations,
+    ):
         reg = RegistrationFactory(project=project_public)
         draft_registration.registered_node = reg
         draft_registration.save()
@@ -126,13 +134,15 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 
     def test_cannot_access_other_users_draft_registration(
             self, app, user, other_admin, project_public,
-            draft_registration, schema):
+            draft_registration, schema,
+    ):
         url = '/{}users/{}/draft_registrations/'.format(API_BASE, user._id)
         res = app.get(url, auth=other_admin.auth, expect_errors=True)
         assert res.status_code == 403
 
     def test_can_access_own_draft_registrations_with_guid(
-            self, app, user, draft_registration):
+            self, app, user, draft_registration,
+    ):
         url = '/{}users/{}/draft_registrations/'.format(API_BASE, user._id)
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200

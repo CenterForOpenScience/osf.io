@@ -17,12 +17,14 @@ class TestRegistrationProviderExists(ProviderDetailViewTestBaseMixin):
     @pytest.fixture()
     def provider_url(self, provider):
         return '/{}providers/registrations/{}/'.format(
-            API_BASE, provider._id)
+            API_BASE, provider._id,
+        )
 
     @pytest.fixture()
     def provider_url_two(self, provider_two):
         return '/{}providers/registrations/{}/'.format(
-            API_BASE, provider_two._id)
+            API_BASE, provider_two._id,
+        )
 
     @pytest.fixture()
     def provider_list_url(self, provider):

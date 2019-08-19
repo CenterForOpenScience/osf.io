@@ -23,13 +23,13 @@ class Command(BaseCommand):
             '--analyze',
             action='store_true',
             dest='analyze',
-            help='Whether to run VACUUM ANALYZE'
+            help='Whether to run VACUUM ANALYZE',
         )
         parser.add_argument(
             '--dry',
             action='store_true',
             dest='dry',
-            help='If true, no SQL commands will be executed'
+            help='If true, no SQL commands will be executed',
         )
 
     def handle(self, *args, **options):

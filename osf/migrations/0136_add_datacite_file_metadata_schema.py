@@ -19,8 +19,8 @@ def add_datacite_schema(state, schema):
         schema_version=1,
         defaults={
             'name': 'datacite',
-            'schema': jsonschema
-        }
+            'schema': jsonschema,
+        },
 
     )
     if created:
@@ -40,5 +40,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_datacite_schema, remove_datacite_schema)
+        migrations.RunPython(add_datacite_schema, remove_datacite_schema),
     ]

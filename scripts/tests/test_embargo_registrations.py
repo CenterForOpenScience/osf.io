@@ -19,7 +19,7 @@ class TestRetractRegistrations(OsfTestCase):
         self.registration = RegistrationFactory(creator=self.user)
         self.registration.embargo_registration(
             self.user,
-            timezone.now() + timedelta(days=10)
+            timezone.now() + timedelta(days=10),
         )
         self.registration.save()
 
@@ -36,7 +36,7 @@ class TestRetractRegistrations(OsfTestCase):
         self.registration.embargo._fields['initiation_date'].__set__(
             self.registration.embargo,
             (timezone.now() - timedelta(hours=47)),
-            safe=True
+            safe=True,
         )
         self.registration.embargo.save()
         assert_false(self.registration.embargo_end_date)
@@ -49,7 +49,7 @@ class TestRetractRegistrations(OsfTestCase):
         self.registration.embargo._fields['initiation_date'].__set__(
             self.registration.embargo,
             (timezone.now() - timedelta(hours=48)),
-            safe=True
+            safe=True,
         )
         self.registration.embargo.save()
         assert_true(self.registration.is_pending_embargo)
@@ -64,7 +64,7 @@ class TestRetractRegistrations(OsfTestCase):
         self.registration.embargo._fields['initiation_date'].__set__(
             self.registration.embargo,
             (timezone.now() - timedelta(days=365)),
-            safe=True
+            safe=True,
         )
         self.registration.embargo.save()
         assert_true(self.registration.is_pending_embargo)
@@ -85,7 +85,7 @@ class TestRetractRegistrations(OsfTestCase):
         self.registration.embargo._fields['end_date'].__set__(
             self.registration.embargo,
             (timezone.now() - timedelta(days=1)),
-            safe=True
+            safe=True,
         )
         self.registration.embargo.save()
 
@@ -107,7 +107,7 @@ class TestRetractRegistrations(OsfTestCase):
         self.registration.embargo._fields['end_date'].__set__(
             self.registration.embargo,
             (timezone.now() + timedelta(days=1)),
-            safe=True
+            safe=True,
         )
         self.registration.embargo.save()
 
@@ -123,7 +123,7 @@ class TestRetractRegistrations(OsfTestCase):
         self.registration.embargo._fields['initiation_date'].__set__(
             self.registration.embargo,
             (timezone.now() - timedelta(days=365)),
-            safe=True
+            safe=True,
         )
         self.registration.embargo.save()
 
@@ -143,7 +143,7 @@ class TestRetractRegistrations(OsfTestCase):
         self.registration.embargo._fields['end_date'].__set__(
             self.registration.embargo,
             (timezone.now() - timedelta(days=1)),
-            safe=True
+            safe=True,
         )
         self.registration.embargo.save()
 

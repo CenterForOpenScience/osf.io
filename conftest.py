@@ -81,12 +81,12 @@ _MOCKS = {
     },
     'website.search.search.search_engine': {
         'mark': 'enable_search',
-        'replacement': mock.MagicMock()
+        'replacement': mock.MagicMock(),
     },
     'website.search.elastic_search': {
         'mark': 'enable_search',
-        'replacement': mock.MagicMock()
-    }
+        'replacement': mock.MagicMock(),
+    },
 }
 
 @pytest.fixture(autouse=True, scope='session')

@@ -26,7 +26,7 @@ def block_bing_preview(func):
         if user_agent and ('BingPreview' in user_agent or 'MSIE 9.0' in user_agent):
             return HTTPError(
                 httplib.FORBIDDEN,
-                data={'message_long': 'Internet Explorer 9 and BingPreview cannot be used to access this page for security reasons. Please use another browser. If this should not have occurred and the issue persists, please report it to <a href="mailto: ' + settings.OSF_SUPPORT_EMAIL + '">' + settings.OSF_SUPPORT_EMAIL + '</a>.'}
+                data={'message_long': 'Internet Explorer 9 and BingPreview cannot be used to access this page for security reasons. Please use another browser. If this should not have occurred and the issue persists, please report it to <a href="mailto: ' + settings.OSF_SUPPORT_EMAIL + '">' + settings.OSF_SUPPORT_EMAIL + '</a>.'},
             )
         return func(*args, **kwargs)
 
@@ -54,10 +54,12 @@ def must_be_confirmed(func):
             if user.is_confirmed:
                 return func(*args, **kwargs)
             else:
-                raise HTTPError(httplib.BAD_REQUEST, data={
-                    'message_short': 'Account not yet confirmed',
-                    'message_long': 'The profile page could not be displayed as the user has not confirmed the account.'
-                })
+                raise HTTPError(
+                    httplib.BAD_REQUEST, data={
+                        'message_short': 'Account not yet confirmed',
+                        'message_long': 'The profile page could not be displayed as the user has not confirmed the account.',
+                    },
+                )
         else:
             raise HTTPError(httplib.NOT_FOUND)
 
@@ -95,19 +97,23 @@ def must_be_signed(func):
             payload = signing.unserialize_payload(data['payload'])
             exp_time = payload['time']
         except (KeyError, ValueError):
-            raise HTTPError(httplib.BAD_REQUEST, data={
-                'message_short': 'Invalid payload',
-                'message_long': 'The request payload could not be deserialized.'
-            })
+            raise HTTPError(
+                httplib.BAD_REQUEST, data={
+                    'message_short': 'Invalid payload',
+                    'message_long': 'The request payload could not be deserialized.',
+                },
+            )
 
         if not signing.default_signer.verify_payload(sig, payload):
             raise HTTPError(httplib.UNAUTHORIZED)
 
         if time.time() > exp_time:
-            raise HTTPError(httplib.BAD_REQUEST, data={
-                'message_short': 'Expired',
-                'message_long': 'Signature has expired.'
-            })
+            raise HTTPError(
+                httplib.BAD_REQUEST, data={
+                    'message_short': 'Expired',
+                    'message_long': 'Signature has expired.',
+                },
+            )
 
         kwargs['payload'] = payload
         return func(*args, **kwargs)

@@ -18,8 +18,10 @@ def add_http_scheme_to_gitlab_host(apps, schema_editor):
 
 
 def revert_add_http_scheme_to_gitlab_host(apps, schema_editor):
-    logger.warning('No reverse migration for 0003_add_schemes_to_schemeless_hosts.py because we can\'t identify'
-                  ' hostnames that were contained schemes before the initial migration.')
+    logger.warning(
+        'No reverse migration for 0003_add_schemes_to_schemeless_hosts.py because we can\'t identify'
+        ' hostnames that were contained schemes before the initial migration.',
+    )
 
 class Migration(migrations.Migration):
 
@@ -28,5 +30,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_http_scheme_to_gitlab_host, revert_add_http_scheme_to_gitlab_host)
+        migrations.RunPython(add_http_scheme_to_gitlab_host, revert_add_http_scheme_to_gitlab_host),
     ]

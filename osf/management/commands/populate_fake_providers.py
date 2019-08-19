@@ -91,13 +91,13 @@ PREPRINT_PROVIDERS = [
             'custom': {
                 'Architectural Engineering': {
                     'parent': 'Engineering',
-                    'bepress': 'Architectural Engineering'
-                }
+                    'bepress': 'Architectural Engineering',
+                },
             },
             'merge': {
-                'Architecture': 'Architectural Engineering'
-            }
-        }
+                'Architecture': 'Architectural Engineering',
+            },
+        },
     },
 ]
 REGISTRATION_PROVIDERS = [
@@ -323,13 +323,13 @@ class Command(BaseCommand):
             '--reverse',
             action='store_true',
             dest='reverse',
-            help='Removes providers'
+            help='Removes providers',
         )
         parser.add_argument(
             '--add-data',
             action='store_true',
             dest='add_data',
-            help='Adds data to the primary collection'
+            help='Adds data to the primary collection',
         )
 
     def handle(self, *args, **options):

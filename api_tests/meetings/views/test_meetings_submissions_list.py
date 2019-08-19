@@ -106,8 +106,10 @@ class TestMeetingSubmissionsList:
         assert 'download' in data[0]['links']
         assert 'author' in data[0]['relationships']
 
-    def test_meeting_submissions_list_sorting_and_filtering(self, app, url_meeting_two, meeting_two,
-            meeting_two_submission, file, meeting_two_second_submission, file_two, meeting_two_third_submission, file_three):
+    def test_meeting_submissions_list_sorting_and_filtering(
+        self, app, url_meeting_two, meeting_two,
+        meeting_two_submission, file, meeting_two_second_submission, file_two, meeting_two_third_submission, file_three,
+    ):
         first = meeting_two_submission._id
         second = meeting_two_second_submission._id
         third = meeting_two_third_submission._id

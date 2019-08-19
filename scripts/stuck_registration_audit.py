@@ -41,7 +41,7 @@ def analyze_failed_registration_nodes():
             .filter(date__gt=broken_registration.registered_date)
             .exclude(action__in=fa.LOG_WHITELIST)
             .exclude(action__in=fa.LOG_GREYLIST)
-            .values_list('action', flat=True)
+            .values_list('action', flat=True),
         )
 
         # Does it have any addons?
@@ -57,7 +57,7 @@ def analyze_failed_registration_nodes():
         succeeded_registrations_after_failed = []
         for other_reg in Registration.objects.filter(
             registered_from=broken_registration.registered_from,
-            registered_date__gt=broken_registration.registered_date
+            registered_date__gt=broken_registration.registered_date,
         ):
             if other_reg.sanction:
                 if other_reg.sanction.is_approved:
@@ -78,7 +78,7 @@ def analyze_failed_registration_nodes():
                 'succeeded_registrations_after_failed': succeeded_registrations_after_failed,
                 'can_be_reset': can_be_reset,
                 'registered_from_public': broken_registration.registered_from.is_public,
-            }
+            },
         )
 
     return failed_registration_info
@@ -87,10 +87,12 @@ def analyze_failed_registration_nodes():
 def main():
     broken_registrations = analyze_failed_registration_nodes()
     if broken_registrations:
-        fieldnames = ['registration', 'registered_date', 'original_node',
-                    'logs_on_original_after_registration_date',
-                    'has_addons', 'addon_list', 'succeeded_registrations_after_failed', 'can_be_reset',
-                    'registered_from_public']
+        fieldnames = [
+            'registration', 'registered_date', 'original_node',
+            'logs_on_original_after_registration_date',
+            'has_addons', 'addon_list', 'succeeded_registrations_after_failed', 'can_be_reset',
+            'registered_from_public',
+        ]
         filename = 'stuck_registrations_{}.csv'.format(timezone.now().isoformat())
 
         output = io.BytesIO()

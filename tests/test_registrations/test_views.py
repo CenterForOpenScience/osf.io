@@ -23,7 +23,7 @@ from website.util import api_url_for
 from website.project.views import drafts as draft_views
 
 from osf_tests.factories import (
-    NodeFactory, AuthUserFactory, DraftRegistrationFactory, RegistrationFactory, Auth
+    NodeFactory, AuthUserFactory, DraftRegistrationFactory, RegistrationFactory, Auth,
 )
 from tests.test_registrations.base import RegistrationsTestBase
 
@@ -54,7 +54,7 @@ class TestRegistrationViews(RegistrationsTestBase):
             non_admin,
             permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
             auth=self.auth,
-            save=True
+            save=True,
         )
         reg = RegistrationFactory(project=self.node)
         url = reg.web_url_for('node_register_page')
@@ -77,7 +77,7 @@ class TestRegistrationViews(RegistrationsTestBase):
         # of their name.
         reg = self.draft.register(
             auth=self.auth,
-            save=True
+            save=True,
         )
         url = reg.web_url_for(
             'node_register_template_page',
@@ -103,7 +103,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.post_json(
             url,
             self.embargo_payload,
-            auth=self.user.auth
+            auth=self.user.auth,
         )
         assert_equal(res.status_code, http.ACCEPTED)
         data = res.json
@@ -112,10 +112,12 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
         self.draft.reload()
         assert_is_not_none(self.draft.approval)
-        assert_equal(self.draft.approval.meta, {
-            u'registration_choice': 'embargo',
-            u'embargo_end_date': unicode(self.embargo_payload['data']['attributes']['lift_embargo'])
-        })
+        assert_equal(
+            self.draft.approval.meta, {
+                u'registration_choice': 'embargo',
+                u'embargo_end_date': unicode(self.embargo_payload['data']['attributes']['lift_embargo']),
+            },
+        )
 
     def test_submit_draft_for_review_invalid(self):
         # invalid registrationChoice
@@ -124,7 +126,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             url,
             self.invalid_payload,
             auth=self.user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
 
@@ -133,7 +135,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             url,
             self.embargo_payload,
             auth=self.group_mem.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == http.FORBIDDEN
 
@@ -144,11 +146,13 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             self.draft_api_url('submit_draft_for_review'),
             self.immediate_payload,
             auth=self.user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
-        assert_equal(res.json['message_long'], 'This draft has already been registered, if you wish to register it '
-                                               'again or submit it for review please create a new draft.')
+        assert_equal(
+            res.json['message_long'], 'This draft has already been registered, if you wish to register it '
+            'again or submit it for review please create a new draft.',
+        )
 
     def test_draft_before_register_page(self):
         url = self.draft_url('draft_before_register_page')
@@ -161,7 +165,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             url,
             self.embargo_payload,
             auth=self.non_admin.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert_equal(res.status_code, http.FORBIDDEN)
 
@@ -199,7 +203,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
                 initiator=self.user,
                 branched_from=dummy,
                 meta_schema=self.meta_schema,
-                schema_data={}
+                schema_data={},
             )
 
         found = [self.draft]
@@ -209,7 +213,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
                 initiator=self.user,
                 branched_from=self.node,
                 meta_schema=self.meta_schema,
-                schema_data={}
+                schema_data={},
             )
             found.append(d)
         url = self.node.api_url_for('get_draft_registrations')
@@ -225,7 +229,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         target = NodeFactory(creator=self.user)
         payload = {
             'schema_name': self.meta_schema.name,
-            'schema_version': self.meta_schema.schema_version
+            'schema_version': self.meta_schema.schema_version,
         }
         url = target.web_url_for('new_draft_registration')
 
@@ -239,7 +243,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         target = RegistrationFactory(user=self.user)
         payload = {
             'schema_name': self.meta_schema.name,
-            'schema_version': self.meta_schema.schema_version
+            'schema_version': self.meta_schema.schema_version,
         }
         url = target.web_url_for('new_draft_registration')
         res = self.app.post(url, payload, auth=self.user.auth, expect_errors=True)
@@ -247,13 +251,13 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
     def test_update_draft_registration_cant_update_registered(self):
         metadata = {
-            'summary': {'value': 'updated'}
+            'summary': {'value': 'updated'},
         }
         assert_not_equal(metadata, self.draft.registration_metadata)
         payload = {
             'schema_data': metadata,
             'schema_name': 'OSF-Standard Pre-Data Collection Registration',
-            'schema_version': 1
+            'schema_version': 1,
         }
         self.draft.register(self.auth, save=True)
         url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
@@ -271,14 +275,14 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         metadata = {
             'summary': {
                 'value': 'updated',
-                'comments': []
-            }
+                'comments': [],
+            },
         }
         assert_not_equal(metadata, self.draft.registration_metadata)
         payload = {
             'schema_data': metadata,
             'schema_name': 'Open-Ended Registration',
-            'schema_version': 2
+            'schema_version': 2,
         }
         url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
 
@@ -295,14 +299,14 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         metadata = {
             'summary': {
                 'value': 'updated',
-                'comments': []
-            }
+                'comments': [],
+            },
         }
         assert_not_equal(metadata, self.draft.registration_metadata)
         payload = {
             'schema_data': metadata,
             'schema_name': 'OSF-Standard Pre-Data Collection Registration',
-            'schema_version': 1
+            'schema_version': 1,
         }
         url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
 
@@ -368,7 +372,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.get(url).json
         assert_equal(
             len(res['meta_schemas']),
-            RegistrationSchema.objects.get_latest_versions().count()
+            RegistrationSchema.objects.get_latest_versions().count(),
         )
 
     def test_get_metaschemas_all(self):
@@ -377,7 +381,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(res.status_code, http.OK)
         assert_equal(
             len(res.json['meta_schemas']),
-            RegistrationSchema.objects.filter(active=True).count()
+            RegistrationSchema.objects.filter(active=True).count(),
         )
 
     def test_validate_embargo_end_date_too_soon(self):
@@ -477,7 +481,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
                 url,
                 self.embargo_payload,
                 auth=self.user.auth,
-                expect_errors=True
+                expect_errors=True,
             )
         assert_equal(res.status_code, http.GONE)
         data = res.json

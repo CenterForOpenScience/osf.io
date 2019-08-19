@@ -12,5 +12,5 @@ def _valid_code(seed, drift=0):
         """
         return totp(
             key=seed,
-            t=int(time.time()) + (drift * 30)
+            t=int(time.time()) + (drift * 30),
         )

@@ -47,15 +47,16 @@ class TestApplicationList:
                     'owner': 'Value discarded',
                     'client_id': 'Value discarded',
                     'client_secret': 'Value discarded',
-                }
-            }
+                },
+            },
         }
 
     def test_user_should_see_only_their_applications(
-            self, app, user, user_app, url):
+            self, app, user, user_app, url,
+    ):
         res = app.get(url, auth=user.auth)
         assert len(
-            res.json['data']
+            res.json['data'],
         ) == ApiOAuth2Application.objects.filter(owner=user).count()
 
     def test_other_user_should_see_only_their_applications(self, app, url):
@@ -69,7 +70,8 @@ class TestApplicationList:
 
     @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
     def test_deleting_application_should_hide_it_from_api_list(
-            self, mock_method, app, user, user_app, url):
+            self, mock_method, app, user, user_app, url,
+    ):
         mock_method.return_value(True)
         api_app = user_app
         delete_url = _get_application_detail_route(api_app)
@@ -80,15 +82,16 @@ class TestApplicationList:
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert len(
-            res.json['data']
+            res.json['data'],
         ) == ApiOAuth2Application.objects.count() - 1
 
     def test_created_applications_are_tied_to_request_user_with_data_specified(
-            self, app, user, url, sample_data):
+            self, app, user, url, sample_data,
+    ):
         res = app.post_json_api(
             url, sample_data,
             auth=user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 201
 
@@ -98,28 +101,31 @@ class TestApplicationList:
         assert res.json['data']['attributes']['client_secret'] != sample_data['data']['attributes']['client_secret']
 
     def test_creating_application_fails_if_callbackurl_fails_validation(
-            self, app, user, url, sample_data):
+            self, app, user, url, sample_data,
+    ):
         data = copy.copy(sample_data)
         data['data']['attributes']['callback_url'] = 'itunes:///invalid_url_of_doom'
         res = app.post_json_api(
-            url, data, auth=user.auth, expect_errors=True
+            url, data, auth=user.auth, expect_errors=True,
         )
         assert res.status_code == 400
 
     @pytest.mark.enable_implicit_clean
     def test_multiple_validation_errors(
-            self, app, user, url, sample_data):
+            self, app, user, url, sample_data,
+    ):
         # callback url and home url are both too long
         sample_data['data']['attributes']['callback_url'] = 'https://cos.io/' + 'a' * 200
         sample_data['data']['attributes']['home_url'] = 'https://cos.io/' + 'a' * 200
         res = app.post_json_api(
-            url, sample_data, auth=user.auth, expect_errors=True
+            url, sample_data, auth=user.auth, expect_errors=True,
         )
         assert res.status_code == 400
         assert len(res.json['errors']) == 2
 
     def test_field_content_is_sanitized_upon_submission(
-            self, app, user, url, sample_data):
+            self, app, user, url, sample_data,
+    ):
         bad_text = '<a href=\'http://sanitized.name\'>User_text</a>'
         cleaned_text = sanitize.strip_html(bad_text)
 
@@ -132,7 +138,8 @@ class TestApplicationList:
         assert res.json['data']['attributes']['name'] == cleaned_text
 
     def test_created_applications_show_up_in_api_list(
-            self, app, user, user_app, url, sample_data):
+            self, app, user, user_app, url, sample_data,
+    ):
         res = app.post_json_api(url, sample_data, auth=user.auth)
         assert res.status_code == 201
 

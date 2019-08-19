@@ -46,7 +46,8 @@ class TestRegistrationDetail:
         return ProjectFactory(
             title='Public Project',
             is_public=True,
-            creator=user)
+            creator=user,
+        )
 
     @pytest.fixture()
     def private_project(self, user):
@@ -63,7 +64,8 @@ class TestRegistrationDetail:
             project=public_project,
             creator=user,
             is_public=True,
-            comment_level='private')
+            comment_level='private',
+        )
 
     @pytest.fixture()
     def private_wiki(self, user, private_project):
@@ -109,13 +111,15 @@ class TestRegistrationDetail:
     @pytest.fixture()
     def private_url(self, private_registration):
         return '/{}registrations/{}/'.format(
-            API_BASE, private_registration._id)
+            API_BASE, private_registration._id,
+        )
 
     def test_registration_detail(
             self, app, user, public_project, private_project,
             public_registration, private_registration, private_wiki,
             public_url, private_url, registration_comment, registration_comment_reply,
-            registration_wiki_comment):
+            registration_wiki_comment,
+    ):
 
         non_contributor = AuthUserFactory()
 
@@ -124,12 +128,13 @@ class TestRegistrationDetail:
         assert res.status_code == 200
         data = res.json['data']
         registered_from = urlparse(
-            data['relationships']['registered_from']['links']['related']['href']
+            data['relationships']['registered_from']['links']['related']['href'],
         ).path
         assert data['attributes']['registration'] is True
         assert data['attributes']['current_user_is_contributor'] is False
         assert registered_from == '/{}nodes/{}/'.format(
-            API_BASE, public_project._id)
+            API_BASE, public_project._id,
+        )
 
     #   test_return_public_registration_details_logged_in
         res = app.get(public_url, auth=user.auth)
@@ -137,11 +142,13 @@ class TestRegistrationDetail:
         assert res.content_type == 'application/vnd.api+json'
         data = res.json['data']
         registered_from = urlparse(
-            data['relationships']['registered_from']['links']['related']['href']).path
+            data['relationships']['registered_from']['links']['related']['href'],
+        ).path
         assert data['attributes']['registration'] is True
         assert data['attributes']['current_user_is_contributor'] is True
         assert registered_from == '/{}nodes/{}/'.format(
-            API_BASE, public_project._id)
+            API_BASE, public_project._id,
+        )
 
     #   test_return_private_registration_details_logged_out
         res = app.get(private_url, expect_errors=True)
@@ -154,17 +161,20 @@ class TestRegistrationDetail:
         assert res.content_type == 'application/vnd.api+json'
         data = res.json['data']
         registered_from = urlparse(
-            data['relationships']['registered_from']['links']['related']['href']).path
+            data['relationships']['registered_from']['links']['related']['href'],
+        ).path
         assert data['attributes']['registration'] is True
         assert data['attributes']['current_user_is_contributor'] is True
         assert registered_from == '/{}nodes/{}/'.format(
-            API_BASE, private_project._id)
+            API_BASE, private_project._id,
+        )
 
     #   test_return_private_registration_details_logged_in_non_contributor
         res = app.get(
             private_url,
             auth=non_contributor.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
 
@@ -176,7 +186,8 @@ class TestRegistrationDetail:
 
     #   test_do_not_return_node_detail_in_sub_view
         url = '/{}registrations/{}/contributors/'.format(
-            API_BASE, public_project._id)
+            API_BASE, public_project._id,
+        )
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == exceptions.NotFound.default_detail
@@ -189,7 +200,8 @@ class TestRegistrationDetail:
 
     #   test_registration_shows_related_counts
         url = '/{}registrations/{}/?related_counts=True'.format(
-            API_BASE, private_registration._id)
+            API_BASE, private_registration._id,
+        )
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
@@ -205,7 +217,8 @@ class TestRegistrationDetail:
 
     #   test_registration_shows_specific_related_counts
         url = '/{}registrations/{}/?related_counts=children,wikis'.format(
-            API_BASE, private_registration._id)
+            API_BASE, private_registration._id,
+        )
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
@@ -246,24 +259,28 @@ class TestRegistrationUpdateTestCase:
     @pytest.fixture()
     def registration_approval(self, user):
         return RegistrationApprovalFactory(
-            state='unapproved', approve=False, user=user)
+            state='unapproved', approve=False, user=user,
+        )
 
     @pytest.fixture()
     def unapproved_registration(self, registration_approval):
         return Registration.objects.get(
-            registration_approval=registration_approval)
+            registration_approval=registration_approval,
+        )
 
     @pytest.fixture()
     def unapproved_url(self, unapproved_registration):
         return '/{}registrations/{}/'.format(
-            API_BASE, unapproved_registration._id)
+            API_BASE, unapproved_registration._id,
+        )
 
     @pytest.fixture()
     def public_project(self, user):
         return ProjectFactory(
             title='Public Project',
             is_public=True,
-            creator=user)
+            creator=user,
+        )
 
     @pytest.fixture()
     def private_project(self, user):
@@ -274,18 +291,23 @@ class TestRegistrationUpdateTestCase:
         return RegistrationFactory(
             project=public_project,
             creator=user,
-            is_public=True)
+            is_public=True,
+        )
 
     @pytest.fixture()
     def private_registration(
             self, user, private_project, read_only_contributor,
-            read_write_contributor):
+            read_write_contributor,
+    ):
         private_registration = RegistrationFactory(
-            project=private_project, creator=user)
+            project=private_project, creator=user,
+        )
         private_registration.add_contributor(
-            read_only_contributor, permissions=permissions.READ)
+            read_only_contributor, permissions=permissions.READ,
+        )
         private_registration.add_contributor(
-            read_write_contributor, permissions=permissions.WRITE)
+            read_write_contributor, permissions=permissions.WRITE,
+        )
         private_registration.save()
         return private_registration
 
@@ -296,7 +318,8 @@ class TestRegistrationUpdateTestCase:
     @pytest.fixture()
     def private_url(self, private_registration):
         return '/{}registrations/{}/'.format(
-            API_BASE, private_registration._id)
+            API_BASE, private_registration._id,
+        )
 
     @pytest.fixture()
     def attributes(self):
@@ -311,14 +334,14 @@ class TestRegistrationUpdateTestCase:
         def payload(
                 id=private_registration._id,
                 type='registrations',
-                attributes=attributes
+                attributes=attributes,
         ):
             return {
                 'data': {
                     'id': id,
                     'type': type,
-                    'attributes': attributes
-                }
+                    'attributes': attributes,
+                },
             }
         return payload
 
@@ -333,7 +356,8 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
     def test_update_registration(
             self, app, user, read_only_contributor,
             read_write_contributor, public_registration,
-            public_url, private_url, make_payload, public_project):
+            public_url, private_url, make_payload, public_project,
+    ):
 
         private_registration_payload = make_payload()
         non_contributor = AuthUserFactory()
@@ -342,14 +366,16 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
         res = app.put_json_api(
             private_url,
             private_registration_payload,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 401
 
     #   test_update_private_registration_logged_in_admin
         res = app.put_json_api(
             private_url,
             private_registration_payload,
-            auth=user.auth)
+            auth=user.auth,
+        )
         assert res.status_code == 200
         assert res.json['data']['attributes']['public'] is True
 
@@ -358,7 +384,8 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             private_url,
             private_registration_payload,
             auth=read_only_contributor.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
     #   test_update_private_registration_logged_in_read_write_contributor
@@ -366,18 +393,21 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             private_url,
             private_registration_payload,
             auth=read_write_contributor.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
     #   test_update_public_registration_to_private
         public_to_private_payload = make_payload(
-            id=public_registration._id, attributes={'public': False})
+            id=public_registration._id, attributes={'public': False},
+        )
 
         res = app.put_json_api(
             public_url,
             public_to_private_payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Registrations can only be turned from private to public.'
 
@@ -385,7 +415,8 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             public_url,
             public_to_private_payload,
             auth=non_contributor.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
@@ -397,7 +428,8 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             public_url,
             public_to_private_payload,
             auth=group_mem.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
     #   test_osf_group_member_admin_cannot_update_registration
@@ -407,36 +439,42 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             public_url,
             public_to_private_payload,
             auth=group_mem.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
     def test_fields(
             self, app, user, public_registration,
             private_registration, public_url, institution_one,
-            private_url, make_payload, license_cc0):
+            private_url, make_payload, license_cc0,
+    ):
 
         #   test_field_has_invalid_value
         invalid_public_payload = make_payload(
             id=public_registration._id,
-            attributes={'public': 'Dr.Strange'})
+            attributes={'public': 'Dr.Strange'},
+        )
 
         res = app.put_json_api(
             public_url,
             invalid_public_payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == '"Dr.Strange" is not a valid boolean.'
 
         invalid_public_payload = make_payload(
             id=public_registration._id,
-            attributes={'category': 'data visualization'})
+            attributes={'category': 'data visualization'},
+        )
 
         res = app.put_json_api(
             public_url,
             invalid_public_payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == '"data visualization" is not a valid choice.'
 
@@ -458,28 +496,29 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             'custom_citation': custom_citation,
             'node_license': {
                 'year': year,
-                'copyright_holders': copyright_holders
+                'copyright_holders': copyright_holders,
             },
-            'article_doi': '10.123/456/789'
+            'article_doi': '10.123/456/789',
         }
         verbose_private_payload = make_payload(attributes=attribute_list)
         verbose_private_payload['data']['relationships'] = {
             'license': {
                 'data': {
                     'type': 'licenses',
-                    'id': license_cc0._id
-                }
+                    'id': license_cc0._id,
+                },
             },
             'affiliated_institutions': {
                 'data': [
-                    {'type': 'institutions', 'id': institution_one._id}
-                ]
-            }
+                    {'type': 'institutions', 'id': institution_one._id},
+                ],
+            },
         }
         res = app.put_json_api(
             private_url,
             verbose_private_payload,
-            auth=user.auth)
+            auth=user.auth,
+        )
         assert res.status_code == 200
         assert res.json['data']['attributes']['public'] is True
         assert res.json['data']['attributes']['category'] == 'instrumentation'
@@ -493,9 +532,11 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
 
         institution_links = res.json['data']['relationships']['affiliated_institutions']['links']
         assert '/{}registrations/{}/institutions/'.format(
-            API_BASE, private_registration._id) in institution_links['related']['href']
+            API_BASE, private_registration._id,
+        ) in institution_links['related']['href']
         assert '/{}registrations/{}/relationships/institutions/'.format(
-            API_BASE, private_registration._id) in institution_links['self']['href']
+            API_BASE, private_registration._id,
+        ) in institution_links['self']['href']
 
     #   test_can_unset_certain_registration_fields
         attribute_list = {
@@ -507,15 +548,16 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             'custom_citation': '',
             'node_license': {
                 'year': '',
-                'copyright_holders': []
-            }
+                'copyright_holders': [],
+            },
         }
         verbose_private_payload = make_payload(attributes=attribute_list)
 
         res = app.put_json_api(
             private_url,
             verbose_private_payload,
-            auth=user.auth)
+            auth=user.auth,
+        )
         assert res.status_code == 200
         assert res.json['data']['attributes']['public'] is True
         assert res.json['data']['attributes']['category'] == ''
@@ -533,7 +575,8 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             private_url,
             node_type_payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 409
 
     #   test_id_field_must_match
@@ -543,7 +586,8 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             private_url,
             mismatch_id_payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 409
 
     #   test_invalid_doi
@@ -552,14 +596,17 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             private_url,
             bad_doi_payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
 
     def test_turning_private_registrations_public(
-            self, app, user, make_payload):
+            self, app, user, make_payload,
+    ):
         private_project = ProjectFactory(creator=user, is_public=False)
         private_registration = RegistrationFactory(
-            project=private_project, creator=user, is_public=False)
+            project=private_project, creator=user, is_public=False,
+        )
 
         private_to_public_payload = make_payload(id=private_registration._id)
 
@@ -584,7 +631,8 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             'affiliated_institutions',
             'article_doi',
             'custom_citation',
-            'category']
+            'category',
+        ]
         for field in RegistrationSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
             if field not in writeable_fields:
@@ -607,7 +655,8 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             'affiliated_institutions',
             'article_doi',
             'custom_citation',
-            'category']
+            'category',
+        ]
 
         for field in RegistrationDetailSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
@@ -618,33 +667,38 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
         res = app.delete_json_api(
             private_url,
             expect_errors=True,
-            auth=user.auth)
+            auth=user.auth,
+        )
         assert res.status_code == 405
 
     def test_make_public_unapproved_registration_raises_error(
-            self, app, user, unapproved_registration, unapproved_url, make_payload):
+            self, app, user, unapproved_registration, unapproved_url, make_payload,
+    ):
         attribute_list = {
             'public': True,
         }
         unapproved_registration_payload = make_payload(
-            id=unapproved_registration._id, attributes=attribute_list)
+            id=unapproved_registration._id, attributes=attribute_list,
+        )
 
         res = app.put_json_api(
             unapproved_url,
             unapproved_registration_payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'An unapproved registration cannot be made public.'
 
     def test_read_write_contributor_cannot_update_admin_writeable_fields(
             self, app, read_write_contributor, private_registration,
-            private_url, make_payload, institution_one):
+            private_url, make_payload, institution_one,
+    ):
 
         #  test_read_write_contributor_cannot_update_custom_citation
         payload = make_payload(
             id=private_registration._id,
-            attributes={'custom_citation': 'This is a custom citation yay'}
+            attributes={'custom_citation': 'This is a custom citation yay'},
         )
         res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
         assert res.status_code == 403
@@ -652,7 +706,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
         #  test_read_write_contributor_cannot_update_description
         payload = make_payload(
             id=private_registration._id,
-            attributes={'description': 'Updated description'}
+            attributes={'description': 'Updated description'},
         )
         res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
         assert res.status_code == 403
@@ -660,7 +714,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
         #  test_read_write_contributor_cannot_update_category
         payload = make_payload(
             id=private_registration._id,
-            attributes={'category': 'instrumentation'}
+            attributes={'category': 'instrumentation'},
         )
         res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
         assert res.status_code == 403
@@ -668,7 +722,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
         #  test_read_write_contributor_cannot_update_article_doi
         payload = make_payload(
             id=private_registration._id,
-            attributes={'article_doi': '10.123/456/789'}
+            attributes={'article_doi': '10.123/456/789'},
         )
         res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
         assert res.status_code == 403
@@ -680,9 +734,9 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
         payload['relationships'] = {
             'affiliated_institutions': {
                 'data': [
-                    {'type': 'institutions', 'id': institution_one._id}
-                ]
-            }
+                    {'type': 'institutions', 'id': institution_one._id},
+                ],
+            },
         }
         res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
         assert res.status_code == 403
@@ -695,12 +749,13 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
     def public_payload(self, public_registration, make_payload):
         return make_payload(
             id=public_registration._id,
-            attributes={'pending_withdrawal': True, 'withdrawal_justification': 'Not enough oopmh.'}
+            attributes={'pending_withdrawal': True, 'withdrawal_justification': 'Not enough oopmh.'},
         )
 
     def test_initiate_withdraw_registration_fails(
             self, app, user, read_write_contributor, public_registration, make_payload,
-            private_registration, public_url, private_url, public_project, public_payload):
+            private_registration, public_url, private_url, public_project, public_payload,
+    ):
         # test set pending_withdrawal with no auth
         res = app.put_json_api(public_url, public_payload, expect_errors=True)
         assert res.status_code == 401
@@ -714,7 +769,7 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         # test set pending_withdrawal private registration fails
         payload_private = make_payload(
             id=private_registration._id,
-            attributes={'pending_withdrawal': True, 'withdrawal_justification': 'fine whatever'}
+            attributes={'pending_withdrawal': True, 'withdrawal_justification': 'fine whatever'},
         )
         res = app.put_json_api(private_url, payload_private, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
@@ -726,7 +781,7 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         registration_comp = registration_with_comp._nodes.first()
         payload_component = make_payload(
             id=registration_comp._id,
-            attributes={'pending_withdrawal': True}
+            attributes={'pending_withdrawal': True},
         )
         url = '/{}registrations/{}/'.format(API_BASE, registration_comp._id)
         res = app.put_json_api(url, payload_component, auth=user.auth, expect_errors=True)
@@ -758,11 +813,12 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         assert mock_send_mail.called
 
     def test_initiate_withdrawal_with_embargo_ends_embargo(
-            self, app, user, public_project, public_registration, public_url, public_payload):
+            self, app, user, public_project, public_registration, public_url, public_payload,
+    ):
         public_registration.embargo_registration(
             user,
             (timezone.now() + datetime.timedelta(days=10)),
-            for_existing_registration=True
+            for_existing_registration=True,
         )
         public_registration.save()
         assert public_registration.is_pending_embargo
@@ -780,7 +836,8 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
 
     @mock.patch('website.mails.send_mail')
     def test_withdraw_request_does_not_send_email_to_unregistered_admins(
-            self, mock_send_mail, app, user, public_registration, public_url, public_payload):
+            self, mock_send_mail, app, user, public_registration, public_url, public_payload,
+    ):
         unreg = UnregUserFactory()
         with disconnected_from_listeners(contributor_added):
             public_registration.add_unregistered_contributor(
@@ -789,7 +846,7 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
                 auth=Auth(user),
                 permissions=permissions.ADMIN,
                 existing_user=unreg,
-                save=True
+                save=True,
             )
 
         res = app.put_json_api(public_url, public_payload, auth=user.auth)
@@ -820,15 +877,18 @@ class TestRegistrationTags:
         project_public = ProjectFactory(
             title='Project One',
             is_public=True,
-            creator=user_admin)
+            creator=user_admin,
+        )
         project_public.add_contributor(
             user_admin,
             permissions=permissions.CREATOR_PERMISSIONS,
-            save=True)
+            save=True,
+        )
         project_public.add_contributor(
             read_write_contrib,
             permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
-            save=True)
+            save=True,
+        )
         return project_public
 
     @pytest.fixture()
@@ -836,29 +896,34 @@ class TestRegistrationTags:
         return RegistrationFactory(
             project=project_public,
             creator=user_admin,
-            is_public=True)
+            is_public=True,
+        )
 
     @pytest.fixture()
     def registration_private(self, project_public, user_admin):
         return RegistrationFactory(
             project=project_public,
             creator=user_admin,
-            is_public=False)
+            is_public=False,
+        )
 
     @pytest.fixture()
     def registration_withdrawn(self, project_public, user_admin):
         return RegistrationFactory(
             project=project_public,
             creator=user_admin,
-            is_public=True)
+            is_public=True,
+        )
 
     @pytest.fixture()
     def withdrawn_registration(self, registration_withdrawn, user_admin):
         registration_withdrawn.add_tag(
-            'existing-tag', auth=Auth(user=user_admin))
+            'existing-tag', auth=Auth(user=user_admin),
+        )
         registration_withdrawn.save()
         withdrawn_registration = WithdrawnRegistrationFactory(
-            registration=registration_withdrawn, user=user_admin)
+            registration=registration_withdrawn, user=user_admin,
+        )
         withdrawn_registration.justification = 'We made a major error.'
         withdrawn_registration.save()
         return withdrawn_registration
@@ -866,18 +931,22 @@ class TestRegistrationTags:
     @pytest.fixture()
     def url_registration_public(self, registration_public):
         return '/{}registrations/{}/'.format(
-            API_BASE, registration_public._id)
+            API_BASE, registration_public._id,
+        )
 
     @pytest.fixture()
     def url_registration_private(self, registration_private):
         return '/{}registrations/{}/'.format(
-            API_BASE, registration_private._id)
+            API_BASE, registration_private._id,
+        )
 
     @pytest.fixture()
     def url_registration_withdrawn(
-            self, registration_withdrawn, withdrawn_registration):
+            self, registration_withdrawn, withdrawn_registration,
+    ):
         return '/{}registrations/{}/'.format(
-            API_BASE, registration_withdrawn._id)
+            API_BASE, registration_withdrawn._id,
+        )
 
     @pytest.fixture()
     def new_tag_payload_public(self, registration_public):
@@ -887,8 +956,8 @@ class TestRegistrationTags:
                 'type': 'registrations',
                 'attributes': {
                     'tags': ['new-tag'],
-                }
-            }
+                },
+            },
         }
 
     @pytest.fixture()
@@ -899,8 +968,8 @@ class TestRegistrationTags:
                 'type': 'registrations',
                 'attributes': {
                     'tags': ['new-tag'],
-                }
-            }
+                },
+            },
         }
 
     @pytest.fixture()
@@ -911,15 +980,16 @@ class TestRegistrationTags:
                 'type': 'registrations',
                 'attributes': {
                     'tags': ['new-tag', 'existing-tag'],
-                }
-            }
+                },
+            },
         }
 
     def test_registration_tags(
             self, app, registration_public, registration_private,
             url_registration_public, url_registration_private,
             new_tag_payload_public, new_tag_payload_private,
-            user_admin, user_non_contrib, read_write_contrib):
+            user_admin, user_non_contrib, read_write_contrib,
+    ):
         # test_registration_starts_with_no_tags
         res = app.get(url_registration_public)
         assert res.status_code == 200
@@ -936,7 +1006,8 @@ class TestRegistrationTags:
             res = app.patch_json_api(
                 url_registration_public,
                 new_tag_payload_public,
-                auth=user_admin.auth)
+                auth=user_admin.auth,
+            )
             assert res.status_code == 200
             # Ensure data is correct from the PATCH response
             assert len(res.json['data']['attributes']['tags']) == 1
@@ -955,7 +1026,8 @@ class TestRegistrationTags:
             res = app.patch_json_api(
                 url_registration_private,
                 new_tag_payload_private,
-                auth=user_admin.auth)
+                auth=user_admin.auth,
+            )
             assert res.status_code == 200
             # Ensure data is correct from the PATCH response
             assert len(res.json['data']['attributes']['tags']) == 1
@@ -967,7 +1039,8 @@ class TestRegistrationTags:
             # Ensure data is correct when GETting the resource again
             reload_res = app.get(
                 url_registration_private,
-                auth=user_admin.auth)
+                auth=user_admin.auth,
+            )
             assert len(reload_res.json['data']['attributes']['tags']) == 1
             assert reload_res.json['data']['attributes']['tags'][0] == 'new-tag'
 
@@ -976,7 +1049,8 @@ class TestRegistrationTags:
             url_registration_public,
             new_tag_payload_public,
             expect_errors=True,
-            auth=user_non_contrib.auth)
+            auth=user_non_contrib.auth,
+        )
         assert res.status_code == 403
 
         # test_partial_update_registration_does_not_clear_tags
@@ -985,14 +1059,15 @@ class TestRegistrationTags:
                 'id': registration_private._id,
                 'type': 'registrations',
                 'attributes': {
-                    'public': True
-                }
-            }
+                    'public': True,
+                },
+            },
         }
         res = app.patch_json_api(
             url_registration_private,
             new_payload,
-            auth=user_admin.auth)
+            auth=user_admin.auth,
+        )
         assert res.status_code == 200
         assert len(res.json['data']['attributes']['tags']) == 1
 
@@ -1001,17 +1076,20 @@ class TestRegistrationTags:
         res = app.patch_json_api(
             url_registration_public,
             new_tag_payload_public,
-            auth=read_write_contrib.auth)
+            auth=read_write_contrib.auth,
+        )
         assert res.status_code == 200
 
     def test_tags_add_and_remove_properly(
             self, app, user_admin, registration_public,
-            new_tag_payload_public, url_registration_public):
+            new_tag_payload_public, url_registration_public,
+    ):
         with assert_latest_log(NodeLog.TAG_ADDED, registration_public):
             res = app.patch_json_api(
                 url_registration_public,
                 new_tag_payload_public,
-                auth=user_admin.auth)
+                auth=user_admin.auth,
+            )
             assert res.status_code == 200
             # Ensure adding tag data is correct from the PATCH response
             assert len(res.json['data']['attributes']['tags']) == 1
@@ -1025,9 +1103,10 @@ class TestRegistrationTags:
                     'data': {
                         'id': registration_public._id,
                         'type': 'registrations',
-                        'attributes': {'tags': ['newer-tag']}
-                    }
-                }, auth=user_admin.auth)
+                        'attributes': {'tags': ['newer-tag']},
+                    },
+                }, auth=user_admin.auth,
+            )
             assert res.status_code == 200
             assert len(res.json['data']['attributes']['tags']) == 1
             assert res.json['data']['attributes']['tags'][0] == 'newer-tag'
@@ -1039,20 +1118,23 @@ class TestRegistrationTags:
                     'data': {
                         'id': registration_public._id,
                         'type': 'registrations',
-                        'attributes': {'tags': []}
-                    }
-                }, auth=user_admin.auth)
+                        'attributes': {'tags': []},
+                    },
+                }, auth=user_admin.auth,
+            )
             assert res.status_code == 200
             assert len(res.json['data']['attributes']['tags']) == 0
 
     def test_tags_for_withdrawn_registration(
             self, app, registration_withdrawn, user_admin,
-            url_registration_withdrawn, new_tag_payload_withdrawn):
+            url_registration_withdrawn, new_tag_payload_withdrawn,
+    ):
         res = app.patch_json_api(
             url_registration_withdrawn,
             new_tag_payload_withdrawn,
             auth=user_admin.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 409
         assert res.json['errors'][0]['detail'] == 'Cannot add tags to withdrawn registrations.'
 
@@ -1062,11 +1144,12 @@ class TestRegistrationTags:
                 'data': {
                     'id': registration_withdrawn._id,
                     'type': 'registrations',
-                    'attributes': {'tags': []}
-                }
+                    'attributes': {'tags': []},
+                },
             },
             auth=user_admin.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 409
         assert res.json['errors'][0]['detail'] == 'Cannot remove tags of withdrawn registrations.'
 
@@ -1079,7 +1162,8 @@ class TestUpdateRegistrationLicense(TestNodeUpdateLicense):
         node.add_contributor(
             user_read_contrib,
             auth=Auth(user_admin_contrib),
-            permissions=permissions.READ)
+            permissions=permissions.READ,
+        )
         node.save()
         return node
 
@@ -1091,27 +1175,28 @@ class TestUpdateRegistrationLicense(TestNodeUpdateLicense):
     def make_payload(self):
         def payload(
                 node_id, license_id=None, license_year=None,
-                copyright_holders=None):
+                copyright_holders=None,
+        ):
             attributes = {}
 
             if license_year and copyright_holders:
                 attributes = {
                     'node_license': {
                         'year': license_year,
-                        'copyright_holders': copyright_holders
-                    }
+                        'copyright_holders': copyright_holders,
+                    },
                 }
             elif license_year:
                 attributes = {
                     'node_license': {
-                        'year': license_year
-                    }
+                        'year': license_year,
+                    },
                 }
             elif copyright_holders:
                 attributes = {
                     'node_license': {
-                        'copyright_holders': copyright_holders
-                    }
+                        'copyright_holders': copyright_holders,
+                    },
                 }
 
             return {
@@ -1123,17 +1208,17 @@ class TestUpdateRegistrationLicense(TestNodeUpdateLicense):
                         'license': {
                             'data': {
                                 'type': 'licenses',
-                                'id': license_id
-                            }
-                        }
-                    }
-                }
+                                'id': license_id,
+                            },
+                        },
+                    },
+                },
             } if license_id else {
                 'data': {
                     'type': 'registrations',
                     'id': node_id,
-                    'attributes': attributes
-                }
+                    'attributes': attributes,
+                },
             }
         return payload
 
@@ -1147,6 +1232,7 @@ class TestUpdateRegistrationSubjects(UpdateSubjectsMixin):
         registration.add_contributor(
             user_read_contrib,
             auth=Auth(user_admin_contrib),
-            permissions=permissions.READ)
+            permissions=permissions.READ,
+        )
         registration.save()
         return registration

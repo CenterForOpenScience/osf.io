@@ -14,5 +14,5 @@ class AppConfig(BaseAppConfig):
         super(AppConfig, self).ready()
         post_migrate.connect(
             update_permission_groups,
-            dispatch_uid='osf.apps.update_permissions_groups'
+            dispatch_uid='osf.apps.update_permissions_groups',
         )

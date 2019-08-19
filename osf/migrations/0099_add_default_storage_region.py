@@ -26,7 +26,7 @@ def add_osfstorage_addon(apps, *args):
         name=DEFAULT_REGION_NAME,
         waterbutler_credentials=osfstorage_config.WATERBUTLER_CREDENTIALS,
         waterbutler_settings=osfstorage_config.WATERBUTLER_SETTINGS,
-        waterbutler_url=WATERBUTLER_URL
+        waterbutler_url=WATERBUTLER_URL,
     )
 
     if created:
@@ -42,7 +42,7 @@ def add_osfstorage_addon(apps, *args):
         for user in page:
             new_user_settings = OsfStorageUserSettings(
                 owner=user,
-                default_region=default_region
+                default_region=default_region,
             )
             user_settings_to_update.append(new_user_settings)
             users_done += 1
@@ -58,7 +58,7 @@ def remove_osfstorage_addon(apps, *args):
     OsfStorageUserSettings = osfstorage_config.user_settings
 
     region = Region.objects.filter(
-        name=DEFAULT_REGION_NAME
+        name=DEFAULT_REGION_NAME,
     )
 
     if region:

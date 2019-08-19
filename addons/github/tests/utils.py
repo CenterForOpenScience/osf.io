@@ -91,23 +91,25 @@ def create_mock_github(user='octo-cat', private=False):
      u'notifications_url': u'https://api.github.com/repos/{user}/mock-repo/notifications{{?since,all,participating}}'.format(user=user),
      u'open_issues': 2,
      u'open_issues_count': 2,
-     u'owner': {u'avatar_url': u'https://gravatar.com/avatar/c74f9cfd7776305a82ede0b765d65402?d=https%3A%2F%2Fidenticons.github.com%2F3959fe3bcd263a12c28ae86a66ec75ef.png&r=x',
-      u'events_url': u'https://api.github.com/users/{user}/events{{/privacy}}'.format(user=user),
-      u'followers_url': u'https://api.github.com/users/{user}/followers'.format(user=user),
-      u'following_url': u'https://api.github.com/users/{user}/following{{/other_user}}'.format(user=user),
-      u'gists_url': u'https://api.github.com/users/{user}/gists{{/gist_id}}'.format(user=user),
-      u'gravatar_id': u'c74f9cfd7776305a82ede0b765d65402',
-      u'html_url': u'https://github.com/{user}'.format(user=user),
-      u'id': 2379650,
-      u'login': user,
-      u'organizations_url': u'https://api.github.com/users/{user}/orgs'.format(user=user),
-      u'received_events_url': u'https://api.github.com/users/{user}/received_events',
-      u'repos_url': u'https://api.github.com/users/{user}/repos'.format(user=user),
-      u'site_admin': False,
-      u'starred_url': u'https://api.github.com/users/{user}/starred{{/owner}}{{/repo}}',
-      u'subscriptions_url': u'https://api.github.com/users/{user}/subscriptions'.format(user=user),
-      u'type': u'User',
-      u'url': u'https://api.github.com/users/{user}'.format(user=user)},
+     u'owner': {
+         u'avatar_url': u'https://gravatar.com/avatar/c74f9cfd7776305a82ede0b765d65402?d=https%3A%2F%2Fidenticons.github.com%2F3959fe3bcd263a12c28ae86a66ec75ef.png&r=x',
+         u'events_url': u'https://api.github.com/users/{user}/events{{/privacy}}'.format(user=user),
+         u'followers_url': u'https://api.github.com/users/{user}/followers'.format(user=user),
+         u'following_url': u'https://api.github.com/users/{user}/following{{/other_user}}'.format(user=user),
+         u'gists_url': u'https://api.github.com/users/{user}/gists{{/gist_id}}'.format(user=user),
+         u'gravatar_id': u'c74f9cfd7776305a82ede0b765d65402',
+         u'html_url': u'https://github.com/{user}'.format(user=user),
+         u'id': 2379650,
+         u'login': user,
+         u'organizations_url': u'https://api.github.com/users/{user}/orgs'.format(user=user),
+         u'received_events_url': u'https://api.github.com/users/{user}/received_events',
+         u'repos_url': u'https://api.github.com/users/{user}/repos'.format(user=user),
+         u'site_admin': False,
+         u'starred_url': u'https://api.github.com/users/{user}/starred{{/owner}}{{/repo}}',
+         u'subscriptions_url': u'https://api.github.com/users/{user}/subscriptions'.format(user=user),
+         u'type': u'User',
+         u'url': u'https://api.github.com/users/{user}'.format(user=user),
+     },
      u'private': private,
      u'pulls_url': u'https://api.github.com/repos/{user}/mock-repo/pulls{{/number}}'.format(user=user),
      u'pushed_at': u'2013-12-30T16:05:54Z',
@@ -129,19 +131,31 @@ def create_mock_github(user='octo-cat', private=False):
      u'watchers': 1469,
      u'watchers_count': 1469,
      # NOTE: permissions are only available if authorized on the repo
-     'permissions': { 'push': True }
-     }))
+     'permissions': { 'push': True },
+    }))
 
     github_mock.branches.return_value = [
-        Branch.from_json(dumps({u'commit': {u'sha': u'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230',
-           u'url': u'https://api.github.com/repos/{user}/mock-repo/commits/e22d92d5d90bb8f9695e9a5e2e2311a5c1997230'.format(user=user)},
-          u'name': u'dev'})),
-         Branch.from_json(dumps({u'commit': {u'sha': u'444a74d0d90a4aea744dacb31a14f87b5c30759c',
-           u'url': u'https://api.github.com/repos/{user}/mock-repo/commits/444a74d0d90a4aea744dacb31a14f87b5c30759c'.format(user=user)},
-          u'name': u'master'})),
-         Branch.from_json(dumps({u'commit': {u'sha': u'c6eaaf6708561c3d4439c0c8dd99c2e33525b1e6',
-           u'url': u'https://api.github.com/repos/{user}/mock-repo/commits/c6eaaf6708561c3d4439c0c8dd99c2e33525b1e6'.format(user=user)},
-          u'name': u'no-bundle'}))
-      ]
+        Branch.from_json(dumps({
+            u'commit': {
+                u'sha': u'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230',
+                u'url': u'https://api.github.com/repos/{user}/mock-repo/commits/e22d92d5d90bb8f9695e9a5e2e2311a5c1997230'.format(user=user),
+            },
+            u'name': u'dev',
+        })),
+         Branch.from_json(dumps({
+             u'commit': {
+                 u'sha': u'444a74d0d90a4aea744dacb31a14f87b5c30759c',
+                 u'url': u'https://api.github.com/repos/{user}/mock-repo/commits/444a74d0d90a4aea744dacb31a14f87b5c30759c'.format(user=user),
+             },
+             u'name': u'master',
+         })),
+         Branch.from_json(dumps({
+             u'commit': {
+                 u'sha': u'c6eaaf6708561c3d4439c0c8dd99c2e33525b1e6',
+                 u'url': u'https://api.github.com/repos/{user}/mock-repo/commits/c6eaaf6708561c3d4439c0c8dd99c2e33525b1e6'.format(user=user),
+             },
+             u'name': u'no-bundle',
+         })),
+    ]
 
     return github_mock

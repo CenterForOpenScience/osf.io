@@ -17,7 +17,7 @@ class TestAuthViews(OneDriveAddonTestCase, views.OAuthAddonAuthViewsTestCaseMixi
 class TestConfigViews(OneDriveAddonTestCase, views.OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
     folder = {
         'path': 'Drive/Camera Uploads',
-        'id': '1234567890'
+        'id': '1234567890',
     }
     Serializer = OneDriveSerializer
     client = OneDriveClient
@@ -31,7 +31,7 @@ class TestConfigViews(OneDriveAddonTestCase, views.OAuthAddonConfigViewsTestCase
 
         self.mock_fetch = mock.patch.object(
             self.node_settings.__class__,
-            'fetch_access_token'
+            'fetch_access_token',
         )
         self.mock_fetch.return_value = self.external_account.oauth_key
         self.mock_fetch.start()

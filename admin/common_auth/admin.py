@@ -17,7 +17,8 @@ class AdminAdmin(admin.ModelAdmin):
 
     def permission_groups(self):
         perm_groups = ', '.join(
-            [perm.name for perm in self.user.groups.all()]) if self.user.groups.all() else 'No permission groups'
+            [perm.name for perm in self.user.groups.all()],
+        ) if self.user.groups.all() else 'No permission groups'
         return u'<a href="/account/register/?id={id}">{groups}</a>'.format(id=self.user._id, groups=perm_groups)
 
     def user_name(self):
@@ -44,12 +45,12 @@ class LogEntryAdmin(admin.ModelAdmin):
 
     list_filter = [
         'user',
-        'action_flag'
+        'action_flag',
     ]
 
     search_fields = [
         'object_repr',
-        'change_message'
+        'change_message',
     ]
 
     list_display = [

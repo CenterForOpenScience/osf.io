@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
-                                BaseStorageAddon)
+from addons.base.models import (
+    BaseOAuthNodeSettings, BaseOAuthUserSettings,
+    BaseStorageAddon,
+)
 from django.db import models
 from framework.auth import Auth
 from osf.models.files import File, Folder, BaseFileNode
@@ -45,7 +47,7 @@ class OwnCloudProvider(BasicAuthProviderMixin):
     def __repr__(self):
         return '<{name}: {status}>'.format(
             name=self.__class__.__name__,
-            status=self.account.display_name if self.account else 'anonymous'
+            status=self.account.display_name if self.account else 'anonymous',
         )
 
 
@@ -111,7 +113,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return {
             'host': provider.host,
             'username': provider.username,
-            'password': provider.password
+            'password': provider.password,
         }
 
     def serialize_waterbutler_settings(self):
@@ -119,12 +121,14 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             raise exceptions.AddonError('ownCloud is not configured')
         return {
             'folder': self.folder_id,
-            'verify_ssl': USE_SSL
+            'verify_ssl': USE_SSL,
         }
 
     def create_waterbutler_log(self, auth, action, metadata):
-        url = self.owner.web_url_for('addon_view_or_download_file',
-                                     path=metadata['path'], provider='owncloud')
+        url = self.owner.web_url_for(
+            'addon_view_or_download_file',
+            path=metadata['path'], provider='owncloud',
+        )
         self.owner.add_log(
             'owncloud_{0}'.format(action),
             auth=auth,
@@ -135,7 +139,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'path': metadata['materialized'].lstrip('/'),
                 'urls': {
                     'view': url,
-                    'download': url + '?action=download'
+                    'download': url + '?action=download',
                 },
             },
         )
@@ -158,11 +162,13 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'id': '/',
                 'name': '/ (Full ownCloud)',
                 'urls': {
-                    'folders': api_v2_url('nodes/{}/addons/owncloud/folders/'.format(self.owner._id),
+                    'folders': api_v2_url(
+                        'nodes/{}/addons/owncloud/folders/'.format(self.owner._id),
                         params={
                             'path': '/',
-                    })
-                }
+                        },
+                    ),
+                },
             }]
 
         provider = OwnCloudProvider(account=self.external_account)
@@ -180,12 +186,14 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                     'id': item.path,
                     'name': item.path.strip('/').split('/')[-1],
                     'urls': {
-                        'folders': api_v2_url('nodes/{}/addons/owncloud/folders/'.format(self.owner._id),
+                        'folders': api_v2_url(
+                            'nodes/{}/addons/owncloud/folders/'.format(self.owner._id),
                             params={
                                 'path': item.path,
-                        })
+                            },
+                        ),
 
-                    }
+                    },
                 })
 
         return ret

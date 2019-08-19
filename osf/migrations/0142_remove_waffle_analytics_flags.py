@@ -11,5 +11,5 @@ class Migration(migrations.Migration):
         ('osf', '0142_remove_forks_flag'),
     ]
     operations = [
-        DeleteWaffleFlags([EMBER_PROJECT_ANALYTICS])
+        DeleteWaffleFlags([EMBER_PROJECT_ANALYTICS]),
     ]

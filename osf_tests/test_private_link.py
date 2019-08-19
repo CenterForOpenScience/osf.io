@@ -112,7 +112,7 @@ class TestPrivateLinkNodeLogs:
             name='wooo',
             user=node.creator,
             nodes=[node],
-            anonymous=False
+            anonymous=False,
         )
         last_log = node.logs.latest()
 
@@ -121,7 +121,7 @@ class TestPrivateLinkNodeLogs:
             'node': node._id,
             'project': node.parent_node._id,
             'anonymous_link': False,
-            'user': node.creator._id
+            'user': node.creator._id,
         }
 
     def test_create_anonymous_private_link_log(self):
@@ -130,7 +130,7 @@ class TestPrivateLinkNodeLogs:
             name='wooo',
             user=node.creator,
             nodes=[node],
-            anonymous=True
+            anonymous=True,
         )
         last_log = node.logs.latest()
 
@@ -139,5 +139,5 @@ class TestPrivateLinkNodeLogs:
             'node': node._id,
             'project': node.parent_node._id,
             'anonymous_link': True,
-            'user': node.creator._id
+            'user': node.creator._id,
         }

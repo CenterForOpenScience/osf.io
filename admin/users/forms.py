@@ -12,7 +12,7 @@ class EmailResetForm(forms.Form):
 
 class WorkshopForm(forms.Form):
     document = forms.FileField(
-        label='Select a file'
+        label='Select a file',
     )
 
 

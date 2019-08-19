@@ -32,7 +32,7 @@ class DeskClient(object):
             settings.DESK_KEY,
             client_secret=settings.DESK_KEY_SECRET,
             resource_owner_key=user.admin_profile.desk_token,
-            resource_owner_secret=user.admin_profile.desk_token_secret
+            resource_owner_secret=user.admin_profile.desk_token_secret,
         )
 
     def build_url(self, service):
@@ -70,11 +70,12 @@ class DeskClient(object):
         customer_data = {
             'id': customer['id'],
             'name': '{} {}'.format(
-                customer['first_name'], customer['last_name']),
+                customer['first_name'], customer['last_name'],
+            ),
             'emails': customer['emails'],
             'background': customer['background'],
             'company': customer['company'],
-            'link': customer['_links']['self']
+            'link': customer['_links']['self'],
         }
         return customer_data
 
@@ -82,7 +83,7 @@ class DeskClient(object):
         case_list = [None]
         params.update({
             'sort_field': 'created_at',
-            'sort_direction': 'desc'
+            'sort_direction': 'desc',
         })
         try:
             case_list = self.call_get('cases/search', params)

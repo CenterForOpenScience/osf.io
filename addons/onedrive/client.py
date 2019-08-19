@@ -30,15 +30,17 @@ class OneDriveClient(BaseClient):
         if folder_id is None or folder_id == DEFAULT_ROOT_ID:
             url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', DEFAULT_ROOT_ID, 'children')
         else:
-            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', 'items',
-                                  folder_id, 'children')
+            url = self._build_url(
+                settings.ONEDRIVE_API_URL, 'drive', 'items',
+                folder_id, 'children',
+            )
 
         res = self._make_request(
             'GET',
             url,
             params={'filter': 'folder ne null'},
             expects=(200, ),
-            throws=HTTPError(401)
+            throws=HTTPError(401),
         )
         return res.json()['value']
 
@@ -59,5 +61,5 @@ class OneDriveClient(BaseClient):
             self._build_url(settings.MSLIVE_API_URL, 'me'),
             params={'access_token': access_token},
             expects=(200, ),
-            throws=HTTPError(401)
+            throws=HTTPError(401),
         ).json()

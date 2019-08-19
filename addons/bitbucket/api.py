@@ -44,7 +44,7 @@ class BitbucketClient(BaseClient):
             'GET',
             self._build_url(settings.BITBUCKET_V2_API_URL, 'user'),
             expects=(200, ),
-            throws=HTTPError(401)
+            throws=HTTPError(401),
         )
         return res.json()
 
@@ -63,7 +63,7 @@ class BitbucketClient(BaseClient):
             'GET',
             self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', user, repo),
             expects=(200, 404, ),
-            throws=HTTPError(401)
+            throws=HTTPError(401),
         )
         return None if res.status_code == 404 else res.json()
 
@@ -79,14 +79,14 @@ class BitbucketClient(BaseClient):
         """
         query_params = {
             'pagelen': 100,
-            'fields': 'values.full_name'
+            'fields': 'values.full_name',
         }
         res = self._make_request(
             'GET',
             self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', self.username),
             expects=(200, ),
             throws=HTTPError(401),
-            params=query_params
+            params=query_params,
         )
         repo_list = res.json()['values']
 
@@ -108,14 +108,14 @@ class BitbucketClient(BaseClient):
         query_params = {
             'role': 'member',
             'pagelen': 100,
-            'fields': 'values.links.repositories.href'
+            'fields': 'values.links.repositories.href',
         }
         res = self._make_request(
             'GET',
             self._build_url(settings.BITBUCKET_V2_API_URL, 'teams'),
             expects=(200, ),
             throws=HTTPError(401),
-            params=query_params
+            params=query_params,
         )
         team_repos_url_list = [x['links']['repositories']['href'] for x in res.json()['values']]
 
@@ -126,7 +126,7 @@ class BitbucketClient(BaseClient):
                 team_repos_url,
                 expects=(200, ),
                 throws=HTTPError(401),
-                params={'fields': 'values.full_name'}
+                params={'fields': 'values.full_name'},
             )
             team_repos.extend(res.json()['values'])
 
@@ -149,7 +149,7 @@ class BitbucketClient(BaseClient):
             'GET',
             self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', user, repo),
             expects=(200, ),
-            throws=HTTPError(401)
+            throws=HTTPError(401),
         )
         return res.json()['mainbranch']['name']
 
@@ -172,7 +172,7 @@ class BitbucketClient(BaseClient):
                 'GET',
                 url,
                 expects=(200, ),
-                throws=HTTPError(401)
+                throws=HTTPError(401),
             )
             res_data = res.json()
             branches.extend(res_data['values'])

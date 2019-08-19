@@ -32,14 +32,14 @@ def check_spam(guid, flag=False):
     author_email = node.creator.username
     # Required by Node#do_check_spam
     request_headers = {
-        'Remote-Addr': ''
+        'Remote-Addr': '',
     }
     is_spam = node.do_check_spam(
         author=author,
         author_email=author_email,
         content=content,
         request_headers=request_headers,
-        update=flag
+        update=flag,
     )
     logger.info('{} {} spam? {}'.format(referent_type, node._id, is_spam))
     if is_spam and flag:

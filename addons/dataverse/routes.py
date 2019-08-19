@@ -95,5 +95,5 @@ api_routes = {
             json_renderer,
         ),
     ],
-    'prefix': '/api/v1'
+    'prefix': '/api/v1',
 }

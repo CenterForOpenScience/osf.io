@@ -14,5 +14,5 @@ class S3AddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
     folder = {
         'path': 'bucket',
         'name': 'bucket',
-        'id': 'bucket'
+        'id': 'bucket',
     }

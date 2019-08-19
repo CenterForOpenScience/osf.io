@@ -13,21 +13,21 @@ FULL_NAME = SHORT_NAME
 
 figshare_account_list = generic_views.account_list(
     SHORT_NAME,
-    FigshareSerializer
+    FigshareSerializer,
 )
 
 figshare_import_auth = generic_views.import_auth(
     SHORT_NAME,
-    FigshareSerializer
+    FigshareSerializer,
 )
 
 figshare_deauthorize_node = generic_views.deauthorize_node(
-    SHORT_NAME
+    SHORT_NAME,
 )
 
 figshare_get_config = generic_views.get_config(
     SHORT_NAME,
-    FigshareSerializer
+    FigshareSerializer,
 )
 
 def _set_folder(node_addon, folder, auth):
@@ -38,7 +38,7 @@ figshare_set_config = generic_views.set_config(
     SHORT_NAME,
     FULL_NAME,
     FigshareSerializer,
-    _set_folder
+    _set_folder,
 )
 
 @must_have_addon(SHORT_NAME, 'node')

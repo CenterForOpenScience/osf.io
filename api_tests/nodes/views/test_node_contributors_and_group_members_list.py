@@ -45,7 +45,7 @@ def group(group_manager, group_member, group_member_and_contributor):
 @pytest.fixture()
 def project(group, admin_contributor, write_contributor, group_member_and_contributor):
     project = ProjectFactory(
-        creator=admin_contributor
+        creator=admin_contributor,
     )
     project.add_contributor(write_contributor, WRITE)
     project.add_contributor(group_member_and_contributor, READ)
@@ -58,7 +58,8 @@ def project(group, admin_contributor, write_contributor, group_member_and_contri
 class TestNodeContributorsAndGroupMembers:
     def test_list_and_filter_contributors_and_group_members(
             self, app, project, admin_contributor, write_contributor, group_manager,
-            group_member, group_member_and_contributor, non_contributor):
+            group_member, group_member_and_contributor, non_contributor,
+    ):
         url = '/{}nodes/{}/contributors_and_group_members/'.format(API_BASE, project._id)
 
         # unauthenticated
@@ -87,7 +88,7 @@ class TestNodeContributorsAndGroupMembers:
             write_contributor._id,
             group_manager._id,
             group_member._id,
-            group_member_and_contributor._id
+            group_member_and_contributor._id,
         ])
         actual = set([node['id'] for node in res.json['data']])
 

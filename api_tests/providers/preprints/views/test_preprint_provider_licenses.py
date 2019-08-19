@@ -32,7 +32,8 @@ class TestPreprintProviderLicenses:
     def url(self, provider, request):
         url = request.param
         return url.format(
-            API_BASE, provider._id)
+            API_BASE, provider._id,
+        )
 
     def test_preprint_provider_has_no_acceptable_licenses_and_no_default(self, app, provider, licenses, url):
         provider.licenses_acceptable = []

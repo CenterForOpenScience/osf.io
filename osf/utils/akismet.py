@@ -25,7 +25,7 @@ class AkismetClient(object):
     @property
     def _default_headers(self):
         return {
-            'content-type': 'application/x-www-form-urlencoded'
+            'content-type': 'application/x-www-form-urlencoded',
         }
 
     def _is_apikey_valid(self):
@@ -36,9 +36,9 @@ class AkismetClient(object):
                 '{}{}/1.1/verify-key'.format(self.API_PROTOCOL, self.API_HOST),
                 data={
                     'key': self.apikey,
-                    'blog': self.website
+                    'blog': self.website,
                 },
-                headers=self._default_headers
+                headers=self._default_headers,
             )
             self._apikey_is_valid = (res.text == 'valid')
             return self._is_apikey_valid()
@@ -56,9 +56,11 @@ class AkismetClient(object):
 
         :return: a (bool, str) tuple representing (is_spam, pro_tip)
         """
-        ALLOWED_ARGS = ('referrer', 'permalink', 'is_test',
-                        'comment_author', 'comment_author_email', 'comment_author_url',
-                        'comment_content', 'comment_date_gmt', 'comment_post_modified_gmt')
+        ALLOWED_ARGS = (
+            'referrer', 'permalink', 'is_test',
+            'comment_author', 'comment_author_email', 'comment_author_url',
+            'comment_content', 'comment_date_gmt', 'comment_post_modified_gmt',
+        )
         data = {
             k: kwargs.get(k)
             for k in ALLOWED_ARGS
@@ -73,7 +75,7 @@ class AkismetClient(object):
                 '{}{}.{}/1.1/comment-check'.format(self.API_PROTOCOL, self.apikey, self.API_HOST),
                 data=data,
                 headers=self._default_headers,
-                timeout=5
+                timeout=5,
             )
             res.raise_for_status()
         except requests.exceptions.RequestException as e:
@@ -81,8 +83,10 @@ class AkismetClient(object):
         return res.text == 'true', res.headers.get('X-akismet-pro-tip')
 
     def submit_spam(self, user_ip, user_agent, **kwargs):
-        ALLOWED_ARGS = ('referrer', 'permalink', 'is_test',
-                        'comment_author', 'comment_author_email', 'comment_author_url', 'comment_content')
+        ALLOWED_ARGS = (
+            'referrer', 'permalink', 'is_test',
+            'comment_author', 'comment_author_email', 'comment_author_url', 'comment_content',
+        )
         data = {
             k: kwargs.get(k)
             for k in ALLOWED_ARGS
@@ -95,14 +99,16 @@ class AkismetClient(object):
         res = requests.post(
             '{}{}.{}/1.1/submit-spam'.format(self.API_PROTOCOL, self.apikey, self.API_HOST),
             data=data,
-            headers=self._default_headers
+            headers=self._default_headers,
         )
         if res.status_code != requests.codes.ok:
             raise AkismetClientError(reason=res.text)
 
     def submit_ham(self, user_ip, user_agent, **kwargs):
-        ALLOWED_ARGS = ('referrer', 'permalink', 'is_test',
-                        'comment_author', 'comment_author_email', 'comment_author_url', 'comment_content')
+        ALLOWED_ARGS = (
+            'referrer', 'permalink', 'is_test',
+            'comment_author', 'comment_author_email', 'comment_author_url', 'comment_content',
+        )
         data = {
             k: kwargs.get(k)
             for k in ALLOWED_ARGS
@@ -115,7 +121,7 @@ class AkismetClient(object):
         res = requests.post(
             '{}{}.{}/1.1/submit-ham'.format(self.API_PROTOCOL, self.apikey, self.API_HOST),
             data=data,
-            headers=self._default_headers
+            headers=self._default_headers,
         )
         if res.status_code != requests.codes.ok:
             raise AkismetClientError(reason=res.text)

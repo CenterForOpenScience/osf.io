@@ -5,7 +5,7 @@ from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
-    PrivateLinkFactory
+    PrivateLinkFactory,
 )
 
 
@@ -32,9 +32,11 @@ class TestViewOnlyLinksDetail:
     def public_project(self, user, read_only_user, read_write_user):
         public_project = ProjectFactory(is_public=True, creator=user)
         public_project.add_contributor(
-            read_only_user, permissions=permissions.READ)
+            read_only_user, permissions=permissions.READ,
+        )
         public_project.add_contributor(
-            read_write_user, permissions=permissions.WRITE)
+            read_write_user, permissions=permissions.WRITE,
+        )
         public_project.save()
         return public_project
 
@@ -51,7 +53,8 @@ class TestViewOnlyLinksDetail:
 
     def test_view_only_links_detail(
             self, app, user, read_only_user, read_write_user,
-            non_contributor, url):
+            non_contributor, url,
+    ):
 
         #   test_admin_can_view_vol_detail
         res = app.get(url, auth=user.auth)

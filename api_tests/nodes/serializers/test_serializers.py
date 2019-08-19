@@ -11,7 +11,7 @@ from osf_tests.factories import (
     UserFactory,
     NodeFactory,
     RegistrationFactory,
-    ProjectFactory
+    ProjectFactory,
 )
 from tests.base import assert_datetime_equal
 from tests.utils import make_drf_request_with_version
@@ -62,7 +62,8 @@ class TestNodeSerializer:
         assert 'forked_from' not in relationships
         parent_link = relationships['parent']['links']['related']['href']
         assert urlparse(
-            parent_link).path == '/{}nodes/{}/'.format(API_BASE, parent._id)
+            parent_link,
+        ).path == '/{}nodes/{}/'.format(API_BASE, parent._id)
 
     #   test_fork_serialization
         node = NodeFactory(creator=user)
@@ -75,7 +76,8 @@ class TestNodeSerializer:
         relationships = data['relationships']
         forked_from = relationships['forked_from']['links']['related']['href']
         assert urlparse(
-            forked_from).path == '/{}nodes/{}/'.format(API_BASE, node._id)
+            forked_from,
+        ).path == '/{}nodes/{}/'.format(API_BASE, node._id)
 
     #   test_template_serialization
         node = NodeFactory(creator=user)
@@ -88,7 +90,8 @@ class TestNodeSerializer:
         relationships = data['relationships']
         templated_from = relationships['template_node']['links']['related']['href']
         assert urlparse(
-            templated_from).path == '/{}nodes/{}/'.format(API_BASE, node._id)
+            templated_from,
+        ).path == '/{}nodes/{}/'.format(API_BASE, node._id)
 
 
 @pytest.mark.django_db
@@ -100,7 +103,9 @@ class TestNodeRegistrationSerializer:
         registration = RegistrationFactory(creator=user)
         result = RegistrationSerializer(
             registration, context={
-                'request': versioned_request}).data
+                'request': versioned_request,
+            },
+        ).data
         data = result['data']
         assert data['id'] == registration._id
         assert data['type'] == 'registrations'
@@ -117,7 +122,7 @@ class TestNodeRegistrationSerializer:
         attributes = data['attributes']
         assert_datetime_equal(
             parse_date(attributes['date_registered']),
-            registration.registered_date
+            registration.registered_date,
         )
         assert attributes['withdrawn'] == registration.is_retracted
 
@@ -127,20 +132,24 @@ class TestNodeRegistrationSerializer:
         # Relationships with data
         relationship_urls = {
             k: v['links']['related']['href'] for k, v
-            in relationships.items()}
+            in relationships.items()
+        }
 
         assert 'registered_by' in relationships
         registered_by = relationships['registered_by']['links']['related']['href']
         assert urlparse(
-            registered_by).path == '/{}users/{}/'.format(API_BASE, user._id)
+            registered_by,
+        ).path == '/{}users/{}/'.format(API_BASE, user._id)
         assert 'registered_from' in relationships
         registered_from = relationships['registered_from']['links']['related']['href']
         assert urlparse(registered_from).path == '/{}nodes/{}/'.format(
-            API_BASE, registration.registered_from._id)
+            API_BASE, registration.registered_from._id,
+        )
         api_registrations_url = '/{}registrations/'.format(API_BASE)
         for relationship in relationship_urls:
             if relationship in should_not_relate_to_registrations:
                 assert api_registrations_url not in relationship_urls[relationship]
             else:
                 assert api_registrations_url in relationship_urls[relationship], 'For key {}'.format(
-                    relationship)
+                    relationship,
+                )

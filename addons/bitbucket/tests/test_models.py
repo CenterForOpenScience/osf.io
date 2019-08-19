@@ -16,7 +16,7 @@ from addons.bitbucket.models import NodeSettings
 from addons.bitbucket.tests.factories import (
     BitbucketAccountFactory,
     BitbucketNodeSettingsFactory,
-    BitbucketUserSettingsFactory
+    BitbucketUserSettingsFactory,
 )
 from addons.base.tests import models
 
@@ -40,7 +40,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, unittest.Tes
             'user_settings': self.user_settings,
             'repo': 'mock',
             'user': 'abc',
-            'owner': self.node
+            'owner': self.node,
         }
 
     def test_set_folder(self):
@@ -57,7 +57,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, unittest.Tes
 
     @mock.patch(
         'addons.bitbucket.models.UserSettings.revoke_remote_oauth_access',
-        mock.PropertyMock()
+        mock.PropertyMock(),
     )
     def test_complete_has_auth_not_verified(self):
         super(TestNodeSettings, self).test_complete_has_auth_not_verified()
@@ -210,23 +210,23 @@ class TestCallbacks(OsfTestCase):
 
     def test_before_remove_contributor_authenticator(self):
         message = self.node_settings.before_remove_contributor(
-            self.project, self.project.creator
+            self.project, self.project.creator,
         )
         assert_true(message)
 
     def test_before_remove_contributor_not_authenticator(self):
         message = self.node_settings.before_remove_contributor(
-            self.project, self.non_authenticator
+            self.project, self.non_authenticator,
         )
         assert_false(message)
 
     def test_after_remove_contributor_authenticator_self(self):
         message = self.node_settings.after_remove_contributor(
-            self.project, self.project.creator, self.consolidated_auth
+            self.project, self.project.creator, self.consolidated_auth,
         )
         assert_equal(
             self.node_settings.user_settings,
-            None
+            None,
         )
         assert_true(message)
         assert_not_in('You can re-authenticate', message)
@@ -234,18 +234,18 @@ class TestCallbacks(OsfTestCase):
     def test_after_remove_contributor_authenticator_not_self(self):
         auth = Auth(user=self.non_authenticator)
         message = self.node_settings.after_remove_contributor(
-            self.project, self.project.creator, auth
+            self.project, self.project.creator, auth,
         )
         assert_equal(
             self.node_settings.user_settings,
-            None
+            None,
         )
         assert_true(message)
         assert_in('You can re-authenticate', message)
 
     def test_after_remove_contributor_not_authenticator(self):
         self.node_settings.after_remove_contributor(
-            self.project, self.non_authenticator, self.consolidated_auth
+            self.project, self.non_authenticator, self.consolidated_auth,
         )
         assert_not_equal(
             self.node_settings.user_settings,

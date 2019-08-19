@@ -26,14 +26,15 @@ from website.settings import DOI_FORMAT
 
 def build_preprint_update_payload(
         node_id, attributes=None, relationships=None,
-        jsonapi_type='preprints'):
+        jsonapi_type='preprints',
+):
     payload = {
         'data': {
             'id': node_id,
             'type': jsonapi_type,
             'attributes': attributes,
-            'relationships': relationships
-        }
+            'relationships': relationships,
+        },
     }
     return payload
 
@@ -104,9 +105,11 @@ class TestPreprintDetail:
         deleted_preprint = PreprintFactory(project=deleted_node, creator=user)
 
         deleted_preprint_url = '/{}preprints/{}/'.format(
-            API_BASE, deleted_preprint._id)
+            API_BASE, deleted_preprint._id,
+        )
         deleted_preprint_res = app.get(
-            deleted_preprint_url, expect_errors=True)
+            deleted_preprint_url, expect_errors=True,
+        )
         assert deleted_preprint_res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
@@ -114,9 +117,11 @@ class TestPreprintDetail:
         node = ProjectFactory(creator=user)
         preprint_with_node = PreprintFactory(project=node, creator=user)
         preprint_with_node_url = '/{}preprints/{}/'.format(
-            API_BASE, preprint_with_node._id)
+            API_BASE, preprint_with_node._id,
+        )
         preprint_with_node_res = app.get(
-            preprint_with_node_url)
+            preprint_with_node_url,
+        )
 
         node_data = preprint_with_node_res.json['data']['relationships']['node']['data']
 
@@ -159,7 +164,8 @@ class TestPreprintDetail:
     @pytest.mark.enable_quickfiles_creation
     def test_embed_contributors(self, app, user, preprint):
         url = '/{}preprints/{}/?embed=contributors'.format(
-            API_BASE, preprint._id)
+            API_BASE, preprint._id,
+        )
 
         res = app.get(url, auth=user.auth)
         embeds = res.json['data']['embeds']
@@ -169,7 +175,8 @@ class TestPreprintDetail:
             assert contrib['id'] in ids
 
     def test_preprint_doi_link_absent_in_unpublished_preprints(
-            self, app, user, unpublished_preprint, unpublished_url):
+            self, app, user, unpublished_preprint, unpublished_url,
+    ):
         res = app.get(unpublished_url, auth=user.auth)
         assert res.json['data']['id'] == unpublished_preprint._id
         assert res.json['data']['attributes']['is_published'] is False
@@ -177,7 +184,8 @@ class TestPreprintDetail:
         assert res.json['data']['attributes']['preprint_doi_created'] is None
 
     def test_published_preprint_doi_link_not_returned_before_doi_request(
-            self, app, user, unpublished_preprint, unpublished_url):
+            self, app, user, unpublished_preprint, unpublished_url,
+    ):
         unpublished_preprint.is_published = True
         unpublished_preprint.date_published = timezone.now()
         unpublished_preprint.save()
@@ -187,10 +195,11 @@ class TestPreprintDetail:
         assert 'preprint_doi' not in res.json['data']['links'].keys()
 
     def test_published_preprint_doi_link_returned_after_doi_request(
-            self, app, user, preprint, url):
+            self, app, user, preprint, url,
+    ):
         expected_doi = DOI_FORMAT.format(
             prefix=preprint.provider.doi_prefix,
-            guid=preprint._id
+            guid=preprint._id,
         )
         preprint.set_identifier_values(doi=expected_doi)
         res = app.get(url, auth=user.auth)
@@ -198,7 +207,8 @@ class TestPreprintDetail:
         assert res.json['data']['attributes']['is_published'] is True
         assert 'preprint_doi' in res.json['data']['links'].keys()
         assert res.json['data']['links']['preprint_doi'] == 'https://doi.org/{}'.format(
-            expected_doi)
+            expected_doi,
+        )
         assert res.json['data']['attributes']['preprint_doi_created']
 
     def test_preprint_embed_identifiers(self, app, user, preprint, url):
@@ -225,7 +235,8 @@ class TestPreprintDelete:
         return '/{}preprints/{{}}/'.format(API_BASE)
 
     def test_cannot_delete_preprints(
-            self, app, user, url, unpublished_preprint, published_preprint):
+            self, app, user, url, unpublished_preprint, published_preprint,
+    ):
         res = app.delete(url.format(unpublished_preprint._id), auth=user.auth, expect_errors=True)
         assert res.status_code == 405
         assert unpublished_preprint.deleted is None
@@ -253,14 +264,16 @@ class TestPreprintUpdate:
 
     def test_update_preprint_permission_denied(self, app, preprint, url):
         update_doi_payload = build_preprint_update_payload(
-            preprint._id, attributes={'article_doi': '10.123/456/789'})
+            preprint._id, attributes={'article_doi': '10.123/456/789'},
+        )
 
         noncontrib = AuthUserFactory()
         res = app.patch_json_api(
             url,
             update_doi_payload,
             auth=noncontrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
         res = app.patch_json_api(url, update_doi_payload, expect_errors=True)
@@ -272,7 +285,7 @@ class TestPreprintUpdate:
             url,
             update_doi_payload,
             auth=read_contrib.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 403
 
@@ -285,7 +298,7 @@ class TestPreprintUpdate:
         update_payload = build_preprint_update_payload(
             preprint._id, attributes={
                 'original_publication_date': None,
-            }
+            },
         )
 
         res = app.patch_json_api(
@@ -306,7 +319,7 @@ class TestPreprintUpdate:
         original_publication_date = '2013-12-11 10:09:08.070605+00:00'
         license_record = {
             'year': '2015',
-            'copyright_holders': ['Tonya Bateman']
+            'copyright_holders': ['Tonya Bateman'],
         }
         license = NodeLicense.objects.filter(name='No license').first()
         title = 'My Preprint Title'
@@ -314,7 +327,8 @@ class TestPreprintUpdate:
         tags = ['test tag']
         node = ProjectFactory(creator=write_contrib)
         new_file = test_utils.create_test_preprint_file(
-            preprint, write_contrib, filename='shook_that_mans_hand.pdf')
+            preprint, write_contrib, filename='shook_that_mans_hand.pdf',
+        )
 
         update_payload = build_preprint_update_payload(
             preprint._id, attributes={
@@ -324,9 +338,12 @@ class TestPreprintUpdate:
                 'title': title,
                 'description': description,
                 'tags': tags,
-            }, relationships={'node': {'data': {'type': 'nodes', 'id': node._id}},
-            'primary_file': {'data': {'type': 'file', 'id': new_file._id}},
-                'license': {'data': {'type': 'licenses', 'id': license._id}}}
+            },
+            relationships={
+                'node': {'data': {'type': 'nodes', 'id': node._id}},
+                'primary_file': {'data': {'type': 'file', 'id': new_file._id}},
+                'license': {'data': {'type': 'licenses', 'id': license._id}},
+            },
         )
 
         res = app.patch_json_api(
@@ -358,15 +375,16 @@ class TestPreprintUpdate:
 
         update_payload = build_preprint_update_payload(
             preprint._id, attributes={
-                'is_published': 'true'
-            }
+                'is_published': 'true',
+            },
         )
 
         res = app.patch_json_api(
             url,
             update_payload,
             auth=write_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
 
         assert res.status_code == 403
         assert preprint.is_published is False
@@ -375,7 +393,7 @@ class TestPreprintUpdate:
         assert preprint.node is None
         node = ProjectFactory(creator=user)
         update_node_payload = build_preprint_update_payload(
-            preprint._id, relationships={'node': {'data': {'type': 'nodes', 'id': node._id}}}
+            preprint._id, relationships={'node': {'data': {'type': 'nodes', 'id': node._id}}},
         )
 
         res = app.patch_json_api(url, update_node_payload, auth=user.auth)
@@ -388,7 +406,7 @@ class TestPreprintUpdate:
         assert preprint.node is None
         node = ProjectFactory()
         update_node_payload = build_preprint_update_payload(
-            preprint._id, relationships={'node': {'data': {'type': 'nodes', 'id': node._id}}}
+            preprint._id, relationships={'node': {'data': {'type': 'nodes', 'id': node._id}}},
         )
 
         res = app.patch_json_api(url, update_node_payload, auth=user.auth, expect_errors=True)
@@ -402,7 +420,7 @@ class TestPreprintUpdate:
         # Create preprint with same provider on node
         PreprintFactory(creator=user, project=node, provider=preprint.provider)
         update_node_payload = build_preprint_update_payload(
-            preprint._id, relationships={'node': {'data': {'type': 'nodes', 'id': node._id}}}
+            preprint._id, relationships={'node': {'data': {'type': 'nodes', 'id': node._id}}},
         )
 
         res = app.patch_json_api(url, update_node_payload, auth=user.auth, expect_errors=True)
@@ -416,7 +434,7 @@ class TestPreprintUpdate:
         node.is_deleted = True
         node.save()
         update_node_payload = build_preprint_update_payload(
-            preprint._id, relationships={'node': {'data': {'type': 'nodes', 'id': node._id}}}
+            preprint._id, relationships={'node': {'data': {'type': 'nodes', 'id': node._id}}},
         )
 
         res = app.patch_json_api(url, update_node_payload, auth=user.auth, expect_errors=True)
@@ -427,18 +445,20 @@ class TestPreprintUpdate:
 
     def test_update_primary_file(self, app, user, preprint, url):
         new_file = test_utils.create_test_preprint_file(
-            preprint, user, filename='shook_that_mans_hand.pdf')
+            preprint, user, filename='shook_that_mans_hand.pdf',
+        )
         relationships = {
             'primary_file': {
                 'data': {
                     'type': 'file',
-                    'id': new_file._id
-                }
-            }
+                    'id': new_file._id,
+                },
+            },
         }
         assert preprint.primary_file != new_file
         update_file_payload = build_preprint_update_payload(
-            preprint._id, relationships=relationships)
+            preprint._id, relationships=relationships,
+        )
 
         res = app.patch_json_api(url, update_file_payload, auth=user.auth)
         assert res.status_code == 200
@@ -456,8 +476,8 @@ class TestPreprintUpdate:
                 'id': preprint._id,
                 'type': None,
                 'attributes': None,
-                'relationship': None
-            }
+                'relationship': None,
+            },
         }
 
         res = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
@@ -469,8 +489,8 @@ class TestPreprintUpdate:
             'data': {
                 'id': preprint._id,
                 'attributes': None,
-                'relationship': None
-            }
+                'relationship': None,
+            },
         }
 
         res = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
@@ -486,23 +506,26 @@ class TestPreprintUpdate:
     def test_new_primary_not_in_node(self, app, user, preprint, url):
         project = ProjectFactory()
         file_for_project = test_utils.create_test_file(
-            project, user, filename='six_pack_novak.pdf')
+            project, user, filename='six_pack_novak.pdf',
+        )
 
         relationships = {
             'primary_file': {
                 'data': {
                     'type': 'file',
-                    'id': file_for_project._id
-                }
-            }
+                    'id': file_for_project._id,
+                },
+            },
         }
 
         update_file_payload = build_preprint_update_payload(
-            preprint._id, relationships=relationships)
+            preprint._id, relationships=relationships,
+        )
 
         res = app.patch_json_api(
             url, update_file_payload,
-            auth=user.auth, expect_errors=True)
+            auth=user.auth, expect_errors=True,
+        )
         assert res.status_code == 400
 
         preprint.reload()
@@ -511,7 +534,7 @@ class TestPreprintUpdate:
     def test_update_original_publication_date(self, app, user, preprint, url):
         date = timezone.now() - datetime.timedelta(days=365)
         update_payload = build_preprint_update_payload(
-            preprint._id, attributes={'original_publication_date': str(date)}
+            preprint._id, attributes={'original_publication_date': str(date)},
         )
         res = app.patch_json_api(url, update_payload, auth=user.auth)
         assert res.status_code == 200
@@ -523,7 +546,8 @@ class TestPreprintUpdate:
         new_doi = '10.1234/ASDFASDF'
         assert preprint.article_doi != new_doi
         update_payload = build_preprint_update_payload(
-            preprint._id, attributes={'doi': new_doi})
+            preprint._id, attributes={'doi': new_doi},
+        )
 
         res = app.patch_json_api(url, update_payload, auth=user.auth)
         assert res.status_code == 200
@@ -533,7 +557,8 @@ class TestPreprintUpdate:
 
         preprint_detail = app.get(url, auth=user.auth).json['data']
         assert preprint_detail['links']['doi'] == 'https://doi.org/{}'.format(
-            new_doi)
+            new_doi,
+        )
 
     def test_title_has_a_512_char_limit(self, app, user, preprint, url):
         new_title = 'a' * 513
@@ -541,13 +566,13 @@ class TestPreprintUpdate:
             preprint._id,
             attributes={
                 'title': new_title,
-            }
+            },
         )
         res = app.patch_json_api(
             url,
             update_title_payload,
             auth=user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
 
         assert res.status_code == 400
@@ -557,7 +582,8 @@ class TestPreprintUpdate:
 
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_update_description_and_title(
-            self, mock_preprint_updated, app, user, preprint, url):
+            self, mock_preprint_updated, app, user, preprint, url,
+    ):
         new_title = 'Brother Nero'
         new_description = 'I knew you\'d come!'
         assert preprint.description != new_description
@@ -567,12 +593,13 @@ class TestPreprintUpdate:
             attributes={
                 'title': new_title,
                 'description': new_description,
-            }
+            },
         )
         res = app.patch_json_api(
             url,
             update_title_description_payload,
-            auth=user.auth)
+            auth=user.auth,
+        )
 
         assert res.status_code == 200
         preprint.reload()
@@ -591,8 +618,8 @@ class TestPreprintUpdate:
         update_tags_payload = build_preprint_update_payload(
             preprint._id,
             attributes={
-                'tags': new_tags
-            }
+                'tags': new_tags,
+            },
         )
         res = app.patch_json_api(url, update_tags_payload, auth=user.auth)
 
@@ -603,7 +630,9 @@ class TestPreprintUpdate:
             list(
                 preprint.tags.all().values_list(
                     'name',
-                    flat=True))
+                    flat=True,
+                ),
+            ),
         ) == new_tags
         assert mock_update_doi_metadata.called
 
@@ -611,8 +640,8 @@ class TestPreprintUpdate:
         update_tags_payload = build_preprint_update_payload(
             preprint._id,
             attributes={
-                'tags': []
-            }
+                'tags': [],
+            },
         )
         res = app.patch_json_api(url, update_tags_payload, auth=user.auth)
 
@@ -623,25 +652,26 @@ class TestPreprintUpdate:
     @pytest.mark.enable_quickfiles_creation
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_update_contributors(
-            self, mock_update_doi_metadata, app, user, preprint, url):
+            self, mock_update_doi_metadata, app, user, preprint, url,
+    ):
         new_user = AuthUserFactory()
         contributor_payload = {
             'data': {
                 'attributes': {
                     'bibliographic': True,
                     'permission': WRITE,
-                    'send_email': False
+                    'send_email': False,
                 },
                 'type': 'contributors',
                 'relationships': {
                     'users': {
                         'data': {
                             'id': new_user._id,
-                            'type': 'users'
-                        }
-                    }
-                }
-            }
+                            'type': 'users',
+                        },
+                    },
+                },
+            },
         }
 
         contributor_url = url + 'contributors/'
@@ -649,7 +679,8 @@ class TestPreprintUpdate:
         res = app.post_json_api(
             contributor_url,
             contributor_payload,
-            auth=user.auth)
+            auth=user.auth,
+        )
 
         assert res.status_code == 201
         assert new_user in preprint.contributors
@@ -665,9 +696,11 @@ class TestPreprintUpdate:
         preprint.add_contributor(
             read_write_contrib,
             permissions=WRITE,
-            auth=Auth(user), save=True)
+            auth=Auth(user), save=True,
+        )
         new_file = test_utils.create_test_preprint_file(
-            preprint, user, filename='lovechild_reason.pdf')
+            preprint, user, filename='lovechild_reason.pdf',
+        )
 
         data = {
             'data': {
@@ -678,23 +711,25 @@ class TestPreprintUpdate:
                     'primary_file': {
                         'data': {
                             'type': 'file',
-                            'id': new_file._id
-                        }
-                    }
-                }
-            }
+                            'id': new_file._id,
+                        },
+                    },
+                },
+            },
         }
 
         res = app.patch_json_api(
             url, data,
             auth=read_write_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 200
 
     #   test_noncontrib_cannot_set_primary_file
         non_contrib = AuthUserFactory()
         new_file = test_utils.create_test_preprint_file(
-            preprint, user, filename='flowerchild_nik.pdf')
+            preprint, user, filename='flowerchild_nik.pdf',
+        )
 
         data = {
             'data': {
@@ -705,36 +740,40 @@ class TestPreprintUpdate:
                     'primary_file': {
                         'data': {
                             'type': 'file',
-                            'id': new_file._id
-                        }
-                    }
-                }
-            }
+                            'id': new_file._id,
+                        },
+                    },
+                },
+            },
         }
 
         res = app.patch_json_api(
             url, data,
             auth=non_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
     def test_update_published(self, app, user):
         unpublished = PreprintFactory(creator=user, is_published=False)
         url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
         payload = build_preprint_update_payload(
-            unpublished._id, attributes={'is_published': True})
+            unpublished._id, attributes={'is_published': True},
+        )
         app.patch_json_api(url, payload, auth=user.auth)
         unpublished.reload()
         assert unpublished.is_published
 
     def test_update_published_does_not_make_node_public(
-            self, app, user):
+            self, app, user,
+    ):
         project = ProjectFactory(creator=user)
         unpublished = PreprintFactory(creator=user, is_published=False, project=project)
         assert not unpublished.node.is_public
         url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
         payload = build_preprint_update_payload(
-            unpublished._id, attributes={'is_published': True})
+            unpublished._id, attributes={'is_published': True},
+        )
         app.patch_json_api(url, payload, auth=user.auth)
         unpublished.node.reload()
         unpublished.reload()
@@ -744,9 +783,11 @@ class TestPreprintUpdate:
 
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_update_preprint_task_called_on_api_update(
-            self, mock_on_preprint_updated, app, user, preprint, url):
+            self, mock_on_preprint_updated, app, user, preprint, url,
+    ):
         update_doi_payload = build_preprint_update_payload(
-            preprint._id, attributes={'doi': '10.1234/ASDFASDF'})
+            preprint._id, attributes={'doi': '10.1234/ASDFASDF'},
+        )
 
         app.patch_json_api(url, update_doi_payload, auth=user.auth)
 
@@ -762,7 +803,8 @@ class TestPreprintUpdateSubjects(UpdateSubjectsMixin):
         preprint.add_contributor(
             user_read_contrib,
             auth=Auth(user_admin_contrib),
-            permissions=READ)
+            permissions=READ,
+        )
         preprint.save()
         return preprint
 
@@ -808,15 +850,18 @@ class TestPreprintUpdateLicense:
     @pytest.fixture()
     def preprint(
             self, admin_contrib, write_contrib, read_contrib,
-            preprint_provider):
+            preprint_provider,
+    ):
         preprint = PreprintFactory(
             creator=admin_contrib,
-            provider=preprint_provider)
+            provider=preprint_provider,
+        )
         preprint.add_contributor(write_contrib, permissions=WRITE, auth=Auth(admin_contrib))
         preprint.add_contributor(
             read_contrib,
             auth=Auth(admin_contrib),
-            permissions=READ)
+            permissions=READ,
+        )
         preprint.save()
         return preprint
 
@@ -828,7 +873,7 @@ class TestPreprintUpdateLicense:
     def make_payload(self):
         def payload(
                 node_id, license_id=None, license_year=None,
-                copyright_holders=None, jsonapi_type='preprints'
+                copyright_holders=None, jsonapi_type='preprints',
         ):
             attributes = {}
 
@@ -836,20 +881,20 @@ class TestPreprintUpdateLicense:
                 attributes = {
                     'license_record': {
                         'year': license_year,
-                        'copyright_holders': copyright_holders
-                    }
+                        'copyright_holders': copyright_holders,
+                    },
                 }
             elif license_year:
                 attributes = {
                     'license_record': {
-                        'year': license_year
-                    }
+                        'year': license_year,
+                    },
                 }
             elif copyright_holders:
                 attributes = {
                     'license_record': {
-                        'copyright_holders': copyright_holders
-                    }
+                        'copyright_holders': copyright_holders,
+                    },
                 }
 
             return {
@@ -861,17 +906,17 @@ class TestPreprintUpdateLicense:
                         'license': {
                             'data': {
                                 'type': 'licenses',
-                                'id': license_id
-                            }
-                        }
-                    }
-                }
+                                'id': license_id,
+                            },
+                        },
+                    },
+                },
             } if license_id else {
                 'data': {
                     'id': node_id,
                     'type': jsonapi_type,
-                    'attributes': attributes
-                }
+                    'attributes': attributes,
+                },
             }
 
         return payload
@@ -880,14 +925,16 @@ class TestPreprintUpdateLicense:
     def make_request(self, app):
         def request(url, data, auth=None, expect_errors=False):
             return app.patch_json_api(
-                url, data, auth=auth, expect_errors=expect_errors)
+                url, data, auth=auth, expect_errors=expect_errors,
+            )
         return request
 
     def test_admin_update_license_with_invalid_id(
-            self, admin_contrib, preprint, url, make_payload, make_request):
+            self, admin_contrib, preprint, url, make_payload, make_request,
+    ):
         data = make_payload(
             node_id=preprint._id,
-            license_id='thisisafakelicenseid'
+            license_id='thisisafakelicenseid',
         )
 
         assert preprint.license is None
@@ -895,7 +942,8 @@ class TestPreprintUpdateLicense:
         res = make_request(
             url, data,
             auth=admin_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == 'Unable to find specified license.'
 
@@ -904,10 +952,11 @@ class TestPreprintUpdateLicense:
 
     def test_admin_can_update_license(
             self, admin_contrib, preprint, cc0_license,
-            url, make_payload, make_request):
+            url, make_payload, make_request,
+    ):
         data = make_payload(
             node_id=preprint._id,
-            license_id=cc0_license._id
+            license_id=cc0_license._id,
         )
 
         assert preprint.license is None
@@ -919,9 +968,11 @@ class TestPreprintUpdateLicense:
         res_data = res.json['data']
         pp_license_id = preprint.license.node_license._id
         assert res_data['relationships']['license']['data'].get(
-            'id', None) == pp_license_id
+            'id', None,
+        ) == pp_license_id
         assert res_data['relationships']['license']['data'].get(
-            'type', None) == 'licenses'
+            'type', None,
+        ) == 'licenses'
 
         assert preprint.license.node_license == cc0_license
         assert preprint.license.year is None
@@ -934,12 +985,13 @@ class TestPreprintUpdateLicense:
 
     def test_admin_can_update_license_record(
             self, admin_contrib, preprint, no_license,
-            url, make_payload, make_request):
+            url, make_payload, make_request,
+    ):
         data = make_payload(
             node_id=preprint._id,
             license_id=no_license._id,
             license_year='2015',
-            copyright_holders=['Tonya Shepoly, Lucas Pucas']
+            copyright_holders=['Tonya Shepoly, Lucas Pucas'],
         )
 
         assert preprint.license is None
@@ -951,22 +1003,25 @@ class TestPreprintUpdateLicense:
         assert preprint.license.node_license == no_license
         assert preprint.license.year == '2015'
         assert preprint.license.copyright_holders == [
-            'Tonya Shepoly, Lucas Pucas']
+            'Tonya Shepoly, Lucas Pucas',
+        ]
 
     def test_cannot_update_license(
             self, write_contrib, read_contrib, non_contrib,
-            preprint, cc0_license, url, make_payload, make_request):
+            preprint, cc0_license, url, make_payload, make_request,
+    ):
 
         #   test_write_contrib_can_update_license
         data = make_payload(
             node_id=preprint._id,
-            license_id=cc0_license._id
+            license_id=cc0_license._id,
         )
 
         res = make_request(
             url, data,
             auth=write_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 200
         preprint.reload()
 
@@ -975,33 +1030,35 @@ class TestPreprintUpdateLicense:
     #   test_read_contrib_cannot_update_license
         data = make_payload(
             node_id=preprint._id,
-            license_id=cc0_license._id
+            license_id=cc0_license._id,
         )
 
         res = make_request(
             url, data,
             auth=read_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     #   test_non_contrib_cannot_update_license
         data = make_payload(
             node_id=preprint._id,
-            license_id=cc0_license._id
+            license_id=cc0_license._id,
         )
 
         res = make_request(
             url, data,
             auth=non_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     #   test_unauthenticated_user_cannot_update_license
         data = make_payload(
             node_id=preprint._id,
-            license_id=cc0_license._id
+            license_id=cc0_license._id,
         )
 
         res = make_request(url, data, expect_errors=True)
@@ -1010,12 +1067,13 @@ class TestPreprintUpdateLicense:
 
     def test_update_error(
             self, admin_contrib, preprint, preprint_provider,
-            mit_license, no_license, url, make_payload, make_request):
+            mit_license, no_license, url, make_payload, make_request,
+    ):
 
         #   test_update_preprint_with_invalid_license_for_provider
         data = make_payload(
             node_id=preprint._id,
-            license_id=mit_license._id
+            license_id=mit_license._id,
         )
 
         assert preprint.license is None
@@ -1023,22 +1081,25 @@ class TestPreprintUpdateLicense:
         res = make_request(
             url, data,
             auth=admin_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'Invalid license chosen for {}'.format(
-            preprint_provider.name)
+            preprint_provider.name,
+        )
 
     #   test_update_preprint_license_without_required_year_in_payload
         data = make_payload(
             node_id=preprint._id,
             license_id=no_license._id,
-            copyright_holders=['Rachel', 'Rheisen']
+            copyright_holders=['Rachel', 'Rheisen'],
         )
 
         res = make_request(
             url, data,
             auth=admin_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'year must be specified for this license'
 
@@ -1046,23 +1107,25 @@ class TestPreprintUpdateLicense:
         data = make_payload(
             node_id=preprint._id,
             license_id=no_license._id,
-            license_year='1994'
+            license_year='1994',
         )
 
         res = make_request(
             url, data,
             auth=admin_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'copyrightHolders must be specified for this license'
 
     def test_update_preprint_with_existing_license_year_attribute_only(
-            self, admin_contrib, preprint, no_license, url, make_payload, make_request):
+            self, admin_contrib, preprint, no_license, url, make_payload, make_request,
+    ):
         preprint.set_preprint_license(
             {
                 'id': no_license.license_id,
                 'year': '2014',
-                'copyrightHolders': ['Daniel FromBrazil', 'Queen Jaedyn']
+                'copyrightHolders': ['Daniel FromBrazil', 'Queen Jaedyn'],
             },
             Auth(admin_contrib),
         )
@@ -1071,11 +1134,12 @@ class TestPreprintUpdateLicense:
         assert preprint.license.node_license == no_license
         assert preprint.license.year == '2014'
         assert preprint.license.copyright_holders == [
-            'Daniel FromBrazil', 'Queen Jaedyn']
+            'Daniel FromBrazil', 'Queen Jaedyn',
+        ]
 
         data = make_payload(
             node_id=preprint._id,
-            license_year='2015'
+            license_year='2015',
         )
 
         res = make_request(url, data, auth=admin_contrib.auth)
@@ -1085,15 +1149,17 @@ class TestPreprintUpdateLicense:
         assert preprint.license.node_license == no_license
         assert preprint.license.year == '2015'
         assert preprint.license.copyright_holders == [
-            'Daniel FromBrazil', 'Queen Jaedyn']
+            'Daniel FromBrazil', 'Queen Jaedyn',
+        ]
 
     def test_update_preprint_with_existing_license_copyright_holders_attribute_only(
-            self, admin_contrib, preprint, no_license, url, make_payload, make_request):
+            self, admin_contrib, preprint, no_license, url, make_payload, make_request,
+    ):
         preprint.set_preprint_license(
             {
                 'id': no_license.license_id,
                 'year': '2014',
-                'copyrightHolders': ['Captain Haley', 'Keegor Cannoli']
+                'copyrightHolders': ['Captain Haley', 'Keegor Cannoli'],
             },
             Auth(admin_contrib),
         )
@@ -1102,11 +1168,12 @@ class TestPreprintUpdateLicense:
         assert preprint.license.node_license == no_license
         assert preprint.license.year == '2014'
         assert preprint.license.copyright_holders == [
-            'Captain Haley', 'Keegor Cannoli']
+            'Captain Haley', 'Keegor Cannoli',
+        ]
 
         data = make_payload(
             node_id=preprint._id,
-            copyright_holders=['Reason Danish', 'Ben the NJB']
+            copyright_holders=['Reason Danish', 'Ben the NJB'],
         )
 
         res = make_request(url, data, auth=admin_contrib.auth)
@@ -1116,16 +1183,18 @@ class TestPreprintUpdateLicense:
         assert preprint.license.node_license == no_license
         assert preprint.license.year == '2014'
         assert preprint.license.copyright_holders == [
-            'Reason Danish', 'Ben the NJB']
+            'Reason Danish', 'Ben the NJB',
+        ]
 
     def test_update_preprint_with_existing_license_relationship_only(
             self, admin_contrib, preprint, cc0_license,
-            no_license, url, make_payload, make_request):
+            no_license, url, make_payload, make_request,
+    ):
         preprint.set_preprint_license(
             {
                 'id': no_license.license_id,
                 'year': '2014',
-                'copyrightHolders': ['Reason', 'Mr. Lulu']
+                'copyrightHolders': ['Reason', 'Mr. Lulu'],
             },
             Auth(admin_contrib),
         )
@@ -1137,7 +1206,7 @@ class TestPreprintUpdateLicense:
 
         data = make_payload(
             node_id=preprint._id,
-            license_id=cc0_license._id
+            license_id=cc0_license._id,
         )
 
         res = make_request(url, data, auth=admin_contrib.auth)
@@ -1150,15 +1219,16 @@ class TestPreprintUpdateLicense:
 
     def test_update_preprint_with_existing_license_relationship_and_attributes(
             self, admin_contrib, preprint, cc0_license,
-            no_license, url, make_payload, make_request):
+            no_license, url, make_payload, make_request,
+    ):
         preprint.set_preprint_license(
             {
                 'id': no_license.license_id,
                 'year': '2014',
-                'copyrightHolders': ['Reason', 'Mr. Cosgrove']
+                'copyrightHolders': ['Reason', 'Mr. Cosgrove'],
             },
             Auth(admin_contrib),
-            save=True
+            save=True,
         )
 
         assert preprint.license.node_license == no_license
@@ -1169,7 +1239,7 @@ class TestPreprintUpdateLicense:
             node_id=preprint._id,
             license_id=cc0_license._id,
             license_year='2015',
-            copyright_holders=['Rheisen', 'Princess Tyler']
+            copyright_holders=['Rheisen', 'Princess Tyler'],
         )
 
         res = make_request(url, data, auth=admin_contrib.auth)
@@ -1179,11 +1249,13 @@ class TestPreprintUpdateLicense:
         assert preprint.license.node_license == cc0_license
         assert preprint.license.year == '2015'
         assert preprint.license.copyright_holders == [
-            'Rheisen', 'Princess Tyler']
+            'Rheisen', 'Princess Tyler',
+        ]
 
     def test_update_preprint_license_does_not_change_project_license(
             self, admin_contrib, preprint, cc0_license,
-            no_license, url, make_payload, make_request):
+            no_license, url, make_payload, make_request,
+    ):
         project = ProjectFactory(creator=admin_contrib)
         preprint.node = project
         preprint.save()
@@ -1191,16 +1263,16 @@ class TestPreprintUpdateLicense:
             {
                 'id': no_license.license_id,
                 'year': '2015',
-                'copyrightHolders': ['Simba', 'Mufasa']
+                'copyrightHolders': ['Simba', 'Mufasa'],
             },
-            auth=Auth(admin_contrib)
+            auth=Auth(admin_contrib),
         )
         preprint.node.save()
         assert preprint.node.node_license.node_license == no_license
 
         data = make_payload(
             node_id=preprint._id,
-            license_id=cc0_license._id
+            license_id=cc0_license._id,
         )
 
         res = make_request(url, data, auth=admin_contrib.auth)
@@ -1211,15 +1283,16 @@ class TestPreprintUpdateLicense:
         assert preprint.node.node_license.node_license == no_license
 
     def test_update_preprint_license_without_change_does_not_add_log(
-            self, admin_contrib, preprint, no_license, url, make_payload, make_request):
+            self, admin_contrib, preprint, no_license, url, make_payload, make_request,
+    ):
         preprint.set_preprint_license(
             {
                 'id': no_license.license_id,
                 'year': '2015',
-                'copyrightHolders': ['Kim', 'Kanye']
+                'copyrightHolders': ['Kim', 'Kanye'],
             },
             auth=Auth(admin_contrib),
-            save=True
+            save=True,
         )
 
         before_num_logs = preprint.logs.count()
@@ -1229,7 +1302,7 @@ class TestPreprintUpdateLicense:
             node_id=preprint._id,
             license_id=no_license._id,
             license_year='2015',
-            copyright_holders=['Kanye', 'Kim']
+            copyright_holders=['Kanye', 'Kim'],
         )
         res = make_request(url, data, auth=admin_contrib.auth)
         preprint.reload()
@@ -1281,7 +1354,8 @@ class TestPreprintDetailPermissions:
             provider=provider,
             subjects=[[subject._id]],
             is_published=False,
-            machine_state='initial')
+            machine_state='initial',
+        )
         assert fact.is_published is False
         return fact
 
@@ -1294,7 +1368,8 @@ class TestPreprintDetailPermissions:
             subjects=[[subject._id]],
             is_published=True,
             is_public=False,
-            machine_state='accepted')
+            machine_state='accepted',
+        )
         fact.add_contributor(write_contrib, permissions=WRITE)
         fact.is_public = False
         fact.save()
@@ -1309,13 +1384,15 @@ class TestPreprintDetailPermissions:
             subjects=[[subject._id]],
             is_published=True,
             is_public=True,
-            machine_state='accepted')
+            machine_state='accepted',
+        )
         fact.add_contributor(write_contrib, permissions=WRITE)
         return fact
 
     @pytest.fixture()
     def abandoned_private_preprint(
-            self, admin, provider, subject, private_project):
+            self, admin, provider, subject, private_project,
+    ):
         return PreprintFactory(
             creator=admin,
             filename='toe_socks_and_sunrises.pdf',
@@ -1324,11 +1401,13 @@ class TestPreprintDetailPermissions:
             project=private_project,
             is_published=False,
             is_public=False,
-            machine_state='initial')
+            machine_state='initial',
+        )
 
     @pytest.fixture()
     def abandoned_public_preprint(
-            self, admin, provider, subject, public_project):
+            self, admin, provider, subject, public_project,
+    ):
         fact = PreprintFactory(
             creator=admin,
             filename='toe_socks_and_sunrises.pdf',
@@ -1337,19 +1416,22 @@ class TestPreprintDetailPermissions:
             project=public_project,
             is_published=False,
             is_public=True,
-            machine_state='initial')
+            machine_state='initial',
+        )
         assert fact.is_public is True
         return fact
 
     @pytest.fixture()
     def abandoned_private_url(self, abandoned_private_preprint):
         return '/{}preprints/{}/'.format(
-            API_BASE, abandoned_private_preprint._id)
+            API_BASE, abandoned_private_preprint._id,
+        )
 
     @pytest.fixture()
     def abandoned_public_url(self, abandoned_public_preprint):
         return '/{}preprints/{}/'.format(
-            API_BASE, abandoned_public_preprint._id)
+            API_BASE, abandoned_public_preprint._id,
+        )
 
     @pytest.fixture()
     def unpublished_url(self, unpublished_preprint):
@@ -1361,7 +1443,8 @@ class TestPreprintDetailPermissions:
 
     def test_preprint_is_published_detail(
             self, app, admin, write_contrib, non_contrib,
-            unpublished_preprint, unpublished_url):
+            unpublished_preprint, unpublished_url,
+    ):
 
         #   test_unpublished_visible_to_admins
         res = app.get(unpublished_url, auth=admin.auth)
@@ -1371,14 +1454,16 @@ class TestPreprintDetailPermissions:
         res = app.get(
             unpublished_url,
             auth=write_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
     #   test_unpublished_invisible_to_non_contribs
         res = app.get(
             unpublished_url,
             auth=non_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
     #   test_unpublished_invisible_to_public
@@ -1387,7 +1472,8 @@ class TestPreprintDetailPermissions:
 
     def test_preprint_is_public_detail(
             self, app, admin, write_contrib, non_contrib,
-            private_preprint, private_url):
+            private_preprint, private_url,
+    ):
 
         #   test_private_visible_to_admins
         res = app.get(private_url, auth=admin.auth)
@@ -1407,7 +1493,8 @@ class TestPreprintDetailPermissions:
 
     def test_preprint_is_orphaned_detail(
             self, app, admin, write_contrib, non_contrib,
-            published_preprint):
+            published_preprint,
+    ):
         published_preprint.primary_file = None
         published_preprint.save()
 
@@ -1434,7 +1521,8 @@ class TestPreprintDetailPermissions:
             non_contrib, abandoned_private_preprint,
             abandoned_public_preprint,
             abandoned_private_url,
-            abandoned_public_url):
+            abandoned_public_url,
+    ):
 
         #   test_abandoned_private_visible_to_admins
         res = app.get(abandoned_private_url, auth=admin.auth)
@@ -1444,14 +1532,16 @@ class TestPreprintDetailPermissions:
         res = app.get(
             abandoned_private_url,
             auth=write_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
     #   test_abandoned_private_invisible_to_non_contribs
         res = app.get(
             abandoned_private_url,
             auth=non_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
     #   test_abandoned_private_invisible_to_public
@@ -1466,14 +1556,16 @@ class TestPreprintDetailPermissions:
         res = app.get(
             abandoned_public_url,
             auth=write_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
     #   test_abandoned_public_invisible_to_non_contribs
         res = app.get(
             abandoned_public_url,
             auth=non_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
     #   test_abandoned_public_invisible_to_public
@@ -1481,7 +1573,8 @@ class TestPreprintDetailPermissions:
         assert res.status_code == 401
 
     def test_access_primary_file_on_unpublished_preprint(
-            self, app, user, write_contrib):
+            self, app, user, write_contrib,
+    ):
         unpublished = PreprintFactory(creator=user, is_public=True, is_published=False)
         preprint_file_id = unpublished.primary_file._id
         url = '/{}files/{}/'.format(API_BASE, preprint_file_id)
@@ -1531,32 +1624,37 @@ class TestReviewsPreprintDetailPermissions:
 
     @pytest.fixture()
     def unpublished_reviews_preprint(
-            self, admin, reviews_provider, subject, public_project, write_contrib):
+            self, admin, reviews_provider, subject, public_project, write_contrib,
+    ):
         preprint = PreprintFactory(
             creator=admin,
             filename='toe_socks_and_sunrises.pdf',
             provider=reviews_provider,
             subjects=[[subject._id]],
             is_published=False,
-            machine_state=DefaultStates.PENDING.value)
+            machine_state=DefaultStates.PENDING.value,
+        )
         preprint.add_contributor(write_contrib, permissions=WRITE)
         preprint.save()
         return preprint
 
     @pytest.fixture()
     def unpublished_reviews_initial_preprint(
-            self, admin, reviews_provider, subject, public_project):
+            self, admin, reviews_provider, subject, public_project,
+    ):
         return PreprintFactory(
             creator=admin,
             filename='toe_socks_and_sunrises.pdf',
             provider=reviews_provider,
             subjects=[[subject._id]],
             is_published=False,
-            machine_state=DefaultStates.INITIAL.value)
+            machine_state=DefaultStates.INITIAL.value,
+        )
 
     @pytest.fixture()
     def private_reviews_preprint(
-            self, admin, reviews_provider, subject, private_project, write_contrib):
+            self, admin, reviews_provider, subject, private_project, write_contrib,
+    ):
         preprint = PreprintFactory(
             creator=admin,
             filename='toe_socks_and_sunsets.pdf',
@@ -1564,28 +1662,33 @@ class TestReviewsPreprintDetailPermissions:
             subjects=[[subject._id]],
             is_published=False,
             is_public=False,
-            machine_state=DefaultStates.PENDING.value)
+            machine_state=DefaultStates.PENDING.value,
+        )
         preprint.add_contributor(write_contrib, permissions=WRITE)
         return preprint
 
     @pytest.fixture()
     def unpublished_url(self, unpublished_reviews_preprint):
         return '/{}preprints/{}/'.format(
-            API_BASE, unpublished_reviews_preprint._id)
+            API_BASE, unpublished_reviews_preprint._id,
+        )
 
     @pytest.fixture()
     def unpublished_initial_url(self, unpublished_reviews_initial_preprint):
         return '/{}preprints/{}/'.format(
-            API_BASE, unpublished_reviews_initial_preprint._id)
+            API_BASE, unpublished_reviews_initial_preprint._id,
+        )
 
     @pytest.fixture()
     def private_url(self, private_reviews_preprint):
         return '/{}preprints/{}/'.format(
-            API_BASE, private_reviews_preprint._id)
+            API_BASE, private_reviews_preprint._id,
+        )
 
     def test_reviews_preprint_is_published_detail(
             self, app, admin, write_contrib, non_contrib,
-            unpublished_reviews_preprint, unpublished_url):
+            unpublished_reviews_preprint, unpublished_url,
+    ):
 
         #   test_unpublished_visible_to_admins
         res = app.get(unpublished_url, auth=admin.auth)
@@ -1595,14 +1698,16 @@ class TestReviewsPreprintDetailPermissions:
         res = app.get(
             unpublished_url,
             auth=write_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 200
 
     #   test_unpublished_invisible_to_non_contribs
         res = app.get(
             unpublished_url,
             auth=non_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
     #   test_unpublished_invisible_to_public
@@ -1612,7 +1717,8 @@ class TestReviewsPreprintDetailPermissions:
     def test_reviews_preprint_initial_detail(
             self, app, admin, write_contrib, non_contrib,
             unpublished_reviews_initial_preprint,
-            unpublished_initial_url):
+            unpublished_initial_url,
+    ):
 
         #   test_unpublished_visible_to_admins
         res = app.get(unpublished_initial_url, auth=admin.auth)
@@ -1622,14 +1728,16 @@ class TestReviewsPreprintDetailPermissions:
         res = app.get(
             unpublished_initial_url,
             auth=write_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
     #   test_unpublished_invisible_to_non_contribs
         res = app.get(
             unpublished_initial_url,
             auth=non_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
     #   test_unpublished_invisible_to_public
@@ -1638,7 +1746,8 @@ class TestReviewsPreprintDetailPermissions:
 
     def test_reviews_preprint_is_public_detail(
             self, app, admin, write_contrib, non_contrib,
-            private_reviews_preprint, private_url):
+            private_reviews_preprint, private_url,
+    ):
 
         #   test_private_visible_to_admins
         res = app.get(private_url, auth=admin.auth)
@@ -1665,11 +1774,13 @@ class TestPreprintDetailWithMetrics:
         with override_switch(features.ELASTICSEARCH_METRICS, active=True):
             yield
 
-    @pytest.mark.parametrize(('metric_name', 'metric_class_name'),
-    [
-        ('downloads', 'PreprintDownload'),
-        ('views', 'PreprintView'),
-    ])
+    @pytest.mark.parametrize(
+        ('metric_name', 'metric_class_name'),
+        [
+            ('downloads', 'PreprintDownload'),
+            ('views', 'PreprintView'),
+        ],
+    )
     def test_preprint_detail_with_downloads(self, app, settings, metric_name, metric_class_name):
         preprint = PreprintFactory()
         url = '/{}preprints/{}/?metrics[{}]=total'.format(API_BASE, preprint._id, metric_name)

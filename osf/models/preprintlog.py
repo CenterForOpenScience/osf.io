@@ -47,26 +47,36 @@ class PreprintLog(ObjectIDMixin, BaseModel):
 
     PUBLISHED = 'published'
 
-    actions = ([DELETED, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED,
-                PERMISSIONS_UPDATED, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, CHANGED_LICENSE,
-                EDITED_DESCRIPTION, FILE_UPDATED, FILE_METADATA_UPDATED, MADE_CONTRIBUTOR_VISIBLE, SUPPLEMENTAL_NODE_ADDED,
-                MADE_CONTRIBUTOR_INVISIBLE, SUBJECTS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, PUBLISHED] + list(sum([
-                    config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')
-                ], tuple())))
+    actions = ([
+        DELETED, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED,
+        PERMISSIONS_UPDATED, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, CHANGED_LICENSE,
+        EDITED_DESCRIPTION, FILE_UPDATED, FILE_METADATA_UPDATED, MADE_CONTRIBUTOR_VISIBLE, SUPPLEMENTAL_NODE_ADDED,
+        MADE_CONTRIBUTOR_INVISIBLE, SUBJECTS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, PUBLISHED,
+    ] + list(sum(
+        [
+            config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')
+        ], tuple(),
+    )))
     action_choices = [(action, action.upper()) for action in actions]
     # TODO build action choices on the fly with the addon stuff
     action = models.CharField(max_length=255, db_index=True)  # , choices=action_choices)
     params = DateTimeAwareJSONField(default=dict)
     should_hide = models.BooleanField(default=False)
-    user = models.ForeignKey('OSFUser', related_name='preprint_logs', db_index=True,
-                             null=True, blank=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        'OSFUser', related_name='preprint_logs', db_index=True,
+        null=True, blank=True, on_delete=models.CASCADE,
+    )
     foreign_user = models.CharField(max_length=255, null=True, blank=True)
-    preprint = models.ForeignKey('Preprint', related_name='logs',
-                             db_index=True, null=True, blank=True, on_delete=models.CASCADE)
+    preprint = models.ForeignKey(
+        'Preprint', related_name='logs',
+        db_index=True, null=True, blank=True, on_delete=models.CASCADE,
+    )
 
     def __unicode__(self):
-        return ('({self.action!r}, user={self.user!r}, preprint={self.preprint!r}, params={self.params!r}) '
-                'with id {self.id!r}').format(self=self)
+        return (
+            '({self.action!r}, user={self.user!r}, preprint={self.preprint!r}, params={self.params!r}) '
+            'with id {self.id!r}'
+        ).format(self=self)
 
     class Meta:
         ordering = ['-created']

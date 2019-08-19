@@ -21,7 +21,7 @@ from osf.exceptions import (
     InvalidTriggerError,
     ValidationValueError,
     UserStateError,
-    BlacklistedEmailError
+    BlacklistedEmailError,
 )
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
@@ -97,7 +97,7 @@ class Loggable(models.Model):
 
         log = NodeLog(
             action=action, user=user, foreign_user=foreign_user,
-            params=params, node=self, original_node=original_node
+            params=params, node=self, original_node=original_node,
         )
 
         if log_date:
@@ -197,8 +197,12 @@ class AddonModelMixin(models.Model):
 
     # from addons.base.apps import BaseAddonConfig
     settings_type = None
-    ADDONS_AVAILABLE = sorted([config for config in apps.get_app_configs() if config.name.startswith('addons.') and
-        config.label != 'base'], key=lambda config: config.name)
+    ADDONS_AVAILABLE = sorted(
+        [
+            config for config in apps.get_app_configs() if config.name.startswith('addons.') and
+            config.label != 'base'
+        ], key=lambda config: config.name,
+    )
 
     class Meta:
         abstract = True
@@ -212,10 +216,12 @@ class AddonModelMixin(models.Model):
         return self.get_addons()
 
     def get_addons(self):
-        return [_f for _f in [
-            self.get_addon(config.short_name)
-            for config in self.ADDONS_AVAILABLE
-        ] if _f]
+        return [
+            _f for _f in [
+                self.get_addon(config.short_name)
+                for config in self.ADDONS_AVAILABLE
+            ] if _f
+        ]
 
     def get_oauth_addons(self):
         # TODO: Using hasattr is a dirty hack - we should be using issubclass().
@@ -342,7 +348,7 @@ class NodeLinkMixin(models.Model):
         # contained in `self.nodes`.
         if NodeRelation.objects.filter(parent=self, child=node, is_node_link=True).exists():
             raise ValueError(
-                'Link to node {0} already exists'.format(node._id)
+                'Link to node {0} already exists'.format(node._id),
             )
 
         if self.is_registration:
@@ -352,7 +358,7 @@ class NodeLinkMixin(models.Model):
         node_relation, created = NodeRelation.objects.get_or_create(
             parent=self,
             child=node,
-            is_node_link=True
+            is_node_link=True,
         )
 
         # Add log
@@ -780,7 +786,7 @@ class TaxonomizableMixin(models.Model):
             action=NodeLog.SUBJECTS_UPDATED,
             params={
                 'subjects': list(self.subjects.values('_id', 'text')),
-                'old_subjects': list(Subject.objects.filter(id__in=old_subjects).values('_id', 'text'))
+                'old_subjects': list(Subject.objects.filter(id__in=old_subjects).values('_id', 'text')),
             },
             auth=auth,
             save=False,
@@ -962,7 +968,7 @@ class ContributorMixin(models.Model):
         query_dict = {
             'user__in': users,
             'user__is_active': True,
-            'user__groups': self.get_group(ADMIN).id
+            'user__groups': self.get_group(ADMIN).id,
         }
         if isinstance(self, Preprint):
             query_dict['preprint'] = self
@@ -971,8 +977,10 @@ class ContributorMixin(models.Model):
 
         return self.contributor_class.objects.select_related('user').filter(**query_dict)
 
-    def add_contributor(self, contributor, permissions=None, visible=True,
-                        send_email=None, auth=None, log=True, save=False):
+    def add_contributor(
+        self, contributor, permissions=None, visible=True,
+        send_email=None, auth=None, log=True, save=False,
+    ):
         """Add a contributor to the project.
 
         :param User contributor: The contributor to be added
@@ -992,8 +1000,10 @@ class ContributorMixin(models.Model):
             raise ValidationValueError('Deactivated users cannot be added as contributors.')
 
         if not contrib_to_add.is_registered and not contrib_to_add.unclaimed_records:
-            raise UserStateError('This contributor cannot be added. If the problem persists please report it '
-                                       'to ' + language.SUPPORT_LINK)
+            raise UserStateError(
+                'This contributor cannot be added. If the problem persists please report it '
+                'to ' + language.SUPPORT_LINK,
+            )
 
         if self.is_contributor(contrib_to_add):
             if permissions is None:
@@ -1030,9 +1040,11 @@ class ContributorMixin(models.Model):
                 self.save()
 
             if self._id and contrib_to_add:
-                project_signals.contributor_added.send(self,
-                                                       contributor=contributor,
-                                                       auth=auth, email_template=send_email, permissions=permissions)
+                project_signals.contributor_added.send(
+                    self,
+                    contributor=contributor,
+                    auth=auth, email_template=send_email, permissions=permissions,
+                )
 
             # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is added
             if self.get_identifier_value('doi'):
@@ -1073,8 +1085,10 @@ class ContributorMixin(models.Model):
         if save:
             self.save()
 
-    def add_unregistered_contributor(self, fullname, email, auth, send_email=None,
-                                     visible=True, permissions=None, save=False, existing_user=None):
+    def add_unregistered_contributor(
+        self, fullname, email, auth, send_email=None,
+        visible=True, permissions=None, save=False, existing_user=None,
+    ):
         """Add a non-registered contributor to the project.
 
         :param str fullname: The full name of the person.
@@ -1096,8 +1110,10 @@ class ContributorMixin(models.Model):
         # Create a new user record if you weren't passed an existing user
         contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)
 
-        contributor.add_unclaimed_record(self, referrer=auth.user,
-                                         given_name=fullname, email=email)
+        contributor.add_unclaimed_record(
+            self, referrer=auth.user,
+            given_name=fullname, email=email,
+        )
         try:
             contributor.save()
         except ValidationError:  # User with same email already exists
@@ -1108,21 +1124,23 @@ class ContributorMixin(models.Model):
                 raise
 
             contributor.add_unclaimed_record(
-                self, referrer=auth.user, given_name=fullname, email=email
+                self, referrer=auth.user, given_name=fullname, email=email,
             )
 
             contributor.save()
 
         self.add_contributor(
             contributor, permissions=permissions, auth=auth,
-            visible=visible, send_email=send_email, log=True, save=False
+            visible=visible, send_email=send_email, log=True, save=False,
         )
         self.save()
         return contributor
 
-    def add_contributor_registered_or_not(self, auth, user_id=None,
-                                          full_name=None, email=None, send_email=None,
-                                          permissions=None, bibliographic=True, index=None, save=False):
+    def add_contributor_registered_or_not(
+        self, auth, user_id=None,
+        full_name=None, email=None, send_email=None,
+        permissions=None, bibliographic=True, index=None, save=False,
+    ):
         OSFUser = apps.get_model('osf.OSFUser')
         send_email = send_email or self.contributor_email_template
 
@@ -1135,18 +1153,20 @@ class ContributorMixin(models.Model):
                 raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
 
             if contributor.is_registered:
-                contributor = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
-                                     permissions=permissions, send_email=send_email, save=True)
+                contributor = self.add_contributor(
+                    contributor=contributor, auth=auth, visible=bibliographic,
+                    permissions=permissions, send_email=send_email, save=True,
+                )
             else:
                 if not full_name:
                     raise ValueError(
                         'Cannot add unconfirmed user {} to resource {}. You need to provide a full_name.'
-                        .format(user_id, self._id)
+                        .format(user_id, self._id),
                     )
                 contributor = self.add_unregistered_contributor(
                     fullname=full_name, email=contributor.username, auth=auth,
                     send_email=send_email, permissions=permissions,
-                    visible=bibliographic, existing_user=contributor, save=True
+                    visible=bibliographic, existing_user=contributor, save=True,
                 )
 
         else:
@@ -1155,13 +1175,15 @@ class ContributorMixin(models.Model):
                 raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
 
             if contributor and contributor.is_registered:
-                self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
-                                    send_email=send_email, permissions=permissions, save=True)
+                self.add_contributor(
+                    contributor=contributor, auth=auth, visible=bibliographic,
+                    send_email=send_email, permissions=permissions, save=True,
+                )
             else:
                 contributor = self.add_unregistered_contributor(
                     fullname=full_name, email=email, auth=auth,
                     send_email=send_email, permissions=permissions,
-                    visible=bibliographic, save=True
+                    visible=bibliographic, save=True,
                 )
 
         auth.user.email_last_sent = timezone.now()
@@ -1221,12 +1243,12 @@ class ContributorMixin(models.Model):
                     raise self.state_error(error_msg)
             if not self.contributor_set.filter(user=user).exists():
                 raise ValueError(
-                    'User {0} not in contributors'.format(user.fullname)
+                    'User {0} not in contributors'.format(user.fullname),
                 )
             if not self.get_group(permission).user_set.filter(id=user.id).exists():
                 self.set_permissions(user, permission, save=False)
                 permissions_changed = {
-                    user._id: permission
+                    user._id: permission,
                 }
                 params = self.log_params
                 params['contributors'] = permissions_changed
@@ -1234,7 +1256,7 @@ class ContributorMixin(models.Model):
                     action=self.log_class.PERMISSIONS_UPDATED,
                     params=params,
                     auth=auth,
-                    save=False
+                    save=False,
                 )
                 with transaction.atomic():
                     if [READ] in permissions_changed.values():
@@ -1373,7 +1395,7 @@ class ContributorMixin(models.Model):
                     raise ValueError('User not found')
                 if not self.contributors.filter(id=user.id).exists():
                     raise ValueError(
-                        'User {0} not in contributors'.format(user.fullname)
+                        'User {0} not in contributors'.format(user.fullname),
                     )
 
                 permission = user_dict.get('permission', None) or user_dict.get('permissions', None)
@@ -1384,18 +1406,22 @@ class ContributorMixin(models.Model):
 
                 # visible must be added before removed to ensure they are validated properly
                 if user_dict['visible']:
-                    self.set_visible(user,
-                                     visible=True,
-                                     auth=auth)
+                    self.set_visible(
+                        user,
+                        visible=True,
+                        auth=auth,
+                    )
                 else:
                     visibility_removed.append(user)
                 users.append(user)
                 user_ids.append(user_dict['id'])
 
             for user in visibility_removed:
-                self.set_visible(user,
-                                 visible=False,
-                                 auth=auth)
+                self.set_visible(
+                    user,
+                    visible=False,
+                    auth=auth,
+                )
 
             for user in self.contributors.all():
                 if user._id in user_ids:
@@ -1449,7 +1475,7 @@ class ContributorMixin(models.Model):
         OSFUser = apps.get_model('osf.OSFUser')
         return OSFUser.objects.filter(
             contributor__node=self,
-            contributor__visible=True
+            contributor__visible=True,
         ).order_by('contributor___order')
 
     # visible_contributor_ids was moved to this property
@@ -1599,12 +1625,14 @@ class ContributorMixin(models.Model):
                 if message:
                     # Because addons can return HTML strings, addons are responsible
                     # for markupsafe-escaping any messages returned
-                    status.push_status_message(message, kind='info', trust=True, id='remove_addon', extra={
-                        'addon': markupsafe.escape(addon.config.full_name),
-                        'category': markupsafe.escape(self.category_display),
-                        'title': markupsafe.escape(self.title),
-                        'user': markupsafe.escape(user.fullname)
-                    })
+                    status.push_status_message(
+                        message, kind='info', trust=True, id='remove_addon', extra={
+                            'addon': markupsafe.escape(addon.config.full_name),
+                            'category': markupsafe.escape(self.category_display),
+                            'title': markupsafe.escape(self.title),
+                            'user': markupsafe.escape(user.fullname),
+                        },
+                    )
 
 
 class SpamOverrideMixin(SpamMixin):
@@ -1635,7 +1663,7 @@ class SpamOverrideMixin(SpamMixin):
             action=self.log_class.MADE_PRIVATE,
             params=self.log_params,
             auth=None,
-            save=False
+            save=False,
         )
         log.should_hide = True
         log.save()
@@ -1668,10 +1696,10 @@ class SpamOverrideMixin(SpamMixin):
             user.fullname,
             user.username,
             content,
-            request_headers
+            request_headers,
         )
         logger.info("{} ({}) '{}' smells like {} (tip: {})".format(
-            self.__class__.__name__, self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
+            self.__class__.__name__, self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip,
         ))
         if is_spam:
             self._check_spam_user(user)
@@ -1718,7 +1746,7 @@ class SpamOverrideMixin(SpamMixin):
                 action=self.log_class.MADE_PRIVATE,
                 params=self.log_params,
                 auth=None,
-                save=False
+                save=False,
             )
             log.should_hide = True
             log.save()

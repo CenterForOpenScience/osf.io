@@ -22,7 +22,7 @@ def recent_public_registrations(n=10):
         is_deleted=False,
     ).filter(
         Q(Q(embargo__isnull=True) | ~Q(embargo__state='unapproved')) &
-        Q(Q(retraction__isnull=True) | ~Q(retraction__state='approved'))
+        Q(Q(retraction__isnull=True) | ~Q(retraction__state='approved')),
     ).get_roots().order_by('-registered_date')[:n]
 
 
@@ -40,9 +40,9 @@ def get_keen_activity():
             {
                 'property_name': 'node.id',
                 'operator': 'exists',
-                'property_value': True
-            }
-        ]
+                'property_value': True,
+            },
+        ],
     )
 
     node_visits = client.count_unique(
@@ -54,9 +54,9 @@ def get_keen_activity():
             {
                 'property_name': 'node.id',
                 'operator': 'exists',
-                'property_value': True
-            }
-        ]
+                'property_value': True,
+            },
+        ],
     )
 
     return {'node_pageviews': node_pageviews, 'node_visits': node_visits}
@@ -100,7 +100,7 @@ def activity():
         'new_and_noteworthy_projects': new_and_noteworthy_projects,
         'recent_public_registrations': recent_public_registrations(),
         'popular_public_projects': popular_public_projects,
-        'popular_public_registrations': popular_public_registrations
+        'popular_public_registrations': popular_public_registrations,
     }
 
 

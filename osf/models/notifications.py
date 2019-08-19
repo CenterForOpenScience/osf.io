@@ -15,12 +15,18 @@ class NotificationSubscription(BaseModel):
 
     event_name = models.CharField(max_length=50)  # wiki_updated, comment_replies
 
-    user = models.ForeignKey('OSFUser', related_name='notification_subscriptions',
-                             null=True, blank=True, on_delete=models.CASCADE)
-    node = models.ForeignKey('Node', related_name='notification_subscriptions',
-                             null=True, blank=True, on_delete=models.CASCADE)
-    provider = models.ForeignKey('AbstractProvider', related_name='notification_subscriptions',
-                                 null=True, blank=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        'OSFUser', related_name='notification_subscriptions',
+        null=True, blank=True, on_delete=models.CASCADE,
+    )
+    node = models.ForeignKey(
+        'Node', related_name='notification_subscriptions',
+        null=True, blank=True, on_delete=models.CASCADE,
+    )
+    provider = models.ForeignKey(
+        'AbstractProvider', related_name='notification_subscriptions',
+        null=True, blank=True, on_delete=models.CASCADE,
+    )
     # Notification types
     none = models.ManyToManyField('OSFUser', related_name='+')  # reverse relationships
     email_digest = models.ManyToManyField('OSFUser', related_name='+')  # for these

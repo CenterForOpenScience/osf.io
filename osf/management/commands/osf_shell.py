@@ -70,7 +70,7 @@ def format_imported_objects(models, metrics, osf, transaction, other, user):
     if user:
         ret += '\n\n{user_header}\n{user}'.format(
             user_header=header('User Imports:'),
-            user=format_dict(user)
+            user=format_dict(user),
         )
     return ret
 
@@ -136,7 +136,7 @@ class Command(shell_plus.Command):
         parser.add_argument(
             '--no-transaction', action='store_false', dest='transaction',
             help="Don't run session in transaction. Transactions must be "
-                 'started manually with start_transaction()'
+                 'started manually with start_transaction()',
         )
 
     def get_osf_imports(self):

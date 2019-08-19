@@ -19,7 +19,7 @@ class AddonNodeLogger(object):
             'node': self.node._primary_key,
             'folder_id': node_settings.folder_id,
             'folder_name': node_settings.folder_name,
-            'folder': node_settings.folder_path
+            'folder': node_settings.folder_path,
         }
 
     def __init__(self, node, auth, path=None):
@@ -44,8 +44,8 @@ class AddonNodeLogger(object):
                     'download': self.node.web_url_for(
                         'addon_view_or_download_file',
                         path=self.path,
-                        provider=self.addon_short_name
-                    )
+                        provider=self.addon_short_name,
+                    ),
                 },
                 'path': self.path,
             })
@@ -55,7 +55,7 @@ class AddonNodeLogger(object):
         self.node.add_log(
             action='{0}_{1}'.format(self.addon_short_name, action),
             params=params,
-            auth=self.auth
+            auth=self.auth,
         )
         if save:
             self.node.save()

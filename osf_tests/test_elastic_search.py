@@ -256,8 +256,12 @@ class TestCollectionsSearch(OsfTestCase):
         assert_equal(docs[0]['_source']['contributors'][0]['url'], self.user.url)
         assert_equal(docs[0]['_source']['contributors'][0]['fullname'], self.user.fullname)
         assert_equal(docs[0]['_source']['url'], self.node_one.url)
-        assert_equal(docs[0]['_source']['id'], '{}-{}'.format(self.node_one._id,
-            self.node_one.collecting_metadata_list[0].collection._id))
+        assert_equal(
+            docs[0]['_source']['id'], '{}-{}'.format(
+                self.node_one._id,
+                self.node_one.collecting_metadata_list[0].collection._id,
+            ),
+        )
         assert_equal(docs[0]['_source']['category'], 'collectionSubmission')
 
 
@@ -485,14 +489,15 @@ class TestPreprint(OsfTestCase):
                 title='Red Special',
                 description='We are the champions',
                 creator=self.user,
-                provider=factories.PreprintProviderFactory()
+                provider=factories.PreprintProviderFactory(),
             )
             self.preprint.save()
             self.file = OsfStorageFile.create(
                 target=self.preprint,
                 path='/panda.txt',
                 name='panda.txt',
-                materialized_path='/panda.txt')
+                materialized_path='/panda.txt',
+            )
             self.file.save()
             self.published_preprint = factories.PreprintFactory(
                 creator=self.user,
@@ -568,7 +573,8 @@ class TestPreprint(OsfTestCase):
             target=self.published_preprint,
             path='/panda.txt',
             name='panda.txt',
-            materialized_path='/panda.txt')
+            materialized_path='/panda.txt',
+        )
         self.file.save()
         self.published_preprint.set_primary_file(self.file, auth=Auth(self.user), save=True)
         docs = query(self.published_preprint.title)['results']
@@ -579,7 +585,7 @@ class TestPreprint(OsfTestCase):
         license_details = {
             'id': 'NONE',
             'year': '2015',
-            'copyrightHolders': ['Iron Man']
+            'copyrightHolders': ['Iron Man'],
         }
         title = 'Elderberry'
         self.published_preprint.title = title
@@ -832,7 +838,7 @@ class TestPublicNodes(OsfTestCase):
                 description='',
                 title=self.title,
                 creator=self.user,
-                is_public=True
+                is_public=True,
             )
             self.registration = factories.RegistrationFactory(
                 title=self.title,
@@ -912,7 +918,7 @@ class TestPublicNodes(OsfTestCase):
         title_original = self.project.title
         with run_celery_tasks():
             self.project.set_title(
-                'Blue Ordinary', self.consolidate_auth, save=True
+                'Blue Ordinary', self.consolidate_auth, save=True,
             )
 
         docs = query('category:project AND ' + title_original)['results']
@@ -952,7 +958,7 @@ class TestPublicNodes(OsfTestCase):
         """
         wiki_content = {
             'home': 'Hammer to fall',
-            'swag': '#YOLO'
+            'swag': '#YOLO',
         }
         for key, value in wiki_content.items():
             docs = query(value)['results']
@@ -1211,25 +1217,43 @@ class TestUserSearchResults(OsfTestCase):
     def setUp(self):
         with run_celery_tasks():
             super(TestUserSearchResults, self).setUp()
-            self.user_one = factories.UserFactory(jobs=[job(institution='Oxford'),
-                                                        job(institution='Star Fleet')],
-                                                  fullname='Date Soong')
+            self.user_one = factories.UserFactory(
+                jobs=[
+                    job(institution='Oxford'),
+                    job(institution='Star Fleet'),
+                ],
+                fullname='Date Soong',
+            )
 
-            self.user_two = factories.UserFactory(jobs=[job(institution='Grapes la Picard'),
-                                                        job(institution='Star Fleet')],
-                                                  fullname='Jean-Luc Picard')
+            self.user_two = factories.UserFactory(
+                jobs=[
+                    job(institution='Grapes la Picard'),
+                    job(institution='Star Fleet'),
+                ],
+                fullname='Jean-Luc Picard',
+            )
 
-            self.user_three = factories.UserFactory(jobs=[job(institution='Star Fleet'),
-                                                      job(institution='Federation Medical')],
-                                                    fullname='Beverly Crusher')
+            self.user_three = factories.UserFactory(
+                jobs=[
+                    job(institution='Star Fleet'),
+                    job(institution='Federation Medical'),
+                ],
+                fullname='Beverly Crusher',
+            )
 
-            self.user_four = factories.UserFactory(jobs=[job(institution='Star Fleet')],
-                                                   fullname='William Riker')
+            self.user_four = factories.UserFactory(
+                jobs=[job(institution='Star Fleet')],
+                fullname='William Riker',
+            )
 
-            self.user_five = factories.UserFactory(jobs=[job(institution='Traveler intern'),
-                                                         job(institution='Star Fleet Academy'),
-                                                         job(institution='Star Fleet Intern')],
-                                                   fullname='Wesley Crusher')
+            self.user_five = factories.UserFactory(
+                jobs=[
+                    job(institution='Traveler intern'),
+                    job(institution='Star Fleet Academy'),
+                    job(institution='Star Fleet Intern'),
+                ],
+                fullname='Wesley Crusher',
+            )
 
             for i in range(25):
                 factories.UserFactory(jobs=[job()])
@@ -1244,7 +1268,7 @@ class TestUserSearchResults(OsfTestCase):
             self.user_two,
             self.user_three,
             self.user_four,
-            self.user_five
+            self.user_five,
         ]
 
     @unittest.skip('Cannot guarentee always passes')
@@ -1315,10 +1339,10 @@ class TestSearchMigration(OsfTestCase):
         self.project = factories.ProjectFactory(
             title=settings.ELASTIC_INDEX,
             creator=self.user,
-            is_public=True
+            is_public=True,
         )
         self.preprint = factories.PreprintFactory(
-            creator=self.user
+            creator=self.user,
         )
 
     def test_first_migration_no_remove(self):
@@ -1355,8 +1379,8 @@ class TestSearchMigration(OsfTestCase):
             'counts': {
                 'terms': {
                     'field': '_type',
-                }
-            }
+                },
+            },
         }
         institution_bucket_found = False
         res = self.es.search(index=settings.ELASTIC_INDEX, doc_type=None, search_type='count', body=count_query)
@@ -1386,8 +1410,8 @@ class TestSearchMigration(OsfTestCase):
             'counts': {
                 'terms': {
                     'field': '_type',
-                }
-            }
+                },
+            },
         }
 
         migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)

@@ -38,7 +38,7 @@ def log_exception():
 def log_message(message, extra_data=None):
     if not enabled:
         logger.warning(
-            'Sentry called to log message, but is not active: %s' % message
+            'Sentry called to log message, but is not active: %s' % message,
         )
         return None
     extra = {

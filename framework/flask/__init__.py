@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-from flask import (Flask, request, jsonify, render_template,  # noqa
-    render_template_string, Blueprint, send_file, abort, make_response,
-    redirect as flask_redirect, url_for, send_from_directory, current_app
+from flask import (
+    Flask,
+    request,
+    redirect as flask_redirect,
 )
 import furl
 

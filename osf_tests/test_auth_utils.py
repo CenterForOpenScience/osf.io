@@ -17,5 +17,5 @@ class TestGetUser:
         user = UserFactory.build()
         user.set_password('killerqueen')
         assert bool(
-            get_user(email=user.username, password='wrong')
+            get_user(email=user.username, password='wrong'),
         ) is False

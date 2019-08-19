@@ -10,11 +10,11 @@ def user():
     user = AuthUserFactory()
     user.external_identity = {
         'ORCID': {
-            '0000-0001-9143-4653': 'VERIFIED'
+            '0000-0001-9143-4653': 'VERIFIED',
         },
         'LOTUS': {
-            '0000-0001-9143-4652': 'LINK'
-        }
+            '0000-0001-9143-4652': 'LINK',
+        },
     }
     user.save()
     return user
@@ -84,8 +84,8 @@ class TestUserIdentitiesDetail:
         user.refresh_from_db()
         assert user.external_identity == {
             'LOTUS': {
-                '0000-0001-9143-4652': 'LINK'
-            }
+                '0000-0001-9143-4652': 'LINK',
+            },
         }
 
     def test_anonymous_gets_401(self, app, url):

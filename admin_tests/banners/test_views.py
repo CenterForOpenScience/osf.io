@@ -29,7 +29,7 @@ def today_banner():
 @pytest.fixture()
 def tomorrow_banner(date):
     return ScheduledBannerFactory(
-        start_date=date + timedelta(days=1)
+        start_date=date + timedelta(days=1),
     )
 
 @pytest.fixture()

@@ -108,7 +108,7 @@ api_routes = {
             ],
             'post',
             views.osfstorage_add_tag,
-            json_renderer
+            json_renderer,
         ),
 
         Rule(
@@ -117,7 +117,7 @@ api_routes = {
             ],
             'delete',
             views.osfstorage_remove_tag,
-            json_renderer
+            json_renderer,
         ),
     ],
 

@@ -4,7 +4,7 @@ from api.base.settings.defaults import API_BASE
 from api_tests import utils
 from osf_tests.factories import (
     AuthUserFactory,
-    ProjectFactory
+    ProjectFactory,
 )
 
 @pytest.mark.django_db

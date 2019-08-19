@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
                             WHERE _id = split_part(AG0.name, '_', 2)
                 )
                 WHERE AG0.name LIKE 'reviews_%';
-                """
+                """,
             ], [
                 """
                 UPDATE auth_group AG0
@@ -40,7 +40,7 @@ class Migration(migrations.Migration):
                             WHERE id = split_part(AG0.name, '_', 3)::INT
                 )
                 WHERE AG0.name LIKE 'reviews_%';
-                """
-            ]
-        )
+                """,
+            ],
+        ),
     ]

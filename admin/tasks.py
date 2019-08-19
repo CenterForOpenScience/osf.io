@@ -47,8 +47,10 @@ def webpack(ctx, clean=False, watch=False, dev=False):
         clean_assets(ctx)
     if os.getcwd() != HERE:
         os.chdir(HERE)
-    webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin',
-                               'webpack.js')
+    webpack_bin = os.path.join(
+        HERE, 'node_modules', 'webpack', 'bin',
+        'webpack.js',
+    )
     args = [webpack_bin]
     if settings.DEBUG_MODE and dev:
         args += ['--colors']

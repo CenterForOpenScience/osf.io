@@ -96,7 +96,8 @@ class TestUserQuickFiles:
         assert 'user' in file_detail_json['relationships']
         assert 'node' not in file_detail_json['relationships']
         assert file_detail_json['relationships']['user']['links']['related']['href'].split(
-            '/')[-2] == user._id
+            '/',
+        )[-2] == user._id
 
     def test_get_files_has_links(self, app, user, url, quickfiles):
         res = app.get(url, auth=user.auth)
@@ -104,7 +105,7 @@ class TestUserQuickFiles:
         waterbutler_url = utils.waterbutler_api_url_for(
             quickfiles._id,
             'osfstorage',
-            file_detail_json['attributes']['path']
+            file_detail_json['attributes']['path'],
         )
 
         assert 'delete' in file_detail_json['links']

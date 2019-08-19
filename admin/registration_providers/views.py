@@ -52,7 +52,8 @@ class RegistrationProviderList(PermissionRequiredMixin, ListView):
         query_set = kwargs.pop('object_list', self.object_list)
         page_size = self.get_paginate_by(query_set)
         paginator, page, query_set, is_paginated = self.paginate_queryset(
-            query_set, page_size)
+            query_set, page_size,
+        )
         return {
             'registration_providers': query_set,
             'page': page,
@@ -165,8 +166,10 @@ class RegistrationProviderChangeForm(PermissionRequiredMixin, UpdateView):
         return RegistrationProvider.objects.get(id=provider_id)
 
     def get_success_url(self, *args, **kwargs):
-        return reverse_lazy('registration_providers:detail',
-                            kwargs={'registration_provider_id': self.kwargs.get('registration_provider_id')})
+        return reverse_lazy(
+            'registration_providers:detail',
+            kwargs={'registration_provider_id': self.kwargs.get('registration_provider_id')},
+        )
 
 
 class DeleteRegistrationProvider(PermissionRequiredMixin, DeleteView):
@@ -235,7 +238,7 @@ class ExportRegistrationProvider(PermissionRequiredMixin, View):
             result['custom'] = {
                 subject.text: {
                     'parent': subject.parent.text if subject.parent else '',
-                    'bepress': subject.bepress_subject.text
+                    'bepress': subject.bepress_subject.text,
                 }
                 for subject in provider.subjects.all()
             }
@@ -317,7 +320,8 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
                             custom_provider=provider,
                             data=taxonomy_json,
                             provider_type='osf.registrationprovider',
-                            add_missing=provider_form.cleaned_data['add_missing'])
+                            add_missing=provider_form.cleaned_data['add_missing'],
+                        )
 
                         if response_data:
                             added_subjects = [subject.text for subject in response_data]
@@ -332,18 +336,19 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
                         provider=provider._id,
                         data=taxonomy_json,
                         provider_type='osf.registrationprovider',
-                        add_missing=provider_form.cleaned_data['add_missing'])
+                        add_missing=provider_form.cleaned_data['add_missing'],
+                    )
 
                     return redirect('registration_providers:detail', registration_provider_id=provider.id)
             except (ValueError, RuntimeError) as error:
                 response_data = {
                     'message': 'There is an error with the submitted JSON or the provider. Here are some details: ' + error.message,
-                    'feedback_type': 'error'
+                    'feedback_type': 'error',
                 }
         else:
             response_data = {
                 'message': 'There is a problem with the form. Here are some details: ' + unicode(provider_form.errors),
-                'feedback_type': 'error'
+                'feedback_type': 'error',
             }
         # Return a JsonResponse with the JSON error or the validation error if it's not doing an actual migration
         return JsonResponse(response_data)

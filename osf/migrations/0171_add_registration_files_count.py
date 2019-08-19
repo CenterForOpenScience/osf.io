@@ -21,9 +21,9 @@ def add_registration_files_count(state, *args, **kwargs):
     """
     registrations = Registration.objects.filter(is_deleted=False).filter(
         files__type='osf.osfstoragefile',
-        files__deleted_on__isnull=True
+        files__deleted_on__isnull=True,
     ).annotate(
-        annotated_file_count=Count('files')
+        annotated_file_count=Count('files'),
     )
     progress_bar = tqdm(total=registrations.count())
     registrations_to_update = []
@@ -53,5 +53,5 @@ class Migration(migrations.Migration):
             name='files_count',
             field=models.PositiveIntegerField(blank=True, null=True),
         ),
-        migrations.RunPython(add_registration_files_count, noop)
+        migrations.RunPython(add_registration_files_count, noop),
     ]

@@ -17,7 +17,7 @@ from framework.forms import (
     stripped,
     lowerstripped,
     BooleanField,
-    CheckboxInput
+    CheckboxInput,
 )
 from website import language
 
@@ -73,7 +73,8 @@ name_field_not_required = TextField(
     widget=BootstrapTextInput(),
 )
 
-email_field = TextField('Email Address',
+email_field = TextField(
+    'Email Address',
     [
         validators.Required(message=u'Email address is required'),
         validators.Length(min=6, message=u'Email address is too short'),
@@ -82,10 +83,12 @@ email_field = TextField('Email Address',
         NoHtmlCharacters(),
     ],
     filters=[lowerstripped],
-    widget=BootstrapTextInput())
+    widget=BootstrapTextInput(),
+)
 
 
-unique_email_field = TextField('Email Address',
+unique_email_field = TextField(
+    'Email Address',
     [
         validators.Required(message=u'Email address is required'),
         validators.Length(min=6, message=u'Email address is too short'),
@@ -95,61 +98,75 @@ unique_email_field = TextField('Email Address',
         UniqueEmail(),
     ],
     filters=[lowerstripped],
-    widget=BootstrapTextInput())
+    widget=BootstrapTextInput(),
+)
 
 confirm_email_field = TextField(
     'Verify Email Address',
     [
         validators.EqualTo(
             'username',
-            message='Email addresses must match'),
+            message='Email addresses must match',
+        ),
     ],
     filters=[lowerstripped],
     widget=BootstrapTextInput(),
 )
 
-password_field = PasswordField('Password',
+password_field = PasswordField(
+    'Password',
     [
         validators.Required(message=u'Password is required'),
-        validators.Length(min=8, message=u'Password is too short. '
-            'Password should be at least 8 characters.'),
-        validators.Length(max=255, message=u'Password is too long. '
-            'Password should be at most 255 characters.'),
+        validators.Length(
+            min=8, message=u'Password is too short. '
+            'Password should be at least 8 characters.',
+        ),
+        validators.Length(
+            max=255, message=u'Password is too long. '
+            'Password should be at most 255 characters.',
+        ),
     ],
     filters=[stripped],
-    widget=BootstrapPasswordInput()
+    widget=BootstrapPasswordInput(),
 )
 
 confirm_password_field = PasswordField(
     'Verify Password',
     [
-        validators.EqualTo('password', message='Passwords must match')
+        validators.EqualTo('password', message='Passwords must match'),
     ],
     filters=[stripped],
-    widget=BootstrapPasswordInput()
+    widget=BootstrapPasswordInput(),
 )
 
 
 class ResetPasswordForm(Form):
-    password = PasswordField('New Password',
+    password = PasswordField(
+        'New Password',
         [
             validators.Required(message=u'Password is required'),
-            validators.Length(min=8, message=u'Password is too short. '
-                'Password should be at least 8 characters.'),
-            validators.Length(max=255, message=u'Password is too long. '
-                'Password should be at most 255 characters.'),
+            validators.Length(
+                min=8,
+                message=u'Password is too short. '
+                'Password should be at least 8 characters.',
+            ),
+            validators.Length(
+                max=255,
+                message=u'Password is too long. '
+                'Password should be at most 255 characters.',
+            ),
         ],
         filters=[stripped],
-        widget=BootstrapPasswordInput()
+        widget=BootstrapPasswordInput(),
     )
 
     password2 = PasswordField(
         'Verify New Password',
         [
-            validators.EqualTo('password', message='Passwords must match')
+            validators.EqualTo('password', message='Passwords must match'),
         ],
         filters=[stripped],
-        widget=BootstrapPasswordInput()
+        widget=BootstrapPasswordInput(),
     )
 
 
@@ -158,7 +175,7 @@ class SetEmailAndPasswordForm(ResetPasswordForm):
     accepted_terms_of_service = BooleanField(
         [
             validators.Required(message=u'This field is required'),
-        ]
+        ],
     )
 
 
@@ -174,7 +191,7 @@ class ResendConfirmationForm(Form):
         [
             validators.Required(message=u'This field is required'),
         ],
-        widget=CheckboxInput()
+        widget=CheckboxInput(),
     )
 
 

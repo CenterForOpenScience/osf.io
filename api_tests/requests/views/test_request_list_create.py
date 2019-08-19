@@ -18,10 +18,10 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
             'data': {
                 'attributes': {
                     'comment': 'ASDFG',
-                    'request_type': 'access'
+                    'request_type': 'access',
                 },
-                'type': 'node-requests'
-            }
+                'type': 'node-requests',
+            },
         }
 
     def test_noncontrib_can_submit_to_public_node(self, app, project, noncontrib, url, create_payload):
@@ -113,7 +113,7 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
             creator=noncontrib,
             target=project,
             request_type=workflows.RequestTypes.ACCESS.value,
-            machine_state=workflows.DefaultStates.INITIAL.value
+            machine_state=workflows.DefaultStates.INITIAL.value,
         )
         filtered_url = '{}?filter[machine_state]=pending'.format(url)
         res = app.get(filtered_url, auth=admin.auth)
@@ -133,10 +133,10 @@ class TestPreprintRequestListCreate(PreprintRequestTestMixin):
             'data': {
                 'attributes': {
                     'comment': 'ASDFG',
-                    'request_type': 'withdrawal'
+                    'request_type': 'withdrawal',
                 },
-                'type': 'preprint-requests'
-            }
+                'type': 'preprint-requests',
+            },
         }
 
     def test_noncontrib_cannot_submit(self, app, noncontrib, create_payload, pre_mod_preprint, post_mod_preprint, none_mod_preprint):

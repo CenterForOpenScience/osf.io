@@ -24,7 +24,7 @@ def add_guid_field(state, schema):
               )
             FROM addons_wiki_nodewikipage as nwp2
             WHERE nwp.id = nwp2.id
-            """, [content_type_id]
+            """, [content_type_id],
         )
     return
 
@@ -36,5 +36,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_guid_field, reverse_func)
+        migrations.RunPython(add_guid_field, reverse_func),
     ]

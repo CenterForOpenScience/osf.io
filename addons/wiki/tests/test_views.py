@@ -7,8 +7,10 @@ import datetime
 from django.utils import timezone
 
 from addons.wiki.models import WikiPage, WikiVersion
-from addons.wiki.exceptions import (NameInvalidError, NameMaximumLengthError,
-     PageCannotRenameError, PageConflictError, PageNotFoundError)
+from addons.wiki.exceptions import (
+    NameInvalidError, NameMaximumLengthError,
+    PageCannotRenameError, PageConflictError, PageNotFoundError,
+)
 from addons.wiki.tests.factories import WikiVersionFactory, WikiFactory
 from addons.wiki.utils import serialize_wiki_widget
 from framework.auth import Auth
@@ -120,10 +122,12 @@ class TestUpdateNodeWiki(OsfTestCase):
 
         # user views comments -- sets user.comments_viewed_timestamp
         url = project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, {
-            'page': 'wiki',
-            'rootId': wiki_page._id
-        }, auth=self.user.auth)
+        res = self.app.put_json(
+            url, {
+                'page': 'wiki',
+                'rootId': wiki_page._id,
+            }, auth=self.user.auth,
+        )
         assert res.status_code == 200
         self.user.reload()
         assert wiki_page._id in self.user.comments_viewed_timestamp
@@ -147,19 +151,23 @@ class TestUpdateNodeWiki(OsfTestCase):
 
         # user views comments -- sets user.comments_viewed_timestamp
         url = project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, {
-            'page': 'wiki',
-            'rootId': wiki_page._id
-        }, auth=self.user.auth)
+        res = self.app.put_json(
+            url, {
+                'page': 'wiki',
+                'rootId': wiki_page._id,
+            }, auth=self.user.auth,
+        )
         assert res.status_code == 200
         self.user.reload()
         assert wiki_page._id in self.user.comments_viewed_timestamp
 
         # contributor views comments -- sets contributor.comments_viewed_timestamp
-        res = self.app.put_json(url, {
-            'page': 'wiki',
-            'rootId': wiki_page._id
-        }, auth=contributor.auth)
+        res = self.app.put_json(
+            url, {
+                'page': 'wiki',
+                'rootId': wiki_page._id,
+            }, auth=contributor.auth,
+        )
         contributor.reload()
         assert wiki_page._id in contributor.comments_viewed_timestamp
 

@@ -33,7 +33,7 @@ def new_node(category, title, user, description='', parent=None):
         category=category,
         creator=user,
         description=description,
-        parent=parent
+        parent=parent,
     )
 
     node.save()
@@ -52,7 +52,7 @@ def new_bookmark_collection(user):
     existing_bookmark_collections = Collection.objects.filter(
         is_bookmark_collection=True,
         creator=user,
-        deleted__isnull=True
+        deleted__isnull=True,
     ).exists()
 
     if existing_bookmark_collections:
@@ -61,7 +61,7 @@ def new_bookmark_collection(user):
     collection = Collection(
         title='Bookmarks',
         creator=user,
-        is_bookmark_collection=True
+        is_bookmark_collection=True,
     )
     collection.save()
     return collection
@@ -92,7 +92,7 @@ def new_private_link(name, user, nodes, anonymous):
         key=key,
         name=name,
         creator=user,
-        anonymous=anonymous
+        anonymous=anonymous,
     )
 
     private_link.save()
@@ -111,7 +111,7 @@ def new_private_link(name, user, nodes, anonymous):
         node.add_log(
             NodeLog.VIEW_ONLY_LINK_ADDED,
             log_dict,
-            auth=auth
+            auth=auth,
         )
 
     private_link.save()

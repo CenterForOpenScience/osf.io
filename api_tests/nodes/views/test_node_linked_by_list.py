@@ -16,14 +16,16 @@ class TestNodeLinkedByNodesList:
         return ProjectFactory(
             title='Project One',
             is_public=True,
-            creator=user)
+            creator=user,
+        )
 
     @pytest.fixture()
     def project_private(self, user):
         return ProjectFactory(
             title='Project Two',
             is_public=False,
-            creator=user)
+            creator=user,
+        )
 
     @pytest.fixture()
     def url_public(self, project_public):
@@ -88,14 +90,16 @@ class TestNodeLinkedByRegistrationsList:
         return ProjectFactory(
             title='Project One',
             is_public=True,
-            creator=user)
+            creator=user,
+        )
 
     @pytest.fixture()
     def project_private(self, user):
         return ProjectFactory(
             title='Project Two',
             is_public=False,
-            creator=user)
+            creator=user,
+        )
 
     @pytest.fixture()
     def url_public(self, project_public):

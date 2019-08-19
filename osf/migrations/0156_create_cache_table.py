@@ -9,15 +9,17 @@ class Migration(migrations.Migration):
         ('osf', '0155_merge_20190115_1437'),
     ]
     operations = [
-        migrations.RunSQL([
-            """
+        migrations.RunSQL(
+            [
+                """
             CREATE TABLE "{}" (
                 "cache_key" varchar(255) NOT NULL PRIMARY KEY,
                 "value" text NOT NULL,
                 "expires" timestamp with time zone NOT NULL
             );
-            """.format(settings.CACHES[settings.STORAGE_USAGE_CACHE_NAME]['LOCATION'])
-        ], [
-            """DROP TABLE "{}"; """.format(settings.CACHES[settings.STORAGE_USAGE_CACHE_NAME]['LOCATION'])
-        ])
+            """.format(settings.CACHES[settings.STORAGE_USAGE_CACHE_NAME]['LOCATION']),
+            ], [
+                """DROP TABLE "{}"; """.format(settings.CACHES[settings.STORAGE_USAGE_CACHE_NAME]['LOCATION']),
+            ],
+        ),
     ]

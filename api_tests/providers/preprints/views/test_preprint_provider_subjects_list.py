@@ -12,17 +12,20 @@ class TestPreprintProviderSubjectsForDeprecatedEndpoint(ProviderSubjectsMixin):
     @pytest.fixture()
     def lawless_url(self, lawless_provider):
         return '/{}preprint_providers/{}/taxonomies/?page[size]=20&'.format(
-            API_BASE, lawless_provider._id)
+            API_BASE, lawless_provider._id,
+        )
 
     @pytest.fixture()
     def ruled_url(self, ruled_provider):
         return '/{}preprint_providers/{}/taxonomies/?page[size]=20&'.format(
-            API_BASE, ruled_provider._id)
+            API_BASE, ruled_provider._id,
+        )
 
     @pytest.fixture()
     def base_url(self, lawless_provider):
         return '/{}preprint_providers/{}/taxonomies/'.format(
-            API_BASE, lawless_provider._id)
+            API_BASE, lawless_provider._id,
+        )
 
 
 class TestPreprintProviderTaxonomies(ProviderSubjectsMixin):
@@ -31,17 +34,20 @@ class TestPreprintProviderTaxonomies(ProviderSubjectsMixin):
     @pytest.fixture()
     def lawless_url(self, lawless_provider):
         return '/{}providers/preprints/{}/taxonomies/?page[size]=20&'.format(
-            API_BASE, lawless_provider._id)
+            API_BASE, lawless_provider._id,
+        )
 
     @pytest.fixture()
     def ruled_url(self, ruled_provider):
         return '/{}providers/preprints/{}/taxonomies/?page[size]=20&'.format(
-            API_BASE, ruled_provider._id)
+            API_BASE, ruled_provider._id,
+        )
 
     @pytest.fixture()
     def base_url(self, lawless_provider):
         return '/{}providers/preprints/{}/taxonomies/'.format(
-            API_BASE, lawless_provider._id)
+            API_BASE, lawless_provider._id,
+        )
 
 
 class TestPreprintProviderSubjects(ProviderSubjectsMixin):
@@ -50,23 +56,28 @@ class TestPreprintProviderSubjects(ProviderSubjectsMixin):
     @pytest.fixture()
     def lawless_url(self, lawless_provider):
         return '/{}providers/preprints/{}/subjects/?page[size]=20&'.format(
-            API_BASE, lawless_provider._id)
+            API_BASE, lawless_provider._id,
+        )
 
     @pytest.fixture()
     def ruled_url(self, ruled_provider):
         return '/{}providers/preprints/{}/subjects/?page[size]=20&'.format(
-            API_BASE, ruled_provider._id)
+            API_BASE, ruled_provider._id,
+        )
 
     @pytest.fixture()
     def base_url(self, lawless_provider):
         return '/{}providers/preprints/{}/subjects/'.format(
-            API_BASE, lawless_provider._id)
+            API_BASE, lawless_provider._id,
+        )
 
     def test_no_rules_with_parents_filter(self, app, lawless_url, subB, subI, subM):
         res = app.get(
             lawless_url +
             'filter[parent]={}'.format(
-                subB._id))
+                subB._id,
+            ),
+        )
 
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == 1
@@ -93,7 +104,9 @@ class TestPreprintProviderSubjects(ProviderSubjectsMixin):
         res = app.get(
             ruled_url +
             'filter[parent]={}'.format(
-                subB._id))
+                subB._id,
+            ),
+        )
 
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == 0
@@ -103,7 +116,9 @@ class TestPreprintProviderSubjects(ProviderSubjectsMixin):
         res = app.get(
             ruled_url +
             'filter[parent]={}'.format(
-                subI._id))
+                subI._id,
+            ),
+        )
 
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == 1
@@ -114,13 +129,17 @@ class TestPreprintProviderSubjects(ProviderSubjectsMixin):
         res = app.get(
             ruled_url +
             'filter[parent]={}'.format(
-                subM._id))
+                subM._id,
+            ),
+        )
 
     def test_no_rules_with_grandparent_filter(self, app, lawless_url, subA):
         res = app.get(
             lawless_url +
             'filter[parent]={}'.format(
-                subA._id))
+                subA._id,
+            ),
+        )
 
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == 3
@@ -129,7 +148,9 @@ class TestPreprintProviderSubjects(ProviderSubjectsMixin):
         res = app.get(
             ruled_url +
             'filter[parent]={}'.format(
-                subA._id))
+                subA._id,
+            ),
+        )
 
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == 2
@@ -281,11 +302,15 @@ class TestCustomTaxonomy:
         bepress_res = app.get(
             url_deprecated.format(
                 API_BASE,
-                osf_provider._id))
+                osf_provider._id,
+            ),
+        )
         asdf_res = app.get(
             url_deprecated.format(
                 API_BASE,
-                asdf_provider._id))
+                asdf_provider._id,
+            ),
+        )
 
         assert len(bepress_res.json['data']) == len(asdf_res.json['data']) == 1
         assert bepress_res.json['data'][0]['attributes']['share_title'] == osf_provider.share_title
@@ -294,11 +319,15 @@ class TestCustomTaxonomy:
         bepress_res = app.get(
             url.format(
                 API_BASE,
-                osf_provider._id))
+                osf_provider._id,
+            ),
+        )
         asdf_res = app.get(
             url.format(
                 API_BASE,
-                asdf_provider._id))
+                asdf_provider._id,
+            ),
+        )
         assert len(bepress_res.json['data']) == len(asdf_res.json['data']) == 1
         assert bepress_res.json['data'][0]['attributes']['share_title'] == osf_provider.share_title
         assert asdf_res.json['data'][0]['attributes']['share_title'] == asdf_provider.share_title
@@ -315,11 +344,15 @@ class TestCustomSubjects(TestCustomTaxonomy):
         bepress_res = app.get(
             url_deprecated.format(
                 API_BASE,
-                osf_provider._id))
+                osf_provider._id,
+            ),
+        )
         asdf_res = app.get(
             url_deprecated.format(
                 API_BASE,
-                asdf_provider._id))
+                asdf_provider._id,
+            ),
+        )
 
         assert len(bepress_res.json['data']) == len(asdf_res.json['data']) == 1
         assert bepress_res.json['data'][0]['attributes']['share_title'] == osf_provider.share_title
@@ -328,11 +361,15 @@ class TestCustomSubjects(TestCustomTaxonomy):
         bepress_res = app.get(
             url.format(
                 API_BASE,
-                osf_provider._id))
+                osf_provider._id,
+            ),
+        )
         asdf_res = app.get(
             url.format(
                 API_BASE,
-                asdf_provider._id))
+                asdf_provider._id,
+            ),
+        )
         assert len(bepress_res.json['data']) == len(asdf_res.json['data']) == 1
         assert bepress_res.json['data'][0]['attributes']['taxonomy_name'] == osf_provider.share_title
         assert asdf_res.json['data'][0]['attributes']['taxonomy_name'] == asdf_provider.share_title

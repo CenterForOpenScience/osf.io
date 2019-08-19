@@ -1,18 +1,24 @@
 # -*- coding: utf-8 -*-
 
-from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
-                                BaseStorageAddon)
+from addons.base.models import (
+    BaseOAuthNodeSettings, BaseOAuthUserSettings,
+    BaseStorageAddon,
+)
 from django.db import models
 from framework.auth.core import Auth
 from osf.models.files import File, Folder, BaseFileNode
 from addons.base import exceptions
 from addons.s3.provider import S3Provider
 from addons.s3.serializer import S3Serializer
-from addons.s3.settings import (BUCKET_LOCATIONS,
-                                        ENCRYPT_UPLOADS_DEFAULT)
-from addons.s3.utils import (bucket_exists,
-                                     get_bucket_location_or_error,
-                                     get_bucket_names)
+from addons.s3.settings import (
+    BUCKET_LOCATIONS,
+    ENCRYPT_UPLOADS_DEFAULT,
+)
+from addons.s3.utils import (
+    bucket_exists,
+    get_bucket_location_or_error,
+    get_bucket_names,
+)
 
 class S3FileNode(BaseFileNode):
     _provider = 's3'
@@ -57,8 +63,10 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     def set_folder(self, folder_id, auth):
         if not bucket_exists(self.external_account.oauth_key, self.external_account.oauth_secret, folder_id):
-            error_message = ('We are having trouble connecting to that bucket. '
-                             'Try a different one.')
+            error_message = (
+                'We are having trouble connecting to that bucket. '
+                'Try a different one.'
+            )
             raise exceptions.InvalidFolderError(error_message)
 
         self.folder_id = str(folder_id)
@@ -66,7 +74,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         bucket_location = get_bucket_location_or_error(
             self.external_account.oauth_key,
             self.external_account.oauth_secret,
-            folder_id
+            folder_id,
         )
         try:
             bucket_location = BUCKET_LOCATIONS[bucket_location]
@@ -96,8 +104,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'name': bucket,
                 'path': bucket,
                 'urls': {
-                    'folders': ''
-                }
+                    'folders': '',
+                },
             }
             for bucket in buckets
         ]
@@ -139,7 +147,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             raise exceptions.AddonError('Cannot serialize settings for S3 addon')
         return {
             'bucket': self.folder_id,
-            'encrypt_uploads': self.encrypt_uploads
+            'encrypt_uploads': self.encrypt_uploads,
         }
 
     def create_waterbutler_log(self, auth, action, metadata):
@@ -155,8 +163,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'bucket': self.folder_id,
                 'urls': {
                     'view': url,
-                    'download': url + '?action=download'
-                }
+                    'download': url + '?action=download',
+                },
             },
         )
 

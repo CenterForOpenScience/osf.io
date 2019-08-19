@@ -37,7 +37,7 @@ def verify_hook_signature(node_settings, data, headers):
     digest = hmac.new(
         str(node_settings.hook_secret),
         data,
-        digestmod=hashlib.sha1
+        digestmod=hashlib.sha1,
     ).hexdigest()
     signature = headers.get(HOOK_SIGNATURE_KEY, '').replace('sha1=', '')
     if digest != signature:
@@ -106,7 +106,7 @@ def check_permissions(node_settings, auth, connection, branch, sha=None, repo=No
     has_auth = bool(user_settings and user_settings.has_auth)
     if has_auth:
         repo = repo or connection.repo(
-            node_settings.user, node_settings.repo
+            node_settings.user, node_settings.repo,
         )
 
         has_access = (
@@ -117,7 +117,7 @@ def check_permissions(node_settings, auth, connection, branch, sha=None, repo=No
 
     if sha:
         branches = connection.branches(
-            node_settings.user, node_settings.repo, branch
+            node_settings.user, node_settings.repo, branch,
         )
         # TODO Will I ever return false?
         is_head = next((True for branch in branches if sha == branch.commit.sha), None)

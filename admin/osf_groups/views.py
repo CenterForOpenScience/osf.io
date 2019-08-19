@@ -70,7 +70,8 @@ class OSFGroupsListView(PermissionRequiredMixin, ListView):
         query_set = kwargs.pop('object_list', self.object_list)
         page_size = self.get_paginate_by(query_set)
         paginator, page, query_set, is_paginated = self.paginate_queryset(
-            query_set, page_size)
+            query_set, page_size,
+        )
 
         return {
             'groups': list(map(serialize_group, query_set)),

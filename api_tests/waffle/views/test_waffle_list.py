@@ -7,7 +7,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     FlagFactory,
     SampleFactory,
-    SwitchFactory
+    SwitchFactory,
 )
 from api.base.pagination import MaxSizePagination
 

@@ -19,7 +19,7 @@ class TokenHandler(object):
         'approve_embargo_termination_approval': functools.partial(handlers.sanction_handler, 'embargo_termination_approval', 'approve'),
         'reject_embargo_termination_approval': functools.partial(handlers.sanction_handler, 'embargo_termination_approval', 'reject'),
         'approve_retraction': functools.partial(handlers.sanction_handler, 'retraction', 'approve'),
-        'reject_retraction': functools.partial(handlers.sanction_handler, 'retraction', 'reject')
+        'reject_retraction': functools.partial(handlers.sanction_handler, 'retraction', 'reject'),
     }
 
     def __init__(self, encoded_token=None, payload=None):
@@ -36,8 +36,8 @@ class TokenHandler(object):
                 http.BAD_REQUEST,
                 data={
                     'message_short': 'Bad request',
-                    'message_long': e.message
-                }
+                    'message_long': e.message,
+                },
             )
         return cls(encoded_token=encoded_token, payload=payload)
 
@@ -76,8 +76,8 @@ def process_token_or_pass(func):
                     http.BAD_REQUEST,
                     data={
                         'message_short': 'Invalid Token',
-                        'message_long': 'No token handler for action: {} found'.format(e.action)
-                    }
+                        'message_long': 'No token handler for action: {} found'.format(e.action),
+                    },
                 )
             if res:
                 return res
@@ -89,7 +89,7 @@ def encode(payload):
     return jwt.encode(
         payload,
         settings.JWT_SECRET,
-        algorithm=settings.JWT_ALGORITHM
+        algorithm=settings.JWT_ALGORITHM,
     )
 
 
@@ -97,4 +97,5 @@ def decode(encoded_token):
     return jwt.decode(
         encoded_token,
         settings.JWT_SECRET,
-        algorithms=[settings.JWT_ALGORITHM])
+        algorithms=[settings.JWT_ALGORITHM],
+    )

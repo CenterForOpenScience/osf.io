@@ -12,14 +12,16 @@ def create_test_file(target, user, filename='test_file', create_guid=True, size=
     if create_guid:
         test_file.get_guid(create=True)
 
-    test_file.create_version(user, {
-        'object': '06d80e',
-        'service': 'cloud',
-        osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
-    }, {
-        'size': size,
-        'contentType': 'img/png'
-    }).save()
+    test_file.create_version(
+        user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': size,
+            'contentType': 'img/png',
+        },
+    ).save()
     return test_file
 
 
@@ -30,14 +32,16 @@ def create_test_preprint_file(target, user, filename='test_file', create_guid=Tr
     if create_guid:
         test_file.get_guid(create=True)
 
-    test_file.create_version(user, {
-        'object': '06d80e',
-        'service': 'cloud',
-        osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
-    }, {
-        'size': size,
-        'contentType': 'img/png'
-    }).save()
+    test_file.create_version(
+        user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': size,
+            'contentType': 'img/png',
+        },
+    ).save()
     return test_file
 
 

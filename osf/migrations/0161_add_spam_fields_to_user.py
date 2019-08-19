@@ -12,7 +12,7 @@ import osf.utils.fields
 TAG_MAP = {
     'spam_flagged': osf.models.spam.SpamStatus.FLAGGED,
     'spam_confirmed': osf.models.spam.SpamStatus.SPAM,
-    'ham_confirmed': osf.models.spam.SpamStatus.HAM
+    'ham_confirmed': osf.models.spam.SpamStatus.HAM,
 }
 
 def add_spam_status_to_tagged_users(state, schema):

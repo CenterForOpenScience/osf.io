@@ -59,7 +59,8 @@ class DatabaseWrapper(PostgresqlDatabaseWrapper):
 
         cursor = self.connection.cursor(
             name='osf.db.backends.postgresql_cursors:{}'.format(
-                uuid.uuid4().hex),
+                uuid.uuid4().hex,
+            ),
             cursor_factory=psycopg2.extras.DictCursor, )
         cursor.tzinfo_factory = utc_tzinfo_factory if settings.USE_TZ else None
         cursor.itersize = self.server_side_cursor_itersize

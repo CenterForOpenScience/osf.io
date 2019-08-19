@@ -46,5 +46,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_preprint_doi_created, reverse_func)
+        migrations.RunPython(add_preprint_doi_created, reverse_func),
     ]

@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 FIELDS_TO_MIGRATE = [
     'github',
     'linkedIn',
-    'twitter'
+    'twitter',
 ]
 
 
@@ -68,5 +68,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(update_social_fields, reset_social_fields)
+        migrations.RunPython(update_social_fields, reset_social_fields),
     ]

@@ -21,5 +21,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(set_is_root, unset_is_root)
+        migrations.RunPython(set_is_root, unset_is_root),
     ]

@@ -102,8 +102,10 @@ def create_session(response, data=None):
         cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(session_id)
         set_session(new_session)
     if response is not None:
-        response.set_cookie(settings.COOKIE_NAME, value=cookie_value, domain=settings.OSF_COOKIE_DOMAIN,
-                            secure=settings.SESSION_COOKIE_SECURE, httponly=settings.SESSION_COOKIE_HTTPONLY)
+        response.set_cookie(
+            settings.COOKIE_NAME, value=cookie_value, domain=settings.OSF_COOKIE_DOMAIN,
+            secure=settings.SESSION_COOKIE_SECURE, httponly=settings.SESSION_COOKIE_HTTPONLY,
+        )
         return response
 
 
@@ -131,7 +133,7 @@ def before_request():
     if request.authorization:
         user = get_user(
             email=request.authorization.username,
-            password=request.authorization.password
+            password=request.authorization.password,
         )
         # Create an empty session
         # TODO: Shoudn't need to create a session for Basic Auth

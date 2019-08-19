@@ -236,7 +236,7 @@ FINALIZE_MIGRATION = [
     'ALTER TABLE osf_tag ALTER COLUMN created SET NOT NULL;',
     'ALTER TABLE osf_tag ALTER COLUMN modified SET NOT NULL;',
     'ALTER TABLE osf_useractivitycounter ALTER COLUMN created SET NOT NULL;',
-    'ALTER TABLE osf_useractivitycounter ALTER COLUMN modified SET NOT NULL;'
+    'ALTER TABLE osf_useractivitycounter ALTER COLUMN modified SET NOT NULL;',
 ]
 
 @celery_app.task
@@ -278,7 +278,7 @@ def finalize_migration():
 def main():
     django.setup()
     parser = argparse.ArgumentParser(
-        description='Handles long-running, non-breaking db changes slowly without requiring much downtime'
+        description='Handles long-running, non-breaking db changes slowly without requiring much downtime',
     )
     parser.add_argument(
         '--dry',

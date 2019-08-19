@@ -25,7 +25,7 @@ EMBER_WAFFLE_PAGES = [
     'search',
     'support',
     'user_profile',
-    'user_settings'
+    'user_settings',
 ]
 
 def reverse_func(state, schema):
@@ -56,5 +56,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_ember_waffle_flags, reverse_func)
+        migrations.RunPython(add_ember_waffle_flags, reverse_func),
     ]

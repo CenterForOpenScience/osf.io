@@ -8,9 +8,11 @@ from website import settings
 NAMESPACE = 'http://datacite.org/schema/kernel-4'
 XSI = 'http://www.w3.org/2001/XMLSchema-instance'
 SCHEMA_LOCATION = 'http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd'
-E = lxml.builder.ElementMaker(nsmap={
-    None: NAMESPACE,
-    'xsi': XSI},
+E = lxml.builder.ElementMaker(
+    nsmap={
+        None: NAMESPACE,
+        'xsi': XSI,
+    },
 )
 
 CREATOR = E.creator
@@ -65,7 +67,7 @@ def datacite_metadata_for_node(node, doi, pretty_print=False):
         creators=creators,
         publisher='Open Science Framework',
         publication_year=getattr(node.registered_date or node.created, 'year'),
-        pretty_print=pretty_print
+        pretty_print=pretty_print,
     )
 
 

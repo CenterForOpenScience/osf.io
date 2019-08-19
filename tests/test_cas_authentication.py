@@ -16,8 +16,8 @@ def make_successful_response(user):
         authenticated=True,
         user=user._id,
         attributes={
-            'accessToken': fake.md5()
-        }
+            'accessToken': fake.md5(),
+        },
     )
 
 
@@ -40,7 +40,7 @@ def make_external_response(release=True, unicode=False):
     return cas.CasResponse(
         authenticated=True,
         user='OrcidProfile#{}'.format(fake.numerify('####-####-####-####')),
-        attributes=attributes
+        attributes=attributes,
     )
 
 
@@ -59,8 +59,8 @@ def generate_external_user_with_resp(service_url, user=True, release=True):
         user = UserFactory.build()
         user.external_identity = {
             validated_credentials['provider']: {
-                validated_credentials['id']: 'VERIFIED'
-            }
+                validated_credentials['id']: 'VERIFIED',
+            },
         }
         user.save()
         return user, validated_credentials, cas_resp
@@ -99,7 +99,7 @@ def make_service_validation_response_body(user, access_token=None):
         given_name=user.given_name,
         family_name=user.family_name,
         username=user.username,
-        access_token=token
+        access_token=token,
     )
 
 
@@ -134,7 +134,7 @@ class TestCASClient(OsfTestCase):
                 url.url,
                 body=body,
                 status=200,
-            )
+            ),
         )
         resp = self.client.service_validate(ticket, service_url)
         assert_true(resp.authenticated)
@@ -151,7 +151,7 @@ class TestCASClient(OsfTestCase):
                 url.url,
                 body='invalid ticket...',
                 status=500,
-            )
+            ),
         )
         with assert_raises(cas.CasHTTPError):
             self.client.service_validate('invalid', service_url)
@@ -165,7 +165,7 @@ class TestCASClient(OsfTestCase):
                 responses.GET,
                 url.url,
                 status=500,
-            )
+            ),
         )
         with assert_raises(cas.CasHTTPError):
             self.client.profile('invalid-access-token')
@@ -179,10 +179,12 @@ class TestCASClient(OsfTestCase):
             responses.Response(
                 responses.POST,
                 url,
-                body={'client_id': client_id,
-                      'client_secret': client_secret},
-                status=204
-            )
+                body={
+                    'client_id': client_id,
+                    'client_secret': client_secret,
+                },
+                status=204,
+            ),
         )
 
         res = self.client.revoke_application_tokens(client_id, client_secret)
@@ -197,10 +199,12 @@ class TestCASClient(OsfTestCase):
             responses.Response(
                 responses.POST,
                 url,
-                body={'client_id': client_id,
-                      'client_secret': client_secret},
-                status=400
-            )
+                body={
+                    'client_id': client_id,
+                    'client_secret': client_secret,
+                },
+                status=400,
+            ),
         )
 
         with assert_raises(cas.CasHTTPError):
@@ -272,8 +276,8 @@ class TestCASExternalLogin(OsfTestCase):
         validated_creds = cas.validate_external_credential(mock_response.user)
         self.user.external_identity = {
             validated_creds['provider']: {
-                validated_creds['id']: 'VERIFIED'
-            }
+                validated_creds['id']: 'VERIFIED',
+            },
         }
         self.user.save()
         user, external_credential, action = cas.get_user_from_cas_resp(mock_response)
@@ -295,8 +299,8 @@ class TestCASExternalLogin(OsfTestCase):
         validated_creds = cas.validate_external_credential(mock_response.user)
         self.user.external_identity = {
             validated_creds['provider']: {
-                validated_creds['id']: 'VERIFIED'
-            }
+                validated_creds['id']: 'VERIFIED',
+            },
         }
         self.user.save()
         mock_get_user_from_cas_resp.return_value = (self.user, validated_creds, 'authenticate')
@@ -332,8 +336,8 @@ class TestCASExternalLogin(OsfTestCase):
         validated_creds = cas.validate_external_credential(mock_response.user)
         self.user.external_identity = {
             validated_creds['provider']: {
-                validated_creds['id']: 'VERIFIED'
-            }
+                validated_creds['id']: 'VERIFIED',
+            },
         }
         self.user.save()
         mock_service_validate.return_value = mock_response

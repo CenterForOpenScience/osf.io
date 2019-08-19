@@ -29,7 +29,7 @@ class BoxSerializer(StorageAddonSerializer):
         path = node_settings.fetch_full_folder_path()
         return {
             'path': path,
-            'name': path.replace('All Files', '', 1) if path != '/' else '/ (Full Box)'
+            'name': path.replace('All Files', '', 1) if path != '/' else '/ (Full Box)',
         }
 
     @property
@@ -37,8 +37,10 @@ class BoxSerializer(StorageAddonSerializer):
         node = self.node_settings.owner
 
         return {
-            'auth': api_url_for('oauth_connect',
-                                service_name='box'),
+            'auth': api_url_for(
+                'oauth_connect',
+                service_name='box',
+            ),
             'importAuth': node.api_url_for('box_import_auth'),
             'files': node.web_url_for('collect_file_trees'),
             'folders': node.api_url_for('box_folder_list'),

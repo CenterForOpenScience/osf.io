@@ -17,7 +17,7 @@ from dateutil.relativedelta import relativedelta
 from website.oauth.models import ExternalAccount
 
 from scripts.refresh_addon_tokens import (
-    get_targets, main, look_up_provider, PROVIDER_CLASSES
+    get_targets, main, look_up_provider, PROVIDER_CLASSES,
 )
 
 

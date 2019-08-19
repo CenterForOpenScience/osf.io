@@ -113,50 +113,56 @@ def pytest_generate_tests(metafunc):
     if not funcarglist:
         return
     argnames = sorted(funcarglist[0])
-    metafunc.parametrize(argnames, [[funcargs[name] for name in argnames]
-            for funcargs in funcarglist])
+    metafunc.parametrize(
+        argnames, [
+            [funcargs[name] for name in argnames]
+            for funcargs in funcarglist
+        ],
+    )
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
 class TestUserSerializer:
 
     params = {
-        'test_related_counts_equal_related_views': [{
-            'field_name': 'nodes',
-            'expected_count': {
-                'user': 5,  # this counts the private nodes created by RegistrationFactory
-                'other_user': 1,
-                'no_auth': 1
+        'test_related_counts_equal_related_views': [
+            {
+                'field_name': 'nodes',
+                'expected_count': {
+                    'user': 5,  # this counts the private nodes created by RegistrationFactory
+                    'other_user': 1,
+                    'no_auth': 1,
+                },
+            }, {
+                'field_name': 'preprints',  # "unpublished" preprints don't appear in api at all
+                'expected_count': {
+                    'user': 2,
+                    'other_user': 1,
+                    'no_auth': 1,
+                },
+            }, {
+                'field_name': 'registrations',
+                'expected_count': {
+                    'user': 2,
+                    'other_user': 1,
+                    'no_auth': 1,
+                },
+            }, {
+                'field_name': 'institutions',
+                'expected_count': {
+                    'user': 1,
+                    'other_user': 1,
+                    'no_auth': 1,
+                },
+            }, {
+                'field_name': 'quickfiles',
+                'expected_count': {
+                    'user': 1,
+                    'other_user': 1,
+                    'no_auth': 1,
+                },
             },
-        }, {
-            'field_name': 'preprints',  # "unpublished" preprints don't appear in api at all
-            'expected_count': {
-                'user': 2,
-                'other_user': 1,
-                'no_auth': 1
-            },
-        }, {
-            'field_name': 'registrations',
-            'expected_count': {
-                'user': 2,
-                'other_user': 1,
-                'no_auth': 1
-            },
-        }, {
-            'field_name': 'institutions',
-            'expected_count': {
-                'user': 1,
-                'other_user': 1,
-                'no_auth': 1
-            },
-        }, {
-            'field_name': 'quickfiles',
-            'expected_count': {
-                'user': 1,
-                'other_user': 1,
-                'no_auth': 1
-            },
-        }]
+        ],
     }
 
     def get_data(self, user):
@@ -207,25 +213,27 @@ class TestUserSerializer:
         assert 'registrations' in relationships
         assert 'groups' in relationships
 
-    def test_related_counts_equal_related_views(self,
-                                                request,
-                                                field_name,
-                                                expected_count,
-                                                user,
-                                                user_without_nodes,
-                                                project,
-                                                public_project,
-                                                deleted_project,
-                                                registration,
-                                                private_registration,
-                                                withdrawn_registration,
-                                                preprint,
-                                                private_preprint,
-                                                withdrawn_preprint,
-                                                unpublished_preprint,  # not in the view/related counts by default
-                                                deleted_preprint,
-                                                group,
-                                                group_project):
+    def test_related_counts_equal_related_views(
+        self,
+        request,
+        field_name,
+        expected_count,
+        user,
+        user_without_nodes,
+        project,
+        public_project,
+        deleted_project,
+        registration,
+        private_registration,
+        withdrawn_registration,
+        preprint,
+        private_preprint,
+        withdrawn_preprint,
+        unpublished_preprint,  # not in the view/related counts by default
+        deleted_preprint,
+        group,
+        group_project,
+    ):
 
         view_count = self.get_view_count(user, field_name, auth=user)
         related_count = self.get_related_count(user, field_name, auth=user)

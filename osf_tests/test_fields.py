@@ -8,8 +8,10 @@ from osf.models import BaseFileNode
 from osf_tests.factories import ProjectFactory
 from tests.test_websitefiles import TestFileNode
 
-from osf.utils.datetime_aware_jsonfield import (DateTimeAwareJSONEncoder,
-                                                decode_datetime_objects)
+from osf.utils.datetime_aware_jsonfield import (
+    DateTimeAwareJSONEncoder,
+    decode_datetime_objects,
+)
 
 
 class DateTimeAwareJSONFieldTests(TestCase):
@@ -21,7 +23,7 @@ class DateTimeAwareJSONFieldTests(TestCase):
             nested_data=dict(
                 sample_date=dt.date.today(),
                 sample_datetime=timezone.now(),
-                sample_decimal=Decimal('10.259')
+                sample_decimal=Decimal('10.259'),
             ),
             sample_datetime=timezone.now(),
             sample_decimal=Decimal('10.259'),
@@ -30,37 +32,37 @@ class DateTimeAwareJSONFieldTests(TestCase):
                 dict(
                     sample_date=dt.date.today(),
                     sample_datetime=timezone.now(),
-                    sample_decimal=Decimal('10.259')
+                    sample_decimal=Decimal('10.259'),
                 ),
                 dict(
                     sample_date=dt.date.today(),
                     sample_datetime=timezone.now(),
-                    sample_decimal=Decimal('10.259')
+                    sample_decimal=Decimal('10.259'),
                 ),
                 [
                     dict(
                         sample_date=dt.date.today(),
                         sample_datetime=timezone.now(),
-                        sample_decimal=Decimal('10.259')
+                        sample_decimal=Decimal('10.259'),
                     ),
                     dict(
                         sample_date=dt.date.today(),
                         sample_datetime=timezone.now(),
-                        sample_decimal=Decimal('10.259')
+                        sample_decimal=Decimal('10.259'),
                     ),
-                ]
-            ]
+                ],
+            ],
         )
         cls.json_list_data = [
             dict(
                 sample_date=dt.date.today(),
                 sample_datetime=timezone.now(),
-                sample_decimal=Decimal('10.259')
+                sample_decimal=Decimal('10.259'),
             ),
             dict(
                 sample_date=dt.date.today(),
                 sample_datetime=timezone.now(),
-                sample_decimal=Decimal('10.259')
+                sample_decimal=Decimal('10.259'),
             ),
         ]
 

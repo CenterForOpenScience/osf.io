@@ -17,7 +17,7 @@ def _get_client():
     return akismet.AkismetClient(
         apikey=settings.AKISMET_APIKEY,
         website=settings.DOMAIN,
-        verify=True
+        verify=True,
     )
 
 
@@ -30,8 +30,10 @@ def _validate_reports(value, *args, **kwargs):
             raise ValidationTypeError('Values must be dictionaries')
         if ('category' not in val or 'text' not in val or 'date' not in val or 'retracted' not in val):
             raise ValidationValueError(
-                ('Values must include `date`, `category`, ',
-                 '`text`, `retracted` keys')
+                (
+                    'Values must include `date`, `category`, ',
+                    '`text`, `retracted` keys',
+                ),
             )
 
 
@@ -73,7 +75,7 @@ class SpamMixin(models.Model):
     #  - category: What type of spam does the reporter believe this is
     #  - text: Comment on the comment
     reports = DateTimeAwareJSONField(
-        default=dict, blank=True, validators=[_validate_reports]
+        default=dict, blank=True, validators=[_validate_reports],
     )
 
     def flag_spam(self):
@@ -200,7 +202,7 @@ class SpamMixin(models.Model):
                 referrer=referer,
                 comment_content=content,
                 comment_author=author,
-                comment_author_email=author_email
+                comment_author_email=author_email,
             )
         except akismet.AkismetClientError:
             logger.exception('Error performing SPAM check')

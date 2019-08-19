@@ -105,7 +105,7 @@ class TestSearchViews(OsfTestCase):
         res = self.app.post_json(
             api_url_for('search_node'),
             {'query': self.project.title},
-            auth=factories.AuthUserFactory().auth
+            auth=factories.AuthUserFactory().auth,
         )
         assert_equal(res.status_code, 200)
 
@@ -113,7 +113,7 @@ class TestSearchViews(OsfTestCase):
         res = self.app.post_json(
             api_url_for('search_node'),
             {'query': 'a', 'includePublic': True},
-            auth=self.user_one.auth
+            auth=self.user_one.auth,
         )
         node_ids = [node['id'] for node in res.json['nodes']]
         assert_in(self.project_private_user_one._id, node_ids)
@@ -125,7 +125,7 @@ class TestSearchViews(OsfTestCase):
         res = self.app.post_json(
             api_url_for('search_node'),
             {'query': 'a', 'includePublic': False},
-            auth=self.user_one.auth
+            auth=self.user_one.auth,
         )
         node_ids = [node['id'] for node in res.json['nodes']]
         assert_in(self.project_private_user_one._id, node_ids)
@@ -151,7 +151,7 @@ class TestSearchViews(OsfTestCase):
         user_one.social = {
             'github': user_one.given_name,
             'twitter': user_one.given_name,
-            'ssrn': user_one.given_name
+            'ssrn': user_one.given_name,
         }
         user_one.save()
 
@@ -172,14 +172,14 @@ class TestSearchViews(OsfTestCase):
             'linkedIn': user_two.given_name,
             'scholar': user_two.given_name,
             'impactStory': user_two.given_name,
-            'baiduScholar': user_two.given_name
+            'baiduScholar': user_two.given_name,
         }
         user_two.save()
 
         user_three = factories.AuthUserFactory(fullname='Janet Umwali')
         user_three.social = {
             'github': user_three.given_name,
-            'ssrn': user_three.given_name
+            'ssrn': user_three.given_name,
         }
         user_three.save()
 
@@ -237,100 +237,122 @@ class TestODMTitleSearch(OsfTestCase):
         res = self.app.get(self.url, {'term': self.project.title}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.public_project.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'no'
-                           }, auth=self.user.auth)
+        res = self.app.get(
+            self.url,
+            {
+                'term': self.public_project.title,
+                'includePublic': 'yes',
+                'includeContributed': 'no',
+            }, auth=self.user.auth,
+        )
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.project.title,
-                               'includePublic': 'no',
-                               'includeContributed': 'yes'
-                           }, auth=self.user.auth)
+        res = self.app.get(
+            self.url,
+            {
+                'term': self.project.title,
+                'includePublic': 'no',
+                'includeContributed': 'yes',
+            }, auth=self.user.auth,
+        )
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.project.title,
-                               'includePublic': 'no',
-                               'includeContributed': 'yes',
-                               'isRegistration': 'no'
-                           }, auth=self.user.auth)
+        res = self.app.get(
+            self.url,
+            {
+                'term': self.project.title,
+                'includePublic': 'no',
+                'includeContributed': 'yes',
+                'isRegistration': 'no',
+            }, auth=self.user.auth,
+        )
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.project.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isRegistration': 'either'
-                           }, auth=self.user.auth)
+        res = self.app.get(
+            self.url,
+            {
+                'term': self.project.title,
+                'includePublic': 'yes',
+                'includeContributed': 'yes',
+                'isRegistration': 'either',
+            }, auth=self.user.auth,
+        )
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.public_project.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isRegistration': 'either'
-                           }, auth=self.user.auth)
+        res = self.app.get(
+            self.url,
+            {
+                'term': self.public_project.title,
+                'includePublic': 'yes',
+                'includeContributed': 'yes',
+                'isRegistration': 'either',
+            }, auth=self.user.auth,
+        )
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.registration_project.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isRegistration': 'either'
-                           }, auth=self.user.auth)
+        res = self.app.get(
+            self.url,
+            {
+                'term': self.registration_project.title,
+                'includePublic': 'yes',
+                'includeContributed': 'yes',
+                'isRegistration': 'either',
+            }, auth=self.user.auth,
+        )
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json), 2)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.registration_project.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isRegistration': 'no'
-                           }, auth=self.user.auth)
+        res = self.app.get(
+            self.url,
+            {
+                'term': self.registration_project.title,
+                'includePublic': 'yes',
+                'includeContributed': 'yes',
+                'isRegistration': 'no',
+            }, auth=self.user.auth,
+        )
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.folder.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isFolder': 'yes'
-                           }, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(
+            self.url,
+            {
+                'term': self.folder.title,
+                'includePublic': 'yes',
+                'includeContributed': 'yes',
+                'isFolder': 'yes',
+            }, auth=self.user.auth, expect_errors=True,
+        )
         assert_equal(res.status_code, 200)
         assert len(res.json) == 0
-        res = self.app.get(self.url,
-                           {
-                               'term': self.folder.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isFolder': 'no'
-                           }, auth=self.user.auth)
+        res = self.app.get(
+            self.url,
+            {
+                'term': self.folder.title,
+                'includePublic': 'yes',
+                'includeContributed': 'yes',
+                'isFolder': 'no',
+            }, auth=self.user.auth,
+        )
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json), 0)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.dashboard.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isFolder': 'no'
-                           }, auth=self.user.auth)
+        res = self.app.get(
+            self.url,
+            {
+                'term': self.dashboard.title,
+                'includePublic': 'yes',
+                'includeContributed': 'yes',
+                'isFolder': 'no',
+            }, auth=self.user.auth,
+        )
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json), 0)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.dashboard.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isFolder': 'yes'
-                           }, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(
+            self.url,
+            {
+                'term': self.dashboard.title,
+                'includePublic': 'yes',
+                'includeContributed': 'yes',
+                'isFolder': 'yes',
+            }, auth=self.user.auth, expect_errors=True,
+        )
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json), 0)

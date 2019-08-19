@@ -84,7 +84,7 @@ def register_unconfirmed(username, password, fullname, campaign=None, accepted_t
             password=password,
             fullname=fullname,
             campaign=campaign,
-            accepted_terms_of_service=accepted_terms_of_service
+            accepted_terms_of_service=accepted_terms_of_service,
         )
         user.save()
         signals.unconfirmed_user_created.send(user)

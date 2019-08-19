@@ -65,13 +65,15 @@ def create_mock_connection(token='snowman-frosty'):
     ]
 
     def _get_dataverse(alias):
-        return next((
-            dataverse for dataverse in mock_connection.get_dataverses()
-            if alias is not None and dataverse.title[-1] == alias[-1]), None
+        return next(
+            (
+                dataverse for dataverse in mock_connection.get_dataverses()
+                if alias is not None and dataverse.title[-1] == alias[-1]
+            ), None,
         )
 
     mock_connection.get_dataverse = mock.MagicMock(
-        side_effect=_get_dataverse
+        side_effect=_get_dataverse,
     )
     mock_connection.get_dataverse.return_value = create_mock_dataverse()
 
@@ -85,7 +87,7 @@ def create_mock_dataverse(title='Example Dataverse 0'):
     type(mock_dataverse).title = mock.PropertyMock(return_value=title)
     type(mock_dataverse).is_published = mock.PropertyMock(return_value=True)
     type(mock_dataverse).alias = mock.PropertyMock(
-        return_value='ALIAS{}'.format(title[-1])
+        return_value='ALIAS{}'.format(title[-1]),
     )
 
     mock_dataverse.get_datasets.return_value = [
@@ -95,13 +97,15 @@ def create_mock_dataverse(title='Example Dataverse 0'):
     ]
 
     def _get_dataset_by_doi(doi, timeout=None):
-        return next((
-            dataset for dataset in mock_dataverse.get_datasets(timeout=timeout)
-            if dataset.doi == doi), None
+        return next(
+            (
+                dataset for dataset in mock_dataverse.get_datasets(timeout=timeout)
+                if dataset.doi == doi
+            ), None,
         )
 
     mock_dataverse.get_dataset_by_doi = mock.MagicMock(
-        side_effect=_get_dataset_by_doi
+        side_effect=_get_dataset_by_doi,
     )
 
     return mock_dataverse
@@ -154,12 +158,14 @@ mock_responses = {
         u'name': u'file.txt',
         u'ext': u'.txt',
         u'file_id': u'54321',
-        u'urls': {u'download': u'/project/xxxxx/dataverse/file/54321/download/',
-                 u'delete': u'/api/v1/project/xxxxx/dataverse/file/54321/',
-                 u'view': u'/project/xxxxx/dataverse/file/54321/'},
+        u'urls': {
+            u'download': u'/project/xxxxx/dataverse/file/54321/download/',
+            u'delete': u'/api/v1/project/xxxxx/dataverse/file/54321/',
+            u'view': u'/project/xxxxx/dataverse/file/54321/',
+        },
         u'permissions': {u'edit': False, u'view': True},
         u'addon': u'dataverse',
         u'hasPublishedFiles': True,
         u'state': 'published',
-    }
+    },
 }

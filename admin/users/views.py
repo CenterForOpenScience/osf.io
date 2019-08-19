@@ -86,14 +86,15 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
             raise Http404(
                 '{} with id "{}" not found.'.format(
                     self.context_object_name.title(),
-                    self.kwargs.get('guid')
-                ))
+                    self.kwargs.get('guid'),
+                ),
+            )
         update_admin_log(
             user_id=self.request.user.id,
             object_id=user.pk,
             object_repr='User',
             message=message,
-            action_flag=flag
+            action_flag=flag,
         )
         return redirect(reverse_user(self.kwargs.get('guid')))
 
@@ -129,7 +130,7 @@ class UserGDPRDeleteView(PermissionRequiredMixin, DeleteView):
                 object_id=user.pk,
                 object_repr='User',
                 message=message,
-                action_flag=USER_GDPR_DELETED
+                action_flag=USER_GDPR_DELETED,
             )
         except UserStateError as e:
             messages.warning(request, str(e))
@@ -149,8 +150,9 @@ class UserGDPRDeleteView(PermissionRequiredMixin, DeleteView):
             raise Http404(
                 '{} with id "{}" not found.'.format(
                     self.context_object_name.title(),
-                    self.kwargs.get('guid')
-                ))
+                    self.kwargs.get('guid'),
+                ),
+            )
 
 
 class SpamUserDeleteView(UserDeleteView):
@@ -168,8 +170,9 @@ class SpamUserDeleteView(UserDeleteView):
             raise Http404(
                 '{} with id "{}" not found.'.format(
                     self.context_object_name.title(),
-                    self.kwargs.get('guid')
-                ))
+                    self.kwargs.get('guid'),
+                ),
+            )
         if user:
             for node in user.contributor_or_group_member_to:
                 if not node.is_registration and not node.is_spam:
@@ -179,7 +182,7 @@ class SpamUserDeleteView(UserDeleteView):
                         object_id=node._id,
                         object_repr='Node',
                         message='Confirmed SPAM: {} when user {} marked as spam'.format(node._id, user._id),
-                        action_flag=CONFIRM_SPAM
+                        action_flag=CONFIRM_SPAM,
                     )
 
         kwargs.update({'is_spam': True})
@@ -200,8 +203,9 @@ class HamUserRestoreView(UserDeleteView):
             raise Http404(
                 '{} with id "{}" not found.'.format(
                     self.context_object_name.title(),
-                    self.kwargs.get('guid')
-                ))
+                    self.kwargs.get('guid'),
+                ),
+            )
         if user:
             user.confirm_ham(save=True)
             for node in user.contributor_or_group_member_to:
@@ -212,7 +216,7 @@ class HamUserRestoreView(UserDeleteView):
                         object_id=node._id,
                         object_repr='Node',
                         message='Confirmed HAM: {} when user {} marked as ham'.format(node._id, user._id),
-                        action_flag=CONFIRM_SPAM
+                        action_flag=CONFIRM_SPAM,
                     )
 
         kwargs.update({'is_spam': False})
@@ -236,7 +240,8 @@ class UserSpamList(PermissionRequiredMixin, ListView):
         query_set = kwargs.pop('object_list', self.object_list)
         page_size = self.get_paginate_by(query_set)
         paginator, page, query_set, is_paginated = self.paginate_queryset(
-            query_set, page_size)
+            query_set, page_size,
+        )
         return {
             'users': list(map(serialize_user, query_set)),
             'page': page,
@@ -266,7 +271,7 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
                 object_id=uid,
                 object_repr='User',
                 message='Confirmed SPAM: {}'.format(uid),
-                action_flag=CONFIRM_SPAM
+                action_flag=CONFIRM_SPAM,
             )
         return redirect('users:flagged-spam')
 
@@ -294,14 +299,15 @@ class User2FactorDeleteView(UserDeleteView):
             raise Http404(
                 '{} with id "{}" not found.'.format(
                     self.context_object_name.title(),
-                    self.kwargs.get('guid')
-                ))
+                    self.kwargs.get('guid'),
+                ),
+            )
         update_admin_log(
             user_id=self.request.user.id,
             object_id=user.pk,
             object_repr='User',
             message='Removed 2 factor auth for user {}'.format(user.pk),
-            action_flag=USER_2_FACTOR
+            action_flag=USER_2_FACTOR,
         )
         return redirect(reverse_user(self.kwargs.get('guid')))
 
@@ -390,8 +396,9 @@ class UserMergeAccounts(PermissionRequiredMixin, FormView):
     def form_invalid(self, form):
         raise Http404(
             '{} not found.'.format(
-                form.cleaned_data.get('user_guid_to_be_merged', 'guid')
-            ))
+                form.cleaned_data.get('user_guid_to_be_merged', 'guid'),
+            ),
+        )
 
 class UserSearchList(PermissionRequiredMixin, ListView):
     template_name = 'users/list.html'
@@ -402,7 +409,7 @@ class UserSearchList(PermissionRequiredMixin, ListView):
 
     def get_queryset(self):
         query = OSFUser.objects.filter(fullname__icontains=self.kwargs['name']).only(
-            'guids', 'fullname', 'username', 'date_confirmed', 'date_disabled'
+            'guids', 'fullname', 'username', 'date_confirmed', 'date_disabled',
         )
         return query
 
@@ -411,13 +418,15 @@ class UserSearchList(PermissionRequiredMixin, ListView):
         page_size = self.get_paginate_by(users)
         paginator, page, query_set, is_paginated = self.paginate_queryset(users, page_size)
         kwargs['page'] = page
-        kwargs['users'] = [{
-            'name': user.fullname,
-            'username': user.username,
-            'id': user.guids.first()._id,
-            'confirmed': user.date_confirmed,
-            'disabled': user.date_disabled if user.is_disabled else None
-        } for user in query_set]
+        kwargs['users'] = [
+            {
+                'name': user.fullname,
+                'username': user.username,
+                'id': user.guids.first()._id,
+                'confirmed': user.date_confirmed,
+                'disabled': user.date_disabled if user.is_disabled else None,
+            } for user in query_set
+        ]
         return super(UserSearchList, self).get_context_data(**kwargs)
 
 
@@ -516,7 +525,7 @@ class UserWorkshopFormView(PermissionRequiredMixin, FormView):
         for index, row in enumerate(csv_reader):
             if index == 0:
                 row.extend([
-                    'OSF ID', 'Logs Since Workshop', 'Nodes Created Since Workshop', 'Last Log Date'
+                    'OSF ID', 'Logs Since Workshop', 'Nodes Created Since Workshop', 'Last Log Date',
                 ])
                 result.append(row)
                 continue
@@ -550,7 +559,7 @@ class UserWorkshopFormView(PermissionRequiredMixin, FormView):
             last_log_date = self.get_user_latest_log(user, workshop_date).date.strftime('%m/%d/%y') if user_logs else ''
 
             row.extend([
-                user._id, user_logs, nodes, last_log_date
+                user._id, user_logs, nodes, last_log_date,
             ])
             result.append(row)
 
@@ -618,7 +627,7 @@ class GetUserClaimLinks(GetUserLink):
                 base_url=DOMAIN,
                 uid=user._id,
                 project_id=guid,
-                token=value['token']
+                token=value['token'],
             )
             links.append('Claim URL for {} {}: {}'.format(obj.content_type.model, obj._id, url))
 
@@ -644,8 +653,9 @@ class ResetPasswordView(PermissionRequiredMixin, FormView):
             raise Http404(
                 '{} with id "{}" not found.'.format(
                     self.context_object_name.title(),
-                    self.kwargs.get('guid')
-                ))
+                    self.kwargs.get('guid'),
+                ),
+            )
         return super(ResetPasswordView, self).dispatch(request, *args, **kwargs)
 
     def get_initial(self):
@@ -668,9 +678,9 @@ class ResetPasswordView(PermissionRequiredMixin, FormView):
                 '{} with id "{}" and email "{}" not found.'.format(
                     self.context_object_name.title(),
                     self.kwargs.get('guid'),
-                    email
+                    email,
                 ),
-                status=409
+                status=409,
             )
         reset_abs_url = furl(DOMAIN)
 
@@ -682,17 +692,17 @@ class ResetPasswordView(PermissionRequiredMixin, FormView):
         send_mail(
             subject='Reset OSF Password',
             message='Follow this link to reset your password: {}'.format(
-                reset_abs_url.url
+                reset_abs_url.url,
             ),
             from_email=OSF_SUPPORT_EMAIL,
-            recipient_list=[email]
+            recipient_list=[email],
         )
         update_admin_log(
             user_id=self.request.user.id,
             object_id=user.pk,
             object_repr='User',
             message='Emailed user {} a reset link.'.format(user.pk),
-            action_flag=USER_EMAILED
+            action_flag=USER_EMAILED,
         )
         return super(ResetPasswordView, self).form_valid(form)
 
@@ -712,6 +722,6 @@ class UserReindexElastic(UserDeleteView):
             object_id=user._id,
             object_repr='User',
             message='User Reindexed (Elastic): {}'.format(user._id),
-            action_flag=REINDEX_ELASTIC
+            action_flag=REINDEX_ELASTIC,
         )
         return redirect(reverse_user(self.kwargs.get('guid')))

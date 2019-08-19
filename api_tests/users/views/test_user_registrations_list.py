@@ -10,7 +10,7 @@ from osf_tests.factories import (
     CollectionFactory,
     ProjectFactory,
     RegistrationFactory,
-    OSFGroupFactory
+    OSFGroupFactory,
 )
 from osf.utils import permissions
 from tests.base import ApiTestCase
@@ -44,35 +44,39 @@ class TestUserRegistrations:
         return ProjectFactory(
             title='Public Project User One',
             is_public=True,
-            creator=user_one)
+            creator=user_one,
+        )
 
     @pytest.fixture()
     def project_private_user_one(self, user_one):
         return ProjectFactory(
             title='Private Project User One',
             is_public=False,
-            creator=user_one)
+            creator=user_one,
+        )
 
     @pytest.fixture()
     def project_public_user_two(self, user_two):
         return ProjectFactory(
             title='Public Project User Two',
             is_public=True,
-            creator=user_two)
+            creator=user_two,
+        )
 
     @pytest.fixture()
     def project_private_user_two(self, user_two):
         return ProjectFactory(
             title='Private Project User Two',
             is_public=False,
-            creator=user_two)
+            creator=user_two,
+        )
 
     @pytest.fixture()
     def project_private_group_member(self, user_one, osf_group):
         project = ProjectFactory(
             title='Private Project Group Member',
             is_public=False,
-            creator=user_one
+            creator=user_one,
         )
         project.add_osf_group(osf_group, permissions.ADMIN)
         return project
@@ -83,7 +87,8 @@ class TestUserRegistrations:
             title='Deleted Project User One',
             is_public=False,
             creator=user_one,
-            deleted=now())
+            deleted=now(),
+        )
 
     @pytest.fixture()
     def folder(self):
@@ -95,7 +100,8 @@ class TestUserRegistrations:
             title='Deleted Folder User One',
             is_public=False,
             creator=user_one,
-            deleted=now())
+            deleted=now(),
+        )
 
     @pytest.fixture()
     def bookmark_collection(self, user_one):
@@ -106,35 +112,40 @@ class TestUserRegistrations:
         return RegistrationFactory(
             project=project_public_user_one,
             creator=user_one,
-            is_public=True)
+            is_public=True,
+        )
 
     @pytest.fixture()
     def reg_project_private_user_one(self, user_one, project_private_user_one):
         return RegistrationFactory(
             project=project_private_user_one,
             creator=user_one,
-            is_private=True)
+            is_private=True,
+        )
 
     @pytest.fixture()
     def reg_project_public_user_two(self, user_two, project_public_user_two):
         return RegistrationFactory(
             project=project_public_user_two,
             creator=user_two,
-            is_public=True)
+            is_public=True,
+        )
 
     @pytest.fixture()
     def reg_project_private_user_two(self, user_two, project_private_user_two):
         return RegistrationFactory(
             project=project_private_user_two,
             creator=user_two,
-            is_private=True)
+            is_private=True,
+        )
 
     @pytest.fixture()
     def reg_project_private_group_member(self, user_one, project_private_group_member):
         return RegistrationFactory(
             project=project_private_group_member,
             creator=user_one,
-            is_private=True)
+            is_private=True,
+        )
 
     def test_user_registrations(
             self, app, user_one, user_two, group_member,
@@ -144,7 +155,8 @@ class TestUserRegistrations:
             reg_project_private_user_two,
             reg_project_private_group_member,
             folder, folder_deleted,
-            project_deleted_user_one):
+            project_deleted_user_one,
+    ):
 
         #   test_authorized_in_gets_200
         url = '/{}users/{}/registrations/'.format(API_BASE, user_one._id)
@@ -219,6 +231,7 @@ class TestUserRegistrations:
 
 class TestRegistrationListFiltering(
         RegistrationListFilteringMixin,
-        ApiTestCase):
+        ApiTestCase,
+):
 
     url = '/{}users/me/registrations/?'.format(API_BASE)

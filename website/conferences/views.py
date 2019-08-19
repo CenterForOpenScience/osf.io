@@ -67,7 +67,7 @@ def add_poster_by_email(conference, message):
             CONFERENCE_FAILED,
             fullname=message.sender_display,
             can_change_preferences=False,
-            logo=settings.OSF_MEETINGS_LOGO
+            logo=settings.OSF_MEETINGS_LOGO,
         )
 
     with transaction.atomic():
@@ -98,7 +98,7 @@ def add_poster_by_email(conference, message):
         # Always create a new meeting node
         node = Node.objects.create(
             title=message.subject,
-            creator=user
+            creator=user,
         )
         node.add_system_tag('osf4m')
         node.save()
@@ -140,7 +140,7 @@ def add_poster_by_email(conference, message):
         presentation_type=message.conference_category.lower(),
         is_spam=message.is_spam,
         can_change_preferences=False,
-        logo=settings.OSF_MEETINGS_LOGO
+        logo=settings.OSF_MEETINGS_LOGO,
     )
     if user_created:
         signals.osf4m_user_created.send(user, conference=conference, node=node)
@@ -245,7 +245,7 @@ def conference_submissions_sql(conf):
                 osf_user_content_type_id,
                 abstract_node_content_type_id,
                 conf.id,
-            ]
+            ],
         )
         rows = cursor.fetchall()
         return [row[0] for row in rows]

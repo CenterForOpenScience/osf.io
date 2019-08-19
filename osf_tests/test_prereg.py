@@ -28,7 +28,7 @@ class TestPreregLandingPage(OsfTestCase):
                 'campaign_short': 'prereg_challenge',
                 'is_logged_in': False,
                 'sign_up_url': '{}register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F'.format(DOMAIN),
-            }
+            },
         )
 
         with override_switch(name=OSF_PREREGISTRATION, active=True):
@@ -41,7 +41,7 @@ class TestPreregLandingPage(OsfTestCase):
                     'campaign_short': 'prereg',
                     'is_logged_in': False,
                     'sign_up_url': '{}register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F'.format(DOMAIN),
-                }
+                },
             )
 
     def test_no_projects(self):
@@ -54,7 +54,7 @@ class TestPreregLandingPage(OsfTestCase):
                 'campaign_short': 'prereg_challenge',
                 'is_logged_in': True,
                 'sign_up_url': '{}register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F'.format(DOMAIN),
-            }
+            },
         )
 
         with override_switch(name=OSF_PREREGISTRATION, active=True):
@@ -67,7 +67,7 @@ class TestPreregLandingPage(OsfTestCase):
                     'campaign_short': 'prereg',
                     'is_logged_in': True,
                     'sign_up_url': '{}register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F'.format(DOMAIN),
-                }
+                },
             )
 
     def test_has_project(self):
@@ -82,7 +82,7 @@ class TestPreregLandingPage(OsfTestCase):
                 'campaign_short': 'prereg_challenge',
                 'is_logged_in': True,
                 'sign_up_url': '{}register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F'.format(DOMAIN),
-            }
+            },
         )
 
         with override_switch(name=OSF_PREREGISTRATION, active=True):
@@ -95,14 +95,14 @@ class TestPreregLandingPage(OsfTestCase):
                     'campaign_short': 'prereg',
                     'is_logged_in': True,
                     'sign_up_url': '{}register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F'.format(DOMAIN),
-                }
+                },
             )
 
     def test_has_project_and_draft_registration(self):
         prereg_schema = RegistrationSchema.objects.get(name='Prereg Challenge')
         factories.DraftRegistrationFactory(
             initiator=self.user,
-            registration_schema=prereg_schema
+            registration_schema=prereg_schema,
         )
 
         assert_equal(
@@ -114,14 +114,14 @@ class TestPreregLandingPage(OsfTestCase):
                 'campaign_short': 'prereg_challenge',
                 'is_logged_in': True,
                 'sign_up_url': '{}register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F'.format(DOMAIN),
-            }
+            },
         )
 
         with override_switch(name=OSF_PREREGISTRATION, active=True):
             prereg_schema = RegistrationSchema.objects.get(name='OSF Preregistration')
             factories.DraftRegistrationFactory(
                 initiator=self.user,
-                registration_schema=prereg_schema
+                registration_schema=prereg_schema,
             )
             assert_equal(
                 landing_page(user=self.user),
@@ -132,7 +132,7 @@ class TestPreregLandingPage(OsfTestCase):
                     'campaign_short': 'prereg',
                     'is_logged_in': True,
                     'sign_up_url': '{}register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F'.format(DOMAIN),
-                }
+                },
             )
 
     def test_drafts_for_user_omits_registered(self):
@@ -140,15 +140,15 @@ class TestPreregLandingPage(OsfTestCase):
 
         d1 = factories.DraftRegistrationFactory(
             initiator=self.user,
-            registration_schema=prereg_schema
+            registration_schema=prereg_schema,
         )
         d2 = factories.DraftRegistrationFactory(
             initiator=self.user,
-            registration_schema=prereg_schema
+            registration_schema=prereg_schema,
         )
         d3 = factories.DraftRegistrationFactory(
             initiator=self.user,
-            registration_schema=prereg_schema
+            registration_schema=prereg_schema,
         )
         d1.registered_node = factories.RegistrationFactory()
         d1.save()

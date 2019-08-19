@@ -21,7 +21,7 @@ class Command(BaseCommand):
             schema_version=egap_registration_schema.get('version', 1),
             defaults={
                 'schema': egap_registration_schema,
-            }
+            },
         )
 
         if created:

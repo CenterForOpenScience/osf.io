@@ -43,6 +43,6 @@ class Migration(migrations.Migration):
             field=models.ManyToManyField(blank=True, related_name='preprint_services', to='osf.Subject'),
         ),
         migrations.RunPython(
-            migrate_data, unmigrate_data
+            migrate_data, unmigrate_data,
         ),
     ]

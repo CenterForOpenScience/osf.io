@@ -21,8 +21,10 @@ from nose.tools import *  # noqa
 from osf_tests import factories
 from tests.base import OsfTestCase, get_default_metaschema
 from api_tests.utils import create_test_file
-from osf_tests.factories import (AuthUserFactory, ProjectFactory,
-                             RegistrationFactory)
+from osf_tests.factories import (
+    AuthUserFactory, ProjectFactory,
+    RegistrationFactory,
+)
 from website import settings
 from addons.base import views
 from addons.github.exceptions import ApiError
@@ -83,13 +85,21 @@ class TestAddonAuth(OsfTestCase):
         self.user_addon.save()
 
     def build_url(self, **kwargs):
-        options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
-            action='download',
-            nid=self.node._id,
-            metrics={'uri': settings.MFR_SERVER_URL},
-            provider=self.node_addon.config.short_name), **kwargs),
-            'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
-        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
+        options = {'payload': jwe.encrypt(
+            jwt.encode(
+                {
+                    'data': dict(
+                        dict(
+                        action='download',
+                        nid=self.node._id,
+                        metrics={'uri': settings.MFR_SERVER_URL},
+                        provider=self.node_addon.config.short_name,
+                        ), **kwargs
+                    ),
+                        'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
+                }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM,
+            ), self.JWE_KEY,
+        )}
         return api_url_for('get_auth', **options)
 
     def test_auth_download(self):
@@ -240,7 +250,7 @@ class TestAddonLogs(OsfTestCase):
             path='/testfile',
             _id='testfile',
             name='testfile',
-            materialized_path='/testfile'
+            materialized_path='/testfile',
         )
         self.file.save()
         self.session = Session(data={'auth_user_id': self.user._id})
@@ -399,7 +409,7 @@ class TestAddonLogs(OsfTestCase):
         self.app.put_json(
             url,
             payload,
-            headers={'Content-Type': 'application/json'}
+            headers={'Content-Type': 'application/json'},
         )
         self.node.reload()
 
@@ -414,11 +424,15 @@ class TestAddonLogs(OsfTestCase):
         base_url = self.node.osfstorage_region.waterbutler_url
         wb_url = base_url + '?version=1'
         for action in download_actions:
-            payload = self.build_payload(metadata={'path': '/testfile',
-                                                   'nid': self.node._id},
-                                         action_meta={'is_mfr_render': False},
-                                         request_meta={'url': wb_url},
-                                         action=action)
+            payload = self.build_payload(
+                metadata={
+                    'path': '/testfile',
+                    'nid': self.node._id,
+                },
+                action_meta={'is_mfr_render': False},
+                request_meta={'url': wb_url},
+                action=action,
+            )
             nlogs = self.node.logs.count()
             res = self.app.put_json(
                 url,
@@ -542,18 +556,22 @@ class TestCheckPreregAuth(OsfTestCase):
         self.draft_registration = factories.DraftRegistrationFactory(
             initiator=self.user,
             registration_schema=prereg_schema,
-            branched_from=self.parent
+            branched_from=self.parent,
         )
 
     def test_has_permission_download_prereg_challenge_admin(self):
-        res = views.check_access(self.draft_registration.branched_from,
-            Auth(user=self.prereg_challenge_admin_user), 'download', None)
+        res = views.check_access(
+            self.draft_registration.branched_from,
+            Auth(user=self.prereg_challenge_admin_user), 'download', None,
+        )
         assert_true(res)
 
     def test_has_permission_download_on_component_prereg_challenge_admin(self):
         try:
-            res = views.check_access(self.draft_registration.branched_from._nodes.first(),
-                                     Auth(user=self.prereg_challenge_admin_user), 'download', None)
+            res = views.check_access(
+                self.draft_registration.branched_from._nodes.first(),
+                Auth(user=self.prereg_challenge_admin_user), 'download', None,
+            )
         except Exception:
             self.fail()
         assert_true(res)
@@ -561,20 +579,26 @@ class TestCheckPreregAuth(OsfTestCase):
     def test_has_permission_download_not_prereg_challenge_admin(self):
         new_user = AuthUserFactory()
         with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.draft_registration.branched_from,
-                 Auth(user=new_user), 'download', None)
+            views.check_access(
+                self.draft_registration.branched_from,
+                Auth(user=new_user), 'download', None,
+            )
             assert_equal(exc_info.exception.code, http.FORBIDDEN)
 
     def test_has_permission_download_prereg_challenge_admin_not_draft(self):
         with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.node,
-                 Auth(user=self.prereg_challenge_admin_user), 'download', None)
+            views.check_access(
+                self.node,
+                Auth(user=self.prereg_challenge_admin_user), 'download', None,
+            )
             assert_equal(exc_info.exception.code, http.FORBIDDEN)
 
     def test_has_permission_write_prereg_challenge_admin(self):
         with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.draft_registration.branched_from,
-                Auth(user=self.prereg_challenge_admin_user), WRITE, None)
+            views.check_access(
+                self.draft_registration.branched_from,
+                Auth(user=self.prereg_challenge_admin_user), WRITE, None,
+            )
             assert_equal(exc_info.exception.code, http.FORBIDDEN)
 
 class TestCheckOAuth(OsfTestCase):
@@ -597,8 +621,10 @@ class TestCheckOAuth(OsfTestCase):
     def test_has_permission_private_no_scope_forbidden(self):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
-        cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                   attributes={'accessTokenScope': {}})
+        cas_resp = cas.CasResponse(
+            authenticated=True, status=None, user=self.user._id,
+            attributes={'accessTokenScope': {}},
+        )
 
         assert_false(component.has_permission(self.user, WRITE))
         with assert_raises(HTTPError) as exc_info:
@@ -608,8 +634,10 @@ class TestCheckOAuth(OsfTestCase):
     def test_has_permission_public_irrelevant_scope_allowed(self):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, is_public=True, parent=self.node)
-        cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                   attributes={'accessTokenScope': {'osf.users.all_read'}})
+        cas_resp = cas.CasResponse(
+            authenticated=True, status=None, user=self.user._id,
+            attributes={'accessTokenScope': {'osf.users.all_read'}},
+        )
 
         assert_false(component.has_permission(self.user, WRITE))
         res = views.check_access(component, Auth(user=self.user), 'download', cas_resp)
@@ -618,8 +646,10 @@ class TestCheckOAuth(OsfTestCase):
     def test_has_permission_private_irrelevant_scope_forbidden(self):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
-        cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                   attributes={'accessTokenScope': {'osf.users.all_read'}})
+        cas_resp = cas.CasResponse(
+            authenticated=True, status=None, user=self.user._id,
+            attributes={'accessTokenScope': {'osf.users.all_read'}},
+        )
 
         assert_false(component.has_permission(self.user, WRITE))
         with assert_raises(HTTPError) as exc_info:
@@ -629,11 +659,13 @@ class TestCheckOAuth(OsfTestCase):
     def test_has_permission_decommissioned_scope_no_error(self):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
-        cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                   attributes={'accessTokenScope': {
-                                       'decommissioned.scope+write',
-                                       'osf.nodes.data_read',
-                                   }})
+        cas_resp = cas.CasResponse(
+            authenticated=True, status=None, user=self.user._id,
+            attributes={'accessTokenScope': {
+                'decommissioned.scope+write',
+                'osf.nodes.data_read',
+            }},
+        )
 
         assert_false(component.has_permission(self.user, WRITE))
         res = views.check_access(component, Auth(user=self.user), 'download', cas_resp)
@@ -642,8 +674,10 @@ class TestCheckOAuth(OsfTestCase):
     def test_has_permission_write_scope_read_action(self):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
-        cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                   attributes={'accessTokenScope': {'osf.nodes.data_write'}})
+        cas_resp = cas.CasResponse(
+            authenticated=True, status=None, user=self.user._id,
+            attributes={'accessTokenScope': {'osf.nodes.data_write'}},
+        )
 
         assert_false(component.has_permission(self.user, WRITE))
         res = views.check_access(component, Auth(user=self.user), 'download', cas_resp)
@@ -651,8 +685,10 @@ class TestCheckOAuth(OsfTestCase):
 
     def test_has_permission_read_scope_write_action_forbidden(self):
         component = ProjectFactory(creator=self.user, is_public=False, parent=self.node)
-        cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                   attributes={'accessTokenScope': {'osf.nodes.data_read'}})
+        cas_resp = cas.CasResponse(
+            authenticated=True, status=None, user=self.user._id,
+            attributes={'accessTokenScope': {'osf.nodes.data_read'}},
+        )
 
         assert_true(component.has_permission(self.user, WRITE))
         with assert_raises(HTTPError) as exc_info:
@@ -814,9 +850,9 @@ class TestAddonFileViews(OsfTestCase):
             self.project.web_url_for(
                 'addon_view_or_download_file',
                 path=file_node.path.strip('/'),
-                provider='github'
+                provider='github',
             ),
-            auth=self.user.auth
+            auth=self.user.auth,
         )
 
         assert_equals(resp.status_code, 302)
@@ -915,15 +951,17 @@ class TestAddonFileViews(OsfTestCase):
                 path=file_node.path.strip('/'),
                 provider='github',
             ),
-            auth=self.user.auth
+            auth=self.user.auth,
         )
 
         assert_true(file_node.get_guid())
 
     @pytest.mark.enable_bookmark_creation
     def test_view_file_does_not_delete_file_when_requesting_invalid_version(self):
-        with mock.patch('addons.github.models.NodeSettings.is_private',
-                        new_callable=mock.PropertyMock) as mock_is_private:
+        with mock.patch(
+            'addons.github.models.NodeSettings.is_private',
+            new_callable=mock.PropertyMock,
+        ) as mock_is_private:
             mock_is_private.return_value = False
 
             file_node = self.get_test_file()
@@ -952,10 +990,10 @@ class TestAddonFileViews(OsfTestCase):
                 'addon_view_or_download_file',
                 path=path,
                 provider='github',
-                action='download'
+                action='download',
             ),
             auth=self.user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
 
         assert_equals(resp.status_code, 401)
@@ -966,10 +1004,10 @@ class TestAddonFileViews(OsfTestCase):
                 'addon_view_or_download_file',
                 path='sillywiki',
                 provider='wiki',
-                action='download'
+                action='download',
             ),
             auth=self.user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
 
         assert_equals(resp.status_code, 400)
@@ -1003,10 +1041,10 @@ class TestAddonFileViews(OsfTestCase):
                 'addon_view_or_download_file',
                 path=path,
                 provider='github',
-                action='download'
+                action='download',
             ),
             auth=self.user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
 
         assert_equals(resp.status_code, 400)
@@ -1021,10 +1059,10 @@ class TestAddonFileViews(OsfTestCase):
                 'addon_view_or_download_file',
                 path=path,
                 provider='github',
-                action='download'
+                action='download',
             ),
             auth=self.user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
 
         assert_equals(resp.status_code, 401)
@@ -1044,7 +1082,7 @@ class TestAddonFileViews(OsfTestCase):
                 provider='osfstorage',
             ),
             auth=self.user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
 
         assert_equals(resp.status_code, 400)
@@ -1055,8 +1093,8 @@ class TestAddonFileViews(OsfTestCase):
             'provider': file_node.provider,
             'metadata': {
                 'path': '/test/Test',
-                'materialized': '/test/Test'
-            }
+                'materialized': '/test/Test',
+            },
         }
         views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert_false(GithubFileNode.load(file_node._id))
@@ -1075,8 +1113,8 @@ class TestAddonFileViews(OsfTestCase):
             'provider': file_node.provider,
             'metadata': {
                 'path': '/test/',
-                'materialized': '/test/'
-            }
+                'materialized': '/test/',
+            },
         }
         views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert_false(GithubFileNode.load(subfolder._id))
@@ -1130,7 +1168,7 @@ class TestAddonFileViews(OsfTestCase):
         file_data = {
             'name': 'Test File Update',
             'materialized': file_node.materialized_path,
-            'modified': None
+            'modified': None,
         }
         file_node.update(revision=None, data=file_data)
         assert_equal(len(file_node.history), 1)
@@ -1143,7 +1181,7 @@ class TestAddonFileViews(OsfTestCase):
         file_data = {
             'name': 'Test File Update',
             'materialized': file_node.materialized_path,
-            'modified': None
+            'modified': None,
         }
         file_node.update(revision=None, data=file_data)
         assert_equal(len(file_node.history), 2)
@@ -1156,12 +1194,12 @@ class TestAddonFileViews(OsfTestCase):
         file_node.history.append({'modified': parse_date(
                 '2017-08-22T13:54:32.100900',
                 ignoretz=True,
-                default=timezone.now()  # Just incase nothing can be parsed
-            )})
+                default=timezone.now(),  # Just incase nothing can be parsed
+        )})
         data = {
             'name': 'a name',
             'materialized': 'materialized',
-            'modified': '2016-08-22T13:54:32.100900'
+            'modified': '2016-08-22T13:54:32.100900',
         }
         file_node.update(revision=None, user=None, data=data)
         mock_capture.assert_called_with(unicode('update() receives metatdata older than the newest entry in file history.'), extra={'session': {}})

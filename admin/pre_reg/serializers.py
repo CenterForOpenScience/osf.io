@@ -17,7 +17,7 @@ def serialize_user(user):
     return {
         'full_name': user.fullname,
         'username': user.username,
-        'id': user._id
+        'id': user._id,
     }
 
 

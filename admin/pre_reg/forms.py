@@ -11,11 +11,11 @@ class DraftRegistrationForm(forms.Form):
             ('under_review', 'Published Article Under Review'),
             ('approved', 'Published Article Approved'),
             ('rejected', 'Published Article Rejected'),
-        )
+        ),
     )
     payment_sent = forms.BooleanField(
         label='Payment sent',
-        required=False
+        required=False,
     )
     assignee = forms.ChoiceField(
         label='Assignee',
@@ -27,10 +27,10 @@ class DraftRegistrationForm(forms.Form):
         label='Notes',
         widget=forms.Textarea(
             attrs={
-                'class': 'prereg-form-notes'
-            }
+                'class': 'prereg-form-notes',
+            },
         ),
-        required=False
+        required=False,
     )
 
     approve_reject = forms.ChoiceField(
@@ -46,5 +46,6 @@ class DraftRegistrationForm(forms.Form):
     def __init__(self, *args, **kwargs):
         prereg_reviewers = ((None, 'None'), )
         self.base_fields['assignee'] = forms.ChoiceField(
-            choices=prereg_reviewers, required=False)
+            choices=prereg_reviewers, required=False,
+        )
         super(DraftRegistrationForm, self).__init__(*args, **kwargs)

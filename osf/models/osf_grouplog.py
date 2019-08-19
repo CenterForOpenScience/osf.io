@@ -22,22 +22,30 @@ class OSFGroupLog(ObjectIDMixin, BaseModel):
     NODE_PERMS_UPDATED = 'node_permissions_updated'
     NODE_DISCONNECTED = 'node_disconnected'
 
-    actions = ([GROUP_CREATED, MEMBER_ADDED, MANAGER_ADDED, MEMBER_REMOVED, ROLE_UPDATED,
-    EDITED_NAME, NODE_CONNECTED, NODE_PERMS_UPDATED, NODE_DISCONNECTED])
+    actions = ([
+        GROUP_CREATED, MEMBER_ADDED, MANAGER_ADDED, MEMBER_REMOVED, ROLE_UPDATED,
+        EDITED_NAME, NODE_CONNECTED, NODE_PERMS_UPDATED, NODE_DISCONNECTED,
+    ])
 
     action_choices = [(action, action.upper()) for action in actions]
 
     action = models.CharField(max_length=255, db_index=True)
     params = DateTimeAwareJSONField(default=dict)
     should_hide = models.BooleanField(default=False)
-    user = models.ForeignKey('OSFUser', related_name='group_logs', db_index=True,
-                             null=True, blank=True, on_delete=models.CASCADE)
-    group = models.ForeignKey('OSFGroup', related_name='logs',
-                             db_index=True, null=True, blank=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        'OSFUser', related_name='group_logs', db_index=True,
+        null=True, blank=True, on_delete=models.CASCADE,
+    )
+    group = models.ForeignKey(
+        'OSFGroup', related_name='logs',
+        db_index=True, null=True, blank=True, on_delete=models.CASCADE,
+    )
 
     def __unicode__(self):
-        return ('({self.action!r}, user={self.user!r}, group={self.group!r}, params={self.params!r}) '
-                'with id {self.id!r}').format(self=self)
+        return (
+            '({self.action!r}, user={self.user!r}, group={self.group!r}, params={self.params!r}) '
+            'with id {self.id!r}'
+        ).format(self=self)
 
     class Meta:
         ordering = ['-created']

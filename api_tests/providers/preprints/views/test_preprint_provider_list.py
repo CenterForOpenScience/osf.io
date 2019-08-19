@@ -38,7 +38,8 @@ def provider_two():
 class TestPreprintProviderList:
 
     def test_preprint_provider_list(
-            self, app, url, user, provider_one, provider_two):
+            self, app, url, user, provider_one, provider_two,
+    ):
         # Test length and not auth
         res = app.get(url)
         assert res.status_code == 200
@@ -49,20 +50,24 @@ class TestPreprintProviderList:
         assert res.status_code == 200
         assert len(res.json['data']) == 2
 
-    @pytest.mark.parametrize('filter_type,filter_value', [
-        ('allow_submissions', True),
-        ('description', 'spots%20not%20dots'),
-        ('domain', 'https://www.spotarxiv.com'),
-        ('domain_redirect_enabled', True),
-        ('id', 'spot'),
-        ('name', 'Spotarxiv'),
-        ('share_publish_type', 'Thesis'),
-    ])
+    @pytest.mark.parametrize(
+        'filter_type,filter_value', [
+            ('allow_submissions', True),
+            ('description', 'spots%20not%20dots'),
+            ('domain', 'https://www.spotarxiv.com'),
+            ('domain_redirect_enabled', True),
+            ('id', 'spot'),
+            ('name', 'Spotarxiv'),
+            ('share_publish_type', 'Thesis'),
+        ],
+    )
     def test_preprint_provider_list_filtering(
             self, filter_type, filter_value, app, url,
-            provider_one, provider_two):
+            provider_one, provider_two,
+    ):
         res = app.get('{}filter[{}]={}'.format(
-            url, filter_type, filter_value))
+            url, filter_type, filter_value,
+        ))
         assert res.status_code == 200
         assert len(res.json['data']) == 1
 

@@ -46,7 +46,7 @@ class TestPreprintProviderModeratorList:
                     'permission_group': permission_group,
                 },
                 'type': 'moderators',
-            }
+            },
         }
         if full_name:
             data['data']['attributes']['full_name'] = full_name

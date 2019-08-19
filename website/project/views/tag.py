@@ -8,7 +8,7 @@ from osf.models import AbstractNode
 from osf.utils.permissions import WRITE
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from website.project.decorators import (
-    must_be_valid_project, must_have_permission, must_not_be_registration
+    must_be_valid_project, must_have_permission, must_not_be_registration,
 )
 
 

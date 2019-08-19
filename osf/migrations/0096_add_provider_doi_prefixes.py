@@ -29,7 +29,7 @@ PREPRINT_DOI_NAMESPACE = {
     'psyarxiv': '10.31234',
     'socarxiv': '10.31235',
     'sportrxiv': '10.31236',
-    'thesiscommons': '10.31237'
+    'thesiscommons': '10.31237',
 }
 
 
@@ -62,5 +62,5 @@ class Migration(migrations.Migration):
             name='doi_prefix',
             field=models.CharField(blank=True, max_length=32, null=True),
         ),
-        migrations.RunPython(add_doi_prefix, remove_doi_prefix)
+        migrations.RunPython(add_doi_prefix, remove_doi_prefix),
     ]

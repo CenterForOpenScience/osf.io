@@ -3,7 +3,7 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     AuthUserFactory,
-    RegionFactory
+    RegionFactory,
 )
 
 @pytest.mark.django_db
@@ -20,7 +20,8 @@ class TestRegionDetail:
     @pytest.fixture()
     def region_url(self, region):
         return '/{}regions/{}/'.format(
-            API_BASE, region._id)
+            API_BASE, region._id,
+        )
 
     @pytest.fixture()
     def user(self):

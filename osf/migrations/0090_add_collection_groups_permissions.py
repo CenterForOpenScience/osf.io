@@ -96,7 +96,7 @@ class Migration(migrations.Migration):
                         FROM auth_group
                         WHERE name = 'collections_' || C.id || '_admin'
                     ) G ON TRUE;
-                """
+                """,
             ], [
                 """
                 -- Delete things from the forward
@@ -114,7 +114,7 @@ class Migration(migrations.Migration):
                 SELECT setval('osf_collectiongroupobjectpermission_id_seq', 1);
                 SELECT setval('auth_group_id_seq', max(id) + 1)
                     FROM auth_group;
-                """
-            ]
-        )
+                """,
+            ],
+        ),
     ]

@@ -21,7 +21,7 @@ class TestUtils(OsfTestCase):
             {
                 'url': node_settings.url,
                 'label': node_settings.label,
-            }
+            },
         )
 
     def test_settings_complete_true(self):

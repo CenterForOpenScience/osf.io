@@ -15,12 +15,12 @@ FULL_NAME = 'Dropbox'
 
 dropbox_account_list = generic_views.account_list(
     SHORT_NAME,
-    DropboxSerializer
+    DropboxSerializer,
 )
 
 dropbox_import_auth = generic_views.import_auth(
     SHORT_NAME,
-    DropboxSerializer
+    DropboxSerializer,
 )
 
 @must_have_addon(SHORT_NAME, 'node')
@@ -34,7 +34,7 @@ def dropbox_folder_list(node_addon, **kwargs):
 
 dropbox_get_config = generic_views.get_config(
     SHORT_NAME,
-    DropboxSerializer
+    DropboxSerializer,
 )
 
 def _set_folder(node_addon, folder, auth):
@@ -46,9 +46,9 @@ dropbox_set_config = generic_views.set_config(
     SHORT_NAME,
     FULL_NAME,
     DropboxSerializer,
-    _set_folder
+    _set_folder,
 )
 
 dropbox_deauthorize_node = generic_views.deauthorize_node(
-    SHORT_NAME
+    SHORT_NAME,
 )

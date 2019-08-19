@@ -24,14 +24,14 @@ def process_data(data, func):
 def process_payload(data):
     return process_data(
         data,
-        lambda value: urllib.quote(value.encode('utf-8') if value else '', safe=' ')
+        lambda value: urllib.quote(value.encode('utf-8') if value else '', safe=' '),
     )
 
 
 def unprocess_payload(data):
     return process_data(
         data,
-        lambda value: urllib.unquote(value.encode('utf-8') if value else '')
+        lambda value: urllib.unquote(value.encode('utf-8') if value else ''),
     )
 
 
@@ -45,8 +45,8 @@ def jsonify(form):
                 'id': field.id,
                 'label': str(field.label),
                 'html': str(field),
-                'description': str(field.description)
+                'description': str(field.description),
             }
             for field in form
-        ]
+        ],
     }

@@ -30,10 +30,12 @@ from guardian.shortcuts import get_objects_for_user
 
 from framework.auth import Auth, signals, utils
 from framework.auth.core import generate_verification_key
-from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
-                                       InvalidTokenError,
-                                       MergeConfirmedRequiredError,
-                                       MergeConflictError)
+from framework.auth.exceptions import (
+    ChangePasswordError, ExpiredTokenError,
+    InvalidTokenError,
+    MergeConfirmedRequiredError,
+    MergeConflictError,
+)
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
@@ -82,7 +84,7 @@ class OSFUserManager(BaseUserManager):
         user = self.model(
             username=self.normalize_email(username),
             is_active=True,
-            date_registered=timezone.now()
+            date_registered=timezone.now(),
         )
 
         user.set_password(password)
@@ -159,12 +161,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'academiaInstitution': u'https://{}',
         'academiaProfileID': u'.academia.edu/{}',
         'baiduScholar': u'http://xueshu.baidu.com/scholarID/{}',
-        'ssrn': u'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}'
+        'ssrn': u'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}',
     }
 
     SPAM_USER_PROFILE_FIELDS = {
         'schools': ['degree', 'institution', 'department'],
-        'jobs': ['title', 'institution', 'department']
+        'jobs': ['title', 'institution', 'department'],
     }
 
     # The primary email address for the account.
@@ -278,10 +280,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # list of collaborators that this user recently added to nodes as a contributor
     # recently_added = fields.ForeignField("user", list=True)
-    recently_added = models.ManyToManyField('self',
-                                            through=RecentlyAddedContributor,
-                                            through_fields=('user', 'contributor'),
-                                            symmetrical=False)
+    recently_added = models.ManyToManyField(
+        'self',
+        through=RecentlyAddedContributor,
+        through_fields=('user', 'contributor'),
+        symmetrical=False,
+    )
 
     # Attached external accounts (OAuth)
     # external_accounts = fields.ForeignField("externalaccount", list=True)
@@ -734,11 +738,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     status = 'VERIFIED' if external == 'VERIFIED' else 'LINK'
                     if self.external_identity.get(service):
                         self.external_identity[service].update(
-                            {service_id: status}
+                            {service_id: status},
                         )
                     else:
                         self.external_identity[service] = {
-                            service_id: status
+                            service_id: status,
                         }
         user.external_identity = {}
 
@@ -909,7 +913,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             mailchimp_utils.unsubscribe_mailchimp(
                 list_name=website_settings.MAILCHIMP_GENERAL_LIST,
                 user_id=self._id,
-                username=self.username
+                username=self.username,
             )
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
             pass
@@ -975,7 +979,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user = cls(
             username=username,
             fullname=fullname,
-            accepted_terms_of_service=accepted_terms_of_service
+            accepted_terms_of_service=accepted_terms_of_service,
         )
         user.update_guessed_names()
         user.set_password(password)
@@ -1003,13 +1007,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 mimetype='html',
                 user=self,
                 can_change_preferences=False,
-                osf_contact_email=website_settings.OSF_CONTACT_EMAIL
+                osf_contact_email=website_settings.OSF_CONTACT_EMAIL,
             )
             remove_sessions_for_user(self)
 
     @classmethod
-    def create_unconfirmed(cls, username, password, fullname, external_identity=None,
-                           do_confirm=True, campaign=None, accepted_terms_of_service=None):
+    def create_unconfirmed(
+        cls, username, password, fullname, external_identity=None,
+        do_confirm=True, campaign=None, accepted_terms_of_service=None,
+    ):
         """Create a new user who has begun registration but needs to verify
         their primary email address (username).
         """
@@ -1079,10 +1085,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 except OSFUser.DoesNotExist:
                     user_merge = False
 
-                unconfirmed_emails.append({'address': self.email_verifications[token]['email'],
-                                        'token': token,
-                                        'confirmed': self.email_verifications[token]['confirmed'],
-                                        'user_merge': user_merge.email if user_merge else False})
+                unconfirmed_emails.append({
+                    'address': self.email_verifications[token]['email'],
+                    'token': token,
+                    'confirmed': self.email_verifications[token]['confirmed'],
+                    'user_merge': user_merge.email if user_merge else False,
+                })
         return unconfirmed_emails
 
     def clean_email_verifications(self, given_token=None):
@@ -1239,12 +1247,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 return token
         raise KeyError('No confirmation token for email "{0}"'.format(email))
 
-    def get_confirmation_url(self, email,
-                             external=True,
-                             force=False,
-                             renew=False,
-                             external_id_provider=None,
-                             destination=None):
+    def get_confirmation_url(
+        self, email,
+        external=True,
+        force=False,
+        renew=False,
+        external_id_provider=None,
+        destination=None,
+    ):
         """Return the confirmation url for a given email.
 
         :param email: The email to confirm.
@@ -1371,7 +1381,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             'user_fullname': self.fullname,
             'user_profile_url': self.profile_url,
             'user_display_name': name_formatters[formatter](self),
-            'user_is_registered': self.is_registered
+            'user_is_registered': self.is_registered,
         }
 
     def check_password(self, raw_password):
@@ -1440,7 +1450,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return filters.gravatar(
             self,
             use_ssl=True,
-            size=size
+            size=size,
         )
 
     @property
@@ -1513,18 +1523,18 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if isinstance(claim_origin, AbstractProvider):
             if not bool(get_perms(referrer, claim_origin)):
                 raise PermissionsError(
-                    'Referrer does not have permission to add a moderator to provider {0}'.format(claim_origin._id)
+                    'Referrer does not have permission to add a moderator to provider {0}'.format(claim_origin._id),
                 )
 
         elif isinstance(claim_origin, OSFGroup):
             if not claim_origin.has_permission(referrer, MANAGE):
                 raise PermissionsError(
-                    'Referrer does not have permission to add a member to {0}'.format(claim_origin._id)
+                    'Referrer does not have permission to add a member to {0}'.format(claim_origin._id),
                 )
         else:
             if not claim_origin.has_permission(referrer, ADMIN):
                 raise PermissionsError(
-                    'Referrer does not have permission to add a contributor to {0}'.format(claim_origin._id)
+                    'Referrer does not have permission to add a contributor to {0}'.format(claim_origin._id),
                 )
 
         pid = str(claim_origin._id)
@@ -1616,9 +1626,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         secret = secret or settings.SECRET_KEY
         user_session = Session.objects.filter(
-            data__auth_user_id=self._id
+            data__auth_user_id=self._id,
         ).order_by(
-            '-modified'
+            '-modified',
         ).first()
 
         if not user_session:
@@ -1681,7 +1691,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     self.fullname,
                     self.username,
                     content,
-                    request_headers
+                    request_headers,
                 )
                 self.save()
 
@@ -1720,7 +1730,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             if not alternate_admins:
                 raise UserStateError(
                     'You cannot delete node {} because it would be a node with contributors, but with no admin.'.format(
-                        node._id))
+                        node._id,
+                    ),
+                )
 
             for addon in node.get_addons():
                 if addon.short_name not in ('osfstorage', 'wiki') and addon.user_settings and addon.user_settings.owner.id == self.id:

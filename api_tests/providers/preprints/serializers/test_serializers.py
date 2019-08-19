@@ -19,18 +19,20 @@ class TestRetractedPreprintSerialization:
     def test_hidden_fields_on_retracted_preprint(self, preprint):
         hide_if_withdrawal_fields = {
             'is_published', 'is_preprint_orphan', 'license_record',
-            'preprint_doi_created'
+            'preprint_doi_created',
         }
         hide_if_not_withdrawal_fields = {'withdrawal_justification'}
         always_show_fields = {
             'date_created', 'date_modified', 'date_published', 'original_publication_date',
-            'doi', 'title', 'description', 'date_withdrawn', 'tags'}
+            'doi', 'title', 'description', 'date_withdrawn', 'tags',
+        }
 
         # test_non_retracted
         req = make_drf_request_with_version()
         result = PreprintSerializer(
             preprint,
-            context={'request': req}).data
+            context={'request': req},
+        ).data
         data = result['data']
         attributes = set(data['attributes'])
 
@@ -46,7 +48,8 @@ class TestRetractedPreprintSerialization:
 
         result = PreprintSerializer(
             preprint,
-            context={'request': req}).data
+            context={'request': req},
+        ).data
         data = result['data']
         attributes = set(data['attributes'])
 
@@ -68,7 +71,7 @@ class TestDeprecatedPreprintProviderSerializer:
         req = make_drf_request_with_version(version='2.0')
         result = DeprecatedPreprintProviderSerializer(
             preprint_provider,
-            context={'request': req}
+            context={'request': req},
         ).data
 
         data = result['data']
@@ -91,7 +94,7 @@ class TestDeprecatedPreprintProviderSerializer:
         req = make_drf_request_with_version(version='2.4')
         result = DeprecatedPreprintProviderSerializer(
             preprint_provider,
-            context={'request': req}
+            context={'request': req},
         ).data
 
         data = result['data']
@@ -112,7 +115,7 @@ class TestDeprecatedPreprintProviderSerializer:
         req = make_drf_request_with_version(version='2.5')
         result = DeprecatedPreprintProviderSerializer(
             preprint_provider,
-            context={'request': req}
+            context={'request': req},
         ).data
 
         data = result['data']

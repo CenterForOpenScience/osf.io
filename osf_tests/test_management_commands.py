@@ -40,14 +40,16 @@ class TestDataStorageUsage(DbTestCase):
 
     @staticmethod
     def add_file_version(file_to_version, user, size, version=1):
-        file_to_version.create_version(user, {
-            'object': '06d80e' + str(version),
-            'service': 'cloud',
-            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
-        }, {
-            'size': size,
-            'contentType': 'img/png'
-        }).save()
+        file_to_version.create_version(
+            user, {
+                'object': '06d80e' + str(version),
+                'service': 'cloud',
+                osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+            }, {
+                'size': size,
+                'contentType': 'img/png',
+            },
+        ).save()
 
     @pytest.fixture()
     def project(self, creator, is_public=True, is_deleted=False, region=None, parent=None):
@@ -119,7 +121,7 @@ class TestDataStorageUsage(DbTestCase):
         project_public_us_test_file = create_test_file(
             target=project_public_us,
             user=user,
-            size=file_size
+            size=file_size,
         )
         logger.debug(u'Public project, US: {}'.format(file_size))
         expected_summary_data['total'] += file_size
@@ -141,7 +143,7 @@ class TestDataStorageUsage(DbTestCase):
         create_test_file(
             target=project_private_au,
             user=user,
-            size=file_size
+            size=file_size,
         )
         logger.debug(u'Private project, AU: {}'.format(file_size))
         expected_summary_data['total'] += file_size
@@ -152,7 +154,7 @@ class TestDataStorageUsage(DbTestCase):
             creator=user,
             is_public=False,
             region=region_de,
-            parent=project_public_us
+            parent=project_public_us,
         )
         file_size = next(small_size)
         deleted_file = create_test_file(
@@ -196,7 +198,7 @@ class TestDataStorageUsage(DbTestCase):
         create_test_file(
             target=supplementary_node_public_au,
             user=user,
-            size=file_size
+            size=file_size,
         )
         logger.debug(u'Public supplemental project of Canadian preprint, US: {}'.format(file_size))
 
@@ -229,7 +231,7 @@ class TestDataStorageUsage(DbTestCase):
             filename='deleted_test_file',
             target=quickfiles_node_us,
             user=user,
-            size=file_size
+            size=file_size,
         )
         quickfile_deleted.delete(user=user, save=True)
         logger.debug(u'Deleted quickfile, US: {}'.format(file_size))
@@ -245,7 +247,7 @@ class TestDataStorageUsage(DbTestCase):
         create_test_file(
             target=registration,
             user=user,
-            size=file_size
+            size=file_size,
         )
         assert registration.get_addon('osfstorage').region == self.region_us
         logger.debug(u'Registration, US: {}'.format(file_size))
@@ -259,7 +261,7 @@ class TestDataStorageUsage(DbTestCase):
         create_test_file(
             target=withdrawal,
             user=user,
-            size=file_size
+            size=file_size,
         )
         logger.debug(u'Withdrawn registration, US: {}'.format(file_size))
 

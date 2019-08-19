@@ -37,8 +37,8 @@ class TestUserRequestExport:
         return {
             'data': {
                 'type': 'user-account-export-form',
-                'attributes': {}
-            }
+                'attributes': {},
+            },
         }
 
     def test_get(self, app, user_one, url):
@@ -110,8 +110,8 @@ class TestUserChangePassword:
                 'attributes': {
                     'existing_password': 'password1',
                     'new_password': 'password2',
-                }
-            }
+                },
+            },
         }
 
     def test_get(self, app, user_one, url):
@@ -188,8 +188,8 @@ class TestUserEmailsList:
         return {
             'data': {
                 'type': 'user_emails',
-                'attributes': {}
-            }
+                'attributes': {},
+            },
         }
 
     def test_get_emails_current_user(self, app, url, user_one):
@@ -366,8 +366,8 @@ class TestUserEmailDetail:
         return {
             'data': {
                 'type': 'user_emails',
-                'attributes': {}
-            }
+                'attributes': {},
+            },
         }
 
     @pytest.fixture()
@@ -428,8 +428,10 @@ class TestUserEmailDetail:
         assert res_unconfirmed.json['data']['attributes']['is_merge'] is False
         assert res_primary.json['data']['attributes']['is_merge'] is False
 
-    def test_adding_new_token_for_unconfirmed_email(self, app, user_one, unconfirmed_address,
-                                                    unconfirmed_token, unconfirmed_url):
+    def test_adding_new_token_for_unconfirmed_email(
+        self, app, user_one, unconfirmed_address,
+        unconfirmed_token, unconfirmed_url,
+    ):
         res = app.get(unconfirmed_url, auth=user_one.auth)
         assert res.status_code == 200
         assert res.json['data']['id'] == unconfirmed_token
@@ -495,8 +497,10 @@ class TestUserEmailDetail:
 
     @mock.patch('framework.auth.views.cas.get_logout_url')
     @mock.patch('framework.auth.views.web_url_for')
-    def test_verified(self, mock_get_logout_url, mock_web_url_for, app, user_one, unconfirmed_token,
-                        unconfirmed_url, unconfirmed_address):
+    def test_verified(
+        self, mock_get_logout_url, mock_web_url_for, app, user_one, unconfirmed_token,
+        unconfirmed_url, unconfirmed_address,
+    ):
         # clicking the link in the email to set confirm calls
         # auth_email_logout which does the correct attribute setting
         with mock.patch('framework.auth.views.redirect'):
@@ -516,8 +520,10 @@ class TestUserEmailDetail:
         assert res.json['data']['attributes']['confirmed'] is True
         assert res.json['data']['attributes']['verified'] is True
 
-    def test_update_confirmed_email_to_verified(self, app, user_one, unconfirmed_address,
-                                                unconfirmed_url, payload, unconfirmed_token):
+    def test_update_confirmed_email_to_verified(
+        self, app, user_one, unconfirmed_address,
+        unconfirmed_url, payload, unconfirmed_token,
+    ):
         payload['data']['attributes'] = {'verified': True}
 
         # setting verified on unconfirmed email fails
@@ -541,8 +547,10 @@ class TestUserEmailDetail:
         res_original = app.get(unconfirmed_url, auth=user_one.auth, expect_errors=True)
         assert res_original.status_code == 404
 
-    def test_delete_confirmed_but_unverified_email(self, app, user_one, unconfirmed_address,
-                                                unconfirmed_url, payload, unconfirmed_token):
+    def test_delete_confirmed_but_unverified_email(
+        self, app, user_one, unconfirmed_address,
+        unconfirmed_url, payload, unconfirmed_token,
+    ):
         # manually set the email to confirmed
         user_one.email_verifications[unconfirmed_token]['confirmed'] = True
         user_one.email_verifications[unconfirmed_token]['verified'] = False

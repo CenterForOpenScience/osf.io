@@ -20,7 +20,7 @@ def registration_with_children(user):
     NodeFactory(parent=project, creator=user)
     NodeFactory(parent=project, creator=user)
     return RegistrationFactory(
-        project=project
+        project=project,
     )
 
 @pytest.fixture()
@@ -83,14 +83,18 @@ class TestRegistrationsChildrenList:
         assert res.status_code == 401
         assert res.content_type == 'application/vnd.api+json'
 
-    def test_registration_children_no_auth_vol(self, user, app, registration_with_children,
-            registration_with_children_url, view_only_link):
+    def test_registration_children_no_auth_vol(
+        self, user, app, registration_with_children,
+        registration_with_children_url, view_only_link,
+    ):
         # viewed through private link
         component_one, component_two = registration_with_children.nodes
 
         # get registration related_counts with vol before vol is attached to components
-        node_url = '/{}registrations/{}/?related_counts=children&view_only={}'.format(API_BASE,
-            registration_with_children._id, view_only_link.key)
+        node_url = '/{}registrations/{}/?related_counts=children&view_only={}'.format(
+            API_BASE,
+            registration_with_children._id, view_only_link.key,
+        )
         res = app.get(node_url)
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
 
@@ -138,7 +142,7 @@ class TestRegistrationChildrenListFiltering:
         url = '/{}registrations/{}/children/?filter[title]={}'.format(
             API_BASE,
             registration_with_children._id,
-            component_one.title
+            component_one.title,
         )
         res = app.get(url, auth=user.auth)
         ids = [node['id'] for node in res.json['data']]

@@ -107,11 +107,11 @@ LOG_GREYLIST = {
     'osf_storage_file_added',
     'osf_storage_file_removed',
     'osf_storage_file_updated',
-    'osf_storage_folder_created'
+    'osf_storage_folder_created',
 }
 VERIFY_PROVIDER = {
     'addon_file_moved',
-    'addon_file_renamed'
+    'addon_file_renamed',
 }
 
 # Permissible in certain circumstances after communication with user
@@ -120,12 +120,12 @@ PERMISSIBLE_BLACKLIST = {
     'dropbox_node_authorized',
     'dropbox_node_deauthorized',
     'addon_removed',
-    'addon_added'
+    'addon_added',
 }
 
 # Extendable with command line input
 PERMISSIBLE_ADDONS = {
-    'osfstorage'
+    'osfstorage',
 }
 
 def complete_archive_target(reg, addon_short_name):
@@ -171,7 +171,8 @@ def manually_archive(tree, reg, node_settings, parent=None):
             continue
         if filenode.get('parent') and (
                 (parent is not None and filenode['parent']._id != parent.copied_from._id)
-                or (parent is None and filenode['parent'].name != '')):
+                or (parent is None and filenode['parent'].name != '')
+        ):
             # Not the parent we're looking for
             continue
         file_obj = filenode['object']
@@ -219,7 +220,7 @@ def modify_file_tree_recursive(reg_id, tree, file_obj, deleted=None, cached=Fals
                 'deleted': None,
                 'object': file_obj,
                 'name': file_obj.name,
-                'version': int(file_obj.versions.latest('created').identifier) if file_obj.versions.exists() else None
+                'version': int(file_obj.versions.latest('created').identifier) if file_obj.versions.exists() else None,
             })
             cached = True
             if move_under:
@@ -251,7 +252,7 @@ def modify_file_tree_recursive(reg_id, tree, file_obj, deleted=None, cached=Fals
                     'object': file_obj,
                     'name': file_obj.name,
                     'deleted': file_obj.is_deleted,
-                    'version': int(file_obj.versions.latest('created').identifier) if file_obj.versions.exists() else None
+                    'version': int(file_obj.versions.latest('created').identifier) if file_obj.versions.exists() else None,
                 })
             noop = False
         if filenode.get('children'):
@@ -263,11 +264,14 @@ def modify_file_tree_recursive(reg_id, tree, file_obj, deleted=None, cached=Fals
 
 def get_logs_to_revert(reg):
     return NodeLog.objects.filter(
-        Q(node__id__in=Node.objects.get_children(reg.registered_from).values_list('id', flat=True)) | Q(node__id=reg.registered_from.id))\
-        .filter(date__gte=reg.registered_date).exclude(action__in=LOG_WHITELIST)\
-        .filter(
-            Q(node=reg.registered_from) |
-            (Q(params__source__nid=reg.registered_from._id) | Q(params__destination__nid=reg.registered_from._id))).order_by('-date')
+        Q(node__id__in=Node.objects.get_children(reg.registered_from).values_list('id', flat=True)) | Q(node__id=reg.registered_from.id),
+    ).filter(
+        date__gte=reg.registered_date,
+    ).exclude(
+        action__in=LOG_WHITELIST,
+    ).filter(
+        Q(node=reg.registered_from) | (Q(params__source__nid=reg.registered_from._id) | Q(params__destination__nid=reg.registered_from._id)),
+    ).order_by('-date')
 
 def revert_log_actions(file_tree, reg, obj_cache):
     logs_to_revert = get_logs_to_revert(reg)
@@ -322,7 +326,7 @@ def build_file_tree(reg, node_settings):
             'object': file_obj,
             'name': file_obj.name,
             'deleted': file_obj.is_deleted,
-            'version': int(file_obj.versions.latest('created').identifier) if file_obj.versions.exists() else None
+            'version': int(file_obj.versions.latest('created').identifier) if file_obj.versions.exists() else None,
         }
         if not file_obj.is_file:
             serialized['children'] = [_recurse(child, node) for child in node.files.filter(parent_id=file_obj.id)]
@@ -379,7 +383,7 @@ def verify(registration):
                 logger.error('{}: Original node {} has unacceptable logs: {}'.format(
                     registration._id,
                     reg.registered_from._id,
-                    list(unacceptable_logs.values_list('action', flat=True))
+                    list(unacceptable_logs.values_list('action', flat=True)),
                 ))
                 return False
         if nonignorable_logs.filter(action__in=VERIFY_PROVIDER).exists():
@@ -389,7 +393,7 @@ def verify(registration):
                         if log.params[key]['provider'] != 'osfstorage':
                             logger.error('{}: {} Only OSFS moves and renames are permissible'.format(
                                 registration._id,
-                                log._id
+                                log._id,
                             ))
                             return False
         addons = reg.registered_from.get_addon_names()
@@ -399,12 +403,12 @@ def verify(registration):
         if nonignorable_logs.exists():
             logger.info('{}: Original node {} has had revertable file operations'.format(
                 registration._id,
-                reg.registered_from._id
+                reg.registered_from._id,
             ))
         if reg.registered_from.is_deleted:
             logger.info('{}: Original node {} is deleted'.format(
                 registration._id,
-                reg.registered_from._id
+                reg.registered_from._id,
             ))
     return True
 
@@ -470,7 +474,7 @@ def log_results(dry_run):
     if ARCHIVED:
         logger.info('{} registrations archived: {}'.format(
             len(ARCHIVED),
-            [e._id for e in ARCHIVED]
+            [e._id for e in ARCHIVED],
         ))
     if SKIPPED:
         logger.error('{} registrations skipped: {}'.format(len(SKIPPED), [e._id for e in SKIPPED]))

@@ -44,5 +44,5 @@ def serialize_simple_user_and_preprint_permissions(preprint, user):
     return {
         'id': user._id,
         'name': user.fullname,
-        'permission': PreprintContributor.objects.get(preprint=preprint, user=user).permission
+        'permission': PreprintContributor.objects.get(preprint=preprint, user=user).permission,
     }

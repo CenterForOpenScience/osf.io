@@ -45,39 +45,39 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         node_pageviews = [
             {
                 'result': 5,
-                'node.id': self.pop1._id
+                'node.id': self.pop1._id,
             },
             {
                 'result': 5,
-                'node.id': self.pop2._id
+                'node.id': self.pop2._id,
             },
             {
                 'result': 5,
-                'node.id': self.popreg1._id
+                'node.id': self.popreg1._id,
             },
             {
                 'result': 5,
-                'node.id': self.popreg2._id
-            }
+                'node.id': self.popreg2._id,
+            },
         ]
 
         node_visits = [
             {
                 'result': 2,
-                'node.id': self.pop1._id
+                'node.id': self.pop1._id,
             },
             {
                 'result': 2,
-                'node.id': self.pop2._id
+                'node.id': self.pop2._id,
             },
             {
                 'result': 2,
-                'node.id': self.popreg1._id
+                'node.id': self.popreg1._id,
             },
             {
                 'result': 2,
-                'node.id': self.popreg2._id
-            }
+                'node.id': self.popreg2._id,
+            },
         ]
 
         mock_client.return_value = {'node_pageviews': node_pageviews, 'node_visits': node_visits}

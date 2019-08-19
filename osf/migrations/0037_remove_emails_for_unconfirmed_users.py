@@ -33,6 +33,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunPython(
-            remove_emails, restore_emails
+            remove_emails, restore_emails,
         ),
     ]

@@ -10,7 +10,7 @@ from osf.models import PreprintProvider
 logger = logging.getLogger(__file__)
 
 PREPRINT_DOI_NAMESPACE = {
-    'africarxiv': '10.31730'
+    'africarxiv': '10.31730',
 }
 
 def add_doi_prefix(*args, **kwargs):
@@ -41,5 +41,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_doi_prefix, remove_doi_prefix)
+        migrations.RunPython(add_doi_prefix, remove_doi_prefix),
     ]

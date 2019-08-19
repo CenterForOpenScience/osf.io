@@ -48,5 +48,5 @@ def delete_files_task(node_id):
         OsfStorageFolder.objects.get(
             target_object_id=guid['object_id'],
             target_content_type=guid['content_type_id'],
-            is_root=True
+            is_root=True,
         ).delete(save=True)

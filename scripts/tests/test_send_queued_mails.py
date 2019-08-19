@@ -54,7 +54,7 @@ class TestSendQueuedMails(OsfTestCase):
             user=user_with_email_sent,
             send_at=time,
             to_addr=user_with_email_sent.username,
-            email_type=NO_LOGIN_TYPE
+            email_type=NO_LOGIN_TYPE,
         )
         mail_sent.save()
         mail1 = self.queue_mail(user=user_with_email_sent)
@@ -64,7 +64,7 @@ class TestSendQueuedMails(OsfTestCase):
         user_queue = {
             user_with_email_sent._id: [mail1],
             user_with_multiple_emails._id: [mail2, mail3],
-            user_with_no_emails_sent._id: [mail4]
+            user_with_no_emails_sent._id: [mail4],
         }
         mails_ = list(pop_and_verify_mails_for_each_user(user_queue))
         assert_equal(len(mails_), 2)

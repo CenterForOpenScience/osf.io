@@ -4,7 +4,7 @@ from api.base.settings.defaults import API_BASE
 from api_tests.nodes.views.test_node_bibliographic_contributors_list import TestNodeBibliographicContributors
 from osf_tests.factories import (
     RegistrationFactory,
-    ProjectFactory
+    ProjectFactory,
 )
 from osf.utils.permissions import READ, WRITE
 
@@ -18,7 +18,7 @@ class TestRegistrationBibliographicContributors(TestNodeBibliographicContributor
         project = ProjectFactory(creator=admin_contributor_bib)
         reg = RegistrationFactory(
             creator=admin_contributor_bib,
-            project=project
+            project=project,
         )
         reg.add_contributor(write_contributor_non_bib, WRITE, visible=False)
         reg.add_contributor(read_contributor_bib, READ)

@@ -62,7 +62,8 @@ class DraftListView(PermissionRequiredMixin, ListView):
         query_set = kwargs.pop('object_list', self.object_list)
         page_size = self.get_paginate_by(query_set)
         paginator, page, query_set, is_paginated = self.paginate_queryset(
-            query_set, page_size)
+            query_set, page_size,
+        )
         return {
             'drafts': [
                 serializers.serialize_draft_registration(d, json_safe=False)
@@ -101,7 +102,7 @@ class CheckoutCheckupView(PermissionRequiredMixin, DeleteView):
         self.bad_drafts = DraftRegistration.objects.filter(
             registration_schema=RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2),
             approval__state__in=['approved', 'rejected'],
-            branched_from__files__checkout__in=self.prereg_admins
+            branched_from__files__checkout__in=self.prereg_admins,
         ).distinct().values_list('id', flat=True)
         return self.bad_drafts
 
@@ -120,7 +121,7 @@ class CheckoutCheckupView(PermissionRequiredMixin, DeleteView):
                 object_id=draft.branched_from._id,
                 object_repr='Node',
                 message='Cleared Prereg checkouts from {}'.format(draft.branched_from._id),
-                action_flag=CHECKOUT_CHECKUP
+                action_flag=CHECKOUT_CHECKUP,
             )
         return redirect(reverse('pre_reg:prereg'))
 
@@ -139,7 +140,7 @@ class DraftDetailView(PermissionRequiredMixin, DetailView):
         except AttributeError:
             raise Http404('{} with id "{}" not found.'.format(
                 self.context_object_name.title(),
-                self.kwargs.get('draft_pk')
+                self.kwargs.get('draft_pk'),
             ))
 
     def checkout_files(self, draft):
@@ -163,7 +164,7 @@ class DraftFormView(PermissionRequiredMixin, FormView):
         if self.draft is None:
             raise Http404('{} with id "{}" not found.'.format(
                 self.context_object_name.title(),
-                self.kwargs.get('draft_pk')
+                self.kwargs.get('draft_pk'),
             ))
         return super(DraftFormView, self).dispatch(request, *args, **kwargs)
 
@@ -178,10 +179,12 @@ class DraftFormView(PermissionRequiredMixin, FormView):
         return super(DraftFormView, self).get_initial()
 
     def get_context_data(self, **kwargs):
-        kwargs.setdefault('draft', serializers.serialize_draft_registration(
-            self.draft,
-            json_safe=False
-        ))
+        kwargs.setdefault(
+            'draft', serializers.serialize_draft_registration(
+                self.draft,
+                json_safe=False,
+            ),
+        )
         kwargs.setdefault('IMMEDIATE', serializers.IMMEDIATE)
         return super(DraftFormView, self).get_context_data(**kwargs)
 
@@ -200,8 +203,10 @@ class DraftFormView(PermissionRequiredMixin, FormView):
             except PermissionsError as e:
                 return permission_denied(self.request, e)
             self.checkin_files(self.draft)
-            update_admin_log(self.request.user.id, self.kwargs.get('draft_pk'),
-                             'Draft Registration', message, flag)
+            update_admin_log(
+                self.request.user.id, self.kwargs.get('draft_pk'),
+                'Draft Registration', message, flag,
+            )
         admin_settings = form.cleaned_data
         self.draft.notes = admin_settings.get('notes', self.draft.notes)
         del admin_settings['approve_reject']
@@ -216,8 +221,10 @@ class DraftFormView(PermissionRequiredMixin, FormView):
             item.save()
 
     def get_success_url(self):
-        return '{}?page={}'.format(reverse('pre_reg:prereg'),
-                                   self.request.POST.get('page', 1))
+        return '{}?page={}'.format(
+            reverse('pre_reg:prereg'),
+            self.request.POST.get('page', 1),
+        )
 
 
 class CommentUpdateView(PermissionRequiredMixin, UpdateView):
@@ -244,13 +251,13 @@ class CommentUpdateView(PermissionRequiredMixin, UpdateView):
                 object_id=draft._id,
                 object_repr='Draft Registration',
                 message='Comments: <p>{}</p>'.format('</p><p>'.join(log_message)),
-                action_flag=COMMENT_PREREG
+                action_flag=COMMENT_PREREG,
             )
             return JsonResponse(serializers.serialize_draft_registration(draft))
         except AttributeError:
             raise Http404('{} with id "{}" not found.'.format(
                 self.context_object_name.title(),
-                self.kwargs.get('draft_pk')
+                self.kwargs.get('draft_pk'),
             ))
         except NodeStateError as e:
             return bad_request(request, e)
@@ -271,15 +278,16 @@ def get_metadata_files(draft):
                 if provider != 'osfstorage':
                     raise Http404(
                         'File does not exist in OSFStorage ({}: {})'.format(
-                            q, question
-                        ))
+                            q, question,
+                        ),
+                    )
                 file_guid = file_info.get('fileId')
                 if not file_guid:
                     node = Node.load(file_info.get('nodeId'))
                     path = file_info['data'].get('path')
                     item = BaseFileNode.resolve_class(
                         provider,
-                        BaseFileNode.FILE
+                        BaseFileNode.FILE,
                     ).get_or_create(node, path)
                     file_guid = item.get_guid(create=True)._id
                     data[q]['extra'][i]['fileId'] = file_guid
@@ -290,8 +298,9 @@ def get_metadata_files(draft):
                 if item is None:
                     raise Http404(
                         'File with guid "{}" in "{}" does not exist'.format(
-                            file_guid, question
-                        ))
+                            file_guid, question,
+                        ),
+                    )
                 yield item
             continue
         for i, file_info in enumerate(data[q]['value']['uploader']['extra']):
@@ -299,15 +308,16 @@ def get_metadata_files(draft):
             if provider != 'osfstorage':
                 raise Http404(
                     'File does not exist in OSFStorage ({}: {})'.format(
-                        q, question
-                    ))
+                        q, question,
+                    ),
+                )
             file_guid = file_info.get('fileId')
             if not file_guid:
                 node = Node.load(file_info.get('nodeId'))
                 path = file_info['data'].get('path')
                 item = BaseFileNode.resolve_class(
                     provider,
-                    BaseFileNode.FILE
+                    BaseFileNode.FILE,
                 ).get_or_create(node, path)
                 file_guid = item.get_guid(create=True)._id
                 data[q]['value']['uploader']['extra'][i]['fileId'] = file_guid
@@ -318,8 +328,9 @@ def get_metadata_files(draft):
             if item is None:
                 raise Http404(
                     'File with guid "{}" in "{}" does not exist'.format(
-                        file_guid, question
-                    ))
+                        file_guid, question,
+                    ),
+                )
             yield item
 
 
@@ -327,7 +338,7 @@ def get_file_questions(json_file):
     uploader = {
         'id': 'uploader',
         'type': 'osf-upload',
-        'format': 'osf-upload-toggle'
+        'format': 'osf-upload-toggle',
     }
     questions = []
     schema = from_json(json_file)

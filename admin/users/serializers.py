@@ -7,14 +7,14 @@ def serialize_group_for_user(group, user):
     return {
         'name': group.name,
         'id': group._id,
-        'role': user.group_role(group)
+        'role': user.group_role(group),
     }
 
 def serialize_user(user):
 
     potential_spam_profile_content = {
         'schools': user.schools,
-        'jobs': user.jobs
+        'jobs': user.jobs,
     }
 
     return {

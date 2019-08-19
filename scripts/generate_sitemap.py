@@ -46,7 +46,7 @@ class Sitemap(object):
                 's3',
                 aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
                 aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                region_name='us-east-1'
+                region_name='us-east-1',
             )
 
     def cleanup(self):
@@ -225,8 +225,8 @@ class Sitemap(object):
                         os.path.join(
                             obj._id,
                             'download',
-                            '?format=pdf'
-                        )
+                            '?format=pdf',
+                        ),
                     )
                     file_config['lastmod'] = preprint_date
                     self.add_url(file_config)

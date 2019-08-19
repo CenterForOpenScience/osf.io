@@ -15,9 +15,11 @@ class PreprintCitationsMixin(object):
         super(PreprintCitationsMixin, self).setUp()
         self.admin_contributor = AuthUserFactory()
         self.published_preprint = PreprintFactory(
-            creator=self.admin_contributor)
+            creator=self.admin_contributor,
+        )
         self.unpublished_preprint = PreprintFactory(
-            creator=self.admin_contributor, is_published=False)
+            creator=self.admin_contributor, is_published=False,
+        )
 
     def test_unauthenticated_can_view_published_preprint_citations(self):
         res = self.app.get(self.published_preprint_url)
@@ -31,17 +33,20 @@ class PreprintCitationsMixin(object):
         post_res = self.app.post_json_api(
             self.published_preprint_url, {},
             auth=self.admin_contributor.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert_equal(post_res.status_code, 405)
         put_res = self.app.put_json_api(
             self.published_preprint_url, {},
             auth=self.admin_contributor.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert_equal(put_res.status_code, 405)
         delete_res = self.app.delete_json_api(
             self.published_preprint_url,
             auth=self.admin_contributor.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert_equal(delete_res.status_code, 405)
 
 
@@ -50,9 +55,11 @@ class TestPreprintCitations(PreprintCitationsMixin, ApiTestCase):
     def setUp(self):
         super(TestPreprintCitations, self).setUp()
         self.published_preprint_url = '/{}preprints/{}/citation/'.format(
-            API_BASE, self.published_preprint._id)
+            API_BASE, self.published_preprint._id,
+        )
         self.unpublished_preprint_url = '/{}preprints/{}/citation/'.format(
-            API_BASE, self.unpublished_preprint._id)
+            API_BASE, self.unpublished_preprint._id,
+        )
         self.other_contrib = AuthUserFactory()
 
     def test_citation_publisher_is_preprint_provider(self):
@@ -60,14 +67,15 @@ class TestPreprintCitations(PreprintCitationsMixin, ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(
             res.json['data']['attributes']['publisher'],
-            self.published_preprint.provider.name)
+            self.published_preprint.provider.name,
+        )
 
     def test_citation_url_is_preprint_url_not_project(self):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         assert_equal(
             res.json['data']['links']['self'],
-            self.published_preprint.display_absolute_url
+            self.published_preprint.display_absolute_url,
         )
 
 class TestPreprintCitationsPermissions(PreprintCitationsMixin, ApiTestCase):
@@ -75,9 +83,11 @@ class TestPreprintCitationsPermissions(PreprintCitationsMixin, ApiTestCase):
     def setUp(self):
         super(TestPreprintCitationsPermissions, self).setUp()
         self.published_preprint_url = '/{}preprints/{}/citation/'.format(
-            API_BASE, self.published_preprint._id)
+            API_BASE, self.published_preprint._id,
+        )
         self.unpublished_preprint_url = '/{}preprints/{}/citation/'.format(
-            API_BASE, self.unpublished_preprint._id)
+            API_BASE, self.unpublished_preprint._id,
+        )
         self.other_contrib = AuthUserFactory()
 
     def test_unpublished_preprint_citations(self):
@@ -193,16 +203,19 @@ class TestPreprintCitationContent(PreprintCitationsMixin, ApiTestCase):
     def setUp(self):
         super(TestPreprintCitationContent, self).setUp()
         self.published_preprint_url = '/{}preprints/{}/citation/apa/'.format(
-            API_BASE, self.published_preprint._id)
+            API_BASE, self.published_preprint._id,
+        )
         self.unpublished_preprint_url = '/{}preprints/{}/citation/apa/'.format(
-            API_BASE, self.unpublished_preprint._id)
+            API_BASE, self.unpublished_preprint._id,
+        )
 
     def test_citation_contains_correct_date(self):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         expected_date = self.published_preprint.date_published.strftime('%Y, %B %-d')
         assert_true(
-            expected_date in res.json['data']['attributes']['citation'])
+            expected_date in res.json['data']['attributes']['citation'],
+        )
 
     def test_citation_no_date(self):
         self.published_preprint.date_published = None
@@ -212,7 +225,8 @@ class TestPreprintCitationContent(PreprintCitationsMixin, ApiTestCase):
         assert_equal(res.status_code, 200)
         expected_date = 'n.d.'
         assert_true(
-            expected_date in res.json['data']['attributes']['citation'])
+            expected_date in res.json['data']['attributes']['citation'],
+        )
 
 
 class TestPreprintCitationsContentPermissions(PreprintCitationsMixin, ApiTestCase):
@@ -220,9 +234,11 @@ class TestPreprintCitationsContentPermissions(PreprintCitationsMixin, ApiTestCas
     def setUp(self):
         super(TestPreprintCitationsContentPermissions, self).setUp()
         self.published_preprint_url = '/{}preprints/{}/citation/apa/'.format(
-            API_BASE, self.published_preprint._id)
+            API_BASE, self.published_preprint._id,
+        )
         self.unpublished_preprint_url = '/{}preprints/{}/citation/apa/'.format(
-            API_BASE, self.unpublished_preprint._id)
+            API_BASE, self.unpublished_preprint._id,
+        )
         self.other_contrib = AuthUserFactory()
 
     def test_unpublished_preprint_citations(self):
@@ -339,7 +355,8 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         super(TestPreprintCitationContentMLA, self).setUp()
         self.admin_contributor = AuthUserFactory()
         self.published_preprint = PreprintFactory(
-            creator=self.admin_contributor)
+            creator=self.admin_contributor,
+        )
         self.published_preprint.title = 'My Preprint'
         self.published_preprint.save()
 
@@ -348,7 +365,8 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         self.admin_contributor.family_name = 'McGee'
         self.admin_contributor.save()
         self.published_preprint_url = '/{}preprints/{}/citation/modern-language-association/'.format(
-            API_BASE, self.published_preprint._id)
+            API_BASE, self.published_preprint._id,
+        )
 
         self.second_contrib = AuthUserFactory()
         self.second_contrib.given_name = 'Darla'
@@ -369,10 +387,12 @@ class TestPreprintCitationContentMLA(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        assert_equal(citation, u'McGee, Grapes C. B. “{}.” {}, {} Web.'.format(
-            self.published_preprint.title,
-            self.published_preprint.provider.name,
-            'n.d.')
+        assert_equal(
+            citation, u'McGee, Grapes C. B. “{}.” {}, {} Web.'.format(
+                self.published_preprint.title,
+                self.published_preprint.provider.name,
+                'n.d.',
+            ),
         )
 
     def test_one_author(self):
@@ -449,7 +469,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         self.admin_contributor = AuthUserFactory()
         self.published_preprint = PreprintFactory(
             title='A Study of Coffee',
-            creator=self.admin_contributor
+            creator=self.admin_contributor,
         )
         self.published_preprint.save()
 
@@ -472,7 +492,8 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         self.third_contrib.save()
 
         self.published_preprint_url = '/{}preprints/{}/citation/apa/'.format(
-            API_BASE, self.published_preprint._id)
+            API_BASE, self.published_preprint._id,
+        )
 
         def test_not_published(self):
             self.published_preprint.date_published = None
@@ -482,12 +503,13 @@ class TestPreprintCitationContentAPA(ApiTestCase):
             res = self.app.get(self.published_preprint_url)
             assert_equal(res.status_code, 200)
             citation = res.json['data']['attributes']['citation']
-            assert_equal(citation,
+            assert_equal(
+                citation,
                 u'McGee, G. C. B., & Jenkins, D. T. T., Junior. ({}). {}. {}'.format(
                     'n.d.',
                     self.published_preprint.title,
-                    'https://doi.org/' + self.published_preprint.article_doi
-                )
+                    'https://doi.org/' + self.published_preprint.article_doi,
+                ),
             )
 
     def test_one_author(self):
@@ -495,12 +517,13 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published.strftime('%Y, %B %-d')
-        assert_equal(citation,
+        assert_equal(
+            citation,
             u'McGee, G. C. B. ({}). {}. {}'.format(
                 date,
                 self.published_preprint.title,
-                'https://doi.org/' + self.published_preprint.article_doi
-            )
+                'https://doi.org/' + self.published_preprint.article_doi,
+            ),
         )
 
         # test_suffix
@@ -510,12 +533,13 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published.strftime('%Y, %B %-d')
-        assert_equal(citation,
+        assert_equal(
+            citation,
             u'McGee, G. C. B., Junior. ({}). {}. {}'.format(
                 date,
                 self.published_preprint.title,
-                'https://doi.org/' + self.published_preprint.article_doi
-            )
+                'https://doi.org/' + self.published_preprint.article_doi,
+            ),
         )
 
         # test_no_middle_names
@@ -526,12 +550,13 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published.strftime('%Y, %B %-d')
-        assert_equal(citation,
+        assert_equal(
+            citation,
             u'McGee, G. ({}). {}. {}'.format(
                 date,
                 self.published_preprint.title,
-                'https://doi.org/' + self.published_preprint.article_doi
-            )
+                'https://doi.org/' + self.published_preprint.article_doi,
+            ),
         )
 
     def test_two_authors(self):
@@ -541,12 +566,13 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published.strftime('%Y, %B %-d')
-        assert_equal(citation,
+        assert_equal(
+            citation,
             u'McGee, G. C. B., & Jenkins, D. T. T., Junior. ({}). {}. {}'.format(
                 date,
                 self.published_preprint.title,
-                'https://doi.org/' + self.published_preprint.article_doi
-            )
+                'https://doi.org/' + self.published_preprint.article_doi,
+            ),
         )
 
     def test_three_authors_and_title_with_period(self):
@@ -558,10 +584,13 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published.strftime('%Y, %B %-d')
-        assert_equal(citation, u'McGee, G. C. B., Jenkins, D. T. T., Junior, & Schematics, L. R. ({}). {}. {}'.format(
-            date,
-            'This Title Ends in a Period',
-            'https://doi.org/' + self.published_preprint.article_doi)
+        assert_equal(
+            citation,
+            u'McGee, G. C. B., Jenkins, D. T. T., Junior, & Schematics, L. R. ({}). {}. {}'.format(
+                date,
+                'This Title Ends in a Period',
+                'https://doi.org/' + self.published_preprint.article_doi,
+            ),
         )
 
     def test_seven_authors(self):
@@ -579,12 +608,13 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published.strftime('%Y, %B %-d')
-        assert_equal(citation,
+        assert_equal(
+            citation,
             u'McGee, G. C. B., Jenkins, D. T. T., Junior, Schematics, L. R., Taylor1, J., Taylor2, J., Taylor3, J., & Taylor4, J. ({}). {}. {}'.format(
                 date,
                 self.published_preprint.title,
-                'https://doi.org/' + self.published_preprint.article_doi
-            )
+                'https://doi.org/' + self.published_preprint.article_doi,
+            ),
         )
 
     def test_eight_authors(self):
@@ -602,12 +632,13 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published.strftime('%Y, %B %-d')
-        assert_equal(citation,
+        assert_equal(
+            citation,
             u'McGee, G. C. B., Jenkins, D. T. T., Junior, Schematics, L. R., Taylor1, J., Taylor2, J., Taylor3, J., … Taylor5, J. ({}). {}. {}'.format(
                 date,
                 self.published_preprint.title,
-                'https://doi.org/' + self.published_preprint.article_doi
-            )
+                'https://doi.org/' + self.published_preprint.article_doi,
+            ),
         )
 
 
@@ -618,7 +649,8 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         self.admin_contributor = AuthUserFactory()
         self.published_preprint = PreprintFactory(
             title='A Study of Coffee',
-            creator=self.admin_contributor)
+            creator=self.admin_contributor,
+        )
         self.published_preprint.save()
 
         self.admin_contributor.given_name = 'Grapes'
@@ -626,7 +658,8 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         self.admin_contributor.family_name = 'McGee'
         self.admin_contributor.save()
         self.published_preprint_url = '/{}preprints/{}/citation/chicago-author-date/'.format(
-            API_BASE, self.published_preprint._id)
+            API_BASE, self.published_preprint._id,
+        )
 
         self.second_contrib = AuthUserFactory()
         self.second_contrib.given_name = 'Darla'
@@ -647,13 +680,14 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
-        assert_equal(citation,
+        assert_equal(
+            citation,
             u'McGee, Grapes C. B. {} “{}.” {}. {}.'.format(
                 'n.d.',
                 self.published_preprint.title,
                 self.published_preprint.provider.name,
                 'doi:' + self.published_preprint.article_doi,
-            )
+            ),
         )
 
     def test_one_author(self):
@@ -661,14 +695,15 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published
-        assert_equal(citation,
+        assert_equal(
+            citation,
             u'McGee, Grapes C. B. {}. “{}.” {}. {}. {}.'.format(
                 date.strftime('%Y'),
                 self.published_preprint.title,
                 self.published_preprint.provider.name,
                 date.strftime('%B %-d'),
-                'doi:' + self.published_preprint.article_doi
-            )
+                'doi:' + self.published_preprint.article_doi,
+            ),
         )
 
         # test_suffix
@@ -678,14 +713,15 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published
-        assert_equal(citation,
+        assert_equal(
+            citation,
             u'McGee, Grapes C. B., Junior. {}. “{}.” {}. {}. {}.'.format(
                 date.strftime('%Y'),
                 self.published_preprint.title,
                 self.published_preprint.provider.name,
                 date.strftime('%B %-d'),
-                'doi:' + self.published_preprint.article_doi
-            )
+                'doi:' + self.published_preprint.article_doi,
+            ),
         )
 
         # test_no_middle_names
@@ -696,14 +732,15 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published
-        assert_equal(citation,
+        assert_equal(
+            citation,
             u'McGee, Grapes. {}. “{}.” {}. {}. {}.'.format(
                 date.strftime('%Y'),
                 self.published_preprint.title,
                 self.published_preprint.provider.name,
                 date.strftime('%B %-d'),
-                'doi:' + self.published_preprint.article_doi
-            )
+                'doi:' + self.published_preprint.article_doi,
+            ),
         )
 
     def test_two_authors(self):
@@ -713,14 +750,15 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published
-        assert_equal(citation,
+        assert_equal(
+            citation,
             u'McGee, Grapes C. B., and Darla T. T. Jenkins, Junior. {}. “{}.” {}. {}. {}.'.format(
                 date.strftime('%Y'),
                 self.published_preprint.title,
                 self.published_preprint.provider.name,
                 date.strftime('%B %-d'),
-                'doi:' + self.published_preprint.article_doi
-            )
+                'doi:' + self.published_preprint.article_doi,
+            ),
         )
 
     def test_three_authors_and_title_with_period(self):
@@ -732,12 +770,15 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published
-        assert_equal(citation, u'McGee, Grapes C. B., Darla T. T. Jenkins, Junior, and Lilith R. Schematics. {}. “{}.” {}. {}. {}.'.format(
-            date.strftime('%Y'),
-            'This Preprint Ends in a Period',
-            self.published_preprint.provider.name,
-            date.strftime('%B %-d'),
-            'doi:' + self.published_preprint.article_doi)
+        assert_equal(
+            citation,
+            u'McGee, Grapes C. B., Darla T. T. Jenkins, Junior, and Lilith R. Schematics. {}. “{}.” {}. {}. {}.'.format(
+                date.strftime('%Y'),
+                'This Preprint Ends in a Period',
+                self.published_preprint.provider.name,
+                date.strftime('%B %-d'),
+                'doi:' + self.published_preprint.article_doi,
+            ),
         )
 
     def test_eleven_contributors(self):
@@ -754,12 +795,13 @@ class TestPreprintCitationContentChicago(ApiTestCase):
         assert_equal(res.status_code, 200)
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published
-        assert_equal(citation,
+        assert_equal(
+            citation,
             u'McGee, Grapes C. B., Darla T. T. Jenkins, Junior, Lilith R. Schematics, James Taylor1, James Taylor2, James Taylor3, James Taylor4, et al. {}. “{}.” {}. {}. {}.'.format(
                 date.strftime('%Y'),
                 self.published_preprint.title,
                 self.published_preprint.provider.name,
                 date.strftime('%B %-d'),
-                'doi:' + self.published_preprint.article_doi
-            )
+                'doi:' + self.published_preprint.article_doi,
+            ),
         )

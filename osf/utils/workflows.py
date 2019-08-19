@@ -31,7 +31,7 @@ REVIEW_STATES = DEFAULT_STATES + [
     ('WITHDRAWN', 'withdrawn'),
 ]
 REVIEW_TRIGGERS = DEFAULT_TRIGGERS + [
-    ('WITHDRAW', 'withdraw')
+    ('WITHDRAW', 'withdraw'),
 ]
 
 DefaultStates = ChoiceEnum('DefaultStates', DEFAULT_STATES)
@@ -90,8 +90,8 @@ REVIEWABLE_TRANSITIONS = DEFAULT_TRANSITIONS + [
         'trigger': ReviewTriggers.WITHDRAW.value,
         'source': [ReviewStates.PENDING.value, ReviewStates.ACCEPTED.value],
         'dest': ReviewStates.WITHDRAWN.value,
-        'after': ['save_action', 'update_last_transitioned', 'perform_withdraw', 'save_changes', 'notify_withdraw']
-    }
+        'after': ['save_action', 'update_last_transitioned', 'perform_withdraw', 'save_changes', 'notify_withdraw'],
+    },
 ]
 
 @unique

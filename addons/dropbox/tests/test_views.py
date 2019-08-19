@@ -31,7 +31,7 @@ class TestAuthViews(DropboxAddonTestCase, views_testing.OAuthAddonAuthViewsTestC
 
     @mock.patch(
         'addons.dropbox.models.Provider.auth_url',
-        mock.PropertyMock(return_value='http://api.foo.com')
+        mock.PropertyMock(return_value='http://api.foo.com'),
     )
     def test_oauth_start(self):
         super(TestAuthViews, self).test_oauth_start()
@@ -45,7 +45,7 @@ class TestConfigViews(DropboxAddonTestCase, views_testing.OAuthAddonConfigViewsT
 
     folder = {
         'path': '12234',
-        'id': '12234'
+        'id': '12234',
     }
     Serializer = DropboxSerializer
     client = mock_client
@@ -183,15 +183,19 @@ class TestRestrictions(DropboxAddonTestCase, OsfTestCase):
         mock_metadata.return_value = MockListFolderResult()
 
         # tries to access a parent folder
-        url = self.project.api_url_for('dropbox_folder_list',
-            path='foo bar')
+        url = self.project.api_url_for(
+            'dropbox_folder_list',
+            path='foo bar',
+        )
         res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
     def test_restricted_config_contrib_no_addon(self):
         url = self.project.api_url_for('dropbox_set_config')
-        res = self.app.put_json(url, {'selected': {'path': 'foo'}},
-            auth=self.contrib.auth, expect_errors=True)
+        res = self.app.put_json(
+            url, {'selected': {'path': 'foo'}},
+            auth=self.contrib.auth, expect_errors=True,
+        )
         assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_restricted_config_contrib_not_owner(self):
@@ -200,6 +204,8 @@ class TestRestrictions(DropboxAddonTestCase, OsfTestCase):
         self.contrib.save()
 
         url = self.project.api_url_for('dropbox_set_config')
-        res = self.app.put_json(url, {'selected': {'path': 'foo'}},
-            auth=self.contrib.auth, expect_errors=True)
+        res = self.app.put_json(
+            url, {'selected': {'path': 'foo'}},
+            auth=self.contrib.auth, expect_errors=True,
+        )
         assert_equal(res.status_code, http.FORBIDDEN)

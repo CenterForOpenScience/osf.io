@@ -31,7 +31,8 @@ class ZoteroAddonAppConfig(BaseAddonAppConfig):
         FOLDER_SELECTED,
         LIBRARY_SELECTED,
         NODE_AUTHORIZED,
-        NODE_DEAUTHORIZED)
+        NODE_DEAUTHORIZED,
+    )
 
     @property
     def routes(self):

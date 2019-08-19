@@ -9,7 +9,7 @@ from osf.utils.permissions import WRITE
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
-    must_be_valid_project, must_be_contributor_or_public
+    must_be_valid_project, must_be_contributor_or_public,
 )
 
 def list_citation_styles():
@@ -19,10 +19,10 @@ def list_citation_styles():
         citation_styles = CitationStyle.objects.filter(
             Q(_id__icontains=query) |
             Q(title__icontains=query) |
-            Q(short_title__icontains=query)
+            Q(short_title__icontains=query),
         )
     return {
-        'styles': [style.to_json() for style in citation_styles if style.has_bibliography]
+        'styles': [style.to_json() for style in citation_styles if style.has_bibliography],
     }
 
 
@@ -89,7 +89,7 @@ class GenericCitationViews(object):
             provider = Provider()
             result = provider.serializer(
                 node_settings=node_addon,
-                user_settings=auth.user.get_addon(addon_short_name)
+                user_settings=auth.user.get_addon(addon_short_name),
             ).serialized_node_settings
             result['validCredentials'] = provider.check_credentials(node_addon)
             return {'result': result}
@@ -124,7 +124,7 @@ class GenericCitationViews(object):
                 'result': provider.serializer(
                     node_settings=node_addon,
                     user_settings=auth.user.get_addon(addon_short_name),
-                ).serialized_node_settings
+                ).serialized_node_settings,
             }
         _set_config.__name__ = '{0}_set_config'.format(addon_short_name)
         return _set_config

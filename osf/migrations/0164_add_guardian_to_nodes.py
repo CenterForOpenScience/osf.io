@@ -333,7 +333,7 @@ def migrate_nodes_to_guardian(state, schema):
         {'sql': add_permissions_to_node_groups, 'description': 'Adding permissions to node django groups:'},
         {'sql': add_read_contribs_to_read_groups, 'description': 'Adding node read contribs to read django groups:'},
         {'sql': add_write_contribs_to_write_groups, 'description': 'Adding node write contribs to write django groups:'},
-        {'sql': add_admin_contribs_to_admin_groups, 'description': 'Adding node admin contribs to admin django groups:'}
+        {'sql': add_admin_contribs_to_admin_groups, 'description': 'Adding node admin contribs to admin django groups:'},
     ]
 
     batch_node_migrations(state, migrations)

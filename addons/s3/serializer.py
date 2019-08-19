@@ -23,14 +23,16 @@ class S3Serializer(StorageAddonSerializer):
             'files': node.web_url_for('collect_file_trees'),
         }
         if user_settings:
-            result['owner'] = web_url_for('profile_view_id',
-                uid=user_settings.owner._id)
+            result['owner'] = web_url_for(
+                'profile_view_id',
+                uid=user_settings.owner._id,
+            )
         return result
 
     def serialized_folder(self, node_settings):
         return {
             'path': node_settings.folder_id,
-            'name': node_settings.folder_name
+            'name': node_settings.folder_name,
         }
 
     def credentials_are_valid(self, user_settings, client=None):

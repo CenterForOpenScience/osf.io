@@ -40,7 +40,8 @@ class TestUserSerializers(AdminTestCase):
         nt.assert_almost_equal(
             int(info['disabled'].strftime('%s')),
             int(timezone.now().strftime('%s')),
-            delta=50)
+            delta=50,
+        )
         nt.assert_is_instance(info['disabled'], datetime)
 
     def test_serialize_simple_node(self):

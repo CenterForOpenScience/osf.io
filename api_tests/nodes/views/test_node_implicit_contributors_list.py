@@ -5,7 +5,7 @@ from osf_tests.factories import (
     ProjectFactory,
     OSFGroupFactory,
     AuthUserFactory,
-    NodeFactory
+    NodeFactory,
 )
 from osf.utils.permissions import READ
 
@@ -23,7 +23,7 @@ def implicit_contributor():
 def parent(implicit_contributor):
     return ProjectFactory(
         title='Parent Project',
-        creator=implicit_contributor
+        creator=implicit_contributor,
     )
 
 @pytest.fixture()

@@ -33,7 +33,7 @@ from website.project import signals as project_signals
 
 
 def build_preprint_update_payload(
-    preprint_id, primary_file_id, is_published=True
+    preprint_id, primary_file_id, is_published=True,
 ):
     return {
         'data': {
@@ -47,18 +47,19 @@ def build_preprint_update_payload(
                 'primary_file': {
                     'data': {
                         'type': 'primary_file',
-                        'id': primary_file_id
-                    }
-                }
-            }
-        }
+                        'id': primary_file_id,
+                    },
+                },
+            },
+        },
     }
 
 def build_preprint_create_payload(
         node_id=None,
         provider_id=None,
         file_id=None,
-        attrs={}):
+        attrs={},
+):
 
     attrs['title'] = 'A Study of Coffee and Productivity'
     attrs['description'] = 'The more the better'
@@ -67,41 +68,43 @@ def build_preprint_create_payload(
         'data': {
             'attributes': attrs,
             'relationships': {},
-            'type': 'preprints'
-        }
+            'type': 'preprints',
+        },
     }
     if node_id:
         payload['data']['relationships']['node'] = {
             'data': {
                 'type': 'node',
-                'id': node_id
-            }
+                'id': node_id,
+            },
         }
     if provider_id:
         payload['data']['relationships']['provider'] = {
             'data': {
                 'type': 'provider',
-                'id': provider_id
-            }
+                'id': provider_id,
+            },
         }
     if file_id:
         payload['data']['relationships']['primary_file'] = {
             'data': {
                 'type': 'primary_file',
-                'id': file_id
-            }
+                'id': file_id,
+            },
         }
     return payload
 
 
 def build_preprint_create_payload_without_node(
-        provider_id=None, file_id=None, attrs=None):
+        provider_id=None, file_id=None, attrs=None,
+):
     attrs = attrs or {}
     return build_preprint_create_payload(
         node_id=None,
         provider_id=provider_id,
         file_id=file_id,
-        attrs=attrs)
+        attrs=attrs,
+    )
 
 
 @pytest.mark.django_db
@@ -141,15 +144,22 @@ class TestPreprintCreateWithoutNode:
                     'provider': {
                         'data': {
                             'id': provider._id,
-                            'type': 'providers'}}}}}
+                            'type': 'providers',
+                        },
+                    },
+                },
+            },
+        }
 
     def test_create_preprint_logged_in(
-            self, app, user_one, url, preprint_payload):
+            self, app, user_one, url, preprint_payload,
+    ):
         res = app.post_json_api(
             url,
             preprint_payload,
             auth=user_one.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
 
         assert res.status_code == 201
         assert res.json['data']['attributes']['title'] == preprint_payload['data']['attributes']['title']
@@ -157,58 +167,66 @@ class TestPreprintCreateWithoutNode:
         assert res.content_type == 'application/vnd.api+json'
 
     def test_create_preprint_does_not_create_a_node(
-            self, app, user_one, provider, url, preprint_payload):
+            self, app, user_one, provider, url, preprint_payload,
+    ):
         # Assume that if a supplemental node is being created, will be a separate POST to nodes?
         res = app.post_json_api(
             url,
             preprint_payload,
             auth=user_one.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
 
         assert res.status_code == 201
         preprint = Preprint.load(res.json['data']['id'])
         assert preprint.node is None
         assert not Node.objects.filter(
-            preprints__guids___id=res.json['data']['id']).exists()
+            preprints__guids___id=res.json['data']['id'],
+        ).exists()
 
     def test_create_preprint_with_supplementary_node(
-            self, app, user_one, provider, url, preprint_payload, supplementary_project):
+            self, app, user_one, provider, url, preprint_payload, supplementary_project,
+    ):
         preprint_payload['data']['relationships']['node'] = {
             'data': {
                 'id': supplementary_project._id,
-                'type': 'nodes'
-            }
-        }
-        res = app.post_json_api(
-            url,
-            preprint_payload,
-            auth=user_one.auth)
-
-        assert res.status_code == 201
-        preprint = Preprint.load(res.json['data']['id'])
-        assert preprint.node == supplementary_project
-        assert Node.objects.filter(
-            preprints__guids___id=res.json['data']['id']).exists()
-
-    def test_create_preprint_with_incorrectly_specified_node(
-            self, app, user_one, provider, url, preprint_payload, supplementary_project):
-        preprint_payload['data']['relationships']['node'] = {
-            'data': {
-                'id': supplementary_project.id,
-                'type': 'nodes'
-            }
+                'type': 'nodes',
+            },
         }
         res = app.post_json_api(
             url,
             preprint_payload,
             auth=user_one.auth,
-            expect_errors=True
+        )
+
+        assert res.status_code == 201
+        preprint = Preprint.load(res.json['data']['id'])
+        assert preprint.node == supplementary_project
+        assert Node.objects.filter(
+            preprints__guids___id=res.json['data']['id'],
+        ).exists()
+
+    def test_create_preprint_with_incorrectly_specified_node(
+            self, app, user_one, provider, url, preprint_payload, supplementary_project,
+    ):
+        preprint_payload['data']['relationships']['node'] = {
+            'data': {
+                'id': supplementary_project.id,
+                'type': 'nodes',
+            },
+        }
+        res = app.post_json_api(
+            url,
+            preprint_payload,
+            auth=user_one.auth,
+            expect_errors=True,
         )
 
         assert res.status_code == 400
         assert_equal(
             res.json['errors'][0]['detail'],
-            'Node not correctly specified.')
+            'Node not correctly specified.',
+        )
 
 
 class TestPreprintList(ApiTestCase):
@@ -298,13 +316,16 @@ class TestPreprintsListFiltering(PreprintsListFilteringMixin):
             user,
             provider_two,
             preprint_two,
-            provider_url):
+            provider_url,
+    ):
         expected = [preprint_two._id]
         res = app.get(
             '{}{}'.format(
                 provider_url,
-                provider_two._id),
-            auth=user.auth)
+                provider_two._id,
+            ),
+            auth=user.auth,
+        )
         actual = [preprint['id'] for preprint in res.json['data']]
         assert expected == actual
 
@@ -377,12 +398,17 @@ class TestPreprintListFilteringByReviewableFields(ReviewableFilterMixin):
         with mock.patch('website.identifiers.utils.request_identifiers'):
             preprints = [
                 PreprintFactory(
-                    is_published=False, project=ProjectFactory(
-                        is_public=True)), PreprintFactory(
-                    is_published=False, project=ProjectFactory(
-                        is_public=True)), PreprintFactory(
-                            is_published=False, project=ProjectFactory(
-                                is_public=True)), ]
+                    is_published=False,
+                    project=ProjectFactory(is_public=True),
+                ),
+                PreprintFactory(
+                    is_published=False,
+                    project=ProjectFactory(is_public=True),
+                ), PreprintFactory(
+                    is_published=False,
+                    project=ProjectFactory(is_public=True),
+                ),
+            ]
             preprints[0].run_submit(user)
             preprints[0].run_accept(user, 'comment')
             preprints[1].run_submit(user)
@@ -406,7 +432,8 @@ class TestPreprintCreate(ApiTestCase):
         self.public_project.add_contributor(
             self.other_user,
             permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
-            save=True)
+            save=True,
+        )
         self.subject = SubjectFactory()
         self.provider = PreprintProviderFactory()
 
@@ -415,7 +442,8 @@ class TestPreprintCreate(ApiTestCase):
 
     def publish_preprint(self, preprint, user, expect_errors=False):
         preprint_file = test_utils.create_test_preprint_file(
-            preprint, user, 'coffee_manuscript.pdf')
+            preprint, user, 'coffee_manuscript.pdf',
+        )
 
         update_payload = build_preprint_update_payload(preprint._id, preprint_file._id)
 
@@ -423,18 +451,20 @@ class TestPreprintCreate(ApiTestCase):
             self.url + '{}/'.format(preprint._id),
             update_payload,
             auth=user.auth,
-            expect_errors=expect_errors
+            expect_errors=expect_errors,
         )
         return res
 
     def test_create_preprint_with_supplemental_public_project(self):
         public_project_payload = build_preprint_create_payload(
-            self.public_project._id, self.provider._id)
+            self.public_project._id, self.provider._id,
+        )
 
         res = self.app.post_json_api(
             self.url,
             public_project_payload,
-            auth=self.user.auth)
+            auth=self.user.auth,
+        )
 
         data = res.json['data']
         preprint = Preprint.load(data['id'])
@@ -449,12 +479,16 @@ class TestPreprintCreate(ApiTestCase):
             attrs={
                 'subjects': [
                     [
-                        SubjectFactory()._id]],
-            })
+                        SubjectFactory()._id,
+                    ],
+                ],
+            },
+        )
         res = self.app.post_json_api(
             self.url,
             private_project_payload,
-            auth=self.user.auth)
+            auth=self.user.auth,
+        )
 
         assert_equal(res.status_code, 201)
         self.private_project.reload()
@@ -471,24 +505,28 @@ class TestPreprintCreate(ApiTestCase):
 
     def test_non_authorized_user_on_supplemental_node(self):
         public_project_payload = build_preprint_create_payload(
-            self.public_project._id, self.provider._id)
+            self.public_project._id, self.provider._id,
+        )
         res = self.app.post_json_api(
             self.url,
             public_project_payload,
             auth=self.user_two.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
 
         assert_equal(res.status_code, 403)
 
     def test_write_user_on_supplemental_node(self):
         assert_in(self.other_user, self.public_project.contributors)
         public_project_payload = build_preprint_create_payload(
-            self.public_project._id, self.provider._id)
+            self.public_project._id, self.provider._id,
+        )
         res = self.app.post_json_api(
             self.url,
             public_project_payload,
             auth=self.other_user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         # Users can create a preprint with a supplemental node that they have write perms to
         assert_equal(res.status_code, 201)
 
@@ -496,56 +534,67 @@ class TestPreprintCreate(ApiTestCase):
         self.public_project.set_permissions(self.other_user, permissions.READ, save=True)
         assert_in(self.other_user, self.public_project.contributors)
         public_project_payload = build_preprint_create_payload(
-            self.public_project._id, self.provider._id)
+            self.public_project._id, self.provider._id,
+        )
         res = self.app.post_json_api(
             self.url,
             public_project_payload,
             auth=self.other_user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert_equal(res.status_code, 403)
 
     def test_file_is_not_in_node(self):
         file_one_project = test_utils.create_test_file(
-            self.public_project, self.user, 'openupthatwindow.pdf')
+            self.public_project, self.user, 'openupthatwindow.pdf',
+        )
         assert_equal(file_one_project.target, self.public_project)
         wrong_project_payload = build_preprint_create_payload(
-            self.public_project._id, self.provider._id, file_one_project._id)
+            self.public_project._id, self.provider._id, file_one_project._id,
+        )
         res = self.app.post_json_api(
             self.url,
             wrong_project_payload,
             auth=self.user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
 
         assert_equal(res.status_code, 400)
         # File which is targeted towards the project instead of the preprint is invalid
         assert_equal(
             res.json['errors'][0]['detail'],
-            'This file is not a valid primary file for this preprint.')
+            'This file is not a valid primary file for this preprint.',
+        )
 
     def test_already_has_supplemental_node_on_another_preprint(self):
         preprint = PreprintFactory(creator=self.user, project=self.public_project)
         already_preprint_payload = build_preprint_create_payload(
-            preprint.node._id, preprint.provider._id)
+            preprint.node._id, preprint.provider._id,
+        )
         res = self.app.post_json_api(
             self.url,
             already_preprint_payload,
             auth=self.user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         # One preprint per provider per node constraint has been lifted
         assert_equal(res.status_code, 201)
 
     def test_read_write_user_already_a_preprint_with_same_provider(
-            self):
+            self,
+    ):
         assert_in(self.other_user, self.public_project.contributors)
 
         preprint = PreprintFactory(creator=self.user, project=self.public_project)
         already_preprint_payload = build_preprint_create_payload(
-            preprint.node._id, preprint.provider._id)
+            preprint.node._id, preprint.provider._id,
+        )
         res = self.app.post_json_api(
             self.url,
             already_preprint_payload,
             auth=self.other_user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
 
         assert_equal(res.status_code, 201)
 
@@ -557,18 +606,20 @@ class TestPreprintCreate(ApiTestCase):
             attrs={
                 'is_published': True,
                 'subjects': [[SubjectFactory()._id]],
-            }
+            },
         )
         res = self.app.post_json_api(
             self.url,
             no_file_payload,
             auth=self.user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
 
         assert_equal(res.status_code, 400)
         assert_equal(
             res.json['errors'][0]['detail'],
-            'A valid primary_file must be set before publishing a preprint.')
+            'A valid primary_file must be set before publishing a preprint.',
+        )
 
     def test_publish_preprint_fails_with_invalid_primary_file(self):
         no_file_payload = build_preprint_create_payload(
@@ -576,13 +627,14 @@ class TestPreprintCreate(ApiTestCase):
             provider_id=self.provider._id,
             attrs={
                 'subjects': [[SubjectFactory()._id]],
-            }
+            },
         )
         res = self.app.post_json_api(
             self.url,
             no_file_payload,
             auth=self.user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
 
         assert_equal(res.status_code, 201)
         preprint = Preprint.load(res.json['data']['id'])
@@ -592,13 +644,14 @@ class TestPreprintCreate(ApiTestCase):
             self.url + '{}/'.format(preprint._id),
             update_payload,
             auth=self.user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
 
         assert_equal(res.status_code, 400)
         assert_equal(
             res.json['errors'][0]['detail'],
-            'A valid primary_file must be set before publishing a preprint.')
+            'A valid primary_file must be set before publishing a preprint.',
+        )
 
     def test_no_provider_given(self):
         no_providers_payload = build_preprint_create_payload()
@@ -606,43 +659,51 @@ class TestPreprintCreate(ApiTestCase):
             self.url,
             no_providers_payload,
             auth=self.user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
 
         assert_equal(res.status_code, 400)
         assert_equal(
             res.json['errors'][0]['detail'],
-            'You must specify a valid provider to create a preprint.')
+            'You must specify a valid provider to create a preprint.',
+        )
 
     def test_invalid_provider_given(self):
         wrong_provider_payload = build_preprint_create_payload(
-            provider_id='jobbers')
+            provider_id='jobbers',
+        )
 
         res = self.app.post_json_api(
             self.url,
             wrong_provider_payload,
             auth=self.user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
 
         assert_equal(res.status_code, 400)
         assert_equal(
             res.json['errors'][0]['detail'],
-            'You must specify a valid provider to create a preprint.')
+            'You must specify a valid provider to create a preprint.',
+        )
 
     def test_file_not_osfstorage(self):
         public_project_payload = build_preprint_create_payload(
-            provider_id=self.provider._id)
+            provider_id=self.provider._id,
+        )
 
         res = self.app.post_json_api(
             self.url,
             public_project_payload,
             auth=self.user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
 
         preprint = Preprint.load(res.json['data']['id'])
         assert_equal(res.status_code, 201)
 
         github_file = test_utils.create_test_preprint_file(
-            preprint, self.user, 'coffee_manuscript.pdf')
+            preprint, self.user, 'coffee_manuscript.pdf',
+        )
         github_file.recast(GithubFile._typedmodels_type)
         github_file.save()
 
@@ -652,51 +713,61 @@ class TestPreprintCreate(ApiTestCase):
             self.url + '{}/'.format(preprint._id),
             update_payload,
             auth=self.user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
 
         assert_equal(res.status_code, 400)
         assert_equal(
             res.json['errors'][0]['detail'],
-            'This file is not a valid primary file for this preprint.')
+            'This file is not a valid primary file for this preprint.',
+        )
 
     def test_preprint_contributor_signal_sent_on_creation(self):
         # Signal sent but bails out early without sending email
         with capture_signals() as mock_signals:
             payload = build_preprint_create_payload(
-                provider_id=self.provider._id)
+                provider_id=self.provider._id,
+            )
             res = self.app.post_json_api(
-                self.url, payload, auth=self.user.auth)
+                self.url, payload, auth=self.user.auth,
+            )
 
             assert_equal(res.status_code, 201)
             assert_true(len(mock_signals.signals_sent()) == 1)
             assert_in(
                 project_signals.contributor_added,
-                mock_signals.signals_sent())
+                mock_signals.signals_sent(),
+            )
 
     def test_create_preprint_with_deleted_node_should_fail(self):
         self.public_project.is_deleted = True
         self.public_project.save()
         public_project_payload = build_preprint_create_payload(
-            self.public_project._id, self.provider._id)
+            self.public_project._id, self.provider._id,
+        )
         res = self.app.post_json_api(
             self.url,
             public_project_payload,
             auth=self.user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'],
-                     'Cannot attach a deleted project to a preprint.')
+        assert_equal(
+            res.json['errors'][0]['detail'],
+            'Cannot attach a deleted project to a preprint.',
+        )
 
     def test_create_preprint_with_no_permissions_to_node(self):
         project = ProjectFactory()
         public_project_payload = build_preprint_create_payload(
-            project._id, self.provider._id)
+            project._id, self.provider._id,
+        )
         res = self.app.post_json_api(
             self.url,
             public_project_payload,
             auth=self.user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert_equal(res.status_code, 403)
 
     def test_create_preprint_adds_log_if_published(self):
@@ -706,7 +777,8 @@ class TestPreprintCreate(ApiTestCase):
         res = self.app.post_json_api(
             self.url,
             public_project_payload,
-            auth=self.user.auth)
+            auth=self.user.auth,
+        )
         assert_equal(res.status_code, 201)
 
         preprint = Preprint.load(res.json['data']['id'])
@@ -718,14 +790,17 @@ class TestPreprintCreate(ApiTestCase):
 
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_create_preprint_from_project_published_hits_update(
-            self, mock_on_preprint_updated):
+            self, mock_on_preprint_updated,
+    ):
         private_project_payload = build_preprint_create_payload(
             self.private_project._id,
-            self.provider._id)
+            self.provider._id,
+        )
         res = self.app.post_json_api(
             self.url,
             private_project_payload,
-            auth=self.user.auth)
+            auth=self.user.auth,
+        )
 
         assert_false(mock_on_preprint_updated.called)
         preprint = Preprint.load(res.json['data']['id'])
@@ -735,19 +810,23 @@ class TestPreprintCreate(ApiTestCase):
 
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_create_preprint_from_project_unpublished_does_not_hit_update(
-            self, mock_on_preprint_updated):
+            self, mock_on_preprint_updated,
+    ):
         private_project_payload = build_preprint_create_payload(
             self.private_project._id,
-            self.provider._id)
+            self.provider._id,
+        )
         self.app.post_json_api(
             self.url,
             private_project_payload,
-            auth=self.user.auth)
+            auth=self.user.auth,
+        )
         assert not mock_on_preprint_updated.called
 
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_setting_is_published_with_moderated_provider_fails(
-            self, mock_on_preprint_updated):
+            self, mock_on_preprint_updated,
+    ):
         self.provider.reviews_workflow = 'pre-moderation'
         self.provider.save()
         public_project_payload = build_preprint_create_payload(
@@ -758,7 +837,8 @@ class TestPreprintCreate(ApiTestCase):
             self.url,
             public_project_payload,
             auth=self.user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 201
         preprint = Preprint.load(res.json['data']['id'])
         res = self.publish_preprint(preprint, self.user, expect_errors=True)
@@ -787,7 +867,8 @@ class TestPreprintIsPublishedList(PreprintIsPublishedListMixin):
     @pytest.fixture()
     def project_public(self, user_admin_contrib, user_write_contrib):
         return ProjectFactory(
-            creator=user_admin_contrib, is_public=True)
+            creator=user_admin_contrib, is_public=True,
+        )
 
     @pytest.fixture()
     def url(self):
@@ -800,14 +881,17 @@ class TestPreprintIsPublishedList(PreprintIsPublishedListMixin):
             user_write_contrib,
             provider_one,
             project_public,
-            subject):
-        preprint = PreprintFactory(creator=user_admin_contrib,
-                               filename='mgla.pdf',
-                               provider=provider_one,
-                               subjects=[[subject._id]],
-                               project=project_public,
-                               machine_state='pending',
-                               is_published=False)
+            subject,
+    ):
+        preprint = PreprintFactory(
+            creator=user_admin_contrib,
+            filename='mgla.pdf',
+            provider=provider_one,
+            subjects=[[subject._id]],
+            project=project_public,
+            machine_state='pending',
+            is_published=False,
+        )
         preprint.add_contributor(user_write_contrib, permissions=permissions.WRITE, save=True)
         return preprint
 
@@ -817,7 +901,8 @@ class TestPreprintIsPublishedList(PreprintIsPublishedListMixin):
             user_admin_contrib,
             preprint_unpublished,
             preprint_published,
-            url):
+            url,
+    ):
         res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 2
         assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
@@ -828,31 +913,35 @@ class TestPreprintIsPublishedList(PreprintIsPublishedListMixin):
         user_write_contrib,
         preprint_unpublished,
         preprint_published,
-        url
+        url,
     ):
         res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 2
         assert preprint_unpublished._id in [
-            d['id'] for d in res.json['data']]
+            d['id'] for d in res.json['data']
+        ]
 
     def test_unpublished_invisible_to_noncontribs(
         self,
         app,
         preprint_unpublished,
         preprint_published,
-        url
+        url,
     ):
         noncontrib = AuthUserFactory()
         res = app.get(url, auth=noncontrib.auth)
         assert len(res.json['data']) == 1
         assert preprint_unpublished._id not in [
-            d['id'] for d in res.json['data']]
+            d['id'] for d in res.json['data']
+        ]
 
     def test_filter_published_false_write_contrib(
-            self, app, user_write_contrib, preprint_unpublished, url):
+            self, app, user_write_contrib, preprint_unpublished, url,
+    ):
         res = app.get(
             '{}filter[is_published]=false'.format(url),
-            auth=user_write_contrib.auth)
+            auth=user_write_contrib.auth,
+        )
         assert len(res.json['data']) == 1
 
 
@@ -873,7 +962,8 @@ class TestReviewsPendingPreprintIsPublishedList(PreprintIsPublishedListMixin):
     @pytest.fixture()
     def project_public(self, user_admin_contrib):
         return ProjectFactory(
-            creator=user_admin_contrib, is_public=True)
+            creator=user_admin_contrib, is_public=True,
+        )
 
     @pytest.fixture()
     def project_published(self, user_admin_contrib):
@@ -890,14 +980,17 @@ class TestReviewsPendingPreprintIsPublishedList(PreprintIsPublishedListMixin):
             user_write_contrib,
             provider_one,
             project_public,
-            subject):
-        preprint = PreprintFactory(creator=user_admin_contrib,
-                               filename='mgla.pdf',
-                               provider=provider_one,
-                               subjects=[[subject._id]],
-                               project=project_public,
-                               is_published=False,
-                               machine_state=DefaultStates.PENDING.value)
+            subject,
+    ):
+        preprint = PreprintFactory(
+            creator=user_admin_contrib,
+            filename='mgla.pdf',
+            provider=provider_one,
+            subjects=[[subject._id]],
+            project=project_public,
+            is_published=False,
+            machine_state=DefaultStates.PENDING.value,
+        )
         preprint.add_contributor(user_write_contrib, permissions=permissions.WRITE, save=True)
         return preprint
 
@@ -907,7 +1000,8 @@ class TestReviewsPendingPreprintIsPublishedList(PreprintIsPublishedListMixin):
             user_admin_contrib,
             preprint_unpublished,
             preprint_published,
-            url):
+            url,
+    ):
         res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 2
         assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
@@ -918,16 +1012,19 @@ class TestReviewsPendingPreprintIsPublishedList(PreprintIsPublishedListMixin):
             user_write_contrib,
             preprint_unpublished,
             preprint_published,
-            url):
+            url,
+    ):
         res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 2
         assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
 
     def test_filter_published_false_write_contrib(
-            self, app, user_write_contrib, preprint_unpublished, url):
+            self, app, user_write_contrib, preprint_unpublished, url,
+    ):
         res = app.get(
             '{}filter[is_published]=false'.format(url),
-            auth=user_write_contrib.auth)
+            auth=user_write_contrib.auth,
+        )
         assert len(res.json['data']) == 1
 
 
@@ -948,7 +1045,8 @@ class TestReviewsInitialPreprintIsPublishedList(PreprintIsPublishedListMixin):
     @pytest.fixture()
     def project_public(self, user_admin_contrib):
         return ProjectFactory(
-            creator=user_admin_contrib, is_public=True)
+            creator=user_admin_contrib, is_public=True,
+        )
 
     @pytest.fixture()
     def project_published(self, user_admin_contrib):
@@ -965,14 +1063,17 @@ class TestReviewsInitialPreprintIsPublishedList(PreprintIsPublishedListMixin):
             provider_one,
             project_public,
             user_write_contrib,
-            subject):
-        preprint = PreprintFactory(creator=user_admin_contrib,
-                               filename='mgla.pdf',
-                               provider=provider_one,
-                               subjects=[[subject._id]],
-                               project=project_public,
-                               is_published=False,
-                               machine_state=DefaultStates.INITIAL.value)
+            subject,
+    ):
+        preprint = PreprintFactory(
+            creator=user_admin_contrib,
+            filename='mgla.pdf',
+            provider=provider_one,
+            subjects=[[subject._id]],
+            project=project_public,
+            is_published=False,
+            machine_state=DefaultStates.INITIAL.value,
+        )
         preprint.add_contributor(user_write_contrib, permissions=permissions.WRITE, save=True)
         return preprint
 
@@ -982,7 +1083,8 @@ class TestReviewsInitialPreprintIsPublishedList(PreprintIsPublishedListMixin):
             user_admin_contrib,
             preprint_unpublished,
             preprint_published,
-            url):
+            url,
+    ):
         res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 1
         assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
@@ -993,32 +1095,39 @@ class TestReviewsInitialPreprintIsPublishedList(PreprintIsPublishedListMixin):
             user_write_contrib,
             preprint_unpublished,
             preprint_published,
-            url):
+            url,
+    ):
         res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 1
         assert preprint_unpublished._id not in [
-            d['id'] for d in res.json['data']]
+            d['id'] for d in res.json['data']
+        ]
 
     def test_filter_published_false_write_contrib(
-            self, app, user_write_contrib, preprint_unpublished, url):
+            self, app, user_write_contrib, preprint_unpublished, url,
+    ):
         res = app.get(
             '{}filter[is_published]=false'.format(url),
-            auth=user_write_contrib.auth)
+            auth=user_write_contrib.auth,
+        )
         assert len(res.json['data']) == 0
 
     def test_filter_published_false_admin(
-            self, app, user_admin_contrib, preprint_unpublished, url):
+            self, app, user_admin_contrib, preprint_unpublished, url,
+    ):
 
         res = app.get(
             '{}filter[is_published]=false'.format(url),
-            auth=user_admin_contrib.auth)
+            auth=user_admin_contrib.auth,
+        )
         # initial state now visible to no one
         assert len(res.json['data']) == 0
         assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
 
 
 class TestPreprintIsPublishedListMatchesDetail(
-        PreprintListMatchesPreprintDetailMixin):
+        PreprintListMatchesPreprintDetailMixin,
+):
 
     @pytest.fixture()
     def user_admin_contrib(self):
@@ -1039,7 +1148,8 @@ class TestPreprintIsPublishedListMatchesDetail(
     @pytest.fixture()
     def project_public(self, user_admin_contrib):
         return ProjectFactory(
-            creator=user_admin_contrib, is_public=True)
+            creator=user_admin_contrib, is_public=True,
+        )
 
     @pytest.fixture()
     def preprint_unpublished(
@@ -1048,13 +1158,16 @@ class TestPreprintIsPublishedListMatchesDetail(
             user_write_contrib,
             provider_one,
             project_public,
-            subject):
-        preprint = PreprintFactory(creator=user_admin_contrib,
-                               filename='mgla.pdf',
-                               provider=provider_one,
-                               subjects=[[subject._id]],
-                               project=project_public,
-                               is_published=False)
+            subject,
+    ):
+        preprint = PreprintFactory(
+            creator=user_admin_contrib,
+            filename='mgla.pdf',
+            provider=provider_one,
+            subjects=[[subject._id]],
+            project=project_public,
+            is_published=False,
+        )
         preprint.add_contributor(user_write_contrib, permissions.WRITE, save=True)
         return preprint
 
@@ -1073,7 +1186,8 @@ class TestPreprintIsPublishedListMatchesDetail(
             preprint_unpublished,
             preprint_published,
             list_url,
-            detail_url):
+            detail_url,
+    ):
         res = app.get(list_url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 1
         assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
@@ -1088,21 +1202,25 @@ class TestPreprintIsPublishedListMatchesDetail(
             preprint_unpublished,
             preprint_published,
             list_url,
-            detail_url):
+            detail_url,
+    ):
         res = app.get(list_url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 1
         assert preprint_unpublished._id not in [
-            d['id'] for d in res.json['data']]
+            d['id'] for d in res.json['data']
+        ]
 
         res = app.get(
             detail_url,
             auth=user_write_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
 
 class TestReviewsInitialPreprintIsPublishedListMatchesDetail(
-        PreprintListMatchesPreprintDetailMixin):
+        PreprintListMatchesPreprintDetailMixin,
+):
 
     @pytest.fixture()
     def user_admin_contrib(self):
@@ -1123,7 +1241,8 @@ class TestReviewsInitialPreprintIsPublishedListMatchesDetail(
     @pytest.fixture()
     def project_public(self, user_admin_contrib):
         return ProjectFactory(
-            creator=user_admin_contrib, is_public=True)
+            creator=user_admin_contrib, is_public=True,
+        )
 
     @pytest.fixture()
     def preprint_unpublished(
@@ -1132,14 +1251,17 @@ class TestReviewsInitialPreprintIsPublishedListMatchesDetail(
             user_write_contrib,
             provider_one,
             project_public,
-            subject):
-        preprint = PreprintFactory(creator=user_admin_contrib,
-                               filename='mgla.pdf',
-                               provider=provider_one,
-                               subjects=[[subject._id]],
-                               project=project_public,
-                               is_published=False,
-                               machine_state=DefaultStates.INITIAL.value)
+            subject,
+    ):
+        preprint = PreprintFactory(
+            creator=user_admin_contrib,
+            filename='mgla.pdf',
+            provider=provider_one,
+            subjects=[[subject._id]],
+            project=project_public,
+            is_published=False,
+            machine_state=DefaultStates.INITIAL.value,
+        )
         preprint.add_contributor(user_write_contrib, permissions.WRITE, save=True)
         return preprint
 
@@ -1158,7 +1280,8 @@ class TestReviewsInitialPreprintIsPublishedListMatchesDetail(
             preprint_unpublished,
             preprint_published,
             list_url,
-            detail_url):
+            detail_url,
+    ):
         res = app.get(list_url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 1
         assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
@@ -1173,21 +1296,25 @@ class TestReviewsInitialPreprintIsPublishedListMatchesDetail(
             preprint_unpublished,
             preprint_published,
             list_url,
-            detail_url):
+            detail_url,
+    ):
         res = app.get(list_url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 1
         assert preprint_unpublished._id not in [
-            d['id'] for d in res.json['data']]
+            d['id'] for d in res.json['data']
+        ]
 
         res = app.get(
             detail_url,
             auth=user_write_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
 
 class TestReviewsPendingPreprintIsPublishedListMatchesDetail(
-        PreprintListMatchesPreprintDetailMixin):
+        PreprintListMatchesPreprintDetailMixin,
+):
 
     @pytest.fixture()
     def user_admin_contrib(self):
@@ -1208,7 +1335,8 @@ class TestReviewsPendingPreprintIsPublishedListMatchesDetail(
     @pytest.fixture()
     def project_public(self, user_admin_contrib):
         return ProjectFactory(
-            creator=user_admin_contrib, is_public=True)
+            creator=user_admin_contrib, is_public=True,
+        )
 
     @pytest.fixture()
     def preprint_unpublished(
@@ -1217,14 +1345,17 @@ class TestReviewsPendingPreprintIsPublishedListMatchesDetail(
             user_write_contrib,
             provider_one,
             project_public,
-            subject):
-        preprint = PreprintFactory(creator=user_admin_contrib,
-                               filename='mgla.pdf',
-                               provider=provider_one,
-                               subjects=[[subject._id]],
-                               project=project_public,
-                               is_published=False,
-                               machine_state=DefaultStates.PENDING.value)
+            subject,
+    ):
+        preprint = PreprintFactory(
+            creator=user_admin_contrib,
+            filename='mgla.pdf',
+            provider=provider_one,
+            subjects=[[subject._id]],
+            project=project_public,
+            is_published=False,
+            machine_state=DefaultStates.PENDING.value,
+        )
         preprint.add_contributor(user_write_contrib, permissions.WRITE, save=True)
         return preprint
 
@@ -1243,7 +1374,8 @@ class TestReviewsPendingPreprintIsPublishedListMatchesDetail(
             preprint_unpublished,
             preprint_published,
             list_url,
-            detail_url):
+            detail_url,
+    ):
         res = app.get(list_url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 2
         assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
@@ -1258,7 +1390,8 @@ class TestReviewsPendingPreprintIsPublishedListMatchesDetail(
             preprint_unpublished,
             preprint_published,
             list_url,
-            detail_url):
+            detail_url,
+    ):
         res = app.get(list_url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 2
         assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
@@ -1266,7 +1399,8 @@ class TestReviewsPendingPreprintIsPublishedListMatchesDetail(
         res = app.get(
             detail_url,
             auth=user_write_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.json['data']['id'] == preprint_unpublished._id
 
 
@@ -1298,11 +1432,13 @@ class TestPreprintListWithMetrics:
         with override_switch(features.ELASTICSEARCH_METRICS, active=True):
             yield
 
-    @pytest.mark.parametrize(('metric_name', 'metric_class_name'),
-    [
-        ('downloads', 'PreprintDownload'),
-        ('views', 'PreprintView'),
-    ])
+    @pytest.mark.parametrize(
+        ('metric_name', 'metric_class_name'),
+        [
+            ('downloads', 'PreprintDownload'),
+            ('views', 'PreprintView'),
+        ],
+    )
     def test_preprint_list_with_metrics(self, app, metric_name, metric_class_name):
         url = '/{}preprints/?metrics[{}]=total'.format(API_BASE, metric_name)
         preprint1 = PreprintFactory()
@@ -1322,12 +1458,14 @@ class TestPreprintListWithMetrics:
         assert preprint_1_data['meta']['metrics']['downloads'] == 41
 
     @mock.patch('django.utils.timezone.now')
-    @pytest.mark.parametrize(('query_value', 'timedelta'),
-    [
-        ('daily', dt.timedelta(days=1)),
-        ('weekly', dt.timedelta(days=7)),
-        ('yearly', dt.timedelta(days=365)),
-    ])
+    @pytest.mark.parametrize(
+        ('query_value', 'timedelta'),
+        [
+            ('daily', dt.timedelta(days=1)),
+            ('weekly', dt.timedelta(days=7)),
+            ('yearly', dt.timedelta(days=365)),
+        ],
+    )
     def test_preprint_list_filter_metric_by_time_period(self, mock_timezone_now, app, settings, query_value, timedelta):
         url = '/{}preprints/?metrics[views]={}'.format(API_BASE, query_value)
         mock_now = dt.datetime.utcnow().replace(tzinfo=timezone.utc)

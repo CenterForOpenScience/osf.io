@@ -4,7 +4,7 @@ from django.test import RequestFactory
 
 from osf_tests.factories import (
     AuthUserFactory,
-    CollectionProviderFactory
+    CollectionProviderFactory,
 )
 from osf.models import CollectionProvider
 from admin_tests.utilities import setup_view, setup_form_view

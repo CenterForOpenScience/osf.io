@@ -13,7 +13,7 @@ class TestGuidAutoInclude:
     guid_factories = [
         UserFactory,
         PreprintFactory,
-        NodeFactory
+        NodeFactory,
     ]
 
     @pytest.mark.parametrize('Factory', guid_factories)

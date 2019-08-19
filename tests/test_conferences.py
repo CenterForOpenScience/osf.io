@@ -204,7 +204,7 @@ class TestProvisionNode(ContextTestCase):
             _internal=True,
             base_url=self.node.osfstorage_region.waterbutler_url,
             cookie=self.user.get_or_create_cookie(),
-            name=file_name
+            name=file_name,
         )
         mock_put.assert_called_with(
             mock_get_url.return_value,
@@ -354,7 +354,7 @@ class TestMessage(ContextTestCase):
     def test_sender_email(self):
         emails = [
             (u'fred@queen.com', u'fred@queen.com'),
-            (u'FRED@queen.com', u'fred@queen.com')
+            (u'FRED@queen.com', u'fred@queen.com'),
         ]
         for email in emails:
             with self.make_context(data={'from': email[0]}):

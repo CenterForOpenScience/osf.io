@@ -14,14 +14,16 @@ class RegistrationProviderForm(forms.ModelForm):
     _id = forms.SlugField(
         required=True,
         help_text='URL Slug',
-        validators=[validate_slug]
+        validators=[validate_slug],
     )
 
     class Meta:
         model = RegistrationProvider
-        exclude = ['primary_identifier_name', 'primary_collection', 'type', 'allow_commenting', 'advisory_board',
-                   'example', 'domain', 'domain_redirect_enabled', 'reviews_comments_anonymous',
-                   'reviews_comments_private', 'reviews_workflow', 'collected_type_choices', 'status_choices']
+        exclude = [
+            'primary_identifier_name', 'primary_collection', 'type', 'allow_commenting', 'advisory_board',
+            'example', 'domain', 'domain_redirect_enabled', 'reviews_comments_anonymous',
+            'reviews_comments_private', 'reviews_workflow', 'collected_type_choices', 'status_choices',
+        ]
         widgets = {
             'licenses_acceptable': forms.CheckboxSelectMultiple(),
         }
@@ -41,7 +43,7 @@ class RegistrationProviderForm(forms.ModelForm):
             tags=['a', 'br', 'em', 'p', 'span', 'strong'],
             attributes=['class', 'style', 'href', 'title', 'target'],
             styles=['text-align', 'vertical-align'],
-            strip=True
+            strip=True,
         )
 
     def clean_footer_links(self, *args, **kwargs):
@@ -52,7 +54,7 @@ class RegistrationProviderForm(forms.ModelForm):
             tags=['a', 'br', 'div', 'em', 'p', 'span', 'strong'],
             attributes=['class', 'style', 'href', 'title', 'target'],
             styles=['text-align', 'vertical-align'],
-            strip=True
+            strip=True,
         )
 
 class RegistrationProviderCustomTaxonomyForm(forms.Form):

@@ -46,14 +46,14 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
     permissions = {
         'edit': can_edit,
         'view': True,
-        'private': node_settings.is_private
+        'private': node_settings.is_private,
     }
     urls = {
         'upload': node_settings.owner.api_url + 'gitlab/file/' + ref,
         'fetch': node_settings.owner.api_url + 'gitlab/hgrid/' + ref,
         'branch': node_settings.owner.api_url + 'gitlab/hgrid/root/' + ref,
         'zip': '{0}/{1}/repository/archive.zip?branch={2}'.format(node_settings.external_account.oauth_secret, repo.path_with_namespace, ref),
-        'repo': '{0}/{1}/tree/{2}'.format(node_settings.external_account.oauth_secret, repo.path_with_namespace, ref)
+        'repo': '{0}/{1}/tree/{2}'.format(node_settings.external_account.oauth_secret, repo.path_with_namespace, ref),
     }
 
     branch_names = [each.name for each in branches]
@@ -108,7 +108,8 @@ class GitLabAddonConfig(BaseAddonAppConfig):
         NODE_AUTHORIZED,
         NODE_DEAUTHORIZED,
         NODE_DEAUTHORIZED_NO_USER,
-        REPO_LINKED)
+        REPO_LINKED,
+    )
 
     @property
     def routes(self):

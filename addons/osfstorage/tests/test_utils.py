@@ -73,6 +73,6 @@ class TestSerializeRevision(StorageTestCase):
             self.record,
             self.versions[0],
             1,
-            anon=True
+            anon=True,
         )
         assert_equal(expected, observed)

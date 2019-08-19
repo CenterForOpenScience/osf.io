@@ -60,7 +60,8 @@ class CollectionProviderList(PermissionRequiredMixin, ListView):
         query_set = kwargs.pop('object_list', self.object_list)
         page_size = self.get_paginate_by(query_set)
         paginator, page, query_set, is_paginated = self.paginate_queryset(
-            query_set, page_size)
+            query_set, page_size,
+        )
         return {
             'collection_providers': query_set,
             'page': page,
@@ -200,8 +201,10 @@ class CollectionProviderChangeForm(PermissionRequiredMixin, UpdateView):
         return CollectionProvider.objects.get(id=provider_id)
 
     def get_success_url(self, *args, **kwargs):
-        return reverse_lazy('collection_providers:detail',
-                            kwargs={'collection_provider_id': self.kwargs.get('collection_provider_id')})
+        return reverse_lazy(
+            'collection_providers:detail',
+            kwargs={'collection_provider_id': self.kwargs.get('collection_provider_id')},
+        )
 
 
 class DeleteCollectionProvider(PermissionRequiredMixin, DeleteView):

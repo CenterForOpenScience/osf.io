@@ -142,9 +142,9 @@ class TestNodeSettingsPUT:
                 'type': 'node-settings',
                 'attributes': {
                     'redirect_link_enabled': True,
-                    'redirect_link_url': 'https://cos.io'
-                }
-            }
+                    'redirect_link_url': 'https://cos.io',
+                },
+            },
         }
 
     def test_put_permissions(self, app, project, payload, admin_contrib, write_contrib, read_contrib, url, osf_group, group_member):
@@ -200,8 +200,8 @@ class TestNodeSettingsUpdate:
                 'id': project._id,
                 'type': 'node-settings',
                 'attributes': {
-                }
-            }
+                },
+            },
         }
 
     def test_patch_permissions(self, app, project, payload, admin_contrib, write_contrib, read_contrib, group_member, osf_group, url):

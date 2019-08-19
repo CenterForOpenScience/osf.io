@@ -7,7 +7,7 @@ from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
 from osf_tests.factories import (
     AuthUserFactory,
-    PreprintFactory
+    PreprintFactory,
 )
 from osf.utils.permissions import WRITE
 from osf.utils.workflows import DefaultStates
@@ -163,8 +163,10 @@ class TestPreprintProvidersList(ApiTestCase):
         assert res.status_code == 403
 
         # Admin contrib
-        res = self.app.get(self.url,
-        auth=self.user.auth, expect_errors=True)
+        res = self.app.get(
+            self.url,
+            auth=self.user.auth, expect_errors=True,
+        )
         assert res.status_code == 403
 
     def test_return_published_files_logged_out(self):
@@ -173,7 +175,7 @@ class TestPreprintProvidersList(ApiTestCase):
         assert_equal(len(res.json['data']), 1)
         assert_equal(
             res.json['data'][0]['attributes']['provider'],
-            'osfstorage'
+            'osfstorage',
         )
 
     def test_does_not_return_storage_addons_link(self):
@@ -199,17 +201,20 @@ class TestPreprintProvidersList(ApiTestCase):
 
     def test_osfstorage_file_data_not_found(self):
         res = self.app.get(
-            '{}osfstorage/{}'.format(self.url, self.preprint.primary_file._id), auth=self.user.auth, expect_errors=True)
+            '{}osfstorage/{}'.format(self.url, self.preprint.primary_file._id), auth=self.user.auth, expect_errors=True,
+        )
         assert_equal(res.status_code, 404)
 
     def test_returns_osfstorage_folder_version_two(self):
         res = self.app.get(
-            '{}osfstorage/'.format(self.url), auth=self.user.auth)
+            '{}osfstorage/'.format(self.url), auth=self.user.auth,
+        )
         assert_equal(res.status_code, 200)
 
     def test_returns_osf_storage_folder_version_two_point_two(self):
         res = self.app.get(
-            '{}osfstorage/?version=2.2'.format(self.url), auth=self.user.auth)
+            '{}osfstorage/?version=2.2'.format(self.url), auth=self.user.auth,
+        )
         assert_equal(res.status_code, 200)
 
     def test_osfstorage_folder_data_not_found(self):
@@ -217,7 +222,8 @@ class TestPreprintProvidersList(ApiTestCase):
         fobj.save()
 
         res = self.app.get(
-            '{}osfstorage/{}'.format(self.url, fobj._id), auth=self.user.auth, expect_errors=True)
+            '{}osfstorage/{}'.format(self.url, fobj._id), auth=self.user.auth, expect_errors=True,
+        )
         assert_equal(res.status_code, 404)
 
 
@@ -380,19 +386,22 @@ class TestPreprintFilesList(ApiTestCase):
             target_content_type=ContentType.objects.get_for_model(self.preprint),
             path='/{}'.format(filename),
             name=filename,
-            materialized_path='/{}'.format(filename))
+            materialized_path='/{}'.format(filename),
+        )
 
         second_file.save()
         from addons.osfstorage import settings as osfstorage_settings
 
-        second_file.create_version(self.user, {
-            'object': '06d80e',
-            'service': 'cloud',
-            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
-        }, {
-            'size': 1337,
-            'contentType': 'img/png'
-        }).save()
+        second_file.create_version(
+            self.user, {
+                'object': '06d80e',
+                'service': 'cloud',
+                osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+            }, {
+                'size': 1337,
+                'contentType': 'img/png',
+            },
+        ).save()
         second_file.parent = self.preprint.root_folder
         second_file.save()
 

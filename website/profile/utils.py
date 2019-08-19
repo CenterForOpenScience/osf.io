@@ -11,10 +11,12 @@ from api.waffle.utils import storage_i18n_flag_active
 
 
 def get_profile_image_url(user, size=settings.PROFILE_IMAGE_MEDIUM):
-    return profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
-                             user,
-                             use_ssl=True,
-                             size=size)
+    return profile_image_url(
+        settings.PROFILE_IMAGE_PROVIDER,
+        user,
+        use_ssl=True,
+        size=size,
+    )
 
 def serialize_user(user, node=None, admin=False, full=False, is_profile=False, include_node_counts=False):
     """
@@ -52,7 +54,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
             is_contributor_obj = isinstance(contrib, Contributor)
             flags = {
                 'visible': contrib.visible if is_contributor_obj else node.contributor_set.filter(user=user, visible=True).exists(),
-                'permission': contrib.permission if is_contributor_obj else None
+                'permission': contrib.permission if is_contributor_obj else None,
             }
         ret.update(flags)
     if user.is_registered:
@@ -76,7 +78,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
                 {
                     'address': each,
                     'primary': each.strip().lower() == user.username.strip().lower(),
-                    'confirmed': False
+                    'confirmed': False,
                 }
                 for each in user.get_unconfirmed_emails_exclude_external_identity()
             ]
@@ -86,7 +88,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
             merged_by = {
                 'id': str(merger._primary_key),
                 'url': merger.url,
-                'absolute_url': merger.absolute_url
+                'absolute_url': merger.absolute_url,
             }
         else:
             merged_by = None
@@ -159,7 +161,7 @@ def add_contributor_json(user, current_user=None, node=None):
         'registered': user.is_registered,
         'active': user.is_active,
         'profile_image_url': user.profile_image_url(size=settings.PROFILE_IMAGE_MEDIUM),
-        'profile_url': user.profile_url
+        'profile_url': user.profile_url,
     }
 
     if node:
@@ -179,10 +181,12 @@ def serialize_unregistered(fullname, email):
             'id': None,
             'registered': False,
             'active': False,
-            'profile_image_url': profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
-                                                   email,
-                                                   use_ssl=True,
-                                                   size=settings.PROFILE_IMAGE_MEDIUM),
+            'profile_image_url': profile_image_url(
+                settings.PROFILE_IMAGE_PROVIDER,
+                email,
+                use_ssl=True,
+                size=settings.PROFILE_IMAGE_MEDIUM,
+            ),
             'email': email,
         }
     else:
@@ -198,9 +202,9 @@ def serialize_access_requests(node):
         {
             'user': serialize_user(access_request.creator),
             'comment': access_request.comment,
-            'id': access_request._id
+            'id': access_request._id,
         } for access_request in node.requests.filter(
             request_type=workflows.RequestTypes.ACCESS.value,
-            machine_state=workflows.DefaultStates.PENDING.value
+            machine_state=workflows.DefaultStates.PENDING.value,
         ).select_related('creator')
     ]

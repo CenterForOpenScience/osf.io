@@ -37,7 +37,7 @@ class ChronosSubmission(BaseModel):
 
     class Meta:
         unique_together = [
-            ('preprint', 'journal')
+            ('preprint', 'journal'),
         ]
 
     def __repr__(self):

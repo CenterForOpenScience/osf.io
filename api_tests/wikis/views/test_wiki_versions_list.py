@@ -20,9 +20,9 @@ def update_payload(wiki_page, content):
             'id': wiki_page._id,
             'type': 'wiki-versions',
             'attributes': {
-                'content': content
-            }
-        }
+                'content': content,
+            },
+        },
     }
 
 @pytest.fixture()
@@ -229,13 +229,13 @@ class TestWikiVersionCreate(WikiCRUDTestCase):
 
     def test_update_public_wiki_page_as_contributor(
         self, app, user_write_contributor, wiki_public,
-        url_wiki_versions_public
+        url_wiki_versions_public,
     ):
         new_content = fake.text()
         res = app.post_json_api(
             url_wiki_versions_public,
             update_payload(wiki_public, new_content),
-            auth=user_write_contributor.auth
+            auth=user_write_contributor.auth,
         )
         wiki_public.reload()
         assert res.status_code == 201
@@ -244,7 +244,7 @@ class TestWikiVersionCreate(WikiCRUDTestCase):
     def test_do_not_update_public_wiki_page(
         self, app, wiki_public,
         user_read_contributor, user_non_contributor,
-        url_wiki_versions_public
+        url_wiki_versions_public,
     ):
         payload = update_payload(wiki_public, fake.text())
 
@@ -253,7 +253,7 @@ class TestWikiVersionCreate(WikiCRUDTestCase):
             url_wiki_versions_public,
             payload,
             auth=user_read_contributor.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 403
 
@@ -262,7 +262,7 @@ class TestWikiVersionCreate(WikiCRUDTestCase):
             url_wiki_versions_public,
             payload,
             auth=user_non_contributor.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 403
 
@@ -270,19 +270,19 @@ class TestWikiVersionCreate(WikiCRUDTestCase):
         res = app.post_json_api(
             url_wiki_versions_public,
             payload,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 401
 
     def test_update_private_wiki_page(
         self, app, wiki_private,
-        user_write_contributor, url_wiki_versions_private
+        user_write_contributor, url_wiki_versions_private,
     ):
         new_content = fake.text()
         res = app.post_json_api(
             url_wiki_versions_private,
             update_payload(wiki_private, new_content),
-            auth=user_write_contributor.auth
+            auth=user_write_contributor.auth,
         )
         wiki_private.reload()
         assert res.status_code == 201
@@ -291,7 +291,7 @@ class TestWikiVersionCreate(WikiCRUDTestCase):
     def test_do_not_update_private_wiki_page(
         self, app, wiki_private,
         user_read_contributor, user_non_contributor,
-        url_wiki_versions_private
+        url_wiki_versions_private,
     ):
         payload = update_payload(wiki_private, fake.text())
 
@@ -300,7 +300,7 @@ class TestWikiVersionCreate(WikiCRUDTestCase):
             url_wiki_versions_private,
             payload,
             auth=user_read_contributor.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 403
 
@@ -309,7 +309,7 @@ class TestWikiVersionCreate(WikiCRUDTestCase):
             url_wiki_versions_private,
             payload,
             auth=user_non_contributor.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 403
 
@@ -317,21 +317,21 @@ class TestWikiVersionCreate(WikiCRUDTestCase):
         res = app.post_json_api(
             url_wiki_versions_private,
             payload,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 401
 
     def test_do_not_update_wiki_on_registrations(
         self, app, user_creator,
         wiki_registration_public, wiki_registration_private,
-        url_wiki_versions_registration_public, url_wiki_versions_registration_private
+        url_wiki_versions_registration_public, url_wiki_versions_registration_private,
     ):
         # test_do_not_update_wiki_on_public_registration
         res = app.post_json_api(
             url_wiki_versions_registration_public,
             update_payload(wiki_registration_public, fake.text()),
             auth=user_creator.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 405
 
@@ -340,13 +340,13 @@ class TestWikiVersionCreate(WikiCRUDTestCase):
             url_wiki_versions_registration_private,
             update_payload(wiki_registration_private, fake.text()),
             auth=user_creator.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 405
 
     def test_do_not_update_disabled_public_wiki_page(
         self, app, user_creator, wiki_public,
-        project_public, url_wiki_versions_public
+        project_public, url_wiki_versions_public,
     ):
         project_public.delete_addon('wiki', auth=Auth(user_creator))
         new_content = fake.text()
@@ -354,19 +354,19 @@ class TestWikiVersionCreate(WikiCRUDTestCase):
             url_wiki_versions_public,
             update_payload(wiki_public, new_content),
             auth=user_creator.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 404
 
     def test_update_wiki_page_if_publicly_editable_non_contrib(
         self, app, user_creator, user_non_contributor,
-        project_public, url_wiki_versions_public, wiki_public
+        project_public, url_wiki_versions_public, wiki_public,
     ):
         project_public.addons_wiki_node_settings.set_editing(True, auth=Auth(user_creator))
         new_content = fake.text()
         res = app.post_json_api(
             url_wiki_versions_public,
             update_payload(wiki_public, new_content),
-            auth=user_non_contributor.auth
+            auth=user_non_contributor.auth,
         )
         assert res.status_code == 201

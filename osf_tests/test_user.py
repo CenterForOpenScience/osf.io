@@ -53,7 +53,7 @@ from .factories import (
     UnregUserFactory,
     UserFactory,
     RegistrationFactory,
-    PreprintFactory
+    PreprintFactory,
 )
 from tests.base import OsfTestCase
 from tests.utils import run_celery_tasks
@@ -82,7 +82,7 @@ class TestOSFUser:
     def test_create(self):
         name, email = fake.name(), fake_email()
         user = OSFUser.create(
-            username=email, password='foobar', fullname=name
+            username=email, password='foobar', fullname=name,
         )
         user.save()
         assert user.check_password('foobar') is True
@@ -92,7 +92,7 @@ class TestOSFUser:
     def test_create_unconfirmed(self):
         name, email = fake.name(), fake_email()
         user = OSFUser.create_unconfirmed(
-            username=email, password='foobar', fullname=name
+            username=email, password='foobar', fullname=name,
         )
         assert user.is_registered is False
         assert len(user.email_verifications.keys()) == 1
@@ -102,7 +102,7 @@ class TestOSFUser:
         name, email = fake.name(), fake_email()
         user = OSFUser.create_unconfirmed(
             username=email, password='foobar', fullname=name,
-            campaign='institution'
+            campaign='institution',
         )
         assert 'institution_campaign' in user.system_tags
 
@@ -110,8 +110,8 @@ class TestOSFUser:
         name, email = fake.name(), fake_email()
         external_identity = {
             'ORCID': {
-                fake.ean(): 'CREATE'
-            }
+                fake.ean(): 'CREATE',
+            },
         }
         user = OSFUser.create_unconfirmed(
             username=email,
@@ -128,7 +128,7 @@ class TestOSFUser:
     def test_create_confirmed(self):
         name, email = fake.name(), fake_email()
         user = OSFUser.create_confirmed(
-            username=email, password='foobar', fullname=name
+            username=email, password='foobar', fullname=name,
         )
         user.save()
         assert user.is_registered is True
@@ -148,8 +148,10 @@ class TestOSFUser:
 
     def test_create_unregistered(self):
         name, email = fake.name(), fake_email()
-        u = OSFUser.create_unregistered(email=email,
-                                     fullname=name)
+        u = OSFUser.create_unregistered(
+            email=email,
+            fullname=name,
+        )
         # TODO: Remove post-migration
         u.date_registered = timezone.now()
         u.save()
@@ -185,9 +187,11 @@ class TestOSFUser:
         assert dupe.is_active is False
 
     def test_non_registered_user_is_not_active(self):
-        u = OSFUser(username=fake_email(),
-                 fullname='Freddie Mercury',
-                 is_registered=False)
+        u = OSFUser(
+            username=fake_email(),
+            fullname='Freddie Mercury',
+            is_registered=False,
+        )
         u.set_password('killerqueen')
         u.save()
         assert u.is_active is False
@@ -552,7 +556,7 @@ class TestOSFUser:
 
     def test_confirm_email_comparison_is_case_insensitive(self):
         u = UnconfirmedUserFactory.build(
-            username='letsgettacos@lgt.com'
+            username='letsgettacos@lgt.com',
         )
         u.add_unconfirmed_email('LetsGetTacos@LGT.com')
         u.save()
@@ -618,10 +622,12 @@ class TestOSFUser:
         )
 
     def test_profile_image_url(self, user):
-        expected = filters.profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
-                                         user,
-                                         use_ssl=True,
-                                         size=settings.PROFILE_IMAGE_MEDIUM)
+        expected = filters.profile_image_url(
+            settings.PROFILE_IMAGE_PROVIDER,
+            user,
+            use_ssl=True,
+            size=settings.PROFILE_IMAGE_MEDIUM,
+        )
         assert user.profile_image_url(settings.PROFILE_IMAGE_MEDIUM) == expected
 
     def test_set_unusable_username_for_unsaved_user(self):
@@ -643,9 +649,11 @@ class TestOSFUser:
         assert user.has_usable_username() is False
 
     def test_profile_image_url_has_no_default_size(self, user):
-        expected = filters.profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
-                                         user,
-                                         use_ssl=True)
+        expected = filters.profile_image_url(
+            settings.PROFILE_IMAGE_PROVIDER,
+            user,
+            use_ssl=True,
+        )
         assert user.profile_image_url() == expected
         size = urlparse.parse_qs(urlparse.urlparse(user.profile_image_url()).query).get('size')
         assert size is None
@@ -670,9 +678,11 @@ class TestOSFUser:
         # Do not return bad token and removes it from user.email_verifications
         email = 'test@example.com'
         token = 'blahblahblah'
-        user.email_verifications[token] = {'expiration': (timezone.now() + dt.timedelta(days=1)),
-                                                'email': email,
-                                                'confirmed': False}
+        user.email_verifications[token] = {
+            'expiration': (timezone.now() + dt.timedelta(days=1)),
+            'email': email,
+            'confirmed': False,
+        }
         user.save()
         assert user.email_verifications[token]['email'] == email
         user.clean_email_verifications(given_token=token)
@@ -690,7 +700,7 @@ class TestOSFUser:
         project = NodeFactory()
         project.add_unregistered_contributor(
             fullname=name, email=u.username,
-            auth=Auth(project.creator)
+            auth=Auth(project.creator),
         )
         project.save()
         u.reload()
@@ -702,7 +712,7 @@ class TestOSFUser:
         old_name = unreg_user.fullname
         project.add_unregistered_contributor(
             fullname=old_name, email=unreg_user.username,
-            auth=Auth(project.creator)
+            auth=Auth(project.creator),
         )
         project.save()
         unreg_user.reload()
@@ -715,7 +725,7 @@ class TestOSFUser:
         new_name = fake.name()
         project.add_unregistered_contributor(
             fullname=new_name, email=unreg_user.username,
-            auth=Auth(project.creator)
+            auth=Auth(project.creator),
         )
         project.save()
         unreg_user.reload()
@@ -893,8 +903,10 @@ class TestChangePassword:
         assert user.password.startswith('md5$')
         assert mock_send_mail.called is False
 
-    def test_change_password_invalid(self, old_password=None, new_password=None, confirm_password=None,
-                                     error_message='Old password is invalid'):
+    def test_change_password_invalid(
+        self, old_password=None, new_password=None, confirm_password=None,
+        error_message='Old password is invalid',
+    ):
         user = UserFactory()
         user.set_password('password')
         user.save()
@@ -1056,9 +1068,11 @@ class TestUnregisteredUser:
     def unreg_user(self, referrer, project, email):
         user = UnregUserFactory()
         given_name = 'Fredd Merkury'
-        user.add_unclaimed_record(project,
+        user.add_unclaimed_record(
+            project,
             given_name=given_name, referrer=referrer,
-            email=email)
+            email=email,
+        )
         user.save()
         return user
 
@@ -1073,9 +1087,11 @@ class TestUnregisteredUser:
     def unreg_moderator(self, referrer, provider, email):
         user = UnregUserFactory()
         given_name = 'Freddie Merkkury'
-        user.add_unclaimed_record(provider,
+        user.add_unclaimed_record(
+            provider,
             given_name=given_name, referrer=referrer,
-            email=email)
+            email=email,
+        )
         user.save()
         return user
 
@@ -1144,16 +1160,20 @@ class TestUnregisteredUser:
         # test_referrer_is_not_contrib
         project = NodeFactory()
         with pytest.raises(PermissionsError) as e:
-            unreg_user.add_unclaimed_record(project,
-                given_name='fred m', referrer=referrer)
+            unreg_user.add_unclaimed_record(
+                project,
+                given_name='fred m', referrer=referrer,
+            )
             unreg_user.save()
         assert str(e.value) == 'Referrer does not have permission to add a contributor to {}'.format(project._primary_key)
 
         # test_referrer_is_not_admin_or_moderator
         referrer = UserFactory()
         with pytest.raises(PermissionsError) as e:
-            unreg_moderator.add_unclaimed_record(provider,
-                given_name='hodor', referrer=referrer)
+            unreg_moderator.add_unclaimed_record(
+                provider,
+                given_name='hodor', referrer=referrer,
+            )
             unreg_user.save()
         assert str(e.value) == 'Referrer does not have permission to add a moderator to provider {}'.format(provider._id)
 
@@ -1251,7 +1271,7 @@ class TestRecentlyAdded:
         for _ in range(17):
             project.add_contributor(
                 contributor=UserFactory(),
-                auth=auth
+                auth=auth,
             )
 
         assert len(list(user.get_recently_added())) == 15
@@ -1306,9 +1326,11 @@ class TestCitationProperties:
     @pytest.fixture()
     def unreg_user(self, referrer, project, email):
         user = UnregUserFactory()
-        user.add_unclaimed_record(project,
+        user.add_unclaimed_record(
+            project,
             given_name=user.fullname, referrer=referrer,
-            email=email)
+            email=email,
+        )
         user.save()
         return user
 
@@ -1324,7 +1346,7 @@ class TestCitationProperties:
                 {
                     'given': user.csl_given_name,
                     'family': user.family_name,
-                }
+                },
             )
 
     def test_unregistered_user_csl(self, unreg_user, project):
@@ -1337,7 +1359,7 @@ class TestCitationProperties:
             {
                 'given': given_name,
                 'family': family_name,
-            }
+            },
         )
 
 # copied from tests/test_models.py
@@ -1364,7 +1386,7 @@ class TestMergingUsers:
     def dupe(self):
         return UserFactory(
             fullname='Joseph Shmo',
-            emails=['joseph123@hotmail.com']
+            emails=['joseph123@hotmail.com'],
         )
 
     @pytest.fixture()
@@ -1629,7 +1651,7 @@ class TestUser(OsfTestCase):
 
     def test_confirm_email_comparison_is_case_insensitive(self):
         u = UnconfirmedUserFactory.build(
-            username='letsgettacos@lgt.com'
+            username='letsgettacos@lgt.com',
         )
         u.add_unconfirmed_email('LetsGetTacos@LGT.com')
         u.save()
@@ -1787,7 +1809,7 @@ class TestUserMerging(OsfTestCase):
         self.project_with_unreg_contrib.add_unregistered_contributor(
             fullname='Unreg',
             email=self.unregistered.username,
-            auth=Auth(self.project_with_unreg_contrib.creator)
+            auth=Auth(self.project_with_unreg_contrib.creator),
         )
         self.project_with_unreg_contrib.save()
 
@@ -1909,7 +1931,7 @@ class TestUserMerging(OsfTestCase):
                 'shared_lt': True,
             },
             'osf_mailing_lists': {
-                'Open Science Framework Help': True
+                'Open Science Framework Help': True,
             },
             'security_messages': {
                 'user': today,
@@ -2111,26 +2133,26 @@ class TestUserValidation(OsfTestCase):
         self.user.social = {
             'profileWebsites': ['http://cos.io/'],
             'twitter': 'OSFramework',
-            'github': 'CenterForOpenScience'
+            'github': 'CenterForOpenScience',
         }
         self.user.save()
         assert self.user.social_links == {
             'profileWebsites': ['http://cos.io/'],
             'twitter': 'http://twitter.com/OSFramework',
-            'github': 'http://github.com/CenterForOpenScience'
+            'github': 'http://github.com/CenterForOpenScience',
         }
 
     def test_multiple_profile_websites(self):
         self.user.social = {
             'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com'],
             'twitter': 'OSFramework',
-            'github': 'CenterForOpenScience'
+            'github': 'CenterForOpenScience',
         }
         self.user.save()
         assert self.user.social_links == {
             'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com'],
             'twitter': 'http://twitter.com/OSFramework',
-            'github': 'http://github.com/CenterForOpenScience'
+            'github': 'http://github.com/CenterForOpenScience',
         }
 
     def test_nonsocial_ignored(self):
@@ -2402,7 +2424,7 @@ class TestUserSpam:
             degree = fake.catch_phrase()
             schools_list.append({
                 'degree': degree,
-                'institution': institution
+                'institution': institution,
             })
             expected_content += '{} {} '.format(institution, degree)
         saved_fields = {'schools': schools_list}
@@ -2423,7 +2445,7 @@ class TestUserSpam:
                 author=user.fullname,
                 author_email=user.username,
                 content=suspicious_content,
-                request_headers={'Referrer': 'Woo', 'User-Agent': 'yay', 'Remote-Addr': 'ok'}
+                request_headers={'Referrer': 'Woo', 'User-Agent': 'yay', 'Remote-Addr': 'ok'},
             )
         user.save()
         assert user.spam_data['content'] == suspicious_content

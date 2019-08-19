@@ -119,7 +119,7 @@ class ReviewsMachine(BaseMachine):
         self.machineable.add_log(
             action=PreprintLog.PUBLISHED,
             params={
-                'preprint': self.machineable._id
+                'preprint': self.machineable._id,
             },
             auth=auth,
             save=False,
@@ -130,9 +130,11 @@ class ReviewsMachine(BaseMachine):
 
     def notify_resubmit(self, ev):
         context = self.get_context()
-        reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
-                                           template='reviews_resubmission_confirmation',
-                                           action=self.action)
+        reviews_signals.reviews_email.send(
+            creator=ev.kwargs.get('user'), context=context,
+            template='reviews_resubmission_confirmation',
+            action=self.action,
+        )
 
     def notify_accept_reject(self, ev):
         context = self.get_context()
@@ -140,26 +142,32 @@ class ReviewsMachine(BaseMachine):
         context['comment'] = self.action.comment
         context['is_rejected'] = self.action.to_state == DefaultStates.REJECTED.value
         context['was_pending'] = self.action.from_state == DefaultStates.PENDING.value
-        reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
-                                           template='reviews_submission_status',
-                                           action=self.action)
+        reviews_signals.reviews_email.send(
+            creator=ev.kwargs.get('user'), context=context,
+            template='reviews_submission_status',
+            action=self.action,
+        )
 
     def notify_edit_comment(self, ev):
         context = self.get_context()
         context['comment'] = self.action.comment
         if not self.machineable.provider.reviews_comments_private and self.action.comment:
-            reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
-                                               template='reviews_update_comment',
-                                               action=self.action)
+            reviews_signals.reviews_email.send(
+                creator=ev.kwargs.get('user'), context=context,
+                template='reviews_update_comment',
+                action=self.action,
+            )
 
     def notify_withdraw(self, ev):
         context = self.get_context()
         context['ever_public'] = self.machineable.ever_public
         try:
-            preprint_request_action = PreprintRequestAction.objects.get(target__target__id=self.machineable.id,
-                                                                   from_state='pending',
-                                                                   to_state='accepted',
-                                                                   trigger='accept')
+            preprint_request_action = PreprintRequestAction.objects.get(
+                target__target__id=self.machineable.id,
+                from_state='pending',
+                to_state='accepted',
+                trigger='accept',
+            )
             context['requester'] = preprint_request_action.target.creator
         except PreprintRequestAction.DoesNotExist:
             # If there is no preprint request action, it means the withdrawal is directly initiated by admin/moderator
@@ -204,7 +212,8 @@ class NodeRequestMachine(BaseMachine):
                     auth=Auth(ev.kwargs['user']),
                     permissions=contributor_permissions,
                     visible=ev.kwargs.get('visible', True),
-                    send_email='{}_request'.format(self.machineable.request_type))
+                    send_email='{}_request'.format(self.machineable.request_type),
+                )
 
     def resubmission_allowed(self, ev):
         # TODO: [PRODUCT-395]
@@ -257,7 +266,7 @@ class NodeRequestMachine(BaseMachine):
     def get_context(self):
         return {
             'node': self.machineable.target,
-            'requester': self.machineable.creator
+            'requester': self.machineable.creator,
         }
 
 

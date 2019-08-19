@@ -33,7 +33,8 @@ class TestGuidDetail:
         url = '/{}guids/{}/'.format(API_BASE, project._id)
         res = app.get(url, auth=user.auth)
         redirect_url = '{}{}nodes/{}/'.format(
-            API_DOMAIN, API_BASE, project._id)
+            API_DOMAIN, API_BASE, project._id,
+        )
         assert res.status_code == 302
         assert res.location == redirect_url
 
@@ -41,7 +42,8 @@ class TestGuidDetail:
         url = '/{}guids/{}/'.format(API_BASE, registration._id)
         res = app.get(url, auth=user.auth)
         redirect_url = '{}{}registrations/{}/'.format(
-            API_DOMAIN, API_BASE, registration._id)
+            API_DOMAIN, API_BASE, registration._id,
+        )
         assert res.status_code == 302
         assert res.location == redirect_url
 
@@ -50,7 +52,8 @@ class TestGuidDetail:
         url = '/{}guids/{}/'.format(API_BASE, collection._id)
         res = app.get(url, auth=user.auth)
         redirect_url = '{}{}collections/{}/'.format(
-            API_DOMAIN, API_BASE, collection._id)
+            API_DOMAIN, API_BASE, collection._id,
+        )
         assert res.status_code == 302
         assert res.location == redirect_url
 
@@ -65,7 +68,8 @@ class TestGuidDetail:
         url = '/{}guids/{}/'.format(API_BASE, guid._id)
         res = app.get(url, auth=user.auth)
         redirect_url = '{}{}files/{}/'.format(
-            API_DOMAIN, API_BASE, test_file._id)
+            API_DOMAIN, API_BASE, test_file._id,
+        )
         assert res.status_code == 302
         assert res.location == redirect_url
 
@@ -74,7 +78,8 @@ class TestGuidDetail:
         url = '/{}guids/{}/'.format(API_BASE, comment._id)
         res = app.get(url, auth=user.auth)
         redirect_url = '{}{}comments/{}/'.format(
-            API_DOMAIN, API_BASE, comment._id)
+            API_DOMAIN, API_BASE, comment._id,
+        )
         assert res.status_code == 302
         assert res.location == redirect_url
 
@@ -91,10 +96,12 @@ class TestGuidDetail:
         view_only_link.save()
 
         url = '/{}guids/{}/?view_only={}'.format(
-            API_BASE, project._id, view_only_link.key)
+            API_BASE, project._id, view_only_link.key,
+        )
         res = app.get(url, auth=user.auth)
         redirect_url = '{}{}nodes/{}/?view_only={}'.format(
-            API_DOMAIN, API_BASE, project._id, view_only_link.key)
+            API_DOMAIN, API_BASE, project._id, view_only_link.key,
+        )
         assert res.status_code == 302
         assert res.location == redirect_url
 
@@ -108,27 +115,32 @@ class TestGuidDetail:
         test_file.save()
         guid = test_file.get_guid(create=True)
         url = '/{}guids/{}/?view_only={}'.format(
-            API_BASE, guid._id, view_only_link.key)
+            API_BASE, guid._id, view_only_link.key,
+        )
         res = app.get(url, auth=user.auth)
         redirect_url = '{}{}files/{}/?view_only={}'.format(
-            API_DOMAIN, API_BASE, test_file._id, view_only_link.key)
+            API_DOMAIN, API_BASE, test_file._id, view_only_link.key,
+        )
         assert res.status_code == 302
         assert res.location == redirect_url
 
         # test_redirect_when_viewing_private_project_comment_through_view_only_link
         comment = CommentFactory(node=project)
         url = '/{}guids/{}/?view_only={}'.format(
-            API_BASE, comment._id, view_only_link.key)
+            API_BASE, comment._id, view_only_link.key,
+        )
         res = app.get(url, auth=AuthUserFactory().auth)
         redirect_url = '{}{}comments/{}/?view_only={}'.format(
-            API_DOMAIN, API_BASE, comment._id, view_only_link.key)
+            API_DOMAIN, API_BASE, comment._id, view_only_link.key,
+        )
         assert res.status_code == 302
         assert res.location == redirect_url
 
     def test_resolves(self, app, project, user):
         # test_resolve_query_param
         url = '{}{}guids/{}/?resolve=false'.format(
-            API_DOMAIN, API_BASE, project._id)
+            API_DOMAIN, API_BASE, project._id,
+        )
         res = app.get(url, auth=user.auth)
         related_url = '{}{}nodes/{}/'.format(API_DOMAIN, API_BASE, project._id)
         related = res.json['data']['relationships']['referent']['links']['related']
@@ -138,7 +150,8 @@ class TestGuidDetail:
         # test_referent_is_embeddable
         project = ProjectFactory(creator=user)
         url = '{}{}guids/{}/?resolve=false&embed=referent'.format(
-            API_DOMAIN, API_BASE, project._id)
+            API_DOMAIN, API_BASE, project._id,
+        )
         res = app.get(url, auth=user.auth)
         related_url = '{}{}nodes/{}/'.format(API_DOMAIN, API_BASE, project._id)
         related = res.json['data']['relationships']['referent']['links']['related']

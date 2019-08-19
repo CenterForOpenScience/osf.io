@@ -44,8 +44,10 @@ def configure_subscription(auth):
     provider = json_data.get('provider')
 
     if not event or (notification_type not in NOTIFICATION_TYPES and notification_type != 'adopt_parent'):
-        raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_long='Must provide an event and notification type for subscription.')
+        raise HTTPError(
+            http.BAD_REQUEST, data=dict(
+                message_long='Must provide an event and notification type for subscription.',
+            ),
         )
 
     node = AbstractNode.load(target_id)
@@ -59,13 +61,13 @@ def configure_subscription(auth):
         if not target_id == user._id:
             sentry.log_message(
                 '{!r} attempted to subscribe to either a bad '
-                'id or non-node non-self id, {}'.format(user, target_id)
+                'id or non-node non-self id, {}'.format(user, target_id),
             )
             raise HTTPError(http.NOT_FOUND)
 
         if notification_type == 'adopt_parent':
             sentry.log_message(
-                '{!r} attempted to adopt_parent of a none node id, {}'.format(user, target_id)
+                '{!r} attempted to adopt_parent of a none node id, {}'.format(user, target_id),
             )
             raise HTTPError(http.BAD_REQUEST)
         owner = user
@@ -76,7 +78,7 @@ def configure_subscription(auth):
 
         if isinstance(node, Registration):
             sentry.log_message(
-                '{!r} attempted to subscribe to registration, {}'.format(user, target_id)
+                '{!r} attempted to subscribe to registration, {}'.format(user, target_id),
             )
             raise HTTPError(http.BAD_REQUEST)
 
@@ -90,7 +92,7 @@ def configure_subscription(auth):
                 if not parent:
                     sentry.log_message(
                         '{!r} attempted to adopt_parent of '
-                        'the parentless project, {!r}'.format(user, node)
+                        'the parentless project, {!r}'.format(user, node),
                     )
                     raise HTTPError(http.BAD_REQUEST)
 

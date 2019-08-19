@@ -84,7 +84,7 @@ VALUES = (
 def bearer_token_auth(token):
     token_dict = {
         'token_type': 'Bearer',
-        'access_token': token
+        'access_token': token,
     }
     return OAuth2(token=token_dict)
 

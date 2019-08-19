@@ -18,7 +18,7 @@ from osf.models.admin_log_entry import (
     PREPRINT_RESTORED,
     CONFIRM_SPAM,
     APPROVE_WITHDRAWAL,
-    REJECT_WITHDRAWAL
+    REJECT_WITHDRAWAL,
 )
 
 from website.preprints.tasks import update_preprint_share
@@ -99,7 +99,8 @@ class PreprintSpamList(PermissionRequiredMixin, ListView):
         query_set = kwargs.pop('object_list', self.object_list)
         page_size = self.get_paginate_by(query_set)
         paginator, page, query_set, is_paginated = self.paginate_queryset(
-            query_set, page_size)
+            query_set, page_size,
+        )
         return {
             'preprints': list(map(serialize_preprint, query_set)),
             'page': page,
@@ -128,7 +129,7 @@ class PreprintReindexShare(PreprintMixin, DeleteView):
             object_id=preprint._id,
             object_repr='Preprint',
             message='Preprint Reindexed (SHARE): {}'.format(preprint._id),
-            action_flag=REINDEX_SHARE
+            action_flag=REINDEX_SHARE,
         )
         return redirect(reverse_preprint(self.kwargs.get('guid')))
 
@@ -146,7 +147,7 @@ class PreprintReindexElastic(PreprintMixin, NodeDeleteBase):
             object_id=preprint._id,
             object_repr='Preprint',
             message='Preprint Reindexed (Elastic): {}'.format(preprint._id),
-            action_flag=REINDEX_ELASTIC
+            action_flag=REINDEX_ELASTIC,
         )
         return redirect(reverse_preprint(self.kwargs.get('guid')))
 
@@ -170,7 +171,7 @@ class PreprintRemoveContributorView(NodeRemoveContributorView):
             user=None,
             params={
                 'preprint': preprint._id,
-                'contributors': user._id
+                'contributors': user._id,
             },
             should_hide=True,
         )
@@ -190,8 +191,10 @@ class PreprintRemoveContributorView(NodeRemoveContributorView):
         return super(NodeRemoveContributorView, self).get_context_data(**context)
 
     def get_object(self, queryset=None):
-        return (Preprint.load(self.kwargs.get('guid')),
-                OSFUser.load(self.kwargs.get('user_id')))
+        return (
+            Preprint.load(self.kwargs.get('guid')),
+            OSFUser.load(self.kwargs.get('user_id')),
+        )
 
 
 class PreprintDeleteView(PreprintMixin, NodeDeleteBase):
@@ -232,7 +235,7 @@ class PreprintDeleteView(PreprintMixin, NodeDeleteBase):
                     object_id=preprint.pk,
                     object_repr='Preprint',
                     message=message,
-                    action_flag=flag
+                    action_flag=flag,
                 )
             if osf_flag is not None:
                 # Log invisibly on the OSF.
@@ -251,9 +254,9 @@ class PreprintDeleteView(PreprintMixin, NodeDeleteBase):
                 AttributeError(
                     '{} with id "{}" not found.'.format(
                         self.context_object_name.title(),
-                        kwargs.get('guid')
-                    )
-                )
+                        kwargs.get('guid'),
+                    ),
+                ),
             )
         return redirect(reverse_preprint(self.kwargs.get('guid')))
 
@@ -272,7 +275,8 @@ class PreprintRequestDeleteBase(DeleteView):
         return PreprintRequest.objects.filter(
             request_type='withdrawal',
             target__guids___id=self.kwargs.get('guid'),
-            target__provider__reviews_workflow=None).first()
+            target__provider__reviews_workflow=None,
+        ).first()
 
 class PreprintWithdrawalRequestList(PermissionRequiredMixin, ListView):
 
@@ -287,14 +291,17 @@ class PreprintWithdrawalRequestList(PermissionRequiredMixin, ListView):
     def get_queryset(self):
         return PreprintRequest.objects.filter(
             request_type='withdrawal',
-            target__provider__reviews_workflow=None).exclude(
-                machine_state='initial').order_by(self.ordering)
+            target__provider__reviews_workflow=None,
+        ).exclude(
+            machine_state='initial',
+        ).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
         page_size = self.get_paginate_by(query_set)
         paginator, page, query_set, is_paginated = self.paginate_queryset(
-            query_set, page_size)
+            query_set, page_size,
+        )
         return {
             'requests': list(map(serialize_withdrawal_request, query_set)),
             'page': page,
@@ -319,7 +326,7 @@ class PreprintWithdrawalRequestList(PermissionRequiredMixin, ListView):
                 object_id=id_,
                 object_repr='PreprintRequest',
                 message='{} withdrawal request: {} of preprint {}'.format('Approved' if is_approve_action else 'Rejected', id_, withdrawal_request.target._id),
-                action_flag=APPROVE_WITHDRAWAL if is_approve_action else REJECT_WITHDRAWAL
+                action_flag=APPROVE_WITHDRAWAL if is_approve_action else REJECT_WITHDRAWAL,
             )
         return redirect('preprints:withdrawal-requests')
 
@@ -378,7 +385,7 @@ class PreprintFlaggedSpamList(PreprintSpamList, DeleteView):
                 object_id=pid,
                 object_repr='Preprint',
                 message='Confirmed SPAM: {}'.format(pid),
-                action_flag=CONFIRM_SPAM
+                action_flag=CONFIRM_SPAM,
             )
         return redirect('preprints:flagged-spam')
 

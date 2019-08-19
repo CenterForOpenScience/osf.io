@@ -21,7 +21,7 @@ class TestViews(OsfTestCase):
         res = self.app.put_json(
             url,
             {'code': _valid_code(self.user_settings.totp_secret)},
-            auth=self.user.auth
+            auth=self.user.auth,
         )
 
         # reload the user settings object from the DB
@@ -36,7 +36,7 @@ class TestViews(OsfTestCase):
             url,
             {'code': '0000000'},
             auth=self.user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert_equal(res.status_code, 403)
         json = res.json

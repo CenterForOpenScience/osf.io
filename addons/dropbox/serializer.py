@@ -21,7 +21,7 @@ class DropboxSerializer(StorageAddonSerializer):
         path = node_settings.folder
         return {
             'name': path if path != '/' else '/ (Full Dropbox)',
-            'path': path
+            'path': path,
         }
 
     @property
@@ -29,8 +29,10 @@ class DropboxSerializer(StorageAddonSerializer):
         node = self.node_settings.owner
 
         return {
-            'auth': api_url_for('oauth_connect',
-                                service_name='dropbox'),
+            'auth': api_url_for(
+                'oauth_connect',
+                service_name='dropbox',
+            ),
             'importAuth': node.api_url_for('dropbox_import_auth'),
             'files': node.web_url_for('collect_file_trees'),
             'folders': node.api_url_for('dropbox_folder_list'),

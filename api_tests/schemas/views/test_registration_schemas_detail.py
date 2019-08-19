@@ -19,7 +19,7 @@ class TestMetaSchemaDetail:
     def schema(self):
         return RegistrationSchema.objects.filter(
             name='Prereg Challenge',
-            schema_version=SCHEMA_VERSION
+            schema_version=SCHEMA_VERSION,
         ).first()
 
     def test_deprecated_metaschemas_routes(self, app, user, schema):
@@ -62,7 +62,8 @@ class TestMetaSchemaDetail:
 
         # test_inactive_metaschema_returned
         inactive_schema = RegistrationSchema.objects.get(
-            name='Election Research Preacceptance Competition', active=False)
+            name='Election Research Preacceptance Competition', active=False,
+        )
         url = '/{}schemas/registrations/{}/'.format(API_BASE, inactive_schema._id)
         res = app.get(url)
         assert res.status_code == 200

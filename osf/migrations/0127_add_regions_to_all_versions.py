@@ -35,7 +35,7 @@ def add_regions_to_existing_versions(*args, **kwargs):
                     offset,
                     offset + BATCHSIZE,
                     max_pk,
-                )
+                ),
             )
 
 def remove_regions_from_versions(*args, **kwargs):
@@ -52,5 +52,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_regions_to_existing_versions, remove_regions_from_versions)
+        migrations.RunPython(add_regions_to_existing_versions, remove_regions_from_versions),
     ]

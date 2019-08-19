@@ -50,9 +50,11 @@ def to_hgrid(node, auth, **data):
     return NodeFileCollector(node, auth, **data).to_hgrid()
 
 
-def build_addon_root(node_settings, name, permissions=None,
-                     urls=None, extra=None, buttons=None, user=None,
-                     private_key=None, **kwargs):
+def build_addon_root(
+    node_settings, name, permissions=None,
+    urls=None, extra=None, buttons=None, user=None,
+    private_key=None, **kwargs
+):
     """Builds the root or "dummy" folder for an addon.
 
     :param addonNodeSettingsBase node_settings: Addon settings
@@ -87,9 +89,11 @@ def build_addon_root(node_settings, name, permissions=None,
         auth = permissions
         permissions = {
             'view': node_settings.owner.can_view(auth),
-            'edit': (node_settings.owner.can_edit(auth)
-                     and not node_settings.owner.is_registration
-                     and not forbid_edit),
+            'edit': (
+                node_settings.owner.can_edit(auth)
+                and not node_settings.owner.is_registration
+                and not forbid_edit
+            ),
         }
 
     max_size = node_settings.config.max_file_size
@@ -259,8 +263,8 @@ class NodeFileCollector(object):
                         getattr(
                             e,
                             'data',
-                            'Unexpected error when fetching file contents for {0}.'.format(addon.config.full_name)
-                        )
+                            'Unexpected error when fetching file contents for {0}.'.format(addon.config.full_name),
+                        ),
                     )
                     sentry.log_exception()
                     rv.append({

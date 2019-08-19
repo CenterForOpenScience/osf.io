@@ -28,22 +28,28 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
     node = models.ForeignKey('AbstractNode', null=True, on_delete=models.CASCADE)
 
     # The file or project overview page that the comment is for
-    root_target = models.ForeignKey(Guid, on_delete=models.SET_NULL,
-                                    related_name='comments',
-                                    null=True, blank=True)
+    root_target = models.ForeignKey(
+        Guid, on_delete=models.SET_NULL,
+        related_name='comments',
+        null=True, blank=True,
+    )
 
     # the direct 'parent' of the comment (e.g. the target of a comment reply is another comment)
-    target = models.ForeignKey(Guid, on_delete=models.SET_NULL,
-                                    related_name='child_comments',
-                                    null=True, blank=True)
+    target = models.ForeignKey(
+        Guid, on_delete=models.SET_NULL,
+        related_name='child_comments',
+        null=True, blank=True,
+    )
 
     edited = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
     # The type of root_target: node/files
     page = models.CharField(max_length=255, blank=True)
     content = models.TextField(
-        validators=[validators.CommentMaxLength(settings.COMMENT_MAXLENGTH),
-                    validators.string_required]
+        validators=[
+            validators.CommentMaxLength(settings.COMMENT_MAXLENGTH),
+            validators.string_required,
+        ],
     )
 
     # The mentioned users
@@ -125,7 +131,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
             return cls.objects.filter(
                 Q(node=node) & ~Q(user=user) & Q(is_deleted=False) &
                 (Q(created__gt=view_timestamp) | Q(modified__gt=view_timestamp)) &
-                Q(root_target=root_target)
+                Q(root_target=root_target),
             ).count()
 
         return 0

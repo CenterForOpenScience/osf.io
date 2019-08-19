@@ -60,7 +60,7 @@ def update_styles(state, schema):
                 '_id': os.path.splitext(os.path.basename(style_file))[0],
                 'title': title,
                 'has_bibliography': has_bibliography,
-                'parent_style': None
+                'parent_style': None,
             }
 
             # Optional
@@ -105,7 +105,7 @@ def update_styles(state, schema):
                             '_id': style_id,
                             'title': title,
                             'has_bibliography': parent_has_bibliography,
-                            'parent_style': parent_style_id
+                            'parent_style': parent_style_id,
                         }
 
                         # Optional
@@ -130,7 +130,7 @@ def update_styles(state, schema):
                     '_id': style_id,
                     'title': title,
                     'has_bibliography': has_bibliography,
-                    'parent_style': None
+                    'parent_style': None,
                 }
                 style = CitationStyle(**fields)
                 style.save()

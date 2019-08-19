@@ -42,8 +42,10 @@ class RegistrationListFilteringMixin(object):
         expected = [self.node_A._id, self.node_B2._id]
         res = self.app.get(
             '{}null'.format(
-                self.parent_url),
-            auth=self.user.auth)
+                self.parent_url,
+            ),
+            auth=self.user.auth,
+        )
         actual = [node['id'] for node in res.json['data']]
         assert_equal(set(expected), set(actual))
 
@@ -52,8 +54,10 @@ class RegistrationListFilteringMixin(object):
         res = self.app.get(
             '{}{}'.format(
                 self.parent_url,
-                self.node_B2._id),
-            auth=self.user.auth)
+                self.node_B2._id,
+            ),
+            auth=self.user.auth,
+        )
         actual = [node['id'] for node in res.json['data']]
         assert_equal(len(actual), 1)
         assert_equal(expected, actual)
@@ -63,8 +67,10 @@ class RegistrationListFilteringMixin(object):
         res = self.app.get(
             '{}{}'.format(
                 self.parent_url,
-                self.node_A._id),
-            auth=self.user.auth)
+                self.node_A._id,
+            ),
+            auth=self.user.auth,
+        )
         actual = [node['id'] for node in res.json['data']]
         assert_equal(len(actual), 2)
         assert_equal(set(expected), set(actual))
@@ -72,9 +78,11 @@ class RegistrationListFilteringMixin(object):
     def test_root_filter_null(self):
         res = self.app.get(
             '{}null'.format(
-                self.root_url),
+                self.root_url,
+            ),
             auth=self.user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['source']['parameter'], 'filter')
 
@@ -84,8 +92,10 @@ class RegistrationListFilteringMixin(object):
         res = self.app.get(
             '{}{}'.format(
                 self.root_url,
-                self.node_B2._id),
-            auth=self.user.auth)
+                self.node_B2._id,
+            ),
+            auth=self.user.auth,
+        )
         actual = [node['id'] for node in res.json['data']]
         assert_equal(set(expected), set(actual))
 
@@ -95,8 +105,10 @@ class RegistrationListFilteringMixin(object):
         res = self.app.get(
             '{}{}'.format(
                 self.root_url,
-                self.node_A._id),
-            auth=self.user.auth)
+                self.node_A._id,
+            ),
+            auth=self.user.auth,
+        )
         actual = [node['id'] for node in res.json['data']]
         assert_equal(len(actual), 6)
         assert_equal(set(expected), set(actual))
@@ -117,7 +129,9 @@ class RegistrationListFilteringMixin(object):
         res = self.app.get(
             '{}{}'.format(
                 self.contributors_url,
-                self.user_two._id),
-            auth=self.user.auth)
+                self.user_two._id,
+            ),
+            auth=self.user.auth,
+        )
         actual = [node['id'] for node in res.json['data']]
         assert_equal(expected, actual)

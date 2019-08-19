@@ -22,7 +22,7 @@ class GitHubClient(object):
         if self.access_token:
             self.gh3 = github3.login(token=self.access_token)
             self.gh3.set_client_id(
-                github_settings.CLIENT_ID, github_settings.CLIENT_SECRET
+                github_settings.CLIENT_ID, github_settings.CLIENT_SECRET,
             )
         else:
             self.gh3 = github3.GitHub()

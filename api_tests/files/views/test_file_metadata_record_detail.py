@@ -138,7 +138,7 @@ class TestFileMetadataRecordUpdate:
             'funders': [
                 {'funding_agency': 'LJAF'},
                 {'funding_agency': 'Templeton', 'grant_number': '12345'},
-            ]
+            ],
         }
 
     @pytest.fixture()
@@ -149,9 +149,9 @@ class TestFileMetadataRecordUpdate:
                     'id': record._id,
                     'type': 'metadata_records',
                     'attributes': {
-                        'metadata': metadata_record_json if not metadata else metadata
-                    }
-                }
+                        'metadata': metadata_record_json if not metadata else metadata,
+                    },
+                },
             }
             if relationships:
                 payload_data['data']['relationships'] = relationships

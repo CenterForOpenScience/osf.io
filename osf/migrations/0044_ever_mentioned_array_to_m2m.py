@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
         migrations.RenameField(
             model_name='comment',
             old_name='ever_mentioned',
-            new_name='_ever_mentioned'
+            new_name='_ever_mentioned',
         ),
         migrations.AddField(
             model_name='comment',
@@ -40,10 +40,10 @@ class Migration(migrations.Migration):
             field=models.ManyToManyField(blank=True, related_name='mentioned_in', to=settings.AUTH_USER_MODEL),
         ),
         migrations.RunPython(
-            migrate_user_guid_array_to_m2m, unmigrate_user_guid_array_from_m2m
+            migrate_user_guid_array_to_m2m, unmigrate_user_guid_array_from_m2m,
         ),
         migrations.RemoveField(
             model_name='comment',
-            name='_ever_mentioned'
+            name='_ever_mentioned',
         ),
     ]

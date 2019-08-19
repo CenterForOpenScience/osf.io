@@ -19,7 +19,7 @@ class BannerForm(forms.ModelForm):
         }
         labels = {
             'default_alt_text': 'Default photo alt text',
-            'mobile_alt_text': 'Mobile photo alt text'
+            'mobile_alt_text': 'Mobile photo alt text',
         }
 
     def __init__(self, *args, **kwargs):

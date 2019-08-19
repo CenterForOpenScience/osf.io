@@ -36,7 +36,7 @@ class CitationStyle(BaseModel):
             'short_title': self.short_title,
             'summary': self.summary,
             'has_bibliography': self.has_bibliography,
-            'parent_style': self.parent_style
+            'parent_style': self.parent_style,
         }
 
     @property

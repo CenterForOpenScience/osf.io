@@ -50,19 +50,19 @@ class TestSubjectRules(AdminTestCase):
     def test_two_toplevel_subjects(self):
         subjects_selected = [
             self.parent_one,
-            self.parent_two
+            self.parent_two,
         ]
         rules_returned = get_subject_rules(subjects_selected)
         rules_ideal = [
             [[self.parent_one._id], False],
-            [[self.parent_two._id], False]
+            [[self.parent_two._id], False],
         ]
         self.assertItemsEqual(rules_returned, rules_ideal)
 
     def test_one_child(self):
         subjects_selected = [
             self.parent_one,
-            self.child_one_1
+            self.child_one_1,
         ]
         rules_returned = get_subject_rules(subjects_selected)
         rules_ideal = [[[self.parent_one._id, self.child_one_1._id], False]]
@@ -85,7 +85,7 @@ class TestSubjectRules(AdminTestCase):
             self.child_one_1,
             self.grandchild_one_1,
             self.grandchild_one_2,
-            self.child_one_2
+            self.child_one_2,
         ]
         rules_returned = get_subject_rules(subjects_selected)
         rules_ideal = [[[self.parent_one._id], True]]
@@ -95,17 +95,17 @@ class TestSubjectRules(AdminTestCase):
         subjects_selected = [
             self.parent_one,
             self.child_one_1,
-            self.grandchild_one_1
+            self.grandchild_one_1,
         ]
         rules_returned = get_subject_rules(subjects_selected)
         rules_ideal = [
-            [[self.parent_one._id, self.child_one_1._id, self.grandchild_one_1._id], False]
+            [[self.parent_one._id, self.child_one_1._id, self.grandchild_one_1._id], False],
         ]
         self.assertItemsEqual(rules_returned, rules_ideal)
 
     def test_rules_to_subjects(self):
         rules = [
-            [[self.parent_one._id, self.child_one_1._id], False]
+            [[self.parent_one._id, self.child_one_1._id], False],
         ]
         subject_queryset_ideal = Subject.objects.filter(Q(id=self.parent_one.id) | Q(id=self.child_one_1.id))
         returned_subjects = rules_to_subjects(rules)

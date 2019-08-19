@@ -94,12 +94,14 @@ class TestUserDetail:
     #   test_user_detail_takes_profile_image_size_param
         size = 42
         url = '/{}users/{}/?profile_image_size={}'.format(
-            API_BASE, user_one._id, size)
+            API_BASE, user_one._id, size,
+        )
         res = app.get(url)
         user_json = res.json['data']
         profile_image_url = user_json['links']['profile_image']
         query_dict = urlparse.parse_qs(
-            urlparse.urlparse(profile_image_url).query)
+            urlparse.urlparse(profile_image_url).query,
+        )
         assert int(query_dict.get('s')[0]) == size
 
     #   test_profile_image_in_links
@@ -125,7 +127,8 @@ class TestUserDetail:
         user_json = res.json['data']
         upload_url = user_json['relationships']['quickfiles']['links']['upload']['href']
         waterbutler_upload = waterbutler_api_url_for(
-            quickfiles._id, 'osfstorage')
+            quickfiles._id, 'osfstorage',
+        )
 
         assert upload_url == waterbutler_upload
 
@@ -140,7 +143,8 @@ class TestUserDetail:
     def test_registrations_relationship(self, app, user_one):
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
         registration_url = '/{}users/{}/registrations/'.format(
-            API_BASE, user_one._id)
+            API_BASE, user_one._id,
+        )
         res = app.get(url, auth=user_one)
         user_json = res.json['data']
         href_url = user_json['relationships']['registrations']['links']['related']['href']
@@ -218,14 +222,16 @@ class TestUserRoutesNodeRoutes:
         return ProjectFactory(
             title='Public Project User One',
             is_public=True,
-            creator=user_one)
+            creator=user_one,
+        )
 
     @pytest.fixture()
     def project_private_user_one(self, user_one):
         return ProjectFactory(
             title='Private Project User One',
             is_public=False,
-            creator=user_one)
+            creator=user_one,
+        )
 
     @pytest.fixture()
     def project_deleted_user_one(self, user_one):
@@ -233,21 +239,24 @@ class TestUserRoutesNodeRoutes:
             title='Deleted Project User One',
             is_public=False,
             creator=user_one,
-            deleted=now())
+            deleted=now(),
+        )
 
     @pytest.fixture()
     def project_public_user_two(self, user_two):
         return ProjectFactory(
             title='Public Project User Two',
             is_public=True,
-            creator=user_two)
+            creator=user_two,
+        )
 
     @pytest.fixture()
     def project_private_user_two(self, user_two):
         return ProjectFactory(
             title='Private Project User Two',
             is_public=False,
-            creator=user_two)
+            creator=user_two,
+        )
 
     @pytest.fixture()
     def folder(self):
@@ -259,7 +268,8 @@ class TestUserRoutesNodeRoutes:
             title='Deleted Folder User One',
             is_public=False,
             creator=user_one,
-            deleted=now())
+            deleted=now(),
+        )
 
     @pytest.fixture()
     def bookmark_collection(self, user_one):
@@ -273,7 +283,8 @@ class TestUserRoutesNodeRoutes:
             project_private_user_two,
             project_deleted_user_one,
             folder, folder_deleted,
-            bookmark_collection):
+            bookmark_collection,
+    ):
 
         #   test_get_200_path_users_me_userone_logged_in
         url = '/{}users/me/'.format(API_BASE)
@@ -461,8 +472,8 @@ class TestUserUpdate:
                 linkedIn='userOneLinkedIn',
                 impactStory='userOneImpactStory',
                 orcid='userOneOrcid',
-                researcherId='userOneResearcherId'
-            )
+                researcherId='userOneResearcherId',
+            ),
         )
         user_one.save()
         return user_one
@@ -485,11 +496,11 @@ class TestUserUpdate:
                     'default_region': {
                         'data': {
                             'type': 'regions',
-                            'id': region._id
-                        }
-                    }
-                }
-            }
+                            'id': region._id,
+                        },
+                    },
+                },
+            },
         }
 
     @pytest.fixture()
@@ -517,8 +528,10 @@ class TestUserUpdate:
                         'impactStory': 'https://impactstory.org/newImpactStory',
                         'orcid': 'http://orcid.org/newOrcid',
                         'researcherId': 'http://researcherid.com/rid/newResearcherId',
-                    }},
-            }}
+                    },
+                },
+            },
+        }
 
     @pytest.fixture()
     def data_missing_id(self):
@@ -528,8 +541,8 @@ class TestUserUpdate:
                 'attributes': {
                     'full_name': 'el-Hajj Malik el-Shabazz',
                     'family_name': 'Z',
-                }
-            }
+                },
+            },
         }
 
     @pytest.fixture()
@@ -540,8 +553,8 @@ class TestUserUpdate:
                 'attributes': {
                     'fullname': 'el-Hajj Malik el-Shabazz',
                     'family_name': 'Z',
-                }
-            }
+                },
+            },
         }
 
     @pytest.fixture()
@@ -553,8 +566,8 @@ class TestUserUpdate:
                 'attributes': {
                     'full_name': 'el-Hajj Malik el-Shabazz',
                     'family_name': 'Z',
-                }
-            }
+                },
+            },
         }
 
     @pytest.fixture()
@@ -566,8 +579,8 @@ class TestUserUpdate:
                 'attributes': {
                     'full_name': 'el-Hajj Malik el-Shabazz',
                     'family_name': 'Z',
-                }
-            }
+                },
+            },
         }
 
     @pytest.fixture()
@@ -577,52 +590,62 @@ class TestUserUpdate:
                 'id': user_one._id,
                 'type': 'users',
                 'attributes': {
-                    'full_name': ' '
-                }
+                    'full_name': ' ',
+                },
 
-            }
+            },
         }
 
     def test_select_for_update(
-            self, app, user_one, url_user_one, data_new_user_one):
+            self, app, user_one, url_user_one, data_new_user_one,
+    ):
         with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
-            res = app.patch_json_api(url_user_one, {
-                'data': {
-                    'id': user_one._id,
-                    'type': 'users',
-                    'attributes': {
-                        'family_name': data_new_user_one['data']['attributes']['family_name'],
-                    }
-                }
-            }, auth=user_one.auth)
+            res = app.patch_json_api(
+                url_user_one, {
+                    'data': {
+                        'id': user_one._id,
+                        'type': 'users',
+                        'attributes': {
+                            'family_name': data_new_user_one['data']['attributes']['family_name'],
+                        },
+                    },
+                }, auth=user_one.auth,
+            )
 
         assert res.status_code == 200
         assert res.json['data']['attributes']['family_name'] == data_new_user_one['data']['attributes']['family_name']
 
         for_update_sql = connection.ops.for_update_sql()
-        assert any(for_update_sql in query['sql']
-                   for query in ctx.captured_queries)
+        assert any(
+            for_update_sql in query['sql']
+            for query in ctx.captured_queries
+        )
 
     @mock.patch('osf.utils.requests.settings.SELECT_FOR_UPDATE_ENABLED', False)
     def test_select_for_update_disabled(
-            self, app, user_one, url_user_one, data_new_user_one):
+            self, app, user_one, url_user_one, data_new_user_one,
+    ):
         with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
-            res = app.patch_json_api(url_user_one, {
-                'data': {
-                    'id': user_one._id,
-                    'type': 'users',
-                    'attributes': {
-                        'family_name': data_new_user_one['data']['attributes']['family_name'],
-                    }
-                }
-            }, auth=user_one.auth)
+            res = app.patch_json_api(
+                url_user_one, {
+                    'data': {
+                        'id': user_one._id,
+                        'type': 'users',
+                        'attributes': {
+                            'family_name': data_new_user_one['data']['attributes']['family_name'],
+                        },
+                    },
+                }, auth=user_one.auth,
+            )
 
         assert res.status_code == 200
         assert res.json['data']['attributes']['family_name'] == data_new_user_one['data']['attributes']['family_name']
 
         for_update_sql = connection.ops.for_update_sql()
-        assert not any(for_update_sql in query['sql']
-                       for query in ctx.captured_queries)
+        assert not any(
+            for_update_sql in query['sql']
+            for query in ctx.captured_queries
+        )
 
     def test_patch_user_default_region(self, app, user_one, user_two, region, region_payload, url_user_one):
         original_user_region = user_one.osfstorage_region
@@ -631,7 +654,7 @@ class TestUserUpdate:
         res = app.patch_json_api(
             url_user_one,
             region_payload,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 401
 
@@ -640,7 +663,7 @@ class TestUserUpdate:
             url_user_one,
             region_payload,
             auth=user_two.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 403
 
@@ -648,7 +671,7 @@ class TestUserUpdate:
         res = app.patch_json_api(
             url_user_one,
             region_payload,
-            auth=user_one.auth
+            auth=user_one.auth,
         )
         assert res.status_code == 200
         assert user_one.osfstorage_region == region
@@ -662,7 +685,7 @@ class TestUserUpdate:
             url_user_one,
             region_payload,
             auth=user_one.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Region bad_region is invalid.'
@@ -671,14 +694,16 @@ class TestUserUpdate:
             self, app, user_one, user_two, data_new_user_one,
             data_incorrect_type, data_incorrect_id,
             data_missing_type, data_missing_id,
-            data_blank_but_not_empty_full_name, url_user_one):
+            data_blank_but_not_empty_full_name, url_user_one,
+    ):
 
         #   test_update_user_blank_but_not_empty_full_name
         res = app.put_json_api(
             url_user_one,
             data_blank_but_not_empty_full_name,
             auth=user_one.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'This field may not be blank.'
 
@@ -687,7 +712,8 @@ class TestUserUpdate:
             url_user_one,
             data_blank_but_not_empty_full_name,
             auth=user_one.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'This field may not be blank.'
 
@@ -696,7 +722,8 @@ class TestUserUpdate:
             url_user_one,
             data_incorrect_type,
             auth=user_one.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 409
 
     #   test_patch_user_incorrect_id
@@ -704,7 +731,8 @@ class TestUserUpdate:
             url_user_one,
             data_incorrect_id,
             auth=user_one.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 409
 
     #   test_patch_user_no_type
@@ -712,7 +740,8 @@ class TestUserUpdate:
             url_user_one,
             data_missing_type,
             auth=user_one.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'This field may not be null.'
 
@@ -721,7 +750,8 @@ class TestUserUpdate:
             url_user_one,
             data_missing_id,
             auth=user_one.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'This field may not be null.'
 
@@ -730,7 +760,8 @@ class TestUserUpdate:
             url_user_one,
             data_incorrect_type,
             auth=user_one.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 409
 
     #   test_partial_patch_user_incorrect_id
@@ -738,7 +769,8 @@ class TestUserUpdate:
             url_user_one,
             data_incorrect_id,
             auth=user_one.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 409
 
     #   test_partial_patch_user_no_type
@@ -746,7 +778,8 @@ class TestUserUpdate:
             url_user_one,
             data_missing_type,
             auth=user_one.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
 
     #   test_partial_patch_user_no_id
@@ -754,7 +787,8 @@ class TestUserUpdate:
             url_user_one,
             data_missing_id,
             auth=user_one.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
 
     #   test_patch_fields_not_nested
@@ -764,11 +798,12 @@ class TestUserUpdate:
                 'data': {
                     'id': user_one._id,
                     'type': 'users',
-                    'full_name': 'New name'
-                }
+                    'full_name': 'New name',
+                },
             },
             auth=user_one.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'This field is required.'
 
@@ -779,43 +814,49 @@ class TestUserUpdate:
                 'data': {
                     'id': user_one._id,
                     'type': 'users',
-                    'full_name': 'New name'
-                }
+                    'full_name': 'New name',
+                },
             },
             auth=user_one.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 200
 
     #   test_patch_user_logged_out
-        res = app.patch_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': data_new_user_one['data']['attributes']['full_name'],
-                }
-            }
-        }, expect_errors=True)
+        res = app.patch_json_api(
+            url_user_one, {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                        'full_name': data_new_user_one['data']['attributes']['full_name'],
+                    },
+                },
+            }, expect_errors=True,
+        )
         assert res.status_code == 401
 
     #   test_put_user_without_required_field
         # PUT requires all required fields
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'family_name': data_new_user_one['data']['attributes']['family_name'],
-                }
-            }
-        }, auth=user_one.auth, expect_errors=True)
+        res = app.put_json_api(
+            url_user_one, {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                        'family_name': data_new_user_one['data']['attributes']['family_name'],
+                    },
+                },
+            }, auth=user_one.auth, expect_errors=True,
+        )
         assert res.status_code == 400
 
     #   test_put_user_logged_out
         res = app.put_json_api(
             url_user_one,
             data_new_user_one,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 401
 
     #   test_put_wrong_user
@@ -824,20 +865,23 @@ class TestUserUpdate:
             url_user_one,
             data_new_user_one,
             auth=user_two.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
     #   test_patch_wrong_user
         # User tries to update someone else's user information via patch
-        res = app.patch_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': data_new_user_one['data']['attributes']['full_name'],
-                }
-            }
-        }, auth=user_two.auth, expect_errors=True)
+        res = app.patch_json_api(
+            url_user_one, {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                        'full_name': data_new_user_one['data']['attributes']['full_name'],
+                    },
+                },
+            }, auth=user_two.auth, expect_errors=True,
+        )
         assert res.status_code == 403
         user_one.reload()
         assert user_one.fullname != data_new_user_one['data']['attributes']['full_name']
@@ -845,51 +889,58 @@ class TestUserUpdate:
     #   test_update_user_social_with_invalid_value
         """update the social key which is not profileWebsites with more than one value should throw an error"""
         original_github = user_one.social['github']
-        res = app.patch_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': 'new_fullname',
-                    'suffix': 'The Millionth',
-                    'social': {
-                        'github': ['even_newer_github', 'bad_github'],
-                    }
+        res = app.patch_json_api(
+            url_user_one, {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                        'full_name': 'new_fullname',
+                        'suffix': 'The Millionth',
+                        'social': {
+                            'github': ['even_newer_github', 'bad_github'],
+                        },
+                    },
                 },
-            }
-        }, auth=user_one.auth, expect_errors=True)
+            }, auth=user_one.auth, expect_errors=True,
+        )
         user_one.reload()
         assert res.status_code == 400
         assert user_one.social['github'] == original_github
 
         # Test list with non-string value
-        res = app.patch_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'social': {
-                        'github': [{'should': 'not_work'}]
-                    }
-                }
-            }
-        }, auth=user_one.auth, expect_errors=True)
+        res = app.patch_json_api(
+            url_user_one, {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                        'social': {
+                            'github': [{'should': 'not_work'}],
+                        },
+                    },
+                },
+            }, auth=user_one.auth, expect_errors=True,
+        )
         user_one.reload()
         assert res.status_code == 400
         assert user_one.social['github'] == original_github
 
     def test_patch_user_without_required_field(
-            self, app, user_one, data_new_user_one, url_user_one):
+            self, app, user_one, data_new_user_one, url_user_one,
+    ):
         # PATCH does not require required fields
-        res = app.patch_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'family_name': data_new_user_one['data']['attributes']['family_name'],
-                }
-            }
-        }, auth=user_one.auth)
+        res = app.patch_json_api(
+            url_user_one, {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                        'family_name': data_new_user_one['data']['attributes']['family_name'],
+                    },
+                },
+            }, auth=user_one.auth,
+        )
         assert res.status_code == 200
         assert res.json['data']['attributes']['family_name'] == data_new_user_one['data']['attributes']['family_name']
         user_one.reload()
@@ -897,19 +948,24 @@ class TestUserUpdate:
 
     def test_partial_patch_user_logged_in(self, app, user_one, url_user_one):
         # Test to make sure new fields are patched and old fields stay the same
-        res = app.patch_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': 'new_fullname',
-                    'suffix': 'The Millionth',
-                    'social': {
-                        'github': ['even_newer_github'],
-                    }
-                },
+        res = app.patch_json_api(
+            url_user_one,
+            {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                        'full_name': 'new_fullname',
+                        'suffix': 'The Millionth',
+                        'social': {
+                            'github': ['even_newer_github'],
+                        },
+                    },
 
-            }}, auth=user_one.auth)
+                },
+            },
+            auth=user_one.auth,
+        )
         user_one.reload()
         assert res.status_code == 200
         assert res.json['data']['attributes']['full_name'] == 'new_fullname'
@@ -942,61 +998,68 @@ class TestUserUpdate:
             'impactStory': 'why not',
             'orcid': 'ork-id',
             'researchGate': 'Why are there so many of these',
-            'researcherId': 'ok-lastone'
+            'researcherId': 'ok-lastone',
         }
 
         fake_fields = {
             'nope': ['notreal'],
             'totallyNot': {
-                'a': ['thing']
-            }
+                'a': ['thing'],
+            },
         }
 
         # Payload with fields not in the schema should fail
         new_fields = social_payload.copy()
         new_fields.update(fake_fields)
-        res = app.patch_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'social': new_fields
-                }
-            }
-        }, auth=user_one.auth, expect_errors=True)
+        res = app.patch_json_api(
+            url_user_one, {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                        'social': new_fields,
+                    },
+                },
+            }, auth=user_one.auth, expect_errors=True,
+        )
         assert res.status_code == 400
         assert 'Additional properties are not allowed' in res.json['errors'][0]['detail']
 
         # Payload only containing fields in schema are OK
-        res = app.patch_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'social': social_payload
-                }
-            }
-        }, auth=user_one.auth)
+        res = app.patch_json_api(
+            url_user_one, {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                        'social': social_payload,
+                    },
+                },
+            }, auth=user_one.auth,
+        )
         user_one.reload()
         for key, value in res.json['data']['attributes']['social'].items():
             assert user_one.social[key] == value == social_payload[key]
 
     def test_partial_patch_user_logged_in_no_social_fields(
-            self, app, user_one, url_user_one):
+            self, app, user_one, url_user_one,
+    ):
         # Test to make sure new fields are patched and old fields stay the same
-        res = app.patch_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': 'new_fullname',
-                    'suffix': 'The Millionth',
-                    'social': {
-                        'github': ['even_newer_github'],
-                    }
+        res = app.patch_json_api(
+            url_user_one, {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                        'full_name': 'new_fullname',
+                        'suffix': 'The Millionth',
+                        'social': {
+                            'github': ['even_newer_github'],
+                        },
+                    },
                 },
-            }
-        }, auth=user_one.auth)
+            }, auth=user_one.auth,
+        )
         user_one.reload()
         assert res.status_code == 200
         assert res.json['data']['attributes']['full_name'] == 'new_fullname'
@@ -1018,19 +1081,21 @@ class TestUserUpdate:
 
     def test_partial_put_user_logged_in(self, app, user_one, url_user_one):
         # Test to make sure new fields are patched and old fields stay the same
-        res = app.put_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': 'new_fullname',
-                    'suffix': 'The Millionth',
-                    'social': {
-                        'github': ['even_newer_github'],
-                    }
+        res = app.put_json_api(
+            url_user_one, {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                        'full_name': 'new_fullname',
+                        'suffix': 'The Millionth',
+                        'social': {
+                            'github': ['even_newer_github'],
+                        },
+                    },
                 },
-            }
-        }, auth=user_one.auth)
+            }, auth=user_one.auth,
+        )
         user_one.reload()
         assert res.status_code == 200
         assert res.json['data']['attributes']['full_name'] == 'new_fullname'
@@ -1048,7 +1113,8 @@ class TestUserUpdate:
         res = app.put_json_api(
             url_user_one,
             data_new_user_one,
-            auth=user_one.auth)
+            auth=user_one.auth,
+        )
         assert res.status_code == 200
         assert res.json['data']['attributes']['full_name'] == data_new_user_one['data']['attributes']['full_name']
         assert res.json['data']['attributes']['given_name'] == data_new_user_one['data']['attributes']['given_name']
@@ -1078,28 +1144,34 @@ class TestUserUpdate:
         assert 'newResearcherId' in social['researcherId']
 
     def test_update_user_sanitizes_html_properly(
-            self, app, user_one, url_user_one):
+            self, app, user_one, url_user_one,
+    ):
         """Post request should update resource, and any HTML in fields should be stripped"""
         bad_fullname = 'Malcolm <strong>X</strong>'
         bad_family_name = 'X <script>alert("is")</script> a cool name'
-        res = app.patch_json_api(url_user_one, {
-            'data': {
-                'id': user_one._id,
-                'type': 'users',
-                'attributes': {
-                    'full_name': bad_fullname,
-                    'family_name': bad_family_name,
-                }
-            }
-        }, auth=user_one.auth)
+        res = app.patch_json_api(
+            url_user_one, {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                        'full_name': bad_fullname,
+                        'family_name': bad_family_name,
+                    },
+                },
+            }, auth=user_one.auth,
+        )
         assert res.status_code == 200
         assert res.json['data']['attributes']['full_name'] == strip_html(
-            bad_fullname)
+            bad_fullname,
+        )
         assert res.json['data']['attributes']['family_name'] == strip_html(
-            bad_family_name)
+            bad_family_name,
+        )
 
     def test_update_accepted_tos_sets_field(
-            self, app, user_one, url_user_one):
+            self, app, user_one, url_user_one,
+    ):
         assert user_one.accepted_terms_of_service is None
         res = app.patch_json_api(
             url_user_one,
@@ -1109,10 +1181,10 @@ class TestUserUpdate:
                     'type': 'users',
                     'attributes': {
                         'accepted_terms_of_service': True,
-                    }
-                }
+                    },
+                },
             },
-            auth=user_one.auth
+            auth=user_one.auth,
         )
         user_one.reload()
         assert res.status_code == 200
@@ -1120,7 +1192,8 @@ class TestUserUpdate:
         assert isinstance(user_one.accepted_terms_of_service, dt.datetime)
 
     def test_update_accepted_tos_false(
-            self, app, user_one, url_user_one):
+            self, app, user_one, url_user_one,
+    ):
         assert user_one.accepted_terms_of_service is None
         res = app.patch_json_api(
             url_user_one,
@@ -1130,10 +1203,10 @@ class TestUserUpdate:
                     'type': 'users',
                     'attributes': {
                         'accepted_terms_of_service': False,
-                    }
-                }
+                    },
+                },
             },
-            auth=user_one.auth
+            auth=user_one.auth,
         )
         user_one.reload()
         assert res.status_code == 200
@@ -1152,7 +1225,8 @@ class TestDeactivatedUser:
         return AuthUserFactory()
 
     def test_requesting_as_deactivated_user_returns_400_response(
-            self, app, user_one):
+            self, app, user_one,
+    ):
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
         res = app.get(url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 200
@@ -1163,7 +1237,8 @@ class TestDeactivatedUser:
         assert res.json['errors'][0]['detail'] == 'Making API requests with credentials associated with a deactivated account is not allowed.'
 
     def test_unconfirmed_users_return_entire_user_object(
-            self, app, user_one, user_two):
+            self, app, user_one, user_two,
+    ):
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
         res = app.get(url, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 200
@@ -1176,7 +1251,8 @@ class TestDeactivatedUser:
         assert res.json['data']['id'] == user_one._id
 
     def test_requesting_deactivated_user_returns_410_response_and_meta_info(
-            self, app, user_one, user_two):
+            self, app, user_one, user_two,
+    ):
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
         res = app.get(url, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 200
@@ -1189,7 +1265,8 @@ class TestDeactivatedUser:
         assert res.json['errors'][0]['meta']['middle_names'] == user_one.middle_names
         assert res.json['errors'][0]['meta']['full_name'] == user_one.fullname
         assert urlparse.urlparse(
-            res.json['errors'][0]['meta']['profile_image']).netloc == 'secure.gravatar.com'
+            res.json['errors'][0]['meta']['profile_image'],
+        ).netloc == 'secure.gravatar.com'
         assert res.json['errors'][0]['detail'] == 'The requested user is no longer available.'
 
 
@@ -1365,17 +1442,18 @@ class TestUserSchools(UserProfileMixin):
                 'type': 'users',
                 'attributes': {
                     'full_name': user_one.fullname,
-                    'education': [{'degree': '',
-                                   'startYear': 1991,
-                                   'startMonth': 9,
-                                   'endYear': 1992,
-                                   'endMonth': 9,
-                                   'ongoing': False,
-                                   'department': '',
-                                   'institution': 'Fake U'
-                                   }]
-                }
-            }
+                    'education': [{
+                        'degree': '',
+                        'startYear': 1991,
+                        'startMonth': 9,
+                        'endYear': 1992,
+                        'endMonth': 9,
+                        'ongoing': False,
+                        'department': '',
+                        'institution': 'Fake U',
+                    }],
+                },
+            },
         }
 
     @pytest.fixture()
@@ -1398,17 +1476,18 @@ class TestUserJobs(UserProfileMixin):
                 'type': 'users',
                 'attributes': {
                     'full_name': user_one.fullname,
-                    'employment': [{'title': '',
-                                   'startYear': 1991,
-                                   'startMonth': 9,
-                                   'endYear': 1992,
-                                   'endMonth': 9,
-                                   'ongoing': False,
-                                   'department': '',
-                                   'institution': 'Fake U'
-                                    }]
-                }
-            }
+                    'employment': [{
+                        'title': '',
+                        'startYear': 1991,
+                        'startMonth': 9,
+                        'endYear': 1992,
+                        'endMonth': 9,
+                        'ongoing': False,
+                        'department': '',
+                        'institution': 'Fake U',
+                    }],
+                },
+            },
         }
 
     @pytest.fixture()

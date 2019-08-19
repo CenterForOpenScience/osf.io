@@ -18,6 +18,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunPython(
-            set_ever_public, revert_to_default
+            set_ever_public, revert_to_default,
         ),
     ]

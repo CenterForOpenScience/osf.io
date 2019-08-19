@@ -34,13 +34,13 @@ BEPRESS_CHANGES = {
         'Social and Behavioral Sciences:Food Studies',
         'Social and Behavioral Sciences:Psychology:Comparative Psychology',
         'Social and Behavioral Sciences:Psychology:Transpersonal Psychology',
-        'Social and Behavioral Sciences:Public Affairs, Public Policy and Public Administration:Terrorism Studies'
+        'Social and Behavioral Sciences:Public Affairs, Public Policy and Public Administration:Terrorism Studies',
     ],
     'rename': {
         'Native American Studies': 'Indigenous Studies',
         'Computer Security': 'Information Security',
         'Military Studies': 'Military and Veterans Studies',
-    }
+    },
 }
 
 def update(dry_run=False):
@@ -54,7 +54,8 @@ def update(dry_run=False):
         for custom_parent in bepress_parent.aliases.all():
             if not bepress_parent.children.count() > 1 or (
                     custom_parent.children.exists() and
-                    set(bepress_parent.children.exclude(text=new_text).values_list('text', flat=True)).issubset(set(custom_parent.children.values_list('text', flat=True)))):
+                    set(bepress_parent.children.exclude(text=new_text).values_list('text', flat=True)).issubset(set(custom_parent.children.values_list('text', flat=True)))
+            ):
                 # Either children were included in the custom taxonomy or they didn't exist before, probably
                 logger.info('Creating {} - {}'.format(custom_parent.provider._id, new_text))
                 Subject.objects.create(parent=custom_parent, provider=custom_parent.provider, text=new_text, bepress_subject=bepress_subject)

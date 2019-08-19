@@ -35,6 +35,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunPython(
-            remove_duplicate_notificationsubscriptions, noop
+            remove_duplicate_notificationsubscriptions, noop,
         ),
     ]

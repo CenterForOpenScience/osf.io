@@ -33,25 +33,33 @@ def handle_search_errors(func):
         try:
             return func(*args, **kwargs)
         except exceptions.MalformedQueryError:
-            raise HTTPError(http.BAD_REQUEST, data={
-                'message_short': 'Bad search query',
-                'message_long': language.SEARCH_QUERY_HELP,
-            })
+            raise HTTPError(
+                http.BAD_REQUEST, data={
+                    'message_short': 'Bad search query',
+                    'message_long': language.SEARCH_QUERY_HELP,
+                },
+            )
         except exceptions.SearchUnavailableError:
-            raise HTTPError(http.SERVICE_UNAVAILABLE, data={
-                'message_short': 'Search unavailable',
-                'message_long': ('Our search service is currently unavailable, if the issue persists, '
-                                 + language.SUPPORT_LINK),
-            })
+            raise HTTPError(
+                http.SERVICE_UNAVAILABLE, data={
+                    'message_short': 'Search unavailable',
+                    'message_long': (
+                        'Our search service is currently unavailable, if the issue persists, '
+                        + language.SUPPORT_LINK
+                    ),
+                },
+            )
         except exceptions.SearchException:
             # Interim fix for issue where ES fails with 500 in some settings- ensure exception is still logged until it can be better debugged. See OSF-4538
             sentry.log_exception()
             sentry.log_message('Elasticsearch returned an unexpected error response')
             # TODO: Add a test; may need to mock out the error response due to inability to reproduce error code locally
-            raise HTTPError(http.BAD_REQUEST, data={
-                'message_short': 'Could not perform search query',
-                'message_long': language.SEARCH_QUERY_HELP,
-            })
+            raise HTTPError(
+                http.BAD_REQUEST, data={
+                    'message_short': 'Could not perform search query',
+                    'message_long': language.SEARCH_QUERY_HELP,
+                },
+            )
     return wrapped
 
 
@@ -129,7 +137,7 @@ def search_projects_by_title(**kwargs):
 
     matching_title = Q(
         title__icontains=term,  # search term (case insensitive)
-        category=category  # is a project
+        category=category,  # is a project
     )
 
     matching_title = conditionally_add_query_item(matching_title, 'is_deleted', is_deleted, True)
@@ -147,14 +155,14 @@ def search_projects_by_title(**kwargs):
     if include_contributed == 'yes':
         my_projects = AbstractNode.objects.filter(
             matching_title &
-            Q(_contributors=user)  # user is a contributor
+            Q(_contributors=user),  # user is a contributor
         )[:max_results]
         my_project_count = my_project_count
 
     if my_project_count < max_results and include_public == 'yes':
         public_projects = AbstractNode.objects.filter(
             matching_title &
-            Q(is_public=True)  # is public
+            Q(is_public=True),  # is public
         )[:max_results - my_project_count]
 
     results = list(my_projects) + list(public_projects)
@@ -202,5 +210,7 @@ def search_contributor(auth):
     query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
     page = int(bleach.clean(request.args.get('page', '0'), tags=[], strip=True))
     size = int(bleach.clean(request.args.get('size', '5'), tags=[], strip=True))
-    return search.search_contributor(query=query, page=page, size=size,
-                                     exclude=exclude, current_user=user)
+    return search.search_contributor(
+        query=query, page=page, size=size,
+        exclude=exclude, current_user=user,
+    )

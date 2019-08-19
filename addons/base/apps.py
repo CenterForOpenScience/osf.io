@@ -87,8 +87,8 @@ class BaseAddonAppConfig(AppConfig):
                     path
                     for path in paths
                     if os.path.exists(path)
-                ]
-            )
+                ],
+            ),
         )
         if template_dirs:
             self.template_lookup = TemplateLookup(
@@ -102,7 +102,7 @@ class BaseAddonAppConfig(AppConfig):
                 imports=[
                     'from website.util.sanitize import temp_ampersand_fixer',
                     # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
-                ]
+                ],
             )
         else:
             self.template_lookup = None

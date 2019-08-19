@@ -36,7 +36,7 @@ def serialize_node(node):
         'is_public': node.is_public,
         'registrations': [serialize_node(registration) for registration in node.registrations.all()],
         'registered_from': node.registered_from._id if node.registered_from else None,
-        'osf_groups': [serialize_groups_for_node(node, group) for group in list(node.osf_groups)]
+        'osf_groups': [serialize_groups_for_node(node, group) for group in list(node.osf_groups)],
     }
 
 def serialize_log(log):
@@ -50,12 +50,12 @@ def serialize_simple_user_and_node_permissions(node, user):
     return {
         'id': user._id,
         'name': user.fullname,
-        'permission': Contributor.objects.get(user_id=user.id, node_id=node.id).permission
+        'permission': Contributor.objects.get(user_id=user.id, node_id=node.id).permission,
     }
 
 def serialize_groups_for_node(node, osf_group):
     return {
         'name': osf_group.name,
         'id': osf_group._id,
-        'permission': osf_group.get_permission_to_node(node)
+        'permission': osf_group.get_permission_to_node(node),
     }

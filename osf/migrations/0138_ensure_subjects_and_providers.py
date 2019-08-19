@@ -67,7 +67,7 @@ def create_subjects(state, schema):
             os.path.join(
                 APP_PATH,
                 'website', 'static', 'bepress_taxonomy.json',
-            )
+            ),
         ) as fp:
             taxonomy = json.load(fp)
 

@@ -10,7 +10,7 @@ from tests.base import AdminTestCase
 from osf_tests.factories import (
     AuthUserFactory,
     InstitutionFactory,
-    ProjectFactory
+    ProjectFactory,
 )
 from osf.models import Institution, Node
 
@@ -137,7 +137,7 @@ class TestInstitutionChangeForm(AdminTestCase):
             'name': 'New Name',
             'logo_name': 'awesome_logo.png',
             'domains': 'http://kris.biz/, http://www.little.biz/',
-            '_id': 'newawesomeprov'
+            '_id': 'newawesomeprov',
         }
         form = InstitutionForm(data=new_data)
         nt.assert_true(form.is_valid())

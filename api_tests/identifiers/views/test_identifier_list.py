@@ -54,7 +54,8 @@ class TestRegistrationIdentifierList:
     @pytest.fixture()
     def url_registration_identifiers(self, registration):
         return '/{}registrations/{}/identifiers/'.format(
-            API_BASE, registration._id)
+            API_BASE, registration._id,
+        )
 
     @pytest.fixture()
     def res_registration_identifiers(self, app, url_registration_identifiers):
@@ -71,7 +72,7 @@ class TestRegistrationIdentifierList:
     def test_identifier_list_returns_correct_number_and_referent(
             self, registration, identifier_registration,
             data_registration_identifiers, res_registration_identifiers,
-            all_identifiers
+            all_identifiers,
     ):
         # test_identifier_list_returns_correct_number
         total = res_registration_identifiers.json['links']['meta']['total']
@@ -80,29 +81,36 @@ class TestRegistrationIdentifierList:
         # test_identifier_list_returns_correct_referent
         paths = [
             urlparse(
-                item['relationships']['referent']['links']['related']['href']
+                item['relationships']['referent']['links']['related']['href'],
             ).path for item in data_registration_identifiers
         ]
-        assert '/{}registrations/{}/'.format(API_BASE,
-                                             registration._id) in paths
+        assert '/{}registrations/{}/'.format(
+            API_BASE,
+            registration._id,
+        ) in paths
 
     def test_identifier_list_returns_correct_categories_and_values(
-            self, all_identifiers, data_registration_identifiers):
+            self, all_identifiers, data_registration_identifiers,
+    ):
         # test_identifier_list_returns_correct_categories
         categories = [identifier.category for identifier in all_identifiers]
-        categories_in_response = [identifier['attributes']['category']
-                                  for identifier in data_registration_identifiers]
+        categories_in_response = [
+            identifier['attributes']['category']
+            for identifier in data_registration_identifiers
+        ]
         assert_items_equal(categories_in_response, categories)
 
         # test_identifier_list_returns_correct_values
         values = [identifier.value for identifier in all_identifiers]
-        values_in_response = [identifier['attributes']['value']
-                              for identifier in data_registration_identifiers]
+        values_in_response = [
+            identifier['attributes']['value']
+            for identifier in data_registration_identifiers
+        ]
         assert_items_equal(values_in_response, values)
 
     def test_identifier_filter_by_category(
             self, app, registration, identifier_registration,
-            url_registration_identifiers
+            url_registration_identifiers,
     ):
         IdentifierFactory(referent=registration, category='nopeid')
         identifiers_for_registration = registration.identifiers
@@ -111,13 +119,14 @@ class TestRegistrationIdentifierList:
             list(
                 identifiers_for_registration.values_list(
                     'category',
-                    flat=True
-                )
-            ), ['carpid', 'nopeid']
+                    flat=True,
+                ),
+            ), ['carpid', 'nopeid'],
         )
 
         filter_url = '{}?filter[category]=carpid'.format(
-            url_registration_identifiers)
+            url_registration_identifiers,
+        )
         new_res = app.get(filter_url)
 
         carpid_total = Identifier.objects.filter(category='carpid').count()
@@ -128,7 +137,7 @@ class TestRegistrationIdentifierList:
     def test_node_identifier_not_returned_from_registration_endpoint(
             self, identifier_node, identifier_registration,
             res_registration_identifiers,
-            data_registration_identifiers
+            data_registration_identifiers,
     ):
         assert res_registration_identifiers.status_code == 200
         assert len(data_registration_identifiers) == 1
@@ -136,13 +145,15 @@ class TestRegistrationIdentifierList:
         assert identifier_node._id != data_registration_identifiers[0]['id']
 
     def test_node_not_allowed_from_registrations_endpoint(
-            self, app, node):
+            self, app, node,
+    ):
         url = '/{}registrations/{}/identifiers/'.format(API_BASE, node._id)
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
 
     def test_do_not_return_deleted_identifier(
-            self, app, registration):
+            self, app, registration,
+    ):
         registration.is_deleted = True
         registration.save()
         url = '/{}registrations/{}/identifiers/'.format(API_BASE, registration._id)
@@ -187,7 +198,7 @@ class TestNodeIdentifierList:
 
     def test_identifier_list_returns_correct_number_and_referent(
             self, node, identifier_node, res_node_identifiers,
-            data_node_identifiers, all_identifiers
+            data_node_identifiers, all_identifiers,
     ):
         # test_identifier_list_returns_correct_number
         total = res_node_identifiers.json['links']['meta']['total']
@@ -196,17 +207,19 @@ class TestNodeIdentifierList:
         # test_identifier_list_returns_correct_referent
         paths = [
             urlparse(
-                item['relationships']['referent']['links']['related']['href']
+                item['relationships']['referent']['links']['related']['href'],
             ).path for item in data_node_identifiers
         ]
         assert '/{}nodes/{}/'.format(API_BASE, node._id) in paths
 
     def test_identifier_list_returns_correct_categories_and_values(
-            self, all_identifiers, data_node_identifiers):
+            self, all_identifiers, data_node_identifiers,
+    ):
         # test_identifier_list_returns_correct_categories
         categories = [identifier.category for identifier in all_identifiers]
         categories_in_response = [
-            identifier['attributes']['category'] for identifier in data_node_identifiers]
+            identifier['attributes']['category'] for identifier in data_node_identifiers
+        ]
         assert_items_equal(categories_in_response, categories)
 
         # test_identifier_list_returns_correct_values
@@ -217,14 +230,15 @@ class TestNodeIdentifierList:
         assert_items_equal(values_in_response, values)
 
     def test_identifier_filter_by_category(
-            self, app, node, identifier_node, url_node_identifiers):
+            self, app, node, identifier_node, url_node_identifiers,
+    ):
         IdentifierFactory(referent=node, category='nopeid')
         identifiers_for_node = Identifier.objects.filter(object_id=node.id)
 
         assert identifiers_for_node.count() == 2
         assert_items_equal(
             [identifier.category for identifier in identifiers_for_node],
-            ['carpid', 'nopeid']
+            ['carpid', 'nopeid'],
         )
 
         filter_url = '{}?filter[category]=carpid'.format(url_node_identifiers)
@@ -237,7 +251,7 @@ class TestNodeIdentifierList:
 
     def test_registration_identifier_not_returned_from_registration_endpoint(
             self, identifier_node, identifier_registration,
-            res_node_identifiers, data_node_identifiers
+            res_node_identifiers, data_node_identifiers,
     ):
         assert res_node_identifiers.status_code == 200
         assert len(data_node_identifiers) == 1
@@ -245,13 +259,15 @@ class TestNodeIdentifierList:
         assert identifier_registration._id != data_node_identifiers[0]['id']
 
     def test_registration_not_allowed_from_nodes_endpoint(
-            self, app, registration):
+            self, app, registration,
+    ):
         url = '/{}nodes/{}/identifiers/'.format(API_BASE, registration._id)
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
 
     def test_do_not_return_deleted_identifier(
-            self, app, node):
+            self, app, node,
+    ):
         node.is_deleted = True
         node.save()
         url = '/{}nodes/{}/identifiers/'.format(API_BASE, node._id)
@@ -284,7 +300,7 @@ class TestPreprintIdentifierList:
 
     def test_identifier_list_returns_correct_number_and_referent(
             self, preprint, res_preprint_identifier,
-            data_preprint_identifier, user
+            data_preprint_identifier, user,
     ):
         # add another preprint so there are more identifiers
         PreprintFactory(creator=user)
@@ -292,33 +308,39 @@ class TestPreprintIdentifierList:
         # test_identifier_list_returns_correct_number
         total = res_preprint_identifier.json['links']['meta']['total']
         assert total == Identifier.objects.filter(
-            object_id=preprint.id
+            object_id=preprint.id,
         ).count()
 
         # test_identifier_list_returns_correct_referent
         paths = [
             urlparse(
-                item['relationships']['referent']['links']['related']['href']
+                item['relationships']['referent']['links']['related']['href'],
             ).path for item in data_preprint_identifier
         ]
         assert '/{}preprints/{}/'.format(API_BASE, preprint._id) in paths
 
     def test_identifier_list_returns_correct_categories_and_values(
-            self, all_identifiers, data_preprint_identifier):
+            self, all_identifiers, data_preprint_identifier,
+    ):
         # test_identifier_list_returns_correct_categories
         categories = all_identifiers.values_list('category', flat=True)
-        categories_in_response = [identifier['attributes']['category']
-                                  for identifier in data_preprint_identifier]
+        categories_in_response = [
+            identifier['attributes']['category']
+            for identifier in data_preprint_identifier
+        ]
         assert_items_equal(categories_in_response, list(categories))
 
         # test_identifier_list_returns_correct_values
         values = all_identifiers.values_list('value', flat=True)
-        values_in_response = [identifier['attributes']['value']
-                              for identifier in data_preprint_identifier]
+        values_in_response = [
+            identifier['attributes']['value']
+            for identifier in data_preprint_identifier
+        ]
         assert_items_equal(values_in_response, list(values))
 
     def test_preprint_identifier_list_permissions_unpublished(
-            self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier):
+            self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier,
+    ):
         preprint.is_published = False
         preprint.save()
 
@@ -348,7 +370,8 @@ class TestPreprintIdentifierList:
         assert res.status_code == 200
 
     def test_preprint_identifier_list_permissions_private(
-            self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier):
+            self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier,
+    ):
         preprint.is_public = False
         preprint.save()
 
@@ -378,7 +401,8 @@ class TestPreprintIdentifierList:
         assert res.status_code == 200
 
     def test_preprint_identifier_list_permissions_deleted(
-            self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier):
+            self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier,
+    ):
         preprint.deleted = timezone.now()
         preprint.save()
 
@@ -406,7 +430,8 @@ class TestPreprintIdentifierList:
         assert res.status_code == 404
 
     def test_preprint_identifier_list_permissions_no_primary_file(
-            self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier):
+            self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier,
+    ):
         preprint.primary_file = None
         preprint.save()
 
@@ -430,7 +455,8 @@ class TestPreprintIdentifierList:
         assert res.status_code == 200
 
     def test_preprint_identifier_list_permissions_abandoned(
-            self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier):
+            self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier,
+    ):
         preprint.machine_state = DefaultStates.INITIAL.value
         preprint.save()
 
@@ -485,9 +511,9 @@ class TestNodeIdentifierCreate:
             'data': {
                 'type': 'identifiers',
                 'attributes': {
-                    'category': 'doi'
-                }
-            }
+                    'category': 'doi',
+                },
+            },
         }
 
     @pytest.fixture()
@@ -496,9 +522,9 @@ class TestNodeIdentifierCreate:
             'data': {
                 'type': 'identifiers',
                 'attributes': {
-                    'category': 'ark'
-                }
-            }
+                    'category': 'ark',
+                },
+            },
         }
 
     @pytest.fixture()
@@ -506,15 +532,17 @@ class TestNodeIdentifierCreate:
         return DataCiteClient(base_url='https://mds.fake.datacite.org', prefix=settings.DATACITE_PREFIX)
 
     @responses.activate
-    def test_create_identifier(self, app, resource, client, identifier_url, identifier_payload, user,
-            write_contributor, read_contributor, ark_payload):
+    def test_create_identifier(
+        self, app, resource, client, identifier_url, identifier_payload, user,
+        write_contributor, read_contributor, ark_payload,
+    ):
         responses.add(
             responses.Response(
                 responses.POST,
                 client.base_url + '/metadata',
                 body='OK (10.70102/FK2osf.io/dp438)',
                 status=201,
-            )
+            ),
         )
         responses.add(
             responses.Response(
@@ -522,7 +550,7 @@ class TestNodeIdentifierCreate:
                 client.base_url + '/doi',
                 body='OK (10.70102/FK2osf.io/dp438)',
                 status=201,
-            )
+            ),
         )
 
         # Can only mint DOI's

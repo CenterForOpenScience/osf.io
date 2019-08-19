@@ -13,9 +13,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL([
-            'CREATE INDEX CONCURRENTLY osf_nodelog_should_hide_nid ON osf_nodelog (should_hide, node_id);',
-        ], [
-            'DROP INDEX IF EXISTS osf_nodelog_should_hide_nid, RESTRICT;'
-        ])
+        migrations.RunSQL(
+            [
+                'CREATE INDEX CONCURRENTLY osf_nodelog_should_hide_nid ON osf_nodelog (should_hide, node_id);',
+            ], [
+                'DROP INDEX IF EXISTS osf_nodelog_should_hide_nid, RESTRICT;',
+            ],
+        ),
     ]

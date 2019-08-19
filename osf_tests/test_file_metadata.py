@@ -47,8 +47,8 @@ class TestFileMetadataRecordSerializer:
         contributor = AuthUserFactory()
         contributor.external_identity = {
             'ORCID': {
-                '0000-0001-9143-4653': 'VERIFIED'
-            }
+                '0000-0001-9143-4653': 'VERIFIED',
+            },
         }
         contributor.save()
         node.add_contributor(contributor, save=False)
@@ -63,7 +63,7 @@ class TestFileMetadataRecordSerializer:
         license_detail = {
             'id': no_license.license_id,
             'year': '2018',
-            'copyrightHolders': ['Woop', 'Yeah']
+            'copyrightHolders': ['Woop', 'Yeah'],
         }
 
         set_license(node, license_detail, Auth(node.creator))
@@ -115,7 +115,7 @@ class TestFileMetadataRecordSerializer:
 
         assert jsonschema.validate(
             inject_placeholder_doi(json_data),
-            record.schema.schema
+            record.schema.schema,
         ) is None
 
 
@@ -127,7 +127,7 @@ class TestFileMetadataRecord:
         return {
             'file_description': 'Hello this is a description',
             'resource_type': 'Book',
-            'related_publication_doi': '10.123/fkosf/hello'
+            'related_publication_doi': '10.123/fkosf/hello',
         }
 
     @pytest.fixture()
@@ -142,7 +142,7 @@ class TestFileMetadataRecord:
             'funders': [
                 {'funding_agency': 'Hello'},
                 {'funding_agency': 'Ric Flair', 'grant_number': 'Woooooo'},
-            ]
+            ],
         }
         record.update(partial_metadata, user=node.creator)
 
@@ -159,7 +159,7 @@ class TestFileMetadataRecord:
             ],
             'file_description': 'Hey this is a great interesting important file',
             'resource_type': 'Funding Submission',
-            'related_publication_doi': '10.12345/fk2osf.io/hello/'
+            'related_publication_doi': '10.12345/fk2osf.io/hello/',
         }
         record.update(full_metadata, user=node.creator)
 
@@ -171,13 +171,13 @@ class TestFileMetadataRecord:
         # validate record with all user entered metadata
         assert jsonschema.validate(
             inject_placeholder_doi(json_data),
-            record.schema.schema
+            record.schema.schema,
         ) is None
 
     def test_update_fails_with_incorrect_metadata(self, node, record):
         # metadata not in schema fails
         wrong_metadata = {
-            'favorite_schema': 'crossref'
+            'favorite_schema': 'crossref',
         }
         with pytest.raises(jsonschema.ValidationError):
             record.update(wrong_metadata, user=node.creator)
@@ -187,14 +187,14 @@ class TestFileMetadataRecord:
 
         # metadata not matching schema pattern fails
         wrong_doi = {
-            'related_publication_doi': 'whatever'
+            'related_publication_doi': 'whatever',
         }
         with pytest.raises(jsonschema.ValidationError):
             record.update(wrong_doi, user=node.creator)
 
         # resource_type not in specified options fails
         wrong_resource_type = {
-            'resource_type': 'Scrap Book'
+            'resource_type': 'Scrap Book',
         }
         with pytest.raises(jsonschema.ValidationError):
             record.update(wrong_resource_type, user=node.creator)
@@ -202,8 +202,8 @@ class TestFileMetadataRecord:
         # funders but no funding agency
         no_funding_agency_metadata = {
             'funders': [
-                {'grant_number': 'Woooo'}
-            ]
+                {'grant_number': 'Woooo'},
+            ],
         }
         with pytest.raises(jsonschema.ValidationError):
             record.update(no_funding_agency_metadata, user=node.creator)
@@ -211,8 +211,8 @@ class TestFileMetadataRecord:
         # additional properties for funders fails
         more_funders_metadata = {
             'funders': [
-                {'funding_agency': 'Woop', 'there_it': 'is'}
-            ]
+                {'funding_agency': 'Woop', 'there_it': 'is'},
+            ],
         }
         with pytest.raises(jsonschema.ValidationError):
             record.update(more_funders_metadata, user=node.creator)

@@ -35,5 +35,5 @@ class Migration(migrations.Migration):
             name='category',
             field=models.CharField(max_length=20),
         ),
-        migrations.RunPython(set_preprint_identifier_catetory_to_legacy, return_preprint_identifier_category_to_doi)
+        migrations.RunPython(set_preprint_identifier_catetory_to_legacy, return_preprint_identifier_category_to_doi),
     ]

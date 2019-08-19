@@ -33,7 +33,7 @@ _TPL_LOOKUP = TemplateLookup(
         TEMPLATE_DIR,
         settings.ADDON_PATH,
     ],
-    module_directory='/tmp/mako_modules'
+    module_directory='/tmp/mako_modules',
 )
 
 _TPL_LOOKUP_SAFE = TemplateLookup(
@@ -66,8 +66,10 @@ class Rule(object):
             return [value]
         return value
 
-    def __init__(self, routes, methods, view_func_or_data, renderer,
-                 view_kwargs=None, endpoint_suffix=''):
+    def __init__(
+        self, routes, methods, view_func_or_data, renderer,
+        view_kwargs=None, endpoint_suffix='',
+    ):
         """Rule constructor.
 
         :param routes: Route or list of routes
@@ -160,11 +162,11 @@ def process_rules(app, rules, prefix=''):
             renderer_name = getattr(
                 rule.renderer,
                 '__name__',
-                rule.renderer.__class__.__name__
+                rule.renderer.__class__.__name__,
             )
             endpoint = '{}__{}'.format(
                 renderer_name,
-                rule.view_func_or_data.__name__
+                rule.view_func_or_data.__name__,
             )
             view_functions[endpoint] = rule.view_func_or_data
 
@@ -182,7 +184,7 @@ def process_rules(app, rules, prefix=''):
             view_func,
             rule.renderer,
             rule.view_kwargs,
-            debug_mode=app.debug
+            debug_mode=app.debug,
         )
 
         # Add routes
@@ -234,7 +236,7 @@ def render_mako_string(tpldir, tplname, data, trust=True):
             input_encoding='utf-8',
             output_encoding='utf-8',
             default_filters=lookup_obj.template_args['default_filters'],
-            imports=lookup_obj.template_args['imports']  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
+            imports=lookup_obj.template_args['imports'],  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
         )
     # Don't cache in debug mode
     if not app.debug:
@@ -414,14 +416,16 @@ class WebRenderer(Renderer):
         except KeyError:
             raise KeyError(
                 'Could not infer renderer from file name: {}'.format(
-                    filename
-                )
+                    filename,
+                ),
             )
 
-    def __init__(self, template_name,
-                 renderer=None, error_renderer=None,
-                 data=None, detect_render_nested=True,
-                 trust=True, template_dir=TEMPLATE_DIR):
+    def __init__(
+        self, template_name,
+        renderer=None, error_renderer=None,
+        data=None, detect_render_nested=True,
+        trust=True, template_dir=TEMPLATE_DIR,
+    ):
         """Construct WebRenderer.
 
         :param template_name: Name of template file
@@ -445,7 +449,7 @@ class WebRenderer(Renderer):
         self.renderer = self.detect_renderer(renderer, template_name)
         self.error_renderer = self.detect_renderer(
             error_renderer,
-            self.error_template
+            self.error_template,
         )
 
     def handle_error(self, error):
@@ -470,7 +474,7 @@ class WebRenderer(Renderer):
         return self.render(
             error_data,
             None,
-            template_name=error_template
+            template_name=error_template,
         ), error.code
 
     def render_element(self, element, data):
@@ -488,7 +492,7 @@ class WebRenderer(Renderer):
             element_meta = json.loads(attributes_string)
         except ValueError:
             return '<div>No JSON object could be decoded: {}</div>'.format(
-                markupsafe.escape(attributes_string)
+                markupsafe.escape(attributes_string),
             ), True
 
         uri = element_meta.get('uri')
@@ -515,7 +519,7 @@ class WebRenderer(Renderer):
                     return '<div>{}</div>'.format(markupsafe.escape(unicode(error_msg))), is_replace
                 return '<div>Error retrieving URI {}: {}</div>'.format(
                     uri,
-                    repr(error)
+                    repr(error),
                 ), is_replace
 
         try:
@@ -527,7 +531,7 @@ class WebRenderer(Renderer):
             logger.exception(error)
             return '<div>Error rendering template {}: {}'.format(
                 element_meta['tpl'],
-                repr(error)
+                repr(error),
             ), is_replace
 
         return template_rendered, is_replace

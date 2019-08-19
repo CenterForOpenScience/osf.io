@@ -49,13 +49,15 @@ def push_status_message(message, kind='warning', dismissible=True, trust=True, j
     if not extra:
         extra = {}
     css_class = TYPE_MAP.get(kind, 'warning')
-    statuses.append(Status(message=message,
-                           jumbotron=jumbotron,
-                           css_class=css_class,
-                           dismissible=dismissible,
-                           id=id,
-                           extra=extra,
-                           trust=trust))
+    statuses.append(Status(
+        message=message,
+        jumbotron=jumbotron,
+        css_class=css_class,
+        dismissible=dismissible,
+        id=id,
+        extra=extra,
+        trust=trust,
+    ))
     session.data['status'] = statuses
     session.save()
 

@@ -17,8 +17,10 @@ from django.apps import apps
 from django.core.paginator import Paginator
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
-from elasticsearch2 import (ConnectionError, Elasticsearch, NotFoundError,
-                           RequestError, TransportError, helpers)
+from elasticsearch2 import (
+    ConnectionError, Elasticsearch, NotFoundError,
+    RequestError, TransportError, helpers,
+)
 from framework.celery_tasks import app as celery_app
 from framework.database import paginated
 from osf.models import AbstractNode
@@ -64,7 +66,7 @@ DOC_TYPE_TO_MODEL = {
     'institution': Institution,
     'preprint': Preprint,
     'collectionSubmission': CollectionSubmission,
-    'group': OSFGroup
+    'group': OSFGroup,
 }
 
 # Prevent tokenizing and stop word removal.
@@ -147,9 +149,9 @@ def get_aggregations(query, doc_type):
     query['aggregations'] = {
         'licenses': {
             'terms': {
-                'field': 'license.id'
-            }
-        }
+                'field': 'license.id',
+            },
+        },
     }
 
     res = client().search(index=INDEX, doc_type=doc_type, search_type='count', body=query)
@@ -170,8 +172,8 @@ def get_counts(count_query, clean=True):
         'counts': {
             'terms': {
                 'field': '_type',
-            }
-        }
+            },
+        },
     }
 
     res = client().search(index=INDEX, doc_type=None, search_type='count', body=count_query)
@@ -185,8 +187,8 @@ def get_counts(count_query, clean=True):
 def get_tags(query, index):
     query['aggregations'] = {
         'tag_cloud': {
-            'terms': {'field': 'tags'}
-        }
+            'terms': {'field': 'tags'},
+        },
     }
 
     results = client().search(index=index, doc_type=None, body=query)
@@ -240,7 +242,7 @@ def search(query, index=None, doc_type='_all', raw=False):
         'counts': counts,
         'aggs': aggregations,
         'tags': tags,
-        'typeAliases': ALIASES
+        'typeAliases': ALIASES,
     }
     return return_value
 
@@ -404,7 +406,7 @@ def serialize_node(node, category):
         'contributors': [
             {
                 'fullname': x['fullname'],
-                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
+                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None,
             }
             for x in node._contributors.filter(contributor__visible=True).order_by('contributor___order')
             .values('fullname', 'guids___id', 'is_active')
@@ -412,7 +414,7 @@ def serialize_node(node, category):
         'groups': [
             {
                 'name': x['name'],
-                'url': '/{}/'.format(x['_id'])
+                'url': '/{}/'.format(x['_id']),
             }
             for x in node.osf_groups.values('name', '_id')
         ],
@@ -458,7 +460,7 @@ def serialize_preprint(preprint, category):
         'contributors': [
             {
                 'fullname': x['fullname'],
-                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
+                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None,
             }
             for x in preprint._contributors.filter(preprintcontributor__visible=True).order_by('preprintcontributor___order')
             .values('fullname', 'guids___id', 'is_active')
@@ -493,14 +495,14 @@ def serialize_group(group, category):
         'members': [
             {
                 'fullname': x['fullname'],
-                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
+                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None,
             }
             for x in group.members_only.values('fullname', 'guids___id', 'is_active')
         ],
         'managers': [
             {
                 'fullname': x['fullname'],
-                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
+                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None,
             }
             for x in group.managers.values('fullname', 'guids___id', 'is_active')
         ],
@@ -592,7 +594,7 @@ def bulk_update_nodes(serialize, nodes, index=None, category=None):
 def serialize_cgm_contributor(contrib):
     return {
         'fullname': contrib['fullname'],
-        'url': '/{}/'.format(contrib['guids___id']) if contrib['is_active'] else None
+        'url': '/{}/'.format(contrib['guids___id']) if contrib['is_active'] else None,
     }
 
 def serialize_cgm(cgm):
@@ -623,14 +625,16 @@ def serialize_cgm(cgm):
 def bulk_update_cgm(cgms, actions=None, op='update', index=None):
     index = index or INDEX
     if not actions and cgms:
-        actions = ({
-            '_op_type': op,
-            '_index': index,
-            '_id': cgm._id,
-            '_type': 'collectionSubmission',
-            'doc': serialize_cgm(cgm),
-            'doc_as_upsert': True,
-        } for cgm in cgms)
+        actions = (
+            {
+                '_op_type': op,
+                '_index': index,
+                '_id': cgm._id,
+                '_type': 'collectionSubmission',
+                'doc': serialize_cgm(cgm),
+                'doc_as_upsert': True,
+            } for cgm in cgms
+        )
 
     try:
         helpers.bulk(client(), actions or [], refresh=True, raise_on_error=False)
@@ -642,10 +646,10 @@ def serialize_contributors(node):
         'contributors': [
             {
                 'fullname': x['user__fullname'],
-                'url': '/{}/'.format(x['user__guids___id'])
+                'url': '/{}/'.format(x['user__guids___id']),
             } for x in
             node.contributor_set.filter(visible=True, user__is_active=True).order_by('_order').values('user__fullname', 'user__guids___id')
-        ]
+        ],
     }
 
 
@@ -678,7 +682,7 @@ def update_user(user, index=None):
                         doc_type='file',
                         id=quickfile_id,
                         refresh=True,
-                        ignore=[404]
+                        ignore=[404],
                     )
         except NotFoundError:
             pass
@@ -689,7 +693,7 @@ def update_user(user, index=None):
         given_name=user.given_name,
         family_name=user.family_name,
         middle_names=user.middle_names,
-        suffix=user.suffix
+        suffix=user.suffix,
     )
 
     normalized_names = {}
@@ -727,30 +731,32 @@ def update_file(file_, index=None, delete=False):
 
     # TODO: Can remove 'not file_.name' if we remove all base file nodes with name=None
     file_node_is_qa = bool(
-        set(settings.DO_NOT_INDEX_LIST['tags']).intersection(file_.tags.all().values_list('name', flat=True))
+        set(settings.DO_NOT_INDEX_LIST['tags']).intersection(file_.tags.all().values_list('name', flat=True)),
     ) or bool(
-        set(settings.DO_NOT_INDEX_LIST['tags']).intersection(target.tags.all().values_list('name', flat=True))
+        set(settings.DO_NOT_INDEX_LIST['tags']).intersection(target.tags.all().values_list('name', flat=True)),
     ) or any(substring in target.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
     if not file_.name or not target.is_public or delete or file_node_is_qa or getattr(target, 'is_deleted', False) or getattr(target, 'archiving', False) or target.is_spam or (
-            target.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH):
+            target.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH
+    ):
         client().delete(
             index=index,
             doc_type='file',
             id=file_._id,
             refresh=True,
-            ignore=[404]
+            ignore=[404],
         )
         return
 
     if isinstance(target, Preprint):
         if not getattr(target, 'verified_publishable', False) or target.primary_file != file_ or target.is_spam or (
-                target.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH):
+                target.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH
+        ):
             client().delete(
                 index=index,
                 doc_type='file',
                 id=file_._id,
                 refresh=True,
-                ignore=[404]
+                ignore=[404],
             )
             return
 
@@ -792,7 +798,7 @@ def update_file(file_, index=None, delete=False):
         doc_type='file',
         body=file_doc,
         id=file_._id,
-        refresh=True
+        refresh=True,
     )
 
 @requires_search
@@ -823,7 +829,8 @@ def update_cgm_async(self, cgm_id, collection_id=None, op='update', index=None):
                 collection_id=collection_id,
                 collection__provider__isnull=False,
                 collection__deleted__isnull=True,
-                collection__is_bookmark_collection=False)
+                collection__is_bookmark_collection=False,
+            )
 
         except CollectionSubmission.DoesNotExist:
             logger.exception('Could not find object <_id {}> in a collection <_id {}>'.format(cgm_id, collection_id))
@@ -838,7 +845,8 @@ def update_cgm_async(self, cgm_id, collection_id=None, op='update', index=None):
             guid___id=cgm_id,
             collection__provider__isnull=False,
             collection__deleted__isnull=True,
-            collection__is_bookmark_collection=False)
+            collection__is_bookmark_collection=False,
+        )
 
         for cgm in cgms:
             try:
@@ -888,8 +896,8 @@ def create_index(index=None):
                     'programArea': NOT_ANALYZED_PROPERTY,
                     'provider': NOT_ANALYZED_PROPERTY,
                     'title': ENGLISH_ANALYZER_PROPERTY,
-                    'abstract': ENGLISH_ANALYZER_PROPERTY
-                }
+                    'abstract': ENGLISH_ANALYZER_PROPERTY,
+                },
             }
         else:
             mapping = {
@@ -902,13 +910,15 @@ def create_index(index=None):
                             # Elasticsearch automatically infers mappings from content-type. `year` needs to
                             # be explicitly mapped as a string to allow date ranges, which break on the inferred type
                             'year': {'type': 'string'},
-                        }
-                    }
-                }
+                        },
+                    },
+                },
             }
             if type_ in project_like_types:
-                analyzers = {field: ENGLISH_ANALYZER_PROPERTY
-                             for field in analyzed_fields}
+                analyzers = {
+                    field: ENGLISH_ANALYZER_PROPERTY
+                    for field in analyzed_fields
+                }
                 mapping['properties'].update(analyzers)
 
             if type_ == 'user':
@@ -927,7 +937,7 @@ def create_index(index=None):
                     },
                     'all_schools': {
                         'type': 'string',
-                        'boost': '0.01'
+                        'boost': '0.01',
                     },
                 }
                 mapping['properties'].update(fields)
@@ -1018,13 +1028,15 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
                 'education': education,
                 'social': user.social_links,
                 'n_projects_in_common': n_projects_in_common,
-                'profile_image_url': profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
-                                                       user,
-                                                       use_ssl=True,
-                                                       size=settings.PROFILE_IMAGE_MEDIUM),
+                'profile_image_url': profile_image_url(
+                    settings.PROFILE_IMAGE_PROVIDER,
+                    user,
+                    use_ssl=True,
+                    size=settings.PROFILE_IMAGE_MEDIUM,
+                ),
                 'profile_url': user.profile_url,
                 'registered': user.is_registered,
-                'active': user.is_active
+                'active': user.is_active,
             })
 
     return {

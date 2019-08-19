@@ -80,11 +80,11 @@ class Migration(migrations.Migration):
                 ON public.osf_basefilenode (node_id, _path, name, type)
                 WHERE (type NOT IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder')
                   AND parent_id IS NULL);
-                """
+                """,
             ], [
                 """
                 DROP INDEX IF EXISTS active_file_node_path_name_type_unique_index RESTRICT;
-                """
-            ]
-        )
+                """,
+            ],
+        ),
     ]

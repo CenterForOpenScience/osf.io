@@ -330,7 +330,7 @@ class TestRegisterNode:
         )
         current_wiki = WikiVersionFactory(
             wiki_page=wiki_page,
-            identifier=2
+            identifier=2,
         )
         registration = project.register_node(get_default_metaschema(), Auth(user), '', None)
         assert registration.wiki_private_uuids == {}
@@ -621,7 +621,7 @@ class TestDraftRegistrations:
                 'value': 1,
             },
             'b': {
-                'value': True
+                'value': True,
             },
         }
         changes = draft.update_metadata({
@@ -668,13 +668,13 @@ class TestDraftRegistrations:
         for time in times:
             comments.append({
                 'created': time.isoformat(),
-                'value': 'Foo'
+                'value': 'Foo',
             })
         orig_data = {
             'foo': {
                 'value': 'bar',
-                'comments': [comments[i] for i in range(0, 6, 2)]
-            }
+                'comments': [comments[i] for i in range(0, 6, 2)],
+            },
         }
         draft.update_metadata(orig_data)
         draft.save()
@@ -683,8 +683,8 @@ class TestDraftRegistrations:
         new_data = {
             'foo': {
                 'value': 'bar',
-                'comments': [comments[i] for i in range(1, 6, 2)]
-            }
+                'comments': [comments[i] for i in range(1, 6, 2)],
+            },
         }
         draft.update_metadata(new_data)
         draft.save()

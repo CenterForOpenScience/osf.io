@@ -27,18 +27,23 @@ class ProviderAssetFileList(PermissionRequiredMixin, ListView):
         query_set = kwargs.pop('object_list', self.object_list)
         page_size = self.get_paginate_by(query_set)
         paginator, page, query_set, is_paginated = self.paginate_queryset(
-            query_set, page_size)
+            query_set, page_size,
+        )
         rv = {
             'asset_files': query_set,
             'page': page,
-            'filterable_provider_ids': dict({'': '---'}, **{id: ' '.join([type_, name]) for id, name, type_ in AbstractProvider.objects.annotate(
-                type_=Case(
-                    When(type='osf.preprintprovider', then=Value('[preprint]')),
-                    When(type='osf.collectionprovider', then=Value('[collection]')),
-                    default=Value('[unknown]'),
-                    output_field=CharField()
-                )
-            ).values_list('id', 'name', 'type_')}),
+            'filterable_provider_ids': dict(
+                {'': '---'}, **{
+                    id: ' '.join([type_, name]) for id, name, type_ in AbstractProvider.objects.annotate(
+                        type_=Case(
+                            When(type='osf.preprintprovider', then=Value('[preprint]')),
+                            When(type='osf.collectionprovider', then=Value('[collection]')),
+                            default=Value('[unknown]'),
+                            output_field=CharField(),
+                        ),
+                    ).values_list('id', 'name', 'type_')
+                }
+            ),
         }
         return rv
 

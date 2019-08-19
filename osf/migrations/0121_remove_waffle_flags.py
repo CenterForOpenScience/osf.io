@@ -31,5 +31,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(remove_waffle_flags, add_ember_waffle_flags)
+        migrations.RunPython(remove_waffle_flags, add_ember_waffle_flags),
     ]

@@ -228,33 +228,33 @@ class Command(BaseCommand):
             action='store',
             dest='provider',
             required=True,
-            help='_id of the <provider> object, e.g. "osf". <provider> is expected to not already have a custom taxonomy.'
+            help='_id of the <provider> object, e.g. "osf". <provider> is expected to not already have a custom taxonomy.',
         )
         parser.add_argument(
             '--from-subjects-acceptable',
             action='store_true',
             dest='from_subjects_acceptable',
-            help='Specifies that the provider\'s `subjects_acceptable` be copied. `data.include` and `exclude` are ignored, the other keys may still be used'
+            help='Specifies that the provider\'s `subjects_acceptable` be copied. `data.include` and `exclude` are ignored, the other keys may still be used',
         )
         parser.add_argument(
             '--add-missing',
             action='store_true',
             dest='add_missing',
-            help='Adds "used-but-not-included" subjects.'
+            help='Adds "used-but-not-included" subjects.',
         )
         parser.add_argument(
             '--share-title',
             action='store',
             type=str,
             dest='share_title',
-            help='Sets <provider>.share_title. Ignored if already set on provider, required if not.'
+            help='Sets <provider>.share_title. Ignored if already set on provider, required if not.',
         )
         parser.add_argument(
             '--type',
             action='store',
             type=str,
             dest='provider_type',
-            help='Specifies provider type [`osf.preprintprovider`, `osf.registrationprovider`, `osf.collectionprovider`]'
+            help='Specifies provider type [`osf.preprintprovider`, `osf.registrationprovider`, `osf.collectionprovider`]',
         )
 
     def handle(self, *args, **options):

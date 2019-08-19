@@ -5,7 +5,7 @@ from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
-    PrivateLinkFactory
+    PrivateLinkFactory,
 )
 
 
@@ -32,16 +32,19 @@ def non_contrib():
 @pytest.fixture()
 def base_url(public_project):
     return '/{}nodes/{}/view_only_links/'.format(
-        API_BASE, public_project._id)
+        API_BASE, public_project._id,
+    )
 
 
 @pytest.fixture()
 def public_project(user, read_contrib, write_contrib):
     public_project = ProjectFactory(is_public=True, creator=user)
     public_project.add_contributor(
-        read_contrib, permissions=permissions.READ)
+        read_contrib, permissions=permissions.READ,
+    )
     public_project.add_contributor(
-        write_contrib, permissions=permissions.WRITE)
+        write_contrib, permissions=permissions.WRITE,
+    )
     public_project.save()
     return public_project
 
@@ -63,7 +66,8 @@ class TestViewOnlyLinksList:
         return base_url
 
     def test_non_mutating_view_only_links_list_tests(
-            self, app, user, write_contrib, read_contrib, non_contrib, url, public_project, view_only_link):
+            self, app, user, write_contrib, read_contrib, non_contrib, url, public_project, view_only_link,
+    ):
 
         #   test_admin_can_view_vols_list
         res = app.get(url, auth=user.auth)
@@ -120,13 +124,14 @@ class TestViewOnlyLinksCreate:
             'attributes': {
                 'name': '<div>  </div>',
                 'anonymous': False,
-            }
+            },
         }
         res = app.post_json_api(
             url,
             {'data': payload},
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Invalid link name.'
 
@@ -135,7 +140,7 @@ class TestViewOnlyLinksCreate:
         payload = {
             'attributes': {
                 'name': 'testlink',
-            }
+            },
         }
         res = app.post_json_api(url, {'data': payload}, auth=user.auth)
         assert res.status_code == 201
@@ -149,7 +154,7 @@ class TestViewOnlyLinksCreate:
         payload = {
             'attributes': {
                 'anonymous': False,
-            }
+            },
         }
         res = app.post_json_api(url, {'data': payload}, auth=user.auth)
         assert res.status_code == 201
@@ -159,13 +164,14 @@ class TestViewOnlyLinksCreate:
         assert data['embeds']['creator']['data']['id'] == user._id
 
     def test_admin_can_create_vol(
-            self, app, user, url, public_project, view_only_link):
+            self, app, user, url, public_project, view_only_link,
+    ):
         url = '{}?embed=creator'.format(url)
         payload = {
             'attributes': {
                 'name': 'testlink',
                 'anonymous': True,
-            }
+            },
         }
         res = app.post_json_api(url, {'data': payload}, auth=user.auth)
         assert res.status_code == 201
@@ -176,20 +182,22 @@ class TestViewOnlyLinksCreate:
         assert data['embeds']['creator']['data']['id'] == user._id
 
     def test_cannot_create_vol(
-            self, app, write_contrib, read_contrib, non_contrib, url):
+            self, app, write_contrib, read_contrib, non_contrib, url,
+    ):
 
         #   test_read_write_cannot_create_vol
         payload = {
             'attributes': {
                 'name': 'testlink',
                 'anonymous': True,
-            }
+            },
         }
         res = app.post_json_api(
             url,
             {'data': payload},
             auth=write_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
     #   test_read_only_cannot_create_vol
@@ -197,13 +205,14 @@ class TestViewOnlyLinksCreate:
             'attributes': {
                 'name': 'testlink',
                 'anonymous': True,
-            }
+            },
         }
         res = app.post_json_api(
             url,
             {'data': payload},
             auth=read_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
     #   test_logged_in_user_cannot_create_vol
@@ -211,13 +220,14 @@ class TestViewOnlyLinksCreate:
             'attributes': {
                 'name': 'testlink',
                 'anonymous': True,
-            }
+            },
         }
         res = app.post_json_api(
             url,
             {'data': payload},
             auth=non_contrib.auth,
-            expect_errors=True)
+            expect_errors=True,
+        )
         assert res.status_code == 403
 
     #   test_unauthenticated_user_cannot_create_vol
@@ -225,7 +235,7 @@ class TestViewOnlyLinksCreate:
             'attributes': {
                 'name': 'testlink',
                 'anonymous': True,
-            }
+            },
         }
         res = app.post_json_api(url, {'data': payload}, expect_errors=True)
         assert res.status_code == 401

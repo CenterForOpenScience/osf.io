@@ -21,8 +21,8 @@ def order_recursive(data):
                     (key, order_recursive(value))
                     for key, value in data.items()
                 ),
-                key=lambda item: item[0]
-            )
+                key=lambda item: item[0],
+            ),
         )
     if isinstance(data, list):
         return [

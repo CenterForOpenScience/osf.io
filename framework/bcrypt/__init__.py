@@ -26,7 +26,7 @@ def generate_password_hash(password, rounds=None):
 
     pw_hash = bcrypt.hashpw(
         unicode(password).encode('utf-8'),
-        bcrypt.gensalt(rounds)
+        bcrypt.gensalt(rounds),
     )
 
     return pw_hash
@@ -57,7 +57,7 @@ def check_password_hash(pw_hash, password):
     return constant_time_compare(
         bcrypt.hashpw(
             unicode(password).encode('utf-8'),
-            unicode(pw_hash).encode('utf-8')
+            unicode(pw_hash).encode('utf-8'),
         ),
-        pw_hash
+        pw_hash,
     )

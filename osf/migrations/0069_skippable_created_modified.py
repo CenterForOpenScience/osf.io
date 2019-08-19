@@ -79,7 +79,7 @@ OPERATIONS = [
     migrations.RenameField(
         model_name='preprintservice',
         old_name='date_modified',
-        new_name='modified'
+        new_name='modified',
     ),
     migrations.RenameField(
         model_name='privatelink',

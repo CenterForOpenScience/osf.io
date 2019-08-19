@@ -68,10 +68,10 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.RunPython(
-            populate_email_model, restore_old_emails
+            populate_email_model, restore_old_emails,
         ),
         migrations.RemoveField(
             model_name='osfuser',
-            name='emails'
+            name='emails',
         ),
     ]

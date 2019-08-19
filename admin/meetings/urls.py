@@ -9,6 +9,8 @@ app_name = 'admin'
 urlpatterns = [
     url(r'^$', views.MeetingListView.as_view(), name='list'),
     url(r'^create/$', views.MeetingCreateFormView.as_view(), name='create'),
-    url(r'^(?P<endpoint>[a-zA-Z0-9_]+)/$', views.MeetingFormView.as_view(),
-        name='detail'),
+    url(
+        r'^(?P<endpoint>[a-zA-Z0-9_]+)/$', views.MeetingFormView.as_view(),
+        name='detail',
+    ),
 ]
