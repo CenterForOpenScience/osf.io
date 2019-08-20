@@ -9,6 +9,7 @@ from website.project.decorators import (
     must_be_contributor_or_public
 )
 from api.base.utils import is_truthy
+from osf.utils.permissions import WRITE
 
 
 class ZoteroViews(GenericCitationViews):
@@ -20,7 +21,7 @@ class ZoteroViews(GenericCitationViews):
         @must_have_addon(addon_short_name, 'user')
         @must_have_addon(addon_short_name, 'node')
         @must_be_addon_authorizer(addon_short_name)
-        @must_have_permission('write')
+        @must_have_permission(WRITE)
         def _set_config(node_addon, user_addon, auth, **kwargs):
             """ Changes folder associated with addon.
             Returns serialized node settings

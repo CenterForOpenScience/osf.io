@@ -3,6 +3,7 @@ from rest_framework.exceptions import ValidationError, NotFound, PermissionDenie
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import AbstractNode, Registration, OSFUser
+from osf.utils.permissions import WRITE_NODE
 from api.base import permissions as base_permissions
 from api.base import generic_bulk_views as bulk_views
 from api.base.filters import ListFilterMixin
@@ -23,7 +24,7 @@ from api.base.parsers import JSONAPIRelationshipParserForRegularJSON, JSONAPIMul
 from api.base.utils import get_user_auth, default_node_list_permission_queryset, is_bulk_request, is_truthy
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 from api.identifiers.serializers import RegistrationIdentifierSerializer
-from api.nodes.views import NodeIdentifierList, NodeBibliographicContributorsList
+from api.nodes.views import NodeIdentifierList, NodeBibliographicContributorsList, NodeSubjectsList, NodeSubjectsRelationship
 from api.users.views import UserMixin
 from api.users.serializers import UserSerializer
 
@@ -138,8 +139,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpd
             # If skip_uneditable=True in query_params, skip nodes for which the user
             # does not have EDIT permissions.
             if is_truthy(self.request.query_params.get('skip_uneditable', False)):
-                has_permission = registrations.filter(contributor__user_id=auth.user.id, contributor__write=True).values_list('guids___id', flat=True)
-                return Registration.objects.filter(guids___id__in=has_permission)
+                return Registration.objects.get_nodes_for_user(auth.user, WRITE_NODE, registrations)
 
             for registration in registrations:
                 if not registration.can_edit(auth):
@@ -515,6 +515,26 @@ class RegistrationInstitutionsList(NodeInstitutionsList, RegistrationMixin):
     """
     view_category = 'registrations'
     view_name = 'registration-institutions'
+
+
+class RegistrationSubjectsList(NodeSubjectsList, RegistrationMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_subjects_list).
+    """
+    view_category = 'registrations'
+    view_name = 'registration-subjects'
+
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+
+
+class RegistrationSubjectsRelationship(NodeSubjectsRelationship, RegistrationMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_subjects_relationship).
+    """
+
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
+
+    view_category = 'registrations'
+    view_name = 'registration-relationships-subjects'
 
 
 class RegistrationInstitutionsRelationship(NodeInstitutionsRelationship, RegistrationMixin):

@@ -25,21 +25,21 @@ class TestMeetingSubmissionsDetail:
     @pytest.fixture()
     def meeting_one_submission(self, meeting, user):
         submission = ProjectFactory(title='Submission One', is_public=True, creator=user)
-        submission.add_tag(meeting.endpoint, Auth(user))
+        meeting.submissions.add(submission)
         submission.add_tag('poster', Auth(user))
         return submission
 
     @pytest.fixture()
     def meeting_submission_no_category(self, meeting, user):
         submission = ProjectFactory(title='Submission One', is_public=True, creator=user)
-        submission.add_tag(meeting.endpoint, Auth(user))
+        meeting.submissions.add(submission)
         api_utils.create_test_file(submission, user, create_guid=False)
         return submission
 
     @pytest.fixture()
     def meeting_one_private_submission(self, meeting, user):
         submission = ProjectFactory(title='Submission One', is_public=False, creator=user)
-        submission.add_tag(meeting.endpoint, Auth(user))
+        meeting.submissions.add(submission)
         submission.add_tag('poster', Auth(user))
         return submission
 

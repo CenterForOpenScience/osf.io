@@ -176,8 +176,8 @@ class TestUserPreprintsListFiltering(PreprintsListFilteringMixin):
         # Read contribs - contrib=False on UserPreprints filter so read contribs can only see
         # withdrawn preprints that were once public
         user2 = AuthUserFactory()
-        preprint_one.add_contributor(user2, 'read', save=True)
-        preprint_two.add_contributor(user2, 'read', save=True)
+        preprint_one.add_contributor(user2, permissions.READ, save=True)
+        preprint_two.add_contributor(user2, permissions.READ, save=True)
         url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, user2._id)
         expected = [preprint_two._id]
         res = app.get(url, auth=user2.auth)
