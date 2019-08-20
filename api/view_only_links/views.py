@@ -15,7 +15,7 @@ from api.registrations.serializers import RegistrationSerializer
 from api.view_only_links.serializers import ViewOnlyLinkDetailSerializer, ViewOnlyLinkNodesSerializer
 
 from osf.models import PrivateLink
-
+from osf.utils.permissions import ADMIN
 
 class ViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/view_only_links_read).
@@ -39,7 +39,7 @@ class ViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         user = get_user_auth(self.request).user
 
         for node in view_only_link.nodes.all():
-            if not node.has_permission(user, 'admin'):
+            if not node.has_permission(user, ADMIN):
                 raise PermissionDenied
 
         if not view_only_link:
@@ -83,7 +83,7 @@ class ViewOnlyLinkNodes(JSONAPIBaseView, generics.ListAPIView):
 
         nodes = []
         for node in view_only_link.nodes.all():
-            if not node.has_permission(user, 'admin'):
+            if not node.has_permission(user, ADMIN):
                 raise PermissionDenied
             nodes.append(node)
 

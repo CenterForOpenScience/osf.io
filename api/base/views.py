@@ -39,7 +39,7 @@ from api.nodes.permissions import ExcludeWithdrawals
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Contributor, MaintenanceState, BaseFileNode
-from osf.utils.permissions import PERMISSIONS
+from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, READ, WRITE, ADMIN
 from waffle.models import Flag, Switch, Sample
 from waffle import flag_is_active, sample_is_active
 
@@ -128,9 +128,6 @@ class JSONAPIBaseView(generics.GenericAPIView):
             except Exception as e:
                 with transaction.atomic():
                     ret = view.handle_exception(e).data
-
-            # Allow request to be gc'd
-            ser._context = None
 
             # Cache our final result
             cache[_cache_key] = ret
@@ -411,7 +408,7 @@ def root(request, format=None, **kwargs):
     else:
         current_user = None
 
-    flags = [name for name in Flag.objects.values_list('name', flat=True) if flag_is_active(request, name)]
+    flags = [name for name in Flag.objects.values_list('name', flat=True) if flag_is_active(request._request, name)]
     samples = [name for name in Sample.objects.values_list('name', flat=True) if sample_is_active(name)]
     switches = list(Switch.objects.filter(active=True).values_list('name', flat=True))
 
@@ -536,9 +533,20 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
             if operation['op'] != 'eq':
                 raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
             # operation['value'] should be 'admin', 'write', or 'read'
-            if operation['value'].lower().strip() not in PERMISSIONS:
+            query_val = operation['value'].lower().strip()
+            if query_val not in API_CONTRIBUTOR_PERMISSIONS:
                 raise InvalidFilterValue(value=operation['value'])
-            return Q(**{operation['value'].lower().strip(): True})
+            # This endpoint should only be returning *contributors* not group members
+            resource = self.get_resource()
+            if query_val == READ:
+                # If read, return all contributors
+                return Q(user_id__in=resource.contributors.values_list('id', flat=True))
+            elif query_val == WRITE:
+                # If write, return members of write and admin groups, both groups have write perms
+                return Q(user_id__in=(resource.get_group(WRITE).user_set.values_list('id', flat=True) | resource.get_group(ADMIN).user_set.values_list('id', flat=True)))
+            elif query_val == ADMIN:
+                # If admin, return only members of admin group
+                return Q(user_id__in=resource.get_group(ADMIN).user_set.values_list('id', flat=True))
         return super(BaseContributorList, self).build_query_from_field(field_name, operation)
 
 

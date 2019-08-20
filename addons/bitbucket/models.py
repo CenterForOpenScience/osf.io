@@ -311,7 +311,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         messages = []
 
         # Quit if not contributor
-        if not node.is_contributor(user):
+        if not node.is_contributor_or_group_member(user):
             return messages
 
         # Quit if not configured

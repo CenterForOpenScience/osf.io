@@ -21,7 +21,7 @@
 
                     % if parent_node['id']:
 
-                        % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
+                        % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor_or_group_member']:
                             <li><a href="${parent_node['url']}" data-toggle="tooltip" title="${parent_node['title']}" data-placement="bottom"> <i class="fa fa-level-down fa-rotate-180"></i>  </a></li>
 
                         % else:
@@ -56,7 +56,7 @@
                             % endif
                         % endfor
 
-                        % if node['is_public'] or user['is_contributor']:
+                        % if node['is_public'] or user['is_contributor_or_group_member']:
                             <li><a href="${node['url']}analytics/">Analytics</a></li>
                         % endif
 
@@ -64,15 +64,15 @@
                             <li><a href="${node['url']}registrations/">Registrations</a></li>
                         % endif
 
-                        % if user['is_contributor']:
+                        % if user['is_contributor_or_group_member']:
                             <li><a href="${node['url']}contributors/">Contributors</a></li>
                         % endif
 
-                        % if 'write' in user['permissions'] and not node['is_registration']:
+                        % if permissions.WRITE in user['permissions'] and not node['is_registration']:
                             <li><a href="${node['url']}addons/">Add-ons</a></li>
                         % endif
 
-                        % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and 'write' in user['permissions']):
+                        % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and permissions.WRITE in user['permissions']):
                             <li><a href="${node['url']}settings/">Settings</a></li>
                         % endif
                     % endif
@@ -124,7 +124,7 @@
                 <div class="alert alert-info">
                     <div>This is a pending registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>, awaiting approval from project administrators. This registration will be final when all project administrators approve the registration or 48 hours pass, whichever comes first.</div>
 
-                    % if 'admin' in user['permissions']:
+                    % if 'permissions.ADMIN' in user['permissions']:
                         <div>
                             <br>
                             <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
@@ -156,7 +156,7 @@
         % if node['is_pending_embargo']:
             <div
                 class="alert alert-info">This ${node['node_type']} is currently pending registration, awaiting approval from project administrators. This registration will be final and enter the embargo period when all project administrators approve the registration or 48 hours pass, whichever comes first. The embargo will keep the registration private until the embargo period ends.
-                % if 'admin' in user['permissions']:
+                % if permissions.ADMIN in user['permissions']:
                         <div>
                             <br>
                             <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
@@ -174,15 +174,15 @@
 
     % endif  ## End registration undismissable labels
 
-    % if node['is_supplemental_project'] and user['is_contributor'] and not node['is_public']:
+    % if node['is_supplemental_project'] and user['is_contributor_or_group_member'] and not node['is_public']:
         <div class="alert alert-info">This ${node['node_type']} contains supplemental materials for a preprint, but has been made Private. Make your supplemental materials discoverable by making this ${node['node_type']} Public.</div>
     % endif
 
-    % if node['anonymous'] and user['is_contributor']:
+    % if node['anonymous'] and user['is_contributor_or_group_member']:
         <div class="alert alert-info">This ${node['node_type']} is being viewed through an anonymized, view-only link. If you want to view it as a contributor, click <a class="link-solid" href="${node['redirect_url']}">here</a>.</div>
     % endif
 
-    % if node['link'] and not node['is_public'] and not user['is_contributor']:
+    % if node['link'] and not node['is_public'] and not user['is_contributor_or_group_member']:
         <div class="alert alert-info">This ${node['node_type']} is being viewed through a private, view-only link. Anyone with the link can view this project. Keep the link safe.</div>
     % endif
 

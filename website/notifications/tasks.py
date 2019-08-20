@@ -9,6 +9,7 @@ from framework.celery_tasks import app as celery_app
 from framework.sentry import log_exception
 from osf.models import OSFUser, AbstractNode, AbstractProvider
 from osf.models import NotificationDigest
+from osf.utils.permissions import ADMIN
 from website import mails, settings
 from website.notifications.utils import NotificationsDict
 
@@ -76,7 +77,7 @@ def _send_reviews_moderator_emails(send_type):
                 reviews_submissions_url='{}reviews/preprints/{}'.format(settings.DOMAIN, provider._id),
                 notification_settings_url='{}reviews/preprints/{}/notifications'.format(settings.DOMAIN, provider._id),
                 is_reviews_moderator_notification=True,
-                is_admin=provider.get_group('admin').user_set.filter(id=user.id).exists()
+                is_admin=provider.get_group(ADMIN).user_set.filter(id=user.id).exists()
             )
         remove_notifications(email_notification_ids=notification_ids)
 

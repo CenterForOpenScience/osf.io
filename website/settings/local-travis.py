@@ -30,7 +30,7 @@ USE_EXTERNAL_EMBER = True
 EXTERNAL_EMBER_APPS = {
     'ember_osf_web': {
         'server': 'http://localhost:4200',
-        'path': os.environ.get('HOME') + '/ember_osf_web/'
+        'path': os.environ.get('HOME') + 'website/ember_osf_web/'
     },
     'preprints': {
         'server': 'http://localhost:4201',

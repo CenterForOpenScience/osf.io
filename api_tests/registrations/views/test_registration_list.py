@@ -7,6 +7,7 @@ from urlparse import urlparse
 
 from api.base.settings.defaults import API_BASE
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
+from api_tests.subjects.mixins import SubjectsFilterMixin
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 from framework.auth.core import Auth
 from osf.models import RegistrationSchema, DraftRegistration
@@ -17,12 +18,14 @@ from osf_tests.factories import (
     AuthUserFactory,
     CollectionFactory,
     DraftRegistrationFactory,
+    OSFGroupFactory,
 )
 from rest_framework import exceptions
 from tests.base import ApiTestCase
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.views import find_bookmark_collection
 from osf.utils import permissions
+
+SCHEMA_VERSION = 2
 
 
 @pytest.mark.enable_quickfiles_creation
@@ -517,13 +520,27 @@ class TestRegistrationFiltering(ApiTestCase):
             "'notafield' is not a valid field for this endpoint.")
 
 
+class TestRegistrationSubjectFiltering(SubjectsFilterMixin):
+    @pytest.fixture()
+    def resource(self, user):
+        return RegistrationFactory(creator=user)
+
+    @pytest.fixture()
+    def resource_two(self, user):
+        return RegistrationFactory(creator=user)
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}registrations/'.format(API_BASE)
+
+
 class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def schema(self):
         return RegistrationSchema.objects.get(
             name='Replication Recipe (Brandt et al., 2013): Post-Completion',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def project_public_child(self, project_public):
@@ -651,7 +668,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     def test_cannot_create_registration(
             self, app, user_write_contrib, user_read_contrib,
-            payload, url_registrations):
+            payload, url_registrations, project_public):
 
         # def test_write_only_contributor_cannot_create_registration(self):
         res = app.post_json_api(
@@ -672,6 +689,13 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     # def test_non_authenticated_user_cannot_create_registration(self):
         res = app.post_json_api(url_registrations, payload, expect_errors=True)
         assert res.status_code == 401
+
+        # admin via a group cannot create registration
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        project_public.add_osf_group(group, permissions.ADMIN)
+        res = app.post_json_api(url_registrations, payload, auth=group_mem.auth, expect_errors=True)
+        assert res.status_code == 403
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_registration_draft_must_be_specified(
@@ -749,7 +773,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             prereg_metadata, url_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
@@ -786,7 +810,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             self, mock_enqueue, app, user, project_public, prereg_metadata, url_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
@@ -823,7 +847,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             prereg_metadata, url_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
@@ -1344,11 +1368,9 @@ class TestRegistrationBulkUpdate:
             self, app, user, registration_one, registration_two, public_payload, url):
         read_contrib = AuthUserFactory()
         registration_one.add_contributor(
-            read_contrib, permissions=[
-                permissions.READ], save=True)
+            read_contrib, permissions=permissions.READ, save=True)
         registration_two.add_contributor(
-            read_contrib, permissions=[
-                permissions.READ], save=True)
+            read_contrib, permissions=permissions.READ, save=True)
 
         res = app.put_json_api(
             url,
