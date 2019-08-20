@@ -203,13 +203,7 @@ class CursorPagination(pagination.CursorPagination):
         Creates pagination links from the view_name if embedded resource,
         rather than the location used in the request.
         """
-        kwargs = self.request.parser_context['kwargs'].copy()
-        embedded = kwargs.pop('is_embedded', None)
-        view_name = self.request.parser_context['view'].view_fqn
-        reversed_url = None
-        if embedded:
-            reversed_url = reverse(view_name, kwargs=kwargs)
-        response_dict = self.get_response_dict(data, reversed_url)
+        response_dict = self.get_response_dict(data)
 
         if is_anonymized(self.request):
             if response_dict.get('meta', False):
