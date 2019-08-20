@@ -477,8 +477,20 @@ def process_usages(
         dry_run=False,
         page_size=10000,
         sample_only=False,
-        remote_base_folder=None,
 ):
+    if not dry_run:
+        json = requests.get(
+            url=DS_METRICS_BASE_FOLDER,
+            headers={'Accept': 'application/vnd.api+json;version={}'.format(DEFAULT_API_VERSION)},
+            auth=bearer_token_auth(DS_METRICS_OSF_TOKEN)
+        ).json()['data']
+
+        remote_base_folder = {
+            'files': json['relationships']['files']['links']['related']['href'],
+            'new_folder': json['links']['new_folder'],
+            'upload': json['links']['upload'],
+        }
+        logger.debug('Remote base folder: {}'.format(remote_base_folder))
     # We can't re-order these columns after they are released, only add columns to the end
     # This is why we can't just append whatever storage regions we add to the system automatically,
     # because then they'd likely be out of order when they were added.
@@ -606,24 +618,10 @@ class Command(BaseCommand):
         page_size = options['page_size']
         sample_only = options['sample_only']
 
-        remote_base_folder = None
-
         if dry_run:
             logger.info('DRY RUN')
         else:
-            if DS_METRICS_BASE_FOLDER is not None and DS_METRICS_OSF_TOKEN is not None:
-                json = requests.get(
-                    url=DS_METRICS_BASE_FOLDER,
-                    headers={'Accept': 'application/vnd.api+json;version={}'.format(DEFAULT_API_VERSION)},
-                    auth=bearer_token_auth(DS_METRICS_OSF_TOKEN)
-                ).json()['data']
-
-                remote_base_folder = {
-                    'files': json['relationships']['files']['links']['related']['href'],
-                    'new_folder': json['links']['new_folder'],
-                    'upload': json['links']['upload'],
-                }
-            else:
+            if DS_METRICS_BASE_FOLDER is None or DS_METRICS_OSF_TOKEN is None:
                 raise RuntimeError(
                     'DS_METRICS_BASE_FOLDER and DS_METRICS_OSF_TOKEN settings are required if dry_run==False.'
                 )
@@ -638,7 +636,6 @@ class Command(BaseCommand):
             dry_run=dry_run,
             page_size=page_size,
             sample_only=sample_only,
-            remote_base_folder=remote_base_folder,
         )
         script_finish_time = datetime.datetime.now()
         logger.info('Script finished time: {}'.format(script_finish_time))
