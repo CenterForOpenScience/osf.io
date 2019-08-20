@@ -274,7 +274,7 @@ def map_schema_to_schemablocksv2(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0175_add_schema_block_models'),
+        ('osf', '0181_add_schema_block_models'),
     ]
 
     operations = [
