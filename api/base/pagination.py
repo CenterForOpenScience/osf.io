@@ -177,7 +177,7 @@ class CursorPagination(pagination.CursorPagination):
     max_page_size = MAX_PAGE_SIZE
     total = 0
 
-    def get_response_dict(self, data, url):
+    def get_response_dict(self, data):
         return OrderedDict([
             ('data', data),
             (
