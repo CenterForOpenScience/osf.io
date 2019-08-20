@@ -25,7 +25,7 @@ class TestPreprintProviderSubjectsForDeprecatedEndpoint(ProviderSubjectsMixin):
             API_BASE, lawless_provider._id)
 
 
-class TestPreprintProviderSubjects(ProviderSubjectsMixin):
+class TestPreprintProviderTaxonomies(ProviderSubjectsMixin):
     provider_class = PreprintProviderFactory
 
     @pytest.fixture()
@@ -44,6 +44,101 @@ class TestPreprintProviderSubjects(ProviderSubjectsMixin):
             API_BASE, lawless_provider._id)
 
 
+class TestPreprintProviderSubjects(ProviderSubjectsMixin):
+    provider_class = PreprintProviderFactory
+
+    @pytest.fixture()
+    def lawless_url(self, lawless_provider):
+        return '/{}providers/preprints/{}/subjects/?page[size]=20&'.format(
+            API_BASE, lawless_provider._id)
+
+    @pytest.fixture()
+    def ruled_url(self, ruled_provider):
+        return '/{}providers/preprints/{}/subjects/?page[size]=20&'.format(
+            API_BASE, ruled_provider._id)
+
+    @pytest.fixture()
+    def base_url(self, lawless_provider):
+        return '/{}providers/preprints/{}/subjects/'.format(
+            API_BASE, lawless_provider._id)
+
+    def test_no_rules_with_parents_filter(self, app, lawless_url, subB, subI, subM):
+        res = app.get(
+            lawless_url +
+            'filter[parent]={}'.format(
+                subB._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 1
+        assert res.json['data'][0]['attributes']['text'] == 'F'
+
+    def test_rules_enforced_with_null_parent_filter(self, app, ruled_url):
+        res = app.get(ruled_url + 'filter[parent]=null')
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 3
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert 'A' in texts
+        assert 'H' in texts
+        assert 'L' in texts
+        assert 'O' not in texts
+
+    def test_no_rules_with_null_parent_filter(self, app, lawless_url):
+        res = app.get(lawless_url + 'filter[parent]=null')
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 6
+
+    def test_rules_enforced_with_parents_filter(self, app, ruled_url, subB, subI, subM):
+        res = app.get(
+            ruled_url +
+            'filter[parent]={}'.format(
+                subB._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 0
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert 'F' not in texts
+
+        res = app.get(
+            ruled_url +
+            'filter[parent]={}'.format(
+                subI._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 1
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert 'J' in texts
+        assert 'K' not in texts
+
+        res = app.get(
+            ruled_url +
+            'filter[parent]={}'.format(
+                subM._id))
+
+    def test_no_rules_with_grandparent_filter(self, app, lawless_url, subA):
+        res = app.get(
+            lawless_url +
+            'filter[parent]={}'.format(
+                subA._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 3
+
+    def test_rules_enforced_with_grandparent_filter(self, app, ruled_url, subA):
+        res = app.get(
+            ruled_url +
+            'filter[parent]={}'.format(
+                subA._id))
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 2
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert 'B' in texts
+        assert 'D' in texts
+        assert 'C' not in texts
+
+
 class TestPreprintProviderSpecificSubjectsForDeprecatedEndpoint(ProviderSpecificSubjectsMixin):
     provider_class = PreprintProviderFactory
 
@@ -56,7 +151,7 @@ class TestPreprintProviderSpecificSubjectsForDeprecatedEndpoint(ProviderSpecific
         return '/{}preprint_providers/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_2._id)
 
 
-class TestPreprintProviderSpecificSubjects(ProviderSpecificSubjectsMixin):
+class TestPreprintProviderSpecificTaxonomies(ProviderSpecificSubjectsMixin):
     provider_class = PreprintProviderFactory
 
     @pytest.fixture()
@@ -68,8 +163,20 @@ class TestPreprintProviderSpecificSubjects(ProviderSpecificSubjectsMixin):
         return '/{}providers/preprints/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_2._id)
 
 
+class TestPreprintProviderSpecificSubjects(ProviderSpecificSubjectsMixin):
+    provider_class = PreprintProviderFactory
+
+    @pytest.fixture()
+    def url_1(self, provider_1):
+        return '/{}providers/preprints/{}/subjects/?page[size]=15&'.format(API_BASE, provider_1._id)
+
+    @pytest.fixture()
+    def url_2(self, provider_2):
+        return '/{}providers/preprints/{}/subjects/?page[size]=15&'.format(API_BASE, provider_2._id)
+
+
 @pytest.mark.django_db
-class TestPreprintProviderHighlightedSubjects:
+class TestPreprintProviderHighlightedTaxonomies:
 
     @pytest.fixture()
     def provider(self):
@@ -118,6 +225,14 @@ class TestPreprintProviderHighlightedSubjects:
         assert res.status_code == 200
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['id'] == subj_aa._id
+
+
+@pytest.mark.django_db
+class TestPreprintProviderHighlightedSubjects(TestPreprintProviderHighlightedTaxonomies):
+
+    @pytest.fixture()
+    def url(self, provider):
+        return '/{}providers/preprints/{}/subjects/highlighted/'.format(API_BASE, provider._id)
 
 
 @pytest.mark.django_db
@@ -184,7 +299,40 @@ class TestCustomTaxonomy:
             url.format(
                 API_BASE,
                 asdf_provider._id))
+        assert len(bepress_res.json['data']) == len(asdf_res.json['data']) == 1
+        assert bepress_res.json['data'][0]['attributes']['share_title'] == osf_provider.share_title
+        assert asdf_res.json['data'][0]['attributes']['share_title'] == asdf_provider.share_title
+
+
+@pytest.mark.django_db
+class TestCustomSubjects(TestCustomTaxonomy):
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}providers/preprints/{}/subjects/'
+
+    def test_taxonomy_share_title(self, app, url_deprecated, url, osf_provider, asdf_provider, bepress_subj, other_subj):
+        bepress_res = app.get(
+            url_deprecated.format(
+                API_BASE,
+                osf_provider._id))
+        asdf_res = app.get(
+            url_deprecated.format(
+                API_BASE,
+                asdf_provider._id))
 
         assert len(bepress_res.json['data']) == len(asdf_res.json['data']) == 1
         assert bepress_res.json['data'][0]['attributes']['share_title'] == osf_provider.share_title
         assert asdf_res.json['data'][0]['attributes']['share_title'] == asdf_provider.share_title
+
+        bepress_res = app.get(
+            url.format(
+                API_BASE,
+                osf_provider._id))
+        asdf_res = app.get(
+            url.format(
+                API_BASE,
+                asdf_provider._id))
+        assert len(bepress_res.json['data']) == len(asdf_res.json['data']) == 1
+        assert bepress_res.json['data'][0]['attributes']['taxonomy_name'] == osf_provider.share_title
+        assert asdf_res.json['data'][0]['attributes']['taxonomy_name'] == asdf_provider.share_title
