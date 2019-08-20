@@ -850,6 +850,41 @@ class TaxonomizableMixin(models.Model):
 
         self.save(old_subjects=old_subjects)
 
+    def map_subjects_between_providers(self, old_provider, new_provider, auth):
+        """
+        Maps subjects between preprint providers using bepress_subject_id.
+
+        Loops through each subject hierarchy for a resource and attempts to find
+        a matching subject for the lowest tier subject.
+
+        :params old_provider PreprintProvider
+        :params new_provider PreprintProvider
+        :params auth Authenticated User
+
+        returns a list of any subjects that could not be mapped.
+        """
+        new_subjects = []
+        subject_problems = []
+        for hierarchy in self.subject_hierarchy:
+            subject = hierarchy[-1]
+            current_bepress_id = getattr(
+                hierarchy[-1],
+                self.get_bepress_id_field(old_provider)
+            )
+            try:
+                new_subject = new_provider.subjects.get(**{
+                    self.get_bepress_id_field(new_provider): current_bepress_id
+                })
+            except Subject.DoesNotExist:
+                new_subject = subject
+                subject_problems.append(subject.text)
+            new_subjects.append(new_subject.hierarchy)
+        self.set_subjects(new_subjects, auth, add_log=False)
+        return subject_problems
+
+    def get_bepress_id_field(self, provider):
+        return 'id' if provider._id == 'osf' else 'bepress_subject_id'
+
 
 class ContributorMixin(models.Model):
     """

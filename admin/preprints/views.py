@@ -74,8 +74,9 @@ class PreprintView(PreprintMixin, UpdateView, GuidView):
         if not request.user.has_perm('osf.change_preprint'):
             raise PermissionsError("This user does not have permission to update this preprint's provider.")
         response = super(PreprintView, self).post(request, *args, **kwargs)
-        if self.get_object().provider and str(old_provider.id) != self.get_object().provider.id:
-            self.update_subjects_for_provider(request, old_provider, self.object.provider)
+        new_provider = self.get_object().provider
+        if new_provider and old_provider.id != new_provider.id:
+            self.update_subjects_for_provider(request, old_provider, new_provider)
         return response
 
     def get_context_data(self, **kwargs):
@@ -88,26 +89,7 @@ class PreprintView(PreprintMixin, UpdateView, GuidView):
         return super(PreprintView, self).get_context_data(**kwargs)
 
     def update_subjects_for_provider(self, request, old_provider, new_provider):
-        subject_hierarchies = self.object.subject_hierarchy
-        new_subjects = []
-        subject_problems = []
-        for hierarchy in subject_hierarchies:
-            subject = hierarchy[-1]
-            if old_provider._id == 'osf':
-                bepress_id = subject.id
-            else:
-                bepress_id = subject.bepress_subject_id
-            if new_provider._id == 'osf':
-                new_subject = new_provider.subjects.filter(id=bepress_id)
-            else:
-                new_subject = new_provider.subjects.filter(bepress_subject_id=bepress_id)
-            if not new_subject.exists():
-                subject_problems.append(subject.text)
-                new_subject = subject
-            else:
-                new_subject = new_subject[0]
-            new_subjects.append(new_subject.hierarchy)
-        self.object.set_subjects(new_subjects, Auth(request.user))
+        subject_problems = self.object.map_subjects_between_providers(old_provider, new_provider, Auth(request.user))
         if subject_problems:
             messages.warning(request, 'Unable to find subjects in new provider for the following subject(s):')
             for problem in subject_problems:
