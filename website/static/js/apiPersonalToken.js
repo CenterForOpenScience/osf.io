@@ -19,6 +19,8 @@ var $osf = require('./osfHelpers');
 var oop = require('js/oop');
 var language = require('js/osfLanguage');
 
+var ScopesRelationshipVersion = 2.17;
+
 
 /*
  *  Store the data related to a single API Personal Token
@@ -32,8 +34,11 @@ var TokenData = oop.defclass({
         this.name = ko.observable(attributes.name)
             .extend({required: true, maxLength:200});
 
-        this.scopes = ko.observableArray(attributes.scopes ? attributes.scopes.split(' ') : undefined)
-            .extend({required: true});
+        this.scopes = ko.observableArray(Object.keys(data).length !==0 && data.embeds.scopes.data ? data.embeds.scopes.data.map(
+            function(scope) {
+                return scope.id;
+            }) : undefined
+        ).extend({required: true});
 
         this.token_id = ko.observable(attributes.token_id);
 
@@ -59,8 +64,14 @@ var TokenData = oop.defclass({
                 type: 'tokens',
                 attributes: {
                     name: this.name(),
-                    scopes: this.scopes().toString().replace(/,/g, ' ') || '',
                     user_id: this.owner
+                },
+                relationships: {
+                    'scopes': {
+                        'data': this.scopes().map(function(scope) {
+                            return {id: scope, type: 'scopes'};
+                        })
+                    }
                 }
             }
         };
@@ -80,7 +91,7 @@ var TokenDataClient = oop.defclass({
     },
     _fetchData: function (url) {
         var ret = $.Deferred();
-        var request = $osf.ajaxJSON('GET', url, {isCors: true});
+        var request = $osf.ajaxJSON('GET', url + '?version=' + ScopesRelationshipVersion, {isCors: true});
 
         request.done(function (data) {
             ret.resolve(this.unserialize(data));
@@ -102,7 +113,7 @@ var TokenDataClient = oop.defclass({
         var ret = $.Deferred();
 
         var payload = tokenData.serialize();
-        var request = $osf.ajaxJSON(method, url, {isCors: true, data: payload});
+        var request = $osf.ajaxJSON(method, url, {isCors: true, data: payload, fields: {contentType: 'application/vnd.api+json'}});
 
         request.done(function (data) { // The server response will contain the newly created/updated record
             ret.resolve(this.unserialize(data));
@@ -114,15 +125,15 @@ var TokenDataClient = oop.defclass({
     },
     createOne: function (tokenData) {
         var url = this.apiListUrl;
-        return this._sendData(tokenData, url, 'POST');
+        return this._sendData(tokenData, url + '?version=' + ScopesRelationshipVersion, 'POST');
     },
     updateOne: function (tokenData) {
         var url = tokenData.apiDetailUrl;
-        return this._sendData(tokenData, url, 'PATCH');
+        return this._sendData(tokenData, url + '?version=' + ScopesRelationshipVersion, 'PATCH');
     },
     deleteOne: function (tokenData) {
         var url = tokenData.apiDetailUrl;
-        return $osf.ajaxJSON('DELETE', url, {isCors: true});
+        return $osf.ajaxJSON('DELETE', url + '?version=' + ScopesRelationshipVersion, {isCors: true});
     },
     unserialize: function (apiData) {
         var result;
