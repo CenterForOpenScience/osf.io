@@ -492,7 +492,12 @@ class TestExternalUtil(OsfTestCase):
         assert_not_equal(token, updated_token)
 
     def test_set_new_access_token(self):
+        RegionExternalAccount.objects.create(
+            external_account=self.external_account,
+            region=self.region,
+        )
         new_access_token = 'New access token test'
-        set_new_access_token(self.region.id, new_access_token)
+        self.external_account.oauth_key = new_access_token
+        set_new_access_token(self.external_account)
         region_from_db = Region.objects.get(pk=self.region.id)
         assert new_access_token == region_from_db.waterbutler_credentials['storage']['token']
