@@ -490,7 +490,9 @@ def create_waterbutler_log(payload, **kwargs):
         elif action in (NodeLog.FILE_MOVED, NodeLog.FILE_RENAMED):
             metadata = payload.get('metadata') or payload.get('destination')
             src_path = payload['source']['materialized']
+            pprint('src materialized : ' + src_path)
             dest_path = payload['destination']['materialized']
+            pprint('destination materialized :' + dest_path)
             src_provider = payload['source']['provider']
             dest_provider = payload['destination']['provider']
             metadata = payload.get('metadata') or payload.get('destination')

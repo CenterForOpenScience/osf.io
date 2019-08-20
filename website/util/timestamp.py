@@ -32,6 +32,7 @@ from website.util import waterbutler
 from django.contrib.contenttypes.models import ContentType
 from framework.celery_tasks import app as celery_app
 from inspect import currentframe
+from pprint import pprint
 
 logger = logging.getLogger(__name__)
 
@@ -548,15 +549,19 @@ def file_created_or_updated(node, metadata, user_id, created_flag):
     verify_data.upload_file_modified_at = file_info['modified']
     verify_data.upload_file_size = file_info['size']
     verify_data.save()
+    pprint(vars(verify_data))
 
 def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest_path, metadata, src_metadata=None):
     from pprint import pprint
     pprint(src_path)
+    pprint(src_metadata)
     pprint(dest_path)
     pprint(metadata)
     pprint(src_metadata.get('path', None))
-    if src_provider == 'box':
-        src_path = src_metadata.get('path', src_path)
+    # if src_provider == 'box':
+    #     src_path = src_metadata.get('path', src_path)
+    # if dest_provider == 'box':
+    #     dest_path == metadata.get('path', dest_path)
     pprint(get_linenumber())
     src_path = src_path if src_path[0] == '/' else '/' + src_path
     dest_path = dest_path if dest_path[0] == '/' else '/' + dest_path
@@ -571,8 +576,14 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
     ).all()
     pprint(get_linenumber())
     for deleted_file in deleted_files:
+        pprint(deleted_file)
+        pprint(get_linenumber())
         file_node_overwitten(project_id, target_object_id, dest_provider, dest_path)
     pprint(get_linenumber())
+    pprint("=============================================================================")
+    pprint('path__startswith=' + src_path)
+    pprint('project_id=' + project_id)
+    pprint('provider=' + src_provider)
     moved_files = RdmFileTimestamptokenVerifyResult.objects.filter(
         path__startswith=src_path,
         project_id=project_id,
@@ -582,9 +593,14 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
     ).all()
     pprint(get_linenumber())
     for moved_file in moved_files:
+        pprint(moved_file.path)
+        pprint(src_path)
+        pprint(dest_path)
         moved_file.path = moved_file.path.replace(src_path, dest_path, 1)
         moved_file.provider = dest_provider
         moved_file.save()
+        pprint(moved_file.path)
+        pprint(moved_file.provider)
         pprint(get_linenumber())
     if src_provider != 'osfstorage' and src_path[-1:] == '/':
         pprint(get_linenumber())
@@ -592,7 +608,7 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
         file_nodes = BaseFileNode.objects.filter(target_object_id=target_object_id,
                                                  provider=src_provider,
                                                  deleted_on__isnull=True,
-                                                 _path__startswith=src_path).all()
+                                                 _materialized_path__startswith=src_path).all()
 
         # if len(file_nodes) == 0:
         #     if src_provider == 'box':
@@ -636,6 +652,7 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
                 logger.critical(file_node.id)
                 logger.critical(file_node.type)
                 logger.critical(file_node.provider)
+            pprint(file_node)
             provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
 
     else:
@@ -643,7 +660,7 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
         file_nodes = BaseFileNode.objects.filter(target_object_id=target_object_id,
                                                  provider=src_provider,
                                                  deleted_on__isnull=True,
-                                                 _path=src_path).all()
+                                                 _materialized_path=src_path).all()
         pprint(src_path)
         pprint(src_provider)
         pprint(get_linenumber())
@@ -656,50 +673,72 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
             logger.critical(file_node.provider)
             pprint(get_linenumber())
             file_node = move_file_node_update(file_node, src_provider, dest_provider, metadata)
+            pprint(file_node)
             pprint(get_linenumber())
-            if dest_provider == 'osfstorage' and src_provider != 'box':
+            if dest_provider == 'osfstorage':
                 pprint(get_linenumber())
                 file_node.delete()
                 rft = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_node._id).first()
                 pprint(get_linenumber())
-                file_node = BaseFileNode.objects.filter(name=file_node.name).order_by('-id').first()
-                pprint(get_linenumber())
-                rft.file_id = file_node._id
-                rft.provider = 'osfstorage'
-                rft.save()
-                pprint(get_linenumber())
-                logger.critical(file_node.id)
-                logger.critical(file_node.type)
-                logger.critical(file_node.provider)
-            provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
-
-            if src_provider == 'box':
-                pprint(get_linenumber())
-                rft = RdmFileTimestamptokenVerifyResult.objects.filter(provider=dest_provider, path=dest_path).first()
-                pprint(get_linenumber())
                 if rft is not None:
-                    pprint(rft)
+                    pprint(file_node.name)
+                    pprint(rft.path)
+                    temp_path = rft.path
+                    if file_node.name[0] != '/' and rft.path[0] == '/':
+                        temp_path = rft.path[1:]
+                    pprint(temp_path)
+                    file_node = BaseFileNode.objects.filter(name=temp_path, rovider=dest_provider).order_by('-id').first()
+                    pprint(vars(file_node))
                     pprint(get_linenumber())
-                    pprint(dest_provider)
-                    pprint(dest_path)
-                    new_file = BaseFileNode.objects.filter(provider=dest_provider, _path=dest_path).order_by('-id').first()
-                    pprint(get_linenumber())
-                    if new_file is not None:
-                        pprint(get_linenumber())
-                        rft.file_id = new_file._id
+                    if file_node is not None:
+                        rft.file_id = file_node._id
+                        rft.provider = 'osfstorage'
                         rft.save()
                         pprint(get_linenumber())
                 pprint(get_linenumber())
-                # file_node = BaseFileNode.objects.filter(name=file_node.name).order_by('-id').first()
+                # logger.critical(file_node.id)
+                # logger.critical(file_node.type)
+                # logger.critical(file_node.provider)
 
-                pprint(get_linenumber())
-                # rft.provider = 'box'
-                #rft.save()
-                pprint(get_linenumber())
+            # if src_provider == 'box':
+            #     pprint(get_linenumber())
+            #     rft = RdmFileTimestamptokenVerifyResult.objects.filter(provider=dest_provider, path=dest_path).first()
+            #     if rft is None:
+            #         rft = RdmFileTimestamptokenVerifyResult.objects.filter(provider=src_provider, path=dest_path).first()
+            #     pprint(vars(rft))
+            #     pprint(get_linenumber())
+            #     if rft is not None:
+            #         pprint(get_linenumber())
+            #         pprint(dest_provider)
+            #         pprint(dest_path)
+            #         rft.provider = dest_provider
+            #         rft.save()
+            #         new_file = BaseFileNode.objects.filter(provider=dest_provider, _materialized_path=dest_path).order_by('-id').first()
+            #         #if dest_provider == 'osfstorage'
+            #         pprint(get_linenumber())
+            #         if new_file is not None:
+            #             pprint(get_linenumber())
+            #             rft.file_id = new_file._id
+            #             rft.save()
+            #             pprint(get_linenumber())
+            #     pprint(get_linenumber())
+            #     # file_node = BaseFileNode.objects.filter(name=file_node.name).order_by('-id').first()
+
+            #     pprint(get_linenumber())
+            #     # rft.provider = 'box'
+            #     #rft.save()
+            #     pprint(get_linenumber())
+
+            pprint('i am going in......')
+            pprint(file_node)
+            provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
+            pprint("i am done.......")
     if src_provider == 'osfstorage' and dest_provider != 'osfstorage':
         pprint(get_linenumber())
         node = AbstractNode.objects.get(pk=Guid.objects.filter(_id=metadata['node']['_id']).first().object_id)
         pprint(get_linenumber())
+        pprint('cr or update')
+        pprint(metadata)
         file_created_or_updated(node, metadata, uid, False)
         pprint(get_linenumber())
 
@@ -763,8 +802,11 @@ def dynamic_import(name):
     return mod
 
 def provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider):
+    pprint(file_node)
     last_timestamp_result = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
-    path = file_node.materialized_path
+    path = file_node.materialized_path if file_node.materialized_path[0] == '/' else '/' + file_node.materialized_path
+    if dest_provider == 'googledrive':
+        path = file_node.materialized_path
     if src_provider != dest_provider:
         file_info = {
             'file_id': file_node._id,
@@ -1138,6 +1180,7 @@ class TimeStampTokenVerifyCheck:
     # timestamp token check
     def timestamp_check(self, guid, file_info, project_id, file_name, tmp_dir, verify_result=None):
         logger.critical('20')
+        pprint(file_info)
         userid = Guid.objects.get(_id=guid, content_type_id=ContentType.objects.get_for_model(OSFUser).id).object_id
         logger.critical('21')
         # get verify result
@@ -1238,6 +1281,7 @@ class TimeStampTokenVerifyCheck:
         verify_result.verify_file_modified_at = file_modified_at
         verify_result.verify_file_size = file_size
         verify_result.save()
+        pprint(vars(verify_result))
 
         # RDMINFO: TimeStampVerify
         if file_info['provider'] == 'osfstorage':
