@@ -1,29 +1,21 @@
 # -*- coding: utf-8 -*-
 from addons.osfstorage.models import Region
 from osf.models.region_external_account import RegionExternalAccount
-from osf.models.institution import Institution
-from osf.models.external import ExternalAccount
 
 
 def set_region_external_account(institution_id, account):
-    institution = Institution.objects.get(_id=institution_id)
-    region = Region.objects.get(_id=institution._id)
+    region = Region.objects.get(_id=institution_id)
     RegionExternalAccount.objects.create(
         region=region,
         external_account=account,
     )
-    set_new_access_token(region.id, get_oauth_key_by_external_id(account.id))
+    set_new_access_token(account, region)
 
-def set_new_access_token(region_id, access_token):
-    region = Region.objects.get(pk=region_id)
-    region.waterbutler_credentials['storage']['token'] = access_token
+def set_new_access_token(external_account, region=None):
+    if region is None:
+        region = RegionExternalAccount.objects.get(external_account=external_account).region
+    region.waterbutler_credentials['storage']['token'] = external_account.oauth_key
     region.save()
 
-def get_oauth_key_by_external_id(external_account_id):
-    return ExternalAccount.objects.get(pk=external_account_id).oauth_key
-
-def is_custom_googledrive(external_account_id):
-    return RegionExternalAccount.objects.filter(external_account_id=external_account_id).exists()
-
-def get_region_id_by_external_id(external_account_id):
-    return RegionExternalAccount.objects.get(external_account_id__exact=external_account_id).region_id
+def is_institutional_storage(external_account):
+    return RegionExternalAccount.objects.filter(external_account=external_account).exists()

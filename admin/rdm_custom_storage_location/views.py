@@ -232,10 +232,9 @@ class FetchTemporaryTokenView(InstitutionalStorageBaseView, View):
         provider_short_name = data.get('provider_short_name')
 
         if not provider_short_name:
-            response = {
+            return JsonResponse({
                 'message': 'Provider is missing.'
-            }
-            return JsonResponse(response, status=httplib.BAD_REQUEST)
+            }, status=httplib.BAD_REQUEST)
 
         institution_id = request.user.affiliated_institutions.first()._id
         data = utils.get_oauth_info_notification(institution_id, provider_short_name)
@@ -260,7 +259,10 @@ class RemoveTemporaryAuthData(InstitutionalStorageBaseView, View):
 
 def external_acc_update(request, access_token):
     if hashlib.sha512(SITE_KEY).hexdigest() == access_token.lower():
-        refresh_addon_tokens.run_main({'googledrive': 14}, (5, 1), False)
+        refresh_addon_tokens.run_main(
+            addons={'googledrive': -14, 'box': -14},
+            dry_run=False
+        )
         return HttpResponse('Done')
 
     response_hash = {'state': 'fail', 'error': 'access forbidden'}
