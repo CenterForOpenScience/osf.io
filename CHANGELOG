@@ -2,6 +2,24 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.23.0 (2019-08-19)
+===================
+- Represents scopes as an m2m field on personal access tokens instead of a CharField
+- APIv2.17 treats scopes as relationships on tokens instead of attributes.  Earlier
+API versions still serialize scopes as attributes.
+
+19.22.0 (2019-08-14)
+===================
+- APIv2: Editable registrations
+- APIv2.16 treats subjects as relationships instead of attributes
+
+19.21.0 (2019-08-12)
+===================
+- PageCounter optimization part I: split _id field into four columns, `action`,
+`file_id`, `resource_id`, and `version`.
+- Adds a management command (migrate_pagecounter_data) to populate these new
+columns in the PageCounter table over time.
+
 19.20.0 (2019-07-29)
 ===================
 - Waffle cookies - Override to allow cookies to be set for waffle flags
