@@ -8,7 +8,7 @@
       <span data-bind="text:properName">{# addon.addon_full_name #}</span>
     </h4>
     <div>
-        <h5>管理プロジェクト</h5>
+        <h5>Management project</h5>
         <div class="management-project" data-bind="if: managementProjectGUID">
             <a class="pull-right text-danger" data-bind="click: removeManagementProject">Remove</a>
             <p class="management-project-guid text-muted"><em data-bind="text: managementProjectGUID"></em></p>
@@ -22,7 +22,7 @@
                                attr: {disabled: !canSaveManagementProject()}"
             >Save</button>
         </div>
-        <h5>組織プロジェクト</h5>
+        <h5>Organizational project</h5>
         <div class="organizational-project" data-bind="if: organizationalProjectGUID">
             <a class="pull-right text-danger" data-bind="click: removeOrganizationalProject">Remove</a>
             <p class="organizational-project-guid text-muted"><em data-bind="text: organizationalProjectGUID"></em></p>
