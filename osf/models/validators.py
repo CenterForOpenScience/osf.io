@@ -111,6 +111,36 @@ def validate_subject_provider_mapping(provider, mapping):
     if not mapping and provider._id != 'osf':
         raise DjangoValidationError('Invalid PreprintProvider / Subject alias mapping.')
 
+def validate_subjects(subject_list):
+    """
+    Asserts all subjects in subject_list are valid subjects
+    :param subject_list list[Subject._id] List of flattened subject ids
+    :return Subject queryset
+    """
+    from osf.models import Subject
+    subjects = Subject.objects.filter(_id__in=subject_list)
+    if subjects.count() != len(subject_list):
+        raise ValidationValueError('Subject not found.')
+    return subjects
+
+def expand_subject_hierarchy(subject_list):
+    """
+    Takes flattened subject list which may or may not include all parts
+    of the subject hierarchy and supplements with all the parents
+
+    :param subject_list list[Subject._id] List of flattened subjects
+    :return list of flattened subjects, supplemented with parents
+    """
+    subjects = validate_subjects(subject_list)
+    expanded_subjects = []
+    for subj in subjects:
+        expanded_subjects.append(subj)
+        while subj.parent:
+            if subj.parent not in expanded_subjects:
+                expanded_subjects.append(subj.parent)
+            subj = subj.parent
+    return expanded_subjects
+
 def validate_subject_hierarchy(subject_hierarchy):
     from osf.models import Subject
     validated_hierarchy, raw_hierarchy = [], set(subject_hierarchy)

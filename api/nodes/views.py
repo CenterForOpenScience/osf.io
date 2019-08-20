@@ -114,6 +114,7 @@ from api.registrations.serializers import RegistrationSerializer, RegistrationCr
 from api.requests.permissions import NodeRequestPermission
 from api.requests.serializers import NodeRequestSerializer, NodeRequestCreateSerializer
 from api.requests.views import NodeRequestMixin
+from api.subjects.views import SubjectRelationshipBaseView, BaseResourceSubjectsList
 from api.users.views import UserMixin
 from api.users.serializers import UserSerializer
 from api.wikis.serializers import NodeWikiSerializer
@@ -1674,6 +1675,47 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
         except RelationshipPostMakesNoChanges:
             return Response(status=HTTP_204_NO_CONTENT)
         return ret
+
+
+class NodeSubjectsList(BaseResourceSubjectsList, NodeMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_subjects_list).
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublic,
+        ExcludeWithdrawals,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+
+    view_category = 'nodes'
+    view_name = 'node-subjects'
+
+    def get_resource(self):
+        return self.get_node()
+
+
+class NodeSubjectsRelationship(SubjectRelationshipBaseView, NodeMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/node_subjects_relationship).
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublic,
+        ExcludeWithdrawals,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+
+    view_category = 'nodes'
+    view_name = 'node-relationships-subjects'
+
+    ordering = ('-id',)
+
+    def get_resource(self, check_object_permissions=True):
+        return self.get_node(check_object_permissions=check_object_permissions)
 
 
 class NodeWikiList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ListFilterMixin):
