@@ -121,6 +121,22 @@ def transfer_to_external_account(user, institution_id, provider_short_name):
         user.save()
     return account
 
+def oauth_validation(provider, institution_id, folder_id):
+    """Checks if the folder_id is not empty, and that a temporary external account exists
+    in the database.
+    """
+    if not folder_id:
+        return ({
+            'message': 'Folder ID is missing.'
+        }, httplib.BAD_REQUEST)
+
+    if not ExternalAccountTemporary.objects.filter(_id=institution_id, provider=provider).exists():
+        return ({
+            'message': 'Oauth data was not found. Please reload the page and try again.'
+        }, httplib.BAD_REQUEST)
+
+    return True
+
 def test_s3_connection(access_key, secret_key, bucket):
     """Verifies new external account credentials and adds to user's list"""
     if not (access_key and secret_key and bucket):
@@ -192,20 +208,13 @@ def test_s3compat_connection(host_url, access_key, secret_key, bucket):
     }, httplib.OK)
 
 def test_box_connection(institution_id, folder_id):
-    if not folder_id:
-        return ({
-            'message': 'Folder ID is missing.'
-        }, httplib.BAD_REQUEST)
+    validation_result = oauth_validation('box', institution_id, folder_id)
+    if isinstance(validation_result, tuple):
+        return validation_result
 
-    try:
-        access_token = ExternalAccountTemporary.objects.get(
-            _id=institution_id, provider='box'
-        ).oauth_key
-    except ExternalAccountTemporary.DoesNotExist:
-        return ({
-            'message': 'Oauth data was not found. Please reload the page and try again.'
-        }, httplib.BAD_REQUEST)
-
+    access_token = ExternalAccountTemporary.objects.get(
+        _id=institution_id, provider='box'
+    ).oauth_key
     oauth = OAuth2(
         client_id=box_settings.BOX_KEY,
         client_secret=box_settings.BOX_SECRET,
@@ -225,20 +234,13 @@ def test_box_connection(institution_id, folder_id):
     }, httplib.OK)
 
 def test_googledrive_connection(institution_id, folder_id):
-    if not folder_id:
-        return ({
-            'message': 'Folder ID is missing.'
-        }, httplib.BAD_REQUEST)
+    validation_result = oauth_validation('googledrive', institution_id, folder_id)
+    if isinstance(validation_result, tuple):
+        return validation_result
 
-    try:
-        access_token = ExternalAccountTemporary.objects.get(
-            _id=institution_id, provider='googledrive'
-        ).oauth_key
-    except ExternalAccountTemporary.DoesNotExist:
-        return ({
-            'message': 'Oauth data was not found. Please reload the page and try again.'
-        }, httplib.BAD_REQUEST)
-
+    access_token = ExternalAccountTemporary.objects.get(
+        _id=institution_id, provider='googledrive'
+    ).oauth_key
     client = GoogleDriveClient(access_token)
 
     try:
