@@ -27,16 +27,19 @@ from framework.utils import throttle_period_expired
 from osf import features
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode
 from osf.exceptions import BlacklistedEmailError
+from osf.utils.requests import string_type_request_headers
 from website import mails
 from website import mailchimp_utils
 from website import settings
 from website import language
-from website.ember_osf_web.decorators import ember_flag_is_active, storage_i18n_flag_active
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from addons.base import utils as addon_utils
+
+from api.waffle.utils import storage_i18n_flag_active
 
 logger = logging.getLogger(__name__)
 
@@ -763,16 +766,21 @@ def unserialize_school(school):
 def unserialize_contents(field, func, auth):
     user = auth.user
     json_data = escape_html(request.get_json())
+    contents = [
+        func(content)
+        for content in json_data.get('contents', [])
+    ]
     setattr(
         user,
         field,
-        [
-            func(content)
-            for content in json_data.get('contents', [])
-        ]
+        contents
     )
     user.save()
 
+    if contents:
+        saved_fields = {field: contents}
+        request_headers = string_type_request_headers(request)
+        user.check_spam(saved_fields=saved_fields, request_headers=request_headers)
 
 @must_be_logged_in
 def unserialize_jobs(auth, **kwargs):

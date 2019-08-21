@@ -19,7 +19,7 @@ def bitbucket_hgrid_data(node_settings, auth, **kwargs):
     connection = BitbucketClient(access_token=node_settings.external_account.oauth_key)
 
     node = node_settings.owner
-    if node.is_public and not node.is_contributor(auth.user):
+    if node.is_public and not node.is_contributor_or_group_member(auth.user):
 
         repo = connection.repo(node_settings.user, node_settings.repo)
         if not repo:

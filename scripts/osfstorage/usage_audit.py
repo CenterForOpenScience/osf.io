@@ -15,7 +15,8 @@ import functools
 from collections import defaultdict
 from django.contrib.contenttypes.models import ContentType
 
-import progressbar
+from tqdm import tqdm
+
 
 from framework.celery_tasks import app as celery_app
 from osf.models import TrashedFile, Node
@@ -83,7 +84,7 @@ def main(send_email=False):
     users = defaultdict(lambda: (0, 0))
 
     top_level_nodes = AbstractNode.objects.get_roots()
-    progress_bar = progressbar.ProgressBar(maxval=top_level_nodes.count()).start()
+    progress_bar = tqdm(total=top_level_nodes.count())
     top_level_nodes = top_level_nodes.iterator()
 
     for i, node in enumerate(top_level_nodes):
@@ -97,7 +98,7 @@ def main(send_email=False):
 
         if i % 25 == 0:
             gc.collect()
-    progress_bar.finish()
+    progress_bar.close()
 
     for model, collection, limit in ((OSFUser, users, USER_LIMIT), (AbstractNode, projects, PROJECT_LIMIT)):
         for item, (used, deleted) in filter(functools.partial(limit_filter, limit), collection.items()):

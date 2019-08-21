@@ -418,6 +418,7 @@ AddContributorViewModel = oop.extend(Paginator, {
     },
     submit: function () {
         var self = this;
+        self.canSubmit(false);
         $osf.block();
         var url = self.nodeApiUrl + 'contributors/';
         return $osf.postJSON(
@@ -435,8 +436,6 @@ AddContributorViewModel = oop.extend(Paginator, {
                 self.contributors($.map(response.contributors, function (contrib) {
                     return contrib.id;
                 }));
-                self.hide();
-                $osf.unblock();
                 if (self.callback) {
                     self.callback(response);
                 }
@@ -444,8 +443,6 @@ AddContributorViewModel = oop.extend(Paginator, {
                 window.location.reload();
             }
         }).fail(function (xhr, status, error) {
-            self.hide();
-            $osf.unblock();
             var errorMessage = lodashGet(xhr, 'responseJSON.message') || ('There was a problem trying to add contributors.' + osfLanguage.REFRESH_OR_SUPPORT);
             $osf.growl('Could not add contributors', errorMessage);
             Raven.captureMessage('Error adding contributors', {
@@ -455,6 +452,10 @@ AddContributorViewModel = oop.extend(Paginator, {
                     error: error
                 }
             });
+        }).always(function () {
+            self.hide();
+            $osf.unblock();
+            self.canSubmit(true);
         });
     },
     clear: function () {

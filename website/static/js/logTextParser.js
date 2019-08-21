@@ -297,6 +297,16 @@ var LogPieces = {
             return m('span', 'a project');
         }
     },
+    // OSF Group attached to node
+    group: {
+        view: function (ctrl, logObject) {
+            var group = logObject.embeds.group;
+            if (group && paramIsReturned(group, logObject) && !group.errors) {
+                return m('span', $osf.decodeText(group.data.attributes.name));
+            }
+            return m('span', 'a group');
+        }
+    },
     // Node that is linked to the node involved
     pointer: {
         view: function (ctrl, logObject) {
@@ -652,7 +662,7 @@ var LogPieces = {
 
     googledrive_folder: {
         view: function(ctrl, logObject){
-            var folder = logObject.attributes.params.folder;
+            var folder = logObject.attributes.params.folder_name;
             if(paramIsReturned(folder, logObject)){
                 return m('span', folder === '/' ? '(Full Google Drive)' : folder);
             }

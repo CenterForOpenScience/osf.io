@@ -15,6 +15,7 @@ from osf.models.base import BaseModel, GuidMixin
 from osf.models.mixins import GuardianMixin, TaxonomizableMixin
 from osf.models.validators import validate_title
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.permissions import ADMIN
 from osf.exceptions import NodeStateError
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
@@ -56,6 +57,11 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 except cls.DoesNotExist:
                     return None
             return None
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/collections/{}/collected_metadata/{}/'.format(self.collection._id, self.guid._id)
+        return api_v2_url(path)
 
     def update_index(self):
         if self.collection.is_public:
@@ -177,7 +183,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
             self.collected_types = ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'collection', 'preprint'])
             # Set up initial permissions
             self.update_group_permissions()
-            self.get_group('admin').user_set.add(self.creator)
+            self.get_group(ADMIN).user_set.add(self.creator)
 
         elif 'is_public' in saved_fields:
             from website.collections.tasks import on_collection_updated
