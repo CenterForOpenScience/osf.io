@@ -129,7 +129,7 @@ function ajaxRequest(params, providerShortName, route) {
         }
     });
     $.ajax({
-        url: '../' + route,
+        url: '../' + route + '/',
         type: 'POST',
         data: JSON.stringify(params),
         contentType: 'application/json; charset=utf-8',
