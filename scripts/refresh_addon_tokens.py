@@ -74,8 +74,6 @@ def main(delta, Provider, rate_limit, dry_run):
                 success = Provider(record).refresh_oauth_key(force=True)
             except OAuth2Error as e:
                 logger.error(e)
-            except Exception as exception:
-                logger.error(exception)
             else:
                 from osf.utils import external_util
                 if success and external_util.is_institutional_storage(record):
