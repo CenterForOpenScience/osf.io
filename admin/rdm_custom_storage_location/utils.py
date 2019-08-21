@@ -21,7 +21,6 @@ from addons.swift.provider import SwiftProvider
 from framework.exceptions import HTTPError
 from website import settings as osf_settings
 from osf.models.external import ExternalAccountTemporary, ExternalAccount
-from osf.models.region_external_account import RegionExternalAccount
 from osf.utils import external_util
 import datetime
 
@@ -48,7 +47,6 @@ def get_addon_by_name(addon_short_name):
     for addon in osf_settings.ADDONS_AVAILABLE:
         if addon.short_name == addon_short_name:
             return addon
-    return None
 
 def get_modal_path(short_name):
     base_path = os.path.join('rdm_custom_storage_location', 'providers')
@@ -84,7 +82,6 @@ def update_storage(institution_id, storage_name, wb_credentials, wb_settings):
             waterbutler_settings=wb_settings,
         )
     else:
-        RegionExternalAccount.objects.filter(region=region).delete()
         region.name = storage_name
         region.waterbutler_credentials = wb_credentials
         region.waterbutler_settings = wb_settings
@@ -374,7 +371,8 @@ def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bu
         },
     }
 
-    update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+    region = update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+    external_util.remove_region_external_account(region)
 
     return ({
         'message': 'Saved credentials successfully!!'
@@ -406,7 +404,8 @@ def save_s3compat_credentials(institution_id, storage_name, host_url, access_key
         }
     }
 
-    update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+    region = update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+    external_util.remove_region_external_account(region)
 
     return ({
         'message': 'Saved credentials successfully!!'
@@ -432,8 +431,8 @@ def save_box_credentials(user, storage_name, folder_id):
             'provider': 'box',
         }
     }
-    update_storage(institution_id, storage_name, wb_credentials, wb_settings)
-    external_util.set_region_external_account(institution_id, account)
+    region = update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+    external_util.set_region_external_account(region, account)
 
     return ({
         'message': 'OAuth was set successfully'
@@ -461,8 +460,8 @@ def save_googledrive_credentials(user, storage_name, folder_id):
             'provider': 'googledrive',
         }
     }
-    update_storage(institution_id, storage_name, wb_credentials, wb_settings)
-    external_util.set_region_external_account(institution_id, account)
+    region = update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+    external_util.set_region_external_account(region, account)
 
     return ({
         'message': 'OAuth was set successfully'
@@ -495,14 +494,21 @@ def save_nextcloud_credentials(institution_id, storage_name, host_url, username,
         },
     }
 
-    update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+    region = update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+    external_util.remove_region_external_account(region)
 
     return ({
         'message': 'Saved credentials successfully!!'
     }, httplib.OK)
 
 def save_osfstorage_credentials(institution_id):
-    Region.objects.filter(_id=institution_id).delete()
+    try:
+        region = Region.objects.get(_id=institution_id)
+    except Region.DoesNotExist:
+        pass
+    else:
+        external_util.remove_region_external_account(region)
+        region.delete()
     return ({
         'message': 'NII storage was set successfully'
     }, httplib.OK)
@@ -537,7 +543,8 @@ def save_swift_credentials(institution_id, storage_name, auth_version, access_ke
 
     }
 
-    update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+    region = update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+    external_util.remove_region_external_account(region)
 
     return ({
         'message': 'Saved credentials successfully!!'
@@ -570,7 +577,8 @@ def save_owncloud_credentials(institution_id, storage_name, host_url, username, 
         },
     }
 
-    update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+    region = update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+    external_util.remove_region_external_account(region)
 
     return ({
         'message': 'Saved credentials successfully!!'

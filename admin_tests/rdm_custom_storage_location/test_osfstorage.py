@@ -3,10 +3,12 @@ import httplib
 import json
 from nose import tools as nt
 
+from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location import views
+from osf.models.region_external_account import RegionExternalAccount
+from osf.models.external import ExternalAccount
 from osf_tests.factories import (
-    AuthUserFactory,
-    InstitutionFactory,
+    AuthUserFactory, InstitutionFactory, RegionFactory, ExternalAccountFactory
 )
 from tests.base import AdminTestCase
 
@@ -45,3 +47,22 @@ class TestSaveCredentials(AdminTestCase):
 
         nt.assert_equals(response.status_code, httplib.OK)
         nt.assert_in('NII storage was set successfully', response.content)
+
+    def test_success_cleanup_account(self):
+        region = RegionFactory(_id=self.institution._id)
+        external_account = ExternalAccountFactory(provider='box')
+        RegionExternalAccount.objects.create(
+            region=region,
+            external_account=external_account
+        )
+
+        response = self.view_post({
+            'provider_short_name': 'osfstorage',
+        })
+
+        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_in('NII storage was set successfully', response.content)
+
+        nt.assert_false(RegionExternalAccount.objects.filter(region=region).exists())
+        nt.assert_false(ExternalAccount.objects.filter(id=external_account.id).exists())
+        nt.assert_false(Region.objects.filter(id=region.id).exists())

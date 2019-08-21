@@ -10,9 +10,9 @@ from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location import views
 from tests.base import AdminTestCase
 from osf.models.external import ExternalAccount, ExternalAccountTemporary
+from osf.models.region_external_account import RegionExternalAccount
 from osf_tests.factories import (
-    AuthUserFactory,
-    InstitutionFactory,
+    AuthUserFactory, InstitutionFactory, RegionFactory, ExternalAccountFactory
 )
 
 
@@ -256,3 +256,38 @@ class TestSaveCredentials(AdminTestCase):
 
         nt.assert_equals(response.status_code, httplib.OK)
         nt.assert_in('OAuth was set successfully', response.content)
+
+    @mock.patch('boxsdk.Client.folder')
+    def test_connection_success_update_account(self, mock_folder):
+        region = RegionFactory(_id=self.institution._id)
+        previous_external_account = ExternalAccountFactory(provider='box')
+        RegionExternalAccount.objects.create(
+            region=region,
+            external_account=previous_external_account
+        )
+
+        ExternalAccountTemporary.objects.create(
+            provider=self.seed_data['provider_name'],
+            provider_name=self.seed_data['provider_name'],
+            oauth_key=self.seed_data['oauth_key'],
+            oauth_secret=self.seed_data['oauth_secret'],
+            expires_at=self.seed_data['expires_at'],
+            refresh_token=self.seed_data['refresh_token'],
+            date_last_refreshed=self.seed_data['date_last_refreshed'],
+            display_name=self.seed_data['display_name'],
+            profile_url=self.seed_data['profile_url'],
+            _id=self.seed_data['_id'],
+            provider_id=self.seed_data['provider_id'],
+        )
+        response = self.view_post({
+            'provider_short_name': 'box',
+            'storage_name': 'Cardboard Box',
+            'box_folder': 'Valid folder'
+        })
+
+        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_in('OAuth was set successfully', response.content)
+
+        new_external_account = RegionExternalAccount.objects.get(region=region).external_account
+        nt.assert_not_equal(new_external_account, previous_external_account)
+        nt.assert_false(ExternalAccount.objects.filter(id=previous_external_account.id).exists())
