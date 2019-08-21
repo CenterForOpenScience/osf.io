@@ -258,14 +258,14 @@ class RemoveTemporaryAuthData(InstitutionalStorageBaseView, View):
         }, status=httplib.OK)
 
 def external_acc_update(request, access_token):
-    if hashlib.sha512(SITE_KEY).hexdigest() == access_token.lower():
-        refresh_addon_tokens.run_main(
-            addons={'googledrive': -14, 'box': -14},
-            dry_run=False
+    if hashlib.sha512(SITE_KEY).hexdigest() != access_token.lower():
+        return HttpResponse(
+            json.dumps({'state': 'fail', 'error': 'access forbidden'}),
+            content_type='application/json',
         )
-        return HttpResponse('Done')
 
-    response_hash = {'state': 'fail', 'error': 'access forbidden'}
-    response_json = json.dumps(response_hash)
-    response = HttpResponse(response_json, content_type='application/json')
-    return response
+    refresh_addon_tokens.run_main(
+        addons={'googledrive': -14, 'box': -14},
+        dry_run=False
+    )
+    return HttpResponse('Done')
