@@ -1741,8 +1741,9 @@ class TestPreprintProvider(OsfTestCase):
         self.provider_osf = PreprintProviderFactory(_id='osf')
         self.preprint = PreprintFactory(provider=None, is_published=False)
         self.provider = PreprintProviderFactory(name='WWEArxiv')
+        self.provider_one = PreprintProviderFactory(name='DoughnutArxiv')
         self.provider_two = PreprintProviderFactory(name='IceCreamArxiv')
-        self.subject_one = SubjectFactory(provider=self.provider)
+        self.subject_one = SubjectFactory(provider=self.provider_one)
         self.subject_osf = SubjectFactory(provider=self.provider_osf)
 
 
@@ -1816,35 +1817,35 @@ class TestPreprintProvider(OsfTestCase):
     def test_change_preprint_provider_custom_taxonomies(self):
         subject_two = SubjectFactory(provider=self.provider_two,
             bepress_subject=self.subject_one.bepress_subject)
-        preprint = PreprintFactory(subjects=[[self.subject_one._id]], provider=self.provider, creator=self.user)
-        preprint.map_subjects_between_providers(self.provider, self.provider_two, self.auth)
+        preprint = PreprintFactory(subjects=[[self.subject_one._id]], provider=self.provider_one, creator=self.user)
+        subject_problems = preprint.map_subjects_between_providers(self.provider_one, self.provider_two, self.auth)
         preprint.refresh_from_db()
         assert subject_problems == []
         assert subject_two in preprint.subjects.all()
 
     def test_change_preprint_provider_from_osf(self):
-        subject_two = SubjectFactory(provider=self.provider,
+        subject_two = SubjectFactory(provider=self.provider_one,
             bepress_subject=self.subject_osf)
         preprint = PreprintFactory(subjects=[[self.subject_osf._id]], provider=self.provider_osf, creator=self.user)
-        subject_problems = preprint.map_subjects_between_providers(self.provider_osf, self.provider, self.auth)
+        subject_problems = preprint.map_subjects_between_providers(self.provider_osf, self.provider_one, self.auth)
         preprint.refresh_from_db()
         assert subject_problems == []
         assert subject_two in preprint.subjects.all()
 
     def test_change_preprint_provider_to_osf(self):
-        subject_two = SubjectFactory(provider=self.provider,
+        subject_two = SubjectFactory(provider=self.provider_one,
             bepress_subject=self.subject_osf)
-        preprint = PreprintFactory(subjects=[[subject_two._id]], provider=self.provider, creator=self.user)
-        subject_problems = preprint.map_subjects_between_providers(self.provider, self.provider_osf, self.auth)
+        preprint = PreprintFactory(subjects=[[subject_two._id]], provider=self.provider_one, creator=self.user)
+        subject_problems = preprint.map_subjects_between_providers(self.provider_one, self.provider_osf, self.auth)
         preprint.refresh_from_db()
         assert subject_problems == []
         assert self.subject_osf in preprint.subjects.all()
 
     def test_change_preprint_provider_problem_subject(self):
-        subject_two = SubjectFactory(provider=self.provider,
+        subject_two = SubjectFactory(provider=self.provider_one,
             bepress_subject=self.subject_osf)
-        preprint = PreprintFactory(subjects=[[subject_two._id]], provider=self.provider, creator=self.user)
-        subject_problems = preprint.map_subjects_between_providers(self.provider, self.provider_two, self.auth)
+        preprint = PreprintFactory(subjects=[[subject_two._id]], provider=self.provider_one, creator=self.user)
+        subject_problems = preprint.map_subjects_between_providers(self.provider_one, self.provider_two, self.auth)
         preprint.refresh_from_db()
         assert subject_problems == [subject_two.text]
         assert subject_two in preprint.subjects.all()
