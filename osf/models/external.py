@@ -279,8 +279,7 @@ class ExternalProvider(object):
         info.update(self.handle_callback(response))
         if session.data['oauth_states'][self.short_name].get('is_custom', False):
             return self._set_external_account_temporary(user, info)
-        else:
-            return self._set_external_account(user, info)
+        return self._set_external_account(user, info)
 
     def _set_external_account(self, user, info):
 
