@@ -1340,10 +1340,10 @@ class NodeLinksSerializer(JSONAPISerializer):
         try:
             pointer = node.add_pointer(pointer_node, auth, save=True)
             return pointer
-        except ValueError:
+        except ValueError as e:
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/node_links/data/id'},
-                detail='Target Node \'{}\' already pointed to by \'{}\'.'.format(target_node_id, node._id),
+                detail=str(e),
             )
 
     def update(self, instance, validated_data):
