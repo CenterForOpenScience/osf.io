@@ -481,15 +481,17 @@ class TestExternalUtil(OsfTestCase):
         self.user.affiliated_institutions.add(self.institution)
 
     def test_set_region_external_account(self):
-        token = self.region.waterbutler_credentials['storage']['token']
+        assert RegionExternalAccount.objects.filter(
+            region=self.region,
+            external_account=self.external_account
+        ).count() == 0
 
-        set_region_external_account(self.institution._id, self.external_account)
-        rea = RegionExternalAccount.objects.filter(region=self.region, external_account=self.external_account)
-        assert len(rea)==1
+        set_region_external_account(self.region, self.external_account)
 
-        updated_region = Region.objects.get(_id=self.institution._id)
-        updated_token = updated_region.waterbutler_credentials['storage']['token']
-        assert_not_equal(token, updated_token)
+        assert RegionExternalAccount.objects.filter(
+            region=self.region,
+            external_account=self.external_account
+        ).count() == 1
 
     def test_set_new_access_token(self):
         RegionExternalAccount.objects.create(
