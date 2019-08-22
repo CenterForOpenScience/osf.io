@@ -51,10 +51,7 @@ class OSFOrderingFilter(OrderingFilter):
     # override
     def filter_queryset(self, request, queryset, view):
         ordering = self.get_ordering(request, queryset, view)
-        field_order = self.check_serializer_fields(queryset, request.query_params, view, ordering)
-        if field_order:
-            ordering = tuple(field_order)
-        elif isinstance(queryset, DjangoQuerySet):
+        if isinstance(queryset, DjangoQuerySet):
             if queryset.ordered:
                 return queryset
             elif ordering and getattr(queryset.query, 'distinct_fields', None):
@@ -69,32 +66,28 @@ class OSFOrderingFilter(OrderingFilter):
             return queryset.sort(*ordering)
         return queryset
 
-    def check_serializer_fields(self, queryset, query_params, view, ordering):
-        serializer_class = view.serializer_class
-        if not queryset:
-            return []
-        sorting_params = []
-        for field in query_params.getlist(self.ordering_param):
-            ordering_sign = ''
-            # If the field is already a source, it will be returned in the ordering list
-            if field in ordering:
-                sorting_params.append(field)
-                continue
-            # The field may have a '-' before the name for descending order. This needs to be preserved
-            if field[0] == '-':
-                ordering_sign = '-'
-                field = field.lstrip('-')
-            if field in serializer_class._declared_fields:
-                # Checking if the field can be sorted on
-                source_field = serializer_class._declared_fields[field]
-                source_field_name = source_field.source
-                # Checking if the original sort param could be used to sort
-                if hasattr(queryset[0], field):
-                    sorting_params.append(ordering_sign + field)
-                # Validating the source field name
-                elif hasattr(queryset[0], source_field_name):
-                    sorting_params.append(ordering_sign + source_field_name)
-        return sorting_params
+    def remove_invalid_fields(self, queryset, fields, view, request):
+        valid_fields = super(OSFOrderingFilter, self).remove_invalid_fields(queryset, fields, view, request)
+        if valid_fields == []:
+            if hasattr(view, 'get_serializer_class'):
+                serializer_class = view.get_serializer_class()
+            else:
+                serializer_class = getattr(view, 'serializer_class', None)
+            serializer_fields = [
+                (field_name, field.source)
+                for field_name, field in serializer_class(context={'request': request}).fields.items()
+                if not getattr(field, 'write_only', False) and not field.source == '*' and field_name != field.source
+            ]
+            for invalid_field in fields:
+                ordering_sign = ''
+                if invalid_field[0] == '-':
+                    ordering_sign = '-'
+                    invalid_field = invalid_field.lstrip('-')
+                if invalid_field in [a[0] for a in serializer_fields]:
+                    valid_fields.append(ordering_sign + [b[1] for b in serializer_fields if b[0] == invalid_field][0])
+        for n, i in enumerate(valid_fields):
+            valid_fields[n] = i.replace('.', '')
+        return valid_fields
 
 
 class FilterMixin(object):

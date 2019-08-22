@@ -474,6 +474,16 @@ class TestOSFOrderingFilter(ApiTestCase):
             )]
         assert_equal(actual, [40, 30, 10, 20])
 
+    def get_node_sort_url(self, field, ascend=True):
+        if not ascend:
+            field = '-' + field
+        return '/{}nodes/?sort={}'.format(API_BASE, field)
+
+    def get_multi_field_sort_url(self, field, node_id, ascend=True):
+        if not ascend:
+            field = '-' + field
+        return '/{}nodes/{}/addons/?sort={}'.format(API_BASE, node_id, field)
+
     def test_sort_by_serializer_field(self):
         user = AuthUserFactory()
         NodeFactory(creator=user)
@@ -481,16 +491,16 @@ class TestOSFOrderingFilter(ApiTestCase):
 
         # Ensuring that sorting by the serializer field returns the same result
         # as using the source field
-        res_created = self.app.get('/{}nodes/?sort=created'.format(API_BASE), auth=user.auth)
-        res_date_created = self.app.get('/{}nodes/?sort=date_created'.format(API_BASE), auth=user.auth)
+        res_created = self.app.get(self.get_node_sort_url('created'), auth=user.auth)
+        res_date_created = self.app.get(self.get_node_sort_url('date_created'), auth=user.auth)
         assert res_created.status_code == 200
         assert res_created.json['data'] == res_date_created.json['data']
         assert res_created.json['data'][0]['id'] == res_date_created.json['data'][0]['id']
         assert res_created.json['data'][1]['id'] == res_date_created.json['data'][1]['id']
 
         # Testing both are capable of using the inverse sort sign '-'
-        res_created = self.app.get('/{}nodes/?sort=-created'.format(API_BASE), auth=user.auth)
-        res_date_created = self.app.get('/{}nodes/?sort=-date_created'.format(API_BASE), auth=user.auth)
+        res_created = self.app.get(self.get_node_sort_url('created', False), auth=user.auth)
+        res_date_created = self.app.get(self.get_node_sort_url('date_created', False), auth=user.auth)
         assert res_created.status_code == 200
         assert res_created.json['data'] == res_date_created.json['data']
         assert res_created.json['data'][1]['id'] == res_date_created.json['data'][1]['id']
@@ -509,13 +519,13 @@ class TestOSFOrderingFilter(ApiTestCase):
         s3_addon.external_account_id = ExternalAccountFactory()
         node.save()
         s3_addon.save()
-        res_addon = self.app.get('/{}nodes/{}/addons/?sort=external_account_id'.format(API_BASE, node._id), auth=user.auth)
+        res_addon = self.app.get(self.get_multi_field_sort_url('external_account_id', node._id), auth=user.auth)
         assert res_addon.status_code == 200
         assert res_addon.json['data'][1]['id'] == 's3'
         assert res_addon.json['data'][0]['id'] == 'github'
 
         # Descending
-        res_addon = self.app.get('/{}nodes/{}/addons/?sort=-external_account_id'.format(API_BASE, node._id), auth=user.auth)
+        res_addon = self.app.get(self.get_multi_field_sort_url('external_account_id', node._id, False), auth=user.auth)
         assert res_addon.status_code == 200
         assert res_addon.json['data'][0]['id'] == 's3'
         assert res_addon.json['data'][1]['id'] == 'github'
