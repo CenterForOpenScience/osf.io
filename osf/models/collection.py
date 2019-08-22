@@ -58,6 +58,11 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     return None
             return None
 
+    @property
+    def absolute_api_v2_url(self):
+        path = '/collections/{}/collected_metadata/{}/'.format(self.collection._id, self.guid._id)
+        return api_v2_url(path)
+
     def update_index(self):
         if self.collection.is_public:
             from website.search.search import update_collected_metadata
