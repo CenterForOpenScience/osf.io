@@ -141,8 +141,8 @@ class NodeTagField(ser.Field):
 
 class NodeLicenseSerializer(BaseAPISerializer):
 
-    copyright_holders = ser.ListField(allow_empty=True)
-    year = ser.CharField(allow_blank=True)
+    copyright_holders = ser.ListField(allow_empty=True, required=False)
+    year = ser.CharField(allow_blank=True, required=False)
 
     class Meta:
         type_ = 'node_licenses'
@@ -206,8 +206,12 @@ class NodeCitationStyleSerializer(JSONAPISerializer):
         type_ = 'styled-citations'
 
 def get_license_details(node, validated_data):
-    license = node.license if isinstance(node, Preprint) else node.node_license
-
+    if node:
+        license = node.license if isinstance(node, Preprint) else node.node_license
+    else:
+        license = None
+    if ('license_type' not in validated_data and not (license and license.node_license.license_id)):
+        raise exceptions.ValidationError(detail='License ID must be provided for a Node License.')
     license_id = license.node_license.license_id if license else None
     license_year = license.year if license else None
     license_holders = license.copyright_holders if license else []
@@ -747,10 +751,18 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         tag_instances = []
         affiliated_institutions = None
         region_id = None
+        license_details = None
         if 'affiliated_institutions' in validated_data:
             affiliated_institutions = validated_data.pop('affiliated_institutions')
         if 'region_id' in validated_data:
             region_id = validated_data.pop('region_id')
+        if 'license_type' in validated_data or 'license' in validated_data:
+            try:
+                license_details = get_license_details(None, validated_data)
+            except ValidationError as e:
+                raise InvalidModelValueError(detail=str(e.messages[0]))
+            validated_data.pop('license', None)
+            validated_data.pop('license_type', None)
         if 'tags' in validated_data:
             tags = validated_data.pop('tags')
             for tag in tags:
@@ -805,6 +817,20 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             parent = validated_data['parent']
             node.subjects.add(parent.subjects.all())
             node.save()
+
+        if license_details:
+            try:
+                node.set_node_license(
+                    {
+                        'id': license_details.get('id') if license_details.get('id') else 'NONE',
+                        'year': license_details.get('year'),
+                        'copyrightHolders': license_details.get('copyrightHolders') or license_details.get('copyright_holders', []),
+                    },
+                    auth=get_user_auth(request),
+                    save=True,
+                )
+            except ValidationError as e:
+                raise InvalidModelValueError(detail=str(e.message))
 
         if not region_id:
             region_id = self.context.get('region_id')
