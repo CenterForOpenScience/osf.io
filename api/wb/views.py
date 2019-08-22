@@ -10,6 +10,9 @@ from api.wb.serializers import (
     WaterbutlerMetadataSerializer,
 )
 
+from api.caching.tasks import update_storage_usage
+
+
 class FileMetadataView(APIView):
     """
     Mixin with common code for WB move/copy hooks
@@ -77,7 +80,15 @@ class MoveFileMetadataView(FileMetadataView):
         return response
 
     def perform_file_action(self, source, destination, name):
-        return source.move_under(destination, name)
+        dest_target = destination.target
+        source_target = source.target
+        ret = source.move_under(destination, name)
+
+        if dest_target != source_target:
+            update_storage_usage(source.target)
+            update_storage_usage(destination.target)
+
+        return ret
 
 
 class CopyFileMetadataView(FileMetadataView):
@@ -89,4 +100,6 @@ class CopyFileMetadataView(FileMetadataView):
     view_name = 'metadata-copy'
 
     def perform_file_action(self, source, destination, name):
-        return source.copy_under(destination, name)
+        ret = source.copy_under(destination, name)
+        update_storage_usage(destination.target)
+        return ret
