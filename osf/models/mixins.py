@@ -805,7 +805,7 @@ class TaxonomizableMixin(models.Model):
 
         :return: None
         """
-        if auth and not self.has_permission(auth.user, ADMIN):
+        if auth and not (hasattr(self, 'has_permission') and self.has_permission(auth.user, ADMIN)):
             self.check_subject_perms(auth)
         self.assert_subject_format(new_subjects, expect_list=True, error_msg='Expecting list of lists.')
 
