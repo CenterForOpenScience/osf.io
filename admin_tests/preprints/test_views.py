@@ -317,6 +317,32 @@ class TestPreprintView:
         assert preprint.provider == provider_one
         assert subject_osf in preprint.subjects.all()
 
+    def test_change_preprint_provider_subjects_change_permissions(self, plain_view, preprint_user, provider_one, provider_osf, subject_osf):
+        """ Testing that subjects are changed when providers are changed and theres no related mapping between subjects, the old subject stays in place.
+        """
+        auth_user = AuthUserFactory()
+        change_permission = Permission.objects.get(codename='change_preprint')
+        view_permission = Permission.objects.get(codename='view_preprint')
+        auth_user.user_permissions.add(change_permission)
+        auth_user.user_permissions.add(view_permission)
+
+        preprint = PreprintFactory(subjects=[[subject_osf._id]], provider=provider_osf, creator=preprint_user)
+        request = RequestFactory().post(reverse('preprints:preprint', kwargs={'guid': preprint._id}), data={'provider': provider_one.id})
+        request.user = auth_user
+
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(request, 'session', 'session')
+        messages = FallbackStorage(request)
+        setattr(request, '_messages', messages)
+
+        response = plain_view.as_view()(request, guid=preprint._id)
+
+        assert response.status_code == 302
+        preprint.refresh_from_db()
+        assert preprint.provider == provider_one
+        assert subject_osf in preprint.subjects.all()
+
 
 @pytest.mark.urls('admin.base.urls')
 class TestPreprintFormView:

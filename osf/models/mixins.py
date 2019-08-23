@@ -805,7 +805,8 @@ class TaxonomizableMixin(models.Model):
 
         :return: None
         """
-        self.check_subject_perms(auth)
+        if auth and not self.has_permission(auth.user, ADMIN):
+            self.check_subject_perms(auth)
         self.assert_subject_format(new_subjects, expect_list=True, error_msg='Expecting list of lists.')
 
         old_subjects = list(self.subjects.values_list('id', flat=True))
@@ -850,7 +851,7 @@ class TaxonomizableMixin(models.Model):
 
         self.save(old_subjects=old_subjects)
 
-    def map_subjects_between_providers(self, old_provider, new_provider, auth):
+    def map_subjects_between_providers(self, old_provider, new_provider, auth=None):
         """
         Maps subjects between preprint providers using bepress_subject_id.
 

@@ -26,7 +26,6 @@ from website.preprints.tasks import update_preprint_share
 from website.project.views.register import osf_admin_change_status_identifier
 from website import search
 
-from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from admin.base.views import GuidFormView, GuidView
 from admin.nodes.templatetags.node_extras import reverse_preprint
@@ -89,7 +88,7 @@ class PreprintView(PreprintMixin, UpdateView, GuidView):
         return super(PreprintView, self).get_context_data(**kwargs)
 
     def update_subjects_for_provider(self, request, old_provider, new_provider):
-        subject_problems = self.object.map_subjects_between_providers(old_provider, new_provider, Auth(request.user))
+        subject_problems = self.object.map_subjects_between_providers(old_provider, new_provider, auth=None)
         if subject_problems:
             messages.warning(request, 'Unable to find subjects in new provider for the following subject(s):')
             for problem in subject_problems:
