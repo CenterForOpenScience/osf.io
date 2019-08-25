@@ -141,13 +141,16 @@ class TestNodeDeleteView(AdminTestCase):
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_restore_node(self):
-        self.view.delete(self.request)
+        # Removing node outside of admin app
+        self.node.remove_node(auth=Auth(self.node.creator))
+        count = AdminLogEntry.objects.count()
         self.node.refresh_from_db()
         nt.assert_true(self.node.is_deleted)
-        count = AdminLogEntry.objects.count()
+        nt.assert_true(self.node.root_folder.type == 'osf.trashedfolder')
         self.view.delete(self.request)
-        self.node.reload()
+        self.node.refresh_from_db()
         nt.assert_false(self.node.is_deleted)
+        nt.assert_true(self.node.root_folder.type == 'osf.osfstoragefolder')
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_no_user_permissions_raises_error(self):

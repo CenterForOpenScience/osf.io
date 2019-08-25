@@ -4546,6 +4546,21 @@ class TestNodeProperties:
         preprint.save()
         assert project.has_linked_published_preprints is False
 
+    def test_root_folder_property(self, project):
+        assert project.root_folder.type == 'osf.osfstoragefolder'
+        assert project.root_folder.target == project
+        assert project.root_folder.is_root is True
+        assert project.root_folder.name == ''
+        assert project.root_folder == project.get_addon('osfstorage').get_root()
+
+        # Delete root folder (deleted as part of node delete process)
+        assert project.remove_node(Auth(project.creator))
+        project.reload()
+
+        assert project.is_deleted is True
+        assert project.root_folder.type == 'osf.trashedfolder'
+        assert project.root_folder.deleted_on is not None
+
 
 @pytest.mark.enable_bookmark_creation
 class TestCollectionProperties:

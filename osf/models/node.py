@@ -2295,7 +2295,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
             log_date = date or timezone.now()
             for node in hierarchy:
-                # Add log to parents
                 node.is_deleted = True
                 node.deleted_date = date
                 # Deletes OSFStorage root folder; Contents deleted separately in celery task.

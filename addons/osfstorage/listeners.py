@@ -42,11 +42,6 @@ def delete_files(node):
 @app.task(max_retries=5, default_retry_delay=60)
 def delete_files_task(node_id):
     with transaction.atomic():
-        Guid = apps.get_model('osf.Guid')
-        OsfStorageFolder = apps.get_model('osf.OsfStorageFolder')
-        guid = Guid.objects.filter(_id=node_id).values('content_type_id', 'object_id').get()
-        OsfStorageFolder.objects.get(
-            target_object_id=guid['object_id'],
-            target_content_type=guid['content_type_id'],
-            is_root=True
-        ).delete(save=True)
+        AbstractNode = apps.get_model('osf.AbstractNode')
+        node = AbstractNode.objects.get(guids___id=node_id)
+        node.root_folder.delete(save=True)
