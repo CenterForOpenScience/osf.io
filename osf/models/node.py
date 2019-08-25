@@ -14,6 +14,7 @@ from django.db import transaction
 from django_bulk_update.helper import bulk_update
 from django.contrib.auth.models import AnonymousUser, Permission
 from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.db import models, connection
@@ -445,6 +446,23 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             is_node_link=True
         ).select_related('child').values_list('child', flat=True)
         return self._nodes.filter(pk__in=child_pks)
+
+    @property
+    def root_folder(self):
+        """
+        Returns AbstractNode's root_folder. Either an OsfStorageFolder or a TrashedFolder type.
+        """
+        from osf.models.files import BaseFileNode
+
+        try:
+            return BaseFileNode.objects.get(
+                target_object_id=self.id,
+                target_content_type_id=ContentType.objects.get_for_model(AbstractNode).id,
+                name='',
+                is_root=True
+            )
+        except BaseFileNode.DoesNotExist:
+            return None
 
     # permissions = Permissions are now on contributors
     piwik_site_id = models.IntegerField(null=True, blank=True)
@@ -2280,15 +2298,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 # Add log to parents
                 node.is_deleted = True
                 node.deleted_date = date
+                # Deletes OSFStorage root folder; Contents deleted separately in celery task.
+                node.root_folder.delete(recursive=False)
                 node.add_remove_node_log(auth=auth, date=log_date)
                 project_signals.node_deleted.send(node)
 
+            # Saves all nodes (including self) as deleted.
             bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date'])
 
             if len(hierarchy.filter(is_public=True)):
                 AbstractNode.bulk_update_search(hierarchy.filter(is_public=True))
 
-        return True
+            return True
 
     def add_addon(self, name, auth, log=True):
         ret = super(AbstractNode, self).add_addon(name, auth)

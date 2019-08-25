@@ -157,6 +157,7 @@ class NodeDeleteView(PermissionRequiredMixin, NodeDeleteBase):
             if node.is_deleted:
                 node.is_deleted = False
                 node.deleted_date = None
+                node.root_folder.restore()
                 flag = NODE_RESTORED
                 message = 'Node {} restored.'.format(node.pk)
                 osf_flag = NodeLog.NODE_CREATED

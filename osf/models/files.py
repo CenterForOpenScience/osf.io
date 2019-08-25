@@ -392,7 +392,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
                 child._update_node(save=save)
 
     # TODO: Remove unused parent param
-    def delete(self, user=None, parent=None, save=True, deleted_on=None):
+    def delete(self, user=None, parent=None, save=True, deleted_on=None, recursive=True):
         """
         Recast a Folder to TrashedFolder, set fields related to deleting,
         and recast children.
@@ -408,8 +408,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         if not self.is_file:
             self.recast(TrashedFolder._typedmodels_type)
 
-            for child in BaseFileNode.objects.filter(parent=self.id).exclude(type__in=TrashedFileNode._typedmodels_subtypes):
-                child.delete(user=user, save=save, deleted_on=deleted_on)
+            if recursive:
+                for child in BaseFileNode.objects.filter(parent=self.id).exclude(type__in=TrashedFileNode._typedmodels_subtypes):
+                    child.delete(user=user, save=save, deleted_on=deleted_on)
         else:
             self.recast(TrashedFile._typedmodels_type)
 
@@ -636,6 +637,8 @@ class TrashedFileNode(BaseFileNode):
 
         self.recast(self._resolve_class(type_cls)._typedmodels_type)
 
+        self.deleted_on = None
+
         if save:
             self.save()
 
@@ -694,10 +697,11 @@ class TrashedFolder(TrashedFileNode):
         :param deleted_on:
         :return:
         """
+        deleted_on = deleted_on or self.deleted_on
+
         tf = super(TrashedFolder, self).restore(recursive=True, parent=None, save=True, deleted_on=None)
 
         if not self.is_file and recursive:
-            deleted_on = deleted_on or self.deleted_on
             for child in TrashedFileNode.objects.filter(parent=self.id, deleted_on=deleted_on):
                 child.restore(recursive=True, save=save, deleted_on=deleted_on)
         return tf
