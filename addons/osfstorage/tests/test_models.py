@@ -10,6 +10,7 @@ from nose.tools import *  # noqa
 
 from framework.auth import Auth
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
+from osf.models import BaseFileNode
 from osf.exceptions import ValidationError
 from osf.utils.permissions import WRITE, ADMIN
 from osf.utils.fields import EncryptedJSONField
@@ -222,6 +223,22 @@ class TestOsfstorageFileNode(StorageTestCase):
                 OsfStorageFileNode.load(kid._id),
                 None
             )
+
+    def test_delete_root_node(self):
+        root = self.node_settings.get_root()
+        folder = root.append_folder('Test')
+        file = folder.append_file('test_file')
+
+        # If delete_root is False, and the top-level item is a root, it is not deleted
+        root.delete(delete_root=False)
+        root.reload()
+        assert root.type == 'osf.osfstoragefolder'
+        assert BaseFileNode.objects.get(_id=folder._id).type == 'osf.trashedfolder'
+        assert BaseFileNode.objects.get(_id=file._id).type == 'osf.trashedfile'
+
+        # By default, everything is deleted, including the top-level item, root or not
+        root.delete()
+        assert BaseFileNode.objects.get(_id=root._id).type == 'osf.trashedfolder'
 
     def test_delete_file(self):
         child = self.node_settings.get_root().append_file('Test')

@@ -2288,7 +2288,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if len(hierarchy.filter(is_public=True)):
                 AbstractNode.bulk_update_search(hierarchy.filter(is_public=True))
 
-        return True
+            return True
 
     def add_addon(self, name, auth, log=True):
         ret = super(AbstractNode, self).add_addon(name, auth)

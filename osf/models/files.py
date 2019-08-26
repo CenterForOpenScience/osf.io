@@ -392,7 +392,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
                 child._update_node(save=save)
 
     # TODO: Remove unused parent param
-    def delete(self, user=None, parent=None, save=True, deleted_on=None):
+    def delete(self, user=None, parent=None, save=True, deleted_on=None, delete_root=True):
         """
         Recast a Folder to TrashedFolder, set fields related to deleting,
         and recast children.
@@ -400,13 +400,19 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         :param parent:
         :param save:
         :param deleted_on:
+        :param delete_root boolean, if delete_root is False,
+            folder is a root folder, it will not be removed.
         :return:
         """
-        self.deleted_by = user
-        self.deleted_on = deleted_on = deleted_on or timezone.now()
+        deleting_root = delete_root and self.is_root
+
+        if not self.is_root or deleting_root:
+            self.deleted_by = user
+            self.deleted_on = deleted_on = deleted_on or timezone.now()
 
         if not self.is_file:
-            self.recast(TrashedFolder._typedmodels_type)
+            if not self.is_root or deleting_root:
+                self.recast(TrashedFolder._typedmodels_type)
 
             for child in BaseFileNode.objects.filter(parent=self.id).exclude(type__in=TrashedFileNode._typedmodels_subtypes):
                 child.delete(user=user, save=save, deleted_on=deleted_on)
