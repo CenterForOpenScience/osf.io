@@ -1125,9 +1125,9 @@ class TestSaveUsedQuota(OsfTestCase):
             }
         )
 
-class TestQuotaApi(OsfTestCase):
+class TestQuotaApiWaterbutler(OsfTestCase):
     def setUp(self):
-        super(TestQuotaApi, self).setUp()
+        super(TestQuotaApiWaterbutler, self).setUp()
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
 
@@ -1187,6 +1187,68 @@ class TestQuotaApi(OsfTestCase):
                 self.node.api_url_for('creator_quota'),
                 **signing.sign_data(signing.default_signer, {})
             )
+        )
+        assert_equal(response.status_code, 200)
+        assert_equal(response.json['max'], 200 * api_settings.SIZE_UNIT_GB)
+        assert_equal(response.json['used'], 100 * api_settings.SIZE_UNIT_GB)
+
+
+class TestQuotaApiBrowser(OsfTestCase):
+    def setUp(self):
+        super(TestQuotaApiBrowser, self).setUp()
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+
+    def test_default_values(self):
+        ProjectStorageType.objects.filter(node=self.node).delete()
+        response = self.app.get(
+            self.node.api_url_for('get_creator_quota'),
+            auth=self.user.auth
+        )
+        assert_equal(response.status_code, 200)
+        assert_equal(response.json['max'], api_settings.DEFAULT_MAX_QUOTA * api_settings.SIZE_UNIT_GB)
+        assert_equal(response.json['used'], 0)
+
+    def test_used_half_custom_quota(self):
+        UserQuota.objects.create(
+            storage_type=UserQuota.NII_STORAGE,
+            user=self.user,
+            max_quota=200,
+            used=100 * api_settings.SIZE_UNIT_GB
+        )
+
+        response = self.app.get(
+            self.node.api_url_for('get_creator_quota'),
+            auth=self.user.auth
+        )
+        assert_equal(response.status_code, 200)
+        assert_equal(response.json['max'], 200 * api_settings.SIZE_UNIT_GB)
+        assert_equal(response.json['used'], 100 * api_settings.SIZE_UNIT_GB)
+
+    def test_used_half_custom_institution_quota(self):
+        UserQuota.objects.create(
+            storage_type=UserQuota.NII_STORAGE,
+            user=self.user,
+            max_quota=150,
+            used=0
+        )
+        UserQuota.objects.create(
+            storage_type=UserQuota.CUSTOM_STORAGE,
+            user=self.user,
+            max_quota=200,
+            used=100 * api_settings.SIZE_UNIT_GB
+        )
+
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        RegionFactory(_id=institution._id)
+        ProjectStorageType.objects.filter(node=self.node).update(
+            storage_type=ProjectStorageType.CUSTOM_STORAGE
+        )
+
+        response = self.app.get(
+            self.node.api_url_for('get_creator_quota'),
+            auth=self.user.auth
         )
         assert_equal(response.status_code, 200)
         assert_equal(response.json['max'], 200 * api_settings.SIZE_UNIT_GB)
