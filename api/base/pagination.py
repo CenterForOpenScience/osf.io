@@ -42,7 +42,6 @@ def paginate_embedded(queryset, instance):
             msg = 'Invalid page.'
         raise NotFound(msg)
 
-
     if paginator.count > 1 and instance.template is not None:
         # The browsable API should display pagination controls.
         instance.display_page_controls = True
