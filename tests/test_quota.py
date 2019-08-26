@@ -1135,7 +1135,7 @@ class TestQuotaApiWaterbutler(OsfTestCase):
         ProjectStorageType.objects.filter(node=self.node).delete()
         response = self.app.get(
             '{}?payload={payload}&signature={signature}'.format(
-                self.node.api_url_for('creator_quota'),
+                self.node.api_url_for('waterbutler_creator_quota'),
                 **signing.sign_data(signing.default_signer, {})
             )
         )
@@ -1153,7 +1153,7 @@ class TestQuotaApiWaterbutler(OsfTestCase):
 
         response = self.app.get(
             '{}?payload={payload}&signature={signature}'.format(
-                self.node.api_url_for('creator_quota'),
+                self.node.api_url_for('waterbutler_creator_quota'),
                 **signing.sign_data(signing.default_signer, {})
             )
         )
@@ -1184,7 +1184,7 @@ class TestQuotaApiWaterbutler(OsfTestCase):
 
         response = self.app.get(
             '{}?payload={payload}&signature={signature}'.format(
-                self.node.api_url_for('creator_quota'),
+                self.node.api_url_for('waterbutler_creator_quota'),
                 **signing.sign_data(signing.default_signer, {})
             )
         )
