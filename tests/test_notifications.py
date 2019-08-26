@@ -945,7 +945,6 @@ class TestNotificationUtils(OsfTestCase):
     def test_format_data_user_subscriptions_if_children_points_to_parent(self):
         private_project = factories.ProjectFactory(creator=self.user)
         node = factories.NodeFactory(parent=private_project, creator=self.user)
-        node.add_pointer(private_project, Auth(self.user))
         node.save()
         node_comments_subscription = factories.NotificationSubscriptionFactory(
             _id=node._id + '_' + 'comments',
