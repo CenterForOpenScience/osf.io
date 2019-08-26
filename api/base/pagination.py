@@ -22,6 +22,33 @@ from website.search.elastic_search import DOC_TYPE_TO_MODEL
 
 logger = logging.getLogger(__name__)
 
+
+def paginate_embedded(queryset, instance):
+    # Pagination requires an order by clause, especially when using Postgres.
+    # see: https://docs.djangoproject.com/en/1.10/topics/pagination/#required-arguments
+    if isinstance(queryset, QuerySet) and not queryset.ordered:
+        queryset = queryset.order_by(queryset.model._meta.pk.name)
+
+    paginator = DjangoPaginator(queryset, instance.page_size)
+    page_number = 1
+    try:
+        instance.page = paginator.page(page_number)
+    except InvalidPage as exc:
+        if instance.get('invalid_page_message', False):
+            msg = instance.invalid_page_message.format(
+                page_number=page_number, message=six.text_type(exc),
+            )
+        else:
+            msg = 'Invalid page.'
+        raise NotFound(msg)
+
+
+    if paginator.count > 1 and instance.template is not None:
+        # The browsable API should display pagination controls.
+        instance.display_page_controls = True
+    return list(instance.page)
+
+
 class JSONAPIPagination(pagination.PageNumberPagination):
     """
     Custom paginator that formats responses in a JSON-API compatible format.
@@ -134,10 +161,10 @@ class JSONAPIPagination(pagination.PageNumberPagination):
             response_dict = self.get_response_dict(data, reversed_url)
 
         if is_anonymized(self.request):
-            if response_dict.get('meta', False):
-                response_dict['meta'].update({'anonymous': True})
-            else:
+            try:
                 response_dict['meta'] = {'anonymous': True}
+            except AttributeError:
+                response_dict['meta'].update({'anonymous': True})
         return Response(response_dict)
 
     def paginate_queryset(self, queryset, request, view=None):
@@ -146,28 +173,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         If this is an embedded resource, returns first page, ignoring query params.
         """
         if request.parser_context['kwargs'].get('is_embedded'):
-            # Pagination requires an order by clause, especially when using Postgres.
-            # see: https://docs.djangoproject.com/en/1.10/topics/pagination/#required-arguments
-            if isinstance(queryset, QuerySet) and not queryset.ordered:
-                queryset = queryset.order_by(queryset.model._meta.pk.name)
-
-            paginator = DjangoPaginator(queryset, self.page_size)
-            page_number = 1
-            try:
-                self.page = paginator.page(page_number)
-            except InvalidPage as exc:
-                msg = self.invalid_page_message.format(
-                    page_number=page_number, message=six.text_type(exc),
-                )
-                raise NotFound(msg)
-
-            if paginator.count > 1 and self.template is not None:
-                # The browsable API should display pagination controls.
-                self.display_page_controls = True
-
-            self.request = request
-            return list(self.page)
-
+            return paginate_embedded(queryset, self)
         else:
             return super(JSONAPIPagination, self).paginate_queryset(queryset, request, view=None)
 
@@ -175,7 +181,6 @@ class JSONAPIPagination(pagination.PageNumberPagination):
 class CursorPagination(pagination.CursorPagination):
     page_size_query_param = 'page[size]'
     max_page_size = MAX_PAGE_SIZE
-    total = 0
 
     def get_response_dict(self, data):
         return OrderedDict([
@@ -206,10 +211,10 @@ class CursorPagination(pagination.CursorPagination):
         response_dict = self.get_response_dict(data)
 
         if is_anonymized(self.request):
-            if response_dict.get('meta', False):
-                response_dict['meta'].update({'anonymous': True})
-            else:
+            try:
                 response_dict['meta'] = {'anonymous': True}
+            except AttributeError:
+                response_dict['meta'].update({'anonymous': True})
         return Response(response_dict)
 
     def paginate_queryset(self, queryset, request, view=None):
