@@ -58,7 +58,7 @@ from addons.jupyterhub.utils import serialize_jupyterhub_widget
 from admin.rdm_addons.utils import validate_rdm_addons_allowed
 
 from nii.mapcore_api import MAPCoreException
-from nii.mapcore import (mapcore_is_enabled,
+from nii.mapcore import (mapcore_sync_is_enabled,
                          mapcore_log_error,
                          mapcore_sync_rdm_project_or_map_group,
                          mapcore_sync_map_group)
@@ -97,7 +97,7 @@ def edit_node(auth, node, **kwargs):
             http.BAD_REQUEST,
             data=dict(message_long=e.message)
         )
-    if mapcore_is_enabled():
+    if mapcore_sync_is_enabled():
         mapcore_sync_map_group(auth.user, node)
     return {
         'status': 'success',
@@ -745,7 +745,7 @@ def _view_project(node, auth, primary=False,
     except Contributor.DoesNotExist:
         contributor = None
 
-    if mapcore_is_enabled():
+    if mapcore_sync_is_enabled():
         try:
             mapcore_sync_rdm_project_or_map_group(auth.user, node)
         except MAPCoreException as e:

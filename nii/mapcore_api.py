@@ -81,8 +81,8 @@ def mapcore_logger(logger):
         logger = MAPCoreLogger(logger)
     return logger
 
-def mapcore_api_disable_log():
-    logger.setLevel(level=logging.CRITICAL)
+def mapcore_api_disable_log(level=logging.CRITICAL):
+    logger.setLevel(level=level)
 
 logger = mapcore_logger(logging.getLogger(__name__))
 

@@ -920,10 +920,67 @@ def unset_maintenance(ctx):
 
 
 @task
+def mapcore_config(ctx, sync=None):
+    '''mAP core configurations
+
+    Examples:
+        inv mapcore_config --sync=yes
+        inv mapcore_config --sync=no
+    '''
+    from website.app import init_app
+    init_app(routes=False)
+
+    from nii.mapcore import (mapcore_sync_is_enabled,
+                             mapcore_sync_set_enabled,
+                             mapcore_sync_set_disabled)
+
+    def bool_from_str(name, s):
+        if s.lower() in ['enable', 'true', 'yes', 'on', '1']:
+            return True
+        if s.lower() in ['disable', 'false', 'no', 'off', '0']:
+            return False
+        raise Exception('--{} expects yes or no: {}'.format(name, s))
+
+    if sync is not None:
+        if bool_from_str('sync', sync):
+            mapcore_sync_set_enabled()
+        else:
+            mapcore_sync_set_disabled()
+
+    print('mapcore_sync_is_enabled: {}'.format(mapcore_sync_is_enabled()))
+
+
+@task
+def mapcore_upload_all(ctx):
+    '''Synchronize all GRDM projects to mAP core'''
+    from website.app import init_app
+    init_app(routes=False)
+
+    from nii.mapcore import (mapcore_disable_log,
+                             mapcore_sync_is_enabled,
+                             mapcore_sync_upload_all)
+
+    mapcore_disable_log(level=logging.ERROR)
+    if mapcore_sync_is_enabled():
+        count_all_nodes, error_nodes = mapcore_sync_upload_all()
+        idx = 0
+        for error_node in error_nodes:
+            idx += 1
+            print('error node {}: guid={}'.format(idx, error_node._id))
+        count_error_nodes = len(error_nodes)
+        print('count_error_nodes={}'.format(count_error_nodes))
+        print('count_all_nodes={}'.format(count_all_nodes))
+        if count_error_nodes > 0:
+            sys.exit(1)
+    else:
+        print('mapcore_sync_is_enabled: False')
+        sys.exit(1)
+
+@task
 def mapcore_remove_token(ctx, username=None, eppn=None):
     '''Remove OAuth token for mAP core'''
     from website.app import init_app
-    init_app(routes=False, set_backends=False)
+    init_app(routes=False)
 
     from osf.models import OSFUser
     from nii.mapcore import mapcore_remove_token
@@ -972,7 +1029,7 @@ def mapcore_rmgroups(ctx, user=None, file=None, grdm=False, map=False, key_only=
                      interactive=False, verbose=False, dry_run=False):
     '''GRDM/mAP group maintanance utility for bulk deletion'''
     from website.app import init_app
-    init_app(routes=False, set_backends=False)
+    init_app(routes=False)
 
     from nii.rmgroups import Options, remove_multi_groups
 
@@ -984,7 +1041,7 @@ def mapcore_rmgroups(ctx, user=None, file=None, grdm=False, map=False, key_only=
 def mapcore_unlock_all(ctx):
     '''Remove all lock flags for mAP core'''
     from website.app import init_app
-    init_app(routes=False, set_backends=False)
+    init_app(routes=False)
 
     from nii import mapcore
     mapcore.mapcore_unlock_all()
@@ -1002,7 +1059,7 @@ def mapcore_test_lock(ctx):
 
     def test_lock_user(idx):
         print('start: test_lock_user[{}]'.format(idx))
-        init_app(routes=False, set_backends=False)
+        init_app(routes=False)
         from nii.mapcore import user_lock_test
         from osf.models import OSFUser
 
@@ -1011,7 +1068,7 @@ def mapcore_test_lock(ctx):
 
     def test_lock_node(idx):
         print('start: test_lock_node[{}]'.format(idx))
-        init_app(routes=False, set_backends=False)
+        init_app(routes=False)
         from nii.mapcore import node_lock_test
         from osf.models import Node
 

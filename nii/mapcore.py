@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
 from osf.models.user import OSFUser
 from osf.models.node import Node
-from osf.models.mapcore import MAPProfile
+from osf.models.mapcore import MAPSync, MAPProfile
 from osf.models.nodelog import NodeLog
 from framework.auth import Auth
 from website.util import web_url_for
@@ -47,9 +47,9 @@ from nii.mapcore_api import (MAPCore, MAPCoreException, VERIFY,
 
 logger = mapcore_logger(logger)
 
-def mapcore_disable_log():
-    logger.setLevel(level=logging.CRITICAL)
-    mapcore_api_disable_log()
+def mapcore_disable_log(level=logging.CRITICAL):
+    logger.setLevel(level=level)
+    mapcore_api_disable_log(level=level)
 
 ### Node.{title,description} : unicode
 ### from MAPCore methods : utf-8
@@ -84,10 +84,32 @@ def add_log(action, node, user, exc, save=False):
         save=save,
     )
 
-def mapcore_is_enabled():
-    #sys.stderr.write('mapcore_is_enabled: MAPCORE_CLIENTID={}\n'.format(MAPCORE_CLIENTID))
-    return True if MAPCORE_CLIENTID else False
+def mapcore_sync_is_enabled():
+    return MAPSync.is_enabled() if MAPCORE_CLIENTID else False
 
+def mapcore_sync_set_enabled():
+    MAPSync.set_enabled(True)
+
+def mapcore_sync_set_disabled():
+    MAPSync.set_enabled(False)
+
+def mapcore_sync_upload_all(verbose=True):
+    count_all = 0
+    error_nodes = []
+    if not mapcore_sync_is_enabled():
+        return
+    for node in Node.objects.filter(is_deleted=False):
+        count_all += 1
+        if verbose:
+            print(u'*** Node: guid={}. title={}'.format(node._id, node.title))
+        mapcore_set_standby_to_upload(node, log=False)
+        try:
+            admin_user = get_one_admin(node)
+            mapcore_sync_rdm_project_or_map_group(admin_user, node,
+                                                  use_raise=True)
+        except Exception:
+            error_nodes.append(node)
+    return (count_all, error_nodes)
 
 # True or Exception
 def mapcore_api_is_available0(user):
@@ -234,6 +256,7 @@ def mapcore_receive_authcode(user, params):
             map_profile = MAPProfile.objects.create()
             u.map_profile = map_profile
             u.save()
+            user.reload()
         else:
             map_profile = u.map_profile
         map_profile.oauth_access_token = access_token
@@ -345,6 +368,23 @@ def mapcore_remove_token(user):
 # ignore user.eppn=None
 def query_contributors(node):
     return node.contributors.exclude(eppn=None)
+
+def query_admin_contributors(node):
+    admins = []
+    for admin in node.get_admin_contributors(node.contributors):
+        admins.append(admin)
+    return admins
+
+def get_one_admin(node):
+    admins = query_admin_contributors(node)
+    if admins is None or len(admins) == 0:
+        return None
+    if node.creator.is_disabled is False and node.creator in admins:
+        return node.creator
+    for admin in admins:
+        if admin.is_disabled is False:
+            return admin
+    raise MAPCoreException(None, 'GRDM project[{}]: No admin contributor exists. (unexpected)'.format(node._id))
 
 def remove_node(node):
     last_e = None
@@ -460,11 +500,10 @@ def is_node_admin(node, user):
 
 def _mapcore_api_with_switching_token(access_user, node, group_key, func, **kwargs):
     candidates = []
-    if access_user and access_user.eppn:
+    if access_user:
         candidates.append(access_user)  # top priority
     if node:
-        if node.creator.eppn:
-            candidates.append(node.creator)
+        candidates.append(node.creator)
         for contributor in query_contributors(node):
             candidates.append(contributor)
     if len(candidates) == 0:
@@ -474,6 +513,10 @@ def _mapcore_api_with_switching_token(access_user, node, group_key, func, **kwar
     first_e = None
     first_tb = None  # for sys.exc_info()
     for candidate in sorted(set(candidates), key=candidates.index):
+        if candidate.is_disabled:
+            continue
+        if candidate.eppn is None:
+            continue
         if candidate.map_profile is None:
             continue
         try:
@@ -650,7 +693,7 @@ def mapcore_sync_map_new_group(user, node, use_raise=False):
         #raise Exception('test-error map_new') #TOD
         return mapcore_sync_map_new_group0(user, node)
     except Exception as e:
-        logger.error('User(eppn={}) cannot create a new group(title={}) on mAP, reason={}'.format(user.eppn, utf8(node.title), utf8(str(e))))
+        logger.error('User(username={}, eppn={}) cannot create a new group(title={}) on mAP, reason={}'.format(user.username, user.eppn, utf8(node.title), utf8(str(e))))
         add_log(NodeLog.MAPCORE_MAP_GROUP_NOT_CREATED, node, user, e,
                 save=True)
         if use_raise:
@@ -1073,19 +1116,20 @@ def mapcore_sync_rdm_my_projects(user, use_raise=False):
     try:
         mapcore_sync_rdm_my_projects0(user)
     except Exception as e:
-        logger.error('User(eppn={}) cannot compare my GRDM Projects and my mAP groups, reason={}'.format(user.eppn, utf8(str(e))))
+        logger.error('User(username={}, eppn={}) cannot compare my GRDM Projects and my mAP groups, reason={}'.format(user.username, user.eppn, utf8(str(e))))
         if use_raise:
             raise
 
 
-def mapcore_set_standby_to_upload(node):
+def mapcore_set_standby_to_upload(node, log=True):
     with transaction.atomic():
         n = Node.objects.select_for_update().get(guids___id=node._id)
         n.mapcore_standby_to_upload = timezone.now()
         n.save()
-        logger.info('Project({}) will be uploaded to mAP (next time).'.format(node._id))
-        logger.info('Project({}).mapcore_standby_to_upload={}'.format(node._id, n.mapcore_standby_to_upload))
-
+        if log:
+            logger.info('Project({}) will be uploaded to mAP (next time).'.format(node._id))
+            logger.info('Project({}).mapcore_standby_to_upload={}'.format(node._id, n.mapcore_standby_to_upload))
+    node.reload()
 
 def mapcore_is_on_standby_to_upload(node):
     with transaction.atomic():
@@ -1098,6 +1142,7 @@ def mapcore_unset_standby_to_upload(node):
         n.mapcore_standby_to_upload = None
         n.save()
         logger.debug('Project({}).mapcore_standby_to_upload=None'.format(node._id))
+    node.reload()
 
 SYNC_CACHE_TIME = 10  # sec.
 
@@ -1107,6 +1152,7 @@ def mapcore_clear_sync_time(node):
             n = Node.objects.select_for_update().get(guids___id=node._id)
             n.mapcore_sync_time = None
             n.save()
+        node.reload()
     except Exception as e:
         logger.error('mapcore_clear_sync_time: {}'.format(utf8(str(e))))
         # ignore
@@ -1117,6 +1163,7 @@ def mapcore_set_sync_time(node):
             n = Node.objects.select_for_update().get(guids___id=node._id)
             n.mapcore_sync_time = timezone.now()
             n.save()
+        node.reload()
     except Exception as e:
         logger.error('mapcore_set_sync_time: {}'.format(utf8(str(e))))
         # ignore
@@ -1138,7 +1185,8 @@ def mapcore_sync_rdm_project_or_map_group0(access_user, node, use_raise=False):
         return  # skipped
 
     if node.map_group_key is None:
-        group_key = mapcore_sync_map_new_group(node.creator, node,
+        admin_user = get_one_admin(node)
+        group_key = mapcore_sync_map_new_group(admin_user, node,
                                                use_raise=use_raise)
         if group_key:
             node.map_group_key = group_key

@@ -70,7 +70,7 @@ MAPCORE_SYNC_IGNORE_ERROR = True
 # If node is not None, mapcore_sync_rdm_project_or_map_group() is called.
 def mapcore_check_token(auth, node, use_mapcore=True):
     from nii.mapcore_api import MAPCoreTokenExpired
-    from nii.mapcore import (mapcore_is_enabled,
+    from nii.mapcore import (mapcore_sync_is_enabled,
                              mapcore_api_is_available,
                              mapcore_log_error,
                              mapcore_url_is_my_projects,
@@ -82,7 +82,7 @@ def mapcore_check_token(auth, node, use_mapcore=True):
     # status.push_status_message(msg, kind='info', dismissible=True, trust=True)
     # -> "Missing translation: status.<msg>" in dashboard from ember-osf-web
 
-    if auth and use_mapcore and mapcore_is_enabled():
+    if auth and use_mapcore and mapcore_sync_is_enabled():
         node_page = False
         try:
             try:

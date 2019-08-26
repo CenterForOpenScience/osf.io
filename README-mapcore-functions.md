@@ -6,9 +6,27 @@
 
 1. mAP連携機能が有効であるかを返す
     ```
-    def mapcore_is_enabled():
+    def mapcore_sync_is_enabled():
     ```
     - 戻り値: bool 利用可能な場合にTrue
+
+1. mAP連携機能を有効にし(状態をDB保存)
+    ```
+    def mapcore_sync_set_enabled():
+    ```
+    - 戻り値: なし
+
+1. mAP連携機能を無効にする(状態をDB保存)
+    ```
+    def mapcore_sync_set_disabled():
+    ```
+    - 戻り値: なし
+
+1. GRDM側を主としてmAP側に同期する
+    ```
+    def mapcore_sync_upload_all():
+    ```
+    - 戻り値: なし
 
 1. ユーザーのAccess Tokenが有効であることを確認し、可能であれば更新する
     ```

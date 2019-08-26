@@ -27,7 +27,10 @@ from website.util import web_url_for
 from website.profile.utils import add_contributor_json
 from nii.mapcore import (encode_uri_component,
                          mapcore_disable_log,
-                         mapcore_is_enabled,
+                         mapcore_sync_is_enabled,
+                         mapcore_sync_set_enabled,
+                         mapcore_sync_set_disabled,
+                         mapcore_sync_upload_all,
                          mapcore_api_is_available,
                          mapcore_request_authcode,
                          mapcore_receive_authcode)
@@ -207,26 +210,53 @@ class TestFuncOfMAPCore(OsfTestCase):
         self.project.save()
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', None)
-    def test_disabled(self):
-        assert_equal(mapcore_is_enabled(), False)
+    def test_sync_is_disabled(self):
+        assert_equal(mapcore_sync_is_enabled(), False)
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_enabled')
-    def test_enabled(self):
-        assert_equal(mapcore_is_enabled(), True)
+    def test_sync_is_enabled(self):
+        assert_equal(mapcore_sync_is_enabled(), True)
 
+    @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'dummy_client_id')
+    def test_sync_set_enabled(self):
+        mapcore_sync_set_disabled()
+        assert_equal(mapcore_sync_is_enabled(), False)
+        mapcore_sync_set_enabled()
+        assert_equal(mapcore_sync_is_enabled(), True)
+
+    @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'dummy_client_id')
+    @mock.patch('nii.mapcore.mapcore_sync_rdm_project_or_map_group')
+    def test_sync_upload_all(self, mock_sync):
+        mapcore_sync_set_disabled()
+        mapcore_sync_upload_all()
+        assert_equal(mock_sync.call_count, 0)
+        mapcore_sync_set_enabled()
+        mapcore_sync_upload_all()
+        assert_not_equal(mock_sync.call_count, 0)
+        # testing mapcore_set_standby_to_upload() exists in test_sync_rdm_project_or_map_group
+
+    # include testing mapcore_set_standby_to_upload()
     def test_sync_rdm_project_or_map_group(self):
         from nii.mapcore import (mapcore_sync_rdm_project_or_map_group,
                                  mapcore_is_sync_time_expired,
-                                 mapcore_clear_sync_time)
+                                 mapcore_clear_sync_time,
+                                 mapcore_set_standby_to_upload,
+                                 mapcore_unset_standby_to_upload)
 
+        # create a new group (GRDM -> mAP)
         assert_equal(self.project.map_group_key, None)
         with mock.patch('nii.mapcore.mapcore_sync_map_new_group') as mock1, \
-             mock.patch('nii.mapcore.mapcore_sync_map_group') as mock2:
+             mock.patch('nii.mapcore.mapcore_sync_map_group') as mock2, \
+             mock.patch('nii.mapcore.mapcore_sync_rdm_project') as mock3:
             mock1.return_value = 'fake_group_key'
             mapcore_sync_rdm_project_or_map_group(self.me, self.project)
             assert_equal(mock1.call_count, 1)
             assert_equal(mock2.call_count, 1)
+            assert_equal(mock3.call_count, 0)
 
+        # GRDM -> mAP
+        # use mock: mapcore_is_on_standby_to_upload
+        mapcore_clear_sync_time(self.project)
         self.project.map_group_key = 'fake_group_key'
         self.project.save()
         with mock.patch('nii.mapcore.mapcore_is_on_standby_to_upload') as mock1, \
@@ -236,6 +266,16 @@ class TestFuncOfMAPCore(OsfTestCase):
             assert_equal(mock1.call_count, 1)
             assert_equal(mock2.call_count, 1)
 
+        # GRDM -> mAP
+        # not use mock: mapcore_is_on_standby_to_upload
+        mapcore_clear_sync_time(self.project)
+        with mock.patch('nii.mapcore.mapcore_sync_map_group') as mock1:
+            mapcore_set_standby_to_upload(self.project, log=True)
+            mapcore_sync_rdm_project_or_map_group(self.me, self.project)
+            assert_equal(mock1.call_count, 1)
+
+        # mAP -> GRDM
+        # use mock: mapcore_is_on_standby_to_upload
         mapcore_clear_sync_time(self.project)
         with mock.patch('nii.mapcore.mapcore_is_on_standby_to_upload') as mock1, \
              mock.patch('nii.mapcore.mapcore_sync_rdm_project') as mock2:
@@ -244,13 +284,25 @@ class TestFuncOfMAPCore(OsfTestCase):
             mapcore_sync_rdm_project_or_map_group(self.me, self.project)
             assert_equal(mock1.call_count, 1)
             assert_equal(mock2.call_count, 1)
-            # reload
-            p2 = AbstractNode.objects.get(guids___id=self.project._id)
-            self.project = p2
+            self.project.reload()
             assert_equal(mapcore_is_sync_time_expired(self.project), False)
             mapcore_sync_rdm_project_or_map_group(self.me, self.project)
             assert_equal(mock1.call_count, 1)  # not incremented
             assert_equal(mock2.call_count, 1)  # not incremented
+
+        # mAP -> GRDM
+        # not use mock: mapcore_is_on_standby_to_upload
+        mapcore_clear_sync_time(self.project)
+        with mock.patch('nii.mapcore.mapcore_sync_rdm_project') as mock2:
+            assert_equal(mapcore_is_sync_time_expired(self.project), True)
+            mapcore_unset_standby_to_upload(self.project)
+            mapcore_sync_rdm_project_or_map_group(self.me, self.project)
+            assert_equal(mock2.call_count, 1)
+            self.project.reload()
+            assert_equal(mapcore_is_sync_time_expired(self.project), False)
+            mapcore_sync_rdm_project_or_map_group(self.me, self.project)
+            assert_equal(mock2.call_count, 1)  # not incremented
+
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
@@ -1047,6 +1099,36 @@ class TestViewsWithMAPCore(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(mock_sync1.call_count, 2)  # at decorator.py and _view_project()
         assert_equal(mock_sync2.call_count, 1)
+
+    @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_dashboard_disabled')
+    @mock.patch('website.views.use_ember_app')
+    @mock.patch('nii.mapcore.mapcore_sync_rdm_my_projects0')
+    def test_dashboard_disabled(self, mock_sync, mock_ember):
+        mapcore_sync_set_disabled()
+        url = web_url_for('dashboard', _absolute=True)
+        res = self.app.get(url, auth=self.me.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(mock_sync.call_count, 0)
+        assert_equal(mock_ember.call_count, 1)
+
+    @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_my_projects_disabled')
+    @mock.patch('nii.mapcore.mapcore_sync_rdm_my_projects0')
+    def test_my_projects_disabled(self, mock_sync):
+        mapcore_sync_set_disabled()
+        url = web_url_for('my_projects', _absolute=True)
+        res = self.app.get(url, auth=self.me.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(mock_sync.call_count, 0)
+
+    @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_view_project_disabled')
+    @mock.patch('nii.mapcore.mapcore_sync_rdm_project_or_map_group0')
+    @mock.patch('nii.mapcore.mapcore_api_is_available0')
+    def test_view_project_disabled(self, mock_sync2, mock_sync1):
+        mapcore_sync_set_disabled()
+        res = self.app.get(self.project_url, auth=self.me.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(mock_sync1.call_count, 0)
+        assert_equal(mock_sync2.call_count, 0)
 
     ### from tests/test_views.py::test_edit_node_title
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_edit_node_title')
