@@ -58,14 +58,17 @@ class SparseNodeSerializer(NodeSerializer):
     # Overrides SparseFieldsetMixin
     def parse_sparse_fields(self, allow_unsafe=False, **kwargs):
         """
-        Since meeting submissions are actually nodes, we are subclassing the NodeSerializer,
-        but we only want to return a subset of fields specific to meetings
+        SparseNodes are faster mostly because they subset the fields that they return
+        to only the necessary fields for a list view.
         """
         fieldset = [
             'bibliographic_contributors',
             'category',
             'children',
             'contributors',
+            'current_user_is_contributor',
+            'current_user_is_contributor_or_group_member',
+            'current_user_permissions',
             'date_created',
             'date_modified',
             'description',
@@ -100,10 +103,8 @@ class SparseRegistrationSerializer(RegistrationSerializer):
         'detail',
         'id',
         'parent',
-        'preprint',
         'public',
         'root',
-        'subjects',
         'tags',
         'title',
     ])
@@ -143,8 +144,8 @@ class SparseRegistrationSerializer(RegistrationSerializer):
     # Overrides SparseFieldsetMixin
     def parse_sparse_fields(self, allow_unsafe=False, **kwargs):
         """
-        Since meeting submissions are actually nodes, we are subclassing the NodeSerializer,
-        but we only want to return a subset of fields specific to meetings
+        SparseNodes are faster mostly because they subset the fields that they return
+        to only the necessary fields for a list view.
         """
         fieldset = [
             'archiving',
@@ -164,6 +165,7 @@ class SparseRegistrationSerializer(RegistrationSerializer):
             'parent',
             'pending_embargo_approval',
             'pending_embargo_termination_approval',
+            'pending_registration_approval',
             'pending_withdrawal',
             'public',
             'registered_meta',
