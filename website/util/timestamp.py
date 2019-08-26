@@ -529,16 +529,8 @@ def file_created_or_updated(node, metadata, user_id, created_flag):
     verify_data.save()
 
 def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest_path, metadata, src_metadata=None):
-    from pprint import pprint
     src_path = src_path if src_path[0] == '/' else '/' + src_path
     dest_path = dest_path if dest_path[0] == '/' else '/' + dest_path
-    if src_metadata['kind'] == 'folder':
-        for child in metadata['children']:
-            pprint(child)
-    print(src_path)
-    print(src_metadata)
-    print('dest_path:{}'.format(dest_path))
-    print('metadata:{}'.format(metadata))
     target_object_id = Guid.objects.get(_id=project_id,
                                         content_type_id=ContentType.objects.get_for_model(AbstractNode).id).object_id
     deleted_files = RdmFileTimestamptokenVerifyResult.objects.filter(
@@ -558,73 +550,42 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
         inspection_result_status__in=STATUS_NOT_ACCESSIBLE
     ).all()
     for moved_file in moved_files:
-        print(get_linenumber())
         moved_file.path = moved_file.path.replace(src_path, dest_path, 1)
-        print(moved_file.path)
         moved_file.provider = dest_provider
-        print(dest_provider)
         moved_file.save()
-        pprint(vars(moved_file))
     if src_provider != 'osfstorage' and src_path[-1:] == '/':
         file_nodes = BaseFileNode.objects.filter(target_object_id=target_object_id,
                                                  provider=src_provider,
                                                  deleted_on__isnull=True,
                                                  _materialized_path__startswith=src_path).all()
-        print('file_nodes:{}'.format(file_nodes))
         for file_node in file_nodes:
             file_node._path = re.sub(r'^' + src_path, dest_path, file_node._path)
             file_node._materialized_path = re.sub(r'^' + src_path, dest_path, file_node._path)
-            pprint('<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>')
-            pprint('src_path: {}'.format(src_path))
-            pprint('dest_path: {}'.format(dest_path))
             children = metadata.get('children', None)
             if children is not None:
                 for child in metadata['children']:
                     if file_node.name == child['name']:
-                        pprint('child: {}'.format(child))
                         file_node._materialized_path = child.get('materialized')
                         break
-            pprint('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
             file_node = move_file_node_update(file_node, src_provider, dest_provider, metadata)
-            pprint(get_linenumber())
             if dest_provider == 'osfstorage':
-                pprint('file_node.id: {}'.format(file_node.id))
                 file_node.delete()
-                pprint(get_linenumber())
                 rft = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_node._id).first()
-                pprint(get_linenumber())
-                pprint(vars(rft))
                 if rft is not None:
-                    pprint(get_linenumber())
                     temp_path = rft.path
-                    pprint(get_linenumber())
-                    pprint(vars(file_node))
                     if file_node.name[0] != '/' and rft.path[0] == '/':
                         temp_path = rft.path[1:]
-                        pprint(temp_path)
-                        pprint(get_linenumber())
                     children = metadata.get('children', None)
                     if children is not None:
                         for child in metadata['children']:
                             if file_node.name == child['name']:
-                                pprint('KLKLKLKLKLKLKLKLKLKLKLKL')
-                                pprint('child: {}'.format(child))
-                                pprint('LKLKLKLKLKLKLKLKLKLKLKLK')
                                 temp_path = child['name']
                                 break
-                    pprint('rft.path: {}'.format(rft.path))
-                    pprint('file_node.name: {}'.format(file_node.name))
-                    pprint('_materialized_path: {}'.format(temp_path))
                     file_node = BaseFileNode.objects.filter(name=temp_path, provider=dest_provider).order_by('-id').first()
-                    pprint(get_linenumber())
                     if file_node is not None:
-                        pprint(get_linenumber())
                         rft.file_id = file_node._id
                         rft.provider = 'osfstorage'
                         rft.save()
-                        pprint(get_linenumber())
-            pprint(file_node)
-            pprint(get_linenumber())
             provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
 
     else:
@@ -633,21 +594,17 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
                                                  deleted_on__isnull=True,
                                                  _materialized_path=src_path).all()
         for file_node in file_nodes:
-            print('dest_path:{}'.format(dest_path))
             file_node._path = dest_path
             file_node._materialized_path = dest_path
             file_node = move_file_node_update(file_node, src_provider, dest_provider, metadata)
             if dest_provider == 'osfstorage':
                 file_node.delete()
-                pprint(vars(file_node))
                 rft = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_node._id).first()
                 if rft is not None:
                     temp_path = rft.path
                     if file_node.name[0] != '/' and rft.path[0] == '/':
                         temp_path = rft.path[1:]
-                    print(temp_path)
-                    print('file_node.name: {}'.format(file_node.name))
-                    print('src_provider: {}'.format(src_provider))
+
                     file_node = BaseFileNode.objects.filter(name=file_node.name, provider=dest_provider).order_by('-id').first()
                     if file_node is not None:
                         rft.file_id = file_node._id
@@ -678,7 +635,6 @@ def move_file_node_update(file_node, src_provider, dest_provider, metadata=None)
                     file_node.path = child['path']
                     break
     file_node.save()
-    print('move_file_node_update: {}'.format(file_node.id))
     return file_node
 def get_linenumber():
     cf = currentframe()
@@ -693,9 +649,6 @@ def dynamic_import(name):
 
 def provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider):
     last_timestamp_result = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
-    from pprint import pprint
-    pprint('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    pprint(vars(file_node))
     path = ''
     if file_node._materialized_path is not None and file_node._materialized_path != '':
         path = file_node._materialized_path if file_node._materialized_path[0] == '/' else '/' + file_node._materialized_path
