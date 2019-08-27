@@ -1,8 +1,6 @@
 import pytest
 from collections import OrderedDict
 
-from django.core.exceptions import ValidationError
-
 from addons.box.models import BoxFile
 from addons.dropbox.models import DropboxFile
 from addons.github.models import GithubFile
@@ -12,7 +10,7 @@ from addons.s3.models import S3File
 from website import settings
 from addons.osfstorage import settings as osfstorage_settings
 from website.project.views.comment import update_file_guid_referent
-from website.project.signals import comment_added, mention_added, contributor_added
+from website.project.signals import comment_added, mention_added
 from framework.exceptions import PermissionsError
 from tests.base import capture_signals
 from osf.models import Comment, NodeLog, Guid, BaseFileNode
@@ -24,19 +22,28 @@ from .factories import (
     NodeFactory,
     UserFactory,
     UnregUserFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    OSFGroupFactory,
 )
 
 # All tests will require a databse
 pytestmark = pytest.mark.django_db
 
+
 @pytest.fixture()
 def user():
     return UserFactory()
 
+
+@pytest.fixture()
+def user_without_nodes():
+    return UserFactory()
+
+
 @pytest.fixture()
 def node(user):
     return NodeFactory(creator=user)
+
 
 @pytest.fixture()
 def auth(user):
@@ -47,14 +54,104 @@ def auth(user):
 def project(user):
     return ProjectFactory(creator=user)
 
+
+@pytest.fixture()
+def comment(user, project):
+    return CommentFactory(user=user, target=project.guids.last(), node=project)
+
+
+@pytest.fixture()
+def unreg_contributor(project):
+    unreg_user = UnregUserFactory()
+    unreg_user.save()
+    project.add_unregistered_contributor(unreg_user.fullname, unreg_user.email, Auth(project.creator),
+                                         permissions=permissions.READ, save=True)
+    return unreg_user
+
+
+@pytest.fixture()
+def contributor(project):
+    user = UserFactory()
+    project.add_contributor(user)
+    return user
+
+
 @pytest.fixture()
 def component(user, project):
     return NodeFactory(parent=project, creator=user)
 
 
+@pytest.fixture()
+def project_with_contributor(user, contributor):
+    project = ProjectFactory(creator=user)
+    project.add_contributor(contributor)
+    return project
+
+
+@pytest.fixture()
+def comment_self_mentioned(user):
+    return 'This is a comment with a good mention [@Mentioned User](http://localhost:5000/{}/).'.format(user._id)
+
+
+@pytest.fixture()
+def comment_contributor_mentioned(contributor):
+    return 'This is a comment with a good mention [@Mentioned User](http://localhost:5000/{}/).'.format(contributor._id)
+
+
+@pytest.fixture()
+def comment_invalid_user_mentioned():
+    return 'This is a comment with a good mention [@Mentioned User](http://localhost:5000/qwerty/).'
+
+
+@pytest.fixture()
+def comment_too_long():
+    return ''.join(['c' for _ in range(settings.COMMENT_MAXLENGTH + 3)])
+
+
+@pytest.fixture()
+def comment_too_long_with_mention(user):
+    mention = '[@George Ant](http://localhost:5000/{}/)'.format(user._id)
+    return ''.join(['c' for _ in range(settings.COMMENT_MAXLENGTH - 8)]) + mention
+
+
+@pytest.fixture()
+def comment_valid():
+    return 'This is a good comment'
+
+
+@pytest.fixture()
+def comment_mention_valid(contributor):
+    return 'This is a comment [@User](http://localhost:5000/{}/).'.format(contributor._id)
+
+
+@pytest.fixture()
+def comment_mention_project_with_contributor(contributor, project_with_contributor):
+    return 'This is a comment [@User](http://localhost:5000/{}/).'.format(contributor._id)
+
+
+@pytest.fixture()
+def comment_mention_unreg_contributor(unreg_contributor):
+    return 'This is a comment [@Unconfirmed User](http://localhost:5000/{}/).'.format(unreg_contributor._id)
+
+
+@pytest.fixture()
+def comment_mention_non_contributor(user_without_nodes):
+    return 'This is a comment [@User](http://localhost:5000/{}/).'.format(user_without_nodes._id)
+
+
+@pytest.fixture()
+def comment_mention_edited_twice(comment, node):
+    return 'This is a new comment [@User](http://localhost:5000/{}/).'.format(comment.user)
+
+
+@pytest.fixture()
+def comment_mentioned_with_contributors(user):
+    return 'This is a new comment [@User](http://localhost:5000/{}/).'.format(user._id)
+
 def test_comments_have_longer_guid():
     comment = CommentFactory()
     assert len(comment._id) == 12
+
 
 def test_comments_are_queryable_by_root_target():
     root_target = ProjectFactory()
@@ -62,158 +159,182 @@ def test_comments_are_queryable_by_root_target():
     assert Comment.objects.filter(root_target=root_target.guids.first()).first() == comment
 
 
+def pytest_generate_tests(metafunc):
+    # called once per each test function
+    if not metafunc.cls:
+        return
+    if not hasattr(metafunc.cls, 'params'):
+        return
+    funcarglist = metafunc.cls.params.get(metafunc.function.__name__)
+    if not funcarglist:
+        return
+    argnames = sorted(funcarglist[0])
+    metafunc.parametrize(argnames, [[funcargs[name] for name in argnames] for funcargs in funcarglist])
+
+
 # copied from tests/test_comments.py
 @pytest.mark.enable_implicit_clean
 class TestCommentModel:
 
-    def test_create(self):
-        first_comment = CommentFactory()
-        auth = Auth(user=first_comment.user)
+    create_and_edit_cases = [
+        # Make sure comments aren't empty
+        {
+            'comment_content': '',
+            'expected_signals': set(),
+            'expected_error_msg': "{'content': [u'This field cannot be blank.']}",
+        },
+        # Make sure comments aren't whitespace
+        {
+            'comment_content': '       ',
+            'expected_signals': set(),
+            'expected_error_msg': "{'content': [u'Value must not be empty.']}",
+        },
+        # Make sure unreg contributors don't send mentions
+        {
+            'comment_content': comment_mention_unreg_contributor,
+            'expected_signals': set(),
+            'expected_error_msg': "[u'User does not exist or is not active.']",
+        },
+        # Make sure non-contributors don't send mentions
+        {
+            'comment_content': comment_mention_non_contributor,
+            'expected_signals': set(),
+            'expected_error_msg': "[u'Mentioned user is not a contributor or group member.']",
+        },
+        # Make sure mentions with invalid guids don't send signals
+        {
+            'comment_content': comment_invalid_user_mentioned,
+            'expected_signals': set(),
+            'expected_error_msg': "[u'User does not exist or is not active.']",
+        },
+        # Test to prevent user from entering a comment that's too long
+        {
+            'comment_content': comment_too_long,
+            'expected_signals': set(),
+            'expected_error_msg': "{'content': [u'Ensure this field has no more than 1000 characters.']}",
+        },
 
-        comment = Comment.create(
-            auth=auth,
-            user=first_comment.user,
-            node=first_comment.node,
-            target=first_comment.target,
-            root_target=first_comment.root_target,
-            page='node',
-            content='This is a comment, and ya cant teach that.'
-        )
-        assert comment.user == first_comment.user
-        assert comment.node == first_comment.node
-        assert comment.target == first_comment.target
-        assert comment.node.logs.count() == 2
-        assert comment.node.logs.latest().action == NodeLog.COMMENT_ADDED
-        assert not first_comment.ever_mentioned.exists()
+    ]
+    create_cases = [
+        # Make sure valid mentions send signals
+        {
+            'comment_content': comment_mention_valid,
+            'expected_signals': {comment_added, mention_added},
+            'expected_error_msg': None,
+        },
+        #  User mentions a contributor
+        {
+            'comment_content': comment_contributor_mentioned,
+            'expected_signals': {comment_added, mention_added},
+            'expected_error_msg': None,
+        },
+        # Make sure comments aren't NoneType
+        {
+            'comment_content': None,
+            'expected_signals': set(),
+            'expected_error_msg': "{'content': [u'This field cannot be null.']}",
+        },
+        # User makes valid comment
+        {
+            'comment_content': comment_valid,
+            'expected_signals': {comment_added},
+            'expected_error_msg': None,
+        },
+        #  User mentions themselves
+        {
+            'comment_content': comment_self_mentioned,
+            'expected_signals': {comment_added, mention_added},
+            'expected_error_msg': None,
+        },
+        # Prevent user from entering a comment that's too long with a mention
+        {
+            'comment_content': comment_too_long_with_mention,
+            'expected_signals': set(),
+            'expected_error_msg': "{'content': [u'Ensure this field has no more than 1000 characters.']}",
+        },
+    ]
+    edit_cases = [
+        # Send if mention is valid
+        {
+            'comment_content': comment_mention_valid,
+            'expected_signals': {mention_added},
+            'expected_error_msg': None,
+        },
+        #  User mentions a contributor
+        {
+            'comment_content': comment_contributor_mentioned,
+            'expected_signals': {mention_added},
+            'expected_error_msg': None,
+        },
+        # User edits valid comment
+        {
+            'comment_content': comment_valid,
+            'expected_signals': set(),
+            'expected_error_msg': None,
+        },
+        #  User mentions themselves
+        {
+            'comment_content': comment_self_mentioned,
+            'expected_signals': {mention_added},
+            'expected_error_msg': None,
+        },
+        # Don't send mention if already mentioned
+        {
+            'comment_content': comment_mention_edited_twice,
+            'expected_signals': set(),
+            'expected_error_msg': None,
+        },
+        # Send mention if already mentioned
+        {
+            'comment_content': comment_mention_project_with_contributor,
+            'expected_signals': {mention_added},
+            'expected_error_msg': None,
+        }
+    ]
+    params = {
+        'test_create_comment': create_and_edit_cases + create_cases,
+        'test_edit_comment': create_and_edit_cases + edit_cases
+    }
 
-    def test_create_comment_content_cannot_exceed_max_length_simple(self, node, user, auth):
-        with pytest.raises(ValidationError):
-            Comment.create(
-                auth=auth,
-                user=user,
-                node=node,
-                target=node.guids.all()[0],
-                content=''.join(['c' for c in range(settings.COMMENT_MAXLENGTH + 3)])
-            )
+    def test_create_comment(self, request, user, project, comment_content, expected_signals, expected_error_msg):
+        if hasattr(comment_content, '_pytestfixturefunction'):
+            comment_content = request.getfixturevalue(comment_content.__name__)
 
-    def test_create_comment_content_cannot_exceed_max_length_complex(self, node, user, auth):
-        with pytest.raises(ValidationError):
-            Comment.create(
-                auth=auth,
-                user=user,
-                node=node,
-                target=node.guids.all()[0],
-                content=''.join(['c' for c in range(settings.COMMENT_MAXLENGTH - 8)]) + '[@George Ant](http://localhost:5000/' + user._id + '/)'
-            )
-
-    def test_create_comment_content_does_not_exceed_max_length_complex(self, node, user, auth):
-        Comment.create(
-            auth=auth,
-            user=user,
-            node=node,
-            target=node.guids.all()[0],
-            content=''.join(['c' for c in range(settings.COMMENT_MAXLENGTH - 12)]) + '[@George Ant](http://localhost:5000/' + user._id + '/)'
-        )
-
-    def test_create_comment_content_cannot_be_none(self, node, user, auth):
-
-        with pytest.raises(ValidationError) as error:
-            Comment.create(
-                auth=auth,
-                user=user,
-                node=node,
-                target=node.guids.all()[0],
-                content=None
-            )
-        assert error.value.messages[0] == 'This field cannot be null.'
-
-    def test_create_comment_content_cannot_be_empty(self, node, user, auth):
-        with pytest.raises(ValidationError) as error:
-            Comment.create(
-                auth=auth,
-                user=user,
-                node=node,
-                target=node.guids.all()[0],
-                content=''
-            )
-        assert error.value.messages[0] == 'This field cannot be blank.'
-
-    def test_create_comment_content_cannot_be_whitespace(self, node, user, auth):
-        with pytest.raises(ValidationError) as error:
-            Comment.create(
-                auth=auth,
-                user=user,
-                node=node,
-                target=node.guids.all()[0],
-                content='    '
-            )
-        assert error.value.messages[0] == 'Value must not be empty.'
-
-    def test_create_sends_comment_added_signal(self, node, user, auth):
+        auth = Auth(user)
+        error_msg = None
         with capture_signals() as mock_signals:
-            Comment.create(
-                auth=auth,
-                user=user,
-                node=node,
-                target=node.guids.all()[0],
-                content='This is a comment.'
-            )
-        assert mock_signals.signals_sent() == ({comment_added})
+            try:
+                Comment.create(
+                    auth=auth,
+                    user=user,
+                    node=project,
+                    target=project.guids.all()[0],
+                    content=comment_content
+                )
+            except Exception as e:
+                error_msg = str(e)
 
-    def test_create_sends_mention_added_signal_if_mentions(self, node, user, auth):
+        assert expected_signals == mock_signals.signals_sent()
+        assert error_msg == expected_error_msg
+
+    def test_edit_comment(self, request, comment, comment_content, expected_signals, expected_error_msg):
+        if hasattr(comment_content, '_pytestfixturefunction'):
+            comment_content = request.getfixturevalue(comment_content.__name__)
+
+        error_msg = None
+        auth = Auth(comment.user)
         with capture_signals() as mock_signals:
-            Comment.create(
-                auth=auth,
-                user=user,
-                node=node,
-                target=node.guids.all()[0],
-                content='This is a comment with a bad mention [@Unconfirmed User](http://localhost:5000/' + user._id + '/).'
-            )
-        assert mock_signals.signals_sent() == ({comment_added, mention_added})
-
-    def test_create_does_not_send_mention_added_signal_if_unconfirmed_contributor_mentioned(self, node, user, auth):
-        with pytest.raises(ValidationError) as error:
-            with capture_signals() as mock_signals:
-                user = UnregUserFactory()
-                user.save()
-                node.add_unregistered_contributor(user.fullname, user.email, Auth(node.creator), permissions=[permissions.READ], save=True)
-
-                Comment.create(
+            try:
+                comment.edit(
                     auth=auth,
-                    user=user,
-                    node=node,
-                    target=node.guids.all()[0],
-                    content='This is a comment with a bad mention [@Unconfirmed User](http://localhost:5000/' + user._id + '/).'
+                    content=comment_content,
+                    save=True,
                 )
-        assert mock_signals.signals_sent() == ({contributor_added})
-        assert error.value.message == 'User does not exist or is not active.'
+            except Exception as e:
+                error_msg = str(e)
 
-    def test_create_does_not_send_mention_added_signal_if_noncontributor_mentioned(self, node, user, auth):
-        with pytest.raises(ValidationError) as error:
-            with capture_signals() as mock_signals:
-                user = UserFactory()
-                Comment.create(
-                    auth=auth,
-                    user=user,
-                    node=node,
-                    target=node.guids.all()[0],
-                    content='This is a comment with a bad mention [@Non-contributor User](http://localhost:5000/' + user._id + '/).'
-                )
-        assert mock_signals.signals_sent() == set([])
-        assert error.value.message == 'Mentioned user is not a contributor.'
-
-    def test_create_does_not_send_mention_added_signal_if_nonuser_mentioned(self, node, user, auth):
-        with pytest.raises(ValidationError) as error:
-            with capture_signals() as mock_signals:
-                Comment.create(
-                    auth=auth,
-                    user=user,
-                    node=node,
-                    target=node.guids.all()[0],
-                    content='This is a comment with a bad mention [@Not a User](http://localhost:5000/qwert/).'
-                )
-        assert mock_signals.signals_sent() == set([])
-        assert error.value.message == 'User does not exist or is not active.'
+        assert expected_signals == mock_signals.signals_sent()
+        assert error_msg == expected_error_msg
 
     def test_edit(self):
         comment = CommentFactory()
@@ -228,73 +349,20 @@ class TestCommentModel:
         assert comment.node.logs.count() == 2
         assert comment.node.logs.latest().action == NodeLog.COMMENT_UPDATED
 
-    def test_edit_sends_mention_added_signal_if_mentions(self):
-        comment = CommentFactory()
-        auth = Auth(comment.user)
+    def test_create_sends_mention_added_signal_if_group_member_mentions(self, node, user, auth):
+        manager = AuthUserFactory()
+        group = OSFGroupFactory(creator=manager)
+        node.add_osf_group(group)
+        assert node.is_contributor_or_group_member(manager) is True
         with capture_signals() as mock_signals:
-            comment.edit(
+            Comment.create(
                 auth=auth,
-                content='This is a comment with a bad mention [@Mentioned User](http://localhost:5000/' + comment.user._id + '/).',
-                save=True
+                user=user,
+                node=node,
+                target=node.guids.all()[0],
+                content='This is a comment with a group member mention [@Group Member](http://localhost:5000/' + manager._id + '/).'
             )
-        assert mock_signals.signals_sent() == ({mention_added})
-
-    def test_edit_does_not_send_mention_added_signal_if_nonuser_mentioned(self):
-        comment = CommentFactory()
-        auth = Auth(comment.user)
-        with pytest.raises(ValidationError) as error:
-            with capture_signals() as mock_signals:
-                comment.edit(
-                    auth=auth,
-                    content='This is a comment with a bad mention [@Not a User](http://localhost:5000/qwert/).',
-                    save=True
-                )
-        assert mock_signals.signals_sent() == set([])
-        assert error.value.message == 'User does not exist or is not active.'
-
-    def test_edit_does_not_send_mention_added_signal_if_noncontributor_mentioned(self):
-        comment = CommentFactory()
-        auth = Auth(comment.user)
-        with pytest.raises(ValidationError) as error:
-            with capture_signals() as mock_signals:
-                user = UserFactory()
-                comment.edit(
-                    auth=auth,
-                    content='This is a comment with a bad mention [@Non-contributor User](http://localhost:5000/' + user._id + '/).',
-                    save=True
-                )
-        assert mock_signals.signals_sent() == set([])
-        assert error.value.message == 'Mentioned user is not a contributor.'
-
-    def test_edit_does_not_send_mention_added_signal_if_unconfirmed_contributor_mentioned(self):
-        comment = CommentFactory()
-        auth = Auth(comment.user)
-        with pytest.raises(ValidationError) as error:
-            with capture_signals() as mock_signals:
-                user = UnregUserFactory()
-                user.save()
-                comment.node.add_unregistered_contributor(user.fullname, user.email, auth=Auth(comment.node.creator), visible=False, permissions=[permissions.READ])
-                comment.node.save()
-
-                comment.edit(
-                    auth=auth,
-                    content='This is a comment with a bad mention [@Unconfirmed User](http://localhost:5000/' + user._id + '/).',
-                    save=True
-                )
-        assert mock_signals.signals_sent() == ({contributor_added})
-        assert error.value.message == 'User does not exist or is not active.'
-
-    def test_edit_does_not_send_mention_added_signal_if_already_mentioned(self):
-        comment = CommentFactory()
-        auth = Auth(comment.user)
-        with capture_signals() as mock_signals:
-            comment.ever_mentioned.add(comment.user)
-            comment.edit(
-                auth=auth,
-                content='This is a comment with a bad mention [@Already Mentioned User](http://localhost:5000/' + comment.user._id + '/).',
-                save=True
-            )
-        assert mock_signals.signals_sent() == set([])
+        assert mock_signals.signals_sent() == ({comment_added, mention_added})
 
     def test_delete(self, node):
         comment = CommentFactory(node=node)
@@ -318,7 +386,7 @@ class TestCommentModel:
         project = ProjectFactory()
         user = UserFactory()
         project.set_privacy('private')
-        project.add_contributor(user, permissions=[permissions.READ])
+        project.add_contributor(user, permissions=permissions.READ)
         project.save()
 
         assert project.can_comment(Auth(user=user))

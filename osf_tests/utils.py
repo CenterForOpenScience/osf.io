@@ -11,9 +11,9 @@ from website.signals import ALL_SIGNALS
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
 
-from osf.models import Sanction
+from osf.models import Sanction, RegistrationProvider
 
-from .factories import get_default_metaschema
+from .factories import get_default_metaschema, RegistrationProviderFactory
 
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
@@ -78,7 +78,7 @@ def assert_datetime_equal(dt1, dt2, allowance=500):
 def mock_archive(project, schema=None, auth=None, data=None, parent=None,
                  embargo=False, embargo_end_date=None,
                  retraction=False, justification=None, autoapprove_retraction=False,
-                 autocomplete=True, autoapprove=False):
+                 autocomplete=True, autoapprove=False, provider=None):
     """ A context manager for registrations. When you want to call Node#register_node in
     a test but do not want to deal with any of this side effects of archiver, this
     helper allows for creating a registration in a safe fashion.
@@ -89,6 +89,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
     :param bool retraction: retract the registration?
     :param str justification: a justification for the retraction
     :param bool autoapprove_retraction: automatically approve retraction?
+    :param RegistrationProvider provider: provider to put the registration in
 
     Example use:
 
@@ -111,6 +112,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
     schema = schema or get_default_metaschema()
     auth = auth or Auth(project.creator)
     data = data or ''
+    provider = provider or RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
 
     with mock.patch('framework.celery_tasks.handlers.enqueue_task'):
         registration = project.register_node(
@@ -118,6 +120,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
             auth=auth,
             data=data,
             parent=parent,
+            provider=provider,
         )
     if embargo:
         embargo_end_date = embargo_end_date or (

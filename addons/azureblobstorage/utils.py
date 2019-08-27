@@ -27,7 +27,7 @@ def get_container_names(node_settings):
 def validate_container_name(name):
     """Make sure the container name conforms to Azure's expectations
     """
-    label = '[a-z0-9]+(?:[a-z0-9\-]*[a-z0-9])*'
+    label = r'[a-z0-9]+(?:[a-z0-9\-]*[a-z0-9])*'
     validate_name = re.compile('^' + label + '$')
     return (
         len(name) >= 3 and len(name) <= 63 and bool(validate_name.match(name))

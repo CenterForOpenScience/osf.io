@@ -5,6 +5,7 @@ app_name = 'admin'
 
 urlpatterns = [
     url(r'^$', views.InstitutionList.as_view(), name='list'),
+    url(r'^institution_list/$', views.InstitutionUserList.as_view(), name='institution_list'),
     url(r'^create/$', views.CreateInstitution.as_view(), name='create'),
     url(r'^import/$', views.ImportInstitution.as_view(), name='import'),
     url(r'^(?P<institution_id>[0-9]+)/$', views.InstitutionDetail.as_view(), name='detail'),
@@ -12,4 +13,7 @@ urlpatterns = [
     url(r'^(?P<institution_id>[0-9]+)/delete/$', views.DeleteInstitution.as_view(), name='delete'),
     url(r'^(?P<institution_id>[0-9]+)/cannot_delete/$', views.CannotDeleteInstitution.as_view(), name='cannot_delete'),
     url(r'^(?P<institution_id>[0-9]+)/nodes/$', views.InstitutionNodeList.as_view(), name='nodes'),
+    url(r'^user_list_by_institution_id/(?P<institution_id>.*)/$', views.UserListByInstitutionID.as_view(), name='institution_user_list'),
+    url(r'^statistical_status_default_storage/$', views.StatisticalStatusDefaultStorage.as_view(), name='statistical_status_default_storage'),
+    url(r'^default_storage_detail/$', views.InstitutionDefaultStorageDetail.as_view(), name='default_storage_detail'),
 ]

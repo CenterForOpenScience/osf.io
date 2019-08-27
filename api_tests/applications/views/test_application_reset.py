@@ -45,7 +45,7 @@ class TestApplicationReset:
         mock_method.return_value(True)
         old_secret = user_app.client_secret
         user_app.reset_secret(save=True)
-        mock_method.assert_called()
+        mock_method.assert_called_with(user_app.client_id, old_secret)
         user_app.reload()
         assert old_secret != user_app.client_secret
 
@@ -65,7 +65,7 @@ class TestApplicationReset:
         old_secret = user_app.client_secret
         res = app.post_json_api(user_reset_url, correct, auth=user.auth)
         assert res.status_code == 201
-        mock_method.assert_called()
+        mock_method.assert_called_with(user_app.client_id, old_secret)
         user_app.reload()
         assert old_secret != user_app.client_secret
 

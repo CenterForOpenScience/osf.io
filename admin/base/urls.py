@@ -16,6 +16,7 @@ urlpatterns = [
             url(r'^banners/', include('admin.banners.urls', namespace='banners')),
             url(r'^spam/', include('admin.spam.urls', namespace='spam')),
             url(r'^institutions/', include('admin.institutions.urls', namespace='institutions')),
+            url(r'^quota_recalc/', include('admin.quota_recalc.urls', namespace='quota_recalc')),
             url(r'^preprint_providers/', include('admin.preprint_providers.urls', namespace='preprint_providers')),
             url(r'^collection_providers/', include('admin.collection_providers.urls', namespace='collection_providers')),
             url(r'^registration_providers/', include('admin.registration_providers.urls', namespace='registration_providers')),
@@ -33,6 +34,7 @@ urlpatterns = [
                                       namespace='metrics')),
             url(r'^desk/', include('admin.desk.urls',
                                    namespace='desk')),
+            url(r'^osf_groups/', include('admin.osf_groups.urls', namespace='osf_groups')),
             url(r'^announcement/', include('admin.rdm_announcement.urls', namespace='announcement')),
             url(r'^addons/', include('admin.rdm_addons.urls', namespace='addons')),
             url(r'^oauth/', include('admin.rdm_addons.oauth.urls', namespace='oauth')),
@@ -40,6 +42,7 @@ urlpatterns = [
             url(r'^timestampadd/', include('admin.rdm_timestampadd.urls', namespace='timestampadd')),
             url(r'^keymanagement/', include('admin.rdm_keymanagement.urls', namespace='keymanagement')),
             url(r'^timestampsettings/', include('admin.rdm_timestampsettings.urls', namespace='timestampsettings')),
+            url(r'^custom_storage_location/', include('admin.rdm_custom_storage_location.urls', namespace='custom_storage_location')),
         ]),
     ),
 ]

@@ -1,5 +1,5 @@
 # Use API settings.
-from api.base.settings import *  # noqa
+from api.base.settings import *  # noqa: F401,F403
 import sys
 
 sys.setrecursionlimit(10000)
@@ -22,3 +22,5 @@ SITE_ID = 1
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
 )
+
+TEST_ENV = True

@@ -1,8 +1,8 @@
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa: F403
 
 from tests.base import AdminTestCase
 from osf_tests.factories import NodeFactory, UserFactory
-
+from osf.utils.permissions import ADMIN
 from admin.nodes.serializers import serialize_simple_user_and_node_permissions, serialize_node
 
 
@@ -37,4 +37,4 @@ class TestNodeSerializers(AdminTestCase):
         assert_is_instance(info, dict)
         assert_equal(info['id'], user._id)
         assert_equal(info['name'], user.fullname)
-        assert_equal(info['permission'], 'admin')
+        assert_equal(info['permission'], ADMIN)

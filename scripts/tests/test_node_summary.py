@@ -44,6 +44,9 @@ class TestNodeCount(OsfTestCase):
         self.deleted_node = ProjectFactory(is_deleted=True)
         self.deleted_node2 = ProjectFactory(is_deleted=True)
 
+        # Add Spam
+        self.spam_node = ProjectFactory(spam_status=2)
+
         self.date = timezone.now() - datetime.timedelta(days=1)
 
         for node in AbstractNode.objects.all():
@@ -58,22 +61,26 @@ class TestNodeCount(OsfTestCase):
     # test_get_node_count
         nodes = self.results['nodes']
 
-        assert_equal(nodes['total'], 3)  # 2 Projects, 1 component
+        assert_equal(nodes['total'], 4)  # 2 Projects, 1 component, 1 spam node
+        assert_equal(nodes['total_excluding_spam'], 3)  # 2 Projects, 1 component
         assert_equal(nodes['public'], 1)  # 1 Project
-        assert_equal(nodes['private'], 2)  # 1 Project, 1 Component
-        assert_equal(nodes['total_daily'], 3)  # 2 Projects, 1 component
+        assert_equal(nodes['private'], 3)  # 1 Project, 1 Component, 1 spam node (spam is always private)
+        assert_equal(nodes['total_daily'], 4)  # 2 Projects, 1 component,  1 spam node
+        assert_equal(nodes['total_daily_excluding_spam'], 3)  # 2 Projects, 1 component
         assert_equal(nodes['public_daily'], 1)  # 1 Project
-        assert_equal(nodes['private_daily'], 2)  # 1 Project, 1 Component
+        assert_equal(nodes['private_daily'], 3)  # 1 Project, 1 Component, 1 spam node
 
     # test_get_project_count
         projects = self.results['projects']
 
-        assert_equal(projects['total'], 2)
+        assert_equal(projects['total'], 3)
+        assert_equal(projects['total_excluding_spam'], 2)
         assert_equal(projects['public'], 1)
-        assert_equal(projects['private'], 1)
-        assert_equal(projects['total_daily'], 2)
+        assert_equal(projects['private'], 2)
+        assert_equal(projects['total_daily'], 3)
+        assert_equal(projects['total_daily_excluding_spam'], 2)
         assert_equal(projects['public_daily'], 1)
-        assert_equal(projects['private_daily'], 1)
+        assert_equal(projects['private_daily'], 2)
 
 
     # test_get_registered_nodes_count
@@ -115,22 +122,24 @@ class TestNodeCount(OsfTestCase):
     # test_get_node_count daily zero
         nodes = self.results['nodes']
 
-        assert_equal(nodes['total'], 3)  # 2 Projects, 1 component
+        assert_equal(nodes['total'], 4)  # 2 Projects, 1 component, 1 spam node
         assert_equal(nodes['public'], 1)  # 1 Project
-        assert_equal(nodes['private'], 2)  # 1 Project, 1 Component
+        assert_equal(nodes['private'], 3)  # 1 Project, 1 Component, 1 spam node
 
         assert_equal(nodes['total_daily'], 0)  # 2 Projects, 1 component
+        assert_equal(nodes['total_daily_excluding_spam'], 0)
         assert_equal(nodes['public_daily'], 0)  # 1 Project
         assert_equal(nodes['private_daily'], 0)  # 1 Project, 1 Component
 
     # test_get_project_count daily zero
         projects = self.results['projects']
 
-        assert_equal(projects['total'], 2)
+        assert_equal(projects['total'], 3)
         assert_equal(projects['public'], 1)
-        assert_equal(projects['private'], 1)
+        assert_equal(projects['private'], 2)
 
         assert_equal(projects['total_daily'], 0)
+        assert_equal(projects['total_daily_excluding_spam'], 0)
         assert_equal(projects['public_daily'], 0)
         assert_equal(projects['private_daily'], 0)
 

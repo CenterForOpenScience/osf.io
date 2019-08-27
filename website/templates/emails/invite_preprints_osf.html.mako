@@ -12,11 +12,11 @@
     <br>
     ${claim_url}<br>
     <br>
-    Once you have set a password, you will be able to make contributions to "${node.title}" and create your own preprints and projects. You will automatically be subscribed to notification emails for this project. To change your email notification preferences, visit your project or your user settings: ${settings.DOMAIN + "settings/notifications/"}<br>
+    Once you have set a password, you will be able to make contributions to "${node.title}" and create your own preprints and projects. You will automatically be subscribed to notification emails for this preprint. To change your email notification preferences, visit your user settings: ${settings.DOMAIN + "settings/notifications/"}<br>
     <br>
     To preview "${node.title}" click the following link: ${node.absolute_url}<br>
     <br>
-    (NOTE: if this project is private, you will not be able to view it until you have confirmed your account)<br>
+    (NOTE: if this preprint is unpublished, you will not be able to view it until you have confirmed your account)<br>
     <br>
     If you are not ${fullname} or you are erroneously being associated with "${node.title}" then email ${osf_contact_email} with the subject line "Claiming Error" to report the problem.<br>
     <br>

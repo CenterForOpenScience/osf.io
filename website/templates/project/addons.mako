@@ -5,7 +5,7 @@
     <span id="selectAddonsAnchor" class="anchor"></span>
 
     <!-- Begin left column -->
-    % if 'write' in user['permissions'] and any(addon['enabled'] for addon in addon_settings):
+    % if permissions.WRITE in user['permissions'] and any(addon['enabled'] for addon in addon_settings):
         <div class="col-sm-3 affix-parent scrollspy">
 
 
@@ -23,7 +23,7 @@
     % endif
 
     <!-- End left column -->
-        % if 'write' in user['permissions']:  ## Begin Select Addons
+        % if permissions.WRITE in user['permissions']:  ## Begin Select Addons
 
             % if not node['is_registration']:
                 <div class="panel panel-default" id="selectAddon">

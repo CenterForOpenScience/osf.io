@@ -15,7 +15,8 @@ from website.util import timestamp
 import tempfile
 from website.util.timestamp import (
     AddTimestamp, TimeStampTokenVerifyCheck,
-    userkey_generation, userkey_generation_check
+    userkey_generation, userkey_generation_check,
+    OSFAbortableAsyncResult
 )
 
 
@@ -624,3 +625,24 @@ class TestRdmUserKey(OsfTestCase):
 
         rdmuserkey_pub_key = RdmUserKey.objects.filter(guid=osfuser_id, key_kind=api_settings.PUBLIC_KEY_VALUE)
         nt.assert_equal(rdmuserkey_pub_key.count(), 1)
+
+
+class TestOSFAbortableResult(OsfTestCase):
+
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult.ready')
+    def test_ready_succeed(self, mock_ready):
+        mock_ready.return_value = False
+
+        task = OSFAbortableAsyncResult('taskid')
+        nt.assert_false(task.ready())
+
+    @mock.patch('website.util.timestamp.logger')
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult.ready')
+    def test_ready_raise_attribute_error(self, mock_ready, mock_logger):
+        msg = '\'module\' object has no attribute \'MultipleObjectsReturned\''
+        mock_ready.side_effect = AttributeError(msg)
+
+        task = OSFAbortableAsyncResult('taskid')
+        nt.assert_true(task.ready())
+        mock_logger.error.assert_any_call('Failed to get task status! Exception message:')
+        mock_logger.error.assert_any_call(msg)

@@ -6,9 +6,9 @@
     Hello ${user.fullname},<br>
     <br>
     % if is_initiator:
-    You initiated an embargoed registration of ${project_name}${context.get('custom_message', '')}. The proposed registration can be viewed here: ${registration_link}.<br>
+    You initiated an embargoed registration of ${project_name}. The proposed registration can be viewed here: ${registration_link}.<br>
     % else:
-    ${initiated_by} initiated an embargoed registration of ${project_name}${context.get('custom_message', '')}. The proposed registration can be viewed here: ${registration_link}.<br>
+    ${initiated_by} initiated an embargoed registration of ${project_name}. The proposed registration can be viewed here: ${registration_link}.<br>
     % endif
     <br>
     If approved, a registration will be created for the project and it will remain private until it is withdrawn, manually<br>

@@ -25,6 +25,7 @@ class NodeSummary(SummaryAnalytics):
     def get_events(self, date):
         super(NodeSummary, self).get_events(date)
         from osf.models import Node, Registration
+        from osf.models.spam import SpamStatus
 
         # Convert to a datetime at midnight for queries and the timestamp
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
@@ -44,6 +45,8 @@ class NodeSummary(SummaryAnalytics):
         # `embargoed_v2` uses future embargo end dates on root
         embargo_v2_query = Q(root__embargo__end_date__gt=query_datetime)
 
+        exclude_spam = ~Q(spam_status__in=[SpamStatus.SPAM, SpamStatus.FLAGGED])
+
         totals = {
             'keen': {
                 'timestamp': timestamp_datetime.isoformat()
@@ -51,18 +54,22 @@ class NodeSummary(SummaryAnalytics):
             # Nodes - the number of projects and components
             'nodes': {
                 'total': node_qs.count(),
+                'total_excluding_spam': node_qs.filter(exclude_spam).count(),
                 'public': node_qs.filter(public_query).count(),
                 'private': node_qs.filter(private_query).count(),
                 'total_daily': node_qs.filter(daily_query).count(),
+                'total_daily_excluding_spam': node_qs.filter(daily_query).filter(exclude_spam).count(),
                 'public_daily': node_qs.filter(public_query & daily_query).count(),
                 'private_daily': node_qs.filter(private_query & daily_query).count(),
             },
             # Projects - the number of top-level only projects
             'projects': {
                 'total': node_qs.get_roots().count(),
+                'total_excluding_spam': node_qs.get_roots().filter(exclude_spam).count(),
                 'public': node_qs.filter(public_query).get_roots().count(),
                 'private': node_qs.filter(private_query).get_roots().count(),
                 'total_daily': node_qs.filter(daily_query).get_roots().count(),
+                'total_daily_excluding_spam': node_qs.filter(daily_query).get_roots().filter(exclude_spam).count(),
                 'public_daily': node_qs.filter(public_query & daily_query).get_roots().count(),
                 'private_daily': node_qs.filter(private_query & daily_query).get_roots().count(),
             },

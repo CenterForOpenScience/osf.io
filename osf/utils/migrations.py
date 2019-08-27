@@ -2,15 +2,22 @@ import os
 import itertools
 import json
 import logging
+import warnings
+from math import ceil
 
 from contextlib import contextmanager
 from django.apps import apps
+from django.db import connection
+from django.db.migrations.operations.base import Operation
 
 from website import settings
 from osf.models import NodeLicense, RegistrationSchema
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 
 logger = logging.getLogger(__file__)
+
+
+increment = 100000
 
 
 def get_osf_models():
@@ -132,17 +139,19 @@ def ensure_schemas(*args):
     """
     schema_count = 0
     try:
-        RegistrationSchema = args[0].get_model('osf', 'metaschema')
+        RegistrationSchema = args[0].get_model('osf', 'registrationschema')
     except Exception:
-        # Working outside a migration
-        from osf.models import RegistrationSchema
+        try:
+            RegistrationSchema = args[0].get_model('osf', 'metaschema')
+        except Exception:
+            # Working outside a migration
+            from osf.models import RegistrationSchema
     for schema in OSF_META_SCHEMAS:
         schema_obj, created = RegistrationSchema.objects.update_or_create(
             name=schema['name'],
             schema_version=schema.get('version', 1),
             defaults={
                 'schema': schema,
-                'active': schema.get('active', True)
             }
         )
         schema_count += 1
@@ -158,3 +167,155 @@ def remove_schemas(*args):
     RegistrationSchema.objects.all().delete()
 
     logger.info('Removed {} schemas from the database'.format(pre_count))
+
+
+class UpdateRegistrationSchemas(Operation):
+    """Custom migration operation to update registration schemas
+    """
+    reversible = True
+
+    def state_forwards(self, app_label, state):
+        pass
+
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        ensure_schemas(to_state.apps)
+
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        warnings.warn('Reversing UpdateRegistrationSchemas is a noop')
+
+    def describe(self):
+        return 'Updated registration schemas'
+
+
+class AddWaffleFlags(Operation):
+    """Custom migration operation to add waffle flags
+
+    Params:
+    - flag_names: iterable of strings, flag names to create
+    - on_for_everyone: boolean (default False), whether to activate the newly created flags
+    """
+    reversible = True
+
+    def __init__(self, flag_names, on_for_everyone=False):
+        self.flag_names = flag_names
+        self.on_for_everyone = on_for_everyone
+
+    def state_forwards(self, app_label, state):
+        pass
+
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        Flag = to_state.apps.get_model('waffle', 'flag')
+        for flag_name in self.flag_names:
+            Flag.objects.get_or_create(name=flag_name, defaults={'everyone': self.on_for_everyone})
+
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        Flag = to_state.apps.get_model('waffle', 'flag')
+        Flag.objects.filter(name__in=self.flag_names).delete()
+
+    def describe(self):
+        return 'Adds waffle flags: {}'.format(', '.join(self.flag_names))
+
+
+class DeleteWaffleFlags(Operation):
+    """Custom migration operation to delete waffle flags
+
+    Params:
+    - flag_names: iterable of strings, flag names to delete
+    """
+    reversible = True
+
+    def __init__(self, flag_names):
+        self.flag_names = flag_names
+
+    def state_forwards(self, app_label, state):
+        pass
+
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        Flag = to_state.apps.get_model('waffle', 'flag')
+        Flag.objects.filter(name__in=self.flag_names).delete()
+
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        Flag = to_state.apps.get_model('waffle', 'flag')
+        for flag_name in self.flag_names:
+            Flag.objects.get_or_create(name=flag_name)
+
+    def describe(self):
+        return 'Removes waffle flags: {}'.format(', '.join(self.flag_names))
+
+
+class AddWaffleSwitches(Operation):
+    """Custom migration operation to add waffle switches
+
+    Params:
+    - switch_names: iterable of strings, the names of the switches to create
+    - active: boolean (default False), whether the switches should be active
+    """
+    reversible = True
+
+    def __init__(self, switch_names, active=False):
+        self.switch_names = switch_names
+        self.active = active
+
+    def state_forwards(self, app_label, state):
+        pass
+
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        Switch = to_state.apps.get_model('waffle', 'switch')
+        for switch in self.switch_names:
+            Switch.objects.get_or_create(name=switch, defaults={'active': self.active})
+
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        Switch = to_state.apps.get_model('waffle', 'switch')
+        Switch.objects.filter(name__in=self.switch_names).delete()
+
+    def describe(self):
+        return 'Adds waffle switches: {}'.format(', '.join(self.switch_names))
+
+
+class DeleteWaffleSwitches(Operation):
+    """Custom migration operation to delete waffle switches
+
+    Params:
+    - switch_names: iterable of strings, switch names to delete
+    """
+    reversible = True
+
+    def __init__(self, switch_names):
+        self.switch_names = switch_names
+
+    def state_forwards(self, app_label, state):
+        pass
+
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        Switch = to_state.apps.get_model('waffle', 'switch')
+        Switch.objects.filter(name__in=self.switch_names).delete()
+
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        Switch = to_state.apps.get_model('waffle', 'switch')
+        for switch in self.switch_names:
+            Switch.objects.get_or_create(name=switch)
+
+    def describe(self):
+        return 'Removes waffle switches: {}'.format(', '.join(self.switch_names))
+
+def batch_node_migrations(state, migrations):
+    AbstractNode = state.get_model('osf', 'abstractnode')
+    max_nid = getattr(AbstractNode.objects.last(), 'id', 0)
+
+    for migration in migrations:
+        total_pages = int(ceil(max_nid / float(increment)))
+        page_start = 0
+        page_end = 0
+        page = 0
+        logger.info('{}'.format(migration['description']))
+        while page_end <= (max_nid):
+            page += 1
+            page_end += increment
+            if page <= total_pages:
+                logger.info('Updating page {} / {}'.format(page_end / increment, total_pages))
+            with connection.cursor() as cursor:
+                cursor.execute(migration['sql'].format(
+                    start=page_start,
+                    end=page_end
+                ))
+            page_start = page_end

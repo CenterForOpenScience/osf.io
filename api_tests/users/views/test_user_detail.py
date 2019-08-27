@@ -16,6 +16,8 @@ from osf_tests.factories import (
     AuthUserFactory,
     CollectionFactory,
     ProjectFactory,
+    RegionFactory,
+    PrivateLinkFactory,
 )
 from website.views import find_bookmark_collection
 
@@ -35,7 +37,19 @@ class TestUserDetail:
     def user_two(self):
         return AuthUserFactory()
 
-    def test_get(self, app, user_one, user_two):
+    @pytest.fixture()
+    def project(self, user_one):
+        project = ProjectFactory(creator=user_one)
+        return project
+
+    @pytest.fixture()
+    def view_only_link(self, project):
+        view_only_link = PrivateLinkFactory(name='test user', anonymous=True)
+        view_only_link.nodes.add(project)
+        view_only_link.save()
+        return view_only_link
+
+    def test_get(self, app, user_one, user_two, project, view_only_link):
 
         #   test_gets_200
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
@@ -94,6 +108,16 @@ class TestUserDetail:
         user_json = res.json['data']
         assert 'profile_image' in user_json['links']
 
+    #   user_viewed_through_anonymous_link
+        url = '/{}users/{}/?view_only={}'.format(API_BASE, user_one._id, view_only_link.key)
+        res = app.get(url)
+        user_json = res.json['data']
+        assert user_json['id'] == ''
+        assert user_json['type'] == 'users'
+        assert user_json['attributes'] == {}
+        assert 'relationships' not in user_json
+        assert user_json['links'] == {}
+
     def test_files_relationship_upload(self, app, user_one):
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
         res = app.get(url, auth=user_one)
@@ -132,6 +156,20 @@ class TestUserDetail:
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
         res = app.get(url)
         assert 'emails' not in res.json['data']['relationships'].keys()
+
+    def test_user_settings_relationship(self, app, user_one, user_two):
+        # settings relationship does not show for anonymous request
+        url = '/{}users/{}/'.format(API_BASE, user_one._id)
+        res = app.get(url)
+        assert 'settings' not in res.json['data']['relationships'].keys()
+
+        # settings does not appear for a different user
+        res = app.get(url, auth=user_two.auth)
+        assert 'settings' not in res.json['data']['relationships'].keys()
+
+        # settings is present for the current user
+        res = app.get(url, auth=user_one.auth)
+        assert 'settings' in res.json['data']['relationships'].keys()
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-8966
     def test_browsable_api_for_user_detail(self, app, user_one):
@@ -434,6 +472,27 @@ class TestUserUpdate:
         return AuthUserFactory()
 
     @pytest.fixture()
+    def region(self):
+        return RegionFactory(name='Frankfort', _id='eu-central-1')
+
+    @pytest.fixture()
+    def region_payload(self, user_one, region):
+        return {
+            'data': {
+                'type': 'users',
+                'id': user_one._id,
+                'relationships': {
+                    'default_region': {
+                        'data': {
+                            'type': 'regions',
+                            'id': region._id
+                        }
+                    }
+                }
+            }
+        }
+
+    @pytest.fixture()
     def url_user_one(self, user_one):
         return '/v2/users/{}/'.format(user_one._id)
 
@@ -564,6 +623,49 @@ class TestUserUpdate:
         for_update_sql = connection.ops.for_update_sql()
         assert not any(for_update_sql in query['sql']
                        for query in ctx.captured_queries)
+
+    def test_patch_user_default_region(self, app, user_one, user_two, region, region_payload, url_user_one):
+        original_user_region = user_one.osfstorage_region
+
+        # Unauthenticated user updating region
+        res = app.patch_json_api(
+            url_user_one,
+            region_payload,
+            expect_errors=True
+        )
+        assert res.status_code == 401
+
+        # Different user updating region
+        res = app.patch_json_api(
+            url_user_one,
+            region_payload,
+            auth=user_two.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 403
+
+        # User updating own region
+        res = app.patch_json_api(
+            url_user_one,
+            region_payload,
+            auth=user_one.auth
+        )
+        assert res.status_code == 200
+        assert user_one.osfstorage_region == region
+        assert user_one.osfstorage_region != original_user_region
+        assert res.json['data']['relationships']['default_region']['data']['id'] == region._id
+        assert res.json['data']['relationships']['default_region']['data']['type'] == 'regions'
+
+        # Updating with invalid region
+        region_payload['data']['relationships']['default_region']['data']['id'] = 'bad_region'
+        res = app.patch_json_api(
+            url_user_one,
+            region_payload,
+            auth=user_one.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Region bad_region is invalid.'
 
     def test_update_patch_errors(
             self, app, user_one, user_two, data_new_user_one,
@@ -876,7 +978,7 @@ class TestUserUpdate:
             }
         }, auth=user_one.auth)
         user_one.reload()
-        for key, value in res.json['data']['attributes']['social'].iteritems():
+        for key, value in res.json['data']['attributes']['social'].items():
             assert user_one.social[key] == value == social_payload[key]
 
     def test_partial_patch_user_logged_in_no_social_fields(
@@ -1143,11 +1245,13 @@ class UserProfileMixin(object):
     def user_one_url(self, user_one):
         return '/v2/users/{}/'.format(user_one._id)
 
-    def test_user_put_profile_200(self, app, user_one, user_one_url, request_payload, request_key, user_attr):
+    @mock.patch('osf.models.user.OSFUser.check_spam')
+    def test_user_put_profile_200(self, mock_check_spam, app, user_one, user_one_url, request_payload, request_key, user_attr):
         res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth)
         user_one.reload()
         assert res.status_code == 200
         assert getattr(user_one, user_attr) == request_payload['data']['attributes'][request_key]
+        assert mock_check_spam.called
 
     def test_user_put_profile_400(self, app, user_one, user_one_url, bad_request_payload):
         res = app.put_json_api(user_one_url, bad_request_payload, auth=user_one.auth, expect_errors=True)

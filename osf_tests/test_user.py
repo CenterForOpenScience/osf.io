@@ -6,6 +6,7 @@ import datetime as dt
 import urlparse
 
 from django.db import connection, transaction
+from django.contrib.auth.models import Group
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 import mock
@@ -25,12 +26,13 @@ from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
 
-from osf.models import AbstractNode, OSFUser, Tag, Contributor, Session
+from osf.models import AbstractNode, OSFUser, OSFGroup, Tag, Contributor, Session, BlacklistedEmailDomain, QuickFilesNode, PreprintContributor
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 from framework.auth.core import Auth
 from osf.utils.names import impute_names_model
+from osf.utils import permissions
 from osf.exceptions import ValidationError, BlacklistedEmailError, UserStateError
 
 from .utils import capture_signals
@@ -42,6 +44,7 @@ from .factories import (
     ExternalAccountFactory,
     InstitutionFactory,
     NodeFactory,
+    OSFGroupFactory,
     PreprintProviderFactory,
     ProjectFactory,
     SessionFactory,
@@ -129,7 +132,6 @@ class TestOSFUser:
         )
         user.save()
         assert user.is_registered is True
-        assert user.is_claimed is True
         assert user.date_registered == user.date_confirmed
 
     def test_update_guessed_names(self):
@@ -153,7 +155,6 @@ class TestOSFUser:
         u.save()
         assert u.username == email
         assert u.is_registered is False
-        assert u.is_claimed is False
         assert u.is_invited is True
         assert not u.emails.filter(address=email).exists()
         parsed = impute_names_model(name)
@@ -208,8 +209,8 @@ class TestOSFUser:
         # Both the master and dupe are contributors
         project.add_contributor(user2, log=False)
         project.add_contributor(user, log=False)
-        project.set_permissions(user=user, permissions=['read'])
-        project.set_permissions(user=user2, permissions=['read', 'write', 'admin'])
+        project.set_permissions(user=user, permissions=permissions.READ)
+        project.set_permissions(user=user2, permissions=permissions.ADMIN)
         project.set_visible(user=user, visible=False)
         project.set_visible(user=user2, visible=True)
         project.save()
@@ -217,9 +218,174 @@ class TestOSFUser:
         user.save()
         project.reload()
 
-        assert project.has_permission(user, 'admin') is True
+        assert project.has_permission(user, permissions.ADMIN) is True
         assert project.get_visible(user) is True
         assert project.is_contributor(user2) is False
+
+    def test_merged_user_group_member_permissions_are_ignored(self, user):
+        user2 = UserFactory.build()
+        user2.save()
+        group = OSFGroupFactory(creator=user2)
+
+        project = ProjectFactory(is_public=True)
+        project.add_osf_group(group, permissions.ADMIN)
+        assert project.has_permission(user2, permissions.ADMIN)
+        # Both the master and dupe are contributors
+        project.add_contributor(user2, log=False)
+        project.add_contributor(user, log=False)
+        project.set_permissions(user=user, permissions=permissions.READ)
+        project.set_permissions(user=user2, permissions=permissions.WRITE)
+        project.save()
+        user.merge_user(user2)
+        user.save()
+        project.reload()
+
+        assert project.has_permission(user, permissions.ADMIN) is True
+        assert project.is_admin_contributor(user) is False
+        assert project.is_contributor(user2) is False
+        assert group.is_member(user) is True
+        assert group.is_member(user2) is False
+
+    def test_merge_projects(self):
+        user = AuthUserFactory()
+        user2 = AuthUserFactory()
+
+        project_one = ProjectFactory(creator=user, title='project_one')
+
+        project_two = ProjectFactory(title='project_two')
+        project_two.add_contributor(user2)
+
+        project_three = ProjectFactory(title='project_three', creator=user2)
+        project_three.add_contributor(user, visible=False)
+
+        project_four = ProjectFactory(title='project_four')
+        project_four.add_contributor(user2, permissions=permissions.READ, visible=False)
+
+        project_five = ProjectFactory(title='project_five')
+        project_five.add_contributor(user2, permissions=permissions.READ, visible=False)
+        project_five.add_contributor(user, permissions=permissions.WRITE, visible=True)
+
+        # two projects shared b/t user and user2
+        assert user.nodes.filter(type='osf.node').count() == 3
+        assert user2.nodes.filter(type='osf.node').count() == 4
+
+        user.merge_user(user2)
+        project_one.reload()
+        project_two.reload()
+        project_three.reload()
+        project_four.reload()
+        project_five.reload()
+
+        assert user.nodes.filter(type='osf.node').count() == 5
+        # one group for each node
+        assert user.groups.count() == 6  # (including quickfiles node)
+        assert user2.nodes.filter(type='osf.node').count() == 0
+        assert user2.groups.count() == 1  # (quickfilesnode)
+
+        contrib_obj = Contributor.objects.get(user=user, node=project_one)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == permissions.ADMIN
+        assert project_one.creator == user
+        assert not project_one.has_permission(user2, permissions.READ)
+        assert not project_one.is_contributor(user2)
+
+        contrib_obj = Contributor.objects.get(user=user, node=project_two)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == permissions.WRITE
+        assert project_two.creator != user
+        assert not project_two.has_permission(user2, permissions.READ)
+        assert not project_two.is_contributor(user2)
+
+        contrib_obj = Contributor.objects.get(user=user, node=project_three)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == permissions.ADMIN  # of the two users the highest perm wins out.
+        assert project_three.creator == user
+        assert not project_three.has_permission(user2, permissions.READ)
+        assert not project_three.is_contributor(user2)
+
+        contrib_obj = Contributor.objects.get(user=user, node=project_four)
+        assert contrib_obj.visible is False
+        assert contrib_obj.permission == permissions.READ
+        assert project_four.creator != user
+        assert not project_four.has_permission(user2, permissions.READ)
+        assert not project_four.is_contributor(user2)
+
+        contrib_obj = Contributor.objects.get(user=user, node=project_five)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == permissions.WRITE
+        assert project_five.creator != user
+        assert not project_five.has_permission(user2, permissions.READ)
+        assert not project_five.is_contributor(user2)
+
+    def test_merge_preprints(self, user):
+        user2 = AuthUserFactory()
+
+        preprint_one = PreprintFactory(creator=user, title='preprint_one')
+
+        preprint_two = PreprintFactory(title='preprint_two')
+        preprint_two.add_contributor(user2)
+
+        preprint_three = PreprintFactory(title='preprint_three', creator=user2)
+        preprint_three.add_contributor(user, visible=False)
+
+        preprint_four = PreprintFactory(title='preprint_four')
+        preprint_four.add_contributor(user2, permissions=permissions.READ, visible=False)
+
+        preprint_five = PreprintFactory(title='preprint_five')
+        preprint_five.add_contributor(user2, permissions=permissions.READ, visible=False)
+        preprint_five.add_contributor(user, permissions=permissions.WRITE, visible=True)
+
+        # two preprints shared b/t user and user2
+        assert user.preprints.count() == 3
+        assert user2.preprints.count() == 4
+
+        user.merge_user(user2)
+        preprint_one.reload()
+        preprint_two.reload()
+        preprint_three.reload()
+        preprint_four.reload()
+        preprint_five.reload()
+
+        assert user.preprints.count() == 5
+        # one group for each preprint
+        assert user.groups.filter(name__icontains='preprint').count() == 5
+        assert user2.preprints.count() == 0
+        assert not user2.groups.filter(name__icontains='preprint').all()
+
+        contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_one)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == permissions.ADMIN
+        assert preprint_one.creator == user
+        assert not preprint_one.has_permission(user2, permissions.READ)
+        assert not preprint_one.is_contributor(user2)
+
+        contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_two)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == permissions.WRITE
+        assert preprint_two.creator != user
+        assert not preprint_two.has_permission(user2, permissions.READ)
+        assert not preprint_two.is_contributor(user2)
+
+        contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_three)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == permissions.ADMIN  # of the two users the highest perm wins out.
+        assert preprint_three.creator == user
+        assert not preprint_three.has_permission(user2, permissions.READ)
+        assert not preprint_three.is_contributor(user2)
+
+        contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_four)
+        assert contrib_obj.visible is False
+        assert contrib_obj.permission == permissions.READ
+        assert preprint_four.creator != user
+        assert not preprint_four.has_permission(user2, permissions.READ)
+        assert not preprint_four.is_contributor(user2)
+
+        contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_five)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == permissions.WRITE
+        assert preprint_five.creator != user
+        assert not preprint_five.has_permission(user2, permissions.READ)
+        assert not preprint_five.is_contributor(user2)
 
     def test_cant_create_user_without_username(self):
         u = OSFUser()  # No username given
@@ -239,9 +405,10 @@ class TestOSFUser:
             u.save()
 
     def test_add_blacklisted_domain_unconfirmed_email(self, user):
+        BlacklistedEmailDomain.objects.get_or_create(domain='mailinator.com')
         with pytest.raises(BlacklistedEmailError) as e:
             user.add_unconfirmed_email('kanye@mailinator.com')
-        assert e.value.message == 'Invalid Email'
+        assert str(e.value) == 'Invalid Email'
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_url_for_external_service(self, random_string):
@@ -346,7 +513,6 @@ class TestOSFUser:
         assert len(u.email_verifications.keys()) == 0
         assert u.emails.filter(address=u.username).exists()
         assert bool(u.is_registered) is True
-        assert bool(u.is_claimed) is True
 
     def test_confirm_email(self, user):
         token = user.add_unconfirmed_email('foo@bar.com')
@@ -600,12 +766,18 @@ class TestProjectsInCommon:
         project.add_contributor(contributor=user2, auth=auth)
         project.save()
 
-        project_keys = set([node._id for node in user.contributed])
-        projects = set(user.contributed)
-        user2_project_keys = set([node._id for node in user2.contributed])
+        group = OSFGroupFactory(creator=user, name='Platform')
+        group.make_member(user2)
+        group_project = ProjectFactory()
+        group_project.add_osf_group(group)
+        group_project.save()
+
+        project_keys = set([node._id for node in user.all_nodes])
+        projects = set(user.all_nodes)
+        user2_project_keys = set([node._id for node in user2.all_nodes])
 
         assert set(n._id for n in user.get_projects_in_common(user2)) == project_keys.intersection(user2_project_keys)
-        assert user.get_projects_in_common(user2) == projects.intersection(user2.contributed)
+        assert user.get_projects_in_common(user2) == projects.intersection(user2.all_nodes)
 
     def test_n_projects_in_common(self, user, auth):
         user2 = UserFactory()
@@ -615,8 +787,13 @@ class TestProjectsInCommon:
         project.add_contributor(contributor=user2, auth=auth)
         project.save()
 
+        group = OSFGroupFactory(name='Platform', creator=user)
+        group.make_member(user3)
+        project.add_osf_group(group)
+        project.save()
+
         assert user.n_projects_in_common(user2) == 1
-        assert user.n_projects_in_common(user3) == 0
+        assert user.n_projects_in_common(user3) == 1
 
 
 class TestCookieMethods:
@@ -724,7 +901,7 @@ class TestChangePassword:
         with pytest.raises(ChangePasswordError) as excinfo:
             user.change_password(old_password, new_password, confirm_password)
             user.save()
-        assert error_message in excinfo.value.message
+        assert error_message in str(excinfo)
         assert bool(user.check_password(new_password)) is False
 
     def test_change_password_invalid_old_password(self):
@@ -970,7 +1147,7 @@ class TestUnregisteredUser:
             unreg_user.add_unclaimed_record(project,
                 given_name='fred m', referrer=referrer)
             unreg_user.save()
-        assert e.value.message == 'Referrer does not have permission to add a contributor to project {}'.format(project._primary_key)
+        assert str(e.value) == 'Referrer does not have permission to add a contributor to {}'.format(project._primary_key)
 
         # test_referrer_is_not_admin_or_moderator
         referrer = UserFactory()
@@ -978,18 +1155,16 @@ class TestUnregisteredUser:
             unreg_moderator.add_unclaimed_record(provider,
                 given_name='hodor', referrer=referrer)
             unreg_user.save()
-        assert e.value.message == 'Referrer does not have permission to add a moderator to provider {}'.format(provider._id)
+        assert str(e.value) == 'Referrer does not have permission to add a moderator to provider {}'.format(provider._id)
 
     @mock.patch('osf.models.OSFUser.update_search_nodes')
     @mock.patch('osf.models.OSFUser.update_search')
     def test_register(self, mock_search, mock_search_nodes):
         user = UnregUserFactory()
         assert user.is_registered is False  # sanity check
-        assert user.is_claimed is False
         email = fake_email()
         user.register(username=email, password='killerqueen')
         user.save()
-        assert user.is_claimed is True
         assert user.is_registered is True
         assert user.check_password('killerqueen') is True
         assert user.username == email
@@ -1306,24 +1481,24 @@ class TestMergingUsers:
     def test_merge_user_with_higher_permissions_on_project(self, master, dupe, merge_dupe):
         # Both master and dupe are contributors on the same project
         project = ProjectFactory()
-        project.add_contributor(contributor=master, permissions=('read', 'write'))
-        project.add_contributor(contributor=dupe, permissions=('read', 'write', 'admin'))
+        project.add_contributor(contributor=master, permissions=permissions.WRITE)
+        project.add_contributor(contributor=dupe, permissions=permissions.ADMIN)
 
         project.save()
         merge_dupe()  # perform the merge
 
-        assert project.get_permissions(master) == ['read', 'write', 'admin']
+        assert project.get_permissions(master) == [permissions.READ, permissions.WRITE, permissions.ADMIN]
 
     def test_merge_user_with_lower_permissions_on_project(self, master, dupe, merge_dupe):
         # Both master and dupe are contributors on the same project
         project = ProjectFactory()
-        project.add_contributor(contributor=master, permissions=('read', 'write', 'admin'))
-        project.add_contributor(contributor=dupe, permissions=('read', 'write'))
+        project.add_contributor(contributor=master, permissions=permissions.ADMIN)
+        project.add_contributor(contributor=dupe, permissions=permissions.WRITE)
 
         project.save()
         merge_dupe()  # perform the merge
 
-        assert project.get_permissions(master) == ['read', 'write', 'admin']
+        assert project.get_permissions(master) == [permissions.READ, permissions.WRITE, permissions.ADMIN]
 
     def test_merge_user_into_self_fails(self, master):
         with pytest.raises(ValueError):
@@ -1469,7 +1644,7 @@ class TestUser(OsfTestCase):
     def test_cannot_remove_primary_email_from_email_list(self):
         with pytest.raises(PermissionsError) as e:
             self.user.remove_email(self.user.username)
-        assert e.value.message == 'Can\'t remove primary email'
+        assert str(e.value) == 'Can\'t remove primary email'
 
     def test_add_same_unconfirmed_email_twice(self):
         email = 'test@mail.com'
@@ -1503,6 +1678,10 @@ class TestUser(OsfTestCase):
         project_to_be_invisible_on = ProjectFactory()
         project_to_be_invisible_on.add_contributor(self.user, visible=False)
         project_to_be_invisible_on.save()
+        group = OSFGroupFactory(creator=self.user, name='Platform')
+        group_project = ProjectFactory()
+        group_project.add_osf_group(group, permissions.READ)
+
         contributor_to_nodes = [node._id for node in self.user.contributor_to]
 
         assert normal_node._id in contributor_to_nodes
@@ -1511,6 +1690,52 @@ class TestUser(OsfTestCase):
         assert deleted_node._id not in contributor_to_nodes
         assert bookmark_collection_node._id not in contributor_to_nodes
         assert collection_node._id not in contributor_to_nodes
+        assert group_project._id not in contributor_to_nodes
+
+    def test_contributor_or_group_member_to_property(self):
+        normal_node = ProjectFactory(creator=self.user)
+        normal_contributed_node = ProjectFactory()
+        normal_contributed_node.add_contributor(self.user)
+        normal_contributed_node.save()
+        deleted_node = ProjectFactory(creator=self.user, is_deleted=True)
+        bookmark_collection_node = find_bookmark_collection(self.user)
+        collection_node = CollectionFactory(creator=self.user)
+        project_to_be_invisible_on = ProjectFactory()
+        project_to_be_invisible_on.add_contributor(self.user, visible=False)
+        project_to_be_invisible_on.save()
+        group = OSFGroupFactory(creator=self.user, name='Platform')
+        group_project = ProjectFactory()
+        group_project.add_osf_group(group, permissions.READ)
+        registration = RegistrationFactory(creator=self.user)
+
+        contributor_to_or_group_member_nodes = [node._id for node in self.user.contributor_or_group_member_to]
+
+        assert normal_node._id in contributor_to_or_group_member_nodes
+        assert normal_contributed_node._id in contributor_to_or_group_member_nodes
+        assert project_to_be_invisible_on._id in contributor_to_or_group_member_nodes
+        assert deleted_node._id not in contributor_to_or_group_member_nodes
+        assert bookmark_collection_node._id not in contributor_to_or_group_member_nodes
+        assert collection_node._id not in contributor_to_or_group_member_nodes
+        assert group_project._id in contributor_to_or_group_member_nodes
+        assert registration._id in contributor_to_or_group_member_nodes
+
+    def test_all_nodes_property(self):
+        project = ProjectFactory(creator=self.user)
+        project_two = ProjectFactory()
+
+        group = OSFGroupFactory(creator=self.user)
+        project_two.add_osf_group(group)
+        project_two.save()
+
+        project_three = ProjectFactory()
+        project_three.save()
+
+        user_nodes = self.user.all_nodes
+        assert user_nodes.count() == 3
+        assert project in user_nodes
+        assert project_two in user_nodes
+        assert project_three not in user_nodes
+        assert QuickFilesNode.objects.get(creator=self.user) in user_nodes
 
     def test_visible_contributor_to_property(self):
         invisible_contributor = UserFactory()
@@ -1635,7 +1860,6 @@ class TestUserMerging(OsfTestCase):
             'family_name',
             'fullname',
             'given_name',
-            'is_claimed',
             'is_invited',
             'is_registered',
             'jobs',
@@ -1721,7 +1945,7 @@ class TestUserMerging(OsfTestCase):
         self.user.reload()
 
         # check each field/value pair
-        for k, v in expected.iteritems():
+        for k, v in expected.items():
             if is_mrm_field(getattr(self.user, k)):
                 assert set(list(getattr(self.user, k).all().values_list('id', flat=True))) == v, '{} doesn\'t match expectations'.format(k)
             else:
@@ -1742,7 +1966,7 @@ class TestUserMerging(OsfTestCase):
         assert self.unconfirmed.is_merged is True
         assert self.unconfirmed.merged_by == self.user
 
-        assert self.user.is_claimed is True
+        assert self.user.is_registered is True
         assert self.user.is_invited is False
 
         # TODO: test profile fields - jobs, schools, social
@@ -2006,7 +2230,7 @@ class TestUserGdprDelete:
         second_admin_contrib = UserFactory()
         project = ProjectFactory(creator=user)
         project.add_contributor(second_admin_contrib)
-        project.set_permissions(user=second_admin_contrib, permissions=['read', 'write', 'admin'])
+        project.set_permissions(user=second_admin_contrib, permissions=permissions.ADMIN)
         project.save()
         return project
 
@@ -2015,7 +2239,7 @@ class TestUserGdprDelete:
         second_admin_contrib = UserFactory()
         project = ProjectFactory(creator=user)
         project.add_contributor(second_admin_contrib)
-        project.set_permissions(user=second_admin_contrib, permissions=['read', 'write', 'admin'])
+        project.set_permissions(user=second_admin_contrib, permissions=permissions.ADMIN)
         user = project.creator
 
         node_settings = project.add_addon('github', auth=None)
@@ -2052,6 +2276,7 @@ class TestUserGdprDelete:
         non_admin_contrib = UserFactory()
         project = ProjectFactory(creator=user)
         project.add_contributor(non_admin_contrib)
+        project.add_unregistered_contributor('lisa', 'lisafrank@cos.io', permissions=permissions.ADMIN, auth=Auth(user))
         project.save()
         return project
 
@@ -2113,9 +2338,112 @@ class TestUserGdprDelete:
         assert exc_info.value.args[0] == 'You cannot delete node {} because it would' \
                                          ' be a node with contributors, but with no admin.'.format(project_user_is_only_admin._id)
 
+    def test_cant_gdpr_delete_osf_group_if_only_manager(self, user):
+        group = OSFGroupFactory(name='My Group', creator=user)
+        osf_group_name = group.name
+        manager_group_name = group.manager_group.name
+        member_group_name = group.member_group.name
+        member = AuthUserFactory()
+        group.make_member(member)
+
+        with pytest.raises(UserStateError) as exc_info:
+            user.gdpr_delete()
+
+        assert exc_info.value.args[0] == 'You cannot delete this user because ' \
+                                        'they are the only registered manager of OSFGroup ' \
+                                        '{} that contains other members.'.format(group._id)
+
+        unregistered = group.add_unregistered_member('fake_user', 'fake_email@cos.io', Auth(user), 'manager')
+        assert len(group.managers) == 2
+
+        with pytest.raises(UserStateError) as exc_info:
+            user.gdpr_delete()
+
+        assert exc_info.value.args[0] == 'You cannot delete this user because ' \
+                                        'they are the only registered manager of OSFGroup ' \
+                                        '{} that contains other members.'.format(group._id)
+
+        group.remove_member(member)
+        member.gdpr_delete()
+        # User is not the last member in the group, so they are just removed
+        assert OSFGroup.objects.filter(name=osf_group_name).exists()
+        assert Group.objects.filter(name=manager_group_name).exists()
+        assert Group.objects.filter(name=member_group_name).exists()
+        assert group.is_member(member) is False
+        assert group.is_manager(member) is False
+
+        group.remove_member(unregistered)
+        user.gdpr_delete()
+        # Group was deleted because user was the only member
+        assert not OSFGroup.objects.filter(name=osf_group_name).exists()
+        assert not Group.objects.filter(name=manager_group_name).exists()
+        assert not Group.objects.filter(name=member_group_name).exists()
+
     def test_cant_gdpr_delete_with_addon_credentials(self, user, project_with_two_admins_and_addon_credentials):
 
         with pytest.raises(UserStateError) as exc_info:
             user.gdpr_delete()
         assert exc_info.value.args[0] == 'You cannot delete this user because they have an external account for' \
                                          ' github attached to Node {}, which has other contributors.'.format(project_with_two_admins_and_addon_credentials._id)
+
+
+class TestUserSpam:
+
+    @pytest.fixture
+    def user(self):
+        return AuthUserFactory()
+
+    def test_get_spam_content(self, user):
+        schools_list = []
+        expected_content = ''
+
+        for _ in range(2):
+            institution = fake.company()
+            degree = fake.catch_phrase()
+            schools_list.append({
+                'degree': degree,
+                'institution': institution
+            })
+            expected_content += '{} {} '.format(institution, degree)
+        saved_fields = {'schools': schools_list}
+
+        spam_content = user._get_spam_content(saved_fields)
+        assert spam_content == expected_content.strip()
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch('osf.models.spam._get_client')
+    def test_do_check_spam(self, mock_get_client, user):
+        new_mock = mock.MagicMock()
+        new_mock.check_comment = mock.MagicMock(return_value=(True, None))
+        mock_get_client.return_value = new_mock
+
+        suspicious_content = 'spam eggs sausage and spam'
+        with mock.patch('osf.models.user.OSFUser._get_spam_content', mock.Mock(return_value=suspicious_content)):
+            user.do_check_spam(
+                author=user.fullname,
+                author_email=user.username,
+                content=suspicious_content,
+                request_headers={'Referrer': 'Woo', 'User-Agent': 'yay', 'Remote-Addr': 'ok'}
+            )
+        user.save()
+        assert user.spam_data['content'] == suspicious_content
+        assert user.spam_data['author'] == user.fullname
+        assert user.spam_data['author_email'] == user.username
+
+        # test do_check_spam for ham user
+        user.confirm_ham()
+        assert user.do_check_spam(None, None, None, None) is False
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch('osf.models.OSFUser.do_check_spam')
+    def test_check_spam(self, mock_do_check_spam, user):
+
+        # test check_spam for other saved fields
+        with mock.patch('osf.models.OSFUser._get_spam_content', mock.Mock(return_value='some content!')):
+            assert user.check_spam(saved_fields={'fullname': 'Dusty Rhodes'}, request_headers=None) is False
+            assert mock_do_check_spam.call_count == 0
+
+        # test check spam for correct saved_fields
+        with mock.patch('osf.models.OSFUser._get_spam_content', mock.Mock(return_value='some content!')):
+            user.check_spam(saved_fields={'schools': ['one']}, request_headers=None)
+            assert mock_do_check_spam.call_count == 1

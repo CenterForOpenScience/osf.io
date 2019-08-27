@@ -6,6 +6,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     PreprintProviderFactory,
 )
+from osf.utils import permissions
 
 
 @pytest.mark.django_db
@@ -25,7 +26,7 @@ class TestPreprintProviderModeratorList:
     @pytest.fixture()
     def admin(self, provider):
         user = AuthUserFactory()
-        provider.get_group('admin').user_set.add(user)
+        provider.get_group(permissions.ADMIN).user_set.add(user)
         return user
 
     @pytest.fixture()
@@ -77,7 +78,7 @@ class TestPreprintProviderModeratorList:
         assert res.status_code == 200
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['id'] == admin._id
-        assert res.json['data'][0]['attributes']['permission_group'] == 'admin'
+        assert res.json['data'][0]['attributes']['permission_group'] == permissions.ADMIN
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_list_post_unauthorized(self, mock_mail, app, url, nonmoderator, moderator, provider):
@@ -117,14 +118,14 @@ class TestPreprintProviderModeratorList:
         payload = self.create_payload(permission_group='moderator', **unreg_user)
         res = app.post_json_api(url, payload, auth=nonmoderator.auth, expect_errors=True)
         assert res.status_code == 403
-        assert mock_mail.assert_not_called()
+        assert mock_mail.call_count == 0
 
         # test_user_with_moderator_admin_permissions
         payload = self.create_payload(permission_group='moderator', **unreg_user)
         res = app.post_json_api(url, payload, auth=admin.auth)
 
         assert res.status_code == 201
-        assert mock_mail.assert_called_once()
+        assert mock_mail.call_count == 1
         assert mock_mail.call_args[0][0] == unreg_user['email']
 
     @mock.patch('framework.auth.views.mails.send_mail')

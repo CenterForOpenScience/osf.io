@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 
 import logging
-import progressbar
+from tqdm import tqdm
 
 from django.db import migrations, connection
 
@@ -43,12 +43,12 @@ class Migration(migrations.Migration):
         users_with_social = OSFUser.objects.filter(social__has_any_keys=FIELDS_TO_MIGRATE)
         users_to_update = users_with_social.count()
         logger.info('Updating social fields for {} users'.format(users_to_update))
-        progress_bar = progressbar.ProgressBar(maxval=users_to_update or 100).start()
+        progress_bar = tqdm(total=users_to_update or 100)
 
         users_updated = 0
         for user in users_with_social:
             old_social = {}
-            for key, value in user.social.iteritems():
+            for key, value in user.social.items():
                 if key in FIELDS_TO_MIGRATE:
                     if len(value) > 1:
                         raise ValueError('Current social list field has more than one value, cannot reset to just one value.')
@@ -60,7 +60,7 @@ class Migration(migrations.Migration):
             users_updated += 1
             progress_bar.update(users_updated)
 
-        progress_bar.finish()
+        progress_bar.close()
         logger.info('Updated social field for {} users'.format(users_updated))
 
     dependencies = [

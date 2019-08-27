@@ -1,8 +1,7 @@
-from nose.tools import *  # flake8: noqa
-import pytest
+from nose.tools import *  # noqa:
 
 from api.base.settings.defaults import API_BASE
-from addons.wiki.models import WikiPage, WikiVersion
+from addons.wiki.models import WikiPage
 from tests.base import ApiWikiTestCase
 from osf_tests.factories import ProjectFactory, RegistrationFactory
 

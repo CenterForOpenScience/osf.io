@@ -29,11 +29,12 @@ from addons.base import views
 from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
-from addons.osfstorage.models import OsfStorageFileNode
+from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from addons.osfstorage.tests.factories import FileVersionFactory
 from osf.models import NodeLog, Session, RegistrationSchema, QuickFilesNode, RdmFileTimestamptokenVerifyResult, RdmUserKey
 from osf.models import files as file_models
 from osf.models.files import BaseFileNode, TrashedFileNode, FileVersion
+from osf.utils.permissions import WRITE, READ
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
 from website.project.views.node import serialize_addons, collect_node_config_js
@@ -89,6 +90,7 @@ class TestAddonAuth(OsfTestCase):
         options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
             action='download',
             nid=self.node._id,
+            metrics={'uri': settings.MFR_SERVER_URL},
             provider=self.node_addon.config.short_name), **kwargs),
             'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
         }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
@@ -163,6 +165,71 @@ class TestAddonAuth(OsfTestCase):
         res = self.app.get(url, headers={'Authorization': 'Bearer invalid_access_token'}, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    def test_action_downloads_marks_version_as_seen(self):
+        noncontrib = AuthUserFactory()
+        node = ProjectFactory(is_public=True)
+        test_file = create_test_file(node, self.user)
+        url = self.build_url(nid=node._id, action='render', provider='osfstorage', path=test_file.path)
+        res = self.app.get(url, auth=noncontrib.auth)
+        assert_equal(res.status_code, 200)
+
+        # Add a new version, make sure that does not have a record
+        version = FileVersionFactory()
+        test_file.versions.add(version)
+        test_file.save()
+
+        versions = test_file.versions.order_by('created')
+        assert versions.first().seen_by.filter(guids___id=noncontrib._id).exists()
+        assert not versions.last().seen_by.filter(guids___id=noncontrib._id).exists()
+
+    def test_action_download_contrib(self):
+        test_file = create_test_file(self.node, self.user)
+        url = self.build_url(action='download', provider='osfstorage', path=test_file.path, version=1)
+        nlogs = self.node.logs.count()
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        test_file.reload()
+        assert_equal(test_file.get_download_count(), 0) # contribs don't count as downloads
+        assert_equal(self.node.logs.count(), nlogs) # don't log downloads
+
+    def test_action_download_non_contrib(self):
+        noncontrib = AuthUserFactory()
+        node = ProjectFactory(is_public=True)
+        test_file = create_test_file(node, self.user)
+        url = self.build_url(nid=node._id, action='download', provider='osfstorage', path=test_file.path, version=1)
+        nlogs = node.logs.count()
+        res = self.app.get(url, auth=noncontrib.auth)
+        assert_equal(res.status_code, 200)
+
+        test_file.reload()
+        assert_equal(test_file.get_download_count(), 1)
+        assert_equal(node.logs.count(), nlogs) # don't log views
+
+    def test_action_download_mfr_views_contrib(self):
+        test_file = create_test_file(self.node, self.user)
+        url = self.build_url(action='render', provider='osfstorage', path=test_file.path, version=1)
+        nlogs = self.node.logs.count()
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        test_file.reload()
+        assert_equal(test_file.get_view_count(), 0) # contribs don't count as views
+        assert_equal(self.node.logs.count(), nlogs) # don't log views
+
+    def test_action_download_mfr_views_non_contrib(self):
+        noncontrib = AuthUserFactory()
+        node = ProjectFactory(is_public=True)
+        test_file = create_test_file(node, self.user)
+        url = self.build_url(nid=node._id, action='render', provider='osfstorage', path=test_file.path, version=1)
+        nlogs = node.logs.count()
+        res = self.app.get(url, auth=noncontrib.auth)
+        assert_equal(res.status_code, 200)
+
+        test_file.reload()
+        assert_equal(test_file.get_view_count(), 1)
+        assert_equal(node.logs.count(), nlogs) # don't log views
+
 
 class TestAddonLogs(OsfTestCase):
 
@@ -218,7 +285,7 @@ class TestAddonLogs(OsfTestCase):
         options.update(kwargs)
         options = {
             key: value
-            for key, value in options.iteritems()
+            for key, value in options.items()
             if value is not None
         }
         message, signature = signing.default_signer.sign_payload(options)
@@ -303,9 +370,10 @@ class TestAddonLogs(OsfTestCase):
         # assert_true(mock_form_message.called, "form_message not called")
         assert_true(mock_perform.called, 'perform not called')
 
+    @mock.patch('addons.base.views.BaseFileNode')
     @mock.patch('addons.base.views.timestamp')
     @pytest.mark.enable_quickfiles_creation
-    def test_waterbutler_hook_succeeds_for_quickfiles_nodes(self, mock_timestamp):
+    def test_waterbutler_hook_succeeds_for_quickfiles_nodes(self, mock_timestamp, mock_basefilenode):
         quickfiles = QuickFilesNode.objects.get_for_user(self.user)
         materialized_path = 'pizza'
         url = quickfiles.api_url_for('create_waterbutler_log')
@@ -839,8 +907,9 @@ class TestAddonLogs(OsfTestCase):
         self.node.reload()
         assert_equal(self.node.logs.count(), nlogs)
 
+    @mock.patch('addons.base.views.BaseFileNode')
     @mock.patch('addons.base.views.timestamp')
-    def test_add_file_osfstorage_log(self, mock_timestamp):
+    def test_add_file_osfstorage_log(self, mock_timestamp, mock_basefilenode):
         self.configure_osf_addon()
         path = 'pizza'
         url = self.node.api_url_for('create_waterbutler_log')
@@ -863,11 +932,12 @@ class TestAddonLogs(OsfTestCase):
         assert_equal(self.node.logs.count(), nlogs + 1)
         assert('urls' in self.node.logs.filter(action='osf_storage_file_added')[0].params)
 
-    def test_add_folder_osfstorage_log(self):
+    @mock.patch('addons.base.views.BaseFileNode')
+    def test_add_folder_osfstorage_log(self, mock_basefilenode):
         self.configure_osf_addon()
         path = 'pizza'
         url = self.node.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'materialized': path, 'kind': 'folder', 'path': path})
+        payload = self.build_payload(metadata={'materialized': path, 'kind': 'folder', 'path': path, 'size': 1000})
         nlogs = self.node.logs.count()
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
@@ -913,7 +983,7 @@ class TestCheckAuth(OsfTestCase):
 
         component_registration = registration._nodes.first()
 
-        assert_false(component_registration.has_permission(self.user, 'write'))
+        assert_false(component_registration.has_permission(self.user, WRITE))
         res = views.check_access(component_registration, Auth(user=self.user), 'upload', None)
         assert_true(res)
 
@@ -923,7 +993,7 @@ class TestCheckAuth(OsfTestCase):
 
         component_registration = RegistrationFactory(project=component, creator=component_admin)
 
-        assert_false(component_registration.has_permission(self.user, 'read'))
+        assert_false(component_registration.has_permission(self.user, READ))
         res = views.check_access(component_registration, Auth(user=self.user), 'metadata', None)
         assert_true(res)
 
@@ -931,7 +1001,7 @@ class TestCheckAuth(OsfTestCase):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, parent=self.node)
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         with assert_raises(HTTPError):
             views.check_access(component, Auth(user=self.user), 'upload', None)
 
@@ -939,7 +1009,7 @@ class TestCheckAuth(OsfTestCase):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         res = views.check_access(component, Auth(user=self.user), 'copyfrom', None)
         assert_true(res)
 
@@ -995,7 +1065,7 @@ class TestCheckPreregAuth(OsfTestCase):
     def test_has_permission_write_prereg_challenge_admin(self):
         with assert_raises(HTTPError) as exc_info:
             views.check_access(self.draft_registration.branched_from,
-                Auth(user=self.prereg_challenge_admin_user), 'write', None)
+                Auth(user=self.prereg_challenge_admin_user), WRITE, None)
             assert_equal(exc_info.exception.code, http.FORBIDDEN)
 
 class TestCheckOAuth(OsfTestCase):
@@ -1010,7 +1080,7 @@ class TestCheckOAuth(OsfTestCase):
         component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
         cas_resp = cas.CasResponse(authenticated=False)
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         with assert_raises(HTTPError) as exc_info:
             views.check_access(component, Auth(user=self.user), 'download', cas_resp)
         assert_equal(exc_info.exception.code, 403)
@@ -1021,7 +1091,7 @@ class TestCheckOAuth(OsfTestCase):
         cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
                                    attributes={'accessTokenScope': {}})
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         with assert_raises(HTTPError) as exc_info:
             views.check_access(component, Auth(user=self.user), 'download', cas_resp)
         assert_equal(exc_info.exception.code, 403)
@@ -1032,7 +1102,7 @@ class TestCheckOAuth(OsfTestCase):
         cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
                                    attributes={'accessTokenScope': {'osf.users.all_read'}})
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         res = views.check_access(component, Auth(user=self.user), 'download', cas_resp)
         assert_true(res)
 
@@ -1042,7 +1112,7 @@ class TestCheckOAuth(OsfTestCase):
         cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
                                    attributes={'accessTokenScope': {'osf.users.all_read'}})
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         with assert_raises(HTTPError) as exc_info:
             views.check_access(component, Auth(user=self.user), 'download', cas_resp)
         assert_equal(exc_info.exception.code, 403)
@@ -1056,7 +1126,7 @@ class TestCheckOAuth(OsfTestCase):
                                        'osf.nodes.data_read',
                                    }})
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         res = views.check_access(component, Auth(user=self.user), 'download', cas_resp)
         assert_true(res)
 
@@ -1066,7 +1136,7 @@ class TestCheckOAuth(OsfTestCase):
         cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
                                    attributes={'accessTokenScope': {'osf.nodes.data_write'}})
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         res = views.check_access(component, Auth(user=self.user), 'download', cas_resp)
         assert_true(res)
 
@@ -1075,7 +1145,7 @@ class TestCheckOAuth(OsfTestCase):
         cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
                                    attributes={'accessTokenScope': {'osf.nodes.data_read'}})
 
-        assert_true(component.has_permission(self.user, 'write'))
+        assert_true(component.has_permission(self.user, WRITE))
         with assert_raises(HTTPError) as exc_info:
             views.check_access(component, Auth(user=self.user), 'upload', cas_resp)
         assert_equal(exc_info.exception.code, 403)
@@ -1450,6 +1520,26 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 401)
 
+    def test_resolve_folder_raise(self):
+        folder = OsfStorageFolder(
+            name='folder',
+            target=self.project,
+            path='/test/folder/',
+            materialized_path='/test/folder/',
+        )
+        folder.save()
+        resp = self.app.get(
+            self.project.web_url_for(
+                'addon_view_or_download_file',
+                path=folder._id,
+                provider='osfstorage',
+            ),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equals(resp.status_code, 400)
+
     def test_delete_action_creates_trashed_file_node(self):
         file_node = self.get_test_file()
         payload = {
@@ -1462,6 +1552,18 @@ class TestAddonFileViews(OsfTestCase):
         views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert_false(GithubFileNode.load(file_node._id))
         assert_true(TrashedFileNode.load(file_node._id))
+
+    def test_delete_action_no_file_node(self):
+        file_node = self.get_test_file()
+        payload = {
+            'provider': file_node.provider,
+            'metadata': {
+                'path': '/test/FileThatDoesNotExists',
+                'materialized': '/test/FileThatDoesNotExists'
+            }
+        }
+        views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
+        assert_false(TrashedFileNode.load(file_node._id))
 
     def test_delete_action_for_folder_deletes_subfolders_and_creates_trashed_file_nodes(self):
         file_node = self.get_test_file()
@@ -1778,3 +1880,4 @@ class TestViewUtils(OsfTestCase):
         # connect/disconnect from them, think osfstorage, there's no node-cfg for that.
         default_addons = [addon['short_name'] for addon in addon_dicts if addon['default']]
         assert not any('/{}/'.format(addon) in asset_paths for addon in default_addons)
+

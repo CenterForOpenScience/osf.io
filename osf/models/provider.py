@@ -21,6 +21,7 @@ from osf.utils.fields import EncryptedTextField
 from osf.utils.permissions import REVIEW_PERMISSIONS
 from website import settings
 from website.util import api_v2_url
+from functools import reduce
 
 
 class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
@@ -148,7 +149,7 @@ class PreprintProvider(AbstractProvider):
                                ('Thesis', 'Thesis'),)
     PUSH_SHARE_TYPE_HELP = 'This SHARE type will be used when pushing publications to SHARE'
 
-    REVIEWABLE_RELATION_NAME = 'preprint_services'
+    REVIEWABLE_RELATION_NAME = 'preprints'
 
     share_publish_type = models.CharField(choices=PUSH_SHARE_TYPE_CHOICES,
                                           default='Preprint',

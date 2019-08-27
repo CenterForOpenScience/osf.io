@@ -1,0 +1,1 @@
+document.querySelector('a[href="' + location.search + '"]').classList.remove('tb-sort-inactive');

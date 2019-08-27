@@ -7,8 +7,6 @@
         prefix = ''
     if node.get('is_registration', False):
         return prefix + 'registrations'
-    elif node.get('is_preprint', False):
-        return prefix + 'preprints'
     else:
         return prefix + 'nodes'
     %>
@@ -92,7 +90,6 @@
         relations.extend([
             node['registered_from_url'],
             node['forked_from_display_absolute_url'],
-            node['preprint_url'] or '',
             parent_node['absolute_url'] if parent_node['exists'] else ''
         ])
         return relations
@@ -153,6 +150,10 @@
     var userApiUrl = ${ user_api_url | sjson, n };
     var nodeApiUrl = ${ node['api_url'] | sjson, n };
     var absoluteUrl = ${ node['display_absolute_url'] | sjson, n };
+    var isCusStorageLoc = false;
+    % if isCustomStorageLocation is not UNDEFINED:
+        isCusStorageLoc = ${ isCustomStorageLocation | sjson, n }
+    % endif
     <%
        parent_exists = parent_node['exists']
        parent_title = ''
@@ -162,7 +163,7 @@
        if parent_exists:
            parent_title = "Private {0}".format(parent_node['category'])
            parent_registration_url = ''
-       if parent_node['can_view'] or parent_node['is_contributor']:
+       if parent_node['can_view'] or parent_node['is_contributor_or_group_member']:
            parent_title = parent_node['title']
            parent_registration_url = parent_node['registrations_url']
            parent_url = parent_node['absolute_url']
@@ -178,6 +179,7 @@
                 profile: ${user_url | sjson, n}
             },
             isContributor: ${ user.get('is_contributor', False) | sjson, n },
+            isContributorOrGroupMember: ${ user.get('is_contributor_or_group_member', False) | sjson, n },
             fullname: ${ user['fullname'] | sjson, n },
             isAdmin: ${ user.get('is_admin', False) | sjson, n},
             canComment: ${ user['can_comment'] | sjson, n},
@@ -199,8 +201,7 @@
             isPublic: ${ node.get('is_public', False) | sjson, n },
             isRegistration: ${ node.get('is_registration', False) | sjson, n },
             isRetracted: ${ node.get('is_retracted', False) | sjson, n },
-            isPreprint: ${ node.get('is_preprint', False) | sjson, n },
-            preprintFileId: ${ node.get('preprint_file_id', None) | sjson, n },
+            isSupplementalProject: ${ node.get('is_supplemental_project', False) | sjson, n },
             anonymous: ${ node['anonymous'] | sjson, n },
             category: ${node['category_short'] | sjson, n },
             rootId: ${ root_id | sjson, n },
@@ -211,8 +212,9 @@
             childExists: ${ node['child_exists'] | sjson, n},
             registrationMetaSchemas: ${ node['registered_schemas'] | sjson, n },
             registrationMetaData: ${ node['registered_meta'] | sjson, n },
-            contributors: ${ node['contributors'] | sjson, n },
-        }
+            contributors: ${ node['contributors'] | sjson, n }
+        },
+        isCustomStorageLocation: isCusStorageLoc
     });
 </script>
 <script type="text/x-mathjax-config">

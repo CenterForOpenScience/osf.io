@@ -4,6 +4,7 @@ from django.apps import apps
 from django.db.models import Q
 
 from framework.postcommit_tasks.handlers import run_postcommit
+from osf.utils.permissions import READ
 from website.notifications import constants
 from website.notifications.exceptions import InvalidSubscriptionError
 from website.project import signals
@@ -62,7 +63,14 @@ def remove_contributor_from_subscriptions(node, user):
     """ Remove contributor from node subscriptions unless the user is an
         admin on any of node's parent projects.
     """
-    if user._id not in node.admin_contributor_ids:
+    Preprint = apps.get_model('osf.Preprint')
+    # Preprints don't have subscriptions at this time
+    if isinstance(node, Preprint):
+        return
+
+    # If user still has permissions through being a contributor or group member, or has
+    # admin perms on a parent, don't remove their subscription
+    if not(node.is_contributor_or_group_member(user)) and user._id not in node.admin_contributor_or_group_member_ids:
         node_subscriptions = get_all_node_subscriptions(user, node)
         for subscription in node_subscriptions:
             subscription.remove_user_from_subscription(user)
@@ -71,6 +79,10 @@ def remove_contributor_from_subscriptions(node, user):
 @signals.node_deleted.connect
 def remove_subscription(node):
     remove_subscription_task(node._id)
+
+@signals.node_deleted.connect
+def remove_supplemental_node(node):
+    remove_supplemental_node_from_preprints(node._id)
 
 @run_postcommit(once_per_request=False, celery=True)
 @app.task(max_retries=5, default_retry_delay=60)
@@ -89,9 +101,20 @@ def remove_subscription_task(node_id):
         parent.save()
 
 
+@run_postcommit(once_per_request=False, celery=True)
+@app.task(max_retries=5, default_retry_delay=60)
+def remove_supplemental_node_from_preprints(node_id):
+    AbstractNode = apps.get_model('osf.AbstractNode')
+
+    node = AbstractNode.load(node_id)
+    for preprint in node.preprints.all():
+        if preprint.node is not None:
+            preprint.node = None
+            preprint.save()
+
+
 def separate_users(node, user_ids):
     """Separates users into ones with permissions and ones without given a list.
-
     :param node: Node to separate based on permissions
     :param user_ids: List of ids, will also take and return User instances
     :return: list of subbed, list of removed user ids
@@ -104,7 +127,7 @@ def separate_users(node, user_ids):
             user = OSFUser.load(user_id)
         except TypeError:
             user = user_id
-        if node.has_permission(user, 'read'):
+        if node.has_permission(user, READ):
             subbed.append(user_id)
         else:
             removed.append(user_id)
@@ -113,7 +136,6 @@ def separate_users(node, user_ids):
 
 def users_to_remove(source_event, source_node, new_node):
     """Find users that do not have permissions on new_node.
-
     :param source_event: such as _file_updated
     :param source_node: Node instance where a subscription currently resides
     :param new_node: Node instance where a sub or new sub will be.
@@ -140,7 +162,6 @@ def users_to_remove(source_event, source_node, new_node):
 
 def move_subscription(remove_users, source_event, source_node, new_event, new_node):
     """Moves subscription from old_node to new_node
-
     :param remove_users: dictionary of lists of users to remove from the subscription
     :param source_event: A specific guid event <guid>_file_updated
     :param source_node: Instance of Node
@@ -175,7 +196,6 @@ def move_subscription(remove_users, source_event, source_node, new_event, new_no
 def get_configured_projects(user):
     """Filter all user subscriptions for ones that are on parent projects
      and return the node objects.
-
     :param user: OSFUser object
     :return: list of node objects for projects with no parent
     """
@@ -225,7 +245,6 @@ def get_all_user_subscriptions(user, extra=None):
 
 def get_all_node_subscriptions(user, node, user_subscriptions=None):
     """ Get all Subscription objects for a node that the user is subscribed to
-
     :param user: OSFUser object
     :param node: Node object
     :param user_subscriptions: all Subscription objects that the user is subscribed to
@@ -248,15 +267,15 @@ def format_data(user, nodes):
     for node in nodes:
         assert node, '{} is not a valid Node.'.format(node._id)
 
-        can_read = node.has_permission(user, 'read')
-        can_read_children = node.has_permission_on_children(user, 'read')
+        can_read = node.has_permission(user, READ)
+        can_read_children = node.has_permission_on_children(user, READ)
 
         if not can_read and not can_read_children:
             continue
 
         children = node.get_nodes(**{'is_deleted': False, 'is_node_link': False})
         children_tree = []
-        # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
+        # List project/node if user has at least READ permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
 
         if can_read:
@@ -280,7 +299,7 @@ def format_data(user, nodes):
                 'title': node.title if can_read else 'Private Project',
             },
             'children': children_tree,
-            'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
+            'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, READ) else 'node',
             'nodeType': node.project_or_component,
             'category': node.category,
             'permissions': {
@@ -372,7 +391,7 @@ def get_parent_notification_type(node, event, user):
     AbstractNode = apps.get_model('osf.AbstractNode')
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
 
-    if node and isinstance(node, AbstractNode) and node.parent_node and node.parent_node.has_permission(user, 'read'):
+    if node and isinstance(node, AbstractNode) and node.parent_node and node.parent_node.has_permission(user, READ):
         parent = node.parent_node
         key = to_subscription_key(parent._id, event)
         try:
@@ -431,10 +450,13 @@ def subscribe_user_to_global_notifications(user):
 
 def subscribe_user_to_notifications(node, user):
     """ Update the notification settings for the creator or contributors
-
     :param user: User to subscribe to notifications
     """
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
+    Preprint = apps.get_model('osf.Preprint')
+    if isinstance(node, Preprint):
+        raise InvalidSubscriptionError('Preprints are invalid targets for subscriptions at this time.')
+
     if node.is_collection:
         raise InvalidSubscriptionError('Collections are invalid targets for subscriptions')
 

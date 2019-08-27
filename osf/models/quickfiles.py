@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import logging
 
 from osf.models.node import AbstractNode, AbstractNodeManager
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 
 
 logger = logging.getLogger(__name__)
@@ -51,6 +51,8 @@ class QuickFilesNode(AbstractNode):
         raise NodeStateError('You may not set privacy for a QuickFilesNode.')
 
     def add_contributor(self, contributor, *args, **kwargs):
+        if contributor == self.creator:
+            return super(QuickFilesNode, self).add_contributor(contributor, *args, **kwargs)
         raise NodeStateError('A QuickFilesNode may not have additional contributors.')
 
     def clone(self):

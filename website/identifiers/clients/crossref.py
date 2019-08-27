@@ -98,7 +98,7 @@ class CrossRefClient(AbstractIdentifierClient):
         if status == 'public':
             posted_content.append(element.contributors(*self._crossref_format_contributors(element, preprint)))
 
-        title = element.title(remove_control_characters(preprint.node.title)) if status == 'public' else element.title('')
+        title = element.title(remove_control_characters(preprint.title)) if status == 'public' else element.title('')
         posted_content.append(element.titles(title))
 
         posted_content.append(element.posted_date(*self._crossref_format_date(element, preprint.date_published)))
@@ -106,9 +106,9 @@ class CrossRefClient(AbstractIdentifierClient):
         if status == 'public':
             posted_content.append(element.item_number('osf.io/{}'.format(preprint._id)))
 
-            if preprint.node.description:
+            if preprint.description:
                 posted_content.append(
-                    element.abstract(element.p(remove_control_characters(preprint.node.description)), xmlns=JATS_NAMESPACE))
+                    element.abstract(element.p(remove_control_characters(preprint.description)), xmlns=JATS_NAMESPACE))
 
             if preprint.license and preprint.license.node_license.url:
                 posted_content.append(
@@ -123,12 +123,12 @@ class CrossRefClient(AbstractIdentifierClient):
                     element.program(xmlns=CROSSREF_ACCESS_INDICATORS)
                 )
 
-            if preprint.node.preprint_article_doi and include_relation:
+            if preprint.article_doi and include_relation:
                 posted_content.append(
                     element.program(
                         element.related_item(
                             element.intra_work_relation(
-                                preprint.node.preprint_article_doi,
+                                preprint.article_doi,
                                 **{'relationship-type': 'isPreprintOf', 'identifier-type': 'doi'}
                             )
                         ), xmlns=CROSSREF_RELATIONS
@@ -178,7 +178,7 @@ class CrossRefClient(AbstractIdentifierClient):
 
     def _crossref_format_contributors(self, element, preprint):
         contributors = []
-        for index, contributor in enumerate(preprint.node.visible_contributors):
+        for index, contributor in enumerate(preprint.visible_contributors):
             if index == 0:
                 sequence = 'first'
             else:
@@ -245,7 +245,7 @@ class CrossRefClient(AbstractIdentifierClient):
         return self.create_identifier(preprint, category, status)
 
     def get_status(self, preprint):
-        return 'public' if preprint.verified_publishable else 'unavailable'
+        return 'public' if preprint.verified_publishable and not preprint.is_retracted else 'unavailable'
 
     def bulk_create(self, metadata, filename):
         # Crossref sends an email to CROSSREF_DEPOSITOR_EMAIL to confirm

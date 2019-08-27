@@ -4,18 +4,18 @@ import logging
 import re
 import urlparse
 import warnings
-import markupsafe
+import httplib
 
 import bson
 from django.db.models import Q
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
-from django.contrib.auth.models import AnonymousUser
+from django_bulk_update.helper import bulk_update
+from django.contrib.auth.models import AnonymousUser, Permission
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.paginator import Paginator
-from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
-from django.db import models, transaction, connection
+from django.db import models, connection
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -24,52 +24,64 @@ from keen import scoped_keys
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
+from guardian.models import (
+    GroupObjectPermissionBase,
+    UserObjectPermissionBase,
+)
+from guardian.shortcuts import get_objects_for_user, get_groups_with_perms, get_group_perms
 
 from framework import status
+from framework.auth import oauth_scopes
 from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
-from framework.exceptions import PermissionsError
+from framework.exceptions import PermissionsError, HTTPError
 from framework.sentry import log_exception
-from osf.exceptions import ValidationValueError, UserStateError
-from osf.models.contributor import (Contributor, RecentlyAddedContributor,
-                                    get_contributor_permissions)
+from osf.exceptions import (InvalidTagError, NodeStateError,
+                            TagNotFoundError, UserNotAffiliatedError)
+from osf.models.contributor import Contributor
 from osf.models.collection import CollectionSubmission
+
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
-from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable,
-                               NodeLinkMixin, Taggable, TaxonomizableMixin)
+from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable, ContributorMixin, GuardianMixin,
+                               NodeLinkMixin, Taggable, TaxonomizableMixin, SpamOverrideMixin)
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.sanctions import RegistrationApproval
 from osf.models.private_link import PrivateLink
-from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
 from osf.models.user import CGGroup
-from osf.models.validators import validate_doi, validate_title
-from framework.auth.core import Auth, get_user
+from osf.models.project_storage_type import ProjectStorageType
+from osf.models.validators import validate_title
+from framework.auth.core import Auth
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.requests import DummyRequest, get_request_and_user_id
+from osf.utils.requests import get_request_and_user_id, string_type_request_headers
 from osf.utils import sanitize
-from osf.utils.workflows import DefaultStates
+from api.base import settings as api_settings
 from website import language, settings
 from website.citations.utils import datetime_to_csl
-from website.exceptions import (InvalidTagError, NodeStateError,
-                                TagNotFoundError, UserNotAffiliatedError)
 from website.project.licenses import set_license
-from website.mails import mails
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
 from website.identifiers.tasks import update_doi_metadata_on_change
 from website.identifiers.clients import DataCiteClient
-from osf.utils.requests import get_headers_from_request
-from osf.utils.permissions import (ADMIN, CREATOR_PERMISSIONS,
-                                      DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
-                                      WRITE, expand_permissions,
-                                      reduce_permissions)
+from osf.utils.permissions import (
+    ADMIN,
+    ADMIN_NODE,
+    CONTRIB_PERMISSIONS,
+    CREATOR_PERMISSIONS,
+    PERMISSIONS,
+    READ,
+    READ_NODE,
+    WRITE
+)
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
+from api.caching.tasks import update_storage_usage
+from api.caching import settings as cache_settings
+from api.caching.utils import storage_usage_cache
 
 
 logger = logging.getLogger(__name__)
@@ -80,11 +92,11 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
     def get_roots(self):
         return self.filter(id__in=self.exclude(type='osf.collection').exclude(type='osf.quickfilesnode').values_list('root_id', flat=True))
 
-    def get_children(self, root, active=False):
+    def get_children(self, root, active=False, include_root=False):
         # If `root` is a root node, we can use the 'descendants' related name
         # rather than doing a recursive query
         if root.id == root.root_id:
-            query = root.descendants.exclude(id=root.id)
+            query = root.descendants.all() if include_root else root.descendants.exclude(id=root.id)
             if active:
                 query = query.filter(is_deleted=False)
             return query
@@ -125,7 +137,9 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                     root.pk])
                 row = cursor.fetchone()[0]
                 if not row:
-                    return AbstractNode.objects.none()
+                    return AbstractNode.objects.filter(id=root.pk) if include_root else AbstractNode.objects.none()
+                if include_root:
+                    row.append(root.pk)
                 return AbstractNode.objects.filter(id__in=row)
 
     def can_view(self, user=None, private_link=None):
@@ -140,20 +154,19 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
             qs |= self.filter(private_links__is_deleted=False, private_links__key=private_link)
 
         if user is not None and not isinstance(user, AnonymousUser):
-            if isinstance(user, OSFUser):
-                user = user.pk
-            if not isinstance(user, int):
-                raise TypeError('"user" must be either {} or {}. Got {!r}'.format(int, OSFUser, user))
-
-            sqs = Contributor.objects.filter(node=models.OuterRef('pk'), user__id=user, read=True)
-            qs |= self.annotate(can_view=models.Exists(sqs)).filter(can_view=True)
+            read_user_query = get_objects_for_user(user, READ_NODE, self, with_superuser=False)
+            qs |= read_user_query
             qs |= self.extra(where=["""
                 "osf_abstractnode".id in (
                     WITH RECURSIVE implicit_read AS (
-                        SELECT "osf_contributor"."node_id"
-                        FROM "osf_contributor"
-                        WHERE "osf_contributor"."user_id" = %s
-                        AND "osf_contributor"."admin" is TRUE
+                        SELECT N.id as node_id
+                        FROM osf_abstractnode as N, auth_permission as P, osf_nodegroupobjectpermission as G, osf_osfuser_groups as UG
+                        WHERE P.codename = 'admin_node'
+                        AND G.permission_id = P.id
+                        AND UG.osfuser_id = %s
+                        AND G.group_id = UG.group_id
+                        AND G.content_object_id = N.id
+                        AND N.type = 'osf.node'
                     UNION ALL
                         SELECT "osf_noderelation"."child_id"
                         FROM "implicit_read"
@@ -161,9 +174,8 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                         WHERE "osf_noderelation"."is_node_link" IS FALSE
                     ) SELECT * FROM implicit_read
                 )
-            """], params=(user, ))
-
-        return qs
+            """], params=(user.id, ))
+        return qs.filter(is_deleted=False)
 
 
 class AbstractNodeManager(TypedModelManager, IncludeManager):
@@ -178,16 +190,44 @@ class AbstractNodeManager(TypedModelManager, IncludeManager):
     def get_roots(self):
         return self.get_queryset().get_roots()
 
-    def get_children(self, root, active=False):
-        return self.get_queryset().get_children(root, active=active)
+    def get_children(self, root, active=False, include_root=False):
+        return self.get_queryset().get_children(root, active=active, include_root=include_root)
 
     def can_view(self, user=None, private_link=None):
         return self.get_queryset().can_view(user=user, private_link=private_link)
 
+    def get_nodes_for_user(self, user, permission=READ_NODE, base_queryset=None, include_public=False):
+        """
+        Return all AbstractNodes that the user has permissions to - either through contributorship or group membership.
+        - similar to guardian.get_objects_for_user(self, READ_NODE, AbstractNode, with_superuser=False).  If include_public is True,
+        queryset is expanded to include public nodes.
 
-class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
-                   NodeLinkMixin, CommentableMixin, SpamMixin, TaxonomizableMixin,
-                   Taggable, Loggable, GuidMixin, BaseModel):
+        :param User user: User object to check
+        :param permission: Permission string to check, official perm, i.e. 'read_node', 'write_node', 'admin_node'
+        :param base_queryset: If filtering on a smaller queryset is desired, pass in a starting queryset
+        :param include_public: If True, will include public nodes in query that user may not have explicit perms to
+        :returns node queryset that the user has perms to
+        """
+        OSFUserGroup = apps.get_model('osf', 'osfuser_groups')
+        if base_queryset is None:
+            base_queryset = self
+
+        if permission not in PERMISSIONS:
+            raise ValueError('Permission must be one of {}, {}, or {}.'.format(PERMISSIONS[0], PERMISSIONS[1], PERMISSIONS[2]))
+
+        nodes = base_queryset.filter(is_deleted=False)
+        permission_object_id = Permission.objects.get(codename=permission).id
+        user_groups = OSFUserGroup.objects.filter(osfuser_id=user.id if user else None).values_list('group_id', flat=True)
+        node_groups = NodeGroupObjectPermission.objects.filter(group_id__in=user_groups, permission_id=permission_object_id).values_list('content_object_id', flat=True)
+        query = Q(id__in=node_groups)
+        if include_public:
+            query |= Q(is_public=True)
+        return nodes.filter(query)
+
+
+class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin, GuardianMixin,
+                   NodeLinkMixin, CommentableMixin, SpamOverrideMixin, TaxonomizableMixin,
+                   ContributorMixin, Taggable, Loggable, GuidMixin, BaseModel):
     """
     All things that inherit from AbstractNode will appear in
     the same table and will be differentiated by the `type` column.
@@ -229,7 +269,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         'is_public',
         'is_deleted',
         'node_license',
-        'preprint_file',
     }
 
     # Node fields that trigger an identifier update on save
@@ -261,7 +300,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     PRIVATE = 'private'
     PUBLIC = 'public'
 
-    LICENSE_QUERY = re.sub('\s+', ' ', """WITH RECURSIVE ascendants AS (
+    LICENSE_QUERY = re.sub(r'\s+', ' ', """WITH RECURSIVE ascendants AS (
             SELECT
                 N.node_license_id,
                 R.parent_id
@@ -293,11 +332,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     _contributors = models.ManyToManyField(OSFUser,
                                            through=Contributor,
                                            related_name='nodes')
-
-    @property
-    def contributors(self):
-        # NOTE: _order field is generated by order_with_respect_to = 'node'
-        return self._contributors.order_by('contributor___order')
 
     creator = models.ForeignKey(OSFUser,
                                 db_index=True,
@@ -336,10 +370,22 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                     related_name='parent_nodes')
 
     files = GenericRelation('osf.OsfStorageFile', object_id_field='target_object_id', content_type_field='target_content_type')
+    groups = {
+        'read': ('read_node',),
+        'write': ('read_node', 'write_node',),
+        'admin': ('read_node', 'write_node', 'admin_node',)
+    }
+    group_format = 'node_{self.id}_{group}'
 
     class Meta:
         base_manager_name = 'objects'
         index_together = (('is_public', 'is_deleted', 'type'))
+        permissions = (
+            ('view_node', 'Can view node details'),
+            ('read_node', 'Can read the node'),
+            ('write_node', 'Can edit the node'),
+            ('admin_node', 'Can manage the node'),
+        )
 
     objects = AbstractNodeManager()
 
@@ -354,17 +400,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if parent:
                 return parent
         return None
-
-    @property
-    def tag_names(self):
-        """
-        Optimization property. If node has been annotated with "annotated_tags"
-        in a queryset, use that value.  Otherwise, fetch the tags.
-        """
-        if hasattr(self, 'annotated_tags'):
-            return [] if self.annotated_tags == [None] else self.annotated_tags
-        else:
-            return self.tags.values_list('name', flat=True)
 
     @property
     def nodes(self):
@@ -427,16 +462,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     identifiers = GenericRelation(Identifier, related_query_name='nodes')
 
-    # Preprint fields
-    preprint_file = models.ForeignKey('osf.BaseFileNode',
-                                      on_delete=models.SET_NULL,
-                                      null=True, blank=True)
-    preprint_article_doi = models.CharField(max_length=128,
-                                            validators=[validate_doi],
-                                            null=True, blank=True)
-    _is_preprint_orphan = models.NullBooleanField(default=False)
-    _has_abandoned_preprint = models.BooleanField(default=False)
-
     keenio_read_key = models.CharField(max_length=1000, null=True, blank=True)
 
     # Group from Cloud Gateway
@@ -449,7 +474,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self.group is not None:
             # Group-name from isMemberOf is added in project-title.
             import re
-            m = re.match('.+ \[' + self.group + '\]$', value)
+            m = re.match(r'.+ \[' + self.group + r'\]$', value)
             if m is None:
                 value = value + ' [' + self.group + ']'
         return value
@@ -506,55 +531,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return list(self.collecting_metadata_qs)
 
     @property
-    def is_preprint(self):
-        # TODO: This is a temporary implementation.
-        if not self.preprint_file_id or not self.is_public:
-            return False
-        if self.preprint_file.target == self:
-            return self.has_submitted_preprint
-        else:
-            self._is_preprint_orphan = True
-            return False
-
-    @property
-    def has_submitted_preprint(self):
-        return self.preprints.exclude(machine_state=DefaultStates.INITIAL.value).exists()
-
-    @property
-    def is_preprint_orphan(self):
-        """For v1 compat"""
-        if (not self.is_preprint) and self._is_preprint_orphan:
-            return True
-        if self.preprint_file:
-            return self.preprint_file.is_deleted
-        return False
-
-    @property
-    def has_published_preprint(self):
-        return self.published_preprints_queryset.exists()
-
-    @property
-    def published_preprints_queryset(self):
-        return self.preprints.filter(is_published=True)
-
-    @property
-    def preprint_url(self):
-        node_linked_preprint = self.linked_preprint
-        if node_linked_preprint:
-            return node_linked_preprint.url
-
-    @property
-    def linked_preprint(self):
-        if self.is_preprint:
-            try:
-                # if multiple preprints per project are supported on the front end this needs to change.
-                published_preprint = self.published_preprints_queryset.first()
-                if published_preprint:
-                    return published_preprint
-                else:
-                    return self.preprints.get_queryset()[0]
-            except IndexError:
-                pass
+    def has_linked_published_preprints(self):
+        # Node holds supplemental material for published preprint(s)
+        Preprint = apps.get_model('osf.Preprint')
+        return self.preprints.filter(Preprint.objects.no_user_query).exists()
 
     @property
     def is_collection(self):
@@ -759,7 +739,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def bulk_update_search(cls, nodes, index=None):
         from website import search
         try:
-            serialize = functools.partial(search.search.update_node, index=index, bulk=True, async=False)
+            serialize = functools.partial(search.search.update_node, index=index, bulk=True, async_update=False)
             search.search.bulk_update_nodes(serialize, nodes, index=index)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
@@ -769,7 +749,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         from website import search
 
         try:
-            search.search.update_node(self, bulk=False, async=True)
+            search.search.update_node(self, bulk=False, async_update=True)
+            if self.is_collected and self.is_public:
+                search.search.update_collected_metadata(self._id)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -846,7 +828,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return False
 
         return (self.is_public or
-                (auth.user and self.has_permission(auth.user, 'read')) or
+                (auth.user and self.has_permission(auth.user, READ)) or
                 auth.private_key in self.private_link_keys_active or
                 self.is_admin_parent(auth.user))
 
@@ -868,8 +850,50 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         else:
             is_api_node = False
         return (
-            (user and self.has_permission(user, 'write')) or is_api_node
+            (user and self.has_permission(user, WRITE)) or is_api_node
         )
+
+    def add_osf_group(self, group, permission=WRITE, auth=None):
+        if auth and not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Must be an admin to add an OSF Group.')
+        group.add_group_to_node(self, permission, auth)
+
+    def update_osf_group(self, group, permission=WRITE, auth=None):
+        if auth and not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Must be an admin to add an OSF Group.')
+        group.update_group_permissions_to_node(self, permission, auth)
+
+    def remove_osf_group(self, group, auth=None):
+        if auth and not (self.has_permission(auth.user, ADMIN) or group.has_permission(auth.user, 'manage')):
+            raise PermissionsError('Must be an admin or an OSF Group manager to remove an OSF Group.')
+        group.remove_group_from_node(self, auth)
+
+    @property
+    def osf_groups(self):
+        """Returns a queryset of OSF Groups whose members have some permission to the node
+        """
+        from osf.models.osf_group import OSFGroupGroupObjectPermission, OSFGroup
+
+        member_groups = get_groups_with_perms(self).filter(name__icontains='osfgroup')
+        return OSFGroup.objects.filter(id__in=OSFGroupGroupObjectPermission.objects.filter(group_id__in=member_groups).values_list('content_object_id'))
+
+    def get_osf_groups_with_perms(self, permission):
+        """Returns a queryset of OSF Groups whose members have the specified permission to the node
+        """
+        from osf.models.osf_group import OSFGroup
+        from osf.models.node import NodeGroupObjectPermission
+        try:
+            perm_id = Permission.objects.get(codename=permission + '_node').id
+        except Permission.DoesNotExist:
+            raise ValueError('Specified permission does not exist.')
+        member_groups = NodeGroupObjectPermission.objects.filter(
+            permission_id=perm_id, content_object_id=self.id
+        ).filter(
+            group__name__icontains='osfgroup'
+        ).values_list(
+            'group_id', flat=True
+        )
+        return OSFGroup.objects.filter(osfgroupgroupobjectpermission__group_id__in=member_groups)
 
     def get_aggregate_logs_query(self, auth):
         return (
@@ -888,37 +912,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.absolute_api_v2_url
 
     def get_permissions(self, user):
-        if getattr(self.contributor_set.all(), '_result_cache', None):
-            for contrib in self.contributor_set.all():
-                if contrib.user_id == user.id:
-                    return get_contributor_permissions(contrib)
-        try:
-            contrib = user.contributor_set.get(node=self)
-        except Contributor.DoesNotExist:
+        # Overrides guardian mixin - doesn't return view_node perms, and
+        # returns readable perms instead of literal perms
+        if isinstance(user, AnonymousUser):
             return []
-        return get_contributor_permissions(contrib)
-
-    def get_visible(self, user):
-        try:
-            contributor = self.contributor_set.get(user=user)
-        except Contributor.DoesNotExist:
-            raise ValueError(u'User {0} not in contributors'.format(user))
-        return contributor.visible
-
-    def has_permission(self, user, permission, check_parent=True):
-        """Check whether user has permission.
-
-        :param User user: User to test
-        :param str permission: Required permission
-        :returns: User has required permission
-        """
-        if not user:
-            return False
-        query = {'node': self, permission: True}
-        has_permission = user.contributor_set.filter(**query).exists()
-        if not has_permission and permission == 'read' and check_parent:
-            return self.is_admin_parent(user)
-        return has_permission
+        # Returns perms either through contributorship or group membership
+        user_perms = sorted(set(get_group_perms(user, self)).intersection(PERMISSIONS), key=PERMISSIONS.index)
+        return [CONTRIB_PERMISSIONS[perm] for perm in user_perms]
 
     def has_permission_on_children(self, user, permission):
         """Checks if the given user has a given permission on any child nodes
@@ -931,12 +931,21 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 return True
         return False
 
-    def is_admin_parent(self, user):
-        if self.has_permission(user, 'admin', check_parent=False):
-            return True
+    def is_admin_parent(self, user, include_group_admin=True):
+        """
+        :param user: OSFUser to check for admin permissions
+        :param bool include_group_admin: Check if a user is an admin on the parent project via a group.
+                                    Useful for checking parent permissions for non-group actions like registrations.
+        :return: bool Does the user have admin permissions on this object or its parents?
+        """
+        if self.has_permission(user, ADMIN, check_parent=False):
+            ret = True
+            if not include_group_admin and not self.is_contributor(user):
+                ret = False
+            return ret
         parent = self.parent_node
         if parent:
-            return parent.is_admin_parent(user)
+            return parent.is_admin_parent(user, include_group_admin=include_group_admin)
         return False
 
     def find_readable_descendants(self, auth):
@@ -960,22 +969,30 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return [self.parent_node] + self.parent_node.parents
         return []
 
-    @property
-    def admin_contributor_ids(self):
-        return self._get_admin_contributor_ids(include_self=True)
+    def get_users_with_perm(self, permission):
+        # Returns queryset of all User objects with a specific permission for the given node
+        # Can either have these perms through contributorship or group membership.
+        # Implicit admin not included here, and superusers not included.
+        if permission not in self.groups:
+            return False
+
+        perm = Permission.objects.get(codename='{}_node'.format(permission))
+        node_group_objects = NodeGroupObjectPermission.objects.filter(permission_id=perm.id,
+                                                            content_object_id=self.id).values_list('group_id', flat=True)
+        return OSFUser.objects.filter(groups__id__in=node_group_objects).distinct('id', 'family_name')
 
     @property
     def parent_admin_contributor_ids(self):
+        """
+        Contributors who have admin permissions on a parent (excludes group members),
+        and by default, don't have perms on the current node
+
+        """
         return self._get_admin_contributor_ids()
 
     def _get_admin_contributor_ids(self, include_self=False):
         def get_admin_contributor_ids(node):
-            return Contributor.objects.select_related('user').filter(
-                node=node,
-                user__is_active=True,
-                admin=True
-            ).values_list('user__guids___id', flat=True)
-
+            return node.get_group(ADMIN).user_set.filter(is_active=True).values_list('guids___id', flat=True)
         contributor_ids = set(self.contributors.values_list('guids___id', flat=True))
         admin_ids = set(get_admin_contributor_ids(self)) if include_self else set()
         for parent in self.parents:
@@ -984,77 +1001,52 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return admin_ids
 
     @property
-    def admin_contributors(self):
-        return OSFUser.objects.filter(
-            guids___id__in=self.admin_contributor_ids
-        ).order_by('family_name')
-
-    @property
     def parent_admin_contributors(self):
+        """
+        Returns node contributors who are admins on the parent node and not the current
+        node (excludes group members)
+        """
         return OSFUser.objects.filter(
             guids___id__in=self.parent_admin_contributor_ids
         ).order_by('family_name')
 
-    def set_permissions(self, user, permissions, validate=True, save=False):
-        # Ensure that user's permissions cannot be lowered if they are the only admin
-        if isinstance(user, Contributor):
-            user = user.user
+    @property
+    def parent_admin_user_ids(self):
+        return self._get_admin_user_ids()
 
-        if validate and (reduce_permissions(self.get_permissions(user)) == ADMIN and
-                                 reduce_permissions(permissions) != ADMIN):
-            admin_contribs = Contributor.objects.filter(node=self, admin=True)
-            if admin_contribs.count() <= 1:
-                raise NodeStateError('Must have at least one registered admin contributor')
+    def _get_admin_user_ids(self, include_self=False):
+        def get_admin_user_ids(node):
+            return node.get_users_with_perm(ADMIN).values_list('guids___id', flat=True)
 
-        contrib_obj = Contributor.objects.get(node=self, user=user)
+        contributor_ids = set(self.get_users_with_perm(READ).values_list('guids___id', flat=True))
+        admin_ids = set(get_admin_user_ids(self)) if include_self else set()
+        for parent in self.parents:
+            admins = get_admin_user_ids(parent)
+            admin_ids.update(set(admins).difference(contributor_ids))
+        return admin_ids
 
-        for permission_level in [READ, WRITE, ADMIN]:
-            if permission_level in permissions:
-                setattr(contrib_obj, permission_level, True)
-            else:
-                setattr(contrib_obj, permission_level, False)
-        contrib_obj.save()
-        if save:
-            self.save()
-
-    # TODO: Remove save parameter
-    def add_permission(self, user, permission, save=False):
-        """Grant permission to a user.
-
-        :param User user: User to grant permission to
-        :param str permission: Permission to grant
-        :param bool save: Save changes
-        :raises: ValueError if user already has permission
+    @property
+    def parent_admin_users(self):
         """
-        contributor = user.contributor_set.get(node=self)
-        if not getattr(contributor, permission, False):
-            for perm in expand_permissions(permission):
-                setattr(contributor, perm, True)
-            contributor.save()
-        else:
-            if getattr(contributor, permission, False):
-                raise ValueError('User already has permission {0}'.format(permission))
-        if save:
-            self.save()
+        Returns users who are admins on the parent node (and not the current node)
 
-    # TODO: Remove save parameter
-    def remove_permission(self, user, permission, save=False):
-        """Revoke permission from a user.
-
-        :param User user: User to revoke permission from
-        :param str permission: Permission to revoke
-        :param bool save: Save changes
-        :raises: ValueError if user does not have permission
+        Includes contributors and members of OSF Groups
         """
-        contributor = user.contributor_set.get(node=self)
-        if getattr(contributor, permission, False):
-            for perm in expand_permissions(permission):
-                setattr(contributor, perm, False)
-            contributor.save()
-        else:
-            raise ValueError('User does not have permission {0}'.format(permission))
-        if save:
-            self.save()
+        return OSFUser.objects.filter(
+            guids___id__in=self.parent_admin_user_ids
+        ).order_by('family_name')
+
+    @property
+    def contributors_and_group_members(self):
+        """
+        Returns a queryset of all users who are either contributors
+        on the node, or have permission through OSFGroup membership
+        """
+        return self.get_users_with_perm(READ)
+
+    @property
+    def contributor_email_template(self):
+        return 'default'
 
     @property
     def registrations_all(self):
@@ -1096,20 +1088,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return None
 
     @property
-    def visible_contributors(self):
-        return OSFUser.objects.filter(
-            contributor__node=self,
-            contributor__visible=True
-        ).order_by('contributor___order')
-
-    # visible_contributor_ids was moved to this property
-    @property
-    def visible_contributor_ids(self):
-        return self.contributor_set.filter(visible=True) \
-            .order_by('_order') \
-            .values_list('user__guids___id', flat=True)
-
-    @property
     def all_tags(self):
         """Return a queryset containing all of this node's tags (incl. system tags)."""
         # Tag's default manager only returns non-system tags, so we can't use self.tags
@@ -1139,6 +1117,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     # Override Taggable
     def on_tag_added(self, tag):
         self.update_search()
+        node_tasks.update_node_share(self)
 
     def remove_tag(self, tag, auth, save=True):
         if not tag:
@@ -1161,6 +1140,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if save:
                 self.save()
             self.update_search()
+            node_tasks.update_node_share(self)
+
             return True
 
     def remove_tags(self, tags, auth, save=True):
@@ -1187,11 +1168,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if save:
             self.save()
         self.update_search()
-        return True
+        node_tasks.update_node_share(self)
 
-    def is_contributor(self, user):
-        """Return whether ``user`` is a contributor on this node."""
-        return user is not None and Contributor.objects.filter(user=user, node=self).exists()
+        return True
 
     def set_visible(self, user, visible, log=True, auth=None, save=False):
         if not self.is_contributor(user):
@@ -1223,222 +1202,43 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if save:
             self.save()
 
-    def add_contributor(self, contributor, permissions=None, visible=True,
-                        send_email='default', auth=None, log=True, save=False):
-        """Add a contributor to the project.
+    @property
+    def log_class(self):
+        # Override for ContributorMixin
+        return NodeLog
 
-        :param User contributor: The contributor to be added
-        :param list permissions: Permissions to grant to the contributor
-        :param bool visible: Contributor is visible in project dashboard
-        :param str send_email: Email preference for notifying added contributor
-        :param Auth auth: All the auth information including user, API key
-        :param bool log: Add log to self
-        :param bool save: Save after adding contributor
-        :returns: Whether contributor was added
-        """
-        MAX_RECENT_LENGTH = 15
+    @property
+    def contributor_class(self):
+        # Override for ContributorMixin
+        return Contributor
 
-        # If user is merged into another account, use master account
-        contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
-        if contrib_to_add.is_disabled:
-            raise ValidationValueError('Deactivated users cannot be added as contributors.')
+    @property
+    def contributor_kwargs(self):
+        # Override for ContributorMixin
+        return {'node': self}
 
-        if not contrib_to_add.is_registered and not contrib_to_add.unclaimed_records:
-            raise UserStateError('This contributor cannot be added. If the problem persists please report it '
-                                       'to ' + language.SUPPORT_LINK)
+    @property
+    def log_params(self):
+        # Override for ContributorMixin
+        return {
+            'project': self.parent_id,
+            'node': self._primary_key,
+        }
 
-        if not self.is_contributor(contrib_to_add):
+    @property
+    def order_by_contributor_field(self):
+        # Needed for Contributor Mixin
+        return 'contributor___order'
 
-            contributor_obj, created = Contributor.objects.get_or_create(user=contrib_to_add, node=self)
-            contributor_obj.visible = visible
+    @property
+    def state_error(self):
+        # Override for ContributorMixin
+        return NodeStateError
 
-            # Add default contributor permissions
-            permissions = permissions or DEFAULT_CONTRIBUTOR_PERMISSIONS
-            for perm in permissions:
-                setattr(contributor_obj, perm, True)
-            contributor_obj.save()
-
-            # Add contributor to recently added list for user
-            if auth is not None:
-                user = auth.user
-                recently_added_contributor_obj, created = RecentlyAddedContributor.objects.get_or_create(
-                    user=user,
-                    contributor=contrib_to_add
-                )
-                recently_added_contributor_obj.date_added = timezone.now()
-                recently_added_contributor_obj.save()
-                count = user.recently_added.count()
-                if count > MAX_RECENT_LENGTH:
-                    difference = count - MAX_RECENT_LENGTH
-                    for each in user.recentlyaddedcontributor_set.order_by('date_added')[:difference]:
-                        each.delete()
-
-            # If there are pending access requests for this user, mark them as accepted
-            pending_access_requests_for_user = self.requests.filter(creator=contrib_to_add, machine_state='pending')
-            if pending_access_requests_for_user.exists():
-                pending_access_requests_for_user.get().run_accept(contrib_to_add, comment='', permissions=reduce_permissions(permissions))
-
-            if log:
-                self.add_log(
-                    action=NodeLog.CONTRIB_ADDED,
-                    params={
-                        'project': self.parent_id,
-                        'node': self._primary_key,
-                        'contributors': [contrib_to_add._primary_key],
-                    },
-                    auth=auth,
-                    save=False,
-                )
-            if save:
-                self.save()
-
-            if self._id:
-                project_signals.contributor_added.send(self,
-                                                       contributor=contributor,
-                                                       auth=auth, email_template=send_email)
-            self.update_search()
-            self.save_node_preprints()
-
-            # enqueue on_node_updated to update DOI metadata when a contributor is added
-            if self.get_identifier_value('doi'):
-                request, user_id = get_request_and_user_id()
-                self.update_or_enqueue_on_node_updated(user_id, first_save=False, saved_fields={'contributors'})
-
-            return contrib_to_add, True
-
-        # Permissions must be overridden if changed when contributor is
-        # added to parent he/she is already on a child of.
-        elif self.is_contributor(contrib_to_add) and permissions is not None:
-            self.set_permissions(contrib_to_add, permissions)
-            if save:
-                self.save()
-
-            return False
-        else:
-            return False
-
-    def add_contributors(self, contributors, auth=None, log=True, save=False):
-        """Add multiple contributors
-
-        :param list contributors: A list of dictionaries of the form:
-            {
-                'user': <User object>,
-                'permissions': <Permissions list, e.g. ['read', 'write']>,
-                'visible': <Boolean indicating whether or not user is a bibliographic contributor>
-            }
-        :param auth: All the auth information including user, API key.
-        :param log: Add log to self
-        :param save: Save after adding contributor
-        """
-        for contrib in contributors:
-            self.add_contributor(
-                contributor=contrib['user'], permissions=contrib['permissions'],
-                visible=contrib['visible'], auth=auth, log=False, save=False,
-            )
-        if log and contributors:
-            self.add_log(
-                action=NodeLog.CONTRIB_ADDED,
-                params={
-                    'project': self.parent_id,
-                    'node': self._primary_key,
-                    'contributors': [
-                        contrib['user']._id
-                        for contrib in contributors
-                    ],
-                },
-                auth=auth,
-                save=False,
-            )
-        if save:
-            self.save()
-
-    def add_unregistered_contributor(self, fullname, email, auth, send_email='default',
-                                     visible=True, permissions=None, save=False, existing_user=None):
-        """Add a non-registered contributor to the project.
-
-        :param str fullname: The full name of the person.
-        :param str email: The email address of the person.
-        :param Auth auth: Auth object for the user adding the contributor.
-        :param User existing_user: the unregister_contributor if it is already created, otherwise None
-        :returns: The added contributor
-        :raises: DuplicateEmailError if user with given email is already in the database.
-        """
-        # Create a new user record if you weren't passed an existing user
-        contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)
-
-        contributor.add_unclaimed_record(self, referrer=auth.user,
-                                         given_name=fullname, email=email)
-        try:
-            contributor.save()
-        except ValidationError:  # User with same email already exists
-            contributor = get_user(email=email)
-            # Unregistered users may have multiple unclaimed records, so
-            # only raise error if user is registered.
-            if contributor.is_registered or self.is_contributor(contributor):
-                raise
-
-            contributor.add_unclaimed_record(
-                self, referrer=auth.user, given_name=fullname, email=email
-            )
-
-            contributor.save()
-
-        self.add_contributor(
-            contributor, permissions=permissions, auth=auth,
-            visible=visible, send_email=send_email, log=True, save=False
-        )
-        self.save()
-        return contributor
-
-    def add_contributor_registered_or_not(self, auth, user_id=None,
-                                          full_name=None, email=None, send_email='false',
-                                          permissions=None, bibliographic=True, index=None, save=False):
-
-        if user_id:
-            contributor = OSFUser.load(user_id)
-            if not contributor:
-                raise ValueError('User with id {} was not found.'.format(user_id))
-            if not contributor.is_registered:
-                raise ValueError(
-                    'Cannot add unconfirmed user {} to node {} by guid. Add an unregistered contributor with fullname and email.'
-                    .format(user_id, self._id)
-                )
-            if self.contributor_set.filter(user=contributor).exists():
-                raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
-            contributor, _ = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
-                                 permissions=permissions, send_email=send_email, save=True)
-        else:
-            contributor = get_user(email=email)
-            if contributor and self.contributor_set.filter(user=contributor).exists():
-                raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
-
-            if contributor and contributor.is_registered:
-                self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
-                                    send_email=send_email, permissions=permissions, save=True)
-            else:
-                contributor = self.add_unregistered_contributor(
-                    fullname=full_name, email=email, auth=auth,
-                    send_email=send_email, permissions=permissions,
-                    visible=bibliographic, save=True
-                )
-
-        auth.user.email_last_sent = timezone.now()
-        auth.user.save()
-
-        if index is not None:
-            self.move_contributor(contributor=contributor, index=index, auth=auth, save=True)
-
-        contributor_obj = self.contributor_set.get(user=contributor)
-        contributor.permission = get_contributor_permissions(contributor_obj, as_list=False)
-        contributor.bibliographic = contributor_obj.visible
-        contributor.node_id = self._id
-        contributor_order = list(self.get_contributor_order())
-        contributor.index = contributor_order.index(contributor_obj.pk)
-
-        if save:
-            contributor.save()
-
-        return contributor_obj
+    def get_spam_fields(self, saved_fields):
+        # Override for SpamOverrideMixin
+        return self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
+            saved_fields)
 
     def callback(self, callback, recursive=False, *args, **kwargs):
         """Invoke callbacks of attached add-ons and collect messages.
@@ -1465,146 +1265,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         return messages
 
-    def replace_contributor(self, old, new):
-        try:
-            contrib_obj = self.contributor_set.get(user=old)
-        except Contributor.DoesNotExist:
-            return False
-        contrib_obj.user = new
-        contrib_obj.save()
-
-        # Remove unclaimed record for the project
-        if self._id in old.unclaimed_records:
-            del old.unclaimed_records[self._id]
-            old.save()
-        self.save_node_preprints()
-        return True
-
-    def remove_contributor(self, contributor, auth, log=True):
-        """Remove a contributor from this node.
-
-        :param contributor: User object, the contributor to be removed
-        :param auth: All the auth information including user, API key.
-        """
-
-        if isinstance(contributor, Contributor):
-            contributor = contributor.user
-
-        # remove unclaimed record if necessary
-        if self._primary_key in contributor.unclaimed_records:
-            del contributor.unclaimed_records[self._primary_key]
-            contributor.save()
-
-        # If user is the only visible contributor, return False
-        if not self.contributor_set.exclude(user=contributor).filter(visible=True).exists():
-            return False
-
-        # Node must have at least one registered admin user
-        admin_query = self._get_admin_contributors_query(self._contributors.all()).exclude(user=contributor)
-        if not admin_query.exists():
-            return False
-
-        contrib_obj = self.contributor_set.get(user=contributor)
-        contrib_obj.delete()
-
-        # After remove callback
-        for addon in self.get_addons():
-            message = addon.after_remove_contributor(self, contributor, auth)
-            if message:
-                # Because addons can return HTML strings, addons are responsible
-                # for markupsafe-escaping any messages returned
-                status.push_status_message(message, kind='info', trust=True, id='remove_addon', extra={
-                    'addon': markupsafe.escape(addon.config.full_name),
-                    'category': markupsafe.escape(self.category_display),
-                    'title': markupsafe.escape(self.title),
-                    'user': markupsafe.escape(contributor.fullname)
-                })
-
-        if log:
-            self.add_log(
-                action=NodeLog.CONTRIB_REMOVED,
-                params={
-                    'project': self.parent_id,
-                    'node': self._id,
-                    'contributors': [contributor._id],
-                },
-                auth=auth,
-                save=False,
-            )
-
-        self.save()
-        self.update_search()
-        # send signal to remove this user from project subscriptions
-        project_signals.contributor_removed.send(self, user=contributor)
-
-        self.save_node_preprints()
-
-        # enqueue on_node_updated to update DOI metadata when a contributor is removed
-        if self.get_identifier_value('doi'):
-            request, user_id = get_request_and_user_id()
-            self.update_or_enqueue_on_node_updated(user_id, first_save=False, saved_fields={'contributors'})
-        return True
-
-    def remove_contributors(self, contributors, auth=None, log=True, save=False):
-
-        results = []
-        removed = []
-
-        for contrib in contributors:
-            outcome = self.remove_contributor(
-                contributor=contrib, auth=auth, log=False,
-            )
-            results.append(outcome)
-            removed.append(contrib._id)
-        if log:
-            self.add_log(
-                action=NodeLog.CONTRIB_REMOVED,
-                params={
-                    'project': self.parent_id,
-                    'node': self._primary_key,
-                    'contributors': removed,
-                },
-                auth=auth,
-                save=False,
-            )
-
-        if save:
-            self.save()
-
-        return all(results)
-
-    def move_contributor(self, contributor, auth, index, save=False):
-        if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Only admins can modify contributor order')
-        if isinstance(contributor, OSFUser):
-            contributor = self.contributor_set.get(user=contributor)
-        contributor_ids = list(self.get_contributor_order())
-        old_index = contributor_ids.index(contributor.id)
-        contributor_ids.insert(index, contributor_ids.pop(old_index))
-        self.set_contributor_order(contributor_ids)
-        self.add_log(
-            action=NodeLog.CONTRIB_REORDERED,
-            params={
-                'project': self.parent_id,
-                'node': self._id,
-                'contributors': [
-                    contributor.user._id
-                ],
-            },
-            auth=auth,
-            save=False,
-        )
-        if save:
-            self.save()
-        self.save_node_preprints()
-
     def can_comment(self, auth):
         if self.comment_level == 'public':
             return auth.logged_in and (
                 self.is_public or
-                (auth.user and self.has_permission(auth.user, 'read'))
+                (auth.user and self.has_permission(auth.user, READ))
             )
-        return self.is_contributor(auth.user)
+        return self.is_contributor_or_group_member(auth.user)
 
     def set_node_license(self, license_detail, auth, save=False):
 
@@ -1700,14 +1367,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 'operator': 'eq',
                 'property_value': str(self._id)
             }],
-            'allowed_operations': ['read']
+            'allowed_operations': [READ]
         })
-
-    def save_node_preprints(self):
-        if self.preprint_file:
-            PreprintService = apps.get_model('osf.PreprintService')
-            for preprint in PreprintService.objects.filter(node_id=self.id, is_published=True):
-                preprint.save()
 
     @property
     def private_links_active(self):
@@ -1769,21 +1430,26 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """Copies the contibutors from node (including permissions and visibility) into this node."""
         contribs = []
         for contrib in node.contributor_set.all():
+            permission = contrib.permission
             contrib.id = None
             contrib.node = self
             contribs.append(contrib)
+            self.add_permission(contrib.user, permission, save=True)
         Contributor.objects.bulk_create(contribs)
 
-    def register_node(self, schema, auth, data, parent=None):
+    def register_node(self, schema, auth, data, parent=None, child_ids=None, provider=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
         :param auth: All the auth information including user, API key.
         :param data: Form data
         :param parent Node: parent registration of registration to be created
+        :param provider RegistrationProvider: provider to submit the registration to
         """
-        # NOTE: Admins can register child nodes even if they don't have write access them
-        if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
+        # NOTE: Admins can register child nodes even if they don't have write access to them, but not if they are group admins
+        not_contributor_or_admin_parent = not self.is_contributor(auth.user) and not self.is_admin_parent(user=auth.user, include_group_admin=False)
+        cannot_edit_or_admin_parent = not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user)
+        if cannot_edit_or_admin_parent or not_contributor_or_admin_parent:
             raise PermissionsError(
                 'User {} does not have permission '
                 'to register this node'.format(auth.user._id)
@@ -1797,6 +1463,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if original.is_deleted:
             raise NodeStateError('Cannot register deleted node.')
 
+        if not provider:
+            # Avoid circular import
+            from osf.models.provider import RegistrationProvider
+            provider = RegistrationProvider.load('osf')
+
         registered = original.clone()
         registered.recast('osf.registration')
 
@@ -1804,6 +1475,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.registered_date = timezone.now()
         registered.registered_user = auth.user
         registered.registered_from = original
+        registered.provider = provider
         if not registered.registered_meta:
             registered.registered_meta = {}
         registered.registered_meta[schema._id] = data
@@ -1842,20 +1514,29 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         for node_relation in original.node_relations.filter(child__is_deleted=False):
             node_contained = node_relation.child
-            # Register child nodes
-            if not node_relation.is_node_link:
-                node_contained.register_node(
-                    schema=schema,
-                    auth=auth,
-                    data=data,
-                    parent=registered,
-                )
-            else:
-                # Copy linked nodes
+
+            if node_relation.is_node_link:
                 NodeRelation.objects.get_or_create(
                     is_node_link=True,
                     parent=registered,
                     child=node_contained
+                )
+                continue
+            else:
+                if child_ids and node_contained._id not in child_ids:
+                    if node_contained.node_relations.filter(child__is_deleted=False, child__guids___id__in=child_ids, is_node_link=False).exists():
+                        # We can't skip a node with children that we have to register.
+                        raise NodeStateError('The parents of all child nodes being registered must be registered.')
+                    continue
+
+                # Register child nodes
+                node_contained.register_node(
+                    schema=schema,
+                    auth=auth,
+                    data=data,
+                    provider=provider,
+                    parent=registered,
+                    child_ids=child_ids,
                 )
 
         registered.root = None  # Recompute root on save
@@ -1912,7 +1593,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def require_approval(self, user, notify_initiator_on_complete=False):
         if not self.is_registration:
             raise NodeStateError('Only registrations can require registration approval')
-        if not self.has_permission(user, 'admin'):
+        if not self.is_admin_contributor(user):
             raise PermissionsError('Only admins can initiate a registration approval')
 
         approval = self._initiate_approval(user, notify_initiator_on_complete)
@@ -1966,6 +1647,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 return True
         return False
 
+    def add_affiliations(self, user, new):
+        # add all of the user's affiliations to the forked or templated node
+        for affiliation in user.affiliated_institutions.all():
+            new.affiliated_institutions.add(affiliation)
+
     # TODO: Optimize me (e.g. use bulk create)
     def fork_node(self, auth, title=None, parent=None):
         """Recursively fork a node.
@@ -1980,7 +1666,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         user = auth.user
 
         # Non-contributors can't fork private nodes
-        if not (self.is_public or self.has_permission(user, 'read')):
+        if not (self.is_public or self.has_permission(user, READ)):
             raise PermissionsError('{0!r} does not have permission to fork node {1!r}'.format(user, self._id))
 
         when = timezone.now()
@@ -2044,9 +1730,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         else:
             forked.title = title
 
-        if len(forked.title) > 200:
-            forked.title = forked.title[:200]
+        if len(forked.title) > 512:
+            forked.title = forked.title[:512]
 
+        self.add_affiliations(user, forked)
         forked.add_contributor(
             contributor=user,
             permissions=CREATOR_PERMISSIONS,
@@ -2055,11 +1742,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
 
         forked.root = None  # Recompute root on save
-
-        forked.save()
-
-        # Need to call this after save for the notifications to be created with the _primary_key
-        project_signals.contributor_added.send(forked, contributor=user, auth=auth, email_template='false')
 
         forked.add_log(
             action=NodeLog.NODE_FORKED,
@@ -2076,11 +1758,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # Clone each log from the original node for this fork.
         self.clone_logs(forked)
-        forked.refresh_from_db()
 
         # After fork callback
         for addon in original.get_addons():
             addon.after_fork(original, forked, user)
+
+        forked.save()
+
+        # Need to call this after save for the notifications to be created with the _primary_key
+        project_signals.contributor_added.send(forked, contributor=user, auth=auth, email_template='false')
 
         return forked
 
@@ -2133,7 +1819,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             raise NodeStateError('Cannot use deleted node as template.')
 
         # Non-contributors can't template private nodes
-        if not (self.is_public or self.has_permission(auth.user, 'read')):
+        if not (self.is_public or self.has_permission(auth.user, READ)):
             raise PermissionsError('{0!r} does not have permission to template node {1!r}'.format(auth.user, self._id))
 
         new = self.clone()
@@ -2152,7 +1838,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.custom_citation = ''
 
         # apply `changes`
-        for attr, val in attributes.iteritems():
+        for attr, val in attributes.items():
             setattr(new, attr, val)
 
         # set attributes which may NOT be overridden by `changes`
@@ -2164,6 +1850,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.is_fork = False
         new.node_license = self.license.copy() if self.license else None
 
+        self.add_affiliations(auth.user, new)
+
         # If that title hasn't been changed, apply the default prefix (once)
         if (
             new.title == self.title and top_level and
@@ -2171,8 +1859,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         ):
             new.title = ''.join((language.TEMPLATED_FROM_PREFIX, new.title,))
 
-        if len(new.title) > 200:
-            new.title = new.title[:200]
+        if len(new.title) > 512:
+            new.title = new.title[:512]
 
         # Slight hack - created is a read-only field.
         new.created = timezone.now()
@@ -2240,11 +1928,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """
         return itertools.chain([self], self.get_descendants_recursive(primary_only=True))
 
-    def active_contributors(self, include=lambda n: True):
-        for contrib in self.contributors.filter(is_active=True):
-            if include(contrib):
-                yield contrib
-
     def get_active_contributors_recursive(self, unique_users=False, *args, **kwargs):
         """Yield (admin, node) tuples for this node and
         descendant nodes. Excludes contributors on node links and inactive users.
@@ -2262,23 +1945,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 else:
                     yield (contrib, node)
 
-    def _get_admin_contributors_query(self, users):
-        return Contributor.objects.select_related('user').filter(
-            node=self,
-            user__in=users,
-            user__is_active=True,
-            admin=True
-        )
-
-    def get_admin_contributors(self, users):
-        """Return a set of all admin contributors for this node. Excludes contributors on node links and
-        inactive users.
-        """
-        return (each.user for each in self._get_admin_contributors_query(users))
-
     def get_admin_contributors_recursive(self, unique_users=False, *args, **kwargs):
         """Yield (admin, node) tuples for this node and
         descendant nodes. Excludes contributors on node links and inactive users.
+        Excludes group members.
 
         :param bool unique_users: If True, a given admin will only be yielded once
             during iteration.
@@ -2293,152 +1963,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                             yield (contrib, node)
                     else:
                         yield (contrib, node)
-
-    # TODO: Optimize me
-    def manage_contributors(self, user_dicts, auth, save=False):
-        """Reorder and remove contributors.
-
-        :param list user_dicts: Ordered list of contributors represented as
-            dictionaries of the form:
-            {'id': <id>, 'permission': <One of 'read', 'write', 'admin'>, 'visible': bool}
-        :param Auth auth: Consolidated authentication information
-        :param bool save: Save changes
-        :raises: ValueError if any users in `users` not in contributors or if
-            no admin contributors remaining
-        """
-        with transaction.atomic():
-            users = []
-            user_ids = []
-            permissions_changed = {}
-            visibility_removed = []
-            to_retain = []
-            to_remove = []
-            for user_dict in user_dicts:
-                user = OSFUser.load(user_dict['id'])
-                if user is None:
-                    raise ValueError('User not found')
-                if not self.contributors.filter(id=user.id).exists():
-                    raise ValueError(
-                        'User {0} not in contributors'.format(user.fullname)
-                    )
-                permissions = expand_permissions(user_dict['permission'])
-                if set(permissions) != set(self.get_permissions(user)):
-                    # Validate later
-                    self.set_permissions(user, permissions, validate=False, save=False)
-                    permissions_changed[user._id] = permissions
-                # visible must be added before removed to ensure they are validated properly
-                if user_dict['visible']:
-                    self.set_visible(user,
-                                     visible=True,
-                                     auth=auth)
-                else:
-                    visibility_removed.append(user)
-                users.append(user)
-                user_ids.append(user_dict['id'])
-
-            for user in visibility_removed:
-                self.set_visible(user,
-                                 visible=False,
-                                 auth=auth)
-
-            for user in self.contributors.all():
-                if user._id in user_ids:
-                    to_retain.append(user)
-                else:
-                    to_remove.append(user)
-
-            if users is None or not self._get_admin_contributors_query(users).exists():
-                raise NodeStateError(
-                    'Must have at least one registered admin contributor'
-                )
-
-            if to_retain != users:
-                # Ordered Contributor PKs, sorted according to the passed list of user IDs
-                sorted_contrib_ids = [
-                    each.id for each in sorted(self.contributor_set.all(), key=lambda c: user_ids.index(c.user._id))
-                ]
-                self.set_contributor_order(sorted_contrib_ids)
-                self.add_log(
-                    action=NodeLog.CONTRIB_REORDERED,
-                    params={
-                        'project': self.parent_id,
-                        'node': self._id,
-                        'contributors': [
-                            user._id
-                            for user in users
-                        ],
-                    },
-                    auth=auth,
-                    save=False,
-                )
-
-            if to_remove:
-                self.remove_contributors(to_remove, auth=auth, save=False)
-
-            if permissions_changed:
-                self.add_log(
-                    action=NodeLog.PERMISSIONS_UPDATED,
-                    params={
-                        'project': self.parent_id,
-                        'node': self._id,
-                        'contributors': permissions_changed,
-                    },
-                    auth=auth,
-                    save=False,
-                )
-            if save:
-                self.save()
-
-            self.save_node_preprints()
-
-        with transaction.atomic():
-            if to_remove or permissions_changed and ['read'] in permissions_changed.values():
-                project_signals.write_permissions_revoked.send(self)
-
-    # TODO: optimize me
-    def update_contributor(self, user, permission, visible, auth, save=False):
-        """ TODO: this method should be updated as a replacement for the main loop of
-        Node#manage_contributors. Right now there are redundancies, but to avoid major
-        feature creep this will not be included as this time.
-
-        Also checks to make sure unique admin is not removing own admin privilege.
-        """
-        if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Only admins can modify contributor permissions')
-
-        if permission:
-            permissions = expand_permissions(permission)
-            admins = self.contributor_set.filter(admin=True)
-            if not admins.count() > 1:
-                # has only one admin
-                admin = admins.first()
-                if admin.user == user and ADMIN not in permissions:
-                    raise NodeStateError('{} is the only admin.'.format(user.fullname))
-            if not self.contributor_set.filter(user=user).exists():
-                raise ValueError(
-                    'User {0} not in contributors'.format(user.fullname)
-                )
-            if set(permissions) != set(self.get_permissions(user)):
-                self.set_permissions(user, permissions, save=save)
-                permissions_changed = {
-                    user._id: permissions
-                }
-                self.add_log(
-                    action=NodeLog.PERMISSIONS_UPDATED,
-                    params={
-                        'project': self.parent_id,
-                        'node': self._id,
-                        'contributors': permissions_changed,
-                    },
-                    auth=auth,
-                    save=save
-                )
-                with transaction.atomic():
-                    if ['read'] in permissions_changed.values():
-                        project_signals.write_permissions_revoked.send(self)
-        if visible is not None:
-            self.set_visible(user, visible, auth=auth)
-            self.save_node_preprints()
 
     def set_access_requests_enabled(self, access_requests_enabled, auth, save=False):
         user = auth.user
@@ -2469,6 +1993,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save()
 
     def save(self, *args, **kwargs):
+        from osf.models import Registration
         first_save = not bool(self.pk)
         if 'old_subjects' in kwargs.keys():
             # TODO: send this data to SHARE
@@ -2490,6 +2015,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 self.bulk_update_search(batch)
                 children = children[99:]
 
+        if first_save:
+            self.update_group_permissions()
+            if not isinstance(self, Registration):
+                Contributor.objects.get_or_create(
+                    user=self.creator,
+                    node=self,
+                    visible=True,
+                )
+                self.add_permission(self.creator, ADMIN)
         return ret
 
     def update_or_enqueue_on_node_updated(self, user_id, first_save, saved_fields):
@@ -2507,130 +2041,20 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         else:
             enqueue_task(node_tasks.on_node_updated.s(node_id=self._id, user_id=user_id, first_save=first_save, saved_fields=saved_fields))
 
+    def update_or_enqueue_on_resource_updated(self, user_id, first_save, saved_fields):
+        # Needed for ContributorMixin
+        return self.update_or_enqueue_on_node_updated(user_id, first_save, saved_fields)
+
     def on_update(self, first_save, saved_fields):
         User = apps.get_model('osf.OSFUser')
         request, user_id = get_request_and_user_id()
-        request_headers = {}
-        if not isinstance(request, DummyRequest):
-            request_headers = {
-                k: v
-                for k, v in get_headers_from_request(request).items()
-                if isinstance(v, basestring)
-            }
+        request_headers = string_type_request_headers(request)
         self.update_or_enqueue_on_node_updated(user_id, first_save, saved_fields)
-
-        if self.preprint_file:
-            # avoid circular imports
-            from website.preprints.tasks import update_or_enqueue_on_preprint_updated
-            PreprintService = apps.get_model('osf.PreprintService')
-            # .preprints wouldn't return a single deleted preprint
-            for preprint in PreprintService.objects.filter(node_id=self.id, is_published=True):
-                update_or_enqueue_on_preprint_updated(preprint._id)
 
         user = User.load(user_id)
         if user and self.check_spam(user, saved_fields, request_headers):
             # Specifically call the super class save method to avoid recursion into model save method.
             super(AbstractNode, self).save()
-
-    def _get_spam_content(self, saved_fields):
-        spam_fields = self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
-            saved_fields)
-        content = []
-        for field in spam_fields:
-            content.append((getattr(self, field, None) or '').encode('utf-8'))
-        if not content:
-            return None
-        return ' '.join(content)
-
-    def check_spam(self, user, saved_fields, request_headers):
-        if not settings.SPAM_CHECK_ENABLED:
-            return False
-        if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
-            return False
-        if 'ham_confirmed' in user.system_tags:
-            return False
-
-        content = self._get_spam_content(saved_fields)
-        if not content:
-            return
-        is_spam = self.do_check_spam(
-            user.fullname,
-            user.username,
-            content,
-            request_headers
-        )
-        logger.info("Node ({}) '{}' smells like {} (tip: {})".format(
-            self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
-        ))
-        if is_spam:
-            self._check_spam_user(user)
-            for preprint in self.preprints.get_queryset():
-                preprint.flag_spam()
-                preprint.save()
-
-        return is_spam
-
-    def _check_spam_user(self, user):
-        if (
-            settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
-            and (timezone.now() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
-        ):
-            self.set_privacy('private', log=False, save=False)
-
-            # Suspend the flagged user for spam.
-            if 'spam_flagged' not in user.system_tags:
-                user.add_system_tag('spam_flagged')
-            if not user.is_disabled:
-                user.disable_account()
-                user.is_registered = False
-                mails.send_mail(
-                    to_addr=user.username,
-                    mail=mails.SPAM_USER_BANNED,
-                    user=user,
-                    osf_support_email=settings.OSF_SUPPORT_EMAIL,
-                    can_change_preferences=False,
-                )
-            user.save()
-
-            # Make public nodes private from this contributor
-            for node in user.contributed:
-                if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
-                    node.set_privacy('private', log=False, save=True)
-
-    def flag_spam(self):
-        """ Overrides SpamMixin#flag_spam.
-        """
-        super(AbstractNode, self).flag_spam()
-        if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
-            self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
-            log = self.add_log(
-                action=NodeLog.MADE_PRIVATE,
-                params={
-                    'project': self.parent_id,
-                    'node': self._primary_key,
-                },
-                auth=None,
-                save=False
-            )
-            log.should_hide = True
-            log.save()
-
-    def confirm_spam(self, save=False):
-        super(AbstractNode, self).confirm_spam(save=False)
-        self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False)
-        log = self.add_log(
-            action=NodeLog.MADE_PRIVATE,
-            params={
-                'project': self.parent_id,
-                'node': self._primary_key,
-            },
-            auth=None,
-            save=False
-        )
-        log.should_hide = True
-        log.save()
-        if save:
-            self.save()
 
     def resolve(self):
         """For compat with v1 Pointers."""
@@ -2703,11 +2127,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not fields:  # Bail out early if there are no fields to update
             return False
         values = {}
-        for key, value in fields.iteritems():
+        for key, value in fields.items():
             if key not in self.WRITABLE_WHITELIST:
-                continue
-            if self.is_registration and key != 'is_public':
-                raise NodeUpdateError(reason='Registered content cannot be updated', key=key)
+                if self.is_registration:
+                    raise NodeUpdateError(reason='Registered content cannot be updated', key=key)
+                else:
+                    continue
             # Title and description have special methods for logging purposes
             if key == 'title':
                 if not self.is_bookmark_collection or not self.is_quickfiles:
@@ -2793,7 +2218,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
 
     def remove_node(self, auth, date=None):
-        """Marks a node as deleted.
+        """Marks a node plus every node in its hierarchy as deleted
 
         TODO: Call a hook on addons
         Adds a log to the parent node if applicable
@@ -2803,30 +2228,31 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param datetime date: `datetime.datetime` or `None`
         """
         # TODO: rename "date" param - it's shadowing a global
-        if not self.can_edit(auth):
+        hierarchy = Node.objects.get_children(self, active=True, include_root=True).filter(is_deleted=False)
+        if (not auth or isinstance(auth.user, AnonymousUser)) or (
+                len(hierarchy) != (Node.objects.get_nodes_for_user(auth.user, ADMIN_NODE, hierarchy)).count()):
             raise PermissionsError(
-                '{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node')
+                '{0!r} does not have permission to modify this {1}, or a component in its hierarchy.'.format(auth.user, self.category or 'node')
             )
 
-        if Node.objects.get_children(self, active=True).exists():
-            raise NodeStateError('Any child components must be deleted prior to deleting this project.')
-
         # After delete callback
-        remove_addons(auth, [self])
-
-        log_date = date or timezone.now()
+        remove_addons(auth, hierarchy)
 
         Comment = apps.get_model('osf.Comment')
-        Comment.objects.filter(node=self).update(root_target=None)
+        Comment.objects.filter(node__id__in=hierarchy).update(root_target=None)
 
-        # Add log to parent
-        self.add_remove_node_log(auth=auth, date=log_date)
+        log_date = date or timezone.now()
+        for node in hierarchy:
+            # Add log to parents
+            node.is_deleted = True
+            node.deleted_date = date
+            node.add_remove_node_log(auth=auth, date=log_date)
+            project_signals.node_deleted.send(node)
 
-        self.is_deleted = True
-        self.deleted_date = date
-        self.save()
+        bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date'])
 
-        project_signals.node_deleted.send(self)
+        if len(hierarchy.filter(is_public=True)):
+            AbstractNode.bulk_update_search(hierarchy.filter(is_public=True))
 
         return True
 
@@ -2903,6 +2329,37 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def is_registration_of(self, other):
         return self.is_derived_from(other, 'registered_from')
 
+    def serialize_waterbutler_credentials(self, provider_name):
+        return self.get_addon(provider_name).serialize_waterbutler_credentials()
+
+    def serialize_waterbutler_settings(self, provider_name):
+        return self.get_addon(provider_name).serialize_waterbutler_settings()
+
+    def create_waterbutler_log(self, auth, action, payload):
+        try:
+            metadata = payload['metadata']
+            node_addon = self.get_addon(payload['provider'])
+        except KeyError:
+            raise HTTPError(httplib.BAD_REQUEST)
+
+        if node_addon is None:
+            raise HTTPError(httplib.BAD_REQUEST)
+
+        metadata['path'] = metadata['path'].lstrip('/')
+
+        return node_addon.create_waterbutler_log(auth, action, metadata)
+
+    def can_view_files(self, auth=None):
+        return self.can_view(auth)
+
+    @property
+    def file_read_scope(self):
+        return oauth_scopes.CoreScopes.NODE_FILE_READ
+
+    @property
+    def file_write_scope(self):
+        return oauth_scopes.CoreScopes.NODE_FILE_WRITE
+
     def get_doi_client(self):
         if settings.DATACITE_URL and settings.DATACITE_PREFIX:
             return DataCiteClient(base_url=settings.DATACITE_URL, prefix=settings.DATACITE_PREFIX)
@@ -2933,6 +2390,38 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
         self.save()
 
+    @property
+    def storage_usage(self):
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self._id)
+
+        storage_usage_total = storage_usage_cache.get(key)
+        if storage_usage_total:
+            return storage_usage_total
+        else:
+            update_storage_usage(self)  # sets cache
+            return storage_usage_cache.get(key)
+
+
+class NodeUserObjectPermission(UserObjectPermissionBase):
+    """
+    Direct Foreign Key Table for guardian - User models - we typically add object
+    perms directly to Django groups instead of users, so this will be used infrequently
+    """
+    content_object = models.ForeignKey(AbstractNode, on_delete=models.CASCADE)
+
+
+class NodeGroupObjectPermission(GroupObjectPermissionBase):
+    """
+    Direct Foreign Key Table for guardian - Group models. Makes permission checks faster.
+
+    This table gives a Django group a particular permission to an AbstractNode.
+    For example, every time a node is created, an admin, write, and read Django group
+    are created for the node. The "write" group has write/read perms to the node.
+
+    Those links are stored here:  content_object_id (node_id), group_id, permission_id
+    """
+    content_object = models.ForeignKey(AbstractNode, on_delete=models.CASCADE)
+
 
 class Node(AbstractNode):
     """
@@ -2951,13 +2440,6 @@ class Node(AbstractNode):
         """For v1 compat"""
         return False
 
-    class Meta:
-        # custom permissions for use in the GakuNin RDM Admin App
-        permissions = (
-            ('view_node', 'Can view node details'),
-        )
-
-
 def remove_addons(auth, resource_object_list):
     for config in AbstractNode.ADDONS_AVAILABLE:
         try:
@@ -2970,19 +2452,15 @@ def remove_addons(auth, resource_object_list):
             for addon in addon_list:
                 addon.after_delete(auth.user)
 
-
-##### Signal listeners #####
-@receiver(post_save, sender=Node)
-@receiver(post_save, sender='osf.QuickFilesNode')
-def add_creator_as_contributor(sender, instance, created, **kwargs):
-    if created:
-        Contributor.objects.get_or_create(
-            user=instance.creator,
-            node=instance,
-            visible=True,
-            read=True,
-            write=True,
-            admin=True
+def set_project_storage_type(instance):
+    from addons.osfstorage.models import NodeSettings  # this import was essential
+    storage_type = ProjectStorageType.CUSTOM_STORAGE
+    nodeSettings = NodeSettings.objects.filter(owner_id=instance.id).first()
+    if nodeSettings is not None:
+        if nodeSettings.region_id == api_settings.NII_STORAGE_REGION_ID:
+            storage_type = ProjectStorageType.NII_STORAGE
+        obj, created = ProjectStorageType.objects.update_or_create(
+            node_id=instance.id, defaults={'node_id': instance.id, 'storage_type': storage_type}
         )
 
 
@@ -3019,7 +2497,7 @@ def add_default_node_addons(sender, instance, created, **kwargs):
         for addon in settings.ADDONS_AVAILABLE:
             if 'node' in addon.added_default:
                 instance.add_addon(addon.short_name, auth=None, log=False)
-
+        set_project_storage_type(instance)
 
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.Registration')

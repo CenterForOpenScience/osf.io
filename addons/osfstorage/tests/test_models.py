@@ -11,18 +11,20 @@ from nose.tools import *  # noqa
 from framework.auth import Auth
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
 from osf.exceptions import ValidationError
+from osf.utils.permissions import WRITE, ADMIN
 from osf.utils.fields import EncryptedJSONField
-from osf_tests.factories import ProjectFactory, UserFactory, RegionFactory, NodeFactory
+from osf_tests.factories import ProjectFactory, UserFactory, PreprintFactory, RegionFactory, NodeFactory
 
 from addons.osfstorage.tests import factories
 from addons.osfstorage.tests.utils import StorageTestCase
+from addons.osfstorage.listeners import delete_files_task
 
 import datetime
 
 from osf import models
 from addons.osfstorage import utils
 from addons.osfstorage import settings
-from website.files.exceptions import FileNodeCheckedOutError
+from website.files.exceptions import FileNodeCheckedOutError, FileNodeIsPrimaryFile
 
 
 @pytest.mark.django_db
@@ -168,7 +170,7 @@ class TestOsfstorageFileNode(StorageTestCase):
     def test_children(self):
         kids = [
             self.node_settings.get_root().append_file('Foo{}Bar'.format(x))
-            for x in xrange(100)
+            for x in range(100)
         ]
 
         assert_equals(sorted(kids, key=lambda kid: kid.name), list(self.node_settings.get_root().children.order_by('name')))
@@ -236,9 +238,18 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(trashed.path, '/' + child._id)
         trashed_field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and
                                f.name not in ['id', '_materialized_path', 'content_type_pk', '_path', 'deleted_on', 'deleted_by', 'type', 'modified']]
-        for f, value in child_data.iteritems():
+        for f, value in child_data.items():
             if f in trashed_field_names:
                 assert_equal(getattr(trashed, f), value)
+
+    def test_delete_preprint_primary_file(self):
+        user = UserFactory()
+        preprint = PreprintFactory(creator=user)
+        preprint.save()
+        file = preprint.files.all()[0]
+
+        with assert_raises(FileNodeIsPrimaryFile):
+            file.delete()
 
     def test_delete_file_no_guid(self):
         child = self.node_settings.get_root().append_file('Test')
@@ -266,6 +277,13 @@ class TestOsfstorageFileNode(StorageTestCase):
 
         assert_is(OsfStorageFileNode.load(child._id), None)
 
+    @mock.patch('addons.osfstorage.listeners.enqueue_postcommit_task')
+    def test_file_deleted_when_node_deleted(self, mock_enqueue):
+        child = self.node_settings.get_root().append_file('Test')
+        self.node.remove_node(auth=Auth(self.user))
+
+        mock_enqueue.assert_called_with(delete_files_task, (self.node._id, ), {}, celery=True)
+
     def test_materialized_path(self):
         child = self.node_settings.get_root().append_file('Test')
         assert_equals('/Test', child.materialized_path)
@@ -287,6 +305,18 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_not_equal(copied, to_copy)
         assert_equal(copied.parent, copy_to)
         assert_equal(to_copy.parent, self.node_settings.get_root())
+
+    def test_copy_node_file_to_preprint(self):
+        user = UserFactory()
+        preprint = PreprintFactory(creator=user)
+        preprint.save()
+
+        to_copy = self.node_settings.get_root().append_file('Carp')
+        copy_to = preprint.root_folder
+
+        copied = to_copy.copy_under(copy_to)
+        assert_equal(copied.parent, copy_to)
+        assert_equal(copied.target, preprint)
 
     def test_move_nested(self):
         new_project = ProjectFactory()
@@ -334,6 +364,32 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(to_move, moved)
         assert_equal(to_move.name, 'Tuna')
         assert_equal(moved.parent, move_to)
+
+    def test_move_preprint_primary_file_to_node(self):
+        user = UserFactory()
+        preprint = PreprintFactory(creator=user)
+        preprint.save()
+        to_move = preprint.files.all()[0]
+        assert_true(to_move.is_preprint_primary)
+
+        move_to = self.node_settings.get_root().append_folder('Cloud')
+        with assert_raises(FileNodeIsPrimaryFile):
+            moved = to_move.move_under(move_to, name='Tuna')
+
+    def test_move_preprint_primary_file_within_preprint(self):
+        user = UserFactory()
+        preprint = PreprintFactory(creator=user)
+        preprint.save()
+        folder = OsfStorageFolder(name='foofolder', target=preprint)
+        folder.save()
+
+        to_move = preprint.files.all()[0]
+        assert_true(to_move.is_preprint_primary)
+
+        moved = to_move.move_under(folder, name='Tuna')
+        assert preprint.primary_file == to_move
+        assert to_move.parent == folder
+        assert folder.target == preprint
 
     @unittest.skip
     def test_move_folder(self):
@@ -786,7 +842,7 @@ class TestOsfStorageCheckout(StorageTestCase):
 
     def test_checkout_logs(self):
         non_admin = factories.AuthUserFactory()
-        self.node.add_contributor(non_admin, permissions=['read', 'write'])
+        self.node.add_contributor(non_admin, permissions=WRITE)
         self.node.save()
         self.file.check_in_or_out(non_admin, non_admin, save=True)
         self.file.reload()
@@ -858,11 +914,9 @@ class TestOsfStorageCheckout(StorageTestCase):
         models.Contributor.objects.create(
             node=self.node,
             user=user,
-            admin=True,
-            write=True,
-            read=True,
             visible=True
         )
+        self.node.add_permission(user, ADMIN)
         self.file.check_in_or_out(self.user, self.user, save=True)
         self.file.reload()
         assert_equal(self.file.checkout, self.user)

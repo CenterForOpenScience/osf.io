@@ -45,13 +45,13 @@
                     {{ preprint.id }}
                 </a>
             </td>
-            <td> {{ preprint.node.title }} </td>
-            <td> {{ preprint.node.is_public }} </td>
+            <td> {{ preprint.title }} </td>
+            <td> {{ preprint.is_public }} </td>
             <td> {{ preprint.provider.name }} </td>
             <td> {{ preprint.date_published }} </td>
             <td> {{ preprint.modified }} </td>
             <td> {{ preprint.date_created}} </td>
-            <td> {{ preprint.node.creator }} </td>
+            <td> {{ preprint.creator }} </td>
             <td> {{ preprint.spam_status }} </td>
         </tr>
         {% endfor %}
