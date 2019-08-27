@@ -64,6 +64,7 @@ def server(ctx, host=None, port=5000, debug=True, gitlogs=False):
         os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
         app = init_app(set_backends=True, routes=True)
         settings.API_SERVER_PORT = port
+
     else:
         from framework.flask import app
 
@@ -920,3 +921,186 @@ def unset_maintenance(ctx):
     print('Taking down maintenance notice...')
     unset_maintenance()
     print('...Done.')
+
+
+@task
+def mapcore_config(ctx, sync=None):
+    '''mAP core configurations
+
+    Examples:
+        inv mapcore_config --sync=yes
+        inv mapcore_config --sync=no
+    '''
+    from website.app import init_app
+    init_app(routes=False)
+
+    from nii.mapcore import (mapcore_sync_is_enabled,
+                             mapcore_sync_set_enabled,
+                             mapcore_sync_set_disabled)
+
+    def bool_from_str(name, s):
+        if s.lower() in ['enable', 'true', 'yes', 'on', '1']:
+            return True
+        if s.lower() in ['disable', 'false', 'no', 'off', '0']:
+            return False
+        raise Exception('--{} expects yes or no: {}'.format(name, s))
+
+    if sync is not None:
+        if bool_from_str('sync', sync):
+            mapcore_sync_set_enabled()
+        else:
+            mapcore_sync_set_disabled()
+
+    print('mapcore_sync_is_enabled: {}'.format(mapcore_sync_is_enabled()))
+
+
+@task
+def mapcore_upload_all(ctx):
+    '''Synchronize all GRDM projects to mAP core'''
+    from website.app import init_app
+    init_app(routes=False)
+
+    from nii.mapcore import (mapcore_disable_log,
+                             mapcore_sync_is_enabled,
+                             mapcore_sync_upload_all)
+
+    mapcore_disable_log(level=logging.ERROR)
+    if mapcore_sync_is_enabled():
+        count_all_nodes, error_nodes = mapcore_sync_upload_all()
+        idx = 0
+        for error_node in error_nodes:
+            idx += 1
+            print('error node {}: guid={}'.format(idx, error_node._id))
+        count_error_nodes = len(error_nodes)
+        print('count_error_nodes={}'.format(count_error_nodes))
+        print('count_all_nodes={}'.format(count_all_nodes))
+        if count_error_nodes > 0:
+            sys.exit(1)
+    else:
+        print('mapcore_sync_is_enabled: False')
+        sys.exit(1)
+
+@task
+def mapcore_remove_token(ctx, username=None, eppn=None):
+    '''Remove OAuth token for mAP core'''
+    from website.app import init_app
+    init_app(routes=False)
+
+    from osf.models import OSFUser
+    from nii.mapcore import mapcore_remove_token
+
+    user = None
+    if username:
+        try:
+            user = OSFUser.objects.get(username=username)
+        except Exception as e:
+            print e
+            print('Error: no such username: ' + username)
+            print('--- existing username list ---')
+            for user in OSFUser.objects.all():
+                print(user.username)
+            return
+    elif eppn:
+        try:
+            user = OSFUser.objects.get(eppn=eppn)
+        except Exception as e:
+            print e
+            print('Error: no such ePPN: ' + eppn)
+            print('--- existing ePPN list ---')
+            for user in OSFUser.objects.all():
+                if user.eppn:
+                    print(user.eppn)
+            return
+    else:
+        ctx.run('invoke --help mapcore_remove_token')
+        return
+    mapcore_remove_token(user)
+    if username:
+        print('token is REMOVED: username = ' + user.username)
+    elif eppn:
+        print('token is REMOVED: ePPN = ' + user.eppn)
+
+
+@task(help={'user': 'filter with creator\'s mail address',
+            'file': 'file name contains group_key list',
+            'grdm': 'remove groups from GRDM',
+            'map': 'remove groups from mAP',
+            'key-only': 'remove link (group_key) only',
+            'interactive': 'select delete groups interactively',
+            'verbose': 'show more group information',
+            'dry-run': 'dry-run'})
+def mapcore_rmgroups(ctx, user=None, file=None, grdm=False, map=False, key_only=False,
+                     interactive=False, verbose=False, dry_run=False):
+    '''GRDM/mAP group maintanance utility for bulk deletion'''
+    from website.app import init_app
+    init_app(routes=False)
+
+    from nii.rmgroups import Options, remove_multi_groups
+
+    options = Options(user, file, grdm, map, key_only, interactive, verbose, dry_run)
+    remove_multi_groups(options)
+
+
+@task
+def mapcore_unlock_all(ctx):
+    '''Remove all lock flags for mAP core'''
+    from website.app import init_app
+    init_app(routes=False)
+
+    from nii import mapcore
+    mapcore.mapcore_unlock_all()
+
+
+@task
+def mapcore_test_lock(ctx):
+    '''test lock functions for mapcore.py'''
+    from multiprocessing import Process
+    from website.app import init_app
+    import time
+
+    sleep_sec = 5
+    n_proc = 3
+
+    def test_lock_user(idx):
+        print('start: test_lock_user[{}]'.format(idx))
+        init_app(routes=False)
+        from nii.mapcore import user_lock_test
+        from osf.models import OSFUser
+
+        u = OSFUser.objects.order_by('id').first()
+        user_lock_test(u, sleep_sec)
+
+    def test_lock_node(idx):
+        print('start: test_lock_node[{}]'.format(idx))
+        init_app(routes=False)
+        from nii.mapcore import node_lock_test
+        from osf.models import Node
+
+        n = Node.objects.order_by('id').first()
+        node_lock_test(n, sleep_sec)
+
+    def test_base(func, name):
+        procs = []
+        for i in range(n_proc):
+            p = Process(target=func, args=(i,))
+            procs.append(p)
+
+        t1 = time.time()
+        for p in procs:
+            p.start()
+        for p in procs:
+            p.join()
+        t2 = time.time()
+        print('total time: {} sec.'.format(t2 - t1))
+        if ((t2 - t1) >= sleep_sec * n_proc):
+            print('*** OK: ' + name)
+            return True
+        else:
+            print('*** NG: ' + name)
+            return False
+
+    r1 = test_base(test_lock_user, 'test lock user')
+    r2 = test_base(test_lock_node, 'test lock node')
+
+    if not (r1 and r2):
+        print('ERROR: mapcore_test_lock')

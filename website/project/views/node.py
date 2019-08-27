@@ -65,6 +65,12 @@ from website.util import quota
 from osf.models.project_storage_type import ProjectStorageType
 
 
+from nii.mapcore_api import MAPCoreException
+from nii.mapcore import (mapcore_sync_is_enabled,
+                         mapcore_log_error,
+                         mapcore_sync_rdm_project_or_map_group,
+                         mapcore_sync_map_group)
+
 r_strip_html = lambda collection: rapply(collection, strip_html)
 logger = logging.getLogger(__name__)
 
@@ -99,6 +105,8 @@ def edit_node(auth, node, **kwargs):
             http.BAD_REQUEST,
             data=dict(message_long=e.message)
         )
+    if mapcore_sync_is_enabled():
+        mapcore_sync_map_group(auth.user, node)
     return {
         'status': 'success',
         'newValue': new_val  # Used by x-editable  widget to reflect changes made by sanitizer
@@ -646,7 +654,7 @@ def update_node(auth, node, **kwargs):
         updated_field_names = node.update(data, auth=auth)
     except NodeUpdateError as e:
         raise HTTPError(400, data=dict(
-            message_short="Failed to update attribute '{0}'".format(e.key),
+            message_short='Failed to update attribute \'{0}\''.format(e.key),
             message_long=e.reason
         ))
     # Need to cast tags to a string to make them JSON-serialiable
@@ -755,13 +763,41 @@ def _view_project(node, auth, primary=False,
     project.view.mako.
     """
     node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
+    if node.is_deleted:
+        raise HTTPError(http.GONE)
+
     user = auth.user
 
-    if node.group is not None and user.groups_sync is not None and not user.groups_sync.filter(name=node.group.name).exists():
-        from nii import project_sync
-        project_sync.project_sync_one(node, None)
-        user.groups_sync.add(node.group)  # checked
-        user.save()
+    try:
+        contributor = node.contributor_set.get(user=user)
+    except Contributor.DoesNotExist:
+        contributor = None
+
+    if mapcore_sync_is_enabled():
+        try:
+            mapcore_sync_rdm_project_or_map_group(auth.user, node)
+        except MAPCoreException as e:
+            # Do not call redirect() here
+            if settings.DEBUG_MODE:
+                import traceback
+                emsg = '<pre>{}</pre>'.format(
+                    traceback.format_exc())
+            else:
+                emsg = str(e)
+                mapcore_log_error('{}: {}'.format(
+                    e.__class__.__name__, emsg))
+                raise HTTPError(http.SERVICE_UNAVAILABLE, data={
+                    'message_short': 'mAP Core API Error',
+                    'message_long': emsg
+                })
+    else:
+        # for CloudGateway API v1
+        if node.group is not None and user.cggroups_sync is not None \
+           and not user.cggroups_sync.filter(name=node.group.name).exists():
+            from nii import project_sync
+            project_sync.project_sync_one(node, None)
+            user.cggroups_sync.add(node.group)  # checked
+            user.save()
 
     in_bookmark_collection = False
     bookmark_collection_id = ''

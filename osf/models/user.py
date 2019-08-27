@@ -46,6 +46,7 @@ from osf.models.mixins import AddonModelMixin
 from osf.models.spam import SpamMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
+from osf.models.mapcore import MAPProfile
 from osf.models.validators import validate_email, validate_social, validate_history_item
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
@@ -408,6 +409,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     cggroups_sync = models.ManyToManyField(CGGroup, related_name='users_group_sync')
     cggroups_initialized = models.BooleanField(default=False)
     date_last_access = NonNaiveDateTimeField(null=True, blank=True)
+
+    # MAPProfile link.
+    map_profile = models.OneToOneField(MAPProfile,
+                                       on_delete=models.SET_NULL,
+                                       blank=True, null=True,
+                                       related_name='osf_user')
+    mapcore_api_locked = models.BooleanField(default=False)
+    mapcore_refresh_locked = models.BooleanField(default=False)
 
     def __repr__(self):
         return '<OSFUser({0!r}) with guid {1!r}>'.format(self.username, self._id)
@@ -1833,6 +1842,24 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.external_accounts.clear()
         self.external_identity = {}
         self.deleted = timezone.now()
+
+    def get_idp_entity_ids(self):
+        entity_ids = []
+        try:
+            for inst in self.affiliated_institutions.all():
+                if not inst.login_url:
+                    continue
+                try:
+                    login_url_parsed = urlparse.urlparse(inst.login_url)
+                    q = urlparse.parse_qs(login_url_parsed.query)
+                    entity_id = q.get('entityID')[0]
+                    if entity_id:
+                        entity_ids.append(entity_id)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        return entity_ids
 
     class Meta:
         # custom permissions for use in the GakuNin RDM Admin App

@@ -16,7 +16,7 @@ logger = getLogger(__name__)
 
 CERT = settings.GAKUNIN_SP_CERT
 KEY = settings.GAKUNIN_SP_KEY
-HOST = settings.CLOUD_GATAWAY_HOST
+HOST = settings.CLOUD_GATEWAY_HOST
 
 def json_print(text):
     json.dump(json.loads(text), sys.stdout, indent=4, separators=(',', ': '))

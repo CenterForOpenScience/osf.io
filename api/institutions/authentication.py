@@ -196,9 +196,9 @@ def login_by_eppn():
     return settings.LOGIN_BY_EPPN
 
 def init_cloud_gateway_groups(user, provider):
-    if not hasattr(settings, 'CLOUD_GATAWAY_ISMEMBEROF_PREFIX'):
+    if not hasattr(settings, 'CLOUD_GATEWAY_ISMEMBEROF_PREFIX'):
         return
-    prefix = settings.CLOUD_GATAWAY_ISMEMBEROF_PREFIX
+    prefix = settings.CLOUD_GATEWAY_ISMEMBEROF_PREFIX
     if not prefix:
         return
 
