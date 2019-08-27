@@ -28,6 +28,7 @@ SILENT_LOGGERS = [
     'raven.contrib.django.client.DjangoClient',
     'transitions.core',
     'MARKDOWN',
+    'elasticsearch',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
@@ -46,6 +47,9 @@ def override_settings():
     website_settings.BCRYPT_LOG_ROUNDS = 1
     # Make sure we don't accidentally send any emails
     website_settings.SENDGRID_API_KEY = None
+    # Set this here instead of in SILENT_LOGGERS, in case developers
+    # call setLevel in local.py
+    logging.getLogger('website.mails.mails').setLevel(logging.CRITICAL)
 
 
 @pytest.fixture()

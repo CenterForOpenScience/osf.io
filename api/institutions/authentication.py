@@ -14,9 +14,11 @@ from framework import sentry
 from framework.auth import get_or_create_user
 from framework.auth.core import get_user
 
+from osf import features
 from osf.models import Institution
 from website.mails import send_mail, WELCOME_OSF4I
 from website.settings import OSF_SUPPORT_EMAIL, DOMAIN, to_bool
+from website.util.quota import update_default_storage
 
 import logging
 logger = logging.getLogger(__name__)
@@ -163,7 +165,7 @@ class InstitutionAuthentication(BaseAuthentication):
                     user=user,
                     domain=DOMAIN,
                     osf_support_email=OSF_SUPPORT_EMAIL,
-                    storage_flag_is_active=waffle.flag_is_active(request, 'storage_i18n'),
+                    storage_flag_is_active=waffle.flag_is_active(request, features.STORAGE_I18N),
                     use_viewonlylinks=to_bool('USE_VIEWONLYLINKS', True),
                 )
             ### the user is not available when have_email is False.
@@ -175,6 +177,7 @@ class InstitutionAuthentication(BaseAuthentication):
         if not user.is_affiliated_with_institution(institution):
             user.affiliated_institutions.add(institution)
             user.save()
+            update_default_storage(user)
 
         # update every login.
         init_cloud_gateway_groups(user, provider)

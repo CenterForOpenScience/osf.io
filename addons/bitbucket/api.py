@@ -1,9 +1,10 @@
 import urllib
 
+from addons.bitbucket import settings
+
 from framework.exceptions import HTTPError
 
 from website.util.client import BaseClient
-from addons.bitbucket import settings
 
 
 class BitbucketClient(BaseClient):
@@ -27,6 +28,14 @@ class BitbucketClient(BaseClient):
         API docs::
 
         * https://developer.atlassian.com/bitbucket/api/2/reference/resource/user
+
+        Bitbucket API GDPR Update::
+
+        * https://developer.atlassian.com/cloud/bitbucket/bitbucket-api-changes-gdpr/
+
+        As mentioned in the GDPR update on "removal of username", the ``/2.0/user`` endpoint will
+        continue to provide the ``username`` field in its response since this endpoint only ever
+        returns the authenticated user's own user object, not that of other users.
 
         :rtype: dict
         :return: a metadata object representing the user
@@ -68,14 +77,20 @@ class BitbucketClient(BaseClient):
         :rtype:
         :return: list of repository objects
         """
+        query_params = {
+            'pagelen': 100,
+            'fields': 'values.full_name'
+        }
         res = self._make_request(
             'GET',
             self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', self.username),
             expects=(200, ),
             throws=HTTPError(401),
-            params={'pagelen': 100}
+            params=query_params
         )
-        return res.json()['values']
+        repo_list = res.json()['values']
+
+        return repo_list
 
     def team_repos(self):
         """Return a list of repositories owned by teams the user is a member of.
@@ -90,22 +105,28 @@ class BitbucketClient(BaseClient):
         :return: a list of repository objects
         """
 
+        query_params = {
+            'role': 'member',
+            'pagelen': 100,
+            'fields': 'values.links.repositories.href'
+        }
         res = self._make_request(
             'GET',
-            self._build_url(settings.BITBUCKET_V2_API_URL, 'teams') + '?role=member',
+            self._build_url(settings.BITBUCKET_V2_API_URL, 'teams'),
             expects=(200, ),
             throws=HTTPError(401),
-            params={'pagelen': 100}
+            params=query_params
         )
-        teams = [x['username'] for x in res.json()['values']]
+        team_repos_url_list = [x['links']['repositories']['href'] for x in res.json()['values']]
 
         team_repos = []
-        for team in teams:
+        for team_repos_url in team_repos_url_list:
             res = self._make_request(
                 'GET',
-                self._build_url(settings.BITBUCKET_V2_API_URL, 'teams', team, 'repositories'),
+                team_repos_url,
                 expects=(200, ),
-                throws=HTTPError(401)
+                throws=HTTPError(401),
+                params={'fields': 'values.full_name'}
             )
             team_repos.extend(res.json()['values'])
 
@@ -113,11 +134,10 @@ class BitbucketClient(BaseClient):
 
     def repo_default_branch(self, user, repo):
         """Return the default branch for a BB repository (what they call the
-        "main branch").  They do not provide this via their v2 API,
-        but there is a v1 endpoint that will return it.
+        "main branch").
 
         API doc:
-        https://confluence.atlassian.com/bitbucket/repository-resource-1-0-296095202.html#repositoryResource1.0-GETtherepository%27smainbranch
+        https://developer.atlassian.com/bitbucket/api/2/reference/resource/repositories/%7Busername%7D/%7Brepo_slug%7D
 
         :param str user: Bitbucket user name
         :param str repo: Bitbucket repo name
@@ -127,11 +147,11 @@ class BitbucketClient(BaseClient):
         """
         res = self._make_request(
             'GET',
-            self._build_url(settings.BITBUCKET_V1_API_URL, 'repositories', user, repo, 'main-branch'),
+            self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', user, repo),
             expects=(200, ),
             throws=HTTPError(401)
         )
-        return res.json()['name']
+        return res.json()['mainbranch']['name']
 
     def branches(self, user, repo):
         """List a repo's branches.  This endpoint is paginated and may require
@@ -166,7 +186,7 @@ def ref_to_params(branch=None, sha=None):
 
     params = urllib.urlencode({
         key: value
-        for key, value in {'branch': branch, 'sha': sha}.iteritems()
+        for key, value in {'branch': branch, 'sha': sha}.items()
         if value
     })
     if params:

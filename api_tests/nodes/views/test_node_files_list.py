@@ -4,7 +4,7 @@ import json
 import furl
 import responses
 from django.utils import timezone
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 
 from framework.auth.core import Auth
 
@@ -17,8 +17,10 @@ from tests.base import ApiTestCase
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
+    OSFGroupFactory,
     PrivateLinkFactory
 )
+from osf.utils.permissions import READ
 
 
 def prepare_mock_wb_response(
@@ -28,8 +30,7 @@ def prepare_mock_wb_response(
         folder=True,
         path='/',
         method=responses.GET,
-        status_code=200
-    ):
+        status_code=200):
     """Prepare a mock Waterbutler response with responses library.
 
     :param Node node: Target node.
@@ -215,6 +216,16 @@ class TestNodeFilesList(ApiTestCase):
             expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
+
+    def test_returns_private_files_logged_in_osf_group_member(self):
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        self.project.add_osf_group(group, READ)
+        res = self.app.get(
+            self.private_url,
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert_equal(res.status_code, 200)
 
     def test_returns_addon_folders(self):
         user_auth = Auth(self.user)
@@ -419,7 +430,7 @@ class TestNodeFilesList(ApiTestCase):
             responses.Response(
                 responses.GET,
                 wb_url,
-                json={'bad' : 'json'},
+                json={'bad': 'json'},
                 status=418
             )
         )

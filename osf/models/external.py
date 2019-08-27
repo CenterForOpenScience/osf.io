@@ -19,6 +19,7 @@ from osf.models import base
 from osf.utils.fields import EncryptedTextField, NonNaiveDateTimeField
 from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string
+from website.settings import ADDONS_OAUTH_NO_REDIRECT
 from website.util import web_url_for
 
 logger = logging.getLogger(__name__)
@@ -150,12 +151,23 @@ class ExternalProvider(object):
             session.data['oauth_states'] = {}
 
         if self._oauth_version == OAUTH2:
+            # Quirk: Some time between 2019/05/31 and 2019/06/04, Bitbucket's OAuth2 API no longer
+            #        expects the query param `redirect_uri` in the `oauth2/authorize` endpoint.  In
+            #        addition, it relies on the "Callback URL" of the "OAuth Consumer" to redirect
+            #        the auth flow after successful authorization.  `ADDONS_OAUTH_NO_REDIRECT` is a
+            #        list containing addons that do not use `redirect_uri` in OAuth2 requests.
+            if self.short_name in ADDONS_OAUTH_NO_REDIRECT:
+                redirect_uri = None
+            else:
+                redirect_uri = web_url_for(
+                    'oauth_callback',
+                    service_name=self.short_name,
+                    _absolute=True
+                )
             # build the URL
             oauth = OAuth2Session(
                 self.client_id,
-                redirect_uri=web_url_for('oauth_callback',
-                                         service_name=self.short_name,
-                                         _absolute=True),
+                redirect_uri=redirect_uri,
                 scope=self.default_scopes,
             )
 
@@ -251,13 +263,20 @@ class ExternalProvider(object):
                 raise PermissionsError('Request token does not match')
 
             try:
-                response = OAuth2Session(
-                    self.client_id,
-                    redirect_uri=web_url_for(
+                # Quirk: Similarly to the `oauth2/authorize` endpoint, the `oauth2/access_token`
+                #        endpoint of Bitbucket would fail if a not-none or non-empty `redirect_uri`
+                #        were provided in the body of the POST request.
+                if self.short_name in ADDONS_OAUTH_NO_REDIRECT:
+                    redirect_uri = None
+                else:
+                    redirect_uri = web_url_for(
                         'oauth_callback',
                         service_name=self.short_name,
                         _absolute=True
-                    ),
+                    )
+                response = OAuth2Session(
+                    self.client_id,
+                    redirect_uri=redirect_uri,
                 ).fetch_token(
                     self.callback_url,
                     client_secret=self.client_secret,
@@ -302,6 +321,13 @@ class ExternalProvider(object):
         if not user.external_accounts.filter(id=self.account.id).exists():
             user.external_accounts.add(self.account)
             user.save()
+
+        #following imports are essential here to avoid conflict with base.
+        from osf.utils import external_util
+        institution_id = session.data['oauth_states'][self.short_name].get('institution_id')
+        if institution_id is not None:
+            if self.account.provider == 'googledrive':
+                external_util.set_region_external_account(institution_id, self.account)
 
         if self.short_name in session.data.get('oauth_states', {}):
             del session.data['oauth_states'][self.short_name]
@@ -432,6 +458,16 @@ class ExternalProvider(object):
         self.account.expires_at = resp_expiry_fn(token)
         self.account.date_last_refreshed = timezone.now()
         self.account.save()
+        #following imports are essential to avoid exceptions.
+        from osf.utils.external_util import (
+            set_new_access_token, is_custom_googledrive,
+            get_region_id_by_external_id, get_oauth_key_by_external_id
+        )
+        if is_custom_googledrive(self.account.id):
+            set_new_access_token(
+                get_region_id_by_external_id(self.account.id),
+                get_oauth_key_by_external_id(self.account.id)
+            )
         return True
 
     def _needs_refresh(self):

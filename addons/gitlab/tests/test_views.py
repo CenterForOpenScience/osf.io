@@ -83,7 +83,7 @@ class TestGitLabConfigViews(GitLabAddonTestCase, OAuthAddonConfigViewsTestCaseMi
             self.project.logs.latest().action,
             '{0}_repo_linked'.format(self.ADDON_SHORT_NAME)
         )
-        mock_add_hook.assert_called_once()
+        mock_add_hook.assert_called_once_with(save=False)
 
     def test_add_user_account_rdm_addons_denied(self):
         institution = InstitutionFactory()
@@ -474,7 +474,7 @@ class TestGitLabSettings(OsfTestCase):
         assert_equal(self.node_settings.user, 'queen')
         assert_equal(self.node_settings.repo, 'night at the opera')
         assert_equal(self.project.logs.latest().action, 'gitlab_repo_linked')
-        mock_add_hook.assert_called_once()
+        mock_add_hook.assert_called_once_with(save=False)
 
     @mock.patch('addons.gitlab.models.NodeSettings.add_hook')
     @mock.patch('addons.gitlab.api.GitLabClient.repo')

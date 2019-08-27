@@ -73,6 +73,9 @@
         "box",
         "onedrive"
     ],
+    "addons_oauth_no_redirect": [
+        "bitbucket"
+    ],
     "addons_description": {
         "box": "Box is a file storage add-on. Connect your Box account to an OSF project to interact with files hosted on Box via the GakuNin RDM.",
         "dataverse": "Dataverse is an open source software application to share, cite, and archive data. Connect your Dataverse account to share your Dataverse datasets via the GakuNin RDM.",

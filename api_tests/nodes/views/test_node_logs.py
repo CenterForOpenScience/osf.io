@@ -1,15 +1,22 @@
+import mock
 import pytest
 
 from dateutil.parser import parse as parse_date
 
 from api.base.settings.defaults import API_BASE
+from tests.base import ApiTestCase
 from framework.auth.core import Auth
+from osf.models import ProjectStorageType
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
+    OSFGroupFactory,
     RegistrationFactory,
     EmbargoFactory,
+    InstitutionFactory,
+    RegionFactory,
 )
+from osf.utils.permissions import READ
 from tests.base import assert_datetime_equal
 from api_tests.utils import disconnected_from_listeners
 from website.project.signals import contributor_removed
@@ -74,6 +81,13 @@ class TestNodeLogList:
     def public_url(self, public_project):
         return '/{}nodes/{}/logs/?version=2.2'.format(
             API_BASE, public_project._id)
+
+    def test_can_view_osf_group_log(self, app, private_project, private_url):
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        private_project.add_osf_group(group, READ)
+        res = app.get(private_url, auth=group_mem.auth)
+        assert res.status_code == 200
 
     def test_add_tag(self, app, user, user_auth, public_project, public_url):
         public_project.add_tag('Rheisen', auth=user_auth)
@@ -208,7 +222,6 @@ class TestNodeLogList:
 
         # Delete pointer and make sure no data shown
         pointer.remove_node(Auth(user))
-        pointer.save()
 
         res = app.get(public_url, auth=user.auth)
         assert res.status_code == 200
@@ -247,7 +260,6 @@ class TestNodeLogList:
 
         # Delete pointer and make sure no data shown
         pointer_registration.remove_node(Auth(user))
-        pointer_registration.save()
 
         res = app.get(public_url, auth=user.auth)
         assert res.status_code == 200
@@ -285,7 +297,6 @@ class TestNodeLogList:
 
         # Delete pointer and make sure no data shown
         pointer_embargo.remove_node(Auth(user))
-        pointer_embargo.save()
 
         res = app.get(public_url, auth=user.auth)
         assert res.status_code == 200
@@ -328,3 +339,112 @@ class TestNodeLogFiltering(TestNodeLogList):
         assert res.status_code == 200
         assert len(res.json['data']) == 1
         assert res.json['data'][API_LATEST]['attributes']['action'] == 'project_created'
+
+
+@pytest.mark.django_db
+class TestLogStorageName(ApiTestCase):
+
+    def setUp(self):
+        super(TestLogStorageName, self).setUp()
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+
+    def add_folder_created_log(self):
+        self.node.add_log(
+            'osf_storage_folder_created',
+            auth=Auth(self.user),
+            params={
+                'node': self.node._id,
+                'path': 'test_folder',
+                'urls': {'url1': 'www.fake.org', 'url2': 'www.fake.com'},
+                'source': {
+                    'materialized': 'test_folder',
+                    'addon': 'osfstorage',
+                    'node': {
+                        '_id': self.node._id,
+                        'url': 'index.html',
+                        'title': 'Hello World',
+                    }
+                }
+            },
+        )
+
+    def test_unrelated_to_storage(self):
+        url = '/{}nodes/{}/logs/'.format(API_BASE, self.node._id)
+        res = self.app.get(url, auth=self.user.auth)
+
+        log = res.json['data'][0]['attributes']
+        assert log['action'] == 'project_created'
+        assert log['params']['storage_name'] is None
+
+    def test_no_storage_type(self):
+        ProjectStorageType.objects.filter(node=self.node).delete()
+
+        self.add_folder_created_log()
+        url = '/{}nodes/{}/logs/'.format(API_BASE, self.node._id)
+        res = self.app.get(url, auth=self.user.auth)
+
+        log = res.json['data'][0]['attributes']
+        assert log['action'] == 'osf_storage_folder_created'
+        assert log['params']['storage_name'] == 'NII Storage'
+
+    def test_nii_storage(self):
+        self.add_folder_created_log()
+        url = '/{}nodes/{}/logs/'.format(API_BASE, self.node._id)
+        res = self.app.get(url, auth=self.user.auth)
+
+        log = res.json['data'][0]['attributes']
+        assert log['action'] == 'osf_storage_folder_created'
+        assert log['params']['storage_name'] == 'NII Storage'
+
+    @mock.patch('api.logs.serializers.logging')
+    def test_custom_storage_no_institution(self, mock_logging):
+        ProjectStorageType.objects.filter(node=self.node).update(
+            storage_type=ProjectStorageType.CUSTOM_STORAGE
+        )
+
+        self.add_folder_created_log()
+        url = '/{}nodes/{}/logs/'.format(API_BASE, self.node._id)
+        res = self.app.get(url, auth=self.user.auth)
+
+        log = res.json['data'][0]['attributes']
+        assert log['action'] == 'osf_storage_folder_created'
+        assert log['params']['storage_name'] == 'Institutional Storage'
+
+        assert mock_logging.warning.call_count == 1
+        mock_logging.warning.assert_called_with('Unable to retrieve storage name: Institution not found')
+
+    @mock.patch('api.logs.serializers.logging')
+    def test_custom_storage_no_region(self, mock_logging):
+        ProjectStorageType.objects.filter(node=self.node).update(
+            storage_type=ProjectStorageType.CUSTOM_STORAGE
+        )
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+
+        self.add_folder_created_log()
+        url = '/{}nodes/{}/logs/'.format(API_BASE, self.node._id)
+        res = self.app.get(url, auth=self.user.auth)
+
+        log = res.json['data'][0]['attributes']
+        assert log['action'] == 'osf_storage_folder_created'
+        assert log['params']['storage_name'] == 'Institutional Storage'
+
+        assert mock_logging.warning.call_count == 1
+        mock_logging.warning.assert_called_with('Unable to retrieve storage name from institution ID {}'.format(institution.id))
+
+    def test_custom_storage_get_name(self):
+        ProjectStorageType.objects.filter(node=self.node).update(
+            storage_type=ProjectStorageType.CUSTOM_STORAGE
+        )
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        RegionFactory(_id=institution._id, name='Kitten Storage')
+
+        self.add_folder_created_log()
+        url = '/{}nodes/{}/logs/'.format(API_BASE, self.node._id)
+        res = self.app.get(url, auth=self.user.auth)
+
+        log = res.json['data'][0]['attributes']
+        assert log['action'] == 'osf_storage_folder_created'
+        assert log['params']['storage_name'] == 'Kitten Storage'

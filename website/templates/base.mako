@@ -139,32 +139,42 @@
      ## TODO: shouldn't always have the watermark class
     ${self.content_wrap()}
 
-% if not user_id:
-<div id="cookieBanner" class="alert">
-    <div id="cookieText">
-        This website relies on cookies to help provide a better user experience. By clicking Accept or continuing to use the site, you agree. For more information,
-        see our <a href='https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422'>Privacy Policy</a>
-        and information on <a href='https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422'>cookie use</a>.
+<div class="footBanners">
+    <div id="IEDepreciationBanner"  class="alert warningBanner">
+        <div class="warningBannerText">
+            OSF does not support the use of Internet Explorer. For optimal performance, please switch to another browser.
+        </div>
+        <div class="warningBannerAcceptBtn">
+            <div class="btn btn-default" data-dismiss="alert" data-bind="click: accept" aria-label="Accept">Accept</div>
+        </div>
     </div>
-    <div id="cookieAccept">
-        <div class="btn btn-default" data-dismiss="alert" data-bind="click: accept" aria-label="Accept">Accept</div>
+    % if not user_id:
+    <div id="cookieBanner" class="alert warningBanner">
+        <div id="cookieText" class="warningBannerText">
+            This website relies on cookies to help provide a better user experience. By clicking Accept or continuing to use the site, you agree. For more information,
+            see our <a href='https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422'>Privacy Policy</a>
+            and information on <a href='https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422'>cookie use</a>.
+        </div>
+        <div class="warningBannerAcceptBtn">
+            <div class="btn btn-default" data-dismiss="alert" data-bind="click: accept" aria-label="Accept">Accept</div>
+        </div>
     </div>
-</div>
-<div id="footerSlideIn">
-    <div class="container">
-        <div class="row">
-            <div class='col-sm-2 hidden-xs'>
-                <img class="logo" src="/static/img/circle_logo.png">
-            </div>
-            <div class='col-sm-10 col-xs-12'>
-                <a data-bind="click: dismiss" class="close" href="#">&times;</a>
-                <h1>Start managing your projects on the GakuNin RDM today.</h1>
-                <p>Free and easy to use, the GakuNin RDM supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery.</p>
-                <div>
-                    <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="${web_url_for('index')}#signUp">Create an Account</a>
+    <div id="footerSlideIn">
+        <div class="container">
+            <div class="row">
+                <div class='col-sm-2 hidden-xs'>
+                    <img class="logo" src="/static/img/circle_logo.png">
+                </div>
+                <div class='col-sm-10 col-xs-12'>
+                    <a data-bind="click: dismiss" class="close" href="#">&times;</a>
+                    <h1>Start managing your projects on the GakuNin RDM today.</h1>
+                    <p>Free and easy to use, the GakuNin RDM supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery.</p>
+                    <div>
+                        <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="${web_url_for('index')}#signUp">Create an Account</a>
 
-                    <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="https://meatwiki.nii.ac.jp/confluence/display/gakuninrdmusers" target="_blank" rel="noreferrer">Learn More</a>
-                    <a data-bind="click: dismiss">Hide this message</a>
+                        <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="https://meatwiki.nii.ac.jp/confluence/display/gakuninrdmusers" target="_blank" rel="noreferrer">Learn More</a>
+                        <a data-bind="click: dismiss">Hide this message</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -270,7 +280,7 @@
 
 <%def name="nav()">
     <%namespace name="nav_helper" file="nav.mako" />
-    ${nav_helper.nav(service_name='HOME', service_url='/', service_support_url='/support/')}
+    ${nav_helper.nav(service_name='HOME', service_url=domain, service_support_url='/support/')}
 </%def>
 
 <%def name="title()">

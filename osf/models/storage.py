@@ -24,3 +24,16 @@ class ProviderAssetFile(BaseModel):
     name = models.CharField(choices=PROVIDER_ASSET_NAME_CHOICES, max_length=63)
     file = models.FileField(upload_to='assets')
     providers = models.ManyToManyField('AbstractProvider', blank=True, related_name='asset_files')
+
+
+class StorageType(BaseModel):
+    class Meta:
+        abstract = True
+
+    NII_STORAGE = 1
+    CUSTOM_STORAGE = 2
+
+    STORAGE_TYPE_CHOICES = (
+        (NII_STORAGE, 'NII Storage'),
+        (CUSTOM_STORAGE, 'Custom Storage'),
+    )

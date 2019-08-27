@@ -57,7 +57,6 @@ class UserFactory(DjangoModelFactory):
     password = factory.PostGenerationMethodCall('set_password',
                                                 'queenfan86')
     is_registered = True
-    is_claimed = True
     date_confirmed = factory.Faker('date_time_this_decade', tzinfo=pytz.utc)
     merged_by = None
     verification_key = None
@@ -292,7 +291,7 @@ class CollectionFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
-        collected_types = kwargs.pop('collected_types', ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'basefilenode', 'collection', 'preprintservice']))
+        collected_types = kwargs.pop('collected_types', ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'basefilenode', 'collection', 'preprint']))
         obj = cls._build(*args, **kwargs)
         obj.save()
         # M2M, requires initial save
@@ -331,9 +330,18 @@ class RegistrationProviderFactory(DjangoModelFactory):
     def _create(cls, *args, **kwargs):
         user = kwargs.pop('creator', None)
         obj = cls._build(*args, **kwargs)
-        obj._creator = user or UserFactory()  # Generates primary_collection
+        obj._creator = user or models.OSFUser.objects.first() or UserFactory()  # Generates primary_collection
         obj.save()
         return obj
+
+
+class OSFGroupFactory(DjangoModelFactory):
+    name = factory.Faker('company')
+    created = factory.LazyFunction(timezone.now)
+    creator = factory.SubFactory(AuthUserFactory)
+
+    class Meta:
+        model = models.OSFGroup
 
 
 class RegistrationFactory(BaseNodeFactory):
@@ -350,15 +358,17 @@ class RegistrationFactory(BaseNodeFactory):
     def _create(cls, target_class, project=None, is_public=False,
                 schema=None, data=None,
                 archive=False, embargo=None, registration_approval=None, retraction=None,
+                provider=None,
                 *args, **kwargs):
         user = None
         if project:
             user = project.creator
         user = kwargs.pop('user', None) or kwargs.get('creator') or user or UserFactory()
         kwargs['creator'] = user
+        provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
         # Original project to be registered
         project = project or target_class(*args, **kwargs)
-        if project.has_permission(user, 'admin'):
+        if project.is_admin_contributor(user):
             project.add_contributor(
                 contributor=user,
                 permissions=permissions.CREATOR_PERMISSIONS,
@@ -374,7 +384,8 @@ class RegistrationFactory(BaseNodeFactory):
         register = lambda: project.register_node(
             schema=schema,
             auth=auth,
-            data=data
+            data=data,
+            provider=provider,
         )
 
         def add_approval_step(reg):
@@ -487,6 +498,7 @@ class DraftRegistrationFactory(DjangoModelFactory):
         initiator = kwargs.get('initiator')
         registration_schema = kwargs.get('registration_schema')
         registration_metadata = kwargs.get('registration_metadata')
+        provider = kwargs.get('provider')
         if not branched_from:
             project_params = {}
             if initiator:
@@ -495,11 +507,13 @@ class DraftRegistrationFactory(DjangoModelFactory):
         initiator = branched_from.creator
         registration_schema = registration_schema or models.RegistrationSchema.objects.first()
         registration_metadata = registration_metadata or {}
+        provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
         draft = models.DraftRegistration.create_from_node(
             branched_from,
             user=initiator,
             schema=registration_schema,
             data=registration_metadata,
+            provider=provider,
         )
         return draft
 
@@ -616,7 +630,12 @@ def sync_set_identifiers(preprint):
 
 class PreprintFactory(DjangoModelFactory):
     class Meta:
-        model = models.PreprintService
+        model = models.Preprint
+
+    title = factory.Faker('catch_phrase')
+    description = factory.Faker('sentence')
+    created = factory.LazyFunction(timezone.now)
+    creator = factory.SubFactory(AuthUserFactory)
 
     doi = factory.Sequence(lambda n: '10.123/{}'.format(n))
     provider = factory.SubFactory(PreprintProviderFactory)
@@ -624,10 +643,12 @@ class PreprintFactory(DjangoModelFactory):
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
         creator = kwargs.pop('creator', None) or UserFactory()
-        project = kwargs.pop('project', None) or ProjectFactory(creator=creator)
         provider = kwargs.pop('provider', None) or PreprintProviderFactory()
-        instance = target_class(node=project, provider=provider)
-
+        project = kwargs.pop('project', None) or None
+        title = kwargs.pop('title', None) or 'Untitled'
+        description = kwargs.pop('description', None) or 'None'
+        is_public = kwargs.pop('is_public', True)
+        instance = target_class(provider=provider, title=title, description=description, creator=creator, node=project, is_public=is_public)
         return instance
 
     @classmethod
@@ -644,26 +665,20 @@ class PreprintFactory(DjangoModelFactory):
         license_details = kwargs.pop('license_details', None)
         filename = kwargs.pop('filename', None) or 'preprint_file.txt'
         subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
-        instance.node.preprint_article_doi = doi
+        instance.article_doi = doi
 
         instance.machine_state = kwargs.pop('machine_state', 'initial')
-
-        user = kwargs.pop('creator', None) or instance.node.creator
-        if not instance.node.is_contributor(user):
-            instance.node.add_contributor(
-                contributor=user,
-                permissions=permissions.CREATOR_PERMISSIONS,
-                log=False,
-                save=True
-            )
+        user = kwargs.pop('creator', None) or instance.creator
+        instance.save()
 
         preprint_file = OsfStorageFile.create(
-            target=instance.node,
+            target_object_id=instance.id,
+            target_content_type=ContentType.objects.get_for_model(instance),
             path='/{}'.format(filename),
             name=filename,
             materialized_path='/{}'.format(filename))
-        preprint_file.save()
 
+        preprint_file.save()
         from addons.osfstorage import settings as osfstorage_settings
 
         preprint_file.create_version(user, {
@@ -675,7 +690,6 @@ class PreprintFactory(DjangoModelFactory):
             'contentType': 'img/png'
         }).save()
         update_task_patcher.stop()
-
         if finish:
             auth = Auth(user)
 
@@ -683,19 +697,13 @@ class PreprintFactory(DjangoModelFactory):
             instance.set_subjects(subjects, auth=auth)
             if license_details:
                 instance.set_preprint_license(license_details, auth=auth)
-
+            instance.set_published(is_published, auth=auth)
             create_task_patcher = mock.patch('website.identifiers.utils.request_identifiers')
             mock_create_identifier = create_task_patcher.start()
             if is_published and set_doi:
                 mock_create_identifier.side_effect = sync_set_identifiers(instance)
-
-            instance.set_published(is_published, auth=auth)
             create_task_patcher.stop()
 
-        if not instance.is_published:
-            instance.node._has_abandoned_preprint = True
-
-        instance.node.save()
         instance.save()
         return instance
 
@@ -995,5 +1003,52 @@ class ProviderAssetFileFactory(DjangoModelFactory):
         providers = kwargs.pop('providers', [])
         instance = super(ProviderAssetFileFactory, cls)._create(target_class, *args, **kwargs)
         instance.providers = providers
+        instance.save()
+        return instance
+
+class ChronosJournalFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ChronosJournal
+
+    name = factory.Faker('text')
+    title = factory.Faker('text')
+    journal_id = factory.Faker('ean')
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        kwargs['raw_response'] = kwargs.get('raw_response', {
+            'TITLE': kwargs.get('title', factory.Faker('text').generate([])),
+            'JOURNAL_ID': kwargs.get('title', factory.Faker('ean').generate([])),
+            'NAME': kwargs.get('name', factory.Faker('text').generate([])),
+            'JOURNAL_URL': factory.Faker('url').generate([]),
+            'PUBLISHER_ID': factory.Faker('ean').generate([]),
+            'PUBLISHER_NAME': factory.Faker('name').generate([])
+            # Other stuff too probably
+        })
+        instance = super(ChronosJournalFactory, cls)._create(target_class, *args, **kwargs)
+        instance.save()
+        return instance
+
+
+class ChronosSubmissionFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ChronosSubmission
+
+    publication_id = factory.Faker('ean')
+    journal = factory.SubFactory(ChronosJournalFactory)
+    preprint = factory.SubFactory(PreprintFactory)
+    submitter = factory.SubFactory(AuthUserFactory)
+    status = factory.Faker('random_int', min=1, max=5)
+    submission_url = factory.Faker('url')
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        kwargs['raw_response'] = kwargs.get('raw_response', {
+            'PUBLICATION_ID': kwargs.get('publication_id', factory.Faker('ean').generate([])),
+            'STATUS_CODE': kwargs.get('status', factory.Faker('random_int', min=1, max=5).generate([])),
+            'CHRONOS_SUBMISSION_URL': kwargs.get('submission_url', factory.Faker('url').generate([])),
+            # Other stuff too probably
+        })
+        instance = super(ChronosSubmissionFactory, cls)._create(target_class, *args, **kwargs)
         instance.save()
         return instance

@@ -9,7 +9,7 @@ from django.utils import timezone
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from osf.utils.fields import NonNaiveDateTimeField
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from website.util import api_v2_url
 from website import settings
 from website.archiver import ARCHIVER_INITIATED
@@ -24,6 +24,8 @@ from osf.models.archive import ArchiveJob
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.node import AbstractNode
 from osf.models.nodelog import NodeLog
+from osf.models.provider import RegistrationProvider
+from osf.models.validators import validate_doi
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 logger = logging.getLogger(__name__)
@@ -31,6 +33,17 @@ logger = logging.getLogger(__name__)
 
 class Registration(AbstractNode):
 
+    WRITABLE_WHITELIST = [
+        'article_doi',
+        'description',
+        'is_public',
+        'node_license',
+    ]
+
+    article_doi = models.CharField(max_length=128,
+                                        validators=[validate_doi],
+                                        null=True, blank=True)
+    provider = models.ForeignKey('RegistrationProvider', related_name='registrations', null=True)
     registered_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
     registered_user = models.ForeignKey(OSFUser,
                                         related_name='related_to',
@@ -96,34 +109,31 @@ class Registration(AbstractNode):
 
     @property
     def sanction(self):
+        root = self._dirty_root
         sanction = (
-            self.embargo_termination_approval or
-            self.retraction or
-            self.embargo or
-            self.registration_approval
+            root.embargo_termination_approval or
+            root.retraction or
+            root.embargo or
+            root.registration_approval
         )
         if sanction:
             return sanction
-        elif self.parent_node:
-            return self.parent_node.sanction
         else:
             return None
 
     @property
     def is_registration_approved(self):
-        if self.registration_approval is None:
-            if self.parent_node:
-                return self.parent_node.is_registration_approved
+        root = self._dirty_root
+        if root.registration_approval is None:
             return False
-        return self.registration_approval.is_approved
+        return root.registration_approval.is_approved
 
     @property
     def is_pending_embargo(self):
-        if self.embargo is None:
-            if self.parent_node:
-                return self.parent_node.is_pending_embargo
+        root = self._dirty_root
+        if root.embargo is None:
             return False
-        return self.embargo.is_pending_approval
+        return root.embargo.is_pending_approval
 
     @property
     def is_pending_embargo_for_existing_registration(self):
@@ -132,35 +142,38 @@ class Registration(AbstractNode):
         registrations pre-dating the Embargo feature do not get deleted if
         their respective Embargo request is rejected.
         """
-        if self.embargo is None:
-            if self.parent_node:
-                return self.parent_node.is_pending_embargo_for_existing_registration
+        root = self._dirty_root
+        if root.embargo is None:
             return False
-        return self.embargo.pending_registration
+        return root.embargo.pending_registration
 
     @property
     def is_retracted(self):
-        if self.retraction is None:
-            if self.parent_node:
-                return self.parent_node.is_retracted
+        root = self._dirty_root
+        if root.retraction is None:
             return False
-        return self.retraction.is_approved
+        return root.retraction.is_approved
 
     @property
     def is_pending_registration(self):
-        if self.registration_approval is None:
-            if self.parent_node:
-                return self.parent_node.is_pending_registration
+        root = self._dirty_root
+        if root.registration_approval is None:
             return False
-        return self.registration_approval.is_pending_approval
+        return root.registration_approval.is_pending_approval
 
     @property
     def is_pending_retraction(self):
-        if self.retraction is None:
-            if self.parent_node:
-                return self.parent_node.is_pending_retraction
+        root = self._dirty_root
+        if root.retraction is None:
             return False
-        return self.retraction.is_pending_approval
+        return root.retraction.is_pending_approval
+
+    @property
+    def is_pending_embargo_termination(self):
+        root = self._dirty_root
+        if root.embargo_termination_approval is None:
+            return False
+        return root.embargo_termination_approval.is_pending_approval
 
     @property
     def is_embargoed(self):
@@ -169,23 +182,39 @@ class Registration(AbstractNode):
         - that record has been approved
         - the node is not public (embargo not yet lifted)
         """
-        if self.embargo is None:
-            if self.parent_node:
-                return self.parent_node.is_embargoed
-        return self.embargo and self.embargo.is_approved and not self.is_public
+        root = self._dirty_root
+        if root.is_public or root.embargo is None:
+            return False
+        return root.embargo.is_approved
 
     @property
     def embargo_end_date(self):
-        if self.embargo is None:
-            if self.parent_node:
-                return self.parent_node.embargo_end_date
+        root = self._dirty_root
+        if root.embargo is None:
             return False
-        return self.embargo.embargo_end_date
+        return root.embargo.embargo_end_date
 
     @property
     def archiving(self):
         job = self.archive_job
         return job and not job.done and not job.archive_tree_finished()
+
+    @property
+    def _dirty_root(self):
+        """Equivalent to `self.root`, but don't let Django fetch a clean copy
+        when `self == self.root`. Use when it's important to reflect unsaved
+        state rather than database state.
+        """
+        if self.id == self.root_id:
+            return self
+        return self.root
+
+    def date_withdrawn(self):
+        return getattr(self.root.retraction, 'date_retracted', None)
+
+    @property
+    def withdrawal_justification(self):
+        return getattr(self.root.retraction, 'justification', None)
 
     def _initiate_embargo(self, user, end_date, for_existing_registration=False,
                           notify_initiator_on_complete=False):
@@ -220,7 +249,7 @@ class Registration(AbstractNode):
         :raises: PermissionsError if user is not an admin for the Node
         :raises: ValidationError if end_date is not within time constraints
         """
-        if not self.has_permission(user, 'admin'):
+        if not self.is_admin_contributor(user):
             raise PermissionsError('Only admins may embargo a registration')
         if not self._is_embargo_date_valid(end_date):
             if (end_date - timezone.now()) >= settings.EMBARGO_END_DATE_MIN:
@@ -427,6 +456,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
                                       null=True, on_delete=models.CASCADE)
 
     initiator = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
+    provider = models.ForeignKey('RegistrationProvider', related_name='draft_registrations', null=True)
 
     # Dictionary field mapping question id to a question's comments and answer
     # {
@@ -470,7 +500,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
             schema = meta_schema.schema
             flags = schema.get('flags', {})
             dirty = False
-            for flag, value in flags.iteritems():
+            for flag, value in flags.items():
                 if flag not in self._metaschema_flags:
                     self._metaschema_flags[flag] = value
                     dirty = True
@@ -537,12 +567,15 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
         return self.logs.all().order_by('date')
 
     @classmethod
-    def create_from_node(cls, node, user, schema, data=None):
+    def create_from_node(cls, node, user, schema, data=None, provider=None):
+        if not provider:
+            provider = RegistrationProvider.load('osf')
         draft = cls(
             initiator=user,
             branched_from=node,
             registration_schema=schema,
             registration_metadata=data or {},
+            provider=provider,
         )
         draft.save()
         return draft
@@ -551,7 +584,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
         changes = []
         # Prevent comments on approved drafts
         if not self.is_approved:
-            for question_id, value in metadata.iteritems():
+            for question_id, value in metadata.items():
                 old_value = self.registration_metadata.get(question_id)
                 if old_value:
                     old_comments = {
@@ -584,14 +617,16 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
         if save:
             self.save()
 
-    def register(self, auth, save=False):
+    def register(self, auth, save=False, child_ids=None):
         node = self.branched_from
 
         # Create the registration
         register = node.register_node(
             schema=self.registration_schema,
             auth=auth,
-            data=self.registration_metadata
+            data=self.registration_metadata,
+            child_ids=child_ids,
+            provider=self.provider
         )
         self.registered_node = register
         self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)

@@ -9,8 +9,13 @@ Other resources that are a part of the Prereg Challenge:
 * website/static/css/prereg.css
 """
 
+import waffle
+
 from website.registries import views
+from osf import features
 
 def prereg_landing_page(**kwargs):
-    """Landing page for the prereg challenge"""
-    return views._view_registries_landing_page('prereg', **kwargs)
+    """Landing page for osf prereg"""
+    if waffle.switch_is_active(features.OSF_PREREGISTRATION):
+        return views._view_registries_landing_page('prereg', **kwargs)
+    return views._view_registries_landing_page('prereg_challenge', **kwargs)

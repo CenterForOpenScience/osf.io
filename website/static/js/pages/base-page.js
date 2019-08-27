@@ -39,18 +39,21 @@ if (String.prototype.endsWith === undefined) {
 
 $('[rel="tooltip"]').tooltip();
 
-// Cookie banner notice for logged out users
 var cookieBannerSelector = '#cookieBanner';
-var CookieBannerViewModel = function(){
-    var self = this;
-    self.elem = $(cookieBannerSelector);
-    var cookieConsentKey = 'osf_cookieconsent';
+var cookieConsentKey = 'osf_cookieconsent';
 
+// IE Depreciation Banner
+var IEDepreciationBannerSelector = '#IEDepreciationBanner';
+var IEcookieConsentKey = 'osf_IEconsent';
+
+var makeWarningBanner = function(selector, cookieKey){
+    var self = this;
+    self.elem = $(selector);
     self.accept = function() {
-        Cookie.set(cookieConsentKey, '1', { expires: 30, path: '/'});
+        Cookie.set(cookieKey, '1', { expires: 30, path: '/'});
     };
 
-    var accepted = Cookie.get(cookieConsentKey) === '1';
+    var accepted = Cookie.get(cookieKey) === '1';
     if (!accepted) {
         self.elem.css({'display': 'flex'});
         self.elem.show();
@@ -211,6 +214,10 @@ function confirmEmails(emailsToAdd) {
 
 
 $(function() {
+    var isIE = /*@cc_on!@*/false || !!document.documentMode;
+    if(isIE){
+        $osf.applyBindings(new makeWarningBanner(IEDepreciationBannerSelector, IEcookieConsentKey), IEDepreciationBannerSelector);
+    }
     if(/MSIE 9.0/.test(window.navigator.userAgent) ||
        /MSIE 8.0/.test(window.navigator.userAgent) ||
        /MSIE 7.0/.test(window.navigator.userAgent) ||
@@ -225,7 +232,7 @@ $(function() {
     }
 
     if ($(cookieBannerSelector).length) {
-        $osf.applyBindings(new CookieBannerViewModel(), cookieBannerSelector);
+        $osf.applyBindings(new makeWarningBanner(cookieBannerSelector, cookieConsentKey), cookieBannerSelector);
     }
 
     var affix = $('.osf-affix');

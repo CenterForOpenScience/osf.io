@@ -14,14 +14,14 @@
                 % if is_creator:
                     <p>
                         Your ${reviewable.provider.preprint_word}
-                        <a href="${reviewable.absolute_url}">${reviewable.node.title}</a>
+                        <a href="${reviewable.absolute_url}">${reviewable.title}</a>
                         has been successfully submitted to ${reviewable.provider.name}.
                     </p>
                 % else:
                     <p>
                         ${referrer.fullname} has added you as a contributor to the
                         ${reviewable.provider.preprint_word}
-                        <a href="${reviewable.absolute_url}">${reviewable.node.title}</a>
+                        <a href="${reviewable.absolute_url}">${reviewable.title}</a>
                         on ${reviewable.provider.name}, which is hosted on the GakuNin RDM.
                     </p>
                 % endif
@@ -41,14 +41,14 @@
                                     Now that you've shared your ${reviewable.provider.preprint_word}, take advantage of more GakuNin RDM features:
                                         <ul>
                                             <li>Upload supplemental, materials, data, and code to the GakuNin RDM project associated with your ${reviewable.provider.preprint_word}.
-                                                <a href="http://help.osf.io/m/preprints/l/685323-add-supplemental-files-to-a-preprint" target="_blank">Learn how</a></li>
-                                            <li>Preregister your next study. <a href="http://help.osf.io/m/registrations/l/524205-register-your-project">Read more</a></li>
+                                                <a href="https://openscience.zendesk.com/hc/en-us/articles/360019930533-Upload-a-Preprint#add-supplemental-materials" target="_blank">Learn how</a></li>
+                                            <li>Preregister your next study. <a href="https://openscience.zendesk.com/hc/en-us/articles/360019930893">Read more</a></li>
                                             <li>Or share on social media: Tell your friends through:
                                                 <table style="display: inline-table;" width="53" border="0" cellspacing="0" cellpadding="0" align="center">
                                                     <tbody>
                                                         <tr>
                                                             <td>
-                                                                <a href="${u'https://twitter.com/home?status=Read%20my%20{word}%2C%20%E2%80%9C{title}%E2%80%9D%20on%20{name}%20{link}'.format(word=reviewable.provider.preprint_word,title=reviewable.node.title, name=reviewable.provider.name, link=reviewable.absolute_url)}" target="_blank">
+                                                                <a href="${u'https://twitter.com/home?status=Read%20my%20{word}%2C%20%E2%80%9C{title}%E2%80%9D%20on%20{name}%20{link}'.format(word=reviewable.provider.preprint_word,title=reviewable.title, name=reviewable.provider.name, link=reviewable.absolute_url)}" target="_blank">
                                                                     <img src="${'{}static/img/fa-twitter-blue.png'.format(settings.DOMAIN)}" alt="twitter" style="display: block; border: 0;outline: none;text-decoration: none; text-align: center;vertical-align: bottom;" width="14">
                                                                 </a>
                                                             </td>
@@ -58,7 +58,7 @@
                                                                 </a>
                                                             </td>
                                                             <td>
-                                                                <a href="${u'https://www.linkedin.com/shareArticle?mini=true&url={link}&summary=Read%20my%20{word}%2C%20%E2%80%9C{title}%E2%80%9D%20on%20{name}%20{link}&title=I%20just%20posted%20a%20{word}&source='.format(word=reviewable.provider.preprint_word,title=reviewable.node.title, name=reviewable.provider.name, link=reviewable.absolute_url)}" target="_blank">
+                                                                <a href="${u'https://www.linkedin.com/shareArticle?mini=true&url={link}&summary=Read%20my%20{word}%2C%20%E2%80%9C{title}%E2%80%9D%20on%20{name}%20{link}&title=I%20just%20posted%20a%20{word}&source='.format(word=reviewable.provider.preprint_word,title=reviewable.title, name=reviewable.provider.name, link=reviewable.absolute_url)}" target="_blank">
                                                                     <img src="${'{}static/img/fa-linkedin-blue.png'.format(settings.DOMAIN)}" alt="LinkedIn" style="display: block; border: 0;outline: none;text-decoration: none; text-align: center;vertical-align: bottom;" width="14">
                                                                 </a>
                                                             </td>
@@ -78,15 +78,15 @@
                 </p>
                 % if not is_creator:
                 <p>
-                    If you have been erroneously associated with "${reviewable.node.title}," then you may visit the project's
-                    "Contributors" page and remove yourself as a contributor.
+                    If you have been erroneously associated with "${reviewable.title}," then you may visit the ${reviewable.provider.preprint_word}
+                    and remove yourself as a contributor.
                 </p>
                 % endif
                 <p>Learn more about <a href="${provider_url}">${reviewable.provider.name}</a> or <a href="https://rdm.nii.ac.jp/">GakuNin RDM</a>.</p>
                 <br>
                 <p>
                     Sincerely,<br>
-                    ${'Your GakuNin RDM team' if isOsfSubmission else 'Your {provider} and GakuNin RDM teams'.format(provider=reviewable.provider.name)}
+                    ${'The GakuNin RDM team' if isOsfSubmission else 'The {provider} and GakuNin RDM teams'.format(provider=reviewable.provider.name)}
                 </p>
             </div>
         </td>

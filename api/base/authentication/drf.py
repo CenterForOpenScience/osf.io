@@ -16,6 +16,7 @@ from api.base.exceptions import (
 )
 from framework.auth import cas
 from framework.auth.core import get_user
+from osf import features
 from osf.models import OSFUser, Session
 from website import settings
 
@@ -43,12 +44,12 @@ def check_user(user):
     """
     Verify users' status.
 
-                        registered      confirmed       disabled        merged      usable password     claimed
-    ACTIVE:             x               x               o               o           x                   x
-    NOT_CONFIRMED:      o               o               o               o           x                   o
-    NOT_CLAIMED:        o               o               o               o           o                   o
-    DISABLED:           o               x               x               o           x                   x
-    USER_MERGED:        x               x               o               x           o                   x
+                        registered      confirmed       disabled        merged      usable password
+    ACTIVE:             x               x               o               o           x
+    NOT_CONFIRMED:      o               o               o               o           x
+    NOT_CLAIMED:        o               o               o               o           o
+    DISABLED:           x               x               x               o           x
+    USER_MERGED:        x               x               o               x           o
 
     :param user: the user
     :raises UnconfirmedAccountError
@@ -71,7 +72,7 @@ def check_user(user):
         raise MergedAccountError
 
     # user not confirmed or contributor not claimed
-    if not user.is_confirmed and not user.is_registered and not user.is_claimed:
+    if not user.is_confirmed and not user.is_registered:
         if user.has_usable_password():
             raise UnconfirmedAccountError
         raise UnclaimedAccountError
@@ -105,7 +106,7 @@ class OSFSessionAuthentication(authentication.BaseAuthentication):
         user_id = session.data.get('auth_user_id')
         user = OSFUser.load(user_id)
         if user:
-            if waffle.switch_is_active('enforce_csrf'):
+            if waffle.switch_is_active(features.ENFORCE_CSRF):
                 self.enforce_csrf(request)
                 # CSRF passed with authenticated user
             check_user(user)
@@ -147,7 +148,7 @@ class OSFBasicAuthentication(BasicAuthentication):
             self.authenticate_twofactor_credentials(user_auth_tuple[0], request)
         return user_auth_tuple
 
-    def authenticate_credentials(self, userid, password):
+    def authenticate_credentials(self, userid, password, request=None):
         """
         Authenticate the user by userid (email) and password.
 

@@ -110,6 +110,16 @@ class TestNodeRelationshipNodeLinks:
         assert linking_node.linked_nodes_self_url in res.json['links']['self']
         assert linking_node.linked_nodes_related_url in res.json['links']['html']
         assert private_node._id in [e['id'] for e in res.json['data']]
+        assert res.json['data'][0]['type'] == 'linked_nodes'
+
+        #   get_relationship_linked_nodes_2_13
+        res = app.get('{}?version=2.13'.format(url), auth=user.auth)
+
+        assert res.status_code == 200
+        assert linking_node.linked_nodes_self_url in res.json['links']['self']
+        assert linking_node.linked_nodes_related_url in res.json['links']['html']
+        assert private_node._id in [e['id'] for e in res.json['data']]
+        assert res.json['data'][0]['type'] == 'nodes'
 
     #   get_linked_nodes_related_counts
         res = app.get(

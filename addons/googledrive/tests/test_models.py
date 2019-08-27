@@ -67,7 +67,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
     def test_api_not_cached(self, mock_gdp):
         # The first call to .api returns a new object
         api = self.node_settings.api
-        mock_gdp.assert_called_once()
+        mock_gdp.assert_called_once_with(self.external_account)
         assert_equal(api, mock_gdp())
 
     @mock.patch('addons.googledrive.models.GoogleDriveProvider')

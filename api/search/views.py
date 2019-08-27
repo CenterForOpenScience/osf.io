@@ -662,11 +662,12 @@ class SearchCollections(BaseSearchView):
         return [
             'abstract',
             'collectedType',
-            'contributors',
+            'contributors.fullname',
             'status',
             'subjects',
             'provider',
             'title',
+            'tags',
         ]
 
     def create(self, request, *args, **kwargs):

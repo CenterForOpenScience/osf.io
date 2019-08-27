@@ -13,7 +13,7 @@ from api.requests.permissions import NodeRequestPermission, PreprintRequestPermi
 from api.requests.serializers import NodeRequestSerializer, PreprintRequestSerializer
 from api.providers.permissions import MustBeModerator
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import Node, NodeRequest, PreprintRequest, PreprintService
+from osf.models import Node, NodeRequest, PreprintRequest, Preprint
 
 
 class RequestMixin(object):
@@ -60,7 +60,7 @@ class PreprintRequestMixin(RequestMixin):
     serializer_class = PreprintRequestSerializer
     request_class = PreprintRequest
     request_display_name = 'preprint request'
-    target_class = PreprintService
+    target_class = Preprint
     target_display_name = 'preprint'
     target_lookup_url_kwarg = 'preprint_id'
     request_lookup_url_kwarg = 'request_id'
@@ -80,9 +80,9 @@ class RequestDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     def get(self, request, *args, **kwargs):
         request_id = self.kwargs['request_id']
         if NodeRequest.objects.filter(_id=request_id).exists():
-            return NodeRequestDetail.as_view()(request, *args, **kwargs)
+            return NodeRequestDetail.as_view()(request._request, *args, **kwargs)
         elif PreprintRequest.objects.filter(_id=request_id).exists():
-            return PreprintRequestDetail.as_view()(request, *args, **kwargs)
+            return PreprintRequestDetail.as_view()(request._request, *args, **kwargs)
         else:
             raise NotFound
 
@@ -137,7 +137,7 @@ class RequestActionList(JSONAPIBaseView, generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         request_id = self.kwargs['request_id']
         if PreprintRequest.objects.filter(_id=request_id).exists():
-            return PreprintRequestActionList.as_view()(request, *args, **kwargs)
+            return PreprintRequestActionList.as_view()(request._request, *args, **kwargs)
         else:
             raise NotFound
 

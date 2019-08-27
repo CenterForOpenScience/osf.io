@@ -60,7 +60,7 @@ def unescape_entities(value, safe=None):
     if isinstance(value, dict):
         return {
             key: unescape_entities(value, safe=safe_characters)
-            for (key, value) in value.iteritems()
+            for (key, value) in value.items()
         }
 
     if is_iterable_but_not_string(value):

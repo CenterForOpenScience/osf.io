@@ -5,7 +5,7 @@ from json import dumps
 import mock
 import pytest
 import mendeley
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 from github3.repos import Repository
 
 
@@ -262,12 +262,13 @@ class NodeAddonDetailMixin(object):
             # If addon was mandatory -- OSFStorage
             pass
         res = self.app.post_json_api(
-            self.setting_detail_url,
-             {'data': {
-                 'id': self.short_name,
-                 'type': 'node_addons',
-                 'attributes': {}
-             }},
+            self.setting_detail_url, {
+                'data': {
+                    'id': self.short_name,
+                    'type': 'node_addons',
+                    'attributes': {}
+                }
+            },
             auth=self.user.auth,
             expect_errors=wrong_type)
         if not wrong_type:
@@ -364,7 +365,7 @@ class NodeAddonDetailMixin(object):
     def test_settings_detail_PATCH_readcontrib_raises_error(self):
         read_user = AuthUserFactory()
         self.node.add_contributor(
-            read_user, permissions=[READ], auth=self.auth)
+            read_user, permissions=READ, auth=self.auth)
         res = self.app.patch_json_api(
             self.setting_detail_url,
             {'data': {
@@ -550,22 +551,26 @@ class NodeAddonFolderMixin(object):
         assert_equal(res.status_code, 403)
 
     def test_folder_list_GET_raises_error_writecontrib_not_authorizer(self):
+        wrong_type = self.should_expect_errors()
         write_user = AuthUserFactory()
         self.node.add_contributor(
             write_user,
-            permissions=[WRITE],
+            permissions=WRITE,
             auth=self.auth)
         res = self.app.get(
             self.folder_url,
             auth=write_user.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 403)
+        if wrong_type:
+            assert_in(res.status_code, [404, 501])
+        else:
+            assert_equal(res.status_code, 403)
 
     def test_folder_list_GET_raises_error_admin_not_authorizer(self):
         wrong_type = self.should_expect_errors()
         admin_user = AuthUserFactory()
         self.node.add_contributor(
-            admin_user, permissions=[ADMIN],
+            admin_user, permissions=ADMIN,
             auth=self.auth)
         res = self.app.get(
             self.folder_url,
@@ -759,15 +764,12 @@ class TestNodeMendeleyAddon(
 
     @mock.patch('addons.mendeley.models.Mendeley._get_folders')
     def test_folder_list_GET_expected_behavior(self, mock_folders):
-        mock_folder = mendeley.models.folders.Folder(
-           json = {
-              'created':'2017-10-14T21:17:14.000Z',
-              'id':'fasdkljla-2341-4592-10po-fds0920dks0ds',
-              'modified':'2017-10-14T21:18:00.000Z',
-              'name':'Test Mendeley Folder'
-           },
-           session = 'session'
-        )
+        mock_folder = mendeley.models.folders.Folder(json={
+            'created': '2017-10-14T21:17:14.000Z',
+            'id': 'fasdkljla-2341-4592-10po-fds0920dks0ds',
+            'modified': '2017-10-14T21:18:00.000Z',
+            'name': 'Test Mendeley Folder'
+        }, session='session')
 
         mock_folders.return_value = [mock_folder]
 
@@ -794,25 +796,25 @@ class TestNodeZoteroAddon(
     def test_folder_list_GET_expected_behavior(self, mock_libraries):
         ## Testing top level - GET library behavior
         mock_library = {
-          'data': {
-            'description': '',
-            'url': '',
-            'libraryReading': 'members',
+            'data': {
+                'description': '',
+                'url': '',
+                'libraryReading': 'members',
+                'version': 1,
+                'owner': 2533095,
+                'fileEditing': 'members',
+                'libraryEditing': 'members',
+                'type': 'Private',
+                'id': 18497322,
+                'name': 'Group Library I'
+            },
             'version': 1,
-            'owner': 2533095,
-            'fileEditing': 'members',
-            'libraryEditing': 'members',
-            'type': 'Private',
-            'id': 18497322,
-            'name': 'Group Library I'
-          },
-          'version': 1,
-          'meta': {
-            'lastModified': '2017-10-19T22:20:41Z',
-            'numItems': 20,
-            'created': '2017-10-19T22:20:41Z'
-          },
-          'id': 18497322
+            'meta': {
+                'lastModified': '2017-10-19T22:20:41Z',
+                'numItems': 20,
+                'created': '2017-10-19T22:20:41Z'
+            },
+            'id': 18497322
         }
 
         mock_libraries.return_value = [mock_library, 1]
@@ -849,23 +851,23 @@ class TestNodeZoteroAddon(
     def test_sub_folder_list_GET_expected_behavior(self, mock_folders):
         ## Testing second level - GET folder behavior
         mock_folder = {
-           'library':{
-              'type':'group',
-              'id':18497322,
-              'name':'Group Library I'
-           },
-           'version':14,
-           'meta':{
-              'numCollections':0,
-              'numItems':1
-           },
-           'key':'V63S7EUJ',
-           'data':{
-              'version':14,
-              'name':'Test Folder',
-              'key':'FSCFSLREF',
-              'parentCollection': 'False'
-           }
+            'library': {
+                'type': 'group',
+                'id': 18497322,
+                'name': 'Group Library I'
+            },
+            'version': 14,
+            'meta': {
+                'numCollections': 0,
+                'numItems': 1
+            },
+            'key': 'V63S7EUJ',
+            'data': {
+                'version': 14,
+                'name': 'Test Folder',
+                'key': 'FSCFSLREF',
+                'parentCollection': 'False'
+            }
         }
 
         mock_folders.return_value = [mock_folder]
@@ -944,7 +946,7 @@ class TestNodeBoxAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
                 'name': 'FAKEFOLDERNAME',
                 'path_collection': {'entries': {}}
             }
-            with mock.patch('addons.box.models.Provider.refresh_oauth_key') as mock_update:
+            with mock.patch('addons.box.models.Provider.refresh_oauth_key'):
                 super(
                     TestNodeBoxAddon,
                     self).test_settings_detail_PUT_all_sets_settings()
@@ -1060,7 +1062,7 @@ class TestNodeGoogleDriveAddon(
     @mock.patch('addons.googledrive.client.GoogleDriveClient.about')
     def test_folder_list_GET_expected_behavior(self, mock_about):
         mock_about.return_value = {'rootFolderId': 'FAKEROOTID'}
-        with mock.patch.object(self.node_settings.__class__, 'fetch_access_token', return_value='asdfghjkl') as mock_fetch:
+        with mock.patch.object(self.node_settings.__class__, 'fetch_access_token', return_value='asdfghjkl'):
             super(
                 TestNodeGoogleDriveAddon, self
             ).test_folder_list_GET_expected_behavior()
@@ -1162,14 +1164,26 @@ class TestNodeForwardAddon(
     # Overrides
 
     def test_folder_list_GET_raises_error_admin_not_authorizer(self):
-        wrong_type = self.should_expect_errors()
+        self.should_expect_errors()
         admin_user = AuthUserFactory()
         self.node.add_contributor(
-            admin_user, permissions=[ADMIN],
+            admin_user, permissions=ADMIN,
             auth=self.auth)
         res = self.app.get(
             self.folder_url,
             auth=admin_user.auth,
+            expect_errors=True)
+        assert_equal(res.status_code, 501)
+
+    def test_folder_list_GET_raises_error_writecontrib_not_authorizer(self):
+        write_user = AuthUserFactory()
+        self.node.add_contributor(
+            write_user,
+            permissions=WRITE,
+            auth=self.auth)
+        res = self.app.get(
+            self.folder_url,
+            auth=write_user.auth,
             expect_errors=True)
         assert_equal(res.status_code, 501)
 

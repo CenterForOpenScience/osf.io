@@ -270,9 +270,8 @@ def create_fake_user():
     email = fake_email()
     name = fake.name()
     user = UserFactory(username=email, fullname=name,
-                       is_registered=True, is_claimed=True,
+                       is_registered=True, emails=[email],
                        date_registered=fake.date_time(tzinfo=pytz.UTC),
-                       emails=[email]
                    )
     user.set_password('faker123')
     user.save()
@@ -349,7 +348,7 @@ def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, p
 
 def render_generations_from_parent(parent, creator, num_generations):
     current_gen = parent
-    for generation in xrange(0, num_generations):
+    for generation in range(0, num_generations):
         next_gen = NodeFactory(
             parent=current_gen,
             creator=creator,

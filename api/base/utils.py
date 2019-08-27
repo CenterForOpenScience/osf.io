@@ -7,7 +7,7 @@ from hashids import Hashids
 
 from django.utils.http import urlquote
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import OuterRef, Exists, Q, QuerySet, F
+from django.db.models import QuerySet, F
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 
@@ -17,7 +17,7 @@ from api.base.settings import HASHIDS_SALT
 from framework.auth import Auth
 from framework.auth.cas import CasResponse
 from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
-from osf.models import OSFUser, Contributor, Node, Registration
+from osf.models import OSFUser, Node, Registration
 from osf.models.base import GuidMixin
 from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
@@ -148,11 +148,12 @@ def default_node_list_queryset(model_cls):
     return model_cls.objects.filter(is_deleted=False).annotate(region=F('addons_osfstorage_node_settings__region___id'))
 
 def default_node_permission_queryset(user, model_cls):
+    """
+    Return nodes that are either public or you have perms because you're a contributor.
+    Implicit admin permissions not included here (NodeList, UserNodes, for example, don't factor this in.)
+    """
     assert model_cls in {Node, Registration}
-    if user.is_anonymous:
-        return model_cls.objects.filter(is_public=True)
-    sub_qs = Contributor.objects.filter(node=OuterRef('pk'), user__id=user.id, read=True)
-    return model_cls.objects.annotate(contrib=Exists(sub_qs)).filter(Q(contrib=True) | Q(is_public=True))
+    return model_cls.objects.get_nodes_for_user(user, include_public=True)
 
 def default_node_list_permission_queryset(user, model_cls):
     # **DO NOT** change the order of the querysets below.
@@ -190,12 +191,11 @@ def has_admin_scope(request):
 
     return set(ComposedScopes.ADMIN_LEVEL).issubset(normalize_scopes(token.attributes['accessTokenScope']))
 
-
 def is_deprecated(request_version, min_version=None, max_version=None):
     if not min_version and not max_version:
         raise NotImplementedError('Must specify min or max version.')
-    min_version_deprecated = min_version and StrictVersion(request_version) < StrictVersion(min_version)
-    max_version_deprecated = max_version and StrictVersion(request_version) > StrictVersion(max_version)
+    min_version_deprecated = min_version and StrictVersion(request_version) < StrictVersion(str(min_version))
+    max_version_deprecated = max_version and StrictVersion(request_version) > StrictVersion(str(max_version))
     if min_version_deprecated or max_version_deprecated:
         return True
     return False
@@ -210,3 +210,18 @@ def waterbutler_api_url_for(node_id, provider, path='/', _internal=False, base_u
     url.path.segments.extend([urlquote(x) for x in segments])
     url.args.update(kwargs)
     return url.url
+
+def assert_resource_type(obj, resource_tuple):
+    assert type(resource_tuple) is tuple, 'resources must be passed in as a tuple.'
+    if len(resource_tuple) == 1:
+        error_message = resource_tuple[0].__name__
+    elif len(resource_tuple) == 2:
+        error_message = resource_tuple[0].__name__ + ' or ' + resource_tuple[1].__name__
+    else:
+        error_message = ''
+        for resource in resource_tuple[:-1]:
+            error_message += resource.__name__ + ', '
+        error_message += 'or ' + resource_tuple[-1].__name__
+
+    a_or_an = 'an' if error_message[0].lower() in 'aeiou' else 'a'
+    assert isinstance(obj, resource_tuple), 'obj must be {} {}; got {}'.format(a_or_an, error_message, obj)
