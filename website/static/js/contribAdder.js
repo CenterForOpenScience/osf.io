@@ -72,12 +72,17 @@ AddContributorViewModel = oop.extend(Paginator, {
             {value: 'admin', text: 'Administrator'}
         ];
 
+        self.inviteFromExplicitLink = false;
         self.page = ko.observable('whom');
         self.pageTitle = ko.computed(function () {
+            var flag = self.inviteFromExplicitLink;
+            self.inviteFromExplicitLink = false;
             return {
                 whom: 'Add Contributors',
                 which: 'Select Components',
-                invite: 'Add Unregistered Contributor'
+                invite: flag ?
+                    'Invite new contributor by e-mail' :
+                    'Add Unregistered Contributor'
             }[self.page()];
         });
         self.query = ko.observable();
@@ -188,6 +193,11 @@ AddContributorViewModel = oop.extend(Paginator, {
         self.inviteError('');
         self.inviteEmail('');
         self.page('invite');
+    },
+    gotoInviteFromExplicitLink: function () {
+        var self = this;
+        self.inviteFromExplicitLink = true;
+        self.gotoInvite();
     },
     goToPage: function (page) {
         this.page(page);

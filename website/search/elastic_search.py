@@ -36,7 +36,7 @@ from website import settings
 from website.filters import profile_image_url
 from osf.models.licenses import serialize_node_license_record
 from website.search import exceptions
-from website.search.util import build_query, clean_splitters
+from website.search.util import build_query, clean_splitters, es_escape
 from website.views import validate_page_num
 
 logger = logging.getLogger(__name__)
@@ -716,6 +716,7 @@ def update_user(user, index=None):
         'degree': user.schools[0]['degree'] if user.schools else '',
         'social': user.social_links,
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
+        'user_affiliated_institutions': list(user.affiliated_institutions.values_list('_id', flat=True)),
     }
 
     client().index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)
@@ -864,6 +865,7 @@ def delete_all():
 def delete_index(index):
     client().indices.delete(index, ignore=[404])
 
+PROJECT_LIKE_TYPES = ['project', 'component', 'registration', 'preprint']
 
 @requires_search
 def create_index(index=None):
@@ -872,7 +874,7 @@ def create_index(index=None):
     """
     index = index or INDEX
     document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint', 'collectionSubmission']
-    project_like_types = ['project', 'component', 'registration', 'preprint']
+    project_like_types = PROJECT_LIKE_TYPES
     analyzed_fields = ['title', 'description']
 
     client().indices.create(index, ignore=[400])  # HTTP 400 if index already exists
@@ -965,6 +967,8 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
         most recent employment and education, profile_image URL of an OSF user
 
     """
+    escaped_query = es_escape(query)
+
     start = (page * size)
     items = re.split(r'[\s-]+', query)
     exclude = exclude or []
@@ -978,10 +982,15 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
         normalized_items.append(normalized_item)
     items = normalized_items
 
-    query = '  AND '.join('{}*~'.format(re.escape(item)) for item in items) + \
+    query = '  AND '.join('{}*~'.format(es_escape(item)) for item in items) + \
             ''.join(' NOT id:"{}"'.format(excluded._id) for excluded in exclude)
+    if current_user and current_user.affiliated_institutions.all().exists():
+        query = query + ' AND user_affiliated_institutions:({})'.format(' OR '.join(
+            '"{}"'.format(es_escape(inst_id)) for inst_id in
+            current_user.affiliated_institutions.values_list('_id', flat=True)
+        ))
 
-    results = search(build_query(query, start=start, size=size), index=INDEX, doc_type='user')
+    results = search(build_query(query, start=start, size=size, sort=None, user_guid=escaped_query), index=INDEX, doc_type='user')
     docs = results['results']
     pages = math.ceil(results['counts'].get('user', 0) / size)
     validate_page_num(page, pages)

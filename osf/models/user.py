@@ -24,7 +24,7 @@ from django.contrib.auth.models import PermissionsMixin
 from django.dispatch import receiver
 from django.db import models
 from django.db.models import Count
-from django.db.models.signals import post_save
+from django.db.models.signals import m2m_changed, post_save
 from django.utils import timezone
 from guardian.shortcuts import get_objects_for_user
 
@@ -1864,3 +1864,8 @@ def _create_quickfiles_project(instance):
 def create_quickfiles_project(sender, instance, created, **kwargs):
     if created:
         _create_quickfiles_project(instance)
+
+@receiver(m2m_changed, sender=OSFUser.affiliated_institutions.through)
+def update_search_with_affiliated_institutions(sender, instance, action, **kwargs):
+    if action in ['post_add', 'post_remove', 'post_clear']:
+        instance.update_search()

@@ -9,6 +9,8 @@ import logging
 from django.db import connection
 from django.core.paginator import Paginator
 from elasticsearch2 import helpers
+import six
+import unicodedata
 
 import website.search.search as search
 from website.search.elastic_search import client
@@ -22,10 +24,43 @@ from website import settings
 from website.app import init_app
 from website.search.elastic_search import client as es_client
 from website.search.elastic_search import bulk_update_cgm
+from website.search.elastic_search import PROJECT_LIKE_TYPES
 from website.search.search import update_institution, bulk_update_collected_metadata
 
 
 logger = logging.getLogger(__name__)
+
+# see:
+# - website.search.elastic_search.update_user
+# - website.search.elastic_search.serialize_node
+# - website.search.elastic_search.create_index
+def normalize(docs):
+    assert docs
+
+    doc_op_type = docs[0]['_op_type']
+    if doc_op_type != 'update':
+        return
+
+    doc_type = docs[0]['_type']
+    if doc_type == 'user':
+        for doc in docs:
+            normalized_names = {}
+            for key, val in doc['doc']['names'].items():
+                if val is not None:
+                    try:
+                        val = six.u(val)
+                    except TypeError:
+                        pass  # This is fine, will only happen in 2.x if val is already unicode
+                    normalized_names[key] = unicodedata.normalize('NFKD', val).encode('ascii', 'ignore')
+            doc['doc']['normalized_user'] = normalized_names['fullname']
+            doc['doc']['normalized_names'] = normalized_names
+    elif doc_type in PROJECT_LIKE_TYPES:
+        for doc in docs:
+            try:
+                title = six.u(doc['doc']['title'])
+            except TypeError:
+                title = doc['doc']['title']
+            doc['doc']['normalized_title'] = unicodedata.normalize('NFKD', title).encode('ascii', 'ignore')
 
 def sql_migrate(index, sql, max_id, increment, es_args=None, **kwargs):
     """ Run provided SQL and send output to elastic.
@@ -65,6 +100,7 @@ def sql_migrate(index, sql, max_id, increment, es_args=None, **kwargs):
             ser_objs = cursor.fetchone()[0]
             if ser_objs:
                 total_objs += len(ser_objs)
+                normalize(ser_objs)
                 helpers.bulk(client(), ser_objs, **es_args)
         page_start = page_end
     return total_objs
