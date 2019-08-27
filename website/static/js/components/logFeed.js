@@ -8,8 +8,6 @@ var mHelpers = require('js/mithrilHelpers');
 var Raven = require('raven-js');
 var LogText = require('js/logTextParser');
 
-// var MAX_PAGES_ON_PAGINATOR = 7;
-// var MAX_PAGES_ON_PAGINATOR_SIDE = 5;
 var LOG_PAGE_SIZE_LIMITED = 3;
 var LOG_PAGE_SIZE = 6;
 var PROFILE_IMAGE_SIZE = 16;
