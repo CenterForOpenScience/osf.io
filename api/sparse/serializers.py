@@ -21,7 +21,6 @@ class SparseNodeSerializer(NodeSerializer):
         'root',
         'parent',
         'contributors',
-        'subjects',
     ])
     links = LinksField({
         'self': 'get_absolute_url',  # self links will break ember data unless we make a specific sparse detail serializer
@@ -144,7 +143,7 @@ class SparseRegistrationSerializer(RegistrationSerializer):
     # Overrides SparseFieldsetMixin
     def parse_sparse_fields(self, allow_unsafe=False, **kwargs):
         """
-        SparseNodes are faster mostly because they subset the fields that they return
+        SparseRegistrations are faster mostly because they subset the fields that they return
         to only the necessary fields for a list view.
         """
         fieldset = [
