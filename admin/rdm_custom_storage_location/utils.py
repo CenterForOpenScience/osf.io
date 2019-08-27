@@ -262,6 +262,7 @@ def test_owncloud_connection(host_url, username, password, folder, provider):
         provider_name = 'Nextcloud'
         provider_setting = nextcloud_settings
 
+    # Ensure that ownCloud uses https
     host = furl()
     host.host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
     host.scheme = 'https'
@@ -474,6 +475,7 @@ def save_nextcloud_credentials(institution_id, storage_name, host_url, username,
     if test_connection_result[1] != httplib.OK:
         return test_connection_result
 
+    # Ensure that NextCloud uses https
     host = furl()
     host.host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
     host.scheme = 'https'
@@ -557,6 +559,7 @@ def save_owncloud_credentials(institution_id, storage_name, host_url, username, 
     if test_connection_result[1] != httplib.OK:
         return test_connection_result
 
+    # Ensure that ownCloud uses https
     host = furl()
     host.host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
     host.scheme = 'https'
