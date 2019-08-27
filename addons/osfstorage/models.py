@@ -164,7 +164,7 @@ class OsfStorageFileNode(BaseFileNode):
     def delete(self, user=None, parent=None, **kwargs):
         self._path = self.path
         self._materialized_path = self.materialized_path
-        return super(OsfStorageFileNode, self).delete(user=user, parent=parent, **kwargs) if self._check_delete_allowed() else None
+        return super(OsfStorageFileNode, self).delete(user=user, parent=parent) if self._check_delete_allowed() else None
 
     def move_under(self, destination_parent, name=None):
         if self.is_preprint_primary:
