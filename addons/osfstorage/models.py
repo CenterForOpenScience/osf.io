@@ -166,16 +166,16 @@ class OsfStorageFileNode(BaseFileNode):
         self._materialized_path = self.materialized_path
         return super(OsfStorageFileNode, self).delete(user=user, parent=parent) if self._check_delete_allowed() else None
 
+    def update_region_from_latest_version(self, destination_parent):
+        raise NotImplementedError
+
     def move_under(self, destination_parent, name=None):
         if self.is_preprint_primary:
             if self.target != destination_parent.target or self.provider != destination_parent.provider:
                 raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
-        most_recent_fileversion = self.versions.select_related('region').order_by('-created').first()
-        if most_recent_fileversion and most_recent_fileversion.region != destination_parent.target.osfstorage_region:
-            most_recent_fileversion.region = destination_parent.target.osfstorage_region
-            most_recent_fileversion.save()
+        self.update_region_from_latest_version(destination_parent)
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
 
     def check_in_or_out(self, user, checkout, save=False):
@@ -292,6 +292,12 @@ class OsfStorageFile(OsfStorageFileNode, File):
             'created': earliest_version.created.isoformat() if version else None,
         })
         return ret
+
+    def update_region_from_latest_version(self, destination_parent):
+        most_recent_fileversion = self.versions.select_related('region').order_by('-created').first()
+        if most_recent_fileversion and most_recent_fileversion.region != destination_parent.target.osfstorage_region:
+            most_recent_fileversion.region = destination_parent.target.osfstorage_region
+            most_recent_fileversion.save()
 
     def create_version(self, creator, location, metadata=None):
         latest_version = self.get_version()
@@ -451,6 +457,9 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
             ret['fullPath'] = self.materialized_path
         return ret
 
+    def update_region_from_latest_version(self, destination_parent):
+        for child in self.children.all().prefetch_related('versions'):
+            child.update_region_from_latest_version(destination_parent)
 
 class Region(models.Model):
     _id = models.CharField(max_length=255, db_index=True)
