@@ -59,6 +59,27 @@ STATUS_NOT_ACCESSIBLE = [
     api_settings.TIME_STAMP_STORAGE_DISCONNECTED,
     api_settings.TIME_STAMP_STORAGE_NOT_ACCESSIBLE
 ]
+
+
+class OSFAbortableAsyncResult(AbortableAsyncResult):
+    """This class is a workaround to a celery bug that throws an AttributeError when it
+    should not.
+
+    The bug itself has been fixed in the celery's PR #5435, but it will only be released
+    on celery 4.4.0. And because of another bug, seems that even after the 4.4.0 release,
+    we won't be able to upgrade celery.
+
+    So for now we're fixing the bug with this class.
+    """
+    def ready(self):
+        try:
+            return super(OSFAbortableAsyncResult, self).ready()
+        except AttributeError as e:
+            logger.error('Failed to get task status! Exception message:')
+            logger.error(str(e))
+            return True
+
+
 def get_async_task_data(node):
     task_data = {
         'ready': True,
@@ -66,7 +87,7 @@ def get_async_task_data(node):
     }
     timestamp_task = TimestampTask.objects.filter(node=node).first()
     if timestamp_task is not None:
-        task = AbortableAsyncResult(timestamp_task.task_id)
+        task = OSFAbortableAsyncResult(timestamp_task.task_id)
         task_data['ready'] = task.ready()
         task_data['requester'] = timestamp_task.requester.username
         if task_data['ready']:
@@ -363,7 +384,7 @@ def get_celery_task(node):
     task = None
     timestamp_task = TimestampTask.objects.filter(node=node).first()
     if timestamp_task is not None:
-        task = AbortableAsyncResult(timestamp_task.task_id)
+        task = OSFAbortableAsyncResult(timestamp_task.task_id)
     return task
 
 def get_celery_task_progress(node):

@@ -680,6 +680,9 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
         submission_provider = self.provider_class(creator=user_one)
         submission_provider.allow_submissions = False
         submission_provider.save()
+        submission_provider.primary_collection.status_choices = ['', 'asdf', 'fdsa']
+        submission_provider.primary_collection.collected_type_choices = ['', 'asdf', 'fdsa']
+        submission_provider.primary_collection.save()
         return submission_provider
 
     @pytest.fixture()
@@ -704,7 +707,7 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
 
     @pytest.fixture()
     def collection_with_provider(self, user_one, submission_one):
-        c = CollectionFactory(creator=user_one)
+        c = CollectionFactory(creator=user_one, status_choices=['asdf'])
         c.collect_object(submission_one, user_one, status='asdf')
         return c
 

@@ -7,7 +7,7 @@ import mock
 
 import pytest
 from django.core.exceptions import ValidationError
-from nose.tools import *  # flake8: noqa (PEP8 asserts)
+from nose.tools import *  # noqa: F403 (PEP8 asserts)
 
 from framework.auth import Auth
 from osf_tests.factories import (AuthUserFactory, NodeLicenseRecordFactory,
@@ -18,7 +18,7 @@ from tests.utils import assert_logs, assert_not_logs
 from website import settings
 from osf.models.licenses import NodeLicense, serialize_node_license_record, serialize_node_license
 from osf.models import NodeLog
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 
 
 

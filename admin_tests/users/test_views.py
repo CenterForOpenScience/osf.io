@@ -12,18 +12,21 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
+from django.contrib.messages.storage.fallback import FallbackStorage
 
+from api.base import settings as api_settings
 from tests.base import AdminTestCase
 from website import settings
 from framework.auth import Auth
 from osf.models.user import OSFUser
-from osf.models.tag import Tag
+from osf.models.spam import SpamStatus
+from osf.models import UserQuota
 from osf_tests.factories import (
     UserFactory,
     AuthUserFactory,
     ProjectFactory,
-    TagFactory,
-    UnconfirmedUserFactory
+    UnconfirmedUserFactory,
+    InstitutionFactory
 )
 from admin_tests.utilities import setup_view, setup_log_view, setup_form_view
 
@@ -134,6 +137,59 @@ class TestResetPasswordView(AdminTestCase):
         self.assertEqual(response.status_code, 200)
 
 
+class TestDeleteUser(AdminTestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.request = RequestFactory().post('/fake_path')
+        self.view = views.UserGDPRDeleteView
+        self.view = setup_log_view(self.view, self.request, guid=self.user._id)
+
+    def test_get_object(self):
+        obj = self.view().get_object()
+        nt.assert_is_instance(obj, OSFUser)
+
+    def test_gdpr_delete_user(self):
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(self.request, 'session', 'session')
+        messages = FallbackStorage(self.request)
+        setattr(self.request, '_messages', messages)
+
+        count = AdminLogEntry.objects.count()
+        self.view().delete(self.request)
+        self.user.reload()
+        nt.assert_true(self.user.deleted)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+
+    def test_no_user(self):
+        view = setup_view(views.UserGDPRDeleteView(), self.request, guid='meh')
+        with nt.assert_raises(Http404):
+            view.delete(self.request)
+
+    def test_no_user_permissions_raises_error(self):
+        user = UserFactory()
+        guid = user._id
+        request = RequestFactory().get(reverse('users:GDPR_delete', kwargs={'guid': guid}))
+        request.user = user
+
+        with self.assertRaises(PermissionDenied):
+            self.view.as_view()(request, guid=guid)
+
+    def test_correct_view_permissions(self):
+        user = UserFactory()
+        guid = user._id
+
+        change_permission = Permission.objects.get(codename='change_osfuser')
+        user.user_permissions.add(change_permission)
+        user.save()
+
+        request = RequestFactory().get(reverse('users:GDPR_delete', kwargs={'guid': guid}))
+        request.user = user
+
+        response = self.view.as_view()(request, guid=guid)
+        self.assertEqual(response.status_code, 200)
+
+
 class TestDisableUser(AdminTestCase):
     def setUp(self):
         self.user = UserFactory()
@@ -204,9 +260,6 @@ class TestHamUserRestore(AdminTestCase):
         self.view = views.HamUserRestoreView
         self.view = setup_log_view(self.view, self.request, guid=self.user._id)
 
-        self.spam_confirmed, created = Tag.objects.get_or_create(name='spam_confirmed')
-        self.ham_confirmed, created = Tag.objects.get_or_create(name='ham_confirmed')
-
     def test_get_object(self):
         obj = self.view().get_object()
         nt.assert_is_instance(obj, OSFUser)
@@ -224,8 +277,7 @@ class TestHamUserRestore(AdminTestCase):
         self.user.reload()
 
         nt.assert_false(self.user.is_disabled)
-        nt.assert_false(self.user.all_tags.filter(name=self.spam_confirmed.name).exists())
-        nt.assert_true(self.user.all_tags.filter(name=self.ham_confirmed.name).exists())
+        nt.assert_true(self.user.spam_status == SpamStatus.HAM)
 
 
 class TestDisableSpamUser(AdminTestCase):
@@ -253,7 +305,7 @@ class TestDisableSpamUser(AdminTestCase):
         self.user.reload()
         self.public_node.reload()
         nt.assert_true(self.user.is_disabled)
-        nt.assert_true(self.user.all_tags.filter(name='spam_confirmed').exists())
+        nt.assert_true(self.user.spam_status == SpamStatus.SPAM)
         nt.assert_false(self.public_node.is_public)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 3)
 
@@ -289,20 +341,16 @@ class TestDisableSpamUser(AdminTestCase):
 class SpamUserListMixin(object):
     def setUp(self):
 
-        spam_flagged = TagFactory(name='spam_flagged')
-        spam_confirmed = TagFactory(name='spam_confirmed')
-        ham_confirmed = TagFactory(name='ham_confirmed')
-
         self.flagged_user = UserFactory()
-        self.flagged_user.tags.add(spam_flagged)
+        self.flagged_user.spam_status = SpamStatus.FLAGGED
         self.flagged_user.save()
 
         self.spam_user = UserFactory()
-        self.spam_user.tags.add(spam_confirmed)
+        self.spam_user.spam_status = SpamStatus.SPAM
         self.spam_user.save()
 
         self.ham_user = UserFactory()
-        self.ham_user.tags.add(ham_confirmed)
+        self.ham_user.spam_status = SpamStatus.HAM
         self.ham_user.save()
 
         self.request = RequestFactory().post('/fake_path')
@@ -780,3 +828,238 @@ class TestUserMerge(AdminTestCase):
 
         view.form_valid(valid_form)
         nt.assert_true(mock_merge_user.called_with())
+
+
+class TestGetUserQuota(AdminTestCase):
+    def setUp(self):
+        super(TestGetUserQuota, self).setUp()
+
+        self.user = UserFactory()
+        self.view = views.UserView()
+
+    def test_get_default_quota(self):
+        response = setup_view(
+            self.view,
+            RequestFactory().get(reverse('users:user', kwargs={'guid': self.user._id})),
+            guid=self.user._id
+        )
+        context = response.get_object()
+        nt.assert_equal(context['quota'], api_settings.DEFAULT_MAX_QUOTA)
+
+    def test_get_custom_quota(self):
+        UserQuota.objects.create(
+            user=self.user,
+            storage_type=UserQuota.NII_STORAGE,
+            max_quota=200
+        )
+        response = setup_view(
+            self.view,
+            RequestFactory().get(reverse('users:user', kwargs={'guid': self.user._id})),
+            guid=self.user._id
+        )
+        context = response.get_object()
+        nt.assert_equal(context['quota'], 200)
+
+
+class TestSetUserQuota(AdminTestCase):
+    def setUp(self):
+        super(TestSetUserQuota, self).setUp()
+
+        self.user = UserFactory()
+        self.view = views.UserQuotaView.as_view()
+
+    def test_new_quota(self):
+        response = self.view(
+            RequestFactory().post(
+                reverse('users:quota', kwargs={'guid': self.user._id}),
+                {'maxQuota': 150}),
+            guid=self.user._id
+        )
+        nt.assert_equal(response.status_code, 302)
+
+        user_quota = UserQuota.objects.filter(
+            user=self.user, storage_type=UserQuota.NII_STORAGE
+        ).first()
+        nt.assert_is_not_none(user_quota)
+        nt.assert_equal(user_quota.max_quota, 150)
+
+    def test_new_quota_empty(self):
+        response = self.view(
+            RequestFactory().post(
+                reverse('users:quota', kwargs={'guid': self.user._id}),
+                {'maxQuota': ''}),
+            guid=self.user._id
+        )
+
+        nt.assert_equal(response.status_code, 302)
+        nt.assert_false(UserQuota.objects.filter(
+            user=self.user, storage_type=UserQuota.NII_STORAGE
+        ).exists())
+
+    def test_new_quota_missing_parameter(self):
+        response = self.view(
+            RequestFactory().post(reverse('users:quota', kwargs={'guid': self.user._id})),
+            guid=self.user._id
+        )
+
+        nt.assert_equal(response.status_code, 302)
+        nt.assert_false(UserQuota.objects.filter(
+            user=self.user, storage_type=UserQuota.NII_STORAGE
+        ).exists())
+
+    def test_update_quota(self):
+        UserQuota.objects.create(user=self.user, max_quota=100)
+
+        response = self.view(
+            RequestFactory().post(
+                reverse('users:quota', kwargs={'guid': self.user._id}),
+                {'maxQuota': 200}),
+            guid=self.user._id
+        )
+        nt.assert_equal(response.status_code, 302)
+
+        user_quota = UserQuota.objects.filter(
+            user=self.user, storage_type=UserQuota.NII_STORAGE
+        ).first()
+        nt.assert_is_not_none(user_quota)
+        nt.assert_equal(user_quota.max_quota, 200)
+
+    def test_update_quota_negative(self):
+        UserQuota.objects.create(user=self.user, max_quota=100)
+
+        response = self.view(
+            RequestFactory().post(
+                reverse('users:quota', kwargs={'guid': self.user._id}),
+                {'maxQuota': -200}),
+            guid=self.user._id
+        )
+        nt.assert_equal(response.status_code, 302)
+
+        user_quota = UserQuota.objects.filter(
+            user=self.user, storage_type=UserQuota.NII_STORAGE
+        ).first()
+        nt.assert_is_not_none(user_quota)
+        nt.assert_equal(user_quota.max_quota, 1)
+
+
+class TestGetUserInstitutionQuota(AdminTestCase):
+    def setUp(self):
+        super(TestGetUserInstitutionQuota, self).setUp()
+
+        self.institution = InstitutionFactory()
+        self.user = UserFactory()
+        self.user.affiliated_institutions.add(self.institution)
+        self.view = views.UserDetailsView()
+
+    def test_admin_login(self):
+        request = RequestFactory().get(reverse('users:user_details', kwargs={'guid': self.user._id}))
+        request.user = self.user
+        request.user.is_active = True
+        request.user.is_registered = True
+        request.user.is_superuser = False
+        request.user.is_staff = True
+        view = setup_view(self.view, request, guid=self.user._id)
+        nt.assert_true(view.test_func())
+
+    def test_get_default_quota(self):
+        response = setup_view(
+            self.view,
+            RequestFactory().get(reverse('users:user_details', kwargs={'guid': self.user._id})),
+            guid=self.user._id
+        )
+        context = response.get_object()
+        nt.assert_equal(context['quota'], api_settings.DEFAULT_MAX_QUOTA)
+
+    def test_get_custom_quota(self):
+        UserQuota.objects.create(
+            storage_type=UserQuota.CUSTOM_STORAGE,
+            user=self.user,
+            max_quota=200
+        )
+        response = setup_view(
+            self.view,
+            RequestFactory().get(reverse('users:user_details', kwargs={'guid': self.user._id})),
+            guid=self.user._id
+        )
+        context = response.get_object()
+        nt.assert_equal(context['quota'], 200)
+
+
+class TestSetUserInstitutionQuota(AdminTestCase):
+    def setUp(self):
+        self.user = AuthUserFactory()
+        self.view = views.UserInstitutionQuotaView()
+        self.institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(self.institution)
+
+    def test_permissions_staff(self):
+        request = RequestFactory().post(
+            reverse('users:quota', kwargs={'guid': self.user._id}),
+            {'maxQuota': 200})
+        request.user = self.user
+        request.user.is_superuser = False
+        request.user.is_staff = True
+        response = views.UserInstitutionQuotaView.as_view()(
+            request, guid=self.user._id
+        )
+        nt.assert_equal(response.status_code, 302)
+        nt.assert_not_in('login', str(response))
+
+    def test_permissions_superuser(self):
+        request = RequestFactory().post(
+            reverse('users:quota', kwargs={'guid': self.user._id}),
+            {'maxQuota': 200})
+        request.user = self.user
+        request.user.is_superuser = True
+        request.user.is_staff = False
+        response = views.UserInstitutionQuotaView.as_view()(
+            request, guid=self.user._id
+        )
+        nt.assert_equal(response.status_code, 302)
+        nt.assert_in('login', str(response))
+
+    def test_new_quota(self):
+        request = RequestFactory().post(
+            reverse('users:quota', kwargs={'guid': self.user._id}),
+            {'maxQuota': 150})
+        self.view = setup_view(self.view, request, guid=self.user._id)
+        response = self.view.post(request)
+        nt.assert_equal(response.status_code, 302)
+
+        user_quota = UserQuota.objects.filter(
+            user=self.user, storage_type=UserQuota.CUSTOM_STORAGE
+        ).first()
+        nt.assert_is_not_none(user_quota)
+        nt.assert_equal(user_quota.max_quota, 150)
+
+    def test_update_quota(self):
+        UserQuota.objects.create(user=self.user, max_quota=100)
+
+        request = RequestFactory().post(
+            reverse('users:quota', kwargs={'guid': self.user._id}),
+            {'maxQuota': 200})
+        self.view = setup_view(self.view, request, guid=self.user._id)
+        response = self.view.post(request)
+        nt.assert_equal(response.status_code, 302)
+
+        user_quota = UserQuota.objects.filter(
+            user=self.user, storage_type=UserQuota.CUSTOM_STORAGE
+        ).first()
+        nt.assert_is_not_none(user_quota)
+        nt.assert_equal(user_quota.max_quota, 200)
+
+    def test_update_quota_negative(self):
+        UserQuota.objects.create(user=self.user, max_quota=100)
+
+        request = RequestFactory().post(
+            reverse('users:quota', kwargs={'guid': self.user._id}),
+            {'maxQuota': -200})
+        self.view = setup_view(self.view, request, guid=self.user._id)
+        response = self.view.post(request)
+        nt.assert_equal(response.status_code, 302)
+
+        user_quota = UserQuota.objects.filter(
+            user=self.user, storage_type=UserQuota.CUSTOM_STORAGE
+        ).first()
+        nt.assert_is_not_none(user_quota)
+        nt.assert_equal(user_quota.max_quota, 1)

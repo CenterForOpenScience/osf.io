@@ -19,7 +19,8 @@ from osf_tests.factories import (
 )
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
+from osf.utils.permissions import ADMIN, WRITE, READ
 from addons.wiki import settings
 from addons.wiki import views
 from addons.wiki.exceptions import InvalidVersionError
@@ -1002,7 +1003,7 @@ class TestWikiShareJSMongo(OsfTestCase):
         user = UserFactory()
         self.project.add_contributor(
             contributor=user,
-            permissions=['read', 'write', 'admin'],
+            permissions=ADMIN,
             auth=Auth(user=self.user),
         )
         self.project.save()
@@ -1010,8 +1011,8 @@ class TestWikiShareJSMongo(OsfTestCase):
         # Removing admin permission does nothing
         self.project.manage_contributors(
             user_dicts=[
-                {'id': user._id, 'permission': 'write', 'visible': True},
-                {'id': self.user._id, 'permission': 'admin', 'visible': True},
+                {'id': user._id, 'permission': WRITE, 'visible': True},
+                {'id': self.user._id, 'permission': ADMIN, 'visible': True},
             ],
             auth=Auth(user=self.user),
             save=True,
@@ -1020,8 +1021,8 @@ class TestWikiShareJSMongo(OsfTestCase):
         # Removing write permission migrates uuid
         self.project.manage_contributors(
             user_dicts=[
-                {'id': user._id, 'permission': 'read', 'visible': True},
-                {'id': self.user._id, 'permission': 'admin', 'visible': True},
+                {'id': user._id, 'permission': READ, 'visible': True},
+                {'id': self.user._id, 'permission': ADMIN, 'visible': True},
             ],
             auth=Auth(user=self.user),
             save=True,
@@ -1259,7 +1260,7 @@ class TestPublicWiki(OsfTestCase):
             'nodeType': 'component',
             'category': 'hypothesis',
             'permissions': {'view': True,
-                            'admin': True}
+                            ADMIN: True}
         }]
 
         assert_equal(data, expected)
@@ -1277,7 +1278,7 @@ class TestPublicWiki(OsfTestCase):
                     'kind': 'folder',
                     'nodeType': 'component',
                     'children': [],
-                    'permissions': {'admin': True,
+                    'permissions': {ADMIN: True,
                                     'view': True}
                     }]
 

@@ -2,8 +2,10 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 
 from framework.auth.oauth_scopes import public_scopes
+from osf.exceptions import ValidationError
 from osf.models import ApiOAuth2PersonalToken
 
+from api.base.exceptions import format_validation_error
 from api.base.serializers import JSONAPISerializer, LinksField, IDField, TypeField
 
 
@@ -58,7 +60,11 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
     def create(self, validated_data):
         validate_requested_scopes(validated_data)
         instance = ApiOAuth2PersonalToken(**validated_data)
-        instance.save()
+        try:
+            instance.save()
+        except ValidationError as e:
+            detail = format_validation_error(e)
+            raise exceptions.ValidationError(detail=detail)
         return instance
 
     def update(self, instance, validated_data):
@@ -68,12 +74,16 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
         instance.deactivate(save=False)  # This will cause CAS to revoke the existing token but still allow it to be used in the future, new scopes will be updated properly at that time.
         instance.reload()
 
-        for attr, value in validated_data.iteritems():
+        for attr, value in validated_data.items():
             if attr == 'token_id':  # Do not allow user to update token_id
                 continue
             else:
                 setattr(instance, attr, value)
-        instance.save()
+        try:
+            instance.save()
+        except ValidationError as e:
+            detail = format_validation_error(e)
+            raise exceptions.ValidationError(detail=detail)
         return instance
 
 def validate_requested_scopes(validated_data):

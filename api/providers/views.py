@@ -9,6 +9,7 @@ from api.base import permissions as base_permissions
 from api.base.exceptions import InvalidFilterValue, InvalidFilterOperator, Conflict
 from api.base.filters import PreprintFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
+from api.base.metrics import MetricsViewMixin
 from api.base.pagination import MaxSizePagination, IncreasedPageSizePagination
 from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
@@ -23,8 +24,9 @@ from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import AbstractNode, CollectionProvider, CollectionSubmission, NodeLicense, OSFUser, RegistrationProvider, Subject, PreprintRequest, PreprintProvider, WhitelistedSHAREPreprintProvider
-from osf.utils.permissions import REVIEW_PERMISSIONS
+from osf.utils.permissions import REVIEW_PERMISSIONS, ADMIN
 from osf.utils.workflows import RequestTypes
+from osf.metrics import PreprintDownload, PreprintView
 
 
 class GenericProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -61,7 +63,7 @@ class RegistrationProviderList(GenericProviderList):
     view_name = 'registration-providers-list'
 
 
-class PreprintProviderList(GenericProviderList):
+class PreprintProviderList(MetricsViewMixin, GenericProviderList):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_list).
     """
 
@@ -69,6 +71,21 @@ class PreprintProviderList(GenericProviderList):
     serializer_class = PreprintProviderSerializer
     view_category = 'preprint-providers'
     view_name = 'preprint-providers-list'
+    metric_map = {
+        'downloads': PreprintDownload,
+        'views': PreprintView,
+    }
+
+    # overrides MetricsViewMixin
+    def get_annotated_queryset_with_metrics(self, queryset, metric_class, metric_name, after):
+        return metric_class.get_top_by_count(
+            qs=queryset,
+            model_field='_id',
+            metric_field='provider_id',
+            annotation=metric_name,
+            after=after,
+            size=None,
+        )
 
     def get_renderer_context(self):
         context = super(PreprintProviderList, self).get_renderer_context()
@@ -276,7 +293,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
         provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
 
         # Permissions on the list objects are handled by the query
-        return self.preprints_queryset(provider.preprint_services.all(), auth_user)
+        return self.preprints_queryset(provider.preprints.all(), auth_user)
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -390,7 +407,12 @@ class PreprintProviderWithdrawRequestList(JSONAPIBaseView, generics.ListAPIView,
         return get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
 
     def get_default_queryset(self):
-        return PreprintRequest.objects.filter(request_type=RequestTypes.WITHDRAWAL.value, target__provider_id=self.get_provider().id)
+        return PreprintRequest.objects.filter(
+            request_type=RequestTypes.WITHDRAWAL.value,
+            target__provider_id=self.get_provider().id,
+            target__is_public=True,
+            target__deleted__isnull=True,
+        )
 
     def get_renderer_context(self):
         context = super(PreprintProviderWithdrawRequestList, self).get_renderer_context()
@@ -436,10 +458,10 @@ class PreprintProviderModeratorsList(ModeratorMixin, JSONAPIBaseView, generics.L
 
     def get_default_queryset(self):
         provider = self.get_provider()
-        admin_group = provider.get_group('admin')
+        admin_group = provider.get_group(ADMIN)
         mod_group = provider.get_group('moderator')
         return (admin_group.user_set.all() | mod_group.user_set.all()).annotate(permission_group=Case(
-            When(groups=admin_group, then=Value('admin')),
+            When(groups=admin_group, then=Value(ADMIN)),
             default=Value('moderator'),
             output_field=CharField(),
         )).order_by('fullname')
@@ -478,4 +500,4 @@ class PreprintProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics
         try:
             self.get_provider().remove_from_group(instance, instance.permission_group)
         except ValueError as e:
-            raise ValidationError(e.message)
+            raise ValidationError(str(e))

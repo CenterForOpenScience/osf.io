@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import mock
 from urlparse import urlparse
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa: F403
 import unittest
 
 from framework.auth import Auth

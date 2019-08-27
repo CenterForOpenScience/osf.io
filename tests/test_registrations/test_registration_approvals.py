@@ -10,10 +10,10 @@ from osf_tests.factories import (
 )
 
 from framework.exceptions import PermissionsError
-from website.exceptions import (
+from osf.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
 )
-from website import tokens
+from osf.utils import tokens
 from osf.models.sanctions import (
     Sanction,
     PreregCallbackMixin,
@@ -21,7 +21,7 @@ from osf.models.sanctions import (
 )
 from framework.auth import Auth
 from osf.models import Contributor, SpamStatus
-
+from osf.utils.permissions import ADMIN
 
 DUMMY_TOKEN = tokens.encode({
     'dummy': 'token'
@@ -47,8 +47,8 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
     def test__initiate_approval_does_not_create_tokens_for_unregistered_admin(self):
         unconfirmed_user = UnconfirmedUserFactory()
         Contributor.objects.create(node=self.registration, user=unconfirmed_user)
-        self.registration.add_permission(unconfirmed_user, 'admin', save=True)
-        assert_true(self.registration.has_permission(unconfirmed_user, 'admin'))
+        self.registration.add_permission(unconfirmed_user, ADMIN, save=True)
+        assert_equal(Contributor.objects.get(node=self.registration, user=unconfirmed_user).permission, ADMIN)
 
         approval = self.registration._initiate_approval(
             self.user
@@ -82,7 +82,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         assert_not_in(child_non_admin._id, approval.approval_state)
 
     def test_require_approval_from_non_admin_raises_PermissionsError(self):
-        self.registration.remove_permission(self.user, 'admin')
+        self.registration.remove_permission(self.user, ADMIN)
         self.registration.save()
         self.registration.reload()
         with assert_raises(PermissionsError):
@@ -128,7 +128,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
     def test_one_approval_with_two_admins_stays_pending(self):
         admin2 = UserFactory()
         Contributor.objects.create(node=self.registration, user=admin2)
-        self.registration.add_permission(admin2, 'admin', save=True)
+        self.registration.add_permission(admin2, ADMIN, save=True)
         self.registration.require_approval(
             self.user
         )

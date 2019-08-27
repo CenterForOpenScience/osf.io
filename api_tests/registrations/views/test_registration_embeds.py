@@ -1,11 +1,12 @@
 import pytest
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 import functools
 
 from framework.auth.core import Auth
 
 from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
+from osf.utils.permissions import WRITE
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
@@ -30,9 +31,9 @@ class TestRegistrationEmbeds(ApiTestCase):
         self.contribs = [AuthUserFactory() for i in range(2)]
         for contrib in self.contribs:
             self.root_node.add_contributor(
-                contrib, ['read', 'write'], auth=self.auth, save=True)
+                contrib, WRITE, auth=self.auth, save=True)
             self.child1.add_contributor(
-                contrib, ['read', 'write'], auth=self.auth, save=True)
+                contrib, WRITE, auth=self.auth, save=True)
 
         self.contrib1 = self.contribs[0]
         self.contrib2 = self.contribs[1]

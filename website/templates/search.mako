@@ -119,7 +119,13 @@
     </div>
 
     <script type="text/html" id="file">
-        <h4><a data-bind="attr: {href: guid_url || deep_url}, text: name"></a> (<span class="text-danger" data-bind="if: is_retracted">Withdrawn </span><span data-bind="if: is_registration">Registration </span>File)</h4>
+        <!-- ko if: guid_url || deep_url -->
+            <h4><a data-bind="attr: {href: guid_url || deep_url}, text: name"></a> (<span class="text-danger" data-bind="if: is_retracted">Withdrawn </span><span data-bind="if: is_registration">Registration </span>File)</h4>
+        <!-- /ko-->
+        <!-- ko ifnot: guid_url || deep_url -->
+            <h4> <span data-bind="text:name"></span> (Preprint File)</h4>
+        <!-- /ko-->
+
         <h5>
             <!-- ko if: parent_url --> From: <a data-bind="attr: {href: parent_url}, text: parent_title || '' + ' /'"></a> <!-- /ko -->
             <!-- ko if: !parent_url --> From: <span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <!-- /ko -->
@@ -243,6 +249,16 @@
             </span>
         </p>
         <!-- /ko -->
+        <!-- ko if: groups ? groups.length > 0 : false -->
+        <p>
+            <strong>Groups:</strong> <span data-bind="foreach: groups">
+                <!-- ko if: url -->
+                    <span data-bind="text: name"></span>
+                <!-- /ko-->
+            <!-- ko if: ($index()+1) < ($parent.groups.length) -->&nbsp;- <!-- /ko -->
+            </span>
+        </p>
+        <!-- /ko -->
       <!-- ko if: affiliated_institutions ? affiliated_institutions.length > 0 : false -->
         <p><strong>Affiliated institutions:</strong>
             <!-- ko foreach: {data: affiliated_institutions, as: 'item'} -->
@@ -272,12 +288,7 @@
       <div data-bind="template: {name: 'node', data: $data}"></div>
     </script>
     <script type="text/html" id="preprint">
-      <!-- ko if: parent_url -->
-      <h4><a data-bind="attr: {href: parent_url}, text: parent_title"></a> / <a data-bind="attr: {href: url}, text: title"></a></h4>
-        <!-- /ko -->
-        <!-- ko if: !parent_url -->
-        <h4><span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <a data-bind="attr: {href: url}, text: title"></a></h4>
-        <!-- /ko -->
+        <h4><a data-bind="attr: {href: url}, text: title"></a> (Preprint)</h4>
         <p data-bind="visible: description"><strong>Description:</strong> <span data-bind="fitText: {text: description, length: 500}"></span></p>
         <!-- ko if: contributors.length > 0 -->
         <p>
@@ -292,28 +303,38 @@
             </span>
         </p>
         <!-- /ko -->
-      <!-- ko if: affiliated_institutions ? affiliated_institutions.length > 0 : false -->
-        <p><strong>Affiliated institutions:</strong>
-            <!-- ko foreach: {data: affiliated_institutions, as: 'item'} -->
-                <!-- ko if: item == $parent.affiliated_institutions[$parent.affiliated_institutions.length -1] -->
-                <span data-bind="text: item"></span>
-                <!-- /ko -->
-                <!-- ko if: item != $parent.affiliated_institutions[$parent.affiliated_institutions.length -1] -->
-                <span data-bind="text: item"></span>,
-                <!-- /ko -->
-            <!-- /ko -->
-        </p>
-        <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
         <div data-bind="template: 'tag-cloud'"></div>
         <!-- /ko -->
-        <p><strong>Jump to:</strong>
-            <a data-bind="attr: {href: preprintUrl}">Preprint</a> -
-            <!-- ko if: n_wikis > 0 -->
-            <a data-bind="attr: {href: wikiUrl}">Wiki</a> -
-            <!-- /ko -->
-            <a data-bind="attr: {href: filesUrl}">Files</a>
+    </script>
+    <script type="text/html" id="group">
+        <h4><span data-bind="text: title"></span></h4>
+        <!-- ko if: managers.length > 0 -->
+        <p>
+            <strong>Managers:</strong> <span data-bind="foreach: managers">
+                <!-- ko if: url -->
+                    <a data-bind="attr: {href: url}, text: fullname"></a>
+                <!-- /ko-->
+                <!-- ko ifnot: url -->
+                    <span data-bind="text: fullname"></span>
+                <!-- /ko -->
+            <!-- ko if: ($index()+1) < ($parent.managers.length) -->&nbsp;- <!-- /ko -->
+            </span>
         </p>
+        <!-- /ko -->
+        <!-- ko if: members.length > 0 -->
+        <p>
+            <strong>Members:</strong> <span data-bind="foreach: members">
+                <!-- ko if: url -->
+                    <a data-bind="attr: {href: url}, text: fullname"></a>
+                <!-- /ko-->
+                <!-- ko ifnot: url -->
+                    <span data-bind="text: fullname"></span>
+                <!-- /ko -->
+            <!-- ko if: ($index()+1) < ($parent.members.length) -->&nbsp;- <!-- /ko -->
+            </span>
+        </p>
+        <!-- /ko -->
     </script>
     <script type="text/html" id="registration">
         <!-- ko if: parent_url -->

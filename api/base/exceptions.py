@@ -32,7 +32,7 @@ def dict_error_formatting(errors, context, index=None):
     else:
         index = str(index) + '/'
 
-    for error_key, error_description in errors.iteritems():
+    for error_key, error_description in errors.items():
         if isinstance(error_description, basestring):
             error_description = [error_description]
 
@@ -89,6 +89,13 @@ def json_api_exception_handler(exc, context):
         response.data = {'errors': errors}
 
     return response
+
+
+def format_validation_error(e):
+    error_list = []
+    for key, value in e.message_dict.items():
+        error_list.append('There was an issue with the {} field. {}'.format(key, value[0]))
+    return error_list
 
 
 class EndpointNotImplementedError(APIException):

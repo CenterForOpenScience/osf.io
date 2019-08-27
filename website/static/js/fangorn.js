@@ -141,6 +141,12 @@ function cancelUpload(row) {
     tb.isUploading(handled && filesArr.length > 1);
 }
 
+function removeFromUI(file, tb) {
+    var parent = file.treebeardParent || tb.dropzoneItemCache;
+    var item = findByTempID(parent, file.tmpID);
+    tb.deleteNode(parent.id, item.id);
+}
+
 /**
  * Cancel all pending uploads
  * @this Treebeard.controller
@@ -152,12 +158,6 @@ function cancelAllUploads() {
     var filesArr = tb.dropzone.files.filter(function(file) {
         return cancelableStatuses.indexOf(file.status) > -1 || !file.accepted;
     });
-    // Remove all queued files
-    var removeFromUI = function(file) {
-        var parent = file.treebeardParent || tb.dropzoneItemCache;
-        var item = findByTempID(parent, file.tmpID);
-        tb.deleteNode(parent.id, item.id);
-    };
     // Clear all synchronous uploads
     if (tb.dropzone.syncFileCache !== undefined) {
         SYNC_UPLOAD_ADDONS.forEach(function(provider) {
@@ -173,7 +173,7 @@ function cancelAllUploads() {
     filesArr.forEach(function(file, index) {
         // Ignore completed files
         if (file.upload.progress === 100) return;
-        removeFromUI(file);
+        removeFromUI(file, tb);
         // Cancel currently uploading file
         tb.dropzone.removeFile(file);
     });
@@ -533,13 +533,6 @@ function checkConflictsRename(tb, item, name, cb) {
                 m('h5.replace-file', '"Cancel" will cancel the move.')
             ]);
 
-
-            if (window.contextVars.node.preprintFileId === child.data.path.replace('/', '')) {
-                messageArray = messageArray.concat([
-                    m('p', 'The file "' + child.data.name + '" is the primary file for a preprint, so it should not be replaced.'),
-                    m('strong', 'Replacing this file will remove this preprint from circulation.')
-                ]);
-            }
             tb.modal.update(
                 m('', messageArray), [
                     m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
@@ -942,10 +935,18 @@ function _fangornComplete(treebeard, file) {
  */
 function _fangornDropzoneSuccess(treebeard, file, response) {
     treebeard.options.uploadInProgress = false;
-    var parent = file.treebeardParent,
-        item,
-        revisedItem,
-        child;
+
+    if (response.data.attributes.provider === 'osfstorage') {
+        var usedQuota = window.contextVars.used_quota;
+        var maxQuota = window.contextVars.max_quota;
+        var threshold = window.contextVars.threshold;
+        if (usedQuota > maxQuota * threshold) {
+            $osf.growl('Quota usage alert', 'You have used more than ' + (threshold * 100) + '% of your quota.', 'warning');
+        }
+    }
+
+    var parent = file.treebeardParent, item,revisedItem, child;
+
     for (var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
         if (!child.data.tmpID){
@@ -1188,9 +1189,6 @@ function _removeEvent (event, items, col) {
         .fail(function(data){
             tb.modal.dismiss();
             tb.clearMultiselect();
-            if (data.responseJSON.message_long.indexOf('preprint') !== -1) {
-                $osf.growl('Delete failed', data.responseJSON.message_long);
-            }
             item.notify.update('Delete failed.', 'danger', undefined, 3000);
         });
     }
@@ -1512,8 +1510,19 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
 
 function _fangornTitleColumn(item, col) {
     var tb = this;
-    if(item.data.nodeRegion && item.data.provider !== 'osfstorage'){
+    if (item.data.nodeRegion && item.data.provider !== 'osfstorage') {
         return _fangornTitleColumnHelper(tb, item, col, item.data.name + ' (' + item.data.nodeRegion + ')', '/', 'fg-file-links');
+    }
+    if (item.data.nodeRegion) {
+        if (window.contextVars.isCustomStorageLocation) {
+            return _fangornTitleColumnHelper(tb, item, col, item.data.nodeRegion, '/', 'fg-file-links');
+        }
+        else if (item.data.nodeRegion===item.data.addonFullname) {
+            return _fangornTitleColumnHelper(tb, item, col, item.data.nodeRegion, '/', 'fg-file-links');
+        }
+        else {
+            return _fangornTitleColumnHelper(tb, item, col, item.data.name, '/', 'fg-file-links');
+        }
     }
     return _fangornTitleColumnHelper(tb, item, col, item.data.name, '/', 'fg-file-links');
 }
@@ -1939,7 +1948,6 @@ var FGItemButtons = {
         var item = args.item;
         var rowButtons = [];
         var mode = args.mode;
-        var preprintPath = getPreprintPath(window.contextVars.node.preprintFileId);
         if (tb.options.placement !== 'fileview') {
             if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
                 rowButtons.push(
@@ -1956,22 +1964,12 @@ var FGItemButtons = {
                         className: 'text-success'
                     }, 'Create Folder'));
                 if (item.data.path) {
-                    if (preprintPath && folderContainsPreprint(item, preprintPath)) {
-                        rowButtons.push(
-                            m.component(FGButton, {
-                                icon: 'fa fa-trash',
-                                tooltip: 'This folder contains a Preprint. You cannot delete Preprints, but you can upload a new version.',
-                                className: 'tb-disabled'
-                            }, 'Delete Folder'));
-                        reapplyTooltips();
-                    } else {
-                        rowButtons.push(
-                            m.component(FGButton, {
-                                onclick: function(event) {_removeEvent.call(tb, event, [item]); },
-                                icon: 'fa fa-trash',
-                                className : 'text-danger'
-                            }, 'Delete Folder'));
-                    }
+                    rowButtons.push(
+                        m.component(FGButton, {
+                            onclick: function(event) {_removeEvent.call(tb, event, [item]); },
+                            icon: 'fa fa-trash',
+                            className : 'text-danger'
+                        }, 'Delete Folder'));
                 }
             }
             if (item.kind === 'file') {
@@ -1995,24 +1993,13 @@ var FGItemButtons = {
                 if (item.data.permissions && item.data.permissions.edit) {
                     if (item.data.provider === 'osfstorage') {
                         if (!item.data.extra.checkout){
-                            if (preprintPath && preprintPath === item.data.path) {
-                                // Block delete for preprint files
-                                rowButtons.push(
-                                    m.component(FGButton, {
-                                        icon: 'fa fa-trash',
-                                        tooltip: 'This file is a Preprint. You cannot delete Preprints, but you can upload a new version.',
-                                        className: 'tb-disabled'
-                                    }, 'Delete'));
-                                // Tooltips don't seem to auto reapply, this forces them.
-                                reapplyTooltips();
-                            } else {
-                                rowButtons.push(
-                                    m.component(FGButton, {
-                                        onclick: function(event) { _removeEvent.call(tb, event, [item]); },
-                                        icon: 'fa fa-trash',
-                                        className: 'text-danger'
-                                    }, 'Delete'));
-                            }
+                            rowButtons.push(
+                                m.component(FGButton, {
+                                    onclick: function(event) { _removeEvent.call(tb, event, [item]); },
+                                    icon: 'fa fa-trash',
+                                    className: 'text-danger'
+                                }, 'Delete'));
+
                             rowButtons.push(
                                 m.component(FGButton, {
                                     onclick: function(event) {
@@ -2240,27 +2227,16 @@ var FGToolbar = {
             )
         ) {
             if (showDeleteMultiple(items)) {
-                var preprintPath = getPreprintPath(window.contextVars.node.preprintFileId);
-                if (preprintPath && multiselectContainsPreprint(items, preprintPath)) {
-                    generalButtons.push(
-                        m.component(FGButton, {
-                            icon: 'fa fa-trash',
-                            tooltip: 'One of these items is a Preprint or contains a Preprint. You cannot delete Preprints, but you can upload a new version.',
-                            className: 'tb-disabled'
-                        }, 'Delete Multiple')
-                    );
-                } else {
-                    generalButtons.push(
-                        m.component(FGButton, {
-                            onclick: function(event) {
-                                var configOption = resolveconfigOption.call(ctrl.tb, item, 'removeEvent', [event, items]); // jshint ignore:line
-                                if(!configOption){ _removeEvent.call(ctrl.tb, null, items); }
-                            },
-                            icon: 'fa fa-trash',
-                            className : 'text-danger'
-                        }, 'Delete Multiple')
-                    );
-                }
+                generalButtons.push(
+                    m.component(FGButton, {
+                        onclick: function(event) {
+                            var configOption = resolveconfigOption.call(ctrl.tb, item, 'removeEvent', [event, items]); // jshint ignore:line
+                            if(!configOption){ _removeEvent.call(ctrl.tb, null, items); }
+                        },
+                        icon: 'fa fa-trash',
+                        className : 'text-danger'
+                    }, 'Delete Multiple')
+                );
             }
         }
         generalButtons.push(
@@ -2766,17 +2742,6 @@ function allowedToMove(folder, item, mustBeIntra) {
     );
 }
 
-function folderContainsPreprint(item, preprintPath) {
-    // TODO This will only get children of open folders  -ajs
-    var children = getAllChildren(item);
-    for (var c = 0; c < children.length; c++) {
-        if (children[c].data.path === preprintPath) {
-            return true;
-        }
-    }
-    return false;
-}
-
 function showDeleteMultiple(items) {
     // Only show delete button if user has edit permissions on at least one selected file
     for (var i = 0; i < items.length; i++) {
@@ -2788,35 +2753,12 @@ function showDeleteMultiple(items) {
     return false;
 }
 
-function multiselectContainsPreprint(items, preprintPath) {
-    for (var i = 0; i < items.length; i++) {
-        var each = items[i];
-        if (each.data.kind === 'folder') {
-            if (folderContainsPreprint(each, preprintPath)) {
-                return true;
-            }
-        } else if (each.data.path === preprintPath) {
-            return true;
-        }
-    }
-    return false;
-}
-
-function getPreprintPath(preprintFileId) {
-    if (preprintFileId) {
-        return '/' + preprintFileId;
-    }
-    return null;
-}
-
 function getCopyMode(folder, items) {
     var tb = this;
     // Prevents side effects from rare instance where folders not fully populated
     if (typeof folder === 'undefined' || typeof folder.data === 'undefined') {
         return 'forbidden';
     }
-
-    var preprintPath = getPreprintPath(window.contextVars.node.preprintFileId);
     var canMove = true;
     var mustBeIntra = (folder.data.provider === 'github');
     // Folders cannot be copied to dataverse at all.  Folders may only be copied to figshare
@@ -2841,13 +2783,10 @@ function getCopyMode(folder, items) {
             if (children[c].inProgress || children[c].id === folder.id) {
                 return 'forbidden';
             }
-            if (children[c].data.path === preprintPath){
-                mustBeIntra = true;
-            }
         }
 
         if (canMove) {
-            mustBeIntra = mustBeIntra || item.data.provider === 'github' || preprintPath === item.data.path;
+            mustBeIntra = mustBeIntra || item.data.provider === 'github';
             canMove = allowedToMove(folder, item, mustBeIntra);
         }
     }
@@ -2977,10 +2916,12 @@ tbOptions = {
                 size = file.size / 1000000;
                 maxSize = item.data.accept.maxSize;
                 if (size > maxSize) {
-                    displaySize = Math.round(file.size / 10000) / 100;
-                    msgText = 'One of the files is too large (' + displaySize + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.';
-                    item.notify.update(msgText, 'warning', undefined, 3000);
-                    addFileStatus(treebeard, file, false, 'File is too large. Max file size is ' + item.data.accept.maxSize + ' MB.', '');
+                    displaySize = $osf.humanFileSize(file.size, true);
+                    maxSize = $osf.humanFileSize(maxSize * 1000000, true);
+                    msgText = 'This file is too large (' + displaySize + '). Max file size is ' + maxSize + '.';
+                    $osf.growl(msgText);
+                    addFileStatus(treebeard, file, false, msgText, '');
+                    removeFromUI(file, treebeard);
                     return false;
                 }
             }
@@ -3123,12 +3064,10 @@ Fangorn.DefaultOptions = tbOptions;
 module.exports = {
     Fangorn : Fangorn,
     allowedToMove : allowedToMove,
-    folderContainsPreprint : folderContainsPreprint,
     getAllChildren : getAllChildren,
     isInvalidDropFolder : isInvalidDropFolder,
     isInvalidDropItem : isInvalidDropItem,
     getCopyMode : getCopyMode,
-    multiselectContainsPreprint : multiselectContainsPreprint,
     showDeleteMultiple : showDeleteMultiple,
     checkConflicts : checkConflicts
 };

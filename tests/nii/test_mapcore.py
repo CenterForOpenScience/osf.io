@@ -1218,12 +1218,13 @@ class TestViewsWithMAPCore(OsfTestCase):
         # Two users are added as a contributor via a POST request
         project = ProjectFactory(creator=self.me, is_public=True)
         reg_user1, reg_user2 = UserFactory(), UserFactory()
+        from osf.utils import permissions
         project.add_contributors(
             [
-                {'user': reg_user1, 'permissions': [
-                    'read', 'write', 'admin'], 'visible': True},
-                {'user': reg_user2, 'permissions': [
-                    'read', 'write', 'admin'], 'visible': False},
+                {'user': reg_user1,
+                 'permissions': permissions.ADMIN, 'visible': True},
+                {'user': reg_user2,
+                 'permissions': permissions.ADMIN, 'visible': False},
             ]
         )
         # Add a non-registered user
@@ -1238,14 +1239,18 @@ class TestViewsWithMAPCore(OsfTestCase):
             url,
             {
                 'contributors': [
-                    {'id': reg_user2._id, 'permission': 'admin',
-                        'registered': True, 'visible': False},
-                    {'id': project.creator._id, 'permission': 'admin',
-                        'registered': True, 'visible': True},
-                    {'id': unregistered_user._id, 'permission': 'admin',
-                        'registered': False, 'visible': True},
-                    {'id': reg_user1._id, 'permission': 'admin',
-                        'registered': True, 'visible': True},
+                    {'id': reg_user2._id,
+                     'permission': permissions.ADMIN,
+                     'registered': True, 'visible': False},
+                    {'id': project.creator._id,
+                     'permission': permissions.ADMIN,
+                     'registered': True, 'visible': True},
+                    {'id': unregistered_user._id,
+                     'permission': permissions.ADMIN,
+                     'registered': False, 'visible': True},
+                    {'id': reg_user1._id,
+                     'permission': permissions.ADMIN,
+                     'registered': True, 'visible': True},
                 ]
             },
             auth=self.me.auth,

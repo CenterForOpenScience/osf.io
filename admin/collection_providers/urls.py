@@ -11,4 +11,5 @@ urlpatterns = [
     url(r'^(?P<collection_provider_id>[a-z0-9]+)/delete/$', views.DeleteCollectionProvider.as_view(), name='delete'),
     url(r'^(?P<collection_provider_id>[a-z0-9]+)/export/$', views.ExportColectionProvider.as_view(), name='export'),
     url(r'^(?P<collection_provider_id>[a-z0-9]+)/import/$', views.ImportCollectionProvider.as_view(), name='import'),
+    url(r'^(?P<collection_provider_id>[a-z0-9]+)/cannot_delete/$', views.CannotDeleteProvider.as_view(), name='cannot_delete'),
 ]

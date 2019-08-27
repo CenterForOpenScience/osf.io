@@ -1,7 +1,6 @@
 {
     "name": "Election Research Preacceptance Competition",
     "version": 2,
-    "active": false,
     "flags": {
         "payment_sent": false,
         "proof_of_publication": false

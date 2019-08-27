@@ -12,7 +12,7 @@ from nose.tools import *  # noqa (PEP8 asserts)
 import blinker
 
 from tests.base import OsfTestCase, DbTestCase
-from osf_tests.factories import RegistrationFactory, UserFactory, fake_email
+from osf_tests.factories import RegistrationFactory, UserFactory, fake_email, RegionFactory, AuthUserFactory, ExternalAccountFactory, InstitutionFactory
 
 from framework.auth.utils import generate_csl_given_name
 from framework.routing import Rule, json_renderer
@@ -25,6 +25,10 @@ from website.util import paths
 from website.util import web_url_for, api_url_for, is_json_request, conjunct, api_v2_url
 from website.project import utils as project_utils
 from website.profile import utils as profile_utils
+import json
+from osf.utils.external_util import set_region_external_account, set_new_access_token
+from osf.models.region_external_account import RegionExternalAccount
+from addons.osfstorage.models import Region
 
 try:
     import magic  # noqa
@@ -303,7 +307,7 @@ class TestWebsiteUtils(unittest.TestCase):
         rapply(outputs, r_assert)
 
     def test_rapply_on_list(self):
-        inputs = range(5)
+        inputs = list(range(5))
         add_one = lambda n: n + 1
         outputs = rapply(inputs, add_one)
         for i in inputs:
@@ -338,7 +342,7 @@ class TestWebsiteUtils(unittest.TestCase):
             if check and checkFn(item):
                 return item
             return 0
-        inputs = range(5)
+        inputs = list(range(5))
         outputs = rapply(inputs, zero_if_not_check, True, checkFn=lambda n: n % 2)
         assert_equal(outputs, [0, 1, 0, 3, 0])
         outputs = rapply(inputs, zero_if_not_check, False, checkFn=lambda n: n % 2)
@@ -453,3 +457,42 @@ class TestUserFactoryConflict:
         user_one_create = UserFactory()
         user_two_create = UserFactory()
         assert user_one_create.username != user_two_create.username
+
+
+class TestExternalUtil(OsfTestCase):
+
+    def setUp(self, *args, **kwargs):
+        super(TestExternalUtil, self).setUp(*args, **kwargs)
+        self.user = AuthUserFactory()
+        self.external_account = ExternalAccountFactory(
+            provider='mock2',
+            provider_id='mock_provider_id',
+            provider_name='Mock Provider',
+        )
+        self.institution = InstitutionFactory()
+        self.region = RegionFactory()
+        creds = '{"storage": {"token": "ya29.GlsSB6dA5R6JGhBFLPHMweb1sSi_ino4DluN2IU8Fm5EkelY3gv0cXJQTaMR50_sLYJQxBlA8Wdyw1PTiJQe0AMy4pJNW8ajxa3kKC4vAKTHN1oJZ8ez82gkB7Hh"}}'
+        creds_dict = json.loads(creds)
+        self.region._id = self.institution._id
+        self.region.waterbutler_credentials = creds_dict
+        self.region.save()
+        self.user.external_accounts.add(self.external_account)
+        self.user.save()
+        self.user.affiliated_institutions.add(self.institution)
+
+    def test_set_region_external_account(self):
+        token = self.region.waterbutler_credentials['storage']['token']
+
+        set_region_external_account(self.institution.id, self.external_account)
+        rea = RegionExternalAccount.objects.filter(region=self.region, external_account=self.external_account)
+        assert len(rea)==1
+
+        updated_region = Region.objects.get(_id=self.institution._id)
+        updated_token = updated_region.waterbutler_credentials['storage']['token']
+        assert_not_equal(token, updated_token)
+
+    def test_set_new_access_token(self):
+        new_access_token = 'New access token test'
+        set_new_access_token(self.region.id, new_access_token)
+        region_from_db = Region.objects.get(pk=self.region.id)
+        assert new_access_token == region_from_db.waterbutler_credentials['storage']['token']

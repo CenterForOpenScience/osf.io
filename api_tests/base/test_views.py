@@ -5,11 +5,11 @@ import pkgutil
 import mock
 
 from nose import SkipTest
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 
 from tests.base import ApiTestCase
 from osf_tests import factories
-
+from osf.utils.permissions import READ, WRITE
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base.settings.defaults import API_BASE
@@ -93,12 +93,12 @@ class TestApiBaseViews(ApiTestCase):
                         view.permission_classes,
                         '{0} lacks the appropriate permission classes'.format(view)
                     )
-            for key in ['read', 'write']:
+            for key in [READ, WRITE]:
                 scopes = getattr(view, 'required_{}_scopes'.format(key), None)
                 assert_true(bool(scopes))
                 for scope in scopes:
                     assert_is_not_none(scope)
-                if key == 'write':
+                if key == WRITE:
                     assert_not_in(CoreScopes.ALWAYS_PUBLIC, scopes)
 
     def test_view_classes_support_embeds(self):
@@ -112,8 +112,7 @@ class TestApiBaseViews(ApiTestCase):
 
     def test_view_classes_define_or_override_serializer_class(self):
         for view in VIEW_CLASSES:
-            has_serializer_class = getattr(view, 'serializer_class', None) or \
-                                   getattr(view, 'get_serializer_class', None)
+            has_serializer_class = getattr(view, 'serializer_class', None) or getattr(view, 'get_serializer_class', None)
             assert_true(
                 has_serializer_class,
                 '{0} should include serializer class or override get_serializer_class()'.format(view)

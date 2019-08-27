@@ -9,7 +9,7 @@ def rapply(data, func, *args, **kwargs):
     if isinstance(data, collections.Mapping):
         return {
             key: rapply(value, func, *args, **kwargs)
-            for key, value in data.iteritems()
+            for key, value in data.items()
         }
     elif isinstance(data, collections.Iterable) and not isinstance(data, basestring):
         desired_type = type(data)

@@ -64,13 +64,13 @@ def update(dry_run=False):
     for old, new in BEPRESS_CHANGES['rename'].items():
         logger.info('Renaming `{}`->`{}`'.format(old, new))
         to_update = Subject.objects.filter(text=old)
-        affected_preprints = set(to_update.exclude(preprint_services__isnull=True).values_list('preprint_services__guids___id', flat=True))
+        affected_preprints = set(to_update.exclude(preprints__isnull=True).values_list('preprints__guids___id', flat=True))
         to_update.update(text=new)
         for preprint_id in affected_preprints:
             logger.info('Notifying SHARE about preprint {} change'.format(preprint_id))
             if not dry_run:
                 on_preprint_updated(preprint_id)
-    for provider_id, list_of_subjs in created_dict.iteritems():
+    for provider_id, list_of_subjs in created_dict.items():
         logger.info('Created {} new subjects on {}: "{}"'.format(len(list_of_subjs), provider_id, ', '.join(list_of_subjs)))
 
 

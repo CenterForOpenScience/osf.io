@@ -26,9 +26,9 @@
     <br>
     To learn more about the GRDM, visit: https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=24871475<br>
     <br>
-    Sincerely yours,<br>
+    Sincerely,<br>
     <br>
-    The GRDM Robot<br>
+    The GRDM Team<br>
 
 </tr>
 </%def>

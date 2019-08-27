@@ -25,8 +25,10 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
 from framework.utils import throttle_period_expired
 
+from osf import features
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode
 from osf.exceptions import BlacklistedEmailError
+from osf.utils.requests import string_type_request_headers
 from website import mails
 from website import mailchimp_utils
 from website import settings
@@ -146,7 +148,7 @@ def update_user(auth):
                 try:
                     user.remove_email(address)
                 except PermissionsError as e:
-                    raise HTTPError(httplib.FORBIDDEN, e.message)
+                    raise HTTPError(httplib.FORBIDDEN, str(e))
             user.remove_unconfirmed_email(address)
 
         # additions
@@ -164,12 +166,22 @@ def update_user(auth):
                     message_long='Invalid Email')
                 )
             except BlacklistedEmailError:
+                sentry.log_message(
+                    'User attempted to add a blacklisted email',
+                    extra_data={
+                        'user_id': user.id,
+                        'address': address,
+                    }
+                )
                 raise HTTPError(http.BAD_REQUEST, data=dict(
                     message_long=language.BLACKLISTED_EMAIL)
                 )
 
             # TODO: This setting is now named incorrectly.
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
+                if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+                    raise HTTPError(httplib.BAD_REQUEST,
+                                    data={'message_long': 'Too many requests. Please wait a while before adding an email to your account.'})
                 send_confirm_email(user, email=address)
 
         ############
@@ -206,7 +218,7 @@ def update_user(auth):
             )
 
             # Remove old primary email from subscribed mailing lists
-            for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
+            for list_name, subscription in user.mailchimp_mailing_lists.items():
                 if subscription:
                     mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username)
             user.username = username
@@ -229,7 +241,7 @@ def update_user(auth):
 
     # Update subscribed mailing lists with new primary email
     # TODO: move to user.save()
-    for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
+    for list_name, subscription in user.mailchimp_mailing_lists.items():
         if subscription:
             mailchimp_utils.subscribe_mailchimp(list_name, user._id)
 
@@ -270,7 +282,7 @@ def profile_view_id_json(uid, auth):
     return _profile_view(user, is_profile)
 
 @must_be_logged_in_without_checking_email
-@ember_flag_is_active('ember_user_profile_page')
+@ember_flag_is_active(features.EMBER_USER_PROFILE)
 def profile_view(auth):
     # Embed node data, so profile node lists can be rendered
     return _profile_view(auth.user, True, include_node_counts=True)
@@ -285,7 +297,7 @@ def profile_view_id(uid, auth):
 
 
 @must_be_logged_in
-@ember_flag_is_active('ember_user_settings_page')
+@ember_flag_is_active(features.EMBER_USER_SETTINGS)
 def user_profile(auth, **kwargs):
     user = auth.user
     return {
@@ -295,6 +307,7 @@ def user_profile(auth, **kwargs):
 
 
 @must_be_logged_in
+@ember_flag_is_active(features.EMBER_USER_SETTINGS_ACCOUNTS)
 def user_account(auth, **kwargs):
     user = auth.user
     user_addons = addon_utils.get_addons_by_config_type('user', user)
@@ -329,6 +342,7 @@ def user_account_email(auth, **kwargs):
 
 
 @must_be_logged_in
+@ember_flag_is_active(features.EMBER_USER_SETTINGS_ACCOUNTS)
 def user_account_password(auth, **kwargs):
     user = auth.user
     old_password = request.form.get('old_password', None)
@@ -367,6 +381,7 @@ def user_account_password(auth, **kwargs):
 
 
 @must_be_logged_in
+@ember_flag_is_active(features.EMBER_USER_SETTINGS_ADDONS)
 def user_addons(auth, **kwargs):
 
     user = auth.user
@@ -391,6 +406,7 @@ def user_addons(auth, **kwargs):
     return ret
 
 @must_be_logged_in
+@ember_flag_is_active(features.EMBER_USER_SETTINGS_NOTIFICATIONS)
 def user_notifications(auth, **kwargs):
     """Get subscribe data from user"""
     return {
@@ -398,6 +414,7 @@ def user_notifications(auth, **kwargs):
     }
 
 @must_be_logged_in
+@ember_flag_is_active(features.EMBER_USER_SETTINGS_APPS)
 def oauth_application_list(auth, **kwargs):
     """Return app creation page with list of known apps. API is responsible for tying list to current user."""
     app_list_url = api_v2_url('applications/')
@@ -406,6 +423,7 @@ def oauth_application_list(auth, **kwargs):
     }
 
 @must_be_logged_in
+@ember_flag_is_active(features.EMBER_USER_SETTINGS_APPS)
 def oauth_application_register(auth, **kwargs):
     """Register an API application: blank form view"""
     app_list_url = api_v2_url('applications/')  # POST request to this url
@@ -413,6 +431,7 @@ def oauth_application_register(auth, **kwargs):
             'app_detail_url': ''}
 
 @must_be_logged_in
+@ember_flag_is_active(features.EMBER_USER_SETTINGS_APPS)
 def oauth_application_detail(auth, **kwargs):
     """Show detail for a single OAuth application"""
     client_id = kwargs.get('client_id')
@@ -434,6 +453,7 @@ def oauth_application_detail(auth, **kwargs):
             'app_detail_url': app_detail_url}
 
 @must_be_logged_in
+@ember_flag_is_active(features.EMBER_USER_SETTINGS_TOKENS)
 def personal_access_token_list(auth, **kwargs):
     """Return token creation page with list of known tokens. API is responsible for tying list to current user."""
     token_list_url = api_v2_url('tokens/')
@@ -442,6 +462,7 @@ def personal_access_token_list(auth, **kwargs):
     }
 
 @must_be_logged_in
+@ember_flag_is_active(features.EMBER_USER_SETTINGS_TOKENS)
 def personal_access_token_register(auth, **kwargs):
     """Register a personal access token: blank form view"""
     token_list_url = api_v2_url('tokens/')  # POST request to this url
@@ -450,6 +471,7 @@ def personal_access_token_register(auth, **kwargs):
             'scope_options': get_available_scopes()}
 
 @must_be_logged_in
+@ember_flag_is_active(features.EMBER_USER_SETTINGS_TOKENS)
 def personal_access_token_detail(auth, **kwargs):
     """Show detail for a single personal access token"""
     _id = kwargs.get('_id')
@@ -791,16 +813,21 @@ def unserialize_school(school):
 def unserialize_contents(field, func, auth):
     user = auth.user
     json_data = escape_html(request.get_json())
+    contents = [
+        func(content)
+        for content in json_data.get('contents', [])
+    ]
     setattr(
         user,
         field,
-        [
-            func(content)
-            for content in json_data.get('contents', [])
-        ]
+        contents
     )
     user.save()
 
+    if contents:
+        saved_fields = {field: contents}
+        request_headers = string_type_request_headers(request)
+        user.check_spam(saved_fields=saved_fields, request_headers=request_headers)
 
 @must_be_logged_in
 def unserialize_jobs(auth, **kwargs):

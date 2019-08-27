@@ -4,7 +4,6 @@ import operator
 import re
 
 import pytz
-from guardian.shortcuts import get_objects_for_user
 from api.base import utils
 from api.base.exceptions import (
     InvalidFilterComparisonType,
@@ -16,12 +15,11 @@ from api.base.serializers import RelationshipField, ShowIfVersion, TargetField
 from dateutil import parser as date_parser
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet as DjangoQuerySet
-from django.db.models import Q, Exists, OuterRef
+from django.db.models import Q
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
-from osf.models import Subject, PreprintProvider, Node
+from osf.models import Subject, Preprint
 from osf.models.base import GuidMixin
-from osf.utils.workflows import DefaultStates
 
 
 def lowercase(lower):
@@ -122,6 +120,10 @@ class FilterMixin(object):
             raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint.".format(field_name))
         if field_name not in getattr(serializer_class, 'filterable_fields', set()):
             raise InvalidFilterFieldError(parameter='filter', value=field_name)
+        field = serializer_class._declared_fields[field_name]
+        # You cannot filter on deprecated fields.
+        if isinstance(field, ShowIfVersion) and utils.is_deprecated(self.request.version, field.min_version, field.max_version):
+            raise InvalidFilterFieldError(parameter='filter', value=field_name)
         return serializer_class._declared_fields[field_name]
 
     def _validate_operator(self, field, field_name, op):
@@ -201,7 +203,7 @@ class FilterMixin(object):
         }
         """
         query = {}
-        for key, value in query_params.iteritems():
+        for key, value in query_params.items():
             match = self.QUERY_PATTERN.match(key)
             if match:
                 match_dict = match.groupdict()
@@ -223,7 +225,7 @@ class FilterMixin(object):
                         query.get(key).update({
                             field_name: self._parse_date_param(field, source_field_name, op, value),
                         })
-                    elif not isinstance(value, int) and source_field_name in ['_id', 'guid._id']:
+                    elif not isinstance(value, int) and source_field_name in ['_id', 'guid._id', 'journal_id']:
                         query.get(key).update({
                             field_name: {
                                 'op': 'in',
@@ -366,10 +368,10 @@ class ListFilterMixin(FilterMixin):
         query_parts = []
 
         if filters:
-            for key, field_names in filters.iteritems():
+            for key, field_names in filters.items():
 
                 sub_query_parts = []
-                for field_name, data in field_names.iteritems():
+                for field_name, data in field_names.items():
                     operations = data if isinstance(data, list) else [data]
                     if isinstance(queryset, list):
                         for operation in operations:
@@ -500,7 +502,6 @@ class PreprintFilterMixin(ListFilterMixin):
     """View mixin that uses ListFilterMixin, adding postprocessing for preprint querying
 
        Subclasses must define `get_default_queryset()`.
-
     """
     def postprocess_query_param(self, key, field_name, operation):
         if field_name == 'provider':
@@ -517,24 +518,10 @@ class PreprintFilterMixin(ListFilterMixin):
                 operation['source_field_name'] = 'subjects__text'
                 operation['op'] = 'iexact'
 
-    def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True):
-        sub_qs = Node.objects.filter(preprints=OuterRef('pk'), is_deleted=False)
-        no_user_query = Q(is_published=True, node__is_public=True)
-
-        if auth_user:
-            moderator_for = get_objects_for_user(auth_user, 'view_submissions', PreprintProvider)
-            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
-            reviews_user_query = Q(node__is_public=True, provider__in=moderator_for)
-            if allow_contribs:
-                contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.value) & Q(node__contributor__user_id=auth_user.id, node__contributor__read=True)
-                query = (no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
-            else:
-                query = (no_user_query | admin_user_query | reviews_user_query)
-        else:
-            moderator_for = PreprintProvider.objects.none()
-            query = no_user_query
-
-        if not moderator_for.exists():
-            base_queryset = base_queryset.exclude(date_withdrawn__isnull=False, ever_public=False)
-
-        return base_queryset.annotate(default=Exists(sub_qs)).filter(Q(default=True) & query).distinct('id', 'created')
+    def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True, public_only=False):
+        return Preprint.objects.can_view(
+            base_queryset=base_queryset,
+            user=auth_user,
+            allow_contribs=allow_contribs,
+            public_only=public_only,
+        )

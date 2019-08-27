@@ -161,7 +161,7 @@ def ref_to_params(branch=None, sha=None):
         for key, value in {
             'branch': branch,
             'sha': sha,
-        }.iteritems()
+        }.items()
         if value
     })
     if params:

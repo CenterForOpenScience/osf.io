@@ -4,22 +4,26 @@ import itsdangerous
 import mock
 import pytest
 import pytz
+from django.utils import timezone
 
+from addons.base.utils import get_mfr_url
 from addons.github.models import GithubFileNode
 from addons.osfstorage import settings as osfstorage_settings
+from addons.osfstorage.listeners import checkin_files_task
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
 from osf.models import NodeLog, Session, QuickFilesNode
+from osf.utils.permissions import WRITE, READ
+from osf.utils.workflows import DefaultStates
 from osf_tests.factories import (
     AuthUserFactory,
     CommentFactory,
     ProjectFactory,
     UserFactory,
+    PreprintFactory,
 )
-from tests.base import capture_signals
 from website import settings as website_settings
-from website.project.signals import contributor_removed
 
 
 # stolen from^W^Winspired by DRF
@@ -126,6 +130,11 @@ class TestFileView:
         assert res.status_code == 200
         assert guid is not None
         assert res.json['data']['attributes']['guid'] == guid._id
+
+    def test_file_with_wrong_guid(self, app, user):
+        url = '/{}files/{}/'.format(API_BASE, user._id)
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
 
     @mock.patch('api.base.throttling.CreateGuidThrottle.allow_request')
     def test_file_guid_not_created_with_basic_auth(
@@ -473,7 +482,7 @@ class TestFileView:
         # test_noncontrib_cannot_checkout
         non_contrib = AuthUserFactory()
         assert file.checkout is None
-        assert not node.has_permission(non_contrib, 'read')
+        assert not node.has_permission(non_contrib, READ)
         res = app.put_json_api(
             file_url, {
                 'data': {
@@ -492,7 +501,7 @@ class TestFileView:
 
         # test_read_contrib_cannot_checkout
         read_contrib = AuthUserFactory()
-        node.add_contributor(read_contrib, permissions=['read'])
+        node.add_contributor(read_contrib, permissions=READ)
         node.save()
         assert not node.can_edit(user=read_contrib)
         res = app.put_json_api(
@@ -512,7 +521,7 @@ class TestFileView:
 
     def test_write_contrib_can_checkin(self, app, node, file, file_url):
         write_contrib = AuthUserFactory()
-        node.add_contributor(write_contrib, permissions=['read', 'write'])
+        node.add_contributor(write_contrib, permissions=WRITE)
         node.save()
         assert node.can_edit(user=write_contrib)
         file.checkout = write_contrib
@@ -531,19 +540,19 @@ class TestFileView:
         assert res.status_code == 200
         assert file.checkout is None
 
-    def test_removed_contrib_files_checked_in(self, app, node, file):
+    @mock.patch('addons.osfstorage.listeners.enqueue_postcommit_task')
+    def test_removed_contrib_files_checked_in(self, mock_enqueue, app, node, file):
         write_contrib = AuthUserFactory()
-        node.add_contributor(write_contrib, permissions=['read', 'write'])
+        node.add_contributor(write_contrib, permissions=WRITE)
         node.save()
         assert node.can_edit(user=write_contrib)
         file.checkout = write_contrib
         file.save()
         assert file.is_checked_out
-        with capture_signals() as mock_signals:
-            node.remove_contributor(write_contrib, auth=Auth(write_contrib))
-        assert mock_signals.signals_sent() == set([contributor_removed])
-        file.reload()
-        assert not file.is_checked_out
+
+        node.remove_contributor(write_contrib, auth=Auth(write_contrib))
+
+        mock_enqueue.assert_called_with(checkin_files_task, (node._id, write_contrib._id,), {}, celery=True)
 
     def test_must_be_osfstorage(self, app, user, file, file_url):
         file.recast(GithubFileNode._typedmodels_type)
@@ -676,6 +685,26 @@ class TestFileVersionView:
         assert res.status_code == 200
         assert res.json['data']['id'] == '1'
 
+        mfr_url = get_mfr_url(file, 'osfstorage')
+
+        render_link = res.json['data']['links']['render']
+        download_link = res.json['data']['links']['download']
+        assert mfr_url in render_link
+        assert download_link in render_link
+        assert 'revision=1' in render_link
+
+        guid = file.get_guid(create=True)._id
+        res = app.get(
+            '/{}files/{}/versions/1/'.format(API_BASE, file._id),
+            auth=user.auth,
+        )
+        render_link = res.json['data']['links']['render']
+        download_link = res.json['data']['links']['download']
+        assert mfr_url in render_link
+        assert download_link in render_link
+        assert guid in render_link
+        assert 'revision=1' in render_link
+
         # test_read_only
         assert app.put(
             '/{}files/{}/versions/1/'.format(API_BASE, file._id),
@@ -768,3 +797,167 @@ class TestFileTagging:
         app.put_json_api(url, payload, auth=user.auth)
         assert node.logs.count() == count + 1
         assert NodeLog.FILE_TAG_REMOVED == node.logs.latest().action
+
+
+@pytest.mark.django_db
+class TestPreprintFileView:
+
+    @pytest.fixture()
+    def preprint(self, user):
+        return PreprintFactory(creator=user)
+
+    @pytest.fixture()
+    def primary_file(self, preprint):
+        return preprint.primary_file
+
+    @pytest.fixture()
+    def file_url(self, primary_file):
+        return '/{}files/{}/'.format(API_BASE, primary_file._id)
+
+    @pytest.fixture()
+    def other_user(self):
+        return AuthUserFactory()
+
+    def test_published_preprint_file(self, app, file_url, preprint, user, other_user):
+        # Unauthenticated
+        res = app.get(file_url, expect_errors=True)
+        assert res.status_code == 200
+
+        # Non contrib
+        res = app.get(file_url, auth=other_user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        # Write contrib
+        preprint.add_contributor(other_user, WRITE, save=True)
+        res = app.get(file_url, auth=other_user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        # Admin contrib
+        res = app.get(file_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+    def test_unpublished_preprint_file(self, app, file_url, preprint, user, other_user):
+        preprint.is_published = False
+        preprint.save()
+
+        # Unauthenticated
+        res = app.get(file_url, expect_errors=True)
+        assert res.status_code == 401
+
+        # Non contrib
+        res = app.get(file_url, auth=other_user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # Write contrib
+        preprint.add_contributor(other_user, WRITE, save=True)
+        res = app.get(file_url, auth=other_user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        # Admin contrib
+        res = app.get(file_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+    def test_private_preprint_file(self, app, file_url, preprint, user, other_user):
+        preprint.is_public = False
+        preprint.save()
+
+        # Unauthenticated
+        res = app.get(file_url, expect_errors=True)
+        assert res.status_code == 401
+
+        # Non contrib
+        res = app.get(file_url, auth=other_user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # Write contrib
+        preprint.add_contributor(other_user, WRITE, save=True)
+        res = app.get(file_url, auth=other_user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        # Admin contrib
+        res = app.get(file_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+    def test_deleted_preprint_file(self, app, file_url, preprint, user, other_user):
+        preprint.deleted = timezone.now()
+        preprint.save()
+
+        # Unauthenticated
+        res = app.get(file_url, expect_errors=True)
+        assert res.status_code == 410
+
+        # Non contrib
+        res = app.get(file_url, auth=other_user.auth, expect_errors=True)
+        assert res.status_code == 410
+
+        # Write contrib
+        preprint.add_contributor(other_user, WRITE, save=True)
+        res = app.get(file_url, auth=other_user.auth, expect_errors=True)
+        assert res.status_code == 410
+
+        # Admin contrib
+        res = app.get(file_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 410
+
+    def test_abandoned_preprint_file(self, app, file_url, preprint, user, other_user):
+        preprint.machine_state = DefaultStates.INITIAL.value
+        preprint.save()
+
+        # Unauthenticated
+        res = app.get(file_url, expect_errors=True)
+        assert res.status_code == 401
+
+        # Non contrib
+        res = app.get(file_url, auth=other_user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # Write contrib
+        preprint.add_contributor(other_user, WRITE, save=True)
+        res = app.get(file_url, auth=other_user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # Admin contrib
+        res = app.get(file_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+    def test_orphaned_preprint_file(self, app, file_url, preprint, user, other_user):
+        preprint.primary_file = None
+        preprint.save()
+
+        # Unauthenticated
+        res = app.get(file_url, expect_errors=True)
+        assert res.status_code == 200
+
+        # Non contrib
+        res = app.get(file_url, auth=other_user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        # Write contrib
+        preprint.add_contributor(other_user, WRITE, save=True)
+        res = app.get(file_url, auth=other_user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        # Admin contrib
+        res = app.get(file_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+    def test_withdrawn_preprint_files(self, app, file_url, preprint, user, other_user):
+        preprint.date_withdrawn = timezone.now()
+        preprint.save()
+
+        # Unauthenticated
+        res = app.get(file_url, expect_errors=True)
+        assert res.status_code == 401
+
+        # Noncontrib
+        res = app.get(file_url, auth=other_user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # Write contributor
+        preprint.add_contributor(other_user, WRITE, save=True)
+        res = app.get(file_url, auth=other_user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # Admin contrib
+        res = app.get(file_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 403

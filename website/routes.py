@@ -30,8 +30,10 @@ from framework.auth import views as auth_views
 from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
 
+from osf import features
 from osf.models import Institution
 from osf.utils import sanitize
+from osf.utils import permissions
 from website import util
 from website import prereg
 from website import settings
@@ -88,7 +90,7 @@ def get_globals():
     location = geolite2.reader().get(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
-            inst_id = Institution.objects.get(domains__icontains=[request.host])._id
+            inst_id = Institution.objects.get(domains__icontains=request.host, is_deleted=False)._id
             request_login_url = '{}institutions/{}'.format(settings.DOMAIN, inst_id)
         except Institution.DoesNotExist:
             request_login_url = request.url.replace(request.host_url, settings.DOMAIN)
@@ -156,6 +158,7 @@ def get_globals():
         'osf_url': settings.INTERNAL_DOMAIN,
         'waterbutler_url': settings.WATERBUTLER_URL,
         'login_url': cas.get_login_url(request_login_url),
+        'sign_up_url': util.web_url_for('auth_register', _absolute=True, next=request_login_url),
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
@@ -169,7 +172,7 @@ def get_globals():
                 'write_key': settings.KEEN['private']['write_key'],
             },
         },
-        'institutional_landing_flag': waffle.flag_is_active(request, settings.INSTITUTIONAL_LANDING_FLAG),
+        'institutional_landing_flag': waffle.flag_is_active(request, features.INSTITUTIONAL_LANDING_FLAG),
         'maintenance': maintenance.get_maintenance(),
         'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
         'custom_citations': settings.CUSTOM_CITATIONS,
@@ -177,8 +180,10 @@ def get_globals():
         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
         'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=reverse('wafflejs')),
         'footer_links': settings.FOOTER_LINKS,
+        'features': features,
         'waffle': waffle,
         'csrf_cookie_name': api_settings.CSRF_COOKIE_NAME,
+        'permissions': permissions
     }
 
 
@@ -437,13 +442,6 @@ def make_url_map(app):
         Rule('/faq/', 'get', website_views.redirect_faq, notemplate),
         Rule(['/getting-started/', '/getting-started/email/', '/howosfworks/'], 'get', website_views.redirect_getting_started, notemplate),
         Rule(
-            '/explore/',
-            'get',
-            discovery_views.redirect_explore_to_activity,
-            notemplate
-        ),
-
-        Rule(
             [
                 '/messages/',
             ],
@@ -453,10 +451,17 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/view/<meeting>/',
+            '/meetings/<meeting>/',
             'get',
             conference_views.conference_results,
             OsfWebRenderer('public/pages/meeting.mako', trust=False),
+        ),
+
+        Rule(
+            '/view/<meeting>/',
+            'get',
+            conference_views.redirect_to_conference_results,
+            notemplate
         ),
 
         Rule(
@@ -684,19 +689,11 @@ def make_url_map(app):
     ### Discovery ###
 
     process_rules(app, [
-
         Rule(
-            '/explore/activity/',
+            ['/activity/', '/explore/activity/', '/explore/'],
             'get',
-            discovery_views.redirect_explore_activity_to_activity,
+            discovery_views.redirect_activity_to_search,
             notemplate
-        ),
-
-        Rule(
-            '/activity/',
-            'get',
-            discovery_views.activity,
-            OsfWebRenderer('public/pages/active_nodes.mako', trust=False)
         ),
     ])
 
@@ -1157,7 +1154,7 @@ def make_url_map(app):
     # Web
 
     process_rules(app, [
-        Rule('/', 'get', website_views.index, notemplate),
+        Rule('/', 'get', website_views.index, OsfWebRenderer('institution.mako', trust=False)),
 
         Rule('/goodbye/', 'get', goodbye, notemplate),
 
@@ -1170,6 +1167,17 @@ def make_url_map(app):
             project_views.node.view_project,
             OsfWebRenderer('project/project.mako', trust=False)
         ),
+
+        # Process token action
+        Rule(
+            [
+                '/token_action/<pid>/',
+            ],
+            'get',
+            project_views.node.token_action,
+            notemplate,
+        ),
+
 
         # Create a new subproject/component
         Rule(
@@ -1213,8 +1221,6 @@ def make_url_map(app):
             OsfWebRenderer('project/project.mako', trust=False)
         ),
 
-        ### Logs ###
-
         # View forks
         Rule(
             [
@@ -1223,7 +1229,7 @@ def make_url_map(app):
             ],
             'get',
             project_views.node.node_forks,
-            OsfWebRenderer('project/forks.mako', trust=False)
+            notemplate,
         ),
 
         # Registrations
@@ -1253,7 +1259,7 @@ def make_url_map(app):
             ],
             'get',
             project_views.node.node_registrations,
-            OsfWebRenderer('project/registrations.mako', trust=False)
+            notemplate,
         ),
         Rule(
             [
@@ -1314,8 +1320,9 @@ def make_url_map(app):
             ],
             'get',
             project_views.node.project_statistics,
-            OsfWebRenderer('project/statistics.mako', trust=False)
+            notemplate,
         ),
+
 
         ### Files ###
 
@@ -1677,10 +1684,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/beforeregister',
         ], 'get', project_views.register.project_before_register, json_renderer),
         Rule([
-            '/project/<pid>/drafts/<draft_id>/register/',
-            '/project/<pid>/node/<nid>/drafts/<draft_id>/register/',
-        ], 'post', project_views.drafts.register_draft_registration, json_renderer),
-        Rule([
             '/project/<pid>/withdraw/',
             '/project/<pid>/node/<nid>/withdraw/'
         ], 'post', project_views.register.node_registration_retraction_post, json_renderer),
@@ -1854,6 +1857,16 @@ def make_url_map(app):
             ],
             ['post'],
             project_views.timestamp.task_status,
+            json_renderer,
+        ),
+
+        # Quota management
+        Rule(
+            [
+                '/project/<pid>/creator_quota/',
+            ],
+            ['get'],
+            project_views.quota.creator_quota,
             json_renderer,
         ),
 

@@ -1,6 +1,6 @@
 <%def name="render_addon_widget(addon_name, addon_data)">
 
-    % if addon_data['complete'] or 'write' in user['permissions']:
+    % if addon_data['complete'] or permissions.WRITE in user['permissions']:
         <div class="panel panel-default" name="${addon_data['short_name']}">
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">${addon_data['full_name']}</h3>
@@ -204,7 +204,7 @@
             % else:
                 <div class='addon-config-error p-sm'>
                     ${addon_data['full_name']} add-on is not configured properly.
-                    % if user['is_contributor']:
+                    % if user['is_contributor_or_group_member']:
                         Configure this add-on on the <a href="${node['url']}addons/">add-ons</a> page.
                     % endif
                 </div>

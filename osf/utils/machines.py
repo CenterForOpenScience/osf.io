@@ -5,7 +5,7 @@ from api.providers.workflows import Workflows
 from framework.auth import Auth
 from osf.exceptions import InvalidTransitionError
 from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction
-from osf.models.nodelog import NodeLog
+from osf.models.preprintlog import PreprintLog
 from osf.utils import permissions
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, DEFAULT_TRANSITIONS, REVIEWABLE_TRANSITIONS
 from website.mails import mails
@@ -80,15 +80,13 @@ class ReviewsMachine(BaseMachine):
         super(ReviewsMachine, self).__init__(*args, **kwargs)
 
     def save_changes(self, ev):
-        node = self.machineable.node
-        node._has_abandoned_preprint = False
         now = self.action.created if self.action is not None else timezone.now()
         should_publish = self.machineable.in_public_reviews_state
         if self.machineable.is_retracted:
             pass  # Do not alter published state
         elif should_publish and not self.machineable.is_published:
-            if not (self.machineable.node.preprint_file and self.machineable.node.preprint_file.target == self.machineable.node):
-                raise ValueError('Preprint node is not a valid preprint; cannot publish.')
+            if not (self.machineable.primary_file and self.machineable.primary_file.target == self.machineable):
+                raise ValueError('Preprint is not a valid preprint; cannot publish.')
             if not self.machineable.provider:
                 raise ValueError('Preprint provider not specified; cannot publish.')
             if not self.machineable.subjects.exists():
@@ -99,7 +97,6 @@ class ReviewsMachine(BaseMachine):
         elif not should_publish and self.machineable.is_published:
             self.machineable.is_published = False
         self.machineable.save()
-        node.save()
 
     def resubmission_allowed(self, ev):
         return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value
@@ -108,7 +105,7 @@ class ReviewsMachine(BaseMachine):
         # Returns True if the submitter of the request is a moderator or admin for the provider.
         provider = self.machineable.provider
         return provider.get_group('moderator').user_set.filter(id=submitter.id).exists() or \
-               provider.get_group('admin').user_set.filter(id=submitter.id).exists()
+               provider.get_group(permissions.ADMIN).user_set.filter(id=submitter.id).exists()
 
     def perform_withdraw(self, ev):
         self.machineable.date_withdrawn = self.action.created if self.action is not None else timezone.now()
@@ -119,15 +116,15 @@ class ReviewsMachine(BaseMachine):
         context['referrer'] = ev.kwargs.get('user')
         user = ev.kwargs.get('user')
         auth = Auth(user)
-        self.machineable.node.add_log(
-            action=NodeLog.PREPRINT_INITIATED,
+        self.machineable.add_log(
+            action=PreprintLog.PUBLISHED,
             params={
                 'preprint': self.machineable._id
             },
             auth=auth,
             save=False,
         )
-        recipients = list(self.machineable.node.contributors)
+        recipients = list(self.machineable.contributors)
         reviews_signals.reviews_email_submit.send(context=context, recipients=recipients)
         reviews_signals.reviews_email_submit_moderators_notifications.send(timestamp=timezone.now(), context=context)
 
@@ -146,6 +143,7 @@ class ReviewsMachine(BaseMachine):
         reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
                                            template='reviews_submission_status',
                                            action=self.action)
+
     def notify_edit_comment(self, ev):
         context = self.get_context()
         context['comment'] = self.action.comment
@@ -156,8 +154,9 @@ class ReviewsMachine(BaseMachine):
 
     def notify_withdraw(self, ev):
         context = self.get_context()
+        context['ever_public'] = self.machineable.ever_public
         try:
-            preprint_request_action = PreprintRequestAction.objects.get(target__id=self.machineable.id,
+            preprint_request_action = PreprintRequestAction.objects.get(target__target__id=self.machineable.id,
                                                                    from_state='pending',
                                                                    to_state='accepted',
                                                                    trigger='accept')
@@ -166,7 +165,7 @@ class ReviewsMachine(BaseMachine):
             # If there is no preprint request action, it means the withdrawal is directly initiated by admin/moderator
             context['withdrawal_submitter_is_moderator_or_admin'] = True
 
-        for contributor in self.machineable.node.contributors.all():
+        for contributor in self.machineable.contributors.all():
             context['contributor'] = contributor
             if context.get('requester', None):
                 context['is_requester'] = context['requester'].username == contributor.username
@@ -203,7 +202,7 @@ class NodeRequestMachine(BaseMachine):
                 self.machineable.target.add_contributor(
                     self.machineable.creator,
                     auth=Auth(ev.kwargs['user']),
-                    permissions=permissions.expand_permissions(contributor_permissions),
+                    permissions=contributor_permissions,
                     visible=ev.kwargs.get('visible', True),
                     send_email='{}_request'.format(self.machineable.request_type))
 
@@ -217,7 +216,8 @@ class NodeRequestMachine(BaseMachine):
         context = self.get_context()
         context['contributors_url'] = '{}contributors/'.format(self.machineable.target.absolute_url)
         context['project_settings_url'] = '{}settings/'.format(self.machineable.target.absolute_url)
-        for admin in self.machineable.target.contributors.filter(contributor__admin=True, contributor__node=self.machineable.target):
+
+        for admin in self.machineable.target.get_users_with_perm(permissions.ADMIN):
             mails.send_mail(
                 admin.username,
                 mails.ACCESS_REQUEST_SUBMITTED,
@@ -288,7 +288,16 @@ class PreprintRequestMachine(BaseMachine):
             reviews_signals.reviews_email_withdrawal_requests.send(timestamp=timezone.now(), context=context)
 
     def notify_accept_reject(self, ev):
-        pass
+        if ev.event.name == DefaultTriggers.REJECT.value:
+            context = self.get_context()
+            mails.send_mail(
+                self.machineable.creator.username,
+                mails.PREPRINT_WITHDRAWAL_REQUEST_DECLINED,
+                mimetype='html',
+                **context
+            )
+        else:
+            pass
 
     def notify_edit_comment(self, ev):
         """ Not presently required to notify for this event

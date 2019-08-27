@@ -29,6 +29,7 @@ ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
 ROOT = os.path.join(BASE_PATH, '..')
 BCRYPT_LOG_ROUNDS = 12
 LOG_LEVEL = logging.INFO
+TEST_ENV = False
 
 with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
     VERSION = json.load(fobj)['version']
@@ -65,13 +66,11 @@ REGISTRATION_APPROVAL_TIME = datetime.timedelta(days=2)
 # Date range for embargo periods
 EMBARGO_END_DATE_MIN = datetime.timedelta(days=2)
 EMBARGO_END_DATE_MAX = datetime.timedelta(days=1460)  # Four years
+
 # Question titles to be reomved for anonymized VOL
 ANONYMIZED_TITLES = ['Authors']
 
 LOAD_BALANCER = False
-PROXY_ADDRS = []
-
-USE_POSTGRES = True
 
 # May set these to True in local.py for development
 DEV_MODE = False
@@ -97,11 +96,9 @@ EXTERNAL_EMBER_APPS = {}
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
-ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
 
 # User management & registration
 CONFIRM_REGISTRATIONS_BY_EMAIL = True
-ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
 
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
@@ -132,9 +129,6 @@ OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None
 SUPPORT_EMAIL = 'support@osf.io'
 
-# Change if using `scripts/cron.py` to manage crontab
-CRON_USER = None
-
 # External services
 USE_CDN_FOR_CLIENT_LIBS = True
 
@@ -155,6 +149,7 @@ FAKE_EMAIL_DOMAIN = 'cos.io'
 
 # SMTP Settings
 MAIL_SERVER = 'smtp.sendgrid.net'
+MAIL_PORT = 0
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 
@@ -190,28 +185,12 @@ MAILGUN_API_KEY = None
 # Use Celery for file rendering
 USE_CELERY = True
 
-# File rendering timeout (in ms)
-MFR_TIMEOUT = 30000
-
 # TODO: Override in local.py in production
 DB_HOST = 'localhost'
 DB_PORT = os_env.get('OSF_DB_PORT', 27017)
-DB_NAME = 'osf20130903'
-DB_USER = None
-DB_PASS = None
-
-# Cache settings
-SESSION_HISTORY_LENGTH = 5
-SESSION_HISTORY_IGNORE_RULES = [
-    lambda url: '/static/' in url,
-    lambda url: 'favicon' in url,
-    lambda url: url.startswith('/api/'),
-]
 
 # TODO: Configuration should not change between deploys - this should be dynamic.
-CANONICAL_DOMAIN = 'openscienceframework.org'
 COOKIE_DOMAIN = '.openscienceframework.org'  # Beaker
-SHORT_DOMAIN = 'osf.io'
 
 # TODO: Combine Python and JavaScript config
 # If you change COMMENT_MAXLENGTH, make sure you create a corresponding migration.
@@ -220,7 +199,6 @@ COMMENT_MAXLENGTH = 1000
 # Profile image options
 PROFILE_IMAGE_LARGE = 70
 PROFILE_IMAGE_MEDIUM = 40
-PROFILE_IMAGE_SMALL = 20
 # Currently (8/21/2017) only gravatar supported.
 PROFILE_IMAGE_PROVIDER = 'gravatar'
 
@@ -277,18 +255,8 @@ with open(os.path.join(ROOT, 'addons.json')) as fp:
     ADDONS_ARCHIVABLE = addon_settings['addons_archivable']
     ADDONS_COMMENTABLE = addon_settings['addons_commentable']
     ADDONS_BASED_ON_IDS = addon_settings['addons_based_on_ids']
-    ADDONS_DESCRIPTION = addon_settings['addons_description']
-    ADDONS_URL = addon_settings['addons_url']
     ADDONS_DEFAULT = addon_settings['addons_default']
-
-ADDON_CATEGORIES = [
-    'documentation',
-    'storage',
-    'bibliography',
-    'other',
-    'security',
-    'citations',
-]
+    ADDONS_OAUTH_NO_REDIRECT = addon_settings['addons_oauth_no_redirect']
 
 SYSTEM_ADDED_ADDONS = {
     'user': [],
@@ -314,12 +282,6 @@ SENTRY_DSN_JS = None
 
 MISSING_FILE_NAME = 'untitled'
 
-# Project Organizer
-ALL_MY_PROJECTS_ID = '-amp'
-ALL_MY_REGISTRATIONS_ID = '-amr'
-ALL_MY_PROJECTS_NAME = 'All my projects'
-ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
-
 # Most Popular and New and Noteworthy Nodes
 POPULAR_LINKS_NODE = None  # TODO Override in local.py in production.
 POPULAR_LINKS_REGISTRATIONS = None  # TODO Override in local.py in production.
@@ -336,6 +298,12 @@ DISK_SAVING_MODE = False
 # Seconds before another notification email can be sent to a contributor when added to a project
 CONTRIBUTOR_ADDED_EMAIL_THROTTLE = 24 * 3600
 
+# Seconds before another notification email can be sent to a member when added to an OSFGroup
+GROUP_MEMBER_ADDED_EMAIL_THROTTLE = 24 * 3600
+
+# Seconds before another notification email can be sent to group members when added to a project
+GROUP_CONNECTED_EMAIL_THROTTLE = 24 * 3600
+
 # Google Analytics
 GOOGLE_ANALYTICS_ID = None
 GOOGLE_SITE_VERIFICATION = None
@@ -344,7 +312,6 @@ DEFAULT_HMAC_SECRET = 'changeme'
 DEFAULT_HMAC_ALGORITHM = hashlib.sha256
 WATERBUTLER_URL = 'http://localhost:7777'
 WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
-WATERBUTLER_ADDRS = ['127.0.0.1']
 
 ####################
 #   Identifiers   #
@@ -357,14 +324,12 @@ DOI_FORMAT = '{prefix}/osf.io/{guid}'
 # ezid
 EZID_DOI_NAMESPACE = 'doi:10.5072'
 EZID_ARK_NAMESPACE = 'ark:99999'
-EZID_USERNAME = None
-EZID_PASSWORD = None
 
 # datacite
 DATACITE_USERNAME = None
 DATACITE_PASSWORD = None
 DATACITE_URL = None
-DATACITE_PREFIX = '10.5072'  # Datacite's test DOI prefix -- update in production
+DATACITE_PREFIX = '10.70102'  # Datacite's test DOI prefix -- update in production
 # Minting DOIs only works on Datacite's production server, so
 # disable minting on staging and development environments by default
 DATACITE_MINT_DOIS = not DEV_MODE
@@ -392,7 +357,6 @@ MFR_SERVER_URL = 'http://localhost:7778'
 ARCHIVE_PROVIDER = 'osfstorage'
 
 MAX_ARCHIVE_SIZE = 5 * 1024 ** 3  # == math.pow(1024, 3) == 1 GB
-MAX_FILE_SIZE = MAX_ARCHIVE_SIZE  # TODO limit file size?
 
 ARCHIVE_TIMEOUT_TIMEDELTA = timedelta(1)  # 24 hours
 
@@ -433,13 +397,14 @@ class CeleryConfig:
         'scripts.analytics.tasks',
         'scripts.populate_new_and_noteworthy_projects',
         'scripts.populate_popular_projects_and_registrations',
-        'scripts.remind_draft_preregistrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
         'scripts.generate_prereg_csv',
         'scripts.analytics.run_keen_summaries',
         'scripts.analytics.run_keen_snapshots',
         'scripts.analytics.run_keen_events',
+        'scripts.clear_sessions',
+        'scripts.remove_after_use.end_prereg_challenge',
     }
 
     med_pri_modules = {
@@ -495,6 +460,7 @@ class CeleryConfig:
     imports = (
         'framework.celery_tasks',
         'framework.email.tasks',
+        'osf.external.tasks',
         'website.mailchimp_utils',
         'website.notifications.tasks',
         'website.archiver.tasks',
@@ -503,19 +469,18 @@ class CeleryConfig:
         'scripts.populate_new_and_noteworthy_projects',
         'scripts.populate_popular_projects_and_registrations',
         'scripts.refresh_addon_tokens',
-        'scripts.remind_draft_preregistrations',
         'scripts.retract_registrations',
         'scripts.embargo_registrations',
         'scripts.approve_registrations',
         'scripts.approve_embargo_terminations',
         'scripts.triggered_mails',
+        'scripts.clear_sessions',
         'scripts.send_queued_mails',
         'scripts.analytics.run_keen_summaries',
         'scripts.analytics.run_keen_snapshots',
         'scripts.analytics.run_keen_events',
         'scripts.generate_sitemap',
         'scripts.premigrate_created_modified',
-        'scripts.generate_prereg_csv',
         'scripts.add_missing_identifiers_to_preprints',
         'nii.mapcore_refresh_tokens',
     )
@@ -586,14 +551,14 @@ class CeleryConfig:
                 'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },
+            'clear_sessions': {
+                'task': 'scripts.clear_sessions',
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+                'kwargs': {'dry_run': False},
+            },
             'send_queued_mails': {
                 'task': 'scripts.send_queued_mails',
                 'schedule': crontab(minute=0, hour=17),  # Daily 12 p.m.
-                'kwargs': {'dry_run': False},
-            },
-            'prereg_reminder': {
-                'task': 'scripts.remind_draft_preregistrations',
-                'schedule': crontab(minute=0, hour=12),  # Daily 12 p.m.
                 'kwargs': {'dry_run': False},
             },
             'new-and-noteworthy': {
@@ -623,10 +588,6 @@ class CeleryConfig:
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
-            },
-            'generate_prereg_csv': {
-                'task': 'scripts.generate_prereg_csv',
-                'schedule': crontab(minute=0, hour=10, day_of_week=0),  # Sunday 5:00 a.m.
             },
             'mapcore_refresh_token': {
                 'task': 'nii.mapcore_refresh_tokens',
@@ -1479,6 +1440,7 @@ BLACKLISTED_DOMAINS = [
     'qisdo.com',
     'qisoa.com',
     'qoika.com',
+    'qq.com',
     'quickinbox.com',
     'quickmail.nl',
     'rainmail.biz',
@@ -1871,9 +1833,6 @@ SPAM_FLAGGED_REMOVE_FROM_SEARCH = False
 
 SHARE_API_TOKEN = None
 
-# number of nodes that need to be affiliated with an institution before the institution logo is shown on the dashboard
-INSTITUTION_DISPLAY_NODE_THRESHOLD = 5
-
 # refresh campaign every 5 minutes
 CAMPAIGN_REFRESH_THRESHOLD = 5 * 60  # 5 minutes in seconds
 
@@ -1901,8 +1860,6 @@ SITEMAP_STATIC_URLS = [
 
 SITEMAP_USER_CONFIG = OrderedDict([('loc', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 SITEMAP_NODE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'monthly'), ('priority', '0.5')])
-SITEMAP_REGISTRATION_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'never'), ('priority', '0.5')])
-SITEMAP_REVIEWS_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'never'), ('priority', '0.5')])
 SITEMAP_PREPRINT_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 SITEMAP_PREPRINT_FILE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 
@@ -1926,8 +1883,6 @@ OSF_PREREG_LOGO = 'osf_prereg'
 OSF_REGISTRIES_LOGO = 'osf_registries'
 OSF_LOGO_LIST = [OSF_LOGO, OSF_PREPRINTS_LOGO, OSF_MEETINGS_LOGO, OSF_PREREG_LOGO, OSF_REGISTRIES_LOGO]
 
-INSTITUTIONAL_LANDING_FLAG = 'institutions_nav_bar'
-
 FOOTER_LINKS = {
     'terms': 'https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419',
     'privacyPolicy': 'https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422',
@@ -1944,6 +1899,15 @@ FOOTER_LINKS = {
     'github': 'https://github.com/RCOSDP',
 }
 
+CHRONOS_USE_FAKE_FILE = False
+CHRONOS_FAKE_FILE_URL = ''
+CHRONOS_USERNAME = os_env.get('CHRONOS_USERNAME', '')
+CHRONOS_PASSWORD = os_env.get('CHRONOS_PASSWORD', '')
+CHRONOS_API_KEY = os_env.get('CHRONOS_API_KEY', '')
+CHRONOS_HOST = os_env.get('CHRONOS_HOST', 'https://sandbox.api.chronos-oa.com')
+VERIFY_CHRONOS_SSL_CERT = not DEV_MODE
+# Maximum minutes we allow ChronosSubmission status to be stale (only update when user is requesting it)
+CHRONOS_SUBMISSION_UPDATE_TIME = timedelta(minutes=5)
 
 ### NII extensions
 
