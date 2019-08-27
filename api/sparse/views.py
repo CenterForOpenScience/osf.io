@@ -11,13 +11,9 @@ from api.nodes.views import (
 from api.registrations.views import RegistrationDetail, RegistrationChildrenList, RegistrationList
 from api.users.views import UserNodes, UserRegistrations
 
-from api.base.pagination import CursorPagination
-
 
 class BaseSparseMixin(object):
     view_category = 'sparse'
-
-    pagination_class = CursorPagination
     serializer_class = None
 
     # overrides NodeList because these endpoints don't allow writing
