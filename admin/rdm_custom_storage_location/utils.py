@@ -284,7 +284,7 @@ def test_owncloud_connection(host_url, username, password, folder, provider):
     except owncloud.owncloud.HTTPResponseError:
         client.logout()
         return ({
-            'message': 'Invalid folder ID.'
+            'message': 'Invalid folder.'
         }, httplib.BAD_REQUEST)
 
     client.logout()
