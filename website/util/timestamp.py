@@ -37,13 +37,13 @@ logger = logging.getLogger(__name__)
 
 RESULT_MESSAGE = {
     api_settings.TIME_STAMP_TOKEN_CHECK_NG:
-        api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG,  # 'NG'
+        api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG,
     api_settings.TIME_STAMP_TOKEN_NO_DATA:
-        api_settings.TIME_STAMP_TOKEN_NO_DATA_MSG,  # 'TST missing(Retrieving Failed)'
+        api_settings.TIME_STAMP_TOKEN_NO_DATA_MSG,
     api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND:
-        api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG,  # 'TST missing(Unverify)'
+        api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG,
     api_settings.FILE_NOT_EXISTS:
-        api_settings.FILE_NOT_EXISTS_MSG,  # 'FILE missing'
+        api_settings.FILE_NOT_EXISTS_MSG,
     api_settings.TIME_STAMP_VERIFICATION_ERR:
         api_settings.TIME_STAMP_VERIFICATION_ERR_MSG,
     api_settings.TIME_STAMP_STORAGE_DISCONNECTED:
