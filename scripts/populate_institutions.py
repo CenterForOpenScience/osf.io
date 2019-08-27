@@ -1491,6 +1491,18 @@ INSTITUTIONS = {
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'ubc',
+                'name': 'University of British Columbia [Test]',
+                'description': 'Users are reminded to ensure their use of this service is in compliance with all <a href="https://universitycounsel.ubc.ca/policies/">UBC Policies and Standards</a>. Please refer specifically to <a href="https://universitycounsel.ubc.ca/files/2015/08/policy85.pdf">Policy 85</a>, <a href="https://universitycounsel.ubc.ca/files/2013/06/policy104.pdf">Policy 104</a>, and the <a href="https://cio.ubc.ca/node/1073">Information Security Standards</a>. Find out more about <a href="http://openscience.ubc.ca">OSF</a>. Get help with <a href="https://researchdata.library.ubc.ca/">Research Data Management</a>.',
+                'banner_name': 'ubc-banner.png',
+                'logo_name': 'ubc-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://authentication.stg.id.ubc.ca')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-ubc.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'uc',
                 'name': 'University of Cincinnati [Test]',
                 'description': 'In partnership with the <a href="https://research.uc.edu/home/officeofresearch/administrativeoffices.aspx">Office of Research</a>, <a href="https://www.libraries.uc.edu/">UC Libraries</a> and <a href="https://www.uc.edu/ucit.html">IT&#64;UC</a>. Projects must abide by <a href="http://www.uc.edu/infosec/policies.html">Security (9.1.27) and Data Protection (9.1.1) Policies.</a> Learn more by visiting <a href="https://libraries.uc.edu/digital-scholarship/data-services.html">Research Data & GIS services</a>.',
