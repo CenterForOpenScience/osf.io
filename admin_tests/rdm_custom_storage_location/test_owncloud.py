@@ -102,7 +102,7 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 'owncloud',
         })
         nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
-        nt.assert_in('Invalid folder ID.', response.content)
+        nt.assert_in('Invalid folder.', response.content)
 
 
 class TestSaveCredentials(AdminTestCase):
