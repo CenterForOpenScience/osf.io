@@ -2,6 +2,21 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.24.0 (2019-08-27)
+===================
+- APIv2: Allow creating a node with a license attached on creation
+- APIv2: Prevent creating a node link to the node itself, a parent, or a child
+- APIv2: Have the move/copy WB hooks update storage usage
+- Exclude collection groups from user page in Django's admin app
+- Have osfstorage move/copy hooks recursively update the latest file version's region
+- Fix password reset tokens
+- Do not reveal entire google drive file path in node logs
+- Allow logging in from password reset and forgot password pages
+- Fix broken social links on add contributors modal
+- Fix email typos in embargoed registration emails
+- Improve registration and retraction node log display text
+- Fix logs if cron job automatically approves a withdrawal
+
 19.23.0 (2019-08-19)
 ===================
 - Represents scopes as an m2m field on personal access tokens instead of a CharField
