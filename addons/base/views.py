@@ -293,7 +293,9 @@ def get_auth(auth, **kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
 
     node = AbstractNode.load(node_id) or Preprint.load(node_id)
-    if (node and node.is_deleted) or not node:
+    if node and node.is_deleted:
+        raise HTTPError(httplib.GONE)
+    elif not node:
         raise HTTPError(httplib.NOT_FOUND)
 
     check_access(node, auth, action, cas_resp)
