@@ -509,17 +509,12 @@ class TestNodeLinkCreate:
     def test_create_node_pointer_to_itself(
             self, app, user, public_project,
             public_url, make_payload):
-        with assert_latest_log(NodeLog.POINTER_CREATED, public_project):
-            point_to_itself_payload = make_payload(id=public_project._id)
-            res = app.post_json_api(
-                public_url,
-                point_to_itself_payload,
-                auth=user.auth)
-            res_json = res.json['data']
-            assert res.status_code == 201
-            assert res.content_type == 'application/vnd.api+json'
-            embedded = res_json['embeds']['target_node']['data']['id']
-            assert embedded == public_project._id
+        point_to_itself_payload = make_payload(id=public_project._id)
+        res = app.post_json_api(
+            public_url,
+            point_to_itself_payload,
+            auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
 
     def test_create_node_pointer_errors(
             self, app, user, user_two, public_project,
@@ -984,29 +979,24 @@ class TestNodeLinksBulkCreate:
 
     def test_bulk_creates_node_pointer_to_itself(
             self, app, user, public_project, public_url):
-        with assert_latest_log(NodeLog.POINTER_CREATED, public_project):
-            point_to_itself_payload = {
-                'data': [{
-                    'type': 'node_links',
-                    'relationships': {
-                        'nodes': {
-                            'data': {
-                                'type': 'nodes',
-                                'id': public_project._id
-                            }
+        point_to_itself_payload = {
+            'data': [{
+                'type': 'node_links',
+                'relationships': {
+                    'nodes': {
+                        'data': {
+                            'type': 'nodes',
+                            'id': public_project._id
                         }
                     }
-                }]
-            }
+                }
+            }]
+        }
 
-            res = app.post_json_api(
-                public_url, point_to_itself_payload,
-                auth=user.auth, bulk=True)
-            assert res.status_code == 201
-            assert res.content_type == 'application/vnd.api+json'
-            res_json = res.json['data']
-            embedded = res_json[0]['embeds']['target_node']['data']['id']
-            assert embedded == public_project._id
+        res = app.post_json_api(
+            public_url, point_to_itself_payload,
+            auth=user.auth, bulk=True, expect_errors=True)
+        assert res.status_code == 400
 
     def test_bulk_creates_node_pointer_already_connected(
             self, app, user, public_project,

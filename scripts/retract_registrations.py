@@ -49,7 +49,7 @@ def main(dry_run=True):
                                 'registration': parent_registration._id,
                                 'retraction_id': parent_registration.retraction._id,
                             },
-                            auth=Auth(parent_registration.retraction.initiated_by),
+                            auth=None,
                         )
                         retraction.save()
                         parent_registration.update_search()
