@@ -6,7 +6,8 @@ app_name = 'osf'
 
 urlpatterns = [
     url(
-        r'^nodes/', views.SparseNodeList.as_view(),
+        r'^nodes/$',
+        views.SparseNodeList.as_view(),
         name=views.SparseNodeList.view_name,
     ),
     url(
