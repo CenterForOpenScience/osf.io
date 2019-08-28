@@ -803,8 +803,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
                 'sha256': 'existing',
                 'vault': 'the cloud',
                 'archive': 'erchiv'
-            }
-        )
+            })
 
         assert_is(version._find_matching_archive(), True)
         assert_is_not(version.archive, None)
@@ -837,7 +836,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
                 'object': '07d80a',
             }, {
                 'sha256': 'existing',
-            })
+            }, check_permissions=False)
 
         assert_equal(version2.archive, 'erchiv')
 

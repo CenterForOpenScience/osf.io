@@ -14,6 +14,9 @@ from osf.utils.fields import EncryptedJSONField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from framework.auth.core import Auth
+from framework.exceptions import HTTPError
+from rest_framework import status as http_status
+
 from osf.models.mixins import Loggable
 from osf.models import AbstractNode
 from osf.models.files import File, FileVersion, Folder, TrashedFileNode, BaseFileNode, BaseFileNodeManager
@@ -299,12 +302,38 @@ class OsfStorageFile(OsfStorageFileNode, File):
             most_recent_fileversion.region = destination_parent.target.osfstorage_region
             most_recent_fileversion.save()
 
-    def create_version(self, creator, location, metadata=None):
+    def create_version(self, creator, location, metadata=None, check_permissions=True):
+        """
+        :param creator: OSFUser
+        :param location: dict A dict that represents provider details, typical structure:
+        {
+        'object': '06d80e',
+        'service': 'cloud',
+        'folder': 'osf',
+        }
+        :param metadata: dict A dict that represents file metadata, typical structure:
+        }
+        'size': 123,
+        'name': 'file',
+        'provider': 'filesystem',
+        'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
+        }
+
+        :param check_permissions: check if user has permission to create version (False for testing only).
+        :return:
+        """
         latest_version = self.get_version()
         version = FileVersion(identifier=self.versions.count() + 1, creator=creator, location=location)
 
         if latest_version and latest_version.is_duplicate(version):
             return latest_version
+
+        # Checkout the file to prevent concurrency issues by spamming create new version requests
+        if check_permissions and isinstance(self.target, AbstractNode):
+            if not self.is_checked_out:
+                self.check_in_or_out(creator, creator, save=True)
+            else:
+                raise HTTPError(http_status.HTTP_429_TOO_MANY_REQUESTS)
 
         if metadata:
             version.update_metadata(metadata, save=False)
@@ -315,6 +344,9 @@ class OsfStorageFile(OsfStorageFileNode, File):
         version.save()
         self.versions.add(version)
         self.save()
+
+        if check_permissions and isinstance(self.target, AbstractNode):
+            self.check_in_or_out(creator, None, save=True)
 
         return version
 
