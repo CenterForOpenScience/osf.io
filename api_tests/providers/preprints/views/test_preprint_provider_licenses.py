@@ -51,7 +51,7 @@ class TestPreprintProviderLicenses:
 
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == len(licenses)
-        assert license_two._id == res.json['data'][0]['id']
+        assert license_two._id in [item['id'] for item in res.json['data']]
 
     def test_prerint_provider_has_acceptable_licenses_but_no_default(self, app, provider, licenses, license_one, license_two, license_three, url):
         provider.licenses_acceptable.add(license_one, license_two)
@@ -80,5 +80,3 @@ class TestPreprintProviderLicenses:
         assert license_one._id in license_ids
         assert license_three._id in license_ids
         assert license_two._id not in license_ids
-
-        assert license_three._id == license_ids[0]

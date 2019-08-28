@@ -1674,7 +1674,12 @@ class LinkedNodesRelationshipSerializer(BaseAPISerializer):
         for pointer in remove:
             collection.rm_pointer(pointer, auth)
         for node in add:
-            collection.add_pointer(node, auth)
+            try:
+                collection.add_pointer(node, auth)
+            except ValueError as e:
+                raise api_exceptions.InvalidModelValueError(
+                    detail=str(e),
+                )
 
         return self.make_instance_obj(collection)
 
@@ -1689,8 +1694,12 @@ class LinkedNodesRelationshipSerializer(BaseAPISerializer):
             raise api_exceptions.RelationshipPostMakesNoChanges
 
         for node in add:
-            collection.add_pointer(node, auth)
-
+            try:
+                collection.add_pointer(node, auth)
+            except ValueError as e:
+                raise api_exceptions.InvalidModelValueError(
+                    detail=str(e),
+                )
         return self.make_instance_obj(collection)
 
 
@@ -1747,7 +1756,12 @@ class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
         for pointer in remove:
             collection.rm_pointer(pointer, auth)
         for node in add:
-            collection.add_pointer(node, auth)
+            try:
+                collection.add_pointer(node, auth)
+            except ValueError as e:
+                raise api_exceptions.InvalidModelValueError(
+                    detail=str(e),
+                )
 
         return self.make_instance_obj(collection)
 
@@ -1762,7 +1776,12 @@ class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
             raise api_exceptions.RelationshipPostMakesNoChanges
 
         for node in add:
-            collection.add_pointer(node, auth)
+            try:
+                collection.add_pointer(node, auth)
+            except ValueError as e:
+                raise api_exceptions.InvalidModelValueError(
+                    detail=str(e),
+                )
 
         return self.make_instance_obj(collection)
 
