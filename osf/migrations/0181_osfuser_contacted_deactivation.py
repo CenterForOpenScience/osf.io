@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0174_add_ab_testing_home_page_version_b_flag'),
+        ('osf', '0180_finalize_token_scopes_mig'),
     ]
 
     operations = [
