@@ -852,6 +852,9 @@ def claim_user_login_by_eppn(auth, node, **kwargs):
             current_user.save()
             send_welcome(current_user, get_current_request())
 
+        if mapcore_sync_is_enabled():
+            mapcore_sync_map_group(auth.user, node)
+
         status.push_status_message(
             'You are now a contributor to this project.',
             kind='success',

@@ -148,7 +148,11 @@ class TestInvite(OsfTestCase):
         assert_equal(res.status_code, 302)
         assert_in(verify_url, res.headers.get('Location'))
 
-        res2 = self.app.post(verify_url, auth=user2.auth)
+        with mock.patch('website.project.views.contributor.mapcore_sync_map_group') as mock1, \
+             mock.patch('website.project.views.contributor.mapcore_sync_is_enabled') as mock2:
+            mock2.return_value = True
+            res2 = self.app.post(verify_url, auth=user2.auth)
+        assert_equal(mock1.call_count, 1)
         assert_equal(res2.status_code, 302)
         assert_in(self.project.url, res2.headers.get('Location'))
 
