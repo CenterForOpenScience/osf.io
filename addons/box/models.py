@@ -137,7 +137,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                     # 'folders': node.api_url_for('box_folder_list', folderId=0),
                     'folders': api_v2_url(
                         'nodes/{}/addons/box/folders/'.format(self.owner._id),
-                            params={'id': '0'},
+                        params={'id': '0'},
                     ),
                 },
             }]
@@ -173,7 +173,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'urls': {
                     'folders': api_v2_url(
                         'nodes/{}/addons/box/folders/'.format(self.owner._id),
-                            params={'id': item['id']},
+                        params={'id': item['id']},
                     ),
                 },
             }
@@ -250,15 +250,15 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'urls': {
                     'view': self.owner.web_url_for(
                         'addon_view_or_download_file',
-                            provider='box',
-                            action='view',
-                            path=metadata['path'],
+                        provider='box',
+                        action='view',
+                        path=metadata['path'],
                     ),
                     'download': self.owner.web_url_for(
                         'addon_view_or_download_file',
-                            provider='box',
-                            action='download',
-                            path=metadata['path'],
+                        provider='box',
+                        action='download',
+                        path=metadata['path'],
                     ),
                 },
             },
