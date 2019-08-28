@@ -3,8 +3,8 @@ repos:
   rev: v0.7.0
   hooks:
   - id: add-trailing-comma
-    # TODO: Remove this line. For now, we only format the api/ directory
-    files: ^api/
+    # TODO: Remove this line once we add trailing commas to all directories.
+    files: ^api/|^tests
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v1.4.0
   hooks:

@@ -95,11 +95,13 @@ class TestAuthBasicAuthentication(OsfTestCase):
     def test_expired_cookie(self):
         self.session = SessionFactory(user=self.user1)
         with connection.cursor() as cursor:
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE osf_session
                 SET created = %s
                 WHERE id = %s
-            """, [(timezone.now() - timedelta(seconds=settings.OSF_SESSION_TIMEOUT)), self.session.id])
+            """, [(timezone.now() - timedelta(seconds=settings.OSF_SESSION_TIMEOUT)), self.session.id],
+            )
         cookie = self.user1.get_or_create_cookie()
         self.app.set_cookie(settings.COOKIE_NAME, str(cookie))
         res = self.app.get(self.reachable_url)

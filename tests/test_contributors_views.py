@@ -34,7 +34,7 @@ class TestContributorUtils(OsfTestCase):
             self.project.creator,
             self.project,
             full=True,
-            is_profile=True
+            is_profile=True,
         )
         assert_in('emails', serialized)
 
@@ -49,7 +49,7 @@ class TestContributorUtils(OsfTestCase):
             creator=new_user,
             target=self.project,
             request_type=workflows.RequestTypes.ACCESS.value,
-            machine_state=workflows.DefaultStates.INITIAL.value
+            machine_state=workflows.DefaultStates.INITIAL.value,
         )
         node_request.run_submit(new_user)
         res = utils.serialize_access_requests(self.project)

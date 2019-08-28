@@ -10,7 +10,7 @@ from osf_tests.factories import (
     PreprintFactory,
     IdentifierFactory,
     RegistrationFactory,
-    PreprintProviderFactory
+    PreprintProviderFactory,
 )
 
 from tests.base import OsfTestCase
@@ -43,7 +43,7 @@ class TestMetadataGeneration(OsfTestCase):
         license_details = {
             'id': license.license_id,
             'year': '2017',
-            'copyrightHolders': ['Jeff Hardy', 'Matt Hardy']
+            'copyrightHolders': ['Jeff Hardy', 'Matt Hardy'],
         }
         preprint = PreprintFactory(provider=provider, project=self.node, is_published=True, license_details=license_details)
         metadata_xml = metadata.datacite_metadata_for_preprint(preprint, doi=preprint.get_identifier('doi').value, pretty_print=True)

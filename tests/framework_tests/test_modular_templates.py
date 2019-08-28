@@ -106,7 +106,7 @@ class WebRendererTestCase(OsfTestCase):
         # Use OsfRenderer so that global vars are included
         self.r = OsfWebRenderer(
             os.path.join(TEMPLATES_PATH, 'main.html'),
-            render_mako_string
+            render_mako_string,
         )
 
     def test_redirect(self):
@@ -120,11 +120,12 @@ class WebRendererTestCase(OsfTestCase):
         self.app.app.preprocess_request()
 
         resp = self.r(
-            ({},  # data
-            302,  # status code
-            None,  # headers
-            'http://google.com/',  # redirect_uri
-            )
+            (
+                {},  # data
+                302,  # status code
+                None,  # headers
+                'http://google.com/',  # redirect_uri
+            ),
         )
 
         self.assertIsInstance(
@@ -146,12 +147,12 @@ class WebRendererTestCase(OsfTestCase):
         resp = self.r(input_dict)
 
         self.assertIsInstance(
-            resp, werkzeug.wrappers.Response
+            resp, werkzeug.wrappers.Response,
         )
 
         self.assertIn(
             'foo:bar',
-            resp.data
+            resp.data,
         )
 
     def test_http_error_raised(self):
@@ -195,11 +196,11 @@ class WebRendererTestCase(OsfTestCase):
         """
 
         resp = self.r(
-            HTTPError(http.CREATED, redirect_url='http://google.com/')
+            HTTPError(http.CREATED, redirect_url='http://google.com/'),
         )
 
         self.assertIsInstance(
-            resp, werkzeug.wrappers.Response
+            resp, werkzeug.wrappers.Response,
         )
 
         self.assertEqual(302, resp.status_code)
@@ -223,5 +224,5 @@ class JSONRendererEncoderTestCase(unittest.TestCase):
     def test_string(self):
         self.assertEqual(
             '"my string"',
-            json.dumps('my string', cls=JSONRenderer.Encoder)
+            json.dumps('my string', cls=JSONRenderer.Encoder),
         )

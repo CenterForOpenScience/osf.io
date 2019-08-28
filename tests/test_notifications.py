@@ -52,7 +52,7 @@ class TestNotificationsModels(OsfTestCase):
         sub_component2 = factories.NodeFactory(parent=node)
 
         assert_true(
-            node.has_permission_on_children(non_admin_user, permissions.READ)
+            node.has_permission_on_children(non_admin_user, permissions.READ),
         )
 
     def test_check_user_has_permission_excludes_deleted_components(self):
@@ -69,7 +69,7 @@ class TestNotificationsModels(OsfTestCase):
         sub_component2 = factories.NodeFactory(parent=node)
 
         assert_false(
-            node.has_permission_on_children(non_admin_user,permissions.READ)
+            node.has_permission_on_children(non_admin_user,permissions.READ),
         )
 
     def test_check_user_does_not_have_permission_on_private_node_child(self):
@@ -81,7 +81,7 @@ class TestNotificationsModels(OsfTestCase):
         sub_component = factories.NodeFactory(parent=node)
 
         assert_false(
-            node.has_permission_on_children(non_admin_user,permissions.READ)
+            node.has_permission_on_children(non_admin_user,permissions.READ),
         )
 
     def test_check_user_child_node_permissions_false_if_no_children(self):
@@ -92,7 +92,7 @@ class TestNotificationsModels(OsfTestCase):
         node = factories.NodeFactory(parent=parent, category='project')
 
         assert_false(
-            node.has_permission_on_children(non_admin_user,permissions.READ)
+            node.has_permission_on_children(non_admin_user,permissions.READ),
         )
 
     def test_check_admin_has_permissions_on_private_component(self):
@@ -101,7 +101,7 @@ class TestNotificationsModels(OsfTestCase):
         sub_component = factories.NodeFactory(parent=node)
 
         assert_true(
-            node.has_permission_on_children(parent.creator,permissions.READ)
+            node.has_permission_on_children(parent.creator,permissions.READ),
         )
 
     def test_check_user_private_node_child_permissions_excludes_pointers(self):
@@ -112,7 +112,7 @@ class TestNotificationsModels(OsfTestCase):
         parent.save()
 
         assert_false(
-            parent.has_permission_on_children(user,permissions.READ)
+            parent.has_permission_on_children(user,permissions.READ),
         )
 
     def test_new_project_creator_is_subscribed(self):
@@ -138,19 +138,19 @@ class TestNotificationsModels(OsfTestCase):
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_' + 'global_comments',
             user=user,
-            event_name='global_comments'
+            event_name='global_comments',
         ).add_user_to_subscription(user, 'email_digest')
 
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_' + 'global_file_updated',
             user=user,
-            event_name='global_file_updated'
+            event_name='global_file_updated',
         ).add_user_to_subscription(user, 'none')
 
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_' + 'global_mentions',
             user=user,
-            event_name='global_mentions'
+            event_name='global_mentions',
         ).add_user_to_subscription(user, 'email_digest')
 
         node = factories.ProjectFactory(creator=user)
@@ -178,25 +178,25 @@ class TestNotificationsModels(OsfTestCase):
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_' + 'global_comments',
             user=user,
-            event_name='global_comments'
+            event_name='global_comments',
         ).add_user_to_subscription(user, 'email_digest')
 
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_' + 'global_file_updated',
             user=user,
-            event_name='global_file_updated'
+            event_name='global_file_updated',
         ).add_user_to_subscription(user, 'none')
 
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_' + 'global_comment_replies',
             user=user,
-            event_name='global_comment_replies'
+            event_name='global_comment_replies',
         ).add_user_to_subscription(user, 'email_transactional')
 
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_' + 'global_mentions',
             user=user,
-            event_name='global_mentions'
+            event_name='global_mentions',
         ).add_user_to_subscription(user, 'email_transactional')
 
         node = factories.NodeFactory(creator=user)
@@ -228,25 +228,25 @@ class TestNotificationsModels(OsfTestCase):
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_' + 'global_comments',
             user=user,
-            event_name='global_comments'
+            event_name='global_comments',
         ).add_user_to_subscription(user, 'email_transactional')
 
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_' + 'global_file_updated',
             user=user,
-            event_name='global_file_updated'
+            event_name='global_file_updated',
         ).add_user_to_subscription(user, 'email_transactional')
 
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_' + 'global_comment_replies',
             user=user,
-            event_name='global_comment_replies'
+            event_name='global_comment_replies',
         ).add_user_to_subscription(user, 'email_transactional')
 
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_' + 'global_mentions',
             user=user,
-            event_name='global_mentions'
+            event_name='global_mentions',
         ).add_user_to_subscription(user, 'email_transactional')
 
         node = factories.ProjectFactory(creator=user)
@@ -274,19 +274,19 @@ class TestNotificationsModels(OsfTestCase):
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_' + 'global_comments',
             user=user,
-            event_name='global_comments'
+            event_name='global_comments',
         ).add_user_to_subscription(user, 'email_transactional')
 
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_' + 'global_file_updated',
             user=user,
-            event_name='global_file_updated'
+            event_name='global_file_updated',
         ).add_user_to_subscription(user, 'email_transactional')
 
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_' + 'global_mentions',
             user=user,
-            event_name='global_mentions'
+            event_name='global_mentions',
         ).add_user_to_subscription(user, 'email_transactional')
 
         node = factories.ForkFactory(project=project)
@@ -316,25 +316,25 @@ class TestNotificationsModels(OsfTestCase):
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_' + 'global_comments',
             user=user,
-            event_name='global_comments'
+            event_name='global_comments',
         ).add_user_to_subscription(user, 'email_transactional')
 
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_' + 'global_file_updated',
             user=user,
-            event_name='global_file_updated'
+            event_name='global_file_updated',
         ).add_user_to_subscription(user, 'email_transactional')
 
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_' + 'global_comment_replies',
             user=user,
-            event_name='global_comment_replies'
+            event_name='global_comment_replies',
         ).add_user_to_subscription(user, 'email_transactional')
 
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_' + 'global_mentions',
             user=user,
-            event_name='global_mentions'
+            event_name='global_mentions',
         ).add_user_to_subscription(user, 'email_transactional')
 
         node = factories.NodeFactory(creator=user)
@@ -368,13 +368,13 @@ class TestNotificationsModels(OsfTestCase):
         factories.NotificationSubscriptionFactory(
             _id=contributor._id + '_' + 'global_comments',
             user=contributor,
-            event_name='global_comments'
+            event_name='global_comments',
         ).add_user_to_subscription(contributor, 'email_transactional')
 
         factories.NotificationSubscriptionFactory(
             _id=contributor._id + '_' + 'global_file_updated',
             user=contributor,
-            event_name='global_file_updated'
+            event_name='global_file_updated',
         ).add_user_to_subscription(contributor, 'email_transactional')
 
         node = factories.NodeFactory(creator=user)
@@ -402,7 +402,7 @@ class TestNotificationsModels(OsfTestCase):
             unregistered_contributor.fullname,
             unregistered_contributor.email,
             Auth(user),
-            existing_user=unregistered_contributor
+            existing_user=unregistered_contributor,
         )
 
         contributor_subscriptions = list(utils.get_all_user_subscriptions(unregistered_contributor))
@@ -421,7 +421,7 @@ class TestSubscriptionView(OsfTestCase):
         payload = {
             'id': self.node._id,
             'event': 'comments',
-            'notification_type': 'email_transactional'
+            'notification_type': 'email_transactional',
         }
         url = api_url_for('configure_subscription')
         self.app.post_json(url, payload, auth=self.node.creator.auth)
@@ -439,7 +439,7 @@ class TestSubscriptionView(OsfTestCase):
         new_payload = {
             'id': self.node._id,
             'event': 'comments',
-            'notification_type': 'email_digest'
+            'notification_type': 'email_digest',
         }
         url = api_url_for('configure_subscription')
         self.app.post_json(url, new_payload, auth=self.node.creator.auth)
@@ -451,7 +451,7 @@ class TestSubscriptionView(OsfTestCase):
         payload = {
             'id': self.registration._id,
             'event': 'comments',
-            'notification_type': 'email_transactional'
+            'notification_type': 'email_transactional',
         }
         url = api_url_for('configure_subscription')
         res = self.app.post_json(url, payload, auth=self.registration.creator.auth, expect_errors=True)
@@ -461,7 +461,7 @@ class TestSubscriptionView(OsfTestCase):
         payload = {
             'id': self.node._id,
             'event': 'comments',
-            'notification_type': 'adopt_parent'
+            'notification_type': 'adopt_parent',
         }
         url = api_url_for('configure_subscription')
         self.app.post_json(url, payload, auth=self.node.creator.auth)
@@ -474,7 +474,7 @@ class TestSubscriptionView(OsfTestCase):
         payload = {
             'id': self.node._id,
             'event': 'comments',
-            'notification_type': 'email_transactional'
+            'notification_type': 'email_transactional',
         }
         url = api_url_for('configure_subscription')
         self.app.post_json(url, payload, auth=self.node.creator.auth)
@@ -487,7 +487,7 @@ class TestSubscriptionView(OsfTestCase):
         new_payload = {
             'id': self.node._id,
             'event': 'comments',
-            'notification_type': 'adopt_parent'
+            'notification_type': 'adopt_parent',
         }
         url = api_url_for('configure_subscription')
         self.app.post_json(url, new_payload, auth=self.node.creator.auth)
@@ -503,7 +503,7 @@ class TestSubscriptionView(OsfTestCase):
         payload = {
             'id': project._id,
             'event': 'comments',
-            'notification_type': 'email_digest'
+            'notification_type': 'email_digest',
         }
         url = api_url_for('configure_subscription')
         self.app.post_json(url, payload, auth=project.creator.auth)
@@ -524,7 +524,7 @@ class TestRemoveContributor(OsfTestCase):
 
         self.subscription = NotificationSubscription.objects.get(
             node=self.project,
-            _id=self.project._id + '_comments'
+            _id=self.project._id + '_comments',
         )
 
         self.node = factories.NodeFactory(parent=self.project)
@@ -533,7 +533,7 @@ class TestRemoveContributor(OsfTestCase):
 
         self.node_subscription = NotificationSubscription.objects.get(
             _id=self.node._id + '_comments',
-            node=self.node
+            node=self.node,
         )
         self.node_subscription.add_user_to_subscription(self.node.creator, 'email_transactional')
 
@@ -643,16 +643,20 @@ def subscription_schema(project, structure, level=0):
         'node': {
             'id': Use(type(project._id), error='node_id{}'.format(level)),
             'title': Use(type(project.title), error='node_title{}'.format(level)),
-            'url': Use(type(project.url), error='node_{}'.format(level))
+            'url': Use(type(project.url), error='node_{}'.format(level)),
         },
-        'kind': And(str, Use(lambda s: s in ('node', 'folder'),
-                             error="kind didn't match node or folder {}".format(level))),
+        'kind': And(
+            str, Use(
+                lambda s: s in ('node', 'folder'),
+                error="kind didn't match node or folder {}".format(level),
+            ),
+        ),
         'nodeType': Use(lambda s: s in ('project', 'component'), error='nodeType not project or component'),
         'category': Use(lambda s: s in settings.NODE_CATEGORY_MAP, error='category not in settings.NODE_CATEGORY_MAP'),
         'permissions': {
-            'view': Use(lambda s: s in (True, False), error='view permissions is not True/False')
+            'view': Use(lambda s: s in (True, False), error='view permissions is not True/False'),
         },
-        'children': sub_list
+        'children': sub_list,
     }
     if level == 0:
         return Schema([node_schema])
@@ -662,17 +666,25 @@ def subscription_schema(project, structure, level=0):
 def event_schema(level=None):
     return {
         'event': {
-            'title': And(Use(str, error='event_title{} not a string'.format(level)),
-                         Use(lambda s: s in constants.NOTIFICATION_TYPES,
-                             error='event_title{} not in list'.format(level))),
-            'description': And(Use(str, error='event_desc{} not a string'.format(level)),
-                               Use(lambda s: s in constants.NODE_SUBSCRIPTIONS_AVAILABLE,
-                                   error='event_desc{} not in list'.format(level))),
+            'title': And(
+                Use(str, error='event_title{} not a string'.format(level)),
+                Use(
+                    lambda s: s in constants.NOTIFICATION_TYPES,
+                    error='event_title{} not in list'.format(level),
+                ),
+            ),
+            'description': And(
+                Use(str, error='event_desc{} not a string'.format(level)),
+                Use(
+                    lambda s: s in constants.NODE_SUBSCRIPTIONS_AVAILABLE,
+                    error='event_desc{} not in list'.format(level),
+                ),
+            ),
             'notificationType': And(str, Or('adopt_parent', lambda s: s in constants.NOTIFICATION_TYPES)),
-            'parent_notification_type': Or(None, 'adopt_parent', lambda s: s in constants.NOTIFICATION_TYPES)
+            'parent_notification_type': Or(None, 'adopt_parent', lambda s: s in constants.NOTIFICATION_TYPES),
         },
         'kind': 'event',
-        'children': And(list, lambda l: len(l) == 0)
+        'children': And(list, lambda l: len(l) == 0),
     }
 
 
@@ -686,7 +698,7 @@ class TestNotificationUtils(OsfTestCase):
         self.project_subscription = NotificationSubscription.objects.get(
             node=self.project,
             _id=self.project._id + '_comments',
-            event_name='comments'
+            event_name='comments',
         )
 
         self.user.notifications_configured[self.project._id] = True
@@ -697,7 +709,7 @@ class TestNotificationUtils(OsfTestCase):
         self.node_comments_subscription = factories.NotificationSubscriptionFactory(
             _id=self.node._id + '_' + 'comments',
             node=self.node,
-            event_name='comments'
+            event_name='comments',
         )
         self.node_comments_subscription.save()
         self.node_comments_subscription.email_transactional.add(self.user)
@@ -705,21 +717,23 @@ class TestNotificationUtils(OsfTestCase):
 
         self.node_subscription = list(NotificationSubscription.objects.filter(node=self.node))
 
-        self.user_subscription = [factories.NotificationSubscriptionFactory(
-            _id=self.user._id + '_' + 'comment_replies',
-            user=self.user,
-            event_name='comment_replies'
-        ),
-        factories.NotificationSubscriptionFactory(
-            _id=self.user._id + '_' + 'global_comment',
-            user=self.user,
-            event_name='global_comment'
-        ),
-        factories.NotificationSubscriptionFactory(
-            _id=self.user._id + '_' + 'global_file_updated',
-            user=self.user,
-            event_name='global_file_updated'
-        )]
+        self.user_subscription = [
+            factories.NotificationSubscriptionFactory(
+                _id=self.user._id + '_' + 'comment_replies',
+                user=self.user,
+                event_name='comment_replies',
+            ),
+            factories.NotificationSubscriptionFactory(
+                _id=self.user._id + '_' + 'global_comment',
+                user=self.user,
+                event_name='global_comment',
+            ),
+            factories.NotificationSubscriptionFactory(
+                _id=self.user._id + '_' + 'global_file_updated',
+                user=self.user,
+                event_name='global_file_updated',
+            ),
+        ]
 
         for x in self.user_subscription:
             x.save()
@@ -734,10 +748,12 @@ class TestNotificationUtils(OsfTestCase):
 
     def test_from_subscription_key(self):
         parsed_key = utils.from_subscription_key('xyz_comment_replies')
-        assert_equal(parsed_key, {
-            'uid': 'xyz',
-            'event': 'comment_replies'
-        })
+        assert_equal(
+            parsed_key, {
+                'uid': 'xyz',
+                'event': 'comment_replies',
+            },
+        )
 
     def test_get_all_user_subscriptions(self):
         user_subscriptions = list(utils.get_all_user_subscriptions(self.user))
@@ -749,8 +765,10 @@ class TestNotificationUtils(OsfTestCase):
 
     def test_get_all_node_subscriptions_given_user_subscriptions(self):
         user_subscriptions = utils.get_all_user_subscriptions(self.user)
-        node_subscription_ids = [x._id for x in utils.get_all_node_subscriptions(self.user, self.node,
-                                                                          user_subscriptions=user_subscriptions)]
+        node_subscription_ids = [x._id for x in utils.get_all_node_subscriptions(
+            self.user, self.node,
+            user_subscriptions=user_subscriptions,
+        )]
         expected_node_subscription_ids = [x._id for x in self.node_subscription]
         assert_items_equal(node_subscription_ids, expected_node_subscription_ids)
 
@@ -785,7 +803,7 @@ class TestNotificationUtils(OsfTestCase):
         node_comments_subscription = factories.NotificationSubscriptionFactory(
             _id=node._id + '_' + 'comments',
             node=node,
-            event_name='comments'
+            event_name='comments',
         )
         node_comments_subscription.save()
         node_comments_subscription.email_transactional.add(node.creator)
@@ -833,20 +851,20 @@ class TestNotificationUtils(OsfTestCase):
                 'title': 'comments',
                 'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                 'notificationType': 'email_transactional',
-                'parent_notification_type': None
+                'parent_notification_type': None,
             },
             'kind': 'event',
-            'children': []
+            'children': [],
         }
         child_event = {
             'event': {
                 'title': 'comments',
                 'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                 'notificationType': 'email_transactional',
-                'parent_notification_type': 'email_transactional'
+                'parent_notification_type': 'email_transactional',
             },
             'kind': 'event',
-            'children': []
+            'children': [],
         }
         expected_new = [['event'], 'event']
         schema = subscription_schema(self.project, expected_new)
@@ -861,10 +879,10 @@ class TestNotificationUtils(OsfTestCase):
                 'title': 'comments',
                 'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                 'notificationType': 'email_transactional',
-                'parent_notification_type': 'email_transactional'
+                'parent_notification_type': 'email_transactional',
             },
             'kind': 'event',
-            'children': []
+            'children': [],
         }
         schema = subscription_schema(self.project, ['event'])
         assert schema.validate(data)
@@ -880,7 +898,7 @@ class TestNotificationUtils(OsfTestCase):
                 'title': 'comments',
                 'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                 'notificationType': 'adopt_parent',
-                'parent_notification_type': 'email_transactional'
+                'parent_notification_type': 'email_transactional',
             },
             'kind': 'event',
             'children': [],
@@ -902,7 +920,7 @@ class TestNotificationUtils(OsfTestCase):
                 'title': 'comments',
                 'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                 'notificationType': 'email_transactional',
-                'parent_notification_type': None
+                'parent_notification_type': None,
             },
             'kind': 'event',
             'children': [],
@@ -918,7 +936,7 @@ class TestNotificationUtils(OsfTestCase):
         node_comments_subscription = factories.NotificationSubscriptionFactory(
             _id=node._id + '_' + 'comments',
             node=node,
-            event_name='comments'
+            event_name='comments',
         )
         node_comments_subscription.save()
         node_comments_subscription.email_transactional.add(node.creator)
@@ -933,7 +951,7 @@ class TestNotificationUtils(OsfTestCase):
                 'title': 'comments',
                 'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                 'notificationType': 'email_transactional',
-                'parent_notification_type': None
+                'parent_notification_type': None,
             },
             'kind': 'event',
             'children': [],
@@ -949,7 +967,7 @@ class TestNotificationUtils(OsfTestCase):
         node_comments_subscription = factories.NotificationSubscriptionFactory(
             _id=node._id + '_' + 'comments',
             node=node,
-            event_name='comments'
+            event_name='comments',
         )
         node_comments_subscription.save()
         node_comments_subscription.email_transactional.add(node.creator)
@@ -964,7 +982,7 @@ class TestNotificationUtils(OsfTestCase):
                 'title': 'comments',
                 'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                 'notificationType': 'email_transactional',
-                'parent_notification_type': None
+                'parent_notification_type': None,
             },
             'kind': 'event',
             'children': [],
@@ -984,44 +1002,44 @@ class TestNotificationUtils(OsfTestCase):
                     'parent_notification_type': None,
                 },
                 'kind': 'event',
-                'children': []
+                'children': [],
             }, {
                 'event': {
                     'title': 'global_comment_replies',
                     'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_comment_replies'],
                     'notificationType': 'email_transactional',
-                    'parent_notification_type': None
+                    'parent_notification_type': None,
                 },
                 'kind': 'event',
-                'children': []
+                'children': [],
             }, {
                 'event': {
                     'title': 'global_mentions',
                     'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_mentions'],
                     'notificationType': 'email_transactional',
-                    'parent_notification_type': None
+                    'parent_notification_type': None,
                 },
                 'kind': 'event',
-                'children': []
+                'children': [],
             }, {
                 'event': {
                     'title': 'global_comments',
                     'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_comments'],
                     'notificationType': 'email_transactional',
-                    'parent_notification_type': None
+                    'parent_notification_type': None,
                 },
                 'kind': 'event',
-                'children': []
+                'children': [],
             }, {
                 'event': {
                     'title': 'global_reviews',
                     'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_reviews'],
                     'notificationType': 'email_transactional',
-                    'parent_notification_type': None
+                    'parent_notification_type': None,
                 },
                 'kind': 'event',
-                'children': []
-            }
+                'children': [],
+            },
         ]
         assert_items_equal(data, expected)
 
@@ -1049,20 +1067,21 @@ class TestNotificationUtils(OsfTestCase):
                 'node': {
                     'id': self.user._id,
                     'title': 'Default Notification Settings',
-                    'help': 'These are default settings for new projects you create or are added to. Modifying these settings will not modify settings on existing projects.'
-            },
+                    'help': 'These are default settings for new projects you create or are added to. Modifying these settings will not modify settings on existing projects.',
+                },
                 'kind': 'heading',
-                'children': utils.format_user_subscriptions(self.user)
+                'children': utils.format_user_subscriptions(self.user),
             },
             {
                 'node': {
                     'help': 'These are settings for each of your projects. Modifying these settings will only modify the settings for the selected project.',
                     'id': '',
-                    'title': 'Project Notifications'
+                    'title': 'Project Notifications',
                 },
                 'kind': 'heading',
-                'children': utils.format_data(self.user, utils.get_configured_projects(self.user))
-            }]
+                'children': utils.format_data(self.user, utils.get_configured_projects(self.user)),
+            },
+        ]
         assert_equal(data, expected)
 
     def test_serialize_user_level_event(self):
@@ -1071,30 +1090,34 @@ class TestNotificationUtils(OsfTestCase):
         for subscription in user_subscriptions:
             if 'global_comment_replies' in getattr(subscription, 'event_name'):
                 user_subscription = subscription
-        data = utils.serialize_event(self.user, event_description='global_comment_replies',
-                                     subscription=user_subscription)
+        data = utils.serialize_event(
+            self.user, event_description='global_comment_replies',
+            subscription=user_subscription,
+        )
         expected = {
             'event': {
                 'title': 'global_comment_replies',
                 'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_comment_replies'],
                 'notificationType': 'email_transactional',
-                'parent_notification_type': None
+                'parent_notification_type': None,
             },
             'kind': 'event',
-            'children': []
+            'children': [],
         }
         assert_equal(data, expected)
 
     def test_serialize_node_level_event(self):
         node_subscriptions = [x for x in utils.get_all_node_subscriptions(self.user, self.node)]
-        data = utils.serialize_event(user=self.user, event_description='comments',
-                                     subscription=node_subscriptions[0], node=self.node)
+        data = utils.serialize_event(
+            user=self.user, event_description='comments',
+            subscription=node_subscriptions[0], node=self.node,
+        )
         expected = {
             'event': {
                 'title': 'comments',
                 'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                 'notificationType': 'email_transactional',
-                'parent_notification_type': 'email_transactional'
+                'parent_notification_type': 'email_transactional',
             },
             'kind': 'event',
             'children': [],
@@ -1114,14 +1137,16 @@ class TestNotificationUtils(OsfTestCase):
             subscription.remove_user_from_subscription(user)
 
         node_subscriptions = utils.get_all_node_subscriptions(user, self.node)
-        data = utils.serialize_event(user=user, event_description='comments',
-                                     subscription=node_subscriptions, node=self.node)
+        data = utils.serialize_event(
+            user=user, event_description='comments',
+            subscription=node_subscriptions, node=self.node,
+        )
         expected = {
             'event': {
                 'title': 'comments',
                 'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                 'notificationType': 'adopt_parent',
-                'parent_notification_type': 'email_transactional'
+                'parent_notification_type': 'email_transactional',
             },
             'kind': 'event',
             'children': [],
@@ -1134,11 +1159,11 @@ class TestNotificationsDict(OsfTestCase):
         d = utils.NotificationsDict()
         message = {
             'message': 'Freddie commented on your project',
-            'timestamp': timezone.now()
+            'timestamp': timezone.now(),
         }
         message2 = {
             'message': 'Mercury commented on your component',
-            'timestamp': timezone.now()
+            'timestamp': timezone.now(),
         }
 
         d.add_message(['project'], message)
@@ -1150,15 +1175,18 @@ class TestNotificationsDict(OsfTestCase):
                 utils.NotificationsDict, {
                     'project': {
                         'messages': [message],
-                        'children': collections.defaultdict(utils.NotificationsDict, {
-                            'node': {
-                                'messages': [message2],
-                                'children': collections.defaultdict(utils.NotificationsDict, {})
-                            }
-                        })
-                    }
-                }
-            )}
+                        'children': collections.defaultdict(
+                            utils.NotificationsDict, {
+                                'node': {
+                                    'messages': [message2],
+                                    'children': collections.defaultdict(utils.NotificationsDict, {}),
+                                },
+                            },
+                        ),
+                    },
+                },
+            ),
+        }
         assert_equal(d, expected)
 
 
@@ -1182,19 +1210,19 @@ class TestCompileSubscriptions(NotificationTestCase):
         self.base_sub = factories.NotificationSubscriptionFactory(
             _id=self.base_project._id + '_file_updated',
             node=self.base_project,
-            event_name='file_updated'
+            event_name='file_updated',
         )
         self.base_sub.save()
         self.shared_sub = factories.NotificationSubscriptionFactory(
             _id=self.shared_node._id + '_file_updated',
             node=self.shared_node,
-            event_name='file_updated'
+            event_name='file_updated',
         )
         self.shared_sub.save()
         self.private_sub = factories.NotificationSubscriptionFactory(
             _id=self.private_node._id + '_file_updated',
             node=self.private_node,
-            event_name='file_updated'
+            event_name='file_updated',
         )
         self.private_sub.save()
 
@@ -1208,7 +1236,7 @@ class TestCompileSubscriptions(NotificationTestCase):
         node_sub = factories.NotificationSubscriptionFactory(
             _id=node._id + '_file_updated',
             node=node,
-            event_name='file_updated'
+            event_name='file_updated',
         )
         node_sub.save()
         result = emails.compile_subscriptions(node, 'file_updated')
@@ -1272,7 +1300,7 @@ class TestCompileSubscriptions(NotificationTestCase):
         node4_subscription = factories.NotificationSubscriptionFactory(
             _id=node4._id + '_file_updated',
             node=node4,
-            event_name='file_updated'
+            event_name='file_updated',
         )
         node4_subscription.save()
         node4_subscription.email_digest.add(self.user_1)
@@ -1296,14 +1324,14 @@ class TestMoveSubscription(NotificationTestCase):
         self.sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_file_updated',
             node=self.project,
-            event_name='file_updated'
+            event_name='file_updated',
         )
         self.sub.email_transactional.add(self.user_1)
         self.sub.save()
         self.file_sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_xyz42_file_updated',
             node=self.project,
-            event_name='xyz42_file_updated'
+            event_name='xyz42_file_updated',
         )
         self.file_sub.save()
 
@@ -1312,7 +1340,7 @@ class TestMoveSubscription(NotificationTestCase):
         self.private_node.add_contributor(self.user_3, permissions=permissions.WRITE, auth=self.auth)
         self.private_node.save()
         subbed, removed = utils.separate_users(
-            self.private_node, [self.user_2._id, self.user_3._id, self.user_4._id]
+            self.private_node, [self.user_2._id, self.user_3._id, self.user_4._id],
         )
         assert_equal([self.user_2._id, self.user_3._id], subbed)
         assert_equal([self.user_4._id], removed)
@@ -1419,7 +1447,7 @@ class TestSendEmails(NotificationTestCase):
         self.project_subscription = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_' + 'comments',
             node=self.project,
-            event_name='comments'
+            event_name='comments',
         )
         self.project_subscription.save()
         self.project_subscription.email_transactional.add(self.project.creator)
@@ -1429,13 +1457,13 @@ class TestSendEmails(NotificationTestCase):
         self.node_subscription = factories.NotificationSubscriptionFactory(
             _id=self.node._id + '_comments',
             node=self.node,
-            event_name='comments'
+            event_name='comments',
         )
         self.node_subscription.save()
         self.user_subscription = factories.NotificationSubscriptionFactory(
             _id=self.user._id + '_' + 'global_comment_replies',
             node=self.node,
-            event_name='global_comment_replies'
+            event_name='global_comment_replies',
         )
         self.user_subscription.email_transactional.add(self.user)
         self.user_subscription.save()
@@ -1453,7 +1481,7 @@ class TestSendEmails(NotificationTestCase):
         node_subscription = factories.NotificationSubscriptionFactory(
             _id=node._id + '_comments',
             node=node,
-            event_name='comments'
+            event_name='comments',
         )
         node_subscription.save()
         emails.notify('comments', user=self.user, node=node, timestamp=timezone.now())
@@ -1464,8 +1492,10 @@ class TestSendEmails(NotificationTestCase):
         time_now = timezone.now()
         emails.notify('comments', user=self.user, node=self.node, timestamp=time_now)
         assert_true(mock_store.called)
-        mock_store.assert_called_with([self.project.creator._id], 'email_transactional', 'comments', self.user,
-                                      self.node, time_now)
+        mock_store.assert_called_with(
+            [self.project.creator._id], 'email_transactional', 'comments', self.user,
+            self.node, time_now,
+        )
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_does_not_send_to_exclude(self, mock_store):
@@ -1481,7 +1511,7 @@ class TestSendEmails(NotificationTestCase):
         node_subscription = factories.NotificationSubscriptionFactory(
             _id=node._id + '_comments',
             node=node,
-            event_name='comments'
+            event_name='comments',
         )
         node_subscription.save()
         node_subscription.none.add(user)
@@ -1497,7 +1527,7 @@ class TestSendEmails(NotificationTestCase):
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_global_mentions',
             node=self.node,
-            event_name='global_mentions'
+            event_name='global_mentions',
         ).add_user_to_subscription(user, 'none')
         time_now = timezone.now()
         sent = emails.notify_mentions('global_mentions', user=user, node=node, timestamp=time_now, new_mentions=[user._id])
@@ -1510,43 +1540,53 @@ class TestSendEmails(NotificationTestCase):
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_global_mentions',
             node=self.node,
-            event_name='global_mentions'
+            event_name='global_mentions',
         ).add_user_to_subscription(user, 'email_transactional')
         node = factories.ProjectFactory(creator=user)
         time_now = timezone.now()
         emails.notify_mentions('global_mentions', user=user, node=node, timestamp=time_now, new_mentions=[user._id])
         assert_true(mock_store.called)
-        mock_store.assert_called_with([node.creator._id], 'email_transactional', 'global_mentions', user,
-                                      node, time_now, template=None, new_mentions=[node.creator._id], is_creator=(user == node.creator))
+        mock_store.assert_called_with(
+            [node.creator._id], 'email_transactional', 'global_mentions', user,
+            node, time_now, template=None, new_mentions=[node.creator._id], is_creator=(user == node.creator),
+        )
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_reply_event_if_comment_is_direct_reply(self, mock_store):
         time_now = timezone.now()
         emails.notify('comments', user=self.user, node=self.node, timestamp=time_now, target_user=self.project.creator)
-        mock_store.assert_called_with([self.project.creator._id], 'email_transactional', 'comment_replies',
-                                      self.user, self.node, time_now, target_user=self.project.creator)
+        mock_store.assert_called_with(
+            [self.project.creator._id], 'email_transactional', 'comment_replies',
+            self.user, self.node, time_now, target_user=self.project.creator,
+        )
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_reply_when_target_user_is_subscribed_via_user_settings(self, mock_store):
         time_now = timezone.now()
         emails.notify('global_comment_replies', user=self.project.creator, node=self.node, timestamp=time_now, target_user=self.user)
-        mock_store.assert_called_with([self.user._id], 'email_transactional', 'comment_replies',
-                                      self.project.creator, self.node, time_now, target_user=self.user)
+        mock_store.assert_called_with(
+            [self.user._id], 'email_transactional', 'comment_replies',
+            self.project.creator, self.node, time_now, target_user=self.user,
+        )
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_event_if_comment_reply_is_not_direct_reply(self, mock_store):
         user = factories.UserFactory()
         time_now = timezone.now()
         emails.notify('comments', user=user, node=self.node, timestamp=time_now, target_user=user)
-        mock_store.assert_called_with([self.project.creator._id], 'email_transactional', 'comments', user,
-                                      self.node, time_now, target_user=user)
+        mock_store.assert_called_with(
+            [self.project.creator._id], 'email_transactional', 'comments', user,
+            self.node, time_now, target_user=user,
+        )
 
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_does_not_send_comment_if_they_reply_to_their_own_comment(self, mock_store, mock_send_mail):
         time_now = timezone.now()
-        emails.notify('comments', user=self.project.creator, node=self.project, timestamp=time_now,
-                      target_user=self.project.creator)
+        emails.notify(
+            'comments', user=self.project.creator, node=self.project, timestamp=time_now,
+            target_user=self.project.creator,
+        )
         assert_false(mock_store.called)
         assert_false(mock_send_mail.called)
 
@@ -1557,8 +1597,10 @@ class TestSendEmails(NotificationTestCase):
         user = factories.UserFactory()
         time_now = timezone.now()
         emails.notify('comments', user, self.node, time_now, target_user=user)
-        mock_store.assert_called_with([self.project.creator._id], 'email_transactional', 'comments', user,
-                                      self.node, time_now, target_user=user)
+        mock_store.assert_called_with(
+            [self.project.creator._id], 'email_transactional', 'comments', user,
+            self.node, time_now, target_user=user,
+        )
 
     def test_check_node_node_none(self):
         subs = emails.check_node(None, 'comments')
@@ -1575,7 +1617,7 @@ class TestSendEmails(NotificationTestCase):
         user_subscription = factories.NotificationSubscriptionFactory(
             _id=user._id + '_comments',
             user=user,
-            event_name='comment_replies'
+            event_name='comment_replies',
         )
         user_subscription.email_transactional.add(user)
         user_subscription.save()
@@ -1606,7 +1648,7 @@ class TestSendEmails(NotificationTestCase):
         user_subscription = factories.NotificationSubscriptionFactory(
             _id=user._id + '_comments',
             user=user,
-            event_name='comment_replies'
+            event_name='comment_replies',
         )
         user_subscription.email_transactional.add(user)
         user_subscription.save()
@@ -1711,7 +1753,7 @@ class TestSendDigest(OsfTestCase):
             send_type=send_type,
             timestamp=self.timestamp,
             message='Hello',
-            node_lineage=[self.project._id]
+            node_lineage=[self.project._id],
         )
         d.save()
         d2 = factories.NotificationDigestFactory(
@@ -1719,7 +1761,7 @@ class TestSendDigest(OsfTestCase):
             send_type=send_type,
             timestamp=self.timestamp,
             message='Hello',
-            node_lineage=[self.project._id]
+            node_lineage=[self.project._id],
         )
         d2.save()
         d3 = factories.NotificationDigestFactory(
@@ -1727,7 +1769,7 @@ class TestSendDigest(OsfTestCase):
             send_type='email_digest',
             timestamp=self.timestamp,
             message='Hello, but this should not appear (this is a digest)',
-            node_lineage=[self.project._id]
+            node_lineage=[self.project._id],
         )
         d3.save()
         user_groups = list(get_users_emails(send_type))
@@ -1737,17 +1779,17 @@ class TestSendDigest(OsfTestCase):
                 u'info': [{
                     u'message': u'Hello',
                     u'node_lineage': [unicode(self.project._id)],
-                    u'_id': d._id
-                }]
+                    u'_id': d._id,
+                }],
             },
             {
                 u'user_id': self.user_2._id,
                 u'info': [{
                     u'message': u'Hello',
                     u'node_lineage': [unicode(self.project._id)],
-                    u'_id': d2._id
-                }]
-            }
+                    u'_id': d2._id,
+                }],
+            },
         ]
 
         assert_equal(len(user_groups), 2)
@@ -1763,7 +1805,7 @@ class TestSendDigest(OsfTestCase):
             event='comment_replies',
             timestamp=self.timestamp,
             message='Hello',
-            node_lineage=[self.project._id]
+            node_lineage=[self.project._id],
         )
         d.save()
         d2 = factories.NotificationDigestFactory(
@@ -1771,7 +1813,7 @@ class TestSendDigest(OsfTestCase):
             send_type=send_type,
             timestamp=self.timestamp,
             message='Hello',
-            node_lineage=[self.project._id]
+            node_lineage=[self.project._id],
         )
         d2.save()
         d3 = factories.NotificationDigestFactory(
@@ -1779,7 +1821,7 @@ class TestSendDigest(OsfTestCase):
             send_type='email_transactional',
             timestamp=self.timestamp,
             message='Hello, but this should not appear (this is transactional)',
-            node_lineage=[self.project._id]
+            node_lineage=[self.project._id],
         )
         d3.save()
         user_groups = list(get_users_emails(send_type))
@@ -1789,17 +1831,17 @@ class TestSendDigest(OsfTestCase):
                 u'info': [{
                     u'message': u'Hello',
                     u'node_lineage': [unicode(self.project._id)],
-                    u'_id': unicode(d._id)
-                }]
+                    u'_id': unicode(d._id),
+                }],
             },
             {
                 u'user_id': unicode(self.user_2._id),
                 u'info': [{
                     u'message': u'Hello',
                     u'node_lineage': [unicode(self.project._id)],
-                    u'_id': unicode(d2._id)
-                }]
-            }
+                    u'_id': unicode(d2._id),
+                }],
+            },
         ]
 
         assert_equal(len(user_groups), 2)
@@ -1815,7 +1857,7 @@ class TestSendDigest(OsfTestCase):
             event='comment_replies',
             timestamp=timezone.now(),
             message='Hello',
-            node_lineage=[factories.ProjectFactory()._id]
+            node_lineage=[factories.ProjectFactory()._id],
         )
         d.save()
         user_groups = list(get_users_emails(send_type))
@@ -1844,7 +1886,7 @@ class TestSendDigest(OsfTestCase):
             event='comment_replies',
             timestamp=timezone.now(),
             message='Hello',
-            node_lineage=[factories.ProjectFactory()._id]
+            node_lineage=[factories.ProjectFactory()._id],
         )
         d.save()
 
@@ -1863,7 +1905,7 @@ class TestSendDigest(OsfTestCase):
             event='comment_replies',
             timestamp=timezone.now(),
             message='Hello',
-            node_lineage=[factories.ProjectFactory()._id]
+            node_lineage=[factories.ProjectFactory()._id],
         )
         digest_id = d._id
         remove_notifications(email_notification_ids=[digest_id])
@@ -1889,19 +1931,19 @@ class TestNotificationsReviews(OsfTestCase):
         factories.NotificationSubscriptionFactory(
             _id=self.user._id + '_' + 'global_comments',
             user=self.user,
-            event_name='global_comments'
+            event_name='global_comments',
         ).add_user_to_subscription(self.user, 'email_transactional')
 
         factories.NotificationSubscriptionFactory(
             _id=self.user._id + '_' + 'global_file_updated',
             user=self.user,
-            event_name='global_file_updated'
+            event_name='global_file_updated',
         ).add_user_to_subscription(self.user, 'email_transactional')
 
         factories.NotificationSubscriptionFactory(
             _id=self.user._id + '_' + 'global_reviews',
             user=self.user,
-            event_name='global_reviews'
+            event_name='global_reviews',
         ).add_user_to_subscription(self.user, 'email_transactional')
 
     def test_reviews_base_notification(self):
@@ -1966,62 +2008,80 @@ class TestNotificationsReviewsModerator(OsfTestCase):
         time_now = timezone.now()
         self.context_info_submission['message'] = u'submitted {}.'.format(self.context_info_submission['reviewable'].title)
         self.context_info_submission['profile_image_url'] = get_profile_image_url(self.context_info_submission['referrer'])
-        self.context_info_submission['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(settings.DOMAIN,
-                                                                                         self.context_info_submission[
-                                                                                             'reviewable'].provider._id,
-                                                                                         self.context_info_submission[
-                                                                                             'reviewable']._id)
+        self.context_info_submission['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(
+            settings.DOMAIN,
+            self.context_info_submission[
+                'reviewable'
+            ].provider._id,
+            self.context_info_submission[
+                'reviewable'
+            ]._id,
+        )
         listeners.reviews_submit_notification_moderators(self, time_now, self.context_info_submission)
         subscription = NotificationSubscription.load(self.provider._id + '_new_pending_submissions')
         digest_subscriber_ids = subscription.email_digest.all().values_list('guids___id', flat=True)
         instant_subscriber_ids = subscription.email_transactional.all().values_list('guids___id', flat=True)
-        mock_store.assert_any_call(QuerySetMatcher(digest_subscriber_ids),
-                                      'email_digest',
-                                      'new_pending_submissions',
-                                      self.context_info_submission['referrer'],
-                                      self.context_info_submission['reviewable'],
-                                      time_now,
-                                      abstract_provider=self.context_info_submission['reviewable'].provider,
-                                      **self.context_info_submission)
+        mock_store.assert_any_call(
+            QuerySetMatcher(digest_subscriber_ids),
+            'email_digest',
+            'new_pending_submissions',
+            self.context_info_submission['referrer'],
+            self.context_info_submission['reviewable'],
+            time_now,
+            abstract_provider=self.context_info_submission['reviewable'].provider,
+            **self.context_info_submission
+        )
 
-        mock_store.assert_any_call(QuerySetMatcher(instant_subscriber_ids),
-                                   'email_transactional',
-                                   'new_pending_submissions',
-                                   self.context_info_submission['referrer'],
-                                   self.context_info_submission['reviewable'],
-                                   time_now,
-                                   abstract_provider=self.context_info_request['reviewable'].provider,
-                                   **self.context_info_submission)
+        mock_store.assert_any_call(
+            QuerySetMatcher(instant_subscriber_ids),
+            'email_transactional',
+            'new_pending_submissions',
+            self.context_info_submission['referrer'],
+            self.context_info_submission['reviewable'],
+            time_now,
+            abstract_provider=self.context_info_request['reviewable'].provider,
+            **self.context_info_submission
+        )
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_reviews_request_notification(self, mock_store):
         time_now = timezone.now()
-        self.context_info_request['message'] = u'has requested withdrawal of {} "{}".'.format(self.context_info_request['reviewable'].provider.preprint_word,
-                                                                                                 self.context_info_request['reviewable'].title)
+        self.context_info_request['message'] = u'has requested withdrawal of {} "{}".'.format(
+            self.context_info_request['reviewable'].provider.preprint_word,
+            self.context_info_request['reviewable'].title,
+        )
         self.context_info_request['profile_image_url'] = get_profile_image_url(self.context_info_request['requester'])
-        self.context_info_request['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(settings.DOMAIN,
-                                                                                         self.context_info_request[
-                                                                                             'reviewable'].provider._id,
-                                                                                         self.context_info_request[
-                                                                                             'reviewable']._id)
+        self.context_info_request['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(
+            settings.DOMAIN,
+            self.context_info_request[
+                'reviewable'
+            ].provider._id,
+            self.context_info_request[
+                'reviewable'
+            ]._id,
+        )
         listeners.reviews_withdrawal_requests_notification(self, time_now, self.context_info_request)
         subscription = NotificationSubscription.load(self.provider._id + '_new_pending_submissions')
         digest_subscriber_ids = subscription.email_digest.all().values_list('guids___id', flat=True)
         instant_subscriber_ids = subscription.email_transactional.all().values_list('guids___id', flat=True)
-        mock_store.assert_any_call(QuerySetMatcher(digest_subscriber_ids),
-                                      'email_digest',
-                                      'new_pending_submissions',
-                                      self.context_info_request['requester'],
-                                      self.context_info_request['reviewable'],
-                                      time_now,
-                                      abstract_provider=self.context_info_request['reviewable'].provider,
-                                      **self.context_info_request)
+        mock_store.assert_any_call(
+            QuerySetMatcher(digest_subscriber_ids),
+            'email_digest',
+            'new_pending_submissions',
+            self.context_info_request['requester'],
+            self.context_info_request['reviewable'],
+            time_now,
+            abstract_provider=self.context_info_request['reviewable'].provider,
+            **self.context_info_request
+        )
 
-        mock_store.assert_any_call(QuerySetMatcher(instant_subscriber_ids),
-                                   'email_transactional',
-                                   'new_pending_submissions',
-                                   self.context_info_request['requester'],
-                                   self.context_info_request['reviewable'],
-                                   time_now,
-                                   abstract_provider=self.context_info_request['reviewable'].provider,
-                                   **self.context_info_request)
+        mock_store.assert_any_call(
+            QuerySetMatcher(instant_subscriber_ids),
+            'email_transactional',
+            'new_pending_submissions',
+            self.context_info_request['requester'],
+            self.context_info_request['reviewable'],
+            time_now,
+            abstract_provider=self.context_info_request['reviewable'].provider,
+            **self.context_info_request
+        )

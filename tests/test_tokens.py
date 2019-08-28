@@ -27,13 +27,14 @@ class TestTokenHandler(OsfTestCase):
 
         self.payload = {
             'user_id': 'abc123',
-            'field_x': 'xyzert'
+            'field_x': 'xyzert',
         }
         self.secret = settings.JWT_SECRET
         self.encoded_token = jwt.encode(
             self.payload,
             self.secret,
-            algorithm=settings.JWT_ALGORITHM)
+            algorithm=settings.JWT_ALGORITHM,
+        )
 
     def test_encode(self):
         assert_equal(encode(self.payload), self.encoded_token)
@@ -67,8 +68,8 @@ class TestTokenHandler(OsfTestCase):
                 'registration',
                 'approve',
                 self.payload,
-                self.encoded_token
-            )
+                self.encoded_token,
+            ),
         )
 
 class SanctionTokenHandlerBase(OsfTestCase):

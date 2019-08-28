@@ -98,9 +98,11 @@ class TestFileNodeObj(FilesTestCase):
         created.materialized_path = '/Path'
         created.get_guid(create=True)
         created.save()
-        file_guids = TestFile.get_file_guids(materialized_path=created.materialized_path,
-                                             provider=created.provider,
-                                             target=self.node)
+        file_guids = TestFile.get_file_guids(
+            materialized_path=created.materialized_path,
+            provider=created.provider,
+            target=self.node,
+        )
         assert_in(created.get_guid()._id, file_guids)
 
     def test_get_file_guids_with_folder_path(self):
@@ -109,9 +111,11 @@ class TestFileNodeObj(FilesTestCase):
         created.materialized_path = '/folder/Path'
         created.get_guid(create=True)
         created.save()
-        file_guids = TestFile.get_file_guids(materialized_path='folder/',
-                                             provider=created.provider,
-                                             target=self.node)
+        file_guids = TestFile.get_file_guids(
+            materialized_path='folder/',
+            provider=created.provider,
+            target=self.node,
+        )
         assert_in(created.get_guid()._id, file_guids)
 
     def test_get_file_guids_with_folder_path_does_not_include_deleted_files(self):
@@ -121,9 +125,11 @@ class TestFileNodeObj(FilesTestCase):
         guid = created.get_guid(create=True)
         created.save()
         created.delete()
-        file_guids = TestFile.get_file_guids(materialized_path='folder/',
-                                             provider=created.provider,
-                                             target=self.node)
+        file_guids = TestFile.get_file_guids(
+            materialized_path='folder/',
+            provider=created.provider,
+            target=self.node,
+        )
         assert_not_in(guid._id, file_guids)
 
     def test_kind(self):
@@ -309,7 +315,7 @@ class TestFileNodeObj(FilesTestCase):
         for field_name in local_django_fields:
             assert_equal(
                 getattr(restored, field_name),
-                getattr(fn, field_name)
+                getattr(fn, field_name),
             )
 
         assert_equal(models.TrashedFileNode.load(trashed._id), None)
@@ -348,7 +354,7 @@ class TestFileNodeObj(FilesTestCase):
         for field_name in local_django_fields:
             assert_equal(
                 getattr(restored, field_name),
-                getattr(root, field_name)
+                getattr(root, field_name),
             )
 
         assert_equal(models.TrashedFileNode.load(trashed_root_id), None)
@@ -548,8 +554,8 @@ class TestFileObj(FilesTestCase):
                     'modified': '2015',
                     'size': 0xDEADBEEF,
                     'materialized': 'ephemeral',
-                }
-            }
+                },
+            },
         }
         mock_requests.return_value = mock_response
         v = file.touch(None)
@@ -574,8 +580,8 @@ class TestFileObj(FilesTestCase):
                     'modified': '2015',
                     'size': 0xDEADBEEF,
                     'materialized': 'ephemeral',
-                }
-            }
+                },
+            },
         }
         mock_requests.return_value = mock_response
 
@@ -597,9 +603,11 @@ class TestFileObj(FilesTestCase):
         mock_requests.return_value = mock_response
 
         file.touch('Bearer bearer', revision='foo')
-        assert_equal(mock_requests.call_args[1]['headers'], {
-            'Authorization': 'Bearer bearer'
-        })
+        assert_equal(
+            mock_requests.call_args[1]['headers'], {
+                'Authorization': 'Bearer bearer',
+            },
+        )
 
     def test_download_url(self):
         pass
@@ -670,7 +678,7 @@ class TestFolderObj(FilesTestCase):
 
         assert_equal(
             trashed_parent,
-            prnt
+            prnt,
         )
 
         assert_equal(trashed_parent, guid.referent)

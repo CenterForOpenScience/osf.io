@@ -50,8 +50,10 @@ class RuleTestCase(unittest.TestCase):
             assert_equal(url_for('JSONRenderer__dummy_view2', pid=123), '/project/123/')
 
     def test_url_for_with_prefix(self):
-        api_rule = Rule(['/project/'], 'get', view_func_or_data=dummy_view3,
-                renderer=json_renderer)
+        api_rule = Rule(
+            ['/project/'], 'get', view_func_or_data=dummy_view3,
+            renderer=json_renderer,
+        )
         process_rules(self.app, [api_rule], prefix='/api/v1')
         with self.app.test_request_context():
             assert_equal(url_for('JSONRenderer__dummy_view3'), '/api/v1/project/')

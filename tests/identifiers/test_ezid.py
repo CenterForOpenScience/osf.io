@@ -43,7 +43,7 @@ class TestEZIDClient(OsfTestCase):
                     ),
                 }),
                 status=201,
-            )
+            ),
         )
         with mock.patch('osf.models.Registration.get_doi_client') as mock_get_doi:
             mock_get_doi.return_value = self.client
@@ -54,7 +54,7 @@ class TestEZIDClient(OsfTestCase):
         self.registration.reload()
         assert_equal(
             res.json['doi'],
-            self.registration.get_identifier_value('doi')
+            self.registration.get_identifier_value('doi'),
         )
 
         assert_equal(res.status_code, 201)
@@ -72,7 +72,7 @@ class TestEZIDClient(OsfTestCase):
                 url.url,
                 body='identifier already exists',
                 status=400,
-            )
+            ),
         )
         responses.add(
             responses.Response(
@@ -82,7 +82,7 @@ class TestEZIDClient(OsfTestCase):
                     'success': doi,
                 }),
                 status=200,
-            )
+            ),
         )
         with mock.patch('osf.models.Registration.get_doi_client') as mock_get_doi:
             mock_get_doi.return_value = self.client
@@ -93,7 +93,7 @@ class TestEZIDClient(OsfTestCase):
         self.registration.reload()
         assert_equal(
             res.json['doi'],
-            self.registration.get_identifier_value('doi')
+            self.registration.get_identifier_value('doi'),
         )
         assert_equal(res.status_code, 201)
 

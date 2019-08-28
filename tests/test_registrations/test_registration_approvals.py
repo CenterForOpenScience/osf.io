@@ -6,7 +6,7 @@ from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
 from osf_tests.factories import (
     EmbargoFactory, NodeFactory, ProjectFactory,
-    RegistrationFactory, UserFactory, UnconfirmedUserFactory
+    RegistrationFactory, UserFactory, UnconfirmedUserFactory,
 )
 
 from framework.exceptions import PermissionsError
@@ -24,7 +24,7 @@ from osf.models import Contributor, SpamStatus
 from osf.utils.permissions import ADMIN
 
 DUMMY_TOKEN = tokens.encode({
-    'dummy': 'token'
+    'dummy': 'token',
 })
 
 
@@ -40,7 +40,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
     def test__require_approval_saves_approval(self):
         initial_count = RegistrationApproval.objects.all().count()
         self.registration._initiate_approval(
-            self.user
+            self.user,
         )
         assert_equal(RegistrationApproval.objects.all().count(), initial_count + 1)
 
@@ -51,7 +51,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         assert_equal(Contributor.objects.get(node=self.registration, user=unconfirmed_user).permission, ADMIN)
 
         approval = self.registration._initiate_approval(
-            self.user
+            self.user,
         )
         assert_true(self.user._id in approval.approval_state)
         assert_false(unconfirmed_user._id in approval.approval_state)
@@ -90,7 +90,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
 
     def test_invalid_approval_token_raises_InvalidSanctionApprovalToken(self):
         self.registration.require_approval(
-            self.user
+            self.user,
         )
         self.registration.save()
         assert_true(self.registration.is_pending_registration)
@@ -116,7 +116,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
     def test_approval_adds_to_parent_projects_log(self):
         initial_project_logs = self.registration.registered_from.logs.count()
         self.registration.require_approval(
-            self.user
+            self.user,
         )
         self.registration.save()
 
@@ -130,7 +130,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         Contributor.objects.create(node=self.registration, user=admin2)
         self.registration.add_permission(admin2, ADMIN, save=True)
         self.registration.require_approval(
-            self.user
+            self.user,
         )
         self.registration.save()
 
@@ -150,7 +150,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
 
     def test_invalid_rejection_token_raises_InvalidSanctionRejectionToken(self):
         self.registration.require_approval(
-            self.user
+            self.user,
         )
         self.registration.save()
         assert_true(self.registration.is_pending_registration)
@@ -161,7 +161,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
     def test_non_admin_rejection_token_raises_PermissionsError(self):
         non_admin = UserFactory()
         self.registration.require_approval(
-            self.user
+            self.user,
         )
         self.registration.save()
         assert_true(self.registration.is_pending_registration)
@@ -173,7 +173,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
 
     def test_one_disapproval_cancels_registration_approval(self):
         self.registration.require_approval(
-            self.user
+            self.user,
         )
         self.registration.save()
         assert_true(self.registration.is_pending_registration)
@@ -196,7 +196,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
 
     def test_cancelling_registration_approval_deletes_parent_registration(self):
         self.registration.require_approval(
-            self.user
+            self.user,
         )
         self.registration.save()
 
@@ -210,18 +210,18 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         component = NodeFactory(
             creator=self.user,
             parent=self.project,
-            title='Component'
+            title='Component',
         )
         NodeFactory(
             creator=self.user,
             parent=component,
-            title='Subcomponent'
+            title='Subcomponent',
         )
         project_registration = RegistrationFactory(project=self.project)
         component_registration = project_registration._nodes.first()
         subcomponent_registration = component_registration._nodes.first()
         project_registration.require_approval(
-            self.user
+            self.user,
         )
         project_registration.save()
 
@@ -237,7 +237,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
 
     def test_new_registration_is_pending_registration(self):
         self.registration.require_approval(
-            self.user
+            self.user,
         )
         self.registration.save()
         assert_true(self.registration.is_pending_registration)
@@ -245,7 +245,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
     def test_on_complete_notify_initiator(self):
         self.registration.require_approval(
             self.user,
-            notify_initiator_on_complete=True
+            notify_initiator_on_complete=True,
         )
         self.registration.save()
         with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
@@ -268,7 +268,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
     def test__on_complete_raises_error_if_project_is_spam(self):
         self.registration.require_approval(
             self.user,
-            notify_initiator_on_complete=True
+            notify_initiator_on_complete=True,
         )
         self.registration.spam_status = SpamStatus.FLAGGED
         self.registration.save()

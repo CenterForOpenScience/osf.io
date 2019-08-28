@@ -10,8 +10,10 @@ from django.core.exceptions import ValidationError
 from nose.tools import *  # noqa: F403 (PEP8 asserts)
 
 from framework.auth import Auth
-from osf_tests.factories import (AuthUserFactory, NodeLicenseRecordFactory,
-                                 ProjectFactory)
+from osf_tests.factories import (
+    AuthUserFactory, NodeLicenseRecordFactory,
+    ProjectFactory,
+)
 from tests.base import OsfTestCase
 from osf.utils.migrations import ensure_licenses
 from tests.utils import assert_logs, assert_not_logs
@@ -29,8 +31,8 @@ LICENSE_TEXT = json.dumps({
     'MIT': {
         'name': CHANGED_NAME,
         'text': CHANGED_TEXT,
-        'properties': CHANGED_PROPERTIES
-    }
+        'properties': CHANGED_PROPERTIES,
+    },
 })
 
 class TestNodeLicenses(OsfTestCase):
@@ -47,7 +49,7 @@ class TestNodeLicenses(OsfTestCase):
         self.node.node_license = NodeLicenseRecordFactory(
             node_license=self.node_license,
             year=self.YEAR,
-            copyright_holders=self.COPYRIGHT_HOLDERS
+            copyright_holders=self.COPYRIGHT_HOLDERS,
         )
         self.node.save()
 
@@ -119,10 +121,10 @@ class TestNodeLicenses(OsfTestCase):
             {
                 'id': GPL3.license_id,
                 'year': NEW_YEAR,
-                'copyrightHolders': COPYLEFT_HOLDERS
+                'copyrightHolders': COPYLEFT_HOLDERS,
             },
             auth=Auth(self.user),
-            save=True
+            save=True,
         )
 
         assert_equal(self.node.node_license.license_id, GPL3.license_id)
@@ -136,7 +138,7 @@ class TestNodeLicenses(OsfTestCase):
                 {
                     'id': 'SOME ID',
                     'year': 'foo',
-                    'copyrightHolders': []
+                    'copyrightHolders': [],
                 },
-                auth=Auth(self.user)
+                auth=Auth(self.user),
             )

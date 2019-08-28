@@ -59,10 +59,12 @@ class TestUserSerializers(OsfTestCase):
         CollectionFactory(creator=user)
         RegistrationFactory(project=project)
         d = utils.serialize_user(user, full=True, include_node_counts=True)
-        profile_image_url = filters.profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
-                                                  user,
-                                                  use_ssl=True,
-                                                  size=settings.PROFILE_IMAGE_LARGE)
+        profile_image_url = filters.profile_image_url(
+            settings.PROFILE_IMAGE_PROVIDER,
+            user,
+            use_ssl=True,
+            size=settings.PROFILE_IMAGE_LARGE,
+        )
         assert_equal(d['id'], user._primary_key)
         assert_equal(d['url'], user.url)
         assert_equal(d.get('username'), None)
@@ -107,8 +109,10 @@ class TestNodeSerializers(OsfTestCase):
     def test_serialize_node_summary_for_registration_uses_correct_date_format(self):
         reg = RegistrationFactory()
         res = serialize_node_summary(reg, auth=Auth(reg.creator))
-        assert_equal(res['registered_date'],
-                reg.registered_date.strftime('%Y-%m-%d %H:%M UTC'))
+        assert_equal(
+            res['registered_date'],
+            reg.registered_date.strftime('%Y-%m-%d %H:%M UTC'),
+        )
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/858
     def test_serialize_node_summary_private_registration_should_include_is_registration(self):
@@ -125,22 +129,30 @@ class TestNodeSerializers(OsfTestCase):
     def test_get_children_only_returns_child_nodes_with_admin_permissions(self):
         user = UserFactory()
         admin_project = ProjectFactory()
-        admin_project.add_contributor(user, auth=Auth(admin_project.creator),
-                                      permissions=permissions.ADMIN)
+        admin_project.add_contributor(
+            user, auth=Auth(admin_project.creator),
+            permissions=permissions.ADMIN,
+        )
         admin_project.save()
 
         admin_component = NodeFactory(parent=admin_project)
-        admin_component.add_contributor(user, auth=Auth(admin_component.creator),
-                                        permissions=permissions.ADMIN)
+        admin_component.add_contributor(
+            user, auth=Auth(admin_component.creator),
+            permissions=permissions.ADMIN,
+        )
         admin_component.save()
 
         read_and_write = NodeFactory(parent=admin_project)
-        read_and_write.add_contributor(user, auth=Auth(read_and_write.creator),
-                                       permissions=permissions.WRITE)
+        read_and_write.add_contributor(
+            user, auth=Auth(read_and_write.creator),
+            permissions=permissions.WRITE,
+        )
         read_and_write.save()
         read_only = NodeFactory(parent=admin_project)
-        read_only.add_contributor(user, auth=Auth(read_only.creator),
-                                  permissions=permissions.READ)
+        read_only.add_contributor(
+            user, auth=Auth(read_only.creator),
+            permissions=permissions.READ,
+        )
         read_only.save()
 
         non_contributor = NodeFactory(parent=admin_project)
@@ -239,8 +251,10 @@ class TestViewProject(OsfTestCase):
 
     def test_view_project_pending_registration_for_write_contributor_does_not_contain_cancel_link(self):
         write_user = UserFactory()
-        self.node.add_contributor(write_user, permissions=permissions.WRITE,
-                                  auth=Auth(self.user), save=True)
+        self.node.add_contributor(
+            write_user, permissions=permissions.WRITE,
+            auth=Auth(self.user), save=True,
+        )
         pending_reg = RegistrationFactory(project=self.node, archive=True)
         assert_true(pending_reg.is_pending_registration)
         result = _view_project(pending_reg, Auth(write_user))

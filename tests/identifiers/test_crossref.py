@@ -16,7 +16,7 @@ from osf_tests.factories import (
     ProjectFactory,
     PreprintFactory,
     PreprintProviderFactory,
-    AuthUserFactory
+    AuthUserFactory,
 )
 from framework.flask import rm_handlers
 from framework.auth.core import Auth
@@ -37,7 +37,7 @@ def preprint():
     license_details = {
         'id': node_license.license_id,
         'year': '2017',
-        'copyrightHolders': ['Jeff Hardy', 'Matt Hardy']
+        'copyrightHolders': ['Jeff Hardy', 'Matt Hardy'],
     }
     preprint = PreprintFactory(provider=provider, article_doi='10.31219/FK2osf.io/test!', is_published=True, license_details=license_details)
     preprint.license.node_license.url = 'https://creativecommons.org/licenses/by/4.0/legalcode'
@@ -78,8 +78,8 @@ class TestCrossRefClient:
                 crossref_client.base_url,
                 body=crossref_success_response,
                 content_type='text/html;charset=ISO-8859-1',
-                status=200
-            )
+                status=200,
+            ),
         )
         res = crossref_client.update_identifier(preprint, category='doi')
         doi = settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
@@ -129,8 +129,8 @@ class TestCrossRefClient:
                 crossref_client.base_url,
                 body=crossref_success_response,
                 content_type='text/html;charset=ISO-8859-1',
-                status=200
-            )
+                status=200,
+            ),
         )
 
         with mock.patch('osf.models.Preprint.get_doi_client') as mock_get_doi_client:
@@ -230,8 +230,8 @@ class TestCrossRefClient:
         contributor = preprint.creator
         contributor.external_identity = {
             'ORCID': {
-                ORCID: 'VERIFIED'
-            }
+                ORCID: 'VERIFIED',
+            },
         }
         contributor.save()
 
@@ -245,7 +245,7 @@ class TestCrossRefClient:
         # unverified (only in profile)
         contributor.external_identity = {}
         contributor.social = {
-            'orcid': ORCID
+            'orcid': ORCID,
         }
         contributor.save()
 
@@ -265,7 +265,7 @@ class TestCrossRefClient:
         license_detail = {
             'copyrightHolders': ['The Carters'],
             'id': 'NONE',
-            'year': '2018'
+            'year': '2018',
         }
 
         preprint.set_preprint_license(license_detail, Auth(preprint.creator), save=True)

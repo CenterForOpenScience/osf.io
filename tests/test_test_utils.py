@@ -44,7 +44,7 @@ class TestUtilsTests(OsfTestCase):
             self.node.add_log(NodeLog.CONTRIB_ADDED, {}, auth=self.auth)
 
         wrapped = test_utils.assert_logs(NodeLog.UPDATED_FIELDS, 'node', -2)(
-            test_utils.assert_logs(NodeLog.CONTRIB_ADDED, 'node')(add_two_logs)
+            test_utils.assert_logs(NodeLog.CONTRIB_ADDED, 'node')(add_two_logs),
         )
         wrapped(self)
 

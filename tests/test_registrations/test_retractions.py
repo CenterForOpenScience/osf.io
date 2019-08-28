@@ -15,7 +15,7 @@ from tests.base import fake, OsfTestCase
 from osf_tests.factories import (
     AuthUserFactory, NodeFactory, ProjectFactory,
     RegistrationFactory, UserFactory, UnconfirmedUserFactory,
-    UnregUserFactory, OSFGroupFactory
+    UnregUserFactory, OSFGroupFactory,
 )
 from osf.utils import tokens
 from osf.exceptions import (
@@ -103,7 +103,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_equal(self.registration.retraction.initiated_by, self.user)
         assert_equal(
             self.registration.retraction.initiation_date.date(),
-            timezone.now().date()
+            timezone.now().date(),
         )
 
     def test_retract_component_raises_NodeStateError(self):
@@ -132,7 +132,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.embargo_registration(
             self.user,
             (timezone.now() + datetime.timedelta(days=10)),
-            for_existing_registration=True
+            for_existing_registration=True,
         )
         self.registration.save()
         assert_true(self.registration.is_pending_embargo)
@@ -153,7 +153,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.embargo_registration(
             self.user,
             (timezone.now() + datetime.timedelta(days=10)),
-            for_existing_registration=True
+            for_existing_registration=True,
         )
         self.registration.save()
         assert_true(self.registration.is_pending_embargo)
@@ -233,7 +233,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.embargo_registration(
             self.user,
             timezone.now() + datetime.timedelta(days=10),
-            for_existing_registration=True
+            for_existing_registration=True,
         )
         self.registration.save()
         assert_true(self.registration.is_pending_embargo)
@@ -256,7 +256,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.embargo_registration(
             self.user,
             timezone.now() + datetime.timedelta(days=10),
-            for_existing_registration=True
+            for_existing_registration=True,
         )
         self.registration.save()
 
@@ -273,7 +273,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.embargo_registration(
             self.user,
             timezone.now() + datetime.timedelta(days=10),
-            for_existing_registration=True
+            for_existing_registration=True,
         )
         self.registration.save()
         assert_true(self.registration.is_pending_embargo)
@@ -411,17 +411,17 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         self.component = NodeFactory(
             creator=self.user,
             parent=self.project,
-            title='Component'
+            title='Component',
         )
         self.subproject = ProjectFactory(
             creator=self.user,
             parent=self.project,
-            title='Subproject'
+            title='Subproject',
         )
         self.subproject_component = NodeFactory(
             creator=self.user,
             parent=self.subproject,
-            title='Subcomponent'
+            title='Subcomponent',
         )
         self.registration = RegistrationFactory(project=self.project, is_public=True)
         # Reload the registration; else tests won't catch failures to svae
@@ -491,7 +491,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         self.registration.embargo_registration(
             self.user,
             timezone.now() + datetime.timedelta(days=10),
-            for_existing_registration=True
+            for_existing_registration=True,
         )
         self.registration.save()
         assert_true(self.registration.is_pending_embargo)
@@ -530,7 +530,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         self.registration.embargo_registration(
             self.user,
             timezone.now() + datetime.timedelta(days=10),
-            for_existing_registration=True
+            for_existing_registration=True,
         )
         self.registration.save()
         assert_true(self.registration.is_pending_embargo)
@@ -625,7 +625,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.token_without_sanction = tokens.encode({
             'action': 'approve_retraction',
             'user_id': self.user._id,
-            'sanction_id': 'invalid id'
+            'sanction_id': 'invalid id',
         })
 
     # node_registration_retraction_approve_tests
@@ -634,7 +634,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.registration.web_url_for('token_action', token=self.approval_token),
             auth=unauthorized_user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert_equal(res.status_code, http.UNAUTHORIZED)
 
@@ -647,7 +647,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.registration.web_url_for('token_action', token=self.approval_token),
             auth=self.user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
 
@@ -655,7 +655,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.registration.web_url_for('token_action', token=self.corrupt_token),
             auth=self.user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
 
@@ -663,14 +663,14 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.registration.web_url_for('token_action', token=self.token_without_sanction),
             auth=self.user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_GET_approve_with_valid_token_returns_200(self):
         res = self.app.get(
             self.registration.web_url_for('token_action', token=self.approval_token),
-            auth=self.user.auth
+            auth=self.user.auth,
         )
         self.registration.retraction.reload()
         assert_true(self.registration.is_retracted)
@@ -684,7 +684,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.registration.web_url_for('token_action', token=self.rejection_token),
             auth=unauthorized_user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert_equal(res.status_code, http.UNAUTHORIZED)
 
@@ -697,7 +697,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.registration.web_url_for('token_action', token=self.rejection_token),
             auth=self.user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
 
@@ -705,7 +705,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.registration.web_url_for('token_action', token=self.corrupt_token),
             auth=self.user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
 
@@ -731,19 +731,19 @@ class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
             is_public=True,
             creator=self.user,
             parent=self.project,
-            title='Component'
+            title='Component',
         )
         self.subproject = ProjectFactory(
             is_public=True,
             creator=self.user,
             parent=self.project,
-            title='Subproject'
+            title='Subproject',
         )
         self.subproject_component = NodeFactory(
             is_public=True,
             creator=self.user,
             parent=self.subproject,
-            title='Subcomponent'
+            title='Subcomponent',
         )
         self.registration = RegistrationFactory(is_public=True, project=self.project)
         self.component_registration = self.registration._nodes.order_by('created').first()
@@ -824,7 +824,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             unreg.email,
             auth=Auth(self.user),
             permissions=permissions.ADMIN,
-            existing_user=unreg
+            existing_user=unreg,
         )
         self.registration.save()
         self.app.post_json(
@@ -839,7 +839,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.embargo_registration(
             self.user,
             (timezone.now() + datetime.timedelta(days=10)),
-            for_existing_registration=True
+            for_existing_registration=True,
         )
         self.registration.save()
         assert_true(self.registration.is_pending_embargo)
@@ -858,7 +858,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.embargo_registration(
             self.user,
             (timezone.now() + datetime.timedelta(days=10)),
-            for_existing_registration=True
+            for_existing_registration=True,
         )
         self.registration.save()
         assert_true(self.registration.is_pending_embargo)
@@ -923,7 +923,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             self.retraction_post_url,
             {'justification': ''},
             auth=self.user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
         assert_equal(res.status_code, 400)
 

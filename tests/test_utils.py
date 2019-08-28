@@ -69,21 +69,29 @@ class TestUrlForHelpers(unittest.TestCase):
 
         self.app = Flask(__name__)
 
-        api_rule = Rule([
-            '/api/v1/<pid>/',
-            '/api/v1/<pid>/component/<nid>/'
-        ], 'get', dummy_view, json_renderer)
-        web_rule = Rule([
-            '/<pid>/',
-            '/<pid>/component/<nid>/'
-        ], 'get', dummy_view, OsfWebRenderer)
-        web_guid_project_rule = Rule([
-            '/project/<pid>/',
-            '/project/<pid>/node/<nid>/',
-        ], 'get', dummy_guid_project_view, OsfWebRenderer)
-        web_guid_profile_rule = Rule([
-            '/profile/<pid>/',
-        ], 'get', dummy_guid_profile_view, OsfWebRenderer)
+        api_rule = Rule(
+            [
+                '/api/v1/<pid>/',
+                '/api/v1/<pid>/component/<nid>/',
+            ], 'get', dummy_view, json_renderer,
+        )
+        web_rule = Rule(
+            [
+                '/<pid>/',
+                '/<pid>/component/<nid>/',
+            ], 'get', dummy_view, OsfWebRenderer,
+        )
+        web_guid_project_rule = Rule(
+            [
+                '/project/<pid>/',
+                '/project/<pid>/node/<nid>/',
+            ], 'get', dummy_guid_project_view, OsfWebRenderer,
+        )
+        web_guid_profile_rule = Rule(
+            [
+                '/profile/<pid>/',
+            ], 'get', dummy_guid_profile_view, OsfWebRenderer,
+        )
 
         process_rules(self.app, [api_rule, web_rule, web_guid_project_rule, web_guid_profile_rule])
 
@@ -92,31 +100,39 @@ class TestUrlForHelpers(unittest.TestCase):
             assert api_url_for('dummy_view', pid='123') == '/api/v1/123/'
 
     def test_api_v2_url_with_port(self):
-        full_url = api_v2_url('/nodes/abcd3/contributors/',
-                              base_route='http://localhost:8000/',
-                              base_prefix='v2/')
+        full_url = api_v2_url(
+            '/nodes/abcd3/contributors/',
+            base_route='http://localhost:8000/',
+            base_prefix='v2/',
+        )
         assert_equal(full_url, 'http://localhost:8000/v2/nodes/abcd3/contributors/')
 
         # Handles URL the same way whether or not user enters a leading slash
-        full_url = api_v2_url('nodes/abcd3/contributors/',
-                              base_route='http://localhost:8000/',
-                              base_prefix='v2/')
+        full_url = api_v2_url(
+            'nodes/abcd3/contributors/',
+            base_route='http://localhost:8000/',
+            base_prefix='v2/',
+        )
         assert_equal(full_url, 'http://localhost:8000/v2/nodes/abcd3/contributors/')
 
     def test_api_v2_url_with_params(self):
         """Handles- and encodes- URLs with parameters (dict and kwarg) correctly"""
-        full_url = api_v2_url('/nodes/abcd3/contributors/',
-                              params={'filter[fullname]': 'bob'},
-                              base_route='https://api.osf.io/',
-                              base_prefix='v2/',
-                              page_size=10)
+        full_url = api_v2_url(
+            '/nodes/abcd3/contributors/',
+            params={'filter[fullname]': 'bob'},
+            base_route='https://api.osf.io/',
+            base_prefix='v2/',
+            page_size=10,
+        )
         assert_equal(full_url, 'https://api.osf.io/v2/nodes/abcd3/contributors/?filter%5Bfullname%5D=bob&page_size=10')
 
     def test_api_v2_url_base_path(self):
         """Given a blank string, should return the base path (domain + port + prefix) with no extra cruft at end"""
-        full_url = api_v2_url('',
-                              base_route='http://localhost:8000/',
-                              base_prefix='v2/')
+        full_url = api_v2_url(
+            '',
+            base_route='http://localhost:8000/',
+            base_prefix='v2/',
+        )
         assert_equal(full_url, 'http://localhost:8000/v2/')
 
     def test_web_url_for(self):
@@ -133,10 +149,12 @@ class TestUrlForHelpers(unittest.TestCase):
             assert_equal('/nid321/', web_url_for('dummy_guid_project_view', pid='pid123', nid='nid321', _guid=True))
             assert_equal(
                 '/project/pid123/node/nid321/',
-                web_url_for('dummy_guid_project_view', pid='pid123', nid='nid321', _guid=False))
+                web_url_for('dummy_guid_project_view', pid='pid123', nid='nid321', _guid=False),
+            )
             assert_equal(
                 '/project/pid123/node/nid321/',
-                web_url_for('dummy_guid_project_view', pid='pid123', nid='nid321'))
+                web_url_for('dummy_guid_project_view', pid='pid123', nid='nid321'),
+            )
             # check /profile/<pid>
             assert_equal('/pro123/', web_url_for('dummy_guid_profile_view', pid='pro123', _guid=True))
             assert_equal('/profile/pro123/', web_url_for('dummy_guid_profile_view', pid='pro123', _guid=False))
@@ -171,19 +189,23 @@ class TestUrlForHelpers(unittest.TestCase):
             assert_not_equal('/ø∆≤µ©/', web_url_for('dummy_guid_project_view', pid='ø∆≤µ©', _guid=True))
             assert_equal(
                 '/project/%C3%B8%CB%86%E2%88%86%E2%89%A4%C2%B5%CB%86/',
-                web_url_for('dummy_guid_project_view', pid='øˆ∆≤µˆ', _guid=True))
+                web_url_for('dummy_guid_project_view', pid='øˆ∆≤µˆ', _guid=True),
+            )
             # check /project/<pid>/node/<nid>
             assert_not_equal(
                 '/ø∆≤µ©/',
-                web_url_for('dummy_guid_project_view', pid='ø∆≤µ©', nid='©µ≤∆ø', _guid=True))
+                web_url_for('dummy_guid_project_view', pid='ø∆≤µ©', nid='©µ≤∆ø', _guid=True),
+            )
             assert_equal(
                 '/project/%C3%B8%CB%86%E2%88%86%E2%89%A4%C2%B5%CB%86/node/%C2%A9%C2%B5%E2%89%A4%E2%88%86%C3%B8/',
-                web_url_for('dummy_guid_project_view', pid='øˆ∆≤µˆ', nid='©µ≤∆ø', _guid=True))
+                web_url_for('dummy_guid_project_view', pid='øˆ∆≤µˆ', nid='©µ≤∆ø', _guid=True),
+            )
             # check /profile/<pid>
             assert_not_equal('/ø∆≤µ©/', web_url_for('dummy_guid_profile_view', pid='ø∆≤µ©', _guid=True))
             assert_equal(
                 '/profile/%C3%B8%CB%86%E2%88%86%E2%89%A4%C2%B5%CB%86/',
-                web_url_for('dummy_guid_profile_view', pid='øˆ∆≤µˆ', _guid=True))
+                web_url_for('dummy_guid_profile_view', pid='øˆ∆≤µˆ', _guid=True),
+            )
 
     def test_api_url_for_with_multiple_urls(self):
         with self.app.test_request_context():
@@ -232,7 +254,7 @@ class TestFrameworkUtils(unittest.TestCase):
     def test_leading_underscores(self):
         assert_equal(
             '__init__.py',
-            secure_filename('__init__.py')
+            secure_filename('__init__.py'),
         )
 
     def test_werkzeug_cases(self):
@@ -243,17 +265,17 @@ class TestFrameworkUtils(unittest.TestCase):
         #                /tests/test_utils.py, line 282, commit 811b438
         assert_equal(
             'My_cool_movie.mov',
-            secure_filename('My cool movie.mov')
+            secure_filename('My cool movie.mov'),
         )
 
         assert_equal(
             'etc_passwd',
-            secure_filename('../../../etc/passwd')
+            secure_filename('../../../etc/passwd'),
         )
 
         assert_equal(
             'i_contain_cool_umlauts.txt',
-            secure_filename(u'i contain cool \xfcml\xe4uts.txt')
+            secure_filename(u'i contain cool \xfcml\xe4uts.txt'),
         )
 
 
@@ -289,9 +311,9 @@ class TestWebsiteUtils(unittest.TestCase):
             'foo': 'bar',
             'baz': {
                 'boom': ['kapow'],
-                'bang': 'bam'
+                'bang': 'bam',
             },
-            'bat': ['man']
+            'bat': ['man'],
         }
         outputs = rapply(inputs, str.upper)
         assert_equal(outputs['foo'], 'bar'.upper())
@@ -410,7 +432,7 @@ class TestUserUtils(unittest.TestCase):
         middle_names = 'Awesome'
         suffix = 'Jr.'
         csl_given_name = generate_csl_given_name(
-            given_name=given_name, middle_names=middle_names, suffix=suffix
+            given_name=given_name, middle_names=middle_names, suffix=suffix,
         )
         assert_equal(csl_given_name, 'Cause A, Jr.')
 
@@ -418,7 +440,7 @@ class TestUserUtils(unittest.TestCase):
         given_name = 'Cause'
         middle_names = 'Awesome'
         csl_given_name = generate_csl_given_name(
-            given_name=given_name, middle_names=middle_names
+            given_name=given_name, middle_names=middle_names,
         )
         assert_equal(csl_given_name, 'Cause A')
 
@@ -426,7 +448,7 @@ class TestUserUtils(unittest.TestCase):
         given_name = 'Cause'
         suffix = 'Jr.'
         csl_given_name = generate_csl_given_name(
-            given_name=given_name, suffix=suffix
+            given_name=given_name, suffix=suffix,
         )
         assert_equal(csl_given_name, 'Cause, Jr.')
 

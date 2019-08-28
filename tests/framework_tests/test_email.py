@@ -22,13 +22,19 @@ except Exception as err:
 
 class TestEmail(unittest.TestCase):
 
-    @unittest.skipIf(not SERVER_RUNNING,
-                     "Mailserver isn't running. Run \"invoke mailserver\".")
-    @unittest.skipIf(not settings.USE_EMAIL,
-                     'settings.USE_EMAIL is False')
+    @unittest.skipIf(
+        not SERVER_RUNNING,
+        "Mailserver isn't running. Run \"invoke mailserver\".",
+    )
+    @unittest.skipIf(
+        not settings.USE_EMAIL,
+        'settings.USE_EMAIL is False',
+    )
     def test_sending_email(self):
-        assert_true(send_email('foo@bar.com', 'baz@quux.com', subject='no subject',
-                                 message='<h1>Greetings!</h1>', ttls=False, login=False))
+        assert_true(send_email(
+            'foo@bar.com', 'baz@quux.com', subject='no subject',
+            message='<h1>Greetings!</h1>', ttls=False, login=False,
+        ))
 
     def test_send_with_sendgrid_success(self):
         mock_client = mock.MagicMock()
@@ -44,7 +50,7 @@ class TestEmail(unittest.TestCase):
             message=message,
             mimetype='html',
             client=mock_client,
-            categories=(category1, category2)
+            categories=(category1, category2),
         )
         assert_true(ret)
 
@@ -72,7 +78,7 @@ class TestEmail(unittest.TestCase):
             subject=subject,
             message=message,
             mimetype='html',
-            client=mock_client
+            client=mock_client,
         )
         assert_false(ret)
 

@@ -23,7 +23,7 @@ class RegistrationsTestBase(OsfTestCase):
             self.non_admin,
             permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
             auth=self.auth,
-            save=True
+            save=True,
         )
         self.non_contrib = AuthUserFactory()
         self.group_mem = AuthUserFactory()
@@ -37,8 +37,8 @@ class RegistrationsTestBase(OsfTestCase):
             branched_from=self.node,
             registration_schema=self.meta_schema,
             registration_metadata={
-                'summary': {'value': 'Some airy'}
-            }
+                'summary': {'value': 'Some airy'},
+            },
         )
 
         current_month = timezone.now().strftime('%B')
@@ -59,7 +59,7 @@ class RegistrationsTestBase(OsfTestCase):
         self.invalid_embargo_date_payload = copy.deepcopy(self.embargo_payload)
         self.invalid_embargo_date_payload['data']['attributes']['lift_embargo'] = u'Thu, 01 {month} {year} 05:00:00 GMT'.format(
             month=current_month,
-            year=str(int(current_year) - 1)
+            year=str(int(current_year) - 1),
         )
 
         self.immediate_payload = {
