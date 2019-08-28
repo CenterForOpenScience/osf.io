@@ -355,7 +355,7 @@ def project_remove_contributor(auth, **kwargs):
         if not nodes_removed:
             raise HTTPError(
                 http.BAD_REQUEST, data={
-                'message_long': 'Could not remove contributor.',
+                    'message_long': 'Could not remove contributor.',
                 },
             )
 
