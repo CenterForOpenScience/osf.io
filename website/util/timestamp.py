@@ -540,6 +540,7 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
     ).exclude(
         inspection_result_status=api_settings.FILE_NOT_EXISTS
     ).all()
+
     for deleted_file in deleted_files:
         file_node_overwitten(project_id, target_object_id, dest_provider, dest_path)
     moved_files = RdmFileTimestamptokenVerifyResult.objects.filter(
@@ -611,9 +612,25 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
                         rft.provider = 'osfstorage'
                         rft.save()
             provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
+
     if src_provider == 'osfstorage' and dest_provider != 'osfstorage':
         node = AbstractNode.objects.get(pk=Guid.objects.filter(_id=metadata['node']['_id']).first().object_id)
-        file_created_or_updated(node, metadata, uid, False)
+        temp_check = metadata.get('materialized', None)
+        if temp_check is not None:
+            temp_check = temp_check if temp_check[0] == '/' else '/' + temp_check
+            metadata['materialized'] = temp_check
+        if metadata['provider'] != 'osfstorage':
+            file_node = BaseFileNode.resolve_class(
+                metadata['provider'], BaseFileNode.FILE
+            ).get_or_create(node, '/' + metadata.get('path').lstrip('/'))
+            file_node.path = '/' + metadata.get('path').lstrip('/')
+            file_node.name = metadata.get('name')
+            file_node.materialized_path = metadata.get('materialized')
+            file_node.save()
+            rft = RdmFileTimestamptokenVerifyResult.objects.filter(provider=dest_provider, path=metadata['materialized']).first()
+            rft.file_id = file_node._id
+            rft.save()
+            provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
 
 def move_file_node_update(file_node, src_provider, dest_provider, metadata=None):
     file_node.type = file_node.type.replace(src_provider, dest_provider)
