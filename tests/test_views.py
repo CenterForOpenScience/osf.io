@@ -1049,7 +1049,6 @@ class TestGetNodeTree(OsfTestCase):
     def test_get_node_with_child_linked_to_parent(self):
         project = ProjectFactory(creator=self.user)
         child1 = NodeFactory(parent=project, creator=self.user)
-        child1.add_pointer(project, Auth(self.user))
         child1.save()
         url = project.api_url_for('get_node_tree')
         res = self.app.get(url, auth=self.user.auth)
@@ -3144,7 +3143,6 @@ class TestPointerViews(OsfTestCase):
     def test_can_template_project_linked_to_each_other(self):
         project2 = ProjectFactory(creator=self.user)
         self.project.add_pointer(project2, auth=Auth(user=self.user))
-        project2.add_pointer(self.project, auth=Auth(user=self.user))
         template = self.project.use_as_template(auth=Auth(user=self.user))
 
         assert_true(template)

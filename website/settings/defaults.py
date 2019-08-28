@@ -410,6 +410,7 @@ class CeleryConfig:
         'scripts.clear_sessions',
         'scripts.remove_after_use.end_prereg_challenge',
         'osf.management.commands.check_crossref_dois',
+        'osf.management.commands.migrate_pagecounter_data',
     }
 
     med_pri_modules = {
@@ -465,6 +466,8 @@ class CeleryConfig:
         'framework.celery_tasks',
         'framework.email.tasks',
         'osf.external.tasks',
+        'osf.management.commands.data_storage_usage',
+        'osf.management.commands.registration_schema_metrics',
         'website.mailchimp_utils',
         'website.notifications.tasks',
         'website.archiver.tasks',
@@ -584,10 +587,10 @@ class CeleryConfig:
                 'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
                 'kwargs': {'yesterday': True}
             },
-            'run_keen_snapshots': {
-                'task': 'scripts.analytics.run_keen_snapshots',
-                'schedule': crontab(minute=0, hour=8),  # Daily 3:00 a.m.
-            },
+            # 'run_keen_snapshots': {
+            #     'task': 'scripts.analytics.run_keen_snapshots',
+            #     'schedule': crontab(minute=0, hour=8),  # Daily 3:00 a.m.
+            # },
             'run_keen_events': {
                 'task': 'scripts.analytics.run_keen_events',
                 'schedule': crontab(minute=0, hour=9),  # Daily 4:00 a.m.
@@ -596,6 +599,10 @@ class CeleryConfig:
             # 'data_storage_usage': {
             #   'task': 'management.commands.data_storage_usage',
             #   'schedule': crontab(day_of_month=1, minute=30, hour=4),  # Last of the month at 11:30 p.m.
+            # },
+            # 'migrate_pagecounter_data': {
+            #   'task': 'management.commands.migrate_pagecounter_data',
+            #   'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
             # },
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',

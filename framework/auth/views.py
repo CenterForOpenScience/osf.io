@@ -67,9 +67,13 @@ def reset_password_get(auth, uid=None, token=None):
     user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
     user_obj.save()
 
+    #override routes.py login_url to redirect to dashboard
+    service_url = web_url_for('dashboard', _absolute=True)
+
     return {
         'uid': user_obj._id,
         'token': user_obj.verification_key_v2['token'],
+        'login_url': service_url,
     }
 
 
@@ -138,7 +142,11 @@ def forgot_password_get(auth):
     if auth.logged_in:
         return auth_logout(redirect_url=request.url)
 
-    return {}
+    #overriding the routes.py sign in url to redirect to the dashboard after login
+    context = {}
+    context['login_url'] = web_url_for('dashboard', _absolute=True)
+
+    return context
 
 
 def forgot_password_post():

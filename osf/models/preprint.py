@@ -26,7 +26,7 @@ from osf.models import Subject, Tag, OSFUser, PreprintProvider
 from osf.models.preprintlog import PreprintLog
 from osf.models.contributor import PreprintContributor
 from osf.models.mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin
-from osf.models.validators import validate_subject_hierarchy, validate_title, validate_doi
+from osf.models.validators import validate_title, validate_doi
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates, ReviewStates
 from osf.utils import sanitize
@@ -424,45 +424,19 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         # Override for ContributorMixin, Preprints don't have addons
         return []
 
-    def get_subjects(self):
-        ret = []
-        for subj_list in self.subject_hierarchy:
-            subj_hierarchy = []
-            for subj in subj_list:
-                if subj:
-                    subj_hierarchy += ({'id': subj._id, 'text': subj.text}, )
-            if subj_hierarchy:
-                ret.append(subj_hierarchy)
-        return ret
-
-    def set_subjects(self, preprint_subjects, auth, log=True):
-        if not self.has_permission(auth.user, WRITE):
-            raise PermissionsError('Must have admin or write permissions to change a preprint\'s subjects.')
-
-        old_subjects = list(self.subjects.values_list('id', flat=True))
-        self.subjects.clear()
-        for subj_list in preprint_subjects:
-            subj_hierarchy = []
-            for s in subj_list:
-                subj_hierarchy.append(s)
-            if subj_hierarchy:
-                validate_subject_hierarchy(subj_hierarchy)
-                for s_id in subj_hierarchy:
-                    self.subjects.add(Subject.load(s_id))
-
-        if log:
-            self.add_log(
-                action=PreprintLog.SUBJECTS_UPDATED,
-                params={
-                    'subjects': list(self.subjects.values('_id', 'text')),
-                    'old_subjects': list(Subject.objects.filter(id__in=old_subjects).values('_id', 'text')),
-                    'preprint': self._id
-                },
-                auth=auth,
-                save=False,
-            )
-
-        self.save(old_subjects=old_subjects)
+    def add_subjects_log(self, old_subjects, auth):
+        # Overrides TaxonomizableMixin
+        self.add_log(
+            action=PreprintLog.SUBJECTS_UPDATED,
+            params={
+                'subjects': list(self.subjects.values('_id', 'text')),
+                'old_subjects': list(Subject.objects.filter(id__in=old_subjects).values('_id', 'text')),
+                'preprint': self._id
+            },
+            auth=auth,
+            save=False,
+        )
+        return
 
     def set_primary_file(self, preprint_file, auth, save=False):
         if not self.root_folder:

@@ -2110,21 +2110,23 @@ class TestUserValidation(OsfTestCase):
     def test_various_social_handles(self):
         self.user.social = {
             'profileWebsites': ['http://cos.io/'],
-            'twitter': 'OSFramework',
-            'github': 'CenterForOpenScience'
+            'twitter': ['OSFramework'],
+            'github': ['CenterForOpenScience'],
+            'scholar': 'ztt_j28AAAAJ'
         }
         self.user.save()
         assert self.user.social_links == {
             'profileWebsites': ['http://cos.io/'],
             'twitter': 'http://twitter.com/OSFramework',
-            'github': 'http://github.com/CenterForOpenScience'
+            'github': 'http://github.com/CenterForOpenScience',
+            'scholar': 'http://scholar.google.com/citations?user=ztt_j28AAAAJ'
         }
 
     def test_multiple_profile_websites(self):
         self.user.social = {
             'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com'],
-            'twitter': 'OSFramework',
-            'github': 'CenterForOpenScience'
+            'twitter': ['OSFramework'],
+            'github': ['CenterForOpenScience']
         }
         self.user.save()
         assert self.user.social_links == {

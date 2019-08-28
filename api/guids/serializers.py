@@ -82,7 +82,7 @@ class GuidSerializer(JSONAPISerializer):
             ser = resolve(reverse(
                 get_related_view(obj),
                 kwargs={'node_id': obj._id, 'version': self.context['view'].kwargs.get('version', '2')},
-            )).func.cls.serializer_class()
+            )).func.cls.serializer_class(context=self.context)
             [ser.context.update({k: v}) for k, v in self.context.items()]
             return ser.to_representation(obj)
         return super(GuidSerializer, self).to_representation(obj)

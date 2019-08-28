@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 from django.db import migrations
 from django.db.models import OuterRef, Subquery
-from osf.models import NodeLog, Node
+from osf.models import NodeLog
 from django_bulk_update.helper import bulk_update
 
 
@@ -14,8 +14,9 @@ def untransfer_forked_date(state, schema):
 
     Revert the last logged date of nodes whose last log is forking to the previous log's date
     """
+    AbstractNode = state.get_model('osf', 'abstractnode')
     newest = NodeLog.objects.filter(node=OuterRef('pk')).order_by('-date')
-    nodes = Node.objects.filter(is_fork=True).annotate(latest_log=Subquery(newest.values('action')[:1])).filter(latest_log='node_forked')
+    nodes = AbstractNode.objects.filter(is_fork=True, type='osf.node').annotate(latest_log=Subquery(newest.values('action')[:1])).filter(latest_log='node_forked')
     for node in nodes:
         node.last_logged = node.logs.order_by('-date')[1].date
 
@@ -25,8 +26,9 @@ def transfer_forked_date(state, schema):
     """
     If the most recent node log is forking, transfer that log's date to the node's last_logged field
     """
+    AbstractNode = state.get_model('osf', 'abstractnode')
     newest = NodeLog.objects.filter(node=OuterRef('pk')).order_by('-date')
-    nodes = Node.objects.filter(is_fork=True).annotate(latest_log=Subquery(newest.values('action')[:1])).filter(latest_log='node_forked')
+    nodes = AbstractNode.objects.filter(is_fork=True, type='osf.node').annotate(latest_log=Subquery(newest.values('action')[:1])).filter(latest_log='node_forked')
     for node in nodes:
         node.last_logged = node.logs.first().date
 
