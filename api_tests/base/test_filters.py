@@ -10,7 +10,6 @@ from django.utils import timezone
 from nose.tools import *  # noqa:
 
 from rest_framework import serializers as ser
-from framework.auth.core import Auth
 
 from unittest import TestCase
 
@@ -27,7 +26,6 @@ from api.base.exceptions import (
 from osf_tests.factories import (
     NodeFactory,
     AuthUserFactory,
-    ExternalAccountFactory,
 )
 from api.base.settings.defaults import API_BASE
 from api.base.serializers import RelationshipField
@@ -505,30 +503,6 @@ class TestOSFOrderingFilter(ApiTestCase):
         assert res_created.json['data'] == res_date_created.json['data']
         assert res_created.json['data'][1]['id'] == res_date_created.json['data'][1]['id']
         assert res_created.json['data'][0]['id'] == res_date_created.json['data'][0]['id']
-
-    def test_sort_by_serializer_multi_level_field(self):
-        user = AuthUserFactory()
-        node = NodeFactory(creator=user)
-
-        # external_account_id is a source field on a foreign key.
-        # This test ensures you can sort on a foreign key field both ascending and descending
-
-        # Ascending
-        s3_addon = node.get_or_add_addon('s3', Auth(user))
-        node.get_or_add_addon('github', Auth(user))
-        s3_addon.external_account_id = ExternalAccountFactory()
-        node.save()
-        s3_addon.save()
-        res_addon = self.app.get(self.get_multi_field_sort_url('external_account_id', node._id), auth=user.auth)
-        assert res_addon.status_code == 200
-        assert res_addon.json['data'][1]['id'] == 's3'
-        assert res_addon.json['data'][0]['id'] == 'github'
-
-        # Descending
-        res_addon = self.app.get(self.get_multi_field_sort_url('external_account_id', node._id, False), auth=user.auth)
-        assert res_addon.status_code == 200
-        assert res_addon.json['data'][0]['id'] == 's3'
-        assert res_addon.json['data'][1]['id'] == 'github'
 
 
 class TestQueryPatternRegex(TestCase):
