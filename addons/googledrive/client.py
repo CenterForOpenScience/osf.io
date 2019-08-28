@@ -13,7 +13,7 @@ class GoogleAuthClient(BaseClient):
             self._build_url(settings.API_BASE_URL, 'oauth2', 'v3', 'userinfo'),
             params={'access_token': access_token},
             expects=(200, ),
-            throws=HTTPError(401)
+            throws=HTTPError(401),
         ).json()
 
 
@@ -33,7 +33,7 @@ class GoogleDriveClient(BaseClient):
             'GET',
             self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'about', ),
             expects=(200, ),
-            throws=HTTPError(401)
+            throws=HTTPError(401),
         ).json()
 
     def folders(self, folder_id='root'):
@@ -47,6 +47,6 @@ class GoogleDriveClient(BaseClient):
             self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files', ),
             params={'q': query},
             expects=(200, ),
-            throws=HTTPError(401)
+            throws=HTTPError(401),
         )
         return res.json()['items']

@@ -20,13 +20,15 @@ def remove_notification_subscriptions_from_registrations(dry_run=True):
     notifications_to_delete = NotificationSubscription.objects.filter(node__type='osf.registration')
     registrations_affected = Registration.objects.filter(
         id__in=notifications_to_delete.values_list(
-            'node_id', flat=True
-        )
+            'node_id', flat=True,
+        ),
     )
     logger.info('{} NotificationSubscriptions will be deleted.'.format(notifications_to_delete.count()))
-    logger.info('{} Registrations will be affected: {}'.format(
-        registrations_affected.count(),
-        list(registrations_affected.values_list('guids___id', flat=True)))
+    logger.info(
+        '{} Registrations will be affected: {}'.format(
+            registrations_affected.count(),
+            list(registrations_affected.values_list('guids___id', flat=True)),
+        ),
     )
 
     if not dry_run:

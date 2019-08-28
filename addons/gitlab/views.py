@@ -38,12 +38,12 @@ FULL_NAME = 'GitLab'
 
 gitlab_account_list = generic_views.account_list(
     SHORT_NAME,
-    GitLabSerializer
+    GitLabSerializer,
 )
 
 gitlab_import_auth = generic_views.import_auth(
     SHORT_NAME,
-    GitLabSerializer
+    GitLabSerializer,
 )
 
 def _get_folders(node_addon, folder_id):
@@ -52,16 +52,16 @@ def _get_folders(node_addon, folder_id):
 gitlab_folder_list = generic_views.folder_list(
     SHORT_NAME,
     FULL_NAME,
-    _get_folders
+    _get_folders,
 )
 
 gitlab_get_config = generic_views.get_config(
     SHORT_NAME,
-    GitLabSerializer
+    GitLabSerializer,
 )
 
 gitlab_deauthorize_node = generic_views.deauthorize_node(
-    SHORT_NAME
+    SHORT_NAME,
 )
 
 @must_be_logged_in
@@ -110,7 +110,7 @@ def gitlab_add_user_account(auth, **kwargs):
     except ValidationError:
         # ... or get the old one
         account = ExternalAccount.objects.get(
-            provider='gitlab', provider_id=user.web_url
+            provider='gitlab', provider_id=user.web_url,
         )
         if account.oauth_key != access_token:
             account.oauth_key = access_token
@@ -162,8 +162,10 @@ def gitlab_set_config(auth, **kwargs):
         repo = connection.repo(gitlab_repo_id)
     except gitlab.exceptions.GitlabError as exc:
         if exc.response_code == 403 and 'must accept the Terms of Service' in exc.error_message:
-            return {'message': 'Your gitlab account does not have proper authentication. Ensure you have agreed to Gitlab\'s '
-                     'current Terms of Service by disabling and re-enabling your account.'}, http.BAD_REQUEST
+            return {
+                'message': 'Your gitlab account does not have proper authentication. Ensure you have agreed to Gitlab\'s '
+                'current Terms of Service by disabling and re-enabling your account.',
+            }, http.BAD_REQUEST
 
     if repo is None:
         if user_settings:
@@ -204,7 +206,7 @@ def gitlab_set_config(auth, **kwargs):
                     'user': gitlab_user_name,
                     'repo': gitlab_repo_name,
                     'repo_id': gitlab_repo_id,
-                }
+                },
             },
             auth=auth,
         )
@@ -225,7 +227,7 @@ def gitlab_download_starball(node_addon, **kwargs):
 
     connection = GitLabClient(external_account=node_addon.external_account)
     headers, data = connection.starball(
-        node_addon.user, node_addon.repo, node_addon.repo_id, ref
+        node_addon.user, node_addon.repo, node_addon.repo_id, ref,
     )
 
     resp = make_response(data)
@@ -256,8 +258,10 @@ def gitlab_root_folder(*args, **kwargs):
 # Repos #
 #########
 
-def add_hook_log(node, gitlab, action, path, date, committer, include_urls=False,
-                 sha=None, save=False):
+def add_hook_log(
+    node, gitlab, action, path, date, committer, include_urls=False,
+    sha=None, save=False,
+):
     """Add log event for commit from webhook payload.
 
     :param node: Node to add logs to
@@ -282,7 +286,7 @@ def add_hook_log(node, gitlab, action, path, date, committer, include_urls=False
 
         urls = {
             'view': '{0}?branch={1}'.format(url, sha),
-            'download': '{0}?action=download&branch={1}'.format(url, sha)
+            'download': '{0}?action=download&branch={1}'.format(url, sha),
         }
 
     node.add_log(

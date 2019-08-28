@@ -16,21 +16,23 @@ class GoogleDriveSerializer(StorageAddonSerializer):
     def serialized_folder(self, node_settings):
         return {
             'name': node_settings.folder_name,
-            'path': node_settings.folder_path
+            'path': node_settings.folder_path,
         }
 
     @property
     def addon_serialized_urls(self):
         node = self.node_settings.owner
         return {
-            'auth': api_url_for('oauth_connect',
-                                service_name='googledrive'),
+            'auth': api_url_for(
+                'oauth_connect',
+                service_name='googledrive',
+            ),
             'files': node.web_url_for('collect_file_trees'),
             'config': node.api_url_for('googledrive_set_config'),
             'deauthorize': node.api_url_for('googledrive_deauthorize_node'),
             'importAuth': node.api_url_for('googledrive_import_auth'),
             'folders': node.api_url_for('googledrive_folder_list'),
-            'accounts': node.api_url_for('googledrive_account_list')
+            'accounts': node.api_url_for('googledrive_account_list'),
         }
 
     @property

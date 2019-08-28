@@ -19,7 +19,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/bitbucket/settings/',
-                '/project/<pid>/node/<nid>/bitbucket/settings/'
+                '/project/<pid>/node/<nid>/bitbucket/settings/',
             ],
             'get',
             views.bitbucket_get_config,
@@ -39,7 +39,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/bitbucket/user_auth/',
-                '/project/<pid>/node/<nid>/bitbucket/user_auth/'
+                '/project/<pid>/node/<nid>/bitbucket/user_auth/',
             ],
             'put',
             views.bitbucket_import_auth,
@@ -49,7 +49,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/bitbucket/user_auth/',
-                '/project/<pid>/node/<nid>/bitbucket/user_auth/'
+                '/project/<pid>/node/<nid>/bitbucket/user_auth/',
             ],
             'delete',
             views.bitbucket_deauthorize_node,
@@ -90,5 +90,5 @@ api_routes = {
         ),
 
     ],
-    'prefix': '/api/v1'
+    'prefix': '/api/v1',
 }

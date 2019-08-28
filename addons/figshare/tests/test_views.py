@@ -7,7 +7,7 @@ from nose.tools import assert_equal
 import pytest
 
 from addons.base.tests.views import (
-    OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin
+    OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin,
 )
 from addons.figshare.tests.utils import FigshareAddonTestCase
 from tests.base import OsfTestCase
@@ -35,18 +35,20 @@ class TestConfigViews(FigshareAddonTestCase, OAuthAddonConfigViewsTestCaseMixin,
         mock_about.return_value = {'path': 'fileset', 'name': 'Memes', 'id': '009001'}
         self.node_settings.set_auth(self.external_account, self.user)
         url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
-        res = self.app.put_json(url, {
-            'selected': self.folder
-        }, auth=self.user.auth)
+        res = self.app.put_json(
+            url, {
+                'selected': self.folder,
+            }, auth=self.user.auth,
+        )
         assert_equal(res.status_code, http.OK)
         self.project.reload()
         assert_equal(
             self.project.logs.latest().action,
-            '{0}_folder_selected'.format(self.ADDON_SHORT_NAME)
+            '{0}_folder_selected'.format(self.ADDON_SHORT_NAME),
         )
         assert_equal(
             self.project.logs.latest().params['folder'],
-            self.folder['path']
+            self.folder['path'],
         )
         assert_equal(res.json['result']['folder']['path'], self.folder['path'])
 

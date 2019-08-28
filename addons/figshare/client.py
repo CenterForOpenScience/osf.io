@@ -32,14 +32,14 @@ class FigshareClient(BaseClient):
             'GET',
             self._build_url(settings.API_BASE_URL, 'account'),
             expects=(200, ),
-            throws=HTTPError(403)
+            throws=HTTPError(403),
         ).json()
 
     # PROJECT LEVEL API
     def projects(self):
         return self._make_request(
             'GET',
-            self._build_url(settings.API_BASE_URL, 'account', 'projects')
+            self._build_url(settings.API_BASE_URL, 'account', 'projects'),
         ).json()
 
     def project(self, project_id):
@@ -48,13 +48,13 @@ class FigshareClient(BaseClient):
         project = self._make_request(
             'GET',
             self._build_url(settings.API_BASE_URL, 'account', 'projects', project_id),
-            expects=(200,)
+            expects=(200,),
         ).json()
         if not project:
             return
         articles = self._make_request(
             'GET',
-            self._build_url(settings.API_BASE_URL, 'account', 'projects', project_id, 'articles')
+            self._build_url(settings.API_BASE_URL, 'account', 'projects', project_id, 'articles'),
         ).json()
         project['articles'] = []
         if(articles):
@@ -69,7 +69,7 @@ class FigshareClient(BaseClient):
     def articles(self):
         article_list = self._make_request(
             'GET',
-            self._build_url(settings.API_BASE_URL, 'account', 'articles')
+            self._build_url(settings.API_BASE_URL, 'account', 'articles'),
         ).json()
         return [self.article(article['id']) for article in article_list]
 
@@ -89,7 +89,7 @@ class FigshareClient(BaseClient):
         return self._make_request(
             'GET',
             self._build_url(settings.API_BASE_URL, 'account', 'articles', article_id),
-            expects=(200, )
+            expects=(200, ),
         ).json()
 
     # OTHER HELPERS
@@ -101,7 +101,7 @@ class FigshareClient(BaseClient):
             'kind': 'folder',
             'permissions': {'view': True},
             'addon': 'figshare',
-            'hasChildren': False
+            'hasChildren': False,
         } for project in self.projects()]
 
         articles = [{  # TODO: Figshare needs to make this filterable by defined_type to limit spurious requests
@@ -111,7 +111,7 @@ class FigshareClient(BaseClient):
             'kind': 'folder',
             'permissions': {'view': True},
             'addon': 'figshare',
-            'hasChildren': False
+            'hasChildren': False,
         } for article in self.articles() if article['defined_type'] == settings.FIGSHARE_DEFINED_TYPE_NUM_MAP['fileset']]
 
         return projects + articles
@@ -124,7 +124,7 @@ class FigshareClient(BaseClient):
                 'GET',
                 self._build_url(settings.API_BASE_URL, 'account', 'projects', _id),
                 expects=(200, ),
-                throws=HTTPError(404)
+                throws=HTTPError(404),
             ).json()
             ret['path'] = 'project'
         except HTTPError:

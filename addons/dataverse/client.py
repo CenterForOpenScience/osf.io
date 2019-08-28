@@ -62,15 +62,19 @@ def publish_dataverse(dataverse):
 
 def publish_dataset(dataset):
     if dataset.get_state() == 'RELEASED':
-        raise HTTPError(http.CONFLICT, data=dict(
-            message_short='Dataset conflict',
-            message_long='This version of the dataset has already been published.'
-        ))
+        raise HTTPError(
+            http.CONFLICT, data=dict(
+                message_short='Dataset conflict',
+                message_long='This version of the dataset has already been published.',
+            ),
+        )
     if not dataset.dataverse.is_published:
-        raise HTTPError(http.METHOD_NOT_ALLOWED, data=dict(
-            message_short='Method not allowed',
-            message_long='A dataset cannot be published until its parent Dataverse is published.'
-        ))
+        raise HTTPError(
+            http.METHOD_NOT_ALLOWED, data=dict(
+                message_short='Method not allowed',
+                message_long='A dataset cannot be published until its parent Dataverse is published.',
+            ),
+        )
 
     try:
         dataset.publish()
@@ -90,17 +94,21 @@ def get_dataset(dataverse, doi):
     dataset = dataverse.get_dataset_by_doi(doi, timeout=settings.REQUEST_TIMEOUT)
     try:
         if dataset and dataset.get_state() == 'DEACCESSIONED':
-            raise HTTPError(http.GONE, data=dict(
-                message_short='Dataset deaccessioned',
-                message_long='This dataset has been deaccessioned and can no longer be linked to the OSF.'
-            ))
+            raise HTTPError(
+                http.GONE, data=dict(
+                    message_short='Dataset deaccessioned',
+                    message_long='This dataset has been deaccessioned and can no longer be linked to the OSF.',
+                ),
+            )
         return dataset
     except UnicodeDecodeError:
-        raise HTTPError(http.NOT_ACCEPTABLE, data=dict(
-            message_short='Not acceptable',
-            message_long='This dataset cannot be connected due to forbidden '
-                         'characters in one or more of the file names.'
-        ))
+        raise HTTPError(
+            http.NOT_ACCEPTABLE, data=dict(
+                message_short='Not acceptable',
+                message_long='This dataset cannot be connected due to forbidden '
+                             'characters in one or more of the file names.',
+            ),
+        )
 
 
 def get_dataverses(connection):

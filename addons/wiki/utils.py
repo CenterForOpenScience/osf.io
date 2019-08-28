@@ -51,7 +51,7 @@ def get_sharejs_uuid(node, wname):
     private_uuid = node.wiki_private_uuids.get(wiki_key)
     return str(uuid.uuid5(
         uuid.UUID(private_uuid),
-        str(node._id)
+        str(node._id),
     )) if private_uuid else None
 
 
@@ -127,7 +127,7 @@ def broadcast_to_sharejs(action, sharejs_uuid, node=None, wiki_name='home', data
         host=wiki_settings.SHAREJS_HOST,
         port=wiki_settings.SHAREJS_PORT,
         action=action,
-        id=sharejs_uuid
+        id=sharejs_uuid,
     )
 
     if action == 'redirect' or action == 'delete':
@@ -201,7 +201,7 @@ def serialize_wiki_settings(user, nodes):
                     'permission':
                         'public'
                         if wiki.is_publicly_editable
-                        else 'private'
+                        else 'private',
                 },
             })
 
@@ -212,7 +212,7 @@ def serialize_wiki_settings(user, nodes):
                 'id': node._id,
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
-                'is_public': node.is_public
+                'is_public': node.is_public,
             },
             'children': children_tree,
             'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, READ) else 'node',

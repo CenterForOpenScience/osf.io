@@ -71,8 +71,10 @@ def main(default_args=False):
     institutions = INSTITUTIONS[server_env]
 
     if not update_all and not update_ids:
-        logger.error('Nothing to update or create. Please either specify a list of institutions '
-                     'using --ids or run for all with --all')
+        logger.error(
+            'Nothing to update or create. Please either specify a list of institutions '
+            'using --ids or run for all with --all',
+        )
         sys.exit(1)
     elif update_all:
         institutions_to_update = institutions
@@ -112,9 +114,11 @@ INSTITUTIONS = {
                 'banner_name': 'asu-banner.png',
                 'logo_name': 'asu-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(
-                    encode_uri_component('urn:mace:incommon:asu.edu')),
+                    encode_uri_component('urn:mace:incommon:asu.edu'),
+                ),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(
-                    encode_uri_component('https://osf.io/goodbye')),
+                    encode_uri_component('https://osf.io/goodbye'),
+                ),
                 'domains': ['osf.asu.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
@@ -589,9 +593,11 @@ INSTITUTIONS = {
                 'banner_name': 'sc-banner.png',
                 'logo_name': 'sc-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(
-                    encode_uri_component('urn:mace:incommon:sc.edu')),
+                    encode_uri_component('urn:mace:incommon:sc.edu'),
+                ),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(
-                    encode_uri_component('https://osf.io/goodbye')),
+                    encode_uri_component('https://osf.io/goodbye'),
+                ),
                 'domains': ['osf.sc.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
@@ -860,7 +866,7 @@ INSTITUTIONS = {
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
-        ],
+    ],
     'stage': [
             {
                 '_id': 'cos',
@@ -909,7 +915,7 @@ INSTITUTIONS = {
                 'email_domains': ['yahoo.com'],
                 'delegation_protocol': '',
             },
-        ],
+    ],
     'stage2': [
             {
                 '_id': 'cos',
@@ -923,7 +929,7 @@ INSTITUTIONS = {
                 'email_domains': ['cos.io'],
                 'delegation_protocol': '',
             },
-        ],
+    ],
     'stage3': [
             {
                 '_id': 'cos',
@@ -937,7 +943,7 @@ INSTITUTIONS = {
                 'email_domains': ['cos.io'],
                 'delegation_protocol': '',
             },
-        ],
+    ],
     'test': [
             {
                 '_id': 'a2jlab',
@@ -958,9 +964,11 @@ INSTITUTIONS = {
                 'banner_name': 'asu-banner.png',
                 'logo_name': 'asu-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(
-                    encode_uri_component('urn:mace:incommon:asu.edu')),
+                    encode_uri_component('urn:mace:incommon:asu.edu'),
+                ),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(
-                    encode_uri_component('https://test.osf.io/goodbye')),
+                    encode_uri_component('https://test.osf.io/goodbye'),
+                ),
                 'domains': ['test-osf-asu.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
@@ -1435,9 +1443,11 @@ INSTITUTIONS = {
                 'banner_name': 'sc-banner.png',
                 'logo_name': 'sc-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(
-                    encode_uri_component('urn:mace:incommon:sc.edu')),
+                    encode_uri_component('urn:mace:incommon:sc.edu'),
+                ),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(
-                    encode_uri_component('https://test.osf.io/goodbye')),
+                    encode_uri_component('https://test.osf.io/goodbye'),
+                ),
                 'domains': ['test-osf-sc.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
@@ -1718,7 +1728,7 @@ INSTITUTIONS = {
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
-        ],
+    ],
 }
 
 

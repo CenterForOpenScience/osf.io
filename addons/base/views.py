@@ -37,10 +37,12 @@ from website import settings
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
 from osf import features
-from osf.models import (BaseFileNode, TrashedFileNode,
-                        OSFUser, AbstractNode, Preprint,
-                        NodeLog, DraftRegistration, RegistrationSchema,
-                        Guid, FileVersionUserMetadata, FileVersion)
+from osf.models import (
+    BaseFileNode, TrashedFileNode,
+    OSFUser, AbstractNode, Preprint,
+    NodeLog, DraftRegistration, RegistrationSchema,
+    Guid, FileVersionUserMetadata, FileVersion,
+)
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
 from website.profile.utils import get_profile_image_url
@@ -53,7 +55,8 @@ from website.util import rubeus
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
 
-ERROR_MESSAGES = {'FILE_GONE': u"""
+ERROR_MESSAGES = {
+    'FILE_GONE': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -64,7 +67,7 @@ The file "{file_name}" stored on {provider} was deleted via the OSF.
 <p>
 It was deleted by <a href="/{deleted_by_guid}">{deleted_by}</a> on {deleted_on}.
 </p>""",
-                  'FILE_GONE_ACTOR_UNKNOWN': u"""
+    'FILE_GONE_ACTOR_UNKNOWN': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -75,7 +78,7 @@ The file "{file_name}" stored on {provider} was deleted via the OSF.
 <p>
 It was deleted on {deleted_on}.
 </p>""",
-                  'DONT_KNOW': u"""
+    'DONT_KNOW': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -83,7 +86,7 @@ It was deleted on {deleted_on}.
 <p>
 File not found at {provider}.
 </p>""",
-                  'BLAME_PROVIDER': u"""
+    'BLAME_PROVIDER': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -95,12 +98,13 @@ The provider ({provider}) may currently be unavailable or "{file_name}" may have
 <p>
 You may wish to verify this through {provider}'s website.
 </p>""",
-                  'FILE_SUSPENDED': u"""
+    'FILE_SUSPENDED': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
-This content has been removed."""}
+This content has been removed.""",
+}
 
 WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
@@ -208,7 +212,7 @@ def check_access(node, auth, action, cas_resp):
             allowed_nodes = [node] + node.parents
             prereg_draft_registration = DraftRegistration.objects.filter(
                 branched_from__in=allowed_nodes,
-                registration_schema=prereg_schema
+                registration_schema=prereg_schema,
             )
             if action == 'download' and \
                         auth.user is not None and \
@@ -276,7 +280,7 @@ def get_auth(auth, **kwargs):
             jwe.decrypt(request.args.get('payload', '').encode('utf-8'), WATERBUTLER_JWE_KEY),
             settings.WATERBUTLER_JWT_SECRET,
             options={'require_exp': True},
-            algorithm=settings.WATERBUTLER_JWT_ALGORITHM
+            algorithm=settings.WATERBUTLER_JWT_ALGORITHM,
         )['data']
     except (jwt.InvalidTokenError, KeyError) as err:
         sentry.log_message(str(err))
@@ -318,7 +322,7 @@ def get_auth(auth, **kwargs):
                 try:
                     fileversion = FileVersion.objects.filter(
                         basefilenode___id=file_id,
-                        identifier=version
+                        identifier=version,
                     ).select_related('region').get()
                 except FileVersion.DoesNotExist:
                     raise HTTPError(httplib.BAD_REQUEST)
@@ -342,7 +346,7 @@ def get_auth(auth, **kwargs):
                                         preprint=node,
                                         user=auth.user,
                                         version=fileversion.identifier if fileversion else None,
-                                        path=path
+                                        path=path,
                                     )
                                 except es_exceptions.ConnectionError:
                                     log_exception()
@@ -358,19 +362,23 @@ def get_auth(auth, **kwargs):
         credentials = node.serialize_waterbutler_credentials(provider_name)
         waterbutler_settings = node.serialize_waterbutler_settings(provider_name)
 
-    return {'payload': jwe.encrypt(jwt.encode({
-        'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
-        'data': {
-            'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
-            'credentials': credentials,
-            'settings': waterbutler_settings,
-            'callback_url': node.api_url_for(
-                ('create_waterbutler_log' if not getattr(node, 'is_registration', False) else 'registration_callbacks'),
-                _absolute=True,
-                _internal=True
-            )
-        }
-    }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), WATERBUTLER_JWE_KEY)}
+    return {'payload': jwe.encrypt(
+        jwt.encode(
+            {
+                'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
+                'data': {
+                    'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
+                    'credentials': credentials,
+                    'settings': waterbutler_settings,
+                    'callback_url': node.api_url_for(
+                        ('create_waterbutler_log' if not getattr(node, 'is_registration', False) else 'registration_callbacks'),
+                        _absolute=True,
+                        _internal=True,
+                    ),
+                },
+            }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM,
+        ), WATERBUTLER_JWE_KEY,
+    )}
 
 
 LOG_ACTION_MAP = {
@@ -454,13 +462,13 @@ def create_waterbutler_log(payload, **kwargs):
                 'url': source_node.web_url_for(
                     'addon_view_or_download_file',
                     path=payload['source']['path'].lstrip('/'),
-                    provider=payload['source']['provider']
+                    provider=payload['source']['provider'],
                 ),
                 'node': {
                     '_id': source_node._id,
                     'url': source_node.url,
                     'title': source_node.title,
-                }
+                },
             })
 
             payload['destination'].update({
@@ -469,20 +477,20 @@ def create_waterbutler_log(payload, **kwargs):
                 'url': destination_node.web_url_for(
                     'addon_view_or_download_file',
                     path=payload['destination']['path'].lstrip('/'),
-                    provider=payload['destination']['provider']
+                    provider=payload['destination']['provider'],
                 ),
                 'node': {
                     '_id': destination_node._id,
                     'url': destination_node.url,
                     'title': destination_node.title,
-                }
+                },
             })
 
             if not payload.get('errors'):
                 destination_node.add_log(
                     action=action,
                     auth=auth,
-                    params=payload
+                    params=payload,
                 )
 
             if payload.get('email') is True or payload.get('errors'):
@@ -496,7 +504,7 @@ def create_waterbutler_log(payload, **kwargs):
                     source_path=payload['source']['materialized'],
                     source_addon=payload['source']['addon'],
                     destination_addon=payload['destination']['addon'],
-                    osf_support_email=settings.OSF_SUPPORT_EMAIL
+                    osf_support_email=settings.OSF_SUPPORT_EMAIL,
                 )
 
             if payload.get('errors'):
@@ -531,7 +539,7 @@ def addon_delete_file_node(self, target, user, event_type, payload):
                 provider=provider,
                 target_object_id=target.id,
                 target_content_type=content_type,
-                _materialized_path__startswith=materialized_path
+                _materialized_path__startswith=materialized_path,
             )
             for item in folder_children:
                 if item.kind == 'file' and not TrashedFileNode.load(item._id):
@@ -543,7 +551,7 @@ def addon_delete_file_node(self, target, user, event_type, payload):
                 file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).objects.get(
                     target_object_id=target.id,
                     target_content_type=content_type,
-                    _materialized_path=materialized_path
+                    _materialized_path=materialized_path,
                 )
             except BaseFileNode.DoesNotExist:
                 file_node = None
@@ -582,8 +590,8 @@ def addon_view_or_download_file_legacy(**kwargs):
             raise HTTPError(
                 404, data=dict(
                     message_short='File not found',
-                    message_long='You requested a file that does not exist.'
-                )
+                    message_long='You requested a file that does not exist.',
+                ),
             )
 
     return redirect(
@@ -594,7 +602,7 @@ def addon_view_or_download_file_legacy(**kwargs):
             action=action,
             **query_params
         ),
-        code=httplib.MOVED_PERMANENTLY
+        code=httplib.MOVED_PERMANENTLY,
     )
 
 @must_be_contributor_or_public
@@ -634,7 +642,7 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
         file_name=markupsafe.escape(file_name),
         deleted_by=markupsafe.escape(getattr(deleted_by, 'fullname', None)),
         deleted_on=markupsafe.escape(deleted_on),
-        provider=markupsafe.escape(provider_full)
+        provider=markupsafe.escape(provider_full),
     )
     if deleted_by:
         format_params['deleted_by_guid'] = markupsafe.escape(deleted_by_guid)
@@ -699,22 +707,28 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
         if not isinstance(node_addon, BaseStorageAddon):
             object_text = markupsafe.escape(getattr(target, 'project_or_component', 'this object'))
-            raise HTTPError(httplib.BAD_REQUEST, data={
-                'message_short': 'Bad Request',
-                'message_long': 'The {} add-on containing {} is no longer connected to {}.'.format(provider_safe, path_safe, object_text)
-            })
+            raise HTTPError(
+                httplib.BAD_REQUEST, data={
+                    'message_short': 'Bad Request',
+                    'message_long': 'The {} add-on containing {} is no longer connected to {}.'.format(provider_safe, path_safe, object_text),
+                },
+            )
 
         if not node_addon.has_auth:
-            raise HTTPError(httplib.UNAUTHORIZED, data={
-                'message_short': 'Unauthorized',
-                'message_long': 'The {} add-on containing {} is no longer authorized.'.format(provider_safe, path_safe)
-            })
+            raise HTTPError(
+                httplib.UNAUTHORIZED, data={
+                    'message_short': 'Unauthorized',
+                    'message_long': 'The {} add-on containing {} is no longer authorized.'.format(provider_safe, path_safe),
+                },
+            )
 
         if not node_addon.complete:
-            raise HTTPError(httplib.BAD_REQUEST, data={
-                'message_short': 'Bad Request',
-                'message_long': 'The {} add-on containing {} is no longer configured.'.format(provider_safe, path_safe)
-            })
+            raise HTTPError(
+                httplib.BAD_REQUEST, data={
+                    'message_short': 'Bad Request',
+                    'message_long': 'The {} add-on containing {} is no longer configured.'.format(provider_safe, path_safe),
+                },
+            )
 
     savepoint_id = transaction.savepoint()
     file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_or_create(target, path)
@@ -726,7 +740,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         request.headers.get('Authorization'),
         **dict(
             extras,
-            cookie=request.cookies.get(settings.COOKIE_NAME)
+            cookie=request.cookies.get(settings.COOKIE_NAME),
         )
     )
     if version is None:
@@ -737,21 +751,25 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
             file_node = BaseFileNode.load(path)
 
             if not file_node:
-                raise HTTPError(httplib.NOT_FOUND, data={
-                    'message_short': 'File Not Found',
-                    'message_long': 'The requested file could not be found.'
-                })
+                raise HTTPError(
+                    httplib.NOT_FOUND, data={
+                        'message_short': 'File Not Found',
+                        'message_long': 'The requested file could not be found.',
+                    },
+                )
 
             if file_node.kind == 'folder':
-                raise HTTPError(httplib.BAD_REQUEST, data={
-                    'message_short': 'Bad Request',
-                    'message_long': 'You cannot request a folder from this endpoint.'
-                })
+                raise HTTPError(
+                    httplib.BAD_REQUEST, data={
+                        'message_short': 'Bad Request',
+                        'message_long': 'You cannot request a folder from this endpoint.',
+                    },
+                )
 
             # Allow osfstorage to redirect if the deep url can be used to find a valid file_node
             if file_node.provider == 'osfstorage' and not file_node.is_deleted:
                 return redirect(
-                    file_node.target.web_url_for('addon_view_or_download_file', path=file_node._id, provider=file_node.provider)
+                    file_node.target.web_url_for('addon_view_or_download_file', path=file_node._id, provider=file_node.provider),
                 )
         return addon_deleted_file(target=target, file_node=file_node, path=path, **kwargs)
     else:
@@ -759,28 +777,34 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     # TODO clean up these urls and unify what is used as a version identifier
     if request.method == 'HEAD':
-        return make_response(('', httplib.FOUND, {
-            'Location': file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render'))
-        }))
+        return make_response((
+            '', httplib.FOUND, {
+                'Location': file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')),
+            },
+        ))
 
     if action == 'download':
         format = extras.get('format')
         _, extension = os.path.splitext(file_node.name)
         # avoid rendering files with the same format type.
         if format and '.{}'.format(format.lower()) != extension.lower():
-            return redirect('{}/export?format={}&url={}'.format(get_mfr_url(target, provider), format, urllib.quote(file_node.generate_waterbutler_url(
-                **dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')
-            ))))
+            return redirect('{}/export?format={}&url={}'.format(
+                get_mfr_url(target, provider), format, urllib.quote(file_node.generate_waterbutler_url(
+                    **dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')
+                )),
+            ))
         return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')))
 
     if action == 'get_guid':
         draft_id = extras.get('draft')
         draft = DraftRegistration.load(draft_id)
         if draft is None or draft.is_approved:
-            raise HTTPError(httplib.BAD_REQUEST, data={
-                'message_short': 'Bad Request',
-                'message_long': 'File not associated with required object.'
-            })
+            raise HTTPError(
+                httplib.BAD_REQUEST, data={
+                    'message_short': 'Bad Request',
+                    'message_long': 'File not associated with required object.',
+                },
+            )
         guid = file_node.get_guid(create=True)
         guid.referent.save()
         return dict(guid=guid._id)
@@ -804,18 +828,24 @@ def persistent_file_download(auth, **kwargs):
         if guid:
             file = guid.referent
         else:
-            raise HTTPError(httplib.NOT_FOUND, data={
-                'message_short': 'File Not Found',
-                'message_long': 'The requested file could not be found.'
-            })
+            raise HTTPError(
+                httplib.NOT_FOUND, data={
+                    'message_short': 'File Not Found',
+                    'message_long': 'The requested file could not be found.',
+                },
+            )
     if not file.is_file:
-        raise HTTPError(httplib.BAD_REQUEST, data={
-            'message_long': 'Downloading folders is not permitted.'
-        })
+        raise HTTPError(
+            httplib.BAD_REQUEST, data={
+                'message_long': 'Downloading folders is not permitted.',
+            },
+        )
 
-    auth_redirect = check_contributor_auth(file.target, auth,
-                                           include_public=True,
-                                           include_view_only_anon=True)
+    auth_redirect = check_contributor_auth(
+        file.target, auth,
+        include_public=True,
+        include_view_only_anon=True,
+    )
     if auth_redirect:
         return auth_redirect
 
@@ -823,7 +853,7 @@ def persistent_file_download(auth, **kwargs):
 
     return redirect(
         file.generate_waterbutler_url(**query_params),
-        code=httplib.FOUND
+        code=httplib.FOUND,
     )
 
 
@@ -831,10 +861,12 @@ def addon_view_or_download_quickfile(**kwargs):
     fid = kwargs.get('fid', 'NOT_AN_FID')
     file_ = OsfStorageFile.load(fid)
     if not file_:
-        raise HTTPError(httplib.NOT_FOUND, data={
-            'message_short': 'File Not Found',
-            'message_long': 'The requested file could not be found.'
-        })
+        raise HTTPError(
+            httplib.NOT_FOUND, data={
+                'message_short': 'File Not Found',
+                'message_long': 'The requested file could not be found.',
+            },
+        )
     return proxy_url('/project/{}/files/osfstorage/{}/'.format(file_.target._id, fid))
 
 def addon_view_file(auth, node, file_node, version):
@@ -861,18 +893,20 @@ def addon_view_file(auth, node, file_node, version):
     internal_furl = furl.furl(settings.INTERNAL_DOMAIN)
     download_url = furl.furl(request.url.encode('utf-8')).set(
         netloc=internal_furl.netloc,
-        args=dict(request.args, **{
-            'direct': None,
-            'mode': 'render',
-            'action': 'download',
-            'public_file': node.is_public,
-        })
+        args=dict(
+            request.args, **{
+                'direct': None,
+                'mode': 'render',
+                'action': 'download',
+                'public_file': node.is_public,
+            }
+        ),
     )
 
     mfr_url = get_mfr_url(node, file_node.provider)
     render_url = furl.furl(mfr_url).set(
         path=['render'],
-        args={'url': download_url.url}
+        args={'url': download_url.url},
     )
 
     ret.update({

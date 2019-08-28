@@ -21,8 +21,8 @@ def add_file_logger(logger, script_name, suffix=None):
     file_handler = logging.FileHandler(
         os.path.join(
             settings.LOG_PATH,
-            '.'.join([name, format_now(), 'log'])
-        )
+            '.'.join([name, format_now(), 'log']),
+        ),
     )
     logger.addHandler(file_handler)
 

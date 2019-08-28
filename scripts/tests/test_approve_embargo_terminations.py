@@ -26,7 +26,7 @@ class TestApproveEmbargoTerminations(OsfTestCase):
         self.node = NodeFactory(creator=self.user)
         NodeFactory(
             creator=self.user,
-            parent=NodeFactory(creator=self.user, parent=self.node)
+            parent=NodeFactory(creator=self.user, parent=self.node),
         )
 
         # requesting termination but less than 48 hours old

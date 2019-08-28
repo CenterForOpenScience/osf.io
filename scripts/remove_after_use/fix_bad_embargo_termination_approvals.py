@@ -23,7 +23,7 @@ def main(dry=True):
     bad_state_embargo_termination_approvals = EmbargoTerminationApproval.objects.filter(
         embargoed_registration__is_public=True,
         embargoed_registration__embargo__state=Sanction.COMPLETED,
-        state=Sanction.UNAPPROVED
+        state=Sanction.UNAPPROVED,
     )
     logging.info('{} EmbargoTerminationApprovals that are going to be marked as approved'.format(bad_state_embargo_termination_approvals.count()))
     logging.info('Affected Registrations: {}'.format((list(bad_state_embargo_termination_approvals.values_list('embargoed_registration__guids___id', flat=True).distinct()))))

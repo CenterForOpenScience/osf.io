@@ -3,8 +3,10 @@ import pytest
 import unittest
 import mock
 from framework.auth import Auth
-from nose.tools import (assert_equal, assert_is_none, assert_true, assert_false,
-    assert_is, assert_in)
+from nose.tools import (
+    assert_equal, assert_is_none, assert_true, assert_false,
+    assert_is, assert_in,
+)
 
 from addons.base.tests.utils import MockFolder, MockLibrary
 
@@ -66,7 +68,7 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
         self.user_settings.grant_oauth_access(
             node=self.node,
             external_account=self.external_account,
-            metadata={'folder': 'fake_folder_id', 'library': 'fake_library_id'}
+            metadata={'folder': 'fake_folder_id', 'library': 'fake_library_id'},
         )
         self.user_settings.save()
 
@@ -75,7 +77,7 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
             'user_settings': self.user_settings,
             'list_id': 'fake_folder_id',
             'library_id': 'fake_library_id',
-            'owner': self.node
+            'owner': self.node,
         }
 
     def test_fields(self):
@@ -134,7 +136,7 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
 
         assert_equal(
             self.node_settings.fetch_library_name,
-            'My library'
+            'My library',
         )
 
     @mock.patch('addons.zotero.models.Zotero._fetch_libraries')
@@ -170,7 +172,7 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
 
         assert_equal(
             self.node_settings.fetch_library_name,
-            ''
+            '',
         )
 
     def test_selected_library_name(self):
@@ -183,7 +185,7 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
 
         assert_equal(
             name,
-            'Fake Library'
+            'Fake Library',
         )
 
     def test_set_library(self):
@@ -227,8 +229,8 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
             self.user_settings.verify_oauth_access(
                 node=self.node,
                 external_account=self.external_account,
-                metadata={'library': 'fake-library-id'}
-            )
+                metadata={'library': 'fake-library-id'},
+            ),
         )
 
         log = self.node.logs.latest()
@@ -247,13 +249,13 @@ class ZoteroUserSettingsTestCase(OAuthAddonUserSettingTestSuiteMixin, unittest.T
         self.user_settings.grant_oauth_access(
             node=self.node,
             external_account=self.external_account,
-            metadata={'library': 'fake_library_id'}
+            metadata={'library': 'fake_library_id'},
         )
         self.user_settings.save()
 
         assert self.user_settings.oauth_grants == {
             self.node._id: {
-                self.external_account._id: {'library': 'fake_library_id'}
+                self.external_account._id: {'library': 'fake_library_id'},
             },
         }
 
@@ -261,7 +263,7 @@ class ZoteroUserSettingsTestCase(OAuthAddonUserSettingTestSuiteMixin, unittest.T
         self.user_settings.grant_oauth_access(
             node=self.node,
             external_account=self.external_account,
-            metadata={'library': 'fake_library_id'}
+            metadata={'library': 'fake_library_id'},
         )
         self.user_settings.save()
 
@@ -269,14 +271,14 @@ class ZoteroUserSettingsTestCase(OAuthAddonUserSettingTestSuiteMixin, unittest.T
             self.user_settings.verify_oauth_access(
                 node=self.node,
                 external_account=self.external_account,
-                metadata={'library': 'fake_library_id'}
-            )
+                metadata={'library': 'fake_library_id'},
+            ),
         )
 
         assert_false(
             self.user_settings.verify_oauth_access(
                 node=self.node,
                 external_account=self.external_account,
-                metadata={'library': 'another_library_id'}
-            )
+                metadata={'library': 'another_library_id'},
+            ),
         )

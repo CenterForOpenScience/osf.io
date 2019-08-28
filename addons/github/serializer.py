@@ -24,8 +24,10 @@ class GitHubSerializer(StorageAddonSerializer):
         node = self.node_settings.owner
 
         return {
-            'auth': api_url_for('oauth_connect',
-                                service_name='github'),
+            'auth': api_url_for(
+                'oauth_connect',
+                service_name='github',
+            ),
             'importAuth': node.api_url_for('github_import_auth'),
             'files': node.web_url_for('collect_file_trees'),
             'folders': node.api_url_for('github_folder_list'),

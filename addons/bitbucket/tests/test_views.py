@@ -15,7 +15,7 @@ from framework.auth import Auth
 
 from website.util import api_url_for
 from addons.base.tests.views import (
-    OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin
+    OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin,
 )
 from addons.bitbucket import utils
 from addons.bitbucket.api import BitbucketClient
@@ -30,7 +30,7 @@ pytestmark = pytest.mark.django_db
 class TestBitbucketAuthViews(BitbucketAddonTestCase, OAuthAddonAuthViewsTestCaseMixin, OsfTestCase):
     @mock.patch(
         'addons.bitbucket.models.UserSettings.revoke_remote_oauth_access',
-        mock.PropertyMock()
+        mock.PropertyMock(),
     )
     def test_delete_external_account(self):
         super(TestBitbucketAuthViews, self).test_delete_external_account()
@@ -64,15 +64,17 @@ class TestBitbucketConfigViews(BitbucketAddonTestCase, OAuthAddonConfigViewsTest
         mock_account.return_value = mock.Mock()
         mock_repo.return_value = 'repo_name'
         url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
-        res = self.app.post_json(url, {
-            'bitbucket_user': 'octocat',
-            'bitbucket_repo': 'repo_name',
-        }, auth=self.user.auth)
+        res = self.app.post_json(
+            url, {
+                'bitbucket_user': 'octocat',
+                'bitbucket_repo': 'repo_name',
+            }, auth=self.user.auth,
+        )
         assert_equal(res.status_code, http.OK)
         self.project.reload()
         assert_equal(
             self.project.logs.latest().action,
-            '{0}_repo_linked'.format(self.ADDON_SHORT_NAME)
+            '{0}_repo_linked'.format(self.ADDON_SHORT_NAME),
         )
 
 
@@ -137,7 +139,7 @@ class TestBitbucketViews(OsfTestCase):
         branch, sha, branches = utils.get_refs(self.node_settings)
         assert_equal(
             branch,
-            bitbucket_mock.repo_default_branch.return_value
+            bitbucket_mock.repo_default_branch.return_value,
         )
         assert_equal(sha, self._get_sha_for_branch(branch=None))  # Get refs for default branch
 
@@ -188,7 +190,7 @@ class TestBitbucketViews(OsfTestCase):
         url = node.web_url_for('addon_view_or_download_file', path=path, provider='bitbucket')
         expected_urls = {
             'view': '{0}?ref={1}'.format(url, sha),
-            'download': '{0}?action=download&ref={1}'.format(url, sha)
+            'download': '{0}?action=download&ref={1}'.format(url, sha),
         }
 
         assert_equal(urls['view'], expected_urls['view'])
@@ -229,7 +231,7 @@ class TestBitbucketSettings(OsfTestCase):
                 'bitbucket_user': 'queen',
                 'bitbucket_repo': 'night at the opera',
             },
-            auth=self.auth
+            auth=self.auth,
         ).maybe_follow()
 
         self.project.reload()
@@ -255,7 +257,7 @@ class TestBitbucketSettings(OsfTestCase):
                 'bitbucket_user': 'Queen',
                 'bitbucket_repo': 'Sheer-Heart-Attack',
             },
-            auth=self.auth
+            auth=self.auth,
         ).maybe_follow()
 
         self.project.reload()
@@ -277,7 +279,7 @@ class TestBitbucketSettings(OsfTestCase):
                 'bitbucket_repo': 'night at the opera',
             },
             auth=self.auth,
-            expect_errors=True
+            expect_errors=True,
         ).maybe_follow()
 
         assert_equal(res.status_code, 400)
@@ -290,7 +292,7 @@ class TestBitbucketSettings(OsfTestCase):
         registration = self.project.register_node(
             schema=get_default_metaschema(),
             auth=self.consolidated_auth,
-            data=''
+            data='',
         )
 
         url = registration.api_url + 'bitbucket/settings/'
@@ -301,7 +303,7 @@ class TestBitbucketSettings(OsfTestCase):
                 'bitbucket_repo': 'night at the opera',
             },
             auth=self.auth,
-            expect_errors=True
+            expect_errors=True,
         ).maybe_follow()
 
         assert_equal(res.status_code, 400)

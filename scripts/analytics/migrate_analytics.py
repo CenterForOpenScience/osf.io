@@ -21,7 +21,7 @@ VERY_LONG_TIMEFRAME = 'this_20_years'
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Enter a start date and end date to gather, smooth, and send back analytics for keen'
+        description='Enter a start date and end date to gather, smooth, and send back analytics for keen',
     )
     parser.add_argument('-s', '--start', dest='start_date')
     parser.add_argument('-e', '--end', dest='end_date')
@@ -102,7 +102,7 @@ def fill_in_event_gaps(collection_name, events):
                     if date_pair[1] - date_pair[0] > datetime.timedelta(1) and date_pair[0] != date_pair[1]:
                         first_event = [
                             event for event in events if date_from_event_ts(event) == date_pair[0] and event['provider']['name'] == provider and not event.get('generated')
-                            ]
+                        ]
                         if first_event:
                             events_to_add += generate_events_between_events(date_pair, first_event[0])
         elif collection_name == 'institution_summary':
@@ -112,7 +112,7 @@ def fill_in_event_gaps(collection_name, events):
                     if date_pair[1] - date_pair[0] > datetime.timedelta(1) and date_pair[0] != date_pair[1]:
                         first_event = [
                             event for event in events if date_from_event_ts(event) == date_pair[0] and event['institution']['name'] == institution and not event.get('generated')
-                            ]
+                        ]
                         if first_event:
                             events_to_add += generate_events_between_events(date_pair, first_event[0])
         else:
@@ -151,12 +151,13 @@ def generate_events_between_events(given_days, first_event):
         next_day += datetime.timedelta(1)
 
     if generated_events:
-        logger.info('Generated {} events for the interval {} to {}'.format(
-            len(generated_events),
-            given_days[0].isoformat(),
-            given_days[1].isoformat()
+        logger.info(
+            'Generated {} events for the interval {} to {}'.format(
+                    len(generated_events),
+                    given_days[0].isoformat(),
+                    given_days[1].isoformat(),
+            ),
         )
-    )
     return generated_events
 
 
@@ -170,7 +171,7 @@ def get_keen_client():
             project_id=keen_project,
             read_key=read_key,
             master_key=master_key,
-            write_key=write_key
+            write_key=write_key,
         )
     else:
         raise ValueError('Cannot connect to Keen clients - all keys not provided.')
@@ -241,8 +242,8 @@ def transfer_events_to_another_collection(client, source_collection, destination
             'Transferred {} events from the {} collection to the {} collection'.format(
                 len(events_from_source),
                 source_collection,
-                destination_collection
-            )
+                destination_collection,
+            ),
         )
 
 
@@ -277,7 +278,7 @@ def remove_events_from_keen(client, source_collection, events, dry):
                 logger.error('Filtered event not equal to the event you have gathered, not removing...')
             else:
                 logger.info('About to delete a generated event from the {} collection from the date {}'.format(
-                    source_collection, event['keen']['timestamp']
+                    source_collection, event['keen']['timestamp'],
                 ))
 
                 if not dry:
@@ -301,7 +302,7 @@ def import_old_events_from_spreadsheet():
         'dropbox-users-enabled': 'enabled',
         'dropbox-users-authorized': 'authorized',
         'dropbox-users-linked': 'linked',
-        'profile-edits': 'profile_edited'
+        'profile-edits': 'profile_edited',
     }
 
     with open(spreadsheet_path) as csvfile:
@@ -353,8 +354,8 @@ def import_old_events_from_spreadsheet():
         'Gathered {} old user events, {} old node events and {} old dropbox addon events for keen'.format(
             len(user_events),
             len(node_events),
-            len(addon_events)
-        )
+            len(addon_events),
+        ),
     )
 
     return {'user_summary': user_events, 'node_summary': node_events, 'addon_snapshot': addon_events}
@@ -368,18 +369,18 @@ def comma_int(value):
 def format_event(event, analytics_type):
     user_event_template = {
         'status': {},
-        'keen': {}
+        'keen': {},
     }
 
     node_event_template = {
         'projects': {},
         'registered_projects': {},
-        'keen': {}
+        'keen': {},
     }
 
     addon_event_template = {
         'keen': {},
-        'users': {}
+        'users': {},
     }
 
     template_to_use = None

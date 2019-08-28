@@ -13,7 +13,7 @@ from osf.utils import permissions
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
-    must_be_valid_project
+    must_be_valid_project,
 )
 
 def import_auth(addon_short_name, Serializer):
@@ -24,7 +24,7 @@ def import_auth(addon_short_name, Serializer):
         """Import add-on credentials from the currently logged-in user to a node.
         """
         external_account = ExternalAccount.load(
-            request.json['external_account_id']
+            request.json['external_account_id'],
         )
 
         if not user_addon.external_accounts.filter(id=external_account.id).exists():
@@ -77,8 +77,8 @@ def get_config(addon_short_name, Serializer):
         return {
             'result': Serializer().serialize_settings(
                 node_addon,
-                auth.user
-            )
+                auth.user,
+            ),
         }
     _get_config.__name__ = '{0}_get_config'.format(addon_short_name)
     return _get_config
@@ -99,7 +99,7 @@ def set_config(addon_short_name, addon_full_name, Serializer, set_folder):
             'result': {
                 'folder': {
                     'name': path.replace('All Files', '') if path != '/' else '/ (Full {0})'.format(
-                        addon_full_name
+                        addon_full_name,
                     ),
                     'path': path,
                 },

@@ -178,7 +178,7 @@ def create_wiki_pages_sql(state, schema):
               , twp.created
               , twp.modified
             FROM temp_wikipages AS twp;
-            """, [nodewikipage_content_type_id, nodewikipage_content_type_id, wikipage_content_type_id]
+            """, [nodewikipage_content_type_id, nodewikipage_content_type_id, wikipage_content_type_id],
         )
     now = time.time()
     logger.info('Finished migration of WikiPages [SQL]: {:.5} seconds'.format(now - then))
@@ -350,7 +350,7 @@ def create_wiki_versions_and_repoint_comments_sql(state, schema):
                 LIMIT 1
             )
             WHERE target_id IN (SELECT nwp_guid_id FROM nwp_guids_to_wiki_page_guids);
-            """, [nodewikipage_content_type_id, wikipage_content_type_id]
+            """, [nodewikipage_content_type_id, wikipage_content_type_id],
         )
     now = time.time()
     logger.info('Finished migration of WikiVersions [SQL]: {:.5} seconds'.format(now - then))
@@ -418,7 +418,7 @@ def migrate_comments_viewed_timestamp_sql(state, schema):
             $func$ LANGUAGE plpgsql;
 
             SELECT update_comments_viewed_timestamp_sql();
-            """, [wikipage_content_type_id]
+            """, [wikipage_content_type_id],
         )
     now = time.time()
     logger.info('Finished migration of comments_viewed_timestamp [SQL]: {:.5} seconds'.format(now - then))
@@ -493,7 +493,7 @@ def migrate_guid_referent_sql(state, schema):
             SET content_type_id = %s, object_id = wiki_page_id
             FROM repoint_guids
             WHERE repoint_guids.nwp_guid = osf_guid._id;
-            """, [nodewikipage_content_type_id, wikipage_content_type_id]
+            """, [nodewikipage_content_type_id, wikipage_content_type_id],
         )
     now = time.time()
     logger.info('Finished repointing Node Wiki Page guids to Wiki Pages [SQL]: {:.5} seconds'.format(now - then))

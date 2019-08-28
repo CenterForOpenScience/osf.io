@@ -26,5 +26,5 @@ class FigshareAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
     folder = {
         'path': 'fileset',
         'name': 'Memes',
-        'id': '009001'
+        'id': '009001',
     }

@@ -123,8 +123,10 @@ class GitLabClient(object):
     def _get_api_request(self, uri):
         headers = {'PRIVATE-TOKEN': '{}'.format(self.access_token)}
 
-        return requests.get('https://{0}/{1}/{2}'.format(self.host, 'api/v4', uri),
-                            verify=True, headers=headers)
+        return requests.get(
+            'https://{0}/{1}/{2}'.format(self.host, 'api/v4', uri),
+            verify=True, headers=headers,
+        )
 
     def revoke_token(self):
         return False

@@ -21,7 +21,7 @@ class MendeleyApiTestCase(OsfTestCase):
         self.mock_partial = mendeley.Mendeley(
             client_id='1234567890',
             client_secret='1a2s3d4f5g',
-            redirect_uri='/api/v1/some/fake/url/mendeley'
+            redirect_uri='/api/v1/some/fake/url/mendeley',
         )
         self.mock_credentials = {
             'access_token': '1234567890987654321',

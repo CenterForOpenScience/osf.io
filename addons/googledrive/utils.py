@@ -8,7 +8,7 @@ from website.util import api_v2_url
 def build_googledrive_urls(item, node, path):
     return {
         'fetch': api_v2_url('nodes/{}/addons/googledrive/folders/'.format(node._id), params={'path': path}),
-        'folders': api_v2_url('nodes/{}/addons/googledrive/folders/'.format(node._id), params={'path': path, 'id': item['id']})
+        'folders': api_v2_url('nodes/{}/addons/googledrive/folders/'.format(node._id), params={'path': path, 'id': item['id']}),
     }
 
 def to_hgrid(item, node, path):
@@ -24,6 +24,6 @@ def to_hgrid(item, node, path):
         'kind': 'folder',
         'name': item['title'],
         'addon': 'googledrive',
-        'urls': build_googledrive_urls(item, node, path=path)
+        'urls': build_googledrive_urls(item, node, path=path),
     }
     return serialized

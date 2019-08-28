@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import markupsafe
-from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
-                                BaseStorageAddon)
+from addons.base.models import (
+    BaseOAuthNodeSettings, BaseOAuthUserSettings,
+    BaseStorageAddon,
+)
 from django.db import models
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -39,7 +41,8 @@ class FigshareFile(FigshareFileNode, File):
 
         # Draft files are not renderable
         if data['extra']['status'] == 'drafts':
-            return (version, u"""
+            return (
+                version, u"""
             <style>
             .file-download{{display: none;}}
             .file-share{{display: none;}}
@@ -50,7 +53,8 @@ class FigshareFile(FigshareFileNode, File):
             <a href="https://support.figshare.com/support/solutions">publish</a>
             it on figshare.
             </div>
-            """.format(name=markupsafe.escape(self.name)))
+            """.format(name=markupsafe.escape(self.name)),
+            )
 
         return version
 
@@ -125,14 +129,15 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             project = FigshareClient(self.external_account.oauth_key).project(self.folder_id)
             items = project['articles'] if project else []
         private = any(
-            [item for item in items if item['status'].lower() != 'public']
+            [item for item in items if item['status'].lower() != 'public'],
         )
 
         if private:
             return 'The figshare {folder_path} <strong>{folder_name}</strong> contains private content that we cannot copy to the registration. If this content is made public on figshare we should then be able to copy those files. You can view those files <a href="{url}" target="_blank">here.</a>'.format(
                 folder_path=markupsafe.escape(self.folder_path),
                 folder_name=markupsafe.escape(self.folder_name),
-                url=self.owner.web_url_for('collect_file_trees'))
+                url=self.owner.web_url_for('collect_file_trees'),
+            )
 
     def clear_settings(self):
         self.folder_id = None
@@ -177,7 +182,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'filename': metadata['materialized'].strip('/'),
                 'urls': {
                     'view': url,
-                    'download': url + '?action=download'
+                    'download': url + '?action=download',
                 },
             },
         )

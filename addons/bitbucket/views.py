@@ -15,7 +15,7 @@ from addons.bitbucket.serializer import BitbucketSerializer
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
-    must_be_contributor_or_public
+    must_be_contributor_or_public,
 )
 from osf.utils.permissions import WRITE
 
@@ -31,12 +31,12 @@ FULL_NAME = 'Bitbucket'
 
 bitbucket_account_list = generic_views.account_list(
     SHORT_NAME,
-    BitbucketSerializer
+    BitbucketSerializer,
 )
 
 bitbucket_import_auth = generic_views.import_auth(
     SHORT_NAME,
-    BitbucketSerializer
+    BitbucketSerializer,
 )
 
 def _get_folders(node_addon, folder_id):
@@ -45,16 +45,16 @@ def _get_folders(node_addon, folder_id):
 bitbucket_folder_list = generic_views.folder_list(
     SHORT_NAME,
     FULL_NAME,
-    _get_folders
+    _get_folders,
 )
 
 bitbucket_get_config = generic_views.get_config(
     SHORT_NAME,
-    BitbucketSerializer
+    BitbucketSerializer,
 )
 
 bitbucket_deauthorize_node = generic_views.deauthorize_node(
-    SHORT_NAME
+    SHORT_NAME,
 )
 
 
@@ -126,7 +126,7 @@ def bitbucket_set_config(auth, **kwargs):
                 'bitbucket': {
                     'user': bitbucket_user_name,
                     'repo': bitbucket_repo_name,
-                }
+                },
             },
             auth=auth,
         )
@@ -148,7 +148,7 @@ def bitbucket_download_starball(node_addon, **kwargs):
 
     connection = BitbucketClient(access_token=node_addon.external_account.oauth_key)
     headers, data = connection.starball(
-        node_addon.user, node_addon.repo, archive, ref
+        node_addon.user, node_addon.repo, archive, ref,
     )
 
     resp = make_response(data)

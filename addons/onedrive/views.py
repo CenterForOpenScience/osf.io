@@ -16,12 +16,12 @@ FULL_NAME = 'OneDrive'
 
 onedrive_account_list = generic_views.account_list(
     SHORT_NAME,
-    OneDriveSerializer
+    OneDriveSerializer,
 )
 
 onedrive_get_config = generic_views.get_config(
     SHORT_NAME,
-    OneDriveSerializer
+    OneDriveSerializer,
 )
 
 def _set_folder(node_addon, folder, auth):
@@ -32,16 +32,16 @@ onedrive_set_config = generic_views.set_config(
     SHORT_NAME,
     FULL_NAME,
     OneDriveSerializer,
-    _set_folder
+    _set_folder,
 )
 
 onedrive_import_auth = generic_views.import_auth(
     SHORT_NAME,
-    OneDriveSerializer
+    OneDriveSerializer,
 )
 
 onedrive_deauthorize_node = generic_views.deauthorize_node(
-    SHORT_NAME
+    SHORT_NAME,
 )
 
 @must_have_addon(SHORT_NAME, 'node')

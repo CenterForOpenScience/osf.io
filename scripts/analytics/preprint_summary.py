@@ -35,26 +35,26 @@ class PreprintSummary(SummaryAnalytics):
                     'must': [
                         {
                             'match': {
-                                'type': 'preprint'
-                            }
+                                'type': 'preprint',
+                            },
                         },
                         {
                             'match': {
-                                'sources': None
-                            }
-                        }
+                                'sources': None,
+                            },
+                        },
                     ],
                     'filter': [
                         {
                             'range': {
                                 'date': {
-                                    'lte': '{}||/d'.format(query_datetime.strftime('%Y-%m-%d'))
-                                }
-                            }
-                        }
-                    ]
-                }
-            }
+                                    'lte': '{}||/d'.format(query_datetime.strftime('%Y-%m-%d')),
+                                },
+                            },
+                        },
+                    ],
+                },
+            },
         }
 
         counts = []
@@ -64,7 +64,7 @@ class PreprintSummary(SummaryAnalytics):
             resp = requests.post('https://share.osf.io/api/v2/search/creativeworks/_search', json=elastic_query).json()
             counts.append({
                 'keen': {
-                    'timestamp': timestamp_datetime.isoformat()
+                    'timestamp': timestamp_datetime.isoformat(),
                 },
                 'provider': {
                     'name': preprint_provider.name,

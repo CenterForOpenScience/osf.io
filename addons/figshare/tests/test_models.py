@@ -10,7 +10,7 @@ from framework.auth import Auth
 from addons.figshare.tests.factories import (
     FigshareUserSettingsFactory,
     FigshareNodeSettingsFactory,
-    FigshareAccountFactory
+    FigshareAccountFactory,
 )
 from addons.figshare.models import NodeSettings
 
@@ -35,7 +35,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, unittest.Tes
             'folder_id': '1234567890',
             'folder_path': 'fileset',
             'folder_name': 'Camera Uploads',
-            'owner': self.node
+            'owner': self.node,
         }
 
     @mock.patch('website.archiver.tasks.archive')
@@ -44,7 +44,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, unittest.Tes
         registration = self.node.register_node(
             schema=get_default_metaschema(),
             auth=Auth(user=self.node.creator),
-            data='hodor'
+            data='hodor',
         )
         assert_false(registration.has_addon('figshare'))
 
@@ -66,7 +66,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, unittest.Tes
         settings = self.node_settings.serialize_waterbutler_settings()
         expected = {
             'container_id': self.node_settings.folder_id,
-            'container_type': self.node_settings.folder_path
+            'container_type': self.node_settings.folder_path,
         }
         assert_equal(settings, expected)
 

@@ -6,7 +6,7 @@ from osf_tests.factories import UserFactory, ProjectFactory, ExternalAccountFact
 
 from addons.s3.models import (
     UserSettings,
-    NodeSettings
+    NodeSettings,
 )
 
 class S3AccountFactory(ExternalAccountFactory):

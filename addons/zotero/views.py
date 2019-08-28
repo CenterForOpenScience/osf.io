@@ -6,7 +6,7 @@ from website.citations.views import GenericCitationViews
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
-    must_be_contributor_or_public
+    must_be_contributor_or_public,
 )
 from api.base.utils import is_truthy
 from osf.utils.permissions import WRITE
@@ -39,13 +39,13 @@ class ZoteroViews(GenericCitationViews):
                 external_list_name,
                 auth,
                 external_library_id,
-                external_library_name
+                external_library_name,
             )
             return {
                 'result': provider.serializer(
                     node_settings=node_addon,
                     user_settings=auth.user.get_addon(addon_short_name),
-                ).serialized_node_settings
+                ).serialized_node_settings,
             }
         _set_config.__name__ = '{0}_set_config'.format(addon_short_name)
         return _set_config

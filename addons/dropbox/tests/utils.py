@@ -49,12 +49,14 @@ class MockFullAccount(object):
 
 class MockDropbox(object):
 
-    def files_list_folder(self,
-            path,
-            recursive=False,
-            include_media_info=False,
-            include_deleted=False,
-            include_has_explicit_shared_members=False):
+    def files_list_folder(
+        self,
+        path,
+        recursive=False,
+        include_media_info=False,
+        include_deleted=False,
+        include_has_explicit_shared_members=False,
+    ):
          return MockListFolderResult()
 
     def files_list_folder_continue(self, cursor):

@@ -48,7 +48,7 @@ class FileSummary(SummaryAnalytics):
 
         totals = {
             'keen': {
-                'timestamp': timestamp_datetime.isoformat()
+                'timestamp': timestamp_datetime.isoformat(),
             },
             # OsfStorageFiles - the number of files on OsfStorage
             'osfstorage_files_including_quickfiles': {
@@ -64,7 +64,7 @@ class FileSummary(SummaryAnalytics):
         logger.info(
             'OsfStorage Files counted. Files: {}'.format(
                 totals['osfstorage_files_including_quickfiles']['total'],
-            )
+            ),
         )
 
         return [totals]

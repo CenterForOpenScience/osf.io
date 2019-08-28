@@ -22,10 +22,12 @@ def twofactor_settings_put(user_addon, *args, **kwargs):
         user_addon.is_confirmed = True
         user_addon.save()
         return {'message': 'Successfully verified two-factor authentication.'}, http.OK
-    raise HTTPError(http.FORBIDDEN, data=dict(
-        message_short='Forbidden',
-        message_long='The two-factor verification code you provided is invalid.'
-    ))
+    raise HTTPError(
+        http.FORBIDDEN, data=dict(
+            message_short='Forbidden',
+            message_long='The two-factor verification code you provided is invalid.',
+        ),
+    )
 
 @must_be_logged_in
 def twofactor_settings_get(auth, *args, **kwargs):
@@ -57,6 +59,8 @@ def twofactor_disable(auth, *args, **kwargs):
         auth.user.save()
         return {}
     else:
-        raise HTTPError(http.INTERNAL_SERVER_ERROR, data=dict(
-            message_long='Could not disable two-factor at this time'
-        ))
+        raise HTTPError(
+            http.INTERNAL_SERVER_ERROR, data=dict(
+                message_long='Could not disable two-factor at this time',
+            ),
+        )

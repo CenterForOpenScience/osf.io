@@ -29,7 +29,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/onedrive/config/',
-                '/project/<pid>/node/<nid>/onedrive/config/'
+                '/project/<pid>/node/<nid>/onedrive/config/',
             ],
             'get',
             views.onedrive_get_config,
@@ -38,7 +38,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/onedrive/config/',
-                '/project/<pid>/node/<nid>/onedrive/config/'
+                '/project/<pid>/node/<nid>/onedrive/config/',
             ],
             'put',
             views.onedrive_set_config,
@@ -47,7 +47,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/onedrive/config/',
-                '/project/<pid>/node/<nid>/onedrive/config/'
+                '/project/<pid>/node/<nid>/onedrive/config/',
             ],
             'delete',
             views.onedrive_deauthorize_node,
@@ -56,12 +56,12 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/onedrive/import-auth/',
-                '/project/<pid>/node/<nid>/onedrive/import-auth/'
+                '/project/<pid>/node/<nid>/onedrive/import-auth/',
             ],
             'put',
             views.onedrive_import_auth,
             json_renderer,
         ),
     ],
-    'prefix': '/api/v1'
+    'prefix': '/api/v1',
 }

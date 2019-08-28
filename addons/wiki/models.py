@@ -71,14 +71,14 @@ def build_html_output(content, node):
                 configs=[
                     ('base_url', ''),
                     ('end_url', ''),
-                    ('build_url', functools.partial(build_wiki_url, node))
-                ]
+                    ('build_url', functools.partial(build_wiki_url, node)),
+                ],
             ),
             fenced_code.FencedCodeExtension(),
             codehilite.CodeHiliteExtension(
-                [('css_class', 'highlight')]
-            )
-        ]
+                [('css_class', 'highlight')],
+            ),
+        ],
     )
 
 def render_content(content, node):
@@ -136,7 +136,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
                 tags=settings.WIKI_WHITELIST['tags'],
                 attributes=settings.WIKI_WHITELIST['attributes'],
                 styles=settings.WIKI_WHITELIST['styles'],
-                filters=[partial(LinkifyFilter, callbacks=[nofollow, ])]
+                filters=[partial(LinkifyFilter, callbacks=[nofollow, ])],
             )
             return cleaner.clean(html_output)
         except TypeError:
@@ -202,11 +202,11 @@ class WikiVersion(ObjectIDMixin, BaseModel):
             user.fullname,
             user.username,
             content,
-            request_headers
+            request_headers,
         )
 
         logger.info("Node ({}) '{}' smells like {} (tip: {})".format(
-            node._id, node.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', node.spam_pro_tip
+            node._id, node.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', node.spam_pro_tip,
         ))
         if is_spam:
             node._check_spam_user(user)
@@ -249,7 +249,7 @@ class WikiPageNodeManager(models.Manager):
         wiki_page = WikiPage.objects.create(
             node=node,
             page_name=name,
-            user=auth.user
+            user=auth.user,
         )
         # Creates a WikiVersion object
         wiki_page.update(auth.user, content)
@@ -282,7 +282,7 @@ class WikiPage(GuidMixin, BaseModel):
 
     class Meta:
         indexes = [
-            models.Index(fields=['page_name', 'node'])
+            models.Index(fields=['page_name', 'node']),
         ]
 
     def save(self, *args, **kwargs):
@@ -312,7 +312,7 @@ class WikiPage(GuidMixin, BaseModel):
             },
             auth=Auth(user),
             log_date=version.created,
-            save=True
+            save=True,
         )
         return version
 
@@ -329,9 +329,11 @@ class WikiPage(GuidMixin, BaseModel):
 
         sharejs_uuid = wiki_utils.get_sharejs_uuid(node, self.page_name)
         contributors = [user._id for user in node.contributors]
-        wiki_utils.broadcast_to_sharejs('reload',
-                                        sharejs_uuid,
-                                        data=contributors)
+        wiki_utils.broadcast_to_sharejs(
+            'reload',
+            sharejs_uuid,
+            data=contributors,
+        )
 
     def belongs_to_node(self, node_id):
         """Check whether the wiki is attached to the specified node."""
@@ -434,7 +436,7 @@ class WikiPage(GuidMixin, BaseModel):
             raise PageConflictError(
                 'Page already exists with name {0}'.format(
                     new_name,
-                )
+                ),
             )
 
         # rename the page first in case we hit a validation exception.
@@ -519,9 +521,11 @@ class NodeSettings(BaseNodeSettings):
 
         if log:
             node.add_log(
-                action=(NodeLog.MADE_WIKI_PUBLIC
-                        if self.is_publicly_editable
-                        else NodeLog.MADE_WIKI_PRIVATE),
+                action=(
+                    NodeLog.MADE_WIKI_PUBLIC
+                    if self.is_publicly_editable
+                    else NodeLog.MADE_WIKI_PRIVATE
+                ),
                 params={
                     'project': node.parent_id,
                     'node': node._primary_key,

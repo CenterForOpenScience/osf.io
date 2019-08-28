@@ -39,7 +39,7 @@ def get_targets(delta, addon_short_name):
     return ExternalAccount.objects.filter(
         expires_at__lt=timezone.now() - delta,
         date_last_refreshed__lt=timezone.now() - delta,
-        provider=addon_short_name
+        provider=addon_short_name,
     )
 
 def main(delta, Provider, rate_limit, dry_run):
@@ -48,15 +48,15 @@ def main(delta, Provider, rate_limit, dry_run):
     for record in get_targets(delta, Provider.short_name):
         if Provider(record).has_expired_credentials:
             logger.info(
-                'Found expired record {}, skipping'.format(record.__repr__())
+                'Found expired record {}, skipping'.format(record.__repr__()),
             )
             continue
 
         logger.info(
             'Refreshing tokens on record {0}; expires at {1}'.format(
                 record.__repr__(),
-                record.expires_at.strftime('%c')
-            )
+                record.expires_at.strftime('%c'),
+            ),
         )
         if not dry_run:
             if allowance < 1:
@@ -77,7 +77,8 @@ def main(delta, Provider, rate_limit, dry_run):
                 logger.info(
                     'Status of record {}: {}'.format(
                         record.__repr__(),
-                        'SUCCESS' if success else 'FAILURE')
+                        'SUCCESS' if success else 'FAILURE',
+                    ),
                 )
 
 

@@ -20,7 +20,7 @@ from website.oauth.signals import oauth_complete
 
 lookup = TemplateLookup(
     directories=[
-        settings.TEMPLATES_PATH
+        settings.TEMPLATES_PATH,
     ],
     default_filters=[
         'unicode',  # default filter; must set explicitly when overriding
@@ -33,7 +33,7 @@ lookup = TemplateLookup(
         # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it
         # gets re-escaped by Markupsafe. See [#OSF-4432]
         'from website.util.sanitize import temp_ampersand_fixer',
-    ]
+    ],
 )
 
 
@@ -83,8 +83,10 @@ class BaseAddonSettings(ObjectIDMixin, BaseModel):
 
 
 class BaseUserSettings(BaseAddonSettings):
-    owner = models.OneToOneField(OSFUser, related_name='%(app_label)s_user_settings',
-                                 blank=True, null=True, on_delete=models.CASCADE)
+    owner = models.OneToOneField(
+        OSFUser, related_name='%(app_label)s_user_settings',
+        blank=True, null=True, on_delete=models.CASCADE,
+    )
 
     class Meta:
         abstract = True
@@ -123,10 +125,10 @@ class BaseUserSettings(BaseAddonSettings):
                     'url': node.url,
                     'title': node.title,
                     'registered': node.is_registration,
-                    'api_url': node.api_url
+                    'api_url': node.api_url,
                 }
                 for node in self.nodes_authorized
-            ]
+            ],
         })
         return ret
 
@@ -326,7 +328,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
         ret = super(BaseOAuthUserSettings, self).to_json(user)
 
         ret['accounts'] = self.serializer(
-            user_settings=self
+            user_settings=self,
         ).serialized_accounts
 
         return ret
@@ -347,8 +349,10 @@ class BaseOAuthUserSettings(BaseUserSettings):
 
 
 class BaseNodeSettings(BaseAddonSettings):
-    owner = models.OneToOneField(AbstractNode, related_name='%(app_label)s_node_settings',
-                                 null=True, blank=True, on_delete=models.CASCADE)
+    owner = models.OneToOneField(
+        AbstractNode, related_name='%(app_label)s_node_settings',
+        null=True, blank=True, on_delete=models.CASCADE,
+    )
 
     class Meta:
         abstract = True
@@ -376,7 +380,7 @@ class BaseNodeSettings(BaseAddonSettings):
         ret = super(BaseNodeSettings, self).to_json(user)
         ret.update({
             'user': {
-                'permissions': self.owner.get_permissions(user)
+                'permissions': self.owner.get_permissions(user),
             },
             'node': {
                 'id': self.owner._id,
@@ -620,9 +624,11 @@ class BaseStorageAddon(object):
 class BaseOAuthNodeSettings(BaseNodeSettings):
     # TODO: Validate this field to be sure it matches the provider's short_name
     # NOTE: Do not set this field directly. Use ``set_auth()``
-    external_account = models.ForeignKey(ExternalAccount, null=True, blank=True,
-                                         related_name='%(app_label)s_node_settings',
-                                         on_delete=models.CASCADE)
+    external_account = models.ForeignKey(
+        ExternalAccount, null=True, blank=True,
+        related_name='%(app_label)s_node_settings',
+        on_delete=models.CASCADE,
+    )
 
     # NOTE: Do not set this field directly. Use ``set_auth()``
     # user_settings = fields.AbstractForeignField()
@@ -638,19 +644,19 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
     @abc.abstractproperty
     def folder_id(self):
         raise NotImplementedError(
-            "BaseOAuthNodeSettings subclasses must expose a 'folder_id' property."
+            "BaseOAuthNodeSettings subclasses must expose a 'folder_id' property.",
         )
 
     @abc.abstractproperty
     def folder_name(self):
         raise NotImplementedError(
-            "BaseOAuthNodeSettings subclasses must expose a 'folder_name' property."
+            "BaseOAuthNodeSettings subclasses must expose a 'folder_name' property.",
         )
 
     @abc.abstractproperty
     def folder_path(self):
         raise NotImplementedError(
-            "BaseOAuthNodeSettings subclasses must expose a 'folder_path' property."
+            "BaseOAuthNodeSettings subclasses must expose a 'folder_path' property.",
         )
 
     def fetch_folder_name(self):
@@ -667,12 +673,12 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
             type(
                 '{0}NodeLogger'.format(self.config.short_name.capitalize()),
                 (logger.AddonNodeLogger,),
-                {'addon_short_name': self.config.short_name}
-            )
+                {'addon_short_name': self.config.short_name},
+            ),
         )
         return self._logger_class(
             node=self.owner,
-            auth=auth
+            auth=auth,
         )
 
     @property
@@ -683,31 +689,31 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
             self.user_settings.verify_oauth_access(
                 node=self.owner,
                 external_account=self.external_account,
-            )
+            ),
         )
 
     @property
     def configured(self):
         return bool(
             self.complete and
-            (self.folder_id or self.folder_name or self.folder_path)
+            (self.folder_id or self.folder_name or self.folder_path),
         )
 
     @property
     def has_auth(self):
         """Instance has an external account and *active* permission to use it"""
         return bool(
-            self.user_settings and self.user_settings.has_auth
+            self.user_settings and self.user_settings.has_auth,
         ) and bool(
             self.external_account and self.user_settings.verify_oauth_access(
                 node=self.owner,
-                external_account=self.external_account
-            )
+                external_account=self.external_account,
+            ),
         )
 
     def clear_settings(self):
         raise NotImplementedError(
-            "BaseOAuthNodeSettings subclasses must expose a 'clear_settings' method."
+            "BaseOAuthNodeSettings subclasses must expose a 'clear_settings' method.",
         )
 
     def set_auth(self, external_account, user, metadata=None, log=True):
@@ -721,7 +727,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
         user_settings.grant_oauth_access(
             node=self.owner,
             external_account=external_account,
-            metadata=metadata  # metadata can be passed in when forking
+            metadata=metadata,  # metadata can be passed in when forking
         )
         user_settings.save()
 
@@ -786,7 +792,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
                 addon=self.config.full_name,
                 category=markupsafe.escape(node.category_display),
                 title=markupsafe.escape(node.title),
-                user=markupsafe.escape(removed.fullname)
+                user=markupsafe.escape(removed.fullname),
             )
 
             if not auth or auth.user != removed:

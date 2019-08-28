@@ -6,8 +6,10 @@ import logging
 from django.db import models
 
 from addons.base import exceptions
-from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
-                                BaseStorageAddon)
+from addons.base.models import (
+    BaseOAuthNodeSettings, BaseOAuthUserSettings,
+    BaseStorageAddon,
+)
 from addons.onedrive import settings
 from addons.onedrive.client import OneDriveClient
 from addons.onedrive.settings import DEFAULT_ROOT_ID
@@ -63,7 +65,7 @@ class OneDriveProvider(ExternalProvider):
         return {
             'provider_id': user_info['id'],
             'display_name': user_info['name'],
-            'profile_url': user_info['link']
+            'profile_url': user_info['link'],
         }
 
     def fetch_access_token(self, force_refresh=False):
@@ -177,9 +179,11 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'kind': 'folder',
                 'name': '/ (Full OneDrive)',
                 'urls': {
-                    'folders': api_v2_url('nodes/{}/addons/onedrive/folders/'.format(self.owner._id),
-                                          params={'id': DEFAULT_ROOT_ID}),
-                }
+                    'folders': api_v2_url(
+                        'nodes/{}/addons/onedrive/folders/'.format(self.owner._id),
+                        params={'id': DEFAULT_ROOT_ID},
+                    ),
+                },
             }]
 
         try:
@@ -197,9 +201,11 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'name': item['name'],
                 'path': item['name'],
                 'urls': {
-                    'folders': api_v2_url('nodes/{}/addons/onedrive/folders/'.format(self.owner._id),
-                                          params={'id': item['id']}),
-                }
+                    'folders': api_v2_url(
+                        'nodes/{}/addons/onedrive/folders/'.format(self.owner._id),
+                        params={'id': item['id']},
+                    ),
+                },
             }
             for item in items
         ]
@@ -213,7 +219,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             self.user_settings.grant_oauth_access(
                 node=self.owner,
                 external_account=self.external_account,
-                metadata={'folder': self.folder_id}
+                metadata={'folder': self.folder_id},
             )
             self.user_settings.save()
 
@@ -265,13 +271,13 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                         'addon_view_or_download_file',
                         provider='onedrive',
                         action='view',
-                        path=metadata['path']
+                        path=metadata['path'],
                     ),
                     'download': self.owner.web_url_for(
                         'addon_view_or_download_file',
                         provider='onedrive',
                         action='download',
-                        path=metadata['path']
+                        path=metadata['path'],
                     ),
                 },
             },

@@ -7,7 +7,7 @@ s3_root_folder = generic_root_folder('s3')
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(
     HERE,
-    'templates'
+    'templates',
 )
 
 class S3AddonAppConfig(BaseAddonAppConfig):
@@ -38,7 +38,8 @@ class S3AddonAppConfig(BaseAddonAppConfig):
     NODE_DEAUTHORIZED = 's3_node_deauthorized'
     NODE_DEAUTHORIZED_NO_USER = 's3_node_deauthorized_no_user'
 
-    actions = (BUCKET_LINKED,
+    actions = (
+        BUCKET_LINKED,
         BUCKET_UNLINKED,
         FILE_ADDED,
         FILE_REMOVED,
@@ -46,7 +47,8 @@ class S3AddonAppConfig(BaseAddonAppConfig):
         FOLDER_CREATED,
         NODE_AUTHORIZED,
         NODE_DEAUTHORIZED,
-        NODE_DEAUTHORIZED_NO_USER)
+        NODE_DEAUTHORIZED_NO_USER,
+    )
 
     @property
     def routes(self):

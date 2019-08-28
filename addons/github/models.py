@@ -4,8 +4,10 @@ import os
 import urlparse
 
 import markupsafe
-from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
-                                BaseStorageAddon)
+from addons.base.models import (
+    BaseOAuthNodeSettings, BaseOAuthUserSettings,
+    BaseStorageAddon,
+)
 from django.db import models
 from framework.auth import Auth
 from github3 import GitHubError
@@ -62,7 +64,7 @@ class GitHubProvider(ExternalProvider):
         record to the user and saves the account info.
         """
         client = GitHubClient(
-            access_token=response['access_token']
+            access_token=response['access_token'],
         )
 
         user_info = client.user()
@@ -70,7 +72,7 @@ class GitHubProvider(ExternalProvider):
         return {
             'provider_id': str(user_info.id),
             'profile_url': user_info.html_url,
-            'display_name': user_info.login
+            'display_name': user_info.login,
         }
 
 
@@ -175,7 +177,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def repo_url(self):
         if self.user and self.repo:
             return 'https://github.com/{0}/{1}/'.format(
-                self.user, self.repo
+                self.user, self.repo,
             )
 
     @property
@@ -206,9 +208,10 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                         'kind': 'repo',
                         'id': repo.id,
                         'name': repo.name,
-                        'path': os.path.join(repo.owner.login, repo.name)
+                        'path': os.path.join(repo.owner.login, repo.name),
                     }
-                    for repo in connection.repos()]
+                    for repo in connection.repos()
+                ]
             except GitHubError:
                 repo_data = []
             return repo_data
@@ -240,7 +243,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'is_owner': owner == user,
                 'valid_credentials': GitHubClient(external_account=self.external_account).check_authorization(),
                 'addons_url': web_url_for('user_addons'),
-                'files_url': self.owner.web_url_for('collect_file_trees')
+                'files_url': self.owner.web_url_for('collect_file_trees'),
             })
         return ret
 
@@ -267,7 +270,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             sha = metadata['extra']['commit']['sha']
             urls = {
                 'view': '{0}?ref={1}'.format(url, sha),
-                'download': '{0}?action=download&ref={1}'.format(url, sha)
+                'download': '{0}?action=download&ref={1}'.format(url, sha),
             }
         except KeyError:
             pass
@@ -361,7 +364,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             message = (super(NodeSettings, self).before_remove_contributor_message(node, removed) +
             'You can download the contents of this repository before removing '
             'this contributor <u><a href="{url}">here</a></u>.'.format(
-                url=node.api_url + 'github/tarball/'
+                url=node.api_url + 'github/tarball/',
             ))
         except TypeError:
             # super call returned None due to lack of user auth
@@ -386,7 +389,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             ).format(
                 category=markupsafe.escape(node.category_display),
                 title=markupsafe.escape(node.title),
-                user=markupsafe.escape(removed.fullname)
+                user=markupsafe.escape(removed.fullname),
             )
 
             if not auth or auth.user != removed:
@@ -406,7 +409,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         :return the cloned settings
         """
         clone = super(NodeSettings, self).after_fork(
-            node, fork, user, save=False
+            node, fork, user, save=False,
         )
 
         # Copy authentication if authenticated by forking user
@@ -453,8 +456,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                     'url': urlparse.urljoin(
                         hook_domain,
                         os.path.join(
-                            self.owner.api_url, 'github', 'hook/'
-                        )
+                            self.owner.api_url, 'github', 'hook/',
+                        ),
                     ),
                     'content_type': github_settings.HOOK_CONTENT_TYPE,
                     'secret': secret,

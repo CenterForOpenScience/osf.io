@@ -18,7 +18,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/box/settings/',
-                '/project/<pid>/node/<nid>/box/settings/'
+                '/project/<pid>/node/<nid>/box/settings/',
             ],
             'get',
             views.box_get_config,
@@ -27,7 +27,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/box/settings/',
-                '/project/<pid>/node/<nid>/box/settings/'
+                '/project/<pid>/node/<nid>/box/settings/',
             ],
             'put',
             views.box_set_config,
@@ -36,7 +36,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/box/user_auth/',
-                '/project/<pid>/node/<nid>/box/user_auth/'
+                '/project/<pid>/node/<nid>/box/user_auth/',
             ],
             'put',
             views.box_import_auth,
@@ -45,7 +45,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/box/user_auth/',
-                '/project/<pid>/node/<nid>/box/user_auth/'
+                '/project/<pid>/node/<nid>/box/user_auth/',
             ],
             'delete',
             views.box_deauthorize_node,
@@ -61,5 +61,5 @@ api_routes = {
             json_renderer,
         ),
     ],
-    'prefix': '/api/v1'
+    'prefix': '/api/v1',
 }

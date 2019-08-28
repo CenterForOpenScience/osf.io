@@ -4,7 +4,7 @@ repos:
   hooks:
   - id: add-trailing-comma
     # TODO: Remove this line. For now, we only format the api/ directory
-    files: ^api/
+    files: ^api/|^scripts/|^addons
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v1.4.0
   hooks:

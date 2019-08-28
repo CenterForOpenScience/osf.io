@@ -39,7 +39,8 @@ def find_inactive_users_with_no_inactivity_email_sent_or_queued():
         .filter(
             (Q(date_last_login__lt=timezone.now() - settings.NO_LOGIN_WAIT_TIME) & ~Q(tags__name='osf4m')) |
             Q(date_last_login__lt=timezone.now() - settings.NO_LOGIN_OSF4M_WAIT_TIME, tags__name='osf4m'),
-            is_active=True)
+            is_active=True,
+        )
         .exclude(guids___id__in=users_sent_ids))
 
 @celery_app.task(name='scripts.triggered_mails')

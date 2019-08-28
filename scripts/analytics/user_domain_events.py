@@ -30,7 +30,7 @@ class UserDomainEvents(EventAnalytics):
         date = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
 
         logger.info('Gathering user domains between {} and {}'.format(
-            date, (date + timedelta(days=1)).isoformat()
+            date, (date + timedelta(days=1)).isoformat(),
         ))
         user_query = (Q(date_confirmed__lt=date + timedelta(days=1)) &
                       Q(date_confirmed__gte=date) &
@@ -42,7 +42,7 @@ class UserDomainEvents(EventAnalytics):
             event = {
                 'keen': {'timestamp': user_date.isoformat()},
                 'date': user_date.isoformat(),
-                'domain': user.username.split('@')[-1]
+                'domain': user.username.split('@')[-1],
             }
             user_domain_events.append(event)
 

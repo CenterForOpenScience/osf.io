@@ -37,7 +37,7 @@ def get_enabled_authorized_linked(user_settings_list, has_external_account, shor
             password__isnull=False,
             merged_by__isnull=True,
             date_disabled__isnull=True,
-            date_confirmed__isnull=False
+            date_confirmed__isnull=False,
         ).count()
 
     elif short_name == 'forward':
@@ -61,7 +61,7 @@ def get_enabled_authorized_linked(user_settings_list, has_external_account, shor
     return {
         'enabled': num_enabled,
         'authorized': num_authorized,
-        'linked': num_linked
+        'linked': num_linked,
     }
 
 
@@ -102,23 +102,23 @@ class AddonSnapshot(SnapshotAnalytics):
 
             counts.append({
                 'provider': {
-                    'name': short_name
+                    'name': short_name,
                 },
                 'users': usage_counts,
                 'nodes': {
                     'total': total,
                     'connected': connected_count,
                     'deleted': deleted_count,
-                    'disconnected': disconnected_count
-                }
+                    'disconnected': disconnected_count,
+                },
             })
 
             logger.info(
                 '{} counted. Users with a linked node: {}, Total connected nodes: {}.'.format(
                     addon.short_name,
                     usage_counts['linked'],
-                    total
-                )
+                    total,
+                ),
             )
         return counts
 

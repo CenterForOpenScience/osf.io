@@ -44,30 +44,42 @@ from .exceptions import (
 logger = logging.getLogger(__name__)
 
 
-WIKI_NAME_EMPTY_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
-    message_short='Invalid request',
-    message_long='The wiki page name cannot be empty.'
-))
-WIKI_NAME_MAXIMUM_LENGTH_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
-    message_short='Invalid request',
-    message_long='The wiki page name cannot be more than 100 characters.'
-))
-WIKI_PAGE_CANNOT_RENAME_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
-    message_short='Invalid request',
-    message_long='The wiki page cannot be renamed.'
-))
-WIKI_PAGE_CONFLICT_ERROR = HTTPError(http.CONFLICT, data=dict(
-    message_short='Page conflict',
-    message_long='A wiki page with that name already exists.'
-))
-WIKI_PAGE_NOT_FOUND_ERROR = HTTPError(http.NOT_FOUND, data=dict(
-    message_short='Not found',
-    message_long='A wiki page could not be found.'
-))
-WIKI_INVALID_VERSION_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
-    message_short='Invalid request',
-    message_long='The requested version of this wiki page does not exist.'
-))
+WIKI_NAME_EMPTY_ERROR = HTTPError(
+    http.BAD_REQUEST, data=dict(
+        message_short='Invalid request',
+        message_long='The wiki page name cannot be empty.',
+    ),
+)
+WIKI_NAME_MAXIMUM_LENGTH_ERROR = HTTPError(
+    http.BAD_REQUEST, data=dict(
+        message_short='Invalid request',
+        message_long='The wiki page name cannot be more than 100 characters.',
+    ),
+)
+WIKI_PAGE_CANNOT_RENAME_ERROR = HTTPError(
+    http.BAD_REQUEST, data=dict(
+        message_short='Invalid request',
+        message_long='The wiki page cannot be renamed.',
+    ),
+)
+WIKI_PAGE_CONFLICT_ERROR = HTTPError(
+    http.CONFLICT, data=dict(
+        message_short='Page conflict',
+        message_long='A wiki page with that name already exists.',
+    ),
+)
+WIKI_PAGE_NOT_FOUND_ERROR = HTTPError(
+    http.NOT_FOUND, data=dict(
+        message_short='Not found',
+        message_long='A wiki page could not be found.',
+    ),
+)
+WIKI_INVALID_VERSION_ERROR = HTTPError(
+    http.BAD_REQUEST, data=dict(
+        message_short='Invalid request',
+        message_long='The requested version of this wiki page does not exist.',
+    ),
+)
 
 
 def _get_wiki_versions(node, name, anonymous=False):
@@ -94,7 +106,7 @@ def _get_wiki_pages_latest(node):
             'name': page.wiki_page.page_name,
             'url': node.web_url_for('project_wiki_view', wname=page.wiki_page.page_name, _guid=True),
             'wiki_id': page.wiki_page._primary_key,
-            'wiki_content': _wiki_page_content(page.wiki_page.page_name, node=node)
+            'wiki_content': _wiki_page_content(page.wiki_page.page_name, node=node),
         }
         for page in WikiPage.objects.get_wiki_pages_latest(node).order_by(F('name'))
     ]
@@ -106,7 +118,7 @@ def _get_wiki_api_urls(node, name, additional_urls=None):
         'rename': node.api_url_for('project_wiki_rename', wname=name),
         'content': node.api_url_for('wiki_page_content', wname=name),
         'settings': node.api_url_for('edit_wiki_settings'),
-        'grid': node.api_url_for('project_wiki_grid_data', wname=name)
+        'grid': node.api_url_for('project_wiki_grid_data', wname=name),
     }
     if additional_urls:
         urls.update(additional_urls)
@@ -143,7 +155,7 @@ def _wiki_page_content(wname, wver=None, **kwargs):
     wiki_version = WikiVersion.objects.get_for_node(node, wname, wver)
     return {
         'wiki_content': wiki_version.content if wiki_version else '',
-        'rendered_before_update': wiki_version.rendered_before_update if wiki_version else False
+        'rendered_before_update': wiki_version.rendered_before_update if wiki_version else False,
     }
 
 @must_be_valid_project
@@ -274,10 +286,12 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'panels_used': panels_used,
         'num_columns': num_columns,
         'urls': {
-            'api': _get_wiki_api_urls(node, wiki_name, {
-                'content': node.api_url_for('wiki_page_content', wname=wiki_name),
-                'draft': node.api_url_for('wiki_page_draft', wname=wiki_name),
-            }),
+            'api': _get_wiki_api_urls(
+                node, wiki_name, {
+                    'content': node.api_url_for('wiki_page_content', wname=wiki_name),
+                    'draft': node.api_url_for('wiki_page_draft', wname=wiki_name),
+                },
+            ),
             'web': _get_wiki_web_urls(node, wiki_name),
             'profile_image': get_profile_image_url(auth.user, 25),
         },
@@ -324,28 +338,34 @@ def edit_wiki_settings(node, auth, **kwargs):
     permissions = request.get_json().get('permission', None)
 
     if not wiki_settings:
-        raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_short='Invalid request',
-            message_long='Cannot change wiki settings without a wiki'
-        ))
+        raise HTTPError(
+            http.BAD_REQUEST, data=dict(
+                message_short='Invalid request',
+                message_long='Cannot change wiki settings without a wiki',
+            ),
+        )
 
     if permissions == 'public':
         permissions = True
     elif permissions == 'private':
         permissions = False
     else:
-        raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_short='Invalid request',
-            message_long='Permissions flag used is incorrect.'
-        ))
+        raise HTTPError(
+            http.BAD_REQUEST, data=dict(
+                message_short='Invalid request',
+                message_long='Permissions flag used is incorrect.',
+            ),
+        )
 
     try:
         wiki_settings.set_editing(permissions, auth, log=True)
     except NodeStateError as e:
-        raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_short="Can't change privacy",
-            message_long=str(e)
-        ))
+        raise HTTPError(
+            http.BAD_REQUEST, data=dict(
+                message_short="Can't change privacy",
+                message_long=str(e),
+            ),
+        )
 
     return {
         'status': 'success',
@@ -416,10 +436,12 @@ def project_wiki_rename(auth, wname, **kwargs):
     except NameEmptyError:
         raise WIKI_NAME_EMPTY_ERROR
     except NameInvalidError as error:
-        raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_short='Invalid name',
-            message_long=error.args[0]
-        ))
+        raise HTTPError(
+            http.BAD_REQUEST, data=dict(
+                message_short='Invalid name',
+                message_long=error.args[0],
+            ),
+        )
     except NameMaximumLengthError:
         raise WIKI_NAME_MAXIMUM_LENGTH_ERROR
     except PageCannotRenameError:
@@ -429,10 +451,12 @@ def project_wiki_rename(auth, wname, **kwargs):
     except PageNotFoundError:
         raise WIKI_PAGE_NOT_FOUND_ERROR
     except ValidationError as err:
-        raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_short='Invalid request',
-            message_long=err.messages[0]
-        ))
+        raise HTTPError(
+            http.BAD_REQUEST, data=dict(
+                message_short='Invalid request',
+                message_long=err.messages[0],
+            ),
+        )
     else:
         sharejs_uuid = wiki_utils.get_sharejs_uuid(node, new_wiki_name)
         wiki_utils.broadcast_to_sharejs('redirect', sharejs_uuid, node, new_wiki_name)
@@ -447,10 +471,12 @@ def project_wiki_validate_name(wname, auth, node, **kwargs):
     wiki = WikiPage.objects.get_for_node(node, wiki_name)
 
     if wiki or wiki_name.lower() == 'home':
-        raise HTTPError(http.CONFLICT, data=dict(
-            message_short='Wiki page name conflict.',
-            message_long='A wiki page with that name already exists.'
-        ))
+        raise HTTPError(
+            http.CONFLICT, data=dict(
+                message_short='Wiki page name conflict.',
+                message_long='A wiki page with that name already exists.',
+            ),
+        )
     else:
         WikiPage.objects.create_for_node(node, wiki_name, '', auth)
     return {'message': wiki_name}
@@ -463,7 +489,7 @@ def project_wiki_grid_data(auth, node, **kwargs):
         'title': 'Project Wiki Pages',
         'kind': 'folder',
         'type': 'heading',
-        'children': format_project_wiki_pages(node, auth)
+        'children': format_project_wiki_pages(node, auth),
     }
     pages.append(project_wiki_pages)
 
@@ -471,7 +497,7 @@ def project_wiki_grid_data(auth, node, **kwargs):
         'title': 'Component Wiki Pages',
         'kind': 'folder',
         'type': 'heading',
-        'children': format_component_wiki_pages(node, auth)
+        'children': format_component_wiki_pages(node, auth),
     }
     if len(component_wiki_pages['children']) > 0:
         pages.append(component_wiki_pages)
@@ -486,7 +512,7 @@ def format_home_wiki_page(node):
             'url': node.web_url_for('project_wiki_home'),
             'name': 'Home',
             'id': 'None',
-        }
+        },
     }
     if home_wiki:
         home_wiki_page = {
@@ -494,7 +520,7 @@ def format_home_wiki_page(node):
                 'url': node.web_url_for('project_wiki_view', wname='home', _guid=True),
                 'name': 'Home',
                 'id': home_wiki._primary_key,
-            }
+            },
         }
     return home_wiki_page
 
@@ -513,7 +539,7 @@ def format_project_wiki_pages(node, auth):
                     'url': wiki_page['url'],
                     'name': wiki_page['name'],
                     'id': wiki_page['wiki_id'],
-                }
+                },
             }
             if can_edit or has_content:
                 pages.append(page)
@@ -523,8 +549,10 @@ def format_project_wiki_pages(node, auth):
 def format_component_wiki_pages(node, auth):
     pages = []
     for node in node.get_nodes(is_deleted=False):
-        if any([not node.can_view(auth),
-                not node.has_addon('wiki')]):
+        if any([
+            not node.can_view(auth),
+            not node.has_addon('wiki'),
+        ]):
             continue
         else:
             serialized = serialize_component_wiki(node, auth)
@@ -542,8 +570,8 @@ def serialize_component_wiki(node, auth):
             'url': url,
             'name': 'Home',
             # Handle pointers
-            'id': node._id
-        }
+            'id': node._id,
+        },
     }
 
     can_edit = node.has_permission(auth.user, WRITE) and not node.is_registration
@@ -558,7 +586,7 @@ def serialize_component_wiki(node, auth):
                     'url': page['url'],
                     'name': page['name'],
                     'id': page['wiki_id'],
-                }
+                },
             }
             if can_edit or has_content:
                 children.append(component_page)

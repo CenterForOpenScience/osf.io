@@ -6,9 +6,11 @@ from addons.base.tests.utils import MockFolder
 from django.utils import timezone
 from framework.auth import Auth
 from framework.exceptions import HTTPError
-from nose.tools import (assert_equal, assert_false, assert_in, assert_is,
-                        assert_is_none, assert_not_in, assert_raises,
-                        assert_true)
+from nose.tools import (
+    assert_equal, assert_false, assert_in, assert_is,
+    assert_is_none, assert_not_in, assert_raises,
+    assert_true,
+)
 from osf.utils.permissions import ADMIN
 from osf_tests.factories import ProjectFactory, UserFactory
 from tests.utils import mock_auth
@@ -61,7 +63,7 @@ class OAuthAddonUserSettingTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         other_node_settings = other_node.get_or_add_addon(self.short_name, auth=Auth(other_user))
         other_node_settings.set_auth(
             user=other_user,
-            external_account=other_account
+            external_account=other_account,
         )
 
         assert other_node_settings.has_auth
@@ -91,13 +93,13 @@ class OAuthAddonUserSettingTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         self.user_settings.grant_oauth_access(
             node=self.node,
             external_account=self.external_account,
-            metadata={'folder': 'fake_folder_id'}
+            metadata={'folder': 'fake_folder_id'},
         )
         self.user_settings.save()
 
         assert self.user_settings.oauth_grants == {
             self.node._id: {
-                self.external_account._id: {'folder': 'fake_folder_id'}
+                self.external_account._id: {'folder': 'fake_folder_id'},
             },
         }
 
@@ -111,22 +113,22 @@ class OAuthAddonUserSettingTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         assert_true(
             self.user_settings.verify_oauth_access(
                 node=self.node,
-                external_account=self.external_account
-            )
+                external_account=self.external_account,
+            ),
         )
 
         assert_false(
             self.user_settings.verify_oauth_access(
                 node=self.node,
-                external_account=self.ExternalAccountFactory()
-            )
+                external_account=self.ExternalAccountFactory(),
+            ),
         )
 
     def test_verify_oauth_access_metadata(self):
         self.user_settings.grant_oauth_access(
             node=self.node,
             external_account=self.external_account,
-            metadata={'folder': 'fake_folder_id'}
+            metadata={'folder': 'fake_folder_id'},
         )
         self.user_settings.save()
 
@@ -134,16 +136,16 @@ class OAuthAddonUserSettingTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
             self.user_settings.verify_oauth_access(
                 node=self.node,
                 external_account=self.external_account,
-                metadata={'folder': 'fake_folder_id'}
-            )
+                metadata={'folder': 'fake_folder_id'},
+            ),
         )
 
         assert_false(
             self.user_settings.verify_oauth_access(
                 node=self.node,
                 external_account=self.external_account,
-                metadata={'folder': 'another_folder_id'}
-            )
+                metadata={'folder': 'another_folder_id'},
+            ),
         )
 
 class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
@@ -152,7 +154,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
     def _request_context(self, app):
         context = app.test_request_context(headers={
             'Remote-Addr': '146.9.219.56',
-            'User-Agent': 'Mozilla/5.0 (X11; U; SunOS sun4u; en-US; rv:0.9.4.1) Gecko/20020518 Netscape6/6.2.3'
+            'User-Agent': 'Mozilla/5.0 (X11; U; SunOS sun4u; en-US; rv:0.9.4.1) Gecko/20020518 Netscape6/6.2.3',
         })
         context.push()
         yield context
@@ -174,7 +176,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         return {
             'user_settings': self.user_settings,
             'folder_id': '1234567890',
-            'owner': self.node
+            'owner': self.node,
         }
 
     def setUp(self):
@@ -190,7 +192,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         self.user_settings.grant_oauth_access(
             node=self.node,
             external_account=self.external_account,
-            metadata={'folder': '1234567890'}
+            metadata={'folder': '1234567890'},
         )
         self.user_settings.save()
 
@@ -223,7 +225,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         assert_false(self.node_settings.complete)
         assert_equal(
             self.user_settings.oauth_grants,
-            {self.node._id: {}}
+            {self.node._id: {}},
         )
 
     def test_revoke_remote_access_called(self):
@@ -313,7 +315,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
 
     def test_on_delete(self):
         self.user.delete_addon(
-            self.user_settings.oauth_provider.short_name
+            self.user_settings.oauth_provider.short_name,
         )
 
         self.node_settings.reload()
@@ -408,13 +410,13 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         )
         assert_equal(
             self.node.logs.latest().params['path'],
-            path
+            path,
         )
 
     def test_after_fork_by_authorized_user(self):
         fork = ProjectFactory()
         clone = self.node_settings.after_fork(
-            node=self.node, fork=fork, user=self.user_settings.owner
+            node=self.node, fork=fork, user=self.user_settings.owner,
         )
         assert_equal(clone.user_settings, self.user_settings)
 
@@ -423,20 +425,22 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         user = UserFactory()
         clone = self.node_settings.after_fork(
             node=self.node, fork=fork, user=user,
-            save=True
+            save=True,
         )
         assert_is(clone.user_settings, None)
 
     def test_before_remove_contributor_message(self):
         message = self.node_settings.before_remove_contributor(
-            self.node, self.user)
+            self.node, self.user,
+        )
         assert_true(message)
         assert_in(self.user.fullname, message)
         assert_in(self.node.project_or_component, message)
 
     def test_after_remove_authorized_user_not_self(self):
         message = self.node_settings.after_remove_contributor(
-            self.node, self.user_settings.owner)
+            self.node, self.user_settings.owner,
+        )
         self.node_settings.save()
         assert_is_none(self.node_settings.user_settings)
         assert_true(message)
@@ -445,7 +449,8 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
     def test_after_remove_authorized_user_self(self):
         auth = Auth(user=self.user_settings.owner)
         message = self.node_settings.after_remove_contributor(
-            self.node, self.user_settings.owner, auth)
+            self.node, self.user_settings.owner, auth,
+        )
         self.node_settings.save()
         assert_is_none(self.node_settings.user_settings)
         assert_true(message)
@@ -471,14 +476,15 @@ class OAuthCitationsTestSuiteMixinBase(OAuthAddonModelTestSuiteMixinBase):
 
 class OAuthCitationsNodeSettingsTestSuiteMixin(
         OAuthAddonNodeSettingsTestSuiteMixin,
-        OAuthCitationsTestSuiteMixinBase):
+        OAuthCitationsTestSuiteMixinBase,
+):
 
     def setUp(self):
         super(OAuthCitationsNodeSettingsTestSuiteMixin, self).setUp()
         self.user_settings.grant_oauth_access(
             node=self.node,
             external_account=self.external_account,
-            metadata={'folder': 'fake_folder_id'}
+            metadata={'folder': 'fake_folder_id'},
         )
         self.user_settings.save()
 
@@ -487,7 +493,7 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(
 
         assert_equal(
             self.node_settings.fetch_folder_name,
-            'All Documents'
+            'All Documents',
         )
 
     def test_selected_folder_name_empty(self):
@@ -495,7 +501,7 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(
 
         assert_equal(
             self.node_settings.fetch_folder_name,
-            ''
+            '',
         )
 
     def test_selected_folder_name(self):
@@ -508,7 +514,7 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(
 
         assert_equal(
             name,
-            'Fake Folder'
+            'Fake Folder',
         )
 
     def test_api_not_cached(self):
@@ -535,7 +541,7 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(
         return {
             'user_settings': self.user_settings,
             'list_id': 'fake_folder_id',
-            'owner': self.node
+            'owner': self.node,
         }
 
     def test_serialize_credentials(self):
@@ -583,8 +589,8 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(
             self.user_settings.verify_oauth_access(
                 node=self.node,
                 external_account=self.external_account,
-                metadata={'folder': 'fake-folder-id'}
-            )
+                metadata={'folder': 'fake-folder-id'},
+            ),
         )
 
         log = self.node.logs.latest()

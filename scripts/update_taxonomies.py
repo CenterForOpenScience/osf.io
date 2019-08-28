@@ -36,8 +36,8 @@ def update_taxonomies(filename):
     with open(
         os.path.join(
             settings.APP_PATH,
-            'website', 'static', filename
-        )
+            'website', 'static', filename,
+        ),
     ) as fp:
         taxonomy = json.load(fp)
 
@@ -53,13 +53,13 @@ def update_taxonomies(filename):
                     logger.info('Created parent "{}":{} for subject {}'.format(parent.text, parent._id, text))
             logger.info(u'Getting or creating Subject "{}"{}'.format(
                 text,
-                u' with parent {}:{}'.format(parent.text, parent._id) if parent else ''
+                u' with parent {}:{}'.format(parent.text, parent._id) if parent else '',
             ))
             subject, _ = Subject.objects.get_or_create(text=text, provider=bepress_provider)
             if parent and not subject.parent:
                 logger.info(u'Adding parent "{}":{} to Subject "{}":{}'.format(
                     parent.text, parent._id,
-                    subject.text, subject._id
+                    subject.text, subject._id,
                 ))
                 subject.parent = parent
                 subject.save()

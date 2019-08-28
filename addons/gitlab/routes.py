@@ -31,7 +31,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/gitlab/settings/',
-                '/project/<pid>/node/<nid>/gitlab/settings/'
+                '/project/<pid>/node/<nid>/gitlab/settings/',
             ],
             'get',
             views.gitlab_get_config,
@@ -51,7 +51,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/gitlab/user_auth/',
-                '/project/<pid>/node/<nid>/gitlab/user_auth/'
+                '/project/<pid>/node/<nid>/gitlab/user_auth/',
             ],
             'put',
             views.gitlab_import_auth,
@@ -61,7 +61,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/gitlab/user_auth/',
-                '/project/<pid>/node/<nid>/gitlab/user_auth/'
+                '/project/<pid>/node/<nid>/gitlab/user_auth/',
             ],
             'delete',
             views.gitlab_deauthorize_node,
@@ -112,5 +112,5 @@ api_routes = {
         ),
 
     ],
-    'prefix': '/api/v1'
+    'prefix': '/api/v1',
 }

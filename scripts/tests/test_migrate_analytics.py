@@ -18,42 +18,42 @@ class TestMigrateAnalytics(OsfTestCase):
             'keen': {
                 'timestamp': self.day_one.isoformat(),
                 'created_at': self.day_one.isoformat(),
-                'id': 1
+                'id': 1,
             },
             'nodes': {
                 'deleted': 0,
                 'total': 1,
                 'connected': 1,
-                'disconnected': 0
-            }
+                'disconnected': 0,
+            },
         }
 
         self.keen_event_2 = {
             'keen': {
                 'timestamp': self.day_two.isoformat(),
                 'created_at': self.day_two.isoformat(),
-                'id': 2
+                'id': 2,
             },
             'nodes': {
                 'deleted': 0,
                 'total': 5,
                 'connected': 4,
-                'disconnected': 1
-            }
+                'disconnected': 1,
+            },
         }
 
         self.keen_event_3 = {
             'keen': {
                 'timestamp': self.day_three.isoformat(),
                 'created_at': self.day_three.isoformat(),
-                'id': 2
+                'id': 2,
             },
             'nodes': {
                 'deleted': 0,
                 'total': 8,
                 'connected': 6,
-                'disconnected': 2
-            }
+                'disconnected': 2,
+            },
         }
 
     def test_generate_events_between_events(self):

@@ -391,7 +391,7 @@ def main(env):
             'social_facebook': 'SciELONetwork',
             'default_license': 'CC-By Attribution 4.0 International',
             'licenses_acceptable': ['CC-By Attribution 4.0 International'],
-            'subjects_acceptable': []
+            'subjects_acceptable': [],
         },
         'lawarxiv': {
             '_id': 'lawarxiv',
@@ -442,7 +442,7 @@ def main(env):
                 (['Law'], True),
                 (['Medicine and Health Sciences'], True),
                 (['Social and Behavioral Sciences'], True),
-            ]
+            ],
         },
         'agrixiv': {
             '_id': 'agrixiv',
@@ -1065,8 +1065,8 @@ def main(env):
                 (['Social and Behavioral Sciences', 'Science and Technology Studies', 'Tourism'], False),
                 (['Social and Behavioral Sciences', 'Science and Technology Studies', 'Work, Economy and Organizations'], False),
                 (['Social and Behavioral Sciences', 'Science and Technology Studies', 'Other Sociology'], False),
-                (['Social and Behavioral Sciences', 'Other Social and Behavioral Sciences'], False)
-            ]
+                (['Social and Behavioral Sciences', 'Other Social and Behavioral Sciences'], False),
+            ],
         },
         'bitss': {
             '_id': 'bitss',
@@ -1234,9 +1234,9 @@ def main(env):
                 (['Social and Behavioral Sciences', 'Social Statistics', 'Other Sociology'], False),
                 (['Physical Sciences and Mathematics', 'Other Physical Sciences and Mathematics'], False),
                 (['Medicine and Health Sciences', 'Other Medicine and Health Sciences'], False),
-                (['Social and Behavioral Sciences', 'Other Social and Behavioral Sciences'], False)
-            ]
-        }
+                (['Social and Behavioral Sciences', 'Other Social and Behavioral Sciences'], False),
+            ],
+        },
     }
 
     preprint_providers_to_add = STAGING_PREPRINT_PROVIDERS if env == 'stage' else PROD_PREPRINT_PROVIDERS

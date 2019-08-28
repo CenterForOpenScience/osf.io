@@ -10,7 +10,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/forward/config/',
-                '/project/<pid>/node/<nid>/forward/config/'
+                '/project/<pid>/node/<nid>/forward/config/',
             ],
             'get',
             views.config.forward_config_get,
@@ -20,7 +20,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/forward/config/',
-                '/project/<pid>/node/<nid>/forward/config/'
+                '/project/<pid>/node/<nid>/forward/config/',
             ],
             'put',
             views.config.forward_config_put,

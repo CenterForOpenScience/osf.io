@@ -1,7 +1,7 @@
 import mock
 from nose.tools import (
     assert_equal, assert_raises, assert_true,
-    assert_false, assert_in, assert_is, assert_is_none
+    assert_false, assert_in, assert_is, assert_is_none,
 )
 import pytest
 import unittest
@@ -146,7 +146,7 @@ class TestClient(DataverseAddonTestCase, unittest.TestCase):
         mock_dataset2.get_state.return_value = 'RELEASED'
         mock_dataset3.get_state.return_value = 'DEACCESSIONED'
         self.mock_dataverse.get_datasets.return_value = [
-            mock_dataset1, mock_dataset2, mock_dataset3
+            mock_dataset1, mock_dataset2, mock_dataset3,
         ]
 
         datasets = get_datasets(self.mock_dataverse)
@@ -208,7 +208,7 @@ class TestClient(DataverseAddonTestCase, unittest.TestCase):
         type(published_dv).is_published = mock.PropertyMock(return_value=True)
         type(unpublished_dv).is_published = mock.PropertyMock(return_value=False)
         self.mock_connection.get_dataverses.return_value = [
-            published_dv, unpublished_dv
+            published_dv, unpublished_dv,
         ]
 
         dvs = get_dataverses(self.mock_connection)

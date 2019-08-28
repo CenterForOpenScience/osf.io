@@ -29,5 +29,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_slash_to_implict_folders, remove_slash_to_implict_folders)
+        migrations.RunPython(add_slash_to_implict_folders, remove_slash_to_implict_folders),
     ]

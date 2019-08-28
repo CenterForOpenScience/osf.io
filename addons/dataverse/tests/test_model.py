@@ -6,13 +6,15 @@ import unittest
 from tests.base import get_default_metaschema
 from framework.auth.decorators import Auth
 
-from addons.base.tests.models import (OAuthAddonNodeSettingsTestSuiteMixin,
-                                      OAuthAddonUserSettingTestSuiteMixin)
+from addons.base.tests.models import (
+    OAuthAddonNodeSettingsTestSuiteMixin,
+    OAuthAddonUserSettingTestSuiteMixin,
+)
 
 from addons.dataverse.models import NodeSettings
 from addons.dataverse.tests.factories import (
     DataverseAccountFactory, DataverseNodeSettingsFactory,
-    DataverseUserSettingsFactory
+    DataverseUserSettingsFactory,
 )
 from addons.dataverse.tests import utils
 
@@ -34,7 +36,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, utils.DataverseAddo
             'user_settings': self.user_settings,
             '_dataset_id': '1234567890',
             'dataset_doi': '10.123/DAVATERSE',
-            'owner': self.node
+            'owner': self.node,
         }
 
     @mock.patch('website.archiver.tasks.archive')
@@ -65,7 +67,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, utils.DataverseAddo
         )
         assert_equal(
             self.node.logs.latest().params['filename'],
-            filename
+            filename,
         )
 
     def test_set_folder(self):

@@ -85,7 +85,7 @@ class DataverseSerializer(OAuthAddonSerializer):
                 'savedDataset': {
                     'title': self.node_settings.dataset,
                     'doi': self.node_settings.dataset_doi,
-                }
+                },
             })
 
         return result

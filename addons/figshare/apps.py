@@ -57,7 +57,8 @@ class FigshareAddonAppConfig(BaseAddonAppConfig):
         FIGSHARE_FILE_REMOVED,
         FIGSHARE_NODE_AUTHORIZED,
         FIGSHARE_NODE_DEAUTHORIZED,
-        FIGSHARE_NODE_DEAUTHORIZED_NO_USER)
+        FIGSHARE_NODE_DEAUTHORIZED_NO_USER,
+    )
 
     @property
     def routes(self):

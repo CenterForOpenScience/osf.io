@@ -30,7 +30,7 @@ class NodeLogEvents(EventAnalytics):
         date = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
 
         logger.info('Gathering node logs between {} and {}'.format(
-            date, (date + timedelta(1)).isoformat()
+            date, (date + timedelta(1)).isoformat(),
         ))
 
         node_log_query = Q(date__lt=date + timedelta(1)) & Q(date__gte=date)
@@ -42,7 +42,7 @@ class NodeLogEvents(EventAnalytics):
             event = {
                 'keen': {'timestamp': log_date.isoformat()},
                 'date': log_date.isoformat(),
-                'action': node_log.action
+                'action': node_log.action,
             }
 
             if node_log.user:

@@ -11,7 +11,7 @@ class OwnCloudSerializer(StorageAddonSerializer):
     def serialized_folder(self, node_settings):
         return {
             'name': node_settings.fetch_folder_name(),
-            'path': node_settings.folder_id
+            'path': node_settings.folder_id,
         }
 
     def credentials_are_valid(self, user_settings, client=None):
@@ -42,8 +42,10 @@ class OwnCloudSerializer(StorageAddonSerializer):
             'config': node.api_url_for('owncloud_set_config'),
         }
         if user_settings:
-            result['owner'] = web_url_for('profile_view_id',
-                uid=user_settings.owner._id)
+            result['owner'] = web_url_for(
+                'profile_view_id',
+                uid=user_settings.owner._id,
+            )
         return result
 
     @property

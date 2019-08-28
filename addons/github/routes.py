@@ -19,7 +19,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/github/settings/',
-                '/project/<pid>/node/<nid>/github/settings/'
+                '/project/<pid>/node/<nid>/github/settings/',
             ],
             'get',
             views.github_get_config,
@@ -39,7 +39,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/github/user_auth/',
-                '/project/<pid>/node/<nid>/github/user_auth/'
+                '/project/<pid>/node/<nid>/github/user_auth/',
             ],
             'put',
             views.github_import_auth,
@@ -49,7 +49,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/github/user_auth/',
-                '/project/<pid>/node/<nid>/github/user_auth/'
+                '/project/<pid>/node/<nid>/github/user_auth/',
             ],
             'delete',
             views.github_deauthorize_node,
@@ -121,5 +121,5 @@ api_routes = {
         ),
 
     ],
-    'prefix': '/api/v1'
+    'prefix': '/api/v1',
 }

@@ -50,7 +50,8 @@ def main():
                 '_id': os.path.splitext(os.path.basename(style_file))[0],
                 'title': root.find(selector + 'title').text,
                 'has_bibliography': True if root.find(
-                    '{{{ns}}}{tag}'.format(ns=namespace, tag='bibliography')) is not None else False
+                    '{{{ns}}}{tag}'.format(ns=namespace, tag='bibliography'),
+                ) is not None else False,
             }
 
             # Optional

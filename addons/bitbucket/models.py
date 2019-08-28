@@ -5,8 +5,10 @@ import markupsafe
 from django.db import models
 
 from addons.base import exceptions
-from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
-                                BaseStorageAddon)
+from addons.base.models import (
+    BaseOAuthNodeSettings, BaseOAuthUserSettings,
+    BaseStorageAddon,
+)
 
 from addons.bitbucket.api import BitbucketClient
 from addons.bitbucket.serializer import BitbucketSerializer
@@ -79,7 +81,7 @@ class BitbucketProvider(ExternalProvider):
         return {
             'provider_id': user_info['uuid'],
             'profile_url': user_info['links']['html']['href'],
-            'display_name': user_info['username']
+            'display_name': user_info['username'],
         }
 
     def fetch_access_token(self, force_refresh=False):
@@ -187,7 +189,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def repo_url(self):
         if self.user and self.repo:
             return 'https://bitbucket.org/{0}/{1}/'.format(
-                self.user, self.repo
+                self.user, self.repo,
             )
 
     @property
@@ -248,7 +250,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'is_owner': owner == user,
                 'valid_credentials': valid_credentials,
                 'addons_url': web_url_for('user_addons'),
-                'files_url': self.owner.web_url_for('collect_file_trees')
+                'files_url': self.owner.web_url_for('collect_file_trees'),
             })
 
         return ret
@@ -276,7 +278,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             sha = metadata['extra']['commitSha']
             urls = {
                 'view': '{0}?commitSha={1}'.format(url, sha),
-                'download': '{0}?action=download&commitSha={1}'.format(url, sha)
+                'download': '{0}?action=download&commitSha={1}'.format(url, sha),
             }
         except KeyError:
             pass
@@ -375,7 +377,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             message = (super(NodeSettings, self).before_remove_contributor_message(node, removed) +
             'You can download the contents of this repository before removing '
             'this contributor <u><a href="{url}">here</a></u>.'.format(
-                url=node.api_url + 'bitbucket/tarball/'
+                url=node.api_url + 'bitbucket/tarball/',
             ))
         except TypeError:
             # super call returned None due to lack of user auth
@@ -403,7 +405,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             ).format(
                 category=markupsafe.escape(node.category_display),
                 title=markupsafe.escape(node.title),
-                user=markupsafe.escape(removed.fullname)
+                user=markupsafe.escape(removed.fullname),
             )
 
             if not auth or auth.user != removed:
@@ -426,7 +428,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         :return tuple: Tuple of cloned settings and alert message
         """
         clone = super(NodeSettings, self).after_fork(
-            node, fork, user, save=False
+            node, fork, user, save=False,
         )
 
         # Copy authentication if authenticated by forking user

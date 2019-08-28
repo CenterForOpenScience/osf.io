@@ -67,7 +67,7 @@ class TestGetMetadataHook(HookTestCase):
             'osfstorage_get_children',
             {'fid': self.node_settings.get_root()._id, 'user_id': self.user._id},
             {},
-            self.node
+            self.node,
         )
         assert_true(isinstance(res.json, list))
         assert_equal(res.json, [])
@@ -82,7 +82,7 @@ class TestGetMetadataHook(HookTestCase):
             'osfstorage_get_metadata',
             {'fid': record.parent._id},
             {},
-            self.node
+            self.node,
         )
         assert_true(isinstance(res.json, dict))
         assert_equal(res.json, record.parent.serialize(True))
@@ -97,7 +97,7 @@ class TestGetMetadataHook(HookTestCase):
             'osfstorage_get_metadata',
             {'fid': record.parent._id},
             {},
-            preprint
+            preprint,
         )
         assert_true(isinstance(res.json, dict))
         assert_equal(res.json, record.parent.serialize(True))
@@ -112,7 +112,7 @@ class TestGetMetadataHook(HookTestCase):
             'osfstorage_get_children',
             {'fid': record.parent._id, 'user_id': self.user._id},
             {},
-            self.node
+            self.node,
         )
         assert_equal(len(res.json), 1)
         res_data = res.json[0]
@@ -147,7 +147,7 @@ class TestGetMetadataHook(HookTestCase):
             'osfstorage_get_children',
             {'fid': record.parent._id, 'user_id': self.user._id},
             {},
-            preprint
+            preprint,
         )
         assert_equal(len(res.json), 1)
         res_data = res.json[0]
@@ -256,20 +256,24 @@ class TestUploadFileHook(HookTestCase):
         assert_equal(version.size, 123)
         assert_equal(version.location_hash, 'file')
 
-        assert_equal(version.location, {
-            'object': 'file',
-            'uname': 'testmachine',
-            'service': 'filesystem',
-            'provider': 'filesystem',
-            storage_settings.WATERBUTLER_RESOURCE: 'blah',
-        })
-        assert_equal(version.metadata, {
-            'size': 123,
-            'name': 'file',
-            'base64': '==',
-            'provider': 'filesystem',
-            'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
-        })
+        assert_equal(
+            version.location, {
+                'object': 'file',
+                'uname': 'testmachine',
+                'service': 'filesystem',
+                'provider': 'filesystem',
+                storage_settings.WATERBUTLER_RESOURCE: 'blah',
+            },
+        )
+        assert_equal(
+            version.metadata, {
+                'size': 123,
+                'name': 'file',
+                'base64': '==',
+                'provider': 'filesystem',
+                'modified': 'Mon, 16 Feb 2015 18:45:34 GMT',
+            },
+        )
 
         assert_is_not(version, None)
         assert_equal([version], list(record.versions.all()))
@@ -414,20 +418,25 @@ class TestUploadFileHook(HookTestCase):
             'osfstorage_update_metadata',
             {},
             target=self.project,
-            payload={'metadata': {
-                'vault': 'Vault 101',
-                'archive': '101 tluaV',
-            }, 'version': res.json['version']},
+            payload={
+                'metadata': {
+                    'vault': 'Vault 101',
+                    'archive': '101 tluaV',
+                }, 'version': res.json['version'],
+            },
             method='put_json',
         )
 
-        res = self.send_upload_hook(parent, payload=self.make_payload(
+        res = self.send_upload_hook(
+            parent, payload=self.make_payload(
             name=name,
             hashes={'sha256': 'foo'},
             metadata={
                 'name': 'lakdjf',
                 'provider': 'testing',
-            }))
+            },
+            ),
+        )
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['status'], 'success')
@@ -483,20 +492,24 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
         assert_equal(version.size, 123)
         assert_equal(version.location_hash, 'file')
 
-        assert_equal(version.location, {
-            'object': 'file',
-            'uname': 'testmachine',
-            'service': 'filesystem',
-            'provider': 'filesystem',
-            storage_settings.WATERBUTLER_RESOURCE: 'blah',
-        })
-        assert_equal(version.metadata, {
-            'size': 123,
-            'name': 'file',
-            'base64': '==',
-            'provider': 'filesystem',
-            'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
-        })
+        assert_equal(
+            version.location, {
+                'object': 'file',
+                'uname': 'testmachine',
+                'service': 'filesystem',
+                'provider': 'filesystem',
+                storage_settings.WATERBUTLER_RESOURCE: 'blah',
+            },
+        )
+        assert_equal(
+            version.metadata, {
+                'size': 123,
+                'name': 'file',
+                'base64': '==',
+                'provider': 'filesystem',
+                'modified': 'Mon, 16 Feb 2015 18:45:34 GMT',
+            },
+        )
 
         assert_is_not(version, None)
         assert_equal([version], list(record.versions.all()))
@@ -679,8 +692,8 @@ class TestUpdateMetadataHook(HookTestCase):
             'version': self.version._id,
             'metadata': {
                 'vault': 'osf_storage_prod',
-                'archive': 'Some really long glacier object id here'
-            }
+                'archive': 'Some really long glacier object id here',
+            },
         })
         self.version.reload()
 
@@ -693,7 +706,7 @@ class TestUpdateMetadataHook(HookTestCase):
                 'metadata': {'archive': 'glacier'},
                 'version': self.version._id[::-1],
                 'size': 123,
-                'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
+                'modified': 'Mon, 16 Feb 2015 18:45:34 GMT',
             },
             expect_errors=True,
         )
@@ -753,8 +766,8 @@ class TestUpdateMetadataHookPreprints(HookTestCase):
             'version': self.version._id,
             'metadata': {
                 'vault': 'osf_storage_prod',
-                'archive': 'Some really long glacier object id here'
-            }
+                'archive': 'Some really long glacier object id here',
+            },
         })
         self.version.reload()
 
@@ -767,7 +780,7 @@ class TestUpdateMetadataHookPreprints(HookTestCase):
                 'metadata': {'archive': 'glacier'},
                 'version': self.version._id[::-1],
                 'size': 123,
-                'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
+                'modified': 'Mon, 16 Feb 2015 18:45:34 GMT',
             },
             expect_errors=True,
         )
@@ -805,7 +818,7 @@ class TestGetRevisions(StorageTestCase):
                 self.project,
                 self.record,
                 version,
-                index=self.record.versions.count() - 1 - idx
+                index=self.record.versions.count() - 1 - idx,
             )
             for idx, version in enumerate(self.record.versions.all())
         ]
@@ -837,7 +850,7 @@ class TestCreateFolder(HookTestCase):
             payload={
                 'name': name,
                 'user': self.user._id,
-                'kind': 'folder'
+                'kind': 'folder',
             },
             target=self.project,
             method='post_json',
@@ -860,7 +873,7 @@ class TestCreateFolder(HookTestCase):
             payload={},
             target=self.project,
             method='post_json',
-            expect_errors=True
+            expect_errors=True,
         )
         assert_equal(resp.status_code, 400)
 
@@ -903,7 +916,7 @@ class DeleteHook(HookTestCase):
             'osfstorage_delete',
             {'fid': file_node._id},
             payload={
-                'user': self.user._id
+                'user': self.user._id,
             },
             target=self.node,
             method='delete',
@@ -1053,10 +1066,11 @@ class TestMoveHook(HookTestCase):
                     'parent': folder._id,
                     'target': folder.target._id,
                     'name': folder.name,
-                }
+                },
             },
             target=self.node,
-            method='post_json',)
+            method='post_json',
+        )
         assert_equal(res.status_code, 200)
 
     def test_move_checkedout_file(self):
@@ -1076,7 +1090,7 @@ class TestMoveHook(HookTestCase):
                     'parent': folder._id,  # the destination FOLDER
                     'target': folder.target._id,  # The TARGET for the folder where it is going
                     'name': folder.name,
-                }
+                },
             },
             target=self.node,
             method='post_json',
@@ -1102,7 +1116,7 @@ class TestMoveHook(HookTestCase):
                     'parent': folder_two._id,
                     'target': folder_two.target._id,
                     'name': folder_two.name,
-                }
+                },
             },
             target=self.node,
             method='post_json',
@@ -1129,7 +1143,7 @@ class TestMoveHook(HookTestCase):
                     'parent': folder_two._id,
                     'target': folder_two.target._id,
                     'name': folder_two.name,
-                }
+                },
             },
             target=self.node,
             method='post_json',
@@ -1157,7 +1171,7 @@ class TestMoveHook(HookTestCase):
                     'parent': folder_two._id,
                     'target': folder_two.target._id,
                     'name': folder_two.name,
-                }
+                },
             },
             target=project,
             method='post_json',
@@ -1182,7 +1196,7 @@ class TestMoveHook(HookTestCase):
                     'parent': dest_folder._id,
                     'target': self.project._id,
                     'name': dest_folder.name,
-                }
+                },
             },
             target=quickfiles_node,
             method='post_json',
@@ -1209,7 +1223,7 @@ class TestMoveHook(HookTestCase):
                     'parent': quickfiles_folder._id,
                     'target': quickfiles_node._id,
                     'name': new_name,
-                }
+                },
             },
             target=quickfiles_node,
             method='post_json',
@@ -1246,7 +1260,7 @@ class TestMoveHookPreprint(TestMoveHook):
                     'parent': folder_two._id,
                     'target': folder_two.target._id,
                     'name': folder_two.name,
-                }
+                },
             },
             target=project,
             method='post_json',
@@ -1278,10 +1292,11 @@ class TestMoveHookProjectsOnly(TestMoveHook):
                         'parent': folder._id,
                         'target': folder.target._id,
                         'name': folder.name,
-                    }
+                    },
                 },
                 target=self.node,
-                method='post_json',)
+                method='post_json',
+            )
 
         # Cache should stay untouched because net storage usage hasn't changed
         key = STORAGE_USAGE_KEY.format(target_id=self.project._id)
@@ -1315,10 +1330,11 @@ class TestMoveHookProjectsOnly(TestMoveHook):
                         'parent': folder._id,
                         'target': folder.target._id,
                         'name': folder.name,
-                    }
+                    },
                 },
                 target=self.node,
-                method='post_json',)
+                method='post_json',
+            )
 
         # both caches are updated
         source_key = STORAGE_USAGE_KEY.format(target_id=self.project._id)
@@ -1355,7 +1371,7 @@ class TestCopyHook(HookTestCase):
                     'parent': dest_folder._id,
                     'target': self.project._id,
                     'name': dest_folder.name,
-                }
+                },
             },
             target=self.project,
             method='post_json',
@@ -1390,10 +1406,11 @@ class TestCopyHook(HookTestCase):
                         'parent': folder._id,
                         'target': folder.target._id,
                         'name': folder.name,
-                    }
+                    },
                 },
                 target=self.node,
-                method='post_json',)
+                method='post_json',
+            )
 
         # both caches are updated
         source_key = STORAGE_USAGE_KEY.format(target_id=self.project._id)
@@ -1570,13 +1587,13 @@ class TestFileViews(StorageTestCase):
                 '{}/oauth2/profile'.format(cas_base_url),
                 body=json.dumps({'id': '{}'.format(self.user._id)}),
                 status=200,
-            )
+            ),
         )
 
         download_url = base_url.format(file.get_guid()._id)
         token = ApiOAuth2PersonalTokenFactory(owner=self.user)
         headers = {
-            'Authorization': str('Bearer {}'.format(token.token_id))
+            'Authorization': str('Bearer {}'.format(token.token_id)),
         }
         redirect = self.app.get(download_url, headers=headers)
 
@@ -1644,13 +1661,13 @@ class TestPreprintFileViews(StorageTestCase):
                 '{}/oauth2/profile'.format(cas_base_url),
                 body=json.dumps({'id': '{}'.format(self.user._id)}),
                 status=200,
-            )
+            ),
         )
 
         download_url = base_url.format(file.get_guid(create=True)._id)
         token = ApiOAuth2PersonalTokenFactory(owner=self.user)
         headers = {
-            'Authorization': str('Bearer {}'.format(token.token_id))
+            'Authorization': str('Bearer {}'.format(token.token_id)),
         }
         redirect = self.app.get(download_url, headers=headers)
 

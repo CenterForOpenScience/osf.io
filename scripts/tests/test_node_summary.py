@@ -30,14 +30,14 @@ class TestNodeCount(OsfTestCase):
         self.embargoed_registration = RegistrationFactory(project=self.public_project, creator=self.public_project.creator)
         self.embargoed_registration.embargo_registration(
             self.embargoed_registration.creator,
-            timezone.now() + datetime.timedelta(days=10)
+            timezone.now() + datetime.timedelta(days=10),
         )
         self.embargoed_registration.save()
 
         self.reg_to_be_withdrawn = RegistrationFactory(project=self.public_project)
         self.withdrawn_registration = WithdrawnRegistrationFactory(
             registration=self.reg_to_be_withdrawn,
-            user=self.reg_to_be_withdrawn.creator
+            user=self.reg_to_be_withdrawn.creator,
         )
 
         # Add Deleted Nodes

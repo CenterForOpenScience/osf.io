@@ -44,26 +44,26 @@ class TestNodeLogAnalytics(OsfTestCase):
                 'keen': {'timestamp': self.node_log_node_created.date.replace(tzinfo=pytz.UTC).isoformat()},
                 'date': self.node_log_node_created.date.replace(tzinfo=pytz.UTC).isoformat(),
                 'action': 'node_created',
-                'user_id': self.user_one._id
+                'user_id': self.user_one._id,
             },
             {
                 'keen': {'timestamp': self.node_log_file_added.date.replace(tzinfo=pytz.UTC).isoformat()},
                 'date': self.node_log_file_added.date.replace(tzinfo=pytz.UTC).isoformat(),
                 'action': 'file_added',
-                'user_id': self.user_one._id
+                'user_id': self.user_one._id,
             },
             {
                 'keen': {'timestamp': self.node_log_wiki_updated.date.replace(tzinfo=pytz.UTC).isoformat()},
                 'date': self.node_log_wiki_updated.date.replace(tzinfo=pytz.UTC).isoformat(),
                 'action': 'wiki_updated',
-                'user_id': self.user_two._id
+                'user_id': self.user_two._id,
             },
             {
                 'keen': {'timestamp': self.node_log_project_created.date.replace(tzinfo=pytz.UTC).isoformat()},
                 'date': self.node_log_project_created.date.replace(tzinfo=pytz.UTC).isoformat(),
                 'action': 'project_created',
-                'user_id': self.user_two._id
-            }
+                'user_id': self.user_two._id,
+            },
         ]
 
         assert_items_equal(expected, self.results)

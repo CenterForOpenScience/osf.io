@@ -2,8 +2,10 @@ import abc
 
 import mock
 from framework.auth import Auth
-from nose.tools import (assert_equal, assert_false, assert_in,
-                        assert_is_not_none, assert_raises, assert_true)
+from nose.tools import (
+    assert_equal, assert_false, assert_in,
+    assert_is_not_none, assert_raises, assert_true,
+)
 from osf_tests.factories import ProjectFactory, AuthUserFactory
 from tests.utils import mock_auth
 from website.util import web_url_for
@@ -45,18 +47,18 @@ class AddonSerializerTestSuiteMixin(object):
         assert_is_not_none(
             getattr(self, 'user_settings'),
             "'set_user_settings' should set the 'user_settings' attribute of the instance to an instance of \
-             the appropriate user settings model."
+             the appropriate user settings model.",
         )
         self.set_node_settings(self.user_settings)
         assert_is_not_none(
             getattr(self, 'node_settings'),
             "'set_node_settings' should set the 'user_settings' attribute of the instance to an instance of \
-            the appropriate node settings model."
+            the appropriate node settings model.",
         )
 
         self.ser = self.Serializer(
             user_settings=self.user_settings,
-            node_settings=self.node_settings
+            node_settings=self.node_settings,
         )
 
     def test_serialized_node_settings_unauthorized(self):
@@ -109,8 +111,10 @@ class OAuthAddonSerializerTestSuiteMixin(AddonSerializerTestSuiteMixin):
 
     def test_user_is_owner_node_authorized_user_is_not_owner(self):
         self.node_settings.external_account = self.ExternalAccountFactory()
-        with mock.patch('addons.base.models.BaseOAuthUserSettings.verify_oauth_access',
-                return_value=True):
+        with mock.patch(
+            'addons.base.models.BaseOAuthUserSettings.verify_oauth_access',
+            return_value=True,
+        ):
             self.user.external_accounts = []
             assert_false(self.ser.user_is_owner)
 
@@ -189,10 +193,12 @@ class StorageAddonSerializerTestSuiteMixin(OAuthAddonSerializerTestSuiteMixin):
         for key in self.required_settings:
             assert_in(key, serialized)
         assert_in('owner', serialized['urls'])
-        assert_equal(serialized['urls']['owner'], web_url_for(
-            'profile_view_id',
-            uid=self.user_settings.owner._id
-        ))
+        assert_equal(
+            serialized['urls']['owner'], web_url_for(
+                'profile_view_id',
+                uid=self.user_settings.owner._id,
+            ),
+        )
         assert_in('ownerName', serialized)
         assert_equal(serialized['ownerName'], self.user_settings.owner.fullname)
         assert_in('folder', serialized)

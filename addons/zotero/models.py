@@ -38,7 +38,7 @@ class Zotero(CitationsOauthProvider):
             'display_name': response['username'],
             'provider_id': response['userID'],
             'profile_url': 'https://zotero.org/users/{}/'.format(
-                response['userID']
+                response['userID'],
             ),
         }
 
@@ -225,7 +225,7 @@ class NodeSettings(BaseCitationsNodeSettings):
             'name': name,
             'path': path,
             'parent_list_id': parent,
-            'provider_list_id': provider_list_id or id
+            'provider_list_id': provider_list_id or id,
         }
 
     def get_folders(self, path=None, folder_id=None, **kwargs):

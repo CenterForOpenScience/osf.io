@@ -22,24 +22,28 @@ api_routes = {
             json_renderer,
         ),
         Rule(
-            ['/project/<pid>/owncloud/settings/',
-             '/project/<pid>/node/<nid>/owncloud/settings/'],
+            [
+                '/project/<pid>/owncloud/settings/',
+                '/project/<pid>/node/<nid>/owncloud/settings/',
+            ],
             'put',
             views.owncloud_set_config,
-            json_renderer
+            json_renderer,
         ),
         Rule(
-            ['/project/<pid>/owncloud/settings/',
-             '/project/<pid>/node/<nid>/owncloud/settings/'],
+            [
+                '/project/<pid>/owncloud/settings/',
+                '/project/<pid>/node/<nid>/owncloud/settings/',
+            ],
             'get',
             views.owncloud_get_config,
-            json_renderer
+            json_renderer,
         ),
         Rule(
             ['/settings/owncloud/accounts/'],
             'post',
             views.owncloud_add_user_account,
-            json_renderer
+            json_renderer,
         ),
         Rule(
             [
@@ -48,15 +52,17 @@ api_routes = {
             ],
             'put',
             views.owncloud_import_auth,
-            json_renderer
+            json_renderer,
         ),
         Rule(
-            ['/project/<pid>/owncloud/folders/',
-             '/project/<pid>/node/<nid>/owncloud/folders/'],
+            [
+                '/project/<pid>/owncloud/folders/',
+                '/project/<pid>/node/<nid>/owncloud/folders/',
+            ],
             'get',
             views.owncloud_folder_list,
-            json_renderer
+            json_renderer,
         ),
     ],
-    'prefix': '/api/v1'
+    'prefix': '/api/v1',
 }

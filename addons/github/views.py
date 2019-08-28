@@ -37,21 +37,21 @@ FULL_NAME = 'GitHub'
 
 github_account_list = generic_views.account_list(
     SHORT_NAME,
-    GitHubSerializer
+    GitHubSerializer,
 )
 
 github_import_auth = generic_views.import_auth(
     SHORT_NAME,
-    GitHubSerializer
+    GitHubSerializer,
 )
 
 github_get_config = generic_views.get_config(
     SHORT_NAME,
-    GitHubSerializer
+    GitHubSerializer,
 )
 
 github_deauthorize_node = generic_views.deauthorize_node(
-    SHORT_NAME
+    SHORT_NAME,
 )
 
 #################
@@ -122,7 +122,7 @@ def github_set_config(auth, **kwargs):
                 'github': {
                     'user': github_user_name,
                     'repo': github_repo_name,
-                }
+                },
             },
             auth=auth,
         )
@@ -144,7 +144,7 @@ def github_download_starball(node_addon, **kwargs):
 
     connection = GitHubClient(external_account=node_addon.external_account)
     headers, data = connection.starball(
-        node_addon.user, node_addon.repo, archive, ref
+        node_addon.user, node_addon.repo, archive, ref,
     )
 
     resp = make_response(data)
@@ -212,8 +212,10 @@ def github_create_repo(**kwargs):
 #########
 
 # TODO: Refactor using NodeLogger
-def add_hook_log(node, github, action, path, date, committer, include_urls=False,
-                 sha=None, save=False):
+def add_hook_log(
+    node, github, action, path, date, committer, include_urls=False,
+    sha=None, save=False,
+):
     """Add log event for commit from webhook payload.
 
     :param node: Node to add logs to
@@ -239,7 +241,7 @@ def add_hook_log(node, github, action, path, date, committer, include_urls=False
 
         urls = {
             'view': '{0}?ref={1}'.format(url, sha),
-            'download': '{0}?action=download&ref={1}'.format(url, sha)
+            'download': '{0}?action=download&ref={1}'.format(url, sha),
         }
 
     node.add_log(

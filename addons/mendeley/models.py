@@ -57,9 +57,11 @@ class Mendeley(CitationsOauthProvider):
         partial = mendeley.Mendeley(
             client_id=self.client_id,
             client_secret=self.client_secret,
-            redirect_uri=web_url_for('oauth_callback',
-                                     service_name='mendeley',
-                                     _absolute=True) if has_app_context() else None,
+            redirect_uri=web_url_for(
+                'oauth_callback',
+                service_name='mendeley',
+                _absolute=True,
+            ) if has_app_context() else None,
         )
         credentials = credentials or {
             'access_token': self.account.oauth_key,
@@ -122,7 +124,7 @@ class Mendeley(CitationsOauthProvider):
         :return Citation:
         """
         csl = {
-            'id': document.json.get('id')
+            'id': document.json.get('id'),
         }
 
         CSL_TYPE_MAP = {
@@ -140,7 +142,7 @@ class Mendeley(CitationsOauthProvider):
             'statute': 'legislation',
             'television_broadcast': 'broadcast',
             'web_page': 'webpage',
-            'working_paper': 'report'
+            'working_paper': 'report',
         }
 
         csl_type = document.json.get('type')
@@ -281,17 +283,19 @@ class NodeSettings(BaseCitationsNodeSettings):
                     'id': 'ROOT',
                     'parent_list_id': '__',
                     'kind': 'folder',
-                    'addon': 'mendeley'
-                }
-                serialized_folders = [{
                     'addon': 'mendeley',
-                    'kind': 'folder',
-                    'id': folder.json['id'],
-                    'name': folder.json['name'],
-                    'path': folder.json.get('parent_id', '/'),
-                    'parent_list_id': folder.json.get('parent_id', None),
-                    'provider_list_id': folder.json['id']
-                } for folder in folders]
+                }
+                serialized_folders = [
+                    {
+                        'addon': 'mendeley',
+                        'kind': 'folder',
+                        'id': folder.json['id'],
+                        'name': folder.json['name'],
+                        'path': folder.json.get('parent_id', '/'),
+                        'parent_list_id': folder.json.get('parent_id', None),
+                        'provider_list_id': folder.json['id'],
+                    } for folder in folders
+                ]
                 if show_root:
                     serialized_folders.insert(0, serialized_root_folder)
                 return serialized_folders

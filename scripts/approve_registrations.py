@@ -25,7 +25,7 @@ logging.basicConfig(level=logging.INFO)
 def main(dry_run=True):
     approvals_past_pending = models.RegistrationApproval.objects.filter(
         state=models.RegistrationApproval.UNAPPROVED,
-        initiation_date__lt=timezone.now() - settings.REGISTRATION_APPROVAL_TIME
+        initiation_date__lt=timezone.now() - settings.REGISTRATION_APPROVAL_TIME,
     )
 
     for registration_approval in approvals_past_pending:
@@ -35,12 +35,12 @@ def main(dry_run=True):
             pending_registration = models.Registration.objects.get(registration_approval=registration_approval)
         except models.Registration.DoesNotExist:
             logger.error(
-                'RegistrationApproval {} is not attached to a registration'.format(registration_approval._id)
+                'RegistrationApproval {} is not attached to a registration'.format(registration_approval._id),
             )
             continue
         logger.warn(
             'RegistrationApproval {0} automatically approved by system. Making registration {1} public.'
-            .format(registration_approval._id, pending_registration._id)
+            .format(registration_approval._id, pending_registration._id),
         )
         if not dry_run:
             if pending_registration.is_deleted:
@@ -58,7 +58,8 @@ def main(dry_run=True):
                 except Exception as err:
                     logger.error(
                         'Unexpected error raised when approving registration for '
-                        'registration {}. Continuing...'.format(pending_registration))
+                        'registration {}. Continuing...'.format(pending_registration),
+                    )
                     logger.exception(err)
 
 

@@ -49,7 +49,7 @@ class NodeSummary(SummaryAnalytics):
 
         totals = {
             'keen': {
-                'timestamp': timestamp_datetime.isoformat()
+                'timestamp': timestamp_datetime.isoformat(),
             },
             # Nodes - the number of projects and components
             'nodes': {
@@ -99,7 +99,7 @@ class NodeSummary(SummaryAnalytics):
                 'embargoed_daily': registration_qs.filter(private_query & daily_query).get_roots().count(),
                 'embargoed_v2_daily': registration_qs.filter(private_query & daily_query & embargo_v2_query).get_roots().count(),
                 'withdrawn_daily': registration_qs.filter(retracted_query & daily_query).get_roots().count(),
-            }
+            },
         }
 
         logger.info(
@@ -107,8 +107,8 @@ class NodeSummary(SummaryAnalytics):
                 totals['nodes']['total'],
                 totals['projects']['total'],
                 totals['registered_nodes']['total'],
-                totals['registered_projects']['total']
-            )
+                totals['registered_projects']['total'],
+            ),
         )
 
         return [totals]

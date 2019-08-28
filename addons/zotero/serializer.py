@@ -7,7 +7,7 @@ class ZoteroSerializer(CitationsAddonSerializer):
     def serialized_node_settings(self):
         result = super(ZoteroSerializer, self).serialized_node_settings
         result['library'] = {
-            'name': self.node_settings.fetch_library_name
+            'name': self.node_settings.fetch_library_name,
         }
         return result
 

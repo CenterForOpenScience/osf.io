@@ -24,7 +24,7 @@ class TestBoxSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
         self.mock_valid = mock.patch.object(
             BoxSerializer,
             'credentials_are_valid',
-            return_value=True
+            return_value=True,
         )
         self.mock_valid.start()
         super(TestBoxSerializer, self).setUp()

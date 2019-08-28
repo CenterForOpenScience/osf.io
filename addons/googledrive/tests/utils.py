@@ -31,7 +31,7 @@ mock_files_folders = {
    'webContentLink': 'https://docs.google.com/uc?id=0B8IkoNBph4qJbDV4cmpEM182RFk&export=download',
    'alternateLink': 'https://docs.google.com/file/d/0B8IkoNBph4qJbDV4cmpEM182RFk/edit?usp=drivesdk',
    'openWithLinks': {
-    '457660898219': 'https://accounts.google.com/o/oauth2/auth?scope=https://www.googleapis.com/auth/drive.file+https://www.googleapis.com/auth/drive+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile+https://docs.google.com/feeds/+https://docs.googleusercontent.com/feeds/&client_id=457660898219-m490arfh0gaim2bvsot4dg2jic6tvuos.apps.googleusercontent.com&response_type=code&access_type=offline&redirect_uri=https://gadgets.zoho.com/gdrive/writer&user_id=111890625752680749576&state=%7B%22ids%22:%5B%220B8IkoNBph4qJbDV4cmpEM182RFk%22%5D,%22action%22:%22open%22,%22userId%22:%22111890625752680749576%22%7D'
+    '457660898219': 'https://accounts.google.com/o/oauth2/auth?scope=https://www.googleapis.com/auth/drive.file+https://www.googleapis.com/auth/drive+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile+https://docs.google.com/feeds/+https://docs.googleusercontent.com/feeds/&client_id=457660898219-m490arfh0gaim2bvsot4dg2jic6tvuos.apps.googleusercontent.com&response_type=code&access_type=offline&redirect_uri=https://gadgets.zoho.com/gdrive/writer&user_id=111890625752680749576&state=%7B%22ids%22:%5B%220B8IkoNBph4qJbDV4cmpEM182RFk%22%5D,%22action%22:%22open%22,%22userId%22:%22111890625752680749576%22%7D',
    },
    'iconLink': 'https://ssl.gstatic.com/docs/doclist/images/icon_10_text_list.png',
    'thumbnailLink': 'https://lh3.googleusercontent.com/pRKEtkdSgQbmSctvtBx07GO2g2lHFbjNw0sCBvIdyUEwTiTGXNm998qWJzOz1sIW60AaaA=s220',
@@ -42,7 +42,7 @@ mock_files_folders = {
     'hidden': True,
     'trashed': False,
     'restricted': False,
-    'viewed': False
+    'viewed': False,
    },
    'createdDate': '2014-09-27T22:39:38.717Z',
    'modifiedDate': '2014-09-27T22:39:38.717Z',
@@ -56,8 +56,8 @@ mock_files_folders = {
      'id': '0B8IkoNBph4qJenVUSDAxRFdjY1k',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJbDV4cmpEM182RFk/parents/0B8IkoNBph4qJenVUSDAxRFdjY1k',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJenVUSDAxRFdjY1k',
-     'isRoot': False
-    }
+     'isRoot': False,
+    },
    ],
    'downloadUrl': 'https://doc-0o-4s-docs.googleusercontent.com/docs/securesc/tujj9q5cg2f1cm3jop9gn86ej796p8ll/0fnlldf3r65apevhqo7155ms5gtpes1c/1424037600000/03716493619382043449/03716493619382043449/0B8IkoNBph4qJbDV4cmpEM182RFk?e=download&gd=True',
    'userPermission': {
@@ -66,7 +66,7 @@ mock_files_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJbDV4cmpEM182RFk/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'originalFilename': 'Torrent downloaded from Demonoid.txt',
    'fileExtension': 'txt',
@@ -74,37 +74,37 @@ mock_files_folders = {
    'fileSize': '46',
    'quotaBytesUsed': '46',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': True,
    'writersCanShare': True,
    'shared': False,
    'appDataContents': False,
-   'headRevisionId': '0B8IkoNBph4qJOE5kdGhyenlZMmxIVEoyNnRrNTViVUJkSm4wPQ'
+   'headRevisionId': '0B8IkoNBph4qJOE5kdGhyenlZMmxIVEoyNnRrNTViVUJkSm4wPQ',
   },
   {
 
@@ -115,7 +115,7 @@ mock_files_folders = {
    'webContentLink': 'https://docs.google.com/uc?id=0B8IkoNBph4qJRUNmVy12QWFnQWc&export=download',
    'alternateLink': 'https://docs.google.com/file/d/0B8IkoNBph4qJRUNmVy12QWFnQWc/edit?usp=drivesdk',
    'openWithLinks': {
-    '457660898219': 'https://accounts.google.com/o/oauth2/auth?scope=https://www.googleapis.com/auth/drive.file+https://www.googleapis.com/auth/drive+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile+https://docs.google.com/feeds/+https://docs.googleusercontent.com/feeds/&client_id=457660898219-m490arfh0gaim2bvsot4dg2jic6tvuos.apps.googleusercontent.com&response_type=code&access_type=offline&redirect_uri=https://gadgets.zoho.com/gdrive/writer&user_id=111890625752680749576&state=%7B%22ids%22:%5B%220B8IkoNBph4qJRUNmVy12QWFnQWc%22%5D,%22action%22:%22open%22,%22userId%22:%22111890625752680749576%22%7D'
+    '457660898219': 'https://accounts.google.com/o/oauth2/auth?scope=https://www.googleapis.com/auth/drive.file+https://www.googleapis.com/auth/drive+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile+https://docs.google.com/feeds/+https://docs.googleusercontent.com/feeds/&client_id=457660898219-m490arfh0gaim2bvsot4dg2jic6tvuos.apps.googleusercontent.com&response_type=code&access_type=offline&redirect_uri=https://gadgets.zoho.com/gdrive/writer&user_id=111890625752680749576&state=%7B%22ids%22:%5B%220B8IkoNBph4qJRUNmVy12QWFnQWc%22%5D,%22action%22:%22open%22,%22userId%22:%22111890625752680749576%22%7D',
    },
    'iconLink': 'https://ssl.gstatic.com/docs/doclist/images/icon_10_text_list.png',
    'thumbnailLink': 'https://lh4.googleusercontent.com/_iZdicljCKzylIT87wBiOTlCZcnuKXzCu3zNejKowi1XbqSok0ojCf5a2eBhpEADOCwYuA=s220',
@@ -126,7 +126,7 @@ mock_files_folders = {
     'hidden': True,
     'trashed': False,
     'restricted': False,
-    'viewed': False
+    'viewed': False,
    },
    'createdDate': '2014-09-27T22:39:37.885Z',
    'modifiedDate': '2014-09-27T22:39:37.885Z',
@@ -140,8 +140,8 @@ mock_files_folders = {
      'id': '0B8IkoNBph4qJenVUSDAxRFdjY1k',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJRUNmVy12QWFnQWc/parents/0B8IkoNBph4qJenVUSDAxRFdjY1k',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJenVUSDAxRFdjY1k',
-     'isRoot': False
-    }
+     'isRoot': False,
+    },
    ],
    'downloadUrl': 'https://doc-10-4s-docs.googleusercontent.com/docs/securesc/tujj9q5cg2f1cm3jop9gn86ej796p8ll/ojj7q9f2h03ivo4sk5nckm19mkfcsggq/1424037600000/03716493619382043449/03716493619382043449/0B8IkoNBph4qJRUNmVy12QWFnQWc?e=download&gd=True',
    'userPermission': {
@@ -150,7 +150,7 @@ mock_files_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJRUNmVy12QWFnQWc/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'originalFilename': 'Torrent downloaded from AhaShare.com.txt',
    'fileExtension': 'txt',
@@ -158,37 +158,37 @@ mock_files_folders = {
    'fileSize': '59',
    'quotaBytesUsed': '59',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': True,
    'writersCanShare': True,
    'shared': False,
    'appDataContents': False,
-   'headRevisionId': '0B8IkoNBph4qJTi9KU0hyN2R3eEdRMzVMY05PQitTTUdTVklrPQ'
+   'headRevisionId': '0B8IkoNBph4qJTi9KU0hyN2R3eEdRMzVMY05PQitTTUdTVklrPQ',
   },
   {
 
@@ -207,7 +207,7 @@ mock_files_folders = {
     'hidden': True,
     'trashed': False,
     'restricted': False,
-    'viewed': False
+    'viewed': False,
    },
    'createdDate': '2014-09-27T22:39:36.857Z',
    'modifiedDate': '2014-09-27T22:39:36.857Z',
@@ -221,8 +221,8 @@ mock_files_folders = {
      'id': '0B8IkoNBph4qJenVUSDAxRFdjY1k',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJUjREMFF0bEFQTlk/parents/0B8IkoNBph4qJenVUSDAxRFdjY1k',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJenVUSDAxRFdjY1k',
-     'isRoot': False
-    }
+     'isRoot': False,
+    },
    ],
    'downloadUrl': 'https://doc-10-4s-docs.googleusercontent.com/docs/securesc/tujj9q5cg2f1cm3jop9gn86ej796p8ll/21u4h1e2lhoae5aoq7n4eo12vses1r7q/1424037600000/03716493619382043449/03716493619382043449/0B8IkoNBph4qJUjREMFF0bEFQTlk?e=download&gd=True',
    'userPermission': {
@@ -231,7 +231,7 @@ mock_files_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJUjREMFF0bEFQTlk/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'originalFilename': 'Mantesh.jpg',
    'fileExtension': 'jpg',
@@ -239,30 +239,30 @@ mock_files_folders = {
    'fileSize': '75974',
    'quotaBytesUsed': '75974',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': True,
@@ -272,8 +272,8 @@ mock_files_folders = {
    'headRevisionId': '0B8IkoNBph4qJcVJ6bHh6OERDMXpFanE2SVJ2NWJFaWFSa0RzPQ',
    'imageMediaMetadata': {
     'width': 400,
-    'height': 606
-   }
+    'height': 606,
+   },
   },
   {
 
@@ -284,7 +284,7 @@ mock_files_folders = {
    'webContentLink': 'https://docs.google.com/uc?id=0B8IkoNBph4qJSVpjZ1FJUTJ5RTA&export=download',
    'alternateLink': 'https://docs.google.com/file/d/0B8IkoNBph4qJSVpjZ1FJUTJ5RTA/edit?usp=drivesdk',
    'openWithLinks': {
-    '1031094922298': 'http://www.luminpdf.com/open/?state=%7B%22ids%22:%5B%220B8IkoNBph4qJSVpjZ1FJUTJ5RTA%22%5D,%22action%22:%22open%22,%22userId%22:%22111890625752680749576%22%7D'
+    '1031094922298': 'http://www.luminpdf.com/open/?state=%7B%22ids%22:%5B%220B8IkoNBph4qJSVpjZ1FJUTJ5RTA%22%5D,%22action%22:%22open%22,%22userId%22:%22111890625752680749576%22%7D',
    },
    'iconLink': 'https://ssl.gstatic.com/docs/doclist/images/icon_10_pdf_list.png',
    'thumbnailLink': 'https://lh3.googleusercontent.com/Y8z38ZIt2zPAhaoBHKyi8Z0r1cMBVBZJ0FHBCLa96h2KcqBrEWSw4Tu7z8SA33CW0vWNPg=s220',
@@ -295,7 +295,7 @@ mock_files_folders = {
     'hidden': True,
     'trashed': False,
     'restricted': False,
-    'viewed': False
+    'viewed': False,
    },
    'createdDate': '2014-09-27T22:39:36.005Z',
    'modifiedDate': '2014-09-27T22:39:36.005Z',
@@ -309,8 +309,8 @@ mock_files_folders = {
      'id': '0B8IkoNBph4qJenVUSDAxRFdjY1k',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJSVpjZ1FJUTJ5RTA/parents/0B8IkoNBph4qJenVUSDAxRFdjY1k',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJenVUSDAxRFdjY1k',
-     'isRoot': False
-    }
+     'isRoot': False,
+    },
    ],
    'downloadUrl': 'https://doc-08-4s-docs.googleusercontent.com/docs/securesc/tujj9q5cg2f1cm3jop9gn86ej796p8ll/fsmj9tb67k3alt8f4i9mm9naherhc4op/1424037600000/03716493619382043449/03716493619382043449/0B8IkoNBph4qJSVpjZ1FJUTJ5RTA?e=download&gd=True',
    'userPermission': {
@@ -319,7 +319,7 @@ mock_files_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJSVpjZ1FJUTJ5RTA/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'originalFilename': 'Cracking the Coding Interview, 4 Edition - 150 Programming Interview Questions and Solutions.pdf',
    'fileExtension': 'pdf',
@@ -327,39 +327,39 @@ mock_files_folders = {
    'fileSize': '4048243',
    'quotaBytesUsed': '4048243',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': True,
    'writersCanShare': True,
    'shared': False,
    'appDataContents': False,
-   'headRevisionId': '0B8IkoNBph4qJd2RMcng2TVBuZWZTRy8rdHpHUmc4dS81VTE4PQ'
-  }
- ]
+   'headRevisionId': '0B8IkoNBph4qJd2RMcng2TVBuZWZTRy8rdHpHUmc4dS81VTE4PQ',
+  },
+ ],
 }
 
 
@@ -384,7 +384,7 @@ mock_folders = {
             'hidden': False,
             'trashed': False,
             'restricted': False,
-            'viewed': True
+            'viewed': True,
            },
            'createdDate': '2014-09-27T22:35:51.760Z',
            'modifiedDate': '2014-09-27T22:35:51.760Z',
@@ -398,8 +398,8 @@ mock_folders = {
              'id': '0B8IkoNBph4qJeWlDanNYbm9LT2c',
              'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJeU9OSWQtaUNwbFE/parents/0B8IkoNBph4qJeWlDanNYbm9LT2c',
              'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJeWlDanNYbm9LT2c',
-             'isRoot': False
-            }
+             'isRoot': False,
+            },
            ],
            'userPermission': {
             'kind': 'drive#permission',
@@ -407,40 +407,40 @@ mock_folders = {
             'id': 'me',
             'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJeU9OSWQtaUNwbFE/permissions/me',
             'role': 'owner',
-            'type': 'user'
+            'type': 'user',
            },
            'quotaBytesUsed': '0',
            'ownerNames': [
-            'Kushagra Gupta'
+            'Kushagra Gupta',
            ],
            'owners': [
             {
              'kind': 'drive#user',
              'displayName': 'Kushagra Gupta',
              'picture': {
-              'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+              'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
              },
              'isAuthenticatedUser': True,
              'permissionId': '03716493619382043449',
-             'emailAddress': 'imkushagra@gmail.com'
-            }
+             'emailAddress': 'imkushagra@gmail.com',
+            },
            ],
            'lastModifyingUserName': 'Kushagra Gupta',
            'lastModifyingUser': {
             'kind': 'drive#user',
             'displayName': 'Kushagra Gupta',
             'picture': {
-             'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+             'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
             },
             'isAuthenticatedUser': True,
             'permissionId': '03716493619382043449',
-            'emailAddress': 'imkushagra@gmail.com'
+            'emailAddress': 'imkushagra@gmail.com',
            },
            'editable': True,
            'copyable': False,
            'writersCanShare': True,
            'shared': False,
-           'appDataContents': False
+           'appDataContents': False,
           },
           {
 
@@ -457,7 +457,7 @@ mock_folders = {
             'hidden': False,
             'trashed': False,
             'restricted': False,
-            'viewed': True
+            'viewed': True,
            },
            'createdDate': '2014-09-27T22:35:51.760Z',
            'modifiedDate': '2014-09-27T22:35:51.760Z',
@@ -471,8 +471,8 @@ mock_folders = {
              'id': '0B8IkoNBph4qJeWlDanNYbm9LT2c',
              'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJZ0hORDNsbHJJSzQ/parents/0B8IkoNBph4qJeWlDanNYbm9LT2c',
              'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJeWlDanNYbm9LT2c',
-             'isRoot': False
-            }
+             'isRoot': False,
+            },
            ],
            'userPermission': {
             'kind': 'drive#permission',
@@ -480,40 +480,40 @@ mock_folders = {
             'id': 'me',
             'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJZ0hORDNsbHJJSzQ/permissions/me',
             'role': 'owner',
-            'type': 'user'
+            'type': 'user',
            },
            'quotaBytesUsed': '0',
            'ownerNames': [
-            'Kushagra Gupta'
+            'Kushagra Gupta',
            ],
            'owners': [
             {
              'kind': 'drive#user',
              'displayName': 'Kushagra Gupta',
              'picture': {
-              'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+              'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
              },
              'isAuthenticatedUser': True,
              'permissionId': '03716493619382043449',
-             'emailAddress': 'imkushagra@gmail.com'
-            }
+             'emailAddress': 'imkushagra@gmail.com',
+            },
            ],
            'lastModifyingUserName': 'Kushagra Gupta',
            'lastModifyingUser': {
             'kind': 'drive#user',
             'displayName': 'Kushagra Gupta',
             'picture': {
-             'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+             'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
             },
             'isAuthenticatedUser': True,
             'permissionId': '03716493619382043449',
-            'emailAddress': 'imkushagra@gmail.com'
+            'emailAddress': 'imkushagra@gmail.com',
            },
            'editable': True,
            'copyable': False,
            'writersCanShare': True,
            'shared': False,
-           'appDataContents': False
+           'appDataContents': False,
           },
           {
 
@@ -530,7 +530,7 @@ mock_folders = {
             'hidden': False,
             'trashed': False,
             'restricted': False,
-            'viewed': True
+            'viewed': True,
            },
            'createdDate': '2014-09-27T22:35:51.760Z',
            'modifiedDate': '2014-09-27T22:35:51.760Z',
@@ -544,8 +544,8 @@ mock_folders = {
              'id': '0B8IkoNBph4qJeWlDanNYbm9LT2c',
              'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJZmR5aUdSOEE3NGs/parents/0B8IkoNBph4qJeWlDanNYbm9LT2c',
              'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJeWlDanNYbm9LT2c',
-             'isRoot': False
-            }
+             'isRoot': False,
+            },
            ],
            'userPermission': {
             'kind': 'drive#permission',
@@ -553,40 +553,40 @@ mock_folders = {
             'id': 'me',
             'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJZmR5aUdSOEE3NGs/permissions/me',
             'role': 'owner',
-            'type': 'user'
+            'type': 'user',
            },
            'quotaBytesUsed': '0',
            'ownerNames': [
-            'Kushagra Gupta'
+            'Kushagra Gupta',
            ],
            'owners': [
             {
              'kind': 'drive#user',
              'displayName': 'Kushagra Gupta',
              'picture': {
-              'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+              'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
              },
              'isAuthenticatedUser': True,
              'permissionId': '03716493619382043449',
-             'emailAddress': 'imkushagra@gmail.com'
-            }
+             'emailAddress': 'imkushagra@gmail.com',
+            },
            ],
            'lastModifyingUserName': 'Kushagra Gupta',
            'lastModifyingUser': {
             'kind': 'drive#user',
             'displayName': 'Kushagra Gupta',
             'picture': {
-             'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+             'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
             },
             'isAuthenticatedUser': True,
             'permissionId': '03716493619382043449',
-            'emailAddress': 'imkushagra@gmail.com'
+            'emailAddress': 'imkushagra@gmail.com',
            },
            'editable': True,
            'copyable': False,
            'writersCanShare': True,
            'shared': False,
-           'appDataContents': False
+           'appDataContents': False,
           },
           {
 
@@ -603,7 +603,7 @@ mock_folders = {
             'hidden': False,
             'trashed': False,
             'restricted': False,
-            'viewed': True
+            'viewed': True,
            },
            'createdDate': '2014-09-27T22:35:51.760Z',
            'modifiedDate': '2014-09-27T22:35:51.760Z',
@@ -617,8 +617,8 @@ mock_folders = {
              'id': '0B8IkoNBph4qJeWlDanNYbm9LT2c',
              'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJYmRhRWg3Xy05MzQ/parents/0B8IkoNBph4qJeWlDanNYbm9LT2c',
              'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJeWlDanNYbm9LT2c',
-             'isRoot': False
-            }
+             'isRoot': False,
+            },
            ],
            'userPermission': {
             'kind': 'drive#permission',
@@ -626,40 +626,40 @@ mock_folders = {
             'id': 'me',
             'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJYmRhRWg3Xy05MzQ/permissions/me',
             'role': 'owner',
-            'type': 'user'
+            'type': 'user',
            },
            'quotaBytesUsed': '0',
            'ownerNames': [
-            'Kushagra Gupta'
+            'Kushagra Gupta',
            ],
            'owners': [
             {
              'kind': 'drive#user',
              'displayName': 'Kushagra Gupta',
              'picture': {
-              'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+              'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
              },
              'isAuthenticatedUser': True,
              'permissionId': '03716493619382043449',
-             'emailAddress': 'imkushagra@gmail.com'
-            }
+             'emailAddress': 'imkushagra@gmail.com',
+            },
            ],
            'lastModifyingUserName': 'Kushagra Gupta',
            'lastModifyingUser': {
             'kind': 'drive#user',
             'displayName': 'Kushagra Gupta',
             'picture': {
-             'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+             'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
             },
             'isAuthenticatedUser': True,
             'permissionId': '03716493619382043449',
-            'emailAddress': 'imkushagra@gmail.com'
+            'emailAddress': 'imkushagra@gmail.com',
            },
            'editable': True,
            'copyable': False,
            'writersCanShare': True,
            'shared': False,
-           'appDataContents': False
+           'appDataContents': False,
           },
           {
 
@@ -676,7 +676,7 @@ mock_folders = {
             'hidden': False,
             'trashed': False,
             'restricted': False,
-            'viewed': True
+            'viewed': True,
            },
            'createdDate': '2014-09-27T22:35:51.760Z',
            'modifiedDate': '2014-09-27T22:35:51.760Z',
@@ -690,8 +690,8 @@ mock_folders = {
              'id': '0B8IkoNBph4qJeWlDanNYbm9LT2c',
              'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJYmRhRWg3Xy05MzQ/parents/0B8IkoNBph4qJeWlDanNYbm9LT2c',
              'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJeWlDanNYbm9LT2c',
-             'isRoot': False
-            }
+             'isRoot': False,
+            },
            ],
            'userPermission': {
             'kind': 'drive#permission',
@@ -699,43 +699,43 @@ mock_folders = {
             'id': 'me',
             'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJYmRhRWg3Xy05MzQ/permissions/me',
             'role': 'owner',
-            'type': 'user'
+            'type': 'user',
            },
            'quotaBytesUsed': '0',
            'ownerNames': [
-            'Kushagra Gupta'
+            'Kushagra Gupta',
            ],
            'owners': [
             {
              'kind': 'drive#user',
              'displayName': 'Kushagra Gupta',
              'picture': {
-              'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+              'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
              },
              'isAuthenticatedUser': True,
              'permissionId': '03716493619382043449',
-             'emailAddress': 'imkushagra@gmail.com'
-            }
+             'emailAddress': 'imkushagra@gmail.com',
+            },
            ],
            'lastModifyingUserName': 'Kushagra Gupta',
            'lastModifyingUser': {
             'kind': 'drive#user',
             'displayName': 'Kushagra Gupta',
             'picture': {
-             'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+             'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
             },
             'isAuthenticatedUser': True,
             'permissionId': '03716493619382043449',
-            'emailAddress': 'imkushagra@gmail.com'
+            'emailAddress': 'imkushagra@gmail.com',
            },
            'editable': True,
            'copyable': False,
            'writersCanShare': True,
            'shared': False,
-           'appDataContents': False
-          }
-         ]
-        }
+           'appDataContents': False,
+          },
+         ],
+}
 
 mock_root_folders = {
  'kind': 'drive#fileList',
@@ -758,7 +758,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-10-09T00:49:50.281Z',
    'modifiedDate': '2014-12-01T05:04:03.501Z',
@@ -773,8 +773,8 @@ mock_root_folders = {
      'id': '0AMIkoNBph4qJUk9PVA',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJZUViX241ZElCMG8/parents/0AMIkoNBph4qJUk9PVA',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0AMIkoNBph4qJUk9PVA',
-     'isRoot': True
-    }
+     'isRoot': True,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -782,40 +782,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJZUViX241ZElCMG8/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': True,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -833,7 +833,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-12-01T05:03:26.996Z',
    'modifiedDate': '2014-12-01T05:04:03.501Z',
@@ -848,8 +848,8 @@ mock_root_folders = {
      'id': '0B8IkoNBph4qJZUViX241ZElCMG8',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJRlltcThyQ2tqdVE/parents/0B8IkoNBph4qJZUViX241ZElCMG8',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJZUViX241ZElCMG8',
-     'isRoot': False
-    }
+     'isRoot': False,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -857,40 +857,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJRlltcThyQ2tqdVE/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': True,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -908,7 +908,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-10-20T15:27:16.791Z',
    'modifiedDate': '2014-10-20T15:27:16.791Z',
@@ -922,8 +922,8 @@ mock_root_folders = {
      'id': '0B8IkoNBph4qJZUViX241ZElCMG8',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJUXJFemUzWnZqa3c/parents/0B8IkoNBph4qJZUViX241ZElCMG8',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJZUViX241ZElCMG8',
-     'isRoot': False
-    }
+     'isRoot': False,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -931,40 +931,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJUXJFemUzWnZqa3c/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': True,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -982,7 +982,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-10-11T00:23:45.045Z',
    'modifiedDate': '2014-10-11T00:24:05.060Z',
@@ -997,8 +997,8 @@ mock_root_folders = {
      'id': '0B8IkoNBph4qJZUViX241ZElCMG8',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJdEI3aFE1Q0VOZGM/parents/0B8IkoNBph4qJZUViX241ZElCMG8',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJZUViX241ZElCMG8',
-     'isRoot': False
-    }
+     'isRoot': False,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -1006,40 +1006,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJdEI3aFE1Q0VOZGM/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': True,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -1057,7 +1057,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-10-11T00:13:38.395Z',
    'modifiedDate': '2014-10-11T00:13:38.395Z',
@@ -1071,8 +1071,8 @@ mock_root_folders = {
      'id': '0B8IkoNBph4qJZUViX241ZElCMG8',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJdjF3X3JwN0FULWs/parents/0B8IkoNBph4qJZUViX241ZElCMG8',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJZUViX241ZElCMG8',
-     'isRoot': False
-    }
+     'isRoot': False,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -1080,40 +1080,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJdjF3X3JwN0FULWs/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': True,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -1131,7 +1131,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-10-09T01:13:24.141Z',
    'modifiedDate': '2014-10-09T01:13:24.141Z',
@@ -1145,8 +1145,8 @@ mock_root_folders = {
      'id': '0B8IkoNBph4qJZUViX241ZElCMG8',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJa0FXdEFjOUtxaGM/parents/0B8IkoNBph4qJZUViX241ZElCMG8',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJZUViX241ZElCMG8',
-     'isRoot': False
-    }
+     'isRoot': False,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -1154,40 +1154,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJa0FXdEFjOUtxaGM/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': True,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -1205,7 +1205,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-10-09T01:08:51.778Z',
    'modifiedDate': '2014-10-09T01:13:12.374Z',
@@ -1220,8 +1220,8 @@ mock_root_folders = {
      'id': '0B8IkoNBph4qJZUViX241ZElCMG8',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJd25GRmplRE8tQmM/parents/0B8IkoNBph4qJZUViX241ZElCMG8',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJZUViX241ZElCMG8',
-     'isRoot': False
-    }
+     'isRoot': False,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -1229,40 +1229,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJd25GRmplRE8tQmM/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': True,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -1280,7 +1280,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-10-08T23:20:24.147Z',
    'modifiedDate': '2014-10-09T00:43:54.543Z',
@@ -1294,8 +1294,8 @@ mock_root_folders = {
      'id': '0B8IkoNBph4qJRW5wVzctSzRmdlk',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJV3F3TTFiai1ZT2M/parents/0B8IkoNBph4qJRW5wVzctSzRmdlk',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJRW5wVzctSzRmdlk',
-     'isRoot': False
-    }
+     'isRoot': False,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -1303,40 +1303,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJV3F3TTFiai1ZT2M/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': True,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -1353,7 +1353,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-10-08T23:20:24.147Z',
    'modifiedDate': '2014-10-08T23:20:24.147Z',
@@ -1367,8 +1367,8 @@ mock_root_folders = {
      'id': '0AMIkoNBph4qJUk9PVA',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJRW5wVzctSzRmdlk/parents/0AMIkoNBph4qJUk9PVA',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0AMIkoNBph4qJUk9PVA',
-     'isRoot': True
-    }
+     'isRoot': True,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -1376,40 +1376,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJRW5wVzctSzRmdlk/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': False,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -1426,7 +1426,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-09-27T22:35:51.760Z',
    'modifiedDate': '2014-09-27T22:35:51.760Z',
@@ -1440,8 +1440,8 @@ mock_root_folders = {
      'id': '0B8IkoNBph4qJZmR5aUdSOEE3NGs',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJenVUSDAxRFdjY1k/parents/0B8IkoNBph4qJZmR5aUdSOEE3NGs',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJZmR5aUdSOEE3NGs',
-     'isRoot': False
-    }
+     'isRoot': False,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -1449,40 +1449,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJenVUSDAxRFdjY1k/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': False,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -1499,7 +1499,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-09-27T22:35:51.760Z',
    'modifiedDate': '2014-09-27T22:35:51.760Z',
@@ -1513,8 +1513,8 @@ mock_root_folders = {
      'id': '0B8IkoNBph4qJYkJ4OHVqUnVHZFE',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJeWlDanNYbm9LT2c/parents/0B8IkoNBph4qJYkJ4OHVqUnVHZFE',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJYkJ4OHVqUnVHZFE',
-     'isRoot': False
-    }
+     'isRoot': False,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -1522,40 +1522,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJeWlDanNYbm9LT2c/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': False,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -1572,7 +1572,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-09-27T22:35:51.760Z',
    'modifiedDate': '2014-09-27T22:35:51.760Z',
@@ -1586,8 +1586,8 @@ mock_root_folders = {
      'id': '0B8IkoNBph4qJeWlDanNYbm9LT2c',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJeU9OSWQtaUNwbFE/parents/0B8IkoNBph4qJeWlDanNYbm9LT2c',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJeWlDanNYbm9LT2c',
-     'isRoot': False
-    }
+     'isRoot': False,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -1595,40 +1595,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJeU9OSWQtaUNwbFE/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': False,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -1645,7 +1645,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-09-27T22:35:51.760Z',
    'modifiedDate': '2014-09-27T22:35:51.760Z',
@@ -1659,8 +1659,8 @@ mock_root_folders = {
      'id': '0B8IkoNBph4qJeWlDanNYbm9LT2c',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJZ0hORDNsbHJJSzQ/parents/0B8IkoNBph4qJeWlDanNYbm9LT2c',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJeWlDanNYbm9LT2c',
-     'isRoot': False
-    }
+     'isRoot': False,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -1668,40 +1668,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJZ0hORDNsbHJJSzQ/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': False,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -1718,7 +1718,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-09-27T22:35:51.760Z',
    'modifiedDate': '2014-09-27T22:35:51.760Z',
@@ -1732,8 +1732,8 @@ mock_root_folders = {
      'id': '0B8IkoNBph4qJeWlDanNYbm9LT2c',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJZmR5aUdSOEE3NGs/parents/0B8IkoNBph4qJeWlDanNYbm9LT2c',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJeWlDanNYbm9LT2c',
-     'isRoot': False
-    }
+     'isRoot': False,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -1741,40 +1741,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJZmR5aUdSOEE3NGs/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': False,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -1791,7 +1791,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-09-27T22:35:51.760Z',
    'modifiedDate': '2014-09-27T22:35:51.760Z',
@@ -1805,8 +1805,8 @@ mock_root_folders = {
      'id': '0B8IkoNBph4qJeWlDanNYbm9LT2c',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJYmRhRWg3Xy05MzQ/parents/0B8IkoNBph4qJeWlDanNYbm9LT2c',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJeWlDanNYbm9LT2c',
-     'isRoot': False
-    }
+     'isRoot': False,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -1814,40 +1814,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJYmRhRWg3Xy05MzQ/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': False,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -1864,7 +1864,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-09-27T22:35:51.760Z',
    'modifiedDate': '2014-09-27T22:35:51.760Z',
@@ -1878,8 +1878,8 @@ mock_root_folders = {
      'id': '0B8IkoNBph4qJZmR5aUdSOEE3NGs',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJNi1TT0N1bC1fQzg/parents/0B8IkoNBph4qJZmR5aUdSOEE3NGs',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJZmR5aUdSOEE3NGs',
-     'isRoot': False
-    }
+     'isRoot': False,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -1887,40 +1887,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJNi1TT0N1bC1fQzg/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': False,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -1937,7 +1937,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-09-27T22:24:52.240Z',
    'modifiedDate': '2014-09-27T22:24:52.240Z',
@@ -1951,8 +1951,8 @@ mock_root_folders = {
      'id': '0AMIkoNBph4qJUk9PVA',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJYkJ4OHVqUnVHZFE/parents/0AMIkoNBph4qJUk9PVA',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0AMIkoNBph4qJUk9PVA',
-     'isRoot': True
-    }
+     'isRoot': True,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -1960,40 +1960,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJYkJ4OHVqUnVHZFE/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': False,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -2010,7 +2010,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-05-16T19:23:49.005Z',
    'modifiedDate': '2014-05-16T19:23:49.005Z',
@@ -2024,8 +2024,8 @@ mock_root_folders = {
      'id': '0AMIkoNBph4qJUk9PVA',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJZTRjQ3doVVgyd00/parents/0AMIkoNBph4qJUk9PVA',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0AMIkoNBph4qJUk9PVA',
-     'isRoot': True
-    }
+     'isRoot': True,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -2033,40 +2033,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJZTRjQ3doVVgyd00/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': False,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -2083,7 +2083,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-05-12T13:57:01.616Z',
    'modifiedDate': '2014-05-12T13:57:21.360Z',
@@ -2098,8 +2098,8 @@ mock_root_folders = {
      'id': '0AMIkoNBph4qJUk9PVA',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJTk9kdVY5TkFPUFE/parents/0AMIkoNBph4qJUk9PVA',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0AMIkoNBph4qJUk9PVA',
-     'isRoot': True
-    }
+     'isRoot': True,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -2107,40 +2107,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJTk9kdVY5TkFPUFE/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': False,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -2157,7 +2157,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-04-04T17:28:17.504Z',
    'modifiedDate': '2014-05-12T13:56:48.091Z',
@@ -2172,8 +2172,8 @@ mock_root_folders = {
      'id': '0AMIkoNBph4qJUk9PVA',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJYmZmdnlkOVZya2c/parents/0AMIkoNBph4qJUk9PVA',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0AMIkoNBph4qJUk9PVA',
-     'isRoot': True
-    }
+     'isRoot': True,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -2181,40 +2181,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJYmZmdnlkOVZya2c/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': False,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -2231,7 +2231,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2014-03-31T15:56:30.154Z',
    'modifiedDate': '2014-03-31T15:56:30.154Z',
@@ -2245,8 +2245,8 @@ mock_root_folders = {
      'id': '0AMIkoNBph4qJUk9PVA',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJWFRLSHltcmdHRDA/parents/0AMIkoNBph4qJUk9PVA',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0AMIkoNBph4qJUk9PVA',
-     'isRoot': True
-    }
+     'isRoot': True,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -2254,40 +2254,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJWFRLSHltcmdHRDA/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': False,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -2304,7 +2304,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2013-12-29T22:28:42.365Z',
    'modifiedDate': '2014-01-04T03:03:30.778Z',
@@ -2319,8 +2319,8 @@ mock_root_folders = {
      'id': '0AMIkoNBph4qJUk9PVA',
      'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJb1F2S3RQRVl0UzQ/parents/0AMIkoNBph4qJUk9PVA',
      'parentLink': 'https://www.googleapis.com/drive/v2/files/0AMIkoNBph4qJUk9PVA',
-     'isRoot': True
-    }
+     'isRoot': True,
+    },
    ],
    'userPermission': {
     'kind': 'drive#permission',
@@ -2328,40 +2328,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0B8IkoNBph4qJb1F2S3RQRVl0UzQ/permissions/me',
     'role': 'owner',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Kushagra Gupta'
+    'Kushagra Gupta',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Kushagra Gupta',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
      },
      'isAuthenticatedUser': True,
      'permissionId': '03716493619382043449',
-     'emailAddress': 'imkushagra@gmail.com'
-    }
+     'emailAddress': 'imkushagra@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': False,
-   'appDataContents': False
+   'appDataContents': False,
   },
   {
 
@@ -2378,7 +2378,7 @@ mock_root_folders = {
     'hidden': False,
     'trashed': False,
     'restricted': False,
-    'viewed': True
+    'viewed': True,
    },
    'createdDate': '2013-09-27T01:06:01.911Z',
    'modifiedDate': '2013-10-15T23:03:55.201Z',
@@ -2391,11 +2391,11 @@ mock_root_folders = {
     'kind': 'drive#user',
     'displayName': 'Rushabh Gosar',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-ZvzdgXa1w9o/AAAAAAAAAAI/AAAAAAAAIJw/3Q5za_0T_1Q/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-ZvzdgXa1w9o/AAAAAAAAAAI/AAAAAAAAIJw/3Q5za_0T_1Q/s64/photo.jpg',
     },
     'isAuthenticatedUser': False,
     'permissionId': '08913471013364666999',
-    'emailAddress': 'rushabh.techie@gmail.com'
+    'emailAddress': 'rushabh.techie@gmail.com',
    },
    'parents': [
    ],
@@ -2405,40 +2405,40 @@ mock_root_folders = {
     'id': 'me',
     'selfLink': 'https://www.googleapis.com/drive/v2/files/0Bx_h7N2n3_3VZE5RZXJGTDIyVnc/permissions/me',
     'role': 'writer',
-    'type': 'user'
+    'type': 'user',
    },
    'quotaBytesUsed': '0',
    'ownerNames': [
-    'Rushabh Gosar'
+    'Rushabh Gosar',
    ],
    'owners': [
     {
      'kind': 'drive#user',
      'displayName': 'Rushabh Gosar',
      'picture': {
-      'url': 'https://lh4.googleusercontent.com/-ZvzdgXa1w9o/AAAAAAAAAAI/AAAAAAAAIJw/3Q5za_0T_1Q/s64/photo.jpg'
+      'url': 'https://lh4.googleusercontent.com/-ZvzdgXa1w9o/AAAAAAAAAAI/AAAAAAAAIJw/3Q5za_0T_1Q/s64/photo.jpg',
      },
      'isAuthenticatedUser': False,
      'permissionId': '08913471013364666999',
-     'emailAddress': 'rushabh.techie@gmail.com'
-    }
+     'emailAddress': 'rushabh.techie@gmail.com',
+    },
    ],
    'lastModifyingUserName': 'Kushagra Gupta',
    'lastModifyingUser': {
     'kind': 'drive#user',
     'displayName': 'Kushagra Gupta',
     'picture': {
-     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg'
+     'url': 'https://lh4.googleusercontent.com/-kZ7H558nSOU/AAAAAAAAAAI/AAAAAAAAAJY/t1Cv0o4T-Lw/s64/photo.jpg',
     },
     'isAuthenticatedUser': True,
     'permissionId': '03716493619382043449',
-    'emailAddress': 'imkushagra@gmail.com'
+    'emailAddress': 'imkushagra@gmail.com',
    },
    'editable': True,
    'copyable': False,
    'writersCanShare': True,
    'shared': True,
-   'appDataContents': False
-  }
- ]
+   'appDataContents': False,
+  },
+ ],
 }

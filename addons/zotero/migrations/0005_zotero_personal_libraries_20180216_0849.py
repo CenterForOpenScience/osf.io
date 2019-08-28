@@ -54,5 +54,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(migrate_zotero_libraries, reverse_func)
+        migrations.RunPython(migrate_zotero_libraries, reverse_func),
     ]

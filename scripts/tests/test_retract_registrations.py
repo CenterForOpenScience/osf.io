@@ -32,7 +32,7 @@ class TestRetractRegistrations(OsfTestCase):
         self.registration.retraction._fields['initiation_date'].__set__(
             self.registration.retraction,
             (timezone.now() - timedelta(hours=47)),
-            safe=True
+            safe=True,
         )
         # setattr(self.registration.retraction, 'initiation_date', (timezone.now() - timedelta(hours=47)))
         self.registration.retraction.save()
@@ -46,7 +46,7 @@ class TestRetractRegistrations(OsfTestCase):
         self.registration.retraction._fields['initiation_date'].__set__(
             self.registration.retraction,
             (timezone.now() - timedelta(hours=48)),
-            safe=True
+            safe=True,
         )
         self.registration.retraction.save()
         assert_false(self.registration.is_retracted)
@@ -59,7 +59,7 @@ class TestRetractRegistrations(OsfTestCase):
         self.registration.retraction._fields['initiation_date'].__set__(
             self.registration.retraction,
             (timezone.now() - timedelta(days=365)),
-            safe=True
+            safe=True,
         )
         self.registration.retraction.save()
         assert_false(self.registration.is_retracted)
@@ -73,7 +73,7 @@ class TestRetractRegistrations(OsfTestCase):
         self.registration.retraction._fields['initiation_date'].__set__(
             self.registration.retraction,
             (timezone.now() - timedelta(days=365)),
-            safe=True
+            safe=True,
         )
         self.registration.retraction.save()
         assert_false(self.registration.is_retracted)

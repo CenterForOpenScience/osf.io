@@ -11,7 +11,8 @@ from framework.auth.decorators import must_be_logged_in
 from addons.base import generic_views
 from osf.models import ExternalAccount
 from website.project.decorators import (
-    must_have_addon)
+    must_have_addon,
+)
 
 import owncloud
 from addons.owncloud.models import OwnCloudProvider
@@ -23,16 +24,16 @@ FULL_NAME = 'OwnCloud'
 
 owncloud_account_list = generic_views.account_list(
     SHORT_NAME,
-    OwnCloudSerializer
+    OwnCloudSerializer,
 )
 
 owncloud_import_auth = generic_views.import_auth(
     SHORT_NAME,
-    OwnCloudSerializer
+    OwnCloudSerializer,
 )
 
 owncloud_deauthorize_node = generic_views.deauthorize_node(
-    SHORT_NAME
+    SHORT_NAME,
 )
 
 ## Config ##
@@ -61,22 +62,24 @@ def owncloud_add_user_account(auth, **kwargs):
         oc.logout()
     except requests.exceptions.ConnectionError:
         return {
-            'message': 'Invalid ownCloud server.'
+            'message': 'Invalid ownCloud server.',
         }, http.BAD_REQUEST
     except owncloud.owncloud.HTTPResponseError:
         return {
-            'message': 'ownCloud Login failed.'
+            'message': 'ownCloud Login failed.',
         }, http.UNAUTHORIZED
 
-    provider = OwnCloudProvider(account=None, host=host.url,
-                            username=username, password=password)
+    provider = OwnCloudProvider(
+        account=None, host=host.url,
+        username=username, password=password,
+    )
     try:
         provider.account.save()
     except ValidationError:
         # ... or get the old one
         provider.account = ExternalAccount.objects.get(
             provider=provider.short_name,
-            provider_id='{}:{}'.format(host.url, username).lower()
+            provider_id='{}:{}'.format(host.url, username).lower(),
         )
         if provider.account.oauth_key != password:
             provider.account.oauth_key = password
@@ -108,10 +111,10 @@ owncloud_set_config = generic_views.set_config(
     SHORT_NAME,
     FULL_NAME,
     OwnCloudSerializer,
-    _set_folder
+    _set_folder,
 )
 
 owncloud_get_config = generic_views.get_config(
     SHORT_NAME,
-    OwnCloudSerializer
+    OwnCloudSerializer,
 )

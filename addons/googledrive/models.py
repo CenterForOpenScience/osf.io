@@ -3,8 +3,10 @@
 """
 import os
 
-from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
-                                BaseStorageAddon)
+from addons.base.models import (
+    BaseOAuthNodeSettings, BaseOAuthUserSettings,
+    BaseStorageAddon,
+)
 from django.db import models
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -12,8 +14,10 @@ from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
 from addons.base import exceptions
 from addons.googledrive import settings as drive_settings
-from addons.googledrive.client import (GoogleAuthClient,
-                                               GoogleDriveClient)
+from addons.googledrive.client import (
+    GoogleAuthClient,
+    GoogleDriveClient,
+)
 from addons.googledrive.serializer import GoogleDriveSerializer
 from addons.googledrive.utils import to_hgrid
 from website.util import api_v2_url
@@ -66,7 +70,7 @@ class GoogleDriveProvider(ExternalProvider):
         return {
             'provider_id': info['sub'],
             'display_name': info['name'],
-            'profile_url': info.get('profile', None)
+            'profile_url': info.get('profile', None),
         }
 
     def fetch_access_token(self, force_refresh=False):
@@ -102,7 +106,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return bool(self.has_auth and self.user_settings.verify_oauth_access(
             node=self.owner,
             external_account=self.external_account,
-            metadata={'folder': self.folder_id}
+            metadata={'folder': self.folder_id},
         ))
 
     @property
@@ -142,12 +146,14 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'id': about['rootFolderId'],
                 'name': '/ (Full Google Drive)',
                 'urls': {
-                    'folders': api_v2_url('nodes/{}/addons/googledrive/folders/'.format(self.owner._id),
-                        params={
-                            'path': '/',
-                            'id': about['rootFolderId']
-                    })
-                }
+                    'folders': api_v2_url(
+                        'nodes/{}/addons/googledrive/folders/'.format(self.owner._id),
+                            params={
+                                'path': '/',
+                                'id': about['rootFolderId'],
+                            },
+                    ),
+                },
             }]
 
         contents = [
@@ -169,7 +175,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         self.user_settings.grant_oauth_access(
             node=self.owner,
             external_account=self.external_account,
-            metadata={'folder': self.folder_id}
+            metadata={'folder': self.folder_id},
         )  # Performs a save on self.user_settings
         self.save()
 
@@ -210,8 +216,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             'folder': {
                 'id': self.folder_id,
                 'name': self.folder_name,
-                'path': self.folder_path
-            }
+                'path': self.folder_path,
+            },
         }
 
     def create_waterbutler_log(self, auth, action, metadata):
@@ -228,7 +234,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
                 'urls': {
                     'view': url,
-                    'download': url + '?action=download'
+                    'download': url + '?action=download',
                 },
             },
         )

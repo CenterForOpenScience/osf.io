@@ -53,7 +53,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
     def setUp(self):
         self.mock_refresh = mock.patch.object(
             OneDriveProvider,
-            'refresh_oauth_key'
+            'refresh_oauth_key',
         )
         self.mock_refresh.return_value = True
         self.mock_refresh.start()
@@ -91,7 +91,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         folder = {
             'id': 'fake-folder-id',
             'name': 'fake-folder-name',
-            'path': 'fake_path'
+            'path': 'fake_path',
         }
         self.node_settings.set_folder(folder, auth=Auth(self.user))
         self.node_settings.save()

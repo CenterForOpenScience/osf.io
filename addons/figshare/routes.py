@@ -16,7 +16,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/figshare/settings/',
-                '/project/<pid>/node/<nid>/figshare/settings/'
+                '/project/<pid>/node/<nid>/figshare/settings/',
             ],
             'get',
             views.figshare_get_config,
@@ -25,7 +25,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/figshare/settings/',
-                '/project/<pid>/node/<nid>/figshare/settings/'
+                '/project/<pid>/node/<nid>/figshare/settings/',
             ],
             'put',
             views.figshare_set_config,
@@ -34,7 +34,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/figshare/user_auth/',
-                '/project/<pid>/node/<nid>/figshare/user_auth/'
+                '/project/<pid>/node/<nid>/figshare/user_auth/',
             ],
             'put',
             views.figshare_import_auth,
@@ -43,7 +43,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/figshare/user_auth/',
-                '/project/<pid>/node/<nid>/figshare/user_auth/'
+                '/project/<pid>/node/<nid>/figshare/user_auth/',
             ],
             'delete',
             views.figshare_deauthorize_node,
@@ -59,5 +59,5 @@ api_routes = {
             json_renderer,
         ),
     ],
-    'prefix': '/api/v1'
+    'prefix': '/api/v1',
 }

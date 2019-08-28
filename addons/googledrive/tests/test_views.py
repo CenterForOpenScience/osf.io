@@ -19,7 +19,7 @@ class TestAuthViews(GoogleDriveAddonTestCase, OAuthAddonAuthViewsTestCaseMixin, 
 class TestConfigViews(GoogleDriveAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
     folder = {
         'path': 'Drive/Camera Uploads',
-        'id': '1234567890'
+        'id': '1234567890',
     }
     Serializer = GoogleDriveSerializer
     client = GoogleDriveClient
@@ -28,13 +28,13 @@ class TestConfigViews(GoogleDriveAddonTestCase, OAuthAddonConfigViewsTestCaseMix
         super(TestConfigViews, self).setUp()
         self.mock_about = mock.patch.object(
             GoogleDriveClient,
-            'about'
+            'about',
         )
         self.mock_about.return_value = {'rootFolderId': '24601'}
         self.mock_about.start()
         self.mock_fetch = mock.patch.object(
             self.node_settings.__class__,
-            'fetch_access_token'
+            'fetch_access_token',
         )
         self.mock_fetch.return_value = self.external_account.oauth_key
         self.mock_fetch.start()

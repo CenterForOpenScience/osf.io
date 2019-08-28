@@ -29,7 +29,7 @@ def update_analytics(node, file_id, version_idx, action='download'):
     if node.contributors:
         contributors = node.contributors
     node_info = {
-        'contributors': contributors
+        'contributors': contributors,
     }
 
     update_counter('{0}:{1}:{2}'.format(action, node._id, file_id), node_info=node_info)

@@ -25,7 +25,7 @@ class TestBoxNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCas
         self.mock_data = mock.patch.object(
             NodeSettings,
             '_folder_data',
-            return_value=('12235', '/Foo')
+            return_value=('12235', '/Foo'),
         )
         self.mock_data.start()
         super(TestBoxNodeSettings, self).setUp()

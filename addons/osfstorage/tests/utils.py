@@ -72,7 +72,7 @@ def make_payload(user, name, **kwargs):
         'name': name,
         'hashes': {'base64': '=='},
         'worker': {
-            'uname': 'testmachine'
+            'uname': 'testmachine',
         },
         'settings': {
             'provider': 'filesystem',
@@ -82,7 +82,7 @@ def make_payload(user, name, **kwargs):
             'size': 123,
             'name': 'file',
             'provider': 'filesystem',
-            'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
+            'modified': 'Mon, 16 Feb 2015 18:45:34 GMT',
         },
     }
     payload.update(kwargs)

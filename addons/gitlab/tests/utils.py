@@ -57,24 +57,30 @@ def create_mock_gitlab(user='osfio', private=False):
         u'merge_requests_enabled': True,
         u'name': u'mock-repo',
         u'name_with_namespace': u'{} / mock-repo'.format(user),
-        u'namespace': {u'full_path': u'{}'.format(user),
+        u'namespace': {
+            u'full_path': u'{}'.format(user),
             u'id': 1748448,
             u'kind': u'user',
             u'name': u'{}'.format(user),
-            u'path': u'{}'.format(user)},
+            u'path': u'{}'.format(user),
+        },
         u'only_allow_merge_if_all_discussions_are_resolved': False,
         u'only_allow_merge_if_build_succeeds': False,
         u'open_issues_count': 0,
-        u'owner': {u'avatar_url': u'https://secure.gravatar.com/avatar/a7fa245b01a35ad586d8e2fa5bd7be5f?s=80&d=identicon',
+        u'owner': {
+            u'avatar_url': u'https://secure.gravatar.com/avatar/a7fa245b01a35ad586d8e2fa5bd7be5f?s=80&d=identicon',
             u'id': 1444024,
             u'name': u'{}'.format(user),
             u'state': u'active',
             u'username': u'{}'.format(user),
-            u'web_url': u'https://gitlab.com/{}'.format(user)},
+            u'web_url': u'https://gitlab.com/{}'.format(user),
+        },
         u'path': u'mock-repo',
         u'path_with_namespace': u'{}/mock-repo'.format(user),
-        u'permissions': {u'group_access': None,
-            u'project_access': {u'access_level': 40, u'notification_level': 3}},
+        u'permissions': {
+            u'group_access': None,
+            u'project_access': {u'access_level': 40, u'notification_level': 3},
+        },
         u'public': False,
         u'public_builds': True,
         u'request_access_enabled': False,
@@ -86,11 +92,12 @@ def create_mock_gitlab(user='osfio', private=False):
         u'tag_list': [],
         u'visibility_level': 0,
         u'web_url': u'https://gitlab.com/{}/mock-repo'.format(user),
-        u'wiki_enabled': True
+        u'wiki_enabled': True,
     })
 
     branch = mock.Mock(**{
-        u'commit': {u'author_email': u'{}@gmail.com'.format(user),
+        u'commit': {
+            u'author_email': u'{}@gmail.com'.format(user),
             u'author_name': u''.format(user),
             u'authored_date': u'2017-07-05T16:43:04.000+00:00',
             u'committed_date': u'2017-07-05T16:43:04.000+00:00',
@@ -101,11 +108,12 @@ def create_mock_gitlab(user='osfio', private=False):
             u'message': u'Add readme.md',
             u'parent_ids': [],
             u'short_id': u'f064566f',
-            u'title': u'Add readme.md'},
+            u'title': u'Add readme.md',
+        },
         u'developers_can_merge': False,
         u'developers_can_push': False,
         u'merged': False,
-        u'protected': True
+        u'protected': True,
     })
 
     # Hack because 'name' is a reserved keyword in a Mock object
