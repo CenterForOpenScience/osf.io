@@ -6,7 +6,8 @@ def set_region_external_account(region, account):
     region_external_account = RegionExternalAccount.objects.filter(region=region).first()
     if region_external_account is not None:
         # Account is being updated, so delete the previous one and put the new one
-        region_external_account.external_account.delete()
+        if region_external_account.external_account != account:
+            region_external_account.external_account.delete()
         region_external_account.external_account = account
         region_external_account.save()
     else:
