@@ -11,7 +11,6 @@ from api.base.filters import ListFilterMixin
 from api.base.utils import get_object_or_error
 from api.requests.permissions import NodeRequestPermission, PreprintRequestPermission
 from api.requests.serializers import NodeRequestSerializer, PreprintRequestSerializer
-from api.providers.permissions import MustBeModerator
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Node, NodeRequest, PreprintRequest, Preprint
 
@@ -145,7 +144,7 @@ class PreprintRequestActionList(JSONAPIBaseView, generics.ListAPIView, PreprintR
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        MustBeModerator,
+        PreprintRequestPermission,
     )
 
     required_read_scopes = [CoreScopes.ACTIONS_READ]

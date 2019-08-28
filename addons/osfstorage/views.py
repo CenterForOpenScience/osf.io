@@ -18,6 +18,7 @@ from framework.auth.decorators import must_be_signed, must_be_logged_in
 from api.caching.tasks import update_storage_usage
 from osf.exceptions import InvalidTagError, TagNotFoundError
 from osf.models import FileVersion, OSFUser
+from osf.utils.permissions import WRITE
 from osf.utils.requests import check_select_for_update
 from website.project.decorators import (
     must_not_be_registration, must_have_permission
@@ -415,7 +416,7 @@ def osfstorage_download(file_node, payload, **kwargs):
     }
 
 
-@must_have_permission('write')
+@must_have_permission(WRITE)
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_add_tag(file_node, **kwargs):
     data = request.get_json()
@@ -423,7 +424,7 @@ def osfstorage_add_tag(file_node, **kwargs):
         return {'status': 'success'}, httplib.OK
     return {'status': 'failure'}, httplib.BAD_REQUEST
 
-@must_have_permission('write')
+@must_have_permission(WRITE)
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_remove_tag(file_node, **kwargs):
     data = request.get_json()

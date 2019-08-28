@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0162_pagecounter_schema'),
+        ('osf', '0175_pagecounter_schema'),
     ]
 
     if DEBUG_MODE:

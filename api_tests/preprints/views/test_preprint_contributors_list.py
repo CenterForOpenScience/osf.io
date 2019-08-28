@@ -105,9 +105,9 @@ class TestPreprintContributorList(NodeCRUDTestCase):
     def test_permissions_work_with_many_users(
             self, app, user, preprint_unpublished, url_unpublished):
         users = {
-            'admin': [user._id],
-            'write': [],
-            'read': []
+            permissions.ADMIN: [user._id],
+            permissions.WRITE: [],
+            permissions.READ: []
         }
         for i in range(0, 25):
             perm = random.choice(users.keys())
@@ -147,7 +147,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
 
     #   test_return_unpublished_contributor_list_logged_in_read_contributor
         read_contrib = AuthUserFactory()
-        preprint_unpublished.add_contributor(read_contrib, permissions='read', save=True)
+        preprint_unpublished.add_contributor(read_contrib, permissions=permissions.READ, save=True)
         res = app.get(url_unpublished, auth=read_contrib.auth, expect_errors=True)
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
@@ -193,7 +193,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
         assert res.status_code == 403
 
         # test private_preprint_contributors_read_contrib_logged_out
-        preprint_published.add_contributor(user_two, 'read', save=True)
+        preprint_published.add_contributor(user_two, permissions.READ, save=True)
         res = app.get(url_published, auth=user_two.auth)
         assert res.status_code == 200
 
@@ -215,7 +215,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
         assert res.status_code == 404
 
         # test_deleted_preprint_contributors_read_contrib_logged_out
-        preprint_published.add_contributor(user_two, 'read', save=True)
+        preprint_published.add_contributor(user_two, permissions.READ, save=True)
         res = app.get(url_published, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 404
 
@@ -237,7 +237,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
         assert res.status_code == 403
 
         # test_abandoned_preprint_contributors_read_contrib_logged_out
-        preprint_published.add_contributor(user_two, 'read', save=True)
+        preprint_published.add_contributor(user_two, permissions.READ, save=True)
         res = app.get(url_published, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
 
@@ -259,7 +259,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
         assert res.status_code == 403
 
         # test_orphaned_preprint_contributors_read_contrib_logged_out
-        preprint_published.add_contributor(user_two, 'read', save=True)
+        preprint_published.add_contributor(user_two, permissions.READ, save=True)
         res = app.get(url_published, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 200
 
@@ -723,7 +723,7 @@ class TestPreprintContributorAdd(NodeCRUDTestCase):
             preprint_published, data_user_three, url_published):
         preprint_published.add_contributor(
             user_two,
-            permissions='write',
+            permissions=permissions.WRITE,
             auth=Auth(user),
             save=True)
         res = app.post_json_api(url_published, data_user_three,
@@ -810,8 +810,7 @@ class TestPreprintContributorAdd(NodeCRUDTestCase):
 
             preprint_unpublished.reload()
             assert user_two in preprint_unpublished.contributors
-            assert set(preprint_unpublished.get_permissions(user_two)) == set([
-                'read_preprint', 'write_preprint', 'admin_preprint'])
+            assert preprint_unpublished.get_permissions(user_two) == [permissions.READ, permissions.WRITE, permissions.ADMIN]
 
     def test_adds_write_contributor_unpublished_preprint_admin(
             self, app, user, user_two, preprint_unpublished, url_unpublished):
@@ -840,8 +839,8 @@ class TestPreprintContributorAdd(NodeCRUDTestCase):
 
             preprint_unpublished.reload()
             assert user_two in preprint_unpublished.contributors
-            assert set(preprint_unpublished.get_permissions(
-                user_two)) == set(['read_preprint', 'write_preprint'])
+            assert preprint_unpublished.get_permissions(
+                user_two) == [permissions.READ, permissions.WRITE]
 
     def test_adds_read_contributor_unpublished_preprint_admin(
             self, app, user, user_two, preprint_unpublished, url_unpublished):
@@ -870,8 +869,7 @@ class TestPreprintContributorAdd(NodeCRUDTestCase):
 
             preprint_unpublished.reload()
             assert user_two in preprint_unpublished.contributors
-            assert set(preprint_unpublished.get_permissions(user_two)) == set([
-                'read_preprint'])
+            assert preprint_unpublished.get_permissions(user_two) == [permissions.READ]
 
     def test_adds_invalid_permission_contributor_unpublished_preprint_admin(
             self, app, user, user_two, preprint_unpublished, url_unpublished):
@@ -925,8 +923,8 @@ class TestPreprintContributorAdd(NodeCRUDTestCase):
 
             preprint_unpublished.reload()
             assert user_two in preprint_unpublished.contributors
-            for permission in permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS:
-                assert preprint_unpublished.has_permission(user_two, permission)
+            assert preprint_unpublished.has_permission(user_two, permissions.WRITE)
+            assert preprint_unpublished.has_permission(user_two, permissions.READ)
 
     def test_adds_already_existing_contributor_unpublished_preprint_admin(
             self, app, user, user_two, preprint_unpublished, data_user_two, url_unpublished):
@@ -1528,7 +1526,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
             self, mock_update, mock_mail, app, user, url_preprint_contribs, preprint_unpublished):
         url = '/{}preprints/{}/'.format(API_BASE, preprint_unpublished._id)
         user_two = AuthUserFactory()
-        preprint_unpublished.add_contributor(user_two, permissions='write', save=True)
+        preprint_unpublished.add_contributor(user_two, permissions=permissions.WRITE, save=True)
         payload = {
             'data': {
                 'id': preprint_unpublished._id,
@@ -1605,7 +1603,7 @@ class TestPreprintContributorBulkCreate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {
                 'bibliographic': True,
-                'permission': 'admin'
+                'permission': permissions.ADMIN
             },
             'relationships': {
                 'users': {
@@ -1623,7 +1621,7 @@ class TestPreprintContributorBulkCreate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {
                 'bibliographic': False,
-                'permission': 'read'
+                'permission': permissions.READ
             },
             'relationships': {
                 'users': {
@@ -1714,7 +1712,7 @@ class TestPreprintContributorBulkCreate(NodeCRUDTestCase):
         assert_items_equal([res.json['data'][0]['attributes']['bibliographic'],
                             res.json['data'][1]['attributes']['bibliographic']], [True, False])
         assert_items_equal([res.json['data'][0]['attributes']['permission'],
-                            res.json['data'][1]['attributes']['permission']], ['admin', 'read'])
+                            res.json['data'][1]['attributes']['permission']], [permissions.ADMIN, permissions.READ])
         assert res.content_type == 'application/vnd.api+json'
 
         res = app.get(url_published, auth=user.auth)
@@ -1729,7 +1727,7 @@ class TestPreprintContributorBulkCreate(NodeCRUDTestCase):
         assert_items_equal([res.json['data'][0]['attributes']['bibliographic'],
                             res.json['data'][1]['attributes']['bibliographic']], [True, False])
         assert_items_equal([res.json['data'][0]['attributes']['permission'],
-                            res.json['data'][1]['attributes']['permission']], ['admin', 'read'])
+                            res.json['data'][1]['attributes']['permission']], [permissions.ADMIN, permissions.READ])
         assert res.content_type == 'application/vnd.api+json'
 
         res = app.get(url_unpublished, auth=user.auth)
@@ -1872,7 +1870,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {
                 'bibliographic': True,
-                'permission': 'admin'
+                'permission': permissions.ADMIN
             }
         }
 
@@ -1883,7 +1881,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {
                 'bibliographic': True,
-                'permission': 'admin'
+                'permission': permissions.ADMIN
             }
         }
 
@@ -1894,7 +1892,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {
                 'bibliographic': False,
-                'permission': 'write'
+                'permission': permissions.WRITE
             }
         }
 
@@ -1906,7 +1904,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {
                 'bibliographic': False,
-                'permission': 'write'
+                'permission': permissions.WRITE
             }
         }
 
@@ -1949,7 +1947,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read']
+            [permissions.ADMIN, permissions.READ, permissions.READ]
         )
 
     #   test_bulk_update_contributors_published_preprints_logged_out
@@ -1968,7 +1966,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read']
+            [permissions.ADMIN, permissions.READ, permissions.READ]
         )
 
     #   test_bulk_update_contributors_unpublished_preprints_logged_out
@@ -1987,7 +1985,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read'])
+            [permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_update_contributors_unpublished_preprints_logged_in_non_contrib
         res = app.put_json_api(
@@ -2006,7 +2004,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read'])
+            [permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_update_contributors_unpublished_preprints_logged_in_read_only_contrib
         res = app.put_json_api(
@@ -2025,7 +2023,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read']
+            [permissions.ADMIN, permissions.READ, permissions.READ]
         )
 
     #   test_bulk_update_contributors_preprints_send_dictionary_not_list
@@ -2134,7 +2132,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read']
+            [permissions.ADMIN, permissions.READ, permissions.READ]
         )
 
     #   test_bulk_update_contributors_invalid_bibliographic
@@ -2164,7 +2162,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read']
+            [permissions.ADMIN, permissions.READ, permissions.READ]
         )
 
     #   test_bulk_update_contributors_must_have_at_least_one_bibliographic_contributor
@@ -2178,7 +2176,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
                         ),
                         'type': 'contributors',
                         'attributes': {
-                            'permission': 'admin',
+                            'permission': permissions.ADMIN,
                             'bibliographic': False
                         }
                     }, {
@@ -2208,7 +2206,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
                     ),
                     'type': 'contributors',
                     'attributes': {
-                            'permission': 'read'
+                            'permission': permissions.READ
                     }
                 }
             ]},
@@ -2230,7 +2228,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
         assert_items_equal(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission']],
-            ['admin', 'write']
+            [permissions.ADMIN, permissions.WRITE]
         )
 
     def test_bulk_update_contributors_unpublished_preprints_logged_in_contrib(
@@ -2245,7 +2243,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
         assert_items_equal(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission']],
-            ['admin', 'write']
+            [permissions.ADMIN, permissions.WRITE]
         )
 
 
@@ -2319,7 +2317,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {
                 'bibliographic': True,
-                'permission': 'admin'
+                'permission': permissions.ADMIN
             }
         }
 
@@ -2330,7 +2328,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {
                 'bibliographic': False,
-                'permission': 'write'
+                'permission': permissions.WRITE
             }
         }
 
@@ -2341,7 +2339,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {
                 'bibliographic': True,
-                'permission': 'admin'
+                'permission': permissions.ADMIN
             }
         }
 
@@ -2353,7 +2351,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {
                 'bibliographic': False,
-                'permission': 'write'
+                'permission': permissions.WRITE
             }
         }
 
@@ -2390,7 +2388,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read']
+            [permissions.ADMIN, permissions.READ, permissions.READ]
         )
 
     #   test_bulk_partial_update_contributors_published_preprints_logged_out
@@ -2406,7 +2404,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read']
+            [permissions.ADMIN, permissions.READ, permissions.READ]
         )
 
     #   test_bulk_partial_update_contributors_unpublished_preprints_logged_out
@@ -2423,7 +2421,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read'])
+            [permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_partial_update_contributors_unpublished_preprints_logged_in_non_contrib
         res = app.patch_json_api(
@@ -2440,7 +2438,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read']
+            [permissions.ADMIN, permissions.READ, permissions.READ]
         )
 
     #   test_bulk_partial_update_contributors_unpublished_preprints_logged_in_read_only_contrib
@@ -2458,7 +2456,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read'])
+            [permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_partial_update_contributors_preprints_send_dictionary_not_list
         res = app.patch_json_api(
@@ -2555,7 +2553,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read'])
+            [permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_partial_update_invalid_bibliographic
         res = app.patch_json_api(
@@ -2581,7 +2579,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read'])
+            [permissions.ADMIN, permissions.READ, permissions.READ])
 
     def test_bulk_partial_update_contributors_published_preprints_logged_in(
             self, app, user, payload_published_one, payload_published_two, url_published):
@@ -2594,7 +2592,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
         assert_items_equal(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission']],
-            ['admin', 'write'])
+            [permissions.ADMIN, permissions.WRITE])
 
     def test_bulk_partial_update_contributors_unpublished_preprints_logged_in_contrib(
             self, app, user, payload_unpublished_one, payload_unpublished_two, url_unpublished):
@@ -2607,7 +2605,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
         assert_items_equal(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission']],
-            ['admin', 'write'])
+            [permissions.ADMIN, permissions.WRITE])
 
 @pytest.mark.enable_quickfiles_creation
 class TestPreprintContributorBulkDelete(NodeCRUDTestCase):
@@ -2940,6 +2938,7 @@ class TestPreprintContributorBulkDelete(NodeCRUDTestCase):
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestPreprintContributorFiltering:
 
     @pytest.fixture()
@@ -2947,10 +2946,21 @@ class TestPreprintContributorFiltering:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def preprint(self, user):
-        return PreprintFactory(creator=user)
+    def write_contrib(self):
+        return AuthUserFactory()
 
-    def test_filtering(self, app, user, preprint):
+    @pytest.fixture()
+    def read_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def preprint(self, user, write_contrib, read_contrib):
+        preprint = PreprintFactory(creator=user)
+        preprint.add_contributor(write_contrib, permissions.WRITE, visible=False)
+        preprint.add_contributor(read_contrib, permissions.READ)
+        return preprint
+
+    def test_filtering(self, app, user, write_contrib, read_contrib, preprint):
         #   test_filtering_full_name_field
         url = '/{}preprints/{}/contributors/?filter[full_name]=Freddie'.format(
             API_BASE, preprint._id)
@@ -2960,32 +2970,46 @@ class TestPreprintContributorFiltering:
         assert len(errors) == 1
         assert errors[0]['detail'] == '\'full_name\' is not a valid field for this endpoint.'
 
-    #   test_filtering_permission_field
+    #   test_filtering_permission_field_admin
         url = '/{}preprints/{}/contributors/?filter[permission]=admin'.format(
             API_BASE, preprint._id)
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
-        assert res.json['data'][0]['attributes'].get('permission') == 'admin'
+        assert res.json['data'][0]['attributes'].get('permission') == permissions.ADMIN
+
+    #   test_filtering_permission_field_write
+        url = '/{}preprints/{}/contributors/?filter[permission]=write'.format(
+            API_BASE, preprint._id)
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
+
+    #   test_filtering_permission_field_read
+        url = '/{}preprints/{}/contributors/?filter[permission]=read'.format(
+            API_BASE, preprint._id)
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 3
 
     #   test_filtering_node_with_only_bibliographic_contributors
         base_url = '/{}preprints/{}/contributors/'.format(API_BASE, preprint._id)
         # no filter
         res = app.get(base_url, auth=user.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == 1
+        assert len(res.json['data']) == 3
 
         # filter for bibliographic contributors
         url = base_url + '?filter[bibliographic]=True'
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == 1
+        assert len(res.json['data']) == 2
         assert res.json['data'][0]['attributes'].get('bibliographic', None)
 
         # filter for non-bibliographic contributors
         url = base_url + '?filter[bibliographic]=False'
         res = app.get(url, auth=user.auth)
-        assert len(res.json['data']) == 0
+        assert len(res.json['data']) == 1
 
     #   test_filtering_on_invalid_field
         url = '/{}preprints/{}/contributors/?filter[invalid]=foo'.format(
@@ -3007,16 +3031,16 @@ class TestPreprintContributorFiltering:
         # no filter
         res = app.get(base_url, auth=user.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == 2
+        assert len(res.json['data']) == 4
 
         # filter for bibliographic contributors
         url = base_url + '?filter[bibliographic]=True'
         res = app.get(url, auth=user.auth)
-        assert len(res.json['data']) == 1
+        assert len(res.json['data']) == 2
         assert res.json['data'][0]['attributes'].get('bibliographic', None)
 
         # filter for non-bibliographic contributors
         url = base_url + '?filter[bibliographic]=False'
         res = app.get(url, auth=user.auth)
-        assert len(res.json['data']) == 1
+        assert len(res.json['data']) == 2
         assert not res.json['data'][0]['attributes'].get('bibliographic', None)

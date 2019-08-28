@@ -9,6 +9,7 @@ from waffle.testutils import override_switch
 from addons.github.models import GithubFile
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
+from api_tests.subjects.mixins import SubjectsFilterMixin
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from api_tests.preprints.views.test_preprint_list_mixin import (
     PreprintIsPublishedListMixin,
@@ -339,8 +340,8 @@ class TestPreprintsListFiltering(PreprintsListFilteringMixin):
 
         # Read contribs can only see withdrawn preprints that have been public
         user2 = AuthUserFactory()
-        preprint_one.add_contributor(user2, 'read')
-        preprint_two.add_contributor(user2, 'read')
+        preprint_one.add_contributor(user2, permissions.READ)
+        preprint_two.add_contributor(user2, permissions.READ)
         expected = [preprint_two._id]
         res = app.get(url, auth=user2.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
@@ -350,6 +351,20 @@ class TestPreprintsListFiltering(PreprintsListFilteringMixin):
         res = app.get(url, auth=user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert set(expected) == set(actual)
+
+
+class TestPreprintSubjectFiltering(SubjectsFilterMixin):
+    @pytest.fixture()
+    def resource(self, user):
+        return PreprintFactory(creator=user)
+
+    @pytest.fixture()
+    def resource_two(self, user):
+        return PreprintFactory(creator=user)
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}preprints/'.format(API_BASE)
 
 
 class TestPreprintListFilteringByReviewableFields(ReviewableFilterMixin):
@@ -478,7 +493,7 @@ class TestPreprintCreate(ApiTestCase):
         assert_equal(res.status_code, 201)
 
     def test_read_user_on_supplemental_node(self):
-        self.public_project.set_permissions(self.other_user, ['read'], save=True)
+        self.public_project.set_permissions(self.other_user, permissions.READ, save=True)
         assert_in(self.other_user, self.public_project.contributors)
         public_project_payload = build_preprint_create_payload(
             self.public_project._id, self.provider._id)
@@ -793,7 +808,7 @@ class TestPreprintIsPublishedList(PreprintIsPublishedListMixin):
                                project=project_public,
                                machine_state='pending',
                                is_published=False)
-        preprint.add_contributor(user_write_contrib, permissions='write', save=True)
+        preprint.add_contributor(user_write_contrib, permissions=permissions.WRITE, save=True)
         return preprint
 
     def test_unpublished_visible_to_admins(
@@ -883,7 +898,7 @@ class TestReviewsPendingPreprintIsPublishedList(PreprintIsPublishedListMixin):
                                project=project_public,
                                is_published=False,
                                machine_state=DefaultStates.PENDING.value)
-        preprint.add_contributor(user_write_contrib, permissions='write', save=True)
+        preprint.add_contributor(user_write_contrib, permissions=permissions.WRITE, save=True)
         return preprint
 
     def test_unpublished_visible_to_admins(
@@ -958,7 +973,7 @@ class TestReviewsInitialPreprintIsPublishedList(PreprintIsPublishedListMixin):
                                project=project_public,
                                is_published=False,
                                machine_state=DefaultStates.INITIAL.value)
-        preprint.add_contributor(user_write_contrib, permissions='write', save=True)
+        preprint.add_contributor(user_write_contrib, permissions=permissions.WRITE, save=True)
         return preprint
 
     def test_unpublished_not_visible_to_admins(
@@ -1040,7 +1055,7 @@ class TestPreprintIsPublishedListMatchesDetail(
                                subjects=[[subject._id]],
                                project=project_public,
                                is_published=False)
-        preprint.add_contributor(user_write_contrib, 'write', save=True)
+        preprint.add_contributor(user_write_contrib, permissions.WRITE, save=True)
         return preprint
 
     @pytest.fixture()
@@ -1125,7 +1140,7 @@ class TestReviewsInitialPreprintIsPublishedListMatchesDetail(
                                project=project_public,
                                is_published=False,
                                machine_state=DefaultStates.INITIAL.value)
-        preprint.add_contributor(user_write_contrib, 'write', save=True)
+        preprint.add_contributor(user_write_contrib, permissions.WRITE, save=True)
         return preprint
 
     @pytest.fixture()
@@ -1210,7 +1225,7 @@ class TestReviewsPendingPreprintIsPublishedListMatchesDetail(
                                project=project_public,
                                is_published=False,
                                machine_state=DefaultStates.PENDING.value)
-        preprint.add_contributor(user_write_contrib, 'write', save=True)
+        preprint.add_contributor(user_write_contrib, permissions.WRITE, save=True)
         return preprint
 
     @pytest.fixture()

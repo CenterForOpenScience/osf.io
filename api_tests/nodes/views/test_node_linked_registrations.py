@@ -5,8 +5,11 @@ from framework.auth.core import Auth
 from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
+    OSFGroupFactory,
     RegistrationFactory,
+    NodeRelationFactory,
 )
+from osf.utils.permissions import READ
 from rest_framework import exceptions
 
 
@@ -50,7 +53,7 @@ class LinkedRegistrationsTestCase:
             auth=Auth(user_admin_contrib))
         node_private.add_contributor(
             user_read_contrib,
-            permissions=['read'],
+            permissions=READ,
             auth=Auth(user_admin_contrib))
         node_private.add_pointer(registration, auth=Auth(user_admin_contrib))
         return node_private
@@ -112,6 +115,16 @@ class TestNodeLinkedRegistrationsList(LinkedRegistrationsTestCase):
         res = make_request(node_id=node_private._id, expect_errors=True)
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
+
+    #   test_osf_group_member_read_can_view_linked_reg
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        node_private.add_osf_group(group, READ)
+        res = make_request(
+            node_id=node_private._id,
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert res.status_code == 200
 
 
 @pytest.mark.django_db
@@ -180,6 +193,16 @@ class TestNodeLinkedRegistrationsRelationshipRetrieve(
         res = make_request(node_id=node_private._id, expect_errors=True)
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
+
+    #   test_osf_group_member_can_view_linked_registration_relationship
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        node_private.add_osf_group(group, READ)
+        res = make_request(
+            node_id=node_private._id,
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert res.status_code == 200
 
 
 @pytest.mark.django_db
@@ -254,8 +277,8 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
         assert registration._id in linked_registrations
 
     def test_cannot_create_linked_registrations_relationship(
-            self, make_request, user_admin_contrib, user_read_contrib,
-            user_non_contrib, node_private):
+            self, app, make_request, user_admin_contrib, user_read_contrib,
+            user_non_contrib, node_private, make_payload):
 
         #   test_read_contributor_cannot_create_linked_registrations_relationship
         registration = RegistrationFactory(is_public=True)
@@ -278,6 +301,19 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
         )
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
+
+    #   test_read_osf_group_mem_cannot_create_linked_registrations_relationship
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        node_private.add_osf_group(group, READ)
+        registration = RegistrationFactory(is_public=True)
+        res = make_request(
+            node_id=node_private._id,
+            reg_id=registration._id,
+            auth=group_mem.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 403
 
     #   test_unauthenticated_user_cannot_create_linked_registrations_relationship
         registration = RegistrationFactory(is_public=True)
@@ -309,6 +345,26 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
         )
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
+
+    #   test_cannot_create_relationship_with_child_registration
+        child_reg = RegistrationFactory(creator=user_admin_contrib)
+        NodeRelationFactory(child=child_reg, parent=node_private)
+        url = '/{}nodes/{}/relationships/linked_registrations/'.format(
+            API_BASE, node_private._id)
+        data = make_payload(registration_id=child_reg._id)
+        res = app.post_json_api(url, data, auth=user_admin_contrib.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Target Node \'{}\' is already a child of \'{}\'.'.format(child_reg._id, node_private._id)
+
+    #   test_cannot_create_link_registration_to_itself
+        res = make_request(
+            node_id=node_private._id,
+            reg_id=node_private._id,
+            auth=user_admin_contrib.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Cannot link node \'{}\' to itself.'.format(node_private._id)
 
     def test_create_linked_registrations_relationship_registration_already_in_linked_registrations_returns_no_content(
             self, make_request, registration, node_private, user_admin_contrib):
@@ -353,7 +409,7 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
         registration.add_contributor(
             user_admin_contrib,
             auth=Auth(registration.creator),
-            permissions=['read'])
+            permissions=READ)
         registration.save()
         res = make_request(
             node_id=node_private._id,
@@ -449,7 +505,7 @@ class TestNodeLinkedRegistrationsRelationshipUpdate(
         assert registration._id not in linked_registrations
 
     def test_cannot_update_linked_registrations_relationship(
-            self, make_request, user_read_contrib, user_non_contrib, node_private):
+            self, app, make_request, make_payload, user_read_contrib, user_non_contrib, node_private, user_admin_contrib):
 
         #   test_read_contributor_cannot_update_linked_registrations_relationship
         registration = RegistrationFactory(is_public=True)
@@ -483,6 +539,25 @@ class TestNodeLinkedRegistrationsRelationshipUpdate(
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
+    #   test_cannot_update_relationship_with_child_registration
+        child_reg = RegistrationFactory(creator=user_admin_contrib)
+        NodeRelationFactory(child=child_reg, parent=node_private)
+        url = '/{}nodes/{}/relationships/linked_registrations/'.format(
+            API_BASE, node_private._id)
+        data = make_payload(registration_id=child_reg._id)
+        res = app.put_json_api(url, data, auth=user_admin_contrib.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Target Node \'{}\' is already a child of \'{}\'.'.format(child_reg._id, node_private._id)
+
+    #   test_cannot_update_link_registration_to_itself
+        res = make_request(
+            node_id=node_private._id,
+            reg_id=node_private._id,
+            auth=user_admin_contrib.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Cannot link node \'{}\' to itself.'.format(node_private._id)
 
 @pytest.mark.django_db
 class TestNodeLinkedRegistrationsRelationshipDelete(

@@ -9,7 +9,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0161_add_spam_fields_to_user'),
+        ('osf', '0174_add_ab_testing_home_page_version_b_flag'),
     ]
 
     operations = [

@@ -6,6 +6,7 @@ from osf_tests.factories import (
     PreprintFactory,
     PreprintProviderFactory,
 )
+from osf.utils import permissions
 
 
 @pytest.mark.django_db
@@ -30,7 +31,7 @@ class ReviewActionCommentSettingsMixin(object):
     @pytest.fixture()
     def provider_admin(self, provider):
         user = AuthUserFactory()
-        user.groups.add(provider.get_group('admin'))
+        user.groups.add(provider.get_group(permissions.ADMIN))
         return user
 
     @pytest.fixture()
@@ -44,7 +45,7 @@ class ReviewActionCommentSettingsMixin(object):
         user = AuthUserFactory()
         preprint.add_contributor(
             user,
-            'admin'
+            permissions.ADMIN
         )
         return user
 
