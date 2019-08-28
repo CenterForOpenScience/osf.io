@@ -768,11 +768,6 @@ def _view_project(node, auth, primary=False,
 
     user = auth.user
 
-    try:
-        contributor = node.contributor_set.get(user=user)
-    except Contributor.DoesNotExist:
-        contributor = None
-
     if mapcore_sync_is_enabled():
         try:
             mapcore_sync_rdm_project_or_map_group(auth.user, node)
