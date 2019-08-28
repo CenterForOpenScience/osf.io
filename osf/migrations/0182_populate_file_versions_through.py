@@ -90,7 +90,7 @@ def populate_fileversion_name(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0174_add_custom_file_versions_through'),
+        ('osf', '0181_add_custom_file_versions_through'),
     ]
 
     operations = [
