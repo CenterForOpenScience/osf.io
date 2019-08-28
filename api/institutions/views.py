@@ -157,6 +157,16 @@ class InstitutionUserList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView
 
 
 class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
+    """A dedicated view for institution auth, a.k.a "login through institutions".
+
+    This view is only used and should only be used by CAS.  Changing it may break the institution
+    login feature.  Please check with @longze and @matt before making any changes.
+
+    CAS makes POST request with JWE/JWT encrypted payload to check with OSF on the identity of users
+    authenticated by external institutions.  OSF either finds the matching user or otherwise creates
+    a new one.  Everything happens in the API authentication class and the ``post()`` simply returns
+    a 204 if the auth passes. (See ``api.institutions.authenticationInstitutionAuthentication``)
+    """
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,

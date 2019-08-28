@@ -83,6 +83,10 @@ class PreprintRequestTestMixin(object):
         return AuthUserFactory()
 
     @pytest.fixture()
+    def requester(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
     def pre_mod_provider(self, moderator):
         ppp = PreprintProviderFactory(reviews_workflow='pre-moderation')
         ppp.get_group('moderator').user_set.add(moderator)
@@ -203,4 +207,48 @@ class PreprintRequestTestMixin(object):
             machine_state=DefaultStates.INITIAL.value
         )
         request.run_submit(admin)
+        return request
+
+    @pytest.fixture()
+    def nonadmin_pre_request(self, pre_mod_preprint, requester):
+        request = PreprintRequestFactory(
+            creator=requester,
+            target=pre_mod_preprint,
+            request_type=RequestTypes.WITHDRAWAL.value,
+            machine_state=DefaultStates.INITIAL.value
+        )
+        request.run_submit(requester)
+        return request
+
+    @pytest.fixture()
+    def nonadmin_post_request(self, post_mod_preprint, requester):
+        request = PreprintRequestFactory(
+            creator=requester,
+            target=post_mod_preprint,
+            request_type=RequestTypes.WITHDRAWAL.value,
+            machine_state=DefaultStates.INITIAL.value
+        )
+        request.run_submit(requester)
+        return request
+
+    @pytest.fixture()
+    def nonadmin_none_request(self, none_mod_preprint, requester):
+        request = PreprintRequestFactory(
+            creator=requester,
+            target=none_mod_preprint,
+            request_type=RequestTypes.WITHDRAWAL.value,
+            machine_state=DefaultStates.INITIAL.value
+        )
+        request.run_submit(requester)
+        return request
+
+    @pytest.fixture()
+    def nonadmin_auto_approved_pre_request(self, auto_withdrawable_pre_mod_preprint, requester):
+        request = PreprintRequestFactory(
+            creator=requester,
+            target=auto_withdrawable_pre_mod_preprint,
+            request_type=RequestTypes.WITHDRAWAL.value,
+            machine_state=DefaultStates.INITIAL.value
+        )
+        request.run_submit(requester)
         return request

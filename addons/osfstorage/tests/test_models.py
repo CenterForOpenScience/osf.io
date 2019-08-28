@@ -334,6 +334,30 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(new_project, move_to.target)
         assert_equal(new_project, child.target)
 
+    def test_move_nested_between_regions(self):
+        canada = RegionFactory()
+        new_component = NodeFactory(parent=self.project)
+        component_node_settings = new_component.get_addon('osfstorage')
+        component_node_settings.region = canada
+        component_node_settings.save()
+
+        move_to = component_node_settings.get_root()
+        to_move = self.node_settings.get_root().append_folder('Aaah').append_folder('Woop')
+        child = to_move.append_file('There it is')
+
+        for _ in range(2):
+            version = factories.FileVersionFactory(region=self.node_settings.region)
+            child.versions.add(version)
+        child.save()
+
+        moved = to_move.move_under(move_to)
+        child.reload()
+
+        assert new_component == child.target
+        versions = child.versions.order_by('-created')
+        assert versions.first().region == component_node_settings.region
+        assert versions.last().region == self.node_settings.region
+
     def test_copy_rename(self):
         to_copy = self.node_settings.get_root().append_file('Carp')
         copy_to = self.node_settings.get_root().append_folder('Cloud')

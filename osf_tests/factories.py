@@ -704,16 +704,27 @@ class DismissedAlertFactory(DjangoModelFactory):
 
         return super(DismissedAlertFactory, cls)._create(*args, **kwargs)
 
+class ApiOAuth2ScopeFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ApiOAuth2Scope
+
+    name = factory.Faker('word')
+    is_public = True
+    is_active = True
+    description = factory.Faker('text')
+
 class ApiOAuth2PersonalTokenFactory(DjangoModelFactory):
     class Meta:
         model = models.ApiOAuth2PersonalToken
 
     owner = factory.SubFactory(UserFactory)
-
-    scopes = 'osf.full_write osf.full_read'
-
     name = factory.Sequence(lambda n: 'Example OAuth2 Personal Token #{}'.format(n))
 
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        token = super(ApiOAuth2PersonalTokenFactory, cls)._create(*args, **kwargs)
+        token.scopes.add(ApiOAuth2ScopeFactory())
+        return token
 
 class ApiOAuth2ApplicationFactory(DjangoModelFactory):
     class Meta:
