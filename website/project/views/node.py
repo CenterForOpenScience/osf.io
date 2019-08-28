@@ -77,7 +77,7 @@ def edit_node(auth, node, **kwargs):
         except ValidationError as e:
             raise HTTPError(
                 http.BAD_REQUEST,
-                data=dict(message_long=e.message)
+                data=dict(message_long=e.message),
             )
         new_val = node.title
     elif edited_field == 'description':
@@ -91,11 +91,11 @@ def edit_node(auth, node, **kwargs):
     except ValidationError as e:
         raise HTTPError(
             http.BAD_REQUEST,
-            data=dict(message_long=e.message)
+            data=dict(message_long=e.message),
         )
     return {
         'status': 'success',
-        'newValue': new_val  # Used by x-editable  widget to reflect changes made by sanitizer
+        'newValue': new_val,  # Used by x-editable  widget to reflect changes made by sanitizer
     }
 
 
@@ -135,7 +135,7 @@ def project_new_post(auth, **kwargs):
             auth=auth,
             changes={
                 template: changes,
-            }
+            },
         )
 
     else:
@@ -144,12 +144,12 @@ def project_new_post(auth, **kwargs):
         except ValidationError as e:
             raise HTTPError(
                 http.BAD_REQUEST,
-                data=dict(message_long=e.message)
+                data=dict(message_long=e.message),
             )
         new_project = _view_project(project, auth)
     return {
         'projectUrl': project.url,
-        'newNode': new_project['node'] if new_project else None
+        'newNode': new_project['node'] if new_project else None,
     }, http.CREATED
 
 
@@ -188,7 +188,7 @@ def project_new_node(auth, node, **kwargs):
         except ValidationError as e:
             raise HTTPError(
                 http.BAD_REQUEST,
-                data=dict(message_long=e.message)
+                data=dict(message_long=e.message),
             )
         redirect_url = node.url
         message = (
@@ -202,7 +202,7 @@ def project_new_node(auth, node, **kwargs):
                 if contributor._id == user._id and not contributor.is_registered:
                     new_component.add_unregistered_contributor(
                         fullname=contributor.fullname, email=contributor.email,
-                        permissions=perm, auth=auth, existing_user=contributor
+                        permissions=perm, auth=auth, existing_user=contributor,
                     )
                 else:
                     new_component.add_contributor(contributor, permissions=perm, auth=auth)
@@ -239,8 +239,8 @@ def project_before_fork(auth, node, **kwargs):
     if node.has_pointers_recursive:
         prompts.append(
             language.BEFORE_FORK_HAS_POINTERS.format(
-                category=node.project_or_component
-            )
+                category=node.project_or_component,
+            ),
         )
 
     return {'prompts': prompts}
@@ -308,7 +308,7 @@ def node_setting(auth, node, **kwargs):
 
     ret['categories'] = settings.NODE_CATEGORY_MAP
     ret['categories'].update({
-        'project': 'Project'
+        'project': 'Project',
     })
 
     return ret
@@ -442,18 +442,19 @@ def configure_requests(node, **kwargs):
 @ember_flag_is_active(features.EMBER_PROJECT_DETAIL)
 def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
-    ret = _view_project(node, auth,
-                        primary=primary,
-                        embed_contributors=True,
-                        embed_descendants=True
-                        )
+    ret = _view_project(
+        node, auth,
+        primary=primary,
+        embed_contributors=True,
+        embed_descendants=True,
+    )
 
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     # Collect the URIs to the static assets for addons that have widgets
     ret['addon_widget_js'] = list(collect_addon_js(
         node,
         filename='widget-cfg.js',
-        config_entry='widget'
+        config_entry='widget',
     ))
     ret.update(rubeus.collect_addon_assets(node))
 
@@ -465,7 +466,7 @@ def view_project(auth, node, **kwargs):
         'mendeley': None,
         'zotero': None,
         'forward': None,
-        'dataverse': None
+        'dataverse': None,
     }
 
     if 'wiki' in ret['addons']:
@@ -516,7 +517,7 @@ def project_reorder_components(node, **kwargs):
     deleted_node_relation_ids = list(
         node.node_relations.select_related('child')
         .filter(child__is_deleted=True)
-        .values_list('pk', flat=True)
+        .values_list('pk', flat=True),
     )
 
     if len(ordered_guids) > len(node_relations):
@@ -524,8 +525,10 @@ def project_reorder_components(node, **kwargs):
 
     # Ordered NodeRelation pks, sorted according the order of guids passed in the request payload
     new_node_relation_ids = [
-        each.id for each in sorted(node_relations,
-                                   key=lambda nr: ordered_guids.index(nr.child._id))
+        each.id for each in sorted(
+            node_relations,
+            key=lambda nr: ordered_guids.index(nr.child._id),
+        )
     ]
 
     if len(node_relations) == len(ordered_guids):
@@ -560,10 +563,12 @@ def project_set_privacy(auth, node, **kwargs):
     try:
         node.set_privacy(permissions, auth)
     except NodeStateError as e:
-        raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_short="Can't change privacy",
-            message_long=str(e)
-        ))
+        raise HTTPError(
+            http.BAD_REQUEST, data=dict(
+                message_short="Can't change privacy",
+                message_long=str(e),
+            ),
+        )
 
     return {
         'status': 'success',
@@ -581,10 +586,12 @@ def update_node(auth, node, **kwargs):
     try:
         updated_field_names = node.update(data, auth=auth)
     except NodeUpdateError as e:
-        raise HTTPError(400, data=dict(
-            message_short="Failed to update attribute '{0}'".format(e.key),
-            message_long=e.reason
-        ))
+        raise HTTPError(
+            400, data=dict(
+                message_short="Failed to update attribute '{0}'".format(e.key),
+                message_long=e.reason,
+            ),
+        )
     # Need to cast tags to a string to make them JSON-serialiable
     updated_fields_dict = {
         key: getattr(node, key) if key != 'tags' else [str(tag) for tag in node.tags]
@@ -608,12 +615,12 @@ def component_remove(auth, node, **kwargs):
             http.BAD_REQUEST,
             data={
                 'message_short': 'Error',
-                'message_long': 'Could not delete component: ' + str(e)
+                'message_long': 'Could not delete component: ' + str(e),
             },
         )
 
     message = '{} has been successfully deleted.'.format(
-        node.project_or_component.capitalize()
+        node.project_or_component.capitalize(),
     )
     id = '{}_deleted'.format(node.project_or_component)
     status.push_status_message(message, kind='success', trust=False, id=id)
@@ -652,7 +659,7 @@ def remove_private_link(*args, **kwargs):
         node.add_log(
             NodeLog.VIEW_ONLY_LINK_REMOVED,
             log_dict,
-            auth=kwargs.get('auth', None)
+            auth=kwargs.get('auth', None),
         )
 
 # TODO: Split into separate functions
@@ -684,9 +691,11 @@ def _should_show_wiki_widget(node, user):
         return has_wiki and wiki_page and wiki_page.html(node)
 
 
-def _view_project(node, auth, primary=False,
-                  embed_contributors=False, embed_descendants=False,
-                  embed_registrations=False, embed_forks=False):
+def _view_project(
+    node, auth, primary=False,
+    embed_contributors=False, embed_descendants=False,
+    embed_registrations=False, embed_forks=False,
+):
     """Build a JSON object containing everything needed to render
     project.view.mako.
     """
@@ -832,7 +841,7 @@ def _view_project(node, auth, primary=False,
         'node_categories': [
             {'value': key, 'display_name': value}
             for key, value in settings.NODE_CATEGORY_MAP.items()
-        ]
+        ],
     }
 
     # Default should be at top of list for UI and for the project overview page the default region
@@ -892,7 +901,7 @@ def serialize_collections(cgms, auth):
         'program_area': cgm.program_area,
         'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'is_public': cgm.collection.is_public,
-        'logo': cgm.collection.provider.get_asset_url('favicon')
+        'logo': cgm.collection.provider.get_asset_url('favicon'),
     } for cgm in cgms if cgm.collection.provider and (cgm.collection.is_public or
         (auth.user and auth.user.has_perm('read_collection', cgm.collection)))]
 
@@ -906,7 +915,7 @@ def serialize_preprints(node, user):
             'word': preprint.provider.preprint_word,
             'provider': {'name': 'OSF Preprints' if preprint.provider.name == 'Open Science Framework' else preprint.provider.name, 'workflow': preprint.provider.reviews_workflow},
             'url': preprint.url,
-            'absolute_url': preprint.absolute_url
+            'absolute_url': preprint.absolute_url,
         } for preprint in Preprint.objects.can_view(base_queryset=node.preprints, user=user).filter(date_withdrawn__isnull=True)
     ]
 
@@ -925,7 +934,7 @@ def serialize_children(child_list, nested, indent=0):
             'title': child.title,
             'is_public': child.is_public,
             'parent_id': child.parentnode_id,
-            'indent': indent
+            'indent': indent,
         })
         if child._id in nested.keys():
             results.extend(serialize_children(nested.get(child._id), nested, indent + 1))
@@ -956,7 +965,7 @@ def private_link_table(node, **kwargs):
         'node': {
             'absolute_url': node.absolute_url,
             'private_links': [x.to_json() for x in node.private_links_active],
-        }
+        },
     }
     return data
 
@@ -1020,7 +1029,7 @@ def serialize_child_tree(child_list, user, nested):
                 'id': contributor.user._id,
                 'is_admin': child.is_admin_contributor(contributor.user),
                 'is_confirmed': contributor.user.is_confirmed,
-                'visible': contributor.visible
+                'visible': contributor.visible,
             } for contributor in child.contributor_set.all()]
 
             serialized_children.append({
@@ -1039,8 +1048,8 @@ def serialize_child_tree(child_list, user, nested):
                 'category': child.category,
                 'permissions': {
                     'view': True,
-                    'is_admin': child.has_permission(user, ADMIN)
-                }
+                    'is_admin': child.has_permission(user, ADMIN),
+                },
             })
 
     return sorted(serialized_children, key=lambda k: len(k['children']), reverse=True)
@@ -1056,11 +1065,12 @@ def node_child_tree(user, node):
     assert node, '{} is not a valid Node.'.format(node._id)
 
     parent_node_sqs = NodeRelation.objects.filter(child=OuterRef('pk'), is_node_link=False).values('parent__guids___id')
-    children = (Node.objects.get_children(node)
-                .filter(is_deleted=False)
-                .annotate(parentnode_id=Subquery(parent_node_sqs[:1]))
-                .include('contributor__user__guids')
-                )
+    children = (
+        Node.objects.get_children(node)
+        .filter(is_deleted=False)
+        .annotate(parentnode_id=Subquery(parent_node_sqs[:1]))
+        .include('contributor__user__guids')
+    )
 
     nested = defaultdict(list)
     for child in children:
@@ -1070,7 +1080,7 @@ def node_child_tree(user, node):
         'id': contributor.user._id,
         'is_admin': node.is_admin_contributor(contributor.user),
         'is_confirmed': contributor.user.is_confirmed,
-        'visible': contributor.visible
+        'visible': contributor.visible,
     } for contributor in node.contributor_set.all().include('user__guids')]
 
     can_read = node.has_permission(user, READ)
@@ -1095,8 +1105,8 @@ def node_child_tree(user, node):
             'category': node.category,
             'permissions': {
                 'view': can_read,
-                'is_admin': is_admin
-            }
+                'is_admin': is_admin,
+            },
         })
 
     return serialized_nodes
@@ -1125,12 +1135,12 @@ def project_generate_private_link_post(auth, node, **kwargs):
 
     try:
         new_link = new_private_link(
-            name=name, user=auth.user, nodes=nodes, anonymous=anonymous
+            name=name, user=auth.user, nodes=nodes, anonymous=anonymous,
         )
     except ValidationError as e:
         raise HTTPError(
             http.BAD_REQUEST,
-            data=dict(message_long=e.message)
+            data=dict(message_long=e.message),
         )
 
     return new_link
@@ -1146,7 +1156,7 @@ def project_private_link_edit(auth, **kwargs):
         message = 'Invalid link name.' if e.message == 'Invalid title.' else e.message
         raise HTTPError(
             http.BAD_REQUEST,
-            data=dict(message_long=message)
+            data=dict(message_long=message),
         )
 
     private_link_id = request.json.get('pk', '')
@@ -1160,7 +1170,7 @@ def project_private_link_edit(auth, **kwargs):
     else:
         raise HTTPError(
             http.BAD_REQUEST,
-            data=dict(message_long='View-only link not found.')
+            data=dict(message_long='View-only link not found.'),
         )
 
 
@@ -1175,7 +1185,7 @@ def _serialize_node_search(node):
         'id': node._id,
         'title': node.title,
         'etal': len(node.visible_contributors) > 1,
-        'isRegistration': node.is_registration
+        'isRegistration': node.is_registration,
     }
     if node.is_registration:
         data['title'] += ' (registration)'
@@ -1217,7 +1227,8 @@ def search_node(auth, **kwargs):
         .filter(
             can_view_query,
             title__icontains=query,
-            is_deleted=False)
+            is_deleted=False,
+        )
         .exclude(id__in=nin)
         .exclude(type='osf.collection')
         .exclude(type='osf.quickfilesnode'))
@@ -1234,7 +1245,7 @@ def search_node(auth, **kwargs):
         ],
         'total': count,
         'pages': pages,
-        'page': page
+        'page': page,
     }
 
 
@@ -1352,8 +1363,8 @@ def fork_pointer(auth, node, **kwargs):
 
     return {
         'data': {
-            'node': serialize_node_summary(node=fork, auth=auth, show_path=False)
-        }
+            'node': serialize_node_summary(node=fork, auth=auth, show_path=False),
+        },
     }, http.CREATED
 
 def abbrev_authors(node):

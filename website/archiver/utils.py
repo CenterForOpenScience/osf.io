@@ -12,7 +12,7 @@ from website.archiver import (
 
 from website import (
     mails,
-    settings
+    settings,
 )
 from osf.utils.sanitize import unescape_entities
 
@@ -176,7 +176,7 @@ def before_archive(node, user):
     job = ArchiveJob.objects.create(
         src_node=node.registered_from,
         dst_node=node,
-        initiator=user
+        initiator=user,
     )
     job.set_targets()
 
@@ -225,8 +225,8 @@ def find_registration_file(value, node):
         value['selectedFileName'],
         safe={
             '&lt;': '<',
-            '&gt;': '>'
-        }
+            '&gt;': '>',
+        },
     )
     orig_node = value['nodeId']
     file_map = get_file_map(node)
@@ -303,7 +303,7 @@ def migrate_file_metadata(dst, schema):
             if not registration_file:
                 missing_files.append({
                     'file_name': selected['extra'][index]['selectedFileName'],
-                    'question_title': get_title_for_question(schema.schema, path)
+                    'question_title': get_title_for_question(schema.schema, path),
                 })
                 continue
             target = deep_get(metadata, path)
@@ -312,7 +312,7 @@ def migrate_file_metadata(dst, schema):
         from website.archiver.tasks import ArchivedFileNotFound
         raise ArchivedFileNotFound(
             registration=dst,
-            missing_files=missing_files
+            missing_files=missing_files,
         )
     dst.registered_meta[schema._id] = metadata
     dst.save()

@@ -103,10 +103,10 @@ class CitationsProvider(object):
         return {
             'accounts': [
                 self.serializer(
-                    user_settings=user.get_addon(self.provider_name) if user else None
+                    user_settings=user.get_addon(self.provider_name) if user else None,
                 ).serialize_account(each)
                 for each in user.external_accounts.filter(provider=self.provider_name)
-            ]
+            ],
         }
 
     def set_config(self, node_addon, user, external_list_id, external_list_name, auth):
@@ -116,7 +116,7 @@ class CitationsProvider(object):
         node_addon.user_settings.grant_oauth_access(
             node=node_addon.owner,
             external_account=node_addon.external_account,
-            metadata={'folder': external_list_id}
+            metadata={'folder': external_list_id},
         )
         node_addon.user_settings.save()
 
@@ -182,7 +182,7 @@ class CitationsProvider(object):
             'name': folder['name'],
             'provider_list_id': folder['list_id'],
             'id': folder['id'],
-            'parent_list_id': folder.get('parent_id', None)
+            'parent_list_id': folder.get('parent_id', None),
         }
 
     @abc.abstractmethod
@@ -250,5 +250,5 @@ class CitationsProvider(object):
                 ]
 
         return {
-            'contents': contents
+            'contents': contents,
         }

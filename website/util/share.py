@@ -34,12 +34,14 @@ class GraphNode(object):
 
 
 def format_user(user):
-    person = GraphNode('person', **{
-        'suffix': user.suffix,
-        'given_name': user.given_name,
-        'family_name': user.family_name,
-        'additional_name': user.middle_names,
-    })
+    person = GraphNode(
+        'person', **{
+            'suffix': user.suffix,
+            'given_name': user.given_name,
+            'family_name': user.family_name,
+            'additional_name': user.middle_names,
+        }
+    )
 
     person.attrs['identifiers'] = [GraphNode('agentidentifier', agent=person, uri='mailto:{}'.format(uri)) for uri in user.emails.values_list('address', flat=True)]
     person.attrs['identifiers'].append(GraphNode('agentidentifier', agent=person, uri=user.absolute_url))

@@ -111,7 +111,7 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
             user=recipient,
             message=message,
             node_lineage=node_lineage_ids,
-            provider=abstract_provider
+            provider=abstract_provider,
         )
         digest.save()
 

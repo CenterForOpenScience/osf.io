@@ -83,7 +83,7 @@ def _async_update_node_share(self, node_id):
                 send_desk_share_error(node, resp, self.request.retries)
             raise self.retry(
                 exc=e,
-                countdown=(random.random() + 1) * min(60 + settings.CELERY_RETRY_BACKOFF_BASE ** self.request.retries, 60 * 10)
+                countdown=(random.random() + 1) * min(60 + settings.CELERY_RETRY_BACKOFF_BASE ** self.request.retries, 60 * 10),
             )
         else:
             send_desk_share_error(node, resp, self.request.retries)
@@ -100,9 +100,9 @@ def serialize_share_node_data(node):
             'attributes': {
                 'tasks': [],
                 'raw': None,
-                'data': {'@graph': format_registration(node) if node.is_registration else format_node(node)}
-            }
-        }
+                'data': {'@graph': format_registration(node) if node.is_registration else format_node(node)},
+            },
+        },
     }
 
 def format_node(node):
@@ -117,27 +117,29 @@ def format_node(node):
         }, {
             '@id': '_:789',
             '@type': 'project',
-            'is_deleted': not node.is_public or node.is_deleted or node.is_spammy or is_qa_node
-        }
+            'is_deleted': not node.is_public or node.is_deleted or node.is_spammy or is_qa_node,
+        },
     ]
 
 def format_registration(node):
     is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) \
         or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
 
-    registration_graph = GraphNode('registration', **{
-        'title': node.title,
-        'description': node.description or '',
-        'is_deleted': not node.is_public or node.is_deleted or is_qa_node,
-        'date_published': node.registered_date.isoformat() if node.registered_date else None,
-        'registration_type': node.registered_schema.first().name if node.registered_schema else None,
-        'withdrawn': node.is_retracted,
-        'justification': node.retraction.justification if node.retraction else None,
-    })
+    registration_graph = GraphNode(
+        'registration', **{
+            'title': node.title,
+            'description': node.description or '',
+            'is_deleted': not node.is_public or node.is_deleted or is_qa_node,
+            'date_published': node.registered_date.isoformat() if node.registered_date else None,
+            'registration_type': node.registered_schema.first().name if node.registered_schema else None,
+            'withdrawn': node.is_retracted,
+            'justification': node.retraction.justification if node.retraction else None,
+        }
+    )
 
     to_visit = [
         registration_graph,
-        GraphNode('workidentifier', creative_work=registration_graph, uri=urlparse.urljoin(settings.DOMAIN, node.url))
+        GraphNode('workidentifier', creative_work=registration_graph, uri=urlparse.urljoin(settings.DOMAIN, node.url)),
     ]
 
     registration_graph.attrs['tags'] = [

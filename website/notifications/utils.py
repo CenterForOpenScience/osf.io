@@ -54,7 +54,7 @@ def from_subscription_key(key):
     parsed_key = key.split('_', 1)
     return {
         'uid': parsed_key[0],
-        'event': parsed_key[1]
+        'event': parsed_key[1],
     }
 
 
@@ -146,8 +146,10 @@ def users_to_remove(source_event, source_node, new_node):
     if source_node == new_node:
         return removed_users
     old_sub = NotificationSubscription.load(to_subscription_key(source_node._id, source_event))
-    old_node_sub = NotificationSubscription.load(to_subscription_key(source_node._id,
-                                                                     '_'.join(source_event.split('_')[-2:])))
+    old_node_sub = NotificationSubscription.load(to_subscription_key(
+        source_node._id,
+        '_'.join(source_event.split('_')[-2:]),
+    ))
     if not old_sub and not old_node_sub:
         return removed_users
     for notification_type in constants.NOTIFICATION_TYPES:
@@ -200,11 +202,13 @@ def get_configured_projects(user):
     :return: list of node objects for projects with no parent
     """
     configured_projects = set()
-    user_subscriptions = get_all_user_subscriptions(user, extra=(
-        ~Q(node__type='osf.collection') &
-        ~Q(node__type='osf.quickfilesnode') &
-        Q(node__is_deleted=False)
-    ))
+    user_subscriptions = get_all_user_subscriptions(
+        user, extra=(
+            ~Q(node__type='osf.collection') &
+            ~Q(node__type='osf.quickfilesnode') &
+            Q(node__is_deleted=False)
+        ),
+    )
 
     for subscription in user_subscriptions:
         # If the user has opted out of emails skip
@@ -238,7 +242,7 @@ def get_all_user_subscriptions(user, extra=None):
     queryset = NotificationSubscription.objects.filter(
         Q(none=user.pk) |
         Q(email_digest=user.pk) |
-        Q(email_transactional=user.pk)
+        Q(email_transactional=user.pk),
     ).distinct()
     return queryset.filter(extra) if extra else queryset
 
@@ -284,8 +288,10 @@ def format_data(user, nodes):
 
             for subscription in subscriptions:
                 index = node_sub_available.index(getattr(subscription, 'event_name'))
-                children_tree.append(serialize_event(user, subscription=subscription,
-                                                node=node, event_description=node_sub_available.pop(index)))
+                children_tree.append(serialize_event(
+                    user, subscription=subscription,
+                    node=node, event_description=node_sub_available.pop(index),
+                ))
             for node_sub in node_sub_available:
                 children_tree.append(serialize_event(user, node=node, event_description=node_sub))
             children_tree.sort(key=lambda s: s['event']['title'])
@@ -318,7 +324,7 @@ def format_user_subscriptions(user):
     subscriptions = [
         serialize_event(
             user, subscription,
-            event_description=user_subs_available.pop(user_subs_available.index(getattr(subscription, 'event_name')))
+            event_description=user_subs_available.pop(user_subs_available.index(getattr(subscription, 'event_name'))),
         )
         for subscription in get_all_user_subscriptions(user)
         if subscription is not None and getattr(subscription, 'event_name') in user_subs_available
@@ -372,10 +378,10 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
             'title': event_description,
             'description': all_subs[event_type],
             'notificationType': notification_type,
-            'parent_notification_type': get_parent_notification_type(node, event_type, user)
+            'parent_notification_type': get_parent_notification_type(node, event_type, user),
         },
         'kind': 'event',
-        'children': []
+        'children': [],
     }
 
 
@@ -503,18 +509,19 @@ def format_user_and_project_subscriptions(user):
                 'title': 'Default Notification Settings',
                 'help': 'These are default settings for new projects you create ' +
                         'or are added to. Modifying these settings will not ' +
-                        'modify settings on existing projects.'
+                        'modify settings on existing projects.',
             },
             'kind': 'heading',
-            'children': format_user_subscriptions(user)
+            'children': format_user_subscriptions(user),
         },
         {
             'node': {
                 'id': '',
                 'title': 'Project Notifications',
                 'help': 'These are settings for each of your projects. Modifying ' +
-                        'these settings will only modify the settings for the selected project.'
+                        'these settings will only modify the settings for the selected project.',
             },
             'kind': 'heading',
-            'children': format_data(user, get_configured_projects(user))
-        }]
+            'children': format_data(user, get_configured_projects(user)),
+        },
+    ]

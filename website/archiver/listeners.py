@@ -26,7 +26,7 @@ def after_register(src, dst, user):
         return
     archive_tasks = [tasks.archive(job_pk=t.archive_job._id) for t in dst.node_and_primary_descendants()]
     handlers.enqueue_task(
-        celery.chain(archive_tasks)
+        celery.chain(archive_tasks),
     )
 
 
@@ -70,5 +70,5 @@ def archive_fail(dst, errors):
         dst.root.registered_from,
         dst.root,
         dst.root.registered_user,
-        errors
+        errors,
     )

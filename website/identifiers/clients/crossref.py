@@ -53,9 +53,11 @@ class CrossRefClient(AbstractIdentifierClient):
         else:
             preprints = [preprint]
 
-        element = lxml.builder.ElementMaker(nsmap={
-            None: CROSSREF_NAMESPACE,
-            'xsi': XSI},
+        element = lxml.builder.ElementMaker(
+            nsmap={
+                None: CROSSREF_NAMESPACE,
+                'xsi': XSI,
+            },
         )
 
         # batch_id is used to get the guid of preprints for error messages down the line
@@ -67,9 +69,9 @@ class CrossRefClient(AbstractIdentifierClient):
             element.timestamp(str(int(time.time()))),
             element.depositor(
                 element.depositor_name(CROSSREF_DEPOSITOR_NAME),
-                element.email_address(settings.CROSSREF_DEPOSITOR_EMAIL)
+                element.email_address(settings.CROSSREF_DEPOSITOR_EMAIL),
             ),
-            element.registrant('Center for Open Science')
+            element.registrant('Center for Open Science'),
         )
         # if this is a batch update, let build_posted_content determine status for each preprint
         status = status if not is_batch else None
@@ -80,7 +82,7 @@ class CrossRefClient(AbstractIdentifierClient):
         root = element.doi_batch(
             head,
             body,
-            version=CROSSREF_SCHEMA_VERSION
+            version=CROSSREF_SCHEMA_VERSION,
         )
         root.attrib['{%s}schemaLocation' % XSI] = CROSSREF_SCHEMA_LOCATION
         return lxml.etree.tostring(root, pretty_print=kwargs.get('pretty_print', True))
@@ -93,7 +95,7 @@ class CrossRefClient(AbstractIdentifierClient):
         status = status or self.get_status(preprint)
         posted_content = element.posted_content(
             element.group_title(preprint.provider.name),
-            type='preprint'
+            type='preprint',
         )
         if status == 'public':
             posted_content.append(element.contributors(*self._crossref_format_contributors(element, preprint)))
@@ -108,19 +110,22 @@ class CrossRefClient(AbstractIdentifierClient):
 
             if preprint.description:
                 posted_content.append(
-                    element.abstract(element.p(remove_control_characters(preprint.description)), xmlns=JATS_NAMESPACE))
+                    element.abstract(element.p(remove_control_characters(preprint.description)), xmlns=JATS_NAMESPACE),
+                )
 
             if preprint.license and preprint.license.node_license.url:
                 posted_content.append(
                     element.program(
-                        element.license_ref(preprint.license.node_license.url,
-                                            start_date=preprint.date_published.strftime('%Y-%m-%d')),
-                        xmlns=CROSSREF_ACCESS_INDICATORS
-                    )
+                        element.license_ref(
+                            preprint.license.node_license.url,
+                            start_date=preprint.date_published.strftime('%Y-%m-%d'),
+                        ),
+                        xmlns=CROSSREF_ACCESS_INDICATORS,
+                    ),
                 )
             else:
                 posted_content.append(
-                    element.program(xmlns=CROSSREF_ACCESS_INDICATORS)
+                    element.program(xmlns=CROSSREF_ACCESS_INDICATORS),
                 )
 
             if preprint.article_doi and include_relation:
@@ -130,15 +135,15 @@ class CrossRefClient(AbstractIdentifierClient):
                             element.intra_work_relation(
                                 preprint.article_doi,
                                 **{'relationship-type': 'isPreprintOf', 'identifier-type': 'doi'}
-                            )
-                        ), xmlns=CROSSREF_RELATIONS
-                    )
+                            ),
+                        ), xmlns=CROSSREF_RELATIONS,
+                    ),
                 )
 
         doi = self.build_doi(preprint)
         doi_data = [
             element.doi(doi),
-            element.resource(settings.DOMAIN + preprint._id)
+            element.resource(settings.DOMAIN + preprint._id),
         ]
         posted_content.append(element.doi_data(*doi_data))
 
@@ -163,7 +168,7 @@ class CrossRefClient(AbstractIdentifierClient):
         given_stripped = remove_control_characters(given_name)
         # For crossref, given_name is not allowed to have numbers or question marks
         given_processed = ''.join(
-            [char for char in given_stripped if (not char.isdigit() and char != '?')]
+            [char for char in given_stripped if (not char.isdigit() and char != '?')],
         )
         surname_processed = remove_control_characters(family)
 
@@ -195,7 +200,7 @@ class CrossRefClient(AbstractIdentifierClient):
                 verified = contributor.external_identity['ORCID'].values()[0] == 'VERIFIED'
                 if orcid and verified:
                     person.append(
-                        element.ORCID('https://orcid.org/{}'.format(orcid), authenticated='true')
+                        element.ORCID('https://orcid.org/{}'.format(orcid), authenticated='true'),
                     )
             contributors.append(person)
 
@@ -205,7 +210,7 @@ class CrossRefClient(AbstractIdentifierClient):
         elements = [
             element.month(date.strftime('%m')),
             element.day(date.strftime('%d')),
-            element.year(date.strftime('%Y'))
+            element.year(date.strftime('%Y')),
         ]
         return elements
 
@@ -231,7 +236,7 @@ class CrossRefClient(AbstractIdentifierClient):
                     operation='doMDUpload',
                     login_id=username,
                     login_passwd=password,
-                    fname='{}.xml'.format(filename)
+                    fname='{}.xml'.format(filename),
                 ),
                 files={'file': ('{}.xml'.format(filename), metadata)},
             )
@@ -256,7 +261,7 @@ class CrossRefClient(AbstractIdentifierClient):
                 operation='doMDUpload',
                 login_id=username,
                 login_passwd=password,
-                fname='{}.xml'.format(filename)
+                fname='{}.xml'.format(filename),
             ),
             files={'file': ('{}.xml'.format(filename), metadata)},
         )

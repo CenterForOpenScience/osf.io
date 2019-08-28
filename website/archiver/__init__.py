@@ -42,7 +42,7 @@ class StatResult(dict):
             'target_id': self.target_id,
             'target_name': self.target_name,
             'disk_usage': self.disk_usage,
-            'num_files': self.num_files
+            'num_files': self.num_files,
         })
 
 

@@ -40,7 +40,7 @@ class Event(object):
             timestamp=self.timestamp,
             message=self.html_message,
             profile_image_url=self.profile_image_url,
-            url=self.url
+            url=self.url,
         )
 
     @property

@@ -37,7 +37,7 @@ def update_file_guid_referent(self, target, event_type, payload, user=None):
     file_guids = BaseFileNode.resolve_class(source['provider'], BaseFileNode.ANY).get_file_guids(
         materialized_path=source['materialized'] if source['provider'] != 'osfstorage' else source['path'],
         provider=source['provider'],
-        target=source_node
+        target=source_node,
     )
 
     for guid in file_guids:
@@ -161,7 +161,7 @@ def send_mention_added_notification(comment, new_mentions, auth):
         target_user=target.referent.user if is_reply(target) else None,
         parent_comment=target.referent.content if is_reply(target) else '',
         new_mentions=new_mentions,
-        url=comment.get_comment_page_url()
+        url=comment.get_comment_page_url(),
     )
     time_now = timezone.now()
     notify_mentions(

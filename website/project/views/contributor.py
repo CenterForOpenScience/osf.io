@@ -25,8 +25,10 @@ from osf.utils.permissions import ADMIN
 from website import mails, language, settings
 from website.notifications.utils import check_if_all_global_subscriptions_are_none
 from website.profile import utils as profile_utils
-from website.project.decorators import (must_have_permission, must_be_valid_project, must_not_be_registration,
-                                        must_be_contributor_or_public, must_be_contributor)
+from website.project.decorators import (
+    must_have_permission, must_be_valid_project, must_not_be_registration,
+    must_be_contributor_or_public, must_be_contributor,
+)
 from website.project.views.node import serialize_preprints
 from website.project.model import has_anonymous_link
 from website.project.signals import unreg_contributor_added, contributor_added
@@ -87,9 +89,11 @@ def get_contributors(auth, node, **kwargs):
         try:
             limit = int(request.args['limit'])
         except ValueError:
-            raise HTTPError(http.BAD_REQUEST, data=dict(
-                message_long='Invalid value for "limit": {}'.format(request.args['limit'])
-            ))
+            raise HTTPError(
+                http.BAD_REQUEST, data=dict(
+                    message_long='Invalid value for "limit": {}'.format(request.args['limit']),
+                ),
+            )
     else:
         limit = None
 
@@ -110,7 +114,7 @@ def get_contributors(auth, node, **kwargs):
     if limit:
         return {
             'contributors': contribs,
-            'more': max(0, len(node.visible_contributors) - limit)
+            'more': max(0, len(node.visible_contributors) - limit),
         }
     else:
         return {'contributors': contribs}
@@ -177,7 +181,8 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
             try:
                 contributor = OSFUser.create_unregistered(
                     fullname=fullname,
-                    email=email)
+                    email=email,
+                )
                 contributor.save()
             except ValidationError:
                 ## FIXME: This suppresses an exception if ID not found & new validation fails; get_user will return None
@@ -185,15 +190,17 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
 
         # Add unclaimed record if necessary
         if not contributor.is_registered:
-            contributor.add_unclaimed_record(node, referrer=auth.user,
+            contributor.add_unclaimed_record(
+                node, referrer=auth.user,
                 given_name=fullname,
-                email=email)
+                email=email,
+            )
             contributor.save()
 
         contribs.append({
             'user': contributor,
             'visible': visible,
-            'permissions': contrib_dict.get('permission')
+            'permissions': contrib_dict.get('permission'),
         })
     return contribs
 
@@ -243,7 +250,7 @@ def project_contributors_post(auth, node, **kwargs):
         # Only email unreg users once
         try:
             child_contribs = deserialize_contributors(
-                child, user_dicts, auth=auth, validate=True
+                child, user_dicts, auth=auth, validate=True,
             )
         except ValidationError as e:
             return {'status': 400, 'message': e.message}, 400
@@ -258,7 +265,7 @@ def project_contributors_post(auth, node, **kwargs):
         'contributors': profile_utils.serialize_contributors(
             node.visible_contributors,
             node=node,
-        )
+        ),
     }, 201
 
 
@@ -291,7 +298,7 @@ def project_manage_contributors(auth, node, **kwargs):
         status.push_status_message(
             'You have removed yourself as a contributor from this project',
             kind='success',
-            trust=False
+            trust=False,
         )
         if node.is_public:
             return {'redirectUrl': node.url}
@@ -302,7 +309,7 @@ def project_manage_contributors(auth, node, **kwargs):
         status.push_status_message(
             'You have removed your administrative privileges for this project',
             kind='success',
-            trust=False
+            trust=False,
         )
     # Else stay on current page
     return {}
@@ -337,15 +344,20 @@ def project_remove_contributor(auth, **kwargs):
 
         if node.visible_contributors.count() == 1 \
                 and node.visible_contributors[0] == contributor:
-            raise HTTPError(http.FORBIDDEN, data={
-                'message_long': 'Must have at least one bibliographic contributor'
-            })
+            raise HTTPError(
+                http.FORBIDDEN, data={
+                    'message_long': 'Must have at least one bibliographic contributor',
+                },
+            )
 
         nodes_removed = node.remove_contributor(contributor, auth=auth)
         # remove_contributor returns false if there is not one admin or visible contributor left after the move.
         if not nodes_removed:
-            raise HTTPError(http.BAD_REQUEST, data={
-                'message_long': 'Could not remove contributor.'})
+            raise HTTPError(
+                http.BAD_REQUEST, data={
+                'message_long': 'Could not remove contributor.',
+                },
+            )
 
         # On parent node, if user has removed herself from project, alert; redirect to
         # node summary if node is public, else to user's dashboard page
@@ -354,7 +366,7 @@ def project_remove_contributor(auth, **kwargs):
                 'You have removed yourself as a contributor from this project',
                 kind='success',
                 trust=False,
-                id='remove_self_contrib'
+                id='remove_self_contrib',
             )
             if node.is_public:
                 redirect_url = {'redirectUrl': node.url}
@@ -382,9 +394,11 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
     # check throttle
     timestamp = unclaimed_record.get('last_sent')
     if not throttle_period_expired(timestamp, throttle):
-        raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_long='User account can only be claimed with an existing user once every 24 hours'
-        ))
+        raise HTTPError(
+            http.BAD_REQUEST, data=dict(
+                message_long='User account can only be claimed with an existing user once every 24 hours',
+            ),
+        )
 
     # roll the valid token for each email, thus user cannot change email and approve a different email address
     verification_key = generate_verification_key(verification_type='claim')
@@ -484,9 +498,11 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         # check throttle
         timestamp = unclaimed_record.get('last_sent')
         if not throttle_period_expired(timestamp, throttle):
-            raise HTTPError(http.BAD_REQUEST, data=dict(
-                message_long='User account can only be claimed with an existing user once every 24 hours'
-            ))
+            raise HTTPError(
+                http.BAD_REQUEST, data=dict(
+                    message_long='User account can only be claimed with an existing user once every 24 hours',
+                ),
+            )
         # roll the valid token for each email, thus user cannot change email and approve a different email address
         verification_key = generate_verification_key(verification_type='claim')
         unclaimed_record['last_sent'] = get_timestamp()
@@ -586,7 +602,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             can_change_preferences=False,
             logo=logo if logo else settings.OSF_LOGO,
             osf_contact_email=settings.OSF_CONTACT_EMAIL,
-            published_preprints=[] if isinstance(node, Preprint) else serialize_preprints(node, user=None)
+            published_preprints=[] if isinstance(node, Preprint) else serialize_preprints(node, user=None),
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
@@ -605,7 +621,7 @@ def add_recently_added_contributor(node, contributor, auth=None, *args, **kwargs
         user = auth.user
         recently_added_contributor_obj, created = RecentlyAddedContributor.objects.get_or_create(
             user=user,
-            contributor=contributor
+            contributor=contributor,
         )
         recently_added_contributor_obj.date_added = timezone.now()
         recently_added_contributor_obj.save()
@@ -648,7 +664,8 @@ def verify_claim_token(user, token, pid):
         if user.is_registered:
             error_data = {
                 'message_short': 'User has already been claimed.',
-                'message_long': 'Please <a href="/login/">log in</a> to continue.'}
+                'message_long': 'Please <a href="/login/">log in</a> to continue.',
+            }
             raise HTTPError(400, data=error_data)
         else:
             return False
@@ -682,8 +699,10 @@ def claim_user_registered(auth, node, **kwargs):
     if hasattr(node, 'is_contributor') and node.is_contributor(current_user):
         data = {
             'message_short': 'Already a contributor',
-            'message_long': ('The logged-in user is already a contributor to this '
-                'project. Would you like to <a href="{}">log out</a>?').format(sign_out_url)
+            'message_long': (
+                'The logged-in user is already a contributor to this '
+                'project. Would you like to <a href="{}">log out</a>?'
+            ).format(sign_out_url),
         }
         raise HTTPError(http.BAD_REQUEST, data=data)
 
@@ -691,8 +710,10 @@ def claim_user_registered(auth, node, **kwargs):
     if hasattr(node, 'is_member') and node.is_member(current_user):
         data = {
             'message_short': 'Already a member',
-            'message_long': ('The logged-in user is already a member of this OSF Group. '
-                'Would you like to <a href="{}">log out</a>?').format(sign_out_url)
+            'message_long': (
+                'The logged-in user is already a member of this OSF Group. '
+                'Would you like to <a href="{}">log out</a>?'
+            ).format(sign_out_url),
         }
         raise HTTPError(http.BAD_REQUEST, data=data)
 
@@ -701,14 +722,14 @@ def claim_user_registered(auth, node, **kwargs):
     if not verify_claim_token(unreg_user, token, pid=node._primary_key):
         error_data = {
             'message_short': 'Invalid url.',
-            'message_long': 'The token in the URL is invalid or has expired.'
+            'message_long': 'The token in the URL is invalid or has expired.',
         }
         raise HTTPError(http.BAD_REQUEST, data=error_data)
 
     # Store the unreg_user data on the session in case the user registers
     # a new account
     session.data['unreg_user'] = {
-        'uid': uid, 'pid': pid, 'token': token
+        'uid': uid, 'pid': pid, 'token': token,
     }
     session.save()
 
@@ -730,13 +751,13 @@ def claim_user_registered(auth, node, **kwargs):
             status.push_status_message(
                 'You are now a member of this OSFGroup.',
                 kind='success',
-                trust=False
+                trust=False,
             )
         else:
             status.push_status_message(
                 'You are now a contributor to this project.',
                 kind='success',
-                trust=False
+                trust=False,
             )
         return redirect(node.url)
     if is_json_request():
@@ -748,7 +769,7 @@ def claim_user_registered(auth, node, **kwargs):
     return {
         'form': form_ret,
         'user': user_ret,
-        'signOutUrl': sign_out_url
+        'signOutUrl': sign_out_url,
     }
 
 
@@ -768,7 +789,8 @@ def replace_unclaimed_user_with_registered(user):
         node.replace_contributor(old=unreg_user, new=user)
         node.save()
         status.push_status_message(
-            'Successfully claimed contributor.', kind='success', trust=False)
+            'Successfully claimed contributor.', kind='success', trust=False,
+        )
 
 
 @block_bing_preview
@@ -789,14 +811,16 @@ def claim_user_form(auth, **kwargs):
     if not user or not verify_claim_token(user, token, pid):
         error_data = {
             'message_short': 'Invalid url.',
-            'message_long': 'Claim user does not exists, the token in the URL is invalid or has expired.'
+            'message_long': 'Claim user does not exists, the token in the URL is invalid or has expired.',
         }
         raise HTTPError(http.BAD_REQUEST, data=error_data)
 
     # If user is logged in, redirect to 're-enter password' page
     if auth.logged_in:
-        return redirect(web_url_for('claim_user_registered',
-            uid=uid, pid=pid, token=token))
+        return redirect(web_url_for(
+            'claim_user_registered',
+            uid=uid, pid=pid, token=token,
+        ))
 
     unclaimed_record = user.unclaimed_records[pid]
     user.fullname = unclaimed_record['name']
@@ -820,10 +844,12 @@ def claim_user_form(auth, **kwargs):
         else:
             username, password = claimer_email, form.password.data
             if not username:
-                raise HTTPError(http.BAD_REQUEST, data=dict(
-                    message_long='No email associated with this account. Please claim this '
-                    'account on the project to which you were invited.'
-                ))
+                raise HTTPError(
+                    http.BAD_REQUEST, data=dict(
+                        message_long='No email associated with this account. Please claim this '
+                        'account on the project to which you were invited.',
+                    ),
+                )
 
             user.register(username=username, password=password, accepted_terms_of_service=form.accepted_terms_of_service.data)
             # Clear unclaimed records
@@ -843,7 +869,7 @@ def claim_user_form(auth, **kwargs):
             return redirect(cas.get_login_url(
                 redirect_url,
                 username=user.username,
-                verification_key=user.verification_key
+                verification_key=user.verification_key,
             ))
 
     return {
@@ -933,5 +959,5 @@ def claim_user_post(node, **kwargs):
     return {
         'status': 'success',
         'email': email,
-        'fullname': unclaimed_data['name']
+        'fullname': unclaimed_data['name'],
     }

@@ -72,8 +72,10 @@ BLACKLISTED_EMAIL = 'Invalid email address. If this should not have occurred, pl
 AFTER_SUBMIT_FOR_REVIEW = 'Your submission has been received. You will be notified within two business days regarding the status of your submission. If you have questions you may contact us at prereg@cos.io.'
 
 # Shown if user tries to login with an email that is not yet confirmed
-UNCONFIRMED = ('This login email has been registered but not confirmed. Please check your email (and spam folder).'
-               ' <a href="/resend/">Click here</a> to resend your confirmation email.')
+UNCONFIRMED = (
+    'This login email has been registered but not confirmed. Please check your email (and spam folder).'
+    ' <a href="/resend/">Click here</a> to resend your confirmation email.'
+)
 
 # Shown if the user's account is disabled
 DISABLED = """
@@ -101,16 +103,20 @@ EMAIL_NOT_FOUND = u"""
 
 # Shown after an unregistered user claims an account and is redirected to the
 # settings page
-CLAIMED_CONTRIBUTOR = ('<strong>Welcome to the OSF!</strong> Edit your display name below and then check your '
-                       '<a href="/dashboard/">dashboard</a> to see projects to which you have been added as a '
-                       'contributor by someone else.')
+CLAIMED_CONTRIBUTOR = (
+    '<strong>Welcome to the OSF!</strong> Edit your display name below and then check your '
+    '<a href="/dashboard/">dashboard</a> to see projects to which you have been added as a '
+    'contributor by someone else.'
+)
 
 # Error Pages
 # ###########
 
 # Search-related errors
-SEARCH_QUERY_HELP = ('Please check our help (the question mark beside the search box) for more information '
-                     'on advanced search queries.')
+SEARCH_QUERY_HELP = (
+    'Please check our help (the question mark beside the search box) for more information '
+    'on advanced search queries.'
+)
 
 # Shown at error page if an expired/revokes email confirmation link is clicked
 EXPIRED_EMAIL_CONFIRM_TOKEN = 'This confirmation link has expired. Please <a href="/login/">log in</a> to continue.'

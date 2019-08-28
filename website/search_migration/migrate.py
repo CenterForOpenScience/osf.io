@@ -15,7 +15,8 @@ from website.search.elastic_search import client
 from website.search_migration import (
     JSON_UPDATE_NODES_SQL, JSON_DELETE_NODES_SQL,
     JSON_UPDATE_FILES_SQL, JSON_DELETE_FILES_SQL,
-    JSON_UPDATE_USERS_SQL, JSON_DELETE_USERS_SQL)
+    JSON_UPDATE_USERS_SQL, JSON_DELETE_USERS_SQL,
+)
 from scripts import utils as script_utils
 from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode, Preprint, OSFGroup, CollectionSubmission
 from website import settings
@@ -61,7 +62,8 @@ def sql_migrate(index, sql, max_id, increment, es_args=None, **kwargs):
                 index=index,
                 page_start=page_start,
                 page_end=page_end,
-                **kwargs))
+                **kwargs
+            ))
             ser_objs = cursor.fetchone()[0]
             if ser_objs:
                 total_objs += len(ser_objs)
@@ -77,7 +79,8 @@ def migrate_nodes(index, delete, increment=10000):
         JSON_UPDATE_NODES_SQL,
         max_nid,
         increment,
-        spam_flagged_removed_from_search=settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH)
+        spam_flagged_removed_from_search=settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH,
+    )
     logger.info('{} nodes migrated'.format(total_nodes))
     if delete:
         logger.info('Preparing to delete old node documents')
@@ -88,7 +91,8 @@ def migrate_nodes(index, delete, increment=10000):
             max_nid,
             increment,
             es_args={'raise_on_error': False},  # ignore 404s
-            spam_flagged_removed_from_search=settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH)
+            spam_flagged_removed_from_search=settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH,
+        )
         logger.info('{} nodes marked deleted'.format(total_nodes))
 
 def migrate_preprints(index, delete):
@@ -127,7 +131,8 @@ def migrate_files(index, delete, increment=10000):
         JSON_UPDATE_FILES_SQL,
         max_fid,
         increment,
-        spam_flagged_removed_from_search=settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH)
+        spam_flagged_removed_from_search=settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH,
+    )
     logger.info('{} files migrated'.format(total_files))
     if delete:
         logger.info('Preparing to delete old file documents')
@@ -138,7 +143,8 @@ def migrate_files(index, delete, increment=10000):
             max_fid,
             increment,
             es_args={'raise_on_error': False},  # ignore 404s
-            spam_flagged_removed_from_search=settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH)
+            spam_flagged_removed_from_search=settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH,
+        )
         logger.info('{} files marked deleted'.format(total_files))
 
 def migrate_users(index, delete, increment=10000):
@@ -148,7 +154,8 @@ def migrate_users(index, delete, increment=10000):
         index,
         JSON_UPDATE_USERS_SQL,
         max_uid,
-        increment)
+        increment,
+    )
     logger.info('{} users migrated'.format(total_users))
     if delete:
         logger.info('Preparing to delete old user documents')
@@ -158,7 +165,8 @@ def migrate_users(index, delete, increment=10000):
             JSON_DELETE_USERS_SQL,
             max_uid,
             increment,
-            es_args={'raise_on_error': False})  # ignore 404s
+            es_args={'raise_on_error': False},
+        )  # ignore 404s
         logger.info('{} users marked deleted'.format(total_users))
 
 def migrate_collected_metadata(index, delete):
@@ -166,11 +174,14 @@ def migrate_collected_metadata(index, delete):
         collection__provider__isnull=False,
         collection__is_public=True,
         collection__deleted__isnull=True,
-        collection__is_bookmark_collection=False)
+        collection__is_bookmark_collection=False,
+    )
 
-    docs = helpers.scan(es_client(), query={
-        'query': {'match': {'_type': 'collectionSubmission'}}
-    }, index=index)
+    docs = helpers.scan(
+        es_client(), query={
+            'query': {'match': {'_type': 'collectionSubmission'}},
+        }, index=index,
+    )
 
     actions = ({
         '_op_type': 'delete',

@@ -87,7 +87,7 @@ def request_identifiers(target_object):
     return {
         'doi': identifiers.get('doi'),
         'already_exists': already_exists,
-        'only_doi': only_doi
+        'only_doi': only_doi,
     }
 
 

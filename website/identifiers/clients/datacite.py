@@ -21,7 +21,7 @@ class DataCiteClient(AbstractIdentifierClient):
             url=self.base_url,
             username=settings.DATACITE_USERNAME,
             password=settings.DATACITE_PASSWORD,
-            prefix=self.prefix
+            prefix=self.prefix,
         )
 
     def build_metadata(self, node):
@@ -34,31 +34,33 @@ class DataCiteClient(AbstractIdentifierClient):
                 'identifierType': 'DOI',
             },
             'creators': [
-                {'creatorName': user.fullname,
-                 'givenName': user.given_name,
-                 'familyName': user.family_name} for user in node.visible_contributors
+                {
+                    'creatorName': user.fullname,
+                    'givenName': user.given_name,
+                    'familyName': user.family_name,
+                } for user in node.visible_contributors
             ],
             'titles': [
-                {'title': node.title}
+                {'title': node.title},
             ],
             'publisher': 'Open Science Framework',
             'publicationYear': str(datetime.datetime.now().year),
             'resourceType': {
                 'resourceType': 'Project',
-                'resourceTypeGeneral': 'Text'
-            }
+                'resourceTypeGeneral': 'Text',
+            },
         }
 
         if node.description:
             data['descriptions'] = [{
                 'descriptionType': 'Abstract',
-                'description': node.description
+                'description': node.description,
             }]
 
         if node.node_license:
             data['rightsList'] = [{
                 'rights': node.node_license.name,
-                'rightsURI': node.node_license.url
+                'rightsURI': node.node_license.url,
             }]
 
         # Validate dictionary

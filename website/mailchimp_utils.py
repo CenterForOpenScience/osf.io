@@ -14,7 +14,7 @@ from website import settings
 def get_mailchimp_api():
     if not settings.MAILCHIMP_API_KEY:
         raise mailchimp.InvalidApiKeyError(
-            'An API key is required to connect to Mailchimp.'
+            'An API key is required to connect to Mailchimp.',
         )
     return mailchimp.Mailchimp(settings.MAILCHIMP_API_KEY)
 
@@ -82,7 +82,7 @@ def unsubscribe_mailchimp(list_name, user_id, username=None, send_goodbye=True):
     try:
         m.lists.unsubscribe(
             id=list_id, email={'email': username or user.username},
-            send_goodbye=send_goodbye
+            send_goodbye=send_goodbye,
         )
     except mailchimp.ListNotSubscribedError:
         pass

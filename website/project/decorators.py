@@ -49,7 +49,7 @@ def _kwargs_to_nodes(kwargs):
             data={
                 'message_short': 'Node not found',
                 'message_long': 'No Node with that primary key could be found',
-            }
+            },
         )
     return parent, node
 
@@ -68,9 +68,11 @@ def must_not_be_rejected(func):
 
         node = get_or_http_error(AbstractNode, kwargs.get('nid', kwargs.get('pid')), allow_deleted=True)
         if node.sanction and node.sanction.is_rejected:
-            raise HTTPError(http.GONE, data=dict(
-                message_long='This registration has been rejected'
-            ))
+            raise HTTPError(
+                http.GONE, data=dict(
+                    message_long='This registration has been rejected',
+                ),
+            )
 
         return func(*args, **kwargs)
 
@@ -97,13 +99,13 @@ def must_be_valid_project(func=None, retractions_valid=False, quickfiles_valid=F
 
             if getattr(kwargs['node'], 'is_collection', True) or (getattr(kwargs['node'], 'is_quickfiles', True) and not quickfiles_valid):
                 raise HTTPError(
-                    http.NOT_FOUND
+                    http.NOT_FOUND,
                 )
 
             if not retractions_valid and getattr(kwargs['node'].retraction, 'is_retracted', False):
                 raise HTTPError(
                     http.BAD_REQUEST,
-                    data=dict(message_long='Viewing withdrawn registrations is not permitted')
+                    data=dict(message_long='Viewing withdrawn registrations is not permitted'),
                 )
             else:
                 return func(*args, **kwargs)
@@ -128,7 +130,7 @@ def must_be_public_registration(func):
         if not node.is_public or not node.is_registration:
             raise HTTPError(
                 http.BAD_REQUEST,
-                data=dict(message_long='Must be a public registration to view')
+                data=dict(message_long='Must be a public registration to view'),
             )
 
         return func(*args, **kwargs)
@@ -147,7 +149,7 @@ def must_not_be_retracted_registration(func):
 
         if node.is_retracted:
             return redirect(
-                web_url_for('resolve_guid', guid=node._id)
+                web_url_for('resolve_guid', guid=node._id),
             )
         return func(*args, **kwargs)
 
@@ -168,7 +170,7 @@ def must_not_be_registration(func):
                 data={
                     'message_short': 'Registrations cannot be changed',
                     'message_long': "The operation you're trying to do cannot be applied to registered projects, which are not allowed to be changed",
-                }
+                },
             )
         return func(*args, **kwargs)
 
@@ -187,7 +189,7 @@ def must_be_registration(func):
                 data={
                     'message_short': 'Registered Nodes only',
                     'message_long': 'This view is restricted to registered Nodes only',
-                }
+                },
             )
         return func(*args, **kwargs)
 
@@ -228,22 +230,24 @@ def check_can_access(node, user, key=None, api_node=None, include_groups=True):
             data = {
                 'node': {
                     'id': node._id,
-                    'url': node.url
+                    'url': node.url,
                 },
                 'user': {
-                    'access_request_state': access_request.get().machine_state if access_request else None
-                }
+                    'access_request_state': access_request.get().machine_state if access_request else None,
+                },
             }
             raise TemplateHTTPError(
                 http.FORBIDDEN,
                 template='request_access.mako',
-                data=data
+                data=data,
             )
 
         raise HTTPError(
             http.FORBIDDEN,
-            data={'message_long': ('User has restricted access to this page. If this should not '
-                                   'have occurred and the issue persists, ' + language.SUPPORT_LINK)}
+            data={'message_long': (
+                'User has restricted access to this page. If this should not '
+                'have occurred and the issue persists, ' + language.SUPPORT_LINK
+            )},
         )
     return True
 
@@ -448,7 +452,7 @@ def http_error_if_disk_saving_mode(func):
         if settings.DISK_SAVING_MODE:
             raise HTTPError(
                 http.METHOD_NOT_ALLOWED,
-                redirect_url=node.url
+                redirect_url=node.url,
             )
         return func(*args, **kwargs)
     return wrapper

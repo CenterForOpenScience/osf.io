@@ -28,7 +28,7 @@ def search(query, index=None, doc_type=None, raw=None):
 def update_node(node, index=None, bulk=False, async_update=True, saved_fields=None):
     kwargs = {
         'index': index,
-        'bulk': bulk
+        'bulk': bulk,
     }
     if async_update:
         node_id = node._id
@@ -48,7 +48,7 @@ def update_node(node, index=None, bulk=False, async_update=True, saved_fields=No
 def update_preprint(preprint, index=None, bulk=False, async_update=True, saved_fields=None):
     kwargs = {
         'index': index,
-        'bulk': bulk
+        'bulk': bulk,
     }
     if async_update:
         preprint_id = preprint._id
@@ -66,7 +66,7 @@ def update_group(group, index=None, bulk=False, async_update=True, saved_fields=
     kwargs = {
         'index': index,
         'bulk': bulk,
-        'deleted_id': deleted_id
+        'deleted_id': deleted_id,
     }
     if async_update:
         # We need the transaction to be committed before trying to run celery tasks.
@@ -152,6 +152,8 @@ def create_index(index=None):
 @requires_search
 def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     exclude = exclude or []
-    result = search_engine.search_contributor(query=query, page=page, size=size,
-                                              exclude=exclude, current_user=current_user)
+    result = search_engine.search_contributor(
+        query=query, page=page, size=size,
+        exclude=exclude, current_user=current_user,
+    )
     return result
