@@ -88,7 +88,7 @@ def test_file_update_respects_region(project, user, create_test_file):
             'object': '07d80a',
         }, {
             'sha256': 'existing',
-        }, check_permissions=False
+        }, checkout=False
     )
     assert new_region != original_region
     assert new_version.region == new_region

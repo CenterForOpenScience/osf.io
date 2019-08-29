@@ -302,7 +302,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
             most_recent_fileversion.region = destination_parent.target.osfstorage_region
             most_recent_fileversion.save()
 
-    def create_version(self, creator, location, metadata=None, check_permissions=True):
+    def create_version(self, creator, location, metadata=None, checkout=True):
         """
         :param creator: OSFUser
         :param location: dict A dict that represents provider details, typical structure:
@@ -319,7 +319,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
         'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
         }
 
-        :param check_permissions: check if user has permission to create version (False for testing only).
+        :param checkout: checkout file when creating a new version (False for testing only).
         :return:
         """
         latest_version = self.get_version()
@@ -329,7 +329,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
             return latest_version
 
         # Checkout the file to prevent concurrency issues by spamming create new version requests
-        if check_permissions and isinstance(self.target, AbstractNode):
+        if checkout and isinstance(self.target, AbstractNode):
             if not self.is_checked_out:
                 self.check_in_or_out(creator, creator, save=True)
             else:
@@ -345,7 +345,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
         self.versions.add(version)
         self.save()
 
-        if check_permissions and isinstance(self.target, AbstractNode):
+        if checkout and isinstance(self.target, AbstractNode):
             self.check_in_or_out(creator, None, save=True)
 
         return version

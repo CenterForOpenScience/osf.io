@@ -19,7 +19,7 @@ def create_test_file(target, user, filename='test_file', create_guid=True, size=
     }, {
         'size': size,
         'contentType': 'img/png'
-    }).save()
+    }, checkout=False).save()
     return test_file
 
 
