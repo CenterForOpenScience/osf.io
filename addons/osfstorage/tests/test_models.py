@@ -360,7 +360,7 @@ class TestOsfstorageFileNode(StorageTestCase):
 
         for _ in range(2):
             version = factories.FileVersionFactory(region=self.node_settings.region)
-            child.versions.add(version)
+            child.add_version(version)
         child.save()
 
         moved = to_move.move_under(move_to)
