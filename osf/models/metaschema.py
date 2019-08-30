@@ -160,13 +160,15 @@ class FileMetadataSchema(AbstractSchema):
 class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
     class Meta:
         order_with_respect_to = 'schema'
-        unique_together = ('schema', 'answer_id')
+        unique_together = ('schema', 'registration_response_key')
 
     schema = models.ForeignKey('RegistrationSchema', related_name='schema_blocks', on_delete=models.CASCADE)
     help_text = models.TextField()
     example_text = models.TextField(null=True)
-    answer_id = models.CharField(max_length=255, db_index=True, null=True, blank=True)
-    chunk_id = models.CharField(max_length=24, db_index=True, null=True)
+    # Corresponds to a key in DraftRegistration.registration_responses dictionary
+    registration_response_key = models.CharField(max_length=255, db_index=True, null=True, blank=True)
+    # A question can be split into multiple schema blocks, but are linked with a schema_block_group_key
+    schema_block_group_key = models.CharField(max_length=24, db_index=True, null=True)
     block_type = models.CharField(max_length=31, db_index=True, choices=FORMBLOCK_TYPES)
     display_text = models.TextField()
     required = models.BooleanField(default=False)
@@ -177,5 +179,10 @@ class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
         return api_v2_url(path)
 
     def save(self, *args, **kwargs):
-        self.answer_id = self.answer_id or None
+        """
+        Allows us to use a unique_together constraint, so each "registration_response_key"
+        only appears once for every registration schema.  To do this, we need to save
+        empty "registration_response_key"s as null, instead of an empty string.
+        """
+        self.registration_response_key = self.registration_response_key or None
         return super(RegistrationSchemaBlock, self).save(*args, **kwargs)

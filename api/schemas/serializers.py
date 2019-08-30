@@ -33,8 +33,8 @@ class RegistrationSchemaBlockSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    answer_id = ser.CharField(read_only=True)
-    chunk_id = ser.CharField(read_only=True)
+    registration_response_key = ser.CharField(read_only=True)
+    schema_block_group_key = ser.CharField(read_only=True)
     block_type = ser.CharField(read_only=True)
     display_text = ser.CharField(read_only=True)
     help_text = ser.CharField(read_only=True)

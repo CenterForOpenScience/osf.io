@@ -187,7 +187,7 @@ def remove_schemas(*args):
 
 
 def create_block(state, schema_id, block_type, display_text='', required=False, help_text='',
-        answer_id=None, chunk_id='', example_text=''):
+        registration_response_key=None, schema_block_group_key='', example_text=''):
     """
     For mapping schemas to schema blocks: creates a given block from the specified parameters
     """
@@ -199,13 +199,13 @@ def create_block(state, schema_id, block_type, display_text='', required=False, 
         required=required,
         display_text=display_text,
         help_text=help_text,
-        answer_id=answer_id,
-        chunk_id=chunk_id,
+        registration_response_key=registration_response_key,
+        schema_block_group_key=schema_block_group_key,
         example_text=example_text
     )
 
 # Split question multiple choice options into their own blocks
-def split_options_into_blocks(state, rs, question, chunk_id):
+def split_options_into_blocks(state, rs, question, schema_block_group_key):
     """
     For mapping schemas to schema blocks: splits individual multiple choice
     options into their own schema blocks
@@ -220,10 +220,10 @@ def split_options_into_blocks(state, rs, question, chunk_id):
             'select-input-option',
             display_text=answer_text,
             help_text=help_text,
-            chunk_id=chunk_id,
+            schema_block_group_key=schema_block_group_key,
         )
 
-def get_answer_id(question):
+def get_registration_response_key(question):
     """
     For mapping schemas to schema blocks:
     Answer ids will map to the user's response
@@ -301,7 +301,7 @@ def format_property(question, property, index):
       reflect its nested nature, to ensure uniqueness
     - For the first nested subquestion, transfer the parent's title, description, and help.
     """
-    property['qid'] = '{}.{}'.format(get_answer_id(question) or '', property.get('id', ''))
+    property['qid'] = '{}.{}'.format(get_registration_response_key(question) or '', property.get('id', ''))
     if not index:
         title = question.get('title', '')
         description = question.get('description', '')
@@ -319,7 +319,7 @@ def format_question(state, rs, question, sub=False):
     """
     For mapping schemas to schema blocks:
     Split the original question from the schema into multiple schema blocks, all of
-    which have the same chunk_id, to link them.
+    which have the same schema_block_group_key, to link them.
     """
     # If there are subquestions, recurse and format subquestions
     if question.get('properties'):
@@ -333,8 +333,8 @@ def format_question(state, rs, question, sub=False):
         for index, property in enumerate(question.get('properties')):
             format_question(state, rs, format_property(question, property, index), sub=True)
     else:
-        # All form blocks related to a particular question share the same chunk_id.
-        chunk_id = generate_object_id()
+        # All form blocks related to a particular question share the same schema_block_group_key.
+        schema_block_group_key = generate_object_id()
         title, description, help, example = find_title_description_help_example(rs, question)
 
         # Creates question title block
@@ -345,7 +345,7 @@ def format_question(state, rs, question, sub=False):
             display_text=title,
             help_text='' if description else help,
             example_text=example,
-            chunk_id=chunk_id
+            schema_block_group_key=schema_block_group_key
         )
 
         # Creates paragraph block (question description)
@@ -356,7 +356,7 @@ def format_question(state, rs, question, sub=False):
                 block_type='paragraph',
                 display_text=description,
                 help_text=help,
-                chunk_id=chunk_id,
+                schema_block_group_key=schema_block_group_key,
             )
 
         # Creates question input block - this block will correspond to an answer
@@ -367,12 +367,12 @@ def format_question(state, rs, question, sub=False):
             rs.id,
             block_type,
             required=question.get('required', False),
-            chunk_id=chunk_id,
-            answer_id=get_answer_id(question)
+            schema_block_group_key=schema_block_group_key,
+            registration_response_key=get_registration_response_key(question)
         )
 
         # If there are multiple choice answers, create blocks for these as well.
-        split_options_into_blocks(state, rs, question, chunk_id)
+        split_options_into_blocks(state, rs, question, schema_block_group_key)
 
 
 def map_schemas_to_schemablocks(*args):

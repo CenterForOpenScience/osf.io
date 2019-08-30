@@ -25,8 +25,8 @@ class Migration(migrations.Migration):
                 ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24, unique=True)),
                 ('help_text', models.TextField()),
                 ('example_text', models.TextField(null=True)),
-                ('answer_id', models.CharField(blank=True, db_index=True, max_length=255, null=True)),
-                ('chunk_id', models.CharField(db_index=True, max_length=24, null=True)),
+                ('registration_response_key', models.CharField(blank=True, db_index=True, max_length=255, null=True)),
+                ('schema_block_group_key', models.CharField(db_index=True, max_length=24, null=True)),
                 ('block_type', models.CharField(choices=[(b'page-heading', b'page-heading'), (b'section-heading', b'section-heading'), (b'subsection-heading', b'subsection-heading'), (b'paragraph', b'paragraph'), (b'question-title', b'question-title'), (b'short-text-input', b'short-text-input'), (b'long-text-input', b'long-text-input'), (b'file-input', b'file-input'), (b'contributors-input', b'contributors-input'), (b'single-select-input', b'single-select-input'), (b'multi-select-input', b'multi-select-input'), (b'select-input-option', b'select-input-option'), (b'select-other-option', b'select-other-option')], db_index=True, max_length=31)),
                 ('display_text', models.TextField()),
                 ('required', models.BooleanField(default=False)),
@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterUniqueTogether(
             name='registrationschemablock',
-            unique_together=set([('schema', 'answer_id')]),
+            unique_together=set([('schema', 'registration_response_key')]),
         ),
         migrations.AlterOrderWithRespectTo(
             name='registrationschemablock',
