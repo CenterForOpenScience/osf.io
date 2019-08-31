@@ -37,7 +37,8 @@ from addons.iqbrims.models import REVIEW_FOLDERS
 from addons.iqbrims.utils import (
     get_log_actions,
     must_have_valid_hash,
-    get_folder_title
+    get_folder_title,
+    add_comment
 )
 
 logger = logging.getLogger(__name__)
@@ -140,6 +141,8 @@ def iqbrims_post_notify(**kwargs):
     to = data['to']
     notify_title = data['notify_title'] if 'notify_title' in data else None
     notify_body = data['notify_body'] if 'notify_body' in data else None
+    notify_body_md = data['notify_body_md'] \
+                     if 'notify_body_md' in data else None
     use_mail = data['use_mail'] if 'use_mail' in data else False
     nodes = []
     if 'user' in to:
@@ -159,14 +162,20 @@ def iqbrims_post_notify(**kwargs):
             href = href_prefix + node._id + '/'
             nname = 'Paper <a href="{1}">{0}</a>'.format(node.title, href)
             notify_body = notify_body.replace('${node}', nname)
+    if notify_body_md is None:
+        notify_body_md = notify_body
     if notify_title is None:
         notify_title = action
     for n, email_template in nodes:
+        comment = add_comment(node=n, user=n.creator,
+                              title=notify_title,
+                              body=notify_body_md)
         n.add_log(
             action=action,
             params={
                 'project': n.parent_id,
                 'node': node._id,
+                'comment': comment._id,
             },
             auth=Auth(user=node.creator),
         )

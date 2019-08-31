@@ -12,7 +12,7 @@ from flask import request
 
 from addons.iqbrims.apps import IQBRIMSAddonConfig
 from framework.exceptions import HTTPError
-from osf.models import ExternalAccount
+from osf.models import Comment, ExternalAccount
 from website.util import api_v2_url
 
 logger = logging.getLogger(__name__)
@@ -131,6 +131,12 @@ def create_or_update_external_account_with_other(other_external_account):
 
 def get_folder_title(node):
     return u'{0}-{1}'.format(node.title.replace('/', '_'), node._id)
+
+def add_comment(node, user, title, body):
+    content = '**{title}** {body}'.format(title=title, body=body)
+    comment = Comment(user=user, node=node, content=content)
+    comment.save()
+    return comment
 
 def must_have_valid_hash():
     """Decorator factory that ensures that a request have valid X-RDM-Token header.
