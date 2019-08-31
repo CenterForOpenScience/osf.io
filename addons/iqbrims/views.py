@@ -180,6 +180,7 @@ def iqbrims_post_notify(**kwargs):
                       title=n.title, guid=n._id, author=node.creator,
                       notify_type=notify_type, mimetype='html',
                       notify_body=notify_body, notify_title=notify_title)
+    return {'status': 'complete'}
 
 @must_be_valid_project
 @must_have_addon(SHORT_NAME, 'node')
