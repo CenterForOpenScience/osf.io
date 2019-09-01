@@ -129,10 +129,13 @@ class RegistrationSerializer(NodeSerializer):
         'be cleared and the project will be made private.',
     ))
     registration_supplement = ser.SerializerMethodField()
+    # Will be deprecated in favor of registration_responses
     registered_meta = HideIfWithdrawal(ser.SerializerMethodField(
         help_text='A dictionary with supplemental registration questions and responses.',
     ))
-
+    registration_responses = HideIfWithdrawal(ser.SerializerMethodField(
+        help_text='A dictionary with supplemental registration questions and responses.',
+    ))
     registered_by = HideIfWithdrawal(RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<registered_user._id>'},
@@ -355,6 +358,12 @@ class RegistrationSerializer(NodeSerializer):
                 return meta_values
             except ValueError:
                 return meta_values
+        return None
+
+    def get_registration_responses(self, obj):
+        if obj.registration_responses:
+            # TODO - anonymize registratin_responses
+            return obj.registration_responses
         return None
 
     def get_embargo_end_date(self, obj):

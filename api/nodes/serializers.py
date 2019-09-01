@@ -1465,7 +1465,9 @@ class DraftRegistrationSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
+    # Will be eventually deprecated in favor of registration_responses
     registration_metadata = ser.DictField(required=False)
+    registration_responses = ser.DictField(required=False)
     datetime_initiated = VersionedDateTimeField(read_only=True)
     datetime_updated = VersionedDateTimeField(read_only=True)
 
