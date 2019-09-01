@@ -12,7 +12,7 @@ from flask import request
 
 from addons.iqbrims.apps import IQBRIMSAddonConfig
 from framework.exceptions import HTTPError
-from osf.models import Comment, ExternalAccount
+from osf.models import Guid, Comment, ExternalAccount
 from website.util import api_v2_url
 
 logger = logging.getLogger(__name__)
@@ -134,7 +134,9 @@ def get_folder_title(node):
 
 def add_comment(node, user, title, body):
     content = '**{title}** {body}'.format(title=title, body=body)
-    comment = Comment(user=user, node=node, content=content)
+    target = Guid.load(node._id)
+    comment = Comment(user=user, node=node, content=content,
+                      target=target, root_target=target)
     comment.save()
     return comment
 

@@ -604,7 +604,7 @@ class IQBRIMSFlowableClient(BaseClient):
             url,
             headers=headers,
             data=json.dumps(payload),
-            expects=(200, ),
+            expects=(200, 201),
             throws=HTTPError(401)
         )
         logger.info('flowable-rest: response={}'.format(response.json()))
