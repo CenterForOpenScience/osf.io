@@ -9,18 +9,18 @@ import osf.utils.datetime_aware_jsonfield
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0176_migrate_schemas_to_schemablocks'),
+        ('osf', '0182_migrate_schemas_to_schemablocks'),
     ]
 
     operations = [
         migrations.AddField(
             model_name='abstractnode',
-            name='answers',
+            name='registration_responses',
             field=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder, null=True),
         ),
         migrations.AddField(
             model_name='draftregistration',
-            name='answers',
+            name='registration_responses',
             field=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder),
         ),
     ]

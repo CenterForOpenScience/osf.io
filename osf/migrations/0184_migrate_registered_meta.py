@@ -5,19 +5,19 @@ from __future__ import unicode_literals
 from django.db import migrations
 
 
-def clear_draft_registration_answers(state, schema):
+def clear_draft_registration_responses(state, schema):
     """
     Reverse migration
     """
     DraftRegistration = state.get_model('osf', 'draftregistration')
-    DraftRegistration.objects.all().update(answers={})
+    DraftRegistration.objects.all().update(registration_responses={})
 
-def clear_registration_answers(state, schema):
+def clear_registration_responses(state, schema):
     """
     Reverse migration
     """
     Registration = state.get_model('osf', 'registration')
-    Registration.objects.update(answers={})
+    Registration.objects.update(registration_responses={})
 
 def get_nested_answer(nested_response, keys):
     """
@@ -32,34 +32,39 @@ def get_nested_answer(nested_response, keys):
         key = keys.pop(0)
         return get_nested_answer(nested_response.get(key, {}).get('value', ''), keys)
 
-def extract_answers(schema, registered_meta):
+def extract_registration_responses(schema, registered_meta):
     """
-    Extracts questions/nested answers - makes use of schema block `answer_ids` to pull
+    Extracts questions/nested registration_responses - makes use of schema block `registration_response_key` to pull
     out the nested registered_meta
     """
-    answers = {}
-    answer_keys = schema.schema_blocks.filter(answer_id__isnull=False).values_list('answer_id', flat=True)
-    for answer_id in answer_keys:
-        answers[answer_id] = get_nested_answer(registered_meta, answer_id.split('.'))
-    return answers
+    registration_responses = {}
+    registration_response_keys = schema.schema_blocks.filter(
+        registration_response_key__isnull=False
+    ).values_list(
+        'registration_response_key',
+        flat=True
+    )
+    for registration_response_key in registration_response_keys:
+        registration_responses[registration_response_key] = get_nested_answer(registered_meta, registration_response_key.split('.'))
+    return registration_responses
 
 def migrate_draft_registration_metadata(state, schema):
     """
-    Extracts questions/nested answers from `registration_metadata`
-    to top-level key-value pairs in `answers`
+    Extracts questions/nested registration_responses from `registration_metadata`
+    to top-level key-value pairs in `registration_responses`
     """
     DraftRegistration = state.get_model('osf', 'draftregistration')
 
     for draft in DraftRegistration.objects.all():
-        draft.answers = extract_answers(
+        draft.registration_responses = extract_registration_responses(
             draft.registration_schema,
             draft.registration_metadata)
         draft.save()
 
 def migrate_registration_registered_meta(state, schema):
     """
-    Extracts questions/nested answers from `registered_meta`
-    to top-level key-value pairs in `answers`
+    Extracts questions/nested registration_responses from `registered_meta`
+    to top-level key-value pairs in `registration_responses`
     """
     Registration = state.get_model('osf', 'registration')
     RegistrationSchema = state.get_model('osf', 'registrationschema')
@@ -68,17 +73,17 @@ def migrate_registration_registered_meta(state, schema):
         schema_id = reg.registered_meta.keys()[0] if reg.registered_meta.keys() else None
         if schema_id:
             schema = RegistrationSchema.objects.get(_id=schema_id)
-            reg.answers = extract_answers(schema, reg.registered_meta[schema_id])
+            reg.registration_responses = extract_registration_responses(schema, reg.registered_meta[schema_id])
             reg.save()
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0177_add_answer_fields'),
+        ('osf', '0182_add_answer_fields'),
     ]
 
     operations = [
-        migrations.RunPython(migrate_draft_registration_metadata, clear_draft_registration_answers),
-        migrations.RunPython(migrate_registration_registered_meta, clear_registration_answers),
+        migrations.RunPython(migrate_draft_registration_metadata, clear_draft_registration_responses),
+        migrations.RunPython(migrate_registration_registered_meta, clear_registration_responses),
     ]
