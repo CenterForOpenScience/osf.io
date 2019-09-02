@@ -133,7 +133,7 @@ def get_folder_title(node):
     return u'{0}-{1}'.format(node.title.replace('/', '_'), node._id)
 
 def add_comment(node, user, title, body):
-    content = '**{title}** {body}'.format(title=title, body=body)
+    content = u'**{title}** {body}'.format(title=title, body=body)
     target = Guid.load(node._id)
     comment = Comment(user=user, node=node, content=content,
                       target=target, root_target=target)
