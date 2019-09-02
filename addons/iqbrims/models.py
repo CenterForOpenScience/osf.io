@@ -383,6 +383,11 @@ def update_folder_name(sender, instance, created, **kwargs):
     iqbrims = node.get_addon(IQBRIMSAddonConfig.short_name)
     if not iqbrims.has_auth:
         return
+    if RdmAddonOption.objects.filter(
+        provider=IQBRIMSAddonConfig.short_name,
+        management_node=node
+    ).exists():
+        return
     try:
         access_token = iqbrims.fetch_access_token()
         client = IQBRIMSClient(access_token)
