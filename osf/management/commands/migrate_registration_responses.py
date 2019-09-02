@@ -66,6 +66,9 @@ def get_value_or_extra(nested_response, block_type, key, keys):
     otherwise, returns a dictionary to get the next level of nesting.
     """
     keyed_value = nested_response.get(key, '')
+    # No guarantee that the key exists in the dictionary
+    if isinstance(keyed_value, basestring):
+        return keyed_value
 
     # If we are on the most deeply nested key (no more keys left in array),
     # and the block type is "file-input", the information we want is

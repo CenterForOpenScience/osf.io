@@ -897,6 +897,13 @@ class TestMigrateDraftRegistrationRegistrationResponses:
         )
 
     @pytest.fixture()
+    def empty_draft_osf_standard(self, osf_standard_schema):
+        return DraftRegistrationFactory(
+            registration_schema=osf_standard_schema,
+            registration_metadata={}
+        )
+
+    @pytest.fixture()
     def draft_prereg(self, prereg_schema):
         return DraftRegistrationFactory(
             registration_schema=prereg_schema,
@@ -909,6 +916,19 @@ class TestMigrateDraftRegistrationRegistrationResponses:
             registration_schema=veer_schema,
             registration_metadata=veer_registration_metadata
         )
+
+    def test_migrate_empty_draft(self, app, empty_draft_osf_standard):
+        assert empty_draft_osf_standard.registration_responses == {}
+        assert empty_draft_osf_standard.registration_responses_migrated is False
+
+        migrate_draft_registrations(dry_run=False)
+
+        empty_draft_osf_standard.reload()
+        assert empty_draft_osf_standard.registration_responses_migrated is True
+        responses = empty_draft_osf_standard.registration_responses
+        assert responses['looked'] == ''
+        assert responses['datacompletion'] == ''
+        assert responses['comments'] == ''
 
     def test_migrate_draft_registrations(self, app, draft_osf_standard, draft_prereg, draft_veer):
         drafts = [
