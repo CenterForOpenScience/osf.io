@@ -49,6 +49,7 @@ class Registration(AbstractNode):
     # TODO: Consider making this a FK, as there can be one per Registration
     registered_schema = models.ManyToManyField(RegistrationSchema)
     registration_responses = DateTimeAwareJSONField(default=dict, blank=True)
+    registration_responses_migrated = models.NullBooleanField(default=False)
 
     registered_meta = DateTimeAwareJSONField(default=dict, blank=True)
     registered_from = models.ForeignKey('self',
@@ -481,6 +482,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     #   }
     # }
     registration_responses = DateTimeAwareJSONField(default=dict, blank=True)
+    registration_responses_migrated = models.NullBooleanField(default=False)
     registration_metadata = DateTimeAwareJSONField(default=dict, blank=True)
     registration_schema = models.ForeignKey('RegistrationSchema', null=True, on_delete=models.CASCADE)
     registered_node = models.ForeignKey('Registration', null=True, blank=True,

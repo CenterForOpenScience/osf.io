@@ -3,10 +3,13 @@
 from __future__ import unicode_literals
 
 import logging
-from tqdm import tqdm
 
 from django.db import migrations
-from bulk_update.helper import bulk_update
+from osf.management.commands.migrate_registration_responses import (
+    migrate_draft_registrations,
+    migrate_registrations
+)
+from website.settings import DEBUG_MODE
 
 logger = logging.getLogger(__name__)
 
@@ -16,138 +19,26 @@ def clear_draft_registration_responses(state, schema):
     Reverse migration
     """
     DraftRegistration = state.get_model('osf', 'draftregistration')
-    DraftRegistration.objects.all().update(registration_responses={})
+    DraftRegistration.objects.update(
+        registration_responses={},
+        registration_responses_migrated=False
+    )
 
 def clear_registration_responses(state, schema):
     """
     Reverse migration
     """
     Registration = state.get_model('osf', 'registration')
-    Registration.objects.update(registration_responses={})
-
-def extract_file_info(file):
-    """
-    Returns a dictionary with the file_name and file_id as keys,
-    if both exist.
-
-    file_name is extracted from 'selectedFileName' and the _id
-    is pulled from the 'viewUrl'
-
-    Some weird data here...such as {u'selectedFileName': u'No file selected'}
-    """
-    if file:
-        name = file.get('selectedFileName', '')
-        # viewUrl is the only place the file id is accurate.  On a
-        # registration, the other file ids in extra refer to the original
-        # file on the node, not the file that was archived on the reg
-        view_url = file.get('viewUrl', '')
-        file__id = view_url.split('/')[5] if view_url else ''
-
-        if name and file__id:
-            return {
-                'file_name': name,
-                'file_id': file__id
-            }
-    return {}
-
-def format_extra(extra):
-    """
-    "extra" is typically an array, but for some data, it is a dict
-    """
-    files = []
-    if isinstance(extra, list):
-        for file in extra:
-            file_info = extract_file_info(file)
-            files.append(file_info)
-    else:
-        file_info = extract_file_info(extra)
-        if file_info:
-            files.append(file_info)
-    return files
-
-
-def get_value_or_extra(nested_response, key):
-    """
-    If key is "uploader", extract file information which is
-    stored under "extra" key.  Otherwise, extract "value" information
-    """
-    keyed_value = nested_response.get(key, {})
-    if key == 'uploader':
-        extra = format_extra(keyed_value.get('extra', []))
-        return extra
-    value = keyed_value.get('value', '')
-    return value
-
-def get_nested_answer(nested_response, keys):
-    """
-    Recursively fetches the nested response in registered_meta.
-
-    :params nested_response dictionary
-    :params keys array, of nested question_ids: ["recommended-analysis", "specify", "question11c"]
-    """
-    if isinstance(nested_response, dict):
-        key = keys.pop(0)
-        return get_nested_answer(get_value_or_extra(nested_response, key), keys)
-    else:
-        return nested_response
-
-def extract_registration_responses(schema, registered_meta, reg):
-    """
-    Extracts questions/nested registration_responses - makes use of schema block `registration_response_key` to pull
-    out the nested registered_meta
-    """
-    registration_responses = {}
-    registration_response_keys = schema.schema_blocks.filter(
-        registration_response_key__isnull=False
-    ).values_list(
-        'registration_response_key',
-        flat=True
+    Registration.objects.update(
+        registration_responses={},
+        registration_responses_migrated=False
     )
-    for registration_response_key in registration_response_keys:
-        registration_responses[registration_response_key] = get_nested_answer(registered_meta, registration_response_key.split('.'))
-    return registration_responses
 
 def migrate_draft_registration_metadata(state, schema):
-    """
-    Extracts questions/nested registration_responses from `registration_metadata`
-    to top-level key-value pairs in `registration_responses`
-    """
-    DraftRegistration = state.get_model('osf', 'draftregistration')
-    draft_registrations = DraftRegistration.objects.all()
-    logger.info('Migrating draft registration_responses for {} draft registrations.'.format(len(draft_registrations)))
-    drafts = []
-    progress_bar = tqdm(total=len(draft_registrations))
-    for draft in draft_registrations:
-        draft.registration_responses = extract_registration_responses(
-            draft.registration_schema,
-            draft.registration_metadata,
-            draft)
-        drafts.append(draft)
-        progress_bar.update()
-    progress_bar.close()
-    bulk_update(drafts, update_fields=['registration_responses'], batch_size=10000)
-
+    migrate_draft_registrations(dry_run=False, rows='all')
 
 def migrate_registration_registered_meta(state, schema):
-    """
-    Extracts questions/nested registration_responses from `registered_meta`
-    to top-level key-value pairs in `registration_responses`
-    """
-    Registration = state.get_model('osf', 'registration')
-    RegistrationSchema = state.get_model('osf', 'registrationschema')
-    registrations = Registration.objects.all()
-
-    logger.info('Migrating registration_responses for {} draft registrations.'.format(len(registrations)))
-    regs = []
-    for i, reg in tqdm(registrations, []):
-        schema_id = reg.registered_meta.keys()[0] if reg.registered_meta.keys() else None
-        if schema_id:
-            schema = RegistrationSchema.objects.get(_id=schema_id)
-            reg.registration_responses = extract_registration_responses(schema, reg.registered_meta[schema_id])
-            regs.append(reg)
-
-    bulk_update(regs, update_fields=['registration_responses'], batch_size=10000)
-
+    migrate_registrations(dry_run=False, rows='all')
 
 class Migration(migrations.Migration):
 
@@ -155,7 +46,13 @@ class Migration(migrations.Migration):
         ('osf', '0183_add_registation_responses_fields'),
     ]
 
-    operations = [
-        migrations.RunPython(migrate_draft_registration_metadata, clear_draft_registration_responses),
-        migrations.RunPython(migrate_registration_registered_meta, clear_registration_responses),
-    ]
+    if DEBUG_MODE:
+        operations = [
+            migrations.RunPython(migrate_draft_registration_metadata, clear_draft_registration_responses),
+            migrations.RunPython(migrate_registration_registered_meta, clear_registration_responses),
+        ]
+    else:
+        operations = []
+        logger.info(
+            'The automatic migration only runs in DEBUG_MODE. Use management command migrate_registration_responses instead'
+        )
