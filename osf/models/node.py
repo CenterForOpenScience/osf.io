@@ -43,7 +43,7 @@ from osf.models.collection import CollectionSubmission
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
 from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable, ContributorMixin, GuardianMixin,
-                               NodeLinkMixin, Taggable, TaxonomizableMixin, SpamOverrideMixin)
+                               NodeLinkMixin, Taggable, TaxonomizableMixin, SpamOverrideMixin, RegistrationResponseMixin)
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.sanctions import RegistrationApproval
@@ -224,7 +224,7 @@ class AbstractNodeManager(TypedModelManager, IncludeManager):
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin, GuardianMixin,
                    NodeLinkMixin, CommentableMixin, SpamOverrideMixin, TaxonomizableMixin,
-                   ContributorMixin, Taggable, Loggable, GuidMixin, BaseModel):
+                   ContributorMixin, Taggable, Loggable, GuidMixin, RegistrationResponseMixin, BaseModel):
     """
     All things that inherit from AbstractNode will appear in
     the same table and will be differentiated by the `type` column.

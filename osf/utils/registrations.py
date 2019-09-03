@@ -1,7 +1,5 @@
 import copy
 
-from django.apps import apps
-
 
 def strip_registered_meta_comments(messy_dict_or_list, in_place=False):
     """Removes Prereg Challenge comments from a given `registered_meta` dict.
@@ -141,69 +139,6 @@ def get_nested_answer(nested_response, block_type, keys):
         # Once we've drilled down through the entire dictionary, our nested_response
         # should be an array or a string
         return nested_response
-
-# For flatten_registration_metadata
-def get_schema(resource):
-    """
-    Fetches the RegistrationSchema from the resource
-
-    :param resource: DraftRegistration or Registration
-    :returns RegistrationSchema
-    """
-    if getattr(resource, 'registered_meta', None):
-        # Registrations
-        RegistrationSchema = apps.get_model('osf.RegistrationSchema')
-        schema_id = resource.registered_meta.keys()[0] if resource.registered_meta.keys() else None
-        return RegistrationSchema.objects.get(_id=schema_id) if schema_id else None
-    else:
-        # DraftRegistrations
-        return resource.registration_schema
-
-# For flatten_registration_metadata
-def get_registration_metadata(resource, schema=None):
-    """
-    Fetches the original registration responses
-    :param resource: DraftRegistration or Registration
-    :returns dictionary, registration_metadata
-    """
-    if getattr(resource, 'registered_meta', None):
-        # Registration - registered_meta is under the schema key
-        return resource.registered_meta.get(schema._id, {})
-    # Draft Registration
-    return resource.registration_metadata
-
-def flatten_registration_metadata(resource):
-    """
-    Extracts questions/nested registration_responses - makes use of schema block `registration_response_key`
-    and block_type to pull out the nested registered_meta
-
-    For example, if the registration_response_key = "description-methods.planned-sample.question7b",
-    this will recurse through the registered_meta, looking for each key, starting with "description-methods",
-    then "planned-sample", and finally "question7b", returning the most deeply nested value corresponding
-    with the final key to flatten the dictionary.
-    :resource, DraftRegistration or Registration
-    :returns dictionary, registration_responses, flattened dictionary with registration_response_keys
-    top-level
-    """
-    schema = get_schema(resource)
-    registered_meta = get_registration_metadata(resource, schema)
-
-    registration_responses = {}
-    registration_response_keys = schema.schema_blocks.filter(
-        registration_response_key__isnull=False
-    ).values(
-        'registration_response_key',
-        'block_type'
-    )
-
-    for registration_response_key_dict in registration_response_keys:
-        key = registration_response_key_dict['registration_response_key']
-        registration_responses[key] = get_nested_answer(
-            registered_meta,
-            registration_response_key_dict['block_type'],
-            key.split('.')
-        )
-    return registration_responses
 
 
 def expand_registration_responses(resource):

@@ -7,7 +7,6 @@ from tqdm import tqdm
 
 from bulk_update.helper import bulk_update
 from framework.celery_tasks import app as celery_app
-from osf.utils.registrations import flatten_registration_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +67,7 @@ def migrate_responses(resources, resources_count, dry_run=False, rows='all'):
     to_save = []
     progress_bar = tqdm(total=rows)
     for resource in resources:
-        resource.registration_responses = flatten_registration_metadata(resource)
+        resource.registration_responses = resource.flatten_registration_metadata()
         resource.registration_responses_migrated = True
         to_save.append(resource)
         progress_bar.update()

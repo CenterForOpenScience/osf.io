@@ -30,8 +30,10 @@ from osf.models.spam import SpamMixin, SpamStatus
 from osf.models.tag import Tag
 from osf.models.validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
 from osf.utils.permissions import ADMIN, REVIEW_GROUPS, READ, WRITE
+from osf.utils.registrations import get_nested_answer
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils.requests import get_request_and_user_id
 from website.project import signals as project_signals
@@ -1782,3 +1784,50 @@ class SpamOverrideMixin(SpamMixin):
             )
             log.should_hide = True
             log.save()
+
+
+class RegistrationResponseMixin(models.Model):
+    registration_responses = DateTimeAwareJSONField(default=dict, blank=True)
+    registration_responses_migrated = models.NullBooleanField(default=False)
+
+    def get_registration_schema(self):
+        raise NotImplementedError()
+
+    def get_registration_metadata(self):
+        raise NotImplementedError()
+
+    def flatten_registration_metadata(self):
+        """
+        Extracts questions/nested registration_responses - makes use of schema block `registration_response_key`
+        and block_type to pull out the nested registered_meta
+
+        For example, if the registration_response_key = "description-methods.planned-sample.question7b",
+        this will recurse through the registered_meta, looking for each key, starting with "description-methods",
+        then "planned-sample", and finally "question7b", returning the most deeply nested value corresponding
+        with the final key to flatten the dictionary.
+        :self, DraftRegistration or Registration
+        :returns dictionary, registration_responses, flattened dictionary with registration_response_keys
+        top-level
+        """
+        schema = self.get_registration_schema
+        registered_meta = self.get_registration_metadata(schema)
+
+        registration_responses = {}
+        registration_response_keys = schema.schema_blocks.filter(
+            registration_response_key__isnull=False
+        ).values(
+            'registration_response_key',
+            'block_type'
+        )
+
+        for registration_response_key_dict in registration_response_keys:
+            key = registration_response_key_dict['registration_response_key']
+            registration_responses[key] = get_nested_answer(
+                registered_meta,
+                registration_response_key_dict['block_type'],
+                key.split('.')
+            )
+        return registration_responses
+
+    class Meta:
+        abstract = True

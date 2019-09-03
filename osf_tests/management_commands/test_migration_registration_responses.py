@@ -10,10 +10,10 @@ from osf.management.commands.migrate_registration_responses import (
     migrate_registrations
 )
 
-'''
+"""
 Regression test to prevent the migration of 'registration_metadata' behavior
 from regressing
-'''
+"""
 
 prereg_registration_metadata = {
     'q20': {

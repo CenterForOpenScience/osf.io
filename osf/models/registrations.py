@@ -25,6 +25,7 @@ from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.node import AbstractNode
 from osf.models.nodelog import NodeLog
 from osf.models.provider import RegistrationProvider
+from osf.models.mixins import RegistrationResponseMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 logger = logging.getLogger(__name__)
@@ -48,8 +49,6 @@ class Registration(AbstractNode):
 
     # TODO: Consider making this a FK, as there can be one per Registration
     registered_schema = models.ManyToManyField(RegistrationSchema)
-    registration_responses = DateTimeAwareJSONField(default=dict, blank=True)
-    registration_responses_migrated = models.NullBooleanField(default=False)
 
     registered_meta = DateTimeAwareJSONField(default=dict, blank=True)
     registered_from = models.ForeignKey('self',
@@ -84,10 +83,21 @@ class Registration(AbstractNode):
         return stuck_regs
 
     @property
-    def registered_schema_id(self):
+    def get_registration_schema(self):
+        # Overrides RegistrationResponseMixin
         if self.registered_schema.exists():
-            return self.registered_schema.first()._id
+            return self.registered_schema.first()
         return None
+
+    def get_registration_metadata(self, schema):
+        # Overrides RegistrationResponseMixin
+        registered_meta = self.registered_meta or {}
+        return registered_meta.get(schema._id, None)
+
+    @property
+    def registered_schema_id(self):
+        schema = self.get_registration_schema
+        return schema._id if schema else None
 
     @property
     def is_registration(self):
@@ -453,7 +463,7 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
                 'with id {self._id!r}>').format(self=self)
 
 
-class DraftRegistration(ObjectIDMixin, BaseModel):
+class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, BaseModel):
     URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/drafts/{draft_id}'
 
     datetime_initiated = NonNaiveDateTimeField(auto_now_add=True)
@@ -481,8 +491,6 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     #     'value': <value>
     #   }
     # }
-    registration_responses = DateTimeAwareJSONField(default=dict, blank=True)
-    registration_responses_migrated = models.NullBooleanField(default=False)
     registration_metadata = DateTimeAwareJSONField(default=dict, blank=True)
     registration_schema = models.ForeignKey('RegistrationSchema', null=True, on_delete=models.CASCADE)
     registered_node = models.ForeignKey('Registration', null=True, blank=True,
@@ -500,6 +508,15 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     def __repr__(self):
         return ('<DraftRegistration(branched_from={self.branched_from!r}) '
                 'with id {self._id!r}>').format(self=self)
+
+    @property
+    def get_registration_schema(self):
+        # Overrides RegistrationResponseMixin
+        return self.registration_schema
+
+    def get_registration_metadata(self, schema):
+        # Overrides RegistrationResponseMixin
+        return self.registration_metadata
 
     # lazily set flags
     @property
@@ -616,6 +633,10 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
                 else:
                     changes.append(question_id)
         self.registration_metadata.update(metadata)
+
+        # Write to registration_responses also (new workflow)
+        # registration_responses = self.flatten_registration_metadata()
+        # self.registration_responses.update(registration_responses)
         return changes
 
     def submit_for_review(self, initiated_by, meta, save=False):
