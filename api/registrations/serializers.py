@@ -59,6 +59,7 @@ class RegistrationSerializer(NodeSerializer):
         'registered_by',
         'registered_from',
         'registered_meta',
+        'registration_responses',
         'registration_schema',
         'registration_supplement',
         'withdrawal_justification',
@@ -362,8 +363,7 @@ class RegistrationSerializer(NodeSerializer):
 
     def get_registration_responses(self, obj):
         if obj.registration_responses:
-            # TODO - anonymize registratin_responses
-            return obj.registration_responses
+            return self.anonymize_registration_responses(obj)
         return None
 
     def get_embargo_end_date(self, obj):
@@ -407,6 +407,29 @@ class RegistrationSerializer(NodeSerializer):
                         del meta_values[question['qid']]
 
         return meta_values
+
+    def anonymize_registration_responses(self, obj):
+        """
+        For any question titles that are in ANONYMIZED_TITLES, delete
+        that question's response from registration_responses.
+        """
+        registration_responses = obj.registration_responses
+        if is_anonymized(self.context['request']):
+            registration_schema = RegistrationSchema.objects.get(_id=obj.registered_schema_id)
+            anonymous_schema_block_groups = registration_schema.schema_blocks.filter(
+                display_text__in=ANONYMIZED_TITLES,
+                block_type='question-title',
+            ).values_list('schema_block_group_key', flat=True)
+            anonymous_registration_response_keys = registration_schema.schema_blocks.filter(
+                schema_block_group_key__in=anonymous_schema_block_groups,
+                registration_response_key__isnull=False,
+            ).values_list('registration_response_key', flat=True)
+
+            for key in anonymous_registration_response_keys:
+                if key in registration_responses:
+                    del registration_responses[key]
+
+        return registration_responses
 
     def check_admin_perms(self, registration, user, validated_data):
         """
