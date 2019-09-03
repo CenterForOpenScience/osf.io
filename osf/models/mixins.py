@@ -33,7 +33,7 @@ from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
 from osf.utils.permissions import ADMIN, REVIEW_GROUPS, READ, WRITE
-from osf.utils.registrations import get_nested_answer
+from osf.utils.registrations import get_nested_answer, build_registration_metadata_dict, build_answer_block
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils.requests import get_request_and_user_id
 from website.project import signals as project_signals
@@ -1829,8 +1829,44 @@ class RegistrationResponseMixin(models.Model):
             )
         return registration_responses
 
-    def expand_registration_responses(resource):
-        pass
+    def expand_registration_responses(self):
+        """
+        Expanding `registration_responses` into Draft.registration_metadata or
+        Registration.registered_meta. registration_responses are more flat;
+        "registration_response_keys" are top level.  Registration_metadata/registered_meta
+        will have a more deeply nested format.
+        :returns registration_metadata
+        """
+        schema = self.get_registration_schema
+        registration_responses = self.registration_responses
+        # Pull out all registration_response_keys and their block types
+        registration_response_keys = schema.schema_blocks.filter(
+            registration_response_key__isnull=False
+        ).values(
+            'registration_response_key',
+            'block_type'
+        )
+
+        metadata = {}
+
+        for registration_response_key_dict in registration_response_keys:
+            response_key = registration_response_key_dict['registration_response_key']
+            # Turns "confirmatory-analyses-further.further.question2c" into
+            # ['confirmatory-analyses-further', 'value', 'further', 'value', 'question2c']
+            nested_keys = response_key.replace('.', '.value.').split('.')
+            block_type = registration_response_key_dict['block_type']
+
+            # Continues to add to metadata with every registration_response_key
+            metadata = build_registration_metadata_dict(
+                nested_keys,
+                metadata=metadata,
+                value=build_answer_block(
+                    block_type,
+                    registration_responses.get(response_key, '')
+                )
+            )
+
+        return metadata
 
     class Meta:
         abstract = True

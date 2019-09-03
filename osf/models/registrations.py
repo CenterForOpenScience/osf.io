@@ -639,6 +639,17 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, BaseModel):
         self.registration_responses.update(registration_responses)
         return changes
 
+    def update_registration_responses(self, registration_responses):
+        """
+        New workflow - update_registration_responses.  This should have been
+        validated before this method is called.  If writing to registration_responses
+        field, persist the expanded version of this to Draft.registration_metadata.
+        """
+        self.registration_responses.update(registration_responses)
+        registration_metadata = self.expand_registration_responses()
+        self.registration_metadata = registration_metadata
+        return
+
     def submit_for_review(self, initiated_by, meta, save=False):
         approval = DraftRegistrationApproval(
             meta=meta

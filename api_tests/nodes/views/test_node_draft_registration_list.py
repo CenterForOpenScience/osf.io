@@ -528,6 +528,61 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert errors['detail'] == 'This field is required.'
         assert errors['source']['pointer'] == '/data/relationships/registration_schema'
 
+    def test_cannot_supply_both_registration_metadata_and_registration_responses(
+            self, app, user, payload, url_draft_registrations):
+        payload['data']['attributes']['registration_metadata'] = {'summary': 'Registration data'}
+        payload['data']['attributes']['registration_responses'] = {'summary': 'Registration data'}
+
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload, auth=user.auth,
+            expect_errors=True)
+        errors = res.json['errors'][0]
+        assert res.status_code == 400
+        assert 'Please use `registration_responses` as `registration_metadata` will be deprecated in the future.' in errors['detail']
+
+    def test_supply_registration_responses_on_creation(
+            self, app, user, payload, url_draft_registrations
+    ):
+        schema = RegistrationSchema.objects.get(
+            name='OSF-Standard Pre-Data Collection Registration',
+            schema_version=SCHEMA_VERSION)
+
+        payload['data']['relationships']['registration_schema']['data']['id'] = schema._id
+        payload['data']['attributes']['registration_responses'] = {
+            'looked': 'Yes',
+            'datacompletion': 'No, data collection has not begun',
+            'comments': ''
+        }
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload, auth=user.auth,
+            expect_errors=True)
+
+        attributes = res.json['data']['attributes']
+        assert attributes['registration_responses'] == {
+            'looked': 'Yes',
+            'datacompletion': 'No, data collection has not begun',
+            'comments': ''
+        }
+        assert attributes['registration_metadata'] == {
+            'looked': {
+                'comments': [],
+                'value': 'Yes',
+                'extra': []
+            },
+            'datacompletion': {
+                'comments': [],
+                'value': 'No, data collection has not begun',
+                'extra': []
+            },
+            'comments': {
+                'comments': [],
+                'value': '',
+                'extra': []
+            }
+        }
+
     def test_registration_metadata_must_be_a_dictionary(
             self, app, user, payload, url_draft_registrations):
         payload['data']['attributes']['registration_metadata'] = 'Registration data'

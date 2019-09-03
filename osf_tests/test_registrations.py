@@ -679,6 +679,43 @@ class TestDraftRegistrations:
         for key in ['foo', 'c']:
             assert key in changes
 
+    def test_update_registration_responses(self, project):
+        schema = RegistrationSchema.objects.get(
+            name='OSF-Standard Pre-Data Collection Registration',
+            schema_version=2
+        )
+        draft = factories.DraftRegistrationFactory(registration_schema=schema, branched_from=project)
+
+        registration_responses = {
+            'looked': 'Yes',
+            'datacompletion': 'No, data collection has not begun',
+            'comments': ''
+        }
+
+        draft.update_registration_responses(registration_responses)
+        draft.save()
+
+        # To preserve both workflows, if update_metadata is called,
+        # a flattened version of that metadata is stored in
+        # registration_responses
+        assert draft.registration_metadata == {
+            'looked': {
+                'comments': [],
+                'value': 'Yes',
+                'extra': []
+            },
+            'datacompletion': {
+                'comments': [],
+                'value': 'No, data collection has not begun',
+                'extra': []
+            },
+            'comments': {
+                'comments': [],
+                'value': '',
+                'extra': []
+            }
+        }
+
     def test_has_active_draft_registrations(self):
         project, project2 = factories.ProjectFactory(), factories.ProjectFactory()
         factories.DraftRegistrationFactory(branched_from=project)

@@ -1505,13 +1505,21 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     def create(self, validated_data):
         initiator = get_user_auth(self.context['request']).user
         node = self.context['view'].get_node()
+        # Old workflow - deeply nested
         metadata = validated_data.pop('registration_metadata', None)
+        # New workflow - less nesting
+        registration_responses = validated_data.pop('registration_responses', None)
         schema = validated_data.pop('registration_schema')
 
         provider = validated_data.pop('provider', None) or RegistrationProvider.load('osf')
         # TODO: this
         # if not provider.schemas_acceptable.filter(id=schema.id).exists():
         #     raise exceptions.ValidationError('Invalid schema for provider.')
+        if metadata and registration_responses:
+            raise exceptions.ValidationError(
+                'You cannot include both `registration_metadata` and `registration_responses` in your request. Please use' +
+                ' `registration_responses` as `registration_metadata` will be deprecated in the future.',
+            )
 
         draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema, provider=provider)
         reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
@@ -1523,6 +1531,11 @@ class DraftRegistrationSerializer(JSONAPISerializer):
             except ValidationError as e:
                 raise exceptions.ValidationError(e.message)
             draft.update_metadata(metadata)
+            draft.save()
+
+        if registration_responses:
+            # TODO validate registration_responses
+            draft.update_registration_responses(registration_responses)
             draft.save()
         return draft
 

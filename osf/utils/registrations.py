@@ -139,3 +139,71 @@ def get_nested_answer(nested_response, block_type, keys):
         # Once we've drilled down through the entire dictionary, our nested_response
         # should be an array or a string
         return nested_response
+
+# For expanding registration_responses
+def set_nested_values(nested_dictionary, keys, value):
+    """
+    Drills down through the nested dictionary, accessing each key in the array,
+    and sets the last key equal to the  passed in value, if this key doesn't already exist.
+
+    Assumes all keys are present, except for potentially the final key.
+
+    :param nested_dictionary, dictionary
+    :param keys, array
+    :param value, object, array, or string
+    """
+    for key in keys[:-1]:
+        nested_dictionary = nested_dictionary.get(key, None)
+
+    final_key = keys[-1]
+    if not nested_dictionary.get(final_key):
+        nested_dictionary[final_key] = value
+
+# For expanding registration_responses
+def build_answer_block(block_type, value):
+    extra = []
+    if block_type == 'file-input':
+        extra = value
+        value = ''
+    return {
+        'comments': [],
+        'value': value,
+        'extra': extra
+    }
+
+# For expanding registration_responses
+def build_registration_metadata_dict(keys, current_index=0, metadata={}, value={}):
+    """
+    Function will recursively loop through each key in the list, checking if it exists in metadata, if not,
+    adding another nested level in the dictionary.
+
+    For example, calling build_registration_metadata_dict(
+        ["recommended-analysis", "value", "specify", "value", "question11c"], value='hello'), yields,
+
+    {
+        'recommended-analysis': {
+            'value': {
+                'specify': {
+                    'value': {
+                        'question11c': 'hello'
+                    }
+                }
+            }
+        }
+    }
+    :param keys array, of nested question_ids: ["recommended-analysis", "value", "specify", "value", "question11c"]
+    :param current_index, call initially with 0
+    :param metadata - registration_metadata
+    :param value, provide most deeply nested value.
+    :returns partial registration_metadata
+    """
+    if current_index == len(keys):
+        # We've iterated through all the keys, so we exit.
+        return metadata
+    else:
+        # All keys from left to right including the current key
+        current_chain = keys[0:current_index + 1]
+        # If we're on the final key, use the passed in value
+        val = value if current_index == len(keys) - 1 else {}
+        set_nested_values(metadata, current_chain, val)
+        return build_registration_metadata_dict(keys, current_index + 1, metadata, value)
