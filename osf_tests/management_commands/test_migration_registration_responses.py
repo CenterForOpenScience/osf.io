@@ -1121,7 +1121,8 @@ class TestMigrateRegistrationRegistrationResponses:
         ]
 
         for draft in drafts:
-            assert draft.registration_responses == {}
+            draft.registration_responses = {}
+            draft.save()
             assert draft.registration_responses_migrated is False
 
         migrate_registrations(dry_run=False)
