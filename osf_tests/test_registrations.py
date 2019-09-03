@@ -610,6 +610,43 @@ class TestDraftRegistrations:
             draft_2.register(Auth(member))
         assert not draft_2.registered_node
 
+    def test_update_metadata_updates_registration_responses(self, project):
+        schema = RegistrationSchema.objects.get(
+            name='OSF-Standard Pre-Data Collection Registration',
+            schema_version=2
+        )
+        draft = factories.DraftRegistrationFactory(registration_schema=schema, branched_from=project)
+
+        new_metadata = {
+            'looked': {
+                'comments': [],
+                'value': 'Yes',
+                'extra': []
+            },
+            'datacompletion': {
+                'comments': [],
+                'value': 'No, data collection has not begun',
+                'extra': []
+            },
+            'comments': {
+                'comments': [],
+                'value': '',
+                'extra': []
+            }
+        }
+
+        draft.update_metadata(new_metadata)
+        draft.save()
+
+        # To preserve both workflows, if update_metadata is called,
+        # a flattened version of that metadata is stored in
+        # registration_responses
+        assert draft.registration_responses == {
+            'looked': 'Yes',
+            'datacompletion': 'No, data collection has not begun',
+            'comments': ''
+        }
+
     def test_update_metadata_tracks_changes(self, project):
         draft = factories.DraftRegistrationFactory(branched_from=project)
 

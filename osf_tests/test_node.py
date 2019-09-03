@@ -1933,7 +1933,8 @@ class TestRegisterNode:
 
         meta_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
 
-        data = {'some': 'data'}
+        data = {'summary': {'extra': [], 'value': 'This is a summary of my registration...', 'comments': []}}
+        expected_flat_data = {'summary': 'This is a summary of my registration...'}
         reg = root.register_node(
             schema=meta_schema,
             auth=auth,
@@ -1943,6 +1944,7 @@ class TestRegisterNode:
         r1a = r1.nodes[0]
         for r in [reg, r1, r1a]:
             assert r.registered_meta[meta_schema._id] == data
+            assert r.registration_responses == expected_flat_data
             assert r.registered_schema.first() == meta_schema
 
 

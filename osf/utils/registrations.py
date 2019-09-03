@@ -45,7 +45,7 @@ New workflow uses DraftRegistration.registration_responses and Registration.regi
 Both workflows need to be accommodated for the foreseeable future, so writing to one field
 needs to write to the other field.
 
-Contains "flatten_registration_metadata" for converting from old to new, and
+Contains helps for "flatten_registration_metadata" for converting from old to new, and
 "expand_registration_responses" for converting from new to old.
 """
 
@@ -139,7 +139,3 @@ def get_nested_answer(nested_response, block_type, keys):
         # Once we've drilled down through the entire dictionary, our nested_response
         # should be an array or a string
         return nested_response
-
-
-def expand_registration_responses(resource):
-    pass

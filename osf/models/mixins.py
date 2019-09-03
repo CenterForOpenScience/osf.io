@@ -1829,5 +1829,8 @@ class RegistrationResponseMixin(models.Model):
             )
         return registration_responses
 
+    def expand_registration_responses(resource):
+        pass
+
     class Meta:
         abstract = True

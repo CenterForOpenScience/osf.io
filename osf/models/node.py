@@ -1467,6 +1467,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.tags.add(*self.all_tags.values_list('pk', flat=True))
         registered.subjects.add(*self.subjects.values_list('pk', flat=True))
         registered.affiliated_institutions.add(*self.affiliated_institutions.values_list('pk', flat=True))
+        # flatten_registration_metadata can't be called until registration has an id.
+        registered.registration_responses = registered.flatten_registration_metadata()
 
         # Clone each log from the original node for this registration.
         self.clone_logs(registered)

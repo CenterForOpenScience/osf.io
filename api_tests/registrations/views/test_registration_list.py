@@ -699,6 +699,17 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 201
         assert data['registration'] is True
         assert data['pending_registration_approval'] is True
+        assert data['registration_responses'] == {
+            'item32': '',
+            'item33': 'success',
+            'item30': '',
+            'item31': '',
+            'item36': '',
+            'item37': '',
+            'item34': '',
+            'item35': '',
+            'item29': 'Yes'
+        }
         assert data['public'] is False
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')

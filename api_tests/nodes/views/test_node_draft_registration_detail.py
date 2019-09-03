@@ -229,6 +229,12 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         data = res.json['data']
         assert schema._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['attributes']['registration_metadata'] == payload['data']['attributes']['registration_metadata']
+        # A write to registration_metadata, also updates registration_responses
+        assert data['attributes']['registration_responses'] == {
+            'datacompletion': 'No, data collection has not begun',
+            'looked': 'No',
+            'comments': 'This is my first registration.'
+        }
 
     def test_draft_must_be_branched_from_node(
             self, app, user, project_other, draft_registration, payload):

@@ -635,8 +635,8 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, BaseModel):
         self.registration_metadata.update(metadata)
 
         # Write to registration_responses also (new workflow)
-        # registration_responses = self.flatten_registration_metadata()
-        # self.registration_responses.update(registration_responses)
+        registration_responses = self.flatten_registration_metadata()
+        self.registration_responses.update(registration_responses)
         return changes
 
     def submit_for_review(self, initiated_by, meta, save=False):
