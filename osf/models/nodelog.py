@@ -82,6 +82,9 @@ class NodeLog(ObjectIDMixin, BaseModel):
     FILE_REMOVED = 'file_removed'
     FILE_RESTORED = 'file_restored'
 
+    CATEGORY_UPDATED = 'category_updated'
+    ARTICLE_DOI_UPDATED = 'article_doi_updated'
+
     ADDON_ADDED = 'addon_added'
     ADDON_REMOVED = 'addon_removed'
     COMMENT_ADDED = 'comment_added'

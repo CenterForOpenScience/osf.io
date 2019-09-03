@@ -2,6 +2,7 @@ import json
 
 import jwe
 import jwt
+import waffle
 
 from django.utils import timezone
 from rest_framework.authentication import BaseAuthentication
@@ -17,9 +18,14 @@ from osf.models import Institution
 from website.mails import send_mail, WELCOME_OSF4I
 from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
 
-from api.waffle.utils import flag_is_active
 
 class InstitutionAuthentication(BaseAuthentication):
+    """A dedicated authentication class for view ``InstitutionAuth``.
+
+    This ``InstitutionAuth`` view and this auth class is only used and should only be used by CAS.
+    Changing it may break the institution login feature.  Please check with @longze and @matt before
+    making any changes.
+    """
 
     media_type = 'text/plain'
 
@@ -112,7 +118,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 user=user,
                 domain=DOMAIN,
                 osf_support_email=OSF_SUPPORT_EMAIL,
-                storage_flag_is_active=flag_is_active(request, features.STORAGE_I18N),
+                storage_flag_is_active=waffle.flag_is_active(request, features.STORAGE_I18N),
             )
 
         if not user.is_affiliated_with_institution(institution):

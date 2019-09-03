@@ -5,6 +5,8 @@ import pytest
 from addons.osfstorage.models import OsfStorageFolder
 from framework.auth import signing
 
+from api.caching.tasks import update_storage_usage_cache
+
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
@@ -325,6 +327,44 @@ class TestMove():
         )
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 404
+
+    def test_storage_usage_move_within_node(self, app, node, signed_payload, move_url):
+        """
+        Checking moves within a node, since the net value hasn't changed the cache will remain expired at None.
+        """
+        assert node.storage_usage is None
+
+        res = app.post_json(move_url, signed_payload)
+
+        assert res.status_code == 200
+        assert node.storage_usage is None  # this is intentional, the cache shouldn't be touched
+
+    def test_storage_usage_move_between_nodes(self, app, node, node_two, file, root_node, user, node_two_root_node, move_url):
+        """
+        Checking storage usage when moving files outside a node mean both need to be recalculated, as both values have
+        changed.
+        """
+
+        assert node.storage_usage is None  # the cache starts expired, but there is 1337 bytes in there
+        assert node_two.storage_usage is None  # zero bytes here
+
+        signed_payload = sign_payload(
+            {
+                'source': file._id,
+                'target': node._id,
+                'user': user._id,
+                'destination': {
+                    'parent': node_two_root_node._id,
+                    'target': node_two._id,
+                    'name': 'test_file',
+                }
+            }
+        )
+        res = app.post_json(move_url, signed_payload)
+        assert res.status_code == 200
+
+        assert node.storage_usage is None
+        assert node_two.storage_usage == 1337
 
 
 @pytest.mark.django_db
@@ -801,6 +841,50 @@ class TestCopy():
         res = app.post_json(copy_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Invalid Payload'
+
+    def test_storage_usage_copy_within_node(self, app, node, file, signed_payload, copy_url):
+        """
+        Checking copys within a node, since the net size will double the storage usage should be the file size * 2
+        """
+        assert node.storage_usage is None
+
+        res = app.post_json(copy_url, signed_payload)
+
+        assert res.status_code == 201
+        assert node.storage_usage == file.versions.last().metadata['size'] * 2
+
+    def test_storage_usage_copy_between_nodes(self, app, node, node_two, file, user, node_two_root_node, copy_url):
+        """
+        Checking storage usage when copying files to outside a node means only the destination should be recalculated.
+        """
+
+        assert node.storage_usage is None  # The node cache starts expired, but there is 1337 bytes in there
+        assert node_two.storage_usage is None  # There are zero bytes in node_two
+
+        signed_payload = sign_payload(
+            {
+                'source': file._id,
+                'target': node._id,
+                'user': user._id,
+                'destination': {
+                    'parent': node_two_root_node._id,
+                    'target': node_two._id,
+                    'name': 'test_file',
+                }
+            }
+        )
+        res = app.post_json(copy_url, signed_payload)
+        assert res.status_code == 201
+
+        # The node cache is None because it's value should be unchanged --
+        assert node.storage_usage is None
+
+        # But there's really 1337 bytes in the node
+        update_storage_usage_cache(node._id)
+        assert node.storage_usage == 1337
+
+        # And we have exactly 1337 bytes copied in node_two
+        assert node_two.storage_usage == 1337
 
 
 @pytest.mark.django_db

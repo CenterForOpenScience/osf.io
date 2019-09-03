@@ -286,8 +286,6 @@ class TestParentNode:
         NodeFactory(parent=grandchild3)
         greatgrandchild_1 = NodeFactory(parent=grandchild_1)
 
-        child.add_node_link(root, auth=Auth(root.creator))
-        child.add_node_link(greatgrandchild_1, auth=Auth(greatgrandchild_1.creator))
         greatgrandchild_1.add_node_link(child, auth=Auth(child.creator))
 
         assert 20 == len(Node.objects.get_children(root))
@@ -2733,7 +2731,6 @@ class TestNodeTraversals:
         point1 = ProjectFactory(creator=user, parent=root)
         point2 = ProjectFactory(creator=user, parent=root)
         point1.add_pointer(point2, auth=auth)
-        point2.add_pointer(point1, auth=auth)
 
         descendants = list(point1.get_descendants_recursive())
         assert len(descendants) == 1
@@ -3479,6 +3476,15 @@ class TestNodeUpdate:
         last_log = node.logs.latest()
         assert last_log.action == NodeLog.EDITED_TITLE
 
+    def test_update_category(self, node, auth):
+        new_category = 'software'
+
+        node.update({'category': new_category}, auth=auth)
+        assert node.category == new_category
+
+        last_log = node.logs.latest()
+        assert last_log.action == NodeLog.CATEGORY_UPDATED
+
     def test_update_title_and_category(self, fake, node, auth):
         new_title = fake.bs()
 
@@ -3490,8 +3496,8 @@ class TestNodeUpdate:
 
         logs = node.logs.order_by('-date')
         last_log, penultimate_log = logs[:2]
-        assert penultimate_log.action == NodeLog.EDITED_TITLE
-        assert last_log.action == NodeLog.UPDATED_FIELDS
+        assert penultimate_log.action == NodeLog.CATEGORY_UPDATED
+        assert last_log.action == NodeLog.EDITED_TITLE
 
     def test_set_title_works_with_valid_title(self, user, auth):
         proj = ProjectFactory(title='That Was Then', creator=user)
