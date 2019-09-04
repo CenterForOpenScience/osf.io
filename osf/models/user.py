@@ -7,8 +7,6 @@ import uuid
 from copy import deepcopy
 from os.path import splitext
 
-from past.builtins import basestring
-
 from flask import Request as FlaskRequest
 from framework import analytics
 from guardian.shortcuts import get_perms
