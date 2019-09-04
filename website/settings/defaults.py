@@ -318,10 +318,6 @@ DOI_URL_PREFIX = 'https://doi.org/'
 # General Format for DOIs
 DOI_FORMAT = '{prefix}/osf.io/{guid}'
 
-# ezid
-EZID_DOI_NAMESPACE = 'doi:10.5072'
-EZID_ARK_NAMESPACE = 'ark:99999'
-
 # datacite
 DATACITE_USERNAME = None
 DATACITE_PASSWORD = None

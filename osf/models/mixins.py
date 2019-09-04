@@ -343,13 +343,11 @@ class NodeLinkMixin(models.Model):
         :param bool save: Save changes
         :return: Created pointer
         """
-        # Fail if node already in nodes / pointers. Note: cast node and node
-        # to primary keys to test for conflicts with both nodes and pointers
-        # contained in `self.nodes`.
-        if NodeRelation.objects.filter(parent=self, child=node, is_node_link=True).exists():
-            raise ValueError(
-                'Link to node {0} already exists'.format(node._id),
-            )
+        try:
+            self.check_node_link(child_node=node, parent_node=self)
+            self.check_node_link(child_node=self, parent_node=node)
+        except ValueError as e:
+            raise ValueError(e.message)
 
         if self.is_registration:
             raise self.state_error('Cannot add a node link to a registration')
@@ -386,6 +384,21 @@ class NodeLinkMixin(models.Model):
         return node_relation
 
     add_pointer = add_node_link  # For v1 compat
+
+    def check_node_link(self, child_node, parent_node):
+        if child_node._id == parent_node._id:
+            raise ValueError(
+                'Cannot link node \'{}\' to itself.'.format(child_node._id),
+            )
+        existant_relation = NodeRelation.objects.filter(parent=parent_node, child=child_node).first()
+        if existant_relation and existant_relation.is_node_link:
+            raise ValueError(
+                'Target Node \'{}\' already pointed to by \'{}\'.'.format(child_node._id, parent_node._id),
+            )
+        elif existant_relation and not existant_relation.is_node_link:
+            raise ValueError(
+                'Target Node \'{}\' is already a child of \'{}\'.'.format(child_node._id, parent_node._id),
+            )
 
     def rm_node_link(self, node_relation, auth):
         """Remove a pointer.
@@ -1671,10 +1684,21 @@ class SpamOverrideMixin(SpamMixin):
             self.save()
 
     def _get_spam_content(self, saved_fields):
+        """
+        This function retrieves retrieves strings of potential spam from various DB fields. Also here we can follow
+        django's typical ORM query structure for example we can grab the redirect link of a node by giving a saved
+        field of {'addons_forward_node_settings__url'}.
+
+        :param saved_fields: set
+        :return: str
+        """
         spam_fields = self.get_spam_fields(saved_fields)
         content = []
         for field in spam_fields:
-            content.append((getattr(self, field, None) or '').encode('utf-8'))
+            exclude_null = {field + '__isnull': False}
+            values = list(self.__class__.objects.filter(id=self.id, **exclude_null).values_list(field, flat=True))
+            if values:
+                content.append((' '.join(values) or '').encode('utf-8'))
         if self.all_tags.exists():
             content.extend([name.encode('utf-8') for name in self.all_tags.values_list('name', flat=True)])
         if not content:

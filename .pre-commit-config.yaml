@@ -3,6 +3,8 @@ repos:
   rev: v0.7.0
   hooks:
   - id: add-trailing-comma
+    # TODO: Remove this line once we add trailing commas to all directories.
+    files: ^admin/|^admin_tests/|^osf/
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v1.4.0
   hooks:

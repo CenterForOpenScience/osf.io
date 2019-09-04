@@ -48,9 +48,8 @@ def should_update_preprint_identifiers(preprint, old_subjects, saved_fields):
     )
 
 def update_or_create_preprint_identifiers(preprint):
-    status = 'public' if preprint.verified_publishable and not preprint.is_retracted else 'unavailable'
     try:
-        preprint.request_identifier_update(category='doi', status=status)
+        preprint.request_identifier_update(category='doi')
     except HTTPError as err:
         sentry.log_exception()
         sentry.log_message(err.args[0])

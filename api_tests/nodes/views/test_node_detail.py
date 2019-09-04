@@ -1464,9 +1464,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 200
         project_public.reload()
         assert not project_public.is_public
-        mock_update_doi_metadata.assert_called_with(
-            project_public._id, status='unavailable',
-        )
+        mock_update_doi_metadata.assert_called_with(project_public._id)
 
     @pytest.mark.enable_enqueue_task
     @mock.patch('website.preprints.tasks.update_or_enqueue_on_preprint_updated')
@@ -2590,6 +2588,23 @@ class TestNodeUpdateLicense:
         )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'year must be specified for this license'
+
+    def test_update_node_license_without_license_id(
+            self, node, make_payload, make_request, url_node, user_admin_contrib,
+    ):
+        data = make_payload(
+            node_id=node._id,
+            license_year='2015',
+            copyright_holders=['Ben, Jerry'],
+        )
+
+        res = make_request(
+            url_node, data,
+            auth=user_admin_contrib.auth,
+            expect_errors=True,
+        )
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'License ID must be provided for a Node License.'
 
     def test_update_node_license_without_required_copyright_holders_in_payload_(
             self, user_admin_contrib, node, make_payload, make_request, license_no, url_node,
