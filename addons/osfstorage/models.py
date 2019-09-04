@@ -318,19 +318,6 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
         return version
 
-    def get_version(self, version=None, required=False):
-        if version is None:
-            if self.versions.exists():
-                return self.versions.first()
-            return None
-
-        try:
-            return self.versions.get(identifier=version)
-        except FileVersion.DoesNotExist:
-            if required:
-                raise exceptions.VersionNotFoundError(version)
-            return None
-
     def add_tag_log(self, action, tag, auth):
         if isinstance(self.target, Loggable):
             target = self.target
