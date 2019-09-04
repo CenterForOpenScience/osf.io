@@ -28,10 +28,10 @@ def deactivate_requested_accounts(dry_run=True):
                     can_change_preferences=False,
                 )
         else:
-            user.disable_account()
-            user.is_registered = False
-            logger.info('User {} was disabled'.format(user._id))
+            logger.info('Disabling user {}.'.format(user._id))
             if not dry_run:
+                user.disable_account()
+                user.is_registered = False
                 mails.send_mail(
                     to_addr=user.username,
                     mail=mails.REQUEST_DEACTIVATION_COMPLETE,
@@ -55,7 +55,8 @@ def main(dry_run=False):
     This task runs nightly and emails users who want to delete there account with info on how to do so. Users who don't
     have any content can be automatically deleted.
     """
-
+    if dry_run:
+        logger.info('This is a dry run; no changes will be saved, and no emails will be sent.')
     deactivate_requested_accounts(dry_run=dry_run)
 
 
