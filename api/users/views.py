@@ -22,6 +22,7 @@ from api.base.utils import (
     hashids,
     is_truthy,
 )
+from api.subjects.views import BaseResourceSubjectsList
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.throttling import SendEmailThrottle, SendEmailDeactivationThrottle
 from api.institutions.serializers import InstitutionSerializer
@@ -186,6 +187,7 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     view_name = 'user-detail'
 
     serializer_class = UserDetailSerializer
+
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
     def get_serializer_class(self):
@@ -229,6 +231,25 @@ class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, User
         qs = [addon for addon in self.get_user().get_addons() if 'accounts' in addon.config.configs]
         qs.sort()
         return qs
+
+
+class UserSubjectsList(BaseResourceSubjectsList, UserMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_subjects_list).
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ReadOnlyOrCurrentUser,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE]
+
+    view_category = 'users'
+    view_name = 'user-subjects'
+
+    def get_resource(self):
+        return self.get_user()
 
 
 class UserAddonDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, AddonSettingsMixin):

@@ -27,6 +27,7 @@ from website.profile.views import update_osf_help_mails_subscription, update_mai
 from api.nodes.serializers import NodeSerializer, RegionRelationshipField
 from api.base.schemas.utils import validate_user_json, from_json
 from framework.auth.views import send_confirm_email
+from api.taxonomies.serializers import TaxonomizableSerializerMixin
 
 
 class QuickFilesRelationshipField(RelationshipField):
@@ -67,7 +68,7 @@ class SocialField(ser.DictField):
         return super(SocialField, self).to_representation(value)
 
 
-class UserSerializer(JSONAPISerializer):
+class UserSerializer(JSONAPISerializer, TaxonomizableSerializerMixin):
     filterable_fields = frozenset([
         'full_name',
         'given_name',
@@ -167,6 +168,16 @@ class UserSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'users'
 
+    @property
+    def subjects_related_view(self):
+        # Overrides TaxonomizableSerializerMixin
+        return 'users:user-subjects'
+
+    @property
+    def subjects_view_kwargs(self):
+        # Overrides TaxonomizableSerializerMixin
+        return {'user_id': '<_id>'}
+
     def get_projects_in_common(self, obj):
         user = get_user_auth(self.context['request']).user
         if obj == user:
@@ -261,6 +272,10 @@ class UserSerializer(JSONAPISerializer):
                 user_settings.default_region_id = region_id
                 user_settings.save()
                 instance.default_region = self.context['request'].data['default_region']
+            elif 'subjects' == attr:
+                subjects = validated_data.pop('subjects', None)
+                auth = get_user_auth(self.context['request'])
+                self.update_subjects(instance, subjects, auth)
             else:
                 setattr(instance, attr, value)
         try:
@@ -274,6 +289,18 @@ class UserSerializer(JSONAPISerializer):
             instance.check_spam(saved_fields=validated_data, request_headers=request_headers)
 
         return instance
+
+    def expect_subjects_as_relationships(self, request):
+        """Determines whether subjects should be serialized as a relationship.
+        Older serializers expect subjects as attributes for earlier versions,
+        but this serializer is introducing subjects for the first time, so we
+        can go ahead and make them relationships.
+        :param object request: Request object
+        :return bool: Subjects should be serialized as relationships
+        """
+        # Overrides TaxonomizableSerializerMixin
+        return True
+
 
 class UserAddonSettingsSerializer(JSONAPISerializer):
     """

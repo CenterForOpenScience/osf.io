@@ -848,6 +848,8 @@ class TaxonomizableMixin(models.Model):
 
         :return: None
         """
+        OSFUser = apps.get_model('osf.OSFUser')
+
         self.check_subject_perms(auth)
         self.assert_subject_format(subjects_list, expect_list=True, error_msg='Expecting a list of subjects.')
         if subjects_list:
@@ -861,7 +863,11 @@ class TaxonomizableMixin(models.Model):
         if add_log and hasattr(self, 'add_log'):
             self.add_subjects_log(old_subjects, auth)
 
-        self.save(old_subjects=old_subjects)
+        if not isinstance(self, OSFUser):
+            # TODO refactor User.save() to accept old_subjects, and log this
+            self.save(old_subjects=old_subjects)
+        else:
+            self.save()
 
 
 class ContributorMixin(models.Model):

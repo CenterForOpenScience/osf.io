@@ -26,4 +26,5 @@ urlpatterns = [
     url(r'^(?P<user_id>\w+)/settings/identities/(?P<identity_id>\w+)/$', views.UserIdentitiesDetail.as_view(), name=views.UserIdentitiesDetail.view_name),
     url(r'^(?P<user_id>\w+)/settings/export/$', views.UserAccountExport.as_view(), name=views.UserAccountExport.view_name),
     url(r'^(?P<user_id>\w+)/settings/password/$', views.UserChangePassword.as_view(), name=views.UserChangePassword.view_name),
+    url(r'^(?P<user_id>\w+)/subjects/$', views.UserSubjectsList.as_view(), name=views.UserSubjectsList.view_name),
 ]
