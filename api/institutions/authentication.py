@@ -20,6 +20,12 @@ from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
 
 
 class InstitutionAuthentication(BaseAuthentication):
+    """A dedicated authentication class for view ``InstitutionAuth``.
+
+    This ``InstitutionAuth`` view and this auth class is only used and should only be used by CAS.
+    Changing it may break the institution login feature.  Please check with @longze and @matt before
+    making any changes.
+    """
 
     media_type = 'text/plain'
 

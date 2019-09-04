@@ -50,7 +50,7 @@ from osf.models.sanctions import RegistrationApproval
 from osf.models.private_link import PrivateLink
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
-from osf.models.validators import validate_title
+from osf.models.validators import validate_title, validate_doi
 from framework.auth.core import Auth
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
@@ -282,6 +282,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     SPAM_CHECK_FIELDS = {
         'title',
         'description',
+        'addons_forward_node_settings__url'  # the often spammed redirect URL
     }
 
     # Fields that are writable by Node.update
@@ -373,6 +374,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         'admin': ('read_node', 'write_node', 'admin_node',)
     }
     group_format = 'node_{self.id}_{group}'
+
+    article_doi = models.CharField(max_length=128,
+                                        validators=[validate_doi],
+                                        null=True, blank=True)
 
     class Meta:
         base_manager_name = 'objects'
@@ -1310,8 +1315,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # Update existing identifiers
         if self.get_identifier('doi'):
-            doi_status = 'unavailable' if permissions == 'private' else 'public'
-            enqueue_task(update_doi_metadata_on_change.s(self._id, status=doi_status))
+            enqueue_task(update_doi_metadata_on_change.s(self._id))
 
         if log:
             action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
@@ -2087,6 +2091,60 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save()
         return None
 
+    def set_category(self, category, auth, save=False):
+        """Set the category and log the event.
+
+        :param str category: The new category
+        :param auth: All the auth informtion including user, API key.
+        :param bool save: Save self after updating.
+        """
+        original = self.category
+        new_category = category
+        if original == new_category:
+            return False
+        self.category = new_category
+        self.add_log(
+            action=NodeLog.CATEGORY_UPDATED,
+            params={
+                'parent_node': self.parent_id,
+                'node': self._primary_key,
+                'category_new': self.category,
+                'category_original': original
+            },
+            auth=auth,
+            save=False,
+        )
+        if save:
+            self.save()
+        return None
+
+    def set_article_doi(self, article_doi, auth, save=False):
+        """Set the article_doi and log the event.
+
+        :param str article_doi: The new article doi
+        :param auth: All the auth informtion including user, API key.
+        :param bool save: Save self after updating.
+        """
+        original = self.article_doi
+        new_doi = article_doi
+        if original == new_doi:
+            return False
+        self.article_doi = new_doi
+        self.add_log(
+            action=NodeLog.ARTICLE_DOI_UPDATED,
+            params={
+                'parent_node': self.parent_id,
+                'node': self._primary_key,
+                'article_doi_new': self.article_doi,
+                'article_doi_original': original
+            },
+            auth=auth,
+            save=False,
+        )
+        if save:
+            self.save()
+        return None
+
     def update(self, fields, auth=None, save=True):
         """Update the node with the given fields.
 
@@ -2103,7 +2161,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     raise NodeUpdateError(reason='Registered content cannot be updated', key=key)
                 else:
                     continue
-            # Title and description have special methods for logging purposes
+            # Title, description, and category have special methods for logging purposes
             if key == 'title':
                 if not self.is_bookmark_collection or not self.is_quickfiles:
                     self.set_title(title=value, auth=auth, save=False)
@@ -2111,6 +2169,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     raise NodeUpdateError(reason='Bookmark collections or QuickFilesNodes cannot be renamed.', key=key)
             elif key == 'description':
                 self.set_description(description=value, auth=auth, save=False)
+            elif key == 'category':
+                self.set_category(category=value, auth=auth, save=False)
             elif key == 'is_public':
                 self.set_privacy(
                     Node.PUBLIC if value else Node.PRIVATE,
@@ -2128,6 +2188,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     auth,
                     save=save
                 )
+            elif key == 'article_doi' and self.type == 'osf.registration':
+                self.set_article_doi(article_doi=value, auth=auth, save=False)
             else:
                 with warnings.catch_warnings():
                     try:

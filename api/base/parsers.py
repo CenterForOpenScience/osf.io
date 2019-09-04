@@ -137,6 +137,20 @@ class JSONAPIParser(JSONParser):
         else:
             raise JSONAPIException(source={'pointer': '/data'}, detail=NO_DATA_ERROR)
 
+    def flatten_multiple_relationships(self, parser, relationships):
+        rel = {}
+        for resource in relationships:
+            ret = super(parser, self).flatten_relationships({resource: relationships[resource]})
+            if isinstance(ret, list):
+                rel[resource] = []
+                for item in ret:
+                    if item.get('target_type') and item.get('id'):
+                        rel[resource].append(item['id'])
+            else:
+                if ret.get('target_type') and ret.get('id'):
+                    rel[resource] = ret['id']
+        return rel
+
 
 class JSONAPIParserForRegularJSON(JSONAPIParser):
     """
@@ -222,28 +236,20 @@ class JSONAPIOnetoOneRelationshipParserForRegularJSON(JSONAPIOnetoOneRelationshi
 
 
 class JSONAPIMultipleRelationshipsParser(JSONAPIParser):
+    """
+    If edits are made to this class, be sure to check JSONAPIMultipleRelationshipsParserForRegularJSON to see if corresponding
+    edits should be made there.
+    """
     def flatten_relationships(self, relationships):
-        rel = {}
-        for resource in relationships:
-            ret = super(JSONAPIMultipleRelationshipsParser, self).flatten_relationships({resource: relationships[resource]})
-            if isinstance(ret, list):
-                rel[resource] = []
-                for item in ret:
-                    if item.get('target_type') and item.get('id'):
-                        rel[resource].append(item['id'])
-            else:
-                if ret.get('target_type') and ret.get('id'):
-                    rel[resource] = ret['id']
-        return rel
+        return self.flatten_multiple_relationships(JSONAPIMultipleRelationshipsParser, relationships)
 
 
 class JSONAPIMultipleRelationshipsParserForRegularJSON(JSONAPIParserForRegularJSON):
+    """
+    Allows same processing as JSONAPIMultipleRelationshipsParser to occur for requests with application/json media type.
+    """
     def flatten_relationships(self, relationships):
-        ret = super(JSONAPIMultipleRelationshipsParserForRegularJSON, self).flatten_relationships(relationships)
-        related_resource = list(relationships.keys())[0]
-        if ret.get('target_type') and ret.get('id'):
-            return {related_resource: ret['id']}
-        return ret
+        return self.flatten_multiple_relationships(JSONAPIMultipleRelationshipsParserForRegularJSON, relationships)
 
 
 class HMACSignedParser(JSONParser):

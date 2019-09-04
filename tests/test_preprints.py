@@ -186,18 +186,13 @@ class TestPreprintSubjects:
         preprint.save()
         return write_contrib
 
-    def test_get_subjects(self, preprint):
-        subject = preprint.subject_hierarchy[0][0]
-        assert preprint.get_subjects()[0][0]['text'] == subject.text
-        assert preprint.get_subjects()[0][0]['id'] == subject._id
-
     def test_set_subjects(self, preprint, auth):
         subject = SubjectFactory()
         subjects = [[subject._id]]
         preprint.set_subjects(subjects, auth)
 
-        assert preprint.get_subjects()[0][0]['text'] == subject.text
-        assert preprint.get_subjects()[0][0]['id'] == subject._id
+        assert preprint.subjects.count() == 1
+        assert subject in preprint.subjects.all()
 
     def test_admin_can_set_subjects(self, preprint, subject):
         initial_subjects = list(preprint.subjects.all())

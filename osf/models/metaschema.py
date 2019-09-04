@@ -11,6 +11,31 @@ from osf.exceptions import ValidationValueError, ValidationError
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 
 
+class AbstractSchemaManager(models.Manager):
+    def get_latest_version(self, name, only_active=True):
+        """
+        Return the latest version of the given schema
+        :param str only_active: Only returns the latest active schema
+        :return schema
+        """
+        schemas = self.filter(name=name, active=True) if only_active else self.filter(name=name)
+        sorted_schemas = schemas.order_by('schema_version')
+        if sorted_schemas:
+            return sorted_schemas.last()
+        else:
+            return None
+
+    def get_latest_versions(self, only_active=True):
+        """
+        Returns a queryset of the latest version of each schema
+        :param str only_active: Only return active schemas
+        :return queryset
+        """
+        latest_schemas = self.filter(visible=True)
+        if only_active:
+            latest_schemas = latest_schemas.filter(active=True)
+        return latest_schemas.order_by('name', '-schema_version').distinct('name')
+
 class AbstractSchema(ObjectIDMixin, BaseModel):
     name = models.CharField(max_length=255)
     schema = DateTimeAwareJSONField(default=dict)
@@ -20,6 +45,8 @@ class AbstractSchema(ObjectIDMixin, BaseModel):
 
     # Version of the schema to use (e.g. if questions, responses change)
     schema_version = models.IntegerField()
+
+    objects = AbstractSchemaManager()
 
     class Meta:
         abstract = True

@@ -18,7 +18,7 @@ from framework.exceptions import HTTPError
 from osf import features
 from osf.models import RegistrationSchema, DraftRegistration
 from osf.utils import permissions
-from website.project.metadata.schemas import _name_to_id, LATEST_SCHEMA_VERSION
+from website.project.metadata.schemas import _name_to_id
 from website.util import api_url_for
 from website.project.views import drafts as draft_views
 
@@ -29,6 +29,9 @@ from tests.test_registrations.base import RegistrationsTestBase
 
 from tests.base import get_default_metaschema
 from osf.models import Registration
+
+SCHEMA_VERSION = 2
+
 
 @pytest.mark.enable_bookmark_creation
 class TestRegistrationViews(RegistrationsTestBase):
@@ -365,7 +368,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.get(url).json
         assert_equal(
             len(res['meta_schemas']),
-            RegistrationSchema.objects.filter(active=True, schema_version=LATEST_SCHEMA_VERSION).count()
+            RegistrationSchema.objects.get_latest_versions().count()
         )
 
     def test_get_metaschemas_all(self):

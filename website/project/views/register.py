@@ -3,7 +3,6 @@ from rest_framework import status as http_status
 import itertools
 
 from flask import request
-import waffle
 
 from framework import status
 from framework.exceptions import HTTPError
@@ -36,6 +35,7 @@ from website.project.model import has_anonymous_link
 from website.archiver.decorators import fail_archive_on_error
 
 from .node import _view_project
+from api.waffle.utils import flag_is_active
 
 @must_be_valid_project
 @must_not_be_retracted_registration
@@ -127,7 +127,7 @@ def node_registration_retraction_post(auth, node, **kwargs):
 @must_be_contributor_or_public
 @ember_flag_is_active(features.EMBER_REGISTRATION_FORM_DETAIL)
 def node_register_template_page(auth, node, metaschema_id, **kwargs):
-    if waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
+    if flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
         # Registration meta page obviated during redesign
         return redirect(node.url)
     if node.is_registration and bool(node.registered_schema):

@@ -4,8 +4,10 @@ from django.utils import timezone
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
 from api.base.utils import default_node_permission_queryset
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
+from api_tests.subjects.mixins import SubjectsFilterMixin
 from framework.auth.core import Auth
 from osf.models import AbstractNode, Node, NodeLog
+from osf.models.licenses import NodeLicense
 from osf.utils.sanitize import strip_html
 from osf.utils import permissions
 from osf_tests.factories import (
@@ -1398,6 +1400,20 @@ class TestNodeFiltering:
         assert set(expected) == set(actual)
 
 
+class TestNodeSubjectFiltering(SubjectsFilterMixin):
+    @pytest.fixture()
+    def resource(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def resource_two(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}nodes/'.format(API_BASE)
+
+
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
@@ -1757,6 +1773,32 @@ class TestNodeCreate:
         actual_perms = set([contributor.permission for contributor in new_component.contributor_set.all()])
         assert actual_perms == expected_perms
 
+    def test_create_component_inherit_contributors_with_blacklisted_email(
+            self, app, user_one, title, category):
+        parent_project = ProjectFactory(creator=user_one)
+        parent_project.add_unregistered_contributor(
+            fullname='far', email='foo@bar.baz',
+            permissions=permissions.READ,
+            auth=Auth(user=user_one), save=True)
+        contributor = parent_project.contributors.filter(fullname='far').first()
+        contributor.username = 'foo@example.com'
+        contributor.save()
+        url = '/{}nodes/{}/children/?inherit_contributors=true'.format(
+            API_BASE, parent_project._id)
+        component_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes': {
+                    'title': title,
+                    'category': category,
+                }
+            }
+        }
+        res = app.post_json_api(url, component_data, auth=user_one.auth,
+            expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Unregistered contributor email address domain is blacklisted.'
+
     def test_create_project_with_region_relationship(
             self, app, user_one, region, institution_one, private_project, url):
         private_project['data']['relationships'] = {
@@ -1916,6 +1958,140 @@ class TestNodeCreate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Title cannot exceed 512 characters.'
 
+@pytest.mark.django_db
+class TestNodeLicenseOnCreate:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}nodes/'.format(API_BASE)
+
+    @pytest.fixture()
+    def license_name(self):
+        return 'MIT License'
+
+    @pytest.fixture()
+    def node_license(self, license_name):
+        return NodeLicense.objects.filter(name=license_name).first()
+
+    @pytest.fixture()
+    def make_payload(self):
+        def payload(
+                license_id=None, license_year=None, copyright_holders=None):
+            attributes = {}
+
+            if license_year and copyright_holders:
+                attributes = {
+                    'title': 'new title',
+                    'category': 'project',
+                    'tags': ['foo', 'bar'],
+                    'node_license': {
+                        'copyright_holders': copyright_holders,
+                        'year': license_year,
+                    }
+                }
+            elif license_year:
+                attributes = {
+                    'title': 'new title',
+                    'category': 'project',
+                    'tags': ['foo', 'bar'],
+                    'node_license': {
+                        'year': license_year,
+                    }
+                }
+            elif copyright_holders:
+                attributes = {
+                    'title': 'new title',
+                    'category': 'project',
+                    'tags': ['foo', 'bar'],
+                    'node_license': {
+                        'copyright_holders': copyright_holders
+                    }
+                }
+
+            return {
+                'data': {
+                    'type': 'nodes',
+                    'attributes': attributes,
+                    'relationships': {
+                        'license': {
+                            'data': {
+                                'type': 'licenses',
+                                'id': license_id
+                            }
+                        }
+                    }
+                }
+            } if license_id else {
+                'data': {
+                    'type': 'nodes',
+                    'attributes': attributes
+                }
+            }
+        return payload
+
+    def test_node_license_on_create(
+            self, app, user, url, node_license, make_payload):
+        data = make_payload(
+            copyright_holders=['Haagen', 'Dazs'],
+            license_year='2200',
+            license_id=node_license._id
+        )
+        res = app.post_json_api(
+            url, data, auth=user.auth)
+        assert res.json['data']['attributes']['node_license']['year'] == '2200'
+        assert res.json['data']['attributes']['node_license']['copyright_holders'] == ['Haagen', 'Dazs']
+        assert res.json['data']['relationships']['license']['data']['id'] == node_license._id
+
+    def test_create_node_license_errors(
+            self, app, url, user, node_license, make_payload):
+
+        # test_creating_a_node_license_without_a_license_id
+        data = make_payload(
+            license_year='2200',
+            copyright_holders=['Ben', 'Jerry']
+        )
+        res = app.post_json_api(
+            url, data, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'License ID must be provided for a Node License.'
+
+    # test_creating_a_node_license_without_a_copyright_holder
+        data = make_payload(
+            license_year='2200',
+            license_id=node_license._id
+        )
+        res = app.post_json_api(
+            url, data,
+            auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'copyrightHolders must be specified for this license'
+
+    # test_creating_a_node_license_without_a_year
+        data = make_payload(
+            copyright_holders=['Baskin', 'Robbins'],
+            license_id=node_license._id
+        )
+        res = app.post_json_api(
+            url, data,
+            auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'year must be specified for this license'
+
+    # test_creating_a_node_license_with_an_invalid_ID
+        data = make_payload(
+            license_year='2200',
+            license_id='invalid id',
+            copyright_holders=['Ben', 'Jerry']
+        )
+        res = app.post_json_api(
+            url, data,
+            auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
+        assert res.json['errors'][0]['detail'] == 'Unable to find specified license.'
 
 @pytest.mark.django_db
 class TestNodeBulkCreate:

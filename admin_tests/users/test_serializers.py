@@ -4,9 +4,9 @@ from django.utils import timezone
 from nose import tools as nt
 
 from tests.base import AdminTestCase
-from osf_tests.factories import NodeFactory, UserFactory
+from osf_tests.factories import NodeFactory, UserFactory, PreprintFactory
 
-from admin.users.serializers import serialize_user, serialize_simple_node
+from admin.users.serializers import serialize_user, serialize_simple_node, serialize_simple_preprint
 
 
 class TestUserSerializers(AdminTestCase):
@@ -18,7 +18,6 @@ class TestUserSerializers(AdminTestCase):
         nt.assert_equal(info['id'], user._id)
         nt.assert_equal(list(info['emails']), list(user.emails.values_list('address', flat=True)))
         nt.assert_equal(info['last_login'], user.date_last_login)
-        nt.assert_equal(len(info['nodes']), 0)
 
     def test_serialize_two_factor(self):
         user = UserFactory()
@@ -30,7 +29,6 @@ class TestUserSerializers(AdminTestCase):
         nt.assert_equal(info['name'], user.fullname)
         nt.assert_equal(list(info['emails']), list(user.emails.values_list('address', flat=True)))
         nt.assert_equal(info['last_login'], user.date_last_login)
-        nt.assert_equal(len(info['nodes']), 0)
         nt.assert_true(info['two_factor'])
 
     def test_serialize_account_status(self):
@@ -53,3 +51,12 @@ class TestUserSerializers(AdminTestCase):
         nt.assert_equal(info['title'], node.title)
         nt.assert_equal(info['public'], node.is_public)
         nt.assert_equal(info['number_contributors'], len(node.contributors))
+
+    def test_serialize_simple_preprint(self):
+        preprint = PreprintFactory()
+        info = serialize_simple_preprint(preprint)
+        nt.assert_is_instance(info, dict)
+        nt.assert_equal(info['id'], preprint._id)
+        nt.assert_equal(info['title'], preprint.title)
+        nt.assert_equal(info['public'], preprint.verified_publishable)
+        nt.assert_equal(info['number_contributors'], len(preprint.contributors))

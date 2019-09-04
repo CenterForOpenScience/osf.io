@@ -11,7 +11,7 @@ def get_resource_object_member(error_key, context):
     if field:
         return 'relationships' if isinstance(field, RelationshipField) else 'attributes'
     # If field cannot be found (where read/write operations have different serializers,
-    # assume error was in 'attributes' by default
+    # or fields serialized on __init__, assume error was in 'attributes' by default
     return 'attributes'
 
 def dict_error_formatting(errors, context, index=None):

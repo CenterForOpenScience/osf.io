@@ -115,16 +115,21 @@ class FilterMixin(object):
 
         :raises InvalidFilterError: If the filter field is not valid
         """
-        serializer_class = self.serializer_class
-        if field_name not in serializer_class._declared_fields:
+        predeclared_fields = self.serializer_class._declared_fields
+        initialized_fields = self.get_serializer().fields if hasattr(self, 'get_serializer') else {}
+        serializer_fields = predeclared_fields.copy()
+        # Merges fields that were declared on serializer with fields that may have been dynamically added
+        serializer_fields.update(initialized_fields)
+
+        if field_name not in serializer_fields:
             raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint.".format(field_name))
-        if field_name not in getattr(serializer_class, 'filterable_fields', set()):
+        if field_name not in getattr(self.serializer_class, 'filterable_fields', set()):
             raise InvalidFilterFieldError(parameter='filter', value=field_name)
-        field = serializer_class._declared_fields[field_name]
+        field = serializer_fields[field_name]
         # You cannot filter on deprecated fields.
         if isinstance(field, ShowIfVersion) and utils.is_deprecated(self.request.version, field.min_version, field.max_version):
             raise InvalidFilterFieldError(parameter='filter', value=field_name)
-        return serializer_class._declared_fields[field_name]
+        return serializer_fields[field_name]
 
     def _validate_operator(self, field, field_name, op):
         """
@@ -311,7 +316,7 @@ class FilterMixin(object):
                     value=value,
                     field_type='date',
                 )
-        elif isinstance(field, (self.RELATIONSHIP_FIELDS, ser.SerializerMethodField)):
+        elif isinstance(field, (self.RELATIONSHIP_FIELDS, ser.SerializerMethodField, ser.ManyRelatedField)):
             if value == 'null':
                 value = None
             return value
@@ -439,11 +444,14 @@ class ListFilterMixin(FilterMixin):
             )
             operation['op'] = 'in'
         if field_name == 'subjects':
-            if Subject.objects.filter(_id=operation['value']).exists():
-                operation['source_field_name'] = 'subjects___id'
-            else:
-                operation['source_field_name'] = 'subjects__text'
-                operation['op'] = 'iexact'
+            self.postprocess_subject_query_param(operation)
+
+    def postprocess_subject_query_param(self, operation):
+        if Subject.objects.filter(_id=operation['value']).exists():
+            operation['source_field_name'] = 'subjects___id'
+        else:
+            operation['source_field_name'] = 'subjects__text'
+            operation['op'] = 'iexact'
 
     def get_filtered_queryset(self, field_name, params, default_queryset):
         """filters default queryset based on the serializer field type"""
@@ -511,12 +519,7 @@ class PreprintFilterMixin(ListFilterMixin):
             operation['source_field_name'] = 'guids___id'
 
         if field_name == 'subjects':
-            try:
-                Subject.objects.get(_id=operation['value'])
-                operation['source_field_name'] = 'subjects___id'
-            except Subject.DoesNotExist:
-                operation['source_field_name'] = 'subjects__text'
-                operation['op'] = 'iexact'
+            self.postprocess_subject_query_param(operation)
 
     def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True, public_only=False):
         return Preprint.objects.can_view(

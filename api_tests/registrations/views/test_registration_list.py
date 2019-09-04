@@ -8,6 +8,7 @@ from future.moves.urllib.parse import urlparse
 
 from api.base.settings.defaults import API_BASE
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
+from api_tests.subjects.mixins import SubjectsFilterMixin
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 from framework.auth.core import Auth
 from osf.models import RegistrationSchema, DraftRegistration
@@ -22,9 +23,10 @@ from osf_tests.factories import (
 )
 from rest_framework import exceptions
 from tests.base import ApiTestCase
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.views import find_bookmark_collection
 from osf.utils import permissions
+
+SCHEMA_VERSION = 2
 
 
 @pytest.mark.enable_quickfiles_creation
@@ -516,13 +518,27 @@ class TestRegistrationFiltering(ApiTestCase):
             "'notafield' is not a valid field for this endpoint.")
 
 
+class TestRegistrationSubjectFiltering(SubjectsFilterMixin):
+    @pytest.fixture()
+    def resource(self, user):
+        return RegistrationFactory(creator=user)
+
+    @pytest.fixture()
+    def resource_two(self, user):
+        return RegistrationFactory(creator=user)
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}registrations/'.format(API_BASE)
+
+
 class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def schema(self):
         return RegistrationSchema.objects.get(
             name='Replication Recipe (Brandt et al., 2013): Post-Completion',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def project_public_child(self, project_public):
@@ -755,7 +771,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             prereg_metadata, url_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
@@ -792,7 +808,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             self, mock_enqueue, app, user, project_public, prereg_metadata, url_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
@@ -829,7 +845,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             prereg_metadata, url_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
