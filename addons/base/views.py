@@ -14,6 +14,7 @@ import jwe
 import jwt
 import waffle
 from django.db import transaction
+from django.db.models import Max
 from django.contrib.contenttypes.models import ContentType
 from elasticsearch import exceptions as es_exceptions
 
@@ -314,12 +315,13 @@ def get_auth(auth, **kwargs):
             filenode = OsfStorageFileNode.load(path.strip('/'))
             if filenode and filenode.is_file:
                 # default to most recent version if none is provided in the response
-                version = int(data['version']) if data.get('version') else filenode.versions.count()
+                # TODO: [ENG-114] Fix so identifiers are unique
+                version = int(data['version']) if data.get('version') else int(filenode.versions.aggregate(Max('identifier'))['identifier__max'])
                 try:
                     fileversion = FileVersion.objects.filter(
                         basefilenode___id=file_id,
                         identifier=version
-                    ).select_related('region').get()
+                    ).select_related('region').first()
                 except FileVersion.DoesNotExist:
                     raise HTTPError(httplib.BAD_REQUEST)
                 if auth.user:

@@ -277,7 +277,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
                 return self.versions.first()
             return None
 
-        # TODO: [ENG-114] Fix so identifiers are unique
+        # TODO: [ENG-114] Change to .get when identifiers are unique to basefilenode
         version = self.versions.filter(identifier=version).first()
         if version:
             return version
