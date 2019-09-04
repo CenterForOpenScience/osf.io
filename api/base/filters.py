@@ -70,7 +70,9 @@ class OSFOrderingFilter(OrderingFilter):
         """
         Returns a dictionary of serializer fields and source names. i.e. {'date_created': 'created'}
 
-        Logic borrowed from get_field_source_mapping
+        Logic borrowed from OrderingFilter.get_default_valid_fields with modifications to retrieve
+        source fields for serializer field names.
+
         :param view api view
         :
         """
@@ -81,13 +83,14 @@ class OSFOrderingFilter(OrderingFilter):
         else:
             serializer_class = getattr(view, 'serializer_class', None)
 
+        # This will not allow any serializer fields with nested related fields to be sorted on
         for field_name, field in serializer_class(context={'request': request}).fields.items():
             if not getattr(field, 'write_only', False) and not field.source == '*' and field_name != field.source:
                 field_to_source_mapping[field_name] = field.source.replace('.', '_')
 
         return field_to_source_mapping
 
-    # Overrides Ordering Filter
+    # Overrides OrderingFilter
     def remove_invalid_fields(self, queryset, fields, view, request):
         """
         Returns an array of valid fields to be used for ordering.
