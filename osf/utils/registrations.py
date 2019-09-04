@@ -165,6 +165,11 @@ def build_answer_block(block_type, value):
     if block_type == 'file-input':
         extra = value
         value = ''
+        for file in extra:
+            if file.get('file_name'):
+                file['data'] = {
+                    'name': file.get('file_name')  # What legacy FE needs for rendering
+                }
     return {
         'comments': [],
         'value': value,

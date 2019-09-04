@@ -12,8 +12,61 @@ from osf.management.commands.migrate_registration_responses import (
 
 """
 Regression test to prevent the migration of 'registration_metadata' behavior
-from regressing
+from breaking
 """
+
+prereg_registration_responses = {
+    'q12.uploader': [],
+    'q7.question': 'data collection procedures',
+    'q20': 'transforming and recoding',
+    'q21': 'research plan follow up',
+    'q22': 'criteria',
+    'q23': 'this is how outliers will be handled',
+    'q24': 'this is how I will deal with incomplete data.',
+    'q25': 'this is my exploratory analysis',
+    'q26': [],
+    'q27': 'No additional comments',
+    'q12.question': 'these are my measured variables',
+    'q1': 'This is my title',
+    'q3': 'research questions',
+    'q2': 'Dawn Pattison, James Brown, Carrie Skinner',
+    'q5': 'Registration prior to creation of data',
+    'q4': 'this is my hypothesis',
+    'q6': 'Explanation of existing data',
+    'q9': 'this is the rationale for my sample size',
+    'q8': 'this is my sample size',
+    'q13.question': 'these are my indices',
+    'q19.uploader': [],
+    'q11.uploader': [
+        {
+            'file_name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
+            'file_id': '5d6d22264d476c088fb8e01f'
+        },
+        {
+            'file_name': 'Alphabet.txt',
+            'file_id': '5d6d22274d476c088fb8e021'
+        }
+    ],
+    'q16.question': 'this is my study design',
+    'q15': [
+        'No blinding is involved in this study.',
+        'For studies that involve human subjects, they will not know the treatment group to which they have been assigned.',
+        'Research personnel who interact directly with the study subjects (either human or non-human subjects) will not be aware of the assigned treatments.'
+    ],
+    'q14': '',
+    'q17': 'this is my explanation of randomization',
+    'q10': 'this is my stopping rule',
+    'q11.question': 'these are my maniuplated variables',
+    'q16.uploader': [],
+    'q19.question': 'ANOVA',
+    'q13.uploader': [],
+    'q7.uploader': [
+        {
+            'file_name': 'Alphabet.txt',
+            'file_id': '5d6d22274d476c088fb8e021'
+        }
+    ]
+}
 
 prereg_registration_metadata = {
     'q20': {
@@ -341,6 +394,220 @@ prereg_registration_metadata = {
             }
         },
         'extra': []
+    }
+}
+
+prereg_registration_metadata_built = {
+    'q20': {
+        'comments': [],
+        'value': 'transforming and recoding',
+        'extra': []
+    },
+    'q21': {
+        'comments': [],
+        'value': 'research plan follow up',
+        'extra': []
+    },
+    'q22': {
+        'comments': [],
+        'value': 'criteria',
+        'extra': []
+    },
+    'q23': {
+        'comments': [],
+        'value': 'this is how outliers will be handled',
+        'extra': []
+    },
+    'q24': {
+        'comments': [],
+        'value': 'this is how I will deal with incomplete data.',
+        'extra': []
+    },
+    'q25': {
+        'comments': [],
+        'value': 'this is my exploratory analysis',
+        'extra': []
+    },
+    'q26': {
+        'comments': [],
+        'value': '',
+        'extra': []
+    },
+    'q27': {
+        'comments': [],
+        'value': 'No additional comments',
+        'extra': []
+    },
+    'q1': {
+        'comments': [],
+        'value': 'This is my title',
+        'extra': []
+    },
+    'q3': {
+        'comments': [],
+        'value': 'research questions',
+        'extra': []
+    },
+    'q2': {
+        'comments': [],
+        'value': 'Dawn Pattison, James Brown, Carrie Skinner',
+        'extra': []
+    },
+    'q5': {
+        'comments': [],
+        'value': 'Registration prior to creation of data',
+        'extra': []
+    },
+    'q4': {
+        'comments': [],
+        'value': 'this is my hypothesis',
+        'extra': []
+    },
+    'q7': {
+        'value': {
+            'question': {
+                'comments': [],
+                'value': 'data collection procedures',
+                'extra': []
+            },
+            'uploader': {
+                'comments': [],
+                'value': '',
+                'extra': [
+                    {
+                        'file_name': 'Alphabet.txt',
+                        'file_id': '5d6d22274d476c088fb8e021',
+                        'data': {
+                            'name': 'Alphabet.txt'
+                        }
+                    }
+                ]
+            }
+        },
+    },
+    'q6': {
+        'comments': [],
+        'value': 'Explanation of existing data',
+        'extra': []
+    },
+    'q9': {
+        'comments': [],
+        'value': 'this is the rationale for my sample size',
+        'extra': []
+    },
+    'q8': {
+        'comments': [],
+        'value': 'this is my sample size',
+        'extra': []
+    },
+    'q15': {
+        'comments': [],
+        'value': [
+            'No blinding is involved in this study.',
+            'For studies that involve human subjects, they will not know the treatment group to which they have been assigned.',
+            'Research personnel who interact directly with the study subjects (either human or non-human subjects) will not be aware of the assigned treatments.'
+        ],
+        'extra': []
+    },
+    'q14': {
+        'comments': [],
+        'value': '',
+        'extra': []
+    },
+    'q17': {
+        'comments': [],
+        'value': 'this is my explanation of randomization',
+        'extra': []
+    },
+    'q16': {
+        'value': {
+            'question': {
+                'comments': [],
+                'value': 'this is my study design',
+                'extra': []
+            },
+            'uploader': {
+                'comments': [],
+                'value': '',
+                'extra': []
+            }
+        },
+    },
+    'q11': {
+        'value': {
+            'question': {
+                'comments': [],
+                'value': 'these are my maniuplated variables',
+                'extra': []
+            },
+            'uploader': {
+                'comments': [],
+                'value': '',
+                'extra': [
+                    {
+                        'file_name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
+                        'file_id': '5d6d22264d476c088fb8e01f',
+                        'data': {
+                            'name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png'
+                        }
+                    },
+                    {
+                        'file_name': 'Alphabet.txt',
+                        'file_id': '5d6d22274d476c088fb8e021',
+                        'data': {
+                            'name': 'Alphabet.txt'
+                        }
+                    }
+                ]
+            }
+        },
+    },
+    'q10': {
+        'comments': [],
+        'value': 'this is my stopping rule',
+        'extra': []
+    },
+    'q13': {
+        'value': {
+            'question': {
+                'comments': [],
+                'value': 'these are my indices',
+                'extra': []
+            },
+            'uploader': {
+                'comments': [],
+                'value': '',
+                'extra': []
+            }
+        },
+    },
+    'q12': {
+        'value': {
+            'question': {
+                'comments': [],
+                'value': 'these are my measured variables',
+                'extra': []
+            },
+            'uploader': {
+                'comments': [],
+                'value': '',
+                'extra': []
+            }
+        },
+    },
+    'q19': {
+        'value': {
+            'question': {
+                'comments': [],
+                'value': 'ANOVA',
+                'extra': []
+            },
+            'uploader': {
+                'comments': [],
+                'value': '',
+                'extra': []
+            }
+        },
     }
 }
 

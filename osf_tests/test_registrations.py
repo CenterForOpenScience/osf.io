@@ -17,6 +17,10 @@ from . import factories
 from .utils import assert_datetime_equal, mock_archive
 from .factories import get_default_metaschema
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
+from osf_tests.management_commands.test_migration_registration_responses import (
+    prereg_registration_responses,
+    prereg_registration_metadata_built
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -769,3 +773,28 @@ class TestDraftRegistrations:
         draft = factories.DraftRegistrationFactory(branched_from=project)
 
         assert draft.url == settings.DOMAIN + 'project/{}/drafts/{}'.format(project._id, draft._id)
+
+
+class TestRegistrationMixin:
+    @pytest.fixture()
+    def draft_prereg(self, prereg_schema):
+        return factories.DraftRegistrationFactory(
+            registration_schema=prereg_schema,
+            registration_metadata={},
+        )
+
+    @pytest.fixture()
+    def prereg_schema(self):
+        return RegistrationSchema.objects.get(
+            name='Prereg Challenge',
+            schema_version=2
+        )
+
+    def test_expand_registration_responses(self, draft_prereg):
+        draft_prereg.registration_responses = prereg_registration_responses
+        draft_prereg.save()
+        assert draft_prereg.registration_metadata == {}
+
+        registration_metadata = draft_prereg.expand_registration_responses()
+
+        assert registration_metadata == prereg_registration_metadata_built
