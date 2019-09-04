@@ -318,8 +318,9 @@ def get_auth(auth, **kwargs):
                 # default to most recent version if none is provided in the response
                 version = int(data['version']) if data.get('version') else filenode.versions.count()
                 try:
-                    fileversion = FileVersion.objects.filter(
-                        basefilenode___id=file_id,
+                    basefilenode = BaseFileNode.objects.filter(
+                        _id=file_id).get()
+                    fileversion = basefilenode.versions.filter(
                         identifier=version
                     ).select_related('region').get()
                 except FileVersion.DoesNotExist:
