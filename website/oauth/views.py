@@ -81,7 +81,7 @@ def oauth_callback(service_name):
     except KeyError:
         session_oauth_state = None
 
-    if request.args['state'] == session_oauth_state:
+    if request.args.get('state') == session_oauth_state:
         # Request was created from web
         return osf_oauth_callback(service_name)
 

@@ -5246,7 +5246,7 @@ class TestTimestampView(OsfTestCase):
         self.user = AuthUserFactory()
         self.other_user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user, is_public=True)
-        self.project.add_contributor(self.other_user, permissions=['read', 'write'], save=True)
+        self.project.add_contributor(self.other_user, permissions=permissions.WRITE, save=True)
         self.node = self.project
         self.auth_obj = Auth(user=self.project.creator)
         userkey_generation(self.user._id)

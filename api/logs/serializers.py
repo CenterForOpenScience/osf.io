@@ -12,7 +12,6 @@ from api.base.serializers import (
     HideIfNotRegistrationPointerLog,
 )
 
-from osf.models import OSFUser, AbstractNode, Preprint
 from osf.models import OSFUser, AbstractNode, Preprint, ProjectStorageType, Institution
 from osf.utils.names import impute_names_model
 from osf.utils import permissions as osf_permissions

@@ -4,8 +4,10 @@ import os
 import httplib as http
 import requests
 import urlparse
-import waffle
 import json
+
+import waffle
+from waffle.utils import get_setting
 
 from flask import request
 from flask import send_from_directory
@@ -14,6 +16,9 @@ from flask import stream_with_context
 from flask import g
 from django.core.urlresolvers import reverse
 from django.conf import settings as api_settings
+from django.utils.encoding import smart_str
+from werkzeug.http import dump_cookie
+
 
 from geolite2 import geolite2
 
@@ -66,6 +71,8 @@ from website.rdm_addons import views as rdm_addon_views
 from website.rdm_announcement import views as rdm_announcement_views
 from website.mapcore.views import mapcore_oauth_start, mapcore_oauth_complete
 
+from api.waffle.utils import flag_is_active
+
 def set_status_message(user):
     if user and not user.accepted_terms_of_service:
         status.push_status_message(
@@ -96,6 +103,11 @@ def get_globals():
             request_login_url = request.url.replace(request.host_url, settings.DOMAIN)
     else:
         request_login_url = request.url
+
+    try:
+        waffle_url = reverse('wafflejs')  # TODO: fix bug only effects Travis
+    except (KeyError, SyntaxError):
+        waffle_url = '/_/wafflejs'
 
     return {
         'user_merge': settings.ENABLE_USER_MERGE,
@@ -173,13 +185,13 @@ def get_globals():
                 'write_key': settings.KEEN['private']['write_key'],
             },
         },
-        'institutional_landing_flag': waffle.flag_is_active(request, features.INSTITUTIONAL_LANDING_FLAG),
+        'institutional_landing_flag': flag_is_active(request, features.INSTITUTIONAL_LANDING_FLAG),
         'maintenance': maintenance.get_maintenance(),
         'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
         'custom_citations': settings.CUSTOM_CITATIONS,
         'osf_support_email': settings.OSF_SUPPORT_EMAIL,
         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
-        'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=reverse('wafflejs')),
+        'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=waffle_url),
         'footer_links': settings.FOOTER_LINKS,
         'features': features,
         'waffle': waffle,
@@ -206,6 +218,27 @@ class OsfWebRenderer(WebRenderer):
         kwargs['data'] = get_globals
         super(OsfWebRenderer, self).__init__(*args, **kwargs)
 
+    def __call__(self, data, *args, **kwargs):
+        """
+        This function has been added to keep our Flask requests compatible with django-waffle, it's been adapted from
+        waffle's own middleware code at https://github.com/django-waffle/django-waffle/blob/master/waffle/middleware.py
+        """
+
+        resp = super(OsfWebRenderer, self).__call__(data, *args, **kwargs)
+        secure = get_setting('SECURE')
+        max_age = get_setting('MAX_AGE')
+
+        if hasattr(request, 'waffles'):
+            for k in request.waffles:
+                name = smart_str(get_setting('COOKIE') % k)
+                active, rollout = request.waffles[k]
+                if rollout and not active:
+                    # "Inactive" is a session cookie during rollout mode.
+                    age = None
+                else:
+                    age = max_age
+                resp.headers.add('Set-Cookie', dump_cookie(name.encode(), bytes(active), age, bytes(secure)))
+        return resp
 
 #: Use if a view only redirects or raises error
 notemplate = OsfWebRenderer('', renderer=render_mako_string, trust=False)
