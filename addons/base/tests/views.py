@@ -51,19 +51,22 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         assert res.status_code == http.FORBIDDEN
         assert_in('You are prohibited from using this add-on.', res.body)
 
-    def test_oauth_finish(self):
+    @mock.patch('website.oauth.views.session')
+    def test_oauth_finish(self, mock_session):
         url = web_url_for(
             'oauth_callback',
             service_name=self.ADDON_SHORT_NAME
-        )
+        ) + '?state=abc123'
         with mock.patch.object(self.Provider, 'auth_callback') as mock_callback:
             mock_callback.return_value = True
+            mock_session.data = {'oauth_states': {self.ADDON_SHORT_NAME: {'state': 'abc123'}}}
             res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, http.OK)
         name, args, kwargs = mock_callback.mock_calls[0]
         assert_equal(kwargs['user']._id, self.user._id)
 
-    def test_oauth_finish_rdm_addons_denied(self):
+    @mock.patch('website.oauth.views.session')
+    def test_oauth_finish_rdm_addons_denied(self, mock_session):
         institution = InstitutionFactory()
         self.user.affiliated_institutions.add(institution)
         self.user.save()
@@ -73,7 +76,8 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         url = web_url_for(
             'oauth_callback',
             service_name=self.ADDON_SHORT_NAME
-        )
+        ) + '?state=abc123'
+        mock_session.data = {'oauth_states': {self.ADDON_SHORT_NAME: {'state': 'abc123'}}}
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert res.status_code == http.FORBIDDEN
         assert_in('You are prohibited from using this add-on.', res.body)
