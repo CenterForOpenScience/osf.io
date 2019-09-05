@@ -38,7 +38,7 @@ def migrate_draft_registrations(dry_run, rows='all'):
     Populates a subset of draft_registration.registration_responses, and corresponding
     draft_registration.registration_responses_migrated.
     :params dry_run
-    :params rows - if rows=0, all
+    :params rows
     """
     DraftRegistration = apps.get_model('osf.DraftRegistration')
     draft_registrations = DraftRegistration.objects.filter(

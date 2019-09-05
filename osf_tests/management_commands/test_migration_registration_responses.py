@@ -1114,6 +1114,438 @@ veer_registration_metadata = {
     }
 }
 
+veer_condensed = {
+    'dataCollectionDates': {
+        'comments': [],
+        'value': '2020 - 2030',
+        'extra': []
+    },
+    'description-methods': {
+        'value': {
+            'exclusion-criteria': {
+                'value': {
+                    'question8b': {
+                        'comments': [],
+                        'value': 'these are failing check-tests',
+                        'extra': []
+                    }
+                },
+            },
+            'design': {
+                'value': {
+                    'question2a': {
+                        'comments': [],
+                        'value': 'a. whether they are between participants',
+                        'extra': []
+                    },
+                    'question2b': {
+                        'comments': [],
+                        'value': 'these are my dependent variables',
+                        'extra': []
+                    },
+                    'question3b': {
+                        'comments': [],
+                        'value': 'These variables are acting as covariates.',
+                        'extra': []
+                    }
+                },
+            },
+            'procedure': {
+                'value': {
+                    'question10b': {
+                        'comments': [],
+                        'value': 'describe all manipulations',
+                        'extra': []
+                    }
+                },
+            },
+            'planned-sample': {
+                'value': {
+                    'question4b': {
+                        'comments': [],
+                        'value': 'these are the preselection rults',
+                        'extra': []
+                    },
+                    'question7b': {
+                        'comments': [],
+                        'value': 'here is my data collection termination rule',
+                        'extra': []
+                    },
+                    'question5b': {
+                        'comments': [],
+                        'value': 'here is how the data will be collected',
+                        'extra': []
+                    },
+                    'question6b-upload': {
+                        'comments': [],
+                        'value': '',
+                        'extra': []
+                    },
+                    'question6b': {
+                        'comments': [],
+                        'value': 'this is my planned sample size',
+                        'extra': []
+                    }
+                },
+            }
+        },
+    },
+    'recommended-analysis': {
+        'value': {
+            'specify': {
+                'value': {
+                    'question6c': {
+                        'comments': [],
+                        'value': 'I used a method of correction for multiple tests',
+                        'extra': []
+                    },
+                    'question8c': {
+                        'comments': [],
+                        'value': 'reliability criteria',
+                        'extra': []
+                    },
+                    'question9c': {
+                        'comments': [],
+                        'value': 'these are the anticipated data transformations',
+                        'extra': []
+                    },
+                    'question7c': {
+                        'comments': [],
+                        'value': 'method of missing data handling',
+                        'extra': []
+                    },
+                    'question11c': {
+                        'comments': [],
+                        'value': '',
+                        'extra': []
+                    },
+                    'question10c': {
+                        'comments': [],
+                        'value': 'assumptions of analysses',
+                        'extra': []
+                    }
+                },
+            }
+        },
+    },
+    'description-hypothesis': {
+        'value': {
+            'question2a': {
+                'comments': [],
+                'value': 'expected interaction shape',
+                'extra': []
+            },
+            'question1a': {
+                'comments': [],
+                'value': 'These are the essential elements',
+                'extra': []
+            },
+            'question3a': {
+                'comments': [],
+                'value': 'predictions for successful checks',
+                'extra': []
+            }
+        },
+    },
+    'confirmatory-analyses-first': {
+        'value': {
+            'first': {
+                'value': {
+                    'question4c': {
+                        'comments': [],
+                        'value': 'this the covariate rationale',
+                        'extra': []
+                    },
+                    'question5c': {
+                        'comments': [],
+                        'value': 'these are techniques for null hypo testing',
+                        'extra': []
+                    },
+                    'question2c': {
+                        'comments': [],
+                        'value': 'this is the statistical technicque',
+                        'extra': []
+                    },
+                    'question3c': {
+                        'comments': [],
+                        'value': 'this is each variable role',
+                        'extra': []
+                    },
+                    'question1c': {
+                        'comments': [],
+                        'value': 'these are the relevant variables',
+                        'extra': []
+                    }
+                },
+            }
+        },
+    },
+    'confirmatory-analyses-third': {
+        'value': {
+            'third': {
+                'value': {
+                    'question4c': {
+                        'comments': [],
+                        'value': 'here was the rationale',
+                        'extra': []
+                    },
+                    'question5c': {
+                        'comments': [],
+                        'value': 'I used BAYESIAN STATISTICS',
+                        'extra': []
+                    },
+                    'question2c': {
+                        'comments': [],
+                        'value': 't-test',
+                        'extra': []
+                    },
+                    'question3c': {
+                        'comments': [],
+                        'value': 't-test informed covariate',
+                        'extra': []
+                    },
+                    'question1c': {
+                        'comments': [],
+                        'value': '3rd prediction',
+                        'extra': []
+                    }
+                },
+            }
+        },
+    },
+    'datacompletion': {
+        'comments': [],
+        'value': 'No, data collection has not begun',
+        'extra': []
+    },
+    'looked': {
+        'comments': [],
+        'value': 'Yes',
+        'extra': []
+    },
+    'confirmatory-analyses-fourth': {
+        'value': {
+            'fourth': {
+                'value': {
+                    'question4c': {
+                        'comments': [],
+                        'value': '',
+                        'extra': []
+                    },
+                    'question5c': {
+                        'comments': [],
+                        'value': '',
+                        'extra': []
+                    },
+                    'question2c': {
+                        'comments': [],
+                        'value': '',
+                        'extra': []
+                    },
+                    'question3c': {
+                        'comments': [],
+                        'value': '',
+                        'extra': []
+                    },
+                    'question1c': {
+                        'comments': [],
+                        'value': '',
+                        'extra': []
+                    }
+                },
+            }
+        },
+    },
+    'confirmatory-analyses-further': {
+        'value': {
+            'further': {
+                'value': {
+                    'question4c': {
+                        'comments': [],
+                        'value': 'this was the rationale',
+                        'extra': []
+                    },
+                    'question5c': {
+                        'comments': [],
+                        'value': 'also Bayesian',
+                        'extra': []
+                    },
+                    'question2c': {
+                        'comments': [],
+                        'value': 'i used a common statistical technique',
+                        'extra': []
+                    },
+                    'question3c': {
+                        'comments': [],
+                        'value': 'this was the independent variable',
+                        'extra': []
+                    },
+                    'question1c': {
+                        'comments': [],
+                        'value': 'FURTHER PREdictions:',
+                        'extra': []
+                    }
+                },
+            }
+        },
+    },
+    'recommended-hypothesis': {
+        'value': {
+            'question5a': {
+                'comments': [],
+                'value': 'This is the hypotheses that was tested.',
+                'extra': []
+            },
+            'question4a': {
+                'comments': [],
+                'value': '',
+                'extra': [
+                    {
+                        'file_name': 'Alphabet.txt',
+                        'file_id': '5d6d25024d476c088fb8e03b',
+                        'data': {
+                            'name': 'Alphabet.txt',
+                        },
+                    },
+                    {
+                        'file_id': '5d6d25014d476c088fb8e038',
+                        'file_name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
+                        'data': {
+                            'name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png'
+                        }
+                    }
+                ]
+            },
+            'question6a': {
+                'comments': [],
+                'value': 'this is the outcome that would be predicted by each theory',
+                'extra': []
+            }
+        },
+    },
+    'additionalComments': {
+        'comments': [],
+        'value': 'no additional comments',
+        'extra': []
+    },
+    'confirmatory-analyses-second': {
+        'value': {
+            'second': {
+                'value': {
+                    'question4c': {
+                        'comments': [],
+                        'value': 'here is the rationale',
+                        'extra': []
+                    },
+                    'question5c': {
+                        'comments': [],
+                        'value': '',
+                        'extra': []
+                    },
+                    'question2c': {
+                        'comments': [],
+                        'value': 'ANOVA test',
+                        'extra': []
+                    },
+                    'question3c': {
+                        'comments': [],
+                        'value': 'it was the covariate',
+                        'extra': []
+                    },
+                    'question1c': {
+                        'comments': [],
+                        'value': 'how 2nd prediction calculated',
+                        'extra': []
+                    }
+                },
+            }
+        },
+    },
+    'recommended-methods': {
+        'value': {
+            'procedure': {
+                'value': {
+                    'question9b-file': {
+                        'comments': [],
+                        'value': '',
+                        'extra': []
+                    },
+                    'question9b': {
+                        'comments': [],
+                        'value': 'set fail-safe levels of exclusions',
+                        'extra': []
+                    }
+                },
+            }
+        },
+    }
+}
+
+veer_registration_responses = {
+    'confirmatory-analyses-third.third.question4c': 'here was the rationale',
+    'recommended-hypothesis.question5a': 'This is the hypotheses that was tested.',
+    'confirmatory-analyses-further.further.question4c': 'this was the rationale',
+    'confirmatory-analyses-fourth.fourth.question5c': '',
+    'description-methods.design.question3b': 'These variables are acting as covariates.',
+    'confirmatory-analyses-further.further.question2c': 'i used a common statistical technique',
+    'description-methods.exclusion-criteria.question8b': 'these are failing check-tests',
+    'description-methods.planned-sample.question4b': 'these are the preselection rults',
+    'confirmatory-analyses-second.second.question3c': 'it was the covariate',
+    'dataCollectionDates': '2020 - 2030',
+    'recommended-analysis.specify.question6c': 'I used a method of correction for multiple tests',
+    'confirmatory-analyses-first.first.question2c': 'this is the statistical technicque',
+    'description-methods.procedure.question10b': 'describe all manipulations',
+    'recommended-analysis.specify.question11c': [],
+    'recommended-methods.procedure.question9b': 'set fail-safe levels of exclusions',
+    'description-hypothesis.question2a': 'expected interaction shape',
+    'confirmatory-analyses-second.second.question5c': '',
+    'confirmatory-analyses-first.first.question4c': 'this the covariate rationale',
+    'description-methods.planned-sample.question6b': 'this is my planned sample size',
+    'confirmatory-analyses-third.third.question1c': '3rd prediction',
+    'confirmatory-analyses-fourth.fourth.question1c': '',
+    'recommended-analysis.specify.question9c': 'these are the anticipated data transformations',
+    'confirmatory-analyses-fourth.fourth.question2c': '',
+    'confirmatory-analyses-third.third.question3c': 't-test informed covariate',
+    'recommended-hypothesis.question6a': 'this is the outcome that would be predicted by each theory',
+    'confirmatory-analyses-fourth.fourth.question4c': '',
+    'confirmatory-analyses-second.second.question4c': 'here is the rationale',
+    'recommended-hypothesis.question4a': [
+        {
+            'file_name': 'Alphabet.txt',
+            'file_id': '5d6d25024d476c088fb8e03b'
+        },
+        {
+            'file_name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
+            'file_id': '5d6d25014d476c088fb8e038'
+        }
+    ],
+    'confirmatory-analyses-third.third.question5c': 'I used BAYESIAN STATISTICS',
+    'description-methods.design.question2b': 'these are my dependent variables',
+    'description-methods.design.question2a': 'a. whether they are between participants',
+    'datacompletion': 'No, data collection has not begun',
+    'description-methods.planned-sample.question5b': 'here is how the data will be collected',
+    'confirmatory-analyses-further.further.question3c': 'this was the independent variable',
+    'confirmatory-analyses-further.further.question1c': 'FURTHER PREdictions:',
+    'confirmatory-analyses-second.second.question2c': 'ANOVA test',
+    'additionalComments': 'no additional comments',
+    'confirmatory-analyses-first.first.question1c': 'these are the relevant variables',
+    'recommended-analysis.specify.question7c': 'method of missing data handling',
+    'confirmatory-analyses-first.first.question3c': 'this is each variable role',
+    'description-hypothesis.question3a': 'predictions for successful checks',
+    'confirmatory-analyses-further.further.question5c': 'also Bayesian',
+    'recommended-analysis.specify.question10c': 'assumptions of analysses',
+    'recommended-methods.procedure.question9b-file': [],
+    'description-hypothesis.question1a': 'These are the essential elements',
+    'description-methods.planned-sample.question7b': 'here is my data collection termination rule',
+    'confirmatory-analyses-first.first.question5c': 'these are techniques for null hypo testing',
+    'looked': 'Yes',
+    'confirmatory-analyses-second.second.question1c': 'how 2nd prediction calculated',
+    'confirmatory-analyses-third.third.question2c': 't-test',
+    'confirmatory-analyses-fourth.fourth.question3c': '',
+    'recommended-analysis.specify.question8c': 'reliability criteria',
+    'description-methods.planned-sample.question6b-upload': []
+}
+
 
 @pytest.fixture()
 def osf_standard_schema():
@@ -1165,10 +1597,13 @@ class TestMigrateDraftRegistrationRegistrationResponses:
 
     @pytest.fixture()
     def empty_draft_osf_standard(self, osf_standard_schema):
-        return DraftRegistrationFactory(
+        draft = DraftRegistrationFactory(
             registration_schema=osf_standard_schema,
             registration_metadata={}
         )
+        draft.registration_responses_migrated = False
+        draft.save()
+        return draft
 
     @pytest.fixture()
     def draft_prereg(self, prereg_schema):
@@ -1206,7 +1641,8 @@ class TestMigrateDraftRegistrationRegistrationResponses:
 
         for draft in drafts:
             assert draft.registration_responses == {}
-            assert draft.registration_responses_migrated is False
+            draft.registration_responses_migrated = False
+            draft.save()
 
         migrate_draft_registrations(dry_run=False)
 
@@ -1389,8 +1825,8 @@ class TestMigrateRegistrationRegistrationResponses:
 
         for draft in drafts:
             draft.registration_responses = {}
+            draft.registration_responses_migrated = False
             draft.save()
-            assert draft.registration_responses_migrated is False
 
         migrate_registrations(dry_run=False)
 

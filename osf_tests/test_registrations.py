@@ -19,7 +19,9 @@ from .factories import get_default_metaschema
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from osf_tests.management_commands.test_migration_registration_responses import (
     prereg_registration_responses,
-    prereg_registration_metadata_built
+    prereg_registration_metadata_built,
+    veer_registration_responses,
+    veer_condensed
 )
 
 pytestmark = pytest.mark.django_db
@@ -784,9 +786,23 @@ class TestRegistrationMixin:
         )
 
     @pytest.fixture()
+    def draft_veer(self, veer_schema):
+        return factories.DraftRegistrationFactory(
+            registration_schema=veer_schema,
+            registration_metadata={},
+        )
+
+    @pytest.fixture()
     def prereg_schema(self):
         return RegistrationSchema.objects.get(
             name='Prereg Challenge',
+            schema_version=2
+        )
+
+    @pytest.fixture()
+    def veer_schema(self):
+        return RegistrationSchema.objects.get(
+            name__icontains='Pre-Registration in Social Psychology',
             schema_version=2
         )
 
@@ -798,3 +814,12 @@ class TestRegistrationMixin:
         registration_metadata = draft_prereg.expand_registration_responses()
 
         assert registration_metadata == prereg_registration_metadata_built
+
+    def test_expand_registration_responses_veer(self, draft_veer):
+        draft_veer.registration_responses = veer_registration_responses
+        draft_veer.save()
+        assert draft_veer.registration_metadata == {}
+
+        registration_metadata = draft_veer.expand_registration_responses()
+
+        assert registration_metadata == veer_condensed
