@@ -2,6 +2,12 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.25.0 (2019-09-05)
+===================
+- Automate account deactivation if users have no content
+- Clean up EZID workflow
+- Check redirect URL's for spam
+
 19.24.0 (2019-08-27)
 ===================
 - APIv2: Allow creating a node with a license attached on creation
