@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='abstractnode',
             name='registration_responses',
-            field=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder, null=True),
+            field=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder)
         ),
         migrations.AddField(
             model_name='abstractnode',
@@ -32,5 +32,15 @@ class Migration(migrations.Migration):
             model_name='draftregistration',
             name='registration_responses_migrated',
             field=models.NullBooleanField(default=False),
+        ),
+        migrations.AlterField(
+            model_name='abstractnode',
+            name='registration_responses_migrated',
+            field=models.NullBooleanField(default=True),
+        ),
+        migrations.AlterField(
+            model_name='draftregistration',
+            name='registration_responses_migrated',
+            field=models.NullBooleanField(default=True),
         ),
     ]
