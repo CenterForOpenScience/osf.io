@@ -52,14 +52,10 @@ def run_statements(statement, page_size, table):
             sentry.log_message('Deleted field in {} table is populated'.format(table))
 
 def run_sql(statement, page_size):
-    table = statement.split(' ')[5]
+    table = statement.split(' ')[1]
     sentry.log_message('Populating deleted column in table {}'.format(table))
 
     with connection.cursor() as cursor:
-        cursor.execute(CHECK_POPULATED.format(table), [page_size])
-        rows = cursor.fetchall()
-        if not rows:
-            return
         cursor.execute(statement, [page_size])
         rows = cursor.fetchall()
         if not rows:
