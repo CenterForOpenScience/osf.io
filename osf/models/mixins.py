@@ -1788,6 +1788,9 @@ class SpamOverrideMixin(SpamMixin):
 
 
 class RegistrationResponseMixin(models.Model):
+    """
+    Mixin to be shared between DraftRegistrations and Registrations.
+    """
     registration_responses = DateTimeAwareJSONField(default=dict, blank=True)
     registration_responses_migrated = models.NullBooleanField(default=False)
 
@@ -1800,7 +1803,7 @@ class RegistrationResponseMixin(models.Model):
     def flatten_registration_metadata(self):
         """
         Extracts questions/nested registration_responses - makes use of schema block `registration_response_key`
-        and block_type to pull out the nested registered_meta
+        and block_type to assemble flattened registration_responses.
 
         For example, if the registration_response_key = "description-methods.planned-sample.question7b",
         this will recurse through the registered_meta, looking for each key, starting with "description-methods",
@@ -1836,7 +1839,7 @@ class RegistrationResponseMixin(models.Model):
         Registration.registered_meta. registration_responses are more flat;
         "registration_response_keys" are top level.  Registration_metadata/registered_meta
         will have a more deeply nested format.
-        :returns registration_metadata
+        :returns registration_metadata, dictionary
         """
         schema = self.get_registration_schema
         registration_responses = copy.deepcopy(self.registration_responses)

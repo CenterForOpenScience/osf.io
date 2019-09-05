@@ -19,7 +19,7 @@ def add_registration_files_count(state, *args, **kwargs):
     registrations = Registration.objects.filter(is_deleted=False, files_count__isnull=True)
     BaseFileNode = state.get_model('osf', 'BaseFileNode')
     ContentType = state.get_model('contenttypes', 'ContentType')
-    content_type = ContentType.objects.get(app_label='osf', model='registration')
+    content_type = ContentType.objects.get(app_label='osf', model='abstractnode')
     registrations_to_update = []
 
     for registration in registrations:
