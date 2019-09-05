@@ -23,11 +23,14 @@ def update_analytics(node, file, version_idx, action='download'):
     :param int version_idx: Zero-based version index
     :param str action: is this logged as download or a view
     """
-    # Pass in contributors to check that contributors' downloads
+    # Pass in contributors and group members to check that their downloads
     # do not count towards total download count
     contributors = []
-    if node.contributors:
+    if getattr(node, 'contributors_and_group_members', None):
+        contributors = node.contributors_and_group_members
+    elif getattr(node, 'contributors', None):
         contributors = node.contributors
+
     node_info = {
         'contributors': contributors
     }
