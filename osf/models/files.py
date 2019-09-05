@@ -420,17 +420,18 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         :return:
         """
         if not self.is_root
-            self.deleted_by = user
+            self.deleted_by = user     
+            self.deleted = deleted_on or timezone.now()
+            deleted = self.deleted
             #This will need to be removed
-            self.deleted_on = deleted_on = deleted_on or timezone.now()
-            self.deleted = deleted_on = deleted_on or timezone.now()
+            self.deleted_on = deleted
 
         if not self.is_file:
             if not self.is_root:
                 self.recast(TrashedFolder._typedmodels_type)
 
             for child in BaseFileNode.objects.filter(parent=self.id).exclude(type__in=TrashedFileNode._typedmodels_subtypes):
-                child.delete(user=user, save=save, deleted_on=deleted_on)
+                child.delete(user=user, save=save, deleted_on=deleted)
         else:
             self.recast(TrashedFile._typedmodels_type)
 
@@ -637,7 +638,6 @@ class UnableToDelete(Exception):
 
 class TrashedFileNode(BaseFileNode):
     is_deleted = True
-    #deleted = timezone.now()
     _provider = None
 
     def delete(self, user=None, parent=None, save=True, deleted_on=None):

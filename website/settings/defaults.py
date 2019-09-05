@@ -407,6 +407,7 @@ class CeleryConfig:
         'scripts.remove_after_use.end_prereg_challenge',
         'osf.management.commands.check_crossref_dois',
         'osf.management.commands.migrate_pagecounter_data',
+        'osf.management.commands.migrate_deleted_date',
     }
 
     med_pri_modules = {

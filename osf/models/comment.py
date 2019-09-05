@@ -217,9 +217,10 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
             'comment': self._id,
         }
         self.is_deleted = True
-        self.deleted = timezone.now()
+        current_time = timezone.now()
+        self.deleted = current_time
         log_dict.update(self.root_target.referent.get_extra_log_params(self))
-        self.modified = timezone.now()
+        self.modified = current_time
         if save:
             self.save()
             self.node.add_log(
