@@ -817,20 +817,6 @@ def request_export(auth):
 @must_be_logged_in
 def request_deactivation(auth):
     user = auth.user
-    if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-        raise HTTPError(http.BAD_REQUEST,
-                        data={
-                            'message_long': 'Too many requests. Please wait a while before sending another account deactivation request.',
-                            'error_type': 'throttle_error'
-                        })
-
-    mails.send_mail(
-        to_addr=settings.OSF_SUPPORT_EMAIL,
-        mail=mails.REQUEST_DEACTIVATION,
-        user=auth.user,
-        can_change_preferences=False,
-    )
-    user.email_last_sent = timezone.now()
     user.requested_deactivation = True
     user.save()
     return {'message': 'Sent account deactivation request'}
@@ -839,5 +825,6 @@ def request_deactivation(auth):
 def cancel_request_deactivation(auth):
     user = auth.user
     user.requested_deactivation = False
+    user.contacted_deactivation = False  # In case we've already contacted them once.
     user.save()
     return {'message': 'You have canceled your deactivation request'}
