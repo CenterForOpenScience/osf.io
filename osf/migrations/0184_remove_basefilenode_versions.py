@@ -8,7 +8,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0182_populate_file_versions_through'),
+        ('osf', '0183_populate_file_versions_through'),
     ]
 
     operations = [
