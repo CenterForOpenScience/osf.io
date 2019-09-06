@@ -27,8 +27,6 @@ def populate_new_models(state, schema):
 
 
 def parse_model_datetime(month, year):
-    month = format(month, '02')
-    year = format(year, '02')
     try:
         parsed = datetime.strptime('{} {}'.format(month, year), '%m %Y')
     except ValueError:
