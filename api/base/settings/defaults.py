@@ -165,6 +165,9 @@ REST_FRAMEWORK = {
         '2.12',
         '2.13',
         '2.14',
+        '2.15',
+        '2.16',
+        '2.17',
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
@@ -261,6 +264,7 @@ elif osf_settings.DEV_MODE or osf_settings.DEBUG_MODE:
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/vendor')
 
 API_BASE = 'v2/'
+API_PRIVATE_BASE = '_/'
 STATIC_URL = '/static/'
 
 NODE_CATEGORY_MAP = osf_settings.NODE_CATEGORY_MAP
@@ -305,3 +309,20 @@ ELASTICSEARCH_DSL = {
 }
 # Store yearly indices for time-series metrics
 ELASTICSEARCH_METRICS_DATE_FORMAT = '%Y'
+
+WAFFLE_CACHE_NAME = 'waffle_cache'
+STORAGE_USAGE_CACHE_NAME = 'storage_usage'
+
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    },
+    STORAGE_USAGE_CACHE_NAME: {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'osf_cache_table',
+    },
+    WAFFLE_CACHE_NAME: {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    },
+}

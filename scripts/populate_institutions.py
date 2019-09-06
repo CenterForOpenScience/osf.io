@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Populate development database with Institution fixtures."""
 
+import argparse
 import logging
 import sys
 import urllib
@@ -18,9 +19,18 @@ from website.search.search import update_institution
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-ENVS = ['prod', 'stage', 'stage2', 'test']
+ENVS = ['prod', 'stage', 'stage2', 'stage3', 'test', ]
+
+# TODO: Store only the Entity IDs in OSF DB and move the URL building process to CAS
 SHIBBOLETH_SP_LOGIN = '{}/Shibboleth.sso/Login?entityID={{}}'.format(settings.CAS_SERVER_URL)
 SHIBBOLETH_SP_LOGOUT = '{}/Shibboleth.sso/Logout?return={{}}'.format(settings.CAS_SERVER_URL)
+
+# Using optional args instead of positional ones to explicitly set them
+parser = argparse.ArgumentParser()
+parser.add_argument('-e', '--env', help='select the server: prod, test, stage, stage2 or stage3')
+group = parser.add_mutually_exclusive_group()
+group.add_argument('-i', '--ids', nargs='+', help='select the institution(s) to add or update')
+group.add_argument('-a', '--all', action='store_true', help='add or update all institutions')
 
 
 def encode_uri_component(val):
@@ -44,11 +54,45 @@ def update_or_create(inst_data):
         return inst, True
 
 
-def main(env):
-    INSTITUTIONS = []
+def main(default_args=False):
 
-    if env == 'prod':
-        INSTITUTIONS = [
+    if default_args:
+        args = parser.parse_args(['--env', 'test', '--all'])
+    else:
+        args = parser.parse_args()
+
+    server_env = args.env
+    update_ids = args.ids
+    update_all = args.all
+
+    if not server_env or server_env not in ENVS:
+        logger.error('A valid environment must be specified: {}'.format(ENVS))
+        sys.exit(1)
+    institutions = INSTITUTIONS[server_env]
+
+    if not update_all and not update_ids:
+        logger.error('Nothing to update or create. Please either specify a list of institutions '
+                     'using --ids or run for all with --all')
+        sys.exit(1)
+    elif update_all:
+        institutions_to_update = institutions
+    else:
+        institutions_to_update = [inst for inst in institutions if inst['_id'] in update_ids]
+        diff_list = list(set(update_ids) - set([inst['_id'] for inst in institutions_to_update]))
+        if diff_list:
+            logger.error('One or more institution ID(s) provided via -i or --ids do not match any '
+                         'existing records: {}.'.format(diff_list))
+            sys.exit(1)
+
+    with transaction.atomic():
+        for inst_data in institutions_to_update:
+            update_or_create(inst_data)
+        for extra_inst in Institution.objects.exclude(_id__in=[x['_id'] for x in institutions]):
+            logger.warn('Extra Institution : {} - {}'.format(extra_inst._id, extra_inst.name))
+
+
+INSTITUTIONS = {
+    'prod': [
             {
                 '_id': 'a2jlab',
                 'name': 'Access to Justice Lab',
@@ -150,7 +194,7 @@ def main(env):
             {
                 '_id': 'cfa',
                 'name': 'Center for Astrophysics | Harvard & Smithsonian',
-                'description': 'Open Source Project Management Tools for the CfA Community: About <a href="https://cos.io/our-products/osf/">OSF</a> | <a href="https://www.cfa.harvard.edu/researchtopics">Research at the CfA</a> | <a href="https://library.cfa.harvard.edu/">CfA Library</a> | <a href="http://help.osf.io/">Get Help</a>',
+                'description': 'Open Source Project Management Tools for the CfA Community: About <a href="https://cos.io/our-products/osf/">OSF</a> | <a href="https://www.cfa.harvard.edu/researchtopics">Research at the CfA</a> | <a href="https://library.cfa.harvard.edu/">CfA Library</a> | <a href="https://openscience.zendesk.com/hc/en-us">Get Help</a>',
                 'banner_name': 'cfa-banner.png',
                 'logo_name': 'cfa-shield.png',
                 'login_url': None,
@@ -236,6 +280,18 @@ def main(env):
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'cwru',
+                'name': 'Case Western Reserve University',
+                'description': 'This site is provided as a partnership of the <a href="http://library.case.edu/ksl/">Kelvin Smith Library</a>, <a href="https://case.edu/utech/">University Technology</a>, and the <a href="https://case.edu/research/">Office of Research and Technology Management</a> at <a href="https://case.edu/">Case Western Reserve University</a>. Projects must abide by the <a href="https://case.edu/utech/departments/information-security/policies">University Information Security Policies</a> and <a href="https://case.edu/compliance/about/privacy-management/privacy-related-policies-cwru">Data Privacy Policies</a>.',
+                'banner_name': 'cwru-banner.png',
+                'logo_name': 'cwru-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:case.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'duke',
                 'name': 'Duke University',
                 'description': 'A research data service provided by <a href="https://library.duke.edu/data/data-management">Duke Libraries</a>.',
@@ -277,7 +333,7 @@ def main(env):
                 'description': 'In partnership with the <a href="https://www.ferris.edu/research/">Office of Research and Sponsored Programs</a>, the <a href="https://www.ferris.edu/HTMLS/administration/academicaffairs/index.htm">Provost and Vice President for Academic Affairs</a>, and the <a href="https://www.ferris.edu/library/">FLITE Library</a>. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), intellectual property (IP) or any other controlled unclassified information (CUI). All projects must abide by the <a href="https://www.ferris.edu/HTMLS/administration/academicaffairs/Forms_Policies/Documents/Policy_Letters/AA-Intellectual-Property-Rights.pdf">FSU Intellectual Property Rights and Electronic Distance Learning Materials</a> letter of agreement.',
                 'banner_name': 'ferris-banner.png',
                 'logo_name': 'ferris-shield.png',
-                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.ferris.edu/samlsso')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('login.ferris.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
@@ -289,7 +345,7 @@ def main(env):
                 'description': 'This service is supported by the <a href="https://www.lib.fsu.edu/">FSU Libraries</a> for our research community. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), or any other controlled unclassified information (CUI). FSU\'s <a href="http://regulations.fsu.edu/sites/g/files/upcbnu486/files/policies/research/FSU%20Policy%207A-26.pdf">Research Data Management Policy</a> applies. For assistance please contact the FSU Libraries <a href="mailto:lib-datamgmt@fsu.edu">Research Data Management Program</a>.',
                 'banner_name': 'fsu-banner.png',
                 'logo_name': 'fsu-shield.png',
-                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib.its.fsu.edu/idp/shibboleth')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://idp.fsu.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.fsu.edu'],
                 'email_domains': [],
@@ -318,6 +374,30 @@ def main(env):
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'ibhri',
+                'name': 'Integrative Behavioral Health Research Institute',
+                'description': '<a href="https://www.ibhri.org/">The Integrative Behavioral Health Research Institute</a>',
+                'banner_name': 'ibhri-banner.png',
+                'logo_name': 'ibhri-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': ['osf.ibhri.org'],
+                'email_domains': ['ibhri.org'],
+                'delegation_protocol': '',
+            },
+            {
+                '_id': 'icarehb',
+                'name': 'ICArEHB',
+                'description': '<a href="https://www.icarehb.com">Interdisciplinary Center for Archaeology and Evolution of Human Behaviour</a>',
+                'banner_name': 'icarehb-banner.png',
+                'logo_name': 'icarehb-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': ['icarehb.com'],
+                'delegation_protocol': '',
             },
             {
                 '_id': 'icer',
@@ -491,6 +571,18 @@ def main(env):
                 'delegation_protocol': 'cas-pac4j',
             },
             {
+                '_id': 'ou',
+                'name': 'The University of Oklahoma',
+                'description': '<a href="https://www.ou.edu">The University of Oklahoma</a> | <a href="https://libraries.ou.edu">University Libraries</a>',
+                'banner_name': 'ou-banner.png',
+                'logo_name': 'ou-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib.ou.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.ou.edu'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'sc',
                 'name': 'University of South Carolina Libraries',
                 'description': 'Brought to you by <a href="http://library.sc.edu/">University Libraries</a> at the University of South Carolina.',
@@ -507,7 +599,7 @@ def main(env):
             {
                 '_id': 'temple',
                 'name': 'Temple University',
-                'description': 'Projects must abide by the <a href="https://computerservices.temple.edu/classification-and-handling-protected-data">University Classification and Handling of Protected Data</a> and <a href="https://computerservices.temple.edu/guidelines-storing-and-using-personally-identifiable-information-non-production-environments">Guidelines for Storing and Using Personally Identifiable Information in Non-Production Environments</a>.',
+                'description': 'Projects must abide by Temple University\'s <a href="https://www.temple.edu/privacy-statement">Privacy Statement</a>, <a href="https://its.temple.edu/technology-usage-policy">Technology Usage Policy</a>, <a href="https://its.temple.edu/classification-and-handling-protected-data">University Classification and Handling of Protected Data</a>, and <a href="https://its.temple.edu/guidelines-storing-and-using-personally-identifiable-information-non-production-environments">Guidelines for Storing and Using Personally Identifiable Information in Non-Production Environments</a>.',
                 'banner_name': 'temple-banner.png',
                 'logo_name': 'temple-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://fim.temple.edu/idp/shibboleth')),
@@ -637,6 +729,30 @@ def main(env):
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'unc',
+                'name': 'University of North Carolina at Chapel Hill',
+                'description': 'This service is supported by <a href="https://odum.unc.edu/">The Odum Institute for Research in Social Science</a> and <a href="https://library.unc.edu">University Libraries at the University of North Carolina at Chapel Hill</a>. Please do not store or transfer personally identifiable information, personal health information, or any other sensitive or proprietary data in the OSF. Projects should follow applicable <a href="https://unc.policystat.com/">UNC policies</a>. Contact the <a href="mailto:odumarchive@unc.edu">Odum Institute Data Archive</a> with any questions.',
+                'banner_name': 'unc-banner.png',
+                'logo_name': 'unc-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:unc.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'universityofkent',
+                'name': 'University of Kent',
+                'description': 'Collaboration Platform for University of Kent Research | <a href="https://www.kent.ac.uk/governance/policies-and-procedures/documents/Information-security-policy-v1-1.pdf">Information Security policy</a> | <a href="mailto:researchsupport@kent.ac.uk">Help and Support</a>',
+                'banner_name': 'universityofkent-banner.png',
+                'logo_name': 'universityofkent-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://sso.id.kent.ac.uk/idp')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'usc',
                 'name': 'University of Southern California',
                 'description': 'Projects must abide by <a href="http://policy.usc.edu/info-security/">USC\'s Information Security Policy</a>. Data stored for human subject research repositories must abide by <a href="http://policy.usc.edu/biorepositories/">USC\'s Biorepository Policy</a>. The OSF may not be used for storage of Personal Health Information that is subject to <a href="http://policy.usc.edu/hipaa/">HIPPA regulations</a>.',
@@ -647,6 +763,18 @@ def main(env):
                 'domains': ['osf.usc.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'ush',
+                'name': 'Universal Sustainability Hub',
+                'description': '<a href="https://uvers.ac.id/">Universal Sustainability Hub for Universal Family</a>',
+                'banner_name': 'ush-banner.png',
+                'logo_name': 'ush-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': ['uvers.ac.id'],
+                'delegation_protocol': '',
             },
             {
                 '_id': 'utdallas',
@@ -732,9 +860,8 @@ def main(env):
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
-        ]
-    if env == 'stage':
-        INSTITUTIONS = [
+        ],
+    'stage': [
             {
                 '_id': 'cos',
                 'name': 'Center For Open Science [Stage]',
@@ -782,9 +909,8 @@ def main(env):
                 'email_domains': ['yahoo.com'],
                 'delegation_protocol': '',
             },
-        ]
-    if env == 'stage2':
-        INSTITUTIONS = [
+        ],
+    'stage2': [
             {
                 '_id': 'cos',
                 'name': 'Center For Open Science [Stage2]',
@@ -797,9 +923,22 @@ def main(env):
                 'email_domains': ['cos.io'],
                 'delegation_protocol': '',
             },
-        ]
-    elif env == 'test':
-        INSTITUTIONS = [
+        ],
+    'stage3': [
+            {
+                '_id': 'cos',
+                'name': 'Center For Open Science [Stage3]',
+                'description': 'Center for Open Science [Stage3]',
+                'banner_name': 'cos-banner.png',
+                'logo_name': 'cos-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': ['staging3-osf.cos.io'],
+                'email_domains': ['cos.io'],
+                'delegation_protocol': '',
+            },
+        ],
+    'test': [
             {
                 '_id': 'a2jlab',
                 'name': 'Access to Justice Lab [Test]',
@@ -901,7 +1040,7 @@ def main(env):
             {
                 '_id': 'cfa',
                 'name': 'Center for Astrophysics | Harvard & Smithsonian [Test]',
-                'description': 'Open Source Project Management Tools for the CfA Community: About <a href="https://cos.io/our-products/osf/">OSF</a> | <a href="https://www.cfa.harvard.edu/researchtopics">Research at the CfA</a> | <a href="https://library.cfa.harvard.edu/">CfA Library</a> | <a href="http://help.osf.io/">Get Help</a>',
+                'description': 'Open Source Project Management Tools for the CfA Community: About <a href="https://cos.io/our-products/osf/">OSF</a> | <a href="https://www.cfa.harvard.edu/researchtopics">Research at the CfA</a> | <a href="https://library.cfa.harvard.edu/">CfA Library</a> | <a href="https://openscience.zendesk.com/hc/en-us">Get Help</a>',
                 'banner_name': 'cfa-banner.png',
                 'logo_name': 'cfa-shield.png',
                 'login_url': None,
@@ -987,6 +1126,18 @@ def main(env):
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'cwru',
+                'name': 'Case Western Reserve University [Test]',
+                'description': 'This site is provided as a partnership of the <a href="http://library.case.edu/ksl/">Kelvin Smith Library</a>, <a href="https://case.edu/utech/">University Technology</a>, and the <a href="https://case.edu/research/">Office of Research and Technology Management</a> at <a href="https://case.edu/">Case Western Reserve University</a>. Projects must abide by the <a href="https://case.edu/utech/departments/information-security/policies">University Information Security Policies</a> and <a href="https://case.edu/compliance/about/privacy-management/privacy-related-policies-cwru">Data Privacy Policies</a>.',
+                'banner_name': 'cwru-banner.png',
+                'logo_name': 'cwru-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:case.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-cwru.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'duke',
                 'name': 'Duke University [Test]',
                 'description': 'A research data service provided by <a href="https://library.duke.edu/data/data-management">Duke Libraries</a>.',
@@ -1028,7 +1179,7 @@ def main(env):
                 'description': 'In partnership with the <a href="https://www.ferris.edu/research/">Office of Research and Sponsored Programs</a>, the <a href="https://www.ferris.edu/HTMLS/administration/academicaffairs/index.htm">Provost and Vice President for Academic Affairs</a>, and the <a href="https://www.ferris.edu/library/">FLITE Library</a>. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), intellectual property (IP) or any other controlled unclassified information (CUI). All projects must abide by the <a href="https://www.ferris.edu/HTMLS/administration/academicaffairs/Forms_Policies/Documents/Policy_Letters/AA-Intellectual-Property-Rights.pdf">FSU Intellectual Property Rights and Electronic Distance Learning Materials</a> letter of agreement.',
                 'banner_name': 'ferris-banner.png',
                 'logo_name': 'ferris-shield.png',
-                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('fsueeit.ferris.edu')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('login.ferris.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
@@ -1040,7 +1191,7 @@ def main(env):
                 'description': 'This service is supported by the <a href="https://www.lib.fsu.edu/">FSU Libraries</a> for our research community. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), or any other controlled unclassified information (CUI). FSU\'s <a href="http://regulations.fsu.edu/sites/g/files/upcbnu486/files/policies/research/FSU%20Policy%207A-26.pdf">Research Data Management Policy</a> applies. For assistance please contact the FSU Libraries <a href="mailto:lib-datamgmt@fsu.edu">Research Data Management Program</a>.',
                 'banner_name': 'fsu-banner.png',
                 'logo_name': 'fsu-shield.png',
-                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib.its.fsu.edu/idp/shibboleth')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://idp.fsu.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-fsu.cos.io'],
                 'email_domains': [],
@@ -1069,6 +1220,30 @@ def main(env):
                 'domains': ['test-osf-gwu.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'ibhri',
+                'name': 'Integrative Behavioral Health Research Institute [Test]',
+                'description': '<a href="https://www.ibhri.org/">The Integrative Behavioral Health Research Institute</a>',
+                'banner_name': 'ibhri-banner.png',
+                'logo_name': 'ibhri-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': ['test-osf-ibhri.cos.io'],
+                'email_domains': ['ibhri.org'],
+                'delegation_protocol': '',
+            },
+            {
+                '_id': 'icarehb',
+                'name': 'ICArEHB [Test]',
+                'description': '<a href="https://www.icarehb.com">Interdisciplinary Center for Archaeology and Evolution of Human Behaviour</a>',
+                'banner_name': 'icarehb-banner.png',
+                'logo_name': 'icarehb-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': ['test-osf-icarehb.cos.io'],
+                'email_domains': ['icarehb.com'],
+                'delegation_protocol': '',
             },
             {
                 '_id': 'icer',
@@ -1242,6 +1417,18 @@ def main(env):
                 'delegation_protocol': 'cas-pac4j',
             },
             {
+                '_id': 'ou',
+                'name': 'The University of Oklahoma [Test]',
+                'description': '<a href="https://www.ou.edu">The University of Oklahoma</a> | <a href="https://libraries.ou.edu">University Libraries</a>',
+                'banner_name': 'ou-banner.png',
+                'logo_name': 'ou-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib.ou.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-ou.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'sc',
                 'name': 'University of South Carolina Libraries [Test]',
                 'description': 'Brought to you by <a href="http://library.sc.edu/">University Libraries</a> at the University of South Carolina.',
@@ -1300,6 +1487,18 @@ def main(env):
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:arizona.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-ua.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'ubc',
+                'name': 'University of British Columbia [Test]',
+                'description': 'Users are reminded to ensure their use of this service is in compliance with all <a href="https://universitycounsel.ubc.ca/policies/">UBC Policies and Standards</a>. Please refer specifically to <a href="https://universitycounsel.ubc.ca/files/2015/08/policy85.pdf">Policy 85</a>, <a href="https://universitycounsel.ubc.ca/files/2013/06/policy104.pdf">Policy 104</a>, and the <a href="https://cio.ubc.ca/node/1073">Information Security Standards</a>. Find out more about <a href="http://openscience.ubc.ca">OSF</a>. Get help with <a href="https://researchdata.library.ubc.ca/">Research Data Management</a>.',
+                'banner_name': 'ubc-banner.png',
+                'logo_name': 'ubc-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://authentication.stg.id.ubc.ca')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-ubc.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
@@ -1388,6 +1587,30 @@ def main(env):
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'unc',
+                'name': 'University of North Carolina at Chapel Hill [Test]',
+                'description': 'This service is supported by <a href="https://odum.unc.edu/">The Odum Institute for Research in Social Science</a> and <a href="https://library.unc.edu">University Libraries at the University of North Carolina at Chapel Hill</a>. Please do not store or transfer personally identifiable information, personal health information, or any other sensitive or proprietary data in the OSF. Projects should follow applicable <a href="https://unc.policystat.com/">UNC policies</a>. Contact the <a href="mailto:odumarchive@unc.edu">Odum Institute Data Archive</a> with any questions.',
+                'banner_name': 'unc-banner.png',
+                'logo_name': 'unc-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:unc.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-unc.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'universityofkent',
+                'name': 'University of Kent [Test]',
+                'description': 'Collaboration Platform for University of Kent Research | <a href="https://www.kent.ac.uk/governance/policies-and-procedures/documents/Information-security-policy-v1-1.pdf">Information Security policy</a> | <a href="mailto:researchsupport@kent.ac.uk">Help and Support</a>',
+                'banner_name': 'universityofkent-banner.png',
+                'logo_name': 'universityofkent-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://sso.id.kent.ac.uk/idp')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-universityofkent.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'usc',
                 'name': 'University of Southern California [Test]',
                 'description': 'Projects must abide by <a href="http://policy.usc.edu/info-security/">USC\'s Information Security Policy</a>. Data stored for human subject research repositories must abide by <a href="http://policy.usc.edu/biorepositories/">USC\'s Biorepository Policy</a>. The OSF may not be used for storage of Personal Health Information that is subject to <a href="http://policy.usc.edu/hipaa/">HIPPA regulations</a>.',
@@ -1398,6 +1621,18 @@ def main(env):
                 'domains': ['test-osf-usc.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'ush',
+                'name': 'Universal Sustainability Hub [Test]',
+                'description': '<a href="https://uvers.ac.id/">Universal Sustainability Hub for Universal Family</a>',
+                'banner_name': 'ush-banner.png',
+                'logo_name': 'ush-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': ['test-osf-ush.cos.io'],
+                'email_domains': ['uvers.ac.id'],
+                'delegation_protocol': '',
             },
             {
                 '_id': 'utdallas',
@@ -1483,19 +1718,11 @@ def main(env):
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
-        ]
-
-    init_app(routes=False)
-    with transaction.atomic():
-        for inst_data in INSTITUTIONS:
-            update_or_create(inst_data)
-        for extra_inst in Institution.objects.exclude(_id__in=[x['_id'] for x in INSTITUTIONS]):
-            logger.warn('Extra Institution : {} - {}'.format(extra_inst._id, extra_inst.name))
+        ],
+}
 
 
 if __name__ == '__main__':
-    env = str(sys.argv[1]).lower() if len(sys.argv) == 2 else None
-    if env not in ENVS:
-        print('An environment must be specified : {}', ENVS)
-        sys.exit(1)
-    main(env)
+
+    init_app(routes=False)
+    main(default_args=False)

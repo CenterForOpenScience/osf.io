@@ -4,7 +4,7 @@ import httplib as http
 
 from flask import request
 from osf.exceptions import ValidationValueError
-
+from osf.utils.permissions import WRITE
 from framework.exceptions import HTTPError
 
 from website.project.decorators import (
@@ -24,7 +24,7 @@ def forward_config_get(node, node_addon, **kwargs):
     return res
 
 
-@must_have_permission('write')
+@must_have_permission(WRITE)
 @must_not_be_registration
 @must_have_addon('forward', 'node')
 def forward_config_put(auth, node_addon, **kwargs):
@@ -44,7 +44,7 @@ def forward_config_put(auth, node_addon, **kwargs):
     # Save settings and get changed fields; crash if validation fails
     try:
         dirty_fields = node_addon.get_dirty_fields()
-        node_addon.save()
+        node_addon.save(request=request)
     except ValidationValueError:
         raise HTTPError(http.BAD_REQUEST)
 

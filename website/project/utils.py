@@ -102,3 +102,12 @@ def activity():
         'popular_public_projects': popular_public_projects,
         'popular_public_registrations': popular_public_registrations
     }
+
+
+# Credit to https://gist.github.com/cizixs/be41bbede49a772791c08491801c396f
+def sizeof_fmt(num, suffix='B'):
+    for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:
+        if abs(num) < 1000.0:
+            return '%3.1f%s%s' % (num, unit, suffix)
+        num /= 1000.0
+    return '%.1f%s%s' % (num, 'Y', suffix)

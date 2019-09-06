@@ -6,6 +6,8 @@ from urlparse import urlparse
 
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.base.settings.defaults import API_BASE
+from api.taxonomies.serializers import subjects_as_relationships_version
+from api_tests.subjects.mixins import UpdateSubjectsMixin
 from framework.auth.core import Auth
 from osf.models import NodeLog
 from osf.models.licenses import NodeLicense
@@ -23,8 +25,8 @@ from osf_tests.factories import (
     PreprintFactory,
     IdentifierFactory,
     InstitutionFactory,
-    SubjectFactory,
     ForkFactory,
+    OSFGroupFactory,
     WithdrawnRegistrationFactory,
 )
 from rest_framework import exceptions
@@ -77,15 +79,15 @@ class TestNodeDetail:
 
     @pytest.fixture()
     def permissions_read(self):
-        return ['read']
+        return [permissions.READ]
 
     @pytest.fixture()
     def permissions_write(self):
-        return ['read', 'write']
+        return [permissions.WRITE, permissions.READ]
 
     @pytest.fixture()
     def permissions_admin(self):
-        return ['read', 'admin', 'write']
+        return [permissions.READ, permissions.ADMIN, permissions.WRITE]
 
     def test_return_project_details(
             self, app, user, user_two, project_public,
@@ -100,9 +102,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is False
-        assert_items_equal(
-            res.json['data']['attributes']['current_user_permissions'],
-            permissions_read)
+        assert res.json['data']['attributes']['current_user_permissions'] == [permissions.READ]
 
     #   test_return_public_project_details_contributor_logged_in
         res = app.get(url_public, auth=user.auth)
@@ -112,9 +112,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is True
-        assert_items_equal(
-            res.json['data']['attributes']['current_user_permissions'],
-            permissions_admin)
+        assert res.json['data']['attributes']['current_user_permissions'] == [permissions.ADMIN, permissions.WRITE, permissions.READ]
 
     #   test_return_public_project_details_non_contributor_logged_in
         res = app.get(url_public, auth=user_two.auth)
@@ -124,9 +122,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is False
-        assert_items_equal(
-            res.json['data']['attributes']['current_user_permissions'],
-            permissions_read)
+        assert res.json['data']['attributes']['current_user_permissions'] == [permissions.READ]
 
     #   test_return_private_project_details_logged_in_admin_contributor
         res = app.get(url_private, auth=user.auth)
@@ -136,9 +132,8 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is True
-        assert_items_equal(
-            res.json['data']['attributes']['current_user_permissions'],
-            permissions_admin)
+        assert res.json['data']['attributes']['current_user_permissions'] == [permissions.ADMIN, permissions.WRITE, permissions.READ]
+        assert res.json['data']['relationships']['region']['data']['id'] == project_private.osfstorage_region._id
 
     #   test_return_private_project_details_logged_out
         res = app.get(url_private, expect_errors=True)
@@ -149,6 +144,13 @@ class TestNodeDetail:
         res = app.get(url_private, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
+
+    #   test_return_project_where_you_have_osf_group_membership
+        osf_group = OSFGroupFactory(creator=user_two)
+        project_private.add_osf_group(osf_group, permissions.WRITE)
+        res = app.get(url_private, auth=user_two.auth)
+        assert res.status_code == 200
+        assert project_private.has_permission(user_two, permissions.WRITE) is True
 
     def test_return_private_project_details_logged_in_write_contributor(
             self, app, user, user_two, project_private, url_private, permissions_write):
@@ -183,7 +185,7 @@ class TestNodeDetail:
         url = res.json['data']['relationships']['parent']['links']['related']['href']
         assert urlparse(url).path == url_public
 
-    def test_node_has(self, app, url_public):
+    def test_node_has(self, app, url_public, project_public):
 
         #   test_node_has_children_link
         res = app.get(url_public)
@@ -192,28 +194,42 @@ class TestNodeDetail:
         assert urlparse(url).path == expected_url
 
     #   test_node_has_contributors_link
-        res = app.get(url_public)
         url = res.json['data']['relationships']['contributors']['links']['related']['href']
         expected_url = '{}contributors/'.format(url_public)
         assert urlparse(url).path == expected_url
 
     #   test_node_has_node_links_link
-        res = app.get(url_public)
         url = res.json['data']['relationships']['node_links']['links']['related']['href']
         expected_url = '{}node_links/'.format(url_public)
         assert urlparse(url).path == expected_url
 
     #   test_node_has_registrations_link
-        res = app.get(url_public)
         url = res.json['data']['relationships']['registrations']['links']['related']['href']
         expected_url = '{}registrations/'.format(url_public)
         assert urlparse(url).path == expected_url
 
     #   test_node_has_files_link
-        res = app.get(url_public)
         url = res.json['data']['relationships']['files']['links']['related']['href']
         expected_url = '{}files/'.format(url_public)
         assert urlparse(url).path == expected_url
+
+    #   test_node_has_affiliated_institutions_link_and_it_doesn't_serialize_to_none
+        assert project_public.affiliated_institutions.count() == 0
+        related_url = res.json['data']['relationships']['affiliated_institutions']['links']['related']['href']
+        expected_url = '{}institutions/'.format(url_public)
+        assert urlparse(related_url).path == expected_url
+        self_url = res.json['data']['relationships']['affiliated_institutions']['links']['self']['href']
+        expected_url = '{}relationships/institutions/'.format(url_public)
+        assert urlparse(self_url).path == expected_url
+
+    #   test_node_has_subjects_links_for_later_versions
+        res = app.get(url_public + '?version={}'.format(subjects_as_relationships_version))
+        related_url = res.json['data']['relationships']['subjects']['links']['related']['href']
+        expected_url = '{}subjects/'.format(url_public)
+        assert urlparse(related_url).path == expected_url
+        self_url = res.json['data']['relationships']['subjects']['links']['self']['href']
+        expected_url = '{}relationships/subjects/'.format(url_public)
+        assert urlparse(self_url).path == expected_url
 
     def test_node_has_comments_link(
             self, app, user, project_public, url_public):
@@ -366,6 +382,64 @@ class TestNodeDetail:
         res = app.get(url)
         assert res.json['meta']['templated_by_count'] == 1
 
+    def test_node_show_correct_children_count(self, app, user, user_two, project_public, url_public):
+        node_children_url = url_public + 'children/'
+        url = url_public + '?related_counts=true'
+        child = NodeFactory(parent=project_public, creator=user)
+        res = app.get(url, auth=user.auth)
+        # Child admin can view child
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+        res = app.get(node_children_url, auth=user.auth)
+        assert len(res.json['data']) == 1
+
+        # Implicit admin on parent can view child count
+        res = app.get(url, auth=user_two.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
+        project_public.add_contributor(user_two, permissions.ADMIN)
+        project_public.save()
+        res = app.get(url, auth=user_two.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+        res = app.get(node_children_url, auth=user_two.auth)
+        assert len(res.json['data']) == 1
+
+        # Explicit Member of OSFGroup can view child count
+        user_three = AuthUserFactory()
+        group = OSFGroupFactory(creator=user_three)
+        res = app.get(url, auth=user_three.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
+        child.add_osf_group(group, permissions.READ)
+        res = app.get(url, auth=user_three.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+        res = app.get(node_children_url, auth=user_three.auth)
+        assert len(res.json['data']) == 1
+
+        # Implicit admin group member can view child count
+        child.remove_osf_group(group)
+        res = app.get(url, auth=user_three.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
+
+        project_public.add_osf_group(group, permissions.ADMIN)
+        res = app.get(url, auth=user_three.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+        res = app.get(node_children_url, auth=user_three.auth)
+        assert len(res.json['data']) == 1
+
+        # Grandchildren not shown. Children show one level.
+        grandparent = AuthUserFactory()
+        NodeFactory(parent=child, creator=user)
+        project_public.add_contributor(grandparent, permissions.ADMIN)
+        project_public.save()
+        res = app.get(node_children_url, auth=grandparent.auth)
+        assert len(res.json['data']) == 1
+        res = app.get(url, auth=grandparent.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+
+        NodeFactory(parent=project_public, creator=user)
+        res = app.get(node_children_url, auth=grandparent.auth)
+        assert len(res.json['data']) == 2
+        res = app.get(url, auth=grandparent.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 2
+
     def test_node_shows_related_count_for_linked_by_relationships(self, app, user, project_public, url_public, project_private):
         url = url_public + '?related_counts=true'
         res = app.get(url)
@@ -414,7 +488,7 @@ class TestNodeDetail:
     def test_node_shows_correct_forks_count_including_private_forks(self, app, user, project_private, url_private, user_two):
         project_private.add_contributor(
             user_two,
-            permissions=(permissions.READ, permissions.WRITE, permissions.ADMIN),
+            permissions=permissions.ADMIN,
             auth=Auth(user)
         )
         url = url_private + '?related_counts=true'
@@ -449,20 +523,23 @@ class TestNodeDetail:
         res = app.get(url, auth=user_two.auth)
         assert not project_public.has_permission(user_two, permissions.READ)
         assert permissions.READ not in res.json['data']['attributes']['current_user_permissions']
+        assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is False
 
         # ensure read is not included for an anonymous user
         res = app.get(url)
         assert permissions.READ not in res.json['data']['attributes']['current_user_permissions']
+        assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is False
 
         # ensure both read and write included for a write contributor
         new_user = AuthUserFactory()
         project_public.add_contributor(
             new_user,
-            permissions=(permissions.READ, permissions.WRITE),
+            permissions=permissions.WRITE,
             auth=Auth(project_public.creator)
         )
         res = app.get(url, auth=new_user.auth)
-        assert res.json['data']['attributes']['current_user_permissions'] == [permissions.READ, permissions.WRITE]
+        assert res.json['data']['attributes']['current_user_permissions'] == [permissions.WRITE, permissions.READ]
+        assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is True
 
         # make sure 'read' is there for implicit read contributors
         comp = NodeFactory(parent=project_public, is_public=True)
@@ -470,15 +547,76 @@ class TestNodeDetail:
         res = app.get(comp_url, auth=user.auth)
         assert project_public.has_permission(user, permissions.ADMIN)
         assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
+        assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is False
 
         # ensure 'read' is still included with older versions
         res = app.get(url_public, auth=user_two.auth)
         assert not project_public.has_permission(user_two, permissions.READ)
         assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
+        assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is False
 
         # check read permission is included with older versions for anon user
         res = app.get(url_public)
         assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
+        assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is False
+
+        # Read group member has "read" permissions
+        group_member = AuthUserFactory()
+        osf_group = OSFGroupFactory(creator=group_member)
+        project_public.add_osf_group(osf_group, permissions.READ)
+        res = app.get(url, auth=group_member.auth)
+        assert project_public.has_permission(group_member, permissions.READ)
+        assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
+        assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is True
+
+        # Write group member has "read" and "write" permissions
+        group_member = AuthUserFactory()
+        osf_group = OSFGroupFactory(creator=group_member)
+        project_public.add_osf_group(osf_group, permissions.WRITE)
+        res = app.get(url, auth=group_member.auth)
+        assert res.json['data']['attributes']['current_user_permissions'] == [permissions.WRITE, permissions.READ]
+        assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is True
+
+        # Admin group member has "read" and "write" and "admin" permissions
+        group_member = AuthUserFactory()
+        osf_group = OSFGroupFactory(creator=group_member)
+        project_public.add_osf_group(osf_group, permissions.ADMIN)
+        res = app.get(url, auth=group_member.auth)
+        assert res.json['data']['attributes']['current_user_permissions'] == [permissions.ADMIN, permissions.WRITE, permissions.READ]
+        assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is True
+
+        # make sure 'read' is there for implicit read group members
+        comp = NodeFactory(parent=project_public, is_public=True)
+        comp_url = '/{}nodes/{}/?version=2.11'.format(API_BASE, comp._id)
+        res = app.get(comp_url, auth=group_member.auth)
+        assert project_public.has_permission(user, permissions.ADMIN)
+        assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
+        assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is False
+
+        # ensure 'read' is still included with older versions
+        project_public.remove_osf_group(osf_group)
+        res = app.get(url_public, auth=group_member.auth)
+        assert not project_public.has_permission(group_member, permissions.READ)
+        assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
+        assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is False
+
+        # superusers current permissions are None
+        superuser = AuthUserFactory()
+        superuser.is_superuser = True
+        superuser.save()
+
+        res = app.get(url, auth=superuser.auth)
+        assert not project_public.has_permission(superuser, permissions.READ)
+        assert permissions.READ not in res.json['data']['attributes']['current_user_permissions']
+        assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is False
+        assert res.json['data']['attributes']['current_user_is_contributor'] is False
+
+        res = app.get(url_public, auth=superuser.auth)
+        assert not project_public.has_permission(superuser, permissions.READ)
+        assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
+        assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is False
+        assert res.json['data']['attributes']['current_user_is_contributor'] is False
+
 
 @pytest.mark.django_db
 class NodeCRUDTestCase:
@@ -576,15 +714,11 @@ class NodeCRUDTestCase:
 @pytest.mark.django_db
 class TestNodeUpdate(NodeCRUDTestCase):
 
-    @pytest.fixture()
-    def subject(self):
-        return SubjectFactory()
-
     def test_node_institution_update(self, app, user_two, project_private, url_private, make_node_payload,
                                      institution_one, institution_two):
         project_private.add_contributor(
             user_two,
-            permissions=(permissions.READ, permissions.WRITE, permissions.ADMIN),
+            permissions=permissions.ADMIN,
             auth=Auth(project_private.creator)
         )
         affiliated_institutions = {
@@ -637,7 +771,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         non_admin = AuthUserFactory()
         project_private.add_contributor(
             non_admin,
-            permissions=(permissions.READ, permissions.WRITE),
+            permissions=permissions.WRITE,
             auth=Auth(project_private.creator)
         )
         project_private.save()
@@ -657,9 +791,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
             admin_user = AuthUserFactory()
             project_private.add_contributor(
                 admin_user,
-                permissions=(permissions.READ,
-                             permissions.WRITE,
-                             permissions.ADMIN),
+                permissions=permissions.ADMIN,
                 auth=Auth(project_private.creator))
             project_private.save()
             res = app.patch_json_api(
@@ -832,27 +964,75 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
 
+    # test_update_private_project_group_has_read_perms
+        osf_group = OSFGroupFactory(creator=user_two)
+        project_private.add_osf_group(osf_group, permissions.READ)
+        res = app.put_json_api(url_private, {
+            'data': {
+                'id': project_private._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': title_new,
+                    'description': description_new,
+                    'category': category_new,
+                    'public': False
+                }
+            }
+        }, auth=user_two.auth, expect_errors=True)
+        assert project_private.has_permission(user_two, permissions.READ) is True
+        assert res.status_code == 403
+        assert 'detail' in res.json['errors'][0]
+
     def test_update_public_project_logged_in(
             self, app, user, title_new, description_new,
             category_new, project_public, url_public):
-        with assert_latest_log(NodeLog.UPDATED_FIELDS, project_public):
-            res = app.put_json_api(url_public, {
-                'data': {
-                    'id': project_public._id,
-                    'type': 'nodes',
-                    'attributes': {
-                        'title': title_new,
-                        'description': description_new,
-                        'category': category_new,
-                        'public': True
-                    }
+        res = app.put_json_api(url_public, {
+            'data': {
+                'id': project_public._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': title_new,
+                    'description': description_new,
+                    'category': category_new,
+                    'public': True
                 }
-            }, auth=user.auth)
-            assert res.status_code == 200
-            assert res.content_type == 'application/vnd.api+json'
-            assert res.json['data']['attributes']['title'] == title_new
-            assert res.json['data']['attributes']['description'] == description_new
-            assert res.json['data']['attributes']['category'] == category_new
+            }
+        }, auth=user.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == title_new
+        assert res.json['data']['attributes']['description'] == description_new
+        assert res.json['data']['attributes']['category'] == category_new
+        log_actions = project_public.logs.values_list('action', flat=True)
+        assert NodeLog.EDITED_TITLE in log_actions
+        assert NodeLog.EDITED_DESCRIPTION in log_actions
+        assert NodeLog.CATEGORY_UPDATED in log_actions
+
+    def test_update_public_project_osf_group_member(
+        self, app, user_two, title_new, description_new,
+            category_new, project_public, url_public):
+        osf_group = OSFGroupFactory(creator=user_two)
+        project_public.add_osf_group(osf_group, permissions.WRITE)
+        res = app.put_json_api(url_public, {
+            'data': {
+                'id': project_public._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': title_new,
+                    'description': description_new,
+                    'category': category_new,
+                }
+            }
+        }, auth=user_two.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == title_new
+        assert res.json['data']['attributes']['description'] == description_new
+        assert res.json['data']['attributes']['category'] == category_new
+        log_actions = project_public.logs.values_list('action', flat=True)
+        assert NodeLog.CATEGORY_UPDATED in log_actions
+        assert NodeLog.EDITED_TITLE in log_actions
+        assert NodeLog.EDITED_DESCRIPTION in log_actions
 
     def test_cannot_update_a_registration(self, app, user, project_public):
         registration = RegistrationFactory(
@@ -880,49 +1060,55 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_update_private_project_logged_in_contributor(
             self, app, user, title_new, description_new,
             category_new, project_private, url_private):
-        with assert_latest_log(NodeLog.UPDATED_FIELDS, project_private):
-            res = app.put_json_api(url_private, {
-                'data': {
-                    'id': project_private._id,
-                    'type': 'nodes',
-                    'attributes': {
-                        'title': title_new,
-                        'description': description_new,
-                        'category': category_new,
-                        'public': False
-                    }
+        res = app.put_json_api(url_private, {
+            'data': {
+                'id': project_private._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': title_new,
+                    'description': description_new,
+                    'category': category_new,
+                    'public': False
                 }
-            }, auth=user.auth)
-            assert res.status_code == 200
-            assert res.content_type == 'application/vnd.api+json'
-            assert res.json['data']['attributes']['title'] == title_new
-            assert res.json['data']['attributes']['description'] == description_new
-            assert res.json['data']['attributes']['category'] == category_new
+            }
+        }, auth=user.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == title_new
+        assert res.json['data']['attributes']['description'] == description_new
+        assert res.json['data']['attributes']['category'] == category_new
+        log_actions = [log.action for log in project_private.logs.all()]
+        assert NodeLog.EDITED_TITLE in log_actions
+        assert NodeLog.EDITED_DESCRIPTION in log_actions
+        assert NodeLog.CATEGORY_UPDATED in log_actions
 
     def test_update_project_sanitizes_html_properly(
             self, app, user, category_new, project_public, url_public):
-        with assert_latest_log(NodeLog.UPDATED_FIELDS, project_public):
-            """Post request should update resource, and any HTML in fields should be stripped"""
-            new_title = '<strong>Super</strong> Cool Project'
-            new_description = 'An <script>alert("even cooler")</script> project'
-            res = app.put_json_api(url_public, {
-                'data': {
-                    'id': project_public._id,
-                    'type': 'nodes',
-                    'attributes': {
-                        'title': new_title,
-                        'description': new_description,
-                        'category': category_new,
-                        'public': True,
-                    }
+        """Post request should update resource, and any HTML in fields should be stripped"""
+        new_title = '<strong>Super</strong> Cool Project'
+        new_description = 'An <script>alert("even cooler")</script> project'
+        res = app.put_json_api(url_public, {
+            'data': {
+                'id': project_public._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': new_title,
+                    'description': new_description,
+                    'category': category_new,
+                    'public': True,
                 }
-            }, auth=user.auth)
-            assert res.status_code == 200
-            assert res.content_type == 'application/vnd.api+json'
-            assert res.json['data']['attributes']['title'] == strip_html(
-                new_title)
-            assert res.json['data']['attributes']['description'] == strip_html(
-                new_description)
+            }
+        }, auth=user.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == strip_html(
+            new_title)
+        assert res.json['data']['attributes']['description'] == strip_html(
+            new_description)
+        log_actions = [log.action for log in project_public.logs.all()]
+        assert NodeLog.EDITED_TITLE in log_actions
+        assert NodeLog.EDITED_DESCRIPTION in log_actions
+        assert NodeLog.CATEGORY_UPDATED in log_actions
 
     def test_partial_update_project_updates_project_correctly_and_sanitizes_html(
             self, app, user, description, category, project_public, url_public):
@@ -1162,8 +1348,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 200
         project_public.reload()
         assert not project_public.is_public
-        mock_update_doi_metadata.assert_called_with(
-            project_public._id, status='unavailable')
+        mock_update_doi_metadata.assert_called_with(project_public._id)
 
     @pytest.mark.enable_enqueue_task
     @mock.patch('website.preprints.tasks.update_or_enqueue_on_preprint_updated')
@@ -1184,43 +1369,6 @@ class TestNodeUpdate(NodeCRUDTestCase):
         # Turning supplemental_project private no longer turns preprint private
         assert target_object.is_public
         assert not mock_update_doi_metadata.called
-
-    def test_permissions_to_set_subjects(self, app, user, project_public, subject, url_public, make_node_payload):
-        # test_write_contrib_cannot_set_subjects
-        write_contrib = AuthUserFactory()
-        project_public.add_contributor(write_contrib, permissions=['read', 'write'], auth=Auth(user), save=True)
-
-        assert not project_public.subjects.filter(_id=subject._id).exists()
-        update_subjects_payload = make_node_payload(project_public, attributes={'subjects': [[subject._id]]})
-
-        res = app.patch_json_api(url_public, update_subjects_payload, auth=write_contrib.auth, expect_errors=True)
-        assert res.status_code == 403
-
-        assert not project_public.subjects.filter(_id=subject._id).exists()
-
-        # test_non_contrib_cannot_set_subjects
-        non_contrib = AuthUserFactory()
-
-        assert not project_public.subjects.filter(_id=subject._id).exists()
-
-        update_subjects_payload = make_node_payload(project_public, attributes={'subjects': [[subject._id]]})
-
-        res = app.patch_json_api(url_public, update_subjects_payload, auth=non_contrib.auth, expect_errors=True)
-        assert res.status_code == 403
-
-        assert not project_public.subjects.filter(_id=subject._id).exists()
-
-        # test_admin_can_set_subjects
-        admin_contrib = AuthUserFactory()
-        project_public.add_contributor(admin_contrib, permissions=['read', 'write', 'admin'], auth=Auth(user), save=True)
-
-        assert not project_public.subjects.filter(_id=subject._id).exists()
-        update_subjects_payload = make_node_payload(project_public, attributes={'subjects': [[subject._id]]})
-
-        res = app.patch_json_api(url_public, update_subjects_payload, auth=admin_contrib.auth, expect_errors=True)
-        assert res.status_code == 200
-
-        assert project_public.subjects.filter(_id=subject._id).exists()
 
 
 @pytest.mark.django_db
@@ -1264,10 +1412,19 @@ class TestNodeDelete(NodeCRUDTestCase):
         assert res.status_code == 404
         assert 'detail' in res.json['errors'][0]
 
+    #   test_delete_osf_group_improper_permissions
+        osf_group = OSFGroupFactory(creator=user_two)
+        project_private.add_osf_group(osf_group, permissions.READ)
+        res = app.delete(url_private, auth=user_two.auth, expect_errors=True)
+        project_private.reload()
+        assert res.status_code == 403
+        assert project_private.is_deleted is False
+        assert 'detail' in res.json['errors'][0]
+
     def test_deletes_private_node_logged_in_read_only_contributor(
             self, app, user_two, project_private, url_private):
         project_private.add_contributor(
-            user_two, permissions=[permissions.READ])
+            user_two, permissions=permissions.READ)
         project_private.save()
         res = app.delete(url_private, auth=user_two.auth, expect_errors=True)
         project_private.reload()
@@ -1278,7 +1435,7 @@ class TestNodeDelete(NodeCRUDTestCase):
     def test_deletes_private_node_logged_in_write_contributor(
             self, app, user_two, project_private, url_private):
         project_private.add_contributor(
-            user_two, permissions=[permissions.WRITE, permissions.READ])
+            user_two, permissions=permissions.WRITE)
         project_private.save()
         res = app.delete(url_private, auth=user_two.auth, expect_errors=True)
         project_private.reload()
@@ -1480,6 +1637,18 @@ class TestReturnDeletedNode:
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 410
+
+
+@pytest.mark.django_db
+class TestUpdateNodeSubjects(UpdateSubjectsMixin):
+
+    @pytest.fixture()
+    def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib):
+        project = ProjectFactory(is_public=True, creator=user_admin_contrib)
+        project.add_contributor(user_write_contrib, permissions=permissions.WRITE)
+        project.add_contributor(user_read_contrib, permissions=permissions.READ)
+        project.save()
+        return project
 
 
 @pytest.mark.django_db
@@ -1887,7 +2056,7 @@ class TestNodeUpdateLicense:
         node.add_contributor(
             user_read_contrib,
             auth=Auth(user_admin_contrib),
-            permissions=['read'])
+            permissions=permissions.READ)
         node.save()
         return node
 
@@ -2217,6 +2386,21 @@ class TestNodeUpdateLicense:
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'year must be specified for this license'
+
+    def test_update_node_license_without_license_id(
+            self, node, make_payload, make_request, url_node, user_admin_contrib):
+        data = make_payload(
+            node_id=node._id,
+            license_year='2015',
+            copyright_holders=['Ben, Jerry']
+        )
+
+        res = make_request(
+            url_node, data,
+            auth=user_admin_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'License ID must be provided for a Node License.'
 
     def test_update_node_license_without_required_copyright_holders_in_payload_(
             self, user_admin_contrib, node, make_payload, make_request, license_no, url_node):

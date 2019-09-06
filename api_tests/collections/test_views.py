@@ -4,6 +4,8 @@ from urlparse import urlparse
 from django.utils.timezone import now
 
 from api.base.settings.defaults import API_BASE
+from api.taxonomies.serializers import subjects_as_relationships_version
+from api_tests.subjects.mixins import UpdateSubjectsMixin, SubjectsFilterMixin, SubjectsListMixin, SubjectsRelationshipMixin
 from framework.auth.core import Auth
 from osf_tests.factories import (
     CollectionFactory,
@@ -16,6 +18,7 @@ from osf_tests.factories import (
 )
 from osf.models import Collection
 from osf.utils.sanitize import strip_html
+from osf.utils.permissions import ADMIN, WRITE, READ
 from tests.utils import assert_items_equal
 from website.project.signals import contributor_removed
 from api_tests.utils import disconnected_from_listeners
@@ -3204,6 +3207,54 @@ class TestCollectionRelationshipNodeLinks:
         assert len(res.json['data']) + \
             len(reg_res.json['data']) == number_of_links
 
+    def test_delete_linked_registration(
+            self, app, make_payload, url_private_linked_regs, user_two,
+            collection_private, user_one, registration_private):
+
+        payload = {
+            'data': [
+                {'id': registration_private._id, 'type': 'linked_registrations'}
+            ]
+        }
+        # Cannot delete registration from someone else's collection
+        res = app.delete_json_api(
+            url_private_linked_regs, payload, auth=user_two.auth, expect_errors=True
+        )
+        assert res.status_code == 403
+
+        assert collection_private.guid_links.filter(_id=registration_private._id).exists()
+        res = app.delete_json_api(
+            url_private_linked_regs, payload, auth=user_one.auth
+        )
+        assert res.status_code == 204
+        collection_private.reload()
+        assert not collection_private.guid_links.filter(_id=registration_private._id).exists()
+
+    def test_delete_linked_registration_213(
+            self, app, make_payload, url_private_linked_regs, user_two,
+            collection_private, user_one, registration_private):
+
+        payload = {
+            'data': [
+                {'id': registration_private._id, 'type': 'registrations'}
+            ]
+        }
+        url_private_linked_regs = '{}?version=2.13'.format(url_private_linked_regs)
+
+        # Cannot delete registration from someone else's collection
+        res = app.delete_json_api(
+            url_private_linked_regs, payload, auth=user_two.auth, expect_errors=True
+        )
+        assert res.status_code == 403
+
+        assert collection_private.guid_links.filter(_id=registration_private._id).exists()
+        res = app.delete_json_api(
+            url_private_linked_regs, payload, auth=user_one.auth
+        )
+        assert res.status_code == 204
+        collection_private.reload()
+        assert not collection_private.guid_links.filter(_id=registration_private._id).exists()
+
     def test_node_links_and_relationship_represent_same_nodes(
             self, app, user_one, url_private_linked_nodes, auth_user_one,
             node_admin, node_contributor, collection_private):
@@ -4323,6 +4374,195 @@ class TestCollectedMetaList:
         assert len(res.json['data']) == 1
 
 
+class TestCollectedMetaSubjectFiltering(SubjectsFilterMixin):
+    @pytest.fixture()
+    def project_one(self, user):
+        project = ProjectFactory(creator=user)
+        return project
+
+    @pytest.fixture()
+    def project_two(self, user):
+        project = ProjectFactory(creator=user)
+        return project
+
+    @pytest.fixture()
+    def collection(self, user):
+        return CollectionFactory(creator=user, collected_type_choices=['asdf'], status_choices=['one', 'asdf', 'fdsa'])
+
+    @pytest.fixture()
+    def resource(self, user, collection, project_one, subject_one):
+        cgm = collection.collect_object(project_one, user, status='one', collected_type='asdf')
+        cgm.subjects.add(subject_one)
+        return cgm
+
+    @pytest.fixture()
+    def resource_two(self, user, collection, project_two, subject_two):
+        cgm = collection.collect_object(project_two, user, status='one', collected_type='asdf')
+        cgm.subjects.add(subject_two)
+        return cgm
+
+    @pytest.fixture()
+    def url(self, collection):
+        return '/{}collections/{}/collected_metadata/'.format(API_BASE, collection._id)
+
+    def test_subject_filter_using_id_v_2_2(
+            self, app, user, subject_one, subject_two, resource, resource_two,
+            has_subject, project_one, project_two):
+
+        expected = set([project_one._id])
+        res = app.get(
+            '{}{}&version=2.2'.format(has_subject, subject_one._id),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+        expected = set([project_two._id])
+        res = app.get(
+            '{}{}&version=2.2'.format(has_subject, subject_two._id),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+    def test_subject_filter_using_text_v_2_2(
+            self, app, user, subject_two, resource, resource_two,
+            has_subject, project_one, project_two):
+
+        expected = set([project_two._id])
+        res = app.get(
+            '{}{}&version=2.2'.format(has_subject, subject_two.text),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+    def test_subject_filter_using_id_v_2_16(
+            self, app, user, subject_one, subject_two, resource, resource_two,
+            has_subject, project_one, project_two):
+
+        expected = set([project_one._id])
+        res = app.get(
+            '{}{}&version={}'.format(has_subject, subject_one._id, subjects_as_relationships_version),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+        expected = set([project_two._id])
+        res = app.get(
+            '{}{}&version={}'.format(has_subject, subject_two._id, subjects_as_relationships_version),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+    def test_subject_filter_using_text_v_2_16(
+            self, app, user, subject_two, resource, resource_two,
+            has_subject, project_one, project_two):
+        resource_two.subjects.add(subject_two)
+        expected = set([project_two._id])
+        res = app.get(
+            '{}{}&version={}'.format(has_subject, subject_two.text, subjects_as_relationships_version),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+
+class TestCollectedMetaSubjectsList(SubjectsListMixin):
+
+    @pytest.fixture()
+    def project_one(self, user_admin_contrib, user_write_contrib, user_read_contrib):
+        project = ProjectFactory(creator=user_admin_contrib)
+        project.add_contributor(user_write_contrib, permissions=WRITE)
+        project.add_contributor(user_read_contrib, permissions=READ)
+        return project
+
+    @pytest.fixture()
+    def url(self, collection, resource):
+        return '/{}collections/{}/collected_metadata/{}/subjects/'.format(API_BASE, collection._id, resource.guid._id)
+
+    @pytest.fixture()
+    def collection(self, user_admin_contrib):
+        return CollectionFactory(creator=user_admin_contrib, collected_type_choices=['asdf'], status_choices=['one', 'asdf', 'fdsa'])
+
+    @pytest.fixture()
+    def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib, collection, project_one):
+        cgm = collection.collect_object(project_one, user_admin_contrib, status='one', collected_type='asdf')
+        return cgm
+
+    def test_get_resource_subjects_permissions(self, app, user_write_contrib,
+            user_read_contrib, user_non_contrib, resource, url):
+        # test_unauthorized
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
+
+        # test_noncontrib
+        res = app. get(url, auth=user_non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_read_contrib
+        res = app. get(url, auth=user_write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_write_contrib
+        res = app. get(url, auth=user_read_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+
+@pytest.mark.django_db
+class TestUpdateCollectedMetaSubjects(UpdateSubjectsMixin):
+
+    @pytest.fixture()
+    def project_one(self, user_admin_contrib, user_write_contrib, user_read_contrib):
+        project = ProjectFactory(creator=user_admin_contrib)
+        project.add_contributor(user_write_contrib, permissions=WRITE)
+        project.add_contributor(user_read_contrib, permissions=READ)
+        return project
+
+    @pytest.fixture()
+    def collection(self, user_admin_contrib):
+        return CollectionFactory(creator=user_admin_contrib, collected_type_choices=['asdf'], status_choices=['one', 'asdf', 'fdsa'])
+
+    @pytest.fixture()
+    def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib, collection, project_one):
+        cgm = collection.collect_object(project_one, user_admin_contrib, status='one', collected_type='asdf')
+        return cgm
+
+    @pytest.fixture()
+    def resource_type_plural(self, resource):
+        return 'collected-metadata'
+
+    @pytest.fixture()
+    def url(self, collection, resource):
+        return '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, resource.guid._id)
+
+
+@pytest.mark.django_db
+class TestCollectedMetaSubjectsRelationship(SubjectsRelationshipMixin):
+
+    @pytest.fixture()
+    def project_one(self, user_admin_contrib, user_write_contrib, user_read_contrib):
+        project = ProjectFactory(creator=user_admin_contrib)
+        project.add_contributor(user_write_contrib, permissions=WRITE)
+        project.add_contributor(user_read_contrib, permissions=READ)
+        return project
+
+    @pytest.fixture()
+    def collection(self, user_admin_contrib):
+        return CollectionFactory(creator=user_admin_contrib, collected_type_choices=['asdf'], status_choices=['one', 'asdf', 'fdsa'])
+
+    @pytest.fixture()
+    def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib, collection, project_one):
+        cgm = collection.collect_object(project_one, user_admin_contrib, status='one', collected_type='asdf')
+        return cgm
+
+    @pytest.fixture()
+    def url(self, collection, resource):
+        return '/{}collections/{}/collected_metadata/{}/relationships/subjects/'.format(API_BASE, collection._id, resource.guid._id)
+
+
 @pytest.mark.django_db
 class TestCollectedMetaDetail:
     @pytest.fixture()
@@ -4346,6 +4586,12 @@ class TestCollectedMetaDetail:
         cgm = collection.collect_object(project_one, user_one, status='one', collected_type='asdf')
         cgm.set_subjects([[subject_one._id]], Auth(collection.creator))
         return cgm
+
+    @pytest.fixture()
+    def second_collection(self, user_one, project_one):
+        c = CollectionFactory(creator=user_one)
+        c.collect_object(project_one, user_one)
+        return c
 
     @pytest.fixture()
     def url(self, collection, cgm):
@@ -4398,6 +4644,15 @@ class TestCollectedMetaDetail:
         assert res.status_code == 200
         assert res.json['data']['id'] == cgm.guid._id
 
+    #   test_cgm_has_subjects_links_for_later_versions
+        res = app.get(url + '?version={}'.format(subjects_as_relationships_version))
+        related_url = res.json['data']['relationships']['subjects']['links']['related']['href']
+        expected_url = '{}subjects/'.format(url)
+        assert urlparse(related_url).path == expected_url
+        self_url = res.json['data']['relationships']['subjects']['links']['self']['href']
+        expected_url = '{}relationships/subjects/'.format(url)
+        assert urlparse(self_url).path == expected_url
+
         res = app.patch_json_api(
             url,
             payload(status='asdf'),
@@ -4439,12 +4694,25 @@ class TestCollectedMetaDetail:
         )
         assert res.status_code == 403
 
-        project_one.add_contributor(user_two, permissions='admin', save=True)  # has referent admin perms
+        project_one.add_contributor(user_two, permissions=ADMIN, save=True)  # has referent admin perms
         res = app.delete_json_api(
             url,
             auth=user_two.auth,
         )
         assert res.status_code == 204
+
+    def test_get_collection_metadata_project_belongs_to_multiple_collections(self, app, collection, second_collection, project_one, user_one, url):
+        res = app.get(url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        invalid_collection_url = '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, 'abcde', project_one._id)
+        invalid_project_url = '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, 'abcde')
+
+        res = app.get(invalid_collection_url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 404
+
+        res = app.get(invalid_project_url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 404
 
     def test_with_permissions(self, app, collection, cgm, user_one, user_two, url, payload):
         res = app.get(url, auth=user_one.auth, expect_errors=True)

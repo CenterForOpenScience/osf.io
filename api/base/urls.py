@@ -1,9 +1,10 @@
 from django.conf.urls import include, url
 from django.views.generic.base import RedirectView
 
-from . import views
-from . import settings
-from . import versioning
+
+from api.base import views
+from api.base import settings
+from api.base import versioning
 
 default_version = versioning.decimal_version_to_url_path(settings.REST_FRAMEWORK['DEFAULT_VERSION'])
 
@@ -18,6 +19,9 @@ urlpatterns = [
                 url(r'^wb/', include('api.wb.urls', namespace='wb')),
                 url(r'^banners/', include('api.banners.urls', namespace='banners')),
                 url(r'^crossref/', include('api.crossref.urls', namespace='crossref')),
+                url(r'^chronos/', include('api.chronos.urls', namespace='chronos')),
+                url(r'^meetings/', include('api.meetings.urls', namespace='meetings')),
+                url(r'^metrics/', include('api.metrics.urls', namespace='metrics')),
             ],
         ),
     ),
@@ -37,6 +41,7 @@ urlpatterns = [
                 url(r'^education/', include('api.education.urls', namespace='education')),
                 url(r'^employment/', include('api.employment.urls', namespace='employment')),
                 url(r'^files/', include('api.files.urls', namespace='files')),
+                url(r'^groups/', include('api.osf_groups.urls', namespace='groups')),
                 url(r'^guids/', include('api.guids.urls', namespace='guids')),
                 url(r'^identifiers/', include('api.identifiers.urls', namespace='identifiers')),
                 url(r'^institutions/', include('api.institutions.urls', namespace='institutions')),
@@ -53,6 +58,7 @@ urlpatterns = [
                 url(r'^requests/', include('api.requests.urls', namespace='requests')),
                 url(r'^scopes/', include('api.scopes.urls', namespace='scopes')),
                 url(r'^search/', include('api.search.urls', namespace='search')),
+                url(r'^subjects/', include('api.subjects.urls', namespace='subjects')),
                 url(r'^subscriptions/', include('api.subscriptions.urls', namespace='subscriptions')),
                 url(r'^taxonomies/', include('api.taxonomies.urls', namespace='taxonomies')),
                 url(r'^test/', include('api.test.urls', namespace='test')),

@@ -3,11 +3,13 @@ import pytest
 import datetime
 
 from addons.wiki.models import WikiVersion
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from framework.auth.core import Auth
+from framework.exceptions import PermissionsError
 from osf.models import Node, Registration, Sanction, RegistrationSchema, NodeLog
 from addons.wiki.models import WikiPage
-from osf.utils.permissions import READ, WRITE, ADMIN
+from osf.utils.permissions import ADMIN
 
 from website import settings
 
@@ -77,6 +79,30 @@ class TestRegistration:
         reg = factories.RegistrationFactory()
         reg.registered_schema.clear()
         assert reg.registered_schema_id is None
+
+    def test_update_category(self, auth):
+        reg = factories.RegistrationFactory(category='instrumentation')
+        new_category = 'software'
+        reg.update({'category': new_category}, auth=auth)
+        assert reg.category == new_category
+
+        last_log = reg.logs.latest()
+        assert last_log.action == NodeLog.CATEGORY_UPDATED
+        assert last_log.params['category_new'] == new_category
+        assert last_log.params['category_original'] == 'instrumentation'
+
+    def test_update_article_doi(self, auth):
+        reg = factories.RegistrationFactory()
+        reg.article_doi = '10.1234/giraffe'
+        reg.save()
+        new_article_doi = '10.12345/elephant'
+        reg.update({'article_doi': new_article_doi}, auth=auth)
+        assert reg.article_doi == new_article_doi
+
+        last_log = reg.logs.latest()
+        assert last_log.action == NodeLog.ARTICLE_DOI_UPDATED
+        assert last_log.params['article_doi_new'] == new_article_doi
+        assert last_log.params['article_doi_original'] == '10.1234/giraffe'
 
 
 # copied from tests/test_models.py
@@ -224,9 +250,9 @@ class TestRegisterNode:
 
         # Share the project and some nodes
         user2 = factories.UserFactory()
-        project.add_contributor(user2, permissions=(READ, WRITE, ADMIN))
-        shared_component.add_contributor(user2, permissions=(READ, WRITE, ADMIN))
-        shared_subproject.add_contributor(user2, permissions=(READ, WRITE, ADMIN))
+        project.add_contributor(user2, permissions=ADMIN)
+        shared_component.add_contributor(user2, permissions=ADMIN)
+        shared_subproject.add_contributor(user2, permissions=ADMIN)
 
         # Partial contributor registers the node
         registration = factories.RegistrationFactory(project=project, user=user2)
@@ -254,7 +280,7 @@ class TestRegisterNode:
     def test_registered_user(self, project):
         # Add a second contributor
         user2 = factories.UserFactory()
-        project.add_contributor(user2, permissions=(READ, WRITE, ADMIN))
+        project.add_contributor(user2, permissions=ADMIN)
         # Second contributor registers project
         registration = factories.RegistrationFactory(parent=project, user=user2)
         assert registration.registered_user == user2
@@ -513,6 +539,31 @@ class TestNodeSanctionStates:
             assert sub_reg.is_embargoed
 
 
+@pytest.mark.enable_implicit_clean
+class TestDOIValidation:
+
+    def test_validate_bad_doi(self):
+        reg = factories.RegistrationFactory()
+
+        with pytest.raises(ValidationError):
+            reg.article_doi = 'nope'
+            reg.save()
+        with pytest.raises(ValidationError):
+            reg.article_doi = 'https://dx.doi.org/10.123.456'
+            reg.save()  # should save the bare DOI, not a URL
+        with pytest.raises(ValidationError):
+            reg.article_doi = 'doi:10.10.1038/nwooo1170'
+            reg.save()  # should save without doi: prefix
+
+    def test_validate_good_doi(self):
+        reg = factories.RegistrationFactory()
+
+        doi = '10.11038/nwooo1170'
+        reg.article_doi = doi
+        reg.save()
+        assert reg.article_doi == doi
+
+
 class TestDraftRegistrations:
 
     # copied from tests/test_registrations/test_models.py
@@ -547,6 +598,17 @@ class TestDraftRegistrations:
         assert not draft.registered_node
         draft.register(auth)
         assert draft.registered_node
+
+        # group member with admin access cannot register
+        member = factories.AuthUserFactory()
+        osf_group = factories.OSFGroupFactory(creator=user)
+        osf_group.make_member(member, auth=auth)
+        project.add_osf_group(osf_group, ADMIN)
+        draft_2 = factories.DraftRegistrationFactory(branched_from=project)
+        assert project.has_permission(member, ADMIN)
+        with pytest.raises(PermissionsError):
+            draft_2.register(Auth(member))
+        assert not draft_2.registered_node
 
     def test_update_metadata_tracks_changes(self, project):
         draft = factories.DraftRegistrationFactory(branched_from=project)

@@ -18,6 +18,8 @@ from osf.models.archive import ArchiveJob, ArchiveTarget  # noqa
 from osf.models.queued_mail import QueuedMail  # noqa
 from osf.models.external import ExternalAccount, ExternalProvider  # noqa
 from osf.models.oauth import ApiOAuth2Application, ApiOAuth2PersonalToken, ApiOAuth2Scope  # noqa
+from osf.models.osf_group import OSFGroup  # noqa
+from osf.models.osf_grouplog import OSFGroupLog  # noqa
 from osf.models.licenses import NodeLicense, NodeLicenseRecord  # noqa
 from osf.models.private_link import PrivateLink  # noqa
 from osf.models.notifications import NotificationDigest, NotificationSubscription  # noqa
@@ -44,4 +46,5 @@ from osf.models.dismissed_alerts import DismissedAlert  # noqa
 from osf.models.action import ReviewAction  # noqa
 from osf.models.action import NodeRequestAction, PreprintRequestAction, ReviewAction  # noqa
 from osf.models.storage import ProviderAssetFile  # noqa
+from osf.models.chronos import ChronosJournal, ChronosSubmission  # noqa
 from osf.models.blacklisted_email_domain import BlacklistedEmailDomain  # noqa

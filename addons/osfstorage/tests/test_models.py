@@ -11,6 +11,7 @@ from nose.tools import *  # noqa
 from framework.auth import Auth
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
 from osf.exceptions import ValidationError
+from osf.utils.permissions import WRITE, ADMIN
 from osf.utils.fields import EncryptedJSONField
 from osf_tests.factories import ProjectFactory, UserFactory, PreprintFactory, RegionFactory, NodeFactory
 
@@ -332,6 +333,30 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(new_project, to_move.target)
         assert_equal(new_project, move_to.target)
         assert_equal(new_project, child.target)
+
+    def test_move_nested_between_regions(self):
+        canada = RegionFactory()
+        new_component = NodeFactory(parent=self.project)
+        component_node_settings = new_component.get_addon('osfstorage')
+        component_node_settings.region = canada
+        component_node_settings.save()
+
+        move_to = component_node_settings.get_root()
+        to_move = self.node_settings.get_root().append_folder('Aaah').append_folder('Woop')
+        child = to_move.append_file('There it is')
+
+        for _ in range(2):
+            version = factories.FileVersionFactory(region=self.node_settings.region)
+            child.versions.add(version)
+        child.save()
+
+        moved = to_move.move_under(move_to)
+        child.reload()
+
+        assert new_component == child.target
+        versions = child.versions.order_by('-created')
+        assert versions.first().region == component_node_settings.region
+        assert versions.last().region == self.node_settings.region
 
     def test_copy_rename(self):
         to_copy = self.node_settings.get_root().append_file('Carp')
@@ -841,7 +866,7 @@ class TestOsfStorageCheckout(StorageTestCase):
 
     def test_checkout_logs(self):
         non_admin = factories.AuthUserFactory()
-        self.node.add_contributor(non_admin, permissions=['read', 'write'])
+        self.node.add_contributor(non_admin, permissions=WRITE)
         self.node.save()
         self.file.check_in_or_out(non_admin, non_admin, save=True)
         self.file.reload()
@@ -913,11 +938,9 @@ class TestOsfStorageCheckout(StorageTestCase):
         models.Contributor.objects.create(
             node=self.node,
             user=user,
-            admin=True,
-            write=True,
-            read=True,
             visible=True
         )
+        self.node.add_permission(user, ADMIN)
         self.file.check_in_or_out(self.user, self.user, save=True)
         self.file.reload()
         assert_equal(self.file.checkout, self.user)

@@ -518,7 +518,7 @@ var MyProjects = {
                 if(!item.data.attributes.retracted){
                     var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
                     // TODO assess sparse field usage (some already implemented)
-                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'linked_registration', 'template_node'], 'profile_image_size': PROFILE_IMAGE_SIZE, 'fields[users]' : sparseUserFields}});
+                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'linked_registration', 'template_node', 'group',], 'profile_image_size': PROFILE_IMAGE_SIZE, 'fields[users]' : sparseUserFields}});
                     var promise = self.getLogs(url);
                     return promise;
                 }
@@ -775,10 +775,10 @@ var MyProjects = {
                         } else {
                             template = m('.db-non-load-template.m-md.p-md.osf-box',
                             'You have not made any registrations yet. Go to ',
-                            m('a', {href: 'http://help.osf.io/m/registrations'}, 'Getting Started'), ' to learn how registrations work.' );
+                            m('a', {href: 'https://openscience.zendesk.com/hc/en-us/categories/360001550953'}, 'Guides'), ' to learn how registrations work.' );
                         }
                     } else if (lastcrumb.data.nodeType === 'preprints'){
-                        template = m('.db-non-load-template.m-md.p-md.osf-box', [m('span', 'You have not made any preprints yet. Learn more about preprints in the '), m('a[href="http://help.osf.io/m/preprints"]', 'OSF Guides'), m('span', ' or '), m('a[href="/preprints/"]', 'make one now.')]);
+                        template = m('.db-non-load-template.m-md.p-md.osf-box', [m('span', 'You have not made any preprints yet. Learn more about preprints in the '), m('a[href="https://openscience.zendesk.com/hc/en-us/categories/360001530554"]', 'OSF Guides'), m('span', ' or '), m('a[href="/preprints/"]', 'make one now.')]);
                     } else if (lodashGet(lastcrumb, 'data.node.attributes.bookmarks')) {
                         template = m('.db-non-load-template.m-md.p-md.osf-box', 'You have no bookmarks. You can add projects or registrations by dragging them into your bookmarks or by clicking the Add to Bookmark button on the project or registration.');
                     } else {
@@ -1957,6 +1957,7 @@ var Information = {
 
         var template = '';
         var category;
+        var permission;
         var showRemoveFromCollection;
         var collectionFilter = args.currentView().collection;
         if (args.selected().length === 0) {
@@ -1965,7 +1966,14 @@ var Information = {
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
             var resourceType = item.type;
-            var permission = item.attributes.current_user_permissions.slice(-1)[0];
+            var allPerms = item.attributes.current_user_permissions;
+            if (allPerms.includes('admin')) {
+                permission = 'admin';
+            } else if (allPerms.includes('write')) {
+                permission = 'write';
+            } else {
+                permission = 'read';
+            }
             showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].depth === 1 && args.fetchers[collectionFilter.id]._flat.indexOf(item) !== -1; // Be able to remove top level items but not their children
             if (resourceType === 'preprints') {
                 category = 'Preprint';

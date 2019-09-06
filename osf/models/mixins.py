@@ -8,7 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.functional import cached_property
-from guardian.shortcuts import assign_perm, get_perms, remove_perm
+from guardian.shortcuts import assign_perm, get_perms, remove_perm, get_group_perms
 
 from include import IncludeQuerySet
 
@@ -17,16 +17,21 @@ from framework import status
 from framework.auth.core import get_user
 from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
-from osf.exceptions import InvalidTriggerError, ValidationValueError, UserStateError, NodeStateError
+from osf.exceptions import (
+    InvalidTriggerError,
+    ValidationValueError,
+    UserStateError,
+    BlacklistedEmailError
+)
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.subject import Subject
-from osf.models.spam import SpamMixin
+from osf.models.spam import SpamMixin, SpamStatus
 from osf.models.tag import Tag
-from osf.models.validators import validate_subject_hierarchy
+from osf.models.validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
-from osf.utils.permissions import ADMIN, READ, WRITE, reduce_permissions, expand_permissions, REVIEW_GROUPS
+from osf.utils.permissions import ADMIN, REVIEW_GROUPS, READ, WRITE
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils.requests import get_request_and_user_id
 from website.project import signals as project_signals
@@ -99,17 +104,23 @@ class Loggable(models.Model):
             log.date = log_date
         log.save()
 
+        self._complete_add_log(log, action, user, save)
+
+        return log
+
+    def _complete_add_log(self, log, action, user=None, save=True):
         if self.logs.count() == 1:
-            self.last_logged = log.date.replace(tzinfo=pytz.utc)
+            log_date = log.date if hasattr(log, 'date') else log.created
+            self.last_logged = log_date.replace(tzinfo=pytz.utc)
         else:
-            self.last_logged = self.logs.first().date
+            recent_log = self.logs.first()
+            log_date = recent_log.date if hasattr(log, 'date') else recent_log.created
+            self.last_logged = log_date
 
         if save:
             self.save()
-        if user and not self.is_collection:
-            increment_user_activity_counters(user._primary_key, action, log.date.isoformat())
-
-        return log
+        if user and not getattr(self, 'is_collection', None):
+            increment_user_activity_counters(user._primary_key, action, self.last_logged.isoformat())
 
     class Meta:
         abstract = True
@@ -187,7 +198,7 @@ class AddonModelMixin(models.Model):
     # from addons.base.apps import BaseAddonConfig
     settings_type = None
     ADDONS_AVAILABLE = sorted([config for config in apps.get_app_configs() if config.name.startswith('addons.') and
-        config.label != 'base'])
+        config.label != 'base'], key=lambda config: config.name)
 
     class Meta:
         abstract = True
@@ -326,16 +337,14 @@ class NodeLinkMixin(models.Model):
         :param bool save: Save changes
         :return: Created pointer
         """
-        # Fail if node already in nodes / pointers. Note: cast node and node
-        # to primary keys to test for conflicts with both nodes and pointers
-        # contained in `self.nodes`.
-        if NodeRelation.objects.filter(parent=self, child=node, is_node_link=True).exists():
-            raise ValueError(
-                'Link to node {0} already exists'.format(node._id)
-            )
+        try:
+            self.check_node_link(child_node=node, parent_node=self)
+            self.check_node_link(child_node=self, parent_node=node)
+        except ValueError as e:
+            raise ValueError(e.message)
 
         if self.is_registration:
-            raise NodeStateError('Cannot add a node link to a registration')
+            raise self.state_error('Cannot add a node link to a registration')
 
         # Append node link
         node_relation, created = NodeRelation.objects.get_or_create(
@@ -369,6 +378,21 @@ class NodeLinkMixin(models.Model):
         return node_relation
 
     add_pointer = add_node_link  # For v1 compat
+
+    def check_node_link(self, child_node, parent_node):
+        if child_node._id == parent_node._id:
+            raise ValueError(
+                'Cannot link node \'{}\' to itself.'.format(child_node._id)
+            )
+        existant_relation = NodeRelation.objects.filter(parent=parent_node, child=child_node).first()
+        if existant_relation and existant_relation.is_node_link:
+            raise ValueError(
+                'Target Node \'{}\' already pointed to by \'{}\'.'.format(child_node._id, parent_node._id)
+            )
+        elif existant_relation and not existant_relation.is_node_link:
+            raise ValueError(
+                'Target Node \'{}\' is already a child of \'{}\'.'.format(child_node._id, parent_node._id)
+            )
 
     def rm_node_link(self, node_relation, auth):
         """Remove a pointer.
@@ -691,10 +715,11 @@ class ReviewProviderMixin(GuardianMixin):
     def get_request_state_counts(self):
         # import stuff here to get around circular imports
         from osf.models import PreprintRequest
-        qs = PreprintRequest.objects.filter(target__provider__id=self.id,
-                                            target__node__isnull=False,
-                                            target__node__is_deleted=False,
-                                            target__node__is_public=True)
+        qs = PreprintRequest.objects.filter(
+            target__provider__id=self.id,
+            target__is_public=True,
+            target__deleted__isnull=True,
+        )
         qs = qs.values('machine_state').annotate(count=models.Count('*'))
         counts = {state.value: 0 for state in DefaultStates}
         counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
@@ -713,7 +738,7 @@ class ReviewProviderMixin(GuardianMixin):
 
     def remove_from_group(self, user, group, unsubscribe=True):
         _group = self.get_group(group)
-        if group == 'admin':
+        if group == ADMIN:
             if _group.user_set.filter(id=user.id).exists() and not _group.user_set.exclude(id=user.id).exists():
                 raise ValueError('Cannot remove last admin.')
         if unsubscribe:
@@ -739,6 +764,50 @@ class TaxonomizableMixin(models.Model):
             ]
         return []
 
+    @property
+    def subjects_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/subjects/'
+
+    @property
+    def subjects_url(self):
+        return self.absolute_api_v2_url + 'subjects/'
+
+    def check_subject_perms(self, auth):
+        AbstractNode = apps.get_model('osf.AbstractNode')
+        Preprint = apps.get_model('osf.Preprint')
+        CollectionSubmission = apps.get_model('osf.CollectionSubmission')
+
+        if isinstance(self, AbstractNode):
+            if not self.has_permission(auth.user, ADMIN):
+                raise PermissionsError('Only admins can change subjects.')
+        elif isinstance(self, Preprint):
+            if not self.has_permission(auth.user, WRITE):
+                raise PermissionsError('Must have admin or write permissions to change a preprint\'s subjects.')
+        elif isinstance(self, CollectionSubmission):
+            if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(self.collection.groups[ADMIN], self.collection):
+                raise PermissionsError('Only admins can change subjects.')
+        return
+
+    def add_subjects_log(self, old_subjects, auth):
+        self.add_log(
+            action=NodeLog.SUBJECTS_UPDATED,
+            params={
+                'subjects': list(self.subjects.values('_id', 'text')),
+                'old_subjects': list(Subject.objects.filter(id__in=old_subjects).values('_id', 'text'))
+            },
+            auth=auth,
+            save=False,
+        )
+        return
+
+    def assert_subject_format(self, subj_list, expect_list, error_msg):
+        """ Helper for asserting subject request is formatted properly
+        """
+        is_list = type(subj_list) is list
+
+        if (expect_list and not is_list) or (not expect_list and is_list):
+            raise ValidationValueError('Subjects are improperly formatted. {}'.format(error_msg))
+
     def set_subjects(self, new_subjects, auth, add_log=True):
         """ Helper for setting M2M subjects field from list of hierarchies received from UI.
         Only authorized admins may set subjects.
@@ -749,21 +818,13 @@ class TaxonomizableMixin(models.Model):
 
         :return: None
         """
-        AbstractNode = apps.get_model('osf.AbstractNode')
-        Preprint = apps.get_model('osf.Preprint')
-        CollectionSubmission = apps.get_model('osf.CollectionSubmission')
-        if getattr(self, 'is_registration', False):
-            raise PermissionsError('Registrations may not be modified.')
-        if isinstance(self, (AbstractNode, Preprint)):
-            if not self.has_permission(auth.user, ADMIN):
-                raise PermissionsError('Only admins can change subjects.')
-        elif isinstance(self, CollectionSubmission):
-            if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(self.collection.groups[ADMIN], self.collection):
-                raise PermissionsError('Only admins can change subjects.')
+        self.check_subject_perms(auth)
+        self.assert_subject_format(new_subjects, expect_list=True, error_msg='Expecting list of lists.')
 
         old_subjects = list(self.subjects.values_list('id', flat=True))
         self.subjects.clear()
         for subj_list in new_subjects:
+            self.assert_subject_format(subj_list, expect_list=True, error_msg='Expecting list of lists.')
             subj_hierarchy = []
             for s in subj_list:
                 subj_hierarchy.append(s)
@@ -773,15 +834,32 @@ class TaxonomizableMixin(models.Model):
                     self.subjects.add(Subject.load(s_id))
 
         if add_log and hasattr(self, 'add_log'):
-            self.add_log(
-                action=NodeLog.SUBJECTS_UPDATED,
-                params={
-                    'subjects': list(self.subjects.values('_id', 'text')),
-                    'old_subjects': list(Subject.objects.filter(id__in=old_subjects).values('_id', 'text'))
-                },
-                auth=auth,
-                save=False,
-            )
+            self.add_subjects_log(old_subjects, auth)
+
+        self.save(old_subjects=old_subjects)
+
+    def set_subjects_from_relationships(self, subjects_list, auth, add_log=True):
+        """ Helper for setting M2M subjects field from list of flattened subjects received from UI.
+        Only authorized admins may set subjects.
+
+        :param list[Subject._id] new_subjects: List of flattened subject hierarchies
+        :param Auth auth: Auth object for requesting user
+        :param bool add_log: Whether or not to add a log (if called on a Loggable object)
+
+        :return: None
+        """
+        self.check_subject_perms(auth)
+        self.assert_subject_format(subjects_list, expect_list=True, error_msg='Expecting a list of subjects.')
+        if subjects_list:
+            self.assert_subject_format(subjects_list[0], expect_list=False, error_msg='Expecting a list of subjects.')
+
+        old_subjects = list(self.subjects.values_list('id', flat=True))
+        self.subjects.clear()
+        for subj in expand_subject_hierarchy(subjects_list):
+            self.subjects.add(subj)
+
+        if add_log and hasattr(self, 'add_log'):
+            self.add_subjects_log(old_subjects, auth)
 
         self.save(old_subjects=old_subjects)
 
@@ -790,11 +868,13 @@ class ContributorMixin(models.Model):
     """
     ContributorMixin containing methods for managing contributors.
 
-    Works for both Nodes and Preprints.  Some methods are overridden on Preprint
-    model.
+    Works for both Nodes and Preprints. Preprints don't have hierarchies
+    or OSF Groups, so there may be overrides for this.
     """
     class Meta:
         abstract = True
+
+    DEFAULT_CONTRIBUTOR_PERMISSIONS = WRITE
 
     @property
     def log_class(self):
@@ -826,14 +906,6 @@ class ContributorMixin(models.Model):
         # default contributor email template as a string
         raise NotImplementedError()
 
-    def expand_permissions(self):
-        # Transforms the permissions into the form the contributor methods expect
-        raise NotImplementedError()
-
-    def belongs_to_permission_group(self, user, permission):
-        # Boolean, whether the user belongs to this permission get_group
-        raise NotImplementedError()
-
     def get_addons(self):
         raise NotImplementedError()
 
@@ -846,36 +918,71 @@ class ContributorMixin(models.Model):
         return self._contributors.order_by(self.order_by_contributor_field)
 
     @property
-    def admin_contributor_ids(self):
-        return self._get_admin_contributor_ids(include_self=True)
+    def admin_contributor_or_group_member_ids(self):
+        # Admin contributors or group members on parent, or current resource
+        return self._get_admin_user_ids(include_self=True)
 
-    def clear_permissions(self, user):
-        return
+    def is_contributor_or_group_member(self, user):
+        """
+        Whether the user has explicit permissions to the resource -
+        They must be a contributor or a member of an osf group with permissions
+        Implicit admins not included.
+        """
+        return self.has_permission(user, READ, check_parent=False)
 
     def is_contributor(self, user):
-        """Return whether ``user`` is a contributor on the object."""
+        """
+        Return whether ``user`` is a contributor on the resource.
+        (Does not include whether user has permissions via a group.)
+        """
         kwargs = self.contributor_kwargs
         kwargs['user'] = user
         return user is not None and self.contributor_class.objects.filter(**kwargs).exists()
 
+    def is_admin_contributor(self, user):
+        """
+        Return whether ``user`` is a contributor on the resource and their contributor permissions are "admin".
+        Doesn't factor in group member permissions.
+
+        Important: having admin permissions through group membership but being a write contributor doesn't suffice.
+        """
+        if not user or user.is_anonymous:
+            return False
+
+        return self.has_permission(user, ADMIN) and self.get_group(ADMIN) in user.groups.all()
+
     def active_contributors(self, include=lambda n: True):
+        """
+        Returns active contributors, group members excluded
+        """
         for contrib in self.contributors.filter(is_active=True):
             if include(contrib):
                 yield contrib
 
     def get_admin_contributors(self, users):
-        """Return a set of all admin contributors for this node. Excludes contributors on node links and
+        """Of the provided users, return the ones who are admin contributors on the node. Excludes contributors on node links and
         inactive users.
         """
         return (each.user for each in self._get_admin_contributors_query(users))
 
     def _get_admin_contributors_query(self, users):
-        return self.contributor_class.objects.select_related('user').filter(
-            node=self,
-            user__in=users,
-            user__is_active=True,
-            admin=True
-        )
+        """
+        Returns Contributor queryset whose objects have admin permissions to the node.
+        Group permissions not included.
+        """
+        Preprint = apps.get_model('osf.Preprint')
+
+        query_dict = {
+            'user__in': users,
+            'user__is_active': True,
+            'user__groups': self.get_group(ADMIN).id
+        }
+        if isinstance(self, Preprint):
+            query_dict['preprint'] = self
+        else:
+            query_dict['node'] = self
+
+        return self.contributor_class.objects.select_related('user').filter(**query_dict)
 
     def add_contributor(self, contributor, permissions=None, visible=True,
                         send_email=None, auth=None, log=True, save=False):
@@ -920,13 +1027,7 @@ class ContributorMixin(models.Model):
             # Add default contributor permissions
             permissions = permissions or self.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
-            if not isinstance(permissions, basestring):
-                # Currently node permissions are passed in as a list
-                for perm in permissions:
-                    setattr(contributor_obj, perm, True)
-            else:
-                # Preprint permissions passed in as a string
-                self.add_permission(contrib_to_add, permissions, save=True)
+            self.add_permission(contrib_to_add, permissions, save=True)
             contributor_obj.save()
 
             if log:
@@ -958,7 +1059,7 @@ class ContributorMixin(models.Model):
         :param list contributors: A list of dictionaries of the form:
             {
                 'user': <User object>,
-                'permissions': <Permissions list, e.g. ['read', 'write']>, or string (for preprints), e.g. 'read'
+                'permissions': <String highest permission, 'admin', for example>
                 'visible': <Boolean indicating whether or not user is a bibliographic contributor>
             }
         :param auth: All the auth information including user, API key.
@@ -998,6 +1099,12 @@ class ContributorMixin(models.Model):
         """
         OSFUser = apps.get_model('osf.OSFUser')
         send_email = send_email or self.contributor_email_template
+
+        if email:
+            try:
+                validate_email(email)
+            except BlacklistedEmailError:
+                raise ValidationError('Unregistered contributor email address domain is blacklisted.')
 
         # Create a new user record if you weren't passed an existing user
         contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)
@@ -1080,6 +1187,9 @@ class ContributorMixin(models.Model):
         return contributor_obj
 
     def replace_contributor(self, old, new):
+        """
+        Replacing unregistered contributor with a verified user
+        """
         try:
             contrib_obj = self.contributor_set.get(user=old)
         except self.contributor_class.DoesNotExist:
@@ -1091,6 +1201,14 @@ class ContributorMixin(models.Model):
         if self._id in old.unclaimed_records:
             del old.unclaimed_records[self._id]
             old.save()
+
+        # For the read, write, and admin Django group attached to the node/preprint,
+        # add the new user to the group, and remove the old.  This
+        # will give the new user the appropriate permissions.
+        for group_name in self.groups.keys():
+            if self.belongs_to_permission_group(old, group_name):
+                self.get_group(group_name).user_set.remove(old)
+                self.get_group(group_name).user_set.add(new)
         return True
 
     # TODO: optimize me
@@ -1107,23 +1225,21 @@ class ContributorMixin(models.Model):
             raise PermissionsError('Only admins can modify contributor permissions')
 
         if permission:
-            permissions = self.expand_permissions(permission=permission)
             admins = OSFUser.objects.filter(id__in=self._get_admin_contributors_query(self._contributors.all()).values_list('user_id', flat=True))
             if not admins.count() > 1:
                 # has only one admin
                 admin = admins.first()
-                if (admin == user or getattr(admin, 'user', None) == user) and ADMIN not in permissions:
+                if (admin == user or getattr(admin, 'user', None) == user) and ADMIN != permission:
                     error_msg = '{} is the only admin.'.format(user.fullname)
                     raise self.state_error(error_msg)
             if not self.contributor_set.filter(user=user).exists():
                 raise ValueError(
                     'User {0} not in contributors'.format(user.fullname)
                 )
-            if (isinstance(permissions, list) and set(permissions) != set(self.get_permissions(user))) or (
-                    isinstance(permissions, basestring) and not self.get_group(permissions).user_set.filter(id=user.id).exists()):
-                self.set_permissions(user, permissions, save=False)
+            if not self.get_group(permission).user_set.filter(id=user.id).exists():
+                self.set_permissions(user, permission, save=False)
                 permissions_changed = {
-                    user._id: permissions
+                    user._id: permission
                 }
                 params = self.log_params
                 params['contributors'] = permissions_changed
@@ -1134,7 +1250,7 @@ class ContributorMixin(models.Model):
                     save=False
                 )
                 with transaction.atomic():
-                    if ['read'] in permissions_changed.values():
+                    if [READ] in permissions_changed.values():
                         project_signals.write_permissions_revoked.send(self)
         if visible is not None:
             self.set_visible(user, visible, auth=auth)
@@ -1170,17 +1286,7 @@ class ContributorMixin(models.Model):
 
         self.clear_permissions(contributor)
         # After remove callback
-        for addon in self.get_addons():
-            message = addon.after_remove_contributor(self, contributor, auth)
-            if message:
-                # Because addons can return HTML strings, addons are responsible
-                # for markupsafe-escaping any messages returned
-                status.push_status_message(message, kind='info', trust=True, id='remove_addon', extra={
-                    'addon': markupsafe.escape(addon.config.full_name),
-                    'category': markupsafe.escape(self.category_display),
-                    'title': markupsafe.escape(self.title),
-                    'user': markupsafe.escape(contributor.fullname)
-                })
+        self.disconnect_addons(contributor, auth)
 
         if log:
             params = self.log_params
@@ -1286,9 +1392,8 @@ class ContributorMixin(models.Model):
                 permission = user_dict.get('permission', None) or user_dict.get('permissions', None)
                 if not self.belongs_to_permission_group(user, permission):
                     # Validate later
-                    permissions = self.expand_permissions(permission)
-                    self.set_permissions(user, permissions, validate=False, save=False)
-                    permissions_changed[user._id] = permissions
+                    self.set_permissions(user, permission, validate=False, save=False)
+                    permissions_changed[user._id] = permission
 
                 # visible must be added before removed to ensure they are validated properly
                 if user_dict['visible']:
@@ -1349,7 +1454,7 @@ class ContributorMixin(models.Model):
                 self.save()
 
             with transaction.atomic():
-                if to_remove or permissions_changed and ['read'] in permissions_changed.values():
+                if to_remove or permissions_changed and [READ] in permissions_changed.values():
                     project_signals.write_permissions_revoked.send(self)
 
     @property
@@ -1412,18 +1517,23 @@ class ContributorMixin(models.Model):
             self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])
 
     def has_permission(self, user, permission, check_parent=True):
-        """Check whether user has permission.
-
+        """Check whether user has permission, through contributorship or group membership
         :param User user: User to test
         :param str permission: Required permission
         :returns: User has required permission
         """
-        if not user:
+        Preprint = apps.get_model('osf.Preprint')
+        object_type = 'preprint' if isinstance(self, Preprint) else 'node'
+
+        if not user or user.is_anonymous:
             return False
-        query = {'node': self, permission: True}
-        has_permission = user.contributor_set.filter(**query).exists()
-        if not has_permission and permission == 'read' and check_parent:
-            return self.is_admin_parent(user)
+        perm = '{}_{}'.format(permission, object_type)
+        # Using get_group_perms to get permissions that are inferred through
+        # group membership - not inherited from superuser status
+        has_permission = perm in get_group_perms(user, self)
+        if object_type == 'node':
+            if not has_permission and permission == READ and check_parent:
+                return self.is_admin_parent(user)
         return has_permission
 
     # TODO: Remove save parameter
@@ -1435,40 +1545,44 @@ class ContributorMixin(models.Model):
         :param bool save: Save changes
         :raises: ValueError if user already has permission
         """
-        contributor = user.contributor_set.get(node=self)
-        if not getattr(contributor, permission, False):
-            for perm in expand_permissions(permission):
-                setattr(contributor, perm, True)
-            contributor.save()
+        if not self.belongs_to_permission_group(user, permission):
+            permission_group = self.get_group(permission)
+            permission_group.user_set.add(user)
         else:
-            if getattr(contributor, permission, False):
-                raise ValueError('User already has permission {0}'.format(permission))
+            raise ValueError('User already has permission {0}'.format(permission))
         if save:
             self.save()
 
     def set_permissions(self, user, permissions, validate=True, save=False):
-        # Ensure that user's permissions cannot be lowered if they are the only admin
+        """Set a user's permissions to a node.
+
+        :param User user: User to grant permission to
+        :param str permissions: Highest permission to grant, i.e. 'write'
+        :param bool validate: Validate admin contrib constraint
+        :param bool save: Save changes
+        :raises: StateError if contrib constraint is violated
+        """
+        # Ensure that user's permissions cannot be lowered if they are the only admin (
+        # - admin contributor, not admin group member)
         if isinstance(user, self.contributor_class):
             user = user.user
 
-        if validate and (reduce_permissions(self.get_permissions(user)) == ADMIN and
-                                 reduce_permissions(permissions) != ADMIN):
-            admin_contribs = self.contributor_class.objects.filter(node=self, admin=True)
-            if admin_contribs.count() <= 1:
-                raise NodeStateError('Must have at least one registered admin contributor')
-
-        contrib_obj = self.contributor_class.objects.get(node=self, user=user)
-
-        for permission_level in [READ, WRITE, ADMIN]:
-            if permission_level in permissions:
-                setattr(contrib_obj, permission_level, True)
-            else:
-                setattr(contrib_obj, permission_level, False)
-        contrib_obj.save()
+        if validate and (self.is_admin_contributor(user) and permissions != ADMIN):
+            if self.get_group(ADMIN).user_set.filter(is_registered=True).count() <= 1:
+                raise self.state_error('Must have at least one registered admin contributor')
+        self.clear_permissions(user)
+        self.add_permission(user, permissions)
         if save:
             self.save()
 
-    # TODO: Remove save parameter
+    def clear_permissions(self, user):
+        for name in self.groups.keys():
+            if user.groups.filter(name=self.get_group(name)).exists():
+                self.remove_permission(user, name)
+
+    def belongs_to_permission_group(self, user, permission):
+        return self.get_group(permission).user_set.filter(id=user.id).exists()
+
     def remove_permission(self, user, permission, save=False):
         """Revoke permission from a user.
 
@@ -1477,15 +1591,33 @@ class ContributorMixin(models.Model):
         :param bool save: Save changes
         :raises: ValueError if user does not have permission
         """
-        contributor = user.contributor_set.get(node=self)
-        if getattr(contributor, permission, False):
-            for perm in expand_permissions(permission):
-                setattr(contributor, perm, False)
-            contributor.save()
+        if self.belongs_to_permission_group(user, permission):
+            permission_group = self.get_group(permission)
+            permission_group.user_set.remove(user)
         else:
             raise ValueError('User does not have permission {0}'.format(permission))
         if save:
             self.save()
+
+    def disconnect_addons(self, user, auth):
+        """
+        Loop through all the node's addons and remove user's authentication.
+        Used when removing users from nodes (either removing a contributor, removing an OSF Group,
+        removing an OSF Group from a node, or removing a member from an OSF group)
+        """
+        if not self.is_contributor_or_group_member(user):
+            for addon in self.get_addons():
+                # After remove callback
+                message = addon.after_remove_contributor(self, user, auth)
+                if message:
+                    # Because addons can return HTML strings, addons are responsible
+                    # for markupsafe-escaping any messages returned
+                    status.push_status_message(message, kind='info', trust=True, id='remove_addon', extra={
+                        'addon': markupsafe.escape(addon.config.full_name),
+                        'category': markupsafe.escape(self.category_display),
+                        'title': markupsafe.escape(self.title),
+                        'user': markupsafe.escape(user.fullname)
+                    })
 
 
 class SpamOverrideMixin(SpamMixin):
@@ -1524,10 +1656,21 @@ class SpamOverrideMixin(SpamMixin):
             self.save()
 
     def _get_spam_content(self, saved_fields):
+        """
+        This function retrieves retrieves strings of potential spam from various DB fields. Also here we can follow
+        django's typical ORM query structure for example we can grab the redirect link of a node by giving a saved
+        field of {'addons_forward_node_settings__url'}.
+
+        :param saved_fields: set
+        :return: str
+        """
         spam_fields = self.get_spam_fields(saved_fields)
         content = []
         for field in spam_fields:
-            content.append((getattr(self, field, None) or '').encode('utf-8'))
+            exclude_null = {field + '__isnull': False}
+            values = list(self.__class__.objects.filter(id=self.id, **exclude_null).values_list(field, flat=True))
+            if values:
+                content.append((' '.join(values) or '').encode('utf-8'))
         if self.all_tags.exists():
             content.extend([name.encode('utf-8') for name in self.all_tags.values_list('name', flat=True)])
         if not content:
@@ -1539,7 +1682,7 @@ class SpamOverrideMixin(SpamMixin):
             return False
         if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
             return False
-        if 'ham_confirmed' in user.system_tags:
+        if user.spam_status == SpamStatus.HAM:
             return False
 
         content = self._get_spam_content(saved_fields)
@@ -1566,8 +1709,7 @@ class SpamOverrideMixin(SpamMixin):
             self.set_privacy('private', log=False, save=False)
 
             # Suspend the flagged user for spam.
-            if 'spam_flagged' not in user.system_tags:
-                user.add_system_tag('spam_flagged')
+            user.flag_spam()
             if not user.is_disabled:
                 user.disable_account()
                 user.is_registered = False
@@ -1581,7 +1723,7 @@ class SpamOverrideMixin(SpamMixin):
             user.save()
 
             # Make public nodes private from this contributor
-            for node in user.contributed:
+            for node in user.all_nodes:
                 if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
                     node.set_privacy('private', log=False, save=True)
 

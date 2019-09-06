@@ -11,10 +11,7 @@ from datacite import schema40
 from framework.auth import Auth
 
 from website import settings
-from website.app import init_addons
 from website.identifiers.clients import DataCiteClient
-from website.identifiers.clients.datacite import DataCiteMDSClient
-from website.identifiers import metadata
 from website.identifiers.utils import request_identifiers
 
 from tests.base import OsfTestCase
@@ -37,8 +34,8 @@ def datacite_client(registration):
 
         url = 'https://mds.fakedatacite.org'
         metadata_get = mock.Mock(return_value=datacite_metadata_response())
-        metadata_post = mock.Mock(return_value='OK (10.5072/FK2osf.io/{})'.format(registration._id))
-        doi_post = mock.Mock(return_value='OK (10.5072/FK2osf.io/{})'.format(registration._id))
+        metadata_post = mock.Mock(return_value='OK (10.70102/FK2osf.io/{})'.format(registration._id))
+        doi_post = mock.Mock(return_value='OK (10.70102/FK2osf.io/{})'.format(registration._id))
         metadata_delete = mock.Mock(return_value='OK heeeeeeey')
 
     return DataCiteClient(
@@ -151,7 +148,7 @@ class TestDataCiteViews(OsfTestCase):
             responses.Response(
                 responses.POST,
                 self.client.base_url + '/metadata',
-                body='OK (10.5072/FK2osf.io/cq695)',
+                body='OK (10.70102/FK2osf.io/cq695)',
                 status=201,
             )
         )
@@ -159,7 +156,7 @@ class TestDataCiteViews(OsfTestCase):
             responses.Response(
                 responses.POST,
                 self.client.base_url + '/doi',
-                body='OK (10.5072/FK2osf.io/cq695)',
+                body='OK (10.70102/FK2osf.io/cq695)',
                 status=201,
             )
         )
@@ -210,5 +207,3 @@ class TestDataCiteViews(OsfTestCase):
     def test_qatest_doesnt_make_dois(self):
         self.node.add_tag('qatest', auth=Auth(self.user))
         assert not request_identifiers(self.node)
-
-

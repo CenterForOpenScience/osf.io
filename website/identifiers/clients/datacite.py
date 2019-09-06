@@ -77,7 +77,7 @@ class DataCiteClient(AbstractIdentifierClient):
         if category == 'doi':
             metadata = self.build_metadata(node)
             resp = self._client.metadata_post(metadata)
-            # Typical response: 'OK (10.5072/FK2osf.io/cq695)' to doi 10.5072/FK2osf.io/cq695
+            # Typical response: 'OK (10.70102/FK2osf.io/cq695)' to doi 10.70102/FK2osf.io/cq695
             doi = re.match(r'OK \((?P<doi>[a-zA-Z0-9 .\/]{0,})\)', resp).groupdict()['doi']
             if settings.DATACITE_MINT_DOIS:
                 self._client.doi_post(doi, node.absolute_url)
@@ -85,7 +85,7 @@ class DataCiteClient(AbstractIdentifierClient):
         else:
             raise NotImplementedError('Creating an identifier with category {} is not supported'.format(category))
 
-    def update_identifier(self, node, category, status=None):
+    def update_identifier(self, node, category):
         if not node.is_public or node.is_deleted:
             if category == 'doi':
                 doi = self.build_doi(node)

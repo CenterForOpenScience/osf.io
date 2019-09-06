@@ -251,6 +251,8 @@ PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received r
 REQUEST_EXPORT = Mail('support_request', subject='[via OSF] Export Request')
 REQUEST_DEACTIVATION = Mail('support_request', subject='[via OSF] Deactivation Request')
 
+REQUEST_DEACTIVATION_COMPLETE = Mail('request_deactivation_complete', subject='[via OSF] OSF account deactivated')
+
 SPAM_USER_BANNED = Mail('spam_user_banned', subject='[OSF] Account flagged as spam')
 
 CONFERENCE_SUBMITTED = Mail(
@@ -435,7 +437,32 @@ CROSSREF_ERROR = Mail(
     subject='There was an error creating a DOI for preprint(s). batch_id: ${batch_id}'
 )
 
+CROSSREF_DOIS_PENDING = Mail(
+    'crossref_doi_pending',
+    subject='There are ${pending_doi_count} preprints with crossref DOI pending.'
+)
+
 PREPRINT_WITHDRAWAL_REQUEST_GRANTED = Mail(
     'preprint_withdrawal_request_granted',
     subject='Your ${reviewable.provider.preprint_word} has been withdrawn',
+)
+
+GROUP_MEMBER_ADDED = Mail(
+    'group_member_added',
+    subject='You have been added as a ${permission} of the group ${group_name}',
+)
+
+GROUP_MEMBER_UNREGISTERED_ADDED = Mail(
+    'group_member_unregistered_added',
+    subject='You have been added as a ${permission} of the group ${group_name}',
+)
+
+GROUP_ADDED_TO_NODE = Mail(
+    'group_added_to_node',
+    subject='Your group, ${group_name}, has been added to an OSF Project'
+)
+
+PREPRINT_WITHDRAWAL_REQUEST_DECLINED = Mail(
+    'preprint_withdrawal_request_declined',
+    subject='Your withdrawal request has been declined',
 )

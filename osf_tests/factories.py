@@ -21,7 +21,6 @@ from waffle.models import Flag, Sample, Switch
 from website.notifications.constants import NOTIFICATION_TYPES
 from osf.utils import permissions
 from website.archiver import ARCHIVER_SUCCESS
-from website.identifiers.utils import parse_identifiers
 from website.settings import FAKE_EMAIL_NAME, FAKE_EMAIL_DOMAIN
 from framework.auth.core import Auth
 
@@ -350,6 +349,15 @@ class RegistrationProviderFactory(DjangoModelFactory):
         return obj
 
 
+class OSFGroupFactory(DjangoModelFactory):
+    name = factory.Faker('company')
+    created = factory.LazyFunction(timezone.now)
+    creator = factory.SubFactory(AuthUserFactory)
+
+    class Meta:
+        model = models.OSFGroup
+
+
 class RegistrationFactory(BaseNodeFactory):
 
     creator = None
@@ -374,7 +382,7 @@ class RegistrationFactory(BaseNodeFactory):
         provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
         # Original project to be registered
         project = project or target_class(*args, **kwargs)
-        if project.has_permission(user, 'admin'):
+        if project.is_admin_contributor(user):
             project.add_contributor(
                 contributor=user,
                 permissions=permissions.CREATOR_PERMISSIONS,
@@ -419,6 +427,7 @@ class RegistrationFactory(BaseNodeFactory):
                 reg.sanction.save()
         if is_public:
             reg.is_public = True
+        reg.files_count = reg.registered_from.files.filter(deleted_on__isnull=True).count()
         reg.save()
         return reg
 
@@ -615,23 +624,9 @@ class PreprintProviderFactory(DjangoModelFactory):
 
 
 def sync_set_identifiers(preprint):
-    from website.identifiers.clients import EzidClient
     from website import settings
-    client = preprint.get_doi_client()
-
-    if isinstance(client, EzidClient):
-        doi_value = settings.DOI_FORMAT.format(prefix=settings.EZID_DOI_NAMESPACE, guid=preprint._id)
-        ark_value = '{ark}osf.io/{guid}'.format(ark=settings.EZID_ARK_NAMESPACE, guid=preprint._id)
-        return_value = {'success': '{} | {}'.format(doi_value, ark_value)}
-    else:
-        return_value = {'doi': settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)}
-
-    doi_client_return_value = {
-        'response': return_value,
-        'already_exists': False
-    }
-    id_dict = parse_identifiers(doi_client_return_value)
-    preprint.set_identifier_values(doi=id_dict['doi'])
+    doi = settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
+    preprint.set_identifier_values(doi=doi)
 
 
 class PreprintFactory(DjangoModelFactory):
@@ -666,6 +661,7 @@ class PreprintFactory(DjangoModelFactory):
         set_doi = kwargs.pop('set_doi', True)
         is_published = kwargs.pop('is_published', True)
         instance = cls._build(target_class, *args, **kwargs)
+        file_size = kwargs.pop('file_size', 1337)
 
         doi = kwargs.pop('doi', None)
         license_details = kwargs.pop('license_details', None)
@@ -692,7 +688,7 @@ class PreprintFactory(DjangoModelFactory):
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
         }, {
-            'size': 1337,
+            'size': file_size,
             'contentType': 'img/png'
         }).save()
         update_task_patcher.stop()
@@ -732,16 +728,27 @@ class DismissedAlertFactory(DjangoModelFactory):
 
         return super(DismissedAlertFactory, cls)._create(*args, **kwargs)
 
+class ApiOAuth2ScopeFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ApiOAuth2Scope
+
+    name = factory.Faker('word')
+    is_public = True
+    is_active = True
+    description = factory.Faker('text')
+
 class ApiOAuth2PersonalTokenFactory(DjangoModelFactory):
     class Meta:
         model = models.ApiOAuth2PersonalToken
 
     owner = factory.SubFactory(UserFactory)
-
-    scopes = 'osf.full_write osf.full_read'
-
     name = factory.Sequence(lambda n: 'Example OAuth2 Personal Token #{}'.format(n))
 
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        token = super(ApiOAuth2PersonalTokenFactory, cls)._create(*args, **kwargs)
+        token.scopes.add(ApiOAuth2ScopeFactory())
+        return token
 
 class ApiOAuth2ApplicationFactory(DjangoModelFactory):
     class Meta:
@@ -1009,5 +1016,52 @@ class ProviderAssetFileFactory(DjangoModelFactory):
         providers = kwargs.pop('providers', [])
         instance = super(ProviderAssetFileFactory, cls)._create(target_class, *args, **kwargs)
         instance.providers = providers
+        instance.save()
+        return instance
+
+class ChronosJournalFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ChronosJournal
+
+    name = factory.Faker('text')
+    title = factory.Faker('text')
+    journal_id = factory.Faker('ean')
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        kwargs['raw_response'] = kwargs.get('raw_response', {
+            'TITLE': kwargs.get('title', factory.Faker('text').generate([])),
+            'JOURNAL_ID': kwargs.get('title', factory.Faker('ean').generate([])),
+            'NAME': kwargs.get('name', factory.Faker('text').generate([])),
+            'JOURNAL_URL': factory.Faker('url').generate([]),
+            'PUBLISHER_ID': factory.Faker('ean').generate([]),
+            'PUBLISHER_NAME': factory.Faker('name').generate([])
+            # Other stuff too probably
+        })
+        instance = super(ChronosJournalFactory, cls)._create(target_class, *args, **kwargs)
+        instance.save()
+        return instance
+
+
+class ChronosSubmissionFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ChronosSubmission
+
+    publication_id = factory.Faker('ean')
+    journal = factory.SubFactory(ChronosJournalFactory)
+    preprint = factory.SubFactory(PreprintFactory)
+    submitter = factory.SubFactory(AuthUserFactory)
+    status = factory.Faker('random_int', min=1, max=5)
+    submission_url = factory.Faker('url')
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        kwargs['raw_response'] = kwargs.get('raw_response', {
+            'PUBLICATION_ID': kwargs.get('publication_id', factory.Faker('ean').generate([])),
+            'STATUS_CODE': kwargs.get('status', factory.Faker('random_int', min=1, max=5).generate([])),
+            'CHRONOS_SUBMISSION_URL': kwargs.get('submission_url', factory.Faker('url').generate([])),
+            # Other stuff too probably
+        })
+        instance = super(ChronosSubmissionFactory, cls)._create(target_class, *args, **kwargs)
         instance.save()
         return instance
