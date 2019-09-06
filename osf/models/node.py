@@ -282,6 +282,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     SPAM_CHECK_FIELDS = {
         'title',
         'description',
+        'addons_forward_node_settings__url'  # the often spammed redirect URL
     }
 
     # Fields that are writable by Node.update
@@ -1314,8 +1315,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # Update existing identifiers
         if self.get_identifier('doi'):
-            doi_status = 'unavailable' if permissions == 'private' else 'public'
-            enqueue_task(update_doi_metadata_on_change.s(self._id, status=doi_status))
+            enqueue_task(update_doi_metadata_on_change.s(self._id))
 
         if log:
             action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
