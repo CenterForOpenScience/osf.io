@@ -8,6 +8,8 @@ from framework import sentry
 
 logger = logging.getLogger(__name__)
 
+DEBUG_PAGE_SIZE = 100000
+
 TABLES_TO_POPULATE_WITH_MODIFIED = [
     'osf_comment',
     'osf_institution',
@@ -16,10 +18,10 @@ TABLES_TO_POPULATE_WITH_MODIFIED = [
 
 POPULATE_COLUMNS = [
     """UPDATE osf_basefilenode SET deleted = deleted_on
-    WHERE id IN (SELECT id FROM osf_basefilenode WHERE deleted_on IS NOT NULL AND deleted IS NULL LIMIT %s)
+    WHERE id IN (SELECT id FROM osf_basefilenode WHERE deleted_on IS NOT NULL AND deleted IS NULL LIMIT {})
     RETURNING id;""",
     """UPDATE osf_abstractnode SET deleted = CASE WHEN deleted_date IS NOT NULL THEN deleted_date ELSE last_logged END
-    WHERE id IN (SELECT id FROM osf_abstractnode WHERE is_deleted AND deleted IS NULL LIMIT %s)
+    WHERE id IN (SELECT id FROM osf_abstractnode WHERE is_deleted AND deleted IS NULL LIMIT {})
     RETURNING id;"""
 ]
 
@@ -28,6 +30,19 @@ WHERE id IN (SELECT id FROM {} WHERE is_deleted AND deleted IS NULL LIMIT {}) RE
 
 CHECK_POPULATED = """SELECT deleted, is_deleted FROM {} WHERE deleted IS NULL AND is_deleted ;"""
 
+FORWARD_BASE_FILE = POPULATE_COLUMNS[0].format(DEBUG_PAGE_SIZE)
+FORWARD_ABSTRACT_NODE = POPULATE_COLUMNS[1].format(DEBUG_PAGE_SIZE)
+
+REVERSE_BASE_FILE = 'UPDATE osf_basefilenode SET deleted = null where deleted_on IS NOT NULL'
+REVERSE_ABSTRACT_NODE = 'UPDATE osf_abstractnode SET deleted = null WHERE deleted_date IS NOT NULL'
+
+FORWARD_COMMENT = UPDATE_DELETED_WITH_MODIFIED.format('osf_comment', 'osf_comment', DEBUG_PAGE_SIZE)
+FORWARD_INSTITUTION = UPDATE_DELETED_WITH_MODIFIED.format('osf_institution', 'osf_institution', DEBUG_PAGE_SIZE)
+FORWARD_PRIVATE_LINK = UPDATE_DELETED_WITH_MODIFIED.format('osf_privatelink', 'osf_privatelink', DEBUG_PAGE_SIZE)
+
+REVERSE_COMMENT = 'UPDATE osf_basefilenode SET deleted = null where is_deleted'
+REVERSE_INSTITUTION = 'UPDATE osf_institution SET deleted = null where is_deleted'
+REVERSE_PRIVATE_LINK = 'UPDATE osf_privatelink SET deleted = null where is_deleted'
 
 @celery_app.task(name='management.commands.migrate_deleted_date')
 def populate_deleted(dry_run=False, page_size=1000):
@@ -56,7 +71,7 @@ def run_sql(statement, page_size):
     sentry.log_message('Populating deleted column in table {}'.format(table))
 
     with connection.cursor() as cursor:
-        cursor.execute(statement, [page_size])
+        cursor.execute(statement.format(page_size))
         rows = cursor.fetchall()
         if not rows:
             sentry.log_message('Deleted field in {} table is populated'.format(table))

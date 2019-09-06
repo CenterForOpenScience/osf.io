@@ -6,7 +6,18 @@ import logging
 
 from django.db import migrations
 
-from osf.management.commands.migrate_deleted_date import populate_deleted
+from osf.management.commands.migrate_deleted_date import (
+    FORWARD_BASE_FILE,
+    FORWARD_ABSTRACT_NODE,
+    FORWARD_COMMENT,
+    FORWARD_INSTITUTION,
+    FORWARD_PRIVATE_LINK,
+    REVERSE_BASE_FILE,
+    REVERSE_ABSTRACT_NODE,
+    REVERSE_COMMENT,
+    REVERSE_INSTITUTION,
+    REVERSE_PRIVATE_LINK,
+)
 from website.settings import DEBUG_MODE
 
 logger = logging.getLogger(__name__)
@@ -20,7 +31,11 @@ class Migration(migrations.Migration):
 
     if DEBUG_MODE:
         operations = [
-            populate_deleted(dry_run=False, page_size=100000)
+            migrations.RunSQL(FORWARD_BASE_FILE, REVERSE_BASE_FILE),
+            migrations.RunSQL(FORWARD_INSTITUTION, REVERSE_INSTITUTION),
+            migrations.RunSQL(FORWARD_ABSTRACT_NODE, REVERSE_ABSTRACT_NODE),
+            migrations.RunSQL(FORWARD_PRIVATE_LINK, REVERSE_PRIVATE_LINK),
+            migrations.RunSQL(FORWARD_COMMENT, REVERSE_COMMENT)
         ]
     else:
         operations = []
