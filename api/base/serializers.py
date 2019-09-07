@@ -1825,15 +1825,19 @@ class BaseProfileSerializer(JSONAPISerializer):
         'institution',
     ])
 
-    user = RelationshipField(related_view='users:user-detail', related_view_kwargs={'user_id': '<user._id>'})
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+
     institution = ser.CharField(required=True, allow_null=False)
     department = ser.CharField(required=False)
     start_date = ser.DateField(required=False)
     end_date = ser.DateField(required=False)
     ongoing = ser.BooleanField(default=False, required=False)
 
-    id = IDField(source='_id', read_only=True)
-    type = TypeField()
+    user = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<user._id>'},
+    )
 
     links = LinksField({'self': 'self_url'})
 

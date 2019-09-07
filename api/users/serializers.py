@@ -15,9 +15,10 @@ from api.base.serializers import (
 from api.base.utils import default_node_list_queryset
 from osf.models import Registration, Node
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated, hashids
+from api.base.serializers import BaseProfileSerializer
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError, BlacklistedEmailError
-from osf.models import OSFUser, QuickFilesNode, Preprint, Email, Education, Employment
+from osf.models import OSFUser, QuickFilesNode, Preprint, Email, UserEducation, UserEmployment
 from osf.utils.requests import string_type_request_headers
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
@@ -385,6 +386,74 @@ class UserInstitutionsRelationshipSerializer(BaseAPISerializer):
         type_ = 'institutions'
 
 
+class UserEducationSerializer(BaseProfileSerializer):
+    degree = ser.CharField(required=False)
+    schema = 'education-schema.json'
+
+    class Meta:
+        type_ = 'user-education'
+
+    def self_url(self, obj):
+        return absolute_reverse(
+            'users:user-education-detail', kwargs={
+                'education_id': obj._id,
+                'user_id': obj.user._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        education = UserEducation(user=user, **validated_data)
+        education.save()
+        return education
+
+
+class UserEducationDetailSerializer(UserEducationSerializer):
+    institution = ser.CharField(required=False)
+    id = IDField(source='_id', required=True)
+
+    def update(self, education, validated_data):
+        for attr, value in validated_data.items():
+            setattr(education, attr, value)
+        education.save()
+        return education
+
+
+class UserEmploymentSerializer(BaseProfileSerializer):
+    title = ser.CharField(required=False)
+    schema = 'employment-schema.json'
+
+    class Meta:
+        type_ = 'user-employment'
+
+    def self_url(self, obj):
+        return absolute_reverse(
+            'users:user-employment-detail', kwargs={
+                'employment_id': obj._id,
+                'user_id': obj.user._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        employment = UserEmployment(user=user, **validated_data)
+        employment.save()
+        return employment
+
+
+class UserEmploymentDetailSerializer(UserEmploymentSerializer):
+    institution = ser.CharField(required=False)
+    id = IDField(source='_id', required=True)
+
+    def update(self, employment, validated_data):
+        for attr, value in validated_data.items():
+            setattr(employment, attr, value)
+        employment.save()
+        return employment
+
+
 class RelatedEducation(JSONAPIRelationshipSerializer):
     id = ser.CharField(required=False, allow_null=True, source='_id')
     class Meta:
@@ -408,7 +477,7 @@ class UserEducationRelationshipSerializer(BaseAPISerializer):
         new_order = []
         new_data = []
         for entry in validated_data['data']:
-            education = get_object_or_404(Education, _id=entry['_id'])
+            education = get_object_or_404(UserEducation, _id=entry['_id'])
             new_order.append(education.id)
             new_data.append(education)
         user.set_education_order(new_order)
@@ -435,7 +504,7 @@ class UserEducationRelationshipSerializer(BaseAPISerializer):
         return obj.absolute_api_v2_url
 
     class Meta:
-        type_ = 'education'
+        type_ = 'user-education'
 
 
 class RelatedEmployment(JSONAPIRelationshipSerializer):
@@ -459,7 +528,7 @@ class UserEmploymentRelationshipSerializer(BaseAPISerializer):
         new_order = []
         new_data = []
         for entry in validated_data['data']:
-            employment = get_object_or_404(Employment, _id=entry['_id'])
+            employment = get_object_or_404(UserEmployment, _id=entry['_id'])
             new_order.append(employment.id)
             new_data.append(employment)
         user.set_employment_order(new_order)

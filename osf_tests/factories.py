@@ -247,7 +247,7 @@ class EducationFactory(DjangoModelFactory):
     ongoing = False
 
     class Meta:
-        model = models.Education
+        model = models.UserEducation
 
 class EmploymentFactory(DjangoModelFactory):
     user = SubFactory(UserFactory)
@@ -259,7 +259,7 @@ class EmploymentFactory(DjangoModelFactory):
     ongoing = False
 
     class Meta:
-        model = models.Employment
+        model = models.UserEmployment
 
 
 class NodeLicenseRecordFactory(DjangoModelFactory):
