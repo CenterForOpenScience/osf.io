@@ -274,8 +274,12 @@ def iqbrims_reject_storage(**kwargs):
     iqbrims = node.get_addon('iqbrims')
     folder = kwargs['folder']
     folder_name = None
+    file_name = None
     if folder == 'index':
         folder_name = REVIEW_FOLDERS['raw']
+    elif folder == 'scan':
+        folder_name = REVIEW_FOLDERS[folder]
+        file_name = 'scan.pdf'
     else:
         folder_name = REVIEW_FOLDERS[folder]
     try:
@@ -285,6 +289,11 @@ def iqbrims_reject_storage(**kwargs):
     client = IQBRIMSClient(access_token)
     folders = client.folders(folder_id=iqbrims.folder_id)
     folders = [f for f in folders if f['title'] == folder_name]
+    if file_name is not None and len(folders) > 0:
+        files = client.files(folder_id=folders[0]['id'])
+        files = [f for f in files if f['title'] == file_name]
+    else:
+        files = []
 
     folder_path = iqbrims.folder_path
     management_node = _get_management_node(node)
@@ -292,19 +301,33 @@ def iqbrims_reject_storage(**kwargs):
     assert folder_path.startswith(base_folder_path)
     root_folder_path = folder_path[len(base_folder_path):]
 
-    if len(folders) == 0:
-        logger.info(u'Already rejected: {}, {}'.format(folder, folder_name))
-        return {'status': 'nochange',
+    if file_name is not None:
+        if len(files) == 0:
+            logger.info(u'Already rejected: {}, {}'.format(folder,
+                                                           file_name))
+            return {'status': 'nochange',
+                    'root_folder': root_folder_path}
+        logger.info(u'Rejecting Storage: {}, {}, {}'.format(folder,
+                                                            file_name,
+                                                            files[0]['id']))
+        client.delete_file(files[0]['id'])
+        return {'status': 'rejected',
                 'root_folder': root_folder_path}
-    logger.info(u'Rejecting Storage: {}, {}, {}'.format(folder, folder_name,
-                                                        folders[0]['id']))
-    rejected_name = u'{}.{}'.format(folder_name,
-                                    datetime.now().strftime('%Y%m%d-%H%M%S'))
-    client.rename_folder(folders[0]['id'], rejected_name)
-    client.create_folder(iqbrims.folder_id, folder_name)
-
-    return {'status': 'rejected',
-            'root_folder': root_folder_path}
+    else:
+        if len(folders) == 0:
+            logger.info(u'Already rejected: {}, {}'.format(folder,
+                                                           folder_name))
+            return {'status': 'nochange',
+                    'root_folder': root_folder_path}
+        logger.info(u'Rejecting Storage: {}, {}, {}'.format(folder,
+                                                            folder_name,
+                                                            folders[0]['id']))
+        dtid = datetime.now().strftime('%Y%m%d-%H%M%S')
+        rejected_name = u'{}.{}'.format(folder_name, dtid)
+        client.rename_folder(folders[0]['id'], rejected_name)
+        client.create_folder(iqbrims.folder_id, folder_name)
+        return {'status': 'rejected',
+                'root_folder': root_folder_path}
 
 @must_be_valid_project
 @must_have_addon(SHORT_NAME, 'node')

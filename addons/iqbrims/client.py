@@ -188,6 +188,16 @@ class IQBRIMSClient(BaseClient):
         )
         return res.json()
 
+    def delete_file(self, file_id):
+        res = self._make_request(
+            'DELETE',
+            self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files',
+                            file_id),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.json()
+
     def create_folder_if_not_exists(self, folder_id, title):
         items = self.folders(folder_id)
         exists = filter(lambda item: item['title'] == title, items)
