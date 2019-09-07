@@ -130,7 +130,7 @@ class AbstractBaseProfileModel(ObjectIDMixin, BaseModel):
         return '{} for user {}'.format(self.institution, self.user._id)
 
 
-class Employment(AbstractBaseProfileModel):
+class UserEmployment(AbstractBaseProfileModel):
     user = models.ForeignKey('OSFUser', on_delete=models.CASCADE, related_name='employment')
     title = models.CharField(max_length=650, null=True, blank=True)
 
@@ -138,7 +138,7 @@ class Employment(AbstractBaseProfileModel):
         order_with_respect_to = 'user'
 
 
-class Education(AbstractBaseProfileModel):
+class UserEducation(AbstractBaseProfileModel):
     user = models.ForeignKey('OSFUser', on_delete=models.CASCADE, related_name='education')
     degree = models.CharField(max_length=650, null=True, blank=True)
 
@@ -1629,7 +1629,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def remove_education(self, education_id):
         try:
             education = self.education.get(_id=education_id)
-        except Education.DoesNotExist:
+        except UserEducation.DoesNotExist:
             return False
         else:
             education.delete()
@@ -1638,7 +1638,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def remove_employment(self, employment_id):
         try:
             employment = self.employment.get(_id=employment_id)
-        except Employment.DoesNotExist:
+        except UserEmployment.DoesNotExist:
             return False
         else:
             employment.delete()

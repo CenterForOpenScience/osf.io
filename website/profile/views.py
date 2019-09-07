@@ -30,7 +30,7 @@ from framework.status import push_status_message
 from framework.utils import throttle_period_expired
 
 from osf import features
-from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode, Education, Employment
+from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode, UserEducation, UserEmployment
 from osf.exceptions import BlacklistedEmailError
 from osf.utils.requests import string_type_request_headers
 from website import mails
@@ -794,14 +794,14 @@ def unserialize_contents(field, func, auth):
 @must_be_logged_in
 def unserialize_jobs(auth, **kwargs):
     verify_user_match(auth, **kwargs)
-    unserialize_contents(Employment, auth, 'employment')
+    unserialize_contents(UserEmployment, auth, 'employment')
     # TODO: Add return value
 
 
 @must_be_logged_in
 def unserialize_schools(auth, **kwargs):
     verify_user_match(auth, **kwargs)
-    unserialize_contents(Education, auth, 'education')
+    unserialize_contents(UserEducation, auth, 'education')
     # TODO: Add return value
 
 

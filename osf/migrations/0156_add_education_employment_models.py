@@ -16,14 +16,14 @@ DATE_FIELDS = ['startMonth', 'startYear', 'endMonth', 'endYear']
 
 def populate_new_models(state, schema):
     OSFUser = state.get_model('osf', 'osfuser')
-    Education = state.get_model('osf', 'education')
-    Employment = state.get_model('osf', 'employment')
+    UserEducation = state.get_model('osf', 'usereducation')
+    UserEmployment = state.get_model('osf', 'useremployment')
 
     users_with_education = OSFUser.objects.exclude(schools=[])
-    set_model_content(Education, users_with_education, 'schools')
+    set_model_content(UserEducation, users_with_education, 'schools')
 
     users_with_employment = OSFUser.objects.exclude(jobs=[])
-    set_model_content(Employment, users_with_employment, 'jobs')
+    set_model_content(UserEmployment, users_with_employment, 'jobs')
 
 
 def parse_model_datetime(month, year):
@@ -71,7 +71,7 @@ def reset_field_content(model, queryset, original_attribute):
             'institution': entry.institution,
             'startYear': start_date.year if start_date else None,
             'startMonth': start_date.month if start_date else None,
-            'endYear': end_date.month if end_date else None,
+            'endYear': end_date.year if end_date else None,
             'endMonth': end_date.month if end_date else None,
             'department': entry.department,
             'ongoing': entry.ongoing,
@@ -87,14 +87,14 @@ def reset_field_content(model, queryset, original_attribute):
         user.save()
 
 def put_jobs_and_schools_back(state, schema):
-    Education = state.get_model('osf', 'education')
-    Employment = state.get_model('osf', 'employment')
+    UserEducation = state.get_model('osf', 'usereducation')
+    UserEmployment = state.get_model('osf', 'useremployment')
 
-    education_queryset = Education.objects.all()
-    reset_field_content(Education, education_queryset, 'schools')
+    education_queryset = UserEducation.objects.all()
+    reset_field_content(UserEducation, education_queryset, 'schools')
 
-    employment_queryset = Employment.objects.all()
-    reset_field_content(Employment, employment_queryset, 'jobs')
+    employment_queryset = UserEmployment.objects.all()
+    reset_field_content(UserEmployment, employment_queryset, 'jobs')
 
 
 class Migration(migrations.Migration):
@@ -105,7 +105,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Education',
+            name='UserEducation',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
@@ -121,7 +121,7 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
-            name='Employment',
+            name='UserEmployment',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
@@ -137,11 +137,11 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.AlterOrderWithRespectTo(
-            name='employment',
+            name='useremployment',
             order_with_respect_to='user',
         ),
         migrations.AlterOrderWithRespectTo(
-            name='education',
+            name='usereducation',
             order_with_respect_to='user',
         ),
         migrations.RunPython(populate_new_models, put_jobs_and_schools_back),

@@ -31,8 +31,12 @@ from api.nodes.utils import NodeOptimizationMixin
 from api.osf_groups.serializers import GroupSerializer
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
-from api.education.serializers import EducationSerializer, EducationDetailSerializer
-from api.employment.serializers import EmploymentSerializer, EmploymentDetailSerializer
+from api.users.serializers import (
+    UserEducationSerializer,
+    UserEducationDetailSerializer,
+    UserEmploymentSerializer,
+    UserEmploymentDetailSerializer,
+)
 
 from api.users.permissions import (
     CurrentUser, ReadOnlyOrCurrentUser,
@@ -87,8 +91,8 @@ from osf.models import (
     OSFGroup,
     OSFUser,
     Email,
-    Education,
-    Employment,
+    UserEducation,
+    UserEmployment,
 )
 from osf.utils import permissions
 from website import mails, settings
@@ -446,13 +450,13 @@ class UserEducationList(JSONAPIBaseView, generics.ListCreateAPIView, UserMixin, 
 
     ordering = ('-created')
 
-    serializer_class = EducationSerializer
+    serializer_class = UserEducationSerializer
     view_category = 'users'
     view_name = 'user-education'
 
     def get_default_queryset(self):
         user = self.get_user(check_permissions=True)
-        return Education.objects.filter(user=user)
+        return UserEducation.objects.filter(user=user)
 
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -467,12 +471,12 @@ class UserEducationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
 
     ordering = ('-created')
 
-    serializer_class = EducationDetailSerializer
+    serializer_class = UserEducationDetailSerializer
     view_category = 'users'
     view_name = 'user-education-detail'
 
     def get_object(self):
-        education = get_object_or_error(Education, self.kwargs['education_id'], self.request)
+        education = get_object_or_error(UserEducation, self.kwargs['education_id'], self.request)
         self.check_object_permissions(self.request, education)
         return education
 
@@ -486,13 +490,13 @@ class UserEmploymentList(JSONAPIBaseView, generics.ListCreateAPIView, UserMixin,
 
     ordering = ('-created')
 
-    serializer_class = EmploymentSerializer
+    serializer_class = UserEmploymentSerializer
     view_category = 'users'
     view_name = 'user-employment'
 
     def get_default_queryset(self):
         user = self.get_user(check_permissions=True)
-        return Employment.objects.filter(user=user)
+        return UserEmployment.objects.filter(user=user)
 
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -507,12 +511,12 @@ class UserEmploymentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
 
     ordering = ('-created')
 
-    serializer_class = EmploymentDetailSerializer
+    serializer_class = UserEmploymentDetailSerializer
     view_category = 'users'
     view_name = 'user-employment-detail'
 
     def get_object(self):
-        employment = get_object_or_error(Employment, self.kwargs['employment_id'], self.request)
+        employment = get_object_or_error(UserEmployment, self.kwargs['employment_id'], self.request)
         self.check_object_permissions(self.request, employment)
         return employment
 
@@ -673,7 +677,7 @@ class UserEducationRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyA
         data = self.request.data['data']
         user = self.request.user
         for val in data:
-            education = get_object_or_error(Education, Q(_id=val['id']), self.request)
+            education = get_object_or_error(UserEducation, Q(_id=val['id']), self.request)
             if education in user.education.all():
                 user.remove_education(val['id'])
         user.save()
@@ -711,7 +715,7 @@ class UserEmploymentRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroy
         data = self.request.data['data']
         user = self.request.user
         for val in data:
-            employment = get_object_or_error(Employment, Q(_id=val['id']), self.request)
+            employment = get_object_or_error(UserEmployment, Q(_id=val['id']), self.request)
             if employment in user.employment.all():
                 user.remove_employment(val['id'])
         user.save()

@@ -1,7 +1,7 @@
 import pytest
 
 from api.base.settings import API_BASE
-from osf_tests.factories import EmploymentFactory, AuthUserFactory
+from osf_tests.factories import UserEmploymentFactory, AuthUserFactory
 
 
 @pytest.fixture
@@ -14,11 +14,11 @@ def user_two():
 
 @pytest.fixture
 def employment_one(user):
-    return EmploymentFactory(user=user, institution='Employment One')
+    return UserEmploymentFactory(user=user, institution='Employment One')
 
 @pytest.fixture
 def employment_two(user):
-    return EmploymentFactory(user=user, institution='Employment Two')
+    return UserEmploymentFactory(user=user, institution='Employment Two')
 
 
 @pytest.fixture
@@ -53,8 +53,8 @@ class TestEmployment:
         assert 'users/{}/employment/{}'.format(user._id, employment_one._id) in first['links']['self']
 
     def test_filter_employment_list(self, app, user, employment_one, employment_two):
-        employment_one_two = EmploymentFactory(user=user, institution='Employment One')
-        employment_two_two = EmploymentFactory(user=user, institution='Employment Two')
+        employment_one_two = UserEmploymentFactory(user=user, institution='Employment One')
+        employment_two_two = UserEmploymentFactory(user=user, institution='Employment Two')
 
         # filter by institution
         url = '/{}employment/?filter[institution]=Employment One'.format(API_BASE)
