@@ -58,7 +58,7 @@ def noop(*args, **kwargs):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0181_add_schema_block_models'),
+        ('osf', '0182_add_schema_block_models'),
     ]
 
     operations = [
