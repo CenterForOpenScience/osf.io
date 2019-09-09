@@ -3,6 +3,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 from django.db import connection, transaction
+<<<<<<< HEAD:osf/management/commands/migrate_deleted_date.py
 from framework.celery_tasks import app as celery_app
 <<<<<<< HEAD
 from framework import sentry
@@ -45,6 +46,9 @@ REVERSE_COMMENT = 'UPDATE osf_comment SET deleted = null'
 REVERSE_INSTITUTION = 'UPDATE osf_institution SET deleted = null'
 REVERSE_PRIVATE_LINK = 'UPDATE osf_privatelink SET deleted = null'
 =======
+=======
+from framework import sentry
+>>>>>>> Renaming migrations. Modifying osfstorage models:osf/management/commands/addon_deleted_date.py
 
 logger = logging.getLogger(__name__)
 
@@ -82,11 +86,11 @@ TABLES_TO_POPULATE_WITH_MODIFIED = [
     'addons_zotero_nodesettings'
 ]
 
-UPDATE_DELETED_WITH_MODIFIED = 'SET statement_timeout = 10000; UPDATE {} SET deleted=modified WHERE id IN (SELECT id FROM {} WHERE is_deleted AND deleted IS NULL LIMIT {}) RETURNING id;'
+UPDATE_DELETED_WITH_MODIFIED = """UPDATE {} SET deleted=modified
+    WHERE id IN (SELECT id FROM {} WHERE is_deleted AND deleted IS NULL LIMIT {}) RETURNING id;"""
 
 >>>>>>> Adding migrate script
 
-@celery_app.task(name='management.commands.migrate_deleted_date')
 def populate_deleted(dry_run=False, page_size=1000):
     with transaction.atomic():
         for table in TABLES_TO_POPULATE_WITH_MODIFIED:
@@ -124,9 +128,14 @@ def run_sql(statement, check_statement, page_size):
 =======
         cursor.execute(statement.format(table, table, page_size))
         rows = cursor.fetchall()
+<<<<<<< HEAD:osf/management/commands/migrate_deleted_date.py
         if not rows:
             logger.info('Sentry notification that {} is populated'.format(table))
 >>>>>>> Adding migrate script
+=======
+        if rows:
+            sentry.log_message('Table {} still has rows to populate'.format(table))
+>>>>>>> Renaming migrations. Modifying osfstorage models:osf/management/commands/addon_deleted_date.py
 
 class Command(BaseCommand):
     help = '''Populates new deleted field for various models. Ensure you have run migrations
@@ -152,17 +161,17 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         script_start_time = datetime.datetime.now()
-        logger.info('Script started time: {}'.format(script_start_time))
+        sentry.log_message('Script started time: {}'.format(script_start_time))
         logger.debug(options)
 
         dry_run = options['dry_run']
         page_size = options['page_size']
 
         if dry_run:
-            logger.info('DRY RUN')
+            sentry.log_message('DRY RUN')
 
         populate_deleted(dry_run, page_size)
 
         script_finish_time = datetime.datetime.now()
-        logger.info('Script finished time: {}'.format(script_finish_time))
-        logger.info('Run time {}'.format(script_finish_time - script_start_time))
+        sentry.log_message('Script finished time: {}'.format(script_finish_time))
+        sentry.log_message('Run time {}'.format(script_finish_time - script_start_time))
