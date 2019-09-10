@@ -71,7 +71,7 @@ def run_sql(statement, check_statement, page_size):
     with connection.cursor() as cursor:
         cursor.execute(statement.format(LIMIT_CLAUSE), [page_size])
         rows = cursor.fetchall()
-        if rows:
+        if not rows:
             with connection.cursor() as cursor:
                 cursor.execute(check_statement, [page_size])
                 sentry.log_message('Deleted field in {} table is populated'.format(table))

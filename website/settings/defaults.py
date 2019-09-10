@@ -603,7 +603,7 @@ class CeleryConfig:
             #   'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
             # },
             # 'migrate_deleted_date': {
-            #   'task': 'management.commands.migreate_deleted_date',
+            #   'task': 'management.commands.migrate_deleted_date',
             #   'schedule': crontab(minute=0, hour=3),
             # },
             'generate_sitemap': {
