@@ -267,22 +267,23 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
                 if subclass._provider == self.provider:
                     return subclass
 
-    def get_version(self, version=None, required=False):
+    def get_version(self, version_id=None, required=False):
         """Find a version with identifier revision
         :returns: FileVersion or None
         :raises: VersionNotFoundError if required is True
         """
-        if version is None:
+        if version_id is None:
             if self.versions.exists():
                 return self.versions.first()
             return None
 
         # TODO: [ENG-114] Change to .get when identifiers are unique to basefilenode
-        version = self.versions.filter(identifier=version).first()
+        version = self.versions.filter(identifier=version_id).first()
         if version:
             return version
-        elif required:
-            raise VersionNotFoundError(version)
+
+        if required:
+            raise VersionNotFoundError(version_id)
 
     def generate_waterbutler_url(self, **kwargs):
         base_url = None
