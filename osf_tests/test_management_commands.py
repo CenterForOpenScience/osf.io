@@ -31,6 +31,7 @@ def next_file_size():
         yield size
         size *= 2
 
+
 class TestDataStorageUsage(DbTestCase):
 
     def setUp(self):

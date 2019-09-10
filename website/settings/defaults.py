@@ -602,6 +602,10 @@ class CeleryConfig:
             #   'task': 'management.commands.migrate_pagecounter_data',
             #   'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
             # },
+            # 'migrate_deleted_date': {
+            #   'task': 'management.commands.migreate_deleted_date',
+            #   'schedule': crontab(minute=0, hour=3),
+            # },
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.

@@ -641,9 +641,6 @@ class TrashedFileNode(BaseFileNode):
     _provider = None
 
     def delete(self, user=None, parent=None, save=True, deleted_on=None):
-        self.deleted = deleted_on or timezone.now()
-        if save:
-            self.save()
         if isinstance(self, TrashedFileNode):  # TODO Why is this needed
             raise UnableToDelete('You cannot delete things that are deleted.')
 
@@ -718,7 +715,7 @@ class TrashedFolder(TrashedFileNode):
         :param recursive:
         :param parent:
         :param save:
-        :param deleted:
+        :param deleted_on:
         :return:
         """
         tf = super(TrashedFolder, self).restore(recursive=True, parent=None, save=True, deleted_on=None)

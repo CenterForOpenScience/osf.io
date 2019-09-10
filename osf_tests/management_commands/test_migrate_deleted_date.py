@@ -52,7 +52,8 @@ class TestMigrateDeletedDate(DbTestCase):
         assert(comment.deleted == comment.modified)
 
     def test_populate_columns(self):
-        statement = migrate_deleted_date.POPULATE_COLUMNS[0]
+        statement = migrate_deleted_date.POPULATE_BASE_FILE_NODE
+        check_statement = migrate_deleted_date.CHECK_BASE_FILE_NODE
         user = UserFactory()
         project = self.project(user)
         osf_folder = OsfStorageFolder.objects.filter(target_object_id=project.id)[0]
@@ -69,7 +70,7 @@ class TestMigrateDeletedDate(DbTestCase):
 
         osf_folder.save()
         project.save()
-        migrate_deleted_date.run_sql(statement, 1000)
+        migrate_deleted_date.run_sql(statement, check_statement, 1000)
 
         osf_folder.reload()
         assert(osf_folder.deleted)
