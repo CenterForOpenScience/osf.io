@@ -2,6 +2,14 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.26.0 (2019-09-11)
+===================
+- Create a custom through table for linking files and versions
+  for storing version names.  Supports different versions of the same
+  file having different names.
+- Update README for populating institutions.
+
+
 19.25.0 (2019-09-05)
 ===================
 - Automate account deactivation if users have no content
