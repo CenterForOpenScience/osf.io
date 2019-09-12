@@ -9,7 +9,7 @@ from os.path import splitext
 from flask import Request as FlaskRequest
 from framework import analytics
 from guardian.shortcuts import get_perms
-from past.builtins import basestring
+from past.builtins import str
 
 # OSF imports
 import itsdangerous
@@ -471,14 +471,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         social_user_fields = {}
         for key, val in self.social.items():
             if val and key in self.SOCIAL_FIELDS:
-                if isinstance(self.SOCIAL_FIELDS[key], basestring):
-                    if isinstance(val, basestring):
+                if isinstance(self.SOCIAL_FIELDS[key], str):
+                    if isinstance(val, str):
                         social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val)
                     else:
                         # Only provide the first url for services where multiple accounts are allowed
                         social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val[0])
                 else:
-                    if isinstance(val, basestring):
+                    if isinstance(val, str):
                         social_user_fields[key] = [val]
                     else:
                         social_user_fields[key] = val
@@ -1549,8 +1549,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     'Referrer does not have permission to add a contributor to {0}'.format(claim_origin._id)
                 )
 
-        pid = str(claim_origin._id)
-        referrer_id = str(referrer._id)
+        pid = claim_origin._id
+        referrer_id = referrer._id
         if email:
             clean_email = email.lower().strip()
         else:

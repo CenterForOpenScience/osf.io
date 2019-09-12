@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import urlparse
+from future.moves.urllib.parse import urlparse
 
 from django.db import models
 from osf.models.base import BaseModel, ObjectIDMixin

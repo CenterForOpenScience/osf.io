@@ -135,7 +135,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
             permissions.READ: []
         }
         for i in range(0, 25):
-            perm = random.choice(users.keys())
+            perm = random.choice(list(users.keys()))
             user = AuthUserFactory()
 
             project_private.add_contributor(user, permissions=perm)
