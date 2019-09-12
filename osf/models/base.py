@@ -88,10 +88,10 @@ class BaseModel(TimeStampedModel, QuerySetExplainMixin):
 
     @classmethod
     def load(cls, data, select_for_update=False):
-        from osf.models.citation import CitationStyle
+        from osf.models import CitationStyle, PreprintRequest
 
         try:
-            if cls == CitationStyle:  # TODO: fix to be overridden properly
+            if cls in (CitationStyle, PreprintRequest):  # TODO: fix to be overridden properly
                 # Some models (CitationStyle) have an _id that is not a bson
                 return cls.objects.get(_id=data) if not select_for_update else cls.objects.filter(_id=data).select_for_update().get()
             return cls.objects.get(pk=data) if not select_for_update else cls.objects.filter(pk=data).select_for_update().get()
