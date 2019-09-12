@@ -2,7 +2,7 @@ from rest_framework import status as http_status
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import status
-from rest_framework.exceptions import APIException, AuthenticationFailed
+from rest_framework.exceptions import APIException, AuthenticationFailed, ErrorDetail
 
 
 def get_resource_object_member(error_key, context):
@@ -33,7 +33,7 @@ def dict_error_formatting(errors, context, index=None):
         index = str(index) + '/'
 
     for error_key, error_description in errors.items():
-        if isinstance(error_description, basestring):
+        if isinstance(error_description, ErrorDetail):
             error_description = [error_description]
 
         if error_key in top_level_error_keys:
