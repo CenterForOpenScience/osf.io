@@ -9,7 +9,7 @@ from enum import unique
 class ChoiceEnum(Enum):
     @classmethod
     def choices(cls):
-        return tuple((v, v.title()) for v in cls.values() if v is not None)
+        return tuple((v, str(v).title()) for v in cls.values() if v is not None)
 
     @classmethod
     def values(cls):
@@ -41,11 +41,11 @@ ReviewTriggers = ChoiceEnum('ReviewTriggers', REVIEW_TRIGGERS)
 
 
 CHRONOS_STATUS_STATES = [
-    ('DRAFT', '1'),
-    ('SUBMITTED', '2'),
-    ('ACCEPTED', '3'),
-    ('PUBLISHED', '4'),
-    ('CANCELLED', '5'),
+    ('DRAFT', 1),
+    ('SUBMITTED', 2),
+    ('ACCEPTED', 3),
+    ('PUBLISHED', 4),
+    ('CANCELLED', 5),
 ]
 
 ChronosSubmissionStatus = ChoiceEnum('ChronosSubmissionStatus', CHRONOS_STATUS_STATES)
