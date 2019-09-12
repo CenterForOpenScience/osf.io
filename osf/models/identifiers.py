@@ -51,10 +51,10 @@ class IdentifierMixin(models.Model):
         if client:
             return client.create_identifier(self, category)
 
-    def request_identifier_update(self, category, status=None):
+    def request_identifier_update(self, category):
         client = self.get_doi_client()
         if client:
-            return client.update_identifier(self, category, status=status)
+            return client.update_identifier(self, category)
 
     def get_identifier(self, category):
         """Returns None of no identifier matches"""

@@ -1802,15 +1802,6 @@ class TestUserAccount(OsfTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(send_mail.call_count, 1)
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_user_cannot_request_account_deactivation_before_throttle_expires(self, send_mail):
-        url = api_url_for('request_deactivation')
-        self.app.post(url, auth=self.user.auth)
-        assert_true(send_mail.called)
-        res = self.app.post(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(send_mail.call_count, 1)
-
     def test_get_unconfirmed_emails_exclude_external_identity(self):
         external_identity = {
             'service': {
