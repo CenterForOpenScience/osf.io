@@ -697,11 +697,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.is_staff = self.is_staff or user.is_staff
 
         # copy over profile only if this user has no profile info
-        if user.jobs and not self.jobs:
-            self.jobs = user.jobs
+        education = user.education.all()
+        if education:
+            self.education.set(education)
 
-        if user.schools and not self.schools:
-            self.schools = user.schools
+        employment = user.employment.all()
+        if employment:
+            self.employment.set(employment)
 
         if user.social and not self.social:
             self.social = user.social
