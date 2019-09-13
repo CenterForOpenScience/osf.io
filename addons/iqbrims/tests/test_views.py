@@ -15,6 +15,7 @@ from addons.iqbrims.client import IQBRIMSClient, IQBRIMSFlowableClient
 from addons.iqbrims.serializer import IQBRIMSSerializer
 import addons.iqbrims.views as iqbrims_views
 from addons.iqbrims import settings
+from website import mails
 
 pytestmark = pytest.mark.django_db
 
@@ -583,8 +584,10 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         admin_comments = Comment.objects.filter(node=management_project)
         assert_equal(admin_comments.count(), 1)
 
+    @mock.patch.object(iqbrims_views, 'send_mail')
     @mock.patch.object(iqbrims_views, '_get_management_node')
-    def test_post_notify_has_without_mail(self, mock_get_management_node):
+    def test_post_notify_without_mail(self, mock_get_management_node,
+                                      mock_send_mail):
         management_project = ProjectFactory()
         mock_get_management_node.return_value = management_project
 
@@ -611,9 +614,12 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_equal(user_comments.count(), 1)
         admin_comments = Comment.objects.filter(node=management_project)
         assert_equal(admin_comments.count(), 1)
+        assert mock_send_mail.call_args is None
 
+    @mock.patch.object(iqbrims_views, 'send_mail')
     @mock.patch.object(iqbrims_views, '_get_management_node')
-    def test_post_notify_user_has_without_mail(self, mock_get_management_node):
+    def test_post_notify_user_without_mail(self, mock_get_management_node,
+                                           mock_send_mail):
         management_project = ProjectFactory()
         mock_get_management_node.return_value = management_project
 
@@ -640,9 +646,12 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_equal(user_comments.count(), 1)
         admin_comments = Comment.objects.filter(node=management_project)
         assert_equal(admin_comments.count(), 0)
+        assert mock_send_mail.call_args is None
 
+    @mock.patch.object(iqbrims_views, 'send_mail')
     @mock.patch.object(iqbrims_views, '_get_management_node')
-    def test_post_notify_adm_has_without_mail(self, mock_get_management_node):
+    def test_post_notify_adm_without_mail(self, mock_get_management_node,
+                                          mock_send_mail):
         management_project = ProjectFactory()
         mock_get_management_node.return_value = management_project
 
@@ -669,3 +678,84 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_equal(user_comments.count(), 0)
         admin_comments = Comment.objects.filter(node=management_project)
         assert_equal(admin_comments.count(), 1)
+        assert mock_send_mail.call_args is None
+
+    @mock.patch.object(iqbrims_views, 'send_mail')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    def test_post_notify_with_mail(self, mock_get_management_node,
+                                   mock_send_mail):
+        management_project = ProjectFactory()
+        mock_get_management_node.return_value = management_project
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
+        url = self.project.api_url_for('iqbrims_post_notify')
+        res = self.app.post_json(url, {
+          'notify_type': 'test_notify',
+          'to': ['admin', 'user'],
+          'use_mail': True,
+        }, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_items_equal(res.json, {'status': 'complete'})
+        assert_equal(self.project.logs.count(), 3)
+        assert_equal(management_project.logs.count(), 2)
+        user_comments = Comment.objects.filter(node=self.project)
+        assert_equal(user_comments.count(), 1)
+        admin_comments = Comment.objects.filter(node=management_project)
+        assert_equal(admin_comments.count(), 1)
+        assert mock_send_mail.call_args is not None
+
+    @mock.patch.object(iqbrims_views, 'send_mail')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    def test_post_notify_body(self, mock_get_management_node, mock_send_mail):
+        management_project = ProjectFactory()
+        mock_get_management_node.return_value = management_project
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
+        url = self.project.api_url_for('iqbrims_post_notify')
+        body_html = u'''こんにちは。<br>
+連絡です。<br>
+
+URL: <a href="http://test.test">http://test.test</a><br>
+文末。
+'''
+        comment_html = u'''**iqbrims_test_notify** こんにちは。<br>
+連絡です。<br>
+
+URL: http://test.test<br>
+文末。
+'''
+        res = self.app.post_json(url, {
+          'notify_type': 'test_notify',
+          'to': ['admin', 'user'],
+          'notify_body': body_html,
+          'use_mail': True,
+        }, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_items_equal(res.json, {'status': 'complete'})
+        assert_equal(self.project.logs.count(), 3)
+        assert_equal(management_project.logs.count(), 2)
+        user_comments = Comment.objects.filter(node=self.project)
+        assert_equal(user_comments.count(), 1)
+        assert user_comments.get().content == comment_html
+        admin_comments = Comment.objects.filter(node=management_project)
+        assert_equal(admin_comments.count(), 1)
+        assert admin_comments.get().content == comment_html
+        assert mock_send_mail.call_args is not None

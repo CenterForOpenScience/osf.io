@@ -5,6 +5,7 @@ import httplib as http
 import json
 import logging
 import urllib
+import re
 
 from django.db import transaction
 from django.db.models import Subquery
@@ -163,7 +164,10 @@ def iqbrims_post_notify(**kwargs):
             nname = 'Paper <a href="{1}">{0}</a>'.format(node.title, href)
             notify_body = notify_body.replace('${node}', nname)
     if notify_body_md is None:
-        notify_body_md = notify_body
+        a_pat = re.compile(r'<a\s+href=[\'"]?(https?://[^>\'"]+)[\'"]?>' +
+                           r'(https?://[^>]+)</a>')
+        notify_body_md = a_pat.sub(r'\1', notify_body) \
+                         if notify_body is not None else ''
     if notify_title is None:
         notify_title = action
     for n, email_template in nodes:
