@@ -1191,7 +1191,11 @@ class TestArchiverScripts(ArchiverTestCase):
             pending.append(reg)
         failed = Registration.find_failed_registrations()
         assert_equal(len(failed), 5)
-        assert_equals([f._id for f in failed], failures)
+        failures = list(failures)
+        failures.sort()
+        failed = list([f._id for f in failed])
+        failed.sort()
+        assert_equals(failed, failures)
         for pk in legacy:
             assert_false(pk in failed)
 
