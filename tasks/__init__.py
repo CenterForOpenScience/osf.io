@@ -27,6 +27,12 @@ NO_TESTS_COLLECTED = 5
 ns = Collection()
 
 try:
+    from tasks import local as local_tasks
+    ns.add_collection(Collection.from_module(local_tasks), name='local')
+except ImportError:
+    pass
+
+try:
     from admin import tasks as admin_tasks
     ns.add_collection(Collection.from_module(admin_tasks), name='admin')
 except ImportError:
