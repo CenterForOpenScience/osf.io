@@ -46,6 +46,22 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                              [u'\u2514\u2212\u2212', 'file2.txt', '', '', '', '', '', '', '', '']],
                   'majorDimension': 'ROWS'
                 })
+            with mock.patch.object(client, '_make_request',
+                                   return_value=MockResponse('{"test": true}',
+                                                             200)) as mkreq:
+                client.add_files('sheet01', 1,
+                                 [u'ファイル1.txt', u'ファイル2.txt',
+                                  u'テスト/ファイル3.txt'])
+                name, args, kwargs = mkreq.mock_calls[0]
+                print(kwargs['data'])
+                assert_equal(json.loads(kwargs['data']), {
+                  'range': 'sheet01!A3:K3',
+                  'values': [[u'\u251c\u2212\u2212', u'テスト', '', '', '', '', '.txt', '', '', ''],
+                             [u'\u2502', u'\u2514\u2212\u2212', u'ファイル3.txt', '', '', '', '', '', '', ''],
+                             [u'\u251c\u2212\u2212', u'ファイル1.txt', '', '', '', '', '', '', '', ''],
+                             [u'\u2514\u2212\u2212', u'ファイル2.txt', '', '', '', '', '', '', '', '']],
+                  'majorDimension': 'ROWS'
+                })
 
 class TestIQBRIMSFlowableClient(OsfTestCase):
 

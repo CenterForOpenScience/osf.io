@@ -353,7 +353,7 @@ def iqbrims_create_index(**kwargs):
     logger.debug(u'Result files: {}'.format([f['title'] for f in files]))
     if len(files) == 0:
         return {'status': 'processing'}
-    files = client.get_content(files[0]['id']).split('\n')
+    files = client.get_content(files[0]['id']).decode('utf8').split('\n')
     _, r = client.create_spreadsheet_if_not_exists(folders[0]['id'],
                                                    settings.INDEXSHEET_FILENAME)
     sclient = SpreadsheetClient(r['id'], access_token)
