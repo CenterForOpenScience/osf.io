@@ -246,32 +246,39 @@ def get_profile_url():
 
 def make_response_from_ticket(ticket, service_url):
     """
-    Given a CAS ticket and service URL, attempt to validate the user and return a proper redirect response.
+    Given a CAS ticket and a service URL, OSF attempts to validate the service with CAS and return a
+    proper redirect response based on the CAS service validation result.
 
-    :param str ticket: CAS service ticket
-    :param str service_url: Service URL from which the authentication request originates
-    :return: redirect response
+    :param str ticket: the CAS service ticket for service validation
+    :param str service_url: the service URL that keeps track of where the auth request comes from
+    :return: a redirect response
     """
 
     service_furl = furl.furl(service_url)
-    # `service_url` is guaranteed to be removed of `ticket` parameter, which has been pulled off in
-    # `framework.sessions.before_request()`.
+    # The `ticket` query parameter should have already been removed from the `service_url` in
+    # `framework.sessions.before_request()`. However, the extra check below doesn't hurt.
     if 'ticket' in service_furl.args:
         service_furl.args.pop('ticket')
+
     client = get_client()
     cas_resp = client.service_validate(ticket, service_furl.url)
+
     if cas_resp.authenticated:
+
         user, external_credential, action = get_user_from_cas_resp(cas_resp)
-        # user found and authenticated
+
+        # Existing user found and authenticated
         if user and action == 'authenticate':
-            # if we successfully authenticate and a verification key is present, invalidate it
+
+            # Clear verification key upon successful authentication
             if user.verification_key:
                 user.verification_key = None
                 user.save()
 
-            # if user is authenticated by external IDP, ask CAS to authenticate user for a second time
-            # this extra step will guarantee that 2FA are enforced
-            # current CAS session created by external login must be cleared first before authentication
+            # If the user is authenticated through an external identity provider, must ask CAS to
+            # authenticate the user for a second time, which guarantees that 2FA is enforced. In
+            # addition, current CAS session created by the external login must be cleared first
+            # before the second authentication (i.e. logout first and then login).
             if external_credential:
                 user.verification_key = generate_verification_key()
                 user.save()
@@ -281,18 +288,21 @@ def make_response_from_ticket(ticket, service_url):
                     verification_key=user.verification_key
                 )))
 
-            # if user is authenticated by CAS
+            # If user is authenticated by CAS, continue to create an OSF session.
             # TODO [CAS-27]: Remove Access Token From Service Validation
             return authenticate(
                 user,
                 cas_resp.attributes.get('accessToken', ''),
                 redirect(service_furl.url)
             )
-        # first time login from external identity provider
+
+        # First time login from an external identity provider
         if not user and external_credential and action == 'external_first_login':
+
             from website.util import web_url_for
-            # orcid attributes can be marked private and not shared, default to orcid otherwise
-            fullname = u'{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
+            # ORCiD attributes such as the user's names can be marked private and not shared
+            fullname = u'{} {}'.format(cas_resp.attributes.get('given-names', ''),
+                                       cas_resp.attributes.get('family-name', '')).strip()
             # TODO [CAS-27]: Remove Access Token From Service Validation
             user = {
                 'external_id_provider': external_credential['provider'],
@@ -305,7 +315,9 @@ def make_response_from_ticket(ticket, service_url):
                 user,
                 redirect(web_url_for('external_login_email_get'))
             )
-    # Unauthorized: ticket could not be validated, or user does not exist.
+
+    # Unauthenticated (e.g. ticket could not be validated, user does not exist, etc.): redirect the
+    # flow back to the service URL without an authenticated session and without the service ticket.
     return redirect(service_furl.url)
 
 
