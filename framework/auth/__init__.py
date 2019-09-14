@@ -26,6 +26,13 @@ check_password = bcrypt.check_password_hash
 
 
 def authenticate(user, access_token, response):
+    """Create an authenticated OSF session for the user.
+
+    :param user: the authenticated user
+    :param access_token: the access token of type CAS issued during CAS service validation
+    :param response: the response from which the session response is created
+    :return: the session response
+    """
     data = session.data if session._get_current_object() else {}
     data.update({
         'auth_user_username': user.username,
@@ -43,7 +50,20 @@ def authenticate(user, access_token, response):
 
 def external_first_login_authenticate(user, response):
     """
-    Create a special unauthenticated session for user login through external identity provider for the first time.
+    Create a special unauthenticated OSF session for users who have just logged in via an external
+    identity provider for the first time.
+
+    The session only contains data necessary for OSF to link an existing user or create a new one.
+
+    * `auth_user_external_id_provider`, `auth_user_external_id`, `auth_user_external_first_login`
+    and `auth_user_fullname` together store the user's external identity information.
+
+    * `service_url` is used for keeping track of which page users started the login so OSF knows
+    where to redirect the user to after successful account creation or link.
+
+    * `auth_user_username` (email) is not available and will be entered by the user.
+
+    * Neither `auth_user_id` nor `auth_user_access_token` is irrelevant in this case.
 
     :param user: the user with external credential
     :param response: the response to return
@@ -55,7 +75,6 @@ def external_first_login_authenticate(user, response):
         'auth_user_external_id_provider': user['external_id_provider'],
         'auth_user_external_id': user['external_id'],
         'auth_user_fullname': user['fullname'],
-        'auth_user_access_token': user['access_token'],
         'auth_user_external_first_login': True,
         'service_url': user['service_url'],
     })

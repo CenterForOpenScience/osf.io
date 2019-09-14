@@ -289,7 +289,6 @@ def make_response_from_ticket(ticket, service_url):
                 )))
 
             # If user is authenticated by CAS, continue to create an OSF session.
-            # TODO [CAS-27]: Remove Access Token From Service Validation
             return authenticate(
                 user,
                 cas_resp.attributes.get('accessToken', ''),
@@ -303,12 +302,10 @@ def make_response_from_ticket(ticket, service_url):
             # ORCiD attributes such as the user's names can be marked private and not shared
             fullname = u'{} {}'.format(cas_resp.attributes.get('given-names', ''),
                                        cas_resp.attributes.get('family-name', '')).strip()
-            # TODO [CAS-27]: Remove Access Token From Service Validation
             user = {
                 'external_id_provider': external_credential['provider'],
                 'external_id': external_credential['id'],
                 'fullname': fullname,
-                'access_token': cas_resp.attributes.get('accessToken', ''),
                 'service_url': service_furl.url,
             }
             return external_first_login_authenticate(

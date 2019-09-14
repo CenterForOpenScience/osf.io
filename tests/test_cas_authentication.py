@@ -69,10 +69,10 @@ def generate_external_user_with_resp(service_url, user=True, release=True):
             'external_id_provider': validated_credentials['provider'],
             'external_id': validated_credentials['id'],
             'fullname': '',
-            'access_token': cas_resp.attributes['accessToken'],
             'service_url': service_url,
         }
         return user, validated_credentials, cas_resp
+
 
 RESPONSE_TEMPLATE = """
 <cas:serviceResponse xmlns:cas='http://www.yale.edu/tp/cas'>
