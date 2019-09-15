@@ -106,7 +106,7 @@ def iqbrims_get_status(**kwargs):
     node = kwargs['node'] or kwargs['project']
     iqbrims = node.get_addon('iqbrims')
     status = iqbrims.get_status()
-    status['labo_list'] = ['{}:{}'.format(l['id'], l['text'])
+    status['labo_list'] = [u'{}:{}'.format(l['id'], l['text'])
                            for l in settings.LABO_LIST]
     status['review_folders'] = REVIEW_FOLDERS
     is_admin = _get_management_node(node)._id == node._id

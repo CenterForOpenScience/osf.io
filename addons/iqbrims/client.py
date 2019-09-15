@@ -623,7 +623,7 @@ class IQBRIMSFlowableClient(BaseClient):
         labos = [l['text'] for l in settings.LABO_LIST
                  if l['id'] == labo_name]
         labo_display_name = labos[0] if len(labos) > 0 \
-                            else 'LaboID:{}'.format(labo_name)
+                            else u'LaboID:{}'.format(labo_name)
         accepted_date = status['accepted_date'].split('T')[0] \
                         if 'accepted_date' in status else ''
         payload = {'processDefinitionId': self.app_id,
@@ -635,9 +635,9 @@ class IQBRIMSFlowableClient(BaseClient):
                                   'value': project_title},
                                  {'name': 'paperFolderPattern',
                                   'type': 'string',
-                                  'value': '{}/{}/%-{}/'.format(register_type,
-                                                                labo_name,
-                                                                project_id)},
+                                  'value': u'{}/{}/%-{}/'.format(register_type,
+                                                                 labo_name,
+                                                                 project_id)},
                                  {'name': 'laboName',
                                   'type': 'string',
                                   'value': labo_display_name},
