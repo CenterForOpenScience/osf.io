@@ -1,7 +1,8 @@
 import datetime as dt
 import logging
 import re
-from future.moves.urllib.parse import urljoin, urlencode
+import urllib
+import urlparse
 import uuid
 from copy import deepcopy
 from os.path import splitext
@@ -9,7 +10,7 @@ from os.path import splitext
 from flask import Request as FlaskRequest
 from framework import analytics
 from guardian.shortcuts import get_perms
-from past.builtins import str
+from past.builtins import basestring
 
 # OSF imports
 import itsdangerous
@@ -408,7 +409,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def absolute_url(self):
-        return urljoin(website_settings.DOMAIN, self.url)
+        return urlparse.urljoin(website_settings.DOMAIN, self.url)
 
     @property
     def absolute_api_v2_url(self):
@@ -472,13 +473,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         for key, val in self.social.items():
             if val and key in self.SOCIAL_FIELDS:
                 if isinstance(self.SOCIAL_FIELDS[key], basestring):
-                    if isinstance(val, str):
+                    if isinstance(val, basestring):
                         social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val)
                     else:
                         # Only provide the first url for services where multiple accounts are allowed
                         social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val[0])
                 else:
-                    if isinstance(val, str):
+                    if isinstance(val, basestring):
                         social_user_fields[key] = [val]
                     else:
                         social_user_fields[key] = val
@@ -960,7 +961,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # The user can log in if they have set a password OR
         # have a verified external ID, e.g an ORCID
         can_login = self.has_usable_password() or (
-            'VERIFIED' in sum([list(each.values()) for each in list(self.external_identity.values())], [])
+            'VERIFIED' in sum([each.values() for each in self.external_identity.values()], [])
         )
         self.is_active = (
             self.is_registered and
@@ -1283,7 +1284,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         base = website_settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email, force=force, renew=renew)
         external = 'external/' if external_id_provider else ''
-        destination = '?{}'.format(urlencode({'destination': destination})) if destination else ''
+        destination = '?{}'.format(urllib.urlencode({'destination': destination})) if destination else ''
         return '{0}confirm/{1}{2}/{3}/{4}'.format(base, external, self._primary_key, token, destination)
 
     def register(self, username, password=None, accepted_terms_of_service=None):
@@ -1549,8 +1550,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     'Referrer does not have permission to add a contributor to {0}'.format(claim_origin._id)
                 )
 
-        pid = claim_origin._id
-        referrer_id = referrer._id
+        pid = str(claim_origin._id)
+        referrer_id = str(referrer._id)
         if email:
             clean_email = email.lower().strip()
         else:
