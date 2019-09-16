@@ -17,6 +17,13 @@ from invoke import Collection
 from website import settings
 from .utils import pip_install, bin_prefix
 
+
+try:
+    from tasks import local  # noqa
+except ImportError as error:
+    print('No tasks/local.py file found. '
+          'Did you remember to copy local-dist.py to local.py?')
+
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
 # gets the root path for all the scripts that rely on it
