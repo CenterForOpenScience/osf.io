@@ -258,7 +258,7 @@ def iqbrims_get_storage(**kwargs):
             node_urls.append({'title': f['title'], 'url': url})
             url = website_settings.DOMAIN.rstrip('/') + '/' + management_node._id + \
                   '/files/googledrive' + \
-                  urllib.quote(root_folder_path) + \
+                  urllib.quote(root_folder_path.encode('utf8')) + \
                   urllib.quote(folders[0]['title'].encode('utf8')) + '/' + \
                   urllib.quote(f['title'].encode('utf8'))
             management_urls.append({'title': f['title'], 'url': url})

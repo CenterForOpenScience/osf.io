@@ -409,6 +409,88 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         self.mock_fetch.stop()
         super(TestStorageViews, self).tearDown()
 
+    def test_unauthorized_get_storage(self):
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.save()
+
+        url = self.project.api_url_for('iqbrims_get_storage',
+                                       folder='paper')
+        res = self.app.delete(url,
+                              expect_errors=True).maybe_follow()
+
+        assert_equal(res.status_code, 403)
+
+        url = self.project.api_url_for('iqbrims_get_storage',
+                                       folder='paper')
+        res = self.app.delete(url, headers={'X-RDM-Token': 'invalid123'},
+                              expect_errors=True).maybe_follow()
+
+        assert_equal(res.status_code, 403)
+
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    @mock.patch.object(IQBRIMSClient, 'folders')
+    @mock.patch.object(IQBRIMSClient, 'files')
+    def test_get_checklist_storage(self, mock_files, mock_folders,
+                                   mock_get_management_node):
+        management_project = ProjectFactory()
+        management_project.add_addon('googledrive', auth=None)
+        gdsettings = management_project.get_addon('googledrive')
+        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.save()
+        mock_get_management_node.return_value = management_project
+        mock_folders.return_value = [{'id': 'folderid123',
+                                      'title': u'チェックリスト'}]
+        mock_files.return_value = [{'id': 'fileid123',
+                                    'title': 'dummy.txt'}]
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.folder_path = 'testgdpath/iqb123/'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_get_storage',
+                                       folder='checklist')
+        res = self.app.get(url, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'complete')
+
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    @mock.patch.object(IQBRIMSClient, 'folders')
+    @mock.patch.object(IQBRIMSClient, 'files')
+    def test_get_checklist_ja_storage(self, mock_files, mock_folders,
+                                      mock_get_management_node):
+        management_project = ProjectFactory()
+        management_project.add_addon('googledrive', auth=None)
+        gdsettings = management_project.get_addon('googledrive')
+        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.save()
+        mock_get_management_node.return_value = management_project
+        mock_folders.return_value = [{'id': 'folderid123',
+                                      'title': u'チェックリスト'}]
+        mock_files.return_value = [{'id': 'fileid123',
+                                    'title': u'ダミー.txt'}]
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.folder_path = u'testgdpath/日本語123/'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_get_storage',
+                                       folder='checklist')
+        res = self.app.get(url, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'complete')
+
     def test_unauthorized_reject_storage(self):
         node_settings = self.project.get_addon('iqbrims')
         node_settings.secret = 'secret123'
