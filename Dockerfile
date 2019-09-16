@@ -138,8 +138,7 @@ RUN \
     && cd ../ \
     # Cleanup
     && yarn cache clean \
-    && rm -Rf node_modules \
-    && rm -Rf ./admin/node_modules
+    && npm cache clean --force
 
 # Copy the rest of the code over
 COPY ./ ./
