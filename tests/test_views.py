@@ -1049,7 +1049,6 @@ class TestGetNodeTree(OsfTestCase):
     def test_get_node_with_child_linked_to_parent(self):
         project = ProjectFactory(creator=self.user)
         child1 = NodeFactory(parent=project, creator=self.user)
-        child1.add_pointer(project, Auth(self.user))
         child1.save()
         url = project.api_url_for('get_node_tree')
         res = self.app.get(url, auth=self.user.auth)
@@ -1797,15 +1796,6 @@ class TestUserAccount(OsfTestCase):
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_user_cannot_request_account_export_before_throttle_expires(self, send_mail):
         url = api_url_for('request_export')
-        self.app.post(url, auth=self.user.auth)
-        assert_true(send_mail.called)
-        res = self.app.post(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(send_mail.call_count, 1)
-
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_user_cannot_request_account_deactivation_before_throttle_expires(self, send_mail):
-        url = api_url_for('request_deactivation')
         self.app.post(url, auth=self.user.auth)
         assert_true(send_mail.called)
         res = self.app.post(url, auth=self.user.auth, expect_errors=True)
@@ -3144,7 +3134,6 @@ class TestPointerViews(OsfTestCase):
     def test_can_template_project_linked_to_each_other(self):
         project2 = ProjectFactory(creator=self.user)
         self.project.add_pointer(project2, auth=Auth(user=self.user))
-        project2.add_pointer(self.project, auth=Auth(user=self.user))
         template = self.project.use_as_template(auth=Auth(user=self.user))
 
         assert_true(template)

@@ -2,6 +2,66 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.26.0 (2019-09-11)
+===================
+- Create a custom through table for linking files and versions
+  for storing version names.  Supports different versions of the same
+  file having different names.
+- Update README for populating institutions.
+
+
+19.25.0 (2019-09-05)
+===================
+- Automate account deactivation if users have no content
+- Clean up EZID workflow
+- Check redirect URL's for spam
+
+19.24.0 (2019-08-27)
+===================
+- APIv2: Allow creating a node with a license attached on creation
+- APIv2: Prevent creating a node link to the node itself, a parent, or a child
+- APIv2: Have the move/copy WB hooks update storage usage
+- Exclude collection groups from user page in Django's admin app
+- Have osfstorage move/copy hooks recursively update the latest file version's region
+- Fix password reset tokens
+- Do not reveal entire google drive file path in node logs
+- Allow logging in from password reset and forgot password pages
+- Fix broken social links on add contributors modal
+- Fix email typos in embargoed registration emails
+- Improve registration and retraction node log display text
+- Fix logs if cron job automatically approves a withdrawal
+
+19.23.0 (2019-08-19)
+===================
+- Represents scopes as an m2m field on personal access tokens instead of a CharField
+- APIv2.17 treats scopes as relationships on tokens instead of attributes.  Earlier
+API versions still serialize scopes as attributes.
+
+19.22.0 (2019-08-14)
+===================
+- APIv2: Editable registrations
+- APIv2.16 treats subjects as relationships instead of attributes
+
+19.21.0 (2019-08-12)
+===================
+- PageCounter optimization part I: split _id field into four columns, `action`,
+`file_id`, `resource_id`, and `version`.
+- Adds a management command (migrate_pagecounter_data) to populate these new
+columns in the PageCounter table over time.
+
+19.20.0 (2019-07-29)
+===================
+- Waffle cookies - Override to allow cookies to be set for waffle flags
+- Add ab_testing_home_page_version_b waffle flag for A/B testing of home page
+- APIv2: Allow preprint admins to view preprint request actions
+
+19.19.0 (2019-07-24)
+===================
+- Add periodic task that checks for and sets stuck Crossref DOIs
+- Add script that gathers monthly metrics on the number of registrations and retractions created
+- Chronos: Send license info
+- Chronos: Use sync_manuscript for ChronosSubmissionDetailSerializer
+
 19.18.0 (2019-07-15)
 ===================
 - Remove any Notification Subscriptions attached to Registrations

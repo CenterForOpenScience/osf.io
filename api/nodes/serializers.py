@@ -141,8 +141,8 @@ class NodeTagField(ser.Field):
 
 class NodeLicenseSerializer(BaseAPISerializer):
 
-    copyright_holders = ser.ListField(allow_empty=True)
-    year = ser.CharField(allow_blank=True)
+    copyright_holders = ser.ListField(allow_empty=True, required=False)
+    year = ser.CharField(allow_blank=True, required=False)
 
     class Meta:
         type_ = 'node_licenses'
@@ -206,8 +206,12 @@ class NodeCitationStyleSerializer(JSONAPISerializer):
         type_ = 'styled-citations'
 
 def get_license_details(node, validated_data):
-    license = node.license if isinstance(node, Preprint) else node.node_license
-
+    if node:
+        license = node.license if isinstance(node, Preprint) else node.node_license
+    else:
+        license = None
+    if ('license_type' not in validated_data and not (license and license.node_license.license_id)):
+        raise exceptions.ValidationError(detail='License ID must be provided for a Node License.')
     license_id = license.node_license.license_id if license else None
     license_year = license.year if license else None
     license_holders = license.copyright_holders if license else []
@@ -526,6 +530,21 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view_kwargs={'node_id': '<_id>'},
     ))
 
+    @property
+    def subjects_related_view(self):
+        # Overrides TaxonomizableSerializerMixin
+        return 'nodes:node-subjects'
+
+    @property
+    def subjects_view_kwargs(self):
+        # Overrides TaxonomizableSerializerMixin
+        return {'node_id': '<_id>'}
+
+    @property
+    def subjects_self_view(self):
+        # Overrides TaxonomizableSerializerMixin
+        return 'nodes:node-relationships-subjects'
+
     def get_current_user_permissions(self, obj):
         """
         Returns the logged-in user's permissions to the
@@ -732,10 +751,18 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         tag_instances = []
         affiliated_institutions = None
         region_id = None
+        license_details = None
         if 'affiliated_institutions' in validated_data:
             affiliated_institutions = validated_data.pop('affiliated_institutions')
         if 'region_id' in validated_data:
             region_id = validated_data.pop('region_id')
+        if 'license_type' in validated_data or 'license' in validated_data:
+            try:
+                license_details = get_license_details(None, validated_data)
+            except ValidationError as e:
+                raise InvalidModelValueError(detail=str(e.messages[0]))
+            validated_data.pop('license', None)
+            validated_data.pop('license_type', None)
         if 'tags' in validated_data:
             tags = validated_data.pop('tags')
             for tag in tags:
@@ -791,6 +818,20 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             node.subjects.add(parent.subjects.all())
             node.save()
 
+        if license_details:
+            try:
+                node.set_node_license(
+                    {
+                        'id': license_details.get('id') if license_details.get('id') else 'NONE',
+                        'year': license_details.get('year'),
+                        'copyrightHolders': license_details.get('copyrightHolders') or license_details.get('copyright_holders', []),
+                    },
+                    auth=get_user_auth(request),
+                    save=True,
+                )
+            except ValidationError as e:
+                raise InvalidModelValueError(detail=str(e.message))
+
         if not region_id:
             region_id = self.context.get('region_id')
         if region_id:
@@ -827,14 +868,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 node.save()
             if 'subjects' in validated_data:
                 subjects = validated_data.pop('subjects', None)
-                try:
-                    node.set_subjects(subjects, auth)
-                except PermissionsError as e:
-                    raise exceptions.PermissionDenied(detail=str(e))
-                except ValueError as e:
-                    raise exceptions.ValidationError(detail=str(e))
-                except NodeStateError as e:
-                    raise exceptions.ValidationError(detail=str(e))
+                self.update_subjects(node, subjects, auth)
 
             try:
                 node.update(validated_data, auth=auth)
@@ -863,7 +897,7 @@ class NodeAddonSettingsSerializerBase(JSONAPISerializer):
 
     # Forward-specific
     label = ser.CharField(required=False, allow_blank=True)
-    url = ser.CharField(required=False, allow_blank=True)
+    url = ser.URLField(required=False, allow_blank=True)
 
     links = LinksField({
         'self': 'get_absolute_url',
@@ -889,7 +923,9 @@ class NodeAddonSettingsSerializerBase(JSONAPISerializer):
 class ForwardNodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
 
     def update(self, instance, validated_data):
-        auth = Auth(self.context['request'].user)
+        request = self.context['request']
+        user = request.user
+        auth = Auth(user)
         set_url = 'url' in validated_data
         set_label = 'label' in validated_data
 
@@ -919,7 +955,10 @@ class ForwardNodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
             instance.label = label
             url_changed = True
 
-        instance.save()
+        try:
+            instance.save(request=request)
+        except ValidationError as e:
+            raise exceptions.ValidationError(detail=str(e))
 
         if url_changed:
             # add log here because forward architecture isn't great
@@ -934,7 +973,6 @@ class ForwardNodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
                 auth=auth,
                 save=True,
             )
-
         return instance
 
 
@@ -978,14 +1016,14 @@ class NodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
         return set_folder, folder_info
 
     def get_account_or_error(self, addon_name, external_account_id, auth):
-            external_account = ExternalAccount.load(external_account_id)
-            if not external_account:
-                raise exceptions.NotFound('Unable to find requested account.')
-            if not auth.user.external_accounts.filter(id=external_account.id).exists():
-                raise exceptions.PermissionDenied('Requested action requires account ownership.')
-            if external_account.provider != addon_name:
-                raise Conflict('Cannot authorize the {} addon with an account for {}'.format(addon_name, external_account.provider))
-            return external_account
+        external_account = ExternalAccount.load(external_account_id)
+        if not external_account:
+            raise exceptions.NotFound('Unable to find requested account.')
+        if not auth.user.external_accounts.filter(id=external_account.id).exists():
+            raise exceptions.PermissionDenied('Requested action requires account ownership.')
+        if external_account.provider != addon_name:
+            raise Conflict('Cannot authorize the {} addon with an account for {}'.format(addon_name, external_account.provider))
+        return external_account
 
     def should_call_set_folder(self, folder_info, instance, auth, node_settings):
         if (folder_info and not (   # If we have folder information to set
@@ -1306,10 +1344,10 @@ class NodeLinksSerializer(JSONAPISerializer):
         try:
             pointer = node.add_pointer(pointer_node, auth, save=True)
             return pointer
-        except ValueError:
+        except ValueError as e:
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/node_links/data/id'},
-                detail='Target Node \'{}\' already pointed to by \'{}\'.'.format(target_node_id, node._id),
+                detail=str(e),
             )
 
     def update(self, instance, validated_data):
@@ -1771,7 +1809,10 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
             save_forward = True
 
         if save_forward:
-            forward_addon.save()
+            try:
+                forward_addon.save(request=self.context['request'])
+            except ValidationError as e:
+                raise exceptions.ValidationError(detail=str(e))
 
     def enable_or_disable_addon(self, obj, should_enable, addon_name, auth):
         """

@@ -38,6 +38,7 @@ from api.base.utils import waterbutler_api_url_for
 from scripts import utils as script_utils
 from website.archiver import ARCHIVER_SUCCESS
 from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA, ARCHIVE_PROVIDER
+from website.files.utils import attach_versions
 
 logger = logging.getLogger(__name__)
 
@@ -197,7 +198,7 @@ def manually_archive(tree, reg, node_settings, parent=None):
 
         if file_obj.versions.exists() and filenode['version']:  # Min version identifier is 1
             if not cloned.versions.filter(identifier=filenode['version']).exists():
-                cloned.versions.add(*file_obj.versions.filter(identifier__lte=filenode['version']))
+                attach_versions(cloned, file_obj.versions.filter(identifier__lte=filenode['version']), file_obj)
 
         if filenode.get('children'):
             manually_archive(filenode['children'], reg, node_settings, parent=cloned)
