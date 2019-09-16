@@ -28,7 +28,7 @@ from tests.base import ApiWikiTestCase, fake
 
 
 def make_rename_payload(wiki_page):
-    new_page_name = fake.word()
+    new_page_name = 'another instance where you can\'t randomly generate a word because it might be "home"'
     payload = {
         'data': {
             'id': wiki_page._id,
