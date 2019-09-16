@@ -37,7 +37,7 @@ from website import settings
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
 from osf import features
-from osf.models import (BaseFileNode, TrashedFileNode,
+from osf.models import (BaseFileNode, TrashedFileNode, BaseFileVersionsThrough,
                         OSFUser, AbstractNode, Preprint,
                         NodeLog, DraftRegistration, RegistrationSchema,
                         Guid, FileVersionUserMetadata, FileVersion)
@@ -875,6 +875,10 @@ def addon_view_file(auth, node, file_node, version):
         args={'url': download_url.url}
     )
 
+    version_names = BaseFileVersionsThrough.objects.filter(
+        basefilenode_id=file_node.id
+    ).order_by('-fileversion_id').values_list('version_name', flat=True)
+
     ret.update({
         'urls': {
             'render': render_url.url,
@@ -902,6 +906,7 @@ def addon_view_file(auth, node, file_node, version):
         'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
         'checkout_user': file_node.checkout._id if file_node.checkout else None,
         'pre_reg_checkout': is_pre_reg_checkout(node, file_node),
+        'version_names': list(version_names)
     })
 
     ret.update(rubeus.collect_addon_assets(node))

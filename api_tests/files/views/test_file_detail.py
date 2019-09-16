@@ -674,7 +674,9 @@ class TestFileVersionView:
         assert res.status_code == 200
         assert len(res.json['data']) == 2
         assert res.json['data'][0]['id'] == '2'
+        assert res.json['data'][0]['attributes']['name'] == file.name
         assert res.json['data'][1]['id'] == '1'
+        assert res.json['data'][1]['attributes']['name'] == file.name
 
     def test_load_and_property(self, app, user, file):
         # test_by_id
