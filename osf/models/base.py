@@ -56,8 +56,7 @@ class QuerySetExplainMixin:
         cursor.execute('explain analyze verbose %s' % query, params)
         return '\n'.join(r[0] for r in cursor.fetchall())
 
-
-QuerySet.__bases__ += (QuerySetExplainMixin,)
+QuerySet = type('QuerySet', (QuerySetExplainMixin, QuerySet), dict(QuerySet.__dict__))
 
 
 class BaseModel(TimeStampedModel, QuerySetExplainMixin):
@@ -88,10 +87,10 @@ class BaseModel(TimeStampedModel, QuerySetExplainMixin):
 
     @classmethod
     def load(cls, data, select_for_update=False):
-        from osf.models import CitationStyle, PreprintRequest, NodeRequest
         try:
-            if cls in (CitationStyle, PreprintRequest, NodeRequest):  # TODO: fix to be overridden properly
+            if isinstance(data, basestring):
                 # Some models (CitationStyle) have an _id that is not a bson
+                # Looking up things by pk will never work with a basestring
                 return cls.objects.get(_id=data) if not select_for_update else cls.objects.filter(_id=data).select_for_update().get()
             return cls.objects.get(pk=data) if not select_for_update else cls.objects.filter(pk=data).select_for_update().get()
         except cls.DoesNotExist:
