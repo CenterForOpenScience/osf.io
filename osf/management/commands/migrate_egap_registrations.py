@@ -22,7 +22,6 @@ logging.basicConfig(level=logging.INFO)
 CATEGORY = 'project'
 VISIBLE = True
 
-
 def get_egap_schema():
     """Load EGAP Registration Schema
     The EGAP Registration Schema (as of 6/19/19) is not loaded as part of the migrations, but as a management command.
@@ -45,19 +44,24 @@ def create_egap_project(title, authors, egap_author):
     :return Node: an OSF Project
     """
     project = Node.objects.create(title=title, creator=egap_author, category=CATEGORY)
-    authors = authors.split(', ')
+    authors = authors.split(',')
     for family_name in authors:
+        # TODO - supplement email from email list
         email = None
-        name = family_name.decode('utf-8')
+        name = family_name
 
         unregistered_user = OSFUser.create_unregistered(name, email=email)
         unregistered_user.save()
 
         unregistered_user.add_unclaimed_record(project, referrer=egap_author, given_name=name, email=email)
+        # Give every EGAP author WRITE permissions, and make them bibliographic.
         project.add_contributor(
             unregistered_user, permissions=WRITE, auth=Auth(egap_author),
             visible=VISIBLE, send_email=False, log=True, save=True
         )
+
+    # Make EGAP author non-bibliographic
+    project.update_contributor(egap_author, permission='admin', visible=False, auth=Auth(egap_author), save=True)
     return project
 
 def build_question_response(header_row, row, question_key, column_title):
@@ -69,39 +73,46 @@ def build_question_response(header_row, row, question_key, column_title):
     """
     index = header_row.index(column_title)
     value = clean_value(row[index])
+    # Spreadsheet has these as comma-separated values, but looking for array
+    if question_key in ['q33', 'q34']:
+        value = value.split(', ')
+    return build_nested_response(value)
+
+def build_nested_response(value):
     return {
         'comments': [],
         'extra': [],
         'value': value
     }
-    return {}
 
-# Need updated spreadsheet so I can account for all the build_question_response
-# There are extra spaces in some of the spreadsheet column titles
 schema_to_spreadsheet_mapping = [
-    {'q1': 'B1 Title of Project'},
-    {'q2': 'B2 Author(s)'},
+    {'q1': 'TITLE'},
+    {'q2': 'B2 AUTHORS'},
     {'q3': 'ID'},
-    {'q4': 'Timestamp'},
-    {'q6': 'B4 Is one of the study authors a university faculty member?'},
-    {'q8': 'Is this Registration Prospective or Retrospective?'},
-    {'q10': 'Is this an experimental study?'},
-    {'q11': 'Date of start of study '},
-    {'q12': 'Should this study be gated (discouraged)'},
-    {'q13': 'Was this design presented at an EGAP meeting?'},
-    {'q15': 'C1 Background and explanation of rationale.'},
-    {'q16': 'What are the hypotheses to be tested?'},
-    {'q17': 'How will these hypotheses be tested?'},
-    {'q18': 'C4 Country'},
-    {'q19': 'C5 Scale (# of units)'},
-    {'q20': 'Was a power analysis conducted prior to data collection?'},
-    {'q22': 'Has this research received Insitutional Review Board (IRB) or ethics committee approval?'},
-    {'q24': 'C8 IRB Number'},
-    {'q25': 'C9 Date of IRB Approval'},
-    {'q26': 'Will the intervention be implemented by the researcher or a third party? If a third party, please provide the name. '},
-    {'q28': 'Did any of the research team receive remuneration from the implementing agency for taking part in this research? '},
-    {'q30': 'If relevant, is there an advance agreement with the implementation group that all results can be published? '},
-    {'q32': 'C13 JEL Classifications'},
+    {'q4': 'POST DATE'},
+    {'q5': 'B3 ACKNOWLEDGEMENTS'},
+    {'q6': 'B4 FACULTY MEMBER?'},
+    {'q8': 'B5 PROSPECTIVE OR RETROSPECTIVE?'},
+    {'q10': 'B6 EXPERIMENTAL STUDY?'},
+    {'q11': 'B7 DATE OF START OF STUDY'},
+    {'q12': 'B8 GATE DATE'},
+    {'q13': 'B9 PRESENTED AT EGAP MEETING?'},
+    {'q14': 'B10 PRE-ANALYSIS PLAN WITH REGISTRATION?'},
+    {'q15': 'C1 BACKGROUND'},
+    {'q16': 'C2 HYPOTHESES'},
+    {'q17': 'C3 TESTING PLAN'},
+    {'q18': 'C4 COUNTRY'},
+    {'q19': 'C5 SAMPLE SIZE'},
+    {'q20': 'C6 POWER ANALYSIS?'},
+    {'q22': 'C7 IRB APPROVAL?'},
+    {'q24': 'C8 IRB NUMBER'},
+    {'q25': 'C9 DATE OF IRB APPROVAL'},
+    {'q26': 'C10 INTERVENTION IMPLEMENTER'},
+    {'q28': 'C11 REMUNERATION?'},
+    {'q30': 'C12 PUBLICATION AGREEMENT?'},
+    {'q32': 'C13 JEL CODES'},
+    {'q33': 'METHODOLOGY'},
+    {'q34': 'POLICY'},
 ]
 
 # Any multiple choice questions where "Other" is a possible response, have subsequent "Other"
@@ -121,12 +132,17 @@ def validate_response(qid, value, draft):
     """Validate question response
 
     Validating each question response individually.  If there is an error, we will
-    attempt to add the value to the subsequent "Other" block.  Return that question id instead.
+    attempt to add the value to the corresponding "Other" block.  Return that question id instead.
+
+    For example, q6 is a multiple choice question, with "Other" as a choice.  If text is entered
+    for q6 that does not match one of the multiple choice answers, assuming that this is "other"
+    text, and this response should go to the corresponding q7 question.  q6 will be marked
+    as "Other"
 
     :param qid: string, question id from schema
     :param value: question response
     :param draft: DraftRegistration
-    :return qid: string
+    :return qid: tuple, (qid corresponding to value, optional "Other" qid)
     """
     temporary_check = {}
     temporary_check[qid] = value
@@ -135,11 +151,10 @@ def validate_response(qid, value, draft):
         draft.validate_metadata(temporary_check)
     except ValidationError as exc:
         if qid in other_mapping:
-            # TODO, current qid probably needs to be marked as "Other" as well
-            return other_mapping[qid]
+            return other_mapping[qid], qid
         else:
             raise Exception(exc)
-    return qid
+    return qid, None
 
 def clean_value(value):
     """Clean spreadsheet values of issues that will affect validation """
@@ -159,16 +174,21 @@ def build_registraton_metadata(project, header_row, row, egap_author, draft):
     :param draft: DraftRegistration
     :return registration_metdata: Dictionary
     """
-    # TODO Just mark q35 and q36 as True
     registration_metadata = {}
 
     for question in schema_to_spreadsheet_mapping:
         qid = question.keys()[0]
         column_name = question.values()[0]
         value = build_question_response(header_row, row, qid, column_name)
-        validated_qid = validate_response(qid, value, draft)
+        validated_qid, other_response = validate_response(qid, value, draft)
         registration_metadata[validated_qid] = value
+        if other_response:
+            registration_metadata[other_response] = build_nested_response('Other (describe in text box below)')
 
+    # q35 and q36 are required questions at the end of the schema, certification and
+    # confirmation questions. Just marking as agree -
+    registration_metadata['q35'] = build_nested_response('Agree')
+    registration_metadata['q36'] = build_nested_response('Agree')
     return registration_metadata
 
 def create_draft_registration(project, egap_author, schema):
@@ -194,19 +214,21 @@ def make_projects_and_draft_registrations(schema):
     :param schema: RegistrationSchema, EGAP
     :return:
     """
-    with open('EGAP_registry_forCOS - Registrations.csv') as csv_file:
+    with open('egap_registry_for_cos.csv') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         header_row = next(csv_reader)
+        normalized_header_row = [col_header.decode('ascii', 'ignore') for col_header in header_row]
 
-        egap_author = UserFactory()  # TODO, this would need to be the EGAP user
-        title_index = header_row.index('B1 Title of Project')
-        authors_index = header_row.index('B2 Author(s)')
+        egap_author = UserFactory()  # TODO, this would need to be the EGAP user (Matthew Lisiecki)
+        title_index = normalized_header_row.index('TITLE')
+        authors_index = normalized_header_row.index('B2 AUTHORS')
 
-        for row in csv_reader:
+        for line in csv_reader:
+            row = [cell.decode('ascii', 'ignore').strip() for cell in line]
             project = create_egap_project(row[title_index], row[authors_index], egap_author)
             draft_registration = create_draft_registration(project, egap_author, schema)
 
-            registration_metadata = build_registraton_metadata(project, header_row, row, egap_author, draft_registration)
+            registration_metadata = build_registraton_metadata(project, normalized_header_row, row, egap_author, draft_registration)
             draft_registration.update_metadata(registration_metadata)
             draft_registration.save()
 
@@ -215,14 +237,14 @@ def upload_files_to_projects(schema):
 
     The easiest, most reliable way would be to get a copy of the Dropbox files on your local drive,
     and run a script locally to upload them to their various projects.
-    TODO
+    TODO - probably call with a separate argument as part of the management command
     """
     pass
 
 
 def register_projects(schema):
-    """Register projects.  Automatically approve?
-    TODO
+    """Register projects.  Automatically approve.
+    TODO - probably call with a separate argument as part of the management command
     """
     pass
 
