@@ -1849,7 +1849,7 @@ class BaseProfileSerializer(JSONAPISerializer):
 
     def run_validation(self, *args, **kwargs):
         to_validate = self.initial_data.copy()
-        to_validate.pop('id')
-        to_validate.pop('type')
+        to_validate.pop('id', None)
+        to_validate.pop('type', None)
         validate_user_json(to_validate, self.schema)
         return super(BaseProfileSerializer, self).run_validation(*args, **kwargs)
