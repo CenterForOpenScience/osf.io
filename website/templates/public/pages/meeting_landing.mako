@@ -71,7 +71,7 @@
                                 <li>Send your materials to the GakuNin RDM Meetings email address for your conference</li>
                             </ul>
 
-                            <p> We’ll create an GakuNin RDM project for you. You'll get a permanent link to your presentation, plus analytics about who has viewed and downloaded your work.</p>
+                            <p> We’ll create a GakuNin RDM project for you. You'll get a permanent link to your presentation, plus analytics about who has viewed and downloaded your work.</p>
                         </div>
 
                     </div>
