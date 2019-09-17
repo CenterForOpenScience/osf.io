@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from django.db import models
-from django.contrib.postgres.fields import ArrayField
 import jsonschema
 
 from website.util import api_v2_url
@@ -12,19 +11,19 @@ from osf.exceptions import ValidationValueError, ValidationError
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 
 FORMBLOCK_TYPES = [
-    ('string', 'string'),
-    ('singleselect', 'singleselect'),
-    ('multiselect', 'multiselect'),
-    ('osf-author-import', 'osf-author-import'),
-    ('osf-upload', 'osf-upload'),
-    ('header', 'header'),
-]
-
-FORMBLOCK_SIZES = [
-    ('sm', 'sm'),
-    ('md', 'md'),
-    ('lg', 'lg'),
-    ('xl', 'xl'),
+    ('page-heading', 'page-heading'),
+    ('section-heading', 'section-heading'),
+    ('subsection-heading', 'subsection-heading'),
+    ('paragraph', 'paragraph'),
+    ('question-label', 'question-label'),
+    ('short-text-input', 'short-text-input'),
+    ('long-text-input', 'long-text-input'),
+    ('file-input', 'file-input'),
+    ('contributors-input', 'contributors-input'),
+    ('single-select-input', 'single-select-input'),
+    ('multi-select-input', 'multi-select-input'),
+    ('select-input-option', 'select-input-option'),
+    ('select-other-option', 'select-other-option'),
 ]
 
 
@@ -53,6 +52,7 @@ class AbstractSchemaManager(models.Manager):
             latest_schemas = latest_schemas.filter(active=True)
         return latest_schemas.order_by('name', '-schema_version').distinct('name')
 
+
 class AbstractSchema(ObjectIDMixin, BaseModel):
     name = models.CharField(max_length=255)
     schema = DateTimeAwareJSONField(default=dict)
@@ -75,6 +75,7 @@ class AbstractSchema(ObjectIDMixin, BaseModel):
 
 class RegistrationSchema(AbstractSchema):
     config = DateTimeAwareJSONField(blank=True, default=dict)
+    description = models.TextField(null=True, blank=True)
 
     @property
     def _config(self):
@@ -156,23 +157,32 @@ class FileMetadataSchema(AbstractSchema):
         return api_v2_url(path)
 
 
-class RegistrationFormBlock(ObjectIDMixin, BaseModel):
+class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
     class Meta:
-        unique_together = ('schema', 'block_id')
         order_with_respect_to = 'schema'
+        unique_together = ('schema', 'registration_response_key')
 
-    schema = models.ForeignKey('RegistrationSchema', related_name='form_blocks', on_delete=models.CASCADE)
-    page = models.CharField(max_length=255)
-    section = models.CharField(max_length=255, null=True)
+    schema = models.ForeignKey('RegistrationSchema', related_name='schema_blocks', on_delete=models.CASCADE)
     help_text = models.TextField()
-    block_id = models.CharField(max_length=255, db_index=True)
+    example_text = models.TextField(null=True)
+    # Corresponds to a key in DraftRegistration.registration_responses dictionary
+    registration_response_key = models.CharField(max_length=255, db_index=True, null=True, blank=True)
+    # A question can be split into multiple schema blocks, but are linked with a schema_block_group_key
+    schema_block_group_key = models.CharField(max_length=24, db_index=True, null=True)
     block_type = models.CharField(max_length=31, db_index=True, choices=FORMBLOCK_TYPES)
-    block_text = models.TextField()
-    size = models.CharField(max_length=2, null=True, choices=FORMBLOCK_SIZES)
-    choices = ArrayField(models.TextField(), default=list)  # Longest on prod: >511 chars
-    required = models.BooleanField(default=True)
+    display_text = models.TextField()
+    required = models.BooleanField(default=False)
 
     @property
     def absolute_api_v2_url(self):
-        path = '{}form_blocks/{}/'.format(self.schema.absolute_api_v2_url, self._id)
+        path = '{}schema_blocks/{}/'.format(self.schema.absolute_api_v2_url, self._id)
         return api_v2_url(path)
+
+    def save(self, *args, **kwargs):
+        """
+        Allows us to use a unique_together constraint, so each "registration_response_key"
+        only appears once for every registration schema.  To do this, we need to save
+        empty "registration_response_key"s as null, instead of an empty string.
+        """
+        self.registration_response_key = self.registration_response_key or None
+        return super(RegistrationSchemaBlock, self).save(*args, **kwargs)

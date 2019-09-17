@@ -1,4 +1,5 @@
 import os
+import re
 import itertools
 import json
 import logging
@@ -12,6 +13,7 @@ from django.db.migrations.operations.base import Operation
 
 from website import settings
 from osf.models import NodeLicense, RegistrationSchema
+from osf.models.base import generate_object_id
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 
 logger = logging.getLogger(__file__)
@@ -19,6 +21,21 @@ logger = logging.getLogger(__file__)
 
 increment = 100000
 
+# Dict to map original schema formats to schema block types
+FORMAT_TYPE_TO_TYPE_MAP = {
+    ('multiselect', 'choose'): 'multi-select-input',
+    (None, 'multiselect'): 'multi-select-input',
+    (None, 'choose'): 'single-select-input',
+    ('osf-upload-open', 'osf-upload'): 'file-input',
+    ('osf-upload-toggle', 'osf-upload'): 'file-input',
+    ('singleselect', 'choose'): 'single-select-input',
+    ('text', 'string'): 'short-text-input',
+    ('textarea', 'osf-author-import'): 'contributors-input',
+    ('textarea', 'string'): 'long-text-input',
+    ('textarea-lg', None): 'long-text-input',
+    ('textarea-lg', 'string'): 'long-text-input',
+    ('textarea-xl', 'string'): 'long-text-input',
+}
 
 def get_osf_models():
     """
@@ -167,6 +184,233 @@ def remove_schemas(*args):
     RegistrationSchema.objects.all().delete()
 
     logger.info('Removed {} schemas from the database'.format(pre_count))
+
+
+def create_block(state, schema_id, block_type, display_text='', required=False, help_text='',
+        registration_response_key=None, schema_block_group_key='', example_text=''):
+    """
+    For mapping schemas to schema blocks: creates a given block from the specified parameters
+    """
+    RegistrationSchemaBlock = state.get_model('osf', 'registrationschemablock')
+
+    return RegistrationSchemaBlock.objects.create(
+        schema_id=schema_id,
+        block_type=block_type,
+        required=required,
+        display_text=display_text,
+        help_text=help_text,
+        registration_response_key=registration_response_key,
+        schema_block_group_key=schema_block_group_key,
+        example_text=example_text
+    )
+
+# Split question multiple choice options into their own blocks
+def split_options_into_blocks(state, rs, question, schema_block_group_key):
+    """
+    For mapping schemas to schema blocks: splits individual multiple choice
+    options into their own schema blocks
+    """
+    for option in question.get('options', []):
+        answer_text = option if isinstance(option, basestring) else option.get('text')
+        help_text = '' if isinstance(option, basestring) else option.get('tooltip', '')
+
+        create_block(
+            state,
+            rs.id,
+            'select-input-option',
+            display_text=answer_text,
+            help_text=help_text,
+            schema_block_group_key=schema_block_group_key,
+        )
+
+def get_registration_response_key(question):
+    """
+    For mapping schemas to schema blocks:
+    Answer ids will map to the user's response
+    """
+    return question.get('qid', '') or question.get('id', '')
+
+def strip_html(string_with_html):
+    """
+    For mapping schemas to schema blocks:
+    Some original schemas have html in the description/help text.  Just replacing this with empty strings.
+    """
+    stripped_html = re.sub('<.*?>', '', string_with_html)
+    return stripped_html
+
+
+def find_title_description_help_example(rs, question):
+    """
+    For mapping schemas to schema blocks:
+    Schemas are inconsistent with regards to the information going into "title",
+    "description", and "help" blocks.
+
+    :returns tuple, title, description, help, example strings
+
+    """
+    title = question.get('title', '')
+    description = strip_html(question.get('description', ''))
+    help = strip_html(question.get('help', ''))
+    example = ''
+
+    schema_name = rs.schema.get('name', '')
+    # Descriptions that contain any of these keywords
+    # are turned into help text instead.
+    help_text_keywords = [
+        'please',
+        'choose',
+        'provide',
+        'format',
+        'describe',
+        'who',
+        'what',
+        'when',
+        'where',
+        'use',
+        'you',
+        'your',
+        'skip',
+        'enter',
+    ]
+
+    if title:
+        if schema_name in ['OSF Preregistration', 'Prereg Challenge']:
+            # These two schemas have clear "example" text in the "help" section
+            example = help
+            help = description
+            description = ''
+        else:
+            for keyword in help_text_keywords:
+                if keyword in description.lower():
+                    help = description
+                    description = ''
+                    break
+    else:
+        # if no title, description text is moved to title.
+        title = description
+        description = ''
+
+    return title, description, help, example
+
+def format_property(question, property, index):
+    """
+    For mapping schemas to schema blocks:
+    Modify a subquestion's qid, title, description, and help text, because
+    these are often absent.
+    - Modify a subquestion's qid to be of the format "parent-id.current-id", to
+      reflect its nested nature, to ensure uniqueness
+    - For the first nested subquestion, transfer the parent's title, description, and help.
+    """
+    property['qid'] = '{}.{}'.format(get_registration_response_key(question) or '', property.get('id', ''))
+    if not index:
+        title = question.get('title', '')
+        description = question.get('description', '')
+        help = question.get('help', '')
+        if not property.get('title', '') and not property.get('description'):
+            property['title'] = title
+        if not property.get('description', ''):
+            property['description'] = description
+        if not property.get('help', ''):
+            property['help'] = help
+    return property
+
+
+def format_question(state, rs, question, sub=False):
+    """
+    For mapping schemas to schema blocks:
+    Split the original question from the schema into multiple schema blocks, all of
+    which have the same schema_block_group_key, to link them.
+    """
+    # If there are subquestions, recurse and format subquestions
+    if question.get('properties'):
+        # Creates section or subsection
+        create_block(
+            state,
+            rs.id,
+            block_type='subsection-heading' if sub else 'section-heading',
+            display_text=question.get('title', '') or question.get('description', ''),
+        )
+        for index, property in enumerate(question.get('properties')):
+            format_question(state, rs, format_property(question, property, index), sub=True)
+    else:
+        # All form blocks related to a particular question share the same schema_block_group_key.
+        schema_block_group_key = generate_object_id()
+        title, description, help, example = find_title_description_help_example(rs, question)
+
+        # Creates question title block
+        create_block(
+            state,
+            rs.id,
+            block_type='question-label',
+            display_text=title,
+            help_text='' if description else help,
+            example_text=example,
+            schema_block_group_key=schema_block_group_key
+        )
+
+        # Creates paragraph block (question description)
+        if description:
+            create_block(
+                state,
+                rs.id,
+                block_type='paragraph',
+                display_text=description,
+                help_text=help,
+                schema_block_group_key=schema_block_group_key,
+            )
+
+        # Creates question input block - this block will correspond to an answer
+        # Map the original schema section format to the new block_type, and create a schema block
+        block_type = FORMAT_TYPE_TO_TYPE_MAP[(question.get('format'), question.get('type'))]
+        create_block(
+            state,
+            rs.id,
+            block_type,
+            required=question.get('required', False),
+            schema_block_group_key=schema_block_group_key,
+            registration_response_key=get_registration_response_key(question)
+        )
+
+        # If there are multiple choice answers, create blocks for these as well.
+        split_options_into_blocks(state, rs, question, schema_block_group_key)
+
+
+def map_schemas_to_schemablocks(*args):
+    """Map schemas to schema blocks
+    """
+    state = args[0]
+    try:
+        RegistrationSchema = state.get_model('osf', 'registrationschema')
+    except Exception:
+        try:
+            RegistrationSchema = state.get_model('osf', 'metaschema')
+        except Exception:
+            # Working outside a migration
+            from osf.models import RegistrationSchema
+
+    # TODO: remove. Until RegistrationSchemaBlocks are set, running this method
+    # will delete all existing RegistrationSchemaBlocks and rebuild
+    unmap_schemablocks(*args)
+
+    for rs in RegistrationSchema.objects.all():
+        logger.info('Migrating schema {}, version {} to schema blocks.'.format(rs.schema.get('name'), rs.schema_version))
+        for page in rs.schema['pages']:
+            # Create page heading block
+            create_block(
+                state,
+                rs.id,
+                'page-heading',
+                display_text=strip_html(page.get('title', '')),
+                help_text=strip_html(page.get('description', ''))
+            )
+            for question in page['questions']:
+                format_question(state, rs, question)
+
+
+def unmap_schemablocks(*args):
+    state = args[0]
+    RegistrationSchemaBlock = state.get_model('osf', 'registrationschemablock')
+    RegistrationSchemaBlock.objects.all().delete()
 
 
 class UpdateRegistrationSchemas(Operation):
