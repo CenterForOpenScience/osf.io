@@ -418,7 +418,7 @@ class RegistrationSerializer(NodeSerializer):
             registration_schema = RegistrationSchema.objects.get(_id=obj.registered_schema_id)
             anonymous_schema_block_groups = registration_schema.schema_blocks.filter(
                 display_text__in=ANONYMIZED_TITLES,
-                block_type='question-title',
+                block_type='question-label',
             ).values_list('schema_block_group_key', flat=True)
             anonymous_registration_response_keys = registration_schema.schema_blocks.filter(
                 schema_block_group_key__in=anonymous_schema_block_groups,
