@@ -1233,7 +1233,8 @@ class TestUserProfile(OsfTestCase):
             auth=self.user.auth,
         )
         for i, job in enumerate(jobs):
-            assert_equal(job, res.json['contents'][i])
+            for key in job.keys():
+                assert_equal(job[key], res.json['contents'][i][key])
 
     def test_unserialize_and_serialize_schools(self):
         schools = [{
@@ -1241,16 +1242,16 @@ class TestUserProfile(OsfTestCase):
             'department': 'a department',
             'degree': 'a degree',
             'startMonth': 1,
-            'startYear': '2001',
+            'startYear': 2001,
             'endMonth': 5,
-            'endYear': '2001',
+            'endYear': 2001,
             'ongoing': False,
         }, {
             'institution': 'another institution',
             'department': None,
             'degree': None,
             'startMonth': 5,
-            'startYear': '2001',
+            'startYear': 2001,
             'endMonth': None,
             'endYear': None,
             'ongoing': True,
@@ -1259,14 +1260,15 @@ class TestUserProfile(OsfTestCase):
         url = api_url_for('unserialize_schools')
         self.app.put_json(url, payload, auth=self.user.auth)
         self.user.reload()
-        assert_equal(len(self.user.schools), 2)
+        assert_equal(len(self.user.education.all()), 2)
         url = api_url_for('serialize_schools')
         res = self.app.get(
             url,
             auth=self.user.auth,
         )
         for i, job in enumerate(schools):
-            assert_equal(job, res.json['contents'][i])
+            for key in job.keys():
+                assert_equal(job[key], res.json['contents'][i][key])
 
     @mock.patch('osf.models.user.OSFUser.check_spam')
     def test_unserialize_jobs(self, mock_check_spam):
@@ -1276,9 +1278,9 @@ class TestUserProfile(OsfTestCase):
                 'department': fake.catch_phrase(),
                 'title': fake.bs(),
                 'startMonth': 5,
-                'startYear': '2013',
+                'startYear': 2013,
                 'endMonth': 3,
-                'endYear': '2014',
+                'endYear': 2014,
                 'ongoing': False,
             }
         ]
@@ -1288,7 +1290,12 @@ class TestUserProfile(OsfTestCase):
         assert_equal(res.status_code, 200)
         self.user.reload()
         # jobs field is updated
-        assert_equal(self.user.jobs, jobs)
+        assert_equal(self.user.employment.get().institution, jobs[0]['institution'])
+        assert_equal(self.user.employment.get().department, jobs[0]['department'])
+        assert_equal(self.user.employment.get().title, jobs[0]['title'])
+        assert_equal(self.user.employment.get().start_date.year, jobs[0]['startYear'])
+        assert_equal(self.user.employment.get().end_date.year, jobs[0]['endYear'])
+        assert_equal(self.user.employment.get().ongoing, jobs[0]['ongoing'])
         assert mock_check_spam.called
 
     def test_unserialize_names(self):
@@ -1319,9 +1326,9 @@ class TestUserProfile(OsfTestCase):
                 'department': fake.catch_phrase(),
                 'degree': fake.bs(),
                 'startMonth': 5,
-                'startYear': '2013',
+                'startYear': 2013,
                 'endMonth': 3,
-                'endYear': '2014',
+                'endYear': 2014,
                 'ongoing': False,
             }
         ]

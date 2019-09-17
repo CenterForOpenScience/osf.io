@@ -145,14 +145,14 @@ def add_contributor_json(user, current_user=None, node=None):
 
     if user.employment.exists():
         try:
-            current_employment = user.employment.get(ongoing=True)
-        except UserEmployment.NotFoundError:
+            current_employment = user.employment.get(end_date=None).institution
+        except UserEmployment.DoesNotExist:
             current_employment = None
 
     if user.education.exists():
         try:
-            education = user.education.get(ongoing=True)
-        except UserEducation.NotFoundError:
+            education = user.education.all().first().institution
+        except UserEducation.DoesNotExist:
             education = None
 
     contributor_json = {

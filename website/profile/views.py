@@ -1,13 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
-<<<<<<< HEAD
 from rest_framework import status as http_status
-=======
-import httplib
-import httplib as http  # TODO: Inconsistent usage of aliased import
-from dateutil.parser import parse as parse_date
-from datetime import datetime
->>>>>>> Frontend and v1 updates to add/reorder/remove with new models
 
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -729,35 +722,6 @@ def unserialize_social(auth, **kwargs):
         ))
 
 
-def unserialize_contents(model, auth, attribute_name):
-    user = auth.user
-    json_data = escape_html(request.get_json())
-    new_order = []
-    for entry in json_data.get('contents', []):
-        institution = entry.get('institution')
-        _id = entry.get('_id')
-        if institution:
-            if _id:
-                profile_object = model.objects.get(_id=_id)
-                profile_object.institution = institution
-            else:
-                profile_object = model(institution=institution, user=user)
-
-            for key, value in entry.items():
-                if key != 'institution' and hasattr(model, key):
-                    setattr(profile_object, key, value)
-
-            start_year = entry.get('startYear', None)
-            start_month = entry['startMonth'] if start_year else None
-            if start_year and start_month:
-                profile_object.start_date = datetime.strptime('{} {}'.format(start_month, start_year), '%m %Y')
-
-            end_year = entry.get('endYear', None)
-            end_month = entry['endMonth'] if end_year else None
-            if end_year and end_month:
-                profile_object.end_date = datetime.strptime('{} {}'.format(end_month, end_year), '%m %Y')
-
-<<<<<<< HEAD
 def unserialize_contents(field, func, auth):
     user = auth.user
     json_data = escape_html(request.get_json())
@@ -771,7 +735,6 @@ def unserialize_contents(field, func, auth):
         contents
     )
     user.save()
-=======
             profile_object.save()
             new_order.append(profile_object.id)
 
@@ -783,8 +746,8 @@ def unserialize_contents(field, func, auth):
     model.objects.filter(id__in=removed_relationships).delete()
 
     # set the order with respect to the user for the objects sent back by the frontend
-    getattr(user, 'set_{}_order'.format(attribute_name))(new_order)
->>>>>>> Frontend and v1 updates to add/reorder/remove with new models
+    # Django
+    getattr(user, 'set_user{}_order'.format(attribute_name))(new_order)
 
     if contents:
         saved_fields = {field: contents}

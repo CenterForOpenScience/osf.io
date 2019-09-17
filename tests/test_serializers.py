@@ -12,8 +12,10 @@ from osf_tests.factories import (
     NodeFactory,
     OSFGroupFactory,
     CollectionFactory,
+    EducationFactory,
+    EmploymentFactory,
 )
-from osf.models import NodeRelation
+from osf.models import NodeRelation, UserEducation, UserEmployment
 from osf.utils import permissions
 from tests.base import OsfTestCase, get_default_metaschema
 
@@ -433,23 +435,22 @@ class TestAddContributorJson(OsfTestCase):
         self.user_id = self.user._primary_key
         self.fullname = self.user.fullname
         self.username = self.user.username
-
-        self.jobs = [{
-            'institution': 'School of Lover Boys',
-            'department': 'Fancy Patter',
-            'title': 'Lover Boy',
-            'start': None,
-            'end': None,
-        }]
-
-        self.schools = [{
-            'degree': 'Vibing',
-            'institution': 'Queens University',
-            'department': '',
-            'location': '',
-            'start': None,
-            'end': None,
-        }]
+        self.jobs = UserEmployment(
+            user = self.user,
+            institution = 'School of Lover Boys',
+            department = 'Fancy Patter',
+            title = 'Lover Boy',
+            start_date = None,
+            end_date = None,
+        )
+        self.schools = UserEducation(
+            user = self.user,
+            degree = 'Vibing',
+            institution = 'Queens University',
+            department = '',
+            start_date = None,
+            end_date = None,
+        )
 
     def test_add_contributor_json(self):
         # User with no employment or education info listed
@@ -468,14 +469,21 @@ class TestAddContributorJson(OsfTestCase):
 
     def test_add_contributor_json_with_edu(self):
         # Test user with only education information
-        self.user.schools = self.schools
+        self.schools = EducationFactory(
+            user = self.user,
+            degree = 'Vibing',
+            institution = 'Queens University',
+            department = '',
+            start_date = None,
+            end_date = None,
+        )
         user_info = utils.add_contributor_json(self.user)
 
         assert_equal(user_info['fullname'], self.fullname)
         assert_equal(user_info['email'], self.username)
         assert_equal(user_info['id'], self.user_id)
         assert_equal(user_info['employment'], None)
-        assert_equal(user_info['education'], self.user.schools[0]['institution'])
+        assert_equal(user_info['education'], self.schools.institution)
         assert_equal(user_info['n_projects_in_common'], 0)
         assert_equal(user_info['registered'], True)
         assert_equal(user_info['active'], True)
@@ -484,13 +492,20 @@ class TestAddContributorJson(OsfTestCase):
 
     def test_add_contributor_json_with_job(self):
         # Test user with only employment information
-        self.user.jobs = self.jobs
+        self.jobs = EmploymentFactory(
+            user = self.user,
+            institution = 'School of Lover Boys',
+            department = 'Fancy Patter',
+            title = 'Lover Boy',
+            start_date = None,
+            end_date = None,
+        )
         user_info = utils.add_contributor_json(self.user)
 
         assert_equal(user_info['fullname'], self.fullname)
         assert_equal(user_info['email'], self.username)
         assert_equal(user_info['id'], self.user_id)
-        assert_equal(user_info['employment'], self.user.jobs[0]['institution'])
+        assert_equal(user_info['employment'], self.jobs.institution)
         assert_equal(user_info['education'], None)
         assert_equal(user_info['n_projects_in_common'], 0)
         assert_equal(user_info['registered'], True)
@@ -500,15 +515,29 @@ class TestAddContributorJson(OsfTestCase):
 
     def test_add_contributor_json_with_job_and_edu(self):
         # User with both employment and education information
-        self.user.jobs = self.jobs
-        self.user.schools = self.schools
+        self.jobs = EmploymentFactory(
+            user = self.user,
+            institution = 'School of Lover Boys',
+            department = 'Fancy Patter',
+            title = 'Lover Boy',
+            start_date = None,
+            end_date = None,
+        )
+        self.schools = EducationFactory(
+            user = self.user,
+            degree = 'Vibing',
+            institution = 'Queens University',
+            department = '',
+            start_date = None,
+            end_date = None,
+        )
         user_info = utils.add_contributor_json(self.user)
 
         assert_equal(user_info['fullname'], self.fullname)
         assert_equal(user_info['email'], self.username)
         assert_equal(user_info['id'], self.user_id)
-        assert_equal(user_info['employment'], self.user.jobs[0]['institution'])
-        assert_equal(user_info['education'], self.user.schools[0]['institution'])
+        assert_equal(user_info['employment'], self.jobs.institution)
+        assert_equal(user_info['education'], self.schools.institution)
         assert_equal(user_info['n_projects_in_common'], 0)
         assert_equal(user_info['registered'], True)
         assert_equal(user_info['active'], True)
