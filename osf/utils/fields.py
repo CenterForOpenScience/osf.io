@@ -29,7 +29,7 @@ def encrypt_string(value, prefix='jwe:::'):
                 pass
             else:
                 raise
-    return value
+    return value.decode()
 
 
 def decrypt_string(value, prefix='jwe:::'):
