@@ -73,7 +73,7 @@ def render_citation(node, style='apa'):
     bibliography.register(citation)
 
     bib = bibliography.bibliography()
-    cit = unicode(bib[0] if len(bib) else '')
+    cit = str(bib[0] if len(bib) else '')
 
     title = csl['title'] if csl else node.csl['title']
     title = title.rstrip('.')

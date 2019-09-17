@@ -210,7 +210,7 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
                 }
         else:
             response_data = {
-                'message': 'There is a problem with the form. Here are some details: ' + unicode(provider_form.errors),
+                'message': 'There is a problem with the form. Here are some details: ' + str(provider_form.errors),
                 'feedback_type': 'error'
             }
         # Return a JsonResponse with the JSON error or the validation error if it's not doing an actual migration

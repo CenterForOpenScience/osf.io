@@ -1164,7 +1164,7 @@ class TestAddonFileViews(OsfTestCase):
             'modified': '2016-08-22T13:54:32.100900'
         }
         file_node.update(revision=None, user=None, data=data)
-        mock_capture.assert_called_with(unicode('update() receives metatdata older than the newest entry in file history.'), extra={'session': {}})
+        mock_capture.assert_called_with(str('update() receives metatdata older than the newest entry in file history.'), extra={'session': {}})
 
 class TestLegacyViews(OsfTestCase):
 
