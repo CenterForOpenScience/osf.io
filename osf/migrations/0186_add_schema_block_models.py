@@ -12,7 +12,7 @@ import osf.utils.datetime_aware_jsonfield
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0181_osfuser_contacted_deactivation'),
+        ('osf', '0185_basefilenode_versions'),
     ]
 
     operations = [

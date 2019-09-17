@@ -4,9 +4,8 @@ import unittest
 from nose.tools import *  # noqa; PEP8 asserts
 from webtest_plus import TestApp as WebtestApp  # py.test tries to collect `TestApp`
 import mock
-import urllib
-import urlparse
-import httplib as http
+from future.moves.urllib.parse import urlparse, urljoin, quote
+from rest_framework import status as http_status
 
 from flask import Flask
 from werkzeug.wrappers import BaseResponse
@@ -104,7 +103,7 @@ class TestAuthUtils(OsfTestCase):
         res = res.follow()
 
         assert_equal(res.status_code, 302)
-        assert_equal('/', urlparse.urlparse(res.location).path)
+        assert_equal('/', urlparse(res.location).path)
         assert_equal(len(mock_mail.call_args_list), 1)
         session = Session.objects.filter(data__auth_user_id=user._id).order_by('-modified').first()
         assert_equal(len(session.data['status']), 1)
@@ -143,7 +142,7 @@ class TestAuthUtils(OsfTestCase):
         assert_in('/login?service=', resp.location)
 
         # the valid username will be double quoted as it is furl quoted in both get_login_url and get_logout_url in order
-        username_quoted = urllib.quote(urllib.quote(user.username, safe='@'), safe='@')
+        username_quoted = quote(quote(user.username, safe='@'), safe='@')
         assert_in('username={}'.format(username_quoted), resp.location)
         assert_in('verification_key={}'.format(user.verification_key), resp.location)
 
@@ -193,7 +192,7 @@ class TestAuthUtils(OsfTestCase):
     @mock.patch('framework.auth.utils.requests.post')
     def test_validate_recaptcha_success(self, req_post):
         resp = mock.Mock()
-        resp.status_code = http.OK
+        resp.status_code = http_status.HTTP_200_OK
         resp.json = mock.Mock(return_value={'success': True})
         req_post.return_value = resp
         assert_true(validate_recaptcha('a valid captcha'))
@@ -201,7 +200,7 @@ class TestAuthUtils(OsfTestCase):
     @mock.patch('framework.auth.utils.requests.post')
     def test_validate_recaptcha_valid_req_failure(self, req_post):
         resp = mock.Mock()
-        resp.status_code = http.OK
+        resp.status_code = http_status.HTTP_200_OK
         resp.json = mock.Mock(return_value={'success': False})
         req_post.return_value = resp
         assert_false(validate_recaptcha(None))
@@ -209,7 +208,7 @@ class TestAuthUtils(OsfTestCase):
     @mock.patch('framework.auth.utils.requests.post')
     def test_validate_recaptcha_invalid_req_failure(self, req_post):
         resp = mock.Mock()
-        resp.status_code = http.BAD_REQUEST
+        resp.status_code = http_status.HTTP_400_BAD_REQUEST
         resp.json = mock.Mock(return_value={'success': True})
         req_post.return_value = resp
         assert_false(validate_recaptcha(None))
@@ -738,7 +737,7 @@ class TestPermissionDecorators(AuthAppTestCase):
         mock_to_nodes.return_value = (None, project)
         with assert_raises(HTTPError) as ctx:
             thriller(node=project)
-        assert_equal(ctx.exception.code, http.FORBIDDEN)
+        assert_equal(ctx.exception.code, http_status.HTTP_403_FORBIDDEN)
 
     @mock.patch('website.project.decorators._kwargs_to_nodes')
     @mock.patch('framework.auth.decorators.Auth.from_kwargs')
@@ -748,7 +747,7 @@ class TestPermissionDecorators(AuthAppTestCase):
         mock_to_nodes.return_value = (None, project)
         with assert_raises(HTTPError) as ctx:
             thriller(node=project)
-        assert_equal(ctx.exception.code, http.UNAUTHORIZED)
+        assert_equal(ctx.exception.code, http_status.HTTP_401_UNAUTHORIZED)
 
 
 def needs_addon_view(**kwargs):

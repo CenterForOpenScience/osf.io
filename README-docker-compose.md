@@ -81,6 +81,9 @@
 
     `$ cp ./docker-compose-dist.override.yml ./docker-compose.override.yml`
 
+    For local tasks, (dev only)
+    `$ cp ./tasks/local-dist.py ./tasks/local.py`
+
 2. OPTIONAL (uncomment the below lines if you will use remote debugging) Environment variables (incl. remote debugging)
   - e.g. .docker-compose.env
 
@@ -147,7 +150,7 @@
     - `docker-compose run --rm web python manage.py migrate`
 - Populate institutions:
   - After resetting your database or with a new install you will need to populate the table of institutions. **You must have run migrations first.**
-    - `docker-compose run --rm web python -m scripts.populate_institutions test`
+    - `docker-compose run --rm web python -m scripts.populate_institutions -e test -a`
 - Populate preprint, registration, and collection providers:
   - After resetting your database or with a new install, the required providers and subjects will be created automatically **when you run migrations.** To create more:
     - `docker-compose run --rm web python manage.py populate_fake_providers`

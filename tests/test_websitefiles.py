@@ -12,6 +12,7 @@ from osf.models.files import BaseFileNode
 from tests.base import OsfTestCase
 from osf_tests.factories import AuthUserFactory, ProjectFactory
 from website.files import exceptions
+from website.files.utils import attach_versions
 from osf import models
 
 
@@ -495,7 +496,7 @@ class TestFileObj(FilesTestCase):
         )
         file.save()
 
-        file.versions.add(*[v1, v2])
+        attach_versions(file, [v1, v2])
 
         assert_equals(file.get_version('1'), v1)
         assert_equals(file.get_version('2', required=True), v2)
@@ -519,7 +520,7 @@ class TestFileObj(FilesTestCase):
 
         file.save()
 
-        file.versions.add(v1)
+        file.add_version(v1)
         file.update_version_metadata(None, {'size': 1337})
 
         with assert_raises(exceptions.VersionNotFoundError):
