@@ -3,6 +3,7 @@
 """Invoke tasks. To run a task, run ``$ invoke <COMMAND>``. To see a list of
 commands, run ``$ invoke --list``.
 """
+from past.builtins import basestring
 import os
 import sys
 import json
