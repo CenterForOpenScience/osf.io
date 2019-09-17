@@ -1,3 +1,4 @@
+from past.builtins import basestring
 from rest_framework import status as http_status
 from django.utils.translation import ugettext_lazy as _
 
