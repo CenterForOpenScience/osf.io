@@ -19,6 +19,7 @@ from osf.utils.permissions import ADMIN
 from osf.exceptions import NodeStateError
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
+from six import string_types
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         else:
             if cgm_id and collection_id:
                 try:
-                    if isinstance(data, basestring):
+                    if isinstance(data, string_types):
                         return (cls.objects.get(guid___id=cgm_id, collection__guids___id=collection_id) if not select_for_update
                                 else cls.objects.filter(guid___id=cgm_id, collection__guids___id=collection_id).select_for_update().get())
                 except cls.DoesNotExist:

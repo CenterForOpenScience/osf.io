@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from six import string_types
 import bleach
 
 from osf.utils.sanitize import is_iterable_but_not_string
@@ -22,7 +23,7 @@ def escape_html(data):
             escape_html(value)
             for value in data
         ]
-    if isinstance(data, basestring):
+    if isinstance(data, string_types):
         return bleach.clean(data)
     return data
 

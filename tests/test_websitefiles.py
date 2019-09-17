@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from six import string_types
 from __future__ import unicode_literals
 import mock
 from django.utils import timezone
@@ -51,7 +52,7 @@ class TestStoredFileNode(FilesTestCase):
 
     def test_deep_url(self):
         url = self.test_file.deep_url
-        assert_true(isinstance(url, basestring))
+        assert_true(isinstance(url, string_types))
         assert_in(self.node._id, url)
         assert_in(self.test_file.path, url)
         assert_in(self.test_file.provider, url)
@@ -60,7 +61,7 @@ class TestStoredFileNode(FilesTestCase):
         self.test_file.path = u'༼ つ ͠° ͟ ͟ʖ ͡° ༽つ'
         self.test_file.save()
         url = self.test_file.deep_url
-        assert_true(isinstance(url, basestring))
+        assert_true(isinstance(url, string_types))
         assert_in(self.node._id, url)
         # Path is url encode
         # assert_in(self.sfn.path, url)
@@ -476,7 +477,7 @@ class TestFileNodeObj(FilesTestCase):
             materialized_path='/long/path/to/name',
         )
 
-        assert_true(isinstance(child.__repr__(), basestring))
+        assert_true(isinstance(child.__repr__(), string_types))
 
 
 class TestFileObj(FilesTestCase):

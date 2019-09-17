@@ -3,7 +3,7 @@
 """Invoke tasks. To run a task, run ``$ invoke <COMMAND>``. To see a list of
 commands, run ``$ invoke --list``.
 """
-from past.builtins import basestring
+from six import string_types
 import os
 import sys
 import json
@@ -300,13 +300,13 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
         args += ['-s']
     if numprocesses > 1:
         args += ['-n {}'.format(numprocesses), '--max-slave-restart=0']
-    modules = [module] if isinstance(module, basestring) else module
+    modules = [module] if isinstance(module, string_types) else module
     args.extend(modules)
     if testmon:
         args.extend(['--testmon'])
 
     if params:
-        params = [params] if isinstance(params, basestring) else params
+        params = [params] if isinstance(params, string_types) else params
         args.extend(params)
     retcode = pytest.main(args)
 

@@ -1,3 +1,4 @@
+from six import string_types
 import functools
 import itertools
 import logging
@@ -145,7 +146,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
         if private_link is not None:
             if isinstance(private_link, PrivateLink):
                 private_link = private_link.key
-            if not isinstance(private_link, basestring):
+            if not isinstance(private_link, string_types):
                 raise TypeError('"private_link" must be either {} or {}. Got {!r}'.format(str, PrivateLink, private_link))
 
             qs |= self.filter(private_links__is_deleted=False, private_links__key=private_link)
