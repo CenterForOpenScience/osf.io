@@ -1005,11 +1005,11 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
             current_employment = None
             education = None
 
-            if user.jobs:
-                current_employment = user.jobs[0]['institution']
+            if user.employment.exists():
+                current_employment = user.employment.filter(ongoing=True).institution
 
             if user.schools:
-                education = user.schools[0]['institution']
+                education = user.education.all().first().institution
 
             users.append({
                 'fullname': doc['user'],

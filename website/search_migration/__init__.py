@@ -490,47 +490,6 @@ SELECT json_agg(
                 , 'middle_names', U.middle_names
                 , 'suffix', U.suffix
             )
-            , 'job', CASE
-                     WHEN U.jobs :: JSON -> 0 -> 'institution' IS NOT NULL
-                       THEN
-                         (U.jobs :: JSON -> 0 -> 'institution') :: TEXT
-                     ELSE
-                       ''
-                     END
-            , 'job_title', (CASE
-                            WHEN U.jobs :: JSON -> 0 -> 'title' IS NOT NULL
-                              THEN
-                                (U.jobs :: JSON -> 0 -> 'title') :: TEXT
-                            ELSE
-                              ''
-                            END)
-            , 'all_jobs', (SELECT array_agg(DISTINCT (JOB :: JSON -> 'institution') :: TEXT)
-                           FROM
-                             (SELECT json_array_elements(jobs :: JSON) AS JOB
-                              FROM osf_osfuser
-                              WHERE id = U.id
-                             ) AS JOBS)
-            , 'school', (CASE
-                         WHEN U.schools :: JSON -> 0 -> 'institution' IS NOT NULL
-                           THEN
-                             (U.schools :: JSON -> 0 -> 'institution') :: TEXT
-                         ELSE
-                           ''
-                         END)
-            , 'all_schools', (SELECT array_agg(DISTINCT (SCHOOL :: JSON -> 'institution') :: TEXT)
-                              FROM
-                                (SELECT json_array_elements(schools :: JSON) AS SCHOOL
-                                 FROM osf_osfuser
-                                 WHERE id = U.id
-                                ) AS SCHOOLS)
-            , 'category', 'user'
-            , 'degree', (CASE
-                         WHEN U.schools :: JSON -> 0 -> 'degree' IS NOT NULL
-                           THEN
-                             (U.schools :: JSON -> 0 -> 'degree') :: TEXT
-                         ELSE
-                           ''
-                         END)
             , 'social', (SELECT json_object_agg(
                 key,
                 (

@@ -10,7 +10,7 @@ from api.base.exceptions import InvalidModelValueError, Conflict
 from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
     VersionedDateTimeField, HideIfDisabled, IDField,
-    Link, LinksField, TypeField, RelationshipField, JSONAPIListField,
+    Link, LinksField, TypeField, RelationshipField,
     WaterbutlerLink, ShowIfCurrentUser,
 )
 from api.base.utils import default_node_list_queryset
@@ -98,8 +98,6 @@ class UserSerializer(JSONAPISerializer):
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
     social = SocialField(required=False, min_version='2.10')
-    employment = JSONAPIListField(required=False, source='jobs')
-    education = JSONAPIListField(required=False, source='schools')
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
     accepted_terms_of_service = ShowIfCurrentUser(ser.SerializerMethodField())
 

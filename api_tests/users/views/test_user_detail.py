@@ -1277,12 +1277,6 @@ class UserProfileMixin(object):
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
-    def test_user_put_profile_validate_dict(self, app, user_one, user_one_url, request_payload, request_key):
-        # Tests to make sure profile's fields have correct structure
-        request_payload['data']['attributes'][request_key] = {}
-        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
 
 @pytest.mark.django_db
 class TestUserSchools(UserProfileMixin):

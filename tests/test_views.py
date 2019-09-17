@@ -1226,7 +1226,7 @@ class TestUserProfile(OsfTestCase):
         url = api_url_for('unserialize_jobs')
         self.app.put_json(url, payload, auth=self.user.auth)
         self.user.reload()
-        assert_equal(len(self.user.jobs), 2)
+        assert_equal(len(self.user.education.all()), 2)
         url = api_url_for('serialize_jobs')
         res = self.app.get(
             url,

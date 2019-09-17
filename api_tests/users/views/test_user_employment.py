@@ -15,7 +15,7 @@ class UserEmploymentMixin:
 
     @pytest.fixture()
     def profile_type(self):
-        return 'user-employment'
+        return 'employment'
 
 
 @pytest.mark.django_db
