@@ -22,7 +22,7 @@ def encrypt_string(value, prefix='jwe:::'):
     if value and not value.startswith(prefix):
         value = ensure_bytes(value)
         try:
-            value = prefix + jwe.encrypt(bytes(value), SENSITIVE_DATA_KEY)
+            value = prefix.encode() + jwe.encrypt(value, SENSITIVE_DATA_KEY)
         except InvalidTag:
             # Allow use of an encrypted DB locally without encrypting fields
             if settings.DEBUG_MODE:

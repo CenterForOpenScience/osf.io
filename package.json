@@ -6,7 +6,7 @@
   "author": "Center for Open Science",
   "license": "Apache-2.0",
   "dependencies": {
-    "@centerforopenscience/list-of-licenses": "1.1.0",
+    "@centerforopenscience/list-of-licenses": "^1.1.0",
     "@centerforopenscience/markdown-it-atrules": "^0.1.1",
     "@centerforopenscience/markdown-it-imsize": "2.0.1",
     "@centerforopenscience/markdown-it-toc": "~1.1.1",
