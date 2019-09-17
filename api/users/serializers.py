@@ -173,7 +173,7 @@ class UserSerializer(JSONAPISerializer):
             # use computed property if region annotation does not exist
             try:
                 region_id = obj.osfstorage_region._id
-            except:
+            except Exception:
                 pass
         return region_id
 
