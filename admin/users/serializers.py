@@ -12,11 +12,6 @@ def serialize_group_for_user(group, user):
 
 def serialize_user(user):
 
-    potential_spam_profile_content = {
-        'schools': user.schools,
-        'jobs': user.jobs
-    }
-
     return {
         'username': user.username,
         'name': user.fullname,
@@ -35,7 +30,6 @@ def serialize_user(user):
         'unclaimed': bool(user.unclaimed_records),
         'requested_deactivation': bool(user.requested_deactivation),
         'osf_groups': [serialize_group_for_user(group, user) for group in user.osf_groups],
-        'potential_spam_profile_content': user._get_spam_content(potential_spam_profile_content),
     }
 
 

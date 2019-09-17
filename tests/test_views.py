@@ -1207,17 +1207,17 @@ class TestUserProfile(OsfTestCase):
             'institution': 'an institution',
             'department': 'a department',
             'title': 'a title',
-            'startMonth': 'January',
-            'startYear': '2001',
-            'endMonth': 'March',
-            'endYear': '2001',
+            'startMonth': 1,
+            'startYear': 2001,
+            'endMonth': 3,
+            'endYear': 2001,
             'ongoing': False,
         }, {
             'institution': 'another institution',
             'department': None,
             'title': None,
-            'startMonth': 'May',
-            'startYear': '2001',
+            'startMonth': 5,
+            'startYear': 2001,
             'endMonth': None,
             'endYear': None,
             'ongoing': True,
@@ -1338,7 +1338,12 @@ class TestUserProfile(OsfTestCase):
         assert_equal(res.status_code, 200)
         self.user.reload()
         # schools field is updated
-        assert_equal(self.user.schools, schools)
+        assert_equal(self.user.education.get().institution, schools[0]['institution'])
+        assert_equal(self.user.education.get().department, schools[0]['department'])
+        assert_equal(self.user.education.get().degree, schools[0]['degree'])
+        assert_equal(self.user.education.get().start_date.year, schools[0]['startYear'])
+        assert_equal(self.user.education.get().end_date.year, schools[0]['endYear'])
+        assert_equal(self.user.education.get().ongoing, schools[0]['ongoing'])
         assert mock_check_spam.called
 
     @mock.patch('osf.models.user.OSFUser.check_spam')
@@ -1349,9 +1354,9 @@ class TestUserProfile(OsfTestCase):
                 'department': fake.catch_phrase(),
                 'title': fake.bs(),
                 'startMonth': 5,
-                'startYear': '2013',
+                'startYear': 2013,
                 'endMonth': 3,
-                'endYear': '2014',
+                'endYear': 2014,
                 'ongoing': False,
             }
         ]
