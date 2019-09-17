@@ -341,7 +341,7 @@ def format_question(state, rs, question, sub=False):
         create_block(
             state,
             rs.id,
-            block_type='question-title',
+            block_type='question-label',
             display_text=title,
             help_text='' if description else help,
             example_text=example,

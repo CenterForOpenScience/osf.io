@@ -15,7 +15,7 @@ FORMBLOCK_TYPES = [
     ('section-heading', 'section-heading'),
     ('subsection-heading', 'subsection-heading'),
     ('paragraph', 'paragraph'),
-    ('question-title', 'question-title'),
+    ('question-label', 'question-label'),
     ('short-text-input', 'short-text-input'),
     ('long-text-input', 'long-text-input'),
     ('file-input', 'file-input'),
