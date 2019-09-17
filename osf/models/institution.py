@@ -1,5 +1,5 @@
 import logging
-import urlparse
+from future.moves.urllib.parse import urljoin
 
 from dirtyfields import DirtyFieldsMixin
 
@@ -74,7 +74,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(website_settings.DOMAIN, 'institutions/{}/'.format(self._id))
+        return urljoin(website_settings.DOMAIN, 'institutions/{}/'.format(self._id))
 
     @property
     def absolute_api_v2_url(self):

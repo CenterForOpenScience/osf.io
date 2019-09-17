@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 
 from framework.exceptions import HTTPError
 from website.citations.providers import CitationsProvider
@@ -102,7 +102,7 @@ class ZoteroCitationsProvider(CitationsProvider):
 
             while ancestor_id != attached_list_id:
                 if ancestor_id is '__':
-                    raise HTTPError(http.FORBIDDEN)
+                    raise HTTPError(http_status.HTTP_403_FORBIDDEN)
                 ancestor_id = folders[ancestor_id].get('parent_list_id')
 
         contents = []

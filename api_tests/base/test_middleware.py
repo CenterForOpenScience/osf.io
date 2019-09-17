@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.http import HttpResponse
 
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 import mock
 from nose.tools import *  # noqa:
 from rest_framework.test import APIRequestFactory

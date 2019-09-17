@@ -19,7 +19,7 @@ Usage:
 from __future__ import unicode_literals
 
 from copy import deepcopy
-import httplib as http
+from rest_framework import status as http_status
 import json
 import logging
 import requests
@@ -161,7 +161,7 @@ def perform_wb_copy(reg, node_settings):
     }
     url = waterbutler_api_url_for(src._id, node_settings.short_name, _internal=True, base_url=src.osfstorage_region.waterbutler_url, **params)
     res = requests.post(url, data=json.dumps(data))
-    if res.status_code not in (http.OK, http.CREATED, http.ACCEPTED):
+    if res.status_code not in (http_status.HTTP_200_OK, http_status.HTTP_201_CREATED, http_status.HTTP_202_ACCEPTED):
         raise HTTPError(res.status_code)
 
 def manually_archive(tree, reg, node_settings, parent=None):

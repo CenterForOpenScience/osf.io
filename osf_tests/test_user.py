@@ -3,7 +3,7 @@
 import os
 import json
 import datetime as dt
-import urlparse
+from future.moves.urllib.parse import urlparse, urljoin, parse_qs
 
 from django.db import connection, transaction
 from django.contrib.auth.models import Group
@@ -614,7 +614,7 @@ class TestOSFUser:
     def test_absolute_url(self, user):
         assert(
             user.absolute_url ==
-            urlparse.urljoin(settings.DOMAIN, '/{0}/'.format(user._id))
+            urljoin(settings.DOMAIN, '/{0}/'.format(user._id))
         )
 
     def test_profile_image_url(self, user):
@@ -647,7 +647,7 @@ class TestOSFUser:
                                          user,
                                          use_ssl=True)
         assert user.profile_image_url() == expected
-        size = urlparse.parse_qs(urlparse.urlparse(user.profile_image_url()).query).get('size')
+        size = parse_qs(urlparse(user.profile_image_url()).query).get('size')
         assert size is None
 
     def test_activity_points(self, user):

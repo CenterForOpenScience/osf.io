@@ -5,7 +5,7 @@ import jwt
 import mock
 import furl
 import time
-import urlparse
+from future.moves.urllib.parse import urlparse, urljoin
 import datetime
 from django.utils import timezone
 import pytest
@@ -145,7 +145,7 @@ class TestPreprintProperties:
         assert preprint.url == '/preprints/{}/{}/'.format(preprint.provider._id, preprint._id)
 
     def test_absolute_url(self, preprint):
-        assert preprint.absolute_url == urlparse.urljoin(
+        assert preprint.absolute_url == urljoin(
             preprint.provider.domain if preprint.provider.domain_redirect_enabled else settings.DOMAIN,
             preprint.url
         )
@@ -2033,7 +2033,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert related_doi['creative_work'] == related_work
 
         workidentifiers = [nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier']
-        assert workidentifiers == [urlparse.urljoin(settings.DOMAIN, self.preprint._id + '/')]
+        assert workidentifiers == [urljoin(settings.DOMAIN, self.preprint._id + '/')]
 
         relation = nodes.pop(nodes.keys()[0])
         assert relation == {'@id': relation['@id'], '@type': 'workrelation', 'related': {'@id': related_work['@id'], '@type': related_work['@type']}, 'subject': {'@id': preprint['@id'], '@type': preprint['@type']}}
@@ -2131,7 +2131,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
         workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
         # URLs should *always* be osf.io/guid/
-        assert workidentifiers == set([urlparse.urljoin(settings.DOMAIN, self.preprint._id) + '/', 'https://doi.org/{}'.format(self.preprint.get_identifier('doi').value)])
+        assert workidentifiers == set([urljoin(settings.DOMAIN, self.preprint._id) + '/', 'https://doi.org/{}'.format(self.preprint.get_identifier('doi').value)])
 
         assert nodes == {}
 

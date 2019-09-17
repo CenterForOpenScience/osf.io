@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import httplib
+from rest_framework import status as http_status
 import logging
 
 from django.db import transaction, connection
@@ -33,13 +33,13 @@ def meeting_hook():
         message.verify()
     except ConferenceError as error:
         logger.error(error)
-        raise HTTPError(httplib.NOT_ACCEPTABLE)
+        raise HTTPError(http_status.HTTP_406_NOT_ACCEPTABLE)
 
     try:
         conference = Conference.get_by_endpoint(message.conference_name, active=False)
     except ConferenceError as error:
         logger.error(error)
-        raise HTTPError(httplib.NOT_ACCEPTABLE)
+        raise HTTPError(http_status.HTTP_406_NOT_ACCEPTABLE)
 
     if not conference.active:
         send_mail(
@@ -50,7 +50,7 @@ def meeting_hook():
             can_change_preferences=False,
             logo=settings.OSF_MEETINGS_LOGO,
         )
-        raise HTTPError(httplib.NOT_ACCEPTABLE)
+        raise HTTPError(http_status.HTTP_406_NOT_ACCEPTABLE)
 
     add_poster_by_email(conference=conference, message=message)
 
@@ -149,7 +149,7 @@ def conference_data(meeting):
     try:
         conf = Conference.objects.get(endpoint__iexact=meeting)
     except Conference.DoesNotExist:
-        raise HTTPError(httplib.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     return conference_submissions_sql(conf)
 
@@ -282,7 +282,7 @@ def conference_results(meeting):
     try:
         conf = Conference.objects.get(endpoint__iexact=meeting)
     except Conference.DoesNotExist:
-        raise HTTPError(httplib.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     data = conference_data(meeting)
 

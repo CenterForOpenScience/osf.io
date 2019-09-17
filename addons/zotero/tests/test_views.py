@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import mock
 import pytest
-import urlparse
+from future.moves.urllib.parse import urljoin
 import responses
 
 from framework.auth import Auth
@@ -42,9 +42,9 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
 
     def setUp(self):
         super(TestConfigViews, self).setUp()
-        self.foldersApiUrl = urlparse.urljoin(API_URL, 'users/{}/collections'
+        self.foldersApiUrl = urljoin(API_URL, 'users/{}/collections'
             .format(self.external_account.provider_id))
-        self.documentsApiUrl = urlparse.urljoin(API_URL, 'users/{}/items/top'
+        self.documentsApiUrl = urljoin(API_URL, 'users/{}/items/top'
             .format(self.external_account.provider_id))
 
         # Sets library key

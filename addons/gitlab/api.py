@@ -1,4 +1,4 @@
-import urllib
+from future.moves.urllib.parse import urlencode
 import requests
 
 import gitlab
@@ -132,7 +132,7 @@ class GitLabClient(object):
 
 def ref_to_params(branch=None, sha=None):
 
-    params = urllib.urlencode({
+    params = urlencode({
         key: value
         for key, value in {
             'branch': branch,

@@ -1,4 +1,4 @@
-import urlparse
+from future.moves.urllib.parse import urlparse
 
 import requests
 import logging
@@ -31,8 +31,8 @@ def get_bannable_urls(instance):
 
     for host in get_varnish_servers():
         # add instance url
-        varnish_parsed_url = urlparse.urlparse(host)
-        parsed_absolute_url = urlparse.urlparse(instance.absolute_api_v2_url)
+        varnish_parsed_url = urlparse(host)
+        parsed_absolute_url = urlparse(instance.absolute_api_v2_url)
         url_string = '{scheme}://{netloc}{path}.*'.format(
             scheme=varnish_parsed_url.scheme,
             netloc=varnish_parsed_url.netloc,
@@ -41,7 +41,7 @@ def get_bannable_urls(instance):
         bannable_urls.append(url_string)
         if isinstance(instance, Comment):
             try:
-                parsed_target_url = urlparse.urlparse(instance.target.referent.absolute_api_v2_url)
+                parsed_target_url = urlparse(instance.target.referent.absolute_api_v2_url)
             except AttributeError:
                 # some referents don't have an absolute_api_v2_url
                 # I'm looking at you NodeWikiPage
@@ -56,7 +56,7 @@ def get_bannable_urls(instance):
                 bannable_urls.append(url_string)
 
             try:
-                parsed_root_target_url = urlparse.urlparse(instance.root_target.referent.absolute_api_v2_url)
+                parsed_root_target_url = urlparse(instance.root_target.referent.absolute_api_v2_url)
             except AttributeError:
                 # some root_targets don't have an absolute_api_v2_url
                 pass

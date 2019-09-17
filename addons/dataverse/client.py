@@ -1,4 +1,4 @@
-import httplib as http
+from rest_framework import status as http_status
 
 from dataverse import Connection
 from dataverse.exceptions import ConnectionError, UnauthorizedError, OperationFailedError
@@ -32,10 +32,10 @@ def connect_or_error(host, token):
     try:
         connection = _connect(host, token)
         if not connection:
-            raise HTTPError(http.SERVICE_UNAVAILABLE)
+            raise HTTPError(http_status.HTTP_503_SERVICE_UNAVAILABLE)
         return connection
     except UnauthorizedError:
-        raise HTTPError(http.UNAUTHORIZED)
+        raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
 
 
 def connect_from_settings_or_401(node_settings):
@@ -57,17 +57,17 @@ def publish_dataverse(dataverse):
     try:
         dataverse.publish()
     except OperationFailedError:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
 
 def publish_dataset(dataset):
     if dataset.get_state() == 'RELEASED':
-        raise HTTPError(http.CONFLICT, data=dict(
+        raise HTTPError(http_status.HTTP_409_CONFLICT, data=dict(
             message_short='Dataset conflict',
             message_long='This version of the dataset has already been published.'
         ))
     if not dataset.dataverse.is_published:
-        raise HTTPError(http.METHOD_NOT_ALLOWED, data=dict(
+        raise HTTPError(http_status.HTTP_405_METHOD_NOT_ALLOWED, data=dict(
             message_short='Method not allowed',
             message_long='A dataset cannot be published until its parent Dataverse is published.'
         ))
@@ -75,7 +75,7 @@ def publish_dataset(dataset):
     try:
         dataset.publish()
     except OperationFailedError:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
 
 def get_datasets(dataverse):
@@ -90,13 +90,13 @@ def get_dataset(dataverse, doi):
     dataset = dataverse.get_dataset_by_doi(doi, timeout=settings.REQUEST_TIMEOUT)
     try:
         if dataset and dataset.get_state() == 'DEACCESSIONED':
-            raise HTTPError(http.GONE, data=dict(
+            raise HTTPError(http_status.HTTP_410_GONE, data=dict(
                 message_short='Dataset deaccessioned',
                 message_long='This dataset has been deaccessioned and can no longer be linked to the OSF.'
             ))
         return dataset
     except UnicodeDecodeError:
-        raise HTTPError(http.NOT_ACCEPTABLE, data=dict(
+        raise HTTPError(http_status.HTTP_406_NOT_ACCEPTABLE, data=dict(
             message_short='Not acceptable',
             message_long='This dataset cannot be connected due to forbidden '
                          'characters in one or more of the file names.'
