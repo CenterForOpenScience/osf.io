@@ -2,9 +2,6 @@
 Django settings for the admin project.
 """
 
-import os
-from urlparse import urlparse
-from website import settings as osf_settings
 from django.contrib import messages
 from api.base.settings import *  # noqa
 # TODO ALL SETTINGS FROM API WILL BE IMPORTED AND WILL NEED TO BE OVERRRIDEN
@@ -249,7 +246,7 @@ if DEBUG:
     INSTALLED_APPS += ('debug_toolbar', 'nplusone.ext.django',)
     MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware', 'nplusone.ext.django.NPlusOneMiddleware',)
     DEBUG_TOOLBAR_CONFIG = {
-        'SHOW_TOOLBAR_CALLBACK': lambda(_): True,
+        'SHOW_TOOLBAR_CALLBACK': lambda _: True,
         'DISABLE_PANELS': {
             'debug_toolbar.panels.templates.TemplatesPanel',
             'debug_toolbar.panels.redirects.RedirectsPanel'

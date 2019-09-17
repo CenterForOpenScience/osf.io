@@ -1,6 +1,6 @@
 import requests
 import json
-import httplib as http
+from rest_framework import status as http_status
 
 import celery
 from celery.utils.log import get_task_logger
@@ -162,7 +162,7 @@ def make_copy_request(job_pk, url, data):
     src, dst, user = job.info()
     logger.info('Sending copy request for addon: {0} on node: {1}'.format(data['provider'], dst._id))
     res = requests.post(url, data=json.dumps(data))
-    if res.status_code not in (http.OK, http.CREATED, http.ACCEPTED):
+    if res.status_code not in (http_status.HTTP_200_OK, http_status.HTTP_201_CREATED, http_status.HTTP_202_ACCEPTED):
         raise HTTPError(res.status_code)
 
 def make_waterbutler_payload(dst_id, rename):

@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 import os
-import httplib as http
+from rest_framework import status as http_status
 import requests
-import urlparse
+
+from future.moves.urllib.parse import urljoin
+
 import json
 
 import waffle
@@ -245,7 +247,7 @@ def sitemap_file(path):
     elif path.endswith('.xml'):
         mime = 'text/xml'
     else:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
     return send_from_directory(
         settings.STATIC_FOLDER + '/sitemaps/',
         path,
@@ -265,11 +267,11 @@ def ember_app(path=None):
             break
 
     if not ember_app:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     if settings.PROXY_EMBER_APPS:
         path = request.path[len(ember_app['path']):]
-        url = urlparse.urljoin(ember_app['server'], path)
+        url = urljoin(ember_app['server'], path)
         resp = requests.get(url, stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT, headers={'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'})
         excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
         headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
@@ -278,11 +280,11 @@ def ember_app(path=None):
     ember_app_folder = os.path.abspath(os.path.join(os.getcwd(), ember_app['path']))
 
     if not ember_app_folder:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     if not os.path.abspath(os.path.join(ember_app_folder, fp)).startswith(ember_app_folder):
         # Prevent accessing files outside of the ember build dir
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     if not os.path.isfile(os.path.join(ember_app_folder, fp)):
         fp = 'index.html'
@@ -308,13 +310,13 @@ def make_url_map(app):
         Rule(
             '/<path:_>',
             ['get', 'post'],
-            HTTPError(http.NOT_FOUND),
+            HTTPError(http_status.HTTP_404_NOT_FOUND),
             OsfWebRenderer('', render_mako_string, trust=False)
         ),
         Rule(
             '/api/v1/<path:_>',
             ['get', 'post'],
-            HTTPError(http.NOT_FOUND),
+            HTTPError(http_status.HTTP_404_NOT_FOUND),
             json_renderer
         ),
     ])

@@ -1,4 +1,4 @@
-import httplib as http
+from rest_framework import status as http_status
 
 from framework.exceptions import HTTPError
 
@@ -19,5 +19,5 @@ def view_institution(inst_id, **kwargs):
     try:
         inst = Institution.objects.get(_id=inst_id, is_deleted=False)
     except Institution.DoesNotExist:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
     return serialize_institution(inst)

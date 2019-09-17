@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-import urllib
+from future.moves.urllib.parse import quote
 import uuid
 
 import ssl
@@ -131,7 +131,7 @@ def broadcast_to_sharejs(action, sharejs_uuid, node=None, wiki_name='home', data
     )
 
     if action == 'redirect' or action == 'delete':
-        redirect_url = urllib.quote(
+        redirect_url = quote(
             node.web_url_for('project_wiki_view', wname=wiki_name, _guid=True),
             safe='',
         )

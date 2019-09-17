@@ -31,6 +31,7 @@ from osf.models.request import NodeRequest, PreprintRequest  # noqa
 from osf.models.identifiers import Identifier  # noqa
 from osf.models.files import (  # noqa
     BaseFileNode,
+    BaseFileVersionsThrough,
     File, Folder,  # noqa
     FileVersion, TrashedFile, TrashedFileNode, TrashedFolder, FileVersionUserMetadata,  # noqa
 )  # noqa

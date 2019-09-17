@@ -1,6 +1,6 @@
 import collections
 import re
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 
 import furl
 from django.core.urlresolvers import resolve, reverse, NoReverseMatch

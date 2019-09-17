@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import httplib as http
+from rest_framework import status as http_status
 
 from flask import request
 from django.core.exceptions import ValidationError
@@ -48,7 +48,7 @@ def get_node_contributors_abbrev(auth, node, **kwargs):
         users = node.visible_contributors
 
     if anonymous or not node.can_view(auth):
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     contributors = []
 
@@ -87,7 +87,7 @@ def get_contributors(auth, node, **kwargs):
         try:
             limit = int(request.args['limit'])
         except ValueError:
-            raise HTTPError(http.BAD_REQUEST, data=dict(
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
                 message_long='Invalid value for "limit": {}'.format(request.args['limit'])
             ))
     else:
@@ -96,7 +96,7 @@ def get_contributors(auth, node, **kwargs):
     anonymous = has_anonymous_link(node, auth)
 
     if anonymous or not node.can_view(auth):
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     # Limit is either an int or None:
     # if int, contribs list is sliced to specified length
@@ -123,10 +123,10 @@ def get_contributors_from_parent(auth, node, **kwargs):
     parent = node.parent_node
 
     if not parent:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     if not node.can_view(auth):
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     contribs = [
         profile_utils.add_contributor_json(contrib, node=node)
@@ -220,7 +220,7 @@ def project_contributors_post(auth, node, **kwargs):
         node_ids.remove(node._id)
 
     if user_dicts is None or node_ids is None:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     # Prepare input data for `Node::add_contributors`
     try:
@@ -283,7 +283,7 @@ def project_manage_contributors(auth, node, **kwargs):
     try:
         node.manage_contributors(contributors, auth=auth, save=True)
     except (ValueError, NodeStateError) as error:
-        raise HTTPError(http.BAD_REQUEST, data={'message_long': error.args[0]})
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message_long': error.args[0]})
 
     # If user has removed herself from project, alert; redirect to
     # node summary if node is public, else to user's dashboard page
@@ -323,7 +323,7 @@ def project_remove_contributor(auth, **kwargs):
     node_ids = request.get_json()['nodeIDs']
     contributor = OSFUser.load(contributor_id)
     if contributor is None:
-        raise HTTPError(http.BAD_REQUEST, data={'message_long': 'Contributor not found.'})
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message_long': 'Contributor not found.'})
     redirect_url = {}
     parent_id = node_ids[0]
     for node_id in node_ids:
@@ -333,18 +333,18 @@ def project_remove_contributor(auth, **kwargs):
         # Forbidden unless user is removing herself
         if not node.has_permission(auth.user, ADMIN):
             if auth.user != contributor:
-                raise HTTPError(http.FORBIDDEN)
+                raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
         if node.visible_contributors.count() == 1 \
                 and node.visible_contributors[0] == contributor:
-            raise HTTPError(http.FORBIDDEN, data={
+            raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
                 'message_long': 'Must have at least one bibliographic contributor'
             })
 
         nodes_removed = node.remove_contributor(contributor, auth=auth)
         # remove_contributor returns false if there is not one admin or visible contributor left after the move.
         if not nodes_removed:
-            raise HTTPError(http.BAD_REQUEST, data={
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_long': 'Could not remove contributor.'})
 
         # On parent node, if user has removed herself from project, alert; redirect to
@@ -374,7 +374,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
     :param node: the project node where the user account is claimed
     :param throttle: the time period in seconds before another claim for the account can be made
     :return:
-    :raise: http.BAD_REQUEST
+    :raise: http_status.HTTP_400_BAD_REQUEST
     """
 
     unclaimed_record = unclaimed_user.get_unclaimed_record(node._primary_key)
@@ -382,7 +382,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
     # check throttle
     timestamp = unclaimed_record.get('last_sent')
     if not throttle_period_expired(timestamp, throttle):
-        raise HTTPError(http.BAD_REQUEST, data=dict(
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
             message_long='User account can only be claimed with an existing user once every 24 hours'
         ))
 
@@ -444,7 +444,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         emailed during which the referrer will not be emailed again.
     :param str email_template: the email template to use
     :return
-    :raise http.BAD_REQUEST
+    :raise http_status.HTTP_400_BAD_REQUEST
 
     """
 
@@ -484,7 +484,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         # check throttle
         timestamp = unclaimed_record.get('last_sent')
         if not throttle_period_expired(timestamp, throttle):
-            raise HTTPError(http.BAD_REQUEST, data=dict(
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
                 message_long='User account can only be claimed with an existing user once every 24 hours'
             ))
         # roll the valid token for each email, thus user cannot change email and approve a different email address
@@ -685,7 +685,7 @@ def claim_user_registered(auth, node, **kwargs):
             'message_long': ('The logged-in user is already a contributor to this '
                 'project. Would you like to <a href="{}">log out</a>?').format(sign_out_url)
         }
-        raise HTTPError(http.BAD_REQUEST, data=data)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=data)
 
     # Logged in user is already a member of the OSF Group
     if hasattr(node, 'is_member') and node.is_member(current_user):
@@ -694,7 +694,7 @@ def claim_user_registered(auth, node, **kwargs):
             'message_long': ('The logged-in user is already a member of this OSF Group. '
                 'Would you like to <a href="{}">log out</a>?').format(sign_out_url)
         }
-        raise HTTPError(http.BAD_REQUEST, data=data)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=data)
 
     uid, pid, token = kwargs['uid'], kwargs['pid'], kwargs['token']
     unreg_user = OSFUser.load(uid)
@@ -703,7 +703,7 @@ def claim_user_registered(auth, node, **kwargs):
             'message_short': 'Invalid url.',
             'message_long': 'The token in the URL is invalid or has expired.'
         }
-        raise HTTPError(http.BAD_REQUEST, data=error_data)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=error_data)
 
     # Store the unreg_user data on the session in case the user registers
     # a new account
@@ -791,7 +791,7 @@ def claim_user_form(auth, **kwargs):
             'message_short': 'Invalid url.',
             'message_long': 'Claim user does not exists, the token in the URL is invalid or has expired.'
         }
-        raise HTTPError(http.BAD_REQUEST, data=error_data)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=error_data)
 
     # If user is logged in, redirect to 're-enter password' page
     if auth.logged_in:
@@ -820,7 +820,7 @@ def claim_user_form(auth, **kwargs):
         else:
             username, password = claimer_email, form.password.data
             if not username:
-                raise HTTPError(http.BAD_REQUEST, data=dict(
+                raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
                     message_long='No email associated with this account. Please claim this '
                     'account on the project to which you were invited.'
                 ))
@@ -928,7 +928,7 @@ def claim_user_post(node, **kwargs):
         send_claim_registered_email(claimer, unclaimed_user, node)
         email = claimer.username
     else:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     return {
         'status': 'success',
