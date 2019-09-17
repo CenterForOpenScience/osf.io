@@ -43,7 +43,15 @@ $('#s3_modal input').keyup(function () {
     validateRequiredFields('s3');
 });
 
+$('#s3_modal input').on('paste', function(e) {
+    validateRequiredFields('s3');
+});
+
 $('#s3compat_modal input').keyup(function () {
+    validateRequiredFields('s3compat');
+});
+
+$('#s3compat_modal input').on('paste', function(e) {
     validateRequiredFields('s3compat');
 });
 
@@ -51,7 +59,15 @@ $('#swift_modal input').keyup(function () {
     validateRequiredFields('swift');
 });
 
+$('#swift_modal input').on('paste', function(e) {
+    validateRequiredFields('swift');
+});
+
 $('#owncloud_modal input').keyup(function () {
+    validateRequiredFields('owncloud');
+});
+
+$('#owncloud_modal input').on('paste', function(e) {
     validateRequiredFields('owncloud');
 });
 
@@ -59,11 +75,23 @@ $('#nextcloud_modal input').keyup(function () {
     validateRequiredFields('nextcloud');
 });
 
+$('#nextcloud_modal input').on('paste', function(e) {
+    validateRequiredFields('nextcloud');
+});
+
 $('#googledrive_modal input').keyup(function () {
     authSaveButtonState('googledrive');
 });
 
+$('#googledrive_modal input').on('paste', function(e) {
+    authSaveButtonState('googledrive');
+});
+
 $('#box_modal input').keyup(function () {
+    authSaveButtonState('box');
+});
+
+$('#box_modal input').on('paste', function(e) {
     authSaveButtonState('box');
 });
 
