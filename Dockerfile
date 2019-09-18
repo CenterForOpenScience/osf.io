@@ -3,7 +3,7 @@ FROM node:8-alpine
 # Source: https://github.com/docker-library/httpd/blob/7976cabe162268bd5ad2d233d61e340447bfc371/2.4/alpine/Dockerfile#L3
 RUN set -x \
     && addgroup -g 82 -S www-data \
-    && adduser -u 82 -D -S -G www-data www-data
+    && adduser -h /var/www -u 82 -D -S -G www-data www-data
 
 RUN apk add --no-cache --virtual .run-deps \
     su-exec \
