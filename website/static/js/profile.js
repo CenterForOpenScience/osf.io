@@ -835,6 +835,9 @@ var ListViewModel = function(ContentModel, urls, modes, preventUnsaved) {
     self.ContentModel = ContentModel;
     self.contents = ko.observableArray();
 
+    self.idp_attr_institution = ko.observable('').extend({trimmed: true});
+    self.idp_attr_department = ko.observable('').extend({trimmed: true});
+
     self.tracked = self.contents;
 
     self.canRemove = ko.computed(function() {
@@ -963,6 +966,27 @@ ListViewModel.prototype.removeContent = function(content) {
     });
 };
 
+var isEmptyStr = function(s) {
+    if (s !== null && s.length > 0) {
+        return false;
+    }
+    return true;
+};
+
+ListViewModel.prototype.setContentFromIdP = function(content) {
+    var idx = this.contents().indexOf(content);
+    var self = this;
+
+    var inst = self.idp_attr_institution();
+    if (!isEmptyStr(inst)) {
+        content.institution(inst);
+    }
+    var dep = self.idp_attr_department();
+    if (!isEmptyStr(dep)) {
+        content.department(dep);
+    }
+};
+
 ListViewModel.prototype.unserialize = function(data) {
     var self = this;
     if (self.editAllowed) {
@@ -976,6 +1000,24 @@ ListViewModel.prototype.unserialize = function(data) {
         }
         return new self.ContentModel(self).unserialize(each);
     }));
+
+    // Store Shibboleth IdP profile
+    var val;
+    if ('idp_attr' in data) {
+        var idp_attr = data.idp_attr;
+        if ('institution' in idp_attr) {
+            val = idp_attr.institution;
+            if (!isEmptyStr(val)) {
+                self.idp_attr_institution($osf.decodeText(val).trim());
+            }
+        }
+        if ('department' in idp_attr) {
+            val = idp_attr.department;
+            if (!isEmptyStr(val)) {
+                self.idp_attr_department($osf.decodeText(val).trim());
+            }
+        }
+    }
 
     // Ensure at least one item is visible
     if (self.mode() === 'edit') {

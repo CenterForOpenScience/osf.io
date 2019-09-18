@@ -15,7 +15,8 @@ from framework.auth import get_or_create_user
 from framework.auth.core import get_user
 
 from osf import features
-from osf.models import Institution
+from osf.models import Institution, UserExtendedData
+from osf.exceptions import BlacklistedEmailError
 from website.mails import send_mail, WELCOME_OSF4I
 from website.settings import OSF_SUPPORT_EMAIL, DOMAIN, to_bool
 from website.util.quota import update_default_storage
@@ -56,13 +57,17 @@ class InstitutionAuthentication(BaseAuthentication):
                 "id":   "",
                 "user": {
                     "username":     "",  # email or eppn
-                    "fullname":     "",
+                    "fullname":     "",  # displayName
                     "familyName":   "",
                     "givenName":    "",
                     "middleNames":  "",
                     "suffix":       "",
-                    "groups":       "",
-                    "eptid":        "",
+                    "groups":       "",  # isMemberOf for mAP API v1
+                    "eptid":        "",  # persistent-id for mAP API v1
+                    "entitlement":  "",  # eduPersonEntitlement
+                    "email":        "",  # mail
+                    "organizationName": "",    # o
+                    "organizationalUnit": "",  # ou
                 }
             }
         }
@@ -89,17 +94,9 @@ class InstitutionAuthentication(BaseAuthentication):
         if not institution:
             raise AuthenticationFailed('Invalid institution id specified "{}"'.format(provider['id']))
 
-        eppn = None
-        eppn_tmp = None
         USE_EPPN = login_by_eppn()
-        if USE_EPPN:
-            eppn = provider['user'].get('username')
-            if not eppn:
-                message = 'login failed: eppn required'
-                sentry.log_message(message)
-                raise AuthenticationFailed(message)
-            eppn_tmp = ('tmp_eppn_' + eppn).lower()
-        logger.info('---InstitutionAuthentication.authenticate.user:{}'.format(provider))
+
+        #logger.info('---InstitutionAuthentication.authenticate.user:{}'.format(provider))
 
         username = provider['user'].get('username')
         fullname = provider['user'].get('fullname')
@@ -108,6 +105,9 @@ class InstitutionAuthentication(BaseAuthentication):
         middle_names = provider['user'].get('middleNames')
         suffix = provider['user'].get('suffix')
         entitlement = provider['user'].get('entitlement')
+        email = provider['user'].get('email')
+        organization_name = provider['user'].get('organizationName')
+        organizational_unit = provider['user'].get('organizationalUnit')
 
         # use given name and family name to build full name if not provided
         if given_name and family_name and not fullname:
@@ -125,13 +125,46 @@ class InstitutionAuthentication(BaseAuthentication):
 
         user = None
         created = False
+        eppn = None
+
         if USE_EPPN:
-            # use user.eppn because user.username is not always ePPN.
-            user = get_user(eppn=eppn)
+            eppn = username
+            if not eppn:
+                message = 'Institution login failed: eppn required'
+                sentry.log_message(message)
+                raise AuthenticationFailed(message)
+
+            # use user.eppn as primary-key in GakuNin RDM
+            user = get_user(eppn=eppn, log=False)
             if user:
                 created = False
-            else:
-                user, created = get_or_create_user(fullname, eppn_tmp, reset_password=False)
+            else:  # new user
+                if email:
+                    existing_user = get_user(email=email, log=False)
+                    if existing_user and \
+                       existing_user.eppn != eppn:  # suppose race-condition
+                        email = None  # require other email address
+                tmp_eppn = ('tmp_eppn_' + eppn).lower()
+                if email:
+                    username_tmp = email
+                else:
+                    username_tmp = tmp_eppn
+                try:
+                    # try to use email or tmp_eppn
+                    user, created = get_or_create_user(
+                        fullname, username_tmp,
+                        reset_password=False,
+                    )
+                except BlacklistedEmailError:
+                    if username_tmp == tmp_eppn:  # unexpected
+                        raise
+                    # email is Black Listed Email
+                    email = None
+                    # try to use tmp_eppn only
+                    user, created = get_or_create_user(
+                        fullname, tmp_eppn,
+                        reset_password=False,
+                    )
         else:
             user, created = get_or_create_user(fullname, username, reset_password=False)
         # `get_or_create_user()` guesses names from fullname
@@ -162,9 +195,31 @@ class InstitutionAuthentication(BaseAuthentication):
 
             if USE_EPPN:
                 user.eppn = eppn
-                user.have_email = False
-                #user.unclaimed_records = {}
-                username = eppn_tmp
+                if email:
+                    username = email
+                    user.have_email = True
+                else:
+                    username = user.username
+                    user.have_email = False
+                    #user.unclaimed_records = {}
+                if organization_name:
+                    # Settings > Profile information > Employment > ...
+                    #   organization_name (o) : Institution / Employer
+                    #   organizational_unit (ou) : Department / Institute
+                    job = {
+                        'title': '',
+                        'institution': organization_name,  # required
+                        'department': '',
+                        'location': '',
+                        'startMonth': '',
+                        'startYear': '',
+                        'endMonth': '',
+                        'endYear': '',
+                        'ongoing': False,
+                    }
+                    if organizational_unit:
+                        job['department'] = organizational_unit
+                    user.jobs.append(job)
             else:
                 user.eppn = None
                 user.have_email = True
@@ -179,6 +234,20 @@ class InstitutionAuthentication(BaseAuthentication):
                 send_welcome(user, request)
             ### the user is not available when have_email is False.
 
+        ext, created = UserExtendedData.objects.get_or_create(user=user)
+        # update every login.
+        ext.set_idp_attr(
+            {
+                'eppn': eppn,
+                'username': username,
+                'fullname': fullname,
+                'entitlement': entitlement,
+                'email': email,
+                'organization_name': organization_name,
+                'organizational_unit': organizational_unit,
+            },
+        )
+
         # update every login.
         if USE_EPPN:
             for other in user.affiliated_institutions.exclude(id=institution.id):
@@ -188,7 +257,7 @@ class InstitutionAuthentication(BaseAuthentication):
             user.save()
             update_default_storage(user)
 
-        # update every login.
+        # update every login. (for mAP API v1)
         init_cloud_gateway_groups(user, provider)
 
         return user, None

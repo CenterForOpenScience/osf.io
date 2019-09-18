@@ -125,6 +125,29 @@ class CGGroup(BaseModel):
         return self.name
 
 
+class UserExtendedData(BaseModel):
+    user = models.OneToOneField('OSFUser', related_name='ext',
+                                on_delete=models.CASCADE)
+
+    data = DateTimeAwareJSONField(default=dict, blank=True)
+    # Format: {
+    #   'idp_attr': {
+    #      'fullname': <displayName>,
+    #      'entitlement': <eduPersonEntitlement>,
+    #      'email': <mail address>,
+    #      'organization_name': <o>,
+    #      'organizational_unit': <ou>,
+    #   },
+    # }
+
+    def set_idp_attr(self, idp_attr, save=True):
+        if self.data is None:
+            self.data = {}
+        self.data['idp_attr'] = idp_attr
+        if save:
+            self.save()
+
+
 class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin, SpamMixin):
     FIELD_ALIASES = {
         '_id': 'guids___id',
@@ -1816,6 +1839,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.set_unusable_username()
         self.set_unusable_password()
         self.eppn = None
+        try:
+            self.ext.delete()
+        except Exception:  # self.ext may not exist
+            pass
         self.given_name = ''
         self.family_name = ''
         self.middle_names = ''
