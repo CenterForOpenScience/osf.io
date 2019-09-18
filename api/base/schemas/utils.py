@@ -29,10 +29,8 @@ def validate_dates(history):
     if history.get('start_date'):
         start_date = datetime.strptime(history['start_date'], '%Y-%m-%d')
 
-    if not history.get('ongoing', False):
-        if history.get('end_date'):
-            end_date = datetime.strptime(history['end_date'], '%Y-%m-%d')
-
-        if history.get('start_date') and history.get('end_date'):
-            if (end_date - start_date).days <= 0:
-                raise InvalidModelValueError(detail='End date must be greater than or equal to the start date.')
+        if not history.get('ongoing', False):
+            if history.get('end_date'):
+                end_date = datetime.strptime(history['end_date'], '%Y-%m-%d')
+                if (end_date - start_date).days <= 0:
+                    raise InvalidModelValueError(detail='End date must be greater than or equal to the start date.')
