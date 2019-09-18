@@ -35,6 +35,7 @@ def strip_html(unclean, tags=None):
     elif not isinstance(unclean, string_types) and not is_iterable(unclean):
         return unclean
     else:
+        unclean = unclean.decode() if isinstance(unclean, bytes) else unclean
         return bleach.clean(unclean, strip=True, tags=tags, attributes=[], styles=[])
 
 
