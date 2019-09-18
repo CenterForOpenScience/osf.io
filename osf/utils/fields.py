@@ -22,21 +22,22 @@ def encrypt_string(value, prefix='jwe:::'):
     if value and not value.startswith(prefix):
         value = ensure_bytes(value)
         try:
-            value = prefix.encode() + jwe.encrypt(value, SENSITIVE_DATA_KEY)
+            value = (prefix.encode() + jwe.encrypt(value, SENSITIVE_DATA_KEY)).decode()
         except InvalidTag:
             # Allow use of an encrypted DB locally without encrypting fields
             if settings.DEBUG_MODE:
                 pass
             else:
                 raise
-    return value.decode()
+
+    return value
 
 
 def decrypt_string(value, prefix='jwe:::'):
     if value and value.startswith(prefix):
         value = ensure_bytes(value)
         try:
-            value = jwe.decrypt(bytes(value[len(prefix):]), SENSITIVE_DATA_KEY)
+            value = jwe.decrypt(bytes(value[len(prefix):]), SENSITIVE_DATA_KEY).decode()
         except InvalidTag:
             # Allow use of an encrypted DB locally without decrypting fields
             if settings.DEBUG_MODE:
