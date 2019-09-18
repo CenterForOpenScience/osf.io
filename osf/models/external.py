@@ -1,7 +1,7 @@
 import abc
 import datetime as dt
 import functools
-import httplib as http
+from rest_framework import status as http_status
 import logging
 
 from django.contrib.postgres.fields import ArrayField
@@ -21,6 +21,7 @@ from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string
 from website.settings import ADDONS_OAUTH_NO_REDIRECT
 from website.util import web_url_for
+from future.utils import with_metaclass
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +97,7 @@ class ExternalProviderMeta(abc.ABCMeta):
             PROVIDER_LOOKUP[cls.short_name] = cls
 
 
-class ExternalProvider(object):
+class ExternalProvider(with_metaclass(ExternalProviderMeta)):
     """A connection to an external service (ex: GitHub).
 
     This object contains no credentials, and is not saved in the database.
@@ -108,8 +109,6 @@ class ExternalProvider(object):
     It's a separate object because this must be subclassed for each provider,
     and ``ExternalAccount`` instances are stored within a single collection.
     """
-
-    __metaclass__ = ExternalProviderMeta
 
     # Default to OAuth v2.0.
     _oauth_version = OAUTH2
@@ -283,7 +282,7 @@ class ExternalProvider(object):
                     code=request.args.get('code'),
                 )
             except (MissingTokenError, RequestsHTTPError):
-                raise HTTPError(http.SERVICE_UNAVAILABLE)
+                raise HTTPError(http_status.HTTP_503_SERVICE_UNAVAILABLE)
         # pre-set as many values as possible for the ``ExternalAccount``
         info = self._default_handle_callback(response)
         # call the hook for subclasses to parse values from the response

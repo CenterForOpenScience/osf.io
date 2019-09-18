@@ -2,7 +2,7 @@
 
 import os
 import datetime
-import httplib as http
+from rest_framework import status as http_status
 import time
 import functools
 
@@ -563,13 +563,13 @@ class TestCheckPreregAuth(OsfTestCase):
         with assert_raises(HTTPError) as exc_info:
             views.check_access(self.draft_registration.branched_from,
                  Auth(user=new_user), 'download', None)
-            assert_equal(exc_info.exception.code, http.FORBIDDEN)
+            assert_equal(exc_info.exception.code, http_status.HTTP_403_FORBIDDEN)
 
     def test_has_permission_download_prereg_challenge_admin_not_draft(self):
         with assert_raises(HTTPError) as exc_info:
             views.check_access(self.node,
                  Auth(user=self.prereg_challenge_admin_user), 'download', None)
-            assert_equal(exc_info.exception.code, http.FORBIDDEN)
+            assert_equal(exc_info.exception.code, http_status.HTTP_403_FORBIDDEN)
 
     def test_has_permission_write_prereg_challenge_admin(self):
         with assert_raises(HTTPError) as exc_info:

@@ -81,6 +81,9 @@
 
     `$ cp ./docker-compose-dist.override.yml ./docker-compose.override.yml`
 
+    For local tasks, (dev only)
+    `$ cp ./tasks/local-dist.py ./tasks/local.py`
+
 2. OPTIONAL (uncomment the below lines if you will use remote debugging) Environment variables (incl. remote debugging)
   - e.g. .docker-compose.env
 

@@ -1,5 +1,5 @@
 import bleach
-import urllib
+from future.moves.urllib.parse import quote, unquote
 
 # TODO: Test me @jmcarp
 
@@ -24,14 +24,14 @@ def process_data(data, func):
 def process_payload(data):
     return process_data(
         data,
-        lambda value: urllib.quote(value.encode('utf-8') if value else '', safe=' ')
+        lambda value: quote(value.encode('utf-8') if value else '', safe=' ')
     )
 
 
 def unprocess_payload(data):
     return process_data(
         data,
-        lambda value: urllib.unquote(value.encode('utf-8') if value else '')
+        lambda value: unquote(value.encode('utf-8') if value else '')
     )
 
 

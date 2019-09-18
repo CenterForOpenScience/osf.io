@@ -2,6 +2,14 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.27.0 (2019-09-18)
+===================
+- Automatically map subjects when a preprint is moved to a different
+  preprint provider in the admin app
+- Gitlab: return all repos to which the user has access
+- Upgrade Bower
+- Py3 backwards compatible changes
+
 19.26.0 (2019-09-11)
 ===================
 - Create a custom through table for linking files and versions

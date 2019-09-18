@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import functools
-import httplib as http
+from rest_framework import status as http_status
 
 from furl import furl
 from flask import request
@@ -14,7 +14,7 @@ from framework.database import get_or_http_error
 
 from osf.models import AbstractNode, Guid, Preprint, OSFGroup
 from osf.utils.permissions import WRITE
-from website import settings, language
+from website import language
 from website.util import web_url_for
 
 _load_node_or_fail = lambda pk: get_or_http_error(AbstractNode, pk)
@@ -45,7 +45,7 @@ def _kwargs_to_nodes(kwargs):
         node = _load_node_or_fail(nid)
     elif not pid and not nid:
         raise HTTPError(
-            http.NOT_FOUND,
+            http_status.HTTP_404_NOT_FOUND,
             data={
                 'message_short': 'Node not found',
                 'message_long': 'No Node with that primary key could be found',
@@ -68,7 +68,7 @@ def must_not_be_rejected(func):
 
         node = get_or_http_error(AbstractNode, kwargs.get('nid', kwargs.get('pid')), allow_deleted=True)
         if node.sanction and node.sanction.is_rejected:
-            raise HTTPError(http.GONE, data=dict(
+            raise HTTPError(http_status.HTTP_410_GONE, data=dict(
                 message_long='This registration has been rejected'
             ))
 
@@ -97,12 +97,12 @@ def must_be_valid_project(func=None, retractions_valid=False, quickfiles_valid=F
 
             if getattr(kwargs['node'], 'is_collection', True) or (getattr(kwargs['node'], 'is_quickfiles', True) and not quickfiles_valid):
                 raise HTTPError(
-                    http.NOT_FOUND
+                    http_status.HTTP_404_NOT_FOUND
                 )
 
             if not retractions_valid and getattr(kwargs['node'].retraction, 'is_retracted', False):
                 raise HTTPError(
-                    http.BAD_REQUEST,
+                    http_status.HTTP_400_BAD_REQUEST,
                     data=dict(message_long='Viewing withdrawn registrations is not permitted')
                 )
             else:
@@ -127,7 +127,7 @@ def must_be_public_registration(func):
 
         if not node.is_public or not node.is_registration:
             raise HTTPError(
-                http.BAD_REQUEST,
+                http_status.HTTP_400_BAD_REQUEST,
                 data=dict(message_long='Must be a public registration to view')
             )
 
@@ -164,7 +164,7 @@ def must_not_be_registration(func):
 
         if getattr(target, 'is_registration', False) and not getattr(target, 'archiving', False):
             raise HTTPError(
-                http.BAD_REQUEST,
+                http_status.HTTP_400_BAD_REQUEST,
                 data={
                     'message_short': 'Registrations cannot be changed',
                     'message_long': "The operation you're trying to do cannot be applied to registered projects, which are not allowed to be changed",
@@ -183,7 +183,7 @@ def must_be_registration(func):
 
         if not node.is_registration:
             raise HTTPError(
-                http.BAD_REQUEST,
+                http_status.HTTP_400_BAD_REQUEST,
                 data={
                     'message_short': 'Registered Nodes only',
                     'message_long': 'This view is restricted to registered Nodes only',
@@ -218,7 +218,7 @@ def check_can_access(node, user, key=None, api_node=None, include_groups=True):
 
     if (not node.can_view(Auth(user=user)) and api_node != node) or (not include_groups and not node.is_contributor(user)):
         if node.is_deleted:
-            raise HTTPError(http.GONE, data={'message_long': 'The node for this file has been deleted.'})
+            raise HTTPError(http_status.HTTP_410_GONE, data={'message_long': 'The node for this file has been deleted.'})
 
         if getattr(node, 'private_link_keys_deleted', False) and key in node.private_link_keys_deleted:
             status.push_status_message('The view-only links you used are expired.', trust=False)
@@ -235,13 +235,13 @@ def check_can_access(node, user, key=None, api_node=None, include_groups=True):
                 }
             }
             raise TemplateHTTPError(
-                http.FORBIDDEN,
+                http_status.HTTP_403_FORBIDDEN,
                 template='request_access.mako',
                 data=data
             )
 
         raise HTTPError(
-            http.FORBIDDEN,
+            http_status.HTTP_403_FORBIDDEN,
             data={'message_long': ('User has restricted access to this page. If this should not '
                                    'have occurred and the issue persists, ' + language.SUPPORT_LINK)}
         )
@@ -326,13 +326,13 @@ def must_have_addon(addon_name, model):
                 auth = kwargs.get('auth')
                 owner = auth.user if auth else None
                 if owner is None:
-                    raise HTTPError(http.UNAUTHORIZED)
+                    raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
             else:
-                raise HTTPError(http.BAD_REQUEST)
+                raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
             addon = owner.get_addon(addon_name)
             if addon is None:
-                raise HTTPError(http.BAD_REQUEST)
+                raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
             kwargs['{0}_addon'.format(model)] = addon
 
@@ -363,16 +363,16 @@ def must_be_addon_authorizer(addon_name):
                 node_addon = node.get_addon(addon_name)
 
             if not node_addon:
-                raise HTTPError(http.BAD_REQUEST)
+                raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
             if not node_addon.user_settings:
-                raise HTTPError(http.BAD_REQUEST)
+                raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
             auth = kwargs.get('auth')
             user = kwargs.get('user') or (auth.user if auth else None)
 
             if node_addon.user_settings.owner != user:
-                raise HTTPError(http.FORBIDDEN)
+                raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
             return func(*args, **kwargs)
 
@@ -388,8 +388,8 @@ def must_have_permission(permission):
 
     :param list permissions: List of accepted permissions
     :returns: Decorator function for checking permissions
-    :raises: HTTPError(http.UNAUTHORIZED) if not logged in
-    :raises: HTTPError(http.FORBIDDEN) if missing permissions
+    :raises: HTTPError(http_status.HTTP_401_UNAUTHORIZED) if not logged in
+    :raises: HTTPError(http_status.HTTP_403_FORBIDDEN) if missing permissions
 
     """
     def wrapper(func):
@@ -406,11 +406,11 @@ def must_have_permission(permission):
 
             # User must be logged in
             if user is None:
-                raise HTTPError(http.UNAUTHORIZED)
+                raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
 
             # User must have permissions
             if not target.has_permission(user, permission):
-                raise HTTPError(http.FORBIDDEN)
+                raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
             # Call view function
             return func(*args, **kwargs)
@@ -438,20 +438,6 @@ def must_have_write_permission_or_public_wiki(func):
     # Return decorated function
     return wrapped
 
-def http_error_if_disk_saving_mode(func):
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        _inject_nodes(kwargs)
-        node = kwargs['node']
-
-        if settings.DISK_SAVING_MODE:
-            raise HTTPError(
-                http.METHOD_NOT_ALLOWED,
-                redirect_url=node.url
-            )
-        return func(*args, **kwargs)
-    return wrapper
 
 def check_contributor_auth(node, auth, include_public, include_view_only_anon, include_groups=True):
     response = None
@@ -470,12 +456,12 @@ def check_contributor_auth(node, auth, include_public, include_view_only_anon, i
     if not node.is_public or not include_public:
         if not include_view_only_anon and link_anon:
             if not check_can_access(node=node, user=user, include_groups=include_groups):
-                raise HTTPError(http.UNAUTHORIZED)
+                raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
         elif not getattr(node, 'private_link_keys_active', False) or auth.private_key not in node.private_link_keys_active:
             if not check_can_access(node=node, user=user, key=auth.private_key, include_groups=include_groups):
                 redirect_url = check_key_expired(key=auth.private_key, node=node, url=request.url)
                 if request.headers.get('Content-Type') == 'application/json':
-                    raise HTTPError(http.UNAUTHORIZED)
+                    raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
                 else:
                     response = redirect(cas.get_login_url(redirect_url))
 

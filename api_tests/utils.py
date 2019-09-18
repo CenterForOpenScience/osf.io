@@ -1,5 +1,5 @@
 from blinker import ANY
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 from contextlib import contextmanager
 from addons.osfstorage import settings as osfstorage_settings
 

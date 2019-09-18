@@ -1,9 +1,9 @@
 import datetime
-import httplib
+from rest_framework import status as http_status
 import os
 import uuid
 import markupsafe
-import urllib
+from future.moves.urllib.parse import quote
 from django.utils import timezone
 
 from flask import make_response
@@ -112,7 +112,7 @@ def disable_addon(auth, **kwargs):
 
     addon_name = kwargs.get('addon')
     if addon_name is None:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     deleted = node.delete_addon(addon_name, auth)
 
@@ -126,11 +126,11 @@ def get_addon_user_config(**kwargs):
 
     addon_name = kwargs.get('addon')
     if addon_name is None:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     addon = user.get_addon(addon_name)
     if addon is None:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     return addon.to_json(user)
 
@@ -158,7 +158,7 @@ def check_access(node, auth, action, cas_resp):
     """
     permission = permission_map.get(action, None)
     if permission is None:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     if cas_resp:
         if permission == permissions.READ:
@@ -170,7 +170,7 @@ def check_access(node, auth, action, cas_resp):
 
         if not cas_resp.authenticated \
            or required_scope not in oauth_scopes.normalize_scopes(cas_resp.attributes['accessTokenScope']):
-            raise HTTPError(httplib.FORBIDDEN)
+            raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     if permission == permissions.READ:
         if node.can_view_files(auth):
@@ -218,7 +218,7 @@ def check_access(node, auth, action, cas_resp):
         except RegistrationSchema.DoesNotExist:
             pass
 
-    raise HTTPError(httplib.FORBIDDEN if auth.user else httplib.UNAUTHORIZED)
+    raise HTTPError(http_status.HTTP_403_FORBIDDEN if auth.user else http_status.HTTP_401_UNAUTHORIZED)
 
 def make_auth(user):
     if user is not None:
@@ -280,7 +280,7 @@ def get_auth(auth, **kwargs):
         )['data']
     except (jwt.InvalidTokenError, KeyError) as err:
         sentry.log_message(str(err))
-        raise HTTPError(httplib.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     if not auth.user:
         auth.user = OSFUser.from_cookie(data.get('cookie', ''))
@@ -290,18 +290,18 @@ def get_auth(auth, **kwargs):
         node_id = data['nid']
         provider_name = data['provider']
     except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     node = AbstractNode.load(node_id) or Preprint.load(node_id)
     if not node:
-        raise HTTPError(httplib.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     check_access(node, auth, action, cas_resp)
     provider_settings = None
     if hasattr(node, 'get_addon'):
         provider_settings = node.get_addon(provider_name)
         if not provider_settings:
-            raise HTTPError(httplib.BAD_REQUEST)
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     path = data.get('path')
     credentials = None
@@ -321,7 +321,7 @@ def get_auth(auth, **kwargs):
                         identifier=version
                     ).select_related('region').get()
                 except FileVersion.DoesNotExist:
-                    raise HTTPError(httplib.BAD_REQUEST)
+                    raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
                 if auth.user:
                     # mark fileversion as seen
                     FileVersionUserMetadata.objects.get_or_create(user=auth.user, file_version=fileversion)
@@ -404,11 +404,11 @@ def create_waterbutler_log(payload, **kwargs):
 
             user = OSFUser.load(auth['id'])
             if user is None:
-                raise HTTPError(httplib.BAD_REQUEST)
+                raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
             action = LOG_ACTION_MAP[payload['action']]
         except KeyError:
-            raise HTTPError(httplib.BAD_REQUEST)
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
         auth = Auth(user=user)
         node = kwargs.get('node') or kwargs.get('project') or Preprint.load(kwargs.get('nid')) or Preprint.load(kwargs.get('pid'))
@@ -418,7 +418,7 @@ def create_waterbutler_log(payload, **kwargs):
             for bundle in ('source', 'destination'):
                 for key in ('provider', 'materialized', 'name', 'nid'):
                     if key not in payload[bundle]:
-                        raise HTTPError(httplib.BAD_REQUEST)
+                        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
             dest = payload['destination']
             src = payload['source']
@@ -594,7 +594,7 @@ def addon_view_or_download_file_legacy(**kwargs):
             action=action,
             **query_params
         ),
-        code=httplib.MOVED_PERMANENTLY
+        code=http_status.HTTP_301_MOVED_PERMANENTLY
     )
 
 @must_be_contributor_or_public
@@ -674,7 +674,7 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
         # TODO - serialize deleted metadata for future types of deleted file targets
         ret = {'error': error_msg}
 
-    return ret, httplib.GONE
+    return ret, http_status.HTTP_410_GONE
 
 
 @must_be_contributor_or_public
@@ -691,7 +691,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     path_safe = markupsafe.escape(path)
 
     if not path:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     if hasattr(target, 'get_addon'):
 
@@ -699,19 +699,19 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
         if not isinstance(node_addon, BaseStorageAddon):
             object_text = markupsafe.escape(getattr(target, 'project_or_component', 'this object'))
-            raise HTTPError(httplib.BAD_REQUEST, data={
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': 'Bad Request',
                 'message_long': 'The {} add-on containing {} is no longer connected to {}.'.format(provider_safe, path_safe, object_text)
             })
 
         if not node_addon.has_auth:
-            raise HTTPError(httplib.UNAUTHORIZED, data={
+            raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, data={
                 'message_short': 'Unauthorized',
                 'message_long': 'The {} add-on containing {} is no longer authorized.'.format(provider_safe, path_safe)
             })
 
         if not node_addon.complete:
-            raise HTTPError(httplib.BAD_REQUEST, data={
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': 'Bad Request',
                 'message_long': 'The {} add-on containing {} is no longer configured.'.format(provider_safe, path_safe)
             })
@@ -737,13 +737,13 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
             file_node = BaseFileNode.load(path)
 
             if not file_node:
-                raise HTTPError(httplib.NOT_FOUND, data={
+                raise HTTPError(http_status.HTTP_404_NOT_FOUND, data={
                     'message_short': 'File Not Found',
                     'message_long': 'The requested file could not be found.'
                 })
 
             if file_node.kind == 'folder':
-                raise HTTPError(httplib.BAD_REQUEST, data={
+                raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                     'message_short': 'Bad Request',
                     'message_long': 'You cannot request a folder from this endpoint.'
                 })
@@ -759,7 +759,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     # TODO clean up these urls and unify what is used as a version identifier
     if request.method == 'HEAD':
-        return make_response(('', httplib.FOUND, {
+        return make_response(('', http_status.HTTP_302_FOUND, {
             'Location': file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render'))
         }))
 
@@ -768,7 +768,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         _, extension = os.path.splitext(file_node.name)
         # avoid rendering files with the same format type.
         if format and '.{}'.format(format.lower()) != extension.lower():
-            return redirect('{}/export?format={}&url={}'.format(get_mfr_url(target, provider), format, urllib.quote(file_node.generate_waterbutler_url(
+            return redirect('{}/export?format={}&url={}'.format(get_mfr_url(target, provider), format, quote(file_node.generate_waterbutler_url(
                 **dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')
             ))))
         return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')))
@@ -777,7 +777,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         draft_id = extras.get('draft')
         draft = DraftRegistration.load(draft_id)
         if draft is None or draft.is_approved:
-            raise HTTPError(httplib.BAD_REQUEST, data={
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': 'Bad Request',
                 'message_long': 'File not associated with required object.'
             })
@@ -804,12 +804,12 @@ def persistent_file_download(auth, **kwargs):
         if guid:
             file = guid.referent
         else:
-            raise HTTPError(httplib.NOT_FOUND, data={
+            raise HTTPError(http_status.HTTP_404_NOT_FOUND, data={
                 'message_short': 'File Not Found',
                 'message_long': 'The requested file could not be found.'
             })
     if not file.is_file:
-        raise HTTPError(httplib.BAD_REQUEST, data={
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
             'message_long': 'Downloading folders is not permitted.'
         })
 
@@ -823,7 +823,7 @@ def persistent_file_download(auth, **kwargs):
 
     return redirect(
         file.generate_waterbutler_url(**query_params),
-        code=httplib.FOUND
+        code=http_status.HTTP_302_FOUND
     )
 
 
@@ -831,7 +831,7 @@ def addon_view_or_download_quickfile(**kwargs):
     fid = kwargs.get('fid', 'NOT_AN_FID')
     file_ = OsfStorageFile.load(fid)
     if not file_:
-        raise HTTPError(httplib.NOT_FOUND, data={
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND, data={
             'message_short': 'File Not Found',
             'message_long': 'The requested file could not be found.'
         })

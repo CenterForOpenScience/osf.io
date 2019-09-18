@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-import httplib
+from rest_framework import status as http_status
 import logging
 
 from django.core.exceptions import ValidationError
@@ -83,7 +83,7 @@ def osfstorage_update_metadata(payload, **kwargs):
         version_id = payload['version']
         metadata = payload['metadata']
     except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     if check_select_for_update():
         version = FileVersion.objects.filter(_id=version_id).select_for_update().first()
@@ -91,7 +91,7 @@ def osfstorage_update_metadata(payload, **kwargs):
         version = FileVersion.objects.filter(_id=version_id).first()
 
     if version is None:
-        raise HTTPError(httplib.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     version.update_metadata(metadata)
 
@@ -124,7 +124,7 @@ def osfstorage_get_revisions(file_node, payload, target, **kwargs):
 
 @decorators.waterbutler_opt_hook
 def osfstorage_copy_hook(source, destination, name=None, **kwargs):
-    ret = source.copy_under(destination, name=name).serialize(), httplib.CREATED
+    ret = source.copy_under(destination, name=name).serialize(), http_status.HTTP_201_CREATED
     update_storage_usage(destination.target)
     return ret
 
@@ -133,13 +133,13 @@ def osfstorage_move_hook(source, destination, name=None, **kwargs):
     source_target = source.target
 
     try:
-        ret = source.move_under(destination, name=name).serialize(), httplib.OK
+        ret = source.move_under(destination, name=name).serialize(), http_status.HTTP_200_OK
     except exceptions.FileNodeCheckedOutError:
-        raise HTTPError(httplib.METHOD_NOT_ALLOWED, data={
+        raise HTTPError(http_status.HTTP_405_METHOD_NOT_ALLOWED, data={
             'message_long': 'Cannot move file as it is checked out.'
         })
     except exceptions.FileNodeIsPrimaryFile:
-        raise HTTPError(httplib.FORBIDDEN, data={
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
             'message_long': 'Cannot move file as it is the primary file of preprint.'
         })
 
@@ -288,7 +288,7 @@ def osfstorage_create_child(file_node, payload, **kwargs):
 
     if getattr(file_node.target, 'is_registration', False) and not getattr(file_node.target, 'archiving', False):
         raise HTTPError(
-            httplib.BAD_REQUEST,
+            http_status.HTTP_400_BAD_REQUEST,
             data={
                 'message_short': 'Registered Nodes are immutable',
                 'message_long': "The operation you're trying to do cannot be applied to registered Nodes, which are immutable",
@@ -296,10 +296,10 @@ def osfstorage_create_child(file_node, payload, **kwargs):
         )
 
     if not (name or user) or '/' in name:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     if getattr(file_node.target, 'is_quickfiles', False) and is_folder:
-        raise HTTPError(httplib.BAD_REQUEST, data={'message_long': 'You may not create a folder for QuickFiles'})
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message_long': 'You may not create a folder for QuickFiles'})
 
     try:
         # Create a save point so that we can rollback and unlock
@@ -313,7 +313,7 @@ def osfstorage_create_child(file_node, payload, **kwargs):
         created, file_node = False, parent.find_child_by_name(name, kind=int(not is_folder))
 
     if not created and is_folder:
-        raise HTTPError(httplib.CONFLICT, data={
+        raise HTTPError(http_status.HTTP_409_CONFLICT, data={
             'message_long': 'Cannot create folder "{name}" because a file or folder already exists at path "{path}"'.format(
                 name=file_node.name,
                 path=file_node.materialized_path,
@@ -321,7 +321,7 @@ def osfstorage_create_child(file_node, payload, **kwargs):
         })
 
     if file_node.checkout and file_node.checkout._id != user._id:
-        raise HTTPError(httplib.FORBIDDEN, data={
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
             'message_long': 'File cannot be updated due to checkout status.'
         })
 
@@ -335,7 +335,7 @@ def osfstorage_create_child(file_node, payload, **kwargs):
                 }
             ))
         except KeyError:
-            raise HTTPError(httplib.BAD_REQUEST)
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
         current_version = file_node.get_version()
         new_version = file_node.create_version(user, location, metadata)
@@ -354,7 +354,7 @@ def osfstorage_create_child(file_node, payload, **kwargs):
         'archive': not archive_exists,  # Should waterbutler also archive this file
         'data': file_node.serialize(),
         'version': version_id,
-    }, httplib.CREATED if created else httplib.OK
+    }, http_status.HTTP_201_CREATED if created else http_status.HTTP_200_OK
 
 
 @must_be_signed
@@ -366,17 +366,17 @@ def osfstorage_delete(file_node, payload, target, **kwargs):
 
     #TODO Auth check?
     if not auth:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     if file_node == OsfStorageFolder.objects.get_root(target=target):
-            raise HTTPError(httplib.BAD_REQUEST)
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     try:
         file_node.delete(user=user)
 
     except exceptions.FileNodeCheckedOutError:
-        raise HTTPError(httplib.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
     except exceptions.FileNodeIsPrimaryFile:
-        raise HTTPError(httplib.FORBIDDEN, data={
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
             'message_long': 'Cannot delete file as it is the primary file of preprint.'
         })
 
@@ -401,7 +401,7 @@ def osfstorage_download(file_node, payload, **kwargs):
         try:
             version_id = int(request.args['version'])
         except ValueError:
-            raise make_error(httplib.BAD_REQUEST, message_short='Version must be an integer if not specified')
+            raise make_error(http_status.HTTP_400_BAD_REQUEST, message_short='Version must be an integer if not specified')
 
     version = file_node.get_version(version_id, required=True)
     file_version_thru = version.get_basefilenode_version(file_node)
@@ -423,8 +423,8 @@ def osfstorage_download(file_node, payload, **kwargs):
 def osfstorage_add_tag(file_node, **kwargs):
     data = request.get_json()
     if file_node.add_tag(data['tag'], kwargs['auth']):
-        return {'status': 'success'}, httplib.OK
-    return {'status': 'failure'}, httplib.BAD_REQUEST
+        return {'status': 'success'}, http_status.HTTP_200_OK
+    return {'status': 'failure'}, http_status.HTTP_400_BAD_REQUEST
 
 @must_have_permission(WRITE)
 @decorators.autoload_filenode(must_be='file')
@@ -433,11 +433,11 @@ def osfstorage_remove_tag(file_node, **kwargs):
     try:
         file_node.remove_tag(data['tag'], kwargs['auth'])
     except TagNotFoundError:
-        return {'status': 'failure'}, httplib.CONFLICT
+        return {'status': 'failure'}, http_status.HTTP_409_CONFLICT
     except InvalidTagError:
-        return {'status': 'failure'}, httplib.BAD_REQUEST
+        return {'status': 'failure'}, http_status.HTTP_400_BAD_REQUEST
     else:
-        return {'status': 'success'}, httplib.OK
+        return {'status': 'success'}, http_status.HTTP_200_OK
 
 
 @must_be_logged_in
@@ -449,7 +449,7 @@ def update_region(auth, **kwargs):
     try:
         region_id = data['region_id']
     except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     try:
         user_settings.set_region(region_id)
