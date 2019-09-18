@@ -14,7 +14,7 @@ class UserSettings(BaseUserSettings):
 
     @property
     def totp_secret_b32(self):
-        return b32encode(unhexlify(self.totp_secret))
+        return b32encode(unhexlify(self.totp_secret)).decode()
 
     @property
     def otpauth_url(self):
