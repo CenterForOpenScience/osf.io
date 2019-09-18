@@ -183,7 +183,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         res = self.app.get(self.project_url, {'view_only': None})
         assert_is_redirect(res)
         res = res.follow(expect_errors=True)
-        assert_equal(res.status_code, 301)
+        assert_equal(res.status_code, 308)
         assert_equal(
             res.request.path,
             '/login'
@@ -948,7 +948,7 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get(url, auth=self.auth)
 
         assert_not_in('Mako Runtime Error', res.body.decode())
-        assert_in(registration.title, res.body)
+        assert_in(registration.title, res.body.decode())
         assert_equal(res.status_code, 200)
 
         for route in ['files', 'wiki/home', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
@@ -956,11 +956,11 @@ class TestProjectViews(OsfTestCase):
             assert_equal(res.status_code, 302, route)
             res = res.follow()
             assert_equal(res.status_code, 200, route)
-            assert_in('This project is a withdrawn registration of', res.body, route)
+            assert_in('This project is a withdrawn registration of', res.body.decode(), route)
 
         res = self.app.get('/{}/'.format(reg_file.guids.first()._id))
         assert_equal(res.status_code, 200)
-        assert_in('This project is a withdrawn registration of', res.body)
+        assert_in('This project is a withdrawn registration of', res.body.decode())
 
 
 class TestEditableChildrenViews(OsfTestCase):
@@ -1492,7 +1492,7 @@ class TestUserProfile(OsfTestCase):
         url = web_url_for('profile_view_id', uid=self.user._id)
         res = self.app.get(url, auth=self.user.auth)
 
-        assert_in('Quick files', res.body)
+        assert_in('Quick files', res.body.decode())
 
     def test_user_with_no_quickfiles(self):
         assert(not QuickFilesNode.objects.first().files.filter(type='osf.osfstoragefile').exists())
@@ -1500,7 +1500,7 @@ class TestUserProfile(OsfTestCase):
         url = web_url_for('profile_view_id', uid=self.user._primary_key)
         res = self.app.get(url, auth=self.user.auth)
 
-        assert_not_in('Quick files', res.body)
+        assert_not_in('Quick files', res.body.decode())
 
     def test_user_update_region(self):
         user_settings = self.user.get_addon('osfstorage')
@@ -2615,7 +2615,7 @@ class TestClaimViews(OsfTestCase):
         res = self.app.get(url)
         assert res.status_code == 302
         res = res.follow()
-        service_url = 'http://localhost:80{}'.format(url)
+        service_url = 'http://localhost{}'.format(url)
         expected = cas.get_logout_url(service_url=cas.get_login_url(service_url=service_url))
         assert res.request.url == expected
 
@@ -3446,7 +3446,7 @@ class TestAuthViews(OsfTestCase):
         assert_equal(self.user.email_verifications[token]['confirmed'], True)
         assert_equal(res.status_code, 302)
         login_url = 'login?service'
-        assert_in(login_url, res.body)
+        assert_in(login_url, res.body.decode())
 
     def test_get_email_to_add_no_email(self):
         email_verifications = self.user.unconfirmed_email_info
@@ -4645,7 +4645,7 @@ class TestProjectCreation(OsfTestCase):
         res = self.app.post(url, auth=None)
         assert_equal(res.status_code, 302)
         res2 = res.follow(expect_errors=True)
-        assert_equal(res2.status_code, 301)
+        assert_equal(res2.status_code, 308)
         assert_equal(res2.request.path, '/login')
 
     def test_project_new_from_template_public_non_contributor(self):
