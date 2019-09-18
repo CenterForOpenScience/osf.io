@@ -1675,7 +1675,7 @@ class SpamOverrideMixin(SpamMixin):
             content.extend([name.encode('utf-8') for name in self.all_tags.values_list('name', flat=True)])
         if not content:
             return None
-        return ' '.join(content)
+        return b' '.join(content).decode()
 
     def check_spam(self, user, saved_fields, request_headers):
         if not settings.SPAM_CHECK_ENABLED:
