@@ -59,7 +59,7 @@ class Signer(object):
     def sign_payload(self, payload):
         message = serialize_payload(payload)
         signature = self.sign_message(message)
-        return message, signature
+        return message.decode(), signature
 
     def verify_message(self, signature, message):
         expected = self.sign_message(message)
@@ -74,8 +74,9 @@ def sign_data(signer, data, ttl=100):
     target = {'time': int(time.time() + ttl)}
     target.update(data)
     payload, signature = signer.sign_payload(target)
+    payload = payload.decode() if isinstance(payload, bytes) else payload
     return {
-        'payload': payload.decode(),
+        'payload': payload,
         'signature': signature,
     }
 
