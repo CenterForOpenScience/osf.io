@@ -273,7 +273,7 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
         raise NotImplementedError
 
     @pytest.fixture()
-    def user_profile_object_manager(self, user, profile_type, model_name):
+    def user_profile_object_manager(self, user, model_name):
         return getattr(user, model_name)
 
     @pytest.fixture()
@@ -301,7 +301,7 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
         assert profile_item_one._id in ids
         assert profile_item_one._id in ids
 
-    def test_update_order(self, app, url, user, profile_item_one, profile_item_two, relationship_payload, model_name):
+    def test_update_order(self, app, url, user, profile_item_one, profile_item_two, relationship_payload, profile_type, model_name):
         relationship_payload['data'].insert(0, {'type': model_name, 'id': profile_item_two._id})
         res = app.patch_json_api(url, relationship_payload, auth=user.auth)
         assert res.status_code == 200

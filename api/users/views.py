@@ -676,13 +676,9 @@ class UserEducationRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyA
         data = self.request.data['data']
         user = self.request.user
         for val in data:
-            if val['type'] != get_meta_type(self.serializer_class, self.request):
-                raise Conflict()
             education = get_object_or_error(UserEducation, Q(_id=val['id']), self.request)
             if education in user.education.all():
                 user.remove_education(val['id'])
-            else:
-                raise Conflict()
         user.save()
 
 
