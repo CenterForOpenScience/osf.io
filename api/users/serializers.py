@@ -484,7 +484,7 @@ class UserEducationRelationshipSerializer(BaseAPISerializer):
             education = get_object_or_404(UserEducation, _id=entry['_id'])
             new_order.append(education.id)
             new_data.append(education)
-        user.set_education_order(new_order)
+        user.set_usereducation_order(new_order)
         obj['data'] = new_data
         return obj
 
@@ -508,7 +508,7 @@ class UserEducationRelationshipSerializer(BaseAPISerializer):
         return obj.absolute_api_v2_url
 
     class Meta:
-        type_ = 'user-education'
+        type_ = 'education'
 
 
 class RelatedEmployment(JSONAPIRelationshipSerializer):

@@ -17,42 +17,46 @@ class UserEducationMixin:
     def profile_type(self):
         return 'user-education'
 
+    @pytest.fixture()
+    def model_name(self):
+        return 'education'
+
 
 @pytest.mark.django_db
 class TestUserEducationList(UserEducationMixin, UserProfileListMixin):
 
     @pytest.fixture
-    def list_url(self, user, profile_type):
-        return '/{}users/{}/{}/'.format(API_BASE, user._id, profile_type)
+    def list_url(self, user, model_name):
+        return '/{}users/{}/{}/'.format(API_BASE, user._id, model_name)
 
 
 @pytest.mark.django_db
 class TestEducationDetail(UserEducationMixin, UserProfileDetailMixin):
 
     @pytest.fixture
-    def detail_url(self, user, profile_item_one, profile_type):
-        return '/{}users/{}/{}/{}/'.format(API_BASE, user._id, profile_type, profile_item_one._id)
+    def detail_url(self, user, profile_item_one, model_name):
+        return '/{}users/{}/{}/{}/'.format(API_BASE, user._id, model_name, profile_item_one._id)
 
 
 @pytest.mark.django_db
-class TestUerEducationCreate(UserEducationMixin, UserProfileCreateMixin):
+class TestUserEducationCreate(UserEducationMixin, UserProfileCreateMixin):
 
     @pytest.fixture
-    def list_url(self, user, profile_type):
-        return '/{}users/{}/{}/'.format(API_BASE, user._id, profile_type)
+    def list_url(self, user, model_name):
+        return '/{}users/{}/{}/'.format(API_BASE, user._id, model_name)
 
 
 @pytest.mark.django_db
 class TestUserEducationUpdate(UserEducationMixin, UserProfileUpdateMixin):
 
     @pytest.fixture
-    def detail_url(self, user, profile_item_one, profile_type):
-        return '/{}users/{}/{}/{}/'.format(API_BASE, user._id, profile_type, profile_item_one._id)
+    def detail_url(self, user, profile_item_one, model_name):
+        return '/{}users/{}/{}/{}/'.format(API_BASE, user._id, model_name, profile_item_one._id)
 
 
 @pytest.mark.django_db
 class TestUserEducationRelationship(UserEducationMixin, UserProfileRelationshipMixin):
 
     @pytest.fixture()
-    def url(self, user, profile_type):
-        return '/{}users/{}/relationships/{}/'.format(API_BASE, user._id, profile_type)
+    def url(self, user, model_name):
+        return '/{}users/{}/relationships/{}/'.format(API_BASE, user._id, model_name)

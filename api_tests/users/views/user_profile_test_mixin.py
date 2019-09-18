@@ -277,14 +277,14 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
         return getattr(user, model_name)
 
     @pytest.fixture()
-    def relationship_payload(self, profile_item_one, profile_type):
+    def relationship_payload(self, profile_item_one, model_name):
         return {
             'data': [
-                {'type': profile_type, 'id': profile_item_one._id}
+                {'type': model_name, 'id': profile_item_one._id}
             ]
         }
 
-    def test_get(self, app, user, profile_item_one, profile_item_two, url, profile_type, model_name):
+    def test_get(self, app, user, profile_item_one, profile_item_two, url, model_name):
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         links = res.json['links']
@@ -301,8 +301,8 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
         assert profile_item_one._id in ids
         assert profile_item_one._id in ids
 
-    def test_update_order(self, app, url, user, profile_item_one, profile_item_two, relationship_payload, profile_type):
-        relationship_payload['data'].insert(0, {'type': profile_type, 'id': profile_item_two._id})
+    def test_update_order(self, app, url, user, profile_item_one, profile_item_two, relationship_payload, model_name):
+        relationship_payload['data'].insert(0, {'type': model_name, 'id': profile_item_two._id})
         res = app.patch_json_api(url, relationship_payload, auth=user.auth)
         assert res.status_code == 200
 
@@ -310,7 +310,7 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
         assert ids[0] == profile_item_two._id
         assert ids[1] == profile_item_one._id
 
-    def test_delete(self, app, user, profile_item_one, profile_item_two, url, relationship_payload, profile_type, user_profile_object_manager):
+    def test_delete(self, app, user, profile_item_one, profile_item_two, url, relationship_payload, user_profile_object_manager):
         res = app.delete_json_api(url, relationship_payload, auth=user.auth)
         assert res.status_code == 204
 
@@ -320,8 +320,8 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
         assert profile_item_one._id not in ids
         assert profile_item_two._id in ids
 
-    def test_delete_multiple(self, app, user, profile_item_one, profile_item_two, url, relationship_payload, profile_type, model_name):
-        relationship_payload['data'].append({'type': profile_type, 'id': profile_item_two._id})
+    def test_delete_multiple(self, app, user, profile_item_one, profile_item_two, url, relationship_payload, model_name):
+        relationship_payload['data'].append({'type': model_name, 'id': profile_item_two._id})
         res = app.delete_json_api(url, relationship_payload, auth=user.auth)
         assert res.status_code == 204
 
@@ -331,7 +331,7 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
         assert profile_item_one._id not in ids
         assert profile_item_two._id not in ids
 
-    def test_profile_relationship_errors(self, app, user, user_two, profile_item_one, profile_item_two, url, relationship_payload, profile_type):
+    def test_profile_relationship_errors(self, app, user, user_two, profile_item_one, profile_item_two, url, relationship_payload, model_name):
         # wrong type fails
         wrong_payload = relationship_payload.copy()
         wrong_payload['data'][0]['type'] = 'cowabunga'
@@ -361,7 +361,7 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
         assert res.status_code == 404
 
         # test misformed payload fails
-        data_not_an_array = {'data': {'type': profile_type, 'id': profile_item_one._id}}
+        data_not_an_array = {'data': {'type': model_name, 'id': profile_item_one._id}}
         res = app.patch_json_api(url, data_not_an_array, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 

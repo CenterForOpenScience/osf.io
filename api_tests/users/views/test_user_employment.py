@@ -58,5 +58,5 @@ class TestUserEmploymentUpdate(UserEmploymentMixin, UserProfileUpdateMixin):
 class TestUserEmploymentRelationship(UserEmploymentMixin, UserProfileRelationshipMixin):
 
     @pytest.fixture()
-    def url(self, user, profile_type, model_name):
+    def url(self, user, model_name):
         return '/{}users/{}/relationships/{}/'.format(API_BASE, user._id, model_name)
