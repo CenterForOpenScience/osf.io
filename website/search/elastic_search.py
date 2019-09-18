@@ -1008,7 +1008,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
             if user.employment.exists():
                 current_employment = user.employment.filter(ongoing=True).institution
 
-            if user.schools:
+            if user.education.exists():
                 education = user.education.all().first().institution
 
             users.append({

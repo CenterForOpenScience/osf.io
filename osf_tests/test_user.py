@@ -1862,12 +1862,10 @@ class TestUserMerging(OsfTestCase):
             'given_name',
             'is_invited',
             'is_registered',
-            'jobs',
             'locale',
             'merged_by',
             'middle_names',
             'password',
-            'schools',
             'social',
             'suffix',
             'timezone',
@@ -2144,81 +2142,6 @@ class TestUserValidation(OsfTestCase):
         assert isinstance(exc_info.value.args[0], dict)
         assert self.user.social_links == {}
 
-    def test_validate_jobs_valid(self):
-        self.user.jobs = [{
-            'institution': 'School of Lover Boys',
-            'department': 'Fancy Patter',
-            'title': 'Lover Boy',
-            'startMonth': 1,
-            'startYear': '1970',
-            'endMonth': 1,
-            'endYear': '1980',
-        }]
-        self.user.save()
-
-    def test_validate_jobs_institution_empty(self):
-        self.user.jobs = [{'institution': ''}]
-        with pytest.raises(ValidationError):
-            self.user.save()
-
-    def test_validate_jobs_bad_end_date(self):
-        # end year is < start year
-        self.user.jobs = [{
-            'institution': fake.company(),
-            'department': fake.bs(),
-            'position': fake.catch_phrase(),
-            'startMonth': 1,
-            'startYear': '1970',
-            'endMonth': 1,
-            'endYear': '1960',
-        }]
-        with pytest.raises(ValidationError):
-            self.user.save()
-
-    def test_validate_schools_bad_end_date(self):
-        # end year is < start year
-        self.user.schools = [{
-            'degree': fake.catch_phrase(),
-            'institution': fake.company(),
-            'department': fake.bs(),
-            'startMonth': 1,
-            'startYear': '1970',
-            'endMonth': 1,
-            'endYear': '1960',
-        }]
-        with pytest.raises(ValidationError):
-            self.user.save()
-
-    def test_validate_jobs_bad_year(self):
-        start_year = ['hi', '20507', '99', '67.34']
-        for year in start_year:
-            self.user.jobs = [{
-                'institution': fake.company(),
-                'department': fake.bs(),
-                'position': fake.catch_phrase(),
-                'startMonth': 1,
-                'startYear': year,
-                'endMonth': 1,
-                'endYear': '1960',
-            }]
-            with pytest.raises(ValidationError):
-                self.user.save()
-
-    def test_validate_schools_bad_year(self):
-        start_year = ['hi', '20507', '99', '67.34']
-        for year in start_year:
-            self.user.schools = [{
-                'degree': fake.catch_phrase(),
-                'institution': fake.company(),
-                'department': fake.bs(),
-                'startMonth': 1,
-                'startYear': year,
-                'endMonth': 1,
-                'endYear': '1960',
-            }]
-            with pytest.raises(ValidationError):
-                self.user.save()
-
 
 @pytest.mark.enable_quickfiles_creation
 class TestUserGdprDelete:
@@ -2284,8 +2207,6 @@ class TestUserGdprDelete:
 
     def test_can_gdpr_delete(self, user):
         user.social = ['fake social']
-        user.schools = ['fake schools']
-        user.jobs = ['fake jobs']
         user.external_identity = ['fake external identity']
         user.external_accounts.add(ExternalAccountFactory())
 
