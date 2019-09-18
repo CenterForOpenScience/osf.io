@@ -29,8 +29,8 @@ class UserProfileFixtures:
         return resource_factory(user=user)
 
     @pytest.fixture
-    def detail_url(self, user, profile_item_one, profile_type):
-        return '/{}users/{}/{}/{}/'.format(API_BASE, user._id, profile_type, profile_item_one._id)
+    def detail_url(self, user, profile_item_one, model_name):
+        return '/{}users/{}/{}/{}/'.format(API_BASE, user._id, model_name, profile_item_one._id)
 
     @pytest.fixture()
     def payload(self, profile_type):
@@ -53,12 +53,16 @@ class UserProfileFixtures:
     def profile_type(self):
         raise NotImplementedError
 
+    @pytest.fixture()
+    def model_name(self):
+        raise NotImplementedError
+
 
 @pytest.mark.django_db
 class UserProfileListMixin(UserProfileFixtures):
 
     @pytest.fixture
-    def list_url(self, user, profile_type):
+    def list_url(self, user, model_name):
         raise NotImplementedError
 
     @pytest.fixture(autouse=True)
@@ -67,7 +71,7 @@ class UserProfileListMixin(UserProfileFixtures):
         resource_factory(user=user, institution='Institution 2')
         resource_factory(user=user, institution='Institution 3')
 
-    def test_user_profile_list(self, app, user, list_url, profile_type):
+    def test_user_profile_list(self, app, user, list_url, profile_type, model_name):
         # unauthorized can access
         res = app.get(list_url)
         assert res.status_code == 200
@@ -89,8 +93,8 @@ class UserProfileListMixin(UserProfileFixtures):
         assert '3' in profile_object_institutions[2]
 
         # manually reverse the order, make sure list is returned in reversed order
-        user_profile_manager = getattr(user, profile_type)
-        set_user_profile_order = getattr(user, 'set_user{}_order'.format(profile_type))
+        user_profile_manager = getattr(user, model_name)
+        set_user_profile_order = getattr(user, 'set_user{}_order'.format(model_name))
         user_profile_object_ids = user_profile_manager.values_list('id', flat=True)
         set_user_profile_order(user_profile_object_ids[::-1])
         res = app.get(list_url, auth=user.auth)
@@ -166,8 +170,8 @@ class UserProfileCreateMixin(UserProfileFixtures):
         res = app.post_json(list_url, not_really_ongoing, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
-    def test_create_profile_object(self, app, list_url, user, payload, profile_type):
-        user_profile_object_manager = getattr(user, profile_type)
+    def test_create_profile_object(self, app, list_url, user, payload, profile_type, model_name):
+        user_profile_object_manager = getattr(user, model_name)
 
         # test create with just institution
         new_inst_name = 'Tundra Town'
@@ -193,7 +197,7 @@ class UserProfileCreateMixin(UserProfileFixtures):
 
         # test create with start and end dates
         new_name = 'Scundra Town'
-        new_end = '2018-12-01'
+        new_end = str(datetime.now().year + 1) + '-12-01'
         start_date = payload(institution=new_name, start_date=new_start, end_date=new_end, ongoing=True)
         res = app.post_json(list_url, start_date, auth=user.auth)
         assert res.status_code == 201
@@ -269,8 +273,8 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
         raise NotImplementedError
 
     @pytest.fixture()
-    def user_profile_object_manager(self, user, profile_type):
-        return getattr(user, profile_type)
+    def user_profile_object_manager(self, user, profile_type, model_name):
+        return getattr(user, model_name)
 
     @pytest.fixture()
     def relationship_payload(self, profile_item_one, profile_type):
@@ -280,12 +284,12 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
             ]
         }
 
-    def test_get(self, app, user, profile_item_one, profile_item_two, url, profile_type):
+    def test_get(self, app, user, profile_item_one, profile_item_two, url, profile_type, model_name):
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         links = res.json['links']
-        assert links['self'] == '{}relationships/{}/'.format(user.absolute_api_v2_url, profile_type)
-        assert links['html'] == '{}{}/'.format(user.absolute_api_v2_url, profile_type)
+        assert links['self'] == '{}relationships/{}/'.format(user.absolute_api_v2_url, model_name)
+        assert links['html'] == '{}{}/'.format(user.absolute_api_v2_url, model_name)
 
         ids = [result['id'] for result in res.json['data']]
         assert profile_item_one._id in ids
@@ -316,13 +320,13 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
         assert profile_item_one._id not in ids
         assert profile_item_two._id in ids
 
-    def test_delete_multiple(self, app, user, profile_item_one, profile_item_two, url, relationship_payload, profile_type):
+    def test_delete_multiple(self, app, user, profile_item_one, profile_item_two, url, relationship_payload, profile_type, model_name):
         relationship_payload['data'].append({'type': profile_type, 'id': profile_item_two._id})
         res = app.delete_json_api(url, relationship_payload, auth=user.auth)
         assert res.status_code == 204
 
         user.reload()
-        user_profile_object_manager = getattr(user, profile_type)
+        user_profile_object_manager = getattr(user, model_name)
         ids = list(user_profile_object_manager.values_list('_id', flat=True))
         assert profile_item_one._id not in ids
         assert profile_item_two._id not in ids

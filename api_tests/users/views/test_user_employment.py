@@ -15,6 +15,10 @@ class UserEmploymentMixin:
 
     @pytest.fixture()
     def profile_type(self):
+        return 'user-employment'
+
+    @pytest.fixture()
+    def model_name(self):
         return 'employment'
 
 
@@ -22,37 +26,37 @@ class UserEmploymentMixin:
 class TestUserEmploymentList(UserEmploymentMixin, UserProfileListMixin):
 
     @pytest.fixture
-    def list_url(self, user, profile_type):
-        return '/{}users/{}/{}/'.format(API_BASE, user._id, profile_type)
+    def list_url(self, user, profile_type, model_name):
+        return '/{}users/{}/{}/'.format(API_BASE, user._id, model_name)
 
 
 @pytest.mark.django_db
 class TestEmploymentDetail(UserEmploymentMixin, UserProfileDetailMixin):
 
     @pytest.fixture
-    def detail_url(self, user, profile_item_one, profile_type):
-        return '/{}users/{}/{}/{}/'.format(API_BASE, user._id, profile_type, profile_item_one._id)
+    def detail_url(self, user, profile_item_one, profile_type, model_name):
+        return '/{}users/{}/{}/{}/'.format(API_BASE, user._id, model_name, profile_item_one._id)
 
 
 @pytest.mark.django_db
-class TestUerEmploymentCreate(UserEmploymentMixin, UserProfileCreateMixin):
+class TestUserEmploymentCreate(UserEmploymentMixin, UserProfileCreateMixin):
 
     @pytest.fixture
-    def list_url(self, user, profile_type):
-        return '/{}users/{}/{}/'.format(API_BASE, user._id, profile_type)
+    def list_url(self, user, profile_type, model_name):
+        return '/{}users/{}/{}/'.format(API_BASE, user._id, model_name)
 
 
 @pytest.mark.django_db
 class TestUserEmploymentUpdate(UserEmploymentMixin, UserProfileUpdateMixin):
 
     @pytest.fixture
-    def detail_url(self, user, profile_item_one, profile_type):
-        return '/{}users/{}/{}/{}/'.format(API_BASE, user._id, profile_type, profile_item_one._id)
+    def detail_url(self, user, profile_item_one, profile_type, model_name):
+        return '/{}users/{}/{}/{}/'.format(API_BASE, user._id, model_name, profile_item_one._id)
 
 
 @pytest.mark.django_db
 class TestUserEmploymentRelationship(UserEmploymentMixin, UserProfileRelationshipMixin):
 
     @pytest.fixture()
-    def url(self, user, profile_type):
-        return '/{}users/{}/relationships/{}/'.format(API_BASE, user._id, profile_type)
+    def url(self, user, profile_type, model_name):
+        return '/{}users/{}/relationships/{}/'.format(API_BASE, user._id, model_name)

@@ -535,7 +535,7 @@ class UserEmploymentRelationshipSerializer(BaseAPISerializer):
             employment = get_object_or_404(UserEmployment, _id=entry['_id'])
             new_order.append(employment.id)
             new_data.append(employment)
-        user.set_employment_order(new_order)
+        user.set_useremployment_order(new_order)
         obj['data'] = new_data
         return obj
 
