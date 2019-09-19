@@ -1,5 +1,3 @@
-from bidict import bidict
-
 CLIENT_ID = None
 CLIENT_SECRET = None
 
@@ -13,36 +11,28 @@ MAX_UPLOAD_SIZE = 50
 FIGSHARE_OAUTH_TOKEN_ENDPOINT = '{}{}'.format(API_BASE_URL, 'token')
 FIGSHARE_OAUTH_AUTH_ENDPOINT = 'https://figshare.com/account/applications/authorize'
 
-# Each figshare article has a `defined_type` integer and a matching `defined_type_name` string. A
-# bi-directional dictionary (https://bidict.readthedocs.io/en/master/) is used here since both the
-# type and name are used in the figshare client.  In addition, check with figshare occasionally
-# for changes such as type deprecation, type name update as well as new types.
-#
-# TODO: refactor the client to use the `defined_type` only since figshare does change the names :(
-#
-FIGSHARE_DEFINED_TYPE_MAP = bidict({
-    'figure': 1,
-    'media': 2,
-    'dataset': 3,
-    'fileset': 4,  # Unofficially deprecated and replaced by type 3 dataset
-    'poster': 5,
-    'journal contribution': 6,
-    'presentation': 7,
-    'thesis': 8,
-    'software': 9,
+# Each figshare article has a type integer that corresponds to an article type.
+FIGSHARE_IDS_TO_TYPES = {
+    1: 'figure',
+    2: 'media',
+    3: 'dataset',
+    4: 'fileset',  # Unofficially deprecated and replaced by type 3 dataset
+    5: 'poster',
+    6: 'journal contribution',
+    7: 'presentation',
+    8: 'thesis',
+    9: 'software',
     # For unknown reasons, 10 does not exist
-    'online resource': 11,
-    'preprints': 12,
-    'book': 13,
-    'conference': 14,
-})
+    11: 'online resource',
+    12: 'preprints',
+    13: 'book',
+    14: 'conference',
+}
 
-# figshare used to only let type 4 fileset to behave like folders, i.e. it can contain multiple
-# files.  However, it suddenly changed without any announcement that all article types are now
-# folder-like and that type 4 fileset is unofficially deprecated and converted to type 3 dataset
-# internally.  In order not to break the old behavior of OSF and WB, we decide for now to only
-# treat dataset and fileset as folders.
-#
-# TODO: refactor the figshare client to treat all article types as folders
-#
+# When this addon was originally implemented, only type 4 ("fileset") articles behaved like folders
+# and contained multiple files.  Since then, figshare has changed their API so that type 3 articles
+# ("datasets") are the default multiple-file containers.  New requests to create "fileset"s are
+# automatically converted to create "dataset"s.  Pre-exisiting "fileset"s retain the same id.  To
+# preserve backcompat, the addon now allows both type 3 and type 4 articles to be valid root
+# folders.
 FIGSHARE_FOLDER_TYPES = {3, 4, }
