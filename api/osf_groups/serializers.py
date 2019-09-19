@@ -178,7 +178,7 @@ class GroupMemberCreateSerializer(GroupMemberSerializer):
         except ValueError as e:
             raise exceptions.ValidationError(detail=str(e))
         except ValidationError as e:
-            raise InvalidModelValueError(detail=str(e[0]))
+            raise InvalidModelValueError(detail=list(e)[0])
 
         return user
 
