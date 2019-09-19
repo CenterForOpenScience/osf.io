@@ -149,7 +149,7 @@ class OSFGroupMemberBaseView(JSONAPIBaseView, OSFGroupMixin):
         try:
             group.remove_member(instance, auth)
         except ValueError as e:
-            raise ValidationError(detail=str(e.message))
+            raise ValidationError(detail=str(e))
 
 
 class GroupMembersList(OSFGroupMemberBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin):
