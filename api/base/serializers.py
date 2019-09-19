@@ -1862,7 +1862,7 @@ class BaseProfileSerializer(JSONAPISerializer):
     links = LinksField({'self': 'self_url'})
 
     class Meta:
-        _type = 'base-profile'
+        type_ = 'base-profile'
 
     def self_url(self, obj):
         raise NotImplementedError
