@@ -1,8 +1,7 @@
 import datetime as dt
 import logging
 import re
-import urllib
-import urlparse
+from future.moves.urllib.parse import urljoin, urlencode
 import uuid
 from copy import deepcopy
 from os.path import splitext
@@ -10,6 +9,7 @@ from os.path import splitext
 from flask import Request as FlaskRequest
 from framework import analytics
 from guardian.shortcuts import get_perms
+from past.builtins import basestring
 
 # OSF imports
 import itsdangerous
@@ -376,6 +376,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # whether the user has requested to deactivate their account
     requested_deactivation = models.BooleanField(default=False)
 
+    # whether the user has who requested deactivation has been contacted about their pending request. This is reset when
+    # requests are canceled
+    contacted_deactivation = models.BooleanField(default=False)
+
     affiliated_institutions = models.ManyToManyField('Institution', blank=True)
 
     notifications_configured = DateTimeAwareJSONField(default=dict, blank=True)
@@ -404,7 +408,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(website_settings.DOMAIN, self.url)
+        return urljoin(website_settings.DOMAIN, self.url)
 
     @property
     def absolute_api_v2_url(self):
@@ -453,13 +457,31 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def social_links(self):
+        """
+        Returns a dictionary of formatted social links for a user.
+
+        Social account values which are stored as account names are
+        formatted into appropriate social links. The 'type' of each
+        respective social field value is dictated by self.SOCIAL_FIELDS.
+
+        I.e. If a string is expected for a specific social field that
+        permits multiple accounts, a single account url will be provided for
+        the social field to ensure adherence with self.SOCIAL_FIELDS.
+        """
         social_user_fields = {}
         for key, val in self.social.items():
             if val and key in self.SOCIAL_FIELDS:
-                if not isinstance(val, basestring):
-                    social_user_fields[key] = val
+                if isinstance(self.SOCIAL_FIELDS[key], basestring):
+                    if isinstance(val, basestring):
+                        social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val)
+                    else:
+                        # Only provide the first url for services where multiple accounts are allowed
+                        social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val[0])
                 else:
-                    social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val)
+                    if isinstance(val, basestring):
+                        social_user_fields[key] = [val]
+                    else:
+                        social_user_fields[key] = val
         return social_user_fields
 
     @property
@@ -1315,7 +1337,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         base = website_settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email, force=force, renew=renew)
         external = 'external/' if external_id_provider else ''
-        destination = '?{}'.format(urllib.urlencode({'destination': destination})) if destination else ''
+        destination = '?{}'.format(urlencode({'destination': destination})) if destination else ''
         return '{0}confirm/{1}{2}/{3}/{4}'.format(base, external, self._primary_key, token, destination)
 
     def register(self, username, password=None, accepted_terms_of_service=None):
@@ -1838,6 +1860,26 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.external_accounts.clear()
         self.external_identity = {}
         self.deleted = timezone.now()
+
+    @property
+    def has_resources(self):
+        """
+        This is meant to determine if a user has any resources, nodes, preprints etc that might impede their deactivation.
+        If a user only has no resources or only deleted resources this will return false and they can safely be deactivated
+        otherwise they must delete or transfer their outstanding resources.
+
+        :return bool: does the user have any active node, preprints, groups, quickfiles etc?
+        """
+        from osf.models import Preprint
+
+        # TODO: Update once quickfolders in merged
+
+        nodes = self.nodes.exclude(type='osf.quickfilesnode').exclude(is_deleted=True).exists()
+        quickfiles = self.nodes.get(type='osf.quickfilesnode').files.exists()
+        groups = self.osf_groups.exists()
+        preprints = Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists()
+
+        return groups or nodes or quickfiles or preprints
 
     class Meta:
         # custom permissions for use in the OSF Admin App

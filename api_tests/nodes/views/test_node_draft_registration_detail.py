@@ -15,7 +15,8 @@ from osf_tests.factories import (
 from osf.utils.permissions import WRITE, READ
 from rest_framework import exceptions
 from test_node_draft_registration_list import DraftRegistrationTestCase
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
+
+SCHEMA_VERSION = 2
 
 
 @pytest.mark.django_db
@@ -25,7 +26,7 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
     def schema(self):
         return RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -139,7 +140,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
     def schema(self):
         return RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -153,7 +154,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
     def schema_prereg(self):
         return RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def draft_registration_prereg(self, user, project_public, schema_prereg):
@@ -568,7 +569,7 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
     def schema(self):
         return RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -582,7 +583,7 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
     def schema_prereg(self):
         return RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def draft_registration_prereg(self, user, project_public, schema_prereg):
@@ -690,7 +691,7 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
     def schema(self):
         return RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -788,7 +789,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
     def schema_prereg(self):
         return RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def draft_registration_prereg(self, user, project_public, schema_prereg):

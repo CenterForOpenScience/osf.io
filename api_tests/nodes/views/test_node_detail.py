@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 import mock
 import pytest
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 
 
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.base.settings.defaults import API_BASE
+from api.taxonomies.serializers import subjects_as_relationships_version
 from api_tests.subjects.mixins import UpdateSubjectsMixin
 from framework.auth.core import Auth
 from osf.models import NodeLog
@@ -232,7 +233,7 @@ class TestNodeDetail:
         assert urlparse(self_url).path == expected_url
 
     #   test_node_has_subjects_links_for_later_versions
-        res = app.get(url_public + '?version=2.15')
+        res = app.get(url_public + '?version={}'.format(subjects_as_relationships_version))
         related_url = res.json['data']['relationships']['subjects']['links']['related']['href']
         expected_url = '{}subjects/'.format(url_public)
         assert urlparse(related_url).path == expected_url
@@ -995,47 +996,53 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_update_public_project_logged_in(
             self, app, user, title_new, description_new,
             category_new, project_public, url_public):
-        with assert_latest_log(NodeLog.UPDATED_FIELDS, project_public):
-            res = app.put_json_api(url_public, {
-                'data': {
-                    'id': project_public._id,
-                    'type': 'nodes',
-                    'attributes': {
-                        'title': title_new,
-                        'description': description_new,
-                        'category': category_new,
-                        'public': True
-                    }
+        res = app.put_json_api(url_public, {
+            'data': {
+                'id': project_public._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': title_new,
+                    'description': description_new,
+                    'category': category_new,
+                    'public': True
                 }
-            }, auth=user.auth)
-            assert res.status_code == 200
-            assert res.content_type == 'application/vnd.api+json'
-            assert res.json['data']['attributes']['title'] == title_new
-            assert res.json['data']['attributes']['description'] == description_new
-            assert res.json['data']['attributes']['category'] == category_new
+            }
+        }, auth=user.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == title_new
+        assert res.json['data']['attributes']['description'] == description_new
+        assert res.json['data']['attributes']['category'] == category_new
+        log_actions = project_public.logs.values_list('action', flat=True)
+        assert NodeLog.EDITED_TITLE in log_actions
+        assert NodeLog.EDITED_DESCRIPTION in log_actions
+        assert NodeLog.CATEGORY_UPDATED in log_actions
 
     def test_update_public_project_osf_group_member(
         self, app, user_two, title_new, description_new,
             category_new, project_public, url_public):
         osf_group = OSFGroupFactory(creator=user_two)
         project_public.add_osf_group(osf_group, permissions.WRITE)
-        with assert_latest_log(NodeLog.UPDATED_FIELDS, project_public):
-            res = app.put_json_api(url_public, {
-                'data': {
-                    'id': project_public._id,
-                    'type': 'nodes',
-                    'attributes': {
-                        'title': title_new,
-                        'description': description_new,
-                        'category': category_new,
-                    }
+        res = app.put_json_api(url_public, {
+            'data': {
+                'id': project_public._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': title_new,
+                    'description': description_new,
+                    'category': category_new,
                 }
-            }, auth=user_two.auth)
-            assert res.status_code == 200
-            assert res.content_type == 'application/vnd.api+json'
-            assert res.json['data']['attributes']['title'] == title_new
-            assert res.json['data']['attributes']['description'] == description_new
-            assert res.json['data']['attributes']['category'] == category_new
+            }
+        }, auth=user_two.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == title_new
+        assert res.json['data']['attributes']['description'] == description_new
+        assert res.json['data']['attributes']['category'] == category_new
+        log_actions = project_public.logs.values_list('action', flat=True)
+        assert NodeLog.CATEGORY_UPDATED in log_actions
+        assert NodeLog.EDITED_TITLE in log_actions
+        assert NodeLog.EDITED_DESCRIPTION in log_actions
 
     def test_cannot_update_a_registration(self, app, user, project_public):
         registration = RegistrationFactory(
@@ -1063,49 +1070,55 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_update_private_project_logged_in_contributor(
             self, app, user, title_new, description_new,
             category_new, project_private, url_private):
-        with assert_latest_log(NodeLog.UPDATED_FIELDS, project_private):
-            res = app.put_json_api(url_private, {
-                'data': {
-                    'id': project_private._id,
-                    'type': 'nodes',
-                    'attributes': {
-                        'title': title_new,
-                        'description': description_new,
-                        'category': category_new,
-                        'public': False
-                    }
+        res = app.put_json_api(url_private, {
+            'data': {
+                'id': project_private._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': title_new,
+                    'description': description_new,
+                    'category': category_new,
+                    'public': False
                 }
-            }, auth=user.auth)
-            assert res.status_code == 200
-            assert res.content_type == 'application/vnd.api+json'
-            assert res.json['data']['attributes']['title'] == title_new
-            assert res.json['data']['attributes']['description'] == description_new
-            assert res.json['data']['attributes']['category'] == category_new
+            }
+        }, auth=user.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == title_new
+        assert res.json['data']['attributes']['description'] == description_new
+        assert res.json['data']['attributes']['category'] == category_new
+        log_actions = [log.action for log in project_private.logs.all()]
+        assert NodeLog.EDITED_TITLE in log_actions
+        assert NodeLog.EDITED_DESCRIPTION in log_actions
+        assert NodeLog.CATEGORY_UPDATED in log_actions
 
     def test_update_project_sanitizes_html_properly(
             self, app, user, category_new, project_public, url_public):
-        with assert_latest_log(NodeLog.UPDATED_FIELDS, project_public):
-            """Post request should update resource, and any HTML in fields should be stripped"""
-            new_title = '<strong>Super</strong> Cool Project'
-            new_description = 'An <script>alert("even cooler")</script> project'
-            res = app.put_json_api(url_public, {
-                'data': {
-                    'id': project_public._id,
-                    'type': 'nodes',
-                    'attributes': {
-                        'title': new_title,
-                        'description': new_description,
-                        'category': category_new,
-                        'public': True,
-                    }
+        """Post request should update resource, and any HTML in fields should be stripped"""
+        new_title = '<strong>Super</strong> Cool Project'
+        new_description = 'An <script>alert("even cooler")</script> project'
+        res = app.put_json_api(url_public, {
+            'data': {
+                'id': project_public._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': new_title,
+                    'description': new_description,
+                    'category': category_new,
+                    'public': True,
                 }
-            }, auth=user.auth)
-            assert res.status_code == 200
-            assert res.content_type == 'application/vnd.api+json'
-            assert res.json['data']['attributes']['title'] == strip_html(
-                new_title)
-            assert res.json['data']['attributes']['description'] == strip_html(
-                new_description)
+            }
+        }, auth=user.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == strip_html(
+            new_title)
+        assert res.json['data']['attributes']['description'] == strip_html(
+            new_description)
+        log_actions = [log.action for log in project_public.logs.all()]
+        assert NodeLog.EDITED_TITLE in log_actions
+        assert NodeLog.EDITED_DESCRIPTION in log_actions
+        assert NodeLog.CATEGORY_UPDATED in log_actions
 
     def test_partial_update_project_updates_project_correctly_and_sanitizes_html(
             self, app, user, description, category, project_public, url_public):
@@ -1345,8 +1358,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 200
         project_public.reload()
         assert not project_public.is_public
-        mock_update_doi_metadata.assert_called_with(
-            project_public._id, status='unavailable')
+        mock_update_doi_metadata.assert_called_with(project_public._id)
 
     @pytest.mark.enable_enqueue_task
     @mock.patch('website.preprints.tasks.update_or_enqueue_on_preprint_updated')
@@ -2384,6 +2396,21 @@ class TestNodeUpdateLicense:
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'year must be specified for this license'
+
+    def test_update_node_license_without_license_id(
+            self, node, make_payload, make_request, url_node, user_admin_contrib):
+        data = make_payload(
+            node_id=node._id,
+            license_year='2015',
+            copyright_holders=['Ben, Jerry']
+        )
+
+        res = make_request(
+            url_node, data,
+            auth=user_admin_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'License ID must be provided for a Node License.'
 
     def test_update_node_license_without_required_copyright_holders_in_payload_(
             self, user_admin_contrib, node, make_payload, make_request, license_no, url_node):

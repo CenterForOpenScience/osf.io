@@ -81,6 +81,30 @@ class TestRegistration:
         reg.registered_schema.clear()
         assert reg.registered_schema_id is None
 
+    def test_update_category(self, auth):
+        reg = factories.RegistrationFactory(category='instrumentation')
+        new_category = 'software'
+        reg.update({'category': new_category}, auth=auth)
+        assert reg.category == new_category
+
+        last_log = reg.logs.latest()
+        assert last_log.action == NodeLog.CATEGORY_UPDATED
+        assert last_log.params['category_new'] == new_category
+        assert last_log.params['category_original'] == 'instrumentation'
+
+    def test_update_article_doi(self, auth):
+        reg = factories.RegistrationFactory()
+        reg.article_doi = '10.1234/giraffe'
+        reg.save()
+        new_article_doi = '10.12345/elephant'
+        reg.update({'article_doi': new_article_doi}, auth=auth)
+        assert reg.article_doi == new_article_doi
+
+        last_log = reg.logs.latest()
+        assert last_log.action == NodeLog.ARTICLE_DOI_UPDATED
+        assert last_log.params['article_doi_new'] == new_article_doi
+        assert last_log.params['article_doi_original'] == '10.1234/giraffe'
+
 
 # copied from tests/test_models.py
 class TestRegisterNode:

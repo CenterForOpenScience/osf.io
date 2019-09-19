@@ -1316,7 +1316,7 @@ class TestSearchMigration(OsfTestCase):
 
     def setUp(self):
         super(TestSearchMigration, self).setUp()
-        populate_institutions('test')
+        populate_institutions(default_args=True)
         self.es = search.search_engine.CLIENT
         search.delete_index(settings.ELASTIC_INDEX)
         search.create_index(settings.ELASTIC_INDEX)

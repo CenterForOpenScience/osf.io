@@ -107,6 +107,11 @@ class CollectionSerializer(JSONAPISerializer):
         related_meta={'count': 'get_preprint_links_count'},
     )
 
+    collected_metadata = RelationshipField(
+        related_view='collections:collected-metadata-list',
+        related_view_kwargs={'collection_id': '<_id>'},
+    )
+
     class Meta:
         type_ = 'collections'
 

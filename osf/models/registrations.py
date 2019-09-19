@@ -1,6 +1,6 @@
 import logging
 import datetime
-import urlparse
+from future.moves.urllib.parse import urljoin
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -41,7 +41,7 @@ from osf.models.mixins import (
 from osf.models.nodelog import NodeLog
 from osf.models.provider import RegistrationProvider
 from osf.models.tag import Tag
-from osf.models.validators import validate_doi, validate_title
+from osf.models.validators import validate_title
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 logger = logging.getLogger(__name__)
@@ -56,10 +56,6 @@ class Registration(AbstractNode):
         'node_license',
         'category',
     ]
-
-    article_doi = models.CharField(max_length=128,
-                                        validators=[validate_doi],
-                                        null=True, blank=True)
     provider = models.ForeignKey('RegistrationProvider', related_name='registrations', null=True)
     registered_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
     registered_user = models.ForeignKey(OSFUser,
@@ -91,6 +87,7 @@ class Registration(AbstractNode):
                                                     related_name='registrations',
                                                     null=True, blank=True,
                                                     on_delete=models.SET_NULL)
+    files_count = models.PositiveIntegerField(blank=True, null=True)
 
     @staticmethod
     def find_failed_registrations():
@@ -397,6 +394,15 @@ class Registration(AbstractNode):
         for child in self.nodes_primary:
             child.delete_registration_tree(save=save)
 
+    def update_files_count(self):
+        # Updates registration files_count at archival success or
+        # at the end of forced (manual) archive for restarted (stuck or failed) registrations.
+        field = AbstractNode._meta.get_field('modified')
+        field.auto_now = False
+        self.files_count = self.files.filter(deleted_on__isnull=True).count()
+        self.save()
+        field.auto_now = True
+
     def add_tag(self, tag, auth=None, save=True, log=True, system=False):
         if self.retraction is None:
             super(Registration, self).add_tag(tag, auth, save, log, system)
@@ -601,7 +607,7 @@ class DraftRegistration(ObjectIDMixin, DirtyFieldsMixin, BaseModel, Loggable,
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(settings.DOMAIN, self.url)
+        return urljoin(settings.DOMAIN, self.url)
 
     @property
     def absolute_api_v2_url(self):

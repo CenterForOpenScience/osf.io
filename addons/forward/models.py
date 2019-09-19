@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+from osf.utils.requests import get_request_and_user_id, get_headers_from_request
 
 from addons.base.models import BaseNodeSettings
 from dirtyfields import DirtyFieldsMixin
 from django.db import models
 from osf.exceptions import ValidationValueError
 from osf.models.validators import validate_no_html
+from osf.models import OSFUser
 
 
 class NodeSettings(DirtyFieldsMixin, BaseNodeSettings):
@@ -32,6 +34,17 @@ class NodeSettings(DirtyFieldsMixin, BaseNodeSettings):
         clone.save()
 
         return clone, None
+
+    def save(self, request=None, *args, **kwargs):
+        super(NodeSettings, self).save(*args, **kwargs)
+        if request:
+            if not hasattr(request, 'user'):  # TODO: remove when Flask is removed
+                _, user_id = get_request_and_user_id()
+                user = OSFUser.load(user_id)
+            else:
+                user = request.user
+
+            self.owner.check_spam(user, {'addons_forward_node_settings__url'}, get_headers_from_request(request))
 
     def clean(self):
         if self.url and self.owner._id in self.url:

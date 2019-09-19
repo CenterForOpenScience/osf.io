@@ -3,7 +3,8 @@ from django.utils import timezone
 import mock
 from nose.tools import *  # noqa:
 import pytest
-from urlparse import urlparse
+
+from future.moves.urllib.parse import urlparse
 
 from api.base.settings.defaults import API_BASE
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
@@ -22,9 +23,10 @@ from osf_tests.factories import (
 )
 from rest_framework import exceptions
 from tests.base import ApiTestCase
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.views import find_bookmark_collection
 from osf.utils import permissions
+
+SCHEMA_VERSION = 2
 
 
 @pytest.mark.enable_quickfiles_creation
@@ -543,7 +545,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
     def schema(self):
         return RegistrationSchema.objects.get(
             name='Replication Recipe (Brandt et al., 2013): Post-Completion',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def project_public_child(self, project_public):
@@ -787,7 +789,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
             prereg_metadata, url_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
@@ -824,7 +826,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
             self, mock_enqueue, app, user, project_public, prereg_metadata, url_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
@@ -861,7 +863,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
             prereg_metadata, url_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,

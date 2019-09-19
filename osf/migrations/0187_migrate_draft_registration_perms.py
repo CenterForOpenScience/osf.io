@@ -67,7 +67,7 @@ def copy_editable_fields_from_draft_to_node(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0170_draft_node_and_draft_registration'),
+        ('osf', '0186_draft_node_and_draft_registration'),
     ]
 
     operations = [

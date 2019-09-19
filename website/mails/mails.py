@@ -255,6 +255,8 @@ PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received r
 REQUEST_EXPORT = Mail('support_request', subject='[via OSF] Export Request')
 REQUEST_DEACTIVATION = Mail('support_request', subject='[via OSF] Deactivation Request')
 
+REQUEST_DEACTIVATION_COMPLETE = Mail('request_deactivation_complete', subject='[via OSF] OSF account deactivated')
+
 SPAM_USER_BANNED = Mail('spam_user_banned', subject='[OSF] Account flagged as spam')
 
 CONFERENCE_SUBMITTED = Mail(
@@ -437,6 +439,11 @@ ACCESS_REQUEST_DENIED = Mail(
 CROSSREF_ERROR = Mail(
     'crossref_doi_error',
     subject='There was an error creating a DOI for preprint(s). batch_id: ${batch_id}'
+)
+
+CROSSREF_DOIS_PENDING = Mail(
+    'crossref_doi_pending',
+    subject='There are ${pending_doi_count} preprints with crossref DOI pending.'
 )
 
 PREPRINT_WITHDRAWAL_REQUEST_GRANTED = Mail(

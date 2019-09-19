@@ -48,7 +48,7 @@ VALUES = [
 LAST_ROW_SQL = """
     SELECT
         obfnv.id AS fileversion_id
-    FROM osf_basefilenode_versions AS obfnv
+    FROM osf_basefileversionsthrough AS obfnv
     ORDER BY obfnv.id DESC
     LIMIT 1
 """
@@ -73,7 +73,7 @@ NODE_LIST_SQL = """
            node.is_deleted AS node_deleted,
            node.spam_status,
            preprint.id IS NOT NULL AS is_supplementary_node
-        FROM osf_basefilenode_versions AS obfnv
+        FROM osf_basefileversionsthrough AS obfnv
         LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
         LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
         LEFT JOIN addons_osfstorage_region region ON version.region_id = region.id
@@ -89,7 +89,7 @@ NODE_LIST_SQL = """
 TOTAL_FILE_SIZE_SUM_SQL = """
     SELECT
        'total', sum(size) AS deleted_size_sum
-    FROM osf_basefilenode_versions AS obfnv
+    FROM osf_basefileversionsthrough AS obfnv
     LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
     LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
     WHERE file.provider = 'osfstorage'
@@ -100,7 +100,7 @@ TOTAL_FILE_SIZE_SUM_SQL = """
 DELETED_FILE_SIZE_SUM_SQL = """
     SELECT
        'deleted', sum(size) AS deleted_size_sum
-    FROM osf_basefilenode_versions AS obfnv
+    FROM osf_basefileversionsthrough AS obfnv
     LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
     LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
     WHERE file.provider = 'osfstorage'
@@ -112,7 +112,7 @@ DELETED_FILE_SIZE_SUM_SQL = """
 REGIONAL_NODE_SIZE_SUM_SQL = """
         SELECT
            region.name, sum(size)
-        FROM osf_basefilenode_versions AS obfnv
+        FROM osf_basefileversionsthrough AS obfnv
         LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
         LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
         LEFT JOIN addons_osfstorage_region region ON version.region_id = region.id
@@ -128,7 +128,7 @@ ABSTRACT_NODE_SIZE_SUM_SQL = """
                node.type = 'osf.node' AND NOT node.is_public
            ) THEN 'osf.private-node' ELSE node.type END AS type,
            sum(size)
-        FROM osf_basefilenode_versions AS obfnv
+        FROM osf_basefileversionsthrough AS obfnv
         LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
         LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
         LEFT JOIN osf_abstractnode node ON file.target_object_id = node.id
@@ -144,7 +144,7 @@ ABSTRACT_NODE_SIZE_SUM_SQL = """
 ND_QUICK_FILE_SIZE_SUM_SQL = """
         SELECT
            node.type, sum(size)
-        FROM osf_basefilenode_versions AS obfnv
+        FROM osf_basefileversionsthrough AS obfnv
         LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
         LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
         LEFT JOIN osf_abstractnode node ON file.target_object_id = node.id
@@ -161,7 +161,7 @@ ND_QUICK_FILE_SIZE_SUM_SQL = """
 ND_PREPRINT_SUPPLEMENT_SIZE_SUM_SQL = """
         SELECT
            'nd_supplement', sum(size) AS supplementary_node_size
-        FROM osf_basefilenode_versions AS obfnv
+        FROM osf_basefileversionsthrough AS obfnv
         LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
         LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
         LEFT JOIN osf_abstractnode node ON node.id = file.target_object_id
@@ -193,7 +193,7 @@ PREPRINT_LIST_SQL = """
            preprint.deleted IS NOT NULL AS preprint_deleted,
            preprint.spam_status,
            FALSE AS is_supplementary_node
-        FROM osf_basefilenode_versions AS obfnv
+        FROM osf_basefileversionsthrough AS obfnv
         LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
         LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
         LEFT JOIN addons_osfstorage_region region ON version.region_id = region.id
@@ -207,7 +207,7 @@ PREPRINT_LIST_SQL = """
 ND_PREPRINT_SIZE_SUM_SQL = """
         SELECT
            'nd_preprints', sum(size) AS nd_preprint_size_sum
-        FROM osf_basefilenode_versions AS obfnv
+        FROM osf_basefileversionsthrough AS obfnv
         LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
         LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
         LEFT JOIN osf_preprint preprint ON preprint.id = file.target_object_id
@@ -220,7 +220,7 @@ ND_PREPRINT_SIZE_SUM_SQL = """
 REGIONAL_PREPRINT_SIZE_SUM_SQL = """
         SELECT
            region.name, sum(size)
-        FROM osf_basefilenode_versions AS obfnv
+        FROM osf_basefileversionsthrough AS obfnv
         LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
         LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
         LEFT JOIN addons_osfstorage_region region ON version.region_id = region.id
@@ -477,8 +477,20 @@ def process_usages(
         dry_run=False,
         page_size=10000,
         sample_only=False,
-        remote_base_folder=None,
 ):
+    if not dry_run:
+        json = requests.get(
+            url=DS_METRICS_BASE_FOLDER,
+            headers={'Accept': 'application/vnd.api+json;version={}'.format(DEFAULT_API_VERSION)},
+            auth=bearer_token_auth(DS_METRICS_OSF_TOKEN)
+        ).json()['data']
+
+        remote_base_folder = {
+            'files': json['relationships']['files']['links']['related']['href'],
+            'new_folder': json['links']['new_folder'],
+            'upload': json['links']['upload'],
+        }
+        logger.debug('Remote base folder: {}'.format(remote_base_folder))
     # We can't re-order these columns after they are released, only add columns to the end
     # This is why we can't just append whatever storage regions we add to the system automatically,
     # because then they'd likely be out of order when they were added.
@@ -606,24 +618,10 @@ class Command(BaseCommand):
         page_size = options['page_size']
         sample_only = options['sample_only']
 
-        remote_base_folder = None
-
         if dry_run:
             logger.info('DRY RUN')
         else:
-            if DS_METRICS_BASE_FOLDER is not None and DS_METRICS_OSF_TOKEN is not None:
-                json = requests.get(
-                    url=DS_METRICS_BASE_FOLDER,
-                    headers={'Accept': 'application/vnd.api+json;version={}'.format(DEFAULT_API_VERSION)},
-                    auth=bearer_token_auth(DS_METRICS_OSF_TOKEN)
-                ).json()['data']
-
-                remote_base_folder = {
-                    'files': json['relationships']['files']['links']['related']['href'],
-                    'new_folder': json['links']['new_folder'],
-                    'upload': json['links']['upload'],
-                }
-            else:
+            if DS_METRICS_BASE_FOLDER is None or DS_METRICS_OSF_TOKEN is None:
                 raise RuntimeError(
                     'DS_METRICS_BASE_FOLDER and DS_METRICS_OSF_TOKEN settings are required if dry_run==False.'
                 )
@@ -638,7 +636,6 @@ class Command(BaseCommand):
             dry_run=dry_run,
             page_size=page_size,
             sample_only=sample_only,
-            remote_base_folder=remote_base_folder,
         )
         script_finish_time = datetime.datetime.now()
         logger.info('Script finished time: {}'.format(script_finish_time))

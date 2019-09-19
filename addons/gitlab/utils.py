@@ -1,8 +1,8 @@
 import hmac
 import uuid
-import urllib
+from future.moves.urllib.parse import unquote_plus
 import hashlib
-import httplib as http
+from rest_framework import status as http_status
 
 from framework.exceptions import HTTPError
 from addons.base.exceptions import HookError
@@ -46,9 +46,9 @@ def verify_hook_signature(node_settings, data, headers):
 def get_path(kwargs, required=True):
     path = kwargs.get('path')
     if path:
-        return urllib.unquote_plus(path)
+        return unquote_plus(path)
     elif required:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
 
 def get_refs(addon, branch=None, sha=None, connection=None):
@@ -63,7 +63,7 @@ def get_refs(addon, branch=None, sha=None, connection=None):
     connection = connection or GitLabClient(external_account=addon.external_account)
 
     if sha and not branch:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     # Get default branch if not provided
     if not branch:

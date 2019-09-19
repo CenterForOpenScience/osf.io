@@ -1,11 +1,12 @@
 import mock
 import pytest
 import datetime
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 
 from rest_framework import exceptions
 from django.utils import timezone
 from api.base.settings.defaults import API_BASE
+from api.taxonomies.serializers import subjects_as_relationships_version
 from api_tests.subjects.mixins import UpdateSubjectsMixin
 from osf.utils import permissions
 from osf.models import Registration, NodeLog, NodeLicense
@@ -29,6 +30,7 @@ from osf_tests.factories import (
 
 from api_tests.nodes.views.test_node_detail import TestNodeUpdateLicense
 from tests.utils import assert_latest_log
+from api_tests.utils import create_test_file
 
 
 @pytest.fixture()
@@ -48,7 +50,12 @@ class TestRegistrationDetail:
 
     @pytest.fixture()
     def private_project(self, user):
-        return ProjectFactory(title='Private Project', creator=user)
+        private_project = ProjectFactory(title='Private Project', creator=user)
+        create_test_file(private_project, user, filename='sake recipe')
+        create_test_file(private_project, user, filename='sake rice wine recipe')
+        deleted_file = create_test_file(private_project, user, filename='No sake')
+        deleted_file.delete()
+        return private_project
 
     @pytest.fixture()
     def public_registration(self, user, public_project):
@@ -189,6 +196,8 @@ class TestRegistrationDetail:
         assert res.json['data']['relationships']['contributors']['links']['related']['meta']['count'] == 1
         assert res.json['data']['relationships']['comments']['links']['related']['meta']['count'] == 2
         assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 1
+        assert res.json['data']['relationships']['files']['links']['related']['meta']['count'] == 2
+
         registration_comment_reply.is_deleted = True
         registration_comment_reply.save()
         res = app.get(url, auth=user.auth)
@@ -215,7 +224,7 @@ class TestRegistrationDetail:
         assert 'registrations' not in res.json['data']['relationships']
 
     #   test_registration_has_subjects_links_for_later_versions
-        res = app.get(public_url + '?version=2.15')
+        res = app.get(public_url + '?version={}'.format(subjects_as_relationships_version))
         related_url = res.json['data']['relationships']['subjects']['links']['related']['href']
         expected_url = '{}subjects/'.format(public_url)
         assert urlparse(related_url).path == expected_url
@@ -491,7 +500,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
     #   test_can_unset_certain_registration_fields
         attribute_list = {
             'public': True,
-            'category': 'instrumentation',
+            'category': '',
             'title': 'New title',
             'description': '',
             'tags': [],
@@ -509,7 +518,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['public'] is True
-        assert res.json['data']['attributes']['category'] == 'instrumentation'
+        assert res.json['data']['attributes']['category'] == ''
         assert res.json['data']['attributes']['description'] == ''
         assert res.json['data']['attributes']['tags'] == []
         assert res.json['data']['attributes']['title'] == private_registration.title
