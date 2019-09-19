@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from six import string_types
 from __future__ import unicode_literals
+from six import string_types
 import mock
 from django.utils import timezone
 from nose.tools import *  # noqa
