@@ -475,7 +475,7 @@ class TestCSRFValidation:
 
     @pytest.fixture
     def csrf_token(self):
-        return str(csrf._get_new_csrf_token())
+        return csrf._get_new_csrf_token()
 
     @pytest.fixture
     def payload(self):
