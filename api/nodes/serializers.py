@@ -1915,7 +1915,7 @@ class NodeGroupsCreateSerializer(NodeGroupsSerializer):
             raise exceptions.PermissionDenied(detail=str(e))
         except ValueError as e:
             # permission is in writeable_method_fields, so validation happens on OSF Group model
-            raise exceptions.ValidationError(detail=str(e.message))
+            raise exceptions.ValidationError(detail=str(e))
         return group
 
 
@@ -1937,5 +1937,5 @@ class NodeGroupsDetailSerializer(NodeGroupsSerializer):
             raise exceptions.PermissionDenied(detail=str(e.message))
         except ValueError as e:
             # permission is in writeable_method_fields, so validation happens on OSF Group model
-            raise exceptions.ValidationError(detail=str(e.message))
+            raise exceptions.ValidationError(detail=str(e))
         return obj
