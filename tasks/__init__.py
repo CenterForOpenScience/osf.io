@@ -345,6 +345,7 @@ API_TESTS1 = [
 API_TESTS2 = [
     'api_tests/actions',
     'api_tests/chronos',
+    'api_tests/draft_registrations',
     'api_tests/meetings',
     'api_tests/metrics',
     'api_tests/nodes',

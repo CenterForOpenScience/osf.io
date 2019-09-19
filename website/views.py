@@ -310,7 +310,7 @@ def resolve_guid(guid, suffix=None):
 
         # Handle DraftNodes - these should never be accessed directly
         if isinstance(referent, DraftNode):
-            raise HTTPError(http_status.NOT_FOUND)
+            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
         if isinstance(referent, BaseFileNode) and referent.is_file and (getattr(referent.target, 'is_quickfiles', False)):
             if referent.is_deleted:

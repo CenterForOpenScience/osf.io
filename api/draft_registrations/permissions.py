@@ -3,6 +3,7 @@ from rest_framework import permissions
 from api.base.utils import get_user_auth, assert_resource_type
 from osf.models import (
     DraftRegistration,
+    AbstractNode,
     DraftRegistrationContributor,
     OSFUser,
 )
@@ -15,7 +16,7 @@ class IsContributorOrAdminContributor(permissions.BasePermission):
     you need to be an admin contributor to make edits
     """
 
-    acceptable_models = (DraftRegistration,)
+    acceptable_models = (DraftRegistration, AbstractNode, )
 
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, dict):
