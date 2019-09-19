@@ -760,8 +760,8 @@ class TestNodeChildrenBulkCreate:
             url, child, auth=user.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'This field is required.'
-        assert res.json['errors'][0]['source']['pointer'] == '/data/1/attributes/category'
+        assert res.json['errors'][0]['detail'] == 'This field may not be null.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/1/type'
 
         project.reload()
         assert len(project.nodes) == 0
