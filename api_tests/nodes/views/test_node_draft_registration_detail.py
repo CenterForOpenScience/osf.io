@@ -966,7 +966,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
                         'nodeId': project_public._id,
                         'viewUrl': '/project/{}/files/osfstorage/{}'.format(project_public._id, draft_registration_prereg._id),
                         'selectedFileName': 'Screen Shot 2016-03-30 at 7.02.05 PM.png',
-                        'sha256': binascii.hexlify(sha256)
+                        'sha256': binascii.hexlify(sha256).decode()
                     }]
                 }
             }
