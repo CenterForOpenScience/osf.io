@@ -2257,7 +2257,7 @@ class TestNodeBulkCreate:
             expect_errors=True, bulk=True)
 
         assert res.status_code == 400
-        assert res.json['errors'][0]['source']['pointer'] == '/data/1/attributes/category'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/1/attributes/title'
 
         res = app.get(url, auth=user_one.auth)
         assert len(res.json['data']) == 0
