@@ -1,6 +1,6 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 
 from flask import request
 from osf.exceptions import ValidationValueError
@@ -39,14 +39,14 @@ def forward_config_put(auth, node_addon, **kwargs):
         node_addon.url = request.json['url']
         node_addon.label = request.json.get('label')
     except (KeyError, TypeError, ValueError):
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     # Save settings and get changed fields; crash if validation fails
     try:
         dirty_fields = node_addon.get_dirty_fields()
         node_addon.save(request=request)
     except ValidationValueError:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     # Log change if URL updated
     if 'url' in dirty_fields:

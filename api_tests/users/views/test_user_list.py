@@ -3,7 +3,7 @@ import itsdangerous
 import mock
 import pytest
 import unittest
-import urlparse
+from future.moves.urllib.parse import urlparse, parse_qs
 from uuid import UUID
 
 from api.base.settings.defaults import API_BASE
@@ -250,8 +250,8 @@ class TestUsers:
         user_json = res.json['data']
         for user in user_json:
             profile_image_url = user['links']['profile_image']
-            query_dict = urlparse.parse_qs(
-                urlparse.urlparse(profile_image_url).query)
+            query_dict = parse_qs(
+                urlparse(profile_image_url).query)
             assert int(query_dict.get('s')[0]) == size
 
     def test_users_list_filter_multiple_field(self, app, user_one, user_two):

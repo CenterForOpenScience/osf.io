@@ -410,12 +410,17 @@ class FileVersionSerializer(JSONAPISerializer):
     size = ser.IntegerField(read_only=True, help_text='The size of this file at this version')
     content_type = ser.CharField(read_only=True, help_text='The mime type of this file at this verison')
     date_created = VersionedDateTimeField(source='created', read_only=True, help_text='The date that this version was created')
+    name = ser.SerializerMethodField()
     links = LinksField({
         'self': 'self_url',
         'html': 'absolute_url',
         'download': 'get_download_link',
         'render': 'get_render_link',
     })
+
+    def get_name(self, obj):
+        file = self.context['file']
+        return obj.get_basefilenode_version(file).version_name
 
     class Meta:
         type_ = 'file_versions'

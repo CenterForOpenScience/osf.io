@@ -1,6 +1,6 @@
 import pytz
 import functools
-import httplib as http
+from rest_framework import status as http_status
 
 from dateutil.parser import parse as parse_date
 from django.apps import apps
@@ -495,7 +495,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         reg = self._get_registration()
         if reg.is_public:
             raise HTTPError(
-                http.BAD_REQUEST,
+                http_status.HTTP_400_BAD_REQUEST,
                 data={
                     'message_short': 'Registrations cannot be modified',
                     'message_long': 'This project has already been registered and cannot be deleted',
