@@ -2214,9 +2214,7 @@ class TestUserGdprDelete:
 
         assert user.fullname == 'Deleted user'
         assert user.suffix == ''
-        assert user.social == {}
-        assert user.schools == []
-        assert user.jobs == []
+        assert user.social == []
         assert user.external_identity == {}
         assert not user.emails.exists()
         assert not user.external_accounts.exists()

@@ -730,26 +730,6 @@ class TestSearchUsers(ApiSearchTestCase):
         assert total == 1
         assert user_one.family_name == res.json['data'][0]['attributes']['family_name']
 
-        # test_search_users_by_job
-        url = '{}?q={}'.format(url_user_search, 'producer')
-        res = app.get(url)
-        assert res.status_code == 200
-        num_results = len(res.json['data'])
-        total = res.json['links']['meta']['total']
-        assert num_results == 0
-        assert total == 0
-        assert user_one.fullname == res.json['data'][0]['attributes']['full_name']
-
-        # test_search_users_by_school
-        url = '{}?q={}'.format(url_user_search, 'Chicago')
-        res = app.get(url)
-        assert res.status_code == 200
-        num_results = len(res.json['data'])
-        total = res.json['links']['meta']['total']
-        assert num_results == 1
-        assert total == 1
-        assert user_one.fullname == res.json['data'][0]['attributes']['full_name']
-
 
 class TestSearchInstitutions(ApiSearchTestCase):
 

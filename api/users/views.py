@@ -448,6 +448,9 @@ class UserEducationList(JSONAPIBaseView, generics.ListCreateAPIView, UserMixin, 
         ReadOnlyOrCurrentUserProfile,
     )
 
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.EDUCATION_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
     ordering = ('-created')
 
     serializer_class = UserEducationSerializer
@@ -469,6 +472,9 @@ class UserEducationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
         ReadOnlyOrCurrentUserProfile,
     )
 
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.EDUCATION_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE]
+
     ordering = ('-created')
 
     serializer_class = UserEducationDetailSerializer
@@ -487,6 +493,9 @@ class UserEmploymentList(JSONAPIBaseView, generics.ListCreateAPIView, UserMixin,
         base_permissions.TokenHasScope,
         ReadOnlyOrCurrentUserProfile,
     )
+
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.EMPLOYMENT_READ]
+    required_write_scopes = [CoreScopes.NULL]
 
     ordering = ('-created')
 
@@ -508,6 +517,9 @@ class UserEmploymentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
         base_permissions.TokenHasScope,
         ReadOnlyOrCurrentUserProfile,
     )
+
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.EMPLOYMENT_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE]
 
     ordering = ('-created')
 
