@@ -90,7 +90,7 @@ class UserProfileListMixin(UserProfileFixtures):
 
         # manually reverse the order, make sure list is returned in reversed order
         user_profile_manager = getattr(user, profile_type)
-        set_user_profile_order = getattr(user, 'set_{}_order'.format(profile_type))
+        set_user_profile_order = getattr(user, 'set_user{}_order'.format(profile_type))
         user_profile_object_ids = user_profile_manager.values_list('id', flat=True)
         set_user_profile_order(user_profile_object_ids[::-1])
         res = app.get(list_url, auth=user.auth)
