@@ -1938,7 +1938,7 @@ class TestNodeCreate:
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'This field is required.'
-        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/category'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/title'
 
     #   test_create_project_invalid_title
         project = {
