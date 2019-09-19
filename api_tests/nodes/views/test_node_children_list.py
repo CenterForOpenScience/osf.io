@@ -420,8 +420,8 @@ class TestNodeChildCreate:
         }
         res = app.post_json_api(url, child, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'This field is required.'
-        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/category'
+        assert res.json['errors'][0]['detail'] == 'This field may not be null.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/type'
 
     def test_creates_child_logged_in_write_contributor(
             self, app, user, project, child, url):
