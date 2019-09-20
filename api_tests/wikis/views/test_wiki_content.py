@@ -70,7 +70,7 @@ class TestWikiContentView(ApiWikiTestCase):
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'text/markdown')
-        assert_equal(res.body, self.private_wiki.get_version().content)
+        assert_equal(res.body.decode(), self.private_wiki.get_version().content)
 
     def test_user_cannot_get_withdrawn_registration_wiki_content(self):
         self._set_up_public_registration_with_wiki_page()
