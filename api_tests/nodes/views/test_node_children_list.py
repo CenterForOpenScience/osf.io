@@ -428,7 +428,9 @@ class TestNodeChildCreate:
         write_contrib = AuthUserFactory()
         project.add_contributor(
             write_contrib,
-            permissions=permissions.WRITE,
+            permissions=[
+                permissions.READ,
+                permissions.WRITE],
             auth=Auth(user),
             save=True)
 

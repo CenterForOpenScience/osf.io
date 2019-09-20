@@ -87,7 +87,7 @@ class TestNodeList:
         assert private_project._id not in ids
 
     #   test_return_public_node_list_logged_in_user
-        res = app.get(url)
+        res = app.get(url, auth=non_contrib)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
         ids = [each['id'] for each in res.json['data']]
@@ -4112,7 +4112,7 @@ class TestNodeListPagination:
         return '/{}nodes/'.format(API_BASE)
 
     def test_default_pagination_size(self, app, users, projects, url):
-        res = app.get(url)
+        res = app.get(url, auth=Auth(users[0]))
         pids = [e['id'] for e in res.json['data']]
         for project in projects[1:]:
             assert project._id in pids
@@ -4121,7 +4121,7 @@ class TestNodeListPagination:
 
     def test_max_page_size_enforced(self, app, users, projects, url):
         res_url = '{}?page[size]={}'.format(url, MAX_PAGE_SIZE + 1)
-        res = app.get(res_url)
+        res = app.get(res_url, auth=Auth(users[0]))
         pids = [e['id'] for e in res.json['data']]
         for project in projects:
             assert project._id in pids
@@ -4133,7 +4133,7 @@ class TestNodeListPagination:
 
         res_url = '{}?page[size]={}&embed=contributors'.format(
             url, MAX_PAGE_SIZE + 1)
-        res = app.get(res_url)
+        res = app.get(res_url, auth=Auth(users[0]))
         pids = [e['id'] for e in res.json['data']]
         for project in projects:
             assert project._id in pids
