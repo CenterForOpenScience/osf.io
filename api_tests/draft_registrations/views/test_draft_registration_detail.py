@@ -242,7 +242,6 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
         relationships = res.json['data']['relationships']
         assert relationships['license']['data']['id'] == license._id
 
-        # TODO verify links
         subjects = draft_registration.subjects.values_list('id', flat=True)
         assert len(subjects) == 1
         assert subjects[0] == subject.id

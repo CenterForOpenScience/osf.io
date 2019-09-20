@@ -1,13 +1,14 @@
 import pytz
 import json
 
-
+from distutils.version import StrictVersion
 from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 from api.base.exceptions import Conflict, InvalidModelValueError
 from api.base.serializers import is_anonymized
 from api.base.utils import absolute_reverse, get_user_auth, is_truthy
+from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 
@@ -481,20 +482,71 @@ class RegistrationSerializer(NodeSerializer):
 
 class RegistrationCreateSerializer(RegistrationSerializer):
     """
-    Overrides RegistrationSerializer to add draft_registration, registration_choice, and lift_embargo fields
+    Overrides RegistrationSerializer to add draft_registration, registration_choice, and lift_embargo fields -
     """
-    draft_registration = ser.CharField(write_only=True)
-    registration_choice = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
+
+    def expect_cleaner_attributes(self, request):
+        return StrictVersion(getattr(request, 'version', '2.0')) >= StrictVersion(CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
+
+    def __init__(self, *args, **kwargs):
+        super(RegistrationCreateSerializer, self).__init__(*args, **kwargs)
+        request = kwargs['context']['request']
+        # required fields defined here for the different versions
+        if self.expect_cleaner_attributes(request):
+            self.fields['draft_registration_id'] = ser.CharField(write_only=True)
+        else:
+            self.fields['draft_registration'] = ser.CharField(write_only=True)
+            self.fields['registration_choice'] = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
+
+    # For newer versions
+    embargo_end_date = VersionedDateTimeField(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
+    included_node_ids = ser.ListField(write_only=True, required=False)
+    # For older versions
     lift_embargo = VersionedDateTimeField(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
     children = ser.ListField(write_only=True, required=False)
 
+    users = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<user._id>'},
+        always_embed=True,
+        required=False,
+    )
+
+    def get_registration_choice_by_version(self, validated_data):
+        """
+        Old API versions should pass in "immediate" or "embargo" under `registration_choice`.
+        New API versions should pass in an "embargo_end_date" if it should be embargoed, else it will be None
+        """
+        if self.expect_cleaner_attributes(self.context['request']):
+            return 'embargo' if validated_data.get('embargo_end_date', None) else 'immediate'
+        return validated_data.get('registration_choice', 'immediate')
+
+    def get_embargo_end_date_by_version(self, validated_data):
+        """
+        Old API versions should pass in "lift_embargo".
+        New API versions should pass in "embargo_end_date"
+        """
+        if self.expect_cleaner_attributes(self.context['request']):
+            return validated_data.get('embargo_end_date', None)
+        return validated_data.get('lift_embargo')
+
+    def get_children_by_version(self, validated_data):
+        """
+        Old API versions should pass in 'children'
+        New API versions should pass in 'included_node_ids'.
+        """
+        if self.expect_cleaner_attributes(self.context['request']):
+            return validated_data.get('included_node_ids', [])
+        return validated_data.get('children', [])
+
     def create(self, validated_data):
         auth = get_user_auth(self.context['request'])
-        draft = validated_data.pop('draft')
-        registration_choice = validated_data.pop('registration_choice', 'immediate')
-        embargo_lifted = validated_data.pop('lift_embargo', None)
+        draft = validated_data.pop('draft', None)
+        registration_choice = self.get_registration_choice_by_version(validated_data)
+        embargo_lifted = self.get_embargo_end_date_by_version(validated_data)
+
         reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
-        children = validated_data.pop('children', [])
+        children = self.get_children_by_version(validated_data)
         if children:
             # First check that all children are valid
             child_nodes = Node.objects.filter(guids___id__in=children)

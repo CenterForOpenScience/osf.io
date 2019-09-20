@@ -7,6 +7,7 @@ import pytest
 from future.moves.urllib.parse import urlparse
 
 from api.base.settings.defaults import API_BASE
+from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
 from api_tests.subjects.mixins import SubjectsFilterMixin
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
@@ -715,7 +716,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_registration_draft_must_be_specified(
-            self, mock_enqueue, app, user, url_registrations):
+            self, mock_enqueue, app, user, payload, url_registrations):
         payload = {
             'data': {
                 'type': 'registrations',
@@ -730,7 +731,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/draft_registration'
+        assert '/data/attributes/draft_registration' in res.json['errors'][0]['source']['pointer']
         assert res.json['errors'][0]['detail'] == 'This field is required.'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
@@ -741,7 +742,9 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'registration_choice': 'immediate',
-                    'draft_registration': '12345'
+                    'draft_registration': '12345',
+                    'draft_registration_id': '12345',
+
                 }
             }
         }
@@ -770,7 +773,8 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'registration_choice': 'immediate',
-                    'draft_registration': draft_registration._id
+                    'draft_registration': draft_registration._id,
+                    'draft_registration_id': draft_registration._id
                 }
             }
         }
@@ -808,6 +812,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
                 'attributes': {
                     'registration_choice': 'immediate',
                     'draft_registration': prereg_draft_registration._id,
+                    'draft_registration_id': prereg_draft_registration._id,
                 }
             }
         }
@@ -845,6 +850,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
                 'attributes': {
                     'registration_choice': 'immediate',
                     'draft_registration': prereg_draft_registration._id,
+                    'draft_registration_id': prereg_draft_registration._id,
                 }
             }
         }
@@ -883,6 +889,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
                 'attributes': {
                     'registration_choice': 'immediate',
                     'draft_registration': prereg_draft_registration._id,
+                    'draft_registration_id': prereg_draft_registration._id,
                 }
             }
         }
@@ -925,6 +932,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'draft_registration': draft_registration._id,
+                    'draft_registration_id': draft_registration._id,
                     'registration_choice': 'tomorrow'
                 }
             }
@@ -972,8 +980,10 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'draft_registration': draft_registration._id,
+                    'draft_registration_id': draft_registration._id,
                     'registration_choice': 'embargo',
-                    'lift_embargo': five_years
+                    'lift_embargo': five_years,
+                    'embargo_end_date': five_years
                 }
             }
         }
@@ -1000,8 +1010,10 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'draft_registration': draft_registration._id,
+                    'draft_registration_id': draft_registration._id,
                     'registration_choice': 'embargo',
-                    'lift_embargo': next_week
+                    'lift_embargo': next_week,
+                    'embargo_end_date': next_week,
                 }
             }
         }
@@ -1024,8 +1036,10 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'draft_registration': draft_registration._id,
+                    'draft_registration_id': draft_registration._id,
                     'registration_choice': 'embargo',
-                    'lift_embargo': today
+                    'lift_embargo': today,
+                    'embargo_end_date': today,
                 }
             }
         }
@@ -1046,8 +1060,10 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'draft_registration': draft_registration._id,
+                    'draft_registration_id': draft_registration._id,
                     'registration_choice': 'embargo',
-                    'lift_embargo': today
+                    'lift_embargo': today,
+                    'embargo_end_date': today
                 }
             }
         }
@@ -1135,7 +1151,59 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
     """
     @pytest.fixture()
     def url_registrations(self, project_public):
-        return '/{}registrations/'.format(API_BASE)
+        return '/{}registrations/?version={}'.format(
+            API_BASE,
+            CREATE_REGISTRATION_FIELD_CHANGE_VERSION
+        )
+
+    @pytest.fixture()
+    def payload(self, draft_registration):
+        return {
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration_id': draft_registration._id,
+                }
+            }
+        }
+
+    @pytest.fixture()
+    def payload_with_children(self, draft_registration, project_public_child, project_public_grandchild):
+        return {
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration_id': draft_registration._id,
+                    'included_node_ids': [project_public_child._id, project_public_grandchild._id],
+
+                }
+            }
+        }
+
+    @pytest.fixture()
+    def payload_with_grandchildren_but_no_children(self, draft_registration, project_public_child, project_public_grandchild):
+        return {
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration_id': draft_registration._id,
+                    'included_node_ids': [project_public_grandchild._id],
+
+                }
+            }
+        }
+
+    @pytest.fixture()
+    def payload_with_bad_child_node_guid(self, draft_registration):
+        return {
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration_id': draft_registration._id,
+                    'included_node_ids': ['fake0', 'fake3'],
+                }
+            }
+        }
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_registration_draft_must_be_draft_of_current_node(
@@ -1152,7 +1220,7 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
         draft_registration = DraftRegistrationFactory(creator=user_two)
         draft_registration.add_contributor(user, permissions.ADMIN)
         draft_registration.branched_from.add_contributor(user, permissions.WRITE)
-        payload['data']['attributes']['draft_registration'] = draft_registration._id
+        payload['data']['attributes']['draft_registration_id'] = draft_registration._id
         # User is admin on draft, but not on node
         assert draft_registration.branched_from.is_admin_contributor(user) is False
         assert draft_registration.has_permission(user, permissions.ADMIN) is True
@@ -1161,7 +1229,7 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
 
         # User is an admin group contributor on the node (not enough)
         draft_registration.branched_from.add_osf_group(group, permissions.ADMIN)
-        payload['data']['attributes']['draft_registration'] = draft_registration._id
+        payload['data']['attributes']['draft_registration_id'] = draft_registration._id
         # User is admin on draft, but not on node
         assert draft_registration.branched_from.is_admin_contributor(user) is False
         assert draft_registration.branched_from.has_permission(user, permissions.ADMIN) is True
@@ -1172,7 +1240,7 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
         draft_registration = DraftRegistrationFactory(creator=user_two)
         draft_registration.add_contributor(user, permissions.WRITE)
         draft_registration.branched_from.add_contributor(user, permissions.ADMIN)
-        payload['data']['attributes']['draft_registration'] = draft_registration._id
+        payload['data']['attributes']['draft_registration_id'] = draft_registration._id
         # User is admin on node but not on draft
         draft_registration.branched_from.is_admin_contributor(user) is True
         assert draft_registration.has_permission(user, permissions.ADMIN) is False
@@ -1183,9 +1251,13 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
         draft_registration = DraftRegistrationFactory(creator=user)
         assert draft_registration.branched_from.is_admin_contributor(user) is True
         assert draft_registration.has_permission(user, permissions.ADMIN) is True
-        payload['data']['attributes']['draft_registration'] = draft_registration._id
+        payload['data']['attributes']['draft_registration_id'] = draft_registration._id
         res = app.post_json_api(url_registrations, payload, auth=user.auth)
         assert res.status_code == 201
+
+    def test_invalid_registration_choice(self):
+        # Overrides TestNodeRegistrationCreate - this isn't a field used here
+        pass
 
 
 @pytest.mark.django_db
