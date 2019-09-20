@@ -41,6 +41,7 @@
 	],
 	"additionalProperties": false,
 	"dependencies": {
-		"end_date": ["start_date"]
+		"end_date": ["start_date"],
+		"start_date": ["ongoing"]
 	}
 }

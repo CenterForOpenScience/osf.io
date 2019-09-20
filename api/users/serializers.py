@@ -555,7 +555,7 @@ class UserEmploymentRelationshipSerializer(BaseAPISerializer):
         return obj.absolute_api_v2_url
 
     class Meta:
-        type_ = 'employment'
+        type_ = 'user-employment'
 
 
 class UserIdentitiesSerializer(JSONAPISerializer):

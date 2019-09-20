@@ -33,11 +33,11 @@ class UserProfileFixtures:
         return '/{}users/{}/{}/{}/'.format(API_BASE, user._id, profile_type, profile_item_one._id)
 
     @pytest.fixture()
-    def payload(self, profile_type):
+    def payload(self, object_type):
         def payload(**kwargs):
             payload = {
                 'data': {
-                    'type': profile_type,
+                    'type': object_type,
                     'attributes': {}
                 }
             }
@@ -51,6 +51,10 @@ class UserProfileFixtures:
 
     @pytest.fixture()
     def profile_type(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def object_type(self):
         raise NotImplementedError
 
 
@@ -166,6 +170,11 @@ class UserProfileCreateMixin(UserProfileFixtures):
         res = app.post_json(list_url, not_really_ongoing, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
+        # start date with undefined ongoing fails
+        undefined_ongoing = payload(institution='hullo', start_date='2018-01-01')
+        res = app.post_json(list_url, undefined_ongoing, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+
     def test_create_profile_object(self, app, list_url, user, payload, profile_type):
         user_profile_object_manager = getattr(user, profile_type)
 
@@ -194,7 +203,7 @@ class UserProfileCreateMixin(UserProfileFixtures):
         # test create with start and end dates
         new_name = 'Scundra Town'
         new_end = '2018-12-01'
-        start_date = payload(institution=new_name, start_date=new_start, end_date=new_end, ongoing=True)
+        start_date = payload(institution=new_name, start_date=new_start, end_date=new_end, ongoing=False)
         res = app.post_json(list_url, start_date, auth=user.auth)
         assert res.status_code == 201
         assert new_name == res.json['data']['attributes']['institution'] == new_name
@@ -202,7 +211,7 @@ class UserProfileCreateMixin(UserProfileFixtures):
         new_inst = user_profile_object_manager.get(institution=new_name)
         assert new_inst.start_date == datetime.strptime(new_start, '%Y-%m-%d').date()
         assert new_inst.end_date == datetime.strptime(new_end, '%Y-%m-%d').date()
-        assert new_inst.ongoing is True
+        assert new_inst.ongoing is False
 
 
 @pytest.mark.django_db
@@ -250,6 +259,11 @@ class UserProfileUpdateMixin(UserProfileFixtures):
         res = app.put_json_api(detail_url, not_really_ongoing, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
+        # start date with undefined ongoing fails
+        undefined_ongoing = payload(_id=profile_item_one._id, start_date='2018-01-01')
+        res = app.put_json_api(detail_url, undefined_ongoing, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+
     def test_profile_object_update_succeeds(self, app, detail_url, profile_item_one, user, payload):
         # test update institution
         new_inst = 'Dogland'
@@ -273,10 +287,10 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
         return getattr(user, profile_type)
 
     @pytest.fixture()
-    def relationship_payload(self, profile_item_one, profile_type):
+    def relationship_payload(self, profile_item_one, object_type):
         return {
             'data': [
-                {'type': profile_type, 'id': profile_item_one._id}
+                {'type': object_type, 'id': profile_item_one._id}
             ]
         }
 
@@ -297,8 +311,8 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
         assert profile_item_one._id in ids
         assert profile_item_one._id in ids
 
-    def test_update_order(self, app, url, user, profile_item_one, profile_item_two, relationship_payload, profile_type):
-        relationship_payload['data'].insert(0, {'type': profile_type, 'id': profile_item_two._id})
+    def test_update_order(self, app, url, user, profile_item_one, profile_item_two, relationship_payload, object_type):
+        relationship_payload['data'].insert(0, {'type': object_type, 'id': profile_item_two._id})
         res = app.patch_json_api(url, relationship_payload, auth=user.auth)
         assert res.status_code == 200
 
@@ -316,8 +330,8 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
         assert profile_item_one._id not in ids
         assert profile_item_two._id in ids
 
-    def test_delete_multiple(self, app, user, profile_item_one, profile_item_two, url, relationship_payload, profile_type):
-        relationship_payload['data'].append({'type': profile_type, 'id': profile_item_two._id})
+    def test_delete_multiple(self, app, user, profile_item_one, profile_item_two, url, relationship_payload, profile_type, object_type):
+        relationship_payload['data'].append({'type': object_type, 'id': profile_item_two._id})
         res = app.delete_json_api(url, relationship_payload, auth=user.auth)
         assert res.status_code == 204
 
@@ -327,7 +341,7 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
         assert profile_item_one._id not in ids
         assert profile_item_two._id not in ids
 
-    def test_profile_relationship_errors(self, app, user, user_two, profile_item_one, profile_item_two, url, relationship_payload, profile_type):
+    def test_profile_relationship_errors(self, app, user, user_two, profile_item_one, profile_item_two, url, relationship_payload, object_type):
         # wrong type fails
         wrong_payload = relationship_payload.copy()
         wrong_payload['data'][0]['type'] = 'cowabunga'
@@ -357,7 +371,7 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
         assert res.status_code == 404
 
         # test misformed payload fails
-        data_not_an_array = {'data': {'type': profile_type, 'id': profile_item_one._id}}
+        data_not_an_array = {'data': {'type': object_type, 'id': profile_item_one._id}}
         res = app.patch_json_api(url, data_not_an_array, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 

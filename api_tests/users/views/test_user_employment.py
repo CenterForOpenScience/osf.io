@@ -1,7 +1,7 @@
 import pytest
 
 from api.base.settings import API_BASE
-from osf_tests.factories import UserEmploymentFactory
+from osf_tests.factories import EmploymentFactory
 from api_tests.users.views.user_profile_test_mixin import (
     UserProfileListMixin, UserProfileDetailMixin, UserProfileCreateMixin,
     UserProfileUpdateMixin, UserProfileRelationshipMixin)
@@ -11,11 +11,15 @@ class UserEmploymentMixin:
 
     @pytest.fixture
     def resource_factory(self):
-        return UserEmploymentFactory
+        return EmploymentFactory
 
     @pytest.fixture()
     def profile_type(self):
         return 'employment'
+
+    @pytest.fixture()
+    def object_type(self):
+        return 'user-employment'
 
 
 @pytest.mark.django_db
