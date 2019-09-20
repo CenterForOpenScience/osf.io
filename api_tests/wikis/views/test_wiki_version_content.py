@@ -31,21 +31,21 @@ class TestWikiVersionContentView(ApiWikiTestCase):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'text/markdown')
-        assert_equal(res.body, self.public_wiki.content)
+        assert_equal(res.body.decode(), self.public_wiki.content)
 
     def test_logged_in_non_contributor_can_get_public_wiki_content(self):
         self._set_up_public_project_with_wiki_page()
         res = self.app.get(self.public_url, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'text/markdown')
-        assert_equal(res.body, self.public_wiki.content)
+        assert_equal(res.body.decode(), self.public_wiki.content)
 
     def test_logged_in_contributor_can_get_public_wiki_content(self):
         self._set_up_public_project_with_wiki_page()
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'text/markdown')
-        assert_equal(res.body, self.public_wiki.content)
+        assert_equal(res.body.decode(), self.public_wiki.content)
 
     def test_logged_out_user_cannot_get_private_wiki_content(self):
         self._set_up_private_project_with_wiki_page()
@@ -62,7 +62,7 @@ class TestWikiVersionContentView(ApiWikiTestCase):
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'text/markdown')
-        assert_equal(res.body, self.private_wiki.content)
+        assert_equal(res.body.decode(), self.private_wiki.content)
 
     def test_older_versions_content_can_be_accessed(self):
         self._set_up_private_project_with_wiki_page()
@@ -72,13 +72,13 @@ class TestWikiVersionContentView(ApiWikiTestCase):
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'text/markdown')
-        assert_equal(res.body, self.private_wiki.content)
+        assert_equal(res.body.decode(), self.private_wiki.content)
 
         self.private_url_latest = '/{}wikis/{}/versions/{}/content/'.format(API_BASE, wiki_page._id, wiki_version.identifier)
         res = self.app.get(self.private_url_latest, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'text/markdown')
-        assert_equal(res.body, wiki_version.content)
+        assert_equal(res.body.decode(), wiki_version.content)
 
     def test_user_cannot_get_withdrawn_registration_wiki_content(self):
         self._set_up_public_registration_with_wiki_page()
