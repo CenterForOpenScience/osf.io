@@ -36,21 +36,21 @@ class TestWikiContentView(ApiWikiTestCase):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'text/markdown')
-        assert_equal(res.body, self.public_wiki.get_version().content)
+        assert_equal(res.body.decode(), self.public_wiki.get_version().content)
 
     def test_logged_in_non_contributor_can_get_public_wiki_content(self):
         self._set_up_public_project_with_wiki_page()
         res = self.app.get(self.public_url, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'text/markdown')
-        assert_equal(res.body, self.public_wiki.get_version().content)
+        assert_equal(res.body.decode(), self.public_wiki.get_version().content)
 
     def test_logged_in_contributor_can_get_public_wiki_content(self):
         self._set_up_public_project_with_wiki_page()
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'text/markdown')
-        assert_equal(res.body, self.public_wiki.get_version().content)
+        assert_equal(res.body.decode(), self.public_wiki.get_version().content)
 
     def test_logged_out_user_cannot_get_private_wiki_content(self):
         self._set_up_private_project_with_wiki_page()
