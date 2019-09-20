@@ -103,7 +103,6 @@ class TestNodeLicenses(OsfTestCase):
         assert_is_not_none(found)
 
     def test_ensure_licenses_updates_existing(self):
-        print(builtins)
         with mock.patch.object(builtins, 'open', mock.mock_open(read_data=LICENSE_TEXT)):
             ensure_licenses()
         MIT = NodeLicense.objects.get(license_id='MIT')
