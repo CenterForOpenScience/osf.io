@@ -2406,7 +2406,7 @@ class TestUserSpam:
                 'degree': degree,
                 'institution': institution
             })
-            expected_content += '{} {} '.format(institution, degree)
+            expected_content += '{} {} '.format(degree, institution)
         saved_fields = {'schools': schools_list}
 
         spam_content = user._get_spam_content(saved_fields)
