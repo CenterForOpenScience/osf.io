@@ -21,6 +21,7 @@ from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string
 from website.settings import ADDONS_OAUTH_NO_REDIRECT
 from website.util import web_url_for
+from future.utils import with_metaclass
 
 logger = logging.getLogger(__name__)
 
@@ -85,8 +86,6 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
         unique_together = [
             ('provider', 'provider_id',)
         ]
-
-from future.utils import with_metaclass
 
 class ExternalProviderMeta(abc.ABCMeta):
     """Keeps track of subclasses of the ``ExternalProvider`` object"""

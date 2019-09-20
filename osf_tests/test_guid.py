@@ -307,11 +307,13 @@ class TestResolveGuid(OsfTestCase):
         res = self.app.get('/{}/download?format=asdf'.format(pp.primary_file.get_guid(create=True)._id))
         assert res.status_code == 302
         assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
+
         assert '{}/v1/resources/{}/providers/{}{}%3Fformat%3Dasdf%26action%3Ddownload%26direct%26version%3D1'.format(quote(WATERBUTLER_URL), pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
         res = self.app.get('/{}/download/?format=asdf'.format(pp.primary_file.get_guid(create=True)._id))
         assert res.status_code == 302
         assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
+
         assert '{}/v1/resources/{}/providers/{}{}%3Fformat%3Dasdf%26action%3Ddownload%26direct%26version%3D1'.format(quote(WATERBUTLER_URL), pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
         pp.primary_file.create_version(

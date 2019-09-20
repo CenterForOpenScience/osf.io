@@ -54,6 +54,7 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
             'access_key': '',
             'secret_key': 'Non-empty-secret-key'
         }, auth=self.user.auth, expect_errors=True)
+
         assert_in('All the fields above are required.', rv.body.decode())
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
 
@@ -63,6 +64,7 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
             'access_key': 'Non-empty-access-key',
             'secret_key': ''
         }, auth=self.user.auth, expect_errors=True)
+
         assert_in('All the fields above are required.', rv.body.decode())
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
 
