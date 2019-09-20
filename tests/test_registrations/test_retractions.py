@@ -667,7 +667,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         )
         assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
-    def test_GET_approve_with_valid_token_returns_200(self):
+    def test_GET_approve_with_valid_token_returns_302(self):
         res = self.app.get(
             self.registration.web_url_for('token_action', token=self.approval_token),
             auth=self.user.auth
@@ -675,7 +675,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.registration.retraction.reload()
         assert_true(self.registration.is_retracted)
         assert_false(self.registration.is_pending_retraction)
-        assert_equal(res.status_code, 302)
+        assert_equal(res.status_code,  http_status.HTTP_302_FOUND)
 
     # node_registration_retraction_disapprove_tests
     def test_GET_disapprove_from_unauthorized_user_returns_HTTPError_UNAUTHORIZED(self):

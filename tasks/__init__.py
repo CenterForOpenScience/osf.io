@@ -17,6 +17,13 @@ from invoke import Collection
 from website import settings
 from .utils import pip_install, bin_prefix
 
+
+try:
+    from tasks import local  # noqa
+except ImportError:
+    print('No tasks/local.py file found. '
+          'Did you remember to copy local-dist.py to local.py?')
+
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
 # gets the root path for all the scripts that rely on it
@@ -25,6 +32,12 @@ WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
 CONSTRAINTS_PATH = os.path.join(HERE, 'requirements', 'constraints.txt')
 NO_TESTS_COLLECTED = 5
 ns = Collection()
+
+try:
+    from tasks import local as local_tasks
+    ns.add_collection(Collection.from_module(local_tasks), name='local')
+except ImportError:
+    pass
 
 try:
     from admin import tasks as admin_tasks
