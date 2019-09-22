@@ -1534,7 +1534,7 @@ class DraftRegistrationDetailLegacySerializer(DraftRegistrationSerializerLegacy)
     Also makes registration_supplement read-only.
     """
     id = IDField(source='_id', required=True)
-    registration_metadata = ser.DictField(required=True)
+    registration_metadata = ser.DictField(required=False)
 
     registration_schema = RelationshipField(
         related_view='schemas:registration-schema-detail',

@@ -119,11 +119,9 @@ class DraftRegistrationSerializer(DraftRegistrationSerializerLegacy, Taxonomizab
 
 class DraftRegistrationDetailSerializer(DraftRegistrationSerializer, DraftRegistrationDetailLegacySerializer):
     """
-    Overrides DraftRegistrationSerializerLegacy to make id required, and registration_metadata not required.
+    Overrides DraftRegistrationSerializerLegacy to make id required.
     registration_supplement, node, cannot be changed after draft has been created.
     """
-
-    registration_metadata = ser.DictField(required=False)
 
     links = LinksField({
         'self': 'get_self_url',
