@@ -935,7 +935,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         Draft Registrations have contributors, and this model uses guardian.
         The DraftRegistrationContributor table stores order and bibliographic information.
-        Permissions are stored on guardian tables.  DraftRegistratyion information needs to be transferred
+        Permissions are stored on guardian tables.  DraftRegistration information needs to be transferred
         from user -> self, and draft registration permissions need to be transferred from user -> self.
         """
         from osf.models import DraftRegistrationContributor

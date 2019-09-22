@@ -8,6 +8,7 @@ from osf.models import (
     Registration,
     DraftRegistration,
     NodeLicense,
+    NodeLog,
 )
 from osf.exceptions import NodeStateError
 from osf.utils.permissions import READ, WRITE, ADMIN
@@ -127,16 +128,20 @@ class TestDraftNode:
         assert draft.branched_from.title == 'Untitled'
         assert draft.branched_from.type == 'osf.draftnode'
         assert draft.branched_from.creator == user
+        assert len(draft.logs.all()) == 0
 
     def test_register_draft_node(self, user, draft_node, draft_registration):
         assert draft_node.type == 'osf.draftnode'
 
         with disconnected_from_listeners(after_create_registration):
             registration = draft_node.register_node(get_default_metaschema(), Auth(user), draft_registration, None)
-            assert type(registration) is Registration
-            assert draft_node._id != registration._id
-            draft_node.reload()
-            assert draft_node.type == 'osf.node'
+
+        assert type(registration) is Registration
+        assert draft_node._id != registration._id
+        draft_node.reload()
+        assert draft_node.type == 'osf.node'
+        assert len(draft_node.logs.all()) == 1
+        assert draft_node.logs.first().action == NodeLog.PROJECT_CREATED_FROM_DRAFT_REG
 
     def test_draft_registration_fields_are_copied_back_to_draft_node(self, user, institution,
             subject, write_contrib, title, description, category, license, make_complex_draft_registration):

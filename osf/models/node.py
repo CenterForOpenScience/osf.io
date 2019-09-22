@@ -1441,7 +1441,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             resource = draft_registration
             alternative_resource = self
         else:
-            # If registration is a component, pull editable fields from component only
+            # If registration is a component, pull editable fields from component only, not the draft_registration
             resource = self
             alternative_resource = None
 

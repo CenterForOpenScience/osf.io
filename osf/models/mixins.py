@@ -2107,7 +2107,7 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
         Copy various editable fields from the 'resource' object to the current object.
         Includes, title, description, category, contributors, node_license, tags, subjects, and affiliated_institutions
 
-        The field on the resource will always supersede the field on the anonymous_resource. For example,
+        The field on the resource will always supersede the field on the alternative_resource. For example,
         copying fields from the draft_registration to the registration.  resource will be a DraftRegistration object,
         but the alternative_resource will be a Node.  DraftRegistration fields will trump Node fields.
 

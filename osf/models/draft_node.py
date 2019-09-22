@@ -2,7 +2,10 @@ from __future__ import unicode_literals
 
 import logging
 
-from osf.models.node import AbstractNode, Node
+from framework.auth.core import Auth
+from django.utils import timezone
+
+from osf.models.node import AbstractNode, Node, NodeLog
 from osf.exceptions import NodeStateError
 
 
@@ -34,6 +37,23 @@ class DraftNode(AbstractNode):
         """
         return
 
+    def convert_draft_node_to_node(self, auth):
+        self.recast('osf.node')
+        self.save()
+
+        log_params = {
+            'node': self._id
+        }
+
+        log_action = NodeLog.PROJECT_CREATED_FROM_DRAFT_REG
+        self.add_log(
+            log_action,
+            params=log_params,
+            auth=Auth(user=auth.user),
+            log_date=timezone.now()
+        )
+        return
+
     def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None):
         """Converts the DraftNode to a Node, copies editable fields from the DraftRegistration back to the Node,
          and then registers the Node
@@ -44,8 +64,7 @@ class DraftNode(AbstractNode):
         :param parent Node: parent registration of registration to be created
         :param provider RegistrationProvider: provider to submit the registration to
         """
-        self.recast('osf.node')
-        self.save()
+        self.convert_draft_node_to_node(auth)
         # Copies editable fields from the DraftRegistration back to the Node
         self.copy_editable_fields(draft_registration, auth=auth, save=True)
         self.subscribe_contributors_to_node()
