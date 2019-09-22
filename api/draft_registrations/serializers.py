@@ -139,6 +139,7 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer, DraftRegist
         )
 
     def update(self, draft, validated_data):
+        draft = super(DraftRegistrationDetailSerializer, self).update(draft, validated_data)
         user = self.context['request'].user
         auth = get_user_auth(self.context['request'])
 
@@ -155,7 +156,6 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer, DraftRegist
         if 'subjects' in validated_data:
             subjects = validated_data.pop('subjects', None)
             self.update_subjects(draft, subjects, auth)
-
         try:
             draft.update(validated_data, auth=auth)
         except PermissionsError:
@@ -163,8 +163,7 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer, DraftRegist
         except DraftRegistrationStateError as e:
             raise InvalidModelValueError(detail=str(e))
 
-        # updates registration_metadata
-        return super(DraftRegistrationDetailSerializer, self).update(draft, validated_data)
+        return draft
 
 
 class DraftRegistrationContributorsSerializer(NodeContributorsSerializer):

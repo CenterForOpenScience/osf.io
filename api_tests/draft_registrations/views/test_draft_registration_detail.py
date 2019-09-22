@@ -15,7 +15,8 @@ from osf_tests.factories import (
     DraftRegistrationFactory,
     AuthUserFactory,
     InstitutionFactory,
-    SubjectFactory
+    SubjectFactory,
+    ProjectFactory,
 )
 
 
@@ -192,6 +193,17 @@ class TestUpdateEditableFieldsTestCase:
                         'copyright_holders': copyright_holders
                     },
                     'tags': ['oak', 'tree'],
+                    'registration_metadata': {
+                        'datacompletion': {
+                            'value': 'No, data collection has not begun'
+                        },
+                        'looked': {
+                            'value': 'No'
+                        },
+                        'comments': {
+                            'value': 'This is my first registration.'
+                        }
+                    }
                 },
                 'relationships': {
                     'license': {
@@ -238,6 +250,17 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
         assert attributes['node_license']['year'] == year
         assert attributes['node_license']['copyright_holders'] == copyright_holders
         assert set(attributes['tags']) == set(['oak', 'tree'])
+        assert attributes['registration_metadata'] == {
+            'datacompletion': {
+                'value': 'No, data collection has not begun'
+            },
+            'looked': {
+                'value': 'No'
+            },
+            'comments': {
+                'value': 'This is my first registration.'
+            }
+        }
 
         relationships = res.json['data']['relationships']
         assert relationships['license']['data']['id'] == license._id
@@ -276,6 +299,7 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
             url_draft_registrations, editable_fields_payload,
             auth=user.auth, expect_errors=True)
         assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'This field may not be blank.'
 
         # test null title
         editable_fields_payload['data']['attributes']['title'] = None
@@ -293,8 +317,33 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
             url_draft_registrations, editable_fields_payload,
             auth=user.auth, expect_errors=True)
         assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == '"Not a category" is not a valid choice.'
 
-    # def test cannot update node, schema,
+    def test_cannot_edit_node(self, app, user, url_draft_registrations, draft_registration):
+        node = ProjectFactory(creator=user)
+        branched_from = draft_registration.branched_from
+        payload = {
+            'data': {
+                'id': draft_registration._id,
+                'type': 'draft_registrations',
+                'relationships': {
+                    'branched_from': {
+                        'data': {
+                            'id': node._id,
+                            'type': 'nodes'
+                        }
+                    }
+                }
+            }
+        }
+        res = app.put_json_api(
+            url_draft_registrations, payload,
+            auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+        draft_registration.reload()
+
+        assert draft_registration.branched_from == branched_from
+        assert draft_registration.branched_from != node
 
 
 @pytest.mark.django_db

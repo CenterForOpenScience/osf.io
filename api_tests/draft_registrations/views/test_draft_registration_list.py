@@ -14,7 +14,7 @@ from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
 )
-from osf.utils.permissions import READ, WRITE
+from osf.utils.permissions import READ, WRITE, ADMIN
 
 
 @pytest.mark.django_db
@@ -196,7 +196,11 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
         draft_node_id = data['relationships']['branched_from']['data']['id']
         draft_node = DraftNode.load(draft_node_id)
         draft_reg_id = data['id']
-        assert DraftRegistration.load(draft_reg_id).branched_from == draft_node
+
+        draft = DraftRegistration.load(draft_reg_id)
+        assert draft.branched_from == draft_node
+        assert draft.creator == user
+        assert draft.has_permission(user, ADMIN) is True
 
     # Overrides TestDraftRegistrationList
     def test_cannot_create_draft(
