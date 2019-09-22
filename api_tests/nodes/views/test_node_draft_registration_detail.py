@@ -297,7 +297,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         )
         assert res.status_code == 403
 
-    def test_registration_metadata_must_be_supplied(
+    def test_registration_metadata_does_not_need_to_be_supplied(
             self, app, user, payload, url_draft_registrations):
         payload['data']['attributes'] = {}
 
@@ -305,10 +305,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             url_draft_registrations,
             payload, auth=user.auth,
             expect_errors=True)
-        errors = res.json['errors'][0]
-        assert res.status_code == 400
-        assert errors['source']['pointer'] == '/data/attributes/registration_metadata'
-        assert errors['detail'] == 'This field is required.'
+        assert res.status_code == 200
 
     def test_registration_metadata_must_be_a_dictionary(
             self, app, user, payload, url_draft_registrations):

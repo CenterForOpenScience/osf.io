@@ -40,6 +40,7 @@ class TestDraftRegistrationInstitutionList(TestNodeInstitutionList):
         # Overrides TestNodeInstitutionList
         return '/{}draft_registrations/{}/institutions/'.format(API_BASE, node_two._id)
 
+    # Overrides TestNodeInstitutionList
     def test_node_institution_detail(
         self, app, user, user_two, institution, node_one, node_two, node_one_url, node_two_url,
     ):

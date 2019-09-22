@@ -179,7 +179,9 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
         if node.is_admin_contributor(user) and draft.has_permission(user, ADMIN):
             serializer.save(draft=draft)
         else:
-            raise PermissionDenied('You must be an admin contributor on both the project and the draft registration to create a registration.')
+            raise PermissionDenied(
+                'You must be an admin contributor on both the project and the draft registration to create a registration.',
+            )
 
     def check_branched_from(self, draft):
         # Overrides DraftMixin - no node_id in kwargs

@@ -1226,16 +1226,19 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
         assert draft_registration.has_permission(user, permissions.ADMIN) is True
         res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
+        assert res.json['errors']['0']['detail'] == 'You must be an admin contributor  \
+            on both the project and the draft registration to create a registration.'
 
         # User is an admin group contributor on the node (not enough)
         draft_registration.branched_from.add_osf_group(group, permissions.ADMIN)
         payload['data']['attributes']['draft_registration_id'] = draft_registration._id
-        # User is admin on draft, but not on node
         assert draft_registration.branched_from.is_admin_contributor(user) is False
         assert draft_registration.branched_from.has_permission(user, permissions.ADMIN) is True
         assert draft_registration.has_permission(user, permissions.ADMIN) is True
         res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
+        assert res.json['errors']['0']['detail'] == 'You must be an admin contributor  \
+            on both the project and the draft registration to create a registration.'
 
         draft_registration = DraftRegistrationFactory(creator=user_two)
         draft_registration.add_contributor(user, permissions.WRITE)
@@ -1246,6 +1249,8 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
         assert draft_registration.has_permission(user, permissions.ADMIN) is False
         res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
+        assert res.json['errors']['0']['detail'] == 'You must be an admin contributor  \
+            on both the project and the draft registration to create a registration.'
 
         # User is admin on draft and node
         draft_registration = DraftRegistrationFactory(creator=user)

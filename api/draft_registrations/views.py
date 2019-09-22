@@ -99,6 +99,12 @@ class DraftInstitutionsList(NodeInstitutionsList, DraftRegistrationMixin):
 
 
 class DraftInstitutionsRelationship(NodeInstitutionsRelationship, DraftRegistrationMixin):
+    permission_classes = (
+        IsContributorOrAdminContributor,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
     view_category = 'draft_registrations'
     view_name = 'draft-registration-relationships-institutions'
 

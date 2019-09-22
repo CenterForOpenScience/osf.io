@@ -39,13 +39,13 @@ class DraftContributorDetailPermissions(IsContributorOrAdminContributor):
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
         context = request.parser_context['kwargs']
-        preprint = self.load_resource(context, view)
+        draft = self.load_resource(context, view)
         auth = get_user_auth(request)
         user = OSFUser.load(context['user_id'])
 
         if request.method in permissions.SAFE_METHODS:
-            return super(DraftContributorDetailPermissions, self).has_object_permission(request, view, preprint)
+            return super(DraftContributorDetailPermissions, self).has_object_permission(request, view, draft)
         elif request.method == 'DELETE':
-            return preprint.has_permission(auth.user, osf_permissions.ADMIN) or auth.user == user
+            return draft.has_permission(auth.user, osf_permissions.ADMIN) or auth.user == user
         else:
-            return preprint.has_permission(auth.user, osf_permissions.ADMIN)
+            return draft.has_permission(auth.user, osf_permissions.ADMIN)
