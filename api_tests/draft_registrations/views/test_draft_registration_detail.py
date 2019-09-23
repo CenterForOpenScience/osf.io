@@ -100,11 +100,14 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
 
         res.json['data']['links']['self'] == url
         relationships = res.json['data']['relationships']
-        assert DraftNode.load(relationships['branched_from']['data']['id']) == draft_registration.branched_from
 
         assert 'affiliated_institutions' in relationships
         assert 'subjects' in relationships
         assert 'contributors' in relationships
+
+        draft_node_link = relationships['branched_from']['links']['related']['href']
+        res = app.get(draft_node_link, auth=user.auth)
+        assert DraftNode.load(res.json['data']['id']) == draft_registration.branched_from
 
     def test_draft_registration_perms_checked_on_draft_not_node(self, app, user, project_public,
             draft_registration, url_draft_registrations):

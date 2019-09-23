@@ -23,11 +23,12 @@ class DraftNodeSerializer(JSONAPISerializer):
     })
 
     def get_absolute_url(self, obj):
-        kwargs = self.context['request'].parser_context['kwargs']
-
         return absolute_reverse(
             'draft-nodes:draft-node-detail',
-            kwargs=kwargs,
+            kwargs={
+                'node_id': self.context['request'].parser_context['kwargs']['node_id'],
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
         )
 
     files = RelationshipField(

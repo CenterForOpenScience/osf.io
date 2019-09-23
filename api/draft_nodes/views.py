@@ -1,6 +1,8 @@
 from rest_framework import generics, permissions as drf_permissions
 from django.db.models import Q
 
+from framework.auth.oauth_scopes import CoreScopes
+
 from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
@@ -48,6 +50,9 @@ class DraftNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView, DraftNodeMixin)
     serializer_class = DraftNodeSerializer
     view_category = 'draft-nodes'
     view_name = 'draft-node-detail'
+
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NULL]
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):

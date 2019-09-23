@@ -698,7 +698,7 @@ class TestDraftNodeStorageProviderDetail(ApiTestCase):
         self.draft_reg = DraftRegistrationFactory(initiator=self.user)
         self.draft_node = self.draft_reg.branched_from
         self.private_url = '/{}draft_nodes/{}/files/providers/osfstorage/'.format(
-            API_BASE, self.self.draft_node._id)
+            API_BASE, self.draft_node._id)
 
     def test_can_view_if_contributor(self):
         res = self.app.get(self.private_url, auth=self.user.auth)

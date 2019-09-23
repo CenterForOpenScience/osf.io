@@ -538,7 +538,7 @@ class TestRegistrationSubjectFiltering(SubjectsFilterMixin):
 
 class TestNodeRegistrationCreate(DraftRegistrationTestCase):
     """
-    Tests for creating registration through new workflow -
+    Tests for creating registration through old workflow -
     POST NodeRegistrationList
     """
 
@@ -673,7 +673,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
         assert res.json['errors'][0]['detail'] == 'The parents of all child nodes being registered must be registered.'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_old_workflow_node_editable_metadata_copied_to_draft_before_registration(
+    def test_old_workflow_node_editable_metadata_copied(
             self, mock_enqueue, app, user, url_registrations, payload, project_public, draft_registration):
         # New workflow allows you to edit fields on draft registration, but old workflow does not.
         project_public.title = 'Recently updated title'
@@ -1260,6 +1260,21 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
     def test_invalid_registration_choice(self):
         # Overrides TestNodeRegistrationCreate - this isn't a field used here
         pass
+
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_old_workflow_node_editable_metadata_copied(
+            self, mock_enqueue, app, user, url_registrations, payload, project_public, draft_registration):
+        # Overrides TestNodeRegistrationCreate - new workflow (POST to /v2/registrations/) does
+        # not copy fields
+
+        # New workflow allows you to edit fields on draft registration, but old workflow does not.
+        project_public.title = 'Recently updated title'
+        project_public.save()
+        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 201
+        # Draft Registration fields trump nodes fields in new workflow.  Project's title
+        # is not transferred to the reg, the draft's is.
+        assert res.json['data']['attributes']['title'] != 'Recently updated title'
 
 
 @pytest.mark.django_db
