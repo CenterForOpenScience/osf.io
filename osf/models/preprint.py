@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import functools
-import urlparse
+from future.moves.urllib.parse import urljoin
 import logging
 import re
 
@@ -338,7 +338,7 @@ class Preprint(
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(
+        return urljoin(
             self.provider.domain if self.provider.domain_redirect_enabled else settings.DOMAIN,
             self.url,
         )

@@ -1,6 +1,6 @@
 import mock
 import pytest
-import urllib
+from future.moves.urllib.parse import quote
 from django.utils import timezone
 from django.core.exceptions import MultipleObjectsReturned
 
@@ -312,22 +312,22 @@ class TestResolveGuid(OsfTestCase):
         res = self.app.get(pp.url + 'download?format=asdf')
         assert res.status_code == 302
         assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
-        assert '{}/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(urllib.quote(WATERBUTLER_URL), pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(quote(WATERBUTLER_URL), pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
         res = self.app.get(pp.url + 'download/?format=asdf')
         assert res.status_code == 302
         assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
-        assert '{}/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(urllib.quote(WATERBUTLER_URL), pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(quote(WATERBUTLER_URL), pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
         res = self.app.get('/{}/download?format=asdf'.format(pp.primary_file.get_guid(create=True)._id))
         assert res.status_code == 302
         assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
-        assert '{}/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(urllib.quote(WATERBUTLER_URL), pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(quote(WATERBUTLER_URL), pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
         res = self.app.get('/{}/download/?format=asdf'.format(pp.primary_file.get_guid(create=True)._id))
         assert res.status_code == 302
         assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
-        assert '{}/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(urllib.quote(WATERBUTLER_URL), pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(quote(WATERBUTLER_URL), pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
         pp.primary_file.create_version(
             creator=pp.creator,
@@ -339,7 +339,7 @@ class TestResolveGuid(OsfTestCase):
         res = self.app.get(pp.url + 'download/?format=asdf')
         assert res.status_code == 302
         assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
-        assert '{}/v1/resources/{}/providers/{}{}%3F'.format(urllib.quote(WATERBUTLER_URL), pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3F'.format(quote(WATERBUTLER_URL), pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
         quarams = res.location.split('%3F')[1].split('%26')
         assert 'action%3Ddownload' in quarams
         assert 'version%3D2' in quarams
@@ -348,7 +348,7 @@ class TestResolveGuid(OsfTestCase):
         res = self.app.get(pp.url + 'download/?format=asdf&version=1')
         assert res.status_code == 302
         assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
-        assert '{}/v1/resources/{}/providers/{}{}%3F'.format(urllib.quote(WATERBUTLER_URL), pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3F'.format(quote(WATERBUTLER_URL), pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
         quarams = res.location.split('%3F')[1].split('%26')
         assert 'action%3Ddownload' in quarams
         assert 'version%3D1' in quarams
@@ -359,7 +359,7 @@ class TestResolveGuid(OsfTestCase):
         assert res.status_code == 302
         assert res.status_code == 302
         assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
-        assert '{}/v1/resources/{}/providers/{}{}%3F'.format(urllib.quote(WATERBUTLER_URL), unpub_pp._id, unpub_pp.primary_file.provider, unpub_pp.primary_file.path) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3F'.format(quote(WATERBUTLER_URL), unpub_pp._id, unpub_pp.primary_file.provider, unpub_pp.primary_file.path) in res.location
         quarams = res.location.split('%3F')[1].split('%26')
         assert 'action%3Ddownload' in quarams
         assert 'version%3D1' in quarams

@@ -2,7 +2,7 @@
 
 import logging
 import re
-import urlparse
+from future.moves.urllib.parse import urljoin
 
 from django.utils.http import urlencode
 from flask import request, url_for
@@ -62,7 +62,7 @@ def api_url_for(view_name, _absolute=False, _xml=False, _internal=False, *args, 
         # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
         # behavior in an unknown way (currently breaks tests). /sloria /jspies
         domain = website_settings.INTERNAL_DOMAIN if _internal else website_settings.DOMAIN
-        return urlparse.urljoin(domain, url)
+        return urljoin(domain, url)
     return url
 
 # Move somewhere
@@ -84,7 +84,7 @@ def api_v2_url(
     """
     params = params or {}  # Optional params dict for special-character param names, eg filter[fullname]
 
-    x = urlparse.urljoin(base_route, urlparse.urljoin(base_prefix, path_str.lstrip('/')))
+    x = urljoin(base_route, urljoin(base_prefix, path_str.lstrip('/')))
 
     if params or kwargs:
         x = '{}?{}'.format(x, urlencode(dict(params, **kwargs)))
@@ -106,7 +106,7 @@ def web_url_for(view_name, _absolute=False, _internal=False, _guid=False, *args,
         # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
         # behavior in an unknown way (currently breaks tests). /sloria /jspies
         domain = website_settings.INTERNAL_DOMAIN if _internal else website_settings.DOMAIN
-        return urlparse.urljoin(domain, url)
+        return urljoin(domain, url)
     return url
 
 

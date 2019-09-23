@@ -1,8 +1,7 @@
 import datetime as dt
 import logging
 import re
-import urllib
-import urlparse
+from future.moves.urllib.parse import urljoin, urlencode
 import uuid
 from copy import deepcopy
 from os.path import splitext
@@ -381,6 +380,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # whether the user has requested to deactivate their account
     requested_deactivation = models.BooleanField(default=False)
 
+    # whether the user has who requested deactivation has been contacted about their pending request. This is reset when
+    # requests are canceled
+    contacted_deactivation = models.BooleanField(default=False)
+
     affiliated_institutions = models.ManyToManyField('Institution', blank=True)
 
     notifications_configured = DateTimeAwareJSONField(default=dict, blank=True)
@@ -409,7 +412,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(website_settings.DOMAIN, self.url)
+        return urljoin(website_settings.DOMAIN, self.url)
 
     @property
     def absolute_api_v2_url(self):
@@ -1290,7 +1293,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         base = website_settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email, force=force, renew=renew)
         external = 'external/' if external_id_provider else ''
-        destination = '?{}'.format(urllib.urlencode({'destination': destination})) if destination else ''
+        destination = '?{}'.format(urlencode({'destination': destination})) if destination else ''
         return '{0}confirm/{1}{2}/{3}/{4}'.format(base, external, self._primary_key, token, destination)
 
     def register(self, username, password=None, accepted_terms_of_service=None):
@@ -1815,6 +1818,26 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.external_accounts.clear()
         self.external_identity = {}
         self.deleted = timezone.now()
+
+    @property
+    def has_resources(self):
+        """
+        This is meant to determine if a user has any resources, nodes, preprints etc that might impede their deactivation.
+        If a user only has no resources or only deleted resources this will return false and they can safely be deactivated
+        otherwise they must delete or transfer their outstanding resources.
+
+        :return bool: does the user have any active node, preprints, groups, quickfiles etc?
+        """
+        from osf.models import Preprint
+
+        # TODO: Update once quickfolders in merged
+
+        nodes = self.nodes.exclude(type='osf.quickfilesnode').exclude(is_deleted=True).exists()
+        quickfiles = self.nodes.get(type='osf.quickfilesnode').files.exists()
+        groups = self.osf_groups.exists()
+        preprints = Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists()
+
+        return groups or nodes or quickfiles or preprints
 
     class Meta:
         # custom permissions for use in the OSF Admin App

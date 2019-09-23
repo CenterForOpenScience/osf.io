@@ -1,5 +1,5 @@
 import hashlib
-import urllib
+from future.moves.urllib.parse import urlencode
 
 # Adapted from https://github.com/zzzsochi/Flask-Gravatar/blob/master/flaskext/gravatar.py
 def gravatar(user, use_ssl=False, d=None, r=None, size=None):
@@ -23,7 +23,7 @@ def gravatar(user, use_ssl=False, d=None, r=None, size=None):
         params.append(('s', size))
     if r:
         params.append(('r', r))
-    url = base_url + hash_code + '?' + urllib.urlencode(params)
+    url = base_url + hash_code + '?' + urlencode(params)
 
     return url
 

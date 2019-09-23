@@ -2,7 +2,7 @@
 
 import os
 import datetime
-import httplib as http
+from rest_framework import status as http_status
 import time
 import functools
 
@@ -181,7 +181,7 @@ class TestAddonAuth(OsfTestCase):
 
         # Add a new version, make sure that does not have a record
         version = FileVersionFactory()
-        test_file.versions.add(version)
+        test_file.add_version(version)
         test_file.save()
 
         versions = test_file.versions.order_by('created')
@@ -579,19 +579,15 @@ class TestCheckPreregAuth(OsfTestCase):
     def test_has_permission_download_not_prereg_challenge_admin(self):
         new_user = AuthUserFactory()
         with assert_raises(HTTPError) as exc_info:
-            views.check_access(
-                self.draft_registration.branched_from,
-                Auth(user=new_user), 'download', None,
-            )
-            assert_equal(exc_info.exception.code, http.FORBIDDEN)
+            views.check_access(self.draft_registration.branched_from,
+                 Auth(user=new_user), 'download', None)
+            assert_equal(exc_info.exception.code, http_status.HTTP_403_FORBIDDEN)
 
     def test_has_permission_download_prereg_challenge_admin_not_draft(self):
         with assert_raises(HTTPError) as exc_info:
-            views.check_access(
-                self.node,
-                Auth(user=self.prereg_challenge_admin_user), 'download', None,
-            )
-            assert_equal(exc_info.exception.code, http.FORBIDDEN)
+            views.check_access(self.node,
+                 Auth(user=self.prereg_challenge_admin_user), 'download', None)
+            assert_equal(exc_info.exception.code, http_status.HTTP_403_FORBIDDEN)
 
     def test_has_permission_write_prereg_challenge_admin(self):
         with assert_raises(HTTPError) as exc_info:
@@ -774,7 +770,7 @@ class TestAddonFileViews(OsfTestCase):
             materialized_path='/test/Test',
         )
         ret.save()
-        ret.versions.add(version)
+        ret.add_version(version)
         return ret
 
     def get_second_test_file(self):
@@ -787,7 +783,7 @@ class TestAddonFileViews(OsfTestCase):
             materialized_path='/test/Test2',
         )
         ret.save()
-        ret.versions.add(version)
+        ret.add_version(version)
         return ret
 
     def get_uppercased_ext_test_file(self):
@@ -800,7 +796,7 @@ class TestAddonFileViews(OsfTestCase):
             materialized_path='/test/Test2',
         )
         ret.save()
-        ret.versions.add(version)
+        ret.add_version(version)
         return ret
 
     def get_ext_test_file(self):
@@ -813,7 +809,7 @@ class TestAddonFileViews(OsfTestCase):
             materialized_path='/test/Test2',
         )
         ret.save()
-        ret.versions.add(version)
+        ret.add_version(version)
         return ret
 
     def get_mako_return(self):

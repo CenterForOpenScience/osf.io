@@ -1,5 +1,5 @@
-import httplib as http
-import urlparse
+from rest_framework import status as http_status
+from future.moves.urllib.parse import urlparse, urljoin, parse_qs
 
 import mock
 import responses
@@ -27,11 +27,11 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
             service_name=self.ADDON_SHORT_NAME,
         )
         res = self.app.get(url, auth=self.user.auth)
-        assert res.status_code == http.FOUND
-        redirect_url = urlparse.urlparse(res.location)
-        redirect_params = urlparse.parse_qs(redirect_url.query)
-        provider_url = urlparse.urlparse(self.Provider().auth_url)
-        provider_params = urlparse.parse_qs(provider_url.query)
+        assert res.status_code == http_status.HTTP_302_FOUND
+        redirect_url = urlparse(res.location)
+        redirect_params = parse_qs(redirect_url.query)
+        provider_url = urlparse(self.Provider().auth_url)
+        provider_params = parse_qs(provider_url.query)
         for param, value in redirect_params.items():
             if param == 'state':  # state may change between calls
                 continue
@@ -45,7 +45,7 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         with mock.patch.object(self.Provider, 'auth_callback') as mock_callback:
             mock_callback.return_value = True
             res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         name, args, kwargs = mock_callback.mock_calls[0]
         assert_equal(kwargs['user']._id, self.user._id)
 
@@ -55,7 +55,7 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
             external_account_id=self.external_account._id,
         )
         res = self.app.delete(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         self.user.reload()
         for account in self.user.external_accounts.all():
             assert_not_equal(account._id, self.external_account._id)
@@ -68,7 +68,7 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
             external_account_id=self.external_account._id,
         )
         res = self.app.delete(url, auth=other_user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
 class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
 
@@ -93,12 +93,10 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         node_settings = node.get_or_add_addon(self.ADDON_SHORT_NAME, auth=Auth(self.user))
         node.save()
         url = node.api_url_for('{0}_import_auth'.format(self.ADDON_SHORT_NAME))
-        res = self.app.put_json(
-            url, {
-                'external_account_id': ea._id,
-            }, auth=self.user.auth,
-        )
-        assert_equal(res.status_code, http.OK)
+        res = self.app.put_json(url, {
+            'external_account_id': ea._id
+        }, auth=self.user.auth)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         assert_in('result', res.json)
         node_settings.reload()
         assert_equal(node_settings.external_account._id, ea._id)
@@ -114,12 +112,10 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         node.add_addon(self.ADDON_SHORT_NAME, auth=self.auth)
         node.save()
         url = node.api_url_for('{0}_import_auth'.format(self.ADDON_SHORT_NAME))
-        res = self.app.put_json(
-            url, {
-                'external_account_id': ea._id,
-            }, auth=self.user.auth, expect_errors=True,
-        )
-        assert_equal(res.status_code, http.FORBIDDEN)
+        res = self.app.put_json(url, {
+            'external_account_id': ea._id
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     def test_import_auth_cant_write_node(self):
         ea = self.ExternalAccountFactory()
@@ -133,22 +129,18 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         node.add_addon(self.ADDON_SHORT_NAME, auth=self.auth)
         node.save()
         url = node.api_url_for('{0}_import_auth'.format(self.ADDON_SHORT_NAME))
-        res = self.app.put_json(
-            url, {
-                'external_account_id': ea._id,
-            }, auth=user.auth, expect_errors=True,
-        )
-        assert_equal(res.status_code, http.FORBIDDEN)
+        res = self.app.put_json(url, {
+            'external_account_id': ea._id
+        }, auth=user.auth, expect_errors=True)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     def test_set_config(self):
         self.node_settings.set_auth(self.external_account, self.user)
         url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
-        res = self.app.put_json(
-            url, {
-                'selected': self.folder,
-            }, auth=self.user.auth,
-        )
-        assert_equal(res.status_code, http.OK)
+        res = self.app.put_json(url, {
+            'selected': self.folder
+        }, auth=self.user.auth)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         self.project.reload()
         assert_equal(
             self.project.logs.latest().action,
@@ -160,7 +152,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
         with mock.patch.object(type(self.Serializer()), 'credentials_are_valid', return_value=True):
             res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         assert_in('result', res.json)
         serialized = self.Serializer().serialize_settings(
             self.node_settings,
@@ -174,17 +166,17 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         user = AuthUserFactory()
         self.project.add_contributor(user, permissions=permissions.READ, auth=self.auth, save=True)
         res = self.app.get(url, auth=user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     def test_get_config_not_logged_in(self):
         url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
         res = self.app.get(url, auth=None, expect_errors=True)
-        assert_equal(res.status_code, http.FOUND)
+        assert_equal(res.status_code, http_status.HTTP_302_FOUND)
 
     def test_account_list_single(self):
         url = api_url_for('{0}_account_list'.format(self.ADDON_SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         assert_in('accounts', res.json)
         assert_equal(len(res.json['accounts']), 1)
 
@@ -195,14 +187,14 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
 
         url = api_url_for('{0}_account_list'.format(self.ADDON_SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         assert_in('accounts', res.json)
         assert_equal(len(res.json['accounts']), 2)
 
     def test_account_list_not_authorized(self):
         url = api_url_for('{0}_account_list'.format(self.ADDON_SHORT_NAME))
         res = self.app.get(url, auth=None, expect_errors=True)
-        assert_equal(res.status_code, http.FOUND)
+        assert_equal(res.status_code, http_status.HTTP_302_FOUND)
 
     def test_folder_list(self):
         # Note: if your addon's folder_list view makes API calls
@@ -212,13 +204,13 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         self.node_settings.save()
         url = self.project.api_url_for('{0}_folder_list'.format(self.ADDON_SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         # TODO test result serialization?
 
     def test_deauthorize_node(self):
         url = self.project.api_url_for('{0}_deauthorize_node'.format(self.ADDON_SHORT_NAME))
         res = self.app.delete(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         self.node_settings.reload()
         assert_is_none(self.node_settings.external_account)
         assert_false(self.node_settings.has_auth)
@@ -262,13 +254,11 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
         with mock.patch.object(self.client, '_folder_metadata') as mock_metadata:
             mock_metadata.return_value = self.folder
             url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
-            res = self.app.put_json(
-                url, {
-                    'external_list_id': self.folder.json['id'],
-                    'external_list_name': self.folder.name,
-                }, auth=self.user.auth,
-            )
-            assert_equal(res.status_code, http.OK)
+            res = self.app.put_json(url, {
+                'external_list_id': self.folder.json['id'],
+                'external_list_name': self.folder.name,
+            }, auth=self.user.auth)
+            assert_equal(res.status_code, http_status.HTTP_200_OK)
             self.project.reload()
             assert_equal(
                 self.project.logs.latest().action,
@@ -283,7 +273,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
             self.node_settings.save()
             url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
             res = self.app.get(url, auth=self.user.auth)
-            assert_equal(res.status_code, http.OK)
+            assert_equal(res.status_code, http_status.HTTP_200_OK)
             assert_in('result', res.json)
             result = res.json['result']
             serialized = self.Serializer(
@@ -299,7 +289,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
             self.node_settings.save()
             url = self.project.api_url_for('{0}_citation_list'.format(self.ADDON_SHORT_NAME))
             res = self.app.get(url, auth=self.user.auth)
-            assert_equal(res.status_code, http.OK)
+            assert_equal(res.status_code, http_status.HTTP_200_OK)
 
     def test_check_credentials(self):
         with mock.patch.object(self.client, 'client', new_callable=mock.PropertyMock) as mock_client:
@@ -424,4 +414,4 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
             auth=non_authorizing_user.auth,
             expect_errors=True,
         )
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 
 import mock
 import datetime
@@ -71,14 +71,12 @@ class TestGitLabConfigViews(GitLabAddonTestCase, OAuthAddonConfigViewsTestCaseMi
         # GH selects repos, not folders, so this needs to be overriden
         mock_repo.return_value = 'repo_name'
         url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
-        res = self.app.post_json(
-            url, {
-                'gitlab_user': 'octocat',
-                'gitlab_repo': 'repo_name',
-                'gitlab_repo_id': '123',
-            }, auth=self.user.auth,
-        )
-        assert_equal(res.status_code, http.OK)
+        res = self.app.post_json(url, {
+            'gitlab_user': 'octocat',
+            'gitlab_repo': 'repo_name',
+            'gitlab_repo_id': '123',
+        }, auth=self.user.auth)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         self.project.reload()
         assert_equal(
             self.project.logs.latest().action,
