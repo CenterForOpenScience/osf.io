@@ -54,7 +54,7 @@ class DraftNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView, DraftNodeMixin)
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    # overrides RetrieveUpdateDestroyAPIView
+    # overrides RetrieveAPIView
     def get_object(self):
         return self.get_node()
 

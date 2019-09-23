@@ -1,5 +1,6 @@
 {
     "project_created" : "A user created a project",
+    "project_created_from_draft_reg": "A project was created as part of the registration process",
     "project_registered" : "A user registered a project",
     "project_registered_no_user": "Project registered",
     "prereg_registration_initiated": "A user submitted for review to the Preregistration Challenge a registration of a project",

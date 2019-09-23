@@ -7,7 +7,7 @@ from api_tests.nodes.views.test_node_draft_registration_list import (
 )
 from api.base.settings.defaults import API_BASE
 
-from osf.models import DraftNode, DraftRegistration, NodeLicense
+from osf.models import DraftRegistration, NodeLicense
 from osf_tests.factories import (
     RegistrationFactory,
     CollectionFactory,
@@ -189,16 +189,10 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
         data = res.json['data']
         assert metaschema_open_ended._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['attributes']['registration_metadata'] == {}
-        # DraftNodes can't be returned from NodeDetail endpoint
-        assert data['embeds']['branched_from']['errors'][0]['detail'] == 'Not found.'
+        assert data['embeds']['branched_from']['data']['id'] == DraftRegistration.objects.get(_id=data['id']).branched_from._id
         assert data['embeds']['initiator']['data']['id'] == user._id
 
-        draft_node_id = data['relationships']['branched_from']['data']['id']
-        draft_node = DraftNode.load(draft_node_id)
-        draft_reg_id = data['id']
-
-        draft = DraftRegistration.load(draft_reg_id)
-        assert draft.branched_from == draft_node
+        draft = DraftRegistration.load(data['id'])
         assert draft.creator == user
         assert draft.has_permission(user, ADMIN) is True
 
