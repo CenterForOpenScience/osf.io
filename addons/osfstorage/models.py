@@ -313,7 +313,8 @@ class OsfStorageFile(OsfStorageFileNode, File):
         version._find_matching_archive(save=False)
 
         version.save()
-        self.versions.add(version)
+        # Adds version to the list of file versions - using custom through table
+        self.add_version(version)
         self.save()
 
         return version

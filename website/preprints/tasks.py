@@ -1,6 +1,6 @@
 from django.apps import apps
 import logging
-import urlparse
+from future.moves.urllib.parse import urljoin
 
 import random
 import requests
@@ -149,7 +149,7 @@ def format_preprint(preprint, share_type, old_subjects=None):
     })
     to_visit = [
         preprint_graph,
-        GraphNode('workidentifier', creative_work=preprint_graph, uri=urlparse.urljoin(settings.DOMAIN, preprint._id + '/'))
+        GraphNode('workidentifier', creative_work=preprint_graph, uri=urljoin(settings.DOMAIN, preprint._id + '/'))
     ]
 
     if preprint.get_identifier('doi'):

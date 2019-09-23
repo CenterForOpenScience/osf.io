@@ -1,4 +1,4 @@
-import httplib as http
+from rest_framework import status as http_status
 import logging
 import os
 
@@ -90,9 +90,9 @@ class Provider(ExternalProvider):
             # Either way, return and display info about how to properly connect.
             return
         except (oauth.ProviderException, oauth.CsrfException):
-            raise HTTPError(http.FORBIDDEN)
+            raise HTTPError(http_status.HTTP_403_FORBIDDEN)
         except oauth.BadRequestException:
-            raise HTTPError(http.BAD_REQUEST)
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
         self.client = Dropbox(access_token)
 
@@ -187,12 +187,12 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 list_folder = client.files_list_folder_continue(list_folder.cursor)
                 contents += [x for x in list_folder.entries]
         except ApiError as error:
-            raise HTTPError(http.BAD_REQUEST, data={
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': error.user_message_text,
                 'message_long': error.user_message_text,
             })
         except DropboxException:
-            raise HTTPError(http.BAD_REQUEST)
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
         return [
             {
