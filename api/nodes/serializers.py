@@ -1470,7 +1470,7 @@ class DraftRegistrationSerializerLegacy(JSONAPISerializer):
     )
 
     branched_from = RelationshipField(
-        related_view='nodes:node-detail',
+        related_view=lambda n: 'draft-nodes:draft-node-detail' if getattr(n, 'type', False) == 'osf.draftnode' else 'nodes:node-detail',
         related_view_kwargs={'node_id': '<branched_from._id>'},
     )
 

@@ -539,6 +539,20 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             return validated_data.get('included_node_ids', [])
         return validated_data.get('children', [])
 
+    def copy_editable_fields_for_old_workflow(self, draft, auth):
+        """
+        Copies editable metadata information to the draft for old workflow only.
+
+        Because registration process has been modified to have draft registration's
+        fields trump node fields, if you're still using the old workflow, you
+        want the node's items to persist instead.
+        """
+        from api.nodes.views import NodeRegistrationsList
+
+        if isinstance(self.context['view'], NodeRegistrationsList):
+            draft.copy_editable_fields(draft.branched_from, auth=auth)
+        return
+
     def create(self, validated_data):
         auth = get_user_auth(self.context['request'])
         draft = validated_data.pop('draft', None)
@@ -569,9 +583,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             # TODO: Raise an error once our JSON schemas are updated
 
         try:
-            # To preserve old workflow, copy original node's editable metadata to the draft
-            # before registration, because the draft registration's fields trump node fields
-            draft.copy_editable_fields(draft.branched_from, auth=auth)
+            self.copy_editable_fields_for_old_workflow(draft, auth)
             registration = draft.register(auth, save=True, child_ids=children)
         except NodeStateError as err:
             raise exceptions.ValidationError(err)

@@ -7,7 +7,7 @@ import pytz
 import jsonschema
 
 from framework.auth.core import Auth
-from osf.models import BaseFileNode, OSFUser, Comment, Preprint, AbstractNode
+from osf.models import BaseFileNode, OSFUser, Comment, Preprint, AbstractNode, DraftNode
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
 from website import settings
@@ -360,6 +360,8 @@ class FileSerializer(BaseFileSerializer):
         target_type = 'node'
         if isinstance(obj, Preprint):
             target_type = 'preprint'
+        elif isinstance(obj, DraftNode):
+            target_type = 'draft-node'
         return target_type
 
 

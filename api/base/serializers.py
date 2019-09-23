@@ -935,6 +935,10 @@ class TargetField(ser.Field):
             'view': 'preprints:preprint-detail',
             'lookup_kwarg': 'preprint_id',
         },
+        'draft-node': {
+            'view': 'draft-nodes:node-detail',
+            'lookup_kwarg': 'node_id',
+        },
         'comment': {
             'view': 'comments:comment-detail',
             'lookup_kwarg': 'comment_id',

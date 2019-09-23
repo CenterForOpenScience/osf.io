@@ -500,11 +500,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def absolute_api_v2_url(self):
         if self.is_registration:
             path = '/registrations/{}/'.format(self._id)
-            return api_v2_url(path)
-        if self.is_collection:
+        elif self.is_collection:
             path = '/collections/{}/'.format(self._id)
-            return api_v2_url(path)
-        path = '/nodes/{}/'.format(self._id)
+        elif self.type == 'osf.draftnode':
+            path = '/draft_nodes/{}/'.format(self._id)
+        else:
+            path = '/nodes/{}/'.format(self._id)
         return api_v2_url(path)
 
     @property
