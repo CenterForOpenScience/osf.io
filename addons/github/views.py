@@ -1,7 +1,7 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
 from dateutil.parser import parse as dateparse
-import httplib as http
+from rest_framework import status as http_status
 import logging
 
 from flask import request, make_response
@@ -74,14 +74,14 @@ def github_set_config(auth, **kwargs):
         if not user_settings:
             user_settings = node_settings.user_settings
     except AttributeError:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     # Parse request
     github_user_name = request.json.get('github_user', '')
     github_repo_name = request.json.get('github_repo', '')
 
     if not github_user_name or not github_repo_name:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     # Verify that repo exists and that user can access
     connection = GitHubClient(external_account=node_settings.external_account)
@@ -96,7 +96,7 @@ def github_set_config(auth, **kwargs):
             message = (
                 'Cannot access repo.'
             )
-        return {'message': message}, http.BAD_REQUEST
+        return {'message': message}, http_status.HTTP_400_BAD_REQUEST
 
     changed = (
         github_user_name != node_settings.user or
@@ -191,7 +191,7 @@ def github_folder_list(node_addon, **kwargs):
 def github_create_repo(**kwargs):
     repo_name = request.json.get('name')
     if not repo_name:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     node_settings = kwargs['node_addon']
     connection = GitHubClient(external_account=node_settings.external_account)
@@ -200,7 +200,7 @@ def github_create_repo(**kwargs):
         repo = connection.create_repo(repo_name, auto_init=True)
     except GitHubError:
         # TODO: Check status code
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     return {
         'user': repo.owner.login,

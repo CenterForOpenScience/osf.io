@@ -338,7 +338,7 @@ class TestNodeWikiCreate(WikiCRUDTestCase):
         assert res.json['data']['attributes']['name'] == page_name
 
     def test_create_public_wiki_page_with_content(self, app, user_write_contributor, url_node_public, project_public):
-        page_name = fake.word()
+        page_name = 'using random variables in tests can sometimes expose Testmon problems!'
         payload = create_wiki_payload(page_name)
         payload['data']['attributes']['content'] = 'my first wiki page'
         res = app.post_json_api(url_node_public, payload, auth=user_write_contributor.auth)

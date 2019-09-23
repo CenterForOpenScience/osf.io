@@ -1,5 +1,5 @@
 import unittest
-from urlparse import parse_qs, urlparse
+from future.moves.urllib.parse import urlparse, parse_qs
 
 import pytest
 from addons.twofactor.tests.utils import _valid_code

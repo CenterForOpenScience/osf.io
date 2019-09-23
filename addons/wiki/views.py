@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import httplib as http
+from rest_framework import status as http_status
 import logging
 
 from flask import request
@@ -45,37 +45,37 @@ logger = logging.getLogger(__name__)
 
 
 WIKI_NAME_EMPTY_ERROR = HTTPError(
-    http.BAD_REQUEST, data=dict(
+    http_status.HTTP_400_BAD_REQUEST, data=dict(
         message_short='Invalid request',
         message_long='The wiki page name cannot be empty.',
     ),
 )
 WIKI_NAME_MAXIMUM_LENGTH_ERROR = HTTPError(
-    http.BAD_REQUEST, data=dict(
+    http_status.HTTP_400_BAD_REQUEST, data=dict(
         message_short='Invalid request',
         message_long='The wiki page name cannot be more than 100 characters.',
     ),
 )
 WIKI_PAGE_CANNOT_RENAME_ERROR = HTTPError(
-    http.BAD_REQUEST, data=dict(
+    http_status.HTTP_400_BAD_REQUEST, data=dict(
         message_short='Invalid request',
         message_long='The wiki page cannot be renamed.',
     ),
 )
 WIKI_PAGE_CONFLICT_ERROR = HTTPError(
-    http.CONFLICT, data=dict(
+    http_status.HTTP_409_CONFLICT, data=dict(
         message_short='Page conflict',
         message_long='A wiki page with that name already exists.',
     ),
 )
 WIKI_PAGE_NOT_FOUND_ERROR = HTTPError(
-    http.NOT_FOUND, data=dict(
+    http_status.HTTP_404_NOT_FOUND, data=dict(
         message_short='Not found',
         message_long='A wiki page could not be found.',
     ),
 )
 WIKI_INVALID_VERSION_ERROR = HTTPError(
-    http.BAD_REQUEST, data=dict(
+    http_status.HTTP_400_BAD_REQUEST, data=dict(
         message_short='Invalid request',
         message_long='The requested version of this wiki page does not exist.',
     ),
@@ -175,7 +175,7 @@ def project_wiki_delete(auth, wname, **kwargs):
     sharejs_uuid = wiki_utils.get_sharejs_uuid(node, wiki_name)
 
     if not wiki_page:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     wiki_page.delete(auth)
     wiki_utils.broadcast_to_sharejs('delete', sharejs_uuid, node)
@@ -253,10 +253,10 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
             raise WIKI_PAGE_NOT_FOUND_ERROR
         if 'edit' in request.args:
             if wiki_settings.is_publicly_editable:
-                raise HTTPError(http.UNAUTHORIZED)
+                raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
             if node.can_view(auth):
                 return redirect(node.web_url_for('project_wiki_view', wname=wname, _guid=True))
-            raise HTTPError(http.FORBIDDEN)
+            raise HTTPError(http_status.HTTP_403_FORBIDDEN)
         sharejs_uuid = None
 
     # Opens 'edit' panel when home wiki is empty
@@ -327,7 +327,7 @@ def project_wiki_edit_post(auth, wname, **kwargs):
         # Create a wiki
         WikiPage.objects.create_for_node(node, wiki_name, form_wiki_content, auth)
         ret = {'status': 'success'}
-    return ret, http.FOUND, None, redirect_url
+    return ret, http_status.HTTP_302_FOUND, None, redirect_url
 
 @must_be_valid_project  # injects node or project
 @must_have_permission(ADMIN)
@@ -339,7 +339,7 @@ def edit_wiki_settings(node, auth, **kwargs):
 
     if not wiki_settings:
         raise HTTPError(
-            http.BAD_REQUEST, data=dict(
+            http_status.HTTP_400_BAD_REQUEST, data=dict(
                 message_short='Invalid request',
                 message_long='Cannot change wiki settings without a wiki',
             ),
@@ -351,7 +351,7 @@ def edit_wiki_settings(node, auth, **kwargs):
         permissions = False
     else:
         raise HTTPError(
-            http.BAD_REQUEST, data=dict(
+            http_status.HTTP_400_BAD_REQUEST, data=dict(
                 message_short='Invalid request',
                 message_long='Permissions flag used is incorrect.',
             ),
@@ -361,7 +361,7 @@ def edit_wiki_settings(node, auth, **kwargs):
         wiki_settings.set_editing(permissions, auth, log=True)
     except NodeStateError as e:
         raise HTTPError(
-            http.BAD_REQUEST, data=dict(
+            http_status.HTTP_400_BAD_REQUEST, data=dict(
                 message_short="Can't change privacy",
                 message_long=str(e),
             ),
@@ -437,7 +437,7 @@ def project_wiki_rename(auth, wname, **kwargs):
         raise WIKI_NAME_EMPTY_ERROR
     except NameInvalidError as error:
         raise HTTPError(
-            http.BAD_REQUEST, data=dict(
+            http_status.HTTP_400_BAD_REQUEST, data=dict(
                 message_short='Invalid name',
                 message_long=error.args[0],
             ),
@@ -452,7 +452,7 @@ def project_wiki_rename(auth, wname, **kwargs):
         raise WIKI_PAGE_NOT_FOUND_ERROR
     except ValidationError as err:
         raise HTTPError(
-            http.BAD_REQUEST, data=dict(
+            http_status.HTTP_400_BAD_REQUEST, data=dict(
                 message_short='Invalid request',
                 message_long=err.messages[0],
             ),
@@ -472,7 +472,7 @@ def project_wiki_validate_name(wname, auth, node, **kwargs):
 
     if wiki or wiki_name.lower() == 'home':
         raise HTTPError(
-            http.CONFLICT, data=dict(
+            http_status.HTTP_409_CONFLICT, data=dict(
                 message_short='Wiki page name conflict.',
                 message_long='A wiki page with that name already exists.',
             ),

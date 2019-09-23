@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 
 import mock
 import datetime
@@ -70,7 +70,8 @@ class TestBitbucketConfigViews(BitbucketAddonTestCase, OAuthAddonConfigViewsTest
                 'bitbucket_repo': 'repo_name',
             }, auth=self.user.auth,
         )
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
+
         self.project.reload()
         assert_equal(
             self.project.logs.latest().action,

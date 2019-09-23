@@ -5,7 +5,7 @@ import jwt
 import mock
 import furl
 import time
-import urlparse
+from future.moves.urllib.parse import urlparse, urljoin
 import datetime
 from django.utils import timezone
 import pytest
@@ -145,7 +145,7 @@ class TestPreprintProperties:
         assert preprint.url == '/preprints/{}/{}/'.format(preprint.provider._id, preprint._id)
 
     def test_absolute_url(self, preprint):
-        assert preprint.absolute_url == urlparse.urljoin(
+        assert preprint.absolute_url == urljoin(
             preprint.provider.domain if preprint.provider.domain_redirect_enabled else settings.DOMAIN,
             preprint.url
         )
@@ -1736,8 +1736,16 @@ class TestPreprintPermissions(OsfTestCase):
 class TestPreprintProvider(OsfTestCase):
     def setUp(self):
         super(TestPreprintProvider, self).setUp()
+        self.user = AuthUserFactory()
+        self.auth = Auth(user=self.user)
+        self.provider_osf = PreprintProviderFactory(_id='osf')
         self.preprint = PreprintFactory(provider=None, is_published=False)
         self.provider = PreprintProviderFactory(name='WWEArxiv')
+        self.provider_one = PreprintProviderFactory(name='DoughnutArxiv')
+        self.provider_two = PreprintProviderFactory(name='IceCreamArxiv')
+        self.subject_one = SubjectFactory(provider=self.provider_one)
+        self.subject_osf = SubjectFactory(provider=self.provider_osf)
+
 
     def test_add_provider(self):
         assert_not_equal(self.preprint.provider, self.provider)
@@ -1806,6 +1814,41 @@ class TestPreprintProvider(OsfTestCase):
         assert self.provider.has_highlighted_subjects is True
         assert set(self.provider.highlighted_subjects) == set([subj_aaa])
 
+    def test_change_preprint_provider_custom_taxonomies(self):
+        subject_two = SubjectFactory(provider=self.provider_two,
+            bepress_subject=self.subject_one.bepress_subject)
+        preprint = PreprintFactory(subjects=[[self.subject_one._id]], provider=self.provider_one, creator=self.user)
+        subject_problems = preprint.map_subjects_between_providers(self.provider_one, self.provider_two, self.auth)
+        preprint.refresh_from_db()
+        assert subject_problems == []
+        assert subject_two in preprint.subjects.all()
+
+    def test_change_preprint_provider_from_osf(self):
+        subject_two = SubjectFactory(provider=self.provider_one,
+            bepress_subject=self.subject_osf)
+        preprint = PreprintFactory(subjects=[[self.subject_osf._id]], provider=self.provider_osf, creator=self.user)
+        subject_problems = preprint.map_subjects_between_providers(self.provider_osf, self.provider_one, self.auth)
+        preprint.refresh_from_db()
+        assert subject_problems == []
+        assert subject_two in preprint.subjects.all()
+
+    def test_change_preprint_provider_to_osf(self):
+        subject_two = SubjectFactory(provider=self.provider_one,
+            bepress_subject=self.subject_osf)
+        preprint = PreprintFactory(subjects=[[subject_two._id]], provider=self.provider_one, creator=self.user)
+        subject_problems = preprint.map_subjects_between_providers(self.provider_one, self.provider_osf, self.auth)
+        preprint.refresh_from_db()
+        assert subject_problems == []
+        assert self.subject_osf in preprint.subjects.all()
+
+    def test_change_preprint_provider_problem_subject(self):
+        subject_two = SubjectFactory(provider=self.provider_one,
+            bepress_subject=self.subject_osf)
+        preprint = PreprintFactory(subjects=[[subject_two._id]], provider=self.provider_one, creator=self.user)
+        subject_problems = preprint.map_subjects_between_providers(self.provider_one, self.provider_two, self.auth)
+        preprint.refresh_from_db()
+        assert subject_problems == [subject_two.text]
+        assert subject_two in preprint.subjects.all()
 
 class TestPreprintIdentifiers(OsfTestCase):
     def setUp(self):
@@ -1990,7 +2033,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert related_doi['creative_work'] == related_work
 
         workidentifiers = [nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier']
-        assert workidentifiers == [urlparse.urljoin(settings.DOMAIN, self.preprint._id + '/')]
+        assert workidentifiers == [urljoin(settings.DOMAIN, self.preprint._id + '/')]
 
         relation = nodes.pop(nodes.keys()[0])
         assert relation == {'@id': relation['@id'], '@type': 'workrelation', 'related': {'@id': related_work['@id'], '@type': related_work['@type']}, 'subject': {'@id': preprint['@id'], '@type': preprint['@type']}}
@@ -2088,7 +2131,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
         workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
         # URLs should *always* be osf.io/guid/
-        assert workidentifiers == set([urlparse.urljoin(settings.DOMAIN, self.preprint._id) + '/', 'https://doi.org/{}'.format(self.preprint.get_identifier('doi').value)])
+        assert workidentifiers == set([urljoin(settings.DOMAIN, self.preprint._id) + '/', 'https://doi.org/{}'.format(self.preprint.get_identifier('doi').value)])
 
         assert nodes == {}
 
