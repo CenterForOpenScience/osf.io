@@ -94,5 +94,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(populate_fileversion_name, restore_default_through_table)
+        migrations.RunPython(populate_fileversion_name, restore_default_through_table),
     ]

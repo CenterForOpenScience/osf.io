@@ -46,7 +46,7 @@ valid_file_types = [
     'osf.osfstoragefile',
     'osf.bitbucketfile',
     'osf.owncloudfile',
-    FOLDER
+    FOLDER,
 ]
 
 def compare_location_and_region(first_file, second_file):
@@ -123,7 +123,7 @@ def stage_removal(preserved_file, next_file):
     info = {
         'guid_to_repoint': next_file['guids___id'],
         'to_remove': next_file['_id'],
-        'preserving': preserved_file['_id']
+        'preserving': preserved_file['_id'],
     }
     return info
 
@@ -171,8 +171,8 @@ def inspect_duplicates(file_summary):
                 type=file_type,
                 target_object_id=target_id,
                 parent_id=parent_id,
-                _path=path
-            ).order_by('created')
+                _path=path,
+            ).order_by('created'),
         )
 
         preserved_file = files.first()

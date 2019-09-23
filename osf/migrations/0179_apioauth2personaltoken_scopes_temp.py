@@ -27,7 +27,7 @@ old_scope_mapping = {
     'osf.users.all_read': 'osf.users.profile_read',
     'osf.users.all_write': 'osf.users.profile_write',
     'osf.nodes.all_read': 'osf.nodes.full_read',
-    'osf.nodes.all_write': 'osf.nodes.full_write'
+    'osf.nodes.all_write': 'osf.nodes.full_write',
 }
 
 def remove_m2m_scopes(state, schema):
@@ -63,7 +63,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='apioauth2personaltoken',
             name='scopes',
-            field=models.CharField(blank=False, null=True, max_length=300)
+            field=models.CharField(blank=False, null=True, max_length=300),
         ),
 
         migrations.AddField(
@@ -73,6 +73,6 @@ class Migration(migrations.Migration):
         ),
         migrations.RunPython(
             migrate_scopes_from_char_to_m2m,
-            remove_m2m_scopes
-        )
+            remove_m2m_scopes,
+        ),
     ]
