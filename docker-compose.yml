@@ -157,10 +157,12 @@ services:
 
   unoconv:
     image: centerforopenscience/unoconv
+    environment:
+      UNO_PATH: /usr/lib/libreoffice
     command:
       - /bin/bash
       - -c
-      - /opt/libreoffice6.1/program/python -u /usr/local/bin/unoconv --listener --server=0.0.0.0 --port=2002 -vvv &&
+      - /usr/bin/python3.7 /usr/local/bin/unoconv --listener --server=0.0.0.0 --port=2002 -vvv &&
         chmod -R 777 /tmp/mfrlocalcache
     restart: unless-stopped
     ports:
