@@ -39,7 +39,7 @@ class TestEmploymentDetail(UserEmploymentMixin, UserProfileDetailMixin):
 
 
 @pytest.mark.django_db
-class TestUerEmploymentCreate(UserEmploymentMixin, UserProfileCreateMixin):
+class TestUserEmploymentCreate(UserEmploymentMixin, UserProfileCreateMixin):
 
     @pytest.fixture
     def list_url(self, user, profile_type):
