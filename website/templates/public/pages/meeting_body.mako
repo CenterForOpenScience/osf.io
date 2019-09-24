@@ -58,7 +58,7 @@
             Once sent, we will follow-up by sending you the permanent identifier
             that others can use to cite your work; you can also login and make changes,
             such as uploading additional files, to your project at that URL. If you
-            didn't have an GakuNin RDM account, one will be created automatically and a link
+            didn't have a GakuNin RDM account, one will be created automatically and a link
             to set your password will be emailed to you; if you do, we will simply create
             a new project in your account. By creating an account you agree to our
             <a href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419">Terms</a>

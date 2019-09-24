@@ -222,7 +222,7 @@ PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email cha
 # Contributor added confirmation emails
 INVITE_DEFAULT = Mail(
     'invite_default',
-    subject='You have been added as a contributor to an GakuNin RDM project.'
+    subject='You have been added as a contributor to a GakuNin RDM project.'
 )
 INVITE_PREPRINT = lambda template, provider: Mail(
     'invite_preprints_{}'.format(template),
@@ -230,7 +230,7 @@ INVITE_PREPRINT = lambda template, provider: Mail(
 )
 CONTRIBUTOR_ADDED_DEFAULT = Mail(
     'contributor_added_default',
-    subject='You have been added as a contributor to an GakuNin RDM project.'
+    subject='You have been added as a contributor to a GakuNin RDM project.'
 )
 CONTRIBUTOR_ADDED_PREPRINT = lambda template, provider: Mail(
     'contributor_added_preprints_{}'.format(template),
@@ -238,7 +238,7 @@ CONTRIBUTOR_ADDED_PREPRINT = lambda template, provider: Mail(
 )
 CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
     'contributor_added_preprint_node_from_osf',
-    subject='You have been added as a contributor to an GakuNin RDM project.'
+    subject='You have been added as a contributor to a GakuNin RDM project.'
 )
 MODERATOR_ADDED = lambda provider: Mail(
     'moderator_added',
@@ -250,7 +250,7 @@ PREPRINT_CONFIRMATION_DEFAULT = Mail(
 )
 CONTRIBUTOR_ADDED_ACCESS_REQUEST = Mail(
     'contributor_added_access_request',
-    subject='Your access request to an GakuNin RDM project has been approved'
+    subject='Your access request to a GakuNin RDM project has been approved'
 )
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
@@ -434,12 +434,12 @@ REVIEWS_SUBMISSION_CONFIRMATION = Mail(
 
 ACCESS_REQUEST_SUBMITTED = Mail(
     'access_request_submitted',
-    subject='An GakuNin RDM user has requested access to your ${node.project_or_component}'
+    subject='A GakuNin RDM user has requested access to your ${node.project_or_component}'
 )
 
 ACCESS_REQUEST_DENIED = Mail(
     'access_request_rejected',
-    subject='Your access request to an GakuNin RDM project has been declined'
+    subject='Your access request to a GakuNin RDM project has been declined'
 )
 
 CROSSREF_ERROR = Mail(

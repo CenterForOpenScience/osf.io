@@ -5,7 +5,7 @@
   <td style="border-collapse: collapse;">
     Hello ${fullname},<br>
     <br>
-    We received your request to claim an GRDM account and become a contributor for "${node.title}". <br>
+    We received your request to claim a GRDM account and become a contributor for "${node.title}". <br>
     <br>
     To confirm your identity, ${referrer.fullname} has been sent an email to forward to you with your confirmation link.<br>
     <br>
