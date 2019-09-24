@@ -26,18 +26,14 @@ def validate_user_json(value, json_schema):
 
 
 def validate_dates(history):
-    now = datetime.now()
     if history.get('start_date'):
         start_date = datetime.strptime(history['start_date'], '%Y-%m-%d')
-    if not history.get('ongoing', False):
-        if history.get('end_date'):
-            end_date = datetime.strptime(history['end_date'], '%Y-%m-%d')
 
-        if history.get('start_date') and history.get('end_date'):
-            if (end_date - start_date).days <= 0:
-                raise InvalidModelValueError(detail='End date must be greater than or equal to the start date.')
-    else:
-        if history.get('end_date'):
-            end_date = datetime.strptime(history['end_date'], '%Y-%m-%d')
-            if end_date < now:
-                raise InvalidModelValueError(detail='Ongoing cannot be true if end date is in the past')
+        if not history.get('ongoing', False):
+            if history.get('end_date'):
+                end_date = datetime.strptime(history['end_date'], '%Y-%m-%d')
+                if (end_date - start_date).days < 0:
+                    raise InvalidModelValueError(detail='End date must be greater than or equal to the start date.')
+        else:
+            if history.get('end_date'):
+                raise InvalidModelValueError(detail='End date should not be provided if ongoing is true.')

@@ -508,7 +508,7 @@ class UserEducationRelationshipSerializer(BaseAPISerializer):
         return obj.absolute_api_v2_url
 
     class Meta:
-        type_ = 'education'
+        type_ = 'user-education'
 
 
 class RelatedEmployment(JSONAPIRelationshipSerializer):

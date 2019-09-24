@@ -449,7 +449,7 @@ class UserEducationList(JSONAPIBaseView, generics.ListCreateAPIView, UserMixin, 
     )
 
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.EDUCATION_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.USERS_WRITE]
 
     ordering = ('-created')
 
@@ -495,7 +495,7 @@ class UserEmploymentList(JSONAPIBaseView, generics.ListCreateAPIView, UserMixin,
     )
 
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.EMPLOYMENT_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.USERS_WRITE]
 
     ordering = ('-created')
 
