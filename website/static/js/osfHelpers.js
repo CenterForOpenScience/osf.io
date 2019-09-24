@@ -297,7 +297,7 @@ function osfSupportEmail() {
     }
     // currently have problem with osfLanguage.js doesn't have window imported,
     // change this hard coded address later when we have improvement to that
-    return 'nii-rdmp@meatmail.jp';
+    return 'rdm_support@nii.ac.jp';
 }
 
 function osfSupportLink() {
