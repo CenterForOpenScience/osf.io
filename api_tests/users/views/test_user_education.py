@@ -15,11 +15,11 @@ class UserEducationMixin:
 
     @pytest.fixture()
     def profile_type(self):
-        return 'user-education'
+        return 'education'
 
     @pytest.fixture()
-    def model_name(self):
-        return 'education'
+    def object_type(self):
+        return 'user-education'
 
 
 @pytest.mark.django_db

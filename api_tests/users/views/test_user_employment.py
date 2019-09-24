@@ -18,7 +18,7 @@ class UserEmploymentMixin:
         return 'user-employment'
 
     @pytest.fixture()
-    def model_name(self):
+    def object_type(self):
         return 'employment'
 
 

@@ -29,15 +29,15 @@ class UserProfileFixtures:
         return resource_factory(user=user)
 
     @pytest.fixture
-    def detail_url(self, user, profile_item_one, model_name):
-        return '/{}users/{}/{}/{}/'.format(API_BASE, user._id, model_name, profile_item_one._id)
+    def detail_url(self, user, profile_item_one, profile_type):
+        return '/{}users/{}/{}/{}/'.format(API_BASE, user._id, profile_type, profile_item_one._id)
 
     @pytest.fixture()
-    def payload(self, profile_type):
+    def payload(self, object_type):
         def payload(**kwargs):
             payload = {
                 'data': {
-                    'type': profile_type,
+                    'type': object_type,
                     'attributes': {}
                 }
             }
@@ -54,7 +54,7 @@ class UserProfileFixtures:
         raise NotImplementedError
 
     @pytest.fixture()
-    def model_name(self):
+    def object_type(self):
         raise NotImplementedError
 
 
@@ -62,7 +62,7 @@ class UserProfileFixtures:
 class UserProfileListMixin(UserProfileFixtures):
 
     @pytest.fixture
-    def list_url(self, user, model_name):
+    def list_url(self, user, profile_type):
         raise NotImplementedError
 
     @pytest.fixture(autouse=True)
@@ -71,7 +71,7 @@ class UserProfileListMixin(UserProfileFixtures):
         resource_factory(user=user, institution='Institution 2')
         resource_factory(user=user, institution='Institution 3')
 
-    def test_user_profile_list(self, app, user, list_url, profile_type, model_name):
+    def test_user_profile_list(self, app, user, list_url, profile_type):
         # unauthorized can access
         res = app.get(list_url)
         assert res.status_code == 200
@@ -93,8 +93,8 @@ class UserProfileListMixin(UserProfileFixtures):
         assert '3' in profile_object_institutions[2]
 
         # manually reverse the order, make sure list is returned in reversed order
-        user_profile_manager = getattr(user, model_name)
-        set_user_profile_order = getattr(user, 'set_user{}_order'.format(model_name))
+        user_profile_manager = getattr(user, profile_type)
+        set_user_profile_order = getattr(user, 'set_user{}_order'.format(profile_type))
         user_profile_object_ids = user_profile_manager.values_list('id', flat=True)
         set_user_profile_order(user_profile_object_ids[::-1])
         res = app.get(list_url, auth=user.auth)
@@ -170,8 +170,8 @@ class UserProfileCreateMixin(UserProfileFixtures):
         res = app.post_json(list_url, not_really_ongoing, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
-    def test_create_profile_object(self, app, list_url, user, payload, profile_type, model_name):
-        user_profile_object_manager = getattr(user, model_name)
+    def test_create_profile_object(self, app, list_url, user, payload, profile_type):
+        user_profile_object_manager = getattr(user, profile_type)
 
         # test create with just institution
         new_inst_name = 'Tundra Town'
@@ -198,7 +198,7 @@ class UserProfileCreateMixin(UserProfileFixtures):
         # test create with start and end dates
         new_name = 'Scundra Town'
         new_end = str(datetime.now().year + 1) + '-12-01'
-        start_date = payload(institution=new_name, start_date=new_start, end_date=new_end, ongoing=True)
+        start_date = payload(institution=new_name, start_date=new_start, end_date=new_end, ongoing=False)
         res = app.post_json(list_url, start_date, auth=user.auth)
         assert res.status_code == 201
         assert new_name == res.json['data']['attributes']['institution'] == new_name
@@ -206,7 +206,7 @@ class UserProfileCreateMixin(UserProfileFixtures):
         new_inst = user_profile_object_manager.get(institution=new_name)
         assert new_inst.start_date == datetime.strptime(new_start, '%Y-%m-%d').date()
         assert new_inst.end_date == datetime.strptime(new_end, '%Y-%m-%d').date()
-        assert new_inst.ongoing is True
+        assert new_inst.ongoing is False
 
 
 @pytest.mark.django_db
@@ -273,23 +273,23 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
         raise NotImplementedError
 
     @pytest.fixture()
-    def user_profile_object_manager(self, user, model_name):
-        return getattr(user, model_name)
+    def user_profile_object_manager(self, user, profile_type):
+        return getattr(user, profile_type)
 
     @pytest.fixture()
-    def relationship_payload(self, profile_item_one, model_name):
+    def relationship_payload(self, profile_item_one, object_type):
         return {
             'data': [
-                {'type': model_name, 'id': profile_item_one._id}
+                {'type': object_type, 'id': profile_item_one._id}
             ]
         }
 
-    def test_get(self, app, user, profile_item_one, profile_item_two, url, model_name):
+    def test_get(self, app, user, profile_item_one, profile_item_two, url, profile_type):
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         links = res.json['links']
-        assert links['self'] == '{}relationships/{}/'.format(user.absolute_api_v2_url, model_name)
-        assert links['html'] == '{}{}/'.format(user.absolute_api_v2_url, model_name)
+        assert links['self'] == '{}relationships/{}/'.format(user.absolute_api_v2_url, profile_type)
+        assert links['html'] == '{}{}/'.format(user.absolute_api_v2_url, profile_type)
 
         ids = [result['id'] for result in res.json['data']]
         assert profile_item_one._id in ids
@@ -301,8 +301,8 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
         assert profile_item_one._id in ids
         assert profile_item_one._id in ids
 
-    def test_update_order(self, app, url, user, profile_item_one, profile_item_two, relationship_payload, profile_type, model_name):
-        relationship_payload['data'].insert(0, {'type': model_name, 'id': profile_item_two._id})
+    def test_update_order(self, app, url, user, profile_item_one, profile_item_two, relationship_payload, profile_type, object_type):
+        relationship_payload['data'].insert(0, {'type': object_type, 'id': profile_item_two._id})
         res = app.patch_json_api(url, relationship_payload, auth=user.auth)
         assert res.status_code == 200
 
@@ -320,18 +320,18 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
         assert profile_item_one._id not in ids
         assert profile_item_two._id in ids
 
-    def test_delete_multiple(self, app, user, profile_item_one, profile_item_two, url, relationship_payload, model_name):
-        relationship_payload['data'].append({'type': model_name, 'id': profile_item_two._id})
+    def test_delete_multiple(self, app, user, profile_item_one, profile_item_two, url, relationship_payload, object_type):
+        relationship_payload['data'].append({'type': object_type, 'id': profile_item_two._id})
         res = app.delete_json_api(url, relationship_payload, auth=user.auth)
         assert res.status_code == 204
 
         user.reload()
-        user_profile_object_manager = getattr(user, model_name)
+        user_profile_object_manager = getattr(user, object_type)
         ids = list(user_profile_object_manager.values_list('_id', flat=True))
         assert profile_item_one._id not in ids
         assert profile_item_two._id not in ids
 
-    def test_profile_relationship_errors(self, app, user, user_two, profile_item_one, profile_item_two, url, relationship_payload, model_name):
+    def test_profile_relationship_errors(self, app, user, user_two, profile_item_one, profile_item_two, url, relationship_payload, object_type):
         # wrong type fails
         wrong_payload = relationship_payload.copy()
         wrong_payload['data'][0]['type'] = 'cowabunga'
@@ -361,7 +361,7 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
         assert res.status_code == 404
 
         # test misformed payload fails
-        data_not_an_array = {'data': {'type': model_name, 'id': profile_item_one._id}}
+        data_not_an_array = {'data': {'type': object_type, 'id': profile_item_one._id}}
         res = app.patch_json_api(url, data_not_an_array, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
