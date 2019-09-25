@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 import itertools
 
 from flask import request
@@ -74,12 +74,12 @@ def node_registration_retraction_get(auth, node, **kwargs):
     """
 
     if not node.is_registration:
-        raise HTTPError(http.BAD_REQUEST, data={
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
             'message_short': 'Invalid Request',
             'message_long': 'Withdrawal of non-registrations is not permitted.'
         })
     if node.is_pending_retraction:
-        raise HTTPError(http.BAD_REQUEST, data={
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
             'message_short': 'Invalid Request',
             'message_long': 'This registration is already pending withdrawal.'
         })
@@ -96,18 +96,18 @@ def node_registration_retraction_post(auth, node, **kwargs):
     :return: Redirect URL for successful POST
     """
     if node.is_pending_retraction:
-        raise HTTPError(http.BAD_REQUEST, data={
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
             'message_short': 'Invalid Request',
             'message_long': 'This registration is already pending withdrawal'
         })
     if not node.is_registration:
-        raise HTTPError(http.BAD_REQUEST, data={
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
             'message_short': 'Invalid Request',
             'message_long': 'Withdrawal of non-registrations is not permitted.'
         })
 
     if node.root_id != node.id:
-        raise HTTPError(http.BAD_REQUEST, data={
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
             'message_short': 'Invalid Request',
             'message_long': 'Withdrawal of non-parent registrations is not permitted.'
         })
@@ -118,7 +118,7 @@ def node_registration_retraction_post(auth, node, **kwargs):
         node.save()
         node.retraction.ask(node.get_active_contributors_recursive(unique_users=True))
     except NodeStateError as err:
-        raise HTTPError(http.FORBIDDEN, data=dict(message_long=str(err)))
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data=dict(message_long=str(err)))
 
     return {'redirectUrl': node.web_url_for('view_project')}
 
@@ -137,12 +137,12 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
             # backwards compatability for old urls, lookup by name
             meta_schema = RegistrationSchema.objects.filter(name=_id_to_name(metaschema_id)).order_by('-schema_version').first()
             if not meta_schema:
-                raise HTTPError(http.NOT_FOUND, data={
+                raise HTTPError(http_status.HTTP_404_NOT_FOUND, data={
                     'message_short': 'Invalid schema name',
                     'message_long': 'No registration schema with that name could be found.'
                 })
         if not node.registered_schema.filter(id=meta_schema.id).exists():
-            raise HTTPError(http.BAD_REQUEST, data={
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': 'Invalid schema',
                 'message_long': 'This registration has no registration supplment with that name.'
             })
@@ -235,10 +235,10 @@ def get_referent_by_identifier(category, value):
     try:
         identifier = Identifier.objects.get(category=category, value=value)
     except Identifier.DoesNotExist:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
     if identifier.referent.url:
         return redirect(identifier.referent.url)
-    raise HTTPError(http.NOT_FOUND)
+    raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
 @fail_archive_on_error
 @must_be_signed

@@ -1,5 +1,5 @@
 import abc
-import httplib as http
+from rest_framework import status as http_status
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -141,12 +141,12 @@ class CitationsProvider(object):
         external_account = ExternalAccount.load(external_account_id)
 
         if not user.external_accounts.filter(id=external_account.id).all():
-            raise HTTPError(http.FORBIDDEN)
+            raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
         try:
             node_addon.set_auth(external_account, user)
         except PermissionsError:
-            raise HTTPError(http.FORBIDDEN)
+            raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
         result = self.serializer(
             node_settings=node_addon,
@@ -222,7 +222,7 @@ class CitationsProvider(object):
 
             while ancestor_id != attached_list_id:
                 if ancestor_id is '__':
-                    raise HTTPError(http.FORBIDDEN)
+                    raise HTTPError(http_status.HTTP_403_FORBIDDEN)
                 ancestor_id = folders[ancestor_id].get('parent_list_id')
 
         contents = []

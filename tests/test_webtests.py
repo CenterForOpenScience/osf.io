@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Functional tests using WebTest."""
 import datetime as dt
-import httplib as http
+from rest_framework import status as http_status
 import logging
 import unittest
 
@@ -662,7 +662,7 @@ class TestConfirmingEmail(OsfTestCase):
         res = self.app.get(self.confirmation_url, expect_errors=True)
 
         assert_in(auth_exc.InvalidTokenError.message_short, res)
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
 
 @pytest.mark.enable_implicit_clean

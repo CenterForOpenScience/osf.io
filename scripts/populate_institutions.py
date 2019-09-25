@@ -5,7 +5,7 @@
 import argparse
 import logging
 import sys
-import urllib
+from future.moves.urllib.parse import quote
 
 import django
 from django.db import transaction
@@ -34,7 +34,7 @@ group.add_argument('-a', '--all', action='store_true', help='add or update all i
 
 
 def encode_uri_component(val):
-    return urllib.quote(val, safe='~()*!.\'')
+    return quote(val, safe='~()*!.\'')
 
 
 def update_or_create(inst_data):
