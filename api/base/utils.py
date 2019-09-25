@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-import urllib
 import furl
-import urlparse
+from future.moves.urllib.parse import urlunsplit, urlsplit, parse_qs, urlencode
 from distutils.version import StrictVersion
 from hashids import Hashids
 
@@ -163,11 +162,11 @@ def default_node_list_permission_queryset(user, model_cls):
     return qs.annotate(region=F('addons_osfstorage_node_settings__region___id'))
 
 def extend_querystring_params(url, params):
-    scheme, netloc, path, query, _ = urlparse.urlsplit(url)
-    orig_params = urlparse.parse_qs(query)
+    scheme, netloc, path, query, _ = urlsplit(url)
+    orig_params = parse_qs(query)
     orig_params.update(params)
-    query = urllib.urlencode(orig_params, True)
-    return urlparse.urlunsplit([scheme, netloc, path, query, ''])
+    query = urlencode(orig_params, True)
+    return urlunsplit([scheme, netloc, path, query, ''])
 
 def extend_querystring_if_key_exists(url, request, key):
     if key in request.query_params.keys():

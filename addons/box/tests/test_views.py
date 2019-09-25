@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Views tests for the Box addon."""
 from django.utils import timezone
-import httplib
+from rest_framework import status as http_status
 from nose.tools import *  # noqa (PEP8 asserts)
 import mock
 import pytest
@@ -140,7 +140,7 @@ class TestFilebrowserViews(BoxAddonTestCase, OsfTestCase):
         mock_metadata.side_effect = BoxAPIException(status=404, message='File not found')
         url = self.project.api_url_for('box_folder_list', folder_id='lolwut')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.NOT_FOUND)
+        assert_equal(res.status_code, http_status.HTTP_404_NOT_FOUND)
 
     @mock.patch('addons.box.models.Client.folder')
     def test_box_list_folders_handles_max_retry_error(self, mock_metadata):
@@ -148,7 +148,7 @@ class TestFilebrowserViews(BoxAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('box_folder_list', folder_id='fo')
         mock_metadata.side_effect = MaxRetryError(mock_response, url)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
 
 class TestRestrictions(BoxAddonTestCase, OsfTestCase):
@@ -180,13 +180,13 @@ class TestRestrictions(BoxAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('box_folder_list',
             path='foo bar')
         res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     def test_restricted_config_contrib_no_addon(self):
         url = api_url_for('box_set_config', pid=self.project._primary_key)
         res = self.app.put_json(url, {'selected': {'path': 'foo'}},
             auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     def test_restricted_config_contrib_not_owner(self):
         # Contributor has box auth, but is not the node authorizer
@@ -196,4 +196,4 @@ class TestRestrictions(BoxAddonTestCase, OsfTestCase):
         url = api_url_for('box_set_config', pid=self.project._primary_key)
         res = self.app.put_json(url, {'selected': {'path': 'foo'}},
             auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)

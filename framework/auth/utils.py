@@ -1,4 +1,4 @@
-import httplib
+from rest_framework import status as http_status
 import re
 
 from nameparser.parser import HumanName
@@ -128,7 +128,7 @@ def validate_recaptcha(response, remote_ip=None):
     if remote_ip:
         payload.update({'remoteip': remote_ip})
     resp = requests.post(settings.RECAPTCHA_VERIFY_URL, data=payload)
-    return resp.status_code == httplib.OK and resp.json().get('success')
+    return resp.status_code == http_status.HTTP_200_OK and resp.json().get('success')
 
 
 def generate_csl_given_name(given_name, middle_names='', suffix=''):
