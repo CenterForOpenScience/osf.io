@@ -7,6 +7,7 @@ We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 - API v2: Use consistent naming for JSON API type (kebab-case)
 - API v2: Fix sorting on fields with source attribute
 - API v2: Add SparseLists for Nodes and Registrations
+- Management command to remove duplicate files and folders
 
 19.27.0 (2019-09-18)
 ===================
