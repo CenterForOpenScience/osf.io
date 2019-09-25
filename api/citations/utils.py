@@ -1,6 +1,6 @@
 import os
 import re
-import httplib as http
+from rest_framework import status as http_status
 
 from citeproc import CitationStylesStyle, CitationStylesBibliography
 from citeproc import Citation, CitationItem
@@ -112,7 +112,7 @@ def apa_reformat(node, cit):
 
     # throw error if there is no visible contributor
     if contributors_list_length == 0:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     # handle only one contributor
     elif contributors_list_length == 1:
         name = process_name(node, contributors_list[0])
@@ -158,7 +158,7 @@ def mla_reformat(node, cit):
 
     # throw error if there is no visible contributor
     if contributors_list_length == 0:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     # handle only one contributor
     elif contributors_list_length == 1:
         name = process_name(node, contributors_list[0])
@@ -187,7 +187,7 @@ def chicago_reformat(node, cit):
     contributors_list_length = len(contributors_list)
     # throw error if there is no visible contributor
     if contributors_list_length == 0:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     # handle only one contributor
     elif contributors_list_length == 1:
         name = process_name(node, contributors_list[0])

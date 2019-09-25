@@ -28,7 +28,7 @@ from osf.models.nodelog import NodeLog
 from osf.models.subject import Subject
 from osf.models.spam import SpamMixin, SpamStatus
 from osf.models.tag import Tag
-from osf.models.validators import validate_subject_hierarchy, validate_email
+from osf.models.validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
 from osf.utils.permissions import ADMIN, REVIEW_GROUPS, READ, WRITE
@@ -337,13 +337,11 @@ class NodeLinkMixin(models.Model):
         :param bool save: Save changes
         :return: Created pointer
         """
-        # Fail if node already in nodes / pointers. Note: cast node and node
-        # to primary keys to test for conflicts with both nodes and pointers
-        # contained in `self.nodes`.
-        if NodeRelation.objects.filter(parent=self, child=node, is_node_link=True).exists():
-            raise ValueError(
-                'Link to node {0} already exists'.format(node._id)
-            )
+        try:
+            self.check_node_link(child_node=node, parent_node=self)
+            self.check_node_link(child_node=self, parent_node=node)
+        except ValueError as e:
+            raise ValueError(e.message)
 
         if self.is_registration:
             raise self.state_error('Cannot add a node link to a registration')
@@ -380,6 +378,21 @@ class NodeLinkMixin(models.Model):
         return node_relation
 
     add_pointer = add_node_link  # For v1 compat
+
+    def check_node_link(self, child_node, parent_node):
+        if child_node._id == parent_node._id:
+            raise ValueError(
+                'Cannot link node \'{}\' to itself.'.format(child_node._id)
+            )
+        existant_relation = NodeRelation.objects.filter(parent=parent_node, child=child_node).first()
+        if existant_relation and existant_relation.is_node_link:
+            raise ValueError(
+                'Target Node \'{}\' already pointed to by \'{}\'.'.format(child_node._id, parent_node._id)
+            )
+        elif existant_relation and not existant_relation.is_node_link:
+            raise ValueError(
+                'Target Node \'{}\' is already a child of \'{}\'.'.format(child_node._id, parent_node._id)
+            )
 
     def rm_node_link(self, node_relation, auth):
         """Remove a pointer.
@@ -751,6 +764,50 @@ class TaxonomizableMixin(models.Model):
             ]
         return []
 
+    @property
+    def subjects_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/subjects/'
+
+    @property
+    def subjects_url(self):
+        return self.absolute_api_v2_url + 'subjects/'
+
+    def check_subject_perms(self, auth):
+        AbstractNode = apps.get_model('osf.AbstractNode')
+        Preprint = apps.get_model('osf.Preprint')
+        CollectionSubmission = apps.get_model('osf.CollectionSubmission')
+
+        if isinstance(self, AbstractNode):
+            if not self.has_permission(auth.user, ADMIN):
+                raise PermissionsError('Only admins can change subjects.')
+        elif isinstance(self, Preprint):
+            if not self.has_permission(auth.user, WRITE):
+                raise PermissionsError('Must have admin or write permissions to change a preprint\'s subjects.')
+        elif isinstance(self, CollectionSubmission):
+            if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(self.collection.groups[ADMIN], self.collection):
+                raise PermissionsError('Only admins can change subjects.')
+        return
+
+    def add_subjects_log(self, old_subjects, auth):
+        self.add_log(
+            action=NodeLog.SUBJECTS_UPDATED,
+            params={
+                'subjects': list(self.subjects.values('_id', 'text')),
+                'old_subjects': list(Subject.objects.filter(id__in=old_subjects).values('_id', 'text'))
+            },
+            auth=auth,
+            save=False,
+        )
+        return
+
+    def assert_subject_format(self, subj_list, expect_list, error_msg):
+        """ Helper for asserting subject request is formatted properly
+        """
+        is_list = type(subj_list) is list
+
+        if (expect_list and not is_list) or (not expect_list and is_list):
+            raise ValidationValueError('Subjects are improperly formatted. {}'.format(error_msg))
+
     def set_subjects(self, new_subjects, auth, add_log=True):
         """ Helper for setting M2M subjects field from list of hierarchies received from UI.
         Only authorized admins may set subjects.
@@ -761,21 +818,14 @@ class TaxonomizableMixin(models.Model):
 
         :return: None
         """
-        AbstractNode = apps.get_model('osf.AbstractNode')
-        Preprint = apps.get_model('osf.Preprint')
-        CollectionSubmission = apps.get_model('osf.CollectionSubmission')
-        if getattr(self, 'is_registration', False):
-            raise PermissionsError('Registrations may not be modified.')
-        if isinstance(self, (AbstractNode, Preprint)):
-            if not self.has_permission(auth.user, ADMIN):
-                raise PermissionsError('Only admins can change subjects.')
-        elif isinstance(self, CollectionSubmission):
-            if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(self.collection.groups[ADMIN], self.collection):
-                raise PermissionsError('Only admins can change subjects.')
+        if auth:
+            self.check_subject_perms(auth)
+        self.assert_subject_format(new_subjects, expect_list=True, error_msg='Expecting list of lists.')
 
         old_subjects = list(self.subjects.values_list('id', flat=True))
         self.subjects.clear()
         for subj_list in new_subjects:
+            self.assert_subject_format(subj_list, expect_list=True, error_msg='Expecting list of lists.')
             subj_hierarchy = []
             for s in subj_list:
                 subj_hierarchy.append(s)
@@ -785,17 +835,69 @@ class TaxonomizableMixin(models.Model):
                     self.subjects.add(Subject.load(s_id))
 
         if add_log and hasattr(self, 'add_log'):
-            self.add_log(
-                action=NodeLog.SUBJECTS_UPDATED,
-                params={
-                    'subjects': list(self.subjects.values('_id', 'text')),
-                    'old_subjects': list(Subject.objects.filter(id__in=old_subjects).values('_id', 'text'))
-                },
-                auth=auth,
-                save=False,
-            )
+            self.add_subjects_log(old_subjects, auth)
 
         self.save(old_subjects=old_subjects)
+
+    def set_subjects_from_relationships(self, subjects_list, auth, add_log=True):
+        """ Helper for setting M2M subjects field from list of flattened subjects received from UI.
+        Only authorized admins may set subjects.
+
+        :param list[Subject._id] new_subjects: List of flattened subject hierarchies
+        :param Auth auth: Auth object for requesting user
+        :param bool add_log: Whether or not to add a log (if called on a Loggable object)
+
+        :return: None
+        """
+        self.check_subject_perms(auth)
+        self.assert_subject_format(subjects_list, expect_list=True, error_msg='Expecting a list of subjects.')
+        if subjects_list:
+            self.assert_subject_format(subjects_list[0], expect_list=False, error_msg='Expecting a list of subjects.')
+
+        old_subjects = list(self.subjects.values_list('id', flat=True))
+        self.subjects.clear()
+        for subj in expand_subject_hierarchy(subjects_list):
+            self.subjects.add(subj)
+
+        if add_log and hasattr(self, 'add_log'):
+            self.add_subjects_log(old_subjects, auth)
+
+        self.save(old_subjects=old_subjects)
+
+    def map_subjects_between_providers(self, old_provider, new_provider, auth=None):
+        """
+        Maps subjects between preprint providers using bepress_subject_id.
+
+        Loops through each subject hierarchy for a resource and attempts to find
+        a matching subject for the lowest tier subject.
+
+        :params old_provider PreprintProvider
+        :params new_provider PreprintProvider
+        :params auth Authenticated User
+
+        returns a list of any subjects that could not be mapped.
+        """
+        new_subjects = []
+        subject_problems = []
+        for hierarchy in self.subject_hierarchy:
+            subject = hierarchy[-1]
+            current_bepress_id = getattr(
+                hierarchy[-1],
+                self.get_bepress_id_field(old_provider)
+            )
+            try:
+                new_subject = new_provider.subjects.get(**{
+                    self.get_bepress_id_field(new_provider): current_bepress_id
+                })
+            except Subject.DoesNotExist:
+                new_subject = subject
+                subject_problems.append(subject.text)
+            new_subjects.append(new_subject.hierarchy)
+        self.set_subjects(new_subjects, auth, add_log=False)
+        return subject_problems
+
+    def get_bepress_id_field(self, provider):
+        return 'id' if provider._id == 'osf' else 'bepress_subject_id'
 
 
 class ContributorMixin(models.Model):
@@ -1590,10 +1692,21 @@ class SpamOverrideMixin(SpamMixin):
             self.save()
 
     def _get_spam_content(self, saved_fields):
+        """
+        This function retrieves retrieves strings of potential spam from various DB fields. Also here we can follow
+        django's typical ORM query structure for example we can grab the redirect link of a node by giving a saved
+        field of {'addons_forward_node_settings__url'}.
+
+        :param saved_fields: set
+        :return: str
+        """
         spam_fields = self.get_spam_fields(saved_fields)
         content = []
         for field in spam_fields:
-            content.append((getattr(self, field, None) or '').encode('utf-8'))
+            exclude_null = {field + '__isnull': False}
+            values = list(self.__class__.objects.filter(id=self.id, **exclude_null).values_list(field, flat=True))
+            if values:
+                content.append((' '.join(values) or '').encode('utf-8'))
         if self.all_tags.exists():
             content.extend([name.encode('utf-8') for name in self.all_tags.values_list('name', flat=True)])
         if not content:

@@ -3,7 +3,7 @@
 
 # PEP8 asserts
 from copy import deepcopy
-import httplib as http
+from rest_framework import status as http_status
 import time
 import mock
 import pytest
@@ -601,7 +601,7 @@ class TestWikiRename(OsfTestCase):
             auth=self.auth,
             expect_errors=True,
         )
-        assert_equal(http.BAD_REQUEST, res.status_code)
+        assert_equal(http_status.HTTP_400_BAD_REQUEST, res.status_code)
         assert_equal(res.json['message_short'], 'Invalid name')
         assert_equal(res.json['message_long'], 'Page name cannot contain forward slashes.')
         self.project.reload()
@@ -1238,7 +1238,6 @@ class TestPublicWiki(OsfTestCase):
         node = NodeFactory(parent=self.project, creator=self.user, is_public=True)
         node.get_addon('wiki').set_editing(
             permissions=True, auth=self.consolidate_auth, log=True)
-        node.add_pointer(self.project, Auth(self.user))
         node.save()
         data = serialize_wiki_settings(self.user, [node])
         expected = [{

@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 """
 
 import os
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 from website import settings as osf_settings
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -166,6 +166,9 @@ REST_FRAMEWORK = {
         '2.13',
         '2.14',
         '2.15',
+        '2.16',
+        '2.17',
+        '2.18',
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',

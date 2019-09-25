@@ -1,4 +1,4 @@
-import httplib as http
+from rest_framework import status as http_status
 
 from flask import redirect, request
 import markupsafe
@@ -66,14 +66,14 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
     err_code = None
     err_message = None
     if not sanction:
-        err_code = http.BAD_REQUEST
+        err_code = http_status.HTTP_400_BAD_REQUEST
         err_message = 'There is no {0} associated with this token.'.format(
             markupsafe.escape(Model.DISPLAY_NAME))
     elif sanction.is_approved:
         # Simply strip query params and redirect if already approved
         return redirect(request.base_url)
     elif sanction.is_rejected:
-        err_code = http.GONE if kind in ['registration', 'embargo'] else http.BAD_REQUEST
+        err_code = http_status.HTTP_410_GONE if kind in ['registration', 'embargo'] else http_status.HTTP_400_BAD_REQUEST
         err_message = 'This registration {0} has been rejected.'.format(
             markupsafe.escape(sanction.DISPLAY_NAME))
     if err_code:
@@ -88,12 +88,12 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
         try:
             do_action(auth.user, encoded_token)
         except TokenError as e:
-            raise HTTPError(http.BAD_REQUEST, data={
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': e.message_short,
                 'message_long': e.message_long
             })
         except PermissionsError as e:
-            raise HTTPError(http.UNAUTHORIZED, data={
+            raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, data={
                 'message_short': 'Unauthorized access',
                 'message_long': str(e)
             })

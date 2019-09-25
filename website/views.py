@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import itertools
-import httplib as http
+from rest_framework import status as http_status
 import logging
 import math
 import os
 import requests
-import urllib
-import waffle
+from future.moves.urllib.parse import unquote
 
 from django.apps import apps
 from flask import request, send_from_directory, Response, stream_with_context
@@ -28,10 +27,12 @@ from osf.models import BaseFileNode, Guid, Institution, Preprint, AbstractNode, 
 from addons.osfstorage.models import Region
 
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
-from website.ember_osf_web.decorators import ember_flag_is_active, storage_i18n_flag_active
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.ember_osf_web.views import use_ember_app
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
+
+from api.waffle.utils import flag_is_active, storage_i18n_flag_active
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
@@ -189,7 +190,7 @@ def my_projects(auth):
 
 def validate_page_num(page, pages):
     if page < 0 or (pages and page >= pages):
-        raise HTTPError(http.BAD_REQUEST, data=dict(
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
             message_long='Invalid value for "page".'
         ))
 
@@ -246,7 +247,7 @@ def resolve_guid(guid, suffix=None):
         guid_object = Guid.load(guid)
     except KeyError as e:
         if e.message == 'osfstorageguidfile':  # Used when an old detached OsfStorageGuidFile object is accessed
-            raise HTTPError(http.NOT_FOUND)
+            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
         else:
             raise e
     if guid_object:
@@ -259,13 +260,13 @@ def resolve_guid(guid, suffix=None):
             sentry.log_message(
                 'Guid resolved to an object with no deep_url', dict(guid=guid)
             )
-            raise HTTPError(http.NOT_FOUND)
+            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
         referent = guid_object.referent
         if referent is None:
             logger.error('Referent of GUID {0} not found'.format(guid))
-            raise HTTPError(http.NOT_FOUND)
+            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
         if not referent.deep_url:
-            raise HTTPError(http.NOT_FOUND)
+            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
         # Handle file `/download` shortcut with supported types.
         if suffix and suffix.rstrip('/').lower() == 'download':
@@ -285,13 +286,13 @@ def resolve_guid(guid, suffix=None):
                     # Check if user isn't a nonetype or that the user has admin/moderator/superuser permissions
                     if auth.user is None or not (auth.user.has_perm('view_submissions', file_referent.target.provider) or
                             file_referent.target.has_permission(auth.user, permissions.ADMIN)):
-                        raise HTTPError(http.NOT_FOUND)
+                        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
                 # Extend `request.args` adding `action=download`.
                 request.args = request.args.copy()
                 request.args.update({'action': 'download'})
                 # Do not include the `download` suffix in the url rebuild.
-                url = _build_guid_url(urllib.unquote(file_referent.deep_url))
+                url = _build_guid_url(unquote(file_referent.deep_url))
                 return proxy_url(url)
 
         # Handle Ember Applications
@@ -299,7 +300,7 @@ def resolve_guid(guid, suffix=None):
             if referent.provider.domain_redirect_enabled:
                 # This route should always be intercepted by nginx for the branded domain,
                 # w/ the exception of `<guid>/download` handled above.
-                return redirect(referent.absolute_url, http.MOVED_PERMANENTLY)
+                return redirect(referent.absolute_url, http_status.HTTP_301_MOVED_PERMANENTLY)
 
             if PROXY_EMBER_APPS:
                 resp = requests.get(EXTERNAL_EMBER_APPS['preprints']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
@@ -309,7 +310,7 @@ def resolve_guid(guid, suffix=None):
 
         if isinstance(referent, BaseFileNode) and referent.is_file and (getattr(referent.target, 'is_quickfiles', False)):
             if referent.is_deleted:
-                raise HTTPError(http.GONE)
+                raise HTTPError(http_status.HTTP_410_GONE)
             if PROXY_EMBER_APPS:
                 resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
                 return Response(stream_with_context(resp.iter_content()), resp.status_code)
@@ -319,7 +320,7 @@ def resolve_guid(guid, suffix=None):
         if isinstance(referent, Registration) and (
                 not suffix or suffix.rstrip('/').lower() in ('comments', 'links', 'components')
         ):
-            if waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
+            if flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
                 # Route only the base detail view to ember
                 if PROXY_EMBER_APPS:
                     resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
@@ -327,7 +328,7 @@ def resolve_guid(guid, suffix=None):
 
                 return send_from_directory(registries_dir, 'index.html')
 
-        url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
+        url = _build_guid_url(unquote(referent.deep_url), suffix)
         return proxy_url(url)
 
     # GUID not found; try lower-cased and redirect if exists
@@ -338,7 +339,7 @@ def resolve_guid(guid, suffix=None):
         )
 
     # GUID not found
-    raise HTTPError(http.NOT_FOUND)
+    raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
 
 # Redirects #
@@ -351,7 +352,7 @@ def redirect_help(**kwargs):
     return redirect('/faq/')
 
 def redirect_faq(**kwargs):
-    return redirect('http://help.osf.io/m/faqs/')
+    return redirect('https://help.osf.io/hc/en-us/articles/360019737894-FAQs')
 
 # redirect osf.io/howosfworks to osf.io/getting-started/
 def redirect_howosfworks(**kwargs):
@@ -376,7 +377,7 @@ def redirect_to_cos_news(**kwargs):
 # Return error for legacy SHARE v1 search route
 def legacy_share_v1_search(**kwargs):
     return HTTPError(
-        http.BAD_REQUEST,
+        http_status.HTTP_400_BAD_REQUEST,
         data=dict(
             message_long='Please use v2 of the SHARE search API available at {}api/v2/share/search/creativeworks/_search.'.format(settings.SHARE_URL)
         )

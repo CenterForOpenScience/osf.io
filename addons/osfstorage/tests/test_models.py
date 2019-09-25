@@ -184,9 +184,9 @@ class TestOsfstorageFileNode(StorageTestCase):
         mock_session.data = {}
         child = self.node_settings.get_root().append_file('Test')
 
-        utils.update_analytics(self.project, child._id, 0)
-        utils.update_analytics(self.project, child._id, 1)
-        utils.update_analytics(self.project, child._id, 2)
+        utils.update_analytics(self.project, child, 0)
+        utils.update_analytics(self.project, child, 1)
+        utils.update_analytics(self.project, child, 2)
 
         assert_equals(child.get_download_count(), 3)
         assert_equals(child.get_download_count(0), 1)
@@ -299,11 +299,24 @@ class TestOsfstorageFileNode(StorageTestCase):
     def test_copy(self):
         to_copy = self.node_settings.get_root().append_file('Carp')
         copy_to = self.node_settings.get_root().append_folder('Cloud')
+        version = to_copy.create_version(
+            self.user,
+            {
+                'service': 'cloud',
+                settings.WATERBUTLER_RESOURCE: 'osf',
+                'object': '06d80e',
+            }, {
+                'sha256': 'existing',
+                'vault': 'the cloud',
+                'archive': 'erchiv'
+            })
+        assert_equal(to_copy.versions.first().get_basefilenode_version(to_copy).version_name, 'Carp')
 
         copied = to_copy.copy_under(copy_to)
 
         assert_not_equal(copied, to_copy)
         assert_equal(copied.parent, copy_to)
+        assert_equal(copied.versions.first().get_basefilenode_version(copied).version_name, 'Carp')
         assert_equal(to_copy.parent, self.node_settings.get_root())
 
     def test_copy_node_file_to_preprint(self):
@@ -334,11 +347,48 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(new_project, move_to.target)
         assert_equal(new_project, child.target)
 
+    def test_move_nested_between_regions(self):
+        canada = RegionFactory()
+        new_component = NodeFactory(parent=self.project)
+        component_node_settings = new_component.get_addon('osfstorage')
+        component_node_settings.region = canada
+        component_node_settings.save()
+
+        move_to = component_node_settings.get_root()
+        to_move = self.node_settings.get_root().append_folder('Aaah').append_folder('Woop')
+        child = to_move.append_file('There it is')
+
+        for _ in range(2):
+            version = factories.FileVersionFactory(region=self.node_settings.region)
+            child.add_version(version)
+        child.save()
+
+        moved = to_move.move_under(move_to)
+        child.reload()
+
+        assert new_component == child.target
+        versions = child.versions.order_by('-created')
+        assert versions.first().region == component_node_settings.region
+        assert versions.last().region == self.node_settings.region
+
     def test_copy_rename(self):
         to_copy = self.node_settings.get_root().append_file('Carp')
         copy_to = self.node_settings.get_root().append_folder('Cloud')
+        version = to_copy.create_version(
+            self.user,
+            {
+                'service': 'cloud',
+                settings.WATERBUTLER_RESOURCE: 'osf',
+                'object': '06d80e',
+            }, {
+                'sha256': 'existing',
+                'vault': 'the cloud',
+                'archive': 'erchiv'
+            })
+        assert_equal(to_copy.versions.first().get_basefilenode_version(to_copy).version_name, 'Carp')
 
         copied = to_copy.copy_under(copy_to, name='But')
+        assert_equal(copied.versions.first().get_basefilenode_version(copied).version_name, 'But')
 
         assert_equal(copied.name, 'But')
         assert_not_equal(copied, to_copy)
@@ -357,12 +407,25 @@ class TestOsfstorageFileNode(StorageTestCase):
 
     def test_move_and_rename(self):
         to_move = self.node_settings.get_root().append_file('Carp')
+        version = to_move.create_version(
+            self.user,
+            {
+                'service': 'cloud',
+                settings.WATERBUTLER_RESOURCE: 'osf',
+                'object': '06d80e',
+            }, {
+                'sha256': 'existing',
+                'vault': 'the cloud',
+                'archive': 'erchiv'
+            })
         move_to = self.node_settings.get_root().append_folder('Cloud')
+        assert_equal(to_move.versions.first().get_basefilenode_version(to_move).version_name, 'Carp')
 
         moved = to_move.move_under(move_to, name='Tuna')
 
         assert_equal(to_move, moved)
         assert_equal(to_move.name, 'Tuna')
+        assert_equal(moved.versions.first().get_basefilenode_version(moved).version_name, 'Tuna')
         assert_equal(moved.parent, move_to)
 
     def test_move_preprint_primary_file_to_node(self):
@@ -625,7 +688,7 @@ class TestNodeSettingsModel(StorageTestCase):
 
         for _ in range(num_versions):
             version = factories.FileVersionFactory()
-            record.versions.add(version)
+            record.add_version(version)
 
         fork = self.project.fork_node(self.auth_obj)
         fork_node_settings = fork.get_addon('osfstorage')

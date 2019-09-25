@@ -1,9 +1,10 @@
 from django.conf.urls import include, url
 from django.views.generic.base import RedirectView
 
-from . import views
-from . import settings
-from . import versioning
+
+from api.base import views
+from api.base import settings
+from api.base import versioning
 
 default_version = versioning.decimal_version_to_url_path(settings.REST_FRAMEWORK['DEFAULT_VERSION'])
 
@@ -32,6 +33,7 @@ urlpatterns = [
                 url(r'^status/', views.status_check, name='status_check'),
                 url(r'^actions/', include('api.actions.urls', namespace='actions')),
                 url(r'^addons/', include('api.addons.urls', namespace='addons')),
+                url(r'^alerts/', include('api.alerts.urls', namespace='alerts')),
                 url(r'^applications/', include('api.applications.urls', namespace='applications')),
                 url(r'^citations/', include('api.citations.urls', namespace='citations')),
                 url(r'^collections/', include('api.collections.urls', namespace='collections')),
@@ -55,15 +57,16 @@ urlpatterns = [
                 url(r'^requests/', include('api.requests.urls', namespace='requests')),
                 url(r'^scopes/', include('api.scopes.urls', namespace='scopes')),
                 url(r'^search/', include('api.search.urls', namespace='search')),
+                url(r'^sparse/', include('api.sparse.urls', namespace='sparse')),
+                url(r'^subjects/', include('api.subjects.urls', namespace='subjects')),
                 url(r'^subscriptions/', include('api.subscriptions.urls', namespace='subscriptions')),
                 url(r'^taxonomies/', include('api.taxonomies.urls', namespace='taxonomies')),
                 url(r'^test/', include('api.test.urls', namespace='test')),
                 url(r'^tokens/', include('api.tokens.urls', namespace='tokens')),
                 url(r'^users/', include('api.users.urls', namespace='users')),
                 url(r'^view_only_links/', include('api.view_only_links.urls', namespace='view-only-links')),
-                url(r'^_waffle/', include('api.waffle.urls', namespace='waffle')),
                 url(r'^wikis/', include('api.wikis.urls', namespace='wikis')),
-                url(r'^alerts/', include('api.alerts.urls', namespace='alerts')),
+                url(r'^_waffle/', include('api.waffle.urls', namespace='waffle')),
             ],
         ),
     ),

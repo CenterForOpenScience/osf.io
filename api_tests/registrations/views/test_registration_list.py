@@ -3,10 +3,12 @@ from django.utils import timezone
 import mock
 from nose.tools import *  # noqa:
 import pytest
-from urlparse import urlparse
+
+from future.moves.urllib.parse import urlparse
 
 from api.base.settings.defaults import API_BASE
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
+from api_tests.subjects.mixins import SubjectsFilterMixin
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 from framework.auth.core import Auth
 from osf.models import RegistrationSchema, DraftRegistration
@@ -21,9 +23,10 @@ from osf_tests.factories import (
 )
 from rest_framework import exceptions
 from tests.base import ApiTestCase
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.views import find_bookmark_collection
 from osf.utils import permissions
+
+SCHEMA_VERSION = 2
 
 
 @pytest.mark.enable_quickfiles_creation
@@ -85,6 +88,71 @@ class TestRegistrationList(ApiTestCase):
         assert_equal(
             registered_from,
             '/{}nodes/{}/'.format(API_BASE, self.public_project._id))
+
+    def test_total_biographic_contributor_in_registration(self):
+        user3 = AuthUserFactory()
+        registration = RegistrationFactory(is_public=True, creator=self.user)
+        registration.add_contributor(self.user_two, auth=Auth(self.user))
+        registration.add_contributor(
+            user3, auth=Auth(self.user), visible=False)
+        registration.save()
+        registration_url = '/{0}registrations/{1}/?embed=contributors'.format(
+            API_BASE, registration._id)
+
+        res = self.app.get(registration_url)
+        assert_true(
+            res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic']
+        )
+        assert_equal(
+            res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'], 2
+        )
+
+    def test_exclude_nodes_from_registrations_endpoint(self):
+        res = self.app.get(self.url, auth=self.user.auth)
+        ids = [each['id'] for each in res.json['data']]
+        assert_in(self.registration_project._id, ids)
+        assert_in(self.public_registration_project._id, ids)
+        assert_not_in(self.public_project._id, ids)
+        assert_not_in(self.project._id, ids)
+
+@pytest.mark.enable_quickfiles_creation
+class TestSparseRegistrationList(ApiTestCase):
+
+    def setUp(self):
+        super(TestSparseRegistrationList, self).setUp()
+        self.user = AuthUserFactory()
+
+        self.project = ProjectFactory(is_public=False, creator=self.user)
+        self.registration_project = RegistrationFactory(
+            creator=self.user, project=self.project)
+        self.url = '/{}sparse/registrations/'.format(API_BASE)
+
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_registration_project = RegistrationFactory(
+            creator=self.user, project=self.public_project, is_public=True)
+        self.user_two = AuthUserFactory()
+
+    def test_return_public_registrations_logged_out(self):
+        res = self.app.get(self.url)
+        assert_equal(len(res.json['data']), 1)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert 'registered_from' not in res.json['data'][0]['relationships']
+
+    def test_return_registrations_logged_in_contributor(self):
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 2)
+        assert_equal(res.status_code, 200)
+        assert 'registered_from' not in res.json['data'][0]['relationships']
+        assert 'registered_from' not in res.json['data'][1]['relationships']
+        assert_equal(res.content_type, 'application/vnd.api+json')
+
+    def test_return_registrations_logged_in_non_contributor(self):
+        res = self.app.get(self.url, auth=self.user_two.auth)
+        assert_equal(len(res.json['data']), 1)
+        assert_equal(res.status_code, 200)
+        assert 'registered_from' not in res.json['data'][0]['relationships']
+        assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_total_biographic_contributor_in_registration(self):
         user3 = AuthUserFactory()
@@ -518,13 +586,27 @@ class TestRegistrationFiltering(ApiTestCase):
             "'notafield' is not a valid field for this endpoint.")
 
 
+class TestRegistrationSubjectFiltering(SubjectsFilterMixin):
+    @pytest.fixture()
+    def resource(self, user):
+        return RegistrationFactory(creator=user)
+
+    @pytest.fixture()
+    def resource_two(self, user):
+        return RegistrationFactory(creator=user)
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}registrations/'.format(API_BASE)
+
+
 class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def schema(self):
         return RegistrationSchema.objects.get(
             name='Replication Recipe (Brandt et al., 2013): Post-Completion',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def project_public_child(self, project_public):
@@ -757,7 +839,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             prereg_metadata, url_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
@@ -794,7 +876,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             self, mock_enqueue, app, user, project_public, prereg_metadata, url_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
@@ -831,7 +913,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             prereg_metadata, url_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
