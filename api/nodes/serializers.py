@@ -21,6 +21,7 @@ from api.base.utils import (
     absolute_reverse, get_object_or_error,
     get_user_auth, is_truthy,
 )
+from api.base.versioning import get_kebab_snake_case_field
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from django.apps import apps
 from django.conf import settings
@@ -884,7 +885,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
 class NodeAddonSettingsSerializerBase(JSONAPISerializer):
     class Meta:
-        type_ = 'node_addons'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'node-addons')
 
     id = ser.CharField(source='config.short_name', read_only=True)
     node_has_auth = ser.BooleanField(source='has_auth', read_only=True)
@@ -1313,7 +1316,9 @@ class NodeLinksSerializer(JSONAPISerializer):
 
     )
     class Meta:
-        type_ = 'node_links'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'node-links')
 
     links = LinksField({
         'self': 'get_absolute_url',
@@ -1523,7 +1528,9 @@ class DraftRegistrationSerializerLegacy(JSONAPISerializer):
         return draft
 
     class Meta:
-        type_ = 'draft_registrations'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'draft-registrations')
 
 
 class DraftRegistrationDetailLegacySerializer(DraftRegistrationSerializerLegacy):
@@ -1632,7 +1639,9 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
         )
 
     class Meta:
-        type_ = 'view_only_links'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'view-only-links')
 
 
 class NodeViewOnlyLinkUpdateSerializer(NodeViewOnlyLinkSerializer):

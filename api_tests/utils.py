@@ -15,6 +15,7 @@ def create_test_file(target, user, filename='test_file', create_guid=True, size=
     test_file.create_version(user, {
         'object': '06d80e',
         'service': 'cloud',
+        'bucket': 'us-bucket',
         osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
     }, {
         'size': size,
