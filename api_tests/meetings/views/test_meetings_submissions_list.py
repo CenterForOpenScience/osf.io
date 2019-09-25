@@ -92,7 +92,15 @@ class TestMeetingSubmissionsList:
         return file
 
     def mock_download(self, project, file, download_count):
-        return PageCounter.objects.create(_id='download:{}:{}'.format(project._id, file._id), total=download_count)
+            pc, _ = PageCounter.objects.get_or_create(
+                _id='download:{}:{}'.format(project._id, file._id),
+                resource=project.guids.first(),
+                action='download',
+                file=file
+            )
+            pc.total = download_count
+            pc.save()
+            return pc
 
     def test_meeting_submissions_list(self, app, user, meeting, url, meeting_one_submission, meeting_one_private_submission):
         api_utils.create_test_file(meeting_one_submission, user, create_guid=False)
