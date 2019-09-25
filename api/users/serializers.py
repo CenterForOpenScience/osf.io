@@ -26,6 +26,7 @@ from website.profile.views import update_osf_help_mails_subscription, update_mai
 from api.nodes.serializers import NodeSerializer, RegionRelationshipField
 from api.base.schemas.utils import validate_user_json, from_json
 from framework.auth.views import send_confirm_email
+from api.base.versioning import get_kebab_snake_case_field
 
 
 class QuickFilesRelationshipField(RelationshipField):
@@ -287,7 +288,9 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
     })
 
     class Meta:
-        type_ = 'user_addons'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'user-addons')
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
@@ -482,7 +485,9 @@ class UserSettingsSerializer(JSONAPISerializer):
         )
 
     class Meta:
-        type_ = 'user_settings'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'user-settings')
 
 
 class UserSettingsUpdateSerializer(UserSettingsSerializer):
@@ -604,7 +609,9 @@ class UserEmailsSerializer(JSONAPISerializer):
             return '{}?resend_confirmation=true'.format(url)
 
     class Meta:
-        type_ = 'user_emails'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'user-emails')
 
     def create(self, validated_data):
         user = self.context['request'].user
