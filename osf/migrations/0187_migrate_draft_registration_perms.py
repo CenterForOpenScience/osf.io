@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 import logging
 from django.db import migrations
 from django.core.management.sql import emit_post_migrate_signal
-from osf.models import DraftRegistration
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +20,13 @@ add_draft_read_write_admin_auth_groups = """
     FROM osf_draftregistration D;
     """
 
+# Before auth_group items can be deleted, users need to be removed from those auth_groups
 remove_draft_auth_groups = """
+    DELETE FROM osf_osfuser_groups
+      WHERE group_id IN (
+        SELECT id FROM auth_group WHERE name LIKE '%draft_registration_%'
+      );
+
     DELETE FROM auth_group WHERE name in
     (SELECT regexp_split_to_table('draft_registration_' || D.id || '_read,draft_registration_' || D.id || '_write,draft_registration_' || D.id || '_admin', ',')
     FROM osf_draftregistration D);
@@ -58,12 +63,6 @@ drop_draft_reg_group_object_permission_table = """
     DELETE FROM osf_draftregistrationgroupobjectpermission;
     """
 
-def copy_editable_fields_from_draft_to_node(state, schema):
-    for draft_reg in DraftRegistration.objects.all():
-        node = draft_reg.branched_from
-        draft_reg.copy_editable_fields(node)
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -74,5 +73,4 @@ class Migration(migrations.Migration):
         migrations.RunPython(post_migrate_signal, migrations.RunPython.noop),
         migrations.RunSQL(add_draft_read_write_admin_auth_groups, remove_draft_auth_groups),
         migrations.RunSQL(add_permissions_to_draft_registration_groups, drop_draft_reg_group_object_permission_table),
-        migrations.RunPython(copy_editable_fields_from_draft_to_node, migrations.RunPython.noop)
     ]
