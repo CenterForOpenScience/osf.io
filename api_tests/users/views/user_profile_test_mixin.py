@@ -320,13 +320,13 @@ class UserProfileRelationshipMixin(UserProfileFixtures):
         assert profile_item_one._id not in ids
         assert profile_item_two._id in ids
 
-    def test_delete_multiple(self, app, user, profile_item_one, profile_item_two, url, relationship_payload, object_type):
+    def test_delete_multiple(self, app, user, profile_item_one, profile_item_two, url, relationship_payload, object_type, profile_type):
         relationship_payload['data'].append({'type': object_type, 'id': profile_item_two._id})
         res = app.delete_json_api(url, relationship_payload, auth=user.auth)
         assert res.status_code == 204
 
         user.reload()
-        user_profile_object_manager = getattr(user, object_type)
+        user_profile_object_manager = getattr(user, profile_type)
         ids = list(user_profile_object_manager.values_list('_id', flat=True))
         assert profile_item_one._id not in ids
         assert profile_item_two._id not in ids
