@@ -167,6 +167,12 @@ class TestDraftRegistrations:
 
     def test_create_from_node_existing(self, user):
         node = factories.ProjectFactory(creator=user)
+
+        member = factories.AuthUserFactory()
+        osf_group = factories.OSFGroupFactory(creator=user)
+        osf_group.make_member(member, auth=Auth(user))
+        node.add_osf_group(osf_group, ADMIN)
+
         write_contrib = factories.AuthUserFactory()
         subject = factories.SubjectFactory()
         institution = factories.InstitutionFactory()
@@ -211,6 +217,8 @@ class TestDraftRegistrations:
         assert draft.category == category
         assert user in draft.contributors.all()
         assert write_contrib in draft.contributors.all()
+        assert member not in draft.contributors.all()
+        assert not draft.has_permission(member, 'read')
 
         assert draft.get_permissions(user) == [READ, WRITE, ADMIN]
         assert draft.get_permissions(write_contrib) == [READ, WRITE]

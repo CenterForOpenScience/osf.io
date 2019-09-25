@@ -1111,7 +1111,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def log_params(self):
-        # Override for ContributorMixin
+        # Override for ContributorMixin, some node logs were using
+        # parent node as "parent", others use "project" as parent.
+        # Logging both for consistency
         return {
             'parent_node': self.parent_id,
             'project': self.parent_id,

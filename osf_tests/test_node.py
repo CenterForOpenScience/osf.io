@@ -1919,6 +1919,24 @@ class TestRegisterNode:
         assert registration.subjects.filter(id=subject.id).exists()
 
     @mock.patch('website.project.signals.after_create_registration')
+    def test_register_node_does_not_copy_group_members(self, mock_signal):
+        user = UserFactory()
+        node = NodeFactory(creator=user)
+
+        group_mem = UserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        node.add_osf_group(group, permissions.READ)
+        node.save()
+
+        assert node.has_permission(group_mem, permissions.READ) is True
+
+        draft_reg = DraftRegistrationFactory(branched_from=node)
+        registration = node.register_node(get_default_metaschema(), Auth(user), draft_reg, None)
+
+        assert registration.has_permission(user, permissions.ADMIN) is True
+        assert registration.has_permission(group_mem, permissions.READ) is False
+
+    @mock.patch('website.project.signals.after_create_registration')
     def test_register_node_makes_private_registration(self, mock_signal):
         user = UserFactory()
         node = NodeFactory(creator=user)
@@ -1969,18 +1987,46 @@ class TestRegisterNode:
 
     def test_register_root_node_prioritizes_draft_registration_editable_fields(self, node, auth):
         node_title = node.title
+        node.description = 'parent description'
+        node.category = 'project'
+        node.add_tag('parent tag', Auth(node.creator))
         child = NodeFactory(parent=node)
         child_title = child.title
+        child.description = 'child description'
+        child.category = 'software'
+        child.add_tag('child tag', Auth(child.creator))
+        node.save()
+        child.save()
         with disconnected_from_listeners(after_create_registration):
             draft_reg = DraftRegistrationFactory(branched_from=node)
             draft_reg.title = 'The Giraffe'
+            draft_reg.description = 'draft description'
+            draft_reg.category = 'procedure'
+            draft_reg.add_tag('draft tag', Auth(draft_reg.creator))
             draft_reg.save()
             registration = node.register_node(get_default_metaschema(), auth, draft_reg, None)
-            # Draft registration title copied to the registration
+            # Draft registration information copied to the draft
             assert registration.title == 'The Giraffe'
+            assert registration.description == draft_reg.description
+            assert registration.category == draft_reg.category
+            assert list(registration.tags.values_list('name', flat=True)) == list(
+                draft_reg.tags.values_list('name', flat=True))
             assert registration.title != node_title
-            # Component registrations assume original component title
-            assert registration._nodes.all()[0].title == child_title
+            # Component registration editable fields pulled from component
+            # not the draft registration
+            reg_child = registration._nodes.all()[0]
+            assert reg_child.title == child_title
+            assert reg_child.description == child.description
+            assert reg_child.category == child.category
+            assert list(reg_child.tags.values_list('name', flat=True)) == list(
+                child.tags.values_list('name', flat=True))
+
+            # Assert draft fields not copied back to the node
+            node.reload()
+            assert node.title == node_title
+            assert node.description == 'parent description'
+            assert node.category == 'project'
+            assert list(node.tags.values_list('name', flat=True)) == ['parent tag']
 
             # Now registering the child as top level
             draft_reg = DraftRegistrationFactory(branched_from=child)
