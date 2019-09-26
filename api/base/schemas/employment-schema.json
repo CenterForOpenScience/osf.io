@@ -12,18 +12,18 @@
         },
         "ongoing": {
             "oneOf": [{
-                    "const": false,
+                    "const": "false",
                     "required": ["start_date", "end_date"]
                 },
                 {
-                    "const": true,
+                    "const": "true",
                     "required": ["start_date"],
                     "not": {
                         "required": ["end_date"]
                     }
                 }
             ],
-            "type": "boolean"
+            "type": "string"
         },
         "department": {
             "type": "string"

@@ -12,22 +12,21 @@
 			"type": "string",
 			"format": "date"
 		},
-		"ongoing": {
-			"oneOf": [{
-					"const": false,
-					"required": ["start_date", "end_date"],
-					"type": "boolean"
-				},
-				{
-					"const": true,
-					"required": ["start_date"],
-					"not": {
-						"required": ["end_date"]
-					},
-					"type": "boolean"
-				}
-			]
-		},
+        "ongoing": {
+            "oneOf": [{
+                    "const": "false",
+                    "required": ["start_date", "end_date"]
+                },
+                {
+                    "const": "true",
+                    "required": ["start_date"],
+                    "not": {
+                        "required": ["end_date"]
+                    }
+                }
+            ],
+            "type": "string"
+        },
 		"department": {
 			"type": "string"
 		},
