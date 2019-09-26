@@ -594,7 +594,7 @@
                 <div class="db-poFilter m-r-xs row">
                      <div class="db-buttonRow col-xs-10 col-sm-6 col-lg-4">
                          <form>
-                             <input type="text" id="LogSearchName" placeholder="parts of user's Full name">
+                             <input type="text" id="LogSearchName" placeholder="Parts of User's Fullname">
                          </form>
                          <input type="hidden" id="LogSearchUserKeys">
                      </div>

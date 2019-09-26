@@ -205,11 +205,13 @@ $(document).ready(function () {
 
         var splitSearch = function(searchStr) {
             // Examples:
-            // a b c de -> ['a', 'b', 'c', 'de']
-            // "a b c" de -> ['a b c', 'de']
-            // "a\ b c" de -> ['a\ b c', 'de']
-            // a\ b\ c de -> ['a b c', 'de']
-            var results = [];
+            // a b c de -> [['a'], ['b'], ['c'], ['de']]
+            // "a b c" de -> [['a b c'], ['de']]
+            // "a\ b c" de -> [['a\ b c'], ['de']]
+            // "a b c de -> [['a b c de']]
+            // a\ b\ c de -> [['a b c'], ['de']]
+            // "a b" AND c de -> [['a b', 'c'], ['de']]
+            var words = [];
             var all = Array.from(searchStr);
             var len = all.length;
             var i;
@@ -219,7 +221,7 @@ $(document).ready(function () {
 
             var confirm = function() {
                 if (tmp.length > 0) {
-                    results.push(tmp.join(''));
+                    words.push(tmp.join(''));
                     tmp = [];
                 }
             };
@@ -250,6 +252,33 @@ $(document).ready(function () {
                 }
             }
             confirm();
+
+            var results = [];
+            var and_list = [];
+            len = words.length;
+            for (i = 0; i < len; i++) {
+                var word = words[i];
+                var next = null;
+                if (i < len - 1) {
+                    next = words[i+1];
+                }
+                if (word === 'AND') {
+                    continue;
+                } else {
+                    if (word === '"AND"') {
+                        word = 'AND';
+                    }
+                    if (word !== '') {
+                      and_list.push(word);
+                    }
+                    if (next !== 'AND') {
+                       if (and_list.length > 0) {
+                         results.push(and_list);
+                         and_list = [];
+                       }
+                    }
+                }
+            }
             return results;
         };
 
@@ -268,8 +297,8 @@ $(document).ready(function () {
                     var total = Number(data.links.meta.total);
                     var name_i;
                     for (name_i in logSearchNames) {
-                        var name = logSearchNames[name_i];
-                        if (name === '') {
+                        var and_list = logSearchNames[name_i];
+                        if (and_list.length === 0) {
                             continue;
                         }
                         var found = false;
@@ -278,14 +307,23 @@ $(document).ready(function () {
                             var userAttr = data.data[data_i].attributes;
                             // OSFUser.fullname
                             var fullName = userAttr.full_name;
-                            if (fullName.includes(name)) {
+                            var j;
+                            var match_count = 0;
+                            for (j = 0; j < and_list.length; j++) {
+                                var word = and_list[j];
+                                if (fullName.includes(word)) {
+                                    match_count++;
+                                }
+                            }
+                            if (match_count === and_list.length) {
                                 // OSFUser.id
                                 userKeyDict[userAttr.uid] = true;
                                 found = true;
                             }
+ 
                         }
                         if (!found) {
-                            $osf.growl('no user matched', '"' + name + '"', 'warning');
+                            $osf.growl('no user matched', '"' + and_list.join(' AND ')  + '"', 'warning');
                         }
                     }
                     var userKeys = Object.keys(userKeyDict);
