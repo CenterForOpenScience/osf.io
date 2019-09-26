@@ -211,6 +211,8 @@ $(document).ready(function () {
             // "a b c de -> [['a b c de']]
             // a\ b\ c de -> [['a b c'], ['de']]
             // "a b" AND c de -> [['a b', 'c'], ['de']]
+            // "a b" "AND" c de -> [['a b', 'c'], ['de']]
+            // a \"AND\" \b \\ \" -> [['a'], ['AND'], ['b'], ['\'], ['"']]
             var words = [];
             var all = Array.from(searchStr);
             var len = all.length;
@@ -320,7 +322,6 @@ $(document).ready(function () {
                                 userKeyDict[userAttr.uid] = true;
                                 found = true;
                             }
- 
                         }
                         if (!found) {
                             $osf.growl('no user matched', '"' + and_list.join(' AND ')  + '"', 'warning');
