@@ -2,7 +2,7 @@
 
 import copy
 import functools
-import httplib as http
+from rest_framework import status as http_status
 import json
 import logging
 import os
@@ -53,8 +53,8 @@ _TPL_LOOKUP_SAFE = TemplateLookup(
 )
 
 REDIRECT_CODES = [
-    http.MOVED_PERMANENTLY,
-    http.FOUND,
+    http_status.HTTP_301_MOVED_PERMANENTLY,
+    http_status.HTTP_302_FOUND,
 ]
 
 class Rule(object):
@@ -124,7 +124,7 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
             if debug_mode:
                 raise
             data = HTTPError(
-                http.INTERNAL_SERVER_ERROR,
+                http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 message=repr(error),
             )
         return renderer(data, **renderer_kwargs or {})
