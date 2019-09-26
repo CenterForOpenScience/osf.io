@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import mock
 import pytest
-import urlparse
+from future.moves.urllib.parse import urlparse, parse_qs
 import datetime as dt
 
 from django.db import connection, transaction
@@ -98,8 +98,8 @@ class TestUserDetail:
         res = app.get(url)
         user_json = res.json['data']
         profile_image_url = user_json['links']['profile_image']
-        query_dict = urlparse.parse_qs(
-            urlparse.urlparse(profile_image_url).query)
+        query_dict = parse_qs(
+            urlparse(profile_image_url).query)
         assert int(query_dict.get('s')[0]) == size
 
     #   test_profile_image_in_links
@@ -1188,7 +1188,7 @@ class TestDeactivatedUser:
         assert res.json['errors'][0]['meta']['given_name'] == user_one.given_name
         assert res.json['errors'][0]['meta']['middle_names'] == user_one.middle_names
         assert res.json['errors'][0]['meta']['full_name'] == user_one.fullname
-        assert urlparse.urlparse(
+        assert urlparse(
             res.json['errors'][0]['meta']['profile_image']).netloc == 'secure.gravatar.com'
         assert res.json['errors'][0]['detail'] == 'The requested user is no longer available.'
 

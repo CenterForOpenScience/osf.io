@@ -89,7 +89,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     # Add regardless it can be pinned to a version or not
     _history = DateTimeAwareJSONField(default=list, blank=True)
     # A concrete version of a FileNode, must have an identifier
-    versions = models.ManyToManyField('FileVersion')
+    versions = models.ManyToManyField('FileVersion', through='BaseFileVersionsThrough')
 
     target_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     target_object_id = models.PositiveIntegerField()
@@ -234,6 +234,18 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
                     storage.pop(key)
         return storage
 
+    def add_version(self, version, name=None):
+        """
+        Relates the file object to the version object.
+        :param version: Version object
+        :param name: Name, optional.  Pass in if this version needs to have
+        a different name than the file
+        :return: Returns version that was passed in
+        """
+        version_name = name or self.name
+        BaseFileVersionsThrough.objects.create(fileversion=version, basefilenode=self, version_name=version_name)
+        return version
+
     @classmethod
     def files_checked_out(cls, user):
         """
@@ -359,9 +371,17 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         return utils.copy_files(self, destination_parent.target, destination_parent, name=name)
 
     def move_under(self, destination_parent, name=None):
+        renaming = name != self.name
         self.name = name or self.name
         self.parent = destination_parent
         self._update_node(save=True)  # Trust _update_node to save us
+
+        if renaming and self.is_file and self.versions.exists():
+            newest_version = self.versions.first()
+            node_file_version = newest_version.get_basefilenode_version(self)
+            # Rename version in through table
+            node_file_version.version_name = self.name
+            node_file_version.save()
 
         return self
 
@@ -443,6 +463,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             self.target
         )
 
+
 class UnableToRestore(Exception):
     pass
 
@@ -458,7 +479,7 @@ class File(models.Model):
     def update(self, revision, data, user=None, save=True):
         """Using revision and data update all data pretaining to self
         :param str or None revision: The revision that data points to
-        :param dict data: Metadata recieved from waterbutler
+        :param dict data: Metadata received from waterbutler
         :returns: FileVersion
         """
         self.name = data['name']
@@ -479,7 +500,8 @@ class File(models.Model):
         # Dont save the latest information
         if revision is not None:
             version.save()
-            self.versions.add(version)
+            # Adds version to the list of file versions - using custom through table
+            self.add_version(version)
         for entry in self.history:
             # Some entry might have an undefined modified field
             if data['modified'] is not None and entry['modified'] is not None and data['modified'] < entry['modified']:
@@ -750,6 +772,11 @@ class FileVersion(ObjectIDMixin, BaseModel):
     def is_duplicate(self, other):
         return self.location_hash == other.location_hash
 
+    def get_basefilenode_version(self, file):
+        # Returns the throughtable object  - the record that links this version
+        # to the given file.
+        return self.basefileversionsthrough_set.filter(basefilenode=file).first()
+
     def update_metadata(self, metadata, save=True):
         self.metadata.update(metadata)
         # metadata has no defined structure so only attempt to set attributes
@@ -806,3 +833,15 @@ class FileVersion(ObjectIDMixin, BaseModel):
 
     class Meta:
         ordering = ('-created',)
+
+
+class BaseFileVersionsThrough(models.Model):
+    basefilenode = models.ForeignKey(BaseFileNode, db_index=True)
+    fileversion = models.ForeignKey(FileVersion, db_index=True)
+    version_name = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = (('basefilenode', 'fileversion'),)
+        index_together = (
+            ('basefilenode', 'fileversion', )
+        )

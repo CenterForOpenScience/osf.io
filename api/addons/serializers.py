@@ -1,10 +1,13 @@
 from rest_framework import serializers as ser
 from api.base.serializers import JSONAPISerializer, LinksField
 from api.base.utils import absolute_reverse
+from api.base.versioning import get_kebab_snake_case_field
 
 class NodeAddonFolderSerializer(JSONAPISerializer):
     class Meta:
-        type_ = 'node_addon_folders'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'node-addon-folders')
 
     id = ser.CharField(read_only=True)
     kind = ser.CharField(default='folder', read_only=True)

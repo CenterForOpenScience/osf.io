@@ -12,6 +12,7 @@ from addons.osfstorage.tests import factories
 from addons.osfstorage import utils
 
 from addons.osfstorage.tests.utils import StorageTestCase
+from website.files.utils import attach_versions
 
 
 @pytest.mark.django_db
@@ -25,7 +26,7 @@ class TestSerializeRevision(StorageTestCase):
             factories.FileVersionFactory(creator=self.user)
             for __ in range(3)
         ]
-        self.record.versions = self.versions
+        attach_versions(self.record, self.versions)
         self.record.save()
 
     def test_serialize_revision(self):

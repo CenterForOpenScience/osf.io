@@ -3,7 +3,7 @@ from nose.tools import assert_in, assert_equal
 import mock
 import pytest
 
-import httplib as http
+from rest_framework import status as http_status
 
 from addons.base.tests.views import (
     OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin
@@ -57,7 +57,7 @@ class TestConfigViews(OwnCloudAddonTestCase, OAuthAddonConfigViewsTestCaseMixin,
         url = self.project.api_url_for(
             '{0}_get_config'.format(self.ADDON_SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         assert_in('result', res.json)
         serialized = self.Serializer().serialize_settings(
             self.node_settings,

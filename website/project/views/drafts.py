@@ -1,5 +1,5 @@
 import functools
-import httplib as http
+from rest_framework import status as http_status
 import itertools
 
 import waffle
@@ -40,7 +40,7 @@ def get_schema_or_fail(schema_name, schema_version):
         meta_schema = RegistrationSchema.objects.get(name=schema_name, schema_version=schema_version)
     except RegistrationSchema.DoesNotExist:
         raise HTTPError(
-            http.NOT_FOUND, data=dict(
+            http_status.HTTP_200_OK, data=dict(
                 message_long='No RegistrationSchema record matching that query could be found',
             ),
         )
@@ -54,10 +54,10 @@ def must_be_branched_from_node(func):
         node = kwargs['node']
         draft = kwargs['draft']
         if draft.deleted:
-            raise HTTPError(http.GONE)
+            raise HTTPError(http_status.HTTP_410_GONE)
         if not draft.branched_from._id == node._id:
             raise HTTPError(
-                http.BAD_REQUEST,
+                http_status.HTTP_400_BAD_REQUEST,
                 data={
                     'message_short': 'Not a draft of this node',
                     'message_long': 'This draft registration is not created from the given node.',
@@ -82,7 +82,7 @@ def validate_embargo_end_date(end_date_string, node):
     today = timezone.now()
     if (end_date - today) <= settings.DRAFT_REGISTRATION_APPROVAL_PERIOD:
         raise HTTPError(
-            http.BAD_REQUEST, data={
+            http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': 'Invalid embargo end date',
                 'message_long': 'Embargo end date for this submission must be at least {0} days in the future.'.format(settings.DRAFT_REGISTRATION_APPROVAL_PERIOD),
             },
@@ -90,7 +90,7 @@ def validate_embargo_end_date(end_date_string, node):
     elif not node._is_embargo_date_valid(end_date):
         max_end_date = today + settings.DRAFT_REGISTRATION_APPROVAL_PERIOD
         raise HTTPError(
-            http.BAD_REQUEST, data={
+            http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': 'Invalid embargo end date',
                 'message_long': 'Embargo end date must on or before {0}.'.format(max_end_date.isoformat()),
             },
@@ -99,7 +99,7 @@ def validate_embargo_end_date(end_date_string, node):
 def validate_registration_choice(registration_choice):
     if registration_choice not in ('embargo', 'immediate'):
         raise HTTPError(
-            http.BAD_REQUEST,
+            http_status.HTTP_400_BAD_REQUEST,
             data={
                 'message_short': "Invalid 'registrationChoice'",
                 'message_long': "Values for 'registrationChoice' must be either 'embargo' or 'immediate'.",
@@ -110,21 +110,21 @@ def check_draft_state(draft):
     registered_and_deleted = draft.registered_node and draft.registered_node.is_deleted
     if draft.registered_node and not registered_and_deleted:
         raise HTTPError(
-            http.FORBIDDEN, data={
+            http_status.HTTP_403_FORBIDDEN, data={
                 'message_short': 'This draft has already been registered',
                 'message_long': 'This draft has already been registered and cannot be modified.',
             },
         )
     if draft.is_pending_review:
         raise HTTPError(
-            http.FORBIDDEN, data={
+            http_status.HTTP_403_FORBIDDEN, data={
                 'message_short': 'This draft is pending review',
                 'message_long': 'This draft is pending review and cannot be modified.',
             },
         )
     if draft.requires_approval and draft.is_approved and (not registered_and_deleted):
         raise HTTPError(
-            http.FORBIDDEN, data={
+            http_status.HTTP_403_FORBIDDEN, data={
                 'message_short': 'This draft has already been approved',
                 'message_long': 'This draft has already been approved and cannot be modified.',
             },
@@ -142,7 +142,7 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     """
     if waffle.switch_is_active(features.OSF_PREREGISTRATION):
         raise HTTPError(
-            http.GONE, data={
+            http_status.HTTP_410_GONE, data={
                 'message_short': 'The Prereg Challenge has ended',
                 'message_long': 'The Prereg Challenge has ended. No new submissions are accepted at this time.',
             },
@@ -150,10 +150,10 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
 
     json_data = request.get_json()
     if 'data' not in json_data:
-        raise HTTPError(http.BAD_REQUEST, data=dict(message_long='Payload must include "data".'))
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(message_long='Payload must include "data".'))
     data = json_data['data']
     if 'attributes' not in data:
-        raise HTTPError(http.BAD_REQUEST, data=dict(message_long='Payload must include "data/attributes".'))
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(message_long='Payload must include "data/attributes".'))
     attributes = data['attributes']
     meta = {}
     registration_choice = attributes['registration_choice']
@@ -167,7 +167,7 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
 
     if draft.registered_node and not draft.registered_node.is_deleted:
         raise HTTPError(
-            http.BAD_REQUEST, data=dict(
+            http_status.HTTP_400_BAD_REQUEST, data=dict(
                 message_long='This draft has already been registered, if you wish to '
                 'register it again or submit it for review please create '
                 'a new draft.',
@@ -176,7 +176,7 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
 
     # Don't allow resubmission unless submission was rejected
     if draft.approval and draft.approval.state != Sanction.REJECTED:
-        raise HTTPError(http.CONFLICT, data=dict(message_long='Cannot resubmit previously submitted draft.'))
+        raise HTTPError(http_status.HTTP_409_CONFLICT, data=dict(message_long='Cannot resubmit previously submitted draft.'))
 
     draft.submit_for_review(
         initiated_by=auth.user,
@@ -207,7 +207,7 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
             },
         },
         'status': 'initiated',
-    }, http.ACCEPTED
+    }, http_status.HTTP_202_ACCEPTED
 
 @must_have_permission(ADMIN)
 @must_be_contributor_and_not_group_member
@@ -232,7 +232,7 @@ def get_draft_registration(auth, node, draft, *args, **kwargs):
     :return: serialized draft registration
     :rtype: dict
     """
-    return serialize_draft_registration(draft, auth), http.OK
+    return serialize_draft_registration(draft, auth), http_status.HTTP_200_OK
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
@@ -249,7 +249,7 @@ def get_draft_registrations(auth, node, *args, **kwargs):
     sorted_serialized_drafts = sorted(serialized_drafts, key=itemgetter('updated'), reverse=True)
     return {
         'drafts': sorted_serialized_drafts,
-    }, http.OK
+    }, http_status.HTTP_200_OK
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
@@ -264,7 +264,7 @@ def new_draft_registration(auth, node, *args, **kwargs):
     """
     if node.is_registration:
         raise HTTPError(
-            http.FORBIDDEN, data={
+            http_status.HTTP_403_FORBIDDEN, data={
                 'message_short': "Can't create draft",
                 'message_long': 'Creating draft registrations on registered projects is not allowed.',
             },
@@ -274,7 +274,7 @@ def new_draft_registration(auth, node, *args, **kwargs):
     schema_name = data.get('schema_name')
     if not schema_name:
         raise HTTPError(
-            http.BAD_REQUEST,
+            http_status.HTTP_400_BAD_REQUEST,
             data={
                 'message_short': 'Must specify a schema_name',
                 'message_long': 'Please specify a schema_name',
@@ -334,7 +334,7 @@ def update_draft_registration(auth, node, draft, *args, **kwargs):
 
     draft.update_metadata(schema_data)
     draft.save()
-    return serialize_draft_registration(draft, auth), http.OK
+    return serialize_draft_registration(draft, auth), http_status.HTTP_200_OK
 
 @must_have_permission(ADMIN)
 @must_be_contributor_and_not_group_member
@@ -347,7 +347,7 @@ def delete_draft_registration(auth, node, draft, *args, **kwargs):
     """
     if draft.registered_node and not draft.registered_node.is_deleted:
         raise HTTPError(
-            http.FORBIDDEN,
+            http_status.HTTP_403_FORBIDDEN,
             data={
                 'message_short': 'Can\'t delete draft',
                 'message_long': 'This draft has already been registered and cannot be deleted.',
@@ -355,7 +355,7 @@ def delete_draft_registration(auth, node, draft, *args, **kwargs):
         )
     draft.deleted = timezone.now()
     draft.save(update_fields=['deleted'])
-    return None, http.NO_CONTENT
+    return None, http_status.HTTP_204_NO_CONTENT
 
 def get_metaschemas(*args, **kwargs):
     """
@@ -377,4 +377,4 @@ def get_metaschemas(*args, **kwargs):
         'meta_schemas': [
             serialize_meta_schema(ms) for ms in meta_schemas[:count]
         ],
-    }, http.OK
+    }, http_status.HTTP_200_OK
