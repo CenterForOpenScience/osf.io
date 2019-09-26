@@ -199,34 +199,106 @@ $(document).ready(function () {
                     new ArrangeLogDownload(data);
                 }
             }, function(xhr, textStatus, error) {
-                Raven.captureMessage('Error retrieving filebrowser', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});
+                Raven.captureMessage('Error retrieving DownloadLog', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});
             });
          });
+
+        var splitSearch = function(searchStr) {
+            // Examples:
+            // a b c de -> ['a', 'b', 'c', 'de']
+            // "a b c" de -> ['a b c', 'de']
+            // "a\ b c" de -> ['a\ b c', 'de']
+            // a\ b\ c de -> ['a b c', 'de']
+            var results = [];
+            var all = Array.from(searchStr);
+            var len = all.length;
+            var i;
+            var escape = false;
+            var quote = false;
+            var tmp = [];
+
+            var confirm = function() {
+                if (tmp.length > 0) {
+                    results.push(tmp.join(''));
+                    tmp = [];
+                }
+            };
+
+            for (i = 0; i < len; i++) {
+                var c = all[i];
+                if (quote) {
+                    if (c === '"') {
+                       confirm();
+                       quote = false;
+                    } else {
+                        tmp.push(c);
+                    }
+                } else if (escape) {
+                    tmp.push(c);
+                    escape = false;
+                } else if (c === ' ') {
+                    confirm();
+                    escape = false;
+                } else if (c === '\\') {
+                    escape = true;
+                } else if (c === '"') {
+                    confirm();
+                    quote = true;
+                } else {
+                    tmp.push(c);
+                    escape = false;
+                }
+            }
+            confirm();
+            return results;
+        };
 
         // Refresh button
         RefreshLog =function (){
             var LogSearchName = $('#LogSearchName').val();
             if (LogSearchName === '') {
-                document.getElementById('LogSearchKeyUser').value = '';
-            }else{
-                var query = { 'filter[full_name]' : LogSearchName};
+                document.getElementById('LogSearchUserKeys').value = '';
+                m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));
+            } else {
+                var logSearchNames = splitSearch(LogSearchName);
                 var urlUsers = $osf.apiV2Url('/users/');
                 var promise = m.request({ method: 'GET', config: $osf.setXHRAuthorization, url: urlUsers});
                 promise.then(function (data) {
-                    var i;
+                    var userKeyDict = {};
                     var total = Number(data.links.meta.total);
-                    document.getElementById('LogSearchKeyUser').value = '';
-                    for (i in data.data){
-                        if (LogSearchName === data.data[i].attributes.full_name){
-                            document.getElementById('LogSearchKeyUser').value = (total -Number(i)).toString();
+                    var name_i;
+                    for (name_i in logSearchNames) {
+                        var name = logSearchNames[name_i];
+                        if (name === '') {
+                            continue;
+                        }
+                        var found = false;
+                        var data_i;
+                        for (data_i in data.data) {
+                            var userAttr = data.data[data_i].attributes;
+                            // OSFUser.fullname
+                            var fullName = userAttr.full_name;
+                            if (fullName.includes(name)) {
+                                // OSFUser.id
+                                userKeyDict[userAttr.uid] = true;
+                                found = true;
+                            }
+                        }
+                        if (!found) {
+                            $osf.growl('no user matched', '"' + name + '"', 'warning');
                         }
                     }
-                    if(document.getElementById('LogSearchKeyUser').value === ''){$osf.growl('user not found','user:' + LogSearchName + ' is no activity','warning');}
+                    var userKeys = Object.keys(userKeyDict);
+                    //if (userKeys.length === 0) {
+                    //    $osf.growl('no users matched', '"' + logSearchNames.toString() + '"', 'warning');
+                    //}
+                    var userKeysStr = userKeys.join(',');
+                    document.getElementById('LogSearchUserKeys').value = userKeysStr;
+                    m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));
                 }, function(xhr, textStatus, error) {
-                    Raven.captureMessage('Error retrieving filebrowser', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});
+                    Raven.captureMessage('Error retrieving UserList', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});
                 });
             }
-            setTimeout(function(){m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));}, 350);
         };
         $('#RefreshLog').on('click', RefreshLog);
         $('#LogSearchName,#LogSearchE,#LogSearchS').on('keypress', function(e){
