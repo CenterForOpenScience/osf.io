@@ -17,6 +17,10 @@ class UserEducationMixin:
     def profile_type(self):
         return 'education'
 
+    @pytest.fixture()
+    def object_type(self):
+        return 'user-education'
+
 
 @pytest.mark.django_db
 class TestUserEducationList(UserEducationMixin, UserProfileListMixin):
