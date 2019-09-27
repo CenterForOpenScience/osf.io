@@ -8,6 +8,8 @@ from faker import Factory
 from website import settings as website_settings
 
 from framework.celery_tasks import app as celery_app
+from django.db import connection
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -116,3 +118,12 @@ def _test_speedups_disable(request, settings, _test_speedups):
 
     for patcher in patchers:
         patcher.start()
+
+
+@pytest.fixture(autouse=True)
+def fix():
+    if settings.TEST_MIGRATION:
+        # Since  model level fields are deleted from code (but not removed from db) we have to mock a default for them.
+        with connection.cursor() as cursor:
+            cursor.execute('''ALTER TABLE "public"."osf_osfuser" ALTER COLUMN "jobs" SET DEFAULT '[]'::jsonb;''')
+            cursor.execute('''ALTER TABLE "public"."osf_osfuser" ALTER COLUMN "schools" SET DEFAULT '[]'::jsonb;''')

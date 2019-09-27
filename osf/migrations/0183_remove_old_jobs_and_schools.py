@@ -3,14 +3,12 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
+from django.conf import settings
 
 
-class Migration(migrations.Migration):
-
-    dependencies = [
-        ('osf', '0182_add_education_employment_models'),
-    ]
-
+if settings.TEST_MIGRATION:
+    operations = []
+else:
     operations = [
         migrations.RemoveField(
             model_name='osfuser',
@@ -21,3 +19,12 @@ class Migration(migrations.Migration):
             name='schools',
         ),
     ]
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('osf', '0182_add_education_employment_models'),
+    ]
+
+    operations = operations

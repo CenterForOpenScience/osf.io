@@ -7,7 +7,6 @@ from website.app import init_app
 from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 
-
 # NOTE: autouse so that ADDONS_REQUESTED gets set on website.settings
 @pytest.fixture(autouse=True, scope='session')
 def app():

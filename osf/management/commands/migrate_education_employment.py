@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand
 from django.db import connection
 
 from framework.celery_tasks import app as celery_app
-from osf.models import OSFUser, UserEducation, UserEmployment
+from osf.models import UserEducation, UserEmployment
 from osf.models.base import generate_object_id
 
 logger = logging.getLogger(__name__)
@@ -13,11 +13,8 @@ logger = logging.getLogger(__name__)
 
 def populate_new_models(rows, dry_run):
 
-    users_with_education = OSFUser.objects.raw('''SELECT id, schools FROM osf_osfuser where schools <> '{}' LIMIT %s''', [rows])
-    set_model(users_with_education, 'schools', dry_run)
-
-    users_with_employment = OSFUser.objects.raw('''SELECT id, jobs FROM osf_osfuser where jobs <> '{}' LIMIT %s''', [rows])
-    set_model(users_with_employment, 'jobs', dry_run)
+    set_models(dry_run, 'schools')
+    set_models(dry_run, 'jobs')
 
 
 def parse_model_datetime(month, year):
@@ -42,42 +39,39 @@ def get_dates(entry):
     return start_date, end_date
 
 
-def set_model(queryset, attribute_name, dry_run):
-    if attribute_name == 'schools':
-        query = 'INSERT INTO osf_usereducation (_id, user_id, ongoing, degree, department, institution, end_date, start_date, created, modified, _order) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
-
-    if attribute_name == 'jobs':
-        query = 'INSERT INTO osf_useremployment (_id, user_id, ongoing, title, department, institution, end_date, start_date, created, modified, _order) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
-
+def set_models(dry_run, info_type):
+    table = 'osf_usereducation' if info_type == 'schools' else 'osf_useremployment'
+    title_or_degree = 'degree' if info_type == 'schools' else 'title'
     with connection.cursor() as cursor:
-        for user in queryset:
-            entry = getattr(user, attribute_name)
-            for order, data in enumerate(entry):
-                start_date, end_date = get_dates(data)
-                ongoing = data.get('ongoing')
-                title_or_degree = data.get('title') or data.get('degree')
-                department = data.get('department')
-                institution = data.get('institution')
-                created = datetime.datetime.now()
+        cursor.execute("""select
+        user_{info_type}.id,
+                 education_items->>'ongoing' as ongoing,
+                 to_date((education_items->>'startMonth'::text) || '-' || (education_items->>'startYear'::text), 'mm-yyyy') as start_date,
+                 case when education_items->>'ongoing'='true' then null else to_date((education_items->>'endMonth'::text) || '-' || (education_items->>'endYear'::text), 'mm-yyyy') end as end_date,
+                 education_items->>'{title_or_degree}'::text as {title_or_degree},
+                 education_items->>'department' as department,
+                 education_items->>'institution' as institution
 
-                if dry_run:
-                    logger.info('dry_run')
-                else:
-                    sql_params = [
-                        generate_object_id(),
-                        user.id,
-                        ongoing,
-                        title_or_degree,
-                        department,
-                        institution,
-                        end_date,
-                        start_date,
-                        created,
-                        created,
-                        order
-                    ]
-                    cursor.execute(query, sql_params)
+          from (select users.id, jsonb_array_elements(users.{info_type}) as education_items from osf_osfuser users where users.{info_type} != '[]') as user_{info_type};""".format(info_type=info_type, title_or_degree=title_or_degree))
 
+        data = cursor.fetchall()
+        if not data:
+            return
+        user_id = data[0][0]
+        order = 0
+        for info in data:
+
+            # update order
+            if user_id == info[0]:
+                order += 1
+            else:
+                user_id = info[0]
+                order = 0
+
+            info = [generate_object_id(), order] + list(info)
+            query = """INSERT INTO {table} ( _id, _order, user_id, ongoing, start_date, end_date,  {title_or_degree}, department, institution, created, modified) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())"""
+            if not dry_run:
+                cursor.execute(query.format(table=table, title_or_degree=title_or_degree), info)
 
 def reset_field_content(queryset, original_attribute, dry_run):
     for entry in queryset:
