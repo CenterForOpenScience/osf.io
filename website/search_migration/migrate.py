@@ -10,11 +10,11 @@ from django.db import connection
 from django.core.paginator import Paginator
 from elasticsearch2 import helpers
 import six
-import unicodedata
 
 import website.search.search as search
 from website.search.elastic_search import client
 from website.search_migration import (
+    enable_private_search,
     JSON_UPDATE_NODES_SQL, JSON_DELETE_NODES_SQL,
     JSON_UPDATE_FILES_SQL, JSON_DELETE_FILES_SQL,
     JSON_UPDATE_USERS_SQL, JSON_DELETE_USERS_SQL)
@@ -26,6 +26,7 @@ from website.search.elastic_search import client as es_client
 from website.search.elastic_search import bulk_update_cgm
 from website.search.elastic_search import PROJECT_LIKE_TYPES
 from website.search.search import update_institution, bulk_update_collected_metadata
+from website.search.util import normalize as util_normalize
 
 
 logger = logging.getLogger(__name__)
@@ -51,7 +52,7 @@ def normalize(docs):
                         val = six.u(val)
                     except TypeError:
                         pass  # This is fine, will only happen in 2.x if val is already unicode
-                    normalized_names[key] = unicodedata.normalize('NFKD', val).encode('ascii', 'ignore')
+                    normalized_names[key] = util_normalize(val)
             doc['doc']['normalized_user'] = normalized_names['fullname']
             doc['doc']['normalized_names'] = normalized_names
     elif doc_type in PROJECT_LIKE_TYPES:
@@ -60,7 +61,7 @@ def normalize(docs):
                 title = six.u(doc['doc']['title'])
             except TypeError:
                 title = doc['doc']['title']
-            doc['doc']['normalized_title'] = unicodedata.normalize('NFKD', title).encode('ascii', 'ignore')
+            doc['doc']['normalized_title'] = util_normalize(title)
 
 def sql_migrate(index, sql, max_id, increment, es_args=None, **kwargs):
     """ Run provided SQL and send output to elastic.
@@ -96,6 +97,7 @@ def sql_migrate(index, sql, max_id, increment, es_args=None, **kwargs):
                 index=index,
                 page_start=page_start,
                 page_end=page_end,
+                enable_private_search=enable_private_search(settings.ENABLE_PRIVATE_SEARCH),
                 **kwargs))
             ser_objs = cursor.fetchone()[0]
             if ser_objs:

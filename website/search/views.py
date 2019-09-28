@@ -20,7 +20,7 @@ from website.project.views.contributor import get_node_contributors_abbrev
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.search import exceptions
 import website.search.search as search
-from website.search.util import build_query
+from website.search.util import build_query, build_private_search_query
 
 logger = logging.getLogger(__name__)
 
@@ -55,27 +55,84 @@ def handle_search_errors(func):
     return wrapped
 
 
+SEARCH_API_VERSION = 1
+SEARCH_API_VENDOR = 'grdm'
+
+def toint(obj):
+    try:
+        return int(obj)
+    except Exception:
+        return None
+
 @handle_search_errors
+@collect_auth
 def search_search(**kwargs):
     _type = kwargs.get('type', None)
+    auth = kwargs.get('auth', None)
+
+    if settings.ENABLE_PRIVATE_SEARCH and not auth.logged_in:
+        raise HTTPError(http.UNAUTHORIZED)
+    user = auth.user
 
     tick = time.time()
     results = {}
 
-    if request.method == 'POST':
+    if request.method == 'POST' and not settings.ENABLE_PRIVATE_SEARCH:
         results = search.search(request.get_json(), doc_type=_type)
-    elif request.method == 'GET':
+    elif request.method == 'GET' and not settings.ENABLE_PRIVATE_SEARCH:
         q = request.args.get('q', '*')
         # TODO Match javascript params?
         start = request.args.get('from', '0')
         size = request.args.get('size', '10')
         results = search.search(build_query(q, start, size), doc_type=_type)
+    elif request.method == 'POST' and settings.ENABLE_PRIVATE_SEARCH:
+        # 新しいAPIの新設等は改修範囲が広くなるため、当面はクライアン
+        # トから来たクエリからクエリ文字列だけを取り出してサーバー側で
+        # 検索クエリを組み直している。
+        json = request.get_json()
+        api_ver = json.get('api_version', None)
+        if api_ver is None or \
+           toint(api_ver.get('version', None)) != SEARCH_API_VERSION or \
+           api_ver.get('vendor', None) != SEARCH_API_VENDOR:
+            raise HTTPError(http.BAD_REQUEST, data={
+                'message_short': 'api_version field is invalid',
+                'message_long': 'api_version field is invalid'
+            })
+        es_dsl = json['elasticsearch_dsl']
+        qs = es_dsl['query']['filtered']['query']['query_string']['query']
+        es_dsl = build_private_search_query(user, qs, es_dsl['from'], es_dsl['size'])
+        results = search.search(es_dsl, doc_type=_type)
+    elif request.method == 'GET' and settings.ENABLE_PRIVATE_SEARCH:
+        version = request.args.get('version', None)
+        if version is None or toint(version) != SEARCH_API_VERSION or \
+           request.args.get('vendor', None) != SEARCH_API_VENDOR:
+            raise HTTPError(http.BAD_REQUEST, data={
+                'message_short': 'version or vendor parameter is invalid',
+                'message_long': 'version or vendor parameter is invalid'
+            })
+        q = request.args.get('q', '*')
+        # TODO Match javascript params?
+        start = request.args.get('from', '0')
+        size = request.args.get('size', '10')
+        es_dsl = build_private_search_query(user, q, start, size)
+        results = search.search(es_dsl, doc_type=_type)
 
     results['time'] = round(time.time() - tick, 2)
     return results
 
+
+def must_be_logged_in_for_private_search(func):
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        if settings.ENABLE_PRIVATE_SEARCH:
+            return must_be_logged_in(func)(*args, **kwargs)
+        else:
+            return func(*args, **kwargs)
+    return wrapped
+
 @ember_flag_is_active(features.EMBER_SEARCH_PAGE)
-def search_view():
+@must_be_logged_in_for_private_search
+def search_view(**kwargs):
     return {'shareUrl': settings.SHARE_URL},
 
 def conditionally_add_query_item(query, item, condition, value):

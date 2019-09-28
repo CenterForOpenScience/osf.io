@@ -196,7 +196,8 @@ def get_globals():
         'features': features,
         'waffle': waffle,
         'csrf_cookie_name': api_settings.CSRF_COOKIE_NAME,
-        'permissions': permissions
+        'permissions': permissions,
+        'enable_private_search': settings.ENABLE_PRIVATE_SEARCH
     }
 
 

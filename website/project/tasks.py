@@ -27,7 +27,7 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
     # due to async nature of call this can issue a search update for a new record (acceptable trade-off)
     if bool({'spam_status', 'is_deleted'}.intersection(saved_fields)):
         need_update = True
-    elif not node.is_public and 'is_public' not in saved_fields:
+    elif not settings.ENABLE_PRIVATE_SEARCH and not node.is_public and 'is_public' not in saved_fields:
         need_update = False
 
     if need_update:

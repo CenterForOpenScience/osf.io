@@ -116,6 +116,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         index_together = (
             ('target_content_type', 'target_object_id', )
         )
+        ordering = ['-id']
 
     @property
     def history(self):

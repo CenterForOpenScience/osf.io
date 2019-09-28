@@ -20,6 +20,7 @@ SELECT json_agg(
                                                         ELSE NULL
                                                         END
                                                  , 'fullname', U.fullname
+                                                 , 'id', USER_GUID._id
                                              ))
                              FROM osf_osfuser AS U
                                INNER JOIN osf_contributor AS CONTRIB
@@ -289,7 +290,7 @@ FROM osf_abstractnode AS N
     ) END)
             ) REGISTRATION_APPROVAL ON TRUE
 WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration')
-  AND is_public IS TRUE
+  {enable_private_search}
   AND is_deleted IS FALSE
   AND (spam_status IS NULL OR NOT (spam_status = 2 or (spam_status = 1 AND {spam_flagged_removed_from_search})))
   AND NOT (UPPER(N.title::text) LIKE UPPER('%Bulk stress 201%') OR UPPER(N.title::text) LIKE UPPER('%Bulk stress 202%') OR UPPER(N.title::text) LIKE UPPER('%OSF API Registration test%') -- is_qa_node
@@ -344,6 +345,15 @@ SELECT json_agg(
                                     THEN translate(F.name, '-_.', '   ')
                                     ELSE ''
                                     END
+            , 'node_contributors', (SELECT json_agg(json_build_object(
+                                                      'id', USER_GUID._id))
+                             FROM osf_osfuser AS U
+                               INNER JOIN osf_contributor AS CONTRIB
+                                 ON (U.id = CONTRIB.user_id)
+                               LEFT OUTER JOIN osf_guid AS USER_GUID
+                                 ON (U.id = USER_GUID.object_id AND (USER_GUID.content_type_id = (SELECT id FROM django_content_type WHERE model = 'osfuser')))
+                             WHERE (CONTRIB.node_id = (NODE.DATA ->> 'id')::integer AND CONTRIB.visible = TRUE))
+            , 'node_public', NODE.DATA ->> 'public'
         )
     )
 )
@@ -429,6 +439,7 @@ FROM osf_basefilenode AS F
                          ELSE
                            FALSE
                          END)
+                       , 'id', N.id
                    ) AS DATA
             FROM osf_abstractnode N
             WHERE (N.id = F.target_object_id AND (
@@ -442,7 +453,7 @@ WHERE name IS NOT NULL
       AND target_object_id = ANY (SELECT id
                          FROM osf_abstractnode
                          WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesnode')
-                               AND is_public IS TRUE
+                               {enable_private_search}
                                AND is_deleted IS FALSE
                                AND (spam_status IS NULL OR NOT (spam_status = 2 or (spam_status = 1 AND {spam_flagged_removed_from_search})))
                                AND NOT (UPPER(osf_abstractnode.title::text) LIKE UPPER('%Bulk stress 201%') OR UPPER(osf_abstractnode.title::text) LIKE UPPER('%Bulk stress 202%') OR UPPER(osf_abstractnode.title::text) LIKE UPPER('%OSF API Registration test%') -- is_qa_node
@@ -633,7 +644,7 @@ FROM osf_abstractnode AS N
             LIMIT 1
             ) PARENT_GUID ON TRUE
 WHERE NOT ((TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesnode')
-  AND N.is_public IS TRUE
+  {enable_private_search}
   AND N.is_deleted IS FALSE
   AND (spam_status IS NULL OR NOT (spam_status = 2 or (spam_status = 1 AND {spam_flagged_removed_from_search})))
   AND NOT (UPPER(N.title::text) LIKE UPPER('%Bulk stress 201%') OR UPPER(N.title::text) LIKE UPPER('%Bulk stress 202%') OR UPPER(N.title::text) LIKE UPPER('%OSF API Registration test%') -- is_qa_node
@@ -667,7 +678,7 @@ WHERE NOT (name IS NOT NULL
       AND target_object_id = ANY (SELECT id
                          FROM osf_abstractnode
                          WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration')
-                               AND is_public IS TRUE
+                               {enable_private_search}
                                AND is_deleted IS FALSE
                                AND (spam_status IS NULL OR NOT (spam_status = 2 or (spam_status = 1 AND {spam_flagged_removed_from_search})))
                                -- settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH
@@ -716,3 +727,6 @@ WHERE is_active != TRUE
   AND id <= {page_end}
 LIMIT 1;
 """
+
+def enable_private_search(enable):
+    return '' if enable else 'AND is_public IS TRUE'

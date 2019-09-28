@@ -57,6 +57,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
             ('member_group', 'Has group membership'),
             ('manage_group', 'Can manage group membership'),
         )
+        ordering = ['-id']
 
     @property
     def _primary_key(self):
