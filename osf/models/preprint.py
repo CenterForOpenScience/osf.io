@@ -183,7 +183,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             ('write_preprint', 'Can write the preprint'),
             ('admin_preprint', 'Can manage the preprint'),
         )
-        ordering = ['-id']
 
     def __unicode__(self):
         return '{} ({} preprint) (guid={}){}'.format(self.title, 'published' if self.is_published else 'unpublished', self._id, ' with supplemental files on ' + self.node.__unicode__() if self.node else '')

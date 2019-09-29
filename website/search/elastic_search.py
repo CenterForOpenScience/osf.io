@@ -1034,7 +1034,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
             return u'{}*~'.format(item)
 
     def item_format_normal(item):
-        return es_escape(u'{}*~'.format(item))
+        return u'{}*~'.format(es_escape(item))
 
     item_format = item_format_normal
     if settings.ENABLE_MULTILINGUAL_SEARCH:

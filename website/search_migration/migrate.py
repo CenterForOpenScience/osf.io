@@ -131,7 +131,7 @@ def migrate_nodes(index, delete, increment=10000):
 
 def migrate_preprints(index, delete):
     logger.info('Migrating preprints to index: {}'.format(index))
-    preprints = Preprint.objects.all()
+    preprints = Preprint.objects.order_by('-id')
     increment = 100
     paginator = Paginator(preprints, increment)
     for page_number in paginator.page_range:
@@ -141,7 +141,7 @@ def migrate_preprints(index, delete):
 def migrate_preprint_files(index, delete):
     logger.info('Migrating preprint files to index: {}'.format(index))
     valid_preprints = Preprint.objects.all()
-    valid_preprint_files = BaseFileNode.objects.filter(preprint__in=valid_preprints)
+    valid_preprint_files = BaseFileNode.objects.filter(preprint__in=valid_preprints).order_by('-id')
     paginator = Paginator(valid_preprint_files, 500)
     serialize = functools.partial(search.update_file, index=index)
     for page_number in paginator.page_range:
@@ -150,7 +150,7 @@ def migrate_preprint_files(index, delete):
 
 def migrate_groups(index, delete):
     logger.info('Migrating groups to index: {}'.format(index))
-    groups = OSFGroup.objects.all()
+    groups = OSFGroup.objects.order_by('-id')
     increment = 100
     paginator = Paginator(groups, increment)
     for page_number in paginator.page_range:
