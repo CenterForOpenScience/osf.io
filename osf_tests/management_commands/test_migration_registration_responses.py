@@ -1579,7 +1579,7 @@ class TestMigrateDraftRegistrationRegistrationResponses:
 
     @pytest.fixture()
     def draft_osf_standard(self, osf_standard_schema):
-        return DraftRegistrationFactory(
+        draft = DraftRegistrationFactory(
             registration_schema=osf_standard_schema,
             registration_metadata={
                 'looked': {
@@ -1599,6 +1599,9 @@ class TestMigrateDraftRegistrationRegistrationResponses:
                 }
             }
         )
+        draft.registration_responses = {}
+        draft.save()
+        return draft
 
     @pytest.fixture()
     def empty_draft_osf_standard(self, osf_standard_schema):
@@ -1606,23 +1609,32 @@ class TestMigrateDraftRegistrationRegistrationResponses:
             registration_schema=osf_standard_schema,
             registration_metadata={}
         )
+        draft.registration_responses = {}
         draft.registration_responses_migrated = False
         draft.save()
         return draft
 
     @pytest.fixture()
     def draft_prereg(self, prereg_schema):
-        return DraftRegistrationFactory(
+        draft = DraftRegistrationFactory(
             registration_schema=prereg_schema,
             registration_metadata=prereg_registration_metadata
         )
+        draft.registration_responses = {}
+        draft.registration_responses_migrated = False
+        draft.save()
+        return draft
 
     @pytest.fixture()
     def draft_veer(self, veer_schema):
-        return DraftRegistrationFactory(
+        draft = DraftRegistrationFactory(
             registration_schema=veer_schema,
             registration_metadata=veer_registration_metadata
         )
+        draft.registration_responses = {}
+        draft.registration_responses_migrated = False
+        draft.save()
+        return draft
 
     def test_migrate_empty_draft(self, app, empty_draft_osf_standard):
         assert empty_draft_osf_standard.registration_responses == {}
@@ -1791,42 +1803,54 @@ class TestMigrateRegistrationRegistrationResponses:
 
     @pytest.fixture()
     def reg_osf_standard(self, osf_standard_schema):
-        draft = DraftRegistrationFactory(registration_metadata={
-            'looked': {
-                'comments': [],
-                'value': 'Yes',
-                'extra': []
-            },
-            'datacompletion': {
-                'comments': [],
-                'value': 'No, data collection has not begun',
-                'extra': []
-            },
-            'comments': {
-                'comments': [],
-                'value': 'more comments',
-                'extra': []
+        draft = DraftRegistrationFactory(
+            registration_schema=osf_standard_schema,
+            registration_metadata={
+                'looked': {
+                    'comments': [],
+                    'value': 'Yes',
+                    'extra': []
+                },
+                'datacompletion': {
+                    'comments': [],
+                    'value': 'No, data collection has not begun',
+                    'extra': []
+                },
+                'comments': {
+                    'comments': [],
+                    'value': 'more comments',
+                    'extra': []
+                }
             }
-        })
+        )
         return RegistrationFactory(
             schema=osf_standard_schema,
-            draft_registration=draft
+            draft_registration=draft,
+            project=draft.branched_from
         )
 
     @pytest.fixture()
     def reg_prereg(self, prereg_schema):
-        draft = DraftRegistrationFactory(registration_metadata=prereg_registration_metadata)
+        draft = DraftRegistrationFactory(
+            registration_schema=prereg_schema,
+            registration_metadata=prereg_registration_metadata
+        )
         return RegistrationFactory(
             schema=prereg_schema,
-            draft_registration=draft
+            draft_registration=draft,
+            project=draft.branched_from
         )
 
     @pytest.fixture()
     def reg_veer(self, veer_schema):
-        draft = DraftRegistrationFactory(registration_metadata=veer_registration_metadata)
+        draft = DraftRegistrationFactory(
+            registration_metadata=veer_registration_metadata,
+            registration_schema=veer_schema,
+        )
         return RegistrationFactory(
             schema=veer_schema,
-            draft_registration=draft
+            draft_registration=draft,
+            project=draft.branched_from
         )
 
     def test_migrate_registrations(self, app, reg_osf_standard, reg_prereg, reg_veer):
@@ -1867,7 +1891,7 @@ class TestMigrateRegistrationRegistrationResponses:
         assert responses['q12.question'] == 'these are my measured variables'
         assert responses['q1'] == 'This is my title'
         assert responses['q3'] == 'research questions'
-        assert responses['q2'] == 'Dawn Pattison, James Brown, Carrie Skinner'
+        assert responses['q2'] == reg_prereg.registered_from.visible_contributors.first().fullname
         assert responses['q5'] == 'Registration prior to creation of data'
         assert responses['q4'] == 'this is my hypothesis'
         assert responses['q6'] == 'Explanation of existing data'

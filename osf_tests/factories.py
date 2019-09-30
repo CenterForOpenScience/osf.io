@@ -366,10 +366,10 @@ class RegistrationFactory(BaseNodeFactory):
                 save=False
             )
         project.save()
-        draft_registration = draft_registration or DraftRegistrationFactory(branched_from=project, initator=user)
 
         # Default registration parameters
         schema = schema or get_default_metaschema()
+        draft_registration = draft_registration or DraftRegistrationFactory(branched_from=project, initator=user, registration_schema=schema)
         auth = Auth(user=user)
         register = lambda: project.register_node(
             schema=schema,

@@ -1450,10 +1450,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.registered_user = auth.user
         registered.registered_from = original
         registered.provider = provider
-        if not registered.registered_meta:
-            registered.registered_meta = {}
-        registered.registered_meta[schema._id] = draft_registration.registration_metadata
-        registered.registration_responses = draft_registration.registration_responses
 
         registered.forked_from = self.forked_from
         registered.creator = self.creator
@@ -1468,6 +1464,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.tags.add(*self.all_tags.values_list('pk', flat=True))
         registered.subjects.add(*self.subjects.values_list('pk', flat=True))
         registered.affiliated_institutions.add(*self.affiliated_institutions.values_list('pk', flat=True))
+
+        # Sets registration_metadata and registration_responses
+        registered.copy_registered_meta_and_registration_responses(draft_registration, save=False)
 
         # Clone each log from the original node for this registration.
         self.clone_logs(registered)

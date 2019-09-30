@@ -1911,7 +1911,7 @@ class TestRegisterNode:
         node.is_public = True
         node.save()
         draft_reg = DraftRegistrationFactory(branched_from=node)
-        registration = node.register_node(get_default_metaschema(), auth, draft_reg, None)
+        registration = node.register_node(get_default_metaschema(), Auth(user), draft_reg, None)
         assert registration.is_public is False
 
     @mock.patch('website.project.signals.after_create_registration')
@@ -1956,6 +1956,54 @@ class TestRegisterNode:
             assert r.registered_meta[meta_schema._id] == data
             assert r.registration_responses == expected_flat_data
             assert r.registered_schema.first() == meta_schema
+
+    @mock.patch('website.project.signals.after_create_registration')
+    def test_register_node_contributor_questions(self, mock_signal, user, auth):
+        root = ProjectFactory(creator=user)
+        bib_contrib = UserFactory()
+        root.add_contributor(bib_contrib, auth=Auth(user))
+        non_bib_contrib = UserFactory()
+        root.add_contributor(non_bib_contrib, visible=False, auth=Auth(user))
+        schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
+
+        draft_reg = DraftRegistrationFactory(branched_from=root)
+
+        data = {
+            'q2': {
+                'comments': [],
+                'value': 'Dawn Pattison, James Brown, Carrie Skinner',
+                'extra': []
+            },
+            'q3': {
+                'comments': [],
+                'value': 'research questions',
+                'extra': []
+            }
+        }
+        flat_data = {
+            'q2': 'Dawn Pattison, James Brown, Carrie Skinner',
+            'q3': 'research questions'
+        }
+
+        # Contains inaccurate data - this data needs to match the contributors
+        draft_reg.registration_metadata = data
+        draft_reg.registration_responses = flat_data
+        draft_reg.save()
+
+        registration = root.register_node(
+            schema=schema,
+            auth=auth,
+            draft_registration=draft_reg
+        )
+
+        # Author questions are overridden with bibliographic contributors upon registration,
+        # so there aren't discrepancies
+        assert registration.registered_meta[registration.registration_schema._id]['q2']['value'] == user.fullname + ', ' + bib_contrib.fullname
+        assert registration.registration_responses['q2'] == user.fullname + ', ' + bib_contrib.fullname
+
+        # assert that other registration_metadata not overridden
+        assert registration.registered_meta[registration.registration_schema._id]['q3']['value'] == 'research questions'
+        assert registration.registration_responses['q3'] == 'research questions'
 
 
 # Copied from tests/test_models.py

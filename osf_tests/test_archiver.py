@@ -569,8 +569,9 @@ class TestArchiverTasks(ArchiverTestCase):
             selected_files,
             node_index
         )
-        draft_registration = factories.DraftRegistrationFactory(branched_from=node, registration_metadata=data)
         schema = generate_schema_from_data(data)
+        draft_registration = factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registration_metadata=data)
+
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft_registration, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_trees[node._id])):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
@@ -637,8 +638,8 @@ class TestArchiverTasks(ArchiverTestCase):
             }
             for sha256, selected_file in selected_files.items()
         }
-        draft_registration = factories.DraftRegistrationFactory(branched_from=node, registration_metadata=data)
         schema = generate_schema_from_data(data)
+        draft_registration = factories.DraftRegistrationFactory(registration_schema=schema, branched_from=node, registration_metadata=data)
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft_registration, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_trees[node._id])):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
@@ -672,7 +673,7 @@ class TestArchiverTasks(ArchiverTestCase):
             node_index
         )
         schema = generate_schema_from_data(data)
-        draft_registration = factories.DraftRegistrationFactory(branched_from=node, registration_metadata=data)
+        draft_registration = factories.DraftRegistrationFactory(registration_schema=schema, branched_from=node, registration_metadata=data)
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft_registration, autocomplete=True, autoapprove=True) as registration:
             def mock_get_file_tree(self, *args, **kwargs):
                 return file_trees[self.owner.registered_from._id]
@@ -728,7 +729,7 @@ class TestArchiverTasks(ArchiverTestCase):
             }
         }
         schema = generate_schema_from_data(data)
-        draft_registration = factories.DraftRegistrationFactory(branched_from=node, registration_metadata=data)
+        draft_registration = factories.DraftRegistrationFactory(registration_schema=schema, branched_from=node, registration_metadata=data)
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft_registration, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
@@ -792,7 +793,7 @@ class TestArchiverTasks(ArchiverTestCase):
             }
         }
         schema = generate_schema_from_data(data)
-        draft_registration = factories.DraftRegistrationFactory(branched_from=node, registration_metadata=data)
+        draft_registration = factories.DraftRegistrationFactory(registration_schema=schema, branched_from=node, registration_metadata=data)
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft_registration, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
