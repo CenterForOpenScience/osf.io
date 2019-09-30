@@ -1,4 +1,5 @@
 import copy
+import re
 
 
 def strip_registered_meta_comments(messy_dict_or_list, in_place=False):
@@ -52,7 +53,7 @@ Contains helps for "flatten_registration_metadata" for converting from old to ne
 # For flatten_registration_metadata
 def extract_file_info(file):
     """
-    Extracts name and file_id from the nested "extras" dictionary.
+    Extracts name, file_id, and sha256 from the nested "extras" dictionary.
     Pulling name from selectedFileName and the file_id from the viewUrl.
 
     Some weird data here...such as {u'selectedFileName': u'No file selected'}
@@ -65,12 +66,14 @@ def extract_file_info(file):
         # registration, the other file ids in extra refer to the original
         # file on the node, not the file that was archived on the reg
         view_url = file.get('viewUrl', '')
-        file__id = view_url.split('/')[5] if view_url else ''
-        if name and file__id:
-            return {
-                'file_name': name,
-                'file_id': file__id
-            }
+        reg_exp = r'^/project/(?P<node_id>\w{5})/files/osfstorage/(?P<file_id>\w{24})'
+        file__id = re.search(reg_exp, view_url).groupdict().get('file_id') if view_url else ''
+        sha256 = file.get('sha256', '')
+        return {
+            'file_name': name,
+            'file_id': file__id,
+            'sha256': sha256
+        }
     return {}
 
 # For flatten_registration_metadata
@@ -80,7 +83,7 @@ def format_extra(extra):
     Note: "extra" is typically an array, but for some data, it's a dict
 
     :returns array of dictionaries, of format
-    [{'file_name': <filename>, 'file_id': <file__id>}]
+    [{'file_name': <filename>, 'file_id': <file__id>, 'sha256': <sha256>}]
     """
     files = []
     if isinstance(extra, list):
@@ -144,7 +147,7 @@ def get_nested_answer(nested_response, block_type, keys):
 def set_nested_values(nested_dictionary, keys, value):
     """
     Drills down through the nested dictionary, accessing each key in the array,
-    and sets the last key equal to the  passed in value, if this key doesn't already exist.
+    and sets the last key equal to the passed in value, if this key doesn't already exist.
 
     Assumes all keys are present, except for potentially the final key.
 
@@ -160,16 +163,20 @@ def set_nested_values(nested_dictionary, keys, value):
         nested_dictionary[final_key] = value
 
 # For expanding registration_responses
-def build_answer_block(block_type, value):
+def build_answer_block(block_type, value, file_storage_resource=None):
     extra = []
     if block_type == 'file-input':
         extra = value
         value = ''
         for file in extra:
+            if file_storage_resource:
+                # Used in _find_orphan_files
+                file['nodeId'] = file_storage_resource._id
             if file.get('file_name'):
                 file['data'] = {
-                    'name': file.get('file_name')  # What legacy FE needs for rendering
+                    'name': file.get('file_name')  # What legacy FE needs for rendering file on the draft
                 }
+                file['selectedFileName'] = file.get('file_name')
     return {
         'comments': [],
         'value': value,
@@ -206,9 +213,11 @@ def build_registration_metadata_dict(keys, current_index=0, metadata={}, value={
         # We've iterated through all the keys, so we exit.
         return metadata
     else:
-        # All keys from left to right including the current key
+        # All keys from left to right including the current key.
         current_chain = keys[0:current_index + 1]
         # If we're on the final key, use the passed in value
         val = value if current_index == len(keys) - 1 else {}
+        # set_nested_values incrementally adds another layer of nesting to the dictionary,
+        # until we get to the deepest level where we can set the value equal to the user's response
         set_nested_values(metadata, current_chain, val)
         return build_registration_metadata_dict(keys, current_index + 1, metadata, value)

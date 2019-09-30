@@ -18,17 +18,19 @@ def migrate_registrations(dry_run, rows='all'):
     nested user response in registered_meta
     """
     AbstractNode = apps.get_model('osf.AbstractNode')
-    registrations = AbstractNode.objects.filter(
-        registration_responses_migrated=False,
+    registrations = AbstractNode.objects.exclude(
+        registration_responses_migrated=True,
+    ).filter(
         type='osf.registration'
     )
-    regs_count = len(registrations)
+    regs_count = registrations.count()
     logger.info('{} registrations need migrating'.format(regs_count))
 
     migrate_responses(registrations, regs_count, dry_run, rows)
 
-    registrations_remaining = AbstractNode.objects.filter(
-        registration_responses_migrated=False,
+    registrations_remaining = AbstractNode.objects.exclude(
+        registration_responses_migrated=True,
+    ).filter(
         type='osf.registration'
     )
     logger.info('{} registrations remaining'.format(registrations_remaining.count()))
@@ -41,16 +43,16 @@ def migrate_draft_registrations(dry_run, rows='all'):
     :params rows
     """
     DraftRegistration = apps.get_model('osf.DraftRegistration')
-    draft_registrations = DraftRegistration.objects.filter(
-        registration_responses_migrated=False
+    draft_registrations = DraftRegistration.objects.exclude(
+        registration_responses_migrated=True
     )
-    drafts_count = len(draft_registrations)
+    drafts_count = draft_registrations.count()
     logger.info('{} draft registrations need migrating'.format(drafts_count))
 
     migrate_responses(draft_registrations, drafts_count, dry_run, rows)
 
-    draft_registrations_remaining = DraftRegistration.objects.filter(
-        registration_responses_migrated=False
+    draft_registrations_remaining = DraftRegistration.objects.exclude(
+        registration_responses_migrated=True
     )
     logger.info('{} draft registration remaining'.format(draft_registrations_remaining.count()))
 

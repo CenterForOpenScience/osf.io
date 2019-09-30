@@ -410,19 +410,17 @@ class RegistrationSerializer(NodeSerializer):
 
     def anonymize_registration_responses(self, obj):
         """
-        For any question titles that are in ANONYMIZED_TITLES, delete
+        For any questions that have a `contributor-input` block type, delete
         that question's response from registration_responses.
+
+        We want to make sure author's names that need to be anonymized
+        aren't surfaced when viewed through an anonymous VOL
         """
         registration_responses = obj.registration_responses
         if is_anonymized(self.context['request']):
             registration_schema = RegistrationSchema.objects.get(_id=obj.registered_schema_id)
-            anonymous_schema_block_groups = registration_schema.schema_blocks.filter(
-                display_text__in=ANONYMIZED_TITLES,
-                block_type='question-label',
-            ).values_list('schema_block_group_key', flat=True)
             anonymous_registration_response_keys = registration_schema.schema_blocks.filter(
-                schema_block_group_key__in=anonymous_schema_block_groups,
-                registration_response_key__isnull=False,
+                block_type='contributors-input', registration_response_key__isnull=False,
             ).values_list('registration_response_key', flat=True)
 
             for key in anonymous_registration_response_keys:

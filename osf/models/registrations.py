@@ -83,8 +83,8 @@ class Registration(AbstractNode):
         return stuck_regs
 
     @property
-    def get_registration_schema(self):
-        # Overrides RegistrationResponseMixin
+    def registration_schema(self):
+        # For use in RegistrationResponseMixin
         if self.registered_schema.exists():
             return self.registered_schema.first()
         return None
@@ -95,8 +95,13 @@ class Registration(AbstractNode):
         return registered_meta.get(schema._id, None)
 
     @property
+    def file_storage_resource(self):
+        # Overrides RegistrationResponseMixin
+        return self.registered_from
+
+    @property
     def registered_schema_id(self):
-        schema = self.get_registration_schema
+        schema = self.registration_schema
         return schema._id if schema else None
 
     @property
@@ -509,14 +514,14 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, BaseModel):
         return ('<DraftRegistration(branched_from={self.branched_from!r}) '
                 'with id {self._id!r}>').format(self=self)
 
-    @property
-    def get_registration_schema(self):
-        # Overrides RegistrationResponseMixin
-        return self.registration_schema
-
     def get_registration_metadata(self, schema):
         # Overrides RegistrationResponseMixin
         return self.registration_metadata
+
+    @property
+    def file_storage_resource(self):
+        # Overrides RegistrationResponseMixin
+        return self.branched_from
 
     # lazily set flags
     @property

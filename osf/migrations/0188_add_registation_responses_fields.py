@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='abstractnode',
             name='registration_responses_migrated',
-            field=models.NullBooleanField(default=False),
+            field=models.NullBooleanField(),
         ),
         migrations.AddField(
             model_name='draftregistration',
@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='draftregistration',
             name='registration_responses_migrated',
-            field=models.NullBooleanField(default=False),
+            field=models.NullBooleanField(),
         ),
         migrations.AlterField(
             model_name='abstractnode',

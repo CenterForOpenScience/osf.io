@@ -813,6 +813,10 @@ class TestRegistrationMixin:
 
         registration_metadata = draft_prereg.expand_registration_responses()
 
+        prereg_registration_metadata_built['q7']['value']['uploader']['extra'][0]['nodeId'] = draft_prereg.branched_from._id
+        prereg_registration_metadata_built['q11']['value']['uploader']['extra'][0]['nodeId'] = draft_prereg.branched_from._id
+        prereg_registration_metadata_built['q11']['value']['uploader']['extra'][1]['nodeId'] = draft_prereg.branched_from._id
+
         assert registration_metadata == prereg_registration_metadata_built
 
     def test_expand_registration_responses_veer(self, draft_veer):
@@ -821,5 +825,8 @@ class TestRegistrationMixin:
         assert draft_veer.registration_metadata == {}
 
         registration_metadata = draft_veer.expand_registration_responses()
+
+        veer_condensed['recommended-hypothesis']['value']['question4a']['extra'][0]['nodeId'] = draft_veer.branched_from._id
+        veer_condensed['recommended-hypothesis']['value']['question4a']['extra'][1]['nodeId'] = draft_veer.branched_from._id
 
         assert registration_metadata == veer_condensed

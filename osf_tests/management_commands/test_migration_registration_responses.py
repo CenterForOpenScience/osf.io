@@ -475,6 +475,7 @@ prereg_registration_metadata_built = {
                 'value': '',
                 'extra': [
                     {
+                        'selectedFileName': 'Alphabet.txt',
                         'file_name': 'Alphabet.txt',
                         'file_id': '5d6d22274d476c088fb8e021',
                         'data': {
@@ -545,6 +546,7 @@ prereg_registration_metadata_built = {
                 'value': '',
                 'extra': [
                     {
+                        'selectedFileName': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
                         'file_name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
                         'file_id': '5d6d22264d476c088fb8e01f',
                         'data': {
@@ -552,6 +554,7 @@ prereg_registration_metadata_built = {
                         }
                     },
                     {
+                        'selectedFileName': 'Alphabet.txt',
                         'file_name': 'Alphabet.txt',
                         'file_id': '5d6d22274d476c088fb8e021',
                         'data': {
@@ -1401,6 +1404,7 @@ veer_condensed = {
                 'value': '',
                 'extra': [
                     {
+                        'selectedFileName': 'Alphabet.txt',
                         'file_name': 'Alphabet.txt',
                         'file_id': '5d6d25024d476c088fb8e03b',
                         'data': {
@@ -1408,6 +1412,7 @@ veer_condensed = {
                         },
                     },
                     {
+                        'selectedFileName': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
                         'file_id': '5d6d25014d476c088fb8e038',
                         'file_name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
                         'data': {
@@ -1680,10 +1685,12 @@ class TestMigrateDraftRegistrationRegistrationResponses:
         assert responses['q19.uploader'] == []
         assert responses['q11.uploader'] == [
             {
+                'sha256': 'sdf',
                 'file_name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
                 'file_id': '5d6d22264d476c088fb8e01f'
             },
             {
+                'sha256': 'asdf',
                 'file_name': 'Alphabet.txt',
                 'file_id': '5d6d22274d476c088fb8e021'
             }
@@ -1704,7 +1711,8 @@ class TestMigrateDraftRegistrationRegistrationResponses:
         assert responses['q7.uploader'] == [
             {
                 'file_name': 'Alphabet.txt',
-                'file_id': '5d6d22274d476c088fb8e021'
+                'file_id': '5d6d22274d476c088fb8e021',
+                'sha256': 'dsdfds'
             }
         ]
 
@@ -1739,10 +1747,12 @@ class TestMigrateDraftRegistrationRegistrationResponses:
         assert responses['confirmatory-analyses-second.second.question4c'] == 'here is the rationale'
         assert responses['recommended-hypothesis.question4a'] == [
             {
+                'sha256': 'asdf',
                 'file_name': 'Alphabet.txt',
                 'file_id': '5d6d25024d476c088fb8e03b'
             },
             {
+                'sha256': 'asdf',
                 'file_name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
                 'file_id': '5d6d25014d476c088fb8e038'
             }
@@ -1817,16 +1827,16 @@ class TestMigrateRegistrationRegistrationResponses:
         )
 
     def test_migrate_registrations(self, app, reg_osf_standard, reg_prereg, reg_veer):
-        drafts = [
+        regs = [
             reg_osf_standard,
             reg_prereg,
             reg_veer
         ]
 
-        for draft in drafts:
-            draft.registration_responses = {}
-            draft.registration_responses_migrated = False
-            draft.save()
+        for reg in regs:
+            reg.registration_responses = {}
+            reg.registration_responses_migrated = False
+            reg.save()
 
         migrate_registrations(dry_run=False)
 
@@ -1864,10 +1874,12 @@ class TestMigrateRegistrationRegistrationResponses:
         assert responses['q19.uploader'] == []
         assert responses['q11.uploader'] == [
             {
+                'sha256': 'sdf',
                 'file_name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
                 'file_id': '5d6d22264d476c088fb8e01f'
             },
             {
+                'sha256': 'asdf',
                 'file_name': 'Alphabet.txt',
                 'file_id': '5d6d22274d476c088fb8e021'
             }
@@ -1887,6 +1899,7 @@ class TestMigrateRegistrationRegistrationResponses:
         assert responses['q13.uploader'] == []
         assert responses['q7.uploader'] == [
             {
+                'sha256': 'dsdfds',
                 'file_name': 'Alphabet.txt',
                 'file_id': '5d6d22274d476c088fb8e021'
             }
@@ -1923,10 +1936,12 @@ class TestMigrateRegistrationRegistrationResponses:
         assert responses['confirmatory-analyses-second.second.question4c'] == 'here is the rationale'
         assert responses['recommended-hypothesis.question4a'] == [
             {
+                'sha256': 'asdf',
                 'file_name': 'Alphabet.txt',
                 'file_id': '5d6d25024d476c088fb8e03b'
             },
             {
+                'sha256': 'asdf',
                 'file_name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
                 'file_id': '5d6d25014d476c088fb8e038'
             }

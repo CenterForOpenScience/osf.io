@@ -1794,10 +1794,12 @@ class RegistrationResponseMixin(models.Model):
     registration_responses = DateTimeAwareJSONField(default=dict, blank=True)
     registration_responses_migrated = models.NullBooleanField(default=True)
 
-    def get_registration_schema(self):
+    def get_registration_metadata(self, schema):
         raise NotImplementedError()
 
-    def get_registration_metadata(self):
+    @property
+    def file_storage_resource(self):
+        # Where the original files were stored (the node)
         raise NotImplementedError()
 
     def flatten_registration_metadata(self):
@@ -1813,7 +1815,7 @@ class RegistrationResponseMixin(models.Model):
         :returns dictionary, registration_responses, flattened dictionary with registration_response_keys
         top-level
         """
-        schema = self.get_registration_schema
+        schema = self.registration_schema
         registered_meta = self.get_registration_metadata(schema)
 
         registration_responses = {}
@@ -1841,7 +1843,7 @@ class RegistrationResponseMixin(models.Model):
         will have a more deeply nested format.
         :returns registration_metadata, dictionary
         """
-        schema = self.get_registration_schema
+        schema = self.registration_schema
         registration_responses = copy.deepcopy(self.registration_responses)
         # Pull out all registration_response_keys and their block types
         registration_response_keys = schema.schema_blocks.filter(
@@ -1866,7 +1868,8 @@ class RegistrationResponseMixin(models.Model):
                 metadata=metadata,
                 value=build_answer_block(
                     block_type,
-                    registration_responses.get(response_key, '')
+                    registration_responses.get(response_key, ''),
+                    file_storage_resource=self.file_storage_resource
                 )
             )
         return metadata
