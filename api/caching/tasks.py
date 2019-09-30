@@ -1,11 +1,11 @@
 from future.moves.urllib.parse import urlparse
+from django.db import connection
 
 import requests
 import logging
 
 from django.apps import apps
 from api.caching.utils import storage_usage_cache
-from django.db import models
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 
 from api.caching import settings as cache_settings
@@ -104,11 +104,20 @@ def ban_url(instance):
 
 @app.task(max_retries=5, default_retry_delay=10)
 def update_storage_usage_cache(target_id):
-    AbstractNode = apps.get_model('osf.AbstractNode')
+    sql = """
+                SELECT sum(version.size) FROM osf_basefileversionsthrough AS obfnv
+                LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
+                LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
+                LEFT JOIN osf_guid guid ON file.target_object_id = guid.object_id
+                WHERE file.provider = 'osfstorage' AND file.target_content_type_id = 4
+                AND file.deleted_on IS NULL
+                AND guid._id = %s
+    """
+    with connection.cursor() as cursor:
+        cursor.execute(sql, [target_id])
+        result = cursor.fetchall()
 
-    storage_usage_total = AbstractNode.objects.get(
-        guids___id=target_id,
-    ).files.aggregate(sum=models.Sum('versions__size'))['sum'] or 0
+    storage_usage_total = int(result[0][0])
 
     key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_id)
     storage_usage_cache.set(key, storage_usage_total, cache_settings.FIVE_MIN_TIMEOUT)
