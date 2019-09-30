@@ -360,7 +360,7 @@ services:
   #######
 
   requirements:
-    image: quay.io/centerforopenscience/osf:feature-alpine  # revert to osf:develop after testing
+    image: quay.io/centerforopenscience/osf:develop
     # Need to allocate tty to be able to call invoke for requirements task
     tty: true
     command:
@@ -378,7 +378,7 @@ services:
       - osf_requirements_vol:/python2.7
 
   assets:
-    image: quay.io/centerforopenscience/osf:feature-alpine  # revert to osf:develop after testing
+    image: quay.io/centerforopenscience/osf:develop
     command: invoke assets -dw
     restart: unless-stopped
     environment:
@@ -391,7 +391,7 @@ services:
     stdin_open: true
 
   admin_assets:
-    image: quay.io/centerforopenscience/osf:feature-alpine  # revert to osf:develop after testing
+    image: quay.io/centerforopenscience/osf:develop
     command: invoke admin.assets -dw
     restart: unless-stopped
     environment:
@@ -435,7 +435,7 @@ services:
 #      - osf_node_modules_vol:/code/node_modules
 
   worker:
-    image: quay.io/centerforopenscience/osf:feature-alpine  # revert to osf:develop after testing
+    image: quay.io/centerforopenscience/osf:develop
     command: invoke celery_worker
     restart: unless-stopped
     depends_on:
@@ -459,7 +459,7 @@ services:
     stdin_open: true
 
   admin:
-    image: quay.io/centerforopenscience/osf:feature-alpine  # revert to osf:develop after testing
+    image: quay.io/centerforopenscience/osf:develop
     command: invoke adminserver -h 0.0.0.0
     restart: unless-stopped
     environment:
@@ -482,7 +482,7 @@ services:
       - osf_admin_node_modules_vol:/code/admin/node_modules
 
   api:
-    image: quay.io/centerforopenscience/osf:feature-alpine  # revert to osf:develop after testing
+    image: quay.io/centerforopenscience/osf:develop
     command: invoke apiserver -h 0.0.0.0
     restart: unless-stopped
     ports:
@@ -503,7 +503,7 @@ services:
     stdin_open: true
 
   web:
-    image: quay.io/centerforopenscience/osf:feature-alpine  # revert to osf:develop after testing
+    image: quay.io/centerforopenscience/osf:develop
     command: invoke server -h 0.0.0.0
     restart: unless-stopped
     ports:
