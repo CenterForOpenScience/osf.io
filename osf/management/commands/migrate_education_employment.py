@@ -40,19 +40,22 @@ def get_dates(entry):
 
 
 def set_models(dry_run, info_type):
+    insert_query = """INSERT INTO {table} ( _id, _order, user_id, ongoing, start_date, end_date,  {title_or_degree}, department, institution, created, modified) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())"""
+
     table = 'osf_usereducation' if info_type == 'schools' else 'osf_useremployment'
     title_or_degree = 'degree' if info_type == 'schools' else 'title'
     with connection.cursor() as cursor:
-        cursor.execute("""select
+        cursor.execute("""
+        select
         user_{info_type}.id,
-                 education_items->>'ongoing' as ongoing,
-                 to_date((education_items->>'startMonth'::text) || '-' || (education_items->>'startYear'::text), 'mm-yyyy') as start_date,
-                 case when education_items->>'ongoing'='true' then null else to_date((education_items->>'endMonth'::text) || '-' || (education_items->>'endYear'::text), 'mm-yyyy') end as end_date,
-                 education_items->>'{title_or_degree}'::text as {title_or_degree},
-                 education_items->>'department' as department,
-                 education_items->>'institution' as institution
+            json_items->>'ongoing' as ongoing,
+            to_date((json_items->>'startMonth'::text) || '-' || (json_items->>'startYear'::text), 'mm-yyyy') as start_date,
+            case when json_items->>'ongoing'='true' then null else to_date((json_items->>'endMonth'::text) || '-' || (json_items->>'endYear'::text), 'mm-yyyy') end as end_date,
+            json_items->>'{title_or_degree}'::text as {title_or_degree},
+            json_items->>'department' as department,
+            json_items->>'institution' as institution
 
-          from (select users.id, jsonb_array_elements(users.{info_type}) as education_items from osf_osfuser users where users.{info_type} != '[]') as user_{info_type};""".format(info_type=info_type, title_or_degree=title_or_degree))
+        from (select users.id, jsonb_array_elements(users.{info_type}) as json_items from osf_osfuser users where users.{info_type} != '[]') as user_{info_type};""".format(info_type=info_type, title_or_degree=title_or_degree))
 
         data = cursor.fetchall()
         if not data:
@@ -60,8 +63,7 @@ def set_models(dry_run, info_type):
         user_id = data[0][0]
         order = 0
         for info in data:
-
-            # update order
+            # update order for each user
             if user_id == info[0]:
                 order += 1
             else:
@@ -69,9 +71,8 @@ def set_models(dry_run, info_type):
                 order = 0
 
             info = [generate_object_id(), order] + list(info)
-            query = """INSERT INTO {table} ( _id, _order, user_id, ongoing, start_date, end_date,  {title_or_degree}, department, institution, created, modified) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())"""
             if not dry_run:
-                cursor.execute(query.format(table=table, title_or_degree=title_or_degree), info)
+                cursor.execute(insert_query.format(table=table, title_or_degree=title_or_degree), info)
 
 def reset_field_content(queryset, original_attribute, dry_run):
     for entry in queryset:
@@ -101,17 +102,13 @@ def reset_field_content(queryset, original_attribute, dry_run):
             user.save()
 
 
-def put_jobs_and_schools_back(rows, dry_run, education, employment):
+def put_jobs_and_schools_back(rows, dry_run):
 
-    if education:
-        education_queryset = UserEducation.objects.raw('''SELECT * From osf_usereducation LIMIT %s''', [rows])
-        if not dry_run:
-            reset_field_content(education_queryset, 'schools', dry_run)
+    education_queryset = UserEducation.objects.raw('''SELECT * From osf_usereducation LIMIT %s''', [rows])
+    reset_field_content(education_queryset, 'schools', dry_run)
 
-    if employment:
-        users_with_employment = UserEmployment.objects.raw('''SELECT * From osf_useremployment LIMIT %s''', [rows])
-        if not dry_run:
-            reset_field_content(users_with_employment, 'jobs', dry_run)
+    users_with_employment = UserEmployment.objects.raw('''SELECT * From osf_useremployment LIMIT %s''', [rows])
+    reset_field_content(users_with_employment, 'jobs', dry_run)
 
 
 @celery_app.task(name='management.commands.migrate_employment_education')
