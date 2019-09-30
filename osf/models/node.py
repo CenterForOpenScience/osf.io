@@ -871,11 +871,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return OSFGroup.objects.filter(osfgroupgroupobjectpermission__group_id__in=member_groups)
 
     def get_aggregate_logs_query(self, auth):
-        return (
-            (
-                Q(node_id__in=list(Node.objects.get_children(self).can_view(user=auth.user, private_link=auth.private_link).values_list('id', flat=True)) + [self.id])
-            ) & Q(should_hide=False)
-        )
+        return Q(node_id=self.id) & Q(should_hide=False)
 
     def get_aggregate_logs_queryset(self, auth):
         query = self.get_aggregate_logs_query(auth)
