@@ -3272,15 +3272,15 @@ class TestLogMethods:
     def node(self, parent):
         return NodeFactory(parent=parent)
 
-    def test_get_aggregate_logs_queryset_recurses(self, parent, node, auth):
+    def test_get_aggregate_logs_queryset_does_not_recurse(self, parent, node, auth):
         grandchild = NodeFactory(parent=node)
         parent_log = parent.add_log(NodeLog.FILE_ADDED, auth=auth, params={'node': parent._id}, save=True)
         child_log = node.add_log(NodeLog.FILE_ADDED, auth=auth, params={'node': node._id}, save=True)
         grandchild_log = grandchild.add_log(NodeLog.FILE_ADDED, auth=auth, params={'node': grandchild._id}, save=True)
         logs = parent.get_aggregate_logs_queryset(auth)
         assert parent_log in list(logs)
-        assert child_log in list(logs)
-        assert grandchild_log in list(logs)
+        assert child_log not in list(logs)
+        assert grandchild_log not in list(logs)
 
     # copied from tests/test_models.py#TestNode
     def test_get_aggregate_logs_queryset_doesnt_return_hidden_logs(self, parent, auth):
