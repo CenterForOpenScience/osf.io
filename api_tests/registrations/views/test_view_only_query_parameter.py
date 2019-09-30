@@ -173,6 +173,7 @@ class TestRegistrationDetailViewOnlyLinks(TestNodeDetailViewOnlyLinks):
             }
 
         }
+        registration.registration_responses = registration.flatten_registration_metadata()
         registration.save()
         return registration
 

@@ -15,7 +15,7 @@ from website import settings
 
 from . import factories
 from .utils import assert_datetime_equal, mock_archive
-from .factories import get_default_metaschema
+from .factories import get_default_metaschema, DraftRegistrationFactory
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from osf_tests.management_commands.test_migration_registration_responses import (
     prereg_registration_responses,
@@ -60,16 +60,19 @@ def test_factory(user, project):
     # Create a registration from a project
     user2 = factories.UserFactory()
     project.add_contributor(user2)
+
+    data = {'some': 'data'}
+    draft_reg = DraftRegistrationFactory(registration_metadata=data, branched_from=project)
     registration2 = factories.RegistrationFactory(
         project=project,
         user=user2,
-        data={'some': 'data'},
+        draft_registration=draft_reg,
     )
     assert registration2.registered_from == project
     assert registration2.registered_user == user2
     assert (
         registration2.registered_meta[get_default_metaschema()._id] ==
-        {'some': 'data'}
+        data
     )
 
 
@@ -338,7 +341,8 @@ class TestRegisterNode:
             wiki_page=wiki_page,
             identifier=2
         )
-        registration = project.register_node(get_default_metaschema(), Auth(user), '', None)
+        draft_reg = factories.DraftRegistrationFactory(branched_from=project)
+        registration = project.register_node(get_default_metaschema(), Auth(user), draft_reg, None)
         assert registration.wiki_private_uuids == {}
 
         registration_wiki_current = WikiVersion.objects.get_for_node(registration, current_wiki.wiki_page.page_name)

@@ -672,7 +672,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, BaseModel):
         register = node.register_node(
             schema=self.registration_schema,
             auth=auth,
-            data=self.registration_metadata,
+            draft_registration=self,
             child_ids=child_ids,
             provider=self.provider
         )

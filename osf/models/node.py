@@ -1411,12 +1411,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.add_permission(contrib.user, permission, save=True)
         Contributor.objects.bulk_create(contribs)
 
-    def register_node(self, schema, auth, data, parent=None, child_ids=None, provider=None):
+    def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
         :param auth: All the auth information including user, API key.
-        :param data: Form data
+        :param draft registration: Draft registration
         :param parent Node: parent registration of registration to be created
         :param provider RegistrationProvider: provider to submit the registration to
         """
@@ -1452,7 +1452,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.provider = provider
         if not registered.registered_meta:
             registered.registered_meta = {}
-        registered.registered_meta[schema._id] = data
+        registered.registered_meta[schema._id] = draft_registration.registration_metadata
+        registered.registration_responses = draft_registration.registration_responses
 
         registered.forked_from = self.forked_from
         registered.creator = self.creator
@@ -1467,8 +1468,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.tags.add(*self.all_tags.values_list('pk', flat=True))
         registered.subjects.add(*self.subjects.values_list('pk', flat=True))
         registered.affiliated_institutions.add(*self.affiliated_institutions.values_list('pk', flat=True))
-        # flatten_registration_metadata can't be called until registration has an id.
-        registered.registration_responses = registered.flatten_registration_metadata()
 
         # Clone each log from the original node for this registration.
         self.clone_logs(registered)
@@ -1509,7 +1508,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 node_contained.register_node(
                     schema=schema,
                     auth=auth,
-                    data=data,
+                    draft_registration=draft_registration,
                     provider=provider,
                     parent=registered,
                     child_ids=child_ids,

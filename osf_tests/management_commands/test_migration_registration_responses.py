@@ -1791,39 +1791,42 @@ class TestMigrateRegistrationRegistrationResponses:
 
     @pytest.fixture()
     def reg_osf_standard(self, osf_standard_schema):
+        draft = DraftRegistrationFactory(registration_metadata={
+            'looked': {
+                'comments': [],
+                'value': 'Yes',
+                'extra': []
+            },
+            'datacompletion': {
+                'comments': [],
+                'value': 'No, data collection has not begun',
+                'extra': []
+            },
+            'comments': {
+                'comments': [],
+                'value': 'more comments',
+                'extra': []
+            }
+        })
         return RegistrationFactory(
             schema=osf_standard_schema,
-            data={
-                'looked': {
-                    'comments': [],
-                    'value': 'Yes',
-                    'extra': []
-                },
-                'datacompletion': {
-                    'comments': [],
-                    'value': 'No, data collection has not begun',
-                    'extra': []
-                },
-                'comments': {
-                    'comments': [],
-                    'value': 'more comments',
-                    'extra': []
-                }
-            }
+            draft_registration=draft
         )
 
     @pytest.fixture()
     def reg_prereg(self, prereg_schema):
+        draft = DraftRegistrationFactory(registration_metadata=prereg_registration_metadata)
         return RegistrationFactory(
             schema=prereg_schema,
-            data=prereg_registration_metadata
+            draft_registration=draft
         )
 
     @pytest.fixture()
     def reg_veer(self, veer_schema):
+        draft = DraftRegistrationFactory(registration_metadata=veer_registration_metadata)
         return RegistrationFactory(
             schema=veer_schema,
-            data=veer_registration_metadata
+            draft_registration=draft
         )
 
     def test_migrate_registrations(self, app, reg_osf_standard, reg_prereg, reg_veer):
