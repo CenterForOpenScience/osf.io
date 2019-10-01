@@ -197,7 +197,7 @@ class UserProfileCreateMixin(UserProfileFixtures):
 
         # test create with start and end dates
         new_name = 'Scundra Town'
-        new_end = str(datetime.now().year + 1) + '-12-01'
+        new_end = '2018-12-01'
         start_date = payload(institution=new_name, start_date=new_start, end_date=new_end, ongoing=False)
         res = app.post_json(list_url, start_date, auth=user.auth)
         assert res.status_code == 201

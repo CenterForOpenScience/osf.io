@@ -449,7 +449,7 @@ class UserEducationList(JSONAPIBaseView, generics.ListCreateAPIView, UserMixin, 
     )
 
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.EDUCATION_READ]
-    required_write_scopes = [CoreScopes.USERS_WRITE]
+    required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.EDUCATION_WRITE]
 
     ordering = ('-created')
 
@@ -473,7 +473,7 @@ class UserEducationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
     )
 
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.EDUCATION_READ]
-    required_write_scopes = [CoreScopes.USERS_WRITE]
+    required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.EDUCATION_WRITE]
 
     ordering = ('-created')
 
@@ -495,7 +495,7 @@ class UserEmploymentList(JSONAPIBaseView, generics.ListCreateAPIView, UserMixin,
     )
 
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.EMPLOYMENT_READ]
-    required_write_scopes = [CoreScopes.USERS_WRITE]
+    required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.EMPLOYMENT_WRITE]
 
     ordering = ('-created')
 
@@ -519,7 +519,7 @@ class UserEmploymentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
     )
 
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.EMPLOYMENT_READ]
-    required_write_scopes = [CoreScopes.USERS_WRITE]
+    required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.EMPLOYMENT_WRITE]
 
     ordering = ('-created')
 
