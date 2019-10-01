@@ -103,7 +103,7 @@ def ban_url(instance):
 
 
 @app.task(max_retries=5, default_retry_delay=10)
-def update_storage_usage_cache(target_id):
+def update_storage_usage_cache(target_id, target_guid):
     sql = """
         SELECT sum(version.size) FROM osf_basefileversionsthrough AS obfnv
         LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
@@ -121,7 +121,7 @@ def update_storage_usage_cache(target_id):
 
     storage_usage_total = int(result[0][0]) if result[0][0] else 0
 
-    key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_id)
+    key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_guid)
     storage_usage_cache.set(key, storage_usage_total, cache_settings.FIVE_MIN_TIMEOUT)
 
 
@@ -129,4 +129,4 @@ def update_storage_usage(target):
     Preprint = apps.get_model('osf.preprint')
 
     if not isinstance(target, Preprint) and not target.is_quickfiles:
-        enqueue_postcommit_task(update_storage_usage_cache, (target.id,), {}, celery=True)
+        enqueue_postcommit_task(update_storage_usage_cache, (target.id, target._id,), {}, celery=True)
