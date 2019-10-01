@@ -10,7 +10,6 @@ import bson
 from django.db.models import Q
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
-from django.db import transaction
 from django_bulk_update.helper import bulk_update
 from django.contrib.auth.models import AnonymousUser, Permission
 from django.contrib.contenttypes.fields import GenericRelation
@@ -2268,27 +2267,26 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 '{0!r} does not have permission to modify this {1}, or a component in its hierarchy.'.format(auth.user, self.category or 'node')
             )
 
-        with transaction.atomic():
-            # After delete callback
-            remove_addons(auth, hierarchy)
+        # After delete callback
+        remove_addons(auth, hierarchy)
 
-            Comment = apps.get_model('osf.Comment')
-            Comment.objects.filter(node__id__in=hierarchy).update(root_target=None)
+        Comment = apps.get_model('osf.Comment')
+        Comment.objects.filter(node__id__in=hierarchy).update(root_target=None)
 
-            log_date = date or timezone.now()
-            for node in hierarchy:
-                # Add log to parents
-                node.is_deleted = True
-                node.deleted_date = date
-                node.add_remove_node_log(auth=auth, date=log_date)
-                project_signals.node_deleted.send(node)
+        log_date = date or timezone.now()
+        for node in hierarchy:
+            # Add log to parents
+            node.is_deleted = True
+            node.deleted_date = date
+            node.add_remove_node_log(auth=auth, date=log_date)
+            project_signals.node_deleted.send(node)
 
-            bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date'])
+        bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date'])
 
-            if len(hierarchy.filter(is_public=True)):
-                AbstractNode.bulk_update_search(hierarchy.filter(is_public=True))
+        if len(hierarchy.filter(is_public=True)):
+            AbstractNode.bulk_update_search(hierarchy.filter(is_public=True))
 
-            return True
+        return True
 
     def add_addon(self, name, auth, log=True):
         ret = super(AbstractNode, self).add_addon(name, auth)
