@@ -117,7 +117,7 @@ def update_storage_usage_cache(target_id):
         cursor.execute(sql, [target_id])
         result = cursor.fetchall()
 
-    storage_usage_total = int(result[0][0])
+    storage_usage_total = int(result[0][0]) if result[0][0] else 0
 
     key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_id)
     storage_usage_cache.set(key, storage_usage_total, cache_settings.FIVE_MIN_TIMEOUT)
