@@ -105,14 +105,16 @@ def ban_url(instance):
 @app.task(max_retries=5, default_retry_delay=10)
 def update_storage_usage_cache(target_id):
     sql = """
-                SELECT sum(version.size) FROM osf_basefileversionsthrough AS obfnv
-                LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
-                LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
-                LEFT JOIN osf_guid guid ON file.target_object_id = guid.object_id
-                WHERE file.provider = 'osfstorage' AND file.target_content_type_id = 4
-                AND file.deleted_on IS NULL
-                AND guid._id = %s
+        SELECT sum(version.size) FROM osf_basefileversionsthrough AS obfnv
+        LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
+        LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
+        LEFT JOIN django_content_type type on file.target_content_type_id = type.id
+        WHERE file.provider = 'osfstorage'
+        AND type.model = 'abstractnode'
+        AND file.deleted_on IS NULL
+        AND file.target_object_id=%s
     """
+
     with connection.cursor() as cursor:
         cursor.execute(sql, [target_id])
         result = cursor.fetchall()
@@ -127,4 +129,4 @@ def update_storage_usage(target):
     Preprint = apps.get_model('osf.preprint')
 
     if not isinstance(target, Preprint) and not target.is_quickfiles:
-        enqueue_postcommit_task(update_storage_usage_cache, (target._id,), {}, celery=True)
+        enqueue_postcommit_task(update_storage_usage_cache, (target.id,), {}, celery=True)

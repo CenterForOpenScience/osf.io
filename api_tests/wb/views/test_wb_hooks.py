@@ -880,7 +880,7 @@ class TestCopy():
         assert node.storage_usage is None
 
         # But there's really 1337 bytes in the node
-        update_storage_usage_cache(node._id)
+        update_storage_usage_cache(node.id)
         assert node.storage_usage == 1337
 
         # And we have exactly 1337 bytes copied in node_two
