@@ -21,7 +21,6 @@ from waffle.models import Flag, Sample, Switch
 from website.notifications.constants import NOTIFICATION_TYPES
 from osf.utils import permissions
 from website.archiver import ARCHIVER_SUCCESS
-from website.identifiers.utils import parse_identifiers
 from website.settings import FAKE_EMAIL_NAME, FAKE_EMAIL_DOMAIN
 from framework.auth.core import Auth
 
@@ -601,23 +600,9 @@ class PreprintProviderFactory(DjangoModelFactory):
 
 
 def sync_set_identifiers(preprint):
-    from website.identifiers.clients import EzidClient
     from website import settings
-    client = preprint.get_doi_client()
-
-    if isinstance(client, EzidClient):
-        doi_value = settings.DOI_FORMAT.format(prefix=settings.EZID_DOI_NAMESPACE, guid=preprint._id)
-        ark_value = '{ark}osf.io/{guid}'.format(ark=settings.EZID_ARK_NAMESPACE, guid=preprint._id)
-        return_value = {'success': '{} | {}'.format(doi_value, ark_value)}
-    else:
-        return_value = {'doi': settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)}
-
-    doi_client_return_value = {
-        'response': return_value,
-        'already_exists': False
-    }
-    id_dict = parse_identifiers(doi_client_return_value)
-    preprint.set_identifier_values(doi=id_dict['doi'])
+    doi = settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
+    preprint.set_identifier_values(doi=doi)
 
 
 class PreprintFactory(DjangoModelFactory):

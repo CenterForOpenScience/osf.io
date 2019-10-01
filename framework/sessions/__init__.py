@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime as dt
-import httplib as http
-import urllib
-import urlparse
+from rest_framework import status as http_status
+from future.moves.urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 
 from django.apps import apps
 from django.utils import timezone
@@ -24,12 +23,12 @@ def add_key_to_url(url, scheme, key):
 
     query = request.args.to_dict()
     query['view_only'] = key
-    replacements = {'query': urllib.urlencode(query)}
+    replacements = {'query': urlencode(query)}
 
     if scheme:
         replacements['scheme'] = scheme
 
-    parsed_url = urlparse.urlparse(url)
+    parsed_url = urlparse(url)
 
     if parsed_url.fragment:
         # Fragments should exists server side so this mean some one set up a # in the url
@@ -38,7 +37,7 @@ def add_key_to_url(url, scheme, key):
         replacements['fragment'] = ''
 
     parsed_redirect_url = parsed_url._replace(**replacements)
-    return urlparse.urlunparse(parsed_redirect_url)
+    return urlunparse(parsed_redirect_url)
 
 
 def prepare_private_key():
@@ -60,9 +59,9 @@ def prepare_private_key():
 
     # Grab query key from previous request for not logged-in users
     if request.referrer:
-        referrer_parsed = urlparse.urlparse(request.referrer)
+        referrer_parsed = urlparse(request.referrer)
         scheme = referrer_parsed.scheme
-        key = urlparse.parse_qs(urlparse.urlparse(request.referrer).query).get('view_only')
+        key = parse_qs(urlparse(request.referrer).query).get('view_only')
         if key:
             key = key[0]
     else:
@@ -72,7 +71,7 @@ def prepare_private_key():
     # Update URL and redirect
     if key and not session.is_authenticated:
         new_url = add_key_to_url(request.url, scheme, key)
-        return redirect(new_url, code=http.TEMPORARY_REDIRECT)
+        return redirect(new_url, code=http_status.HTTP_307_TEMPORARY_REDIRECT)
 
 
 def get_session():
@@ -144,7 +143,7 @@ def before_request():
                 otp = request.headers.get('X-OSF-OTP')
                 if otp is None or not user_addon.verify_code(otp):
                     # Must specify two-factor authentication OTP code or invalid two-factor authentication OTP code.
-                    user_session.data['auth_error_code'] = http.UNAUTHORIZED
+                    user_session.data['auth_error_code'] = http_status.HTTP_401_UNAUTHORIZED
                     return
             user_session.data['auth_user_username'] = user.username
             user_session.data['auth_user_fullname'] = user.fullname
@@ -153,7 +152,7 @@ def before_request():
                 user_session.save()
         else:
             # Invalid key: Not found in database
-            user_session.data['auth_error_code'] = http.UNAUTHORIZED
+            user_session.data['auth_error_code'] = http_status.HTTP_401_UNAUTHORIZED
         return
 
     cookie = request.cookies.get(settings.COOKIE_NAME)

@@ -21,6 +21,7 @@ from api.base.utils import (
     absolute_reverse, get_object_or_error,
     get_user_auth, is_truthy,
 )
+from api.base.versioning import get_kebab_snake_case_field
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from django.apps import apps
 from django.conf import settings
@@ -886,7 +887,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
 class NodeAddonSettingsSerializerBase(JSONAPISerializer):
     class Meta:
-        type_ = 'node_addons'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'node-addons')
 
     id = ser.CharField(source='config.short_name', read_only=True)
     node_has_auth = ser.BooleanField(source='has_auth', read_only=True)
@@ -897,7 +900,7 @@ class NodeAddonSettingsSerializerBase(JSONAPISerializer):
 
     # Forward-specific
     label = ser.CharField(required=False, allow_blank=True)
-    url = ser.CharField(required=False, allow_blank=True)
+    url = ser.URLField(required=False, allow_blank=True)
 
     links = LinksField({
         'self': 'get_absolute_url',
@@ -923,7 +926,9 @@ class NodeAddonSettingsSerializerBase(JSONAPISerializer):
 class ForwardNodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
 
     def update(self, instance, validated_data):
-        auth = Auth(self.context['request'].user)
+        request = self.context['request']
+        user = request.user
+        auth = Auth(user)
         set_url = 'url' in validated_data
         set_label = 'label' in validated_data
 
@@ -953,7 +958,10 @@ class ForwardNodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
             instance.label = label
             url_changed = True
 
-        instance.save()
+        try:
+            instance.save(request=request)
+        except ValidationError as e:
+            raise exceptions.ValidationError(detail=str(e))
 
         if url_changed:
             # add log here because forward architecture isn't great
@@ -968,7 +976,6 @@ class ForwardNodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
                 auth=auth,
                 save=True,
             )
-
         return instance
 
 
@@ -1309,7 +1316,9 @@ class NodeLinksSerializer(JSONAPISerializer):
 
     )
     class Meta:
-        type_ = 'node_links'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'node-links')
 
     links = LinksField({
         'self': 'get_absolute_url',
@@ -1516,7 +1525,9 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         return draft
 
     class Meta:
-        type_ = 'draft_registrations'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'draft-registrations')
 
 
 class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
@@ -1625,7 +1636,9 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
         )
 
     class Meta:
-        type_ = 'view_only_links'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'view-only-links')
 
 
 class NodeViewOnlyLinkUpdateSerializer(NodeViewOnlyLinkSerializer):
@@ -1805,7 +1818,10 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
             save_forward = True
 
         if save_forward:
-            forward_addon.save()
+            try:
+                forward_addon.save(request=self.context['request'])
+            except ValidationError as e:
+                raise exceptions.ValidationError(detail=str(e))
 
     def enable_or_disable_addon(self, obj, should_enable, addon_name, auth):
         """

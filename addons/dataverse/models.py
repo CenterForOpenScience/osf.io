@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
@@ -152,7 +152,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             return super(NodeSettings, self)._get_fileobj_child_metadata(filenode, user, cookie=cookie, version=version)
         except HTTPError as e:
             # The Dataverse API returns a 404 if the dataset has no published files
-            if e.code == http.NOT_FOUND and version == 'latest-published':
+            if e.code == http_status.HTTP_404_NOT_FOUND and version == 'latest-published':
                 return []
             raise
 

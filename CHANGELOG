@@ -2,6 +2,50 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.28.0 (2019-09-24)
+===================
+- API v2: Use consistent naming for JSON API type (kebab-case)
+- API v2: Fix sorting on fields with source attribute
+- API v2: Add SparseLists for Nodes and Registrations
+- Management command to remove duplicate files and folders
+
+19.27.0 (2019-09-18)
+===================
+- Automatically map subjects when a preprint is moved to a different
+  preprint provider in the admin app
+- Gitlab: return all repos to which the user has access
+- Upgrade Bower
+- Py3 backwards compatible changes
+
+19.26.0 (2019-09-11)
+===================
+- Create a custom through table for linking files and versions
+  for storing version names.  Supports different versions of the same
+  file having different names.
+- Update README for populating institutions.
+
+
+19.25.0 (2019-09-05)
+===================
+- Automate account deactivation if users have no content
+- Clean up EZID workflow
+- Check redirect URL's for spam
+
+19.24.0 (2019-08-27)
+===================
+- APIv2: Allow creating a node with a license attached on creation
+- APIv2: Prevent creating a node link to the node itself, a parent, or a child
+- APIv2: Have the move/copy WB hooks update storage usage
+- Exclude collection groups from user page in Django's admin app
+- Have osfstorage move/copy hooks recursively update the latest file version's region
+- Fix password reset tokens
+- Do not reveal entire google drive file path in node logs
+- Allow logging in from password reset and forgot password pages
+- Fix broken social links on add contributors modal
+- Fix email typos in embargoed registration emails
+- Improve registration and retraction node log display text
+- Fix logs if cron job automatically approves a withdrawal
+
 19.23.0 (2019-08-19)
 ===================
 - Represents scopes as an m2m field on personal access tokens instead of a CharField
