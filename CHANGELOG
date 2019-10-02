@@ -2,6 +2,12 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.29.0 (2019-10-02)
+===================
+- Use new pagecounter fields for increased query efficiency
+- Allow meetings to be sorted on download count
+- Remove old permissions fields now that we have Guardian
+
 19.28.0 (2019-09-24)
 ===================
 - API v2: Use consistent naming for JSON API type (kebab-case)
