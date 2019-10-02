@@ -7,6 +7,7 @@ import pytest
 from future.moves.urllib.parse import urlparse
 
 from api.base.settings.defaults import API_BASE
+from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
 from api_tests.subjects.mixins import SubjectsFilterMixin
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
@@ -727,7 +728,6 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'attributes': {
                     'registration_choice': 'immediate',
                     'draft_registration': '12345',
-                    'draft_registration_id': '12345',
 
                 }
             }
@@ -758,7 +758,6 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'attributes': {
                     'registration_choice': 'immediate',
                     'draft_registration': draft_registration._id,
-                    'draft_registration_id': draft_registration._id
                 }
             }
         }
@@ -796,7 +795,6 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'attributes': {
                     'registration_choice': 'immediate',
                     'draft_registration': prereg_draft_registration._id,
-                    'draft_registration_id': prereg_draft_registration._id,
                 }
             }
         }
@@ -834,7 +832,6 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'attributes': {
                     'registration_choice': 'immediate',
                     'draft_registration': prereg_draft_registration._id,
-                    'draft_registration_id': prereg_draft_registration._id,
                 }
             }
         }
@@ -873,7 +870,6 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'attributes': {
                     'registration_choice': 'immediate',
                     'draft_registration': prereg_draft_registration._id,
-                    'draft_registration_id': prereg_draft_registration._id,
                 }
             }
         }
@@ -916,7 +912,6 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'draft_registration': draft_registration._id,
-                    'draft_registration_id': draft_registration._id,
                     'registration_choice': 'tomorrow'
                 }
             }
@@ -964,10 +959,8 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'draft_registration': draft_registration._id,
-                    'draft_registration_id': draft_registration._id,
                     'registration_choice': 'embargo',
                     'lift_embargo': five_years,
-                    'embargo_end_date': five_years
                 }
             }
         }
@@ -994,10 +987,8 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'draft_registration': draft_registration._id,
-                    'draft_registration_id': draft_registration._id,
                     'registration_choice': 'embargo',
                     'lift_embargo': next_week,
-                    'embargo_end_date': next_week,
                 }
             }
         }
@@ -1020,10 +1011,8 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'draft_registration': draft_registration._id,
-                    'draft_registration_id': draft_registration._id,
                     'registration_choice': 'embargo',
                     'lift_embargo': today,
-                    'embargo_end_date': today,
                 }
             }
         }
@@ -1044,10 +1033,8 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'draft_registration': draft_registration._id,
-                    'draft_registration_id': draft_registration._id,
                     'registration_choice': 'embargo',
                     'lift_embargo': today,
-                    'embargo_end_date': today
                 }
             }
         }
@@ -1059,6 +1046,101 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Datetime has wrong format. Use one of these formats instead: YYYY-MM-DDThh:mm:ss.'
+
+    def test_new_API_version_requires_draft_registration_id_on_creation(
+            self, app, user, draft_registration, url_registrations):
+        url = '{}?version={}'.format(url_registrations, CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
+        payload = {
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration': draft_registration._id,
+                }
+            }
+        }
+        res = app.post_json_api(
+            url,
+            payload,
+            auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/draft_registration_id'
+        assert res.json['errors'][0]['detail'] == 'This field is required.'
+
+    def test_new_API_version_no_embargo_is_immediate_by_default(
+            self, app, user, draft_registration, url_registrations):
+        url = '{}?version={}'.format(url_registrations, CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
+        payload = {
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration_id': draft_registration._id,
+                }
+            }
+        }
+        res = app.post_json_api(
+            url,
+            payload,
+            auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['pending_registration_approval'] is True
+
+    def test_new_API_version_uses_embargo_end_date(
+            self, app, user, draft_registration, url_registrations):
+        url = '{}?version={}'.format(url_registrations, CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
+        today = timezone.now()
+        three_years = (
+            today +
+            dateutil.relativedelta.relativedelta(
+                years=3)).strftime('%Y-%m-%dT%H:%M:%S')
+
+        payload = {
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration_id': draft_registration._id,
+                    'embargo_end_date': three_years
+                }
+            }
+        }
+        res = app.post_json_api(
+            url,
+            payload,
+            auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['pending_embargo_approval'] is True
+
+    def test_new_API_version_uses_included_node_ids_instead_of_children(
+            self, app, user, draft_registration, url_registrations, project_public,
+            project_public_child, project_public_grandchild, project_public_excluded_sibling):
+        url = '{}?version={}'.format(url_registrations, CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
+        payload_with_children = {
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration_id': draft_registration._id,
+                    'included_node_ids': [project_public_child._id, project_public_grandchild._id],
+
+                }
+            }
+        }
+        res = app.post_json_api(
+            url,
+            payload_with_children,
+            auth=user.auth,
+            expect_errors=True)
+        data = res.json['data']['attributes']
+        assert res.status_code == 201
+        assert data['registration'] is True
+        assert data['pending_registration_approval'] is True
+        assert data['public'] is False
+
+        assert project_public.registrations.all().count() == 1
+        assert project_public_child.registrations.all().count() == 1
+        assert project_public_grandchild.registrations.all().count() == 1
+        assert project_public_excluded_sibling.registrations.all().count() == 0
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_cannot_register_draft_that_has_already_been_registered(
