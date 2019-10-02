@@ -19,7 +19,7 @@ from website.ember_osf_web.decorators import ember_flag_is_active
 from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED
 from website.mails import send_mail
 from website.util import web_url_for
-from website.util.metrics import CampaignSourceTags
+from website.util.metrics import CampaignSourceTags, CampaignClaimedTags
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +83,7 @@ def add_poster_by_email(conference, message):
 
             user.save()  # need to save in order to access m2m fields (e.g. tags)
             user.add_system_tag(CampaignSourceTags.Osf4m.value)
+            user.add_system_tag(CampaignClaimedTags.Osf4m.value)
             user.update_date_last_login()
             user.save()
 
@@ -101,7 +102,7 @@ def add_poster_by_email(conference, message):
             title=message.subject,
             creator=user
         )
-        node.add_system_tag(CampaignSourceTags.Osf4m)
+        node.add_system_tag(CampaignSourceTags.Osf4m.value)
         node.save()
 
         utils.provision_node(conference, message, node, user)

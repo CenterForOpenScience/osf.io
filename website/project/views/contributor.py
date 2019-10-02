@@ -870,6 +870,7 @@ def _add_related_claimed_tag_to_user(pid, user):
     """
     node = AbstractNode.load(pid)
     preprint = Preprint.load(pid)
+    osf_claimed_tag, created = Tag.all_tags.get_or_create(name=provider_claimed_tag('osf'), system=True)
     if node:
         node_source_tags = node.all_tags.filter(name__icontains='source:', system=True)
         if node_source_tags.exists():
@@ -877,6 +878,8 @@ def _add_related_claimed_tag_to_user(pid, user):
                 claimed_tag, created = Tag.all_tags.get_or_create(name=NODE_SOURCE_TAG_CLAIMED_TAG_RELATION[tag.name],
                                                                   system=True)
                 user.add_system_tag(claimed_tag)
+        else:
+            user.add_system_tag(osf_claimed_tag)
     elif preprint:
         provider_id = preprint.provider._id
         preprint_claimed_tag, created = Tag.all_tags.get_or_create(name=provider_claimed_tag(provider_id, 'preprint'),
