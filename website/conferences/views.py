@@ -156,9 +156,7 @@ def conference_data(meeting):
 def conference_submissions_sql(conf):
     """
     Serializes all meeting submissions to a conference (returns array of dictionaries)
-
     :param obj conf: Conference object.
-
     """
     submission1_name = conf.field_names['submission1']
     submission2_name = conf.field_names['submission2']
@@ -200,7 +198,7 @@ def conference_submissions_sql(conf):
                         LIMIT 1
                         ) AUTHOR ON TRUE  -- Returns first visible contributor
               LEFT JOIN LATERAL (
-                SELECT osf_guid._id
+                SELECT osf_guid._id, osf_guid.id
                 FROM osf_guid
                 WHERE (osf_guid.object_id = osf_abstractnode.id AND osf_guid.content_type_id = %s) -- Content type for AbstractNode
                 ORDER BY osf_guid.created DESC
@@ -225,7 +223,9 @@ def conference_submissions_sql(conf):
               LEFT JOIN LATERAL (
                 SELECT P.total AS DOWNLOAD_COUNT
                 FROM osf_pagecounter AS P
-                WHERE P._id = 'download:' || GUID._id || ':' || FILE._id
+                WHERE P.action = 'download'
+                AND P.resource_id = GUID.id
+                AND P.file_id = FILE.id
                 LIMIT 1
               ) DOWNLOAD_COUNT ON TRUE
             -- Get all the nodes for a specific meeting
@@ -234,7 +234,6 @@ def conference_submissions_sql(conf):
                    AND osf_abstractnode.is_public = TRUE
                    AND AUTHOR_GUID IS NOT NULL)
             ORDER BY osf_abstractnode.created DESC;
-
             """, [
                 submission1_name,
                 submission1_name,
@@ -276,7 +275,6 @@ def serialize_conference(conf):
 @ember_flag_is_active(features.EMBER_MEETING_DETAIL)
 def conference_results(meeting):
     """Return the data for the grid view for a conference.
-
     :param str meeting: Endpoint name for a conference.
     """
     try:
