@@ -9,6 +9,7 @@ from api.base import utils
 from api.base.renderers import BrowsableAPIRendererNoForms
 from api.base.settings import LATEST_VERSIONS
 
+CREATE_REGISTRATION_FIELD_CHANGE_VERSION = '2.18'
 
 def get_major_version(version):
     return int(version.split('.')[0])

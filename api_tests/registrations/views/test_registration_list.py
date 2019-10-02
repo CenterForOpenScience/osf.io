@@ -700,7 +700,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_registration_draft_must_be_specified(
-            self, mock_enqueue, app, user, url_registrations):
+            self, mock_enqueue, app, user, payload, url_registrations):
         payload = {
             'data': {
                 'type': 'registrations',
@@ -715,7 +715,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/draft_registration'
+        assert '/data/attributes/draft_registration' in res.json['errors'][0]['source']['pointer']
         assert res.json['errors'][0]['detail'] == 'This field is required.'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
@@ -726,7 +726,9 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'registration_choice': 'immediate',
-                    'draft_registration': '12345'
+                    'draft_registration': '12345',
+                    'draft_registration_id': '12345',
+
                 }
             }
         }
@@ -755,7 +757,8 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'registration_choice': 'immediate',
-                    'draft_registration': draft_registration._id
+                    'draft_registration': draft_registration._id,
+                    'draft_registration_id': draft_registration._id
                 }
             }
         }
@@ -793,6 +796,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'attributes': {
                     'registration_choice': 'immediate',
                     'draft_registration': prereg_draft_registration._id,
+                    'draft_registration_id': prereg_draft_registration._id,
                 }
             }
         }
@@ -830,6 +834,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'attributes': {
                     'registration_choice': 'immediate',
                     'draft_registration': prereg_draft_registration._id,
+                    'draft_registration_id': prereg_draft_registration._id,
                 }
             }
         }
@@ -868,6 +873,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'attributes': {
                     'registration_choice': 'immediate',
                     'draft_registration': prereg_draft_registration._id,
+                    'draft_registration_id': prereg_draft_registration._id,
                 }
             }
         }
@@ -910,6 +916,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'draft_registration': draft_registration._id,
+                    'draft_registration_id': draft_registration._id,
                     'registration_choice': 'tomorrow'
                 }
             }
@@ -957,8 +964,10 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'draft_registration': draft_registration._id,
+                    'draft_registration_id': draft_registration._id,
                     'registration_choice': 'embargo',
-                    'lift_embargo': five_years
+                    'lift_embargo': five_years,
+                    'embargo_end_date': five_years
                 }
             }
         }
@@ -985,8 +994,10 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'draft_registration': draft_registration._id,
+                    'draft_registration_id': draft_registration._id,
                     'registration_choice': 'embargo',
-                    'lift_embargo': next_week
+                    'lift_embargo': next_week,
+                    'embargo_end_date': next_week,
                 }
             }
         }
@@ -1009,8 +1020,10 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'draft_registration': draft_registration._id,
+                    'draft_registration_id': draft_registration._id,
                     'registration_choice': 'embargo',
-                    'lift_embargo': today
+                    'lift_embargo': today,
+                    'embargo_end_date': today,
                 }
             }
         }
@@ -1031,8 +1044,10 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'draft_registration': draft_registration._id,
+                    'draft_registration_id': draft_registration._id,
                     'registration_choice': 'embargo',
-                    'lift_embargo': today
+                    'lift_embargo': today,
+                    'embargo_end_date': today
                 }
             }
         }
