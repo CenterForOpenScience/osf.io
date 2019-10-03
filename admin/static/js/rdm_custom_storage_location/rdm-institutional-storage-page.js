@@ -162,11 +162,16 @@ function ajaxRequest(params, providerShortName, route) {
         data: JSON.stringify(params),
         contentType: 'application/json; charset=utf-8',
         custom: providerShortName,
+        timeout: 30000,
         success: function (data) {
             afterRequest[route].success(this.custom, data);
         },
         error: function (jqXHR) {
-            afterRequest[route].fail(this.custom, jqXHR.responseJSON.message);
+            if(jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)){
+                afterRequest[route].fail(this.custom, jqXHR.responseJSON.message);
+            }else{
+                afterRequest[route].fail(this.custom, 'Some errors occurred');
+            }
         }
     });
 }
