@@ -31,17 +31,18 @@ from osf.models import Tag, QuickFilesNode
 from osf.models import files as models
 from addons.osfstorage.apps import osf_storage_root
 from addons.osfstorage import utils
-from addons.base.views import make_auth
+from addons.base.views import make_auth, addon_view_file
 from addons.osfstorage import settings as storage_settings
-from api_tests.utils import create_test_file
+from api_tests.utils import create_test_file, create_test_preprint_file
 from api.caching.settings import STORAGE_USAGE_KEY
 
 from osf_tests.factories import ProjectFactory, ApiOAuth2PersonalTokenFactory, PreprintFactory
+from website.files.utils import attach_versions
 
 def create_record_with_version(path, node_settings, **kwargs):
     version = factories.FileVersionFactory(**kwargs)
     record = node_settings.get_root().append_file(path)
-    record.versions.add(version)
+    record.add_version(version)
     record.save()
     return record
 
@@ -76,7 +77,7 @@ class TestGetMetadataHook(HookTestCase):
         path = u'kind/of/magíc.mp3'
         record = recursively_create_file(self.node_settings, path)
         version = factories.FileVersionFactory()
-        record.versions.add(version)
+        record.add_version(version)
         record.save()
         res = self.send_hook(
             'osfstorage_get_metadata',
@@ -91,7 +92,7 @@ class TestGetMetadataHook(HookTestCase):
         preprint = PreprintFactory()
         record = preprint.primary_file
         version = factories.FileVersionFactory()
-        record.versions.add(version)
+        record.add_version(version)
         record.save()
         res = self.send_hook(
             'osfstorage_get_metadata',
@@ -106,7 +107,7 @@ class TestGetMetadataHook(HookTestCase):
         path = u'kind/of/magíc.mp3'
         record = recursively_create_file(self.node_settings, path)
         version = factories.FileVersionFactory()
-        record.versions.add(version)
+        record.add_version(version)
         record.save()
         res = self.send_hook(
             'osfstorage_get_children',
@@ -141,7 +142,7 @@ class TestGetMetadataHook(HookTestCase):
         preprint = PreprintFactory()
         record = preprint.primary_file
         version = factories.FileVersionFactory()
-        record.versions.add(version)
+        record.add_version(version)
         record.save()
         res = self.send_hook(
             'osfstorage_get_children',
@@ -274,7 +275,9 @@ class TestUploadFileHook(HookTestCase):
         assert_is_not(version, None)
         assert_equal([version], list(record.versions.all()))
         assert_not_in(version, self.record.versions.all())
+        assert_equal(version.get_basefilenode_version(record).version_name, record.name)
         assert_equal(record.serialize(), res.json['data'])
+        assert_equal(version.get_basefilenode_version(record).version_name, record.name)
         assert_equal(res.json['data']['downloads'], self.record.get_download_count())
 
     def test_upload_update(self):
@@ -321,6 +324,7 @@ class TestUploadFileHook(HookTestCase):
         record = parent.find_child_by_name(name)
         assert_in(version, record.versions.all())
         assert_equals(record.name, name)
+        assert_equals(record.versions.first().get_basefilenode_version(record).version_name, name)
         assert_equals(record.parent, parent)
 
     def test_upload_create_child_with_same_name(self):
@@ -341,6 +345,7 @@ class TestUploadFileHook(HookTestCase):
         record = parent.find_child_by_name(name)
         assert_in(version, record.versions.all())
         assert_equals(record.name, name)
+        assert_equals(record.versions.first().get_basefilenode_version(record).version_name, name)
         assert_equals(record.parent, parent)
 
     def test_upload_fail_to_create_version_due_to_checkout(self):
@@ -514,6 +519,7 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
         version = models.FileVersion.load(res.json['version'])
         assert_is_not(version, None)
         assert_in(version, self.record.versions.all())
+        assert_equal(self.record.versions.first().get_basefilenode_version(self.record).version_name, self.name)
 
     def test_upload_duplicate(self):
         location = {
@@ -637,7 +643,7 @@ class TestUpdateMetadataHook(HookTestCase):
         self.path = 'greasy/pízza.png'
         self.record = recursively_create_file(self.node_settings, self.path)
         self.version = factories.FileVersionFactory()
-        self.record.versions = [self.version]
+        self.record.add_version(self.version)
         self.record.save()
         self.payload = {
             'metadata': {
@@ -711,7 +717,7 @@ class TestUpdateMetadataHookPreprints(HookTestCase):
         self.record = self.preprint.primary_file
         self.path = 'greasy/pízza.png'
         self.version = factories.FileVersionFactory()
-        self.record.versions = [self.version]
+        self.record.add_version(self.version)
         self.record.save()
         self.payload = {
             'metadata': {
@@ -783,7 +789,7 @@ class TestGetRevisions(StorageTestCase):
         super(TestGetRevisions, self).setUp()
         self.path = 'tie/your/mother/down.mp3'
         self.record = recursively_create_file(self.node_settings, self.path)
-        self.record.versions = [factories.FileVersionFactory() for __ in range(15)]
+        attach_versions(self.record, [factories.FileVersionFactory() for __ in range(15)])
         self.record.save()
 
     def get_revisions(self, fid=None, guid=None, **kwargs):
@@ -1165,6 +1171,35 @@ class TestMoveHook(HookTestCase):
         )
         assert_equal(res.status_code, 200)
 
+    def test_can_rename_file(self):
+        file = create_test_file(self.node, self.user, filename='road_dogg.mp3')
+        new_name = 'JesseJames.mp3'
+
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'guid': self.node._id},
+            payload={
+                'action': 'rename',
+                'source': file._id,
+                'target': self.root_node._id,
+                'user': self.user._id,
+                'name': file.name,
+                'destination': {
+                    'parent': self.root_node._id,
+                    'target': self.node._id,
+                    'name': new_name,
+                }
+            },
+            target=self.node,
+            method='post_json',
+            expect_errors=True,
+        )
+        file.reload()
+
+        assert_equal(res.status_code, 200)
+        assert_equal(file.name, new_name)
+        assert_equal(file.versions.first().get_basefilenode_version(file).version_name, new_name)
+
     def test_can_move_file_out_of_quickfiles_node(self):
         quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
         quickfiles_file = create_test_file(quickfiles_node, self.user, filename='slippery.mp3')
@@ -1253,6 +1288,35 @@ class TestMoveHookPreprint(TestMoveHook):
             expect_errors=True,
         )
         assert_equal(res.status_code, 403)
+
+    def test_can_rename_file(self):
+        file = create_test_preprint_file(self.node, self.user, filename='road_dogg.mp3')
+        new_name = 'JesseJames.mp3'
+
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'guid': self.node._id},
+            payload={
+                'action': 'rename',
+                'source': file._id,
+                'target': self.root_node._id,
+                'user': self.user._id,
+                'name': file.name,
+                'destination': {
+                    'parent': self.root_node._id,
+                    'target': self.node._id,
+                    'name': new_name,
+                }
+            },
+            target=self.node,
+            method='post_json',
+            expect_errors=True,
+        )
+        file.reload()
+
+        assert_equal(res.status_code, 200)
+        assert_equal(file.name, new_name)
+        assert_equal(file.versions.first().get_basefilenode_version(file).version_name, new_name)
 
 
 @pytest.mark.django_db
@@ -1507,7 +1571,6 @@ class TestFileTags(StorageTestCase):
 @pytest.mark.django_db
 @pytest.mark.enable_bookmark_creation
 class TestFileViews(StorageTestCase):
-
     def test_file_views(self):
         file = create_test_file(target=self.node, user=self.user)
         url = self.node.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
@@ -1552,6 +1615,40 @@ class TestFileViews(StorageTestCase):
         url = base_url.format(folder._id)
         redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert redirect.status_code == 400
+
+    def test_addon_view_file(self):
+        file = create_test_file(target=self.node, user=self.user, filename='first_name')
+        version = factories.FileVersionFactory()
+        file.add_version(version)
+        file.move_under(self.node_settings.get_root(), name='second_name')
+        file.save()
+
+        version = factories.FileVersionFactory()
+        file.add_version(version)
+        file.move_under(self.node_settings.get_root(), name='third_name')
+        file.save()
+
+        ret = addon_view_file(Auth(self.user), self.node, file, version)
+        assert ret['version_names'] == ['third_name', 'second_name', 'first_name']
+
+    def test_osfstorage_download_view(self):
+        file = create_test_file(target=self.node, user=self.user)
+        version = factories.FileVersionFactory()
+        file.add_version(version)
+        file.move_under(self.node_settings.get_root(), name='new_name')
+        file.save()
+
+        res = self.app.get(
+                api_url_for(
+                    'osfstorage_download',
+                    fid=file._id,
+                    guid=self.node._id,
+                    **signing.sign_data(signing.default_signer, {})
+                ),
+                auth=self.user.auth,
+            )
+        assert res.status_code == 200
+        assert res.json['data']['name'] == 'new_name'
 
     @responses.activate
     @mock.patch('framework.auth.cas.get_client')

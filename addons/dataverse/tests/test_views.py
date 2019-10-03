@@ -4,7 +4,7 @@ import mock
 import pytest
 import unittest
 
-import httplib as http
+from rest_framework import status as http_status
 
 
 from addons.base.tests.views import OAuthAddonConfigViewsTestCaseMixin
@@ -98,7 +98,7 @@ class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
             'dataverse': {'alias': 'ALIAS3'},
             'dataset': {'doi': 'doi:12.3456/DVN/00003'},
         }, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         self.project.reload()
         assert_equal(
             self.project.logs.latest().action,
@@ -111,7 +111,7 @@ class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
     def test_get_config(self):
         url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         assert_in('result', res.json)
         serialized = self.Serializer().serialize_settings(
             self.node_settings,
@@ -137,7 +137,7 @@ class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
         self.node_settings.reload()
 
         # Old settings did not change
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
         assert_equal(self.node_settings.dataverse_alias, 'ALIAS2')
         assert_equal(self.node_settings.dataset, 'Example (DVN/00001)')
         assert_equal(self.node_settings.dataset_doi, 'doi:12.3456/DVN/00001')
@@ -303,4 +303,4 @@ class TestDataverseRestrictions(DataverseAddonTestCase, OsfTestCase):
         }
         res = self.app.post_json(url, params, auth=self.contrib.auth,
                                  expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)

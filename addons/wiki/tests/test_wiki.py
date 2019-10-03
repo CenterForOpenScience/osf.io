@@ -3,7 +3,7 @@
 
 # PEP8 asserts
 from copy import deepcopy
-import httplib as http
+from rest_framework import status as http_status
 import time
 import mock
 import pytest
@@ -601,7 +601,7 @@ class TestWikiRename(OsfTestCase):
             auth=self.auth,
             expect_errors=True,
         )
-        assert_equal(http.BAD_REQUEST, res.status_code)
+        assert_equal(http_status.HTTP_400_BAD_REQUEST, res.status_code)
         assert_equal(res.json['message_short'], 'Invalid name')
         assert_equal(res.json['message_long'], 'Page name cannot contain forward slashes.')
         self.project.reload()

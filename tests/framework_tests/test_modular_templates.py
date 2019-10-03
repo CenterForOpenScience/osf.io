@@ -11,7 +11,8 @@ import flask
 from lxml.html import fragment_fromstring
 import werkzeug.wrappers
 
-from framework.exceptions import HTTPError, http
+from rest_framework import status as http_status
+from framework.exceptions import HTTPError
 from framework.routing import (
     Renderer, JSONRenderer, WebRenderer,
     render_mako_string,
@@ -44,7 +45,7 @@ class RendererTestCase(AppTestCase):
     def test_http_error_raised(self):
         """Subclasses of Renderer must implement ``.handle_error()``."""
         with self.assertRaises(NotImplementedError):
-            self.r(HTTPError(http.NOT_FOUND))
+            self.r(HTTPError(http_status.HTTP_404_NOT_FOUND))
 
     def test_tuple(self):
         """Subclasses of Renderer must implement ``.render()``."""
@@ -77,21 +78,21 @@ class JSONRendererTestCase(RendererTestCase):
         associated HTTP status code. This mirrors the tuple format anticipated
         by Flask.
         """
-        resp = self.r(HTTPError(http.NOT_FOUND))
+        resp = self.r(HTTPError(http_status.HTTP_404_NOT_FOUND))
 
-        msg = HTTPError.error_msgs[http.NOT_FOUND]
+        msg = HTTPError.error_msgs[http_status.HTTP_404_NOT_FOUND]
 
         self.assertEqual(
             (
                 {
-                    'code': http.NOT_FOUND,
+                    'code': http_status.HTTP_404_NOT_FOUND,
                     'referrer': None,
                     'message_short': msg['message_short'],
                     'message_long': msg['message_long'],
                 },
-                http.NOT_FOUND,
+                http_status.HTTP_404_NOT_FOUND,
             ),
-            (json.loads(resp[0]), http.NOT_FOUND, ),
+            (json.loads(resp[0]), http_status.HTTP_404_NOT_FOUND, ),
         )
 
     def test_tuple(self):
@@ -165,7 +166,7 @@ class WebRendererTestCase(OsfTestCase):
 
         self.app.app.preprocess_request()
 
-        err = HTTPError(http.NOT_FOUND)
+        err = HTTPError(http_status.HTTP_404_NOT_FOUND)
 
         resp = self.r(err)
 
@@ -174,7 +175,7 @@ class WebRendererTestCase(OsfTestCase):
             resp[0],
         )
         self.assertEqual(
-            http.NOT_FOUND,
+            http_status.HTTP_404_NOT_FOUND,
             resp[1],
         )
 
@@ -195,7 +196,7 @@ class WebRendererTestCase(OsfTestCase):
         """
 
         resp = self.r(
-            HTTPError(http.CREATED, redirect_url='http://google.com/')
+            HTTPError(http_status.HTTP_201_CREATED, redirect_url='http://google.com/')
         )
 
         self.assertIsInstance(

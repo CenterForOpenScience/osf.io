@@ -1,5 +1,5 @@
-import urllib
-import httplib as http
+from future.moves.urllib.parse import unquote_plus
+from rest_framework import status as http_status
 
 from framework.exceptions import HTTPError
 
@@ -9,9 +9,9 @@ from addons.bitbucket.api import BitbucketClient
 def get_path(kwargs, required=True):
     path = kwargs.get('path')
     if path:
-        return urllib.unquote_plus(path)
+        return unquote_plus(path)
     elif required:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
 
 def get_refs(addon, branch=None, sha=None, connection=None):
@@ -26,7 +26,7 @@ def get_refs(addon, branch=None, sha=None, connection=None):
     connection = connection or BitbucketClient(access_token=addon.external_account.oauth_key)
 
     if sha and not branch:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     # Get default branch if not provided
     if not branch:
