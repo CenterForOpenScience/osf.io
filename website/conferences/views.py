@@ -83,7 +83,6 @@ def add_poster_by_email(conference, message):
 
             user.save()  # need to save in order to access m2m fields (e.g. tags)
             user.add_system_tag(CampaignSourceTags.Osf4m.value)
-            user.add_system_tag(CampaignClaimedTags.Osf4m.value)
             user.update_date_last_login()
             user.save()
 
