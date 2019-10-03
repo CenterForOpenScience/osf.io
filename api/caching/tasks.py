@@ -103,9 +103,10 @@ def ban_url(instance):
 
 
 @app.task(max_retries=5, default_retry_delay=10)
-def update_storage_usage_cache(target_id, target_guid):
+def update_storage_usage_cache(target_id, target_guid, per_page=5000):
     sql = """
-        SELECT sum(version.size) FROM osf_basefileversionsthrough AS obfnv
+        SELECT count(size), sum(size) from
+        (SELECT size FROM osf_basefileversionsthrough AS obfnv
         LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
         LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
         LEFT JOIN django_content_type type on file.target_content_type_id = type.id
@@ -113,13 +114,19 @@ def update_storage_usage_cache(target_id, target_guid):
         AND type.model = 'abstractnode'
         AND file.deleted_on IS NULL
         AND file.target_object_id=%s
+        ORDER BY version.id
+        LIMIT %s OFFSET %s) file_page
     """
-
-    with connection.cursor() as cursor:
-        cursor.execute(sql, [target_id])
-        result = cursor.fetchall()
-
-    storage_usage_total = int(result[0][0]) if result[0][0] else 0
+    count = per_page
+    offset = 0
+    storage_usage_total = 0
+    while count:
+        with connection.cursor() as cursor:
+            cursor.execute(sql, [target_id, per_page, offset])
+            result = cursor.fetchall()
+            storage_usage_total += int(result[0][1]) if result[0][1] else 0
+            count = int(result[0][0]) if result[0][0] else 0
+            offset += count
 
     key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_guid)
     storage_usage_cache.set(key, storage_usage_total, cache_settings.FIVE_MIN_TIMEOUT)
