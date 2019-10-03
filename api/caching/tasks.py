@@ -120,13 +120,13 @@ def update_storage_usage_cache(target_id, target_guid, per_page=5000):
     count = per_page
     offset = 0
     storage_usage_total = 0
-    while count:
-        with connection.cursor() as cursor:
-            cursor.execute(sql, [target_id, per_page, offset])
-            result = cursor.fetchall()
-            storage_usage_total += int(result[0][1]) if result[0][1] else 0
-            count = int(result[0][0]) if result[0][0] else 0
-            offset += count
+    with connection.cursor() as cursor:
+        while count:
+                cursor.execute(sql, [target_id, per_page, offset])
+                result = cursor.fetchall()
+                storage_usage_total += int(result[0][1]) if result[0][1] else 0
+                count = int(result[0][0]) if result[0][0] else 0
+                offset += count
 
     key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_guid)
     storage_usage_cache.set(key, storage_usage_total, cache_settings.FIVE_MIN_TIMEOUT)
