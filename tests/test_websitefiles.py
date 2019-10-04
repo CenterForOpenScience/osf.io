@@ -506,6 +506,30 @@ class TestFileObj(FilesTestCase):
         with assert_raises(exceptions.VersionNotFoundError):
             file.get_version('3', required=True)
 
+    def test_get_version_nonsequential_id(self):
+        """
+        When a user makes concurrent requests to make a new version they can produce two or more versions with the same
+        identifier.
+        """
+
+        v1 = models.FileVersion(identifier='1')
+        v2 = models.FileVersion(identifier='1')
+        v1.save()
+        v2.save()
+
+        file = TestFile(
+            _path='afile',
+            name='name',
+            target=self.node,
+            provider='test',
+            materialized_path='/long/path/to/name',
+        )
+        file.save()
+
+        attach_versions(file, [v1, v2])
+
+        assert_equals(file.get_version('1'), v2)
+
     def test_update_version_metadata(self):
         v1 = models.FileVersion(identifier='1')
         v1.save()
@@ -685,7 +709,50 @@ class TestFolderObj(FilesTestCase):
         pass
 
     def test_find_child_by_name(self):
-        pass
+
+        v1 = models.FileVersion(identifier='1')
+        v1.save()
+
+        file = TestFile(
+            _path='afile',
+            name='name',
+            target=self.node,
+            parent_id=self.parent.id,
+            provider='test',
+            materialized_path='/long/path/to/name',
+        )
+        file.save()
+
+        attach_versions(file, [v1])
+
+        record = self.parent.find_child_by_name('name')
+        assert record == file
+
+    def test_find_child_by_name_nonsequential(self):
+        """
+        When a user makes concurrent requests to make a new version they can produce two or more versions with the same
+        identifier.
+        """
+
+        v1 = models.FileVersion(identifier='1')
+        v2 = models.FileVersion(identifier='1')
+        v1.save()
+        v2.save()
+
+        file = TestFile(
+            _path='afile',
+            name='name',
+            target=self.node,
+            parent_id=self.parent.id,
+            provider='test',
+            materialized_path='/long/path/to/name',
+        )
+        file.save()
+
+        attach_versions(file, [v1, v2])
+
+        record = self.parent.find_child_by_name('name')
+        assert record == file
 
 
 class TestFileVersion(FilesTestCase):
