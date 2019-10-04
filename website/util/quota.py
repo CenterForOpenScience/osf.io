@@ -148,18 +148,31 @@ def file_modified(target, user, payload, file_node, storage_type):
     file_info.save()
 
 def update_default_storage(user):
+    from pprint import pprint
+    pprint('i am inside update_default_storage')
     if user is not None:
+        pprint('i am inside update_default_storage: user found!!!')
         user_settings = user.get_addon('osfstorage')
+        pprint('i am inside update_default_storage: got user_settings')
+        pprint(vars(user_settings))
         if user_settings is None:
+            pprint('i am inside update_default_storage: user_settings is none')
             user_settings = user.add_addon('osfstorage')
+            pprint(user_settings)
         institution = user.affiliated_institutions.first()
+        pprint('i am inside update_default_storage: fetched institution')
+        pprint(institution)
         if institution is not None:
             try:
+                pprint('i am inside update_default_storage: getting the institution!!')
                 region = Region.objects.get(_id=institution._id)
             except Region.DoesNotExist:
+                pprint('i am inside update_default_storage: region does not exist.')
                 pass
             else:
                 user_settings.set_region(region._id)
+                pprint('i am inside update_default_storage: user_settings.set_region(region._id)')
+                pprint(vars(user_settings))
 
 def get_node_file_list(file_node):
     if 'file' in file_node.type:
