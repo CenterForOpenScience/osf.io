@@ -21,7 +21,7 @@ from .utils import pip_install, bin_prefix
 
 try:
     from tasks import local  # noqa
-except ImportError as error:
+except ImportError:
     print('No tasks/local.py file found. '
           'Did you remember to copy local-dist.py to local.py?')
 

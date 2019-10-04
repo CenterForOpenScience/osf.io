@@ -20,15 +20,14 @@ class JSONAPIRenderer(JSONRendererWithESISupport):
         # See JSON-API documentation on meta information: http://jsonapi.org/format/#document-meta
         data_type = type(data)
         if renderer_context is not None and data_type != str and data is not None:
-            meta_dict = renderer_context.get('meta')
+            meta_dict = renderer_context.get('meta', {})
             version = getattr(renderer_context['request'], 'version', None)
-            if meta_dict is not None:
-                if version:
-                    meta_dict['version'] = renderer_context['request'].version
-                    data.setdefault('meta', {}).update(meta_dict)
-            elif version:
-                meta_dict = {'version': renderer_context['request'].version}
-                data.setdefault('meta', {}).update(meta_dict)
+            warning = renderer_context['request'].META.get('warning', None)
+            if version:
+                meta_dict['version'] = version
+            if warning:
+                meta_dict['warning'] = warning
+            data.setdefault('meta', {}).update(meta_dict)
         return super(JSONAPIRenderer, self).render(data, accepted_media_type, renderer_context)
 
 

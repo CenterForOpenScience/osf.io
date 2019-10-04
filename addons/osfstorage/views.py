@@ -106,8 +106,7 @@ def osfstorage_get_revisions(file_node, payload, target, **kwargs):
     counter_prefix = 'download:{}:{}:'.format(file_node.target._id, file_node._id)
 
     version_count = file_node.versions.count()
-    # Don't worry. The only % at the end of the LIKE clause, the index is still used
-    counts = dict(PageCounter.objects.filter(_id__startswith=counter_prefix).values_list('_id', 'total'))
+    counts = dict(PageCounter.objects.filter(resource=file_node.target.guids.first().id, file=file_node, action='download').values_list('_id', 'total'))
     qs = FileVersion.includable_objects.filter(basefilenode__id=file_node.id).include('creator__guids').order_by('-created')
 
     for i, version in enumerate(qs):
@@ -233,7 +232,10 @@ def osfstorage_get_children(file_node, **kwargs):
             ) CHECKOUT_GUID ON TRUE
             LEFT JOIN LATERAL (
                 SELECT P.total AS DOWNLOAD_COUNT FROM osf_pagecounter AS P
-                WHERE P._id = 'download:' || %s || ':' || F._id
+                WHERE P.resource_id = %s
+                AND P.file_id = F.id
+                AND P.action = 'download'
+                AND P.version ISNULL
                 LIMIT 1
             ) DOWNLOAD_COUNT ON TRUE
             LEFT JOIN LATERAL (
@@ -268,7 +270,7 @@ def osfstorage_get_children(file_node, **kwargs):
             AND (NOT F.type IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder'))
         """, [
             user_content_type_id,
-            file_node.target._id,
+            file_node.target.guids.first().id,
             user_pk,
             user_pk,
             user_id,

@@ -157,10 +157,12 @@ services:
 
   unoconv:
     image: centerforopenscience/unoconv
+    environment:
+      UNO_PATH: /usr/lib/libreoffice
     command:
       - /bin/bash
       - -c
-      - /opt/libreoffice6.1/program/python -u /usr/local/bin/unoconv --listener --server=0.0.0.0 --port=2002 -vvv &&
+      - /usr/bin/python3.7 /usr/local/bin/unoconv --listener --server=0.0.0.0 --port=2002 -vvv &&
         chmod -R 777 /tmp/mfrlocalcache
     restart: unless-stopped
     ports:
@@ -365,9 +367,9 @@ services:
       - /bin/bash
       - -c
       - invoke requirements --all &&
-        (python -m compileall /usr/local/lib/python2.7 || true) &&
+        (python -m compileall /usr/lib/python2.7 || true) &&
         rm -Rf /python2.7/* &&
-        cp -Rf -p /usr/local/lib/python2.7 /
+        cp -Rf -p /usr/lib/python2.7 /
     restart: 'no'
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
@@ -383,7 +385,7 @@ services:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
@@ -396,7 +398,7 @@ services:
       DJANGO_SETTINGS_MODULE: admin.base.settings
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/lib/python2.7
       - osf_node_modules_vol:/code/node_modules  # needed due to admin references of ../webpack.<...>.js configurations.
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
@@ -448,7 +450,7 @@ services:
       - .docker-compose.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
 #      - ./ssl/ca-chain.cert.pem:/etc/ssl/certs/ca-chain.cert.pem:ro
@@ -473,7 +475,7 @@ services:
     stdin_open: true
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
@@ -495,7 +497,7 @@ services:
       - .docker-compose.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
@@ -517,7 +519,7 @@ services:
       - .docker-compose.sharejs.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - ember_osf_web_dist_vol:/ember_osf_web

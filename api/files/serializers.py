@@ -35,6 +35,7 @@ from api.base.serializers import (
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.exceptions import Conflict, InvalidModelValueError
 from api.base.schemas.utils import from_json
+from api.base.versioning import get_kebab_snake_case_field
 
 class CheckoutField(ser.HyperlinkedRelatedField):
 
@@ -423,7 +424,9 @@ class FileVersionSerializer(JSONAPISerializer):
         return obj.get_basefilenode_version(file).version_name
 
     class Meta:
-        type_ = 'file_versions'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'file-versions')
 
     def self_url(self, obj):
         return absolute_reverse(
@@ -514,7 +517,9 @@ class FileMetadataRecordSerializer(JSONAPISerializer):
         return obj.absolute_api_v2_url
 
     class Meta:
-        type_ = 'metadata_records'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'metadata-records')
 
 
 def get_file_download_link(obj, version=None, view_only=None):
