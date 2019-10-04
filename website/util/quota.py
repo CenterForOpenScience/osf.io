@@ -11,6 +11,21 @@ from osf.models import (
     AbstractNode, BaseFileNode, FileLog, FileInfo, Guid, OSFUser, UserQuota,
     ProjectStorageType
 )
+import logging
+import inspect
+logger = logging.getLogger(__name__)
+# logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+#     datefmt='%Y-%m-%d:%H:%M:%S',
+#     level=logging.INFO)
+
+# fmt='%(name)s - %(levelname)s - %(message)s'
+# logging.basicConfig(level=logging.INFO, format=fmt)
+# c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+# c_handler = logging.StreamHandler()
+# c_handler.setFormatter(c_format)
+# logger.addHandler(c_handler)
+
+# logger = logging.getLogger(__name__)
 
 
 def used_quota(user_id, storage_type=UserQuota.NII_STORAGE):
@@ -148,31 +163,32 @@ def file_modified(target, user, payload, file_node, storage_type):
     file_info.save()
 
 def update_default_storage(user):
-    from pprint import pprint
-    pprint('i am inside update_default_storage')
+    logger.info('----{}::{}({})from:{}::{}({})'.format(inspect.getframeinfo(inspect.currentframe())[0],inspect.getframeinfo(inspect.currentframe())[2],inspect.getframeinfo(inspect.currentframe())[1],inspect.stack()[1][1],inspect.stack()[1][3],inspect.stack()[1][2]))
+    logger.info("user")
+    logger.critical(user)
+    logger.info('i am inside update_default_storage')
     if user is not None:
-        pprint('i am inside update_default_storage: user found!!!')
         user_settings = user.get_addon('osfstorage')
-        pprint('i am inside update_default_storage: got user_settings')
-        pprint(vars(user_settings))
+        logger.critical(user_settings)
         if user_settings is None:
-            pprint('i am inside update_default_storage: user_settings is none')
             user_settings = user.add_addon('osfstorage')
-            pprint(user_settings)
+        logger.info("user_settings")
+        logger.critical(vars(user_settings))
         institution = user.affiliated_institutions.first()
-        pprint('i am inside update_default_storage: fetched institution')
-        pprint(institution)
+        logger.info('Institution')
+        logger.critical(institution)
         if institution is not None:
             try:
-                pprint('i am inside update_default_storage: getting the institution!!')
                 region = Region.objects.get(_id=institution._id)
             except Region.DoesNotExist:
-                pprint('i am inside update_default_storage: region does not exist.')
+                logger.info('i am inside update_default_storage: region does not exist.')
                 pass
             else:
+                logger.info("region")
+                logger.critical(region)
                 user_settings.set_region(region._id)
-                pprint('i am inside update_default_storage: user_settings.set_region(region._id)')
-                pprint(vars(user_settings))
+                logger.info('i am inside update_default_storage: user_settings.set_region(region._id)')
+                logger.critical(vars(user_settings))
 
 def get_node_file_list(file_node):
     if 'file' in file_node.type:

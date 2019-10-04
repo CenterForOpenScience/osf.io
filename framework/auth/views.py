@@ -36,6 +36,10 @@ from osf.exceptions import ValidationValueError, BlacklistedEmailError
 from osf.models.provider import PreprintProvider
 from osf.utils.requests import check_select_for_update
 
+import logging
+import inspect
+logger = logging.getLogger(__name__)
+
 @block_bing_preview
 @collect_auth
 def reset_password_get(auth, uid=None, token=None):
@@ -297,6 +301,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
 
 @collect_auth
 def auth_login(auth):
+    logger.info('----{}::{}({})from:{}::{}({})'.format(inspect.getframeinfo(inspect.currentframe())[0],inspect.getframeinfo(inspect.currentframe())[2],inspect.getframeinfo(inspect.currentframe())[1],inspect.stack()[1][1],inspect.stack()[1][3],inspect.stack()[1][2]))
     """
     View (no template) for OSF Login.
     Redirect user based on `data` returned from `login_and_register_handler`.
@@ -318,9 +323,8 @@ def auth_login(auth):
 
     data = login_and_register_handler(auth, login=True, campaign=campaign, next_url=next_url)
     if data['status_code'] == http.FOUND:
-        #a = 0/0
-        print('UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU')
-        print(auth.user)
+        logger.info("inside auth_login function")
+        logger.info('----{}::{}({})from:{}::{}({})'.format(inspect.getframeinfo(inspect.currentframe())[0],inspect.getframeinfo(inspect.currentframe())[2],inspect.getframeinfo(inspect.currentframe())[1],inspect.stack()[1][1],inspect.stack()[1][3],inspect.stack()[1][2]))
         update_default_storage(auth.user)
         return redirect(data['next_url'])
 
