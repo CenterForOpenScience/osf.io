@@ -323,6 +323,7 @@ def auth_login(auth):
 
     data = login_and_register_handler(auth, login=True, campaign=campaign, next_url=next_url)
     if data['status_code'] == http.FOUND:
+        print('TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT')
         logger.error("inside auth_login function")
         logger.error('----{}::{}({})from:{}::{}({})'.format(inspect.getframeinfo(inspect.currentframe())[0],inspect.getframeinfo(inspect.currentframe())[2],inspect.getframeinfo(inspect.currentframe())[1],inspect.stack()[1][1],inspect.stack()[1][3],inspect.stack()[1][2]))
         update_default_storage(auth.user)
