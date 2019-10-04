@@ -58,8 +58,34 @@ class TestFileView:
         return api_utils.create_test_file(node, user, create_guid=False)
 
     @pytest.fixture()
+    def nonsequential_file(self, user, node):
+        """
+        When a user makes concurrent requests to make a new version they can produce two or more versions with the same
+        identifier
+        :param user:
+        :param node:
+        :return:
+        """
+
+        file_node = api_utils.create_test_file(node, user, create_guid=False, filename='testfile2')
+        file_node.save()
+
+        version = file_node.create_version(
+            creator=node.creator,
+            location={u'folder': u'osf', u'object': u'deadbe', u'service': u'cloud'},
+            metadata={u'contentType': u'img/png', u'size': 9001}
+        )
+        version.identifier = '1'
+        version.save()
+        return file_node
+
+    @pytest.fixture()
     def file_url(self, file):
         return '/{}files/{}/'.format(API_BASE, file._id)
+
+    @pytest.fixture()
+    def nonsequential_version_url(self, nonsequential_file):
+        return '/{}files/{}/versions/'.format(API_BASE, nonsequential_file._id)
 
     def test_must_have_auth_and_be_contributor(self, app, file_url):
         # test_must_have_auth(self, app, file_url):
@@ -601,6 +627,19 @@ class TestFileView:
                 'contentType': 'img/png'}).save()
             res = app.get(file_url, auth=user.auth)
             assert res.json['data']['attributes']['current_version'] == version
+
+    def test_version_nonsequential(self, app, user, nonsequential_version_url, nonsequential_file):
+        """
+        When a user makes concurrent requests to make a new version they can produce two or more versions with the same
+        identifier. This test insures all versions are returned when queried. This behavior may change so version
+        identifiers are unique, in that case it's okay to delete this test.
+        """
+        res = app.get(nonsequential_version_url, auth=user.auth)
+        data = res.json['data']
+        assert len(data) == 2
+
+        assert data[0]['id'] == '1'
+        assert data[1]['id'] == '1'
 
     # Regression test for OSF-7758
     def test_folder_files_relationships_contains_guid_not_id(
