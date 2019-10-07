@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0182_deleted_field_mig'),
+        ('osf', '0188_deleted_field_mig'),
     ]
 
     if DEBUG_MODE:

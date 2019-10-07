@@ -59,6 +59,7 @@ class TestMigrateDeletedDate(DbTestCase):
         osf_folder = OsfStorageFolder.objects.filter(target_object_id=project.id)[0]
 
         project.remove_node(Auth(user))
+        osf_folder.is_root = False
         osf_folder.delete()
         osf_folder.reload()
         project.reload()

@@ -9,7 +9,7 @@ import osf.utils.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0181_osfuser_contacted_deactivation'),
+        ('osf', '0187_remove_outdated_contributor_permissions'),
     ]
 
     operations = [
