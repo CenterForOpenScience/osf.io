@@ -351,11 +351,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         """Assembles a string to retrieve the correct file data from the pagecounter collection,
         then calls get_basic_counters to retrieve the total count. Limit to version if specified.
         """
-        parts = [count_type, self.target._id, self._id]
-        if version is not None:
-            parts.append(version)
-        page = ':'.join([format(part) for part in parts])
-        _, count = get_basic_counters(page)
+        _, count = get_basic_counters(self.target.guids.first(), self, version=version, action=count_type)
 
         return count or 0
 
@@ -422,11 +418,13 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         :param deleted_on:
         :return:
         """
-        self.deleted_by = user
-        self.deleted_on = deleted_on = deleted_on or timezone.now()
+        if not self.is_root:
+            self.deleted_by = user
+            self.deleted_on = deleted_on = deleted_on or timezone.now()
 
         if not self.is_file:
-            self.recast(TrashedFolder._typedmodels_type)
+            if not self.is_root:
+                self.recast(TrashedFolder._typedmodels_type)
 
             for child in BaseFileNode.objects.filter(parent=self.id).exclude(type__in=TrashedFileNode._typedmodels_subtypes):
                 child.delete(user=user, save=save, deleted_on=deleted_on)

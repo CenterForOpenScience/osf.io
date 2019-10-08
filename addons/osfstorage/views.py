@@ -106,8 +106,7 @@ def osfstorage_get_revisions(file_node, payload, target, **kwargs):
     counter_prefix = 'download:{}:{}:'.format(file_node.target._id, file_node._id)
 
     version_count = file_node.versions.count()
-    # Don't worry. The only % at the end of the LIKE clause, the index is still used
-    counts = dict(PageCounter.objects.filter(_id__startswith=counter_prefix).values_list('_id', 'total'))
+    counts = dict(PageCounter.objects.filter(resource=file_node.target.guids.first().id, file=file_node, action='download').values_list('_id', 'total'))
     qs = FileVersion.includable_objects.filter(basefilenode__id=file_node.id).include('creator__guids').order_by('-created')
 
     for i, version in enumerate(qs):
@@ -135,13 +134,17 @@ def osfstorage_move_hook(source, destination, name=None, **kwargs):
     try:
         ret = source.move_under(destination, name=name).serialize(), http_status.HTTP_200_OK
     except exceptions.FileNodeCheckedOutError:
-        raise HTTPError(http_status.HTTP_405_METHOD_NOT_ALLOWED, data={
-            'message_long': 'Cannot move file as it is checked out.'
-        })
+        raise HTTPError(
+            http_status.HTTP_405_METHOD_NOT_ALLOWED, data={
+                'message_long': 'Cannot move file as it is checked out.',
+            },
+        )
     except exceptions.FileNodeIsPrimaryFile:
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
-            'message_long': 'Cannot move file as it is the primary file of preprint.'
-        })
+        raise HTTPError(
+            http_status.HTTP_403_FORBIDDEN, data={
+                'message_long': 'Cannot move file as it is the primary file of preprint.',
+            },
+        )
 
     # once the move is complete recalculate storage for both targets if it's a inter-target move.
     if source_target != destination.target:
@@ -234,7 +237,10 @@ def osfstorage_get_children(file_node, **kwargs):
             ) CHECKOUT_GUID ON TRUE
             LEFT JOIN LATERAL (
                 SELECT P.total AS DOWNLOAD_COUNT FROM osf_pagecounter AS P
-                WHERE P._id = 'download:' || %s || ':' || F._id
+                WHERE P.resource_id = %s
+                AND P.file_id = F.id
+                AND P.action = 'download'
+                AND P.version ISNULL
                 LIMIT 1
             ) DOWNLOAD_COUNT ON TRUE
             LEFT JOIN LATERAL (
@@ -269,7 +275,7 @@ def osfstorage_get_children(file_node, **kwargs):
             AND (NOT F.type IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder'))
         """, [
                 user_content_type_id,
-                file_node.target._id,
+                file_node.target.guids.first().id,
                 user_pk,
                 user_pk,
                 user_id,
@@ -315,17 +321,21 @@ def osfstorage_create_child(file_node, payload, **kwargs):
         created, file_node = False, parent.find_child_by_name(name, kind=int(not is_folder))
 
     if not created and is_folder:
-        raise HTTPError(http_status.HTTP_409_CONFLICT, data={
-            'message_long': 'Cannot create folder "{name}" because a file or folder already exists at path "{path}"'.format(
-                name=file_node.name,
-                path=file_node.materialized_path,
-            )
-        })
+        raise HTTPError(
+            http_status.HTTP_409_CONFLICT, data={
+                'message_long': 'Cannot create folder "{name}" because a file or folder already exists at path "{path}"'.format(
+                    name=file_node.name,
+                    path=file_node.materialized_path,
+                ),
+            },
+        )
 
     if file_node.checkout and file_node.checkout._id != user._id:
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
-            'message_long': 'File cannot be updated due to checkout status.'
-        })
+        raise HTTPError(
+            http_status.HTTP_403_FORBIDDEN, data={
+                'message_long': 'File cannot be updated due to checkout status.',
+            },
+        )
 
     if not is_folder:
         try:
@@ -380,9 +390,11 @@ def osfstorage_delete(file_node, payload, target, **kwargs):
     except exceptions.FileNodeCheckedOutError:
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
     except exceptions.FileNodeIsPrimaryFile:
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
-            'message_long': 'Cannot delete file as it is the primary file of preprint.'
-        })
+        raise HTTPError(
+            http_status.HTTP_403_FORBIDDEN, data={
+                'message_long': 'Cannot delete file as it is the primary file of preprint.',
+            },
+        )
 
     update_storage_usage(file_node.target)
     return {'status': 'success'}

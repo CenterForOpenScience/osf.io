@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import datetime
 import re
-
+import pytest
 import pytz
+
 from dateutil import parser
 from django.utils import timezone
 
@@ -22,7 +23,11 @@ from api.base.exceptions import (
     InvalidFilterComparisonType,
     InvalidFilterMatchType,
 )
-
+from osf_tests.factories import (
+    NodeFactory,
+    AuthUserFactory,
+)
+from api.base.settings.defaults import API_BASE
 from api.base.serializers import RelationshipField
 
 
@@ -399,7 +404,7 @@ class TestListFilterMixin(ApiTestCase):
         assert_equal(parsed_field['value'], False)
         assert_equal(parsed_field['op'], 'eq')
 
-
+@pytest.mark.django_db
 class TestOSFOrderingFilter(ApiTestCase):
     class query:
         title = ' '
@@ -478,6 +483,38 @@ class TestOSFOrderingFilter(ApiTestCase):
             )
         ]
         assert_equal(actual, [40, 30, 10, 20])
+
+    def get_node_sort_url(self, field, ascend=True):
+        if not ascend:
+            field = '-' + field
+        return '/{}nodes/?sort={}'.format(API_BASE, field)
+
+    def get_multi_field_sort_url(self, field, node_id, ascend=True):
+        if not ascend:
+            field = '-' + field
+        return '/{}nodes/{}/addons/?sort={}'.format(API_BASE, node_id, field)
+
+    def test_sort_by_serializer_field(self):
+        user = AuthUserFactory()
+        NodeFactory(creator=user)
+        NodeFactory(creator=user)
+
+        # Ensuring that sorting by the serializer field returns the same result
+        # as using the source field
+        res_created = self.app.get(self.get_node_sort_url('created'), auth=user.auth)
+        res_date_created = self.app.get(self.get_node_sort_url('date_created'), auth=user.auth)
+        assert res_created.status_code == 200
+        assert res_created.json['data'] == res_date_created.json['data']
+        assert res_created.json['data'][0]['id'] == res_date_created.json['data'][0]['id']
+        assert res_created.json['data'][1]['id'] == res_date_created.json['data'][1]['id']
+
+        # Testing both are capable of using the inverse sort sign '-'
+        res_created = self.app.get(self.get_node_sort_url('created', False), auth=user.auth)
+        res_date_created = self.app.get(self.get_node_sort_url('date_created', False), auth=user.auth)
+        assert res_created.status_code == 200
+        assert res_created.json['data'] == res_date_created.json['data']
+        assert res_created.json['data'][1]['id'] == res_date_created.json['data'][1]['id']
+        assert res_created.json['data'][0]['id'] == res_date_created.json['data'][0]['id']
 
 
 class TestQueryPatternRegex(TestCase):
