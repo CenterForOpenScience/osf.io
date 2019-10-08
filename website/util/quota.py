@@ -11,21 +11,8 @@ from osf.models import (
     AbstractNode, BaseFileNode, FileLog, FileInfo, Guid, OSFUser, UserQuota,
     ProjectStorageType
 )
-import logging
 import inspect
 logger = logging.getLogger(__name__)
-# logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
-#     datefmt='%Y-%m-%d:%H:%M:%S',
-#     level=logging.INFO)
-
-# fmt='%(name)s - %(levelname)s - %(message)s'
-# logging.basicConfig(level=logging.INFO, format=fmt)
-# c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-# c_handler = logging.StreamHandler()
-# c_handler.setFormatter(c_format)
-# logger.addHandler(c_handler)
-
-# logger = logging.getLogger(__name__)
 
 
 def used_quota(user_id, storage_type=UserQuota.NII_STORAGE):
@@ -163,35 +150,23 @@ def file_modified(target, user, payload, file_node, storage_type):
     file_info.save()
 
 def update_default_storage(user):
-    from api.base.rdmlogger import RdmLogger, rdmlog
-    rdmlogger = RdmLogger(rdmlog, {})
-    rdmlogger.error("error............................error")
-    logger.error('----{}::{}({})from:{}::{}({})'.format(inspect.getframeinfo(inspect.currentframe())[0],inspect.getframeinfo(inspect.currentframe())[2],inspect.getframeinfo(inspect.currentframe())[1],inspect.stack()[1][1],inspect.stack()[1][3],inspect.stack()[1][2]))
-    logger.error("user")
+    logger.error('----{}::{}({})from:{}::{}({})'.format(inspect.getframeinfo(inspect.currentframe())[0], inspect.getframeinfo(inspect.currentframe())[2], inspect.getframeinfo(inspect.currentframe())[1], inspect.stack()[1][1], inspect.stack()[1][3], inspect.stack()[1][2]))
     logger.error(user)
-    logger.error('i am inside update_default_storage')
     if user is not None:
         user_settings = user.get_addon('osfstorage')
-        logger.error(user_settings)
         if user_settings is None:
             user_settings = user.add_addon('osfstorage')
-        logger.error("user_settings")
-        logger.error(vars(user_settings))
         institution = user.affiliated_institutions.first()
-        logger.error('Institution')
-        logger.error(institution)
         if institution is not None:
             try:
+                logger.error('Institution: {}'.format(institution.name))
                 region = Region.objects.get(_id=institution._id)
             except Region.DoesNotExist:
-                logger.error('i am inside update_default_storage: region does not exist.')
+                logger.error('Inside update_default_storage: region does not exist.')
                 pass
             else:
-                logger.error("region")
-                logger.error(region)
                 user_settings.set_region(region._id)
-                logger.error('i am inside update_default_storage: user_settings.set_region(region._id)')
-                logger.error(vars(user_settings))
+                logger.error('user_settings.set_region({})'.format(region.name))
 
 def get_node_file_list(file_node):
     if 'file' in file_node.type:
