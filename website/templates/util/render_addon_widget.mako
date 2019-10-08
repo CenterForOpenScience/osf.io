@@ -166,40 +166,6 @@
                         <div style="margin: 0.5em;">No Linked JupyterHubs</div>
                         <!-- /ko -->
                       <!-- /ko -->
-                      <div id="jupyterSelectionDialog" class="modal fade">
-                          <div class="modal-dialog modal-lg">
-                              <div class="modal-content">
-
-                                  <div class="modal-header">
-                                      <h3>Select JupyterHub</h3>
-                                  </div>
-
-                                  <form>
-                                      <div class="modal-body">
-
-                                          <div class="row">
-                                              <div class="col-sm-6">
-                                                <ul data-bind="foreach: availableLinks">
-                                                    <li>
-                                                        <a data-bind="attr: {href: url}, text: name" target="_blank"></a>
-                                                    </li>
-                                                </ul>
-                                              </div>
-                                          </div><!-- end row -->
-
-                                      </div><!-- end modal-body -->
-
-                                      <div class="modal-footer">
-
-                                          <a href="#" class="btn btn-default" data-bind="click: clearModal" data-dismiss="modal">Close</a>
-
-                                      </div><!-- end modal-footer -->
-
-                                  </form>
-
-                              </div><!-- end modal-content -->
-                          </div>
-                      </div>
                     </div>
                 % endif
 
