@@ -6,7 +6,7 @@ from django.db import migrations
 from django.conf import settings
 
 
-if settings.TEST_MIGRATION:
+if settings.AUTO_RUN_DATA_MIGRATION:
     operations = []
 else:
     operations = [

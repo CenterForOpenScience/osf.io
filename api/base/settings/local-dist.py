@@ -40,3 +40,5 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'test-anon': '1/hour',
     'send-email': '2/minute',
 }
+
+AUTO_RUN_DATA_MIGRATION = False

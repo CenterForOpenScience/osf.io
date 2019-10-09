@@ -122,7 +122,7 @@ def _test_speedups_disable(request, settings, _test_speedups):
 
 @pytest.fixture(autouse=True)
 def fix():
-    if settings.TEST_MIGRATION:
+    if settings.AUTO_RUN_DATA_MIGRATION:
         # Since  model level fields are deleted from code (but not removed from db) we have to mock a default for them.
         with connection.cursor() as cursor:
             cursor.execute('''ALTER TABLE "public"."osf_osfuser" ALTER COLUMN "jobs" SET DEFAULT '[]'::jsonb;''')

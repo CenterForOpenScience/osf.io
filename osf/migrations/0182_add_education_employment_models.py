@@ -10,7 +10,7 @@ import osf.models.base
 from django.conf import settings
 from osf.management.commands.migrate_education_employment import populate_new_models, put_jobs_and_schools_back
 
-if settings.TEST_MIGRATION:
+if settings.AUTO_RUN_DATA_MIGRATION:
     run_migration = lambda *args, **kwargs: None
     reverse_migration = lambda *args, **kwargs: None
 else:
