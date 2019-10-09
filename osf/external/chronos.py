@@ -85,10 +85,7 @@ class ChronosSerializer(object):
     def serialize_user(cls, user):
         if not bool(user.given_name) and not bool(user.family_name):
             raise ValueError(
-                'Cannot submit because user {} with id {} requires a given and family name'.format(
-                    user.given_name if user.given_name and user.family_name else user.fullname,
-                    user._id
-                )
+                'Cannot submit because user {} requires a given and family name'.format(user.given_name if user.given_name and user.family_name else user.fullname)
             )
 
         return {
