@@ -7,6 +7,7 @@ from api.base.serializers import (
     LinksField,
     RelationshipField,
 )
+from api.base.versioning import get_kebab_snake_case_field
 
 class SchemaSerializer(JSONAPISerializer):
 
@@ -64,13 +65,17 @@ class RegistrationSchemaSerializer(SchemaSerializer):
     filterable_fields = ['active']
 
     class Meta:
-        type_ = 'registration_schemas'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'registration-schemas')
 
 
 class FileMetadataSchemaSerializer(SchemaSerializer):
 
     class Meta:
-        type_ = 'file_metadata_schemas'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'file-metadata-schemas')
 
 
 class DeprecatedMetaSchemaSerializer(SchemaSerializer):

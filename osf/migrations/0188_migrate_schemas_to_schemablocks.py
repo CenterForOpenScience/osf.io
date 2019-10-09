@@ -58,7 +58,7 @@ def noop(*args, **kwargs):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0186_add_schema_block_models'),
+        ('osf', '0187_remove_outdated_contributor_permissions')
     ]
 
     operations = [
