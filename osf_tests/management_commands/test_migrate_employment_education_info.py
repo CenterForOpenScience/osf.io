@@ -52,13 +52,42 @@ class TestEducationEmploymentInfoMigration:
 
         return user
 
-    def test_education_employment_migration(self, user):
+    @pytest.fixture()
+    def user2(self):
+        """
+        endMonth was set to zero instead of null for many users.
+        :return:
+        """
+        user = UserFactory()
+        user.save()
+        schools = [
+            {
+                u'degree': '',
+                u'department': '',
+                u'endMonth': 0,
+                u'endYear': '',
+                u'institution': u'Enfield Tennis Academy',
+                u'ongoing': False,
+                u'startMonth': None,
+                u'startYear': ''
+            }
+        ]
+
+        # Need to make a this a raw slq insert because the model level fields are deleted
+        with connection.cursor() as cursor:
+            cursor.execute('UPDATE osf_osfuser SET schools = %s WHERE id = %s', [json.dumps(schools), user.id])
+
+        return user
+
+    def test_education_employment_migration(self, user, user2):
         populate_new_models(rows=10000, dry_run=False)
         education_info = UserEducation.objects.all()
-        assert education_info.count() == 1
+        assert education_info.count() == 2
 
         education_info = UserEmployment.objects.all()
         assert education_info.count() == 2
+
+        education_info = UserEmployment.objects.all()
         for i, info in enumerate(education_info):
             assert info._order == i + 1
 

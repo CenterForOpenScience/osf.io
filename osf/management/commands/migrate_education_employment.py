@@ -50,7 +50,9 @@ def set_models(dry_run, info_type):
         user_{info_type}.id,
             json_items->>'ongoing' as ongoing,
             to_date((json_items->>'startMonth'::text) || '-' || (json_items->>'startYear'::text), 'mm-yyyy') as start_date,
-            case when json_items->>'ongoing'='true' then null else to_date((json_items->>'endMonth'::text) || '-' || (json_items->>'endYear'::text), 'mm-yyyy') end as end_date,
+            case when json_items->>'ongoing'='true'
+                then null else to_date((case when json_items->>'endMonth'::text='0'
+                    then null else json_items->>'endMonth'::text end) || '-' || (json_items->>'endYear'::text), 'mm-yyyy') end as end_date,
             json_items->>'{title_or_degree}'::text as {title_or_degree},
             json_items->>'department' as department,
             json_items->>'institution' as institution
