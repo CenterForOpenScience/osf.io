@@ -154,7 +154,7 @@ class MeetingSubmissionSerializer(NodeSerializer):
         assuming its first file is the meeting submission.
         """
         if getattr(obj, 'file_id', None):
-            submission_file = OsfStorageFile.objects.get(_id=obj.file_id)
+            submission_file = OsfStorageFile.objects.get(id=obj.file_id)
         else:
             submission_file = self.get_submission_file(obj)
 

@@ -31,9 +31,9 @@ class TestSerializeRevision(StorageTestCase):
 
     def test_serialize_revision(self):
         sessions.sessions[request._get_current_object()] = Session()
-        utils.update_analytics(self.project, self.record._id, 0)
-        utils.update_analytics(self.project, self.record._id, 0)
-        utils.update_analytics(self.project, self.record._id, 2)
+        utils.update_analytics(self.project, self.record, 0)
+        utils.update_analytics(self.project, self.record, 0)
+        utils.update_analytics(self.project, self.record, 2)
         expected = {
             'index': 1,
             'user': {
@@ -58,9 +58,9 @@ class TestSerializeRevision(StorageTestCase):
 
     def test_anon_revisions(self):
         sessions.sessions[request._get_current_object()] = Session()
-        utils.update_analytics(self.project, self.record._id, 0)
-        utils.update_analytics(self.project, self.record._id, 0)
-        utils.update_analytics(self.project, self.record._id, 2)
+        utils.update_analytics(self.project, self.record, 0)
+        utils.update_analytics(self.project, self.record, 0)
+        utils.update_analytics(self.project, self.record, 2)
         expected = {
             'index': 2,
             'user': None,

@@ -3,12 +3,16 @@ from rest_framework import exceptions as drf_exceptions
 from rest_framework import versioning as drf_versioning
 from rest_framework.compat import unicode_http_header
 from rest_framework.utils.mediatypes import _MediaType
+from distutils.version import StrictVersion
 
 from api.base import exceptions
 from api.base import utils
 from api.base.renderers import BrowsableAPIRendererNoForms
 from api.base.settings import LATEST_VERSIONS
 
+# KEBAB_CASE_VERSION determines the API version in which kebab-case will begin being accepted.
+# Note that this version will not deprecate snake_case yet.
+KEBAB_CASE_VERSION = '2.18'
 
 def get_major_version(version):
     return int(version.split('.')[0])
@@ -27,6 +31,12 @@ def decimal_version_to_url_path(decimal_version):
 def get_latest_sub_version(major_version):
     # '2' --> '2.6'
     return LATEST_VERSIONS.get(major_version, None)
+
+def get_kebab_snake_case_field(version, field):
+    if StrictVersion(version) < StrictVersion(KEBAB_CASE_VERSION):
+        return field.replace('-', '_')
+    else:
+        return field
 
 class BaseVersioning(drf_versioning.BaseVersioning):
 

@@ -66,6 +66,51 @@ class OSFOrderingFilter(OrderingFilter):
             return queryset.sort(*ordering)
         return queryset
 
+    def get_serializer_source_field(self, view, request):
+        """
+        Returns a dictionary of serializer fields and source names. i.e. {'date_created': 'created'}
+
+        Logic borrowed from OrderingFilter.get_default_valid_fields with modifications to retrieve
+        source fields for serializer field names.
+
+        :param view api view
+        :
+        """
+        field_to_source_mapping = {}
+
+        if hasattr(view, 'get_serializer_class'):
+            serializer_class = view.get_serializer_class()
+        else:
+            serializer_class = getattr(view, 'serializer_class', None)
+
+        # This will not allow any serializer fields with nested related fields to be sorted on
+        for field_name, field in serializer_class(context={'request': request}).fields.items():
+            if not getattr(field, 'write_only', False) and not field.source == '*' and field_name != field.source:
+                field_to_source_mapping[field_name] = field.source.replace('.', '_')
+
+        return field_to_source_mapping
+
+    # Overrides OrderingFilter
+    def remove_invalid_fields(self, queryset, fields, view, request):
+        """
+        Returns an array of valid fields to be used for ordering.
+        Any valid source fields which are input remain in the valid fields list using the super method.
+        Serializer fields are mapped to their source fields and returned.
+        :param fields, array, input sort fields
+        :returns array of source fields for sorting.
+        """
+        valid_fields = super(OSFOrderingFilter, self).remove_invalid_fields(queryset, fields, view, request)
+        if not valid_fields:
+            for invalid_field in fields:
+                ordering_sign = '-' if invalid_field[0] == '-' else ''
+                invalid_field = invalid_field.lstrip('-')
+
+                field_source_mapping = self.get_serializer_source_field(view, request)
+                source_field = field_source_mapping.get(invalid_field, None)
+                if source_field:
+                    valid_fields.append(ordering_sign + source_field)
+        return valid_fields
+
 
 class FilterMixin(object):
     """ View mixin with helper functions for filtering. """
