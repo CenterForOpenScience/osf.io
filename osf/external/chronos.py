@@ -91,12 +91,12 @@ class ChronosSerializer(object):
         return {
             'CHRONOS_USER_ID': user.chronos_user_id,
             'EMAIL': user.username,
-            'GIVEN_NAME': user.given_name if str(user.given_name) and str(user.family_name) else user.fullname,
+            'GIVEN_NAME': user.given_name,
             'FULLNAME': user.fullname,
             'MIDDLE_NAME': user.middle_names,
             'ORCID_ID': user.social.get('orcid', None),
             'PARTNER_USER_ID': user._id,
-            'SURNAME': user.family_name if str(user.given_name) and str(user.family_name) else None,
+            'SURNAME': user.family_name,
         }
 
     @classmethod
