@@ -6,9 +6,26 @@ from website.util import api_v2_url
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.migrations import build_flattened_jsonschema
 from osf.exceptions import ValidationValueError, ValidationError
 
 from website.project.metadata.utils import create_jsonschema_from_metaschema
+
+SCHEMABLOCK_TYPES = [
+    ('page-heading', 'page-heading'),
+    ('section-heading', 'section-heading'),
+    ('subsection-heading', 'subsection-heading'),
+    ('paragraph', 'paragraph'),
+    ('question-label', 'question-label'),
+    ('short-text-input', 'short-text-input'),
+    ('long-text-input', 'long-text-input'),
+    ('file-input', 'file-input'),
+    ('contributors-input', 'contributors-input'),
+    ('single-select-input', 'single-select-input'),
+    ('multi-select-input', 'multi-select-input'),
+    ('select-input-option', 'select-input-option'),
+    ('select-other-option', 'select-other-option'),
+]
 
 
 class AbstractSchemaManager(models.Manager):
@@ -36,6 +53,7 @@ class AbstractSchemaManager(models.Manager):
             latest_schemas = latest_schemas.filter(active=True)
         return latest_schemas.order_by('name', '-schema_version').distinct('name')
 
+
 class AbstractSchema(ObjectIDMixin, BaseModel):
     name = models.CharField(max_length=255)
     schema = DateTimeAwareJSONField(default=dict)
@@ -57,6 +75,9 @@ class AbstractSchema(ObjectIDMixin, BaseModel):
 
 
 class RegistrationSchema(AbstractSchema):
+    config = DateTimeAwareJSONField(blank=True, default=dict)
+    description = models.TextField(null=True, blank=True)
+
     @property
     def _config(self):
         return self.schema.get('config', {})
@@ -128,6 +149,41 @@ class RegistrationSchema(AbstractSchema):
             raise ValidationValueError(e.message)
         return
 
+    def validate_registration_responses(self, registration_responses, required_fields=False):
+        """
+        Validates registration_responses against the cached jsonschema on the RegistrationSchema.
+        The `title` of the question is stashed under the description for the particular question property
+        for forumulating a more clear error response.
+        """
+        validation_schema = build_flattened_jsonschema(self, required_fields=required_fields)
+
+        try:
+            jsonschema.validate(registration_responses, validation_schema)
+        except jsonschema.ValidationError as e:
+            properties = validation_schema.get('properties', {})
+            relative_path = getattr(e, 'relative_path', None)
+            question_id = relative_path[0] if relative_path else ''
+            if properties.get(question_id, None):
+                question_title = properties.get(question_id).get('description') or question_id
+                if e.relative_schema_path[0] == 'required':
+                    raise ValidationError(
+                        'For your registration the \'{}\' field is required'.format(question_title)
+                    )
+                elif 'enum' in properties.get(question_id):
+                    raise ValidationError(
+                        'For your registration, your response to the \'{}\' field is invalid, your response must be one of the provided options.'.format(
+                            question_title,
+                        ),
+                    )
+                else:
+                    raise ValidationError(
+                        'For your registration, your response to the \'{}\' field is invalid. {}'.format(question_title, e.message),
+                    )
+            raise ValidationError(e.message)
+        except jsonschema.SchemaError as e:
+            raise ValidationValueError(e.message)
+        return True
+
 
 class FileMetadataSchema(AbstractSchema):
 
@@ -135,3 +191,34 @@ class FileMetadataSchema(AbstractSchema):
     def absolute_api_v2_url(self):
         path = '/schemas/files/{}/'.format(self._id)
         return api_v2_url(path)
+
+
+class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
+    class Meta:
+        order_with_respect_to = 'schema'
+        unique_together = ('schema', 'registration_response_key')
+
+    schema = models.ForeignKey('RegistrationSchema', related_name='schema_blocks', on_delete=models.CASCADE)
+    help_text = models.TextField()
+    example_text = models.TextField(null=True)
+    # Corresponds to a key in DraftRegistration.registration_responses dictionary
+    registration_response_key = models.CharField(max_length=255, db_index=True, null=True, blank=True)
+    # A question can be split into multiple schema blocks, but are linked with a schema_block_group_key
+    schema_block_group_key = models.CharField(max_length=24, db_index=True, null=True)
+    block_type = models.CharField(max_length=31, db_index=True, choices=SCHEMABLOCK_TYPES)
+    display_text = models.TextField()
+    required = models.BooleanField(default=False)
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '{}schema_blocks/{}/'.format(self.schema.absolute_api_v2_url, self._id)
+        return api_v2_url(path)
+
+    def save(self, *args, **kwargs):
+        """
+        Allows us to use a unique_together constraint, so each "registration_response_key"
+        only appears once for every registration schema.  To do this, we need to save
+        empty "registration_response_key"s as null, instead of an empty string.
+        """
+        self.registration_response_key = self.registration_response_key or None
+        return super(RegistrationSchemaBlock, self).save(*args, **kwargs)

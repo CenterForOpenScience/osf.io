@@ -1,4 +1,5 @@
 import pytz
+import copy
 import markupsafe
 import logging
 
@@ -30,8 +31,10 @@ from osf.models.spam import SpamMixin, SpamStatus
 from osf.models.tag import Tag
 from osf.models.validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
 from osf.utils.permissions import ADMIN, REVIEW_GROUPS, READ, WRITE
+from osf.utils.registrations import get_nested_answer, build_registration_metadata_dict, build_answer_block
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils.requests import get_request_and_user_id
 from website.project import signals as project_signals
@@ -1782,3 +1785,94 @@ class SpamOverrideMixin(SpamMixin):
             )
             log.should_hide = True
             log.save()
+
+
+class RegistrationResponseMixin(models.Model):
+    """
+    Mixin to be shared between DraftRegistrations and Registrations.
+    """
+    registration_responses = DateTimeAwareJSONField(default=dict, blank=True)
+    registration_responses_migrated = models.NullBooleanField(default=True)
+
+    def get_registration_metadata(self, schema):
+        raise NotImplementedError()
+
+    @property
+    def file_storage_resource(self):
+        # Where the original files were stored (the node)
+        raise NotImplementedError()
+
+    def flatten_registration_metadata(self):
+        """
+        Extracts questions/nested registration_responses - makes use of schema block `registration_response_key`
+        and block_type to assemble flattened registration_responses.
+
+        For example, if the registration_response_key = "description-methods.planned-sample.question7b",
+        this will recurse through the registered_meta, looking for each key, starting with "description-methods",
+        then "planned-sample", and finally "question7b", returning the most deeply nested value corresponding
+        with the final key to flatten the dictionary.
+        :self, DraftRegistration or Registration
+        :returns dictionary, registration_responses, flattened dictionary with registration_response_keys
+        top-level
+        """
+        schema = self.registration_schema
+        registered_meta = self.get_registration_metadata(schema)
+
+        registration_responses = {}
+        registration_response_keys = schema.schema_blocks.filter(
+            registration_response_key__isnull=False
+        ).values(
+            'registration_response_key',
+            'block_type'
+        )
+
+        for registration_response_key_dict in registration_response_keys:
+            key = registration_response_key_dict['registration_response_key']
+            registration_responses[key] = get_nested_answer(
+                registered_meta,
+                registration_response_key_dict['block_type'],
+                key.split('.')
+            )
+        return registration_responses
+
+    def expand_registration_responses(self):
+        """
+        Expanding `registration_responses` into Draft.registration_metadata or
+        Registration.registered_meta. registration_responses are more flat;
+        "registration_response_keys" are top level.  Registration_metadata/registered_meta
+        will have a more deeply nested format.
+        :returns registration_metadata, dictionary
+        """
+        schema = self.registration_schema
+        registration_responses = copy.deepcopy(self.registration_responses)
+        # Pull out all registration_response_keys and their block types
+        registration_response_keys = schema.schema_blocks.filter(
+            registration_response_key__isnull=False
+        ).values(
+            'registration_response_key',
+            'block_type'
+        )
+
+        metadata = {}
+
+        for registration_response_key_dict in registration_response_keys:
+            response_key = str(registration_response_key_dict['registration_response_key'])
+            # Turns "confirmatory-analyses-further.further.question2c" into
+            # ['confirmatory-analyses-further', 'value', 'further', 'value', 'question2c']
+            nested_keys = response_key.replace('.', '.value.').split('.')
+            block_type = registration_response_key_dict['block_type']
+
+            # Continues to add to metadata with every registration_response_key
+            metadata = build_registration_metadata_dict(
+                nested_keys,
+                metadata=metadata,
+                value=build_answer_block(
+                    block_type,
+                    registration_responses.get(response_key, ''),
+                    file_storage_resource=self.file_storage_resource
+                )
+            )
+        return metadata
+
+    class Meta:
+        abstract = True

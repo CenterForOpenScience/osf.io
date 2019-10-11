@@ -25,6 +25,7 @@ from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.node import AbstractNode
 from osf.models.nodelog import NodeLog
 from osf.models.provider import RegistrationProvider
+from osf.models.mixins import RegistrationResponseMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,7 @@ class Registration(AbstractNode):
                                         on_delete=models.SET_NULL,
                                         null=True, blank=True)
 
+    # TODO: Consider making this a FK, as there can be one per Registration
     registered_schema = models.ManyToManyField(RegistrationSchema)
 
     registered_meta = DateTimeAwareJSONField(default=dict, blank=True)
@@ -81,10 +83,26 @@ class Registration(AbstractNode):
         return stuck_regs
 
     @property
-    def registered_schema_id(self):
+    def registration_schema(self):
+        # For use in RegistrationResponseMixin
         if self.registered_schema.exists():
-            return self.registered_schema.first()._id
+            return self.registered_schema.first()
         return None
+
+    def get_registration_metadata(self, schema):
+        # Overrides RegistrationResponseMixin
+        registered_meta = self.registered_meta or {}
+        return registered_meta.get(schema._id, None)
+
+    @property
+    def file_storage_resource(self):
+        # Overrides RegistrationResponseMixin
+        return self.registered_from
+
+    @property
+    def registered_schema_id(self):
+        schema = self.registration_schema
+        return schema._id if schema else None
 
     @property
     def is_registration(self):
@@ -318,6 +336,46 @@ class Registration(AbstractNode):
             )
         return True
 
+    def get_contributor_registration_response_keys(self):
+        """
+        Returns the keys of the supplemental responses whose answers
+        contain author information
+        :returns QuerySet
+        """
+        return self.registration_schema.schema_blocks.filter(
+            block_type='contributors-input', registration_response_key__isnull=False,
+        ).values_list('registration_response_key', flat=True)
+
+    def copy_registered_meta_and_registration_responses(self, draft, save=True):
+        """
+        Sets the registration's registered_meta and registration_responses from the draft.
+
+        If contributor information is in a question, build an accurate bibliographic
+        contributors list on the registration
+        """
+        if not self.registered_meta:
+            self.registered_meta = {}
+
+        registration_metadata = draft.registration_metadata
+        registration_responses = draft.registration_responses
+
+        bibliographic_contributors = ', '.join(
+            draft.branched_from.visible_contributors.values_list('fullname', flat=True)
+        )
+        contributor_keys = self.get_contributor_registration_response_keys()
+
+        for key in contributor_keys:
+            if key in registration_metadata:
+                registration_metadata[key]['value'] = bibliographic_contributors
+            if key in registration_responses:
+                registration_responses[key] = bibliographic_contributors
+
+        self.registered_meta[self.registration_schema._id] = registration_metadata
+        self.registration_responses = registration_responses
+
+        if save:
+            self.save()
+
     def _initiate_retraction(self, user, justification=None):
         """Initiates the retraction process for a registration
         :param user: User who initiated the retraction
@@ -450,7 +508,7 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
                 'with id {self._id!r}>').format(self=self)
 
 
-class DraftRegistration(ObjectIDMixin, BaseModel):
+class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, BaseModel):
     URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/drafts/{draft_id}'
 
     datetime_initiated = NonNaiveDateTimeField(auto_now_add=True)
@@ -495,6 +553,15 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     def __repr__(self):
         return ('<DraftRegistration(branched_from={self.branched_from!r}) '
                 'with id {self._id!r}>').format(self=self)
+
+    def get_registration_metadata(self, schema):
+        # Overrides RegistrationResponseMixin
+        return self.registration_metadata
+
+    @property
+    def file_storage_resource(self):
+        # Overrides RegistrationResponseMixin
+        return self.branched_from
 
     # lazily set flags
     @property
@@ -611,7 +678,22 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
                 else:
                     changes.append(question_id)
         self.registration_metadata.update(metadata)
+
+        # Write to registration_responses also (new workflow)
+        registration_responses = self.flatten_registration_metadata()
+        self.registration_responses.update(registration_responses)
         return changes
+
+    def update_registration_responses(self, registration_responses):
+        """
+        New workflow - update_registration_responses.  This should have been
+        validated before this method is called.  If writing to registration_responses
+        field, persist the expanded version of this to Draft.registration_metadata.
+        """
+        self.registration_responses.update(registration_responses)
+        registration_metadata = self.expand_registration_responses()
+        self.registration_metadata = registration_metadata
+        return
 
     def submit_for_review(self, initiated_by, meta, save=False):
         approval = DraftRegistrationApproval(
@@ -630,7 +712,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
         register = node.register_node(
             schema=self.registration_schema,
             auth=auth,
-            data=self.registration_metadata,
+            draft_registration=self,
             child_ids=child_ids,
             provider=self.provider
         )
@@ -660,3 +742,9 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
         Validates draft's metadata
         """
         return self.registration_schema.validate_metadata(*args, **kwargs)
+
+    def validate_registration_responses(self, *args, **kwargs):
+        """
+        Validates draft's registration_responses
+        """
+        return self.registration_schema.validate_registration_responses(*args, **kwargs)
