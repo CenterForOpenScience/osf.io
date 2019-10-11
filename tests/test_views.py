@@ -93,7 +93,8 @@ from osf_tests.factories import (
     UserFactory,
     UnconfirmedUserFactory,
     UnregUserFactory,
-    RegionFactory
+    RegionFactory,
+    DraftRegistrationFactory,
 )
 
 @mock_app.route('/errorexc')
@@ -2109,7 +2110,13 @@ class TestAddingContributorViews(OsfTestCase):
     def test_registering_project_does_not_send_contributor_added_email(self, send_mail, mock_archive):
         project = ProjectFactory()
         provider = RegistrationProviderFactory()
-        project.register_node(get_default_metaschema(), Auth(user=project.creator), '', None, provider=provider)
+        project.register_node(
+            get_default_metaschema(),
+            Auth(user=project.creator),
+            DraftRegistrationFactory(branched_from=project),
+            None,
+            provider=provider
+        )
         assert_false(send_mail.called)
 
     @mock.patch('website.mails.send_mail')

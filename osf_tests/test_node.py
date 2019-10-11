@@ -365,8 +365,9 @@ class TestParentNode:
         child = NodeFactory(parent=project)
         NodeFactory(parent=child)
 
+        draft_reg = DraftRegistrationFactory(branched_from=project)
         with disconnected_from_listeners(after_create_registration):
-            reg_root = project.register_node(get_default_metaschema(), auth, '', None)
+            reg_root = project.register_node(get_default_metaschema(), auth, draft_reg, None)
         reg_child = reg_root._nodes.first()
         reg_grandchild = reg_child._nodes.first()
 
@@ -1758,8 +1759,9 @@ class TestPermissionMethods:
 
     def test_raises_permissions_error_if_not_a_contributor(self, project):
         user = UserFactory()
+        draft_reg = DraftRegistrationFactory(branched_from=project)
         with pytest.raises(PermissionsError):
-            project.register_node(None, Auth(user=user), '', None)
+            project.register_node(None, Auth(user=user), draft_reg, None)
 
     def test_admin_can_register_private_children(self, project, user, auth):
         project.set_permissions(user, ADMIN)
@@ -1875,7 +1877,8 @@ class TestRegisterNode:
 
     def test_register_node_creates_new_registration(self, node, auth):
         with disconnected_from_listeners(after_create_registration):
-            registration = node.register_node(get_default_metaschema(), auth, '', None)
+            draft_reg = DraftRegistrationFactory(branched_from=node)
+            registration = node.register_node(get_default_metaschema(), auth, draft_reg, None)
             assert type(registration) is Registration
             assert node._id != registration._id
 
@@ -1886,7 +1889,7 @@ class TestRegisterNode:
             node.register_node(
                 schema=None,
                 auth=auth,
-                data=None
+                draft_registration=DraftRegistrationFactory(branched_from=node)
             )
         assert err.value.message == 'Cannot register deleted node.'
 
@@ -1897,7 +1900,8 @@ class TestRegisterNode:
         node.is_public = True
         node.set_subjects([[subject._id]], auth=Auth(user))
         node.save()
-        registration = node.register_node(get_default_metaschema(), Auth(user), '', None)
+        draft_reg = DraftRegistrationFactory(branched_from=node)
+        registration = node.register_node(get_default_metaschema(), Auth(user), draft_reg, None)
         assert registration.subjects.filter(id=subject.id).exists()
 
     @mock.patch('website.project.signals.after_create_registration')
@@ -1906,7 +1910,8 @@ class TestRegisterNode:
         node = NodeFactory(creator=user)
         node.is_public = True
         node.save()
-        registration = node.register_node(get_default_metaschema(), Auth(user), '', None)
+        draft_reg = DraftRegistrationFactory(branched_from=node)
+        registration = node.register_node(get_default_metaschema(), Auth(user), draft_reg, None)
         assert registration.is_public is False
 
     @mock.patch('website.project.signals.after_create_registration')
@@ -1921,7 +1926,8 @@ class TestRegisterNode:
         childchild = NodeFactory(parent=child)
         childchild.is_public = True
         childchild.save()
-        registration = node.register_node(get_default_metaschema(), Auth(user), '', None)
+        draft_reg = DraftRegistrationFactory(branched_from=node)
+        registration = node.register_node(get_default_metaschema(), Auth(user), draft_reg, None)
         for node in registration.node_and_primary_descendants():
             assert node.is_public is False
 
@@ -1933,17 +1939,71 @@ class TestRegisterNode:
 
         meta_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
 
-        data = {'some': 'data'}
+        draft_registration = DraftRegistrationFactory(branched_from=root)
+        data = {'summary': {'extra': [], 'value': 'This is a summary of my registration...', 'comments': []}}
+        expected_flat_data = {'summary': 'This is a summary of my registration...'}
+
+        draft_registration.registration_metadata = data
+        draft_registration.registration_responses = expected_flat_data
         reg = root.register_node(
             schema=meta_schema,
             auth=auth,
-            data=data,
+            draft_registration=draft_registration,
         )
         r1 = reg.nodes[0]
         r1a = r1.nodes[0]
         for r in [reg, r1, r1a]:
             assert r.registered_meta[meta_schema._id] == data
+            assert r.registration_responses == expected_flat_data
             assert r.registered_schema.first() == meta_schema
+
+    @mock.patch('website.project.signals.after_create_registration')
+    def test_register_node_contributor_questions(self, mock_signal, user, auth):
+        root = ProjectFactory(creator=user)
+        bib_contrib = UserFactory()
+        root.add_contributor(bib_contrib, auth=Auth(user))
+        non_bib_contrib = UserFactory()
+        root.add_contributor(non_bib_contrib, visible=False, auth=Auth(user))
+        schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
+
+        draft_reg = DraftRegistrationFactory(branched_from=root)
+
+        data = {
+            'q2': {
+                'comments': [],
+                'value': 'Dawn Pattison, James Brown, Carrie Skinner',
+                'extra': []
+            },
+            'q3': {
+                'comments': [],
+                'value': 'research questions',
+                'extra': []
+            }
+        }
+        flat_data = {
+            'q2': 'Dawn Pattison, James Brown, Carrie Skinner',
+            'q3': 'research questions'
+        }
+
+        # Contains inaccurate data - this data needs to match the contributors
+        draft_reg.registration_metadata = data
+        draft_reg.registration_responses = flat_data
+        draft_reg.save()
+
+        registration = root.register_node(
+            schema=schema,
+            auth=auth,
+            draft_registration=draft_reg
+        )
+
+        # Author questions are overridden with bibliographic contributors upon registration,
+        # so there aren't discrepancies
+        assert registration.registered_meta[registration.registration_schema._id]['q2']['value'] == user.fullname + ', ' + bib_contrib.fullname
+        assert registration.registration_responses['q2'] == user.fullname + ', ' + bib_contrib.fullname
+
+        # assert that other registration_metadata not overridden
+        assert registration.registered_meta[registration.registration_schema._id]['q3']['value'] == 'research questions'
+        assert registration.registration_responses['q3'] == 'research questions'
 
 
 # Copied from tests/test_models.py

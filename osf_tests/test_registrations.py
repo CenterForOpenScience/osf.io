@@ -15,8 +15,14 @@ from website import settings
 
 from . import factories
 from .utils import assert_datetime_equal, mock_archive
-from .factories import get_default_metaschema
+from .factories import get_default_metaschema, DraftRegistrationFactory
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
+from osf_tests.management_commands.test_migration_registration_responses import (
+    prereg_registration_responses,
+    prereg_registration_metadata_built,
+    veer_registration_responses,
+    veer_condensed
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -54,16 +60,19 @@ def test_factory(user, project):
     # Create a registration from a project
     user2 = factories.UserFactory()
     project.add_contributor(user2)
+
+    data = {'some': 'data'}
+    draft_reg = DraftRegistrationFactory(registration_metadata=data, branched_from=project)
     registration2 = factories.RegistrationFactory(
         project=project,
         user=user2,
-        data={'some': 'data'},
+        draft_registration=draft_reg,
     )
     assert registration2.registered_from == project
     assert registration2.registered_user == user2
     assert (
         registration2.registered_meta[get_default_metaschema()._id] ==
-        {'some': 'data'}
+        data
     )
 
 
@@ -332,7 +341,8 @@ class TestRegisterNode:
             wiki_page=wiki_page,
             identifier=2
         )
-        registration = project.register_node(get_default_metaschema(), Auth(user), '', None)
+        draft_reg = factories.DraftRegistrationFactory(branched_from=project)
+        registration = project.register_node(get_default_metaschema(), Auth(user), draft_reg, None)
         assert registration.wiki_private_uuids == {}
 
         registration_wiki_current = WikiVersion.objects.get_for_node(registration, current_wiki.wiki_page.page_name)
@@ -610,6 +620,43 @@ class TestDraftRegistrations:
             draft_2.register(Auth(member))
         assert not draft_2.registered_node
 
+    def test_update_metadata_updates_registration_responses(self, project):
+        schema = RegistrationSchema.objects.get(
+            name='OSF-Standard Pre-Data Collection Registration',
+            schema_version=2
+        )
+        draft = factories.DraftRegistrationFactory(registration_schema=schema, branched_from=project)
+
+        new_metadata = {
+            'looked': {
+                'comments': [],
+                'value': 'Yes',
+                'extra': []
+            },
+            'datacompletion': {
+                'comments': [],
+                'value': 'No, data collection has not begun',
+                'extra': []
+            },
+            'comments': {
+                'comments': [],
+                'value': '',
+                'extra': []
+            }
+        }
+
+        draft.update_metadata(new_metadata)
+        draft.save()
+
+        # To preserve both workflows, if update_metadata is called,
+        # a flattened version of that metadata is stored in
+        # registration_responses
+        assert draft.registration_responses == {
+            'looked': 'Yes',
+            'datacompletion': 'No, data collection has not begun',
+            'comments': ''
+        }
+
     def test_update_metadata_tracks_changes(self, project):
         draft = factories.DraftRegistrationFactory(branched_from=project)
 
@@ -641,6 +688,43 @@ class TestDraftRegistrations:
         draft.save()
         for key in ['foo', 'c']:
             assert key in changes
+
+    def test_update_registration_responses(self, project):
+        schema = RegistrationSchema.objects.get(
+            name='OSF-Standard Pre-Data Collection Registration',
+            schema_version=2
+        )
+        draft = factories.DraftRegistrationFactory(registration_schema=schema, branched_from=project)
+
+        registration_responses = {
+            'looked': 'Yes',
+            'datacompletion': 'No, data collection has not begun',
+            'comments': ''
+        }
+
+        draft.update_registration_responses(registration_responses)
+        draft.save()
+
+        # To preserve both workflows, if update_metadata is called,
+        # a flattened version of that metadata is stored in
+        # registration_responses
+        assert draft.registration_metadata == {
+            'looked': {
+                'comments': [],
+                'value': 'Yes',
+                'extra': []
+            },
+            'datacompletion': {
+                'comments': [],
+                'value': 'No, data collection has not begun',
+                'extra': []
+            },
+            'comments': {
+                'comments': [],
+                'value': '',
+                'extra': []
+            }
+        }
 
     def test_has_active_draft_registrations(self):
         project, project2 = factories.ProjectFactory(), factories.ProjectFactory()
@@ -695,3 +779,58 @@ class TestDraftRegistrations:
         draft = factories.DraftRegistrationFactory(branched_from=project)
 
         assert draft.url == settings.DOMAIN + 'project/{}/drafts/{}'.format(project._id, draft._id)
+
+
+class TestRegistrationMixin:
+    @pytest.fixture()
+    def draft_prereg(self, prereg_schema):
+        return factories.DraftRegistrationFactory(
+            registration_schema=prereg_schema,
+            registration_metadata={},
+        )
+
+    @pytest.fixture()
+    def draft_veer(self, veer_schema):
+        return factories.DraftRegistrationFactory(
+            registration_schema=veer_schema,
+            registration_metadata={},
+        )
+
+    @pytest.fixture()
+    def prereg_schema(self):
+        return RegistrationSchema.objects.get(
+            name='Prereg Challenge',
+            schema_version=2
+        )
+
+    @pytest.fixture()
+    def veer_schema(self):
+        return RegistrationSchema.objects.get(
+            name__icontains='Pre-Registration in Social Psychology',
+            schema_version=2
+        )
+
+    def test_expand_registration_responses(self, draft_prereg):
+        draft_prereg.registration_responses = prereg_registration_responses
+        draft_prereg.save()
+        assert draft_prereg.registration_metadata == {}
+
+        registration_metadata = draft_prereg.expand_registration_responses()
+
+        prereg_registration_metadata_built['q7']['value']['uploader']['extra'][0]['nodeId'] = draft_prereg.branched_from._id
+        prereg_registration_metadata_built['q11']['value']['uploader']['extra'][0]['nodeId'] = draft_prereg.branched_from._id
+        prereg_registration_metadata_built['q11']['value']['uploader']['extra'][1]['nodeId'] = draft_prereg.branched_from._id
+
+        assert registration_metadata == prereg_registration_metadata_built
+
+    def test_expand_registration_responses_veer(self, draft_veer):
+        draft_veer.registration_responses = veer_registration_responses
+        draft_veer.save()
+        assert draft_veer.registration_metadata == {}
+
+        registration_metadata = draft_veer.expand_registration_responses()
+
+        veer_condensed['recommended-hypothesis']['value']['question4a']['extra'][0]['nodeId'] = draft_veer.branched_from._id
+        veer_condensed['recommended-hypothesis']['value']['question4a']['extra'][1]['nodeId'] = draft_veer.branched_from._id
+
+        assert registration_metadata == veer_condensed

@@ -7,9 +7,11 @@ import pytest
 from future.moves.urllib.parse import urlparse
 
 from api.base.settings.defaults import API_BASE
+from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
 from api_tests.subjects.mixins import SubjectsFilterMixin
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
+from api_tests.utils import create_test_file
 from framework.auth.core import Auth
 from osf.models import RegistrationSchema, DraftRegistration
 from osf_tests.factories import (
@@ -21,6 +23,7 @@ from osf_tests.factories import (
     DraftRegistrationFactory,
     OSFGroupFactory,
 )
+from osf_tests.management_commands.test_migration_registration_responses import prereg_registration_responses
 from rest_framework import exceptions
 from tests.base import ApiTestCase
 from website.views import find_bookmark_collection
@@ -699,6 +702,17 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 201
         assert data['registration'] is True
         assert data['pending_registration_approval'] is True
+        assert data['registration_responses'] == {
+            'item32': '',
+            'item33': 'success',
+            'item30': '',
+            'item31': '',
+            'item36': '',
+            'item37': '',
+            'item34': '',
+            'item35': '',
+            'item29': 'Yes'
+        }
         assert data['public'] is False
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
@@ -765,7 +779,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_registration_draft_must_be_specified(
-            self, mock_enqueue, app, user, url_registrations):
+            self, mock_enqueue, app, user, payload, url_registrations):
         payload = {
             'data': {
                 'type': 'registrations',
@@ -780,7 +794,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/draft_registration'
+        assert '/data/attributes/draft_registration' in res.json['errors'][0]['source']['pointer']
         assert res.json['errors'][0]['detail'] == 'This field is required.'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
@@ -791,7 +805,8 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'registration_choice': 'immediate',
-                    'draft_registration': '12345'
+                    'draft_registration': '12345',
+
                 }
             }
         }
@@ -820,7 +835,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'type': 'registrations',
                 'attributes': {
                     'registration_choice': 'immediate',
-                    'draft_registration': draft_registration._id
+                    'draft_registration': draft_registration._id,
                 }
             }
         }
@@ -1023,7 +1038,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'attributes': {
                     'draft_registration': draft_registration._id,
                     'registration_choice': 'embargo',
-                    'lift_embargo': five_years
+                    'lift_embargo': five_years,
                 }
             }
         }
@@ -1051,7 +1066,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'attributes': {
                     'draft_registration': draft_registration._id,
                     'registration_choice': 'embargo',
-                    'lift_embargo': next_week
+                    'lift_embargo': next_week,
                 }
             }
         }
@@ -1075,7 +1090,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'attributes': {
                     'draft_registration': draft_registration._id,
                     'registration_choice': 'embargo',
-                    'lift_embargo': today
+                    'lift_embargo': today,
                 }
             }
         }
@@ -1097,7 +1112,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 'attributes': {
                     'draft_registration': draft_registration._id,
                     'registration_choice': 'embargo',
-                    'lift_embargo': today
+                    'lift_embargo': today,
                 }
             }
         }
@@ -1109,6 +1124,101 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Datetime has wrong format. Use one of these formats instead: YYYY-MM-DDThh:mm:ss.'
+
+    def test_new_API_version_requires_draft_registration_id_on_creation(
+            self, app, user, draft_registration, url_registrations):
+        url = '{}?version={}'.format(url_registrations, CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
+        payload = {
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration': draft_registration._id,
+                }
+            }
+        }
+        res = app.post_json_api(
+            url,
+            payload,
+            auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/draft_registration_id'
+        assert res.json['errors'][0]['detail'] == 'This field is required.'
+
+    def test_new_API_version_no_embargo_is_immediate_by_default(
+            self, app, user, draft_registration, url_registrations):
+        url = '{}?version={}'.format(url_registrations, CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
+        payload = {
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration_id': draft_registration._id,
+                }
+            }
+        }
+        res = app.post_json_api(
+            url,
+            payload,
+            auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['pending_registration_approval'] is True
+
+    def test_new_API_version_uses_embargo_end_date(
+            self, app, user, draft_registration, url_registrations):
+        url = '{}?version={}'.format(url_registrations, CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
+        today = timezone.now()
+        three_years = (
+            today +
+            dateutil.relativedelta.relativedelta(
+                years=3)).strftime('%Y-%m-%dT%H:%M:%S')
+
+        payload = {
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration_id': draft_registration._id,
+                    'embargo_end_date': three_years
+                }
+            }
+        }
+        res = app.post_json_api(
+            url,
+            payload,
+            auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['pending_embargo_approval'] is True
+
+    def test_new_API_version_uses_included_node_ids_instead_of_children(
+            self, app, user, draft_registration, url_registrations, project_public,
+            project_public_child, project_public_grandchild, project_public_excluded_sibling):
+        url = '{}?version={}'.format(url_registrations, CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
+        payload_with_children = {
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration_id': draft_registration._id,
+                    'included_node_ids': [project_public_child._id, project_public_grandchild._id],
+
+                }
+            }
+        }
+        res = app.post_json_api(
+            url,
+            payload_with_children,
+            auth=user.auth,
+            expect_errors=True)
+        data = res.json['data']['attributes']
+        assert res.status_code == 201
+        assert data['registration'] is True
+        assert data['pending_registration_approval'] is True
+        assert data['public'] is False
+
+        assert project_public.registrations.all().count() == 1
+        assert project_public_child.registrations.all().count() == 1
+        assert project_public_grandchild.registrations.all().count() == 1
+        assert project_public_excluded_sibling.registrations.all().count() == 0
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_cannot_register_draft_that_has_already_been_registered(
@@ -1176,6 +1286,84 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         assert res.json['errors'][0]['detail'] == 'All files attached to this form must be registered to complete the' \
                                                   ' process. The following file(s) are attached, but are not part of' \
                                                   ' a component being registered: file 1'
+
+    def test_assert_file_validity_on_registration_metadata(
+        self, app, user, payload, url_registrations, project_public
+    ):
+        file_name = 'registration_file.pdf'
+        sha256 = 'asdfjkl'
+        file = create_test_file(project_public, user, file_name)
+        version = file.versions.first()
+        # mock sha256
+        version.metadata['sha256'] = sha256
+        version.save()
+
+        prereg_schema = RegistrationSchema.objects.get(
+            name='Prereg Challenge',
+            schema_version=SCHEMA_VERSION)
+
+        prereg_draft_registration = DraftRegistrationFactory(
+            initiator=user,
+            registration_schema=prereg_schema,
+            branched_from=project_public
+        )
+
+        prereg_registration_responses['q11.uploader'] = []
+
+        # q7 has file information
+        prereg_draft_registration.update_registration_responses(prereg_registration_responses)
+        prereg_draft_registration.save()
+
+        prereg_draft_registration.save()
+
+        payload = {
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration': prereg_draft_registration._id,
+                    'registration_choice': 'immediate',
+                }
+            }
+        }
+
+        res = app.post_json_api(
+            url_registrations,
+            payload,
+            auth=user.auth,
+            expect_errors=True)
+        # File with the given name in the payload doesn't exist on the node
+        assert res.status_code == 400
+
+        prereg_registration_responses['q7.uploader'] = [{
+            'file_name': file_name,
+            'file_id': file._id,
+            'sha256': 'incorrect_sha'
+        }]
+
+        prereg_draft_registration.update_registration_responses(prereg_registration_responses)
+        prereg_draft_registration.save()
+        res = app.post_json_api(
+            url_registrations,
+            payload,
+            auth=user.auth,
+            expect_errors=True)
+        # sha256 is inaccurate
+        assert res.status_code == 400
+
+        prereg_registration_responses['q7.uploader'] = [{
+            'file_name': file_name,
+            'file_id': file._id,
+            'sha256': sha256
+        }]
+
+        prereg_draft_registration.update_registration_responses(prereg_registration_responses)
+        prereg_draft_registration.save()
+        res = app.post_json_api(
+            url_registrations,
+            payload,
+            auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 201
 
 
 @pytest.mark.django_db
