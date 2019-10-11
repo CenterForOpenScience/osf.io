@@ -407,6 +407,7 @@ class CeleryConfig:
         'scripts.remove_after_use.end_prereg_challenge',
         'osf.management.commands.check_crossref_dois',
         'osf.management.commands.migrate_pagecounter_data',
+        'osf.management.commands.migrate_registration_responses',
     }
 
     med_pri_modules = {
@@ -599,6 +600,10 @@ class CeleryConfig:
             # },
             # 'migrate_pagecounter_data': {
             #   'task': 'management.commands.migrate_pagecounter_data',
+            #   'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
+            # },
+            # 'migrate_registration_responses': {
+            #   'task': 'management.commands.migrate_registration_responses',
             #   'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
             # },
             'generate_sitemap': {
