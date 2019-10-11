@@ -301,7 +301,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
 
 @collect_auth
 def auth_login(auth):
-    logger.error('----{}::{}({})from:{}::{}({})'.format(inspect.getframeinfo(inspect.currentframe())[0], inspect.getframeinfo(inspect.currentframe())[2], inspect.getframeinfo(inspect.currentframe())[1], inspect.stack()[1][1], inspect.stack()[1][3], inspect.stack()[1][2]))
+    logger.info('----{}::{}({})from:{}::{}({})'.format(inspect.getframeinfo(inspect.currentframe())[0], inspect.getframeinfo(inspect.currentframe())[2], inspect.getframeinfo(inspect.currentframe())[1], inspect.stack()[1][1], inspect.stack()[1][3], inspect.stack()[1][2]))
     """
     View (no template) for OSF Login.
     Redirect user based on `data` returned from `login_and_register_handler`.
@@ -323,7 +323,7 @@ def auth_login(auth):
 
     data = login_and_register_handler(auth, login=True, campaign=campaign, next_url=next_url)
     if data['status_code'] == http.FOUND:
-        logger.error('----{}::{}({})from:{}::{}({})'.format(inspect.getframeinfo(inspect.currentframe())[0], inspect.getframeinfo(inspect.currentframe())[2], inspect.getframeinfo(inspect.currentframe())[1], inspect.stack()[1][1], inspect.stack()[1][3], inspect.stack()[1][2]))
+        logger.info('----{}::{}({})from:{}::{}({})'.format(inspect.getframeinfo(inspect.currentframe())[0], inspect.getframeinfo(inspect.currentframe())[2], inspect.getframeinfo(inspect.currentframe())[1], inspect.stack()[1][1], inspect.stack()[1][3], inspect.stack()[1][2]))
         update_default_storage(auth.user)
         return redirect(data['next_url'])
 
