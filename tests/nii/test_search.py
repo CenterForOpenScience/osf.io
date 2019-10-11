@@ -153,8 +153,8 @@ class TestSearch(OsfTestCase):
             self.project_public_user2 = factories.ProjectFactory(title='public日本語プロジェクト2', creator=self.user2, is_public=True)
 
             # private file
-            root = self.project_private_user1.get_addon('osfstorage').get_root()
-            root.append_file(u'日本語ファイル名.txt')
+            rootdir = self.project_private_user1.get_addon('osfstorage').get_root()
+            rootdir.append_file(u'日本語ファイル名.txt')
             self.project_private_user1.add_tag(u'日本語タグ',
                                                Auth(self.user1),
                                                save=True)
@@ -165,10 +165,18 @@ class TestSearch(OsfTestCase):
         import website.search.search as search
         search.delete_all()
 
-    def query_search(self, qs, user):
+    def query_private_search(self, qs, user):
         res = self.app.post_json(
             api_url_for('search_search'),
             build_private_search_query(qs),
+            auth=user.auth
+        )
+        return res, res.json.get('results')
+
+    def query_public_search(self, qs, user):
+        res = self.app.post_json(
+            api_url_for('search_search'),
+            build_query(qs),
             auth=user.auth
         )
         return res, res.json.get('results')
@@ -189,7 +197,7 @@ class TestSearch(OsfTestCase):
         プライベートなプロジェクトに所属するタグとファイル名が有る場合。
         """
         qs = '日本語'
-        res, results = self.query_search(qs, self.user1)
+        res, results = self.query_private_search(qs, self.user1)
         user_fullnames = get_user_fullnames(results)
         node_titles = get_node_titles(results)
         contributors = get_contributors(results, self.project_private_user1.title)
@@ -230,7 +238,7 @@ class TestSearch(OsfTestCase):
         プライベートなプロジェクトに所属するタグとファイル名が無い場合。
         """
         qs = '日本語'
-        res, results = self.query_search(qs, self.user2)
+        res, results = self.query_private_search(qs, self.user2)
         user_fullnames = get_user_fullnames(results)
         node_titles = get_node_titles(results)
         contributors = get_contributors(results, self.project_private_user2_1.title)
@@ -259,14 +267,69 @@ class TestSearch(OsfTestCase):
             s2u(contributors)
         )
 
+    def test_disable_multilingual(self):
+        """
+        ENABLE_MULTILINGUAL_SEARCH = False の場合は「本日」でも「日本」に
+        マッチすることを確認する。
+        """
+        qs = '本日'
+        res, results = self.query_public_search(qs, self.user2)
+        user_fullnames = get_user_fullnames(results)
+        node_titles = get_node_titles(results)
+        contributors = get_contributors(results, self.project_private_user2_1.title)
+        tags = get_tags(results, self.project_private_user2_1.title)
+        filenames = get_filenames(results)
+
+        DEBUG('results', results)
+        DEBUG('user_fullnames', user_fullnames)
+        DEBUG('node_titles', node_titles)
+        DEBUG('contributors', contributors)
+        DEBUG('tags', tags)
+        DEBUG('filenames', filenames)
+
+        assert_not_equal(len(results), 0)
+        assert_not_equal(len(user_fullnames), 0)
+        assert_not_equal(len(node_titles), 0)
+        assert_not_equal(len(contributors), 0)
+        #assert_equal(len(tags), 0)
+        assert_not_equal(len(filenames), 0)
+
+    @enable_private_search
+    def test_no_match(self):
+        """
+        「本日」は「日本」にマッチしないことを確認する。
+        """
+        qs = '本日'
+        res, results = self.query_private_search(qs, self.user2)
+        user_fullnames = get_user_fullnames(results)
+        node_titles = get_node_titles(results)
+        contributors = get_contributors(results, self.project_private_user2_1.title)
+        tags = get_tags(results, self.project_private_user2_1.title)
+        filenames = get_filenames(results)
+
+        DEBUG('results', results)
+        DEBUG('user_fullnames', user_fullnames)
+        DEBUG('node_titles', node_titles)
+        DEBUG('contributors', contributors)
+        DEBUG('tags', tags)
+        DEBUG('filenames', filenames)
+
+        assert_equal(len(results), 0)
+        assert_equal(len(user_fullnames), 0)
+        assert_equal(len(node_titles), 0)
+        assert_equal(len(contributors), 0)
+        assert_equal(len(tags), 0)
+        assert_equal(len(filenames), 0)
+
+
     @enable_private_search
     def test_tags(self):
         """
         タグを検索できることを確認する。
         AND 式も使用して、タグ名に含まれる文字をさらに限定している。
         """
-        qs = 'tags:日本語 AND タグ'
-        res, results = self.query_search(qs, self.user1)
+        qs = 'tags:("日本語") AND タグ'
+        res, results = self.query_private_search(qs, self.user1)
         user_fullnames = get_user_fullnames(results)
         node_titles = get_node_titles(results)
         contributors = get_contributors(results, self.project_private_user1.title)
@@ -294,7 +357,7 @@ class TestSearch(OsfTestCase):
         AND 式も使用して、ファイル名に含まれる文字をさらに限定している。
         """
         qs = 'category:file && 日本語'
-        res, results = self.query_search(qs, self.user1)
+        res, results = self.query_private_search(qs, self.user1)
         user_fullnames = get_user_fullnames(results)
         node_titles = get_node_titles(results)
         contributors = get_contributors(results, self.project_private_user1.title)
@@ -316,7 +379,18 @@ class TestSearch(OsfTestCase):
         assert_equal(len(filenames), 1)
 
     @enable_private_search
-    def test_normalize1(self):
+    def _common_normalize_contributor(self, qs):
+        # app.get() の場合は str にしなければならない。
+        res, results = self.query_search_contributor(qs, self.user1)
+
+        # get_user_fullnames() cannot be used here.
+        user_fullnames = [r['fullname'] for r in results]
+        DEBUG('results', results)
+        DEBUG('user_fullnames', user_fullnames)
+        assert_equal(len(results), 1)
+        assert_equal(len(user_fullnames), 1)
+
+    def test_normalize_contributor1(self):
         """
         Unicode正規化のテスト。
         データベースに登録されている濁点付き文字が結合可能濁点と母体の
@@ -324,39 +398,19 @@ class TestSearch(OsfTestCase):
         ることを確認する。
         Add Contributorsにおける検索のみ、正規化の効果がある。
         """
-
-        # app.get() の場合は str にしなければならないようだ。
         qs = u2s(u'\u304c')  # が
-        res, results = self.query_search_contributor(qs, self.user1)
+        self._common_normalize_contributor(qs)
 
-        # get_user_fullnames() cannot be used here.
-        user_fullnames = [r['fullname'] for r in results]
-
-        DEBUG('results', results)
-        DEBUG('user_fullnames', user_fullnames)
-        assert_equal(len(results), 1)
-        assert_equal(len(user_fullnames), 1)
-
-    @enable_private_search
-    def test_normalize2(self):
+    def test_normalize_contributor2(self):
         """
         Unicode正規化のテスト。
         データベースに登録されている濁点付き文字が合成済み文字の場合に、
         結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
         Add Contributorsにおける検索のみ、正規化の効果がある。
         """
-
         # app.get() の場合は str にしなければならないようだ。
         qs = u2s(u'\u304d\u3099')  # き+濁点
-        res, results = self.query_search_contributor(qs, self.user1)
-
-        # get_user_fullnames() cannot be used here.
-        user_fullnames = [r['fullname'] for r in results]
-
-        DEBUG('results', results)
-        DEBUG('user_fullnames', user_fullnames)
-        assert_equal(len(results), 1)
-        assert_equal(len(user_fullnames), 1)
+        self._common_normalize_contributor(qs)
 
     @enable_private_search
     def test_search_invalid_version(self):
