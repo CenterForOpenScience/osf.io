@@ -6,7 +6,7 @@
 # To install release requirements: inv requirements --release
 
 invoke==0.15.0
-Werkzeug==0.15.6
+Werkzeug==0.16.0
 Flask==0.12.4
 gevent==1.2.2
 Mako==1.0.7
