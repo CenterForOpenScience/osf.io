@@ -282,8 +282,8 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, all=Fa
                 echo=True
             )
     # fix URITemplate name conflict h/t @github
-    ctx.run('pip uninstall uritemplate.py --yes || true')
-    ctx.run('pip install --no-cache-dir uritemplate.py==0.3.0')
+    ctx.run('pip3 uninstall uritemplate.py --yes || true')
+    ctx.run('pip3 install --no-cache-dir uritemplate.py==0.3.0')
 
 
 @task
@@ -535,7 +535,7 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
             if os.path.isdir(path):
                 req_file = os.path.join(path, 'requirements.txt')
                 if os.path.exists(req_file):
-                    cmd = 'pip wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
+                    cmd = 'pip3 wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
                         WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH, CONSTRAINTS_PATH,
                     )
                     ctx.run(cmd, pty=pty)
@@ -545,7 +545,7 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
         req_file = os.path.join(HERE, 'requirements', 'dev.txt')
     else:
         req_file = os.path.join(HERE, 'requirements.txt')
-    cmd = 'pip wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
+    cmd = 'pip3 wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
         WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH, CONSTRAINTS_PATH,
     )
     ctx.run(cmd, pty=pty)
