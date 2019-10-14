@@ -7,6 +7,7 @@ from collections import defaultdict
 
 from flask import request
 from django.apps import apps
+from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.db.models import Q, OuterRef, Subquery
 
@@ -19,6 +20,7 @@ from api.waffle.utils import flag_is_active, storage_i18n_flag_active, storage_u
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
 from osf.utils.functional import rapply
+from osf.utils.registrations import strip_registered_meta_comments
 from osf.utils import sanitize
 from osf import features
 
@@ -638,6 +640,7 @@ def remove_private_link(*args, **kwargs):
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     link.is_deleted = True
+    link.deleted = timezone.now()
     link.save()
 
     for node in link.nodes.all():
@@ -761,7 +764,7 @@ def _view_project(node, auth, primary=False,
             'registered_from_url': node.registered_from.url if is_registration else '',
             'registered_date': iso8601format(node.registered_date) if is_registration else '',
             'root_id': node.root._id if node.root else None,
-            'registered_meta': node.registered_meta,
+            'registered_meta': strip_registered_meta_comments(node.registered_meta),
             'registered_schemas': serialize_meta_schemas(list(node.registered_schema.all())) if is_registration else False,
             'is_fork': node.is_fork,
             'is_collected': node.is_collected,

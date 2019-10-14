@@ -686,6 +686,11 @@ class TestProject:
                     for addon in node.addons
                     if addon.config.short_name == addon_config.short_name
                 ])
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        with mock.patch.object(timezone, 'now', return_value=mock_now):
+            deleted_node = NodeFactory(is_deleted=True)
+        assert deleted_node.is_deleted
+        assert deleted_node.deleted == mock_now
 
     def test_project_factory(self):
         node = ProjectFactory()
@@ -698,6 +703,7 @@ class TestProject:
         assert node.is_public is False
         assert node.is_deleted is False
         assert hasattr(node, 'deleted_date')
+        assert hasattr(node, 'deleted')
         assert node.is_registration is False
         assert hasattr(node, 'registered_date')
         assert node.is_fork is False
@@ -3923,6 +3929,7 @@ class TestRemoveNode:
         assert parent_project.is_deleted
         # parent node should have a log of the event
         assert parent_project.logs.latest().action == 'project_deleted'
+        assert parent_project.deleted == parent_project.logs.latest().date
 
     def test_remove_project_with_project_child_deletes_all_in_hierarchy(self, parent_project, project, auth):
         parent_project.remove_node(auth=auth)
@@ -4368,7 +4375,7 @@ class TestAddonCallbacks:
 
     @pytest.fixture(autouse=True)
     def mock_addons(self, node):
-        def mock_get_addon(addon_name, deleted=False):
+        def mock_get_addon(addon_name, is_deleted=False):
             # Overrides AddonModelMixin.get_addon -- without backrefs,
             # no longer guaranteed to return the same set of objects-in-memory
             return self.patched_addons.get(addon_name, None)

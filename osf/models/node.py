@@ -338,6 +338,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                 on_delete=models.SET_NULL,
                                 null=True, blank=True)
     deleted_date = NonNaiveDateTimeField(null=True, blank=True)
+    deleted = NonNaiveDateTimeField(null=True, blank=True)
     description = models.TextField(blank=True, default='')
     file_guid_to_share_uuids = DateTimeAwareJSONField(default=dict, blank=True)
     forked_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
@@ -2278,11 +2279,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         for node in hierarchy:
             # Add log to parents
             node.is_deleted = True
-            node.deleted_date = date
+            node.deleted_date = log_date
+            node.deleted = log_date
             node.add_remove_node_log(auth=auth, date=log_date)
             project_signals.node_deleted.send(node)
 
-        bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date'])
+        bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date', 'deleted'])
 
         if len(hierarchy.filter(is_public=True)):
             AbstractNode.bulk_update_search(hierarchy.filter(is_public=True))
@@ -2491,7 +2493,7 @@ def remove_addons(auth, resource_object_list):
             settings_model = None
 
         if settings_model:
-            addon_list = settings_model.objects.filter(owner__in=resource_object_list, deleted=False)
+            addon_list = settings_model.objects.filter(owner__in=resource_object_list, is_deleted=False)
             for addon in addon_list:
                 addon.after_delete(auth.user)
 
