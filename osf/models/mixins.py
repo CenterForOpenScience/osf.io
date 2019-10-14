@@ -232,8 +232,8 @@ class AddonModelMixin(models.Model):
             if hasattr(addon, 'oauth_provider')
         ]
 
-    def has_addon(self, addon_name, deleted=False):
-        return bool(self.get_addon(addon_name, deleted=deleted))
+    def has_addon(self, addon_name, is_deleted=False):
+        return bool(self.get_addon(addon_name, is_deleted=is_deleted))
 
     def get_addon_names(self):
         return [each.short_name for each in self.get_addons()]
@@ -244,7 +244,7 @@ class AddonModelMixin(models.Model):
             return addon
         return self.add_addon(name, *args, **kwargs)
 
-    def get_addon(self, name, deleted=False):
+    def get_addon(self, name, is_deleted=False):
         try:
             settings_model = self._settings_model(name)
         except LookupError:
@@ -253,7 +253,7 @@ class AddonModelMixin(models.Model):
             return None
         try:
             settings_obj = settings_model.objects.get(owner=self)
-            if not settings_obj.deleted or deleted:
+            if not settings_obj.is_deleted or is_deleted:
                 return settings_obj
         except ObjectDoesNotExist:
             pass
@@ -275,7 +275,7 @@ class AddonModelMixin(models.Model):
             return False
 
         # Reactivate deleted add-on if present
-        addon = self.get_addon(addon_name, deleted=True)
+        addon = self.get_addon(addon_name, is_deleted=True)
         if addon:
             if addon.deleted:
                 addon.undelete(save=True)
