@@ -4,19 +4,8 @@ from __future__ import unicode_literals
 
 import logging
 from django.db import migrations
-from django.core.management.sql import emit_post_migrate_signal
-from django.db.utils import IntegrityError
 
 logger = logging.getLogger(__name__)
-
-def post_migrate_signal(state, schema):
-    # this is to make sure that the permissions created earlier exist!
-    try:
-        emit_post_migrate_signal(3, False, 'default')
-    except IntegrityError:
-        logger.info('Migration run in tests, skipping post migration signal')
-
-    logger.info('Starting guardian/groups migration [SQL]:')
 
 
 class Migration(migrations.Migration):
@@ -26,5 +15,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(post_migrate_signal, migrations.RunPython.noop),
+        migrations.RunPython(migrations.RunPython.noop, migrations.RunPython.noop),
     ]
