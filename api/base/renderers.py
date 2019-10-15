@@ -1,3 +1,4 @@
+import re
 from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer, StaticHTMLRenderer
 
 
@@ -6,10 +7,9 @@ class JSONRendererWithESISupport(JSONRenderer):
     media_type = 'application/json'
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
-        #  TODO: There should be a way to do this that is conditional on esi being requested and
-        #  TODO: In such a way that it doesn't use regex unless there's absolutely no other way.
-        return super(JSONRendererWithESISupport, self).render(data, accepted_media_type, renderer_context)
-
+        initial_rendering = super(JSONRendererWithESISupport, self).render(data, accepted_media_type, renderer_context)
+        augmented_rendering = re.sub(r'"<esi:include src=\\"(.*?)\\"\/>"', b'<esi:include src="\1"/>', initial_rendering)
+        return augmented_rendering
 
 class JSONAPIRenderer(JSONRendererWithESISupport):
     format = 'jsonapi'

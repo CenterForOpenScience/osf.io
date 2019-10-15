@@ -29,6 +29,7 @@ from tests.base import ApiWikiTestCase
 
 def make_rename_payload(wiki_page):
     new_page_name = 'barbaz'
+
     payload = {
         'data': {
             'id': wiki_page._id,
