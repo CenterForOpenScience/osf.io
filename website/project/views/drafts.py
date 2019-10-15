@@ -39,7 +39,7 @@ def get_schema_or_fail(schema_name, schema_version):
     try:
         meta_schema = RegistrationSchema.objects.get(name=schema_name, schema_version=schema_version)
     except RegistrationSchema.DoesNotExist:
-        raise HTTPError(http_status.HTTP_200_OK, data=dict(
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND, data=dict(
             message_long='No RegistrationSchema record matching that query could be found'
         ))
     return meta_schema

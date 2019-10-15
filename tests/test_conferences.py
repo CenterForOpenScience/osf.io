@@ -5,9 +5,8 @@ from nose.tools import *  # noqa (PEP8 asserts)
 
 import hmac
 import hashlib
-from StringIO import StringIO
+from io import BytesIO
 
-from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 import furl
 
@@ -142,7 +141,7 @@ class TestProvisionNode(ContextTestCase):
         self.conference = ConferenceFactory()
         self.body = 'dragon on my back'
         self.content = 'dragon attack'
-        self.attachment = StringIO(self.content)
+        self.attachment = BytesIO(self.content)
         self.recipient = '{0}{1}-poster@osf.io'.format(
             'test-' if settings.DEV_MODE else '',
             self.conference.endpoint,
@@ -412,7 +411,7 @@ class TestMessage(ContextTestCase):
 
     def test_attachments_count_one(self):
         content = 'slightly mad'
-        sio = StringIO(content)
+        sio = BytesIO(content)
         ctx = self.make_context(
             method='POST',
             data={

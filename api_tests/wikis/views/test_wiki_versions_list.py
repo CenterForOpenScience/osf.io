@@ -141,7 +141,7 @@ class TestWikiVersionList:
     def test_wiki_versions_not_returned_for_withdrawn_registration(self, app, user, private_registration, private_registration_url):
         private_registration.is_public = True
         withdrawal = private_registration.retract_registration(user=user, save=True)
-        token = withdrawal.approval_state.values()[0]['approval_token']
+        token = list(withdrawal.approval_state.values())[0]['approval_token']
         # TODO: Remove mocking when StoredFileNode is implemented
         with mock.patch('osf.models.AbstractNode.update_search'):
             withdrawal.approve_retraction(user, token)

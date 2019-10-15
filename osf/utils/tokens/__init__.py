@@ -36,7 +36,7 @@ class TokenHandler(object):
                 http_status.HTTP_400_BAD_REQUEST,
                 data={
                     'message_short': 'Bad request',
-                    'message_long': e.message
+                    'message_long': str(e)
                 }
             )
         return cls(encoded_token=encoded_token, payload=payload)

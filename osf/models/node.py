@@ -320,7 +320,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
     category = models.CharField(max_length=255,
-                                choices=CATEGORY_MAP.items(),
+                                choices=list(CATEGORY_MAP.items()),
                                 blank=True,
                                 default='')
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
@@ -2473,6 +2473,7 @@ class Node(AbstractNode):
     def is_bookmark_collection(self):
         """For v1 compat"""
         return False
+
 
 def remove_addons(auth, resource_object_list):
     for config in AbstractNode.ADDONS_AVAILABLE:

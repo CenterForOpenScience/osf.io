@@ -221,6 +221,7 @@ class TestRegistrationThroughCampaigns(OsfTestCase):
 
     def setUp(self):
         super(TestRegistrationThroughCampaigns, self).setUp()
+        campaigns.get_campaigns()  # Set up global CAMPAIGNS
 
     def test_confirm_email_get_with_campaign(self):
         for key, value in campaigns.CAMPAIGNS.items():
