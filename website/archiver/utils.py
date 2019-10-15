@@ -343,5 +343,8 @@ def migrate_file_metadata(dst, schema):
             registration=dst,
             missing_files=missing_files
         )
+
     dst.registered_meta[schema._id] = metadata
+    dst.registration_responses = dst.flatten_registration_metadata()
+
     dst.save()

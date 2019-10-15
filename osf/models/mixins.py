@@ -1792,7 +1792,7 @@ class RegistrationResponseMixin(models.Model):
     Mixin to be shared between DraftRegistrations and Registrations.
     """
     registration_responses = DateTimeAwareJSONField(default=dict, blank=True)
-    registration_responses_migrated = models.NullBooleanField(default=True)
+    registration_responses_migrated = models.NullBooleanField(default=True, db_index=True)
 
     def get_registration_metadata(self, schema):
         raise NotImplementedError()

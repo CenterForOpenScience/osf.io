@@ -8,6 +8,8 @@ from tqdm import tqdm
 from bulk_update.helper import bulk_update
 from framework.celery_tasks import app as celery_app
 
+from osf.exceptions import SchemaBlockConversionError
+
 logger = logging.getLogger(__name__)
 
 def migrate_registrations(dry_run, rows='all'):
@@ -18,6 +20,7 @@ def migrate_registrations(dry_run, rows='all'):
     nested user response in registered_meta
     """
     AbstractNode = apps.get_model('osf.AbstractNode')
+
     registrations = AbstractNode.objects.exclude(
         registration_responses_migrated=True,
     ).filter(
@@ -69,8 +72,12 @@ def migrate_responses(resources, resources_count, dry_run=False, rows='all'):
     to_save = []
     progress_bar = tqdm(total=rows)
     for resource in resources:
-        resource.registration_responses = resource.flatten_registration_metadata()
-        resource.registration_responses_migrated = True
+        try:
+            resource.registration_responses = resource.flatten_registration_metadata()
+            resource.registration_responses_migrated = True
+        except SchemaBlockConversionError as e:
+            resource.registration_responses_migrated = False
+            logger.error('Unexpected/invalid nested data in resource: {} with error {}'.format(resource, e))
         to_save.append(resource)
         progress_bar.update()
     progress_bar.close()

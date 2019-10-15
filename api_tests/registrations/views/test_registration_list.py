@@ -4,7 +4,7 @@ import mock
 from nose.tools import *  # noqa:
 import pytest
 
-from future.moves.urllib.parse import urlparse
+from future.moves.urllib.parse import urljoin, urlparse
 
 from api.base.settings.defaults import API_BASE
 from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
@@ -26,6 +26,7 @@ from osf_tests.factories import (
 from osf_tests.management_commands.test_migration_registration_responses import prereg_registration_responses
 from rest_framework import exceptions
 from tests.base import ApiTestCase
+from website import settings
 from website.views import find_bookmark_collection
 from osf.utils import permissions
 
@@ -1334,10 +1335,19 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         # File with the given name in the payload doesn't exist on the node
         assert res.status_code == 400
 
+        file_view_url = urljoin(settings.DOMAIN, '/project/{}/files/osfstorage/{}'.format(
+            prereg_draft_registration.branched_from._id,
+            file._id,
+        ))
         prereg_registration_responses['q7.uploader'] = [{
             'file_name': file_name,
             'file_id': file._id,
-            'sha256': 'incorrect_sha'
+            'file_hashes': {
+                'sha256': 'incorrect_sha',
+            },
+            'file_urls': {
+                'html': file_view_url,
+            },
         }]
 
         prereg_draft_registration.update_registration_responses(prereg_registration_responses)
@@ -1353,7 +1363,12 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         prereg_registration_responses['q7.uploader'] = [{
             'file_name': file_name,
             'file_id': file._id,
-            'sha256': sha256
+            'file_hashes': {
+                'sha256': sha256,
+            },
+            'file_urls': {
+                'html': file_view_url,
+            },
         }]
 
         prereg_draft_registration.update_registration_responses(prereg_registration_responses)

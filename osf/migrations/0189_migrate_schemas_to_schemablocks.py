@@ -45,11 +45,16 @@ def update_schema_configs(state, schema):
     for rs in RegistrationSchema.objects.all():
         if rs.schema.get('description', False):
             rs.description = rs.schema['description']
-            rs.save()
+        if rs.schema.get('config', False):
+            rs.config = rs.schema['config']
+        rs.save()
 
 def unset_schema_configs(state, schema):
     RegistrationSchema = state.get_model('osf', 'registrationschema')
-    RegistrationSchema.objects.update(config=dict())
+    RegistrationSchema.objects.update(
+        config=dict(),
+        description='',
+    )
 
 
 def noop(*args, **kwargs):

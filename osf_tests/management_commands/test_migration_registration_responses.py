@@ -1,6 +1,5 @@
-import os
 import pytest
-HERE = os.path.dirname(os.path.abspath(__file__))
+from future.moves.urllib.parse import urljoin
 
 from osf.models import RegistrationSchema
 from osf_tests.factories import DraftRegistrationFactory, RegistrationFactory
@@ -9,6 +8,7 @@ from osf.management.commands.migrate_registration_responses import (
     migrate_draft_registrations,
     migrate_registrations
 )
+from website import settings
 
 """
 Regression test to prevent the migration of 'registration_metadata' behavior
@@ -40,11 +40,23 @@ prereg_registration_responses = {
     'q11.uploader': [
         {
             'file_name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
-            'file_id': '5d6d22264d476c088fb8e01f'
+            'file_id': '5d6d22264d476c088fb8e01f',
+            'file_urls': {
+                'html': urljoin(settings.DOMAIN, '/project/57zbh/files/osfstorage/5d6d22264d476c088fb8e01f'),
+            },
+            'file_hashes': {
+                'sha256': 'sdf',
+            },
         },
         {
             'file_name': 'Alphabet.txt',
-            'file_id': '5d6d22274d476c088fb8e021'
+            'file_id': '5d6d22274d476c088fb8e021',
+            'file_urls': {
+                'html': urljoin(settings.DOMAIN, '/project/57zbh/files/osfstorage/5d6d22274d476c088fb8e021'),
+            },
+            'file_hashes': {
+                'sha256': 'dsdfds',
+            },
         }
     ],
     'q16.question': 'this is my study design',
@@ -63,7 +75,13 @@ prereg_registration_responses = {
     'q7.uploader': [
         {
             'file_name': 'Alphabet.txt',
-            'file_id': '5d6d22274d476c088fb8e021'
+            'file_id': '5d6d22274d476c088fb8e021',
+            'file_urls': {
+                'html': urljoin(settings.DOMAIN, '/project/57zbh/files/osfstorage/5d6d22274d476c088fb8e021'),
+            },
+            'file_hashes': {
+                'sha256': 'dsdfds',
+            },
         }
     ]
 }
@@ -475,9 +493,10 @@ prereg_registration_metadata_built = {
                 'value': '',
                 'extra': [
                     {
+                        'viewUrl': '/project/57zbh/files/osfstorage/5d6d22274d476c088fb8e021',
                         'selectedFileName': 'Alphabet.txt',
-                        'file_name': 'Alphabet.txt',
-                        'file_id': '5d6d22274d476c088fb8e021',
+                        'nodeId': '57zbh',
+                        'sha256': 'dsdfds',
                         'data': {
                             'name': 'Alphabet.txt'
                         }
@@ -547,16 +566,18 @@ prereg_registration_metadata_built = {
                 'extra': [
                     {
                         'selectedFileName': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
-                        'file_name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
-                        'file_id': '5d6d22264d476c088fb8e01f',
+                        'viewUrl': '/project/57zbh/files/osfstorage/5d6d22264d476c088fb8e01f',
+                        'nodeId': '57zbh',
+                        'sha256': 'sdf',
                         'data': {
                             'name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png'
                         }
                     },
                     {
                         'selectedFileName': 'Alphabet.txt',
-                        'file_name': 'Alphabet.txt',
-                        'file_id': '5d6d22274d476c088fb8e021',
+                        'viewUrl': '/project/57zbh/files/osfstorage/5d6d22274d476c088fb8e021',
+                        'nodeId': '57zbh',
+                        'sha256': 'dsdfds',
                         'data': {
                             'name': 'Alphabet.txt'
                         }
@@ -1405,16 +1426,18 @@ veer_condensed = {
                 'extra': [
                     {
                         'selectedFileName': 'Alphabet.txt',
-                        'file_name': 'Alphabet.txt',
-                        'file_id': '5d6d25024d476c088fb8e03b',
+                        'viewUrl': '/project/85qku/files/osfstorage/5d6d25024d476c088fb8e03b',
+                        'sha256': 'asdf',
+                        'nodeId': '85qku',
                         'data': {
                             'name': 'Alphabet.txt',
                         },
                     },
                     {
                         'selectedFileName': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
-                        'file_id': '5d6d25014d476c088fb8e038',
-                        'file_name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
+                        'viewUrl': '/project/85qku/files/osfstorage/5d6d25014d476c088fb8e038',
+                        'sha256': 'asdf',
+                        'nodeId': '85qku',
                         'data': {
                             'name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png'
                         }
@@ -1517,11 +1540,23 @@ veer_registration_responses = {
     'recommended-hypothesis.question4a': [
         {
             'file_name': 'Alphabet.txt',
-            'file_id': '5d6d25024d476c088fb8e03b'
+            'file_id': '5d6d25024d476c088fb8e03b',
+            'file_urls': {
+                'html': urljoin(settings.DOMAIN, '/project/85qku/files/osfstorage/5d6d25024d476c088fb8e03b'),
+            },
+            'file_hashes': {
+                'sha256': 'asdf',
+            },
         },
         {
             'file_name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
-            'file_id': '5d6d25014d476c088fb8e038'
+            'file_id': '5d6d25014d476c088fb8e038',
+            'file_urls': {
+                'html': urljoin(settings.DOMAIN, '/project/85qku/files/osfstorage/5d6d25014d476c088fb8e038'),
+            },
+            'file_hashes': {
+                'sha256': 'asdf',
+            },
         }
     ],
     'confirmatory-analyses-third.third.question5c': 'I used BAYESIAN STATISTICS',
@@ -1697,14 +1732,26 @@ class TestMigrateDraftRegistrationRegistrationResponses:
         assert responses['q19.uploader'] == []
         assert responses['q11.uploader'] == [
             {
-                'sha256': 'sdf',
                 'file_name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
-                'file_id': '5d6d22264d476c088fb8e01f'
+                'file_id': '5d6d22264d476c088fb8e01f',
+                'file_urls': {
+                    'html': urljoin(settings.DOMAIN, '/project/57zbh/files/osfstorage/5d6d22264d476c088fb8e01f'),
+                    'download': urljoin(settings.DOMAIN, '/download/5d6d22264d476c088fb8e01f'),
+                },
+                'file_hashes': {
+                    'sha256': 'sdf',
+                },
             },
             {
-                'sha256': 'asdf',
                 'file_name': 'Alphabet.txt',
-                'file_id': '5d6d22274d476c088fb8e021'
+                'file_id': '5d6d22274d476c088fb8e021',
+                'file_urls': {
+                    'html': urljoin(settings.DOMAIN, '/project/57zbh/files/osfstorage/5d6d22274d476c088fb8e021'),
+                    'download': urljoin(settings.DOMAIN, '/download/5d6d22274d476c088fb8e021'),
+                },
+                'file_hashes': {
+                    'sha256': 'asdf',
+                },
             }
         ]
         assert responses['q16.question'] == 'this is my study design'
@@ -1724,7 +1771,13 @@ class TestMigrateDraftRegistrationRegistrationResponses:
             {
                 'file_name': 'Alphabet.txt',
                 'file_id': '5d6d22274d476c088fb8e021',
-                'sha256': 'dsdfds'
+                'file_urls': {
+                    'html': urljoin(settings.DOMAIN, '/project/57zbh/files/osfstorage/5d6d22274d476c088fb8e021'),
+                    'download': urljoin(settings.DOMAIN, '/download/5d6d22274d476c088fb8e021'),
+                },
+                'file_hashes': {
+                    'sha256': 'dsdfds'
+                },
             }
         ]
 
@@ -1759,14 +1812,26 @@ class TestMigrateDraftRegistrationRegistrationResponses:
         assert responses['confirmatory-analyses-second.second.question4c'] == 'here is the rationale'
         assert responses['recommended-hypothesis.question4a'] == [
             {
-                'sha256': 'asdf',
                 'file_name': 'Alphabet.txt',
-                'file_id': '5d6d25024d476c088fb8e03b'
+                'file_id': '5d6d25024d476c088fb8e03b',
+                'file_urls': {
+                    'html': urljoin(settings.DOMAIN, '/project/85qku/files/osfstorage/5d6d25024d476c088fb8e03b'),
+                    'download': urljoin(settings.DOMAIN, '/download/5d6d25024d476c088fb8e03b'),
+                },
+                'file_hashes': {
+                    'sha256': 'asdf',
+                },
             },
             {
-                'sha256': 'asdf',
                 'file_name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
-                'file_id': '5d6d25014d476c088fb8e038'
+                'file_id': '5d6d25014d476c088fb8e038',
+                'file_urls': {
+                    'html': urljoin(settings.DOMAIN, '/project/85qku/files/osfstorage/5d6d25014d476c088fb8e038'),
+                    'download': urljoin(settings.DOMAIN, '/download/5d6d25014d476c088fb8e038'),
+                },
+                'file_hashes': {
+                    'sha256': 'asdf',
+                },
             }
         ]
         assert responses['confirmatory-analyses-third.third.question5c'] == 'I used BAYESIAN STATISTICS'
@@ -1901,14 +1966,26 @@ class TestMigrateRegistrationRegistrationResponses:
         assert responses['q19.uploader'] == []
         assert responses['q11.uploader'] == [
             {
-                'sha256': 'sdf',
                 'file_name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
-                'file_id': '5d6d22264d476c088fb8e01f'
+                'file_id': '5d6d22264d476c088fb8e01f',
+                'file_urls': {
+                    'html': urljoin(settings.DOMAIN, '/project/57zbh/files/osfstorage/5d6d22264d476c088fb8e01f'),
+                    'download': urljoin(settings.DOMAIN, '/download/5d6d22264d476c088fb8e01f'),
+                },
+                'file_hashes': {
+                    'sha256': 'sdf',
+                },
             },
             {
-                'sha256': 'asdf',
                 'file_name': 'Alphabet.txt',
-                'file_id': '5d6d22274d476c088fb8e021'
+                'file_id': '5d6d22274d476c088fb8e021',
+                'file_urls': {
+                    'html': urljoin(settings.DOMAIN, '/project/57zbh/files/osfstorage/5d6d22274d476c088fb8e021'),
+                    'download': urljoin(settings.DOMAIN, '/download/5d6d22274d476c088fb8e021'),
+                },
+                'file_hashes': {
+                    'sha256': 'asdf',
+                },
             }
         ]
         assert responses['q16.question'] == 'this is my study design'
@@ -1926,9 +2003,15 @@ class TestMigrateRegistrationRegistrationResponses:
         assert responses['q13.uploader'] == []
         assert responses['q7.uploader'] == [
             {
-                'sha256': 'dsdfds',
                 'file_name': 'Alphabet.txt',
-                'file_id': '5d6d22274d476c088fb8e021'
+                'file_id': '5d6d22274d476c088fb8e021',
+                'file_urls': {
+                    'html': urljoin(settings.DOMAIN, '/project/57zbh/files/osfstorage/5d6d22274d476c088fb8e021'),
+                    'download': urljoin(settings.DOMAIN, '/download/5d6d22274d476c088fb8e021'),
+                },
+                'file_hashes': {
+                    'sha256': 'dsdfds',
+                },
             }
         ]
 
@@ -1963,14 +2046,26 @@ class TestMigrateRegistrationRegistrationResponses:
         assert responses['confirmatory-analyses-second.second.question4c'] == 'here is the rationale'
         assert responses['recommended-hypothesis.question4a'] == [
             {
-                'sha256': 'asdf',
                 'file_name': 'Alphabet.txt',
-                'file_id': '5d6d25024d476c088fb8e03b'
+                'file_id': '5d6d25024d476c088fb8e03b',
+                'file_urls': {
+                    'html': urljoin(settings.DOMAIN, '/project/85qku/files/osfstorage/5d6d25024d476c088fb8e03b'),
+                    'download': urljoin(settings.DOMAIN, '/download/5d6d25024d476c088fb8e03b'),
+                },
+                'file_hashes': {
+                    'sha256': 'asdf',
+                },
             },
             {
-                'sha256': 'asdf',
                 'file_name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
-                'file_id': '5d6d25014d476c088fb8e038'
+                'file_id': '5d6d25014d476c088fb8e038',
+                'file_urls': {
+                    'html': urljoin(settings.DOMAIN, '/project/85qku/files/osfstorage/5d6d25014d476c088fb8e038'),
+                    'download': urljoin(settings.DOMAIN, '/download/5d6d25014d476c088fb8e038'),
+                },
+                'file_hashes': {
+                    'sha256': 'asdf',
+                },
             }
         ]
         assert responses['confirmatory-analyses-third.third.question5c'] == 'I used BAYESIAN STATISTICS'

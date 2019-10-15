@@ -1,6 +1,11 @@
 import copy
 import re
 
+from future.moves.urllib.parse import urljoin
+
+from osf.exceptions import SchemaBlockConversionError
+from website import settings
+
 
 def strip_registered_meta_comments(messy_dict_or_list, in_place=False):
     """Removes Prereg Challenge comments from a given `registered_meta` dict.
@@ -50,51 +55,77 @@ Contains helps for "flatten_registration_metadata" for converting from old to ne
 "expand_registration_responses" for converting from new to old.
 """
 
+# relative urls from the legacy 'nested' format
+FILE_VIEW_URL_TEMPLATE = '/project/{node_id}/files/osfstorage/{file_id}'
+FILE_VIEW_URL_REGEX = re.compile(r'/(?:project/)?(?P<node_id>\w{5})/files/osfstorage/(?P<file_id>\w{24})')
+
+# use absolute URLs in new 'flattened' format
+FILE_HTML_URL_TEMPLATE = urljoin(settings.DOMAIN, '/project/{node_id}/files/osfstorage/{file_id}')
+FILE_DOWNLOAD_URL_TEMPLATE = urljoin(settings.DOMAIN, '/download/{file_id}')
+
 # For flatten_registration_metadata
-def extract_file_info(file):
+def format_file_info(file):
     """
     Extracts name, file_id, and sha256 from the nested "extras" dictionary.
     Pulling name from selectedFileName and the file_id from the viewUrl.
 
     Some weird data here...such as {u'selectedFileName': u'No file selected'}
-    :returns dictionary {'file_name': <file_name>, 'file_id': <file__id>}
-    if both exist, otherwise {}
-    """
-    if file:
-        name = file.get('selectedFileName', '')
-        # viewUrl is the only place the file id is accurate.  On a
-        # registration, the other file ids in extra refer to the original
-        # file on the node, not the file that was archived on the reg
-        view_url = file.get('viewUrl', '')
-        reg_exp = r'^/project/(?P<node_id>\w{5})/files/osfstorage/(?P<file_id>\w{24})'
-        file__id = re.search(reg_exp, view_url).groupdict().get('file_id') if view_url else ''
-        sha256 = file.get('sha256', '')
-        return {
-            'file_name': name,
-            'file_id': file__id,
-            'sha256': sha256
-        }
-    return {}
+    Raises SchemaBlockConversionError if it's too weird to handle.
 
-# For flatten_registration_metadata
-def format_extra(extra):
+    :returns dictionary formatted as below
+    {
+        file_id: <file_id>,
+        file_name: <file_name>,
+        file_hashes: {
+            sha256: <sha256>,
+        },
+        file_urls: {
+            html: <url to webpage with/about file>,
+            download: <url to download file directly>,
+        },
+    }
     """
-    Pulls file names, and file ids out of "extra"
-    Note: "extra" is typically an array, but for some data, it's a dict
+    if not file:
+        raise SchemaBlockConversionError('Unexpected empty/missing file in `extra`')
 
-    :returns array of dictionaries, of format
-    [{'file_name': <filename>, 'file_id': <file__id>, 'sha256': <sha256>}]
-    """
-    files = []
-    if isinstance(extra, list):
-        for file in extra:
-            file_info = extract_file_info(file)
-            files.append(file_info)
-    else:
-        file_info = extract_file_info(extra)
-        if file_info:
-            files.append(file_info)
-    return files
+    file_data = file.get('data')
+
+    # on a Registration, viewUrl is the only place the file/node ids are accurate.
+    # the others refer to the original file on the node, not the file that was archived on the reg
+    view_url = file.get('viewUrl')
+    if view_url:
+        url_match = FILE_VIEW_URL_REGEX.search(view_url)
+        if not url_match:
+            raise SchemaBlockConversionError('Unexpected file viewUrl: {}'.format(view_url))
+        groupdict = url_match.groupdict()
+        file_id = groupdict['file_id']
+        node_id = groupdict['node_id']
+    elif file_data:
+        # this data is bad and it should feel bad
+        id_from_path = file_data.get('path', '').lstrip('/')
+        file_id = id_from_path or file.get('fileId')
+        node_id = file.get('nodeId')
+
+    if not (file_id and node_id):
+        raise SchemaBlockConversionError('Could not find file and node ids for file')
+
+    file_name = file.get('selectedFileName')
+    if file_data and not file_name:
+        file_name = file_data.get('name')
+
+    sha256 = file.get('sha256')
+    if file_data and not sha256:
+        sha256 = file_data.get('extra', {}).get('hashes', {}).get('sha256')
+
+    return {
+        'file_id': file_id,
+        'file_name': file_name,
+        'file_hashes': {'sha256': sha256} if sha256 else {},
+        'file_urls': {
+            'html': FILE_HTML_URL_TEMPLATE.format(file_id=file_id, node_id=node_id),
+            'download': FILE_DOWNLOAD_URL_TEMPLATE.format(file_id=file_id),
+        },
+    }
 
 # For flatten_registration_metadata
 def get_value_or_extra(nested_response, block_type, key, keys):
@@ -118,8 +149,10 @@ def get_value_or_extra(nested_response, block_type, key, keys):
     # and the block type is "file-input", the information we want is
     # stored under extra
     if block_type == 'file-input' and not keys:
-        extra = format_extra(keyed_value.get('extra', []))
-        return extra
+        extra = keyed_value.get('extra', [])
+        if isinstance(extra, list):
+            return map(format_file_info, extra)
+        return [format_file_info(extra)] if extra else []
     else:
         value = keyed_value.get('value', '')
         return value
@@ -141,6 +174,8 @@ def get_nested_answer(nested_response, block_type, keys):
     else:
         # Once we've drilled down through the entire dictionary, our nested_response
         # should be an array or a string
+        if not isinstance(nested_response, (list, basestring)):
+            raise SchemaBlockConversionError('Unexpected value type (expected list or string)', nested_response)
         return nested_response
 
 # For expanding registration_responses
@@ -163,20 +198,36 @@ def set_nested_values(nested_dictionary, keys, value):
         nested_dictionary[final_key] = value
 
 # For expanding registration_responses
+def build_extra_file_dict(file_ref):
+    url_match = FILE_VIEW_URL_REGEX.search(file_ref['file_urls']['html'])
+    if not url_match:
+        raise SchemaBlockConversionError('Expected `file_urls.html` in format `/project/<node_id>/files/osfstorage/<file_id>`')
+
+    groups = url_match.groupdict()
+    node_id = groups['node_id']
+    file_id = groups['file_id']
+
+    file_name = file_ref['file_name']
+    sha256 = file_ref['file_hashes']['sha256']
+
+    # viewUrl, selectedFileName, and sha256 are everything needed for the return trip
+    # (see `osf.utils.format_file_info`)
+    return {
+        'viewUrl': FILE_VIEW_URL_TEMPLATE.format(node_id=node_id, file_id=file_id),
+        'selectedFileName': file_name,
+        'sha256': sha256,
+        'nodeId': node_id,  # Used in _find_orphan_files
+        'data': {
+            'name': file_name,  # What legacy FE needs for rendering file on the draft
+        }
+    }
+
+# For expanding registration_responses
 def build_answer_block(block_type, value, file_storage_resource=None):
     extra = []
     if block_type == 'file-input':
-        extra = value
+        extra = map(build_extra_file_dict, value)
         value = ''
-        for file in extra:
-            if file_storage_resource:
-                # Used in _find_orphan_files
-                file['nodeId'] = file_storage_resource._id
-            if file.get('file_name'):
-                file['data'] = {
-                    'name': file.get('file_name')  # What legacy FE needs for rendering file on the draft
-                }
-                file['selectedFileName'] = file.get('file_name')
     return {
         'comments': [],
         'value': value,

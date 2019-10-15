@@ -604,7 +604,7 @@ class CeleryConfig:
             # },
             # 'migrate_registration_responses': {
             #   'task': 'management.commands.migrate_registration_responses',
-            #   'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
+            #   'schedule': crontab(minute=32, hour=7),  # Daily 2:32 a.m.
             # },
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',

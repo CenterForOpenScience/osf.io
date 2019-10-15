@@ -117,12 +117,12 @@ class RegistrationSchemaBlocks(JSONAPIBaseView, generics.ListAPIView):
 
     pagination_class = MaxSizePagination
 
-    required_read_scopes = [CoreScopes.SCHEMA_FORM_BLOCKS_READ]
+    required_read_scopes = [CoreScopes.SCHEMA_READ]
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = RegistrationSchemaBlockSerializer
     view_category = 'schemas'
-    view_name = 'registration-schema-form-blocks'
+    view_name = 'registration-schema-blocks'
     ordering = ('_order',)
 
     def get_queryset(self):
@@ -138,7 +138,7 @@ class RegistrationSchemaBlockDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.SCHEMA_FORM_BLOCKS_READ]
+    required_read_scopes = [CoreScopes.SCHEMA_READ]
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = RegistrationSchemaBlockSerializer

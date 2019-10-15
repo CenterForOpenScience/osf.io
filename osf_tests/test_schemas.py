@@ -66,7 +66,12 @@ class TestRegistrationSchemaValidation:
             'q13.uploader': [{
                 'file_name': 'Alphabet.txt',
                 'file_id': '5d5d61704a445a02048ad476',
-                'sha256': 'asdfgj'
+                'file_hashes': {
+                    'sha256': 'asdfgj'
+                },
+                'file_urls': {
+                    'html': '/aguid/files/osfstorage/5d5d61704a445a02048ad476'
+                },
             }],
             'q14': 'Meta-Analysis - A systematic review of published studies.',
             'q15': ['No blinding is involved in this study.', 'For studies that involve human subjects, they will not know the treatment group to which they have been assigned.'],
@@ -138,12 +143,12 @@ class TestRegistrationSchemaValidation:
         prereg_test_data['q13.uploader'] = [{'file_name': '12345'}]
         with pytest.raises(ValidationValueError) as excinfo:
             prereg_schema.validate_registration_responses(prereg_test_data)
-        assert excinfo.value.message == "For your registration, your response to the 'q13.uploader' field is invalid. 'file_id' is a dependency of 'file_name'"
+        assert excinfo.value.message.startswith("For your registration, your response to the 'q13.uploader' field is invalid.")
 
         prereg_test_data['q13.uploader'] = [{'file_name': '12345', 'file_id': 'abcde'}]
         with pytest.raises(ValidationValueError) as excinfo:
             prereg_schema.validate_registration_responses(prereg_test_data)
-        assert excinfo.value.message == "For your registration, your response to the 'q13.uploader' field is invalid. 'sha256' is a dependency of 'file_name'"
+        assert excinfo.value.message.startswith("For your registration, your response to the 'q13.uploader' field is invalid.")
 
     def test_validate_required_fields(self, registered_report_schema, prereg_schema, prereg_test_data):
         # Passing in required_fields is True enforces that required fields are present

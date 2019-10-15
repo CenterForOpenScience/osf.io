@@ -51,14 +51,14 @@ class RegistrationSchemaBlockSerializer(JSONAPISerializer):
         return obj.absolute_api_v2_url
 
     class Meta:
-        type_ = 'schema_blocks'
+        type_ = 'schema-blocks'
 
 
 class RegistrationSchemaSerializer(SchemaSerializer):
     description = ser.CharField(read_only=True, allow_blank=True)
 
     schema_blocks = RelationshipField(
-        related_view='schemas:registration-schema-form-blocks',
+        related_view='schemas:registration-schema-blocks',
         related_view_kwargs={'schema_id': '<_id>'},
     )
 
