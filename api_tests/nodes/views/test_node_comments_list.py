@@ -72,6 +72,7 @@ class NodeCommentsListMixin(object):
     #   test_return_private_node_comments_logged_in_non_contributor
         res = app.get(
             project_private_dict['url'],
+            auth=user_non_contrib,
             expect_errors=True)
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail

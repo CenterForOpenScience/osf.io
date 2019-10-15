@@ -262,7 +262,7 @@ class TestSearchComponents(ApiSearchTestCase):
         assert component.title in res
 
         # test_search_public_component_auth
-        res = app.get(url_component_search)
+        res = app.get(url_component_search, auth=user)
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
@@ -272,7 +272,7 @@ class TestSearchComponents(ApiSearchTestCase):
         assert component.title in res
 
         # test_search_public_component_contributor
-        res = app.get(url_component_search)
+        res = app.get(url_component_search, auth=user)
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
@@ -287,12 +287,12 @@ class TestSearchComponents(ApiSearchTestCase):
         assert component_private.title not in res
 
         # test_search_private_component_auth
-        res = app.get(url_component_search)
+        res = app.get(url_component_search, auth=user)
         assert res.status_code == 200
         assert component_private.title not in res
 
         # test_search_private_component_contributor
-        res = app.get(url_component_search)
+        res = app.get(url_component_search, auth=user_two)
         assert res.status_code == 200
         assert component_private.title not in res
 
@@ -374,7 +374,7 @@ class TestSearchFiles(ApiSearchTestCase):
         assert file_component.name in res
 
         # test_search_public_file_auth
-        res = app.get(url_file_search)
+        res = app.get(url_file_search, auth=user)
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
@@ -384,7 +384,7 @@ class TestSearchFiles(ApiSearchTestCase):
         assert file_component.name in res
 
         # test_search_public_file_contributor
-        res = app.get(url_file_search)
+        res = app.get(url_file_search, auth=user_one)
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
@@ -399,12 +399,12 @@ class TestSearchFiles(ApiSearchTestCase):
         assert file_private.name not in res
 
         # test_search_private_file_auth
-        res = app.get(url_file_search)
+        res = app.get(url_file_search, auth=user)
         assert res.status_code == 200
         assert file_private.name not in res
 
         # test_search_private_file_contributor
-        res = app.get(url_file_search)
+        res = app.get(url_file_search, auth=user_one)
         assert res.status_code == 200
         assert file_private.name not in res
 
@@ -440,7 +440,7 @@ class TestSearchProjects(ApiSearchTestCase):
         assert project.title in res
 
         # test_search_public_project_auth
-        res = app.get(url_project_search)
+        res = app.get(url_project_search, auth=user)
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
@@ -450,7 +450,7 @@ class TestSearchProjects(ApiSearchTestCase):
         assert project.title in res
 
         # test_search_public_project_contributor
-        res = app.get(url_project_search)
+        res = app.get(url_project_search, auth=user_one)
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
@@ -465,12 +465,12 @@ class TestSearchProjects(ApiSearchTestCase):
         assert project_private.title not in res
 
         # test_search_private_project_auth
-        res = app.get(url_project_search)
+        res = app.get(url_project_search, auth=user)
         assert res.status_code == 200
         assert project_private.title not in res
 
         # test_search_private_project_contributor
-        res = app.get(url_project_search)
+        res = app.get(url_project_search, auth=user_two)
         assert res.status_code == 200
         assert project_private.title not in res
 
@@ -581,7 +581,7 @@ class TestSearchRegistrations(ApiSearchTestCase):
         assert registration.title in res
 
         # test_search_public_registration_auth
-        res = app.get(url_registration_search)
+        res = app.get(url_registration_search, auth=user)
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
@@ -591,7 +591,7 @@ class TestSearchRegistrations(ApiSearchTestCase):
         assert registration.title in res
 
         # test_search_public_registration_contributor
-        res = app.get(url_registration_search)
+        res = app.get(url_registration_search, auth=user_one)
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
@@ -606,12 +606,12 @@ class TestSearchRegistrations(ApiSearchTestCase):
         assert registration_private.title not in res
 
         # test_search_private_registration_auth
-        res = app.get(url_registration_search)
+        res = app.get(url_registration_search, auth=user)
         assert res.status_code == 200
         assert registration_private.title not in res
 
         # test_search_private_registration_contributor
-        res = app.get(url_registration_search)
+        res = app.get(url_registration_search, auth=user_two)
         assert res.status_code == 200
         assert registration_private.title not in res
 
@@ -692,7 +692,7 @@ class TestSearchUsers(ApiSearchTestCase):
         assert user.fullname in res
 
         # test_search_users_auth
-        res = app.get(url_user_search)
+        res = app.get(url_user_search, auth=user)
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
@@ -770,7 +770,7 @@ class TestSearchInstitutions(ApiSearchTestCase):
         assert institution.name in res
 
         # test_search_institutions_auth
-        res = app.get(url_institution_search)
+        res = app.get(url_institution_search, auth=user)
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
@@ -867,7 +867,7 @@ class TestSearchCollections(ApiSearchTestCase):
         assert node_private._id not in actual_ids
 
         # test_search_collections_auth
-        res = app.get(url_collection_search)
+        res = app.get(url_collection_search, auth=user)
         assert res.status_code == 200
         total = res.json['links']['meta']['total']
         num_results = len(res.json['data'])
