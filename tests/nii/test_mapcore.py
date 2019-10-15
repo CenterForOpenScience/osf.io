@@ -204,7 +204,8 @@ class TestFuncOfMAPCore(OsfTestCase):
         self.project = ProjectFactory(
             creator=self.me,
             is_public=True,
-            title=fake.bs()
+            title=fake.bs(),
+            map_group_key=None,
         )
         self.project_url = self.project.web_url_for('view_project')
         self.project.save()

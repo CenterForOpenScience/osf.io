@@ -1688,7 +1688,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if isinstance(forked, Registration):
             forked.recast('osf.node')
 
-        forked.map_group_key = None
         forked.custom_citation = ''
         forked.is_fork = True
         forked.forked_date = when
@@ -2032,6 +2031,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 )
                 self.add_permission(self.creator, ADMIN)
         return ret
+
+    def clone(self, *args, **kwargs):
+        new = super(AbstractNode, self).clone(*args, **kwargs)
+        new.map_group_key = None
+        return new
 
     def update_or_enqueue_on_node_updated(self, user_id, first_save, saved_fields):
         """
