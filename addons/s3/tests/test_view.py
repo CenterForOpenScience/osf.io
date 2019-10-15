@@ -45,8 +45,8 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
             'access_key': '',
             'secret_key': ''
         }, auth=self.user.auth, expect_errors=True)
-        assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
         assert_in('All the fields above are required.', rv.body.decode())
+        assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
 
     def test_s3_settings_input_empty_access_key(self):
         url = self.project.api_url_for('s3_add_user_account')
@@ -63,8 +63,8 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
             'access_key': 'Non-empty-access-key',
             'secret_key': ''
         }, auth=self.user.auth, expect_errors=True)
-        assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
         assert_in('All the fields above are required.', rv.body.decode())
+        assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
 
     def test_s3_set_bucket_no_settings(self):
         user = AuthUserFactory()
@@ -108,8 +108,8 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
             'access_key': 'aldkjf',
             'secret_key': 'las'
         }, auth=self.user.auth, expect_errors=True)
-        assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
         assert_in('Unable to list buckets.', rv.body.decode())
+        assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
 
     def test_s3_remove_node_settings_owner(self):
         url = self.node_settings.owner.api_url_for('s3_deauthorize_node')
