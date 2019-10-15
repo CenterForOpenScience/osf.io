@@ -399,7 +399,7 @@ class TestWikiViews(OsfTestCase):
         self.sec_wiki.update(self.user, long_content)
         res = serialize_wiki_widget(self.second_project)
         assert_less(len(res['wiki_content']), 520)  # wiggle room for closing tags
-        assert_in('...', res['wiki_content'])
+        assert_in('...', res['wiki_content'].decode())
         assert_true(res['more'])
 
     def test_wiki_widget_with_multiple_short_pages_has_more(self):
