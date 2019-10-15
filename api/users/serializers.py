@@ -15,6 +15,7 @@ from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.models import OSFUser, QuickFilesNode
+from addons.osfstorage.models import Region
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
@@ -164,12 +165,16 @@ class UserSerializer(JSONAPISerializer):
         return group_qs.exists() or obj.abstractprovideruserobjectpermission_set.filter(permission__codename='view_submissions')
 
     def get_default_region_id(self, obj):
+        region_id = Region.objects.first()._id
         try:
             # use the annotated value if possible
             region_id = obj.default_region
         except AttributeError:
             # use computed property if region annotation does not exist
-            region_id = obj.osfstorage_region._id
+            try:
+                region_id = obj.osfstorage_region._id
+            except Exception:
+                pass
         return region_id
 
     def get_accepted_terms_of_service(self, obj):

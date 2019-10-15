@@ -36,5 +36,6 @@
                 public: true,
             },
         });
+        window.contextVars.threshold = ${node['threshold']};
     </script>
 </%def>

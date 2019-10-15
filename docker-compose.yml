@@ -449,7 +449,7 @@ services:
     command:
     - /bin/bash
     - -c
-    - apt-get update && apt-get install -y libtk8.6 wkhtmltopdf xvfb cron curl jq &&
+    - apt-get update && apt-get install -y libtk8.6 wkhtmltopdf xvfb cron jq &&
       /etc/init.d/cron start &&
       cat ./admin/rdm_statistics/cron.sh | crontab - &&
       (crontab -l; cat admin/rdm_custom_storage_location/cron.sh) | crontab - &&

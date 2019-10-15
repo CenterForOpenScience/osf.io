@@ -16,7 +16,9 @@ from framework.auth import authenticate
 from framework.exceptions import PermissionsError, HTTPError
 from framework.sessions import session
 from osf.models.external import ExternalAccount, ExternalProvider, OAUTH1, OAUTH2
+from osf.models.region_external_account import RegionExternalAccount
 from addons.osfstorage.models import Region
+from scripts import refresh_addon_tokens
 from website.oauth import views as oauth_views
 from website.util import api_url_for, web_url_for
 from website.settings import ADMIN_URL
@@ -1318,49 +1320,44 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
             self.provider.refresh_oauth_key(force=True)
 
     @responses.activate
-    def test_set_new_access_token(self):
-        from osf.models.region_external_account import RegionExternalAccount
+    @mock.patch('scripts.refresh_addon_tokens.GoogleDriveProvider.refresh_oauth_key')
+    def test_set_new_access_token(self, mock_drive_refresh):
         external_account = ExternalAccountFactory(
-            provider='mock2',
+            provider='googledrive',
             provider_id='mock_provider_id',
             provider_name='Mock Provider',
-            oauth_key='old_key',
-            oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() - 200).replace(tzinfo=pytz.utc)
+            oauth_key='account_key',
+            oauth_secret='account_secret',
+            expires_at=datetime.utcfromtimestamp(time.time() - 5).replace(tzinfo=pytz.utc),
+            date_last_refreshed=datetime.utcfromtimestamp(time.time() - 10).replace(tzinfo=pytz.utc),
         )
-
-        institution = InstitutionFactory()
         region = RegionFactory()
         region.save()
 
-        obj, created = RegionExternalAccount.objects.update_or_create(
+        RegionExternalAccount.objects.create(
             region=region,
-            defaults={
-                'external_account': external_account,
-                'region': region,
-            },
+            external_account=external_account
         )
 
-        # mock a successful call to the provider to refresh tokens
-        responses.add(
-            responses.Response(
-                responses.POST,
-                self.provider.auto_refresh_url,
-                body=json.dumps({
-                    'access_token': 'refreshed_access_token',
-                    'expires_in': 3600,
-                    'refresh_token': 'refreshed_refresh_token'
-                })
-            )
+        # Token in waterbutler credentials before it is updated
+        assert_not_equal(
+            external_account.oauth_key,
+            region.waterbutler_credentials['storage']['token']
         )
 
-        old_expiry = external_account.expires_at
-        self.provider.account = external_account
-        self.provider.refresh_oauth_key(force=True)
+        refresh_addon_tokens.run_main(
+            addons={'googledrive': -14},
+            dry_run=False
+        )
+
         external_account.reload()
-
         updated_region = Region.objects.get(id=region.id)
-        assert_equal(external_account.oauth_key, updated_region.waterbutler_credentials['storage']['token'])
+
+        # Token in waterbutler credentials after it is updated
+        assert_equal(
+            external_account.oauth_key,
+            updated_region.waterbutler_credentials['storage']['token']
+        )
 
 
 class TestCallback(OsfTestCase):
