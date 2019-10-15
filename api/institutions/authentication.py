@@ -61,7 +61,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 options={'verify_exp': False},
                 algorithm='HS256',
             )
-        except (jwt.InvalidTokenError, TypeError):
+        except (jwt.InvalidTokenError, TypeError, jwe.exceptions.MalformedData):
             raise AuthenticationFailed
 
         data = json.loads(payload['data'])

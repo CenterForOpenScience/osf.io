@@ -114,6 +114,7 @@ class AppTestCase(unittest.TestCase):
     def setUp(self):
         super(AppTestCase, self).setUp()
         self.app = TestApp(test_app)
+        self.app.lint = False  # This breaks things in Py3
         if not self.PUSH_CONTEXT:
             return
         self.context = test_app.test_request_context(headers={

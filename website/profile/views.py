@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
 from rest_framework import status as http_status
-from dateutil.parser import parse as parse_date
 
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -41,14 +40,6 @@ from addons.base import utils as addon_utils
 from api.waffle.utils import storage_i18n_flag_active
 
 logger = logging.getLogger(__name__)
-
-
-def date_or_none(date):
-    try:
-        return parse_date(date)
-    except Exception as error:
-        logger.exception(error)
-        return None
 
 
 def validate_user(data, user):
@@ -372,7 +363,7 @@ def user_addons(auth, **kwargs):
 def user_notifications(auth, **kwargs):
     """Get subscribe data from user"""
     return {
-        'mailing_lists': dict(auth.user.mailchimp_mailing_lists.items() + auth.user.osf_mailing_lists.items())
+        'mailing_lists': dict(list(auth.user.mailchimp_mailing_lists.items()) + list(auth.user.osf_mailing_lists.items()))
     }
 
 @must_be_logged_in
@@ -610,18 +601,6 @@ def get_target_user(auth, uid=None):
     return target
 
 
-def fmt_date_or_none(date, fmt='%Y-%m-%d'):
-    if date:
-        try:
-            return date.strftime(fmt)
-        except ValueError:
-            raise HTTPError(
-                http_status.HTTP_400_BAD_REQUEST,
-                data=dict(message_long='Year entered must be after 1900')
-            )
-    return None
-
-
 def append_editable(data, auth, uid=None):
     target = get_target_user(auth, uid)
     data['editable'] = auth.user == target
@@ -813,12 +792,14 @@ def request_export(auth):
     user.save()
     return {'message': 'Sent account export request'}
 
+
 @must_be_logged_in
 def request_deactivation(auth):
     user = auth.user
     user.requested_deactivation = True
     user.save()
     return {'message': 'Sent account deactivation request'}
+
 
 @must_be_logged_in
 def cancel_request_deactivation(auth):
