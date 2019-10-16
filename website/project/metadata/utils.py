@@ -27,9 +27,16 @@ def serialize_meta_schemas(meta_schemas):
 
 def serialize_draft_registration(draft, auth=None):
     from website.project.utils import serialize_node  # noqa
+    from website.util import api_v2_url
     from api.base.utils import absolute_reverse
+    from django.core.urlresolvers import NoReverseMatch
 
     node = draft.branched_from
+
+    try:
+        register_url = absolute_reverse('nodes:node-registrations', kwargs={'node_id': node._id, 'version': 'v2'}),
+    except (NoReverseMatch, SyntaxError):  # TODO: fix bug on certain Travis environments
+        register_url = api_v2_url('v2/nodes/{}/registrations/'.format(node._id), params=None, base_prefix='')
 
     return {
         'pk': draft._id,
@@ -44,7 +51,7 @@ def serialize_draft_registration(draft, auth=None):
             'edit': node.web_url_for('edit_draft_registration_page', draft_id=draft._id, _guid=True),
             'submit': node.api_url_for('submit_draft_for_review', draft_id=draft._id),
             'before_register': node.api_url_for('project_before_register'),
-            'register': absolute_reverse('nodes:node-registrations', kwargs={'node_id': node._id, 'version': 'v2'}),
+            'register': register_url,
             'register_page': node.web_url_for('draft_before_register_page', draft_id=draft._id, _guid=True),
             'registrations': node.web_url_for('node_registrations', _guid=True)
         },

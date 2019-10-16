@@ -30,7 +30,8 @@ from framework.utils import throttle_period_expired
 from osf.models import OSFUser
 from osf.utils.sanitize import strip_html
 from website import settings, mails, language
-from website.ember_osf_web.decorators import storage_i18n_flag_active, ember_flag_is_active
+from website.ember_osf_web.decorators import ember_flag_is_active
+from api.waffle.utils import storage_i18n_flag_active
 from website.util import web_url_for
 from osf.exceptions import ValidationValueError, BlacklistedEmailError
 from osf.models.provider import PreprintProvider

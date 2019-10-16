@@ -3,7 +3,7 @@
         "GitHub": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an GakuNin RDM project public or private is independent of making a GitHub repo public or private. The GakuNin RDM does not alter the permissions of linked GitHub repos."
+                "text": "Making a GakuNin RDM project public or private is independent of making a GitHub repo public or private. The GakuNin RDM does not alter the permissions of linked GitHub repos."
             },
             "View / download file versions": {
                 "status": "full",
@@ -33,7 +33,7 @@
         "GitLab": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an GakuNin RDM project public or private is independent of making a GitLab repo public or private. The GakuNin RDM does not alter the permissions of linked GitLab repos."
+                "text": "Making a GakuNin RDM project public or private is independent of making a GitLab repo public or private. The GakuNin RDM does not alter the permissions of linked GitLab repos."
             },
             "View / download file versions": {
                 "status": "full",
@@ -63,7 +63,7 @@
         "Amazon S3": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an GakuNin RDM project public or private is independent of making an S3 bucket public or private. The GakuNin RDM does not alter the permissions of linked S3 buckets."
+                "text": "Making a GakuNin RDM project public or private is independent of making an S3 bucket public or private. The GakuNin RDM does not alter the permissions of linked S3 buckets."
             },
             "View / download file versions": {
                 "status": "partial",
@@ -93,7 +93,7 @@
         "figshare": {
             "Permissions": {
                 "status": "partial",
-                "text": " Making an GakuNin RDM project public or private is independent of making figshare content public or private. The GakuNin RDM does not alter the permissions of linked figshare content."
+                "text": " Making a GakuNin RDM project public or private is independent of making figshare content public or private. The GakuNin RDM does not alter the permissions of linked figshare content."
             },
             "View / download file versions": {
                 "status": "partial",
@@ -123,7 +123,7 @@
         "Dropbox": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an GakuNin RDM project public or private is independent of Dropbox privacy. The GakuNin RDM does not alter the permissions of linked Dropbox folders."
+                "text": "Making a GakuNin RDM project public or private is independent of Dropbox privacy. The GakuNin RDM does not alter the permissions of linked Dropbox folders."
             },
             "View / download file versions": {
                 "status": "full",
@@ -153,7 +153,7 @@
         "OneDrive": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an GakuNin RDM project public or private is independent of OneDrive privacy. The GakuNin RDM does not alter the permissions of linked OneDrive folders."
+                "text": "Making a GakuNin RDM project public or private is independent of OneDrive privacy. The GakuNin RDM does not alter the permissions of linked OneDrive folders."
             },
             "View / download file versions": {
                 "status": "full",
@@ -183,7 +183,7 @@
         "Dataverse": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an GakuNin RDM project public or private is independent of making a Dataverse study public or private. The GakuNin RDM allows you to release the latest draft version of a Dataverse dataset."
+                "text": "Making a GakuNin RDM project public or private is independent of making a Dataverse study public or private. The GakuNin RDM allows you to release the latest draft version of a Dataverse dataset."
             },
             "View / download file versions": {
                 "status": "partial",
@@ -213,7 +213,7 @@
         "Google Drive": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an GakuNin RDM project public or private is independent of Google Drive privacy. The GakuNin RDM does not alter the permissions of linked Google Drive folders."
+                "text": "Making a GakuNin RDM project public or private is independent of Google Drive privacy. The GakuNin RDM does not alter the permissions of linked Google Drive folders."
             },
             "View / download file versions": {
                 "status": "full",
@@ -243,7 +243,7 @@
         "Box": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an GakuNin RDM project public or private is independent of Box privacy. The GakuNin RDM does not alter the permissions of linked Box folders."
+                "text": "Making a GakuNin RDM project public or private is independent of Box privacy. The GakuNin RDM does not alter the permissions of linked Box folders."
             },
             "View / download file versions": {
                 "status": "full",
@@ -273,7 +273,7 @@
         "Mendeley": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an GakuNin RDM project public or private is independent of making a Mendeley folder public or private. The GakuNin RDM does not alter the permissions of a linked Mendeley folder."
+                "text": "Making a GakuNin RDM project public or private is independent of making a Mendeley folder public or private. The GakuNin RDM does not alter the permissions of a linked Mendeley folder."
             },
             "View / download file versions": {
                 "status": "NA"
@@ -299,7 +299,7 @@
         "ownCloud": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an GakuNin RDM project public or private is independent of ownCloud privacy. The GakuNin RDM does not alter the permissions of linked ownCloud folders."
+                "text": "Making a GakuNin RDM project public or private is independent of ownCloud privacy. The GakuNin RDM does not alter the permissions of linked ownCloud folders."
             },
             "View / download file versions": {
                 "status": "partial",
@@ -329,7 +329,7 @@
         "Zotero": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an GakuNin RDM project public or private is independent of making a Zotero folder public or private. The GakuNin RDM does not alter the permissions of a linked Zotero folder."
+                "text": "Making a GakuNin RDM project public or private is independent of making a Zotero folder public or private. The GakuNin RDM does not alter the permissions of a linked Zotero folder."
             },
             "View / download file versions": {
                 "status": "NA"
@@ -355,7 +355,7 @@
         "Bitbucket": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an GakuNin RDM project public or private is independent of making a Bitbucket repo public or private. The GakuNin RDM does not alter the permissions of linked Bitbucket repos."
+                "text": "Making a GakuNin RDM project public or private is independent of making a Bitbucket repo public or private. The GakuNin RDM does not alter the permissions of linked Bitbucket repos."
             },
             "View / download file versions": {
                 "status": "full",
@@ -385,7 +385,7 @@
         "OpenStack Swift": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an GakuNin RDM project public or private is independent of making an Swift container public or private."
+                "text": "Making a GakuNin RDM project public or private is independent of making an Swift container public or private."
             },
             "View / download file versions": {
                 "status": "partial",
@@ -415,7 +415,7 @@
         "Azure Blob Storage": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an GakuNin RDM project public or private is independent of making an Azure Blob Storage container public or private."
+                "text": "Making a GakuNin RDM project public or private is independent of making an Azure Blob Storage container public or private."
             },
             "View / download file versions": {
                 "status": "partial",
@@ -497,7 +497,7 @@
             },
             "Permissions": {
                 "status": "partial",
-                "text": "Making an GakuNin RDM project public or private is independent of making an S3 Compatible Storage bucket public or private. The GakuNin RDM does not alter the permissions of linked S3 Compatible Storage buckets."
+                "text": "Making a GakuNin RDM project public or private is independent of making an S3 Compatible Storage bucket public or private. The GakuNin RDM does not alter the permissions of linked S3 Compatible Storage buckets."
             }
         },
         "JupyterHub": {
@@ -557,7 +557,7 @@
             },
             "Permissions": {
                 "status": "partial",
-                "text": "Making an GakuNin RDM project public or private is independent of Nextcloud privacy. The GakuNin RDM does not alter the permissions of linked Nextcloud folders."
+                "text": "Making a GakuNin RDM project public or private is independent of Nextcloud privacy. The GakuNin RDM does not alter the permissions of linked Nextcloud folders."
             }
         },
         "IQB-RIMS": {
