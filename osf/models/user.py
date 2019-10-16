@@ -24,7 +24,7 @@ from django.contrib.auth.models import PermissionsMixin
 from django.dispatch import receiver
 from django.db import models
 from django.db.models import Count
-from django.db.models.signals import post_save
+from django.db.models.signals import m2m_changed, post_save
 from django.utils import timezone
 from guardian.shortcuts import get_objects_for_user
 
@@ -33,7 +33,8 @@ from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
                                        InvalidTokenError,
                                        MergeConfirmedRequiredError,
-                                       MergeConflictError)
+                                       MergeConflictError,
+                                       MergeDisableError)
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
@@ -45,6 +46,7 @@ from osf.models.mixins import AddonModelMixin
 from osf.models.spam import SpamMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
+from osf.models.mapcore import MAPProfile
 from osf.models.validators import validate_email, validate_social, validate_history_item
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
@@ -408,6 +410,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     cggroups_initialized = models.BooleanField(default=False)
     date_last_access = NonNaiveDateTimeField(null=True, blank=True)
 
+    # MAPProfile link.
+    map_profile = models.OneToOneField(MAPProfile,
+                                       on_delete=models.SET_NULL,
+                                       blank=True, null=True,
+                                       related_name='osf_user')
+    mapcore_api_locked = models.BooleanField(default=False)
+    mapcore_refresh_locked = models.BooleanField(default=False)
+
     def __repr__(self):
         return '<OSFUser({0!r}) with guid {1!r}>'.format(self.username, self._id)
 
@@ -682,6 +692,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # Fail if the other user has conflicts.
         if not user.can_be_merged:
             raise MergeConflictError('Users cannot be merged')
+
+        if not website_settings.ENABLE_USER_MERGE:
+            raise MergeDisableError('The merge feature is disabled')
+
         # Move over the other user's attributes
         # TODO: confirm
         for system_tag in user.system_tags.all():
@@ -914,7 +928,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             preprint.remove_permission(user, user_perms)
             preprint.save()
 
-    def disable_account(self):
+    def disable_account(self, logout_session=True):
         """
         Disables user account, making is_disabled true, while also unsubscribing user
         from mailchimp emails, remove any existing sessions.
@@ -943,11 +957,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.reload()
         self.is_disabled = True
 
-        # we must call both methods to ensure the current session is cleared and all existing
-        # sessions are revoked.
-        req = get_current_request()
-        if isinstance(req, FlaskRequest):
-            logout()
+        if logout_session:
+            # we must call both methods to ensure the current session is cleared and all existing
+            # sessions are revoked.
+            req = get_current_request()
+            if isinstance(req, FlaskRequest):
+                logout()
         remove_sessions_for_user(self)
 
     def update_is_active(self):
@@ -1337,23 +1352,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             unregistered_user.username = None
 
         if self.have_email is False:
-            import waffle
+            from api.institutions.authentication import send_welcome
             # username is not email address.
             if self.emails.filter(address=self.username).exists():
                 self.emails.filter(address=self.username).delete()
             self.username = email
             self.have_email = True
             req = get_current_request()
-            mails.send_mail(
-                to_addr=email,
-                mail=mails.WELCOME_OSF4I,
-                mimetype='html',
-                user=self,
-                domain=website_settings.DOMAIN,
-                osf_support_email=website_settings.OSF_SUPPORT_EMAIL,
-                storage_flag_is_active=waffle.flag_is_active(req, 'storage_i18n'),
-                use_viewonlylinks=website_settings.to_bool('USE_VIEWONLYLINKS', True),
-            )
+            send_welcome(self, req)
 
         if not self.emails.filter(address=email).exists():
             self.emails.create(address=email)
@@ -1738,7 +1744,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return is_spam
 
-    def gdpr_delete(self):
+    def gdpr_delete(self, logout_session=True):
         """
         This function does not remove the user object reference from our database, but it does disable the account and
         remove identifying in a manner compliant with GDPR guidelines.
@@ -1774,7 +1780,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                         node._id))
 
             for addon in node.get_addons():
-                if addon.short_name not in ('osfstorage', 'wiki') and addon.user_settings and addon.user_settings.owner.id == self.id:
+                if addon.short_name not in ('osfstorage', 'wiki') and hasattr(addon, 'user_settings') and addon.user_settings and addon.user_settings.owner.id == self.id:
                     raise UserStateError('You cannot delete this user because they '
                                          'have an external account for {} attached to Node {}, '
                                          'which has other contributors.'.format(addon.short_name, node._id))
@@ -1788,7 +1794,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             node.remove_contributor(self, auth=Auth(self), log=False)
 
         # This is doesn't to remove identifying info, but ensures other users can't see the deleted user's profile etc.
-        self.disable_account()
+        self.disable_account(logout_session=logout_session)
 
         # delete all personal nodes (one contributor), bookmarks, quickfiles etc.
         for node in personal_nodes.all():
@@ -1809,6 +1815,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.fullname = 'Deleted user'
         self.set_unusable_username()
         self.set_unusable_password()
+        self.eppn = None
         self.given_name = ''
         self.family_name = ''
         self.middle_names = ''
@@ -1835,6 +1842,24 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.external_accounts.clear()
         self.external_identity = {}
         self.deleted = timezone.now()
+
+    def get_idp_entity_ids(self):
+        entity_ids = []
+        try:
+            for inst in self.affiliated_institutions.all():
+                if not inst.login_url:
+                    continue
+                try:
+                    login_url_parsed = urlparse.urlparse(inst.login_url)
+                    q = urlparse.parse_qs(login_url_parsed.query)
+                    entity_id = q.get('entityID')[0]
+                    if entity_id:
+                        entity_ids.append(entity_id)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        return entity_ids
 
     class Meta:
         # custom permissions for use in the GakuNin RDM Admin App
@@ -1866,3 +1891,8 @@ def _create_quickfiles_project(instance):
 def create_quickfiles_project(sender, instance, created, **kwargs):
     if created:
         _create_quickfiles_project(instance)
+
+@receiver(m2m_changed, sender=OSFUser.affiliated_institutions.through)
+def update_search_with_affiliated_institutions(sender, instance, action, **kwargs):
+    if action in ['post_add', 'post_remove', 'post_clear']:
+        instance.update_search()

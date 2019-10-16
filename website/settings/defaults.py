@@ -424,6 +424,7 @@ class CeleryConfig:
         'scripts.retract_registrations',
         'website.archiver.tasks',
         'scripts.add_missing_identifiers_to_preprints'
+        'nii.mapcore_refresh_tokens',
     }
 
     try:
@@ -481,6 +482,7 @@ class CeleryConfig:
         'scripts.generate_sitemap',
         'scripts.premigrate_created_modified',
         'scripts.add_missing_identifiers_to_preprints',
+        'nii.mapcore_refresh_tokens',
     )
 
     # Modules that need metrics and release requirements
@@ -587,6 +589,12 @@ class CeleryConfig:
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
+            },
+            'mapcore_refresh_token': {
+                'task': 'nii.mapcore_refresh_tokens',
+                'schedule': crontab(minute=0, hour=10),  # Daily 5:00 a.m. EST (-5h)
+                #'schedule': crontab(minute='*/1'), # for DEBUG
+                'kwargs': {'dry_run': False},
             },
         }
 
@@ -1918,10 +1926,10 @@ USER_TIMEZONE = None
 USER_LOCALE = None
 
 # OSF projects synchronize groups on Cloud Gateway.
-CLOUD_GATAWAY_HOST = 'cg.gakunin.jp'
+CLOUD_GATEWAY_HOST = 'cg.gakunin.jp'
 
 # Prefix of isMemberOf attribute for groups.
-CLOUD_GATAWAY_ISMEMBEROF_PREFIX = 'https://cg.gakunin.jp/gr/'
+CLOUD_GATEWAY_ISMEMBEROF_PREFIX = 'https://cg.gakunin.jp/gr/'
 
 # Path of .cer and . key for GakuNin SP on the container of server.
 # (for API of Cloud Gateway)
@@ -1935,3 +1943,16 @@ PROJECT_SYNC_TIME_LENGTH   = 3600  # sec.
 
 ADMIN_URL='http://localhost:8001/'
 ADMIN_INTERNAL_DOCKER_URL='http://192.168.168.167:8001/'
+
+# the user merge feature
+ENABLE_USER_MERGE = True
+
+# mAP core parameters
+MAPCORE_HOSTNAME = 'https://sptest.cg.gakunin.jp'
+MAPCORE_AUTHCODE_PATH = '/oauth/shib/authrequest.php'
+MAPCORE_TOKEN_PATH = '/oauth/token.php'
+MAPCORE_API_PATH = '/api2/v1'
+MAPCORE_REFRESH_PATH = '/oauth/token.php'
+MAPCORE_AUTHCODE_MAGIC = 'GRDM_mAP_AuthCode'
+MAPCORE_CLIENTID = None
+MAPCORE_SECRET = None

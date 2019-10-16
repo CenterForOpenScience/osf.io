@@ -26,7 +26,7 @@ from framework.status import push_status_message
 from framework.utils import throttle_period_expired
 
 from osf import features
-from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode
+from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, Email, OSFUser, QuickFilesNode
 from osf.exceptions import BlacklistedEmailError
 from osf.utils.requests import string_type_request_headers
 from website import mails
@@ -63,7 +63,7 @@ def validate_user(data, user):
         # raise an error if request doesn't have user id
         raise HTTPError(httplib.BAD_REQUEST, data={'message_long': '"id" is required'})
 
-@must_be_logged_in
+@must_be_logged_in_without_checking_email
 def resend_confirmation(auth):
     user = auth.user
     data = request.get_json()
@@ -178,6 +178,12 @@ def update_user(auth):
                 raise HTTPError(http.BAD_REQUEST, data=dict(
                     message_long=language.BLACKLISTED_EMAIL)
                 )
+
+            if settings.ENABLE_USER_MERGE is False:
+                if Email.objects.filter(address=address).exists():
+                    raise HTTPError(http.BAD_REQUEST, data=dict(
+                        message_long='Existing email address')
+                    )
 
             # TODO: This setting is now named incorrectly.
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:

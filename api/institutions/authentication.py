@@ -24,6 +24,23 @@ from website.util.quota import update_default_storage
 import logging
 logger = logging.getLogger(__name__)
 
+NEW_USER_NO_NAME = 'New User (no name)'
+
+def send_welcome(user, request):
+    send_mail(
+        to_addr=user.username,
+        mail=WELCOME_OSF4I,
+        mimetype='html',
+        user=user,
+        domain=DOMAIN,
+        osf_support_email=OSF_SUPPORT_EMAIL,
+        storage_flag_is_active=waffle.flag_is_active(
+            request,
+            features.STORAGE_I18N,
+        ),
+        use_viewonlylinks=to_bool('USE_VIEWONLYLINKS', True),
+    )
+
 class InstitutionAuthentication(BaseAuthentication):
 
     media_type = 'text/plain'
@@ -97,7 +114,7 @@ class InstitutionAuthentication(BaseAuthentication):
             fullname = given_name + ' ' + family_name
 
         if USE_EPPN and not fullname:
-            fullname = 'New User (no name)'
+            fullname = NEW_USER_NO_NAME
 
         # institution must provide `fullname`, otherwise we fail the authentication and inform sentry
         if not fullname:
@@ -159,16 +176,7 @@ class InstitutionAuthentication(BaseAuthentication):
 
             # send confirmation email
             if user.have_email:
-                send_mail(
-                    to_addr=user.username,
-                    mail=WELCOME_OSF4I,
-                    mimetype='html',
-                    user=user,
-                    domain=DOMAIN,
-                    osf_support_email=OSF_SUPPORT_EMAIL,
-                    storage_flag_is_active=waffle.flag_is_active(request, features.STORAGE_I18N),
-                    use_viewonlylinks=to_bool('USE_VIEWONLYLINKS', True),
-                )
+                send_welcome(user, request)
             ### the user is not available when have_email is False.
 
         # update every login.
@@ -186,17 +194,12 @@ class InstitutionAuthentication(BaseAuthentication):
         return user, None
 
 def login_by_eppn():
-    if not hasattr(settings, 'LOGIN_BY_EPPN'):
-        return False
-    if settings.LOGIN_BY_EPPN:
-        return True
-    else:
-        return False
+    return settings.LOGIN_BY_EPPN
 
 def init_cloud_gateway_groups(user, provider):
-    if not hasattr(settings, 'CLOUD_GATAWAY_ISMEMBEROF_PREFIX'):
+    if not hasattr(settings, 'CLOUD_GATEWAY_ISMEMBEROF_PREFIX'):
         return
-    prefix = settings.CLOUD_GATAWAY_ISMEMBEROF_PREFIX
+    prefix = settings.CLOUD_GATEWAY_ISMEMBEROF_PREFIX
     if not prefix:
         return
 

@@ -2330,14 +2330,29 @@ class TestUserInviteViews(OsfTestCase):
             auth=Auth(project.creator),
         )
         project.save()
+        claim_url = unreg_user.get_claim_url(project._primary_key, external=True)
+        claimer_email = given_email.lower().strip()
+        unclaimed_record = unreg_user.get_unclaimed_record(project._primary_key)
+        referrer = OSFUser.load(unclaimed_record['referrer_id'])
+
         send_claim_email(email=given_email, unclaimed_user=unreg_user, node=project)
 
         assert_true(send_mail.called)
-        assert_true(send_mail.called_with(
-            to_addr=given_email,
-            mail=mails.INVITE_DEFAULT,
+        send_mail.assert_called_with(
+            given_email,
+            mails.INVITE_DEFAULT,
+            user=unreg_user,
+            referrer=referrer,
+            node=project,
+            claim_url=claim_url,
+            email=claimer_email,
+            fullname=unclaimed_record['name'],
+            branded_service=None,
             can_change_preferences=False,
-        ))
+            logo=settings.OSF_LOGO,
+            osf_contact_email=settings.OSF_CONTACT_EMAIL,
+            login_by_eppn=False,
+        )
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_send_claim_email_to_referrer(self, send_mail):
@@ -2365,7 +2380,8 @@ class TestUserInviteViews(OsfTestCase):
             branded_service=None,
             can_change_preferences=False,
             logo=settings.OSF_LOGO,
-            osf_contact_email=settings.OSF_CONTACT_EMAIL
+            osf_contact_email=settings.OSF_CONTACT_EMAIL,
+            login_by_eppn=False,
         )
 
     @mock.patch('website.project.views.contributor.mails.send_mail')

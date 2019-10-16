@@ -464,10 +464,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     keenio_read_key = models.CharField(max_length=1000, null=True, blank=True)
 
-    # Group from Cloud Gateway
+    # Group from Cloud Gateway (for API v1)
     group = models.OneToOneField(CGGroup,
                                  on_delete=models.SET_NULL,
                                  null=True, blank=True)
+    # for nii/mapcore.py (for API v2)
+    map_group_key = models.CharField(max_length=255, unique=True,
+                                     db_index=True, null=True, blank=True)
+    mapcore_api_locked = models.BooleanField(default=False)
+    mapcore_standby_to_upload = NonNaiveDateTimeField(null=True, blank=True)
+    mapcore_sync_time = NonNaiveDateTimeField(null=True, blank=True)
 
     def title_with_group(self, title):
         value = title
@@ -2025,6 +2031,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 )
                 self.add_permission(self.creator, ADMIN)
         return ret
+
+    def clone(self, *args, **kwargs):
+        new = super(AbstractNode, self).clone(*args, **kwargs)
+        new.map_group_key = None
+        return new
 
     def update_or_enqueue_on_node_updated(self, user_id, first_save, saved_fields):
         """

@@ -39,3 +39,5 @@ def to_bool(name, default):
         else:
             return bool_from_str(val)
     return default
+
+ENABLE_USER_MERGE = to_bool('ENABLE_USER_MERGE', True)

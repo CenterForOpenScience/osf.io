@@ -69,6 +69,7 @@ from website.identifiers import views as identifier_views
 from website.settings import EXTERNAL_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT
 from website.rdm_addons import views as rdm_addon_views
 from website.rdm_announcement import views as rdm_announcement_views
+from website.mapcore.views import mapcore_oauth_start, mapcore_oauth_complete
 
 from api.waffle.utils import flag_is_active
 
@@ -109,6 +110,7 @@ def get_globals():
         waffle_url = '/_/wafflejs'
 
     return {
+        'user_merge': settings.ENABLE_USER_MERGE,
         'embedded_ds': settings.to_bool('USE_EMBEDDED_DS', False),
         'embedded_ds_url': settings.EMBEDDED_DS_URL,
         'nav_dropdown': settings.to_bool('NAV_DROPDOWN', True),
@@ -667,6 +669,25 @@ def make_url_map(app):
 
     ], prefix='/api/v1')
 
+    ### mAP core ###
+    process_rules(app, [
+        # mapcore OAuth start
+        Rule(
+            '/mapcore_oauth_start',
+            'get',
+            mapcore_oauth_start,
+            OsfWebRenderer('mapcore_agree.mako', trust=False)
+        ),
+
+        # mapcore Oauth result catcher
+        Rule(
+            '/mapcore_oauth_complete',
+            'get',
+            mapcore_oauth_complete,
+            notemplate
+        ),
+    ])
+
     ### Metadata ###
     process_rules(app, [
 
@@ -883,6 +904,16 @@ def make_url_map(app):
             ['get', 'post'],
             project_views.contributor.claim_user_registered,
             OsfWebRenderer('claim_account_registered.mako', trust=False)
+        ),
+
+        # user claim account (contributor-ship of a project)
+        # user will be required ePPN
+        # claim token must be present in query parameter
+        Rule(
+            ['/user/eppn/<uid>/<pid>/claim/verify/<token>/'],
+            ['get', 'post'],
+            project_views.contributor.claim_user_login_by_eppn,
+            OsfWebRenderer('claim_account_eppn.mako', trust=False)
         ),
 
         Rule(
