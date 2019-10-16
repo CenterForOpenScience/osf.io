@@ -28,7 +28,7 @@ from api.base import settings as api_settings
 from addons.base import views
 from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
-from addons.github.tests.factories import GitHubAccountFactory
+from addons.github.tests.factories import GitHubAccountFactory, GoogleDriveAccountFactory
 from addons.osfstorage.models import OsfStorageFileNode
 from addons.osfstorage.tests.factories import FileVersionFactory
 from osf.models import NodeLog, Session, RegistrationSchema, QuickFilesNode, RdmFileTimestamptokenVerifyResult, RdmUserKey
@@ -877,6 +877,168 @@ class TestAddonLogs(OsfTestCase):
         assert_equal(self.node.logs.count(), nlogs + 1)
         assert('urls' not in self.node.logs.filter(action='osf_storage_file_added')[0].params)
 
+class TestAddonLogsDifferentProvider(OsfTestCase):
+
+    def setUp(self):
+        super(TestAddonLogsDifferentProvider, self).setUp()
+        self.user = AuthUserFactory()
+        self.user_non_contrib = AuthUserFactory()
+        self.auth_obj = Auth(user=self.user)
+        self.node = ProjectFactory(creator=self.user)
+        self.file = OsfStorageFileNode.create(
+            target=self.node,
+            path='/testfile',
+            _id='testfile',
+            name='testfile',
+            materialized_path='/testfile'
+        )
+        self.file.save()
+        self.session = Session(data={'auth_user_id': self.user._id})
+        self.session.save()
+        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
+        self.configure_addon()
+
+    def configure_addon(self):
+        self.user.add_addon('github')
+        self.user_addon = self.user.get_addon('github')
+        self.oauth_settings = GitHubAccountFactory(display_name='john')
+        self.oauth_settings.save()
+        self.user.external_accounts.add(self.oauth_settings)
+        self.user.save()
+        self.node.add_addon('github', self.auth_obj)
+        self.node_addon = self.node.get_addon('github')
+        self.node_addon.user = 'john'
+        self.node_addon.repo = 'youre-my-best-friend'
+        self.node_addon.user_settings = self.user_addon
+        self.node_addon.external_account = self.oauth_settings
+        self.node_addon.save()
+        self.user_addon.oauth_grants[self.node._id] = {self.oauth_settings._id: []}
+        self.user_addon.save()
+
+        self.user.add_addon('github')
+        self.user_addon = self.user.get_addon('github')
+        self.oauth_settings = GitHubAccountFactory(display_name='john')
+        self.oauth_settings.save()
+        self.user.external_accounts.add(self.oauth_settings)
+        self.user.save()
+        self.node.add_addon('github', self.auth_obj)
+        self.node_addon = self.node.get_addon('github')
+        self.node_addon.user = 'john'
+        self.node_addon.repo = 'youre-my-best-friend'
+        self.node_addon.user_settings = self.user_addon
+        self.node_addon.external_account = self.oauth_settings
+        self.node_addon.save()
+        self.user_addon.oauth_grants[self.node._id] = {self.oauth_settings._id: []}
+        self.user_addon.save()
+
+        self.user.add_addon('googledrive')
+        self.user_addon2 = self.user.get_addon('googledrive')
+        self.oauth_settings2 = GoogleDriveAccountFactory(display_name='john')
+        self.oauth_settings2.save()
+        self.user.external_accounts.add(self.oauth_settings2)
+        self.user.save()
+        self.node.add_addon('googledrive', self.auth_obj)
+        self.node_addon2 = self.node.get_addon('googledrive')
+        self.node_addon2.user = 'john'
+        self.node_addon2.repo = 'youre-my-best-friend'
+        self.node_addon2.user_settings = self.user_addon2
+        self.node_addon2.external_account = self.oauth_settings2
+        self.node_addon2.save()
+        self.user_addon2.oauth_grants[self.node._id] = {self.oauth_settings._id: []}
+        self.user_addon2.save()
+
+    def configure_osf_addon(self):
+        self.project = ProjectFactory(creator=self.user)
+        self.node_addon = self.project.get_addon('osfstorage')
+        self.node_addon.save()
+
+    def build_payload(self, metadata, **kwargs):
+        options = dict(
+            auth={'id': self.user._id},
+            action='create',
+            provider=self.node_addon.config.short_name,
+            metadata=metadata,
+            time=time.time() + 1000,
+        )
+        options.update(kwargs)
+        options = {
+            key: value
+            for key, value in options.iteritems()
+            if value is not None
+        }
+        message, signature = signing.default_signer.sign_payload(options)
+        return {
+            'payload': message,
+            'signature': signature,
+        }
+
+
+
+    @mock.patch('requests.get')
+    @mock.patch('website.util.waterbutler.download_file')
+    @mock.patch('website.notifications.events.files.FileAdded.perform')
+    def test_action_file_move_different_provider_timestamp(self, mock_perform, mock_downloadfile, mock_get):
+        mock_downloadfile.return_value = '/file_ver1'
+        mock_get.return_value.status_code = 200
+        wb_log_url = self.node.api_url_for('create_waterbutler_log')
+        src_provider = 'github'
+        dest_provider = 'googledrive'
+        # Create file
+        filename = 'file_ver1'
+        file_node = create_test_file(node=self.node, user=self.user, filename=filename)
+        file_node._path = '/' + filename
+        file_node.save()
+        self.app.put_json(wb_log_url, self.build_payload(metadata={
+            'provider': src_provider,
+            'name': filename,
+            'materialized': '/' + filename,
+            'path': '/' + filename,
+            'kind': 'file',
+            'size': 2345,
+            'created_utc': '',
+            'modified_utc': '',
+            'extra': {
+                'version': '1'
+            }
+        }), headers={'Content-Type': 'application/json'})
+
+        files_query = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=self.node._id)
+        assert_equal(1, files_query.count())
+        created_file = files_query.get()
+        assert_equal('/' + filename, created_file.path)
+
+        # Move the file
+        movedfilepath = 'cool_folder/' + filename
+        self.app.put_json(wb_log_url, self.build_payload(
+            action='move',
+            metadata={
+                'path': '/' + movedfilepath,
+            },
+            source={
+                'provider': src_provider,
+                'name': filename,
+                'materialized': '/' + filename,
+                'path': '/' + filename,
+                'node': {'_id': self.node._id},
+                'kind': 'file',
+                'nid': self.node._id,
+            },
+            destination={
+                'provider': dest_provider,
+                'name': filename,
+                'materialized': '/' + movedfilepath,
+                'path': '/' + movedfilepath,
+                'node': {'_id': self.node._id},
+                'kind': 'file',
+                'nid': self.node._id,
+            },
+        ), headers={'Content-Type': 'application/json'})
+        files_query = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=self.node._id)
+        import logging
+        logging.critical(files_query)
+        assert_equal(1, files_query.count())
+        renamed_file = files_query.get()
+        assert_equal('/' + movedfilepath, renamed_file.path)
 
 class TestCheckAuth(OsfTestCase):
 
