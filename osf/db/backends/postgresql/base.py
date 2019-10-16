@@ -1,4 +1,4 @@
-from six import string_types
+from past.builtins import basestring
 import uuid
 
 import psycopg2
@@ -20,7 +20,7 @@ class server_side_cursors(object):
         self.itersize = itersize
         if isinstance(qs_or_using_or_connection, QuerySet):
             self.connection = connections[qs_or_using_or_connection.db]
-        elif isinstance(qs_or_using_or_connection, string_types):
+        elif isinstance(qs_or_using_or_connection, basestring):
             self.connection = connections[qs_or_using_or_connection]
         else:
             self.connection = qs_or_using_or_connection

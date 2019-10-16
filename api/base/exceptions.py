@@ -1,4 +1,4 @@
-from six import string_types
+from past.builtins import basestring
 from rest_framework import status as http_status
 from django.utils.translation import ugettext_lazy as _
 
@@ -79,7 +79,7 @@ def json_api_exception_handler(exc, context):
         elif isinstance(message, dict):
             errors.extend(dict_error_formatting(message, context, index=None))
         else:
-            if isinstance(message, string_types):
+            if isinstance(message, basestring):
                 message = [message]
             for index, error in enumerate(message):
                 if isinstance(error, dict):

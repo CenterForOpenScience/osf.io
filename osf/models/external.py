@@ -87,6 +87,7 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
             ('provider', 'provider_id',)
         ]
 
+
 class ExternalProviderMeta(abc.ABCMeta):
     """Keeps track of subclasses of the ``ExternalProvider`` object"""
 

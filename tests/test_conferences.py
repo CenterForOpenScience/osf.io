@@ -410,7 +410,7 @@ class TestMessage(ContextTestCase):
             assert_equal(msg.attachments, [])
 
     def test_attachments_count_one(self):
-        content = 'slightly mad'
+        content = b'slightly mad'
         sio = BytesIO(content)
         ctx = self.make_context(
             method='POST',

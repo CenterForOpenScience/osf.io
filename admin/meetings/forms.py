@@ -1,4 +1,4 @@
-from six import string_types
+from past.builtins import basestring
 from datetime import datetime
 
 from django import forms
@@ -15,7 +15,7 @@ class MultiEmailField(forms.Field):
         if not value:
             ret = None
         else:
-            if isinstance(value, string_types):
+            if isinstance(value, basestring):
                 ret = value
             else:
                 ret = ', '.join(list(value))

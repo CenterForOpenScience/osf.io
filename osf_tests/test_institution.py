@@ -1,14 +1,14 @@
-from six import string_types
-
+from past.builtins import basestring
 from osf.models import Institution
 
 from .factories import InstitutionFactory
 import pytest
 
+
 @pytest.mark.django_db
 def test_factory():
     inst = InstitutionFactory()
-    assert isinstance(inst.name, string_types)
+    assert isinstance(inst.name, basestring)
     assert len(inst.domains) > 0
     assert len(inst.email_domains) > 0
 

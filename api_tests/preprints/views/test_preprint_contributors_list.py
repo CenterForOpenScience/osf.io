@@ -372,14 +372,12 @@ class TestPreprintContributorList(NodeCRUDTestCase):
                 auth=Auth(preprint_published.creator),
                 save=True
             )
-
         req_one = app.get(
             '{}?page=2'.format(url_published),
             auth=Auth(preprint_published.creator))
         req_two = app.get(
             '{}?page=2'.format(url_published),
             auth=Auth(preprint_published.creator))
-
         id_one = [item['id'] for item in req_one.json['data']]
         id_two = [item['id'] for item in req_two.json['data']]
         for a, b in zip(id_one, id_two):

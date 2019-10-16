@@ -1,4 +1,4 @@
-from six import string_types
+from past.builtins import basestring
 import functools
 import itertools
 import logging
@@ -146,7 +146,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
         if private_link is not None:
             if isinstance(private_link, PrivateLink):
                 private_link = private_link.key
-            if not isinstance(private_link, string_types):
+            if not isinstance(private_link, basestring):
                 raise TypeError('"private_link" must be either {} or {}. Got {!r}'.format(str, PrivateLink, private_link))
 
             qs |= self.filter(private_links__is_deleted=False, private_links__key=private_link)
@@ -473,7 +473,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         self._is_templated_clone = False
         super(AbstractNode, self).__init__(*args, **kwargs)
 
-    def __unicode__(self):
+    def __repr__(self):
         return ('(title={self.title!r}, category={self.category!r}) '
                 'with guid {self._id!r}').format(self=self)
 
@@ -2474,15 +2474,6 @@ class Node(AbstractNode):
     def is_bookmark_collection(self):
         """For v1 compat"""
         return False
-
-    class Meta:
-        # custom permissions for use in the OSF Admin App
-        permissions = (
-            ('view_node', 'Can view node details'),
-        )
-
-    def __repr__(self):
-        return '{self.title!r}, with guid {self._id!r}'.format(self=self)
 
 
 def remove_addons(auth, resource_object_list):

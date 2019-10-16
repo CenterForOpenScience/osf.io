@@ -1,10 +1,7 @@
-from six import string_types
-
 import datetime as dt
 import logging
 import re
 from future.moves.urllib.parse import urljoin, urlencode
-
 import uuid
 from copy import deepcopy
 from os.path import splitext
@@ -12,6 +9,7 @@ from os.path import splitext
 from flask import Request as FlaskRequest
 from framework import analytics
 from guardian.shortcuts import get_perms
+from past.builtins import basestring
 
 # OSF imports
 import itsdangerous
@@ -473,14 +471,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         social_user_fields = {}
         for key, val in self.social.items():
             if val and key in self.SOCIAL_FIELDS:
-                if isinstance(self.SOCIAL_FIELDS[key], string_types):
-                    if isinstance(val, string_types):
+                if isinstance(self.SOCIAL_FIELDS[key], basestring):
+                    if isinstance(val, basestring):
                         social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val)
                     else:
                         # Only provide the first url for services where multiple accounts are allowed
                         social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val[0])
                 else:
-                    if isinstance(val, string_types):
+                    if isinstance(val, basestring):
                         social_user_fields[key] = [val]
                     else:
                         social_user_fields[key] = val

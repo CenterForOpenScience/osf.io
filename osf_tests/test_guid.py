@@ -7,6 +7,7 @@ from django.core.exceptions import MultipleObjectsReturned
 from osf.models import Guid, NodeLicenseRecord, OSFUser
 from osf_tests.factories import AuthUserFactory, UserFactory, NodeFactory, NodeLicenseRecordFactory, \
     RegistrationFactory, PreprintFactory, PreprintProviderFactory
+from osf.utils.permissions import ADMIN
 from tests.base import OsfTestCase
 from tests.test_websitefiles import TestFile
 from website.settings import MFR_SERVER_URL, WATERBUTLER_URL
@@ -278,14 +279,14 @@ class TestResolveGuid(OsfTestCase):
 
         # test_provider_admin_can_download_unpublished
         admin = AuthUserFactory()
-        provider.add_to_group(admin, 'admin')
+        provider.add_to_group(admin, ADMIN)
         provider.save()
 
         res = self.app.get('{}download'.format(pp.url), auth=admin.auth)
         assert res.status_code == 302
         assert '{}/v1/resources/{}/providers/{}{}?action=download&direct&version=1'.format(WATERBUTLER_URL, pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
-        branded_provider.add_to_group(admin, 'admin')
+        branded_provider.add_to_group(admin, ADMIN)
         branded_provider.save()
 
         res = self.app.get('{}download'.format(pp_branded.url), auth=admin.auth)

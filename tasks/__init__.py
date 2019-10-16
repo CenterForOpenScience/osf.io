@@ -3,7 +3,6 @@
 """Invoke tasks. To run a task, run ``$ invoke <COMMAND>``. To see a list of
 commands, run ``$ invoke --list``.
 """
-from six import string_types
 import os
 import sys
 import json
@@ -290,6 +289,7 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, all=Fa
 def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=None, coverage=False, testmon=False):
     """Helper for running tests.
     """
+    from past.builtins import basestring
     os.environ['DJANGO_SETTINGS_MODULE'] = 'osf_tests.settings'
     import pytest
     if not numprocesses:
@@ -313,13 +313,13 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
         args += ['-s']
     if numprocesses > 1:
         args += ['-n {}'.format(numprocesses), '--max-slave-restart=0']
-    modules = [module] if isinstance(module, string_types) else module
+    modules = [module] if isinstance(module, basestring) else module
     args.extend(modules)
     if testmon:
         args.extend(['--testmon'])
 
     if params:
-        params = [params] if isinstance(params, string_types) else params
+        params = [params] if isinstance(params, basestring) else params
         args.extend(params)
     retcode = pytest.main(args)
 

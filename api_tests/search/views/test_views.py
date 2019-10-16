@@ -272,7 +272,7 @@ class TestSearchComponents(ApiSearchTestCase):
         assert component.title in res
 
         # test_search_public_component_contributor
-        res = app.get(url_component_search, auth=user)
+        res = app.get(url_component_search, auth=user_two)
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']

@@ -1360,7 +1360,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         res = app.patch_json_api(
             url_public,
             make_node_payload(project_public, {'public': False}),
-            auth=user.auth  # self.user is creator/admind
+            auth=user.auth  # self.user is creator/admin
         )
 
         assert res.status_code == 200

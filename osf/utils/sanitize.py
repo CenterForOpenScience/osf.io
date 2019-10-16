@@ -1,4 +1,4 @@
-from six import string_types
+from past.builtins import basestring
 import json
 import collections
 
@@ -22,6 +22,9 @@ def strip_html(unclean, tags=None):
     :return: stripped string
     :rtype: str
     """
+    if isinstance(unclean, bytes):
+        unclean = unclean.decode()
+
     if not tags:
         tags = []
 
@@ -32,10 +35,9 @@ def strip_html(unclean, tags=None):
     # We make this noop for non-string, non-collection inputs so this function can be used with higher-order
     # functions, such as rapply (recursively applies a function to collections)
     # If it's not a string and not an iterable (string, list, dict, return unclean)
-    elif not isinstance(unclean, string_types) and not is_iterable(unclean):
+    elif not isinstance(unclean, basestring) and not is_iterable(unclean):
         return unclean
     else:
-        unclean = unclean.decode() if isinstance(unclean, bytes) else unclean
         return bleach.clean(unclean, strip=True, tags=tags, attributes=[], styles=[])
 
 
@@ -70,7 +72,7 @@ def unescape_entities(value, safe=None):
             unescape_entities(each, safe=safe_characters)
             for each in value
         ]
-    if isinstance(value, string_types):
+    if isinstance(value, basestring):
         for escape_sequence, character in safe_characters.items():
             value = value.replace(escape_sequence, character)
         return value

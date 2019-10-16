@@ -57,7 +57,7 @@ class NodeCommentsListMixin(object):
         assert project_public_dict['comment']._id in comment_ids
 
     #   test_return_public_node_comments_logged_in_user
-        res = app.get(project_public_dict['url'])
+        res = app.get(project_public_dict['url'], auth=user_non_contrib)
         assert res.status_code == 200
         comment_json = res.json['data']
         comment_ids = [comment['id'] for comment in comment_json]
