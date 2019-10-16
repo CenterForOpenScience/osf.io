@@ -10,6 +10,7 @@ from nose.tools import *  # noqa
 
 from framework.auth import Auth
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
+from osf.models import BaseFileNode
 from osf.exceptions import ValidationError
 from osf.utils.permissions import WRITE, ADMIN
 from osf.utils.fields import EncryptedJSONField
@@ -99,7 +100,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             u'kind': u'file',
             u'version': 1,
             u'downloads': 0,
-            u'size': 1234L,
+            u'size': 1234,
             u'modified': version.created.isoformat(),
             u'contentType': u'text/plain',
             u'checkout': None,
@@ -120,7 +121,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             u'kind': u'file',
             u'version': 1,
             u'downloads': 0,
-            u'size': 1234L,
+            u'size': 1234,
             # modified date is the creation date of latest version
             # see https://github.com/CenterForOpenScience/osf.io/pull/7155
             u'modified': version.created.isoformat(),
@@ -223,6 +224,18 @@ class TestOsfstorageFileNode(StorageTestCase):
                 None
             )
 
+    def test_delete_root_node(self):
+        root = self.node_settings.get_root()
+        folder = root.append_folder('Test')
+        file = folder.append_file('test_file')
+
+        # If the top-level item is a root, it is not deleted
+        root.delete()
+        root.reload()
+        assert root.type == 'osf.osfstoragefolder'
+        assert BaseFileNode.objects.get(_id=folder._id).type == 'osf.trashedfolder'
+        assert BaseFileNode.objects.get(_id=file._id).type == 'osf.trashedfile'
+
     def test_delete_file(self):
         child = self.node_settings.get_root().append_file('Test')
         field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and f.name not in ['id', 'content_type_pk']]
@@ -237,7 +250,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         child_storage['materialized_path'] = child.materialized_path
         assert_equal(trashed.path, '/' + child._id)
         trashed_field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and
-                               f.name not in ['id', '_materialized_path', 'content_type_pk', '_path', 'deleted_on', 'deleted_by', 'type', 'modified']]
+                               f.name not in ['id', '_materialized_path', 'content_type_pk', '_path', 'deleted', 'deleted_on', 'deleted_by', 'type', 'modified']]
         for f, value in child_data.items():
             if f in trashed_field_names:
                 assert_equal(getattr(trashed, f), value)

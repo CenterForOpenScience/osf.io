@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import urlparse
+from future.moves.urllib.parse import urljoin
 
 from django.db import models
 from osf.models.base import BaseModel, ObjectIDMixin
@@ -77,7 +77,7 @@ class Conference(ObjectIDMixin, BaseModel):
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(settings.DOMAIN, '/view/{}'.format(self.endpoint))
+        return urljoin(settings.DOMAIN, '/view/{}'.format(self.endpoint))
 
     @property
     def valid_submissions(self):

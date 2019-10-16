@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from django.views.generic import FormView, ListView, DetailView
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.http import Http404
+from django.utils import timezone
 
 from osf.models.comment import Comment
 from osf.models.user import OSFUser
@@ -112,11 +113,13 @@ class SpamDetail(PermissionRequiredMixin, FormView):
             if int(form.cleaned_data.get('confirm')) == SpamStatus.SPAM:
                 item.confirm_spam()
                 item.is_deleted = True
+                item.deleted = timezone.now()
                 log_message = 'Confirmed SPAM: {}'.format(spam_id)
                 log_action = CONFIRM_SPAM
             else:
                 item.confirm_ham()
                 item.is_deleted = False
+                item.deleted = None
                 log_message = 'Confirmed HAM: {}'.format(spam_id)
                 log_action = CONFIRM_HAM
             item.save()

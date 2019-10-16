@@ -2,6 +2,8 @@ import abc
 
 import mock
 import pytest
+import pytz
+import datetime
 from addons.base.tests.utils import MockFolder
 from django.utils import timezone
 from framework.auth import Auth
@@ -304,11 +306,14 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         assert_true(self.node_settings.user_settings)
         assert_true(self.node_settings.folder_id)
         old_logs = list(self.node.logs.all())
-        self.node_settings.delete()
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        with mock.patch.object(timezone, 'now', return_value=mock_now):
+            self.node_settings.delete()
         self.node_settings.save()
         assert_is(self.node_settings.user_settings, None)
         assert_is(self.node_settings.folder_id, None)
-        assert_true(self.node_settings.deleted)
+        assert_true(self.node_settings.is_deleted)
+        assert_equal(self.node_settings.deleted, mock_now)
         assert_equal(list(self.node.logs.all()), list(old_logs))
 
     def test_on_delete(self):
