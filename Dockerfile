@@ -109,6 +109,7 @@ COPY ./addons/dropbox/requirements.txt ./addons/dropbox/
 COPY ./addons/github/requirements.txt ./addons/github/
 COPY ./addons/gitlab/requirements.txt ./addons/gitlab/
 #COPY ./addons/googledrive/requirements.txt ./addons/googledrive/
+#COPY ./addons/iqbrims/requirements.txt ./addons/iqbrims/
 COPY ./addons/mendeley/requirements.txt ./addons/mendeley/
 COPY ./addons/onedrive/requirements.txt /code/addons/onedrive/
 #COPY ./addons/osfstorage/requirements.txt ./addons/osfstorage/
@@ -179,6 +180,7 @@ COPY ./addons/weko/static/ ./addons/weko/static/
 COPY ./addons/jupyterhub/static/ ./addons/jupyterhub/static/
 COPY ./addons/s3compat/static/ ./addons/s3compat/static/
 COPY ./addons/nextcloud/static/ ./addons/nextcloud/static/
+COPY ./addons/iqbrims/static/ ./addons/iqbrims/static/
 RUN mkdir -p ./website/static/built/ \
     && invoke build_js_config_files \
     && yarn run webpack-prod

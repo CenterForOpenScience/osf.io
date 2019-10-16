@@ -47,7 +47,7 @@
                                 <li>
                                     <a href="${node['url']}${addons[addon]['short_name']}">
 
-                                        % if addons[addon]['icon']:
+                                        % if addons[addon]['icon'] and addons[addon]['has_page_icon']:
                                             <img src="${addons[addon]['icon']}" class="addon-logo"/>
                                         % endif
                                         ${addons[addon]['full_name']}
