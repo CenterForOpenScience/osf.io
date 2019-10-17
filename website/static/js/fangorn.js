@@ -936,15 +936,6 @@ function _fangornComplete(treebeard, file) {
 function _fangornDropzoneSuccess(treebeard, file, response) {
     treebeard.options.uploadInProgress = false;
 
-    if (response.data.attributes.provider === 'osfstorage') {
-        var usedQuota = window.contextVars.used_quota;
-        var maxQuota = window.contextVars.max_quota;
-        var threshold = window.contextVars.threshold;
-        if (usedQuota > maxQuota * threshold) {
-            $osf.growl('Quota usage alert', 'You have used more than ' + (threshold * 100) + '% of your quota.', 'warning');
-        }
-    }
-
     var parent = file.treebeardParent, item,revisedItem, child;
 
     for (var i = 0; i < parent.children.length; i++) {
@@ -2911,6 +2902,7 @@ tbOptions = {
         var maxSize;
         var displaySize;
         var msgText;
+        var quota;
         if (_fangornCanDrop(treebeard, item)) {
             if (item.data.accept && item.data.accept.maxSize) {
                 size = file.size / 1000000;
@@ -2923,6 +2915,29 @@ tbOptions = {
                     addFileStatus(treebeard, file, false, msgText, '');
                     removeFromUI(file, treebeard);
                     return false;
+                }
+            }
+            if (item.data.provider === 'osfstorage') {
+                quota = $.ajax({
+                    async: false,
+                    method: 'GET',
+                    url: item.data.nodeApiUrl + 'get_creator_quota/'
+                });
+                if (quota.responseJSON) {
+                    quota = quota.responseJSON;
+                    if (quota.used + file.size > quota.max) {
+                        msgText = 'Not enough quota to upload the file.';
+                        item.notify.update(msgText, 'warning', undefined, 3000);
+                        addFileStatus(treebeard, file, false, msgText, '');
+                        return false;
+                    }
+                    if (quota.used + file.size > quota.max * window.contextVars.threshold) {
+                        $osf.growl(
+                            'Quota usage alert',
+                            'You have used more than ' + (window.contextVars.threshold * 100) + '% of your quota.',
+                            'warning'
+                        );
+                    }
                 }
             }
             return true;

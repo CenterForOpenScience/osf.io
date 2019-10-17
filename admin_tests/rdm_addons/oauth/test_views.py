@@ -7,7 +7,7 @@ from django.test import RequestFactory
 from django.contrib.sessions.middleware import SessionMiddleware
 
 from tests.base import AdminTestCase
-from osf.models.external import ExternalAccount
+from osf.models.external import ExternalAccountTemporary
 from osf_tests.factories import (
     AuthUserFactory,
     InstitutionFactory,
@@ -189,7 +189,7 @@ class TestCallbackView(AdminTestCase):
         res = self.view.get(self.request, *args, **self.view.kwargs)
         nt.assert_equal(res.status_code, 302)
 
-        external_account = ExternalAccount.objects.last()
+        external_account = ExternalAccountTemporary.objects.last()
         nt.assert_equal(external_account.oauth_key, '123')
         nt.assert_equal(external_account.refresh_token, 'myrefreshtoken')
 

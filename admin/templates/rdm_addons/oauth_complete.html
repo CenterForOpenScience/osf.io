@@ -1,18 +1,69 @@
+{% load staticfiles %}
+{% load render_bundle from webpack_loader %}
 <!DOCTYPE html>
 <html>
-    <head lang="en">
-        <script>
+
+<head lang="en">
+    <script>
+        try {
             opener.oauthComplete(true);
             window.close();
-        </script>
-        <meta charset="UTF-8">
-        <title>OAuth Complete</title>
-    </head>
-    <body>
-        <p>
-            Successfully connected to {{addon_name|title}} Account.
-            <br />
-            Please close this tab and reload previous page.
-        </p>
-    </body>
+        } catch (err) {
+            console.log(err)
+        }
+    </script>
+    <meta charset="UTF-8">
+    <title>OAuth Complete</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
+    <!-- Bootstrap -->
+    <link href="{% static 'vendor/bower_components/bootstrap/dist/css/bootstrap.min.css' %}" rel="stylesheet"
+        type="text/css" />
+    <!-- Ionicons -->
+    <link href="//code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css" rel="stylesheet" type="text/css" />
+    <!-- Font Awesome Icons -->
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet"
+        type="text/css" />
+    <!-- Theme style -->
+    <link href="{% static 'vendor/bower_components/admin-lte/dist/css/AdminLTE.min.css' %}" rel="stylesheet"
+        type="text/css" />
+    <!-- AdminLTE Skins. -->
+    <link href="{% static 'vendor/bower_components/admin-lte/dist/css/skins/skin-blue.min.css' %}" rel="stylesheet"
+        type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/static/css/base.css" />
+
+    <link href="{% static 'vendor/bower_components/jquery-ui/themes/redmond/jquery-ui.css' %}" rel="stylesheet"
+        type="text/css" />
+
+    <script src="{% static 'vendor/bower_components/raven-js/dist/raven.min.js' %}"></script>
+    <script src="{% static 'vendor/bower_components/jquery/dist/jquery.js' %}"></script>
+    <script src="{% static 'vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js' %}"></script>
+    {% render_bundle 'vendor' %}
+
+    {% block top_includes %}
+
+    {% endblock %}
+</head>
+
+<body>
+    <div class="row">
+        <div class="col-sm-12" style="margin-left: 15px;">
+            <p>
+                Successfully connected to {{addon_name|title}} Account.
+                <br />
+                Please close this tab.
+            </p>
+            <button type="button" class="btn btn-success" onclick="window.close();"> Close</button>
+        </div>
+    </div>
+
+    <!-- Included JS -->
+    {% render_bundle 'admin-base-page' %}
+
+    {% block bottom_js %}
+
+    {% endblock %}
+
+</body>
+
 </html>

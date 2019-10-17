@@ -18,7 +18,6 @@ from admin.institutions.forms import InstitutionForm
 from osf.models import Institution, Node, OSFUser, UserQuota
 from website.util import quota
 from addons.osfstorage.models import Region
-from django.http import HttpResponseRedirect
 from api.base import settings as api_settings
 
 
@@ -97,41 +96,6 @@ class InstitutionDetail(PermissionRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         view = InstitutionChangeForm.as_view()
         return view(request, *args, **kwargs)
-
-
-class InstitutionDefaultStorageDetail(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
-    model = Institution
-    template_name = 'institutions/default_storage.html'
-
-    def test_func(self):
-        """check user permissions"""
-        return not self.is_super_admin and self.is_admin and \
-            self.request.user.affiliated_institutions.exists()
-
-    def get_context_data(self, *args, **kwargs):
-        kwargs['institution'] = self.request.user.affiliated_institutions.first()._id
-        kwargs['institution_pk'] = self.request.user.affiliated_institutions.first().id
-        if Region.objects.filter(_id=kwargs['institution']).exists():
-            kwargs['region'] = Region.objects.get(_id=kwargs['institution'])
-        else:
-            kwargs['region'] = Region.objects.first()
-        kwargs['region'].waterbutler_credentials = json.dumps(kwargs['region'].waterbutler_credentials)
-        kwargs['region'].waterbutler_settings = json.dumps(kwargs['region'].waterbutler_settings)
-        return kwargs
-
-    def post(self, request, *args, **kwargs):
-        default_region = Region.objects.first()
-        Region.objects.update_or_create(
-            _id=self.request.user.affiliated_institutions.first()._id,
-            defaults={
-                'name': request.POST.get('name'),
-                'waterbutler_credentials': eval(request.POST.get('waterbutler_credentials')),
-                'waterbutler_url': default_region.waterbutler_url,
-                'mfr_url': default_region.mfr_url,
-                'waterbutler_settings': eval(request.POST.get('waterbutler_settings'))
-            }
-        )
-        return HttpResponseRedirect(self.request.path_info)
 
 
 class ImportInstitution(PermissionRequiredMixin, View):

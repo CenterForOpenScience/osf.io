@@ -53,7 +53,7 @@ var config = Object.assign({}, common, {
         'rdm-timestampsettings-page': staticAdminPath('js/rdm_timestampsettings/rdm-timestampsettings-page.js'),
         'rdm-timestampadd-page': staticAdminPath('js/rdm_timestampadd/rdm-timestampadd-page.js'),
         'rdm-keymanagement-page': staticAdminPath('js/rdm_keymanagement/rdm-keymanagement-page.js'),
-        'institution-default-storage': staticAdminPath('js/institutions/default_storage.js'),
+        'rdm-institutional-storage-page': staticAdminPath('js/rdm_custom_storage_location/rdm-institutional-storage-page.js'),
     },
     plugins: plugins,
     devtool: 'source-map',

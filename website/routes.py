@@ -1906,11 +1906,19 @@ def make_url_map(app):
 
         # Quota management
         Rule(
-            [
+            [  # For waterbutler
                 '/project/<pid>/creator_quota/',
             ],
             ['get'],
-            project_views.quota.creator_quota,
+            project_views.quota.waterbutler_creator_quota,
+            json_renderer,
+        ),
+        Rule(
+            [  # For user (browser)
+                '/project/<pid>/get_creator_quota/',
+            ],
+            ['get'],
+            project_views.quota.get_creator_quota,
             json_renderer,
         ),
 
