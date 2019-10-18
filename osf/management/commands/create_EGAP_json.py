@@ -78,14 +78,12 @@ def create_file_tree_and_json():
             row = [cell.decode('ascii', 'ignore').strip() for cell in line]
             project_id = row[id_index]
             logger.info('Adding project ID: {}'.format(project_id))
-            os.mkdir('{}/{}'.format(top_dir, project_id))
-            os.mkdir('{}/{}/data'.format(top_dir, project_id))
-            os.mkdir('{}/{}/data/anonymous'.format(top_dir, project_id))
-            os.mkdir('{}/{}/data/nonanonymous'.format(top_dir, project_id))
-            metadata_directory = '{}/{}/metadata'.format(top_dir, project_id)
-            os.mkdir(metadata_directory)
-            make_project_json(project_id, row, metadata_directory, author_list, normalized_header_row)
-            make_registration_json(row, metadata_directory, normalized_header_row)
+            root_directory = '{}/{}'.format(top_dir, project_id)
+            os.mkdir(root_directory)
+            os.mkdir('{}/data'.format(root_directory, project_id))
+            os.mkdir('{}/data/nonanonymous'.format(root_directory))
+            make_project_json(project_id, row, root_directory, author_list, normalized_header_row)
+            make_registration_json(row, root_directory, normalized_header_row)
 
 def create_author_dict():
     # Reads in author CSV and returns a list of dicts with names and emails of EGAP Authors
@@ -152,7 +150,7 @@ def make_json_file(filepath, data, json_type):
     if json_type == 'project':
         filepath = filepath + '/project.json'
     if json_type == 'registration':
-        filepath = filepath + '/registration.json'
+        filepath = filepath + '/registration-schema.json'
     with open(filepath, 'w') as outfile:
         json.dump(data, outfile)
 
