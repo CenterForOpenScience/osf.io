@@ -78,10 +78,11 @@ def create_file_tree_and_json():
             row = [cell.decode('ascii', 'ignore').strip() for cell in line]
             project_id = row[id_index]
             logger.info('Adding project ID: {}'.format(project_id))
-            root_directory = '{}/{}'.format(top_dir, project_id)
+            root_directory = os.path.join(top_dir, project_id)
             os.mkdir(root_directory)
-            os.mkdir('{}/data'.format(root_directory, project_id))
-            os.mkdir('{}/data/nonanonymous'.format(root_directory))
+            data_directory = os.path.join(root_directory, 'data')
+            os.mkdir(data_directory)
+            os.mkdir(os.path.join(data_directory, 'nonanonymous'))
             make_project_json(project_id, row, root_directory, author_list, normalized_header_row)
             make_registration_json(row, root_directory, normalized_header_row)
 
