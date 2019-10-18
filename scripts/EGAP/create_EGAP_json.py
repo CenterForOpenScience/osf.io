@@ -5,13 +5,13 @@ import json
 import os
 import shutil
 import re
-
-from framework.celery_tasks import app as celery_app
+import jsonschema
 
 from django.core.management.base import BaseCommand
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 
-from osf.models import RegistrationSchema
+from website.project.metadata.utils import create_jsonschema_from_metaschema
+from website.project.metadata.schemas import ensure_schema_structure, from_json
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -202,15 +202,13 @@ def validate_response(qid, value):
     """
     temporary_check = {}
     temporary_check[qid] = value
+    egap_schema = ensure_schema_structure(from_json('egap-registration.json'))
+    schema = create_jsonschema_from_metaschema(egap_schema,
+                                                   required_fields=False,
+                                                   is_reviewer=False)
 
     try:
-        egap_schema = RegistrationSchema.objects.get(name='EGAP Registration')
-    except ObjectDoesNotExist:
-        # The proper EGAP Registration schema is not yet imported, need to throw error.
-        raise RuntimeError('Configuration error, run add_egap_registration_schema.py, then try again')
-
-    try:
-        egap_schema.validate_metadata(temporary_check)
+        json_schema=jsonschema.validate(temporary_check, schema)
     except ValidationError as exc:
         if qid in other_mapping:
             return other_mapping[qid], qid
@@ -218,7 +216,6 @@ def validate_response(qid, value):
             raise Exception(exc)
     return qid, None
 
-@celery_app.task(name='management.commands.create_EGAP_json')
 def main(dry_run=False):
     create_file_tree_and_json()
     if dry_run:
