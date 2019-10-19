@@ -94,6 +94,9 @@ function JupyterButton() {
                   view : function(ctrl, args, children) {
                     var tb = args.treebeard;
                     var mode = tb.toolbarMode;
+                    if (tb.options.placement === 'fileview') {
+                      return m('span', []);
+                    }
                     return m('span', [
                                m.component(base, {treebeard : tb, mode : mode,
                                            item : item }),
