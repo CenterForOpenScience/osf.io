@@ -8,7 +8,7 @@ import re
 import jsonschema
 
 from django.core.management.base import BaseCommand
-from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from jsonschema.exceptions import ValidationError
 
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 from website.project.metadata.schemas import ensure_schema_structure, from_json
@@ -83,8 +83,10 @@ def create_file_tree_and_json():
             data_directory = os.path.join(root_directory, 'data')
             os.mkdir(data_directory)
             os.mkdir(os.path.join(data_directory, 'nonanonymous'))
-            make_project_json(project_id, row, root_directory, author_list, normalized_header_row)
-            make_registration_json(row, root_directory, normalized_header_row)
+            project_dict = make_project_dict(row, root_directory, author_list, normalized_header_row)
+            make_json_file(root_directory, project_dict, 'project')
+            registration_dict = make_registration_dict(row, root_directory, normalized_header_row)
+            make_json_file(root_directory, registration_dict, 'registration')
 
 def create_author_dict():
     # Reads in author CSV and returns a list of dicts with names and emails of EGAP Authors
@@ -106,31 +108,34 @@ def create_author_dict():
             authors.append(author_dict)
     return authors
 
-def make_project_json(project_id, row, filepath, author_list, normalized_header_row):
+def make_project_dict(row, author_list, normalized_header_row):
     project = {}
-    project['id'] = project_id
     title_index = normalized_header_row.index('TITLE')
+    id_index = normalized_header_row.index('ID')
     postdate_index = normalized_header_row.index('POST DATE')
     contributors_index = normalized_header_row.index('B2 AUTHORS')
+    project['id'] = row[id_index]
     project['title'] = row[title_index]
     project['post-date'] = row[postdate_index]
 
     authors = row[contributors_index]
-    authors = re.split(',(?! Ph.D., )', authors)
+
+    authors = authors.split(',')
     project['contributors'] = []
     author_name_list = [author['name'] for author in author_list]
     for author in authors:
         author = author.strip()
         if author:
-            if author not in author_name_list:
+            matched_authors = [e for e in author_name_list if e.startswith(author)]
+            if not matched_authors:
                 logger.info('Author {} not in Author spreadsheet...'.format(author))
-                project['contributors'].append(author)
+                # project['contributors'].append(author)
             else:
-                author_list_index = author_name_list.index(author)
+                author_list_index = author_name_list.index(matched_authors[0])
                 project['contributors'].append(author_list[author_list_index])
-    make_json_file(filepath, project, 'project')
+    return project
 
-def make_registration_json(row, filepath, normalized_header_row):
+def make_registration_dict(row, normalized_header_row):
     registration = {}
 
     for question in schema_to_spreadsheet_mapping:
@@ -145,7 +150,7 @@ def make_registration_json(row, filepath, normalized_header_row):
     # confirmation questions. Just marking as agree -
     registration['q35'] = build_nested_response('Agree')
     registration['q36'] = build_nested_response('Agree')
-    make_json_file(filepath, registration, 'registration')
+    return registration
 
 def make_json_file(filepath, data, json_type):
     if json_type == 'project':
@@ -204,11 +209,11 @@ def validate_response(qid, value):
     temporary_check[qid] = value
     egap_schema = ensure_schema_structure(from_json('egap-registration.json'))
     schema = create_jsonschema_from_metaschema(egap_schema,
-                                                   required_fields=False,
-                                                   is_reviewer=False)
+        required_fields=False,
+        is_reviewer=False)
 
     try:
-        json_schema=jsonschema.validate(temporary_check, schema)
+        json_schema = jsonschema.validate(temporary_check, schema)
     except ValidationError as exc:
         if qid in other_mapping:
             return other_mapping[qid], qid
