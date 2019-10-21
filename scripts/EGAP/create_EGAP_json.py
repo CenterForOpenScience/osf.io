@@ -6,6 +6,7 @@ import os
 import shutil
 import re
 import jsonschema
+import argparse
 
 from django.core.management.base import BaseCommand
 from jsonschema.exceptions import ValidationError
@@ -15,6 +16,12 @@ from website.project.metadata.schemas import ensure_schema_structure, from_json
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-a', '--authorsource', help='Specify the source file for the author csv file')
+parser.add_argument('-r', '--registrysource', help='Specify the source file for the registrty csv file')
+parser.add_argument('-t', '--target', help='Specify the target directory of the registry directories')
+parser.add_argument('-d', '--dry', action='store_true', help='Dry run: Have the script delete the target directory after completion')
 
 schema_to_spreadsheet_mapping = [
     {'q1': 'TITLE'},
@@ -59,23 +66,23 @@ other_mapping = {
     'q30': 'q31'
 }
 
-def create_file_tree_and_json():
+def create_file_tree_and_json(author_source, registry_source, target):
     # Things this function needs to do:
     # For each row in the registry function, create a directory.
     # Create two JSON files, one project json with ID, Title, Postdate, and authors listed
     # with emails. And another with all the key value pairs for the registry meta.
-    top_dir = 'EGAP_data_{}'.format(datetime.datetime.now().strftime('%m-%d-%Y'))
+    top_dir = target
     logger.info('Creating EGAP directory at {}'.format(top_dir))
     os.mkdir(top_dir)
-    author_list = create_author_dict()
-    with open('EGAP_registry_for_OSF.csv') as csv_registry_file:
+    author_list = create_author_dict(author_source)
+    with open(registry_source) as csv_registry_file:
         csv_reader = csv.reader(csv_registry_file, delimiter=',')
         header_row = next(csv_reader)
         normalized_header_row = [col_header.decode('ascii', 'ignore') for col_header in header_row]
 
         id_index = normalized_header_row.index('ID')
         for line in csv_reader:
-            row = [cell.decode('ascii', 'ignore').strip() for cell in line]
+            row = [cell.decode('ascii', 'ignore') for cell in line]
             project_id = row[id_index]
             logger.info('Adding project ID: {}'.format(project_id))
             root_directory = os.path.join(top_dir, project_id)
@@ -83,23 +90,23 @@ def create_file_tree_and_json():
             data_directory = os.path.join(root_directory, 'data')
             os.mkdir(data_directory)
             os.mkdir(os.path.join(data_directory, 'nonanonymous'))
-            project_dict = make_project_dict(row, root_directory, author_list, normalized_header_row)
+            project_dict = make_project_dict(row, author_list, normalized_header_row)
             make_json_file(root_directory, project_dict, 'project')
-            registration_dict = make_registration_dict(row, root_directory, normalized_header_row)
+            registration_dict = make_registration_dict(row, normalized_header_row)
             make_json_file(root_directory, registration_dict, 'registration')
 
-def create_author_dict():
+def create_author_dict(source):
     # Reads in author CSV and returns a list of dicts with names and emails of EGAP Authors
     authors = []
-    with open('EGAP_author_emails.csv') as csv_file:
+    with open(source) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         header_row = next(csv_reader)
-        normalized_header_row = [col_header.decode('ascii', 'ignore') for col_header in header_row]
+        normalized_header_row = [col_header.decode('ascii', 'ignore').strip() for col_header in header_row]
 
         name_index = normalized_header_row.index('Name')
         email_index = normalized_header_row.index('Email')
         for line in csv_reader:
-            row = [cell.decode('ascii', 'ignore').strip() for cell in line]
+            row = [cell.decode('ascii', 'ignore') for cell in line]
             logger.info('Adding user: ' + row[name_index])
             if row[email_index] != '':
                 author_dict = {'name': row[name_index].strip(), 'email': row[email_index]}
@@ -128,8 +135,8 @@ def make_project_dict(row, author_list, normalized_header_row):
         if author:
             matched_authors = [e for e in author_name_list if e.startswith(author)]
             if not matched_authors:
-                logger.info('Author {} not in Author spreadsheet...'.format(author))
-                # project['contributors'].append(author)
+                logger.warning('Author {} not in Author spreadsheet for project ID: {}'.format(
+                    author, row[id_index]))
             else:
                 author_list_index = author_name_list.index(matched_authors[0])
                 project['contributors'].append(author_list[author_list_index])
@@ -221,33 +228,36 @@ def validate_response(qid, value):
             raise Exception(exc)
     return qid, None
 
-def main(dry_run=False):
-    create_file_tree_and_json()
+def main(default_args=False):
+    if default_args:
+        args = parser.parse_args(['--source', 'default', '--target', 'default'])
+    else:
+        args = parser.parse_args()
+
+    author_source = args.authorsource
+    registry_source = args.registrysource
+    target_directory = args.target
+    dry_run = args.dry
+
+    if not author_source:
+        author_source = 'EGAP_author_emails.csv'
+
+    if not registry_source:
+        registry_source = 'EGAP_registry_for_OSF.csv'
+
+    if not target_directory:
+        target_directory = 'EGAP_data_{}'.format(datetime.datetime.now().strftime('%m-%d-%Y'))
+
+    print author_source
+    print registry_source
+    print target_directory
+
+    create_file_tree_and_json(author_source, registry_source, target_directory)
+
     if dry_run:
-        shutil.rmtree('/EGAP_data_{}'.format(datetime.datetime.now().strftime('%m-%d-%Y')))
+        shutil.rmtree(target_directory)
         raise RuntimeError('Dry run, file tree being deleted.')
 
-class Command(BaseCommand):
-    help = '''Creates the file tree and json files for each EGAP registration.
-        Assumes 'EGAP_registry_for_OSF.csv' and 'EGAP_author_emails.csv' files in root directory. '''
+if __name__ == '__main__':
 
-    def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
-        parser.add_argument(
-            '--dry',
-            action='store_true',
-            dest='dry_run',
-            help='Dry run',
-        )
-
-    # Management command handler
-    def handle(self, *args, **options):
-        dry_run = options.get('dry_run', True)
-        script_start_time = datetime.datetime.now()
-        logger.info('Script started time: {}'.format(script_start_time))
-
-        main(dry_run)
-
-        script_finish_time = datetime.datetime.now()
-        logger.info('Script finished time: {}'.format(script_finish_time))
-        logger.info('Run time {}'.format(script_finish_time - script_start_time))
+    main(default_args=False)

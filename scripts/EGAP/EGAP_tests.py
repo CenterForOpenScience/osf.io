@@ -76,7 +76,7 @@ TEST_ROW = ['05/05/2018 - 17:00',
 	'20180505AA',
 	'Status is not saved, so this field doesnt matter',
 	'The members of Backstreet boys',
-	'Nick Carter, Brian Littrell, Ph.D., AJ McLean',
+	'Nick Carter, Brian Littrell, Ph.D., AJ McLean, U.S. Agency Bureau, Department of Agency affairs (DOAA)',
 	'doesnt@matter.com',
 	'We acknolowledge Chris Kirkpatrick',
 	'Yes',
@@ -106,7 +106,8 @@ TEST_ROW = ['05/05/2018 - 17:00',
 TEST_ROW_AUTHORS = [
  	{'name': 'Nick Carter', 'email': 'nickc@gmail.com'},
  	{'name': 'Brian Littrell, Ph.D.'},
- 	{'name': 'AJ McLean', 'email': 'AJML@gmail.com'}]
+ 	{'name': 'AJ McLean', 'email': 'AJML@gmail.com'},
+ 	{'name': 'U.S. Agency Bureau, Department of Agency affairs (DOAA)', 'email': 'DOAA@UAB.gov'}]
 
 class TestProjectDict(unittest.TestCase):
 
