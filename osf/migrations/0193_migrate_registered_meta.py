@@ -43,7 +43,7 @@ def migrate_registration_registered_meta(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0190_add_registation_responses_fields'),
+        ('osf', '0192_add_registation_responses_fields'),
     ]
 
     if DEBUG_MODE:
