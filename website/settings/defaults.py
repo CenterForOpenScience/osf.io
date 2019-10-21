@@ -407,6 +407,8 @@ class CeleryConfig:
         'scripts.remove_after_use.end_prereg_challenge',
         'osf.management.commands.check_crossref_dois',
         'osf.management.commands.migrate_pagecounter_data',
+        'osf.management.commands.migrate_deleted_date',
+        'osf.management.commands.addon_deleted_date',
         'osf.management.commands.migrate_registration_responses',
     }
 
@@ -605,6 +607,12 @@ class CeleryConfig:
             # 'migrate_registration_responses': {
             #   'task': 'management.commands.migrate_registration_responses',
             #   'schedule': crontab(minute=32, hour=7),  # Daily 2:32 a.m.
+            # 'migrate_deleted_date': {
+            #   'task': 'management.commands.migrate_deleted_date',
+            #   'schedule': crontab(minute=0, hour=3),
+            # 'addon_deleted_date': {
+            #   'task': 'management.commands.addon_deleted_date',
+            #   'schedule': crontab(minute=0, hour=3),  # Daily 11:00 p.m.
             # },
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',

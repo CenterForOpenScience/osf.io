@@ -17,11 +17,11 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
     :param type Model: StoredObject subclass to query
     :param pk_or_query:
     :type pk_or_query: either
-      - a <basestring> representation of the record's primary key, e.g. 'abcdef'
+      - a <str> representation of the record's primary key, e.g. 'abcdef'
       - a <QueryBase> subclass query to uniquely select a record, e.g.
         Q('title', 'eq', 'Entitled') & Q('version', 'eq', 1)
     :param bool allow_deleted: allow deleleted records?
-    :param basestring display_name:
+    :param str display_name:
     :raises: HTTPError(404) if the record does not exist
     :raises: HTTPError(400) if no unique record is found
     :raises: HTTPError(410) if the resource is deleted and allow_deleted = False
@@ -65,9 +65,9 @@ def autoload(Model, extract_key, inject_key, func):
     an appropriate HTTPError (see #get_or_http_error)
 
     :param type Model: database collection model to query (should be a subclass of StoredObject)
-    :param basestring extract_key: named URL field containing the desired primary key to be fetched
+    :param str extract_key: named URL field containing the desired primary key to be fetched
         from the database
-    :param basestring inject_key: name the instance will be accessible as when it's injected as an
+    :param str inject_key: name the instance will be accessible as when it's injected as an
         argument to the function
 
     Example usage: ::

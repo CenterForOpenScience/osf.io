@@ -20,7 +20,7 @@ from .utils import pip_install, bin_prefix
 
 try:
     from tasks import local  # noqa
-except ImportError as error:
+except ImportError:
     print('No tasks/local.py file found. '
           'Did you remember to copy local-dist.py to local.py?')
 
@@ -814,7 +814,7 @@ def webpack(ctx, clean=False, watch=False, dev=False, colors=False):
 def build_js_config_files(ctx):
     from website import settings
     print('Building JS config files...')
-    with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
+    with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'w') as fp:
         json.dump(settings.NODE_CATEGORY_MAP, fp)
     print('...Done.')
 

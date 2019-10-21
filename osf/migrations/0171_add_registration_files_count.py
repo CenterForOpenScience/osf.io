@@ -15,7 +15,7 @@ def add_registration_files_count(state, *args, **kwargs):
     relationship for speed purposes in this migration.  If this model changes significantly,
     this migration may have to be modified in the future so it runs on an empty db.
     """
-    Registration = state.get_model('osf', 'Registration')
+    Registration = state.get_model('osf', 'registration')
     registrations = Registration.objects.filter(is_deleted=False, files_count__isnull=True)
     BaseFileNode = state.get_model('osf', 'BaseFileNode')
     ContentType = state.get_model('contenttypes', 'ContentType')

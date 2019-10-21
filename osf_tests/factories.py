@@ -186,6 +186,13 @@ class BaseNodeFactory(DjangoModelFactory):
     class Meta:
         model = models.Node
 
+    #Fix for adding the deleted date.
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        if kwargs.get('is_deleted', None):
+            kwargs['deleted'] = timezone.now()
+        return super(BaseNodeFactory, cls)._create(*args, **kwargs)
+
 
 class ProjectFactory(BaseNodeFactory):
     category = 'project'
@@ -269,6 +276,14 @@ class PrivateLinkFactory(DjangoModelFactory):
     key = factory.Faker('md5')
     anonymous = False
     creator = factory.SubFactory(UserFactory)
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        instance = super(PrivateLinkFactory, cls)._create(target_class, *args, **kwargs)
+        if instance.is_deleted and not instance.deleted:
+            instance.deleted = timezone.now()
+            instance.save()
+        return instance
 
 
 class CollectionFactory(DjangoModelFactory):
@@ -418,7 +433,7 @@ class WithdrawnRegistrationFactory(BaseNodeFactory):
 
         registration.retract_registration(user)
         withdrawal = registration.retraction
-        token = withdrawal.approval_state.values()[0]['approval_token']
+        token = list(withdrawal.approval_state.values())[0]['approval_token']
         with patch('osf.models.AbstractNode.update_search'):
             withdrawal.approve_retraction(user, token)
         withdrawal.save()

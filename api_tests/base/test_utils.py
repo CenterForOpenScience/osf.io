@@ -101,13 +101,13 @@ class TestFlaskDjangoIntegration:
                 False,
                 'push_status_message() should have generated a RuntimeError exception.'
             )
-        except ValidationError as e:
+        except ValidationError:
             assert_true(
                 False,
                 'push_status_message() should have re-raised the RuntimeError not gotten ValidationError.'
             )
         except RuntimeError as e:
-            assert_equal(getattr(e, 'message', None),
+            assert_equal(str(e),
                          exception_message,
                          'push_status_message() should have re-raised the '
                          'original RuntimeError with the original message.')

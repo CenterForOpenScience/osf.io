@@ -225,7 +225,7 @@ def export_account(user_id, path, only_private=False, only_admin=False, export_f
 
     """
     user = OSFUser.objects.get(guids___id=user_id, guids___id__isnull=False)
-    proceed = raw_input('\nUser has {:.2f} GB of data in OSFStorage that will be exported.\nWould you like to continue? [y/n] '.format(get_usage(user)))
+    proceed = input('\nUser has {:.2f} GB of data in OSFStorage that will be exported.\nWould you like to continue? [y/n] '.format(get_usage(user)))
     if not proceed or proceed.lower() != 'y':
         print('Exiting...')
         exit(1)

@@ -88,7 +88,7 @@ class NodeOptimizationMixin(object):
         abstract_node_contenttype_id = ContentType.objects.get_for_model(AbstractNode).id
         guid = Guid.objects.filter(content_type_id=abstract_node_contenttype_id, object_id=OuterRef('parent_id'))
         parent = NodeRelation.objects.annotate(parent__id=Subquery(guid.values('_id')[:1])).filter(child=OuterRef('pk'), is_node_link=False)
-        wiki_addon = WikiNodeSettings.objects.filter(owner=OuterRef('pk'), deleted=False)
+        wiki_addon = WikiNodeSettings.objects.filter(owner=OuterRef('pk'), is_deleted=False)
         preprints = Preprint.objects.can_view(user=auth.user).filter(node_id=OuterRef('pk'))
         region = Region.objects.filter(id=OuterRef('region_id'))
         node_settings = NodeSettings.objects.annotate(region_abbrev=Subquery(region.values('_id')[:1])).filter(owner_id=OuterRef('pk'))

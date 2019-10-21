@@ -4,10 +4,10 @@ import logging
 from rest_framework import status as http_status
 import math
 from collections import defaultdict
-from itertools import islice
 
 from flask import request
 from django.apps import apps
+from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.db.models import Q, OuterRef, Subquery
 
@@ -78,7 +78,7 @@ def edit_node(auth, node, **kwargs):
         except ValidationError as e:
             raise HTTPError(
                 http_status.HTTP_400_BAD_REQUEST,
-                data=dict(message_long=e.message)
+                data=dict(message_long=str(e))
             )
         new_val = node.title
     elif edited_field == 'description':
@@ -92,7 +92,7 @@ def edit_node(auth, node, **kwargs):
     except ValidationError as e:
         raise HTTPError(
             http_status.HTTP_400_BAD_REQUEST,
-            data=dict(message_long=e.message)
+            data=dict(message_long=str(e))
         )
     return {
         'status': 'success',
@@ -145,7 +145,7 @@ def project_new_post(auth, **kwargs):
         except ValidationError as e:
             raise HTTPError(
                 http_status.HTTP_400_BAD_REQUEST,
-                data=dict(message_long=e.message)
+                data=dict(message_long=str(e))
             )
         new_project = _view_project(project, auth)
     return {
@@ -189,7 +189,7 @@ def project_new_node(auth, node, **kwargs):
         except ValidationError as e:
             raise HTTPError(
                 http_status.HTTP_400_BAD_REQUEST,
-                data=dict(message_long=e.message)
+                data=dict(message_long=str(e))
             )
         redirect_url = node.url
         message = (
@@ -640,6 +640,7 @@ def remove_private_link(*args, **kwargs):
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     link.is_deleted = True
+    link.deleted = timezone.now()
     link.save()
 
     for node in link.nodes.all():
@@ -832,7 +833,7 @@ def _view_project(node, auth, primary=False,
         'addon_widget_css': css,
         'node_categories': [
             {'value': key, 'display_name': value}
-            for key, value in settings.NODE_CATEGORY_MAP.items()
+            for key, value in list(settings.NODE_CATEGORY_MAP.items())
         ]
     }
 
@@ -1131,7 +1132,7 @@ def project_generate_private_link_post(auth, node, **kwargs):
     except ValidationError as e:
         raise HTTPError(
             http_status.HTTP_400_BAD_REQUEST,
-            data=dict(message_long=e.message)
+            data=dict(message_long=str(e))
         )
 
     return new_link
@@ -1230,7 +1231,7 @@ def search_node(auth, **kwargs):
     return {
         'nodes': [
             _serialize_node_search(each)
-            for each in islice(nodes, start, start + size)
+            for each in nodes[start: start + size]
             if each.contributors
         ],
         'total': count,

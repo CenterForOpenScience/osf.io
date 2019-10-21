@@ -687,6 +687,11 @@ class TestProject:
                     for addon in node.addons
                     if addon.config.short_name == addon_config.short_name
                 ])
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        with mock.patch.object(timezone, 'now', return_value=mock_now):
+            deleted_node = NodeFactory(is_deleted=True)
+        assert deleted_node.is_deleted
+        assert deleted_node.deleted == mock_now
 
     def test_project_factory(self):
         node = ProjectFactory()
@@ -699,6 +704,7 @@ class TestProject:
         assert node.is_public is False
         assert node.is_deleted is False
         assert hasattr(node, 'deleted_date')
+        assert hasattr(node, 'deleted')
         assert node.is_registration is False
         assert hasattr(node, 'registered_date')
         assert node.is_fork is False
@@ -933,7 +939,9 @@ class TestContributorMethods:
 
         with pytest.raises(UserStateError) as excinfo:
             node.add_contributor(unregistered_user, auth=Auth(user))
-        assert 'This contributor cannot be added' in excinfo.value.message
+        assert str(excinfo.value) == 'This contributor cannot be added. ' \
+                                        'If the problem persists please report it to please report it to' \
+                                        ' <a href="mailto:support@osf.io">support@osf.io</a>.'
 
     def test_cant_add_creator_as_contributor_twice(self, node, user):
         node.add_contributor(contributor=user)
@@ -1049,7 +1057,7 @@ class TestContributorMethods:
     def test_set_visible_contributor_with_only_one_contributor(self, node, user):
         with pytest.raises(ValueError) as excinfo:
             node.set_visible(user=user, visible=False, auth=None)
-        assert excinfo.value.message == 'Must have at least one visible contributor'
+        assert str(excinfo.value) == 'Must have at least one visible contributor'
 
     def test_set_visible_missing(self, node):
         with pytest.raises(ValueError):
@@ -1272,12 +1280,12 @@ class TestNodeAddContributorRegisteredOrNot:
     def test_add_contributor_user_id_already_contributor(self, user, node):
         with pytest.raises(ValidationError) as excinfo:
             node.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id, save=True)
-        assert 'is already a contributor' in excinfo.value.message
+        assert 'is already a contributor' in str(excinfo.value)
 
     def test_add_contributor_invalid_user_id(self, user, node):
         with pytest.raises(ValueError) as excinfo:
             node.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde', save=True)
-        assert 'was not found' in excinfo.value.message
+        assert 'was not found' in str(excinfo.value)
 
     def test_add_contributor_fullname_email(self, user, node):
         contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
@@ -1891,7 +1899,7 @@ class TestRegisterNode:
                 auth=auth,
                 draft_registration=DraftRegistrationFactory(branched_from=node)
             )
-        assert err.value.message == 'Cannot register deleted node.'
+        assert str(err.value) == 'Cannot register deleted node.'
 
     @mock.patch('website.project.signals.after_create_registration')
     def test_register_node_copies_subjects(self, mock_signal, subject):
@@ -3981,6 +3989,7 @@ class TestRemoveNode:
         assert parent_project.is_deleted
         # parent node should have a log of the event
         assert parent_project.logs.latest().action == 'project_deleted'
+        assert parent_project.deleted == parent_project.logs.latest().date
 
     def test_remove_project_with_project_child_deletes_all_in_hierarchy(self, parent_project, project, auth):
         parent_project.remove_node(auth=auth)
@@ -4426,7 +4435,7 @@ class TestAddonCallbacks:
 
     @pytest.fixture(autouse=True)
     def mock_addons(self, node):
-        def mock_get_addon(addon_name, deleted=False):
+        def mock_get_addon(addon_name, is_deleted=False):
             # Overrides AddonModelMixin.get_addon -- without backrefs,
             # no longer guaranteed to return the same set of objects-in-memory
             return self.patched_addons.get(addon_name, None)
