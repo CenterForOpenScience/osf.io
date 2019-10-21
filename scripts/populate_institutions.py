@@ -30,7 +30,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-e', '--env', help='select the server: prod, test, stage, stage2 or stage3')
 group = parser.add_mutually_exclusive_group()
 group.add_argument('-i', '--ids', nargs='+', help='select the institution(s) to add or update')
-group.add_argument('-a', '--all', action='store_false', help='add or update all institutions')
+group.add_argument('-a', '--all', action='store_true', help='add or update all institutions')
 
 
 def encode_uri_component(val):
