@@ -93,6 +93,8 @@ def format_file_info(file):
     # on a Registration, viewUrl is the only place the file/node ids are accurate.
     # the others refer to the original file on the node, not the file that was archived on the reg
     view_url = file.get('viewUrl')
+    file_id = None
+    node_id = None
     if view_url:
         url_match = FILE_VIEW_URL_REGEX.search(view_url)
         if not url_match:
@@ -107,7 +109,7 @@ def format_file_info(file):
         node_id = file.get('nodeId')
 
     if not (file_id and node_id):
-        raise SchemaBlockConversionError('Could not find file and node ids for file')
+        raise SchemaBlockConversionError('Could not find file and node ids in file info: {}'.format(file))
 
     file_name = file.get('selectedFileName')
     if file_data and not file_name:
@@ -153,9 +155,13 @@ def get_value_or_extra(nested_response, block_type, key, keys):
         if isinstance(extra, list):
             return map(format_file_info, extra)
         return [format_file_info(extra)] if extra else []
-    else:
-        value = keyed_value.get('value', '')
-        return value
+
+    value = keyed_value.get('value')
+    if value is None:
+        return ''
+    if isinstance(value, bool):
+        return str(value)
+    return value
 
 # For flatten_registration_metadata
 def get_nested_answer(nested_response, block_type, keys):

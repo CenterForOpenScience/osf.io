@@ -117,6 +117,7 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             '--rows',
+            type=int,
             default=5000,
             help='How many rows to process during this run',
         )
