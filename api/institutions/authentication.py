@@ -1,4 +1,6 @@
 import json
+import uuid
+import logging
 
 import jwe
 import jwt
@@ -8,7 +10,8 @@ from django.utils import timezone
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
-from api.base import settings
+from api.base.authentication import drf
+from api.base import exceptions, settings
 
 from framework import sentry
 from framework.auth import get_or_create_user
@@ -17,6 +20,8 @@ from osf import features
 from osf.models import Institution
 from website.mails import send_mail, WELCOME_OSF4I
 from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
+
+logger = logging.getLogger(__name__)
 
 
 class InstitutionAuthentication(BaseAuthentication):
@@ -92,7 +97,45 @@ class InstitutionAuthentication(BaseAuthentication):
         # `get_or_create_user()` guesses names from fullname
         # replace the guessed ones if the names are provided from the authentication
         user, created = get_or_create_user(fullname, username, reset_password=False)
-        if created:
+
+        # Check user status if existing: inactive users need to be either "activated" or failed
+        activation_required = False
+        new_password_required = False
+        if not created:
+            try:
+                drf.check_user(user)
+            except exceptions.UnclaimedAccountError:
+                # Unclaimed user (i.e. a user that has been added as an unregistered contributor)
+                user.unclaimed_records = {}
+                activation_required = True
+                # Unclaimed users have an unusable password when being added as an unregistered
+                # contributor. Thus a random usable password must be assigned during activation.
+                new_password_required = True
+            except exceptions.UnconfirmedAccountError:
+                # Unconfirmed user (i.e. a user that has been created during sign-up)
+                user.email_verifications = {}
+                activation_required = True
+                # Unconfirmed users already have a usable password set by the creator during
+                # sign-up. However, it must be overwritten by a new random one so the creator
+                # (if he is not the real person) can not access the account after activation.
+                new_password_required = True
+            except exceptions.DeactivatedAccountError:
+                # Deactivated user: login is not allowed for deactivated users
+                logger.error('Can not log into a deactivated account via institution SSO')
+                return None, None
+            except exceptions.MergedAccountError:
+                # Merged user: this shouldn't happen since merged users do not have an email
+                logger.error('Can not log into a merged account via institution SSO')
+                return None, None
+            except exceptions.InvalidAccountError:
+                # Other invalid status: this shouldn't happen unless the user happens to be in a
+                # temporary state. Such state requires more updates before the user can be saved
+                # to the database. (e.g. `get_or_create_user()` creates a temporary-state user.)
+                logger.error('Can not log into an invalid account via institution SSO')
+                return None, None
+
+        # Both created and revived accounts need to be updated and registered
+        if created or activation_required:
             if given_name:
                 user.given_name = given_name
             if family_name:
@@ -107,7 +150,8 @@ class InstitutionAuthentication(BaseAuthentication):
             user.accepted_terms_of_service = timezone.now()
 
             # Register and save user
-            user.register(username)
+            password = str(uuid.uuid4()) if new_password_required else None
+            user.register(username, password=password)
             user.save()
 
             # send confirmation email
