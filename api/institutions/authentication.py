@@ -106,9 +106,9 @@ class InstitutionAuthentication(BaseAuthentication):
             # Relying on front-end validation until `accepted_tos` is added to the JWT payload
             user.accepted_terms_of_service = timezone.now()
 
-            # save and register user
-            user.save()
+            # Register and save user
             user.register(username)
+            user.save()
 
             # send confirmation email
             send_mail(
