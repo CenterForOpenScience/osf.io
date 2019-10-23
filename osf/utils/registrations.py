@@ -64,7 +64,7 @@ FILE_HTML_URL_TEMPLATE = urljoin(settings.DOMAIN, '/project/{node_id}/files/osfs
 FILE_DOWNLOAD_URL_TEMPLATE = urljoin(settings.DOMAIN, '/download/{file_id}')
 
 # For flatten_registration_metadata
-def format_file_info(file):
+def build_file_ref(file):
     """
     Extracts name, file_id, and sha256 from the nested "extras" dictionary.
     Pulling name from selectedFileName and the file_id from the viewUrl.
@@ -85,9 +85,6 @@ def format_file_info(file):
         },
     }
     """
-    if not file:
-        raise SchemaBlockConversionError('Unexpected empty/missing file in `extra`')
-
     file_data = file.get('data')
 
     # on a Registration, viewUrl is the only place the file/node ids are accurate.
@@ -130,6 +127,15 @@ def format_file_info(file):
     }
 
 # For flatten_registration_metadata
+def build_file_refs(messy_file_infos):
+    for file_info in messy_file_infos:
+        if not file_info:
+            continue
+        if len(file_info) == 1 and file_info.get('selectedFileName') == 'No file selected':
+            continue
+        yield build_file_ref(file_info)
+
+# For flatten_registration_metadata
 def get_value_or_extra(nested_response, block_type, key, keys):
     """
     Sometimes the relevant information is stored under "extra" for files,
@@ -152,9 +158,8 @@ def get_value_or_extra(nested_response, block_type, key, keys):
     # stored under extra
     if block_type == 'file-input' and not keys:
         extra = keyed_value.get('extra', [])
-        if isinstance(extra, list):
-            return map(format_file_info, extra)
-        return [format_file_info(extra)] if extra else []
+        extra_list = extra if isinstance(extra, list) else [extra]
+        return list(build_file_refs(extra_list))
 
     value = keyed_value.get('value')
     if value is None:
@@ -217,7 +222,7 @@ def build_extra_file_dict(file_ref):
     sha256 = file_ref['file_hashes']['sha256']
 
     # viewUrl, selectedFileName, and sha256 are everything needed for the return trip
-    # (see `osf.utils.format_file_info`)
+    # (see `osf.utils.build_file_ref`)
     return {
         'viewUrl': FILE_VIEW_URL_TEMPLATE.format(node_id=node_id, file_id=file_id),
         'selectedFileName': file_name,
