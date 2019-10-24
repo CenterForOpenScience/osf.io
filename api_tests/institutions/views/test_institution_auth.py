@@ -1,21 +1,20 @@
-import pytest
 import json
-import jwt
+
 import jwe
+import jwt
+import pytest
+from flask import Flask
 
 from api.base import settings
 from api.base.settings.defaults import API_BASE
-from framework.auth import signals
+from framework.auth import signals, Auth
 from osf.models import OSFUser
-from osf_tests.factories import (
-    InstitutionFactory,
-    UserFactory,
-)
-from flask import Flask
+from osf_tests.factories import InstitutionFactory, ProjectFactory, UserFactory
 
 from tests.base import capture_signals
 
 decoratorapp = Flask('decorators')
+
 
 def make_user(username, fullname):
     return UserFactory(username=username, fullname=fullname)
@@ -161,3 +160,138 @@ class TestInstitutionAuth:
         assert user.fullname == 'Fake User'
         assert user.given_name == 'Kanye'
         assert user.family_name == 'West'
+
+    def test_user_active(self, app, institution, url_auth_institution):
+
+        username, fullname, password = 'fake_active@user.edu', 'Active User', 'FuAsKeEr'
+        user = make_user(username, fullname)
+        user.set_password(password)
+        user.save()
+
+        res = app.post(
+            url_auth_institution,
+            make_payload(
+                institution,
+                username,
+                family_name='Family',
+                given_name='Given',
+                fullname='Full'
+            )
+        )
+        assert res.status_code == 204
+
+        user = OSFUser.objects.filter(username=username).first()
+        assert user
+        # User names remains untouched
+        assert user.fullname == fullname
+        assert user.family_name == 'User'
+        assert user.given_name == 'Active'
+        # Existing active user keeps their password
+        assert user.has_usable_password()
+        assert user.check_password(password)
+
+    def test_user_unclaimed(self, app, institution, url_auth_institution):
+
+        username, fullname = 'fake_unclaimed@user.edu', 'Unclaimed User'
+        project = ProjectFactory()
+        user = project.add_unregistered_contributor(
+            fullname=fullname,
+            email=username,
+            auth=Auth(project.creator)
+        )
+        user.save()
+        # Unclaimed user is given an unusable password when being added as a contributor
+        assert not user.has_usable_password()
+
+        res = app.post(
+            url_auth_institution,
+            make_payload(
+                institution,
+                username,
+                family_name='Family',
+                given_name='Given',
+                fullname='Full'
+            )
+        )
+        assert res.status_code == 204
+
+        user = OSFUser.objects.filter(username=username).first()
+        assert user
+        # User becomes active and names (except the full name) are updated
+        assert user.is_active
+        assert user.fullname == fullname
+        assert user.family_name == 'Family'
+        assert user.given_name == 'Given'
+        # Unclaimed records must have been cleared
+        assert not user.unclaimed_records
+        # Previously unclaimed user must be assigned a usable password during institution auth
+        assert user.has_usable_password()
+        # User remains to be a contributor of the project
+        assert project.is_contributor(user)
+
+    def test_user_unconfirmed(self, app, institution, url_auth_institution):
+
+        username, fullname, password = 'fake_unconfirmed@user.edu', 'Unconfirmed User', 'FuAsKeEr'
+        user = OSFUser.create_unconfirmed(username, password, fullname)
+        user.save()
+        # Unconfirmed user has a usable password created during sign-up
+        assert user.has_usable_password()
+
+        res = app.post(
+            url_auth_institution,
+            make_payload(
+                institution,
+                username,
+                family_name='Family',
+                given_name='Given',
+                fullname='Full'
+            )
+        )
+        assert res.status_code == 204
+
+        user = OSFUser.objects.filter(username=username).first()
+        assert user
+        # User becomes active and names (except the full name) are updated
+        assert user.is_active
+        assert user.fullname == fullname
+        assert user.family_name == 'Family'
+        assert user.given_name == 'Given'
+        # Pending email verifications must be cleared
+        assert not user.email_verifications
+        # Previously unconfirmed user must be given a new password during institution auth
+        assert user.has_usable_password()
+        assert not user.check_password(password)
+
+    def test_user_inactive(self, app, institution, url_auth_institution):
+
+        username, fullname, password = 'fake_inactive@user.edu', 'Inactive User', 'FuAsKeEr'
+        user = make_user(username, fullname)
+        user.set_password(password)
+        # User must be saved before deactivation
+        user.save()
+        user.disable_account()
+        user.save()
+        # Disabled user still has the original usable password
+        assert user.has_usable_password()
+        assert user.check_password(password)
+
+        res = app.post(
+            url_auth_institution,
+            make_payload(
+                institution,
+                username,
+                family_name='Family',
+                given_name='Given',
+                fullname='Full'
+            ),
+            expect_errors=True
+        )
+        assert res.status_code == 403
+
+        user = OSFUser.objects.filter(username=username).first()
+        assert user
+        # Inactive user remains untouched
+        assert user.is_disabled
+        assert user.fullname == fullname
+        assert user.family_name == 'User'
+        assert user.given_name == 'Inactive'
