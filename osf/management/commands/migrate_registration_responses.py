@@ -7,6 +7,7 @@ from tqdm import tqdm
 
 from bulk_update.helper import bulk_update
 from framework.celery_tasks import app as celery_app
+from framework import sentry
 
 from osf.exceptions import SchemaBlockConversionError
 
@@ -26,17 +27,7 @@ def migrate_registrations(dry_run, rows='all'):
     ).filter(
         type='osf.registration'
     )
-    regs_count = registrations.count()
-    logger.info('{} registrations need migrating'.format(regs_count))
-
-    migrate_responses(registrations, regs_count, dry_run, rows)
-
-    registrations_remaining = AbstractNode.objects.exclude(
-        registration_responses_migrated=True,
-    ).filter(
-        type='osf.registration'
-    )
-    logger.info('{} registrations remaining'.format(registrations_remaining.count()))
+    return migrate_responses(registrations, 'registrations', dry_run, rows)
 
 def migrate_draft_registrations(dry_run, rows='all'):
     """
@@ -46,44 +37,62 @@ def migrate_draft_registrations(dry_run, rows='all'):
     :params rows
     """
     DraftRegistration = apps.get_model('osf.DraftRegistration')
+
     draft_registrations = DraftRegistration.objects.exclude(
         registration_responses_migrated=True
     )
-    drafts_count = draft_registrations.count()
-    logger.info('{} draft registrations need migrating'.format(drafts_count))
+    return migrate_responses(draft_registrations, 'draft registrations', dry_run, rows)
 
-    migrate_responses(draft_registrations, drafts_count, dry_run, rows)
-
-    draft_registrations_remaining = DraftRegistration.objects.exclude(
-        registration_responses_migrated=True
-    )
-    logger.info('{} draft registration remaining'.format(draft_registrations_remaining.count()))
-
-def migrate_responses(resources, resources_count, dry_run=False, rows='all'):
+def migrate_responses(resources, resource_name, dry_run=False, rows='all'):
     """
     DRY method to be used to migrate both DraftRegistration.registration_responses
     and Registration.registration_responses.
     """
-    if rows == 'all' or resources_count <= rows:
-        rows = resources_count
+    progress_bar = None
+    if rows == 'all':
+        logger.info('Migrating all {}.'.format(resource_name))
+    else:
+        resources = resources[:rows]
+        logger.info('Migrating up to {} {}.'.format(rows, resource_name))
+        progress_bar = tqdm(total=rows)
 
-    resources = resources[:rows]
-    logger.info('Migrating {} registration_responses.'.format(rows))
-    to_save = []
-    progress_bar = tqdm(total=rows)
+    successes_to_save = []
+    errors_to_save = []
     for resource in resources:
         try:
             resource.registration_responses = resource.flatten_registration_metadata()
             resource.registration_responses_migrated = True
+            successes_to_save.append(resource)
         except SchemaBlockConversionError as e:
             resource.registration_responses_migrated = False
+            errors_to_save.append(resource)
             logger.error('Unexpected/invalid nested data in resource: {} with error {}'.format(resource, e))
-        to_save.append(resource)
-        progress_bar.update()
-    progress_bar.close()
+        if progress_bar:
+            progress_bar.update()
 
-    if not dry_run:
-        bulk_update(resources, update_fields=['registration_responses', 'registration_responses_migrated'])
+    if progress_bar:
+        progress_bar.close()
+
+    success_count = len(successes_to_save)
+    error_count = len(errors_to_save)
+    total_count = success_count + error_count
+
+    if total_count == 0:
+        logger.info('No {} left to migrate.'.format(resource_name))
+        return total_count
+
+    logger.info('Successfully migrated {} out of {} {}.'.format(success_count, total_count, resource_name))
+    if error_count:
+        logger.warn('Encountered errors on {} out of {} {}.'.format(error_count, total_count, resource_name))
+
+    if dry_run:
+        logger.info('DRY RUN; discarding changes.')
+    else:
+        logger.info('Saving changes...')
+        bulk_update(successes_to_save, update_fields=['registration_responses', 'registration_responses_migrated'])
+        bulk_update(errors_to_save, update_fields=['registration_responses_migrated'])
+
+    return total_count
 
 
 @celery_app.task(name='management.commands.migrate_registration_responses')
@@ -91,8 +100,12 @@ def migrate_registration_responses(dry_run=False, rows=5000):
     script_start_time = datetime.datetime.now()
     logger.info('Script started time: {}'.format(script_start_time))
 
-    migrate_draft_registrations(dry_run, rows)
-    migrate_registrations(dry_run, rows)
+    draft_count = migrate_draft_registrations(dry_run, rows)
+    registration_count = migrate_registrations(dry_run, rows)
+
+    if draft_count == 0 and registration_count == 0:
+        logger.info('Migration complete! No more drafts or registrations need migrating.')
+        sentry.log_message('`migrate_registration_responses` command found nothing to migrate!')
 
     script_finish_time = datetime.datetime.now()
     logger.info('Script finished time: {}'.format(script_finish_time))

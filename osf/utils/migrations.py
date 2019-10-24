@@ -401,6 +401,8 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
 
 def map_schemas_to_schemablocks(*args):
     """Map schemas to schema blocks
+
+    WARNING: Deletes existing schema blocks
     """
     state = args[0]
     try:
@@ -412,8 +414,7 @@ def map_schemas_to_schemablocks(*args):
             # Working outside a migration
             from osf.models import RegistrationSchema
 
-    # TODO: remove. Until RegistrationSchemaBlocks are set, running this method
-    # will delete all existing RegistrationSchemaBlocks and rebuild
+    # Delete all existing schema blocks (avoid creating duplicates)
     unmap_schemablocks(*args)
 
     for rs in RegistrationSchema.objects.all():
