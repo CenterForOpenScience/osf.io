@@ -18,6 +18,7 @@ from framework.auth import get_or_create_user
 
 from osf import features
 from osf.models import Institution
+
 from website.mails import send_mail, WELCOME_OSF4I
 from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
 
@@ -27,9 +28,10 @@ logger = logging.getLogger(__name__)
 class InstitutionAuthentication(BaseAuthentication):
     """A dedicated authentication class for view ``InstitutionAuth``.
 
-    This ``InstitutionAuth`` view and this auth class is only used and should only be used by CAS.
-    Changing it may break the institution login feature.  Please check with @longze and @matt before
-    making any changes.
+    The ``InstitutionAuth`` view and the ``InstitutionAuthentication`` class are only and should
+    only be used by OSF CAS for institution login. Changing this class and related tests may break
+    the institution login feature. Please check with @longzeC / @mattF / @brianG before making any
+    changes.
     """
 
     media_type = 'text/plain'
@@ -59,6 +61,7 @@ class InstitutionAuthentication(BaseAuthentication):
         :raises: AuthenticationFailed if authentication fails
         """
 
+        # Verify / decrypt / decode the payload
         try:
             payload = jwt.decode(
                 jwe.decrypt(request.body, settings.JWE_SECRET),
@@ -69,13 +72,12 @@ class InstitutionAuthentication(BaseAuthentication):
         except (jwt.InvalidTokenError, TypeError, jwe.exceptions.MalformedData):
             raise AuthenticationFailed
 
+        # Load institution and user data
         data = json.loads(payload['data'])
         provider = data['provider']
-
         institution = Institution.load(provider['id'])
         if not institution:
-            raise AuthenticationFailed('Invalid institution id specified "{}"'.format(provider['id']))
-
+            raise AuthenticationFailed('Invalid institution id: "{}"'.format(provider['id']))
         username = provider['user'].get('username')
         fullname = provider['user'].get('fullname')
         given_name = provider['user'].get('givenName')
@@ -83,22 +85,24 @@ class InstitutionAuthentication(BaseAuthentication):
         middle_names = provider['user'].get('middleNames')
         suffix = provider['user'].get('suffix')
 
-        # use given name and family name to build full name if not provided
+        # Use given name and family name to build full name if it is not provided
         if given_name and family_name and not fullname:
             fullname = given_name + ' ' + family_name
 
-        # institution must provide `fullname`, otherwise we fail the authentication and inform sentry
+        # Non-empty full name is required. Fail the auth and inform sentry if not provided.
         if not fullname:
-            message = 'Institution login failed: fullname required' \
-                      ' for user {} from institution {}'.format(username, provider['id'])
+            message = 'Institution login failed: fullname required for ' \
+                      'user {} from institution {}'.format(username, provider['id'])
             sentry.log_message(message)
             raise AuthenticationFailed(message)
 
-        # `get_or_create_user()` guesses names from fullname
-        # replace the guessed ones if the names are provided from the authentication
+        # Get an existing user or create a new one. If a new user is created, the user object is
+        # confirmed but not registered,which is temporarily of an inactive status. If an existing
+        # user is found, it is also possible that the user is inactive (e.g. unclaimed, disabled,
+        # unconfirmed, etc.).
         user, created = get_or_create_user(fullname, username, reset_password=False)
 
-        # Check user status if existing: inactive users need to be either "activated" or failed
+        # Existing but inactive users need to be either "activated" or failed the auth
         activation_required = False
         new_password_required = False
         if not created:
@@ -134,8 +138,9 @@ class InstitutionAuthentication(BaseAuthentication):
                 logger.error('Can not log into an invalid account via institution SSO')
                 return None, None
 
-        # Both created and revived accounts need to be updated and registered
+        # Both created and activated accounts need to be updated and registered
         if created or activation_required:
+
             if given_name:
                 user.given_name = given_name
             if family_name:
@@ -144,9 +149,11 @@ class InstitutionAuthentication(BaseAuthentication):
                 user.middle_names = middle_names
             if suffix:
                 user.suffix = suffix
+
             # Users claimed or confirmed via institution SSO should have their full name updated
             if activation_required:
                 user.fullname = fullname
+
             user.update_date_last_login()
 
             # Relying on front-end validation until `accepted_tos` is added to the JWT payload
@@ -157,7 +164,7 @@ class InstitutionAuthentication(BaseAuthentication):
             user.register(username, password=password)
             user.save()
 
-            # send confirmation email
+            # Send confirmation email for all three: created, confirmed and claimed
             send_mail(
                 to_addr=user.username,
                 mail=WELCOME_OSF4I,
@@ -168,6 +175,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 storage_flag_is_active=waffle.flag_is_active(request, features.STORAGE_I18N),
             )
 
+        # Affiliate the user if not previously affiliated
         if not user.is_affiliated_with_institution(institution):
             user.affiliated_institutions.add(institution)
             user.save()
