@@ -5,7 +5,7 @@ import os
 import json
 import requests
 from django.core.management.base import BaseCommand
-from osf.models import RegistrationSchema, Node, DraftRegistration, RegistrationProvider
+from osf.models import RegistrationSchema, Node, DraftRegistration
 from website.project.metadata.schemas import ensure_schema_structure, from_json
 from website.settings import WATERBUTLER_INTERNAL_URL
 from osf_tests.factories import ApiOAuth2PersonalTokenFactory
@@ -72,13 +72,13 @@ def recursive_and_upload(auth, node, dir_path, parent='', metadata=list()):
 
     return metadata
 
+
 def main():
     ensure_egap_schema()
     greg, gregs_auth = get_gregs_auth_header()
 
     egap_assets_path = os.path.join(HERE, 'EGAP')
     egap_schema = RegistrationSchema.objects.get(name='EGAP Registration')
-    osf_provider = RegistrationProvider.objects.get(name='OSF Registries')
 
     for epag_project_dir in os.listdir(egap_assets_path):
         node = create_node_from_project_json(egap_assets_path, epag_project_dir, creator=greg)
@@ -93,21 +93,25 @@ def main():
         with open(os.path.join(egap_assets_path, epag_project_dir, 'registration-schema.json'), 'r') as fp:
             registration_metadata = json.load(fp)
 
-        print(non_anon_metadata)
+        # add selectedFileName Just so filenames are listed in the UI
+        for data in non_anon_metadata:
+            data['selectedFileName'] = data['name']
+
+        for data in anon_metadata:
+            data['selectedFileName'] = data['name']
 
         non_anon_titles = ', '.join([data['data']['attributes']['name'] for data in non_anon_metadata])
         registration_metadata['q37'] = {'comments': [], 'extra': non_anon_metadata, 'value': non_anon_titles}
+
         anon_titles = ', '.join([data['data']['attributes']['name'] for data in anon_metadata])
         registration_metadata['q38'] = {'comments': [], 'extra': anon_metadata, 'value': anon_titles}
 
-        DraftRegistration(
-            branched_from=node,
-            registration_schema=egap_schema,
-            registration_metadata=registration_metadata,
-            initiator=greg,
-            provider=osf_provider
-        ).save()
-        print(node)
+        DraftRegistration.create_from_node(
+            node,
+            user=greg,
+            schema=egap_schema,
+            data=registration_metadata,
+        )
 
 class Command(BaseCommand):
     """Magically morphs csv data into lovable nodes with draft registrations attached
