@@ -247,10 +247,6 @@ def main(default_args=False):
     if not target_directory:
         target_directory = 'EGAP_data_{}'.format(datetime.datetime.now().strftime('%m-%d-%Y'))
 
-    print author_source
-    print registry_source
-    print target_directory
-
     create_file_tree_and_json(author_source, registry_source, target_directory)
 
     if dry_run:
