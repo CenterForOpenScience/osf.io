@@ -127,18 +127,17 @@ def make_project_dict(row, author_list, normalized_header_row):
 
     authors = row[contributors_index]
 
-    authors = authors.split(',')
+    authors = authors.split('|')
     project['contributors'] = []
     author_name_list = [author['name'] for author in author_list]
     for author in authors:
         author = author.strip()
         if author:
-            matched_authors = [e for e in author_name_list if e.startswith(author)]
-            if not matched_authors:
-                logger.warning('Author {} not in Author spreadsheet for project ID: {}'.format(
-                    author, row[id_index]))
+            if author not in author_name_list:
+                logger.warning('Author {} not in Author spreadsheet for project {}.'.format(author,row[id_index]))
+                project['contributors'].append({'name': author})
             else:
-                author_list_index = author_name_list.index(matched_authors[0])
+                author_list_index = author_name_list.index(author)
                 project['contributors'].append(author_list[author_list_index])
     return project
 
