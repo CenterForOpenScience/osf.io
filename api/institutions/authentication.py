@@ -144,6 +144,9 @@ class InstitutionAuthentication(BaseAuthentication):
                 user.middle_names = middle_names
             if suffix:
                 user.suffix = suffix
+            # Users claimed or confirmed via institution SSO should have their full name updated
+            if activation_required:
+                user.fullname = fullname
             user.update_date_last_login()
 
             # Relying on front-end validation until `accepted_tos` is added to the JWT payload

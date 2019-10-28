@@ -219,7 +219,7 @@ class TestInstitutionAuth:
         assert user
         # User becomes active and names (except the full name) are updated
         assert user.is_active
-        assert user.fullname == fullname
+        assert user.fullname == 'Full'
         assert user.family_name == 'Family'
         assert user.given_name == 'Given'
         # Unclaimed records must have been cleared
@@ -253,7 +253,7 @@ class TestInstitutionAuth:
         assert user
         # User becomes active and names (except the full name) are updated
         assert user.is_active
-        assert user.fullname == fullname
+        assert user.fullname == 'Full'
         assert user.family_name == 'Family'
         assert user.given_name == 'Given'
         # Pending email verifications must be cleared
