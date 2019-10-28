@@ -22,14 +22,24 @@ class TestEGAPFilesToImportStructure(OsfTestCase):
     def test_moves_anon_files(self, mock_move, mock_mkdir):
         action_files_by_name(
             'scripts/tests/test_files/test_nonanonymous',
-            'scripts/tests/test_files/test_nonanonymous/imafile_Anonymous.pdf',
-            'imafile_Anonymous.pdf'
+            'scripts/tests/test_files/test_nonanonymous/20151016AA_imafile_Anonymous.pdf',
+            '20151016AA_imafile_Anonymous.pdf'
         )
 
         mock_mkdir.assert_called_with('scripts/tests/test_files/anonymous')
 
         mock_move.assert_called_with(
-            'scripts/tests/test_files/test_nonanonymous/imafile_Anonymous.pdf',
-            'scripts/tests/test_files/anonymous/imafile_Anonymous.pdf'
+            'scripts/tests/test_files/test_nonanonymous/20151016AA_imafile_Anonymous.pdf',
+            'scripts/tests/test_files/anonymous/20151016AA_imafile_Anonymous.pdf'
         )
+
+    @mock.patch('scripts.EGAP.files_to_import_structure.os.remove')
+    def test_removes_no_id(self, mock_remove):
+        action_files_by_name(
+            'scripts/tests/test_files/test_nonanonymous',
+            'scripts/tests/test_files/test_nonanonymous/justafile.pdf',
+            'justafile.pdf'
+        )
+
+        mock_remove.assert_called_with('scripts/tests/test_files/test_nonanonymous/justafile.pdf')
 

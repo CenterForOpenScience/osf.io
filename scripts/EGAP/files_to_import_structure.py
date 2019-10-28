@@ -9,12 +9,32 @@ from nose.tools import assert_equal
 # This takes the item id from the path of the project directory for example '20121001AA Findley' -> '20121001AA'
 get_item_id = lambda _path: _path.split(os.sep)[-1].split(' ')[0]
 
+# Check if file name starts with EGAP id for example '20121001AA_PAP.pdf'
+check_id = lambda item: re.match(r'(^[0-9]{8}[A-Z]{2})', item)
+
+# Check if file follows anonymous naming convention
+check_anon = lambda item: 'pap_anon' in item.lower() or 'anonymous' in item.lower()
+
 
 def action_files_by_name(root, source, item_name):
-    print(root, source, item_name)
-    if 'PAP_anon' in item_name or 'Anonymous.' in item_name:
+    """
+    Pick out anonymous and create new folder to move them into it, remove ones that don't follow id naming convention.
+    :param root:
+    :param source:
+    :param item_name:
+    :return:
+    """
+    if not check_id(item_name):
+        path = os.path.join(root, item_name)
+        os.remove(path)
+        return
+
+    if check_anon(item_name):
         destination_parent = os.path.join('/'.join(root.split('/')[:-1]), 'anonymous')
-        os.mkdir(destination_parent)
+
+        if not os.path.exists(destination_parent):
+            os.mkdir(destination_parent)
+
         destination = os.path.join(destination_parent, item_name)
         shutil.move(source, destination)
 
@@ -24,19 +44,32 @@ def audit_files(source):
     ignoring = open('ignoring.txt', 'w+')
     for root, dir, files in os.walk(source):
         for item in files:
-            path = os.path.join(root.split('/')[-1], item)
-
-            if not re.match(r'(^[0-9]{8}[A-Z]{2})', item):
-                ignoring.writelines(path + '\r')
+            name = os.path.join(root.split('/')[-1], item) # get file/folder name after slash
+            if not check_id(name):
+                ignoring.writelines(name + '\r')
             else:
-                including.writelines(path + '\r')
+                including.writelines(name + '\r')
 
     ignoring.close()
     including.close()
 
 
 def main(origin_path, new_path):
-    # Copy whole tree, then pick out anonymous
+    """
+    This is a script for our EGAP partnership that converts the EGAP provided dump of files into a directory structure
+    we can easily import into the OSF. Some files in the dump are anonymous and need to be sorted into a special folder
+    some don't follow an id naming convention and should be ignored and not imported.
+
+    This script copies whole file tree for a project to preserve file hierarchy then picks out anonymous files and moves
+    them to the anonymous folder and delete those that don't follow the naming convention.
+
+    This script can be safely removed once all EGAP registrations have been imported.
+
+    :param origin_path: the source path we're picking files out of
+    :param new_path: a pre-made directory structure for importing projects that we are packing files into.
+    :return:
+    """
+    # Copy whole tree to preserve file hierarchy then
     for item in os.listdir(origin_path):
         item_id = get_item_id(item)
         source = os.path.join(origin_path, item)
@@ -52,18 +85,19 @@ def main(origin_path, new_path):
     # Check All anon files in /anonymous/ directory
     for root, dir, files in os.walk(new_path):
         for item in files:
-            if 'PAP_anon' in item or 'Anonymous.' in item:
-                assert root.endswith('/anonymous')
+            if check_anon(item):
+                assert '/anonymous' in root
             else:
-                assert root.endswith('/nonanonymous')
+                assert '/nonanonymous' in root
 
     original_files = []
     moved = []
 
-    # Check for stragglers
-    for root, dir, files in os.walk(new_path):
+    # Check for stragglers and all files with ids have been moved
+    for root, dir, files in os.walk(origin_path):
         for item in files:
-            original_files.append(item)
+            if check_id(item):
+                original_files.append(item)
 
     for root, dir, files in os.walk(new_path):
         for item in files:
