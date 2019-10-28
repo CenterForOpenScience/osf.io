@@ -110,6 +110,19 @@ class TestInstitutionAuth:
         assert user.fullname == 'Foo Bar'
         assert user.affiliated_institutions.count() == 1
 
+    def test_new_user_names_not_provided(self, app, institution, url_auth_institution):
+
+        username = 'user_created_without_names@osf.edu'
+        res = app.post(
+            url_auth_institution,
+            make_payload(institution, username, fullname=''),
+            expect_errors=True
+        )
+        assert res.status_code == 403
+
+        user = OSFUser.objects.filter(username=username).first()
+        assert not user
+
     def test_new_user_names_guessed_if_not_provided(self, app, institution, url_auth_institution):
 
         username = 'user_created_with_fullname_only@osf.edu'
