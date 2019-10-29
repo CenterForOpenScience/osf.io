@@ -46,10 +46,6 @@ EXTERNAL_EMBER_APPS = {
         'server': 'http://{}:4201/'.format(EMBER_DOMAIN),
         'path': '/preprints/'
     },
-    'registries': {
-        'server': 'http://{}:4202/'.format(EMBER_DOMAIN),
-        'path': '/registries/'
-    },
     'reviews': {
         'server': 'http://{}:4203/'.format(EMBER_DOMAIN),
         'path': '/reviews/'
