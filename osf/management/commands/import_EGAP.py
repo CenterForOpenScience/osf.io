@@ -10,6 +10,7 @@ from website.project.metadata.schemas import ensure_schema_structure, from_json
 from website.settings import WATERBUTLER_INTERNAL_URL
 from osf_tests.factories import ApiOAuth2PersonalTokenFactory
 from osf_tests.factories import UserFactory
+from framework.auth.core import Auth
 
 logger = logging.getLogger(__name__)
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -40,12 +41,17 @@ def create_node_from_project_json(egap_assets_path, epag_project_dir, creator):
         project_data = json.load(fp)
         title = project_data['title']
         node = Node(title=title, creator=creator)
-        node.save()
+        node.save()  # must save before adding contribs for auth reasons
+
+        for contributor in project_data['contributors']:
+            node.add_contributor_registered_or_not(Auth(creator), full_name=contributor['name'], email=contributor['email'])
+
+        node.set_visible(creator, visible=False, log=False, save=True)
 
     return node
 
 
-def recursive_and_upload(auth, node, dir_path, parent='', metadata=list()):
+def recursive_upload(auth, node, dir_path, parent='', metadata=list()):
     for item in os.listdir(dir_path):
         item_path = os.path.join(dir_path, item)
         base_url = '{}/v1/resources/{}/providers/osfstorage/{}'.format(WATERBUTLER_INTERNAL_URL, node._id, parent)
@@ -68,7 +74,7 @@ def recursive_and_upload(auth, node, dir_path, parent='', metadata=list()):
 
             metadata.append(resp.json())
 
-            metadata = recursive_and_upload(auth, node, item_path, parent=resp.json()['data']['attributes']['path'], metadata=metadata)
+            metadata = recursive_upload(auth, node, item_path, parent=resp.json()['data']['attributes']['path'], metadata=metadata)
 
     return metadata
 
@@ -84,11 +90,11 @@ def main():
         node = create_node_from_project_json(egap_assets_path, epag_project_dir, creator=greg)
 
         non_anon_files = os.path.join(egap_assets_path, epag_project_dir, 'data', 'nonanonymous')
-        non_anon_metadata = recursive_and_upload(gregs_auth, node, non_anon_files)
+        non_anon_metadata = recursive_upload(gregs_auth, node, non_anon_files)
 
         anon_files = os.path.join(egap_assets_path, epag_project_dir, 'data', 'anonymous')
         if os.path.isdir(anon_files):
-            anon_metadata = recursive_and_upload(gregs_auth, node, anon_files)
+            anon_metadata = recursive_upload(gregs_auth, node, anon_files)
 
         with open(os.path.join(egap_assets_path, epag_project_dir, 'registration-schema.json'), 'r') as fp:
             registration_metadata = json.load(fp)
