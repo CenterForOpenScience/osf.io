@@ -4,12 +4,17 @@ import logging
 import os
 import json
 import requests
+import argparse
 from django.core.management.base import BaseCommand
-from osf.models import RegistrationSchema, Node, DraftRegistration
+from osf.models import (
+    RegistrationSchema,
+    Node,
+    DraftRegistration,
+    OSFUser
+)
 from website.project.metadata.schemas import ensure_schema_structure, from_json
 from website.settings import WATERBUTLER_INTERNAL_URL
 from osf_tests.factories import ApiOAuth2PersonalTokenFactory
-from osf_tests.factories import UserFactory
 from framework.auth.core import Auth
 
 logger = logging.getLogger(__name__)
@@ -29,11 +34,11 @@ def ensure_egap_schema():
         schema_obj.save()
 
 
-def get_gregs_auth_header():
-    greg = UserFactory()
-    token = ApiOAuth2PersonalTokenFactory(owner=greg)
+def get_creator_auth_header(creator_username):
+    creator = OSFUser.objects.get(username=creator_username)
+    token = ApiOAuth2PersonalTokenFactory(owner=creator)
     token.save()
-    return greg, {'Authorization': 'Bearer {}'.format(token.token_id)}
+    return creator, {'Authorization': 'Bearer {}'.format(token.token_id)}
 
 
 def create_node_from_project_json(egap_assets_path, epag_project_dir, creator):
@@ -79,22 +84,22 @@ def recursive_upload(auth, node, dir_path, parent='', metadata=list()):
     return metadata
 
 
-def main():
+def main(creator_username):
     ensure_egap_schema()
-    greg, gregs_auth = get_gregs_auth_header()
+    creator, creator_auth = get_creator_auth_header(creator_username)
 
     egap_assets_path = os.path.join(HERE, 'EGAP')
     egap_schema = RegistrationSchema.objects.get(name='EGAP Registration')
 
     for epag_project_dir in os.listdir(egap_assets_path):
-        node = create_node_from_project_json(egap_assets_path, epag_project_dir, creator=greg)
+        node = create_node_from_project_json(egap_assets_path, epag_project_dir, creator=creator)
 
         non_anon_files = os.path.join(egap_assets_path, epag_project_dir, 'data', 'nonanonymous')
-        non_anon_metadata = recursive_upload(gregs_auth, node, non_anon_files)
+        non_anon_metadata = recursive_upload(creator_auth, node, non_anon_files)
 
         anon_files = os.path.join(egap_assets_path, epag_project_dir, 'data', 'anonymous')
         if os.path.isdir(anon_files):
-            anon_metadata = recursive_upload(gregs_auth, node, anon_files)
+            anon_metadata = recursive_upload(creator_auth, node, anon_files)
 
         with open(os.path.join(egap_assets_path, epag_project_dir, 'registration-schema.json'), 'r') as fp:
             registration_metadata = json.load(fp)
@@ -114,7 +119,7 @@ def main():
 
         DraftRegistration.create_from_node(
             node,
-            user=greg,
+            user=creator,
             schema=egap_schema,
             data=registration_metadata,
         )
@@ -123,5 +128,15 @@ class Command(BaseCommand):
     """Magically morphs csv data into lovable nodes with draft registrations attached
     """
 
+    def add_arguments(self, parser):
+        super(Command, self).add_arguments(parser)
+        parser = argparse.ArgumentParser()
+        parser.add_argument(
+            '-c',
+            '--creator',
+            help='This should be the username of the initial adminstrator for the imported nodes'
+        )
+
     def handle(self, *args, **options):
-        main()
+        creator_username = options.get('creator', False)
+        main(creator_username)

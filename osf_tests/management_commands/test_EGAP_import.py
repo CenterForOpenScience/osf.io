@@ -18,7 +18,7 @@ from osf.management.commands.import_EGAP import (
     ensure_egap_schema,
     create_node_from_project_json,
     recursive_upload,
-    get_gregs_auth_header
+    get_creator_auth_header
 )
 
 from website.settings import WATERBUTLER_INTERNAL_URL
@@ -43,8 +43,8 @@ class TestEGAPImport:
     def egap_project_name(self):
         return '20120220AA'
 
-    def test_get_gregs_auth_header(self):
-        greg, auth_header = get_gregs_auth_header()
+    def test_get_creator_auth_header(self):
+        greg, auth_header = get_creator_auth_header()
 
         gregs_token = ApiOAuth2PersonalToken.objects.get(owner=greg).token_id
         assert auth_header['Authorization'] == 'Bearer {}'.format(gregs_token)
