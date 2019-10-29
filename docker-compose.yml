@@ -383,6 +383,7 @@ services:
     restart: unless-stopped
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
+      LANG: en_US.UTF-8
     volumes:
       - ./:/code:cached
       - osf_requirements_vol:/usr/lib/python2.7
@@ -396,6 +397,7 @@ services:
     restart: unless-stopped
     environment:
       DJANGO_SETTINGS_MODULE: admin.base.settings
+      LANG: en_US.UTF-8
     volumes:
       - ./:/code:cached
       - osf_requirements_vol:/usr/lib/python2.7
