@@ -53,6 +53,12 @@ def audit_files(source):
     ignoring.close()
     including.close()
 
+    projects = set(os.listdir(source))
+    project_ids = set([get_item_id(folders) for folders in list(projects)])
+
+    # check for duplicate ids
+    assert_equal(len(projects), len(project_ids))
+
 
 def main(origin_path, new_path):
     """
