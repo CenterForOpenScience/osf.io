@@ -1,8 +1,6 @@
 import pytz
 import functools
 from rest_framework import status as http_status
-import logging
-logger = logging.getLogger(__name__)
 
 from dateutil.parser import parse as parse_date
 from django.apps import apps
