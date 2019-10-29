@@ -1,6 +1,8 @@
 import pytz
 import functools
 from rest_framework import status as http_status
+import logging
+logger = logging.getLogger(__name__)
 
 from dateutil.parser import parse as parse_date
 from django.apps import apps
@@ -274,6 +276,10 @@ class EmailApprovableSanction(TokenApprovableSanction):
     # }
     stashed_urls = DateTimeAwareJSONField(default=dict, blank=True)
 
+    @property
+    def should_suppress_emails(self):
+        return bool(self.registrations.first().external_registered_date)
+
     @staticmethod
     def _format_or_empty(template, context):
         if context:
@@ -308,9 +314,11 @@ class EmailApprovableSanction(TokenApprovableSanction):
         return {}
 
     def _notify_authorizer(self, authorizer, node):
+        if self.should_suppress_emails:
+            return
         context = self._email_template_context(authorizer,
-                                               node,
-                                               is_authorizer=True)
+                                            node,
+                                            is_authorizer=True)
         if self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE:
             self._send_approval_request_email(
                 authorizer, self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
@@ -318,6 +326,8 @@ class EmailApprovableSanction(TokenApprovableSanction):
             raise NotImplementedError
 
     def _notify_non_authorizer(self, user, node):
+        if self.should_suppress_emails:
+            return
         context = self._email_template_context(user, node)
         if self.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE:
             self._send_approval_request_email(
@@ -339,7 +349,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
         raise NotImplementedError
 
     def _on_complete(self, *args):
-        if self.notify_initiator_on_complete:
+        if self.notify_initiator_on_complete and not self.should_suppress_emails:
             self._notify_initiator()
 
     class Meta:
