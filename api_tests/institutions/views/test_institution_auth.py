@@ -3,11 +3,13 @@ import json
 import jwe
 import jwt
 import pytest
+from django.utils import timezone
 
 from api.base import settings
 from api.base.settings.defaults import API_BASE
 
 from framework.auth import signals, Auth
+from framework.auth.views import send_confirm_email
 
 from osf.models import OSFUser
 from osf_tests.factories import InstitutionFactory, ProjectFactory, UserFactory
@@ -301,3 +303,60 @@ class TestInstitutionAuth:
         assert user.given_name == 'Foo'
         assert user.family_name == 'Bar'
         assert institution not in user.affiliated_institutions.all()
+
+    def test_user_external_unconfirmed(self, app, institution, url_auth_institution):
+
+        # Create an unconfirmed user with pending external identity
+        username, fullname = 'user_external_unconfirmed@osf.edu', 'Foo Bar'
+        external_id_provider, external_id, status = 'ORCID', '1234-1234-1234-1234', 'CREATE'
+        external_identity = {external_id_provider: {external_id: status}}
+        accepted_terms_of_service = timezone.now()
+        user = OSFUser.create_unconfirmed(
+            username=username,
+            password=None,
+            fullname=fullname,
+            external_identity=external_identity,
+            campaign=None,
+            accepted_terms_of_service=accepted_terms_of_service
+        )
+        user.save()
+        assert not user.has_usable_password()
+        assert user.external_identity
+
+        # Send confirm email in order to add new email verifications
+        send_confirm_email(
+            user,
+            user.username,
+            external_id_provider=external_id_provider,
+            external_id=external_id
+        )
+        user.save()
+        assert user.email_verifications
+        email_verifications = user.email_verifications
+
+        with capture_signals() as mock_signals:
+            res = app.post(
+                url_auth_institution,
+                make_payload(
+                    institution,
+                    username,
+                    family_name='User',
+                    given_name='Fake',
+                    fullname='Fake User'
+                ),
+                expect_errors=True
+            )
+        assert res.status_code == 403
+        assert not mock_signals.signals_sent()
+
+        user = OSFUser.objects.filter(username=username).first()
+        assert user
+        # User remains untouched, including affiliation, external identity email verifcaitons
+        assert user.fullname == fullname
+        assert user.given_name == 'Foo'
+        assert user.family_name == 'Bar'
+        assert institution not in user.affiliated_institutions.all()
+        assert external_identity == user.external_identity
+        assert email_verifications == user.email_verifications
+        assert accepted_terms_of_service == user.accepted_terms_of_service
+        assert not user.has_usable_password()

@@ -116,13 +116,19 @@ class InstitutionAuthentication(BaseAuthentication):
                 # contributor. Thus a random usable password must be assigned during activation.
                 new_password_required = True
             except exceptions.UnconfirmedAccountError:
-                # Unconfirmed user (i.e. a user that has been created during sign-up)
-                user.email_verifications = {}
-                activation_required = True
-                # Unconfirmed users already have a usable password set by the creator during
-                # sign-up. However, it must be overwritten by a new random one so the creator
-                # (if he is not the real person) can not access the account after activation.
-                new_password_required = True
+                if user.has_usable_password():
+                    # Unconfirmed user from default username / password signup
+                    user.email_verifications = {}
+                    activation_required = True
+                    # Unconfirmed users already have a usable password set by the creator during
+                    # sign-up. However, it must be overwritten by a new random one so the creator
+                    # (if he is not the real person) can not access the account after activation.
+                    new_password_required = True
+                else:
+                    # Login take-over has not been implemented for unconfirmed user created via
+                    # external IdP login (ORCiD).
+                    logger.error('Can not log into an unconfirmed account created by external IdP via institution SSO')
+                    return None, None
             except exceptions.DeactivatedAccountError:
                 # Deactivated user: login is not allowed for deactivated users
                 logger.error('Can not log into a deactivated account via institution SSO')
