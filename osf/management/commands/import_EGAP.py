@@ -142,10 +142,10 @@ def main(guid, creator_username):
 
         # add selectedFileName Just so filenames are listed in the UI
         for data in non_anon_metadata:
-            data['selectedFileName'] = data['name']
+            data['selectedFileName'] = data['data']['attributes']['name']
 
         for data in anon_metadata:
-            data['selectedFileName'] = data['name']
+            data['selectedFileName'] = data['data']['attributes']['name']
 
         non_anon_titles = ', '.join([data['data']['attributes']['name'] for data in non_anon_metadata])
         registration_metadata['q37'] = {'comments': [], 'extra': non_anon_metadata, 'value': non_anon_titles}
