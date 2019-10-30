@@ -92,7 +92,7 @@ class InstitutionAuthentication(BaseAuthentication):
         # Non-empty full name is required. Fail the auth and inform sentry if not provided.
         if not fullname:
             message = 'Institution login failed: fullname required for ' \
-                      'user {} from institution {}'.format(username, provider['id'])
+                      'user "{}" from institution "{}"'.format(username, provider['id'])
             sentry.log_message(message)
             raise AuthenticationFailed(message)
 
@@ -108,6 +108,7 @@ class InstitutionAuthentication(BaseAuthentication):
         if not created:
             try:
                 drf.check_user(user)
+                logger.info('Institution SSO: active user "{}"'.format(username))
             except exceptions.UnclaimedAccountError:
                 # Unclaimed user (i.e. a user that has been added as an unregistered contributor)
                 user.unclaimed_records = {}
@@ -115,6 +116,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 # Unclaimed users have an unusable password when being added as an unregistered
                 # contributor. Thus a random usable password must be assigned during activation.
                 new_password_required = True
+                logger.info('Institution SSO: unclaimed contributor "{}"'.format(username))
             except exceptions.UnconfirmedAccountError:
                 if user.has_usable_password():
                     # Unconfirmed user from default username / password signup
@@ -124,25 +126,40 @@ class InstitutionAuthentication(BaseAuthentication):
                     # sign-up. However, it must be overwritten by a new random one so the creator
                     # (if he is not the real person) can not access the account after activation.
                     new_password_required = True
+                    logger.info('Institution SSO: unconfirmed user "{}"'.format(username))
                 else:
                     # Login take-over has not been implemented for unconfirmed user created via
                     # external IdP login (ORCiD).
-                    logger.error('Can not log into an unconfirmed account created by external IdP via institution SSO')
+                    message = 'Institution SSO is not eligible for an unconfirmed account ' \
+                              'created via external IdP login: username = "{}"'.format(username)
+                    sentry.log_message(message)
+                    logger.error(message)
                     return None, None
             except exceptions.DeactivatedAccountError:
                 # Deactivated user: login is not allowed for deactivated users
-                logger.error('Can not log into a deactivated account via institution SSO')
+                message = 'Institution SSO is not eligible for a deactivated account: ' \
+                          'username = "{}"'.format(username)
+                sentry.log_message(message)
+                logger.error(message)
                 return None, None
             except exceptions.MergedAccountError:
                 # Merged user: this shouldn't happen since merged users do not have an email
-                logger.error('Can not log into a merged account via institution SSO')
+                message = 'Institution SSO is not eligible for a merged account: ' \
+                          'username = "{}"'.format(username)
+                sentry.log_message(message)
+                logger.error(message)
                 return None, None
             except exceptions.InvalidAccountError:
                 # Other invalid status: this shouldn't happen unless the user happens to be in a
                 # temporary state. Such state requires more updates before the user can be saved
                 # to the database. (e.g. `get_or_create_user()` creates a temporary-state user.)
-                logger.error('Can not log into an invalid account via institution SSO')
+                message = 'Institution SSO is not eligible for an inactive account with ' \
+                          'an unknown or invalid status: username = "{}"'.format(username)
+                sentry.log_message(message)
+                logger.error(message)
                 return None, None
+        else:
+            logger.info('Institution SSO: new user "{}"'.format(username))
 
         # Both created and activated accounts need to be updated and registered
         if created or activation_required:
