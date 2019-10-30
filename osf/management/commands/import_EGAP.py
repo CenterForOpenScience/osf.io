@@ -6,7 +6,6 @@ import json
 import shutil
 import requests
 import tempfile
-import argparse
 from django.core.management.base import BaseCommand
 from osf.utils.permissions import ADMIN
 from osf.models import (
@@ -24,8 +23,10 @@ from zipfile import ZipFile
 logger = logging.getLogger(__name__)
 HERE = os.path.dirname(os.path.abspath(__file__))
 
+
 class EGAPUploadException(Exception):
     pass
+
 
 def ensure_egap_schema():
     schema = ensure_schema_structure(from_json('egap-registration.json'))
@@ -39,6 +40,7 @@ def ensure_egap_schema():
     if created:
         schema_obj.save()
     return RegistrationSchema.objects.get(name='EGAP Registration')
+
 
 def get_creator_auth_header(creator_username):
     creator = OSFUser.objects.get(username=creator_username)
@@ -96,13 +98,13 @@ def recursive_upload(auth, node, dir_path, parent='', metadata=list()):
     return metadata
 
 
-def get_egap_assets(guid):
+def get_egap_assets(guid, creator_auth):
     node = Node.load(guid)
     zip_file = node.files.first()
     temp_path = tempfile.mkdtemp()
 
     url = '{}/v1/resources/{}/providers/osfstorage/{}'.format(WATERBUTLER_INTERNAL_URL, guid, zip_file._id)
-    zip_file = requests.get(url).content
+    zip_file = requests.get(url, headers=creator_auth).content
 
     egap_assets_path = os.path.join(temp_path, 'egap_assets.zip')
 
@@ -119,7 +121,7 @@ def main(guid, creator_username):
     egap_schema = ensure_egap_schema()
     creator, creator_auth = get_creator_auth_header(creator_username)
 
-    egap_assets_path = get_egap_assets(guid)
+    egap_assets_path = get_egap_assets(guid, creator_auth)
 
     directory_list = [directory for directory in os.listdir(egap_assets_path) if directory not in ('egap_assets.zip', '__MACOSX')]
 
@@ -132,6 +134,8 @@ def main(guid, creator_username):
         anon_files = os.path.join(egap_assets_path, epag_project_dir, 'data', 'anonymous')
         if os.path.isdir(anon_files):
             anon_metadata = recursive_upload(creator_auth, node, anon_files)
+        else:
+            anon_metadata = {}
 
         with open(os.path.join(egap_assets_path, epag_project_dir, 'registration-schema.json'), 'r') as fp:
             registration_metadata = json.load(fp)
@@ -165,7 +169,6 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
-        parser = argparse.ArgumentParser()
         parser.add_argument(
             '-c',
             '--creator',

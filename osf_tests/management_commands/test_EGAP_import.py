@@ -200,7 +200,7 @@ class TestEGAPImport:
             )
         )
 
-        asset_path = get_egap_assets(node_with_file._id)
+        asset_path = get_egap_assets(node_with_file._id, {'fake auth': 'sadasdadsdasdsds'})
         directory_list = os.listdir(asset_path)
         assert set(directory_list) == set(['20110307AA', '__MACOSX', '20110302AA', 'egap_assets.zip', '20120117AA'])
 
