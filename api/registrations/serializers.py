@@ -113,7 +113,7 @@ class RegistrationSerializer(NodeSerializer):
         help_text='The registration has been withdrawn.',
     )
 
-    date_registered = ser.SerializerMethodField(help_text='Date time of registration. Defaults to external registration date if available',)
+    date_registered = ser.SerializerMethodField(help_text='Date time of registration. Defaults to external registration date if available')
     date_withdrawn = VersionedDateTimeField(read_only=True, help_text='Date time of when this registration was retracted.')
     embargo_end_date = HideIfWithdrawal(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
     custom_citation = HideIfWithdrawal(ser.CharField(allow_blank=True, required=False))
