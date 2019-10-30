@@ -16,12 +16,6 @@ def check_id(root, item):
     return item.startswith(project_id)
 
 
-# Check if file name starts with EGAP id and contains form for example '20121001AA_Form.pdf'
-def check_form(root, item):
-    project_id_with_form = get_item_id(root.split('/')[-3]) + '_form'
-    return item.lower().startswith(project_id_with_form.lower())
-
-
 # Check if file follows anonymous naming convention
 check_anon = lambda item: 'pap_anon' in item.lower() or 'anonymous' in item.lower()
 
@@ -34,7 +28,7 @@ def action_files_by_name(root, source, item_name):
     :param item_name:
     :return:
     """
-    if not check_id(root, item_name) or check_form(root, item_name):
+    if not check_id(root, item_name):
         path = os.path.join(root, item_name)
         os.remove(path)
         return
@@ -111,17 +105,6 @@ def main(files_dir, metadata_dir, id_list=None):
                     assert '/anonymous' in root
                 else:
                     assert '/nonanonymous' in root
-
-    form_files = []
-
-    # check if any <id>_FORM files made it in
-    for root, dir, files in os.walk(files_dir):
-        for item in files:
-            if item not in ('project.json', 'registration-schema.json'):
-                if check_form(root, item):
-                    form_files.append(item)
-
-    assert not form_files
 
 
 if __name__ == '__main__':
