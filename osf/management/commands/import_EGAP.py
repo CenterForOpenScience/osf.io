@@ -17,6 +17,7 @@ from website.project.metadata.schemas import ensure_schema_structure, from_json
 from website.settings import WATERBUTLER_INTERNAL_URL
 from osf_tests.factories import ApiOAuth2PersonalTokenFactory
 from framework.auth.core import Auth
+from zipfile import ZipFile
 
 logger = logging.getLogger(__name__)
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -35,7 +36,7 @@ def ensure_egap_schema():
     )
     if created:
         schema_obj.save()
-
+    return RegistrationSchema.objects.get(name='EGAP Registration')
 
 def get_creator_auth_header(creator_username):
     creator = OSFUser.objects.get(username=creator_username)
@@ -93,14 +94,29 @@ def recursive_upload(auth, node, dir_path, parent='', metadata=list()):
     return metadata
 
 
-def main(creator_username):
-    ensure_egap_schema()
+def get_egap_assets(guid):
+    node = Node.load(guid)
+    zip_file = node.files.first()
+
+    url = '{}/v1/resources/{}/providers/osfstorage/{}'.format(WATERBUTLER_INTERNAL_URL, guid, zip_file._id)
+    zip_file = requests.get(url).content
+    with open('egap_assets.zip', 'w') as fp:
+        fp.write(zip_file)
+
+    with ZipFile('egap_assets.zip', 'r') as zipObj:
+        zipObj.extractall('temp')
+
+
+def main(guid, creator_username):
+    egap_schema = ensure_egap_schema()
     creator, creator_auth = get_creator_auth_header(creator_username)
 
-    egap_assets_path = os.path.join(HERE, 'EGAP')
-    egap_schema = RegistrationSchema.objects.get(name='EGAP Registration')
+    get_egap_assets(guid)
 
-    for epag_project_dir in os.listdir(egap_assets_path):
+    egap_assets_path = 'temp'
+    directory_list = [directory for directory in os.listdir(egap_assets_path) if '__MACOSX' != directory]
+
+    for epag_project_dir in directory_list:
         node = create_node_from_project_json(egap_assets_path, epag_project_dir, creator=creator)
 
         non_anon_files = os.path.join(egap_assets_path, epag_project_dir, 'data', 'nonanonymous')
@@ -145,7 +161,13 @@ class Command(BaseCommand):
             '--creator',
             help='This should be the username of the initial adminstrator for the imported nodes'
         )
+        parser.add_argument(
+            '-id',
+            '--guid',
+            help='This should be the guid of the private project with the directory structure'
+        )
 
     def handle(self, *args, **options):
         creator_username = options.get('creator', False)
-        main(creator_username)
+        guid = options.get('guid', False)
+        main(guid, creator_username)

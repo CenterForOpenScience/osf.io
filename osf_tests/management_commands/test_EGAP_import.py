@@ -1,5 +1,6 @@
 # encoding: utf-8
 import os
+import shutil
 import pytest
 import responses
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -13,14 +14,14 @@ from osf.models import (
     RegistrationSchema,
     ApiOAuth2PersonalToken
 )
-
 from osf.management.commands.import_EGAP import (
+    get_egap_assets,
     ensure_egap_schema,
     create_node_from_project_json,
     recursive_upload,
     get_creator_auth_header
 )
-
+from api_tests.utils import create_test_file
 from website.settings import WATERBUTLER_INTERNAL_URL
 
 
@@ -36,8 +37,22 @@ class TestEGAPImport:
         return NodeFactory(creator=greg)
 
     @pytest.fixture()
+    def node_with_file(self):
+        node = NodeFactory()
+        file = create_test_file(node, node.creator)
+        file.save()
+        node.save()
+        return node
+
+    @pytest.fixture()
     def egap_assets_path(self):
         return os.path.join(HERE, 'test_directory', 'EGAP')
+
+    @pytest.fixture()
+    def zip_data(self, egap_assets_path):
+        test_zip_path = os.path.join(egap_assets_path, 'test-egap.zip')
+        with open(test_zip_path, 'rb') as fp:
+            return fp.read()
 
     @pytest.fixture()
     def egap_project_name(self):
@@ -167,3 +182,27 @@ class TestEGAPImport:
         assert metadata[0] == {'metadata': 'for test-2!'}
         assert metadata[1] == {'data': {'attributes': {'path': 'parent'}}}
         assert metadata[2] == {'metadata': 'for test-1!'}
+
+    @responses.activate
+    def test_get_egap_assets(self, node_with_file, zip_data):
+        file_node = node_with_file.files.first()
+
+        responses.add(
+            responses.Response(
+                responses.GET,
+                '{}/v1/resources/{}/providers/osfstorage/{}'.format(
+                    WATERBUTLER_INTERNAL_URL,
+                    node_with_file._id,
+                    file_node._id
+                ),
+                body=zip_data,
+                status=200,
+            )
+        )
+
+        get_egap_assets(node_with_file._id)
+
+        directory_list = os.listdir('temp')
+        assert directory_list == ['20110307AA', '20120117AA', '__MACOSX', '20110302AA']
+
+        shutil.rmtree('temp')
