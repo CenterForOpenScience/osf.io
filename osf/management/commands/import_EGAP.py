@@ -6,6 +6,7 @@ import json
 import requests
 import argparse
 from django.core.management.base import BaseCommand
+from osf.utils.permissions import ADMIN
 from osf.models import (
     RegistrationSchema,
     Node,
@@ -49,7 +50,13 @@ def create_node_from_project_json(egap_assets_path, epag_project_dir, creator):
         node.save()  # must save before adding contribs for auth reasons
 
         for contributor in project_data['contributors']:
-            node.add_contributor_registered_or_not(Auth(creator), full_name=contributor['name'], email=contributor['email'])
+            node.add_contributor_registered_or_not(
+                Auth(creator),
+                full_name=contributor['name'],
+                email=contributor['email'],
+                permissions=ADMIN,
+                send_email='false'
+            )
 
         node.set_visible(creator, visible=False, log=False, save=True)
 
