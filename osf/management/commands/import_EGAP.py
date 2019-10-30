@@ -21,6 +21,8 @@ from framework.auth.core import Auth
 logger = logging.getLogger(__name__)
 HERE = os.path.dirname(os.path.abspath(__file__))
 
+class EGAPUploadException(Exception):
+    pass
 
 def ensure_egap_schema():
     schema = ensure_schema_structure(from_json('egap-registration.json'))
@@ -64,29 +66,29 @@ def create_node_from_project_json(egap_assets_path, epag_project_dir, creator):
 
 
 def recursive_upload(auth, node, dir_path, parent='', metadata=list()):
-    for item in os.listdir(dir_path):
-        item_path = os.path.join(dir_path, item)
-        base_url = '{}/v1/resources/{}/providers/osfstorage/{}'.format(WATERBUTLER_INTERNAL_URL, node._id, parent)
+    try:
+        for item in os.listdir(dir_path):
+            item_path = os.path.join(dir_path, item)
+            base_url = '{}/v1/resources/{}/providers/osfstorage/{}'.format(WATERBUTLER_INTERNAL_URL, node._id, parent)
+            if os.path.isfile(item_path):
+                with open(item_path, 'rb') as fp:
+                    url = base_url + '?name={}&kind=file'.format(item)
+                    resp = requests.put(url, data=fp.read(), headers=auth)
+            else:
+                url = base_url + '?name={}&kind=folder'.format(item)
+                resp = requests.put(url, headers=auth)
+                metadata = recursive_upload(auth, node, item_path, parent=resp.json()['data']['attributes']['path'], metadata=metadata)
 
-        if os.path.isfile(item_path):
-            with open(item_path, 'rb') as fp:
-                url = base_url + '?name={}&kind=file'.format(item)
-                resp = requests.put(url, data=fp.read(), headers=auth)
+            if resp.status_code == 409:  # if we retry something already uploaded just skip.
+                continue
 
             if resp.status_code != 201:
-                raise Exception('Error waterbutler response is {}, with {}'.format(resp.status_code, resp.content))
+                raise EGAPUploadException('Error waterbutler response is {}, with {}'.format(resp.status_code, resp.content))
 
             metadata.append(resp.json())
-        else:
-            url = base_url + '?name={}&kind=folder'.format(item)
-            resp = requests.put(url, headers=auth)
-
-            if resp.status_code != 201:
-                raise Exception('Error waterbutler response is {}, with {}'.format(resp.status_code, resp.content))
-
-            metadata.append(resp.json())
-
-            metadata = recursive_upload(auth, node, item_path, parent=resp.json()['data']['attributes']['path'], metadata=metadata)
+    except EGAPUploadException as e:
+        logger.info(str(e))
+        metadata = recursive_upload(auth, node, dir_path, parent=parent, metadata=metadata)
 
     return metadata
 
