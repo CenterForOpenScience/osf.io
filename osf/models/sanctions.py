@@ -584,6 +584,9 @@ class Retraction(EmailApprovableSanction):
     justification = models.CharField(max_length=2048, null=True, blank=True)
     date_retracted = NonNaiveDateTimeField(null=True, blank=True)
 
+    def _get_registration(self):
+        return self.registrations.first()
+
     def _view_url_context(self, user_id, node):
         registration = self.registrations.first()
         return {
