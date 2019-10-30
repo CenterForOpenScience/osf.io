@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Invoke tasks. To run a task, run ``$ invoke <COMMAND>``. To see a list of
 commands, run ``$ invoke --list``.
@@ -116,7 +116,7 @@ def apiserver(ctx, port=8000, wait=True, autoreload=True, host='127.0.0.1', pty=
 def adminserver(ctx, port=8001, host='127.0.0.1', pty=True):
     """Run the Admin server."""
     env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
-    cmd = '{} python manage.py runserver {}:{} --nothreading'.format(env, host, port)
+    cmd = '{} python3 manage.py runserver {}:{} --nothreading'.format(env, host, port)
     if settings.SECURE_MODE:
         cmd = cmd.replace('runserver', 'runsslserver')
         cmd += ' --certificate {} --key {}'.format(settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
@@ -124,7 +124,7 @@ def adminserver(ctx, port=8001, host='127.0.0.1', pty=True):
 
 @task
 def shell(ctx, transaction=True, print_sql=False, notebook=False):
-    cmd = 'DJANGO_SETTINGS_MODULE="api.base.settings" python manage.py osf_shell'
+    cmd = 'DJANGO_SETTINGS_MODULE="api.base.settings" python3 manage.py osf_shell'
     if print_sql:
         cmd += ' --print-sql'
     if notebook:
@@ -226,7 +226,7 @@ def rebuild_search(ctx):
 @task
 def mailserver(ctx, port=1025):
     """Run a SMTP test server."""
-    cmd = 'python -m smtpd -n -c DebuggingServer localhost:{port}'.format(port=port)
+    cmd = 'python3 -m smtpd -n -c DebuggingServer localhost:{port}'.format(port=port)
     ctx.run(bin_prefix(cmd), pty=True)
 
 
