@@ -43,8 +43,8 @@ class TestEGAPImport:
     def egap_project_name(self):
         return '20120220AA'
 
-    def test_get_creator_auth_header(self):
-        greg, auth_header = get_creator_auth_header()
+    def test_get_creator_auth_header(self, greg):
+        greg, auth_header = get_creator_auth_header(greg.username)
 
         gregs_token = ApiOAuth2PersonalToken.objects.get(owner=greg).token_id
         assert auth_header['Authorization'] == 'Bearer {}'.format(gregs_token)
