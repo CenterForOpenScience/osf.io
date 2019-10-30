@@ -276,7 +276,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
 
     @property
     def should_suppress_emails(self):
-        return bool(self.registrations.first().external_registered_date)
+        return bool(self._get_registration().external_registered_date)
 
     @staticmethod
     def _format_or_empty(template, context):
