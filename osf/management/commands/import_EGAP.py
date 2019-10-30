@@ -3,7 +3,9 @@ import logging
 
 import os
 import json
+import shutil
 import requests
+import tempfile
 import argparse
 from django.core.management.base import BaseCommand
 from osf.utils.permissions import ADMIN
@@ -97,24 +99,29 @@ def recursive_upload(auth, node, dir_path, parent='', metadata=list()):
 def get_egap_assets(guid):
     node = Node.load(guid)
     zip_file = node.files.first()
+    temp_path = tempfile.mkdtemp()
 
     url = '{}/v1/resources/{}/providers/osfstorage/{}'.format(WATERBUTLER_INTERNAL_URL, guid, zip_file._id)
     zip_file = requests.get(url).content
-    with open('egap_assets.zip', 'w') as fp:
+
+    egap_assets_path = os.path.join(temp_path, 'egap_assets.zip')
+
+    with open(egap_assets_path, 'w') as fp:
         fp.write(zip_file)
 
-    with ZipFile('egap_assets.zip', 'r') as zipObj:
-        zipObj.extractall('temp')
+    with ZipFile(egap_assets_path, 'r') as zipObj:
+        zipObj.extractall(temp_path)
+
+    return temp_path
 
 
 def main(guid, creator_username):
     egap_schema = ensure_egap_schema()
     creator, creator_auth = get_creator_auth_header(creator_username)
 
-    get_egap_assets(guid)
+    egap_assets_path = get_egap_assets(guid)
 
-    egap_assets_path = 'temp'
-    directory_list = [directory for directory in os.listdir(egap_assets_path) if '__MACOSX' != directory]
+    directory_list = [directory for directory in os.listdir(egap_assets_path) if directory not in ('egap_assets.zip', '__MACOSX')]
 
     for epag_project_dir in directory_list:
         node = create_node_from_project_json(egap_assets_path, epag_project_dir, creator=creator)
@@ -148,6 +155,9 @@ def main(guid, creator_username):
             schema=egap_schema,
             data=registration_metadata,
         )
+
+    shutil.rmtree(egap_assets_path)
+
 
 class Command(BaseCommand):
     """Magically morphs csv data into lovable nodes with draft registrations attached

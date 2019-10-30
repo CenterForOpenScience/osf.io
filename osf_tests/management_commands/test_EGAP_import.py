@@ -200,9 +200,8 @@ class TestEGAPImport:
             )
         )
 
-        get_egap_assets(node_with_file._id)
+        asset_path = get_egap_assets(node_with_file._id)
+        directory_list = os.listdir(asset_path)
+        assert set(directory_list) == set(['20110307AA', '__MACOSX', '20110302AA', 'egap_assets.zip', '20120117AA'])
 
-        directory_list = os.listdir('temp')
-        assert directory_list == ['20110307AA', '20120117AA', '__MACOSX', '20110302AA']
-
-        shutil.rmtree('temp')
+        shutil.rmtree(asset_path)
