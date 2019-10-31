@@ -239,15 +239,7 @@ class TokenApprovableSanction(Sanction):
         pass
 
     def ask(self, group):
-        """
-        :param list group: List of (user, node) tuples containing contributors to notify about the
-        sanction.
-        """
-        for contrib, node in group:
-            if contrib._id in self.approval_state:
-                self._notify_authorizer(contrib, node)
-            else:
-                self._notify_non_authorizer(contrib, node)
+        pass
 
     class Meta:
         abstract = True
@@ -312,8 +304,6 @@ class EmailApprovableSanction(TokenApprovableSanction):
         return {}
 
     def _notify_authorizer(self, authorizer, node):
-        if self.should_suppress_emails:
-            return
         context = self._email_template_context(authorizer,
                                             node,
                                             is_authorizer=True)
@@ -324,14 +314,25 @@ class EmailApprovableSanction(TokenApprovableSanction):
             raise NotImplementedError
 
     def _notify_non_authorizer(self, user, node):
-        if self.should_suppress_emails:
-            return
         context = self._email_template_context(user, node)
         if self.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE:
             self._send_approval_request_email(
                 user, self.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
         else:
             raise NotImplementedError
+
+    def ask(self, group):
+        """
+        :param list group: List of (user, node) tuples containing contributors to notify about the
+        sanction.
+        """
+        if self.should_suppress_emails:
+            return
+        for contrib, node in group:
+            if contrib._id in self.approval_state:
+                self._notify_authorizer(contrib, node)
+            else:
+                self._notify_non_authorizer(contrib, node)
 
     def add_authorizer(self, user, node, **kwargs):
         super(EmailApprovableSanction, self).add_authorizer(user, node,
