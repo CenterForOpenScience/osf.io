@@ -39,6 +39,7 @@ EXTERNAL_EMBER_APPS = {
         'path': '/ember_osf_web/',
         'routes': [
             'collections',
+            'registries',
             'handbook',
         ],
     },
