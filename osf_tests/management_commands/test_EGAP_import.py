@@ -76,7 +76,9 @@ class TestEGAPImport:
         assert node.creator == greg
 
         assert len(node.contributors.all()) == 5
-        assert node.contributors.exclude(username='greg@greg.com').first().fullname == 'Fletcher Cox'
+        contrib = node.contributors.exclude(username='greg@greg.com').first()
+        assert contrib.fullname == 'Fletcher Cox'
+        assert node.get_permissions(contrib) == ['read', 'write']
         assert not node.get_visible(greg)
 
     @responses.activate

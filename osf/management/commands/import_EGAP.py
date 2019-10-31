@@ -7,7 +7,7 @@ import shutil
 import requests
 import tempfile
 from django.core.management.base import BaseCommand
-from osf.utils.permissions import ADMIN
+from osf.utils.permissions import WRITE
 from osf.models import (
     RegistrationSchema,
     Node,
@@ -61,7 +61,7 @@ def create_node_from_project_json(egap_assets_path, epag_project_dir, creator):
                 Auth(creator),
                 full_name=contributor['name'],
                 email=contributor['email'],
-                permissions=ADMIN,
+                permissions=WRITE,
                 send_email='false'
             )
 
