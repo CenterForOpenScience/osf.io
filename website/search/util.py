@@ -3,6 +3,7 @@ from __future__ import print_function
 import logging
 import re
 import unicodedata
+import six
 
 from website import settings
 
@@ -75,7 +76,7 @@ def clean_splitters(text):
     new_text = text.replace('_', ' ').replace('-', ' ').replace('.', ' ')
     if new_text == text:
         return ''
-    return new_text
+    return unicode_normalize(new_text)
 
 
 def es_escape(text):
@@ -246,6 +247,20 @@ def quote_query_string(chars):
 
     return qs
 
+def replace_normalized_field(qs):
+    FIELDS = ('user', 'names', 'title', 'description', 'name', 'tags')
+    for name in FIELDS:
+        qs = re.sub('(^|[\\(\\s]?){}\\:'.format(name),
+                    '\\1normalized_{}:'.format(name), qs)
+    return qs
+
+def convert_query_string(qs, normalize=False):
+    qs = quote_query_string(qs)
+    qs = replace_normalized_field(qs)
+    if normalize:
+        return unicode_normalize(qs)
+    else:
+        return qs
 
 def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
     match_node = {
@@ -347,7 +362,11 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
         'size': size,
     }
 
-def normalize(text):
+def unicode_normalize(text):
+    try:
+        text = six.u(text)
+    except TypeError:
+        pass
     normalized = unicodedata.normalize('NFKD', text)
     if not settings.ENABLE_MULTILINGUAL_SEARCH:
         normalized = normalized.encode('ascii', 'ignore')

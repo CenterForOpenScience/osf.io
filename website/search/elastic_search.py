@@ -10,8 +10,6 @@ import math
 import re
 from framework import sentry
 
-import six
-
 from django.apps import apps
 from django.core.paginator import Paginator
 from django.contrib.contenttypes.models import ContentType
@@ -35,7 +33,7 @@ from website import settings
 from website.filters import profile_image_url
 from osf.models.licenses import serialize_node_license_record
 from website.search import exceptions
-from website.search.util import build_query, clean_splitters, es_escape, quote_query_string, normalize, quote
+from website.search.util import build_query, clean_splitters, es_escape, convert_query_string, unicode_normalize, quote
 from website.views import validate_page_num
 
 logger = logging.getLogger(__name__)
@@ -195,12 +193,13 @@ def get_tags(query, index):
 
 
 @requires_search
-def search(query, index=None, doc_type='_all', raw=False):
+def search(query, index=None, doc_type='_all', raw=False, normalize=True):
     """Search for a query
 
     :param query: The substring of the username/project name/tag to search for
     :param index:
     :param doc_type:
+    :param normalize: normalize unicode strings
 
     :return: List of dictionaries, each containing the results, counts, tags and typeAliases
         results: All results returned by the query, that are within the index and search type
@@ -228,19 +227,19 @@ def search(query, index=None, doc_type='_all', raw=False):
                                      'should' in query['query']['bool']
         if from_browser:
             q = query['query']['filtered']['query']['query_string']['query']
-            q = quote_query_string(q)
+            q = convert_query_string(q, normalize=normalize)
             query['query']['filtered']['query']['query_string']['query'] = q
         elif from_build_private_search_query:
             q = query['query']['bool']['must'][0]['query_string']['query']
-            q = quote_query_string(q)
+            q = convert_query_string(q, normalize=normalize)
             query['query']['bool']['must'][0]['query_string']['query'] = q
         elif from_build_query:
             q = query['query']['query_string']['query']
-            q = quote_query_string(q)
+            q = convert_query_string(q, normalize=normalize)
             query['query']['query_string']['query'] = q
         elif from_build_query_with_guid:
             q = query['query']['bool']['should'][0]['query_string']['query']
-            q = quote_query_string(q)
+            q = convert_query_string(q, normalize=normalize)
             query['query']['bool']['should'][0]['query_string']['query'] = q
 
     tag_query = copy.deepcopy(query)
@@ -427,11 +426,11 @@ def serialize_node(node, category):
     elastic_document = {}
     parent_id = node.parent_id
 
-    try:
-        normalized_title = six.u(node.title)
-    except TypeError:
-        normalized_title = node.title
-    normalized_title = normalize(normalized_title)
+    normalized_title = unicode_normalize(node.title)
+
+    tags = list(node.tags.filter(system=False).values_list('name', flat=True))
+    normalized_tags = [unicode_normalize(tag) for tag in tags]
+
     elastic_document = {
         'id': node._id,
         'contributors': [
@@ -454,8 +453,10 @@ def serialize_node(node, category):
         'normalized_title': normalized_title,
         'category': category,
         'public': node.is_public,
-        'tags': list(node.tags.filter(system=False).values_list('name', flat=True)),
+        'tags': tags,
+        'normalized_tags': normalized_tags,
         'description': node.description,
+        'normalized_description': unicode_normalize(node.description),
         'url': node.url,
         'is_registration': node.is_registration,
         'is_pending_registration': node.is_pending_registration,
@@ -473,20 +474,22 @@ def serialize_node(node, category):
         'extra_search_terms': clean_splitters(node.title),
     }
     if not node.is_retracted:
+        wiki_names = []
         for wiki in WikiPage.objects.get_wiki_pages_latest(node):
             # '.' is not allowed in field names in ES2
-            elastic_document['wikis'][wiki.wiki_page.page_name.replace('.', ' ')] = wiki.raw_text(node)
+            wiki_name = unicode_normalize(wiki.wiki_page.page_name.replace('.', ' '))
+            elastic_document['wikis'][wiki_name] = unicode_normalize(wiki.raw_text(node))
+            wiki_names.append(wiki_name)
+        elastic_document['wiki_names'] = wiki_names
 
     return elastic_document
 
 def serialize_preprint(preprint, category):
     elastic_document = {}
 
-    try:
-        normalized_title = six.u(preprint.title)
-    except TypeError:
-        normalized_title = preprint.title
-    normalized_title = normalize(normalized_title)
+    normalized_title = unicode_normalize(preprint.title)
+    tags = list(preprint.tags.filter(system=False).values_list('name', flat=True))
+    normalized_tags = [unicode_normalize(tag) for tag in tags]
     elastic_document = {
         'id': preprint._id,
         'contributors': [
@@ -504,8 +507,10 @@ def serialize_preprint(preprint, category):
         'public': preprint.is_public,
         'published': preprint.verified_publishable,
         'is_retracted': preprint.is_retracted,
-        'tags': list(preprint.tags.filter(system=False).values_list('name', flat=True)),
+        'tags': tags,
+        'normalized_tags': normalized_tags,
         'description': preprint.description,
+        'normalized_description': unicode_normalize(preprint.description),
         'url': preprint.url,
         'date_created': preprint.created,
         'license': serialize_node_license_record(preprint.license),
@@ -518,11 +523,7 @@ def serialize_preprint(preprint, category):
 def serialize_group(group, category):
     elastic_document = {}
 
-    try:
-        normalized_title = six.u(group.name)
-    except TypeError:
-        normalized_title = group.name
-    normalized_title = normalize(normalized_title)
+    normalized_title = unicode_normalize(group.name)
     elastic_document = {
         'id': group._id,
         'members': [
@@ -632,6 +633,9 @@ def serialize_cgm_contributor(contrib):
 
 def serialize_cgm(cgm):
     obj = cgm.guid.referent
+    tags = list(obj.tags.filter(system=False).values_list('name', flat=True))
+    normalized_tags = [unicode_normalize(tag) for tag in tags]
+
     contributors = []
     if hasattr(obj, '_contributors'):
         contributors = obj._contributors.filter(contributor__visible=True).order_by('contributor___order').values('fullname', 'guids___id', 'is_active')
@@ -650,7 +654,8 @@ def serialize_cgm(cgm):
         'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'title': getattr(obj, 'title', ''),
         'url': getattr(obj, 'url', ''),
-        'tags': list(obj.tags.filter(system=False).values_list('name', flat=True)),
+        'tags': tags,
+        'normalized_tags': normalized_tags,
         'category': 'collectionSubmission',
     }
 
@@ -731,11 +736,7 @@ def update_user(user, index=None):
     normalized_names = {}
     for key, val in names.items():
         if val is not None:
-            try:
-                val = six.u(val)
-            except TypeError:
-                pass  # This is fine, will only happen in 2.x if val is already unicode
-            normalized_names[key] = normalize(val)
+            normalized_names[key] = unicode_normalize(val)
 
     user_doc = {
         'id': user._id,
@@ -803,6 +804,9 @@ def update_file(file_, index=None, delete=False):
     else:
         node_url = '/{target_id}/'.format(target_id=target._id)
 
+    tags = list(file_.tags.filter(system=False).values_list('name', flat=True))
+    normalized_tags = [unicode_normalize(tag) for tag in tags]
+
     guid_url = None
     file_guid = file_.get_guid(create=False)
     if file_guid:
@@ -813,8 +817,10 @@ def update_file(file_, index=None, delete=False):
         'id': file_._id,
         'deep_url': None if isinstance(target, Preprint) else file_deep_url,
         'guid_url': None if isinstance(target, Preprint) else guid_url,
-        'tags': list(file_.tags.filter(system=False).values_list('name', flat=True)),
+        'tags': tags,
+        'normalized_tags': normalized_tags,
         'name': file_.name,
+        'normalized_name': unicode_normalize(file_.name),
         'category': 'file',
         'node_url': node_url,
         'node_title': getattr(target, 'title', None),
@@ -1018,11 +1024,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     exclude = exclude or []
     normalized_items = []
     for item in items:
-        try:
-            normalized_item = six.u(item)
-        except TypeError:
-            normalized_item = item
-        normalized_item = normalize(normalized_item)
+        normalized_item = unicode_normalize(item)
         normalized_items.append(normalized_item)
     items = normalized_items
 
@@ -1048,7 +1050,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
             current_user.affiliated_institutions.values_list('_id', flat=True)
         ))
 
-    results = search(build_query(query, start=start, size=size, sort=None, user_guid=escaped_query), index=INDEX, doc_type='user')
+    results = search(build_query(query, start=start, size=size, sort=None, user_guid=escaped_query), index=INDEX, doc_type='user', normalize=False)
     docs = results['results']
     pages = math.ceil(results['counts'].get('user', 0) / size)
     validate_page_num(page, pages)

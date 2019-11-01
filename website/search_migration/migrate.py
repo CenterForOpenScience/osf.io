@@ -9,7 +9,6 @@ import logging
 from django.db import connection
 from django.core.paginator import Paginator
 from elasticsearch2 import helpers
-import six
 
 import website.search.search as search
 from website.search.elastic_search import client
@@ -26,7 +25,7 @@ from website.search.elastic_search import client as es_client
 from website.search.elastic_search import bulk_update_cgm
 from website.search.elastic_search import PROJECT_LIKE_TYPES
 from website.search.search import update_institution, bulk_update_collected_metadata
-from website.search.util import normalize as util_normalize
+from website.search.util import unicode_normalize
 
 
 logger = logging.getLogger(__name__)
@@ -48,20 +47,46 @@ def normalize(docs):
             normalized_names = {}
             for key, val in doc['doc']['names'].items():
                 if val is not None:
-                    try:
-                        val = six.u(val)
-                    except TypeError:
-                        pass  # This is fine, will only happen in 2.x if val is already unicode
-                    normalized_names[key] = util_normalize(val)
+                    normalized_names[key] = unicode_normalize(val)
             doc['doc']['normalized_user'] = normalized_names['fullname']
             doc['doc']['normalized_names'] = normalized_names
+    elif doc_type == 'file':
+        name = doc['doc']['name']
+        doc['doc']['normalized_name'] = unicode_normalize(name)
+        normalized_tags = []
+        for tag in doc['doc']['tags']:
+            normalized_tags.append(unicode_normalize(tag))
+        doc['doc']['normalized_tags'] = normalized_tags
     elif doc_type in PROJECT_LIKE_TYPES:
         for doc in docs:
-            try:
-                title = six.u(doc['doc']['title'])
-            except TypeError:
-                title = doc['doc']['title']
-            doc['doc']['normalized_title'] = util_normalize(title)
+            title = doc['doc']['title']
+            doc['doc']['normalized_title'] = unicode_normalize(title)
+            description = doc['doc']['description']
+            if description:
+                doc['doc']['normalized_description'] = unicode_normalize(description)
+            normalized_tags = []
+            for tag in doc['doc']['tags']:
+                normalized_tags.append(unicode_normalize(tag))
+            doc['doc']['normalized_tags'] = normalized_tags
+
+            wikis = doc['doc']['wikis']
+            if isinstance(wikis, list):
+                new_wikis = {}
+                for kv in wikis:
+                    if isinstance(kv, dict):
+                        for k, v in kv.items():
+                            new_wikis[k] = v
+                wikis = new_wikis
+            elif not isinstance(wikis, dict):
+                wikis = {}
+            normalized_wikis = {}
+            normalized_wiki_names = []
+            for wikiname, wikidata in wikis.items():
+                wikiname = unicode_normalize(wikiname)
+                normalized_wikis[wikiname] = unicode_normalize(wikidata)
+                normalized_wiki_names.append(wikiname)
+            doc['doc']['wikis'] = normalized_wikis
+            doc['doc']['wiki_names'] = normalized_wiki_names
 
 def sql_migrate(index, sql, max_id, increment, es_args=None, **kwargs):
     """ Run provided SQL and send output to elastic.

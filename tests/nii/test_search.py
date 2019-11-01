@@ -12,6 +12,7 @@ from osf_tests import factories
 from tests.base import OsfTestCase
 from website.util import web_url_for, api_url_for
 from website.views import find_bookmark_collection
+from addons.wiki.models import WikiPage
 
 from website.search.util import quote_query_string
 
@@ -101,6 +102,15 @@ def get_tags(results, node_title):
             return [r for r in result['tags']]
     return []
 
+def get_filetags(results, file_name):
+    file_name = s2u(file_name)
+    for result in results:
+        if result['category'] != 'file':
+            continue
+        if s2u(result['name']) == file_name:
+            return [r for r in result['tags']]
+    return []
+
 def get_user_fullnames(results):
     return [r['names']['fullname'] for r in results if r['category'] == 'user']
 
@@ -145,19 +155,64 @@ class TestSearch(OsfTestCase):
             self.user4 = factories.AuthUserFactory(
                 fullname=u'\u304e')  # ぎ
 
-            self.project_private_user1 = factories.ProjectFactory(title='private日本語プロジェクト1', creator=self.user1, is_public=False)
-            self.project_private_user2_1 = factories.ProjectFactory(title='private日本語プロジェクト2_1', creator=self.user2, is_public=False)
-            self.project_private_user2_2 = factories.ProjectFactory(title='private日本語プロジェクト2_2', creator=self.user2, is_public=False)
+            self.project_private_user1_1 = factories.ProjectFactory(
+                title='private日本語プロジェクト1_1',
+                creator=self.user1,
+                description=u'\u304f\u3099',  # く+濁点
+                is_public=False)
+            rootdir = self.project_private_user1_1.get_addon('osfstorage').get_root()
+            self.f1 = rootdir.append_file(u'日本語ファイル名.txt')
+            self.f1.add_tag('12345',
+                            Auth(self.user1), save=False)
+            self.f1.add_tag(u'\uff16\uff17\uff18\uff19\uff10',  # ６７８９０
+                            Auth(self.user1), save=False)
+            self.f1.save()
+            self.f2 = rootdir.append_file(u'\u305f\u3099')  # た+濁点
+            self.f3 = rootdir.append_file(u'\u3062')  # ぢ
+            self.project_private_user1_1.add_tag(u'日本語タグ',
+                                                 Auth(self.user1),
+                                                 save=False)
+            self.project_private_user1_1.add_tag(u'\u3064\u3099',  # つ+濁点
+                                                 Auth(self.user1),
+                                                 save=False)
+            self.project_private_user1_1.add_tag(u'\u3067',  # で
+                                                 Auth(self.user1),
+                                                 save=False)
+            self.project_private_user1_1.save()
+            self.wiki1 = WikiPage.objects.create_for_node(
+                self.project_private_user1_1,
+                u'\u3055\u3099',  # page name (wiki_names:): さ+濁点
+                u'\u3059\u3099',  # content (wikis:): す+濁点
+                Auth(self.user1))
+            self.wiki2 = WikiPage.objects.create_for_node(
+                self.project_private_user1_1,
+                u'\u3058',  # page name (wiki_names:): じ
+                u'\u305c',  # content (wikis:): ぜ
+                Auth(self.user1))
 
-            self.project_public_user1 = factories.ProjectFactory(title='public日本語プロジェクト1', creator=self.user1, is_public=True)
-            self.project_public_user2 = factories.ProjectFactory(title='public日本語プロジェクト2', creator=self.user2, is_public=True)
+            self.project_private_user1_2 = factories.ProjectFactory(
+                title='private日本語プロジェクト1_2',
+                creator=self.user1,
+                description=u'\u3052',  # げ
+                is_public=False)
 
-            # private file
-            rootdir = self.project_private_user1.get_addon('osfstorage').get_root()
-            rootdir.append_file(u'日本語ファイル名.txt')
-            self.project_private_user1.add_tag(u'日本語タグ',
-                                               Auth(self.user1),
-                                               save=True)
+            self.project_private_user2_1 = factories.ProjectFactory(
+                title='private日本語プロジェクト2_1',
+                creator=self.user2,
+                is_public=False)
+            self.project_private_user2_2 = factories.ProjectFactory(
+                title='private日本語プロジェクト2_2',
+                creator=self.user2,
+                is_public=False)
+
+            self.project_public_user1 = factories.ProjectFactory(
+                title='public日本語プロジェクト1',
+                creator=self.user1,
+                is_public=True)
+            self.project_public_user2 = factories.ProjectFactory(
+                title='public日本語プロジェクト2',
+                creator=self.user2,
+                is_public=True)
 
     @enable_private_search
     def tearDown(self):
@@ -200,8 +255,8 @@ class TestSearch(OsfTestCase):
         res, results = self.query_private_search(qs, self.user1)
         user_fullnames = get_user_fullnames(results)
         node_titles = get_node_titles(results)
-        contributors = get_contributors(results, self.project_private_user1.title)
-        tags = get_tags(results, self.project_private_user1.title)
+        contributors = get_contributors(results, self.project_private_user1_1.title)
+        tags = get_tags(results, self.project_private_user1_1.title)
         filenames = get_filenames(results)
 
         DEBUG('results', results)
@@ -211,12 +266,12 @@ class TestSearch(OsfTestCase):
         DEBUG('tags', tags)
         DEBUG('filenames', filenames)
 
-        assert_equal(len(results), 6)  # user=2, project=3, file=1
+        assert_equal(len(results), 9)  # user=2, project=4, file=3
         assert_equal(len(user_fullnames), 2)
-        assert_equal(len(node_titles), 3)  # private=1, public=2
+        assert_equal(len(node_titles), 4)  # private=2, public=2
         assert_equal(len(contributors), 1)
-        assert_equal(len(tags), 1)
-        assert_equal(len(filenames), 1)
+        assert_equal(len(tags), 3)
+        assert_equal(len(filenames), 3)
         assert_not_in(
             s2u(self.project_private_user2_1.title),
             s2u(node_titles)
@@ -259,7 +314,7 @@ class TestSearch(OsfTestCase):
         assert_equal(len(tags), 0)
         assert_equal(len(filenames), 0)
         assert_not_in(
-            s2u(self.project_private_user1.title),
+            s2u(self.project_private_user1_1.title),
             s2u(node_titles)
         )
         assert_not_in(
@@ -332,8 +387,8 @@ class TestSearch(OsfTestCase):
         res, results = self.query_private_search(qs, self.user1)
         user_fullnames = get_user_fullnames(results)
         node_titles = get_node_titles(results)
-        contributors = get_contributors(results, self.project_private_user1.title)
-        tags = get_tags(results, self.project_private_user1.title)
+        contributors = get_contributors(results, self.project_private_user1_1.title)
+        tags = get_tags(results, self.project_private_user1_1.title)
         filenames = get_filenames(results)
 
         DEBUG('results', results)
@@ -345,9 +400,9 @@ class TestSearch(OsfTestCase):
 
         assert_equal(len(results), 1)
         assert_equal(len(user_fullnames), 0)
-        assert_equal(len(node_titles), 1)  # private=2, public=2
+        assert_equal(len(node_titles), 1)
         assert_equal(len(contributors), 1)
-        assert_equal(len(tags), 1)
+        assert_equal(len(tags), 3)
         assert_equal(len(filenames), 0)
 
     @enable_private_search
@@ -356,12 +411,12 @@ class TestSearch(OsfTestCase):
         ファイル名を検索できることを確認する。
         AND 式も使用して、ファイル名に含まれる文字をさらに限定している。
         """
-        qs = 'category:file && 日本語'
+        qs = 'category:file && 日本語ファイル'
         res, results = self.query_private_search(qs, self.user1)
         user_fullnames = get_user_fullnames(results)
         node_titles = get_node_titles(results)
-        contributors = get_contributors(results, self.project_private_user1.title)
-        tags = get_tags(results, self.project_private_user1.title)
+        contributors = get_contributors(results, self.project_private_user1_1.title)
+        tags = get_tags(results, self.project_private_user1_1.title)
         filenames = get_filenames(results)
 
         DEBUG('results', results)
@@ -379,38 +434,269 @@ class TestSearch(OsfTestCase):
         assert_equal(len(filenames), 1)
 
     @enable_private_search
-    def _common_normalize_contributor(self, qs):
-        # app.get() の場合は str にしなければならない。
+    def _common_normalize(self, qs):
+        # app.get() requires str
+        qs = u2s(qs)
+        res, results = self.query_private_search(qs, self.user1)
+        return (res, results)
+
+    def test_normalize_user1(self):
+        """
+        Unicode正規化のテスト。通常検索でUserを検索する場合。
+        データベースに登録されている濁点付き文字が結合可能濁点と母体の
+        文字の組み合わせで表現されている場合に、合成済み文字で検索でき
+        ることを確認する。
+        """
+        qs = u'category:user AND \u304c'  # が
+        res, results = self._common_normalize(qs)
+        user_fullnames = get_user_fullnames(results)
+        DEBUG('results', results)
+        DEBUG('user_fullnames', user_fullnames)
+        assert_equal(len(results), 1)
+        assert_equal(len(user_fullnames), 1)
+
+    def test_normalize_user2(self):
+        """
+        Unicode正規化のテスト。通常検索でUserを検索する場合。
+        データベースに登録されている濁点付き文字が合成済み文字の場合に、
+        結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
+        """
+        qs = u'category:user AND \u304d\u3099'  # き+濁点
+        res, results = self._common_normalize(qs)
+        user_fullnames = get_user_fullnames(results)
+        DEBUG('results', results)
+        DEBUG('user_fullnames', user_fullnames)
+        assert_equal(len(results), 1)
+        assert_equal(len(user_fullnames), 1)
+
+    def test_normalize_description1(self):
+        """
+        Unicode正規化のテスト。通常検索でdescriptionを検索する場合。
+        データベースに登録されている濁点付き文字が結合可能濁点と母体の
+        文字の組み合わせで表現されている場合に、合成済み文字で検索でき
+        ることを確認する。
+        """
+        qs = u'category:project AND \u3050'  # ぐ
+        res, results = self._common_normalize(qs)
+        node_titles = get_node_titles(results)
+        DEBUG('results', results)
+        DEBUG('node_titles', node_titles)
+        assert_equal(len(results), 1)
+        assert_equal(len(node_titles), 1)
+
+    def test_normalize_description2(self):
+        """
+        Unicode正規化のテスト。通常検索でdescriptionを検索する場合。
+        データベースに登録されている濁点付き文字が合成済み文字の場合に、
+        結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
+        """
+        qs = u'category:project AND \u3051\u3099'  # け+濁点
+        res, results = self._common_normalize(qs)
+        node_titles = get_node_titles(results)
+        DEBUG('results', results)
+        DEBUG('node_titles', node_titles)
+        assert_equal(len(results), 1)
+        assert_equal(len(node_titles), 1)
+
+    def test_normalize_wikiname1(self):
+        """
+        Unicode正規化のテスト。通常検索でwikiページ名を検索する場合。
+        データベースに登録されている濁点付き文字が結合可能濁点と母体の
+        文字の組み合わせで表現されている場合に、合成済み文字で検索でき
+        ることを確認する。
+        """
+        qs = u'\u3056'  # ざ
+        res, results = self._common_normalize(qs)
+        node_titles = get_node_titles(results)
+        tags = get_tags(results, self.project_private_user1_1.title)
+        DEBUG('results', results)
+        DEBUG('node_titles', node_titles)
+        DEBUG('tags', tags)
+        assert_equal(len(results), 1)
+        assert_equal(len(node_titles), 1)
+        assert_equal(len(tags), 3)
+
+    def test_normalize_wikiname2(self):
+        """
+        Unicode正規化のテスト。通常検索でwikiページ名を検索する場合。
+        データベースに登録されている濁点付き文字が合成済み文字の場合に、
+        結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
+        """
+        qs = u'\u3057\u3099'  # し+濁点
+        res, results = self._common_normalize(qs)
+        node_titles = get_node_titles(results)
+        tags = get_tags(results, self.project_private_user1_1.title)
+        DEBUG('results', results)
+        DEBUG('node_titles', node_titles)
+        DEBUG('tags', tags)
+        assert_equal(len(results), 1)
+        assert_equal(len(node_titles), 1)
+        assert_equal(len(tags), 3)
+
+    def test_normalize_wikicontent1(self):
+        """
+        Unicode正規化のテスト。通常検索でwikiページ本文を検索する場合。
+        データベースに登録されている濁点付き文字が結合可能濁点と母体の
+        文字の組み合わせで表現されている場合に、合成済み文字で検索でき
+        ることを確認する。
+        """
+        qs = u'\u305a'  # ず
+        res, results = self._common_normalize(qs)
+        node_titles = get_node_titles(results)
+        tags = get_tags(results, self.project_private_user1_1.title)
+        DEBUG('results', results)
+        DEBUG('node_titles', node_titles)
+        DEBUG('tags', tags)
+        assert_equal(len(results), 1)
+        assert_equal(len(node_titles), 1)
+        assert_equal(len(tags), 3)
+
+    def test_normalize_wikicontent2(self):
+        """
+        Unicode正規化のテスト。通常検索でwikiページ本文を検索する場合。
+        データベースに登録されている濁点付き文字が合成済み文字の場合に、
+        結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
+        """
+        qs = u'\u305b\u3099'  # せ+濁点
+        res, results = self._common_normalize(qs)
+        node_titles = get_node_titles(results)
+        tags = get_tags(results, self.project_private_user1_1.title)
+        DEBUG('results', results)
+        DEBUG('node_titles', node_titles)
+        DEBUG('tags', tags)
+        assert_equal(len(results), 1)
+        assert_equal(len(node_titles), 1)
+        assert_equal(len(tags), 3)
+
+    def test_normalize_filename1(self):
+        """
+        Unicode正規化のテスト。通常検索でファイル名を検索する場合。
+        データベースに登録されている濁点付き文字が結合可能濁点と母体の
+        文字の組み合わせで表現されている場合に、合成済み文字で検索でき
+        ることを確認する。
+        """
+        qs = u'\u3060'  # だ
+        res, results = self._common_normalize(qs)
+        filenames = get_filenames(results)
+        DEBUG('results', results)
+        DEBUG('filenames', filenames)
+        assert_equal(len(results), 1)
+        assert_equal(len(filenames), 1)
+
+    def test_normalize_filename2(self):
+        """
+        Unicode正規化のテスト。通常検索でファイル名を検索する場合。
+        データベースに登録されている濁点付き文字が合成済み文字の場合に、
+        結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
+        """
+        qs = u'\u3061\u3099'  # ち+濁点
+        res, results = self._common_normalize(qs)
+        filenames = get_filenames(results)
+        DEBUG('results', results)
+        DEBUG('filenames', filenames)
+        assert_equal(len(results), 1)
+        assert_equal(len(filenames), 1)
+
+    def test_normalize_tags1(self):
+        """
+        Unicode正規化のテスト。通常検索でtagsを検索する場合。
+        データベースに登録されている濁点付き文字が結合可能濁点と母体の
+        文字の組み合わせで表現されている場合に、合成済み文字で検索でき
+        ることを確認する。
+        """
+        qs = u'tags:\u3065'  # づ
+        res, results = self._common_normalize(qs)
+        node_titles = get_node_titles(results)
+        tags = get_tags(results, self.project_private_user1_1.title)
+        DEBUG('results', results)
+        DEBUG('node_titles', node_titles)
+        DEBUG('tags', tags)
+        assert_equal(len(results), 1)
+        assert_equal(len(node_titles), 1)
+        assert_equal(len(tags), 3)
+
+    def test_normalize_tags2(self):
+        """
+        Unicode正規化のテスト。通常検索でtagsを検索する場合。
+        データベースに登録されている濁点付き文字が合成済み文字の場合に、
+        結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
+        """
+        qs = u'tags:\u3066\u3099'  # て+濁点
+        res, results = self._common_normalize(qs)
+        node_titles = get_node_titles(results)
+        tags = get_tags(results, self.project_private_user1_1.title)
+        DEBUG('results', results)
+        DEBUG('node_titles', node_titles)
+        DEBUG('tags', tags)
+        assert_equal(len(results), 1)
+        assert_equal(len(node_titles), 1)
+        assert_equal(len(tags), 3)
+
+    def test_normalize_filetags1(self):
+        """
+        Unicode正規化のテスト。通常検索でファイルのtagsを検索する場合。
+        データベースに登録されている半角数字を全角数字で検索できる
+        ことを確認する。
+        """
+        qs = u'tags:\uff11\uff12\uff13\uff14\uff15'  # １２３４５
+        res, results = self._common_normalize(qs)
+        filenames = get_filenames(results)
+        tags = get_filetags(results, self.f1.name)
+        DEBUG('results', results)
+        DEBUG('filenames', filenames)
+        DEBUG('tags', tags)
+        assert_equal(len(results), 1)
+        assert_equal(len(filenames), 1)
+        assert_equal(len(tags), 2)
+
+    def test_normalize_filetags2(self):
+        """
+        Unicode正規化のテスト。通常検索でファイルのtagsを検索する場合。
+        データベースに登録されている全角数字を半角数字で検索できる
+        ことを確認する。
+        """
+        qs = u'tags:67890'
+        res, results = self._common_normalize(qs)
+        filenames = get_filenames(results)
+        tags = get_filetags(results, self.f1.name)
+        DEBUG('results', results)
+        DEBUG('filenames', filenames)
+        DEBUG('tags', tags)
+        assert_equal(len(results), 1)
+        assert_equal(len(filenames), 1)
+        assert_equal(len(tags), 2)
+
+    @enable_private_search
+    def _common_normalize_search_contributor(self, qs):
+        # app.get() requires str
+        qs = u2s(qs)
         res, results = self.query_search_contributor(qs, self.user1)
 
-        # get_user_fullnames() cannot be used here.
+        # get_user_fullnames() cannot be used for query_search_contributor().
         user_fullnames = [r['fullname'] for r in results]
         DEBUG('results', results)
         DEBUG('user_fullnames', user_fullnames)
         assert_equal(len(results), 1)
         assert_equal(len(user_fullnames), 1)
 
-    def test_normalize_contributor1(self):
+    def test_normalize_search_contributor1(self):
         """
-        Unicode正規化のテスト。
+        Unicode正規化のテスト。Add Contributorsにおける検索の場合。
         データベースに登録されている濁点付き文字が結合可能濁点と母体の
         文字の組み合わせで表現されている場合に、合成済み文字で検索でき
         ることを確認する。
-        Add Contributorsにおける検索のみ、正規化の効果がある。
         """
-        qs = u2s(u'\u304c')  # が
-        self._common_normalize_contributor(qs)
+        qs = u'\u304c'  # が
+        self._common_normalize_search_contributor(qs)
 
-    def test_normalize_contributor2(self):
+    def test_normalize_search_contributor2(self):
         """
-        Unicode正規化のテスト。
+        Unicode正規化のテスト。Add Contributorsにおける検索の場合。
         データベースに登録されている濁点付き文字が合成済み文字の場合に、
         結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
-        Add Contributorsにおける検索のみ、正規化の効果がある。
         """
-        # app.get() の場合は str にしなければならないようだ。
-        qs = u2s(u'\u304d\u3099')  # き+濁点
-        self._common_normalize_contributor(qs)
+        qs = u'\u304d\u3099'  # き+濁点
+        self._common_normalize_search_contributor(qs)
 
     @enable_private_search
     def test_search_invalid_version(self):
