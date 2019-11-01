@@ -18,17 +18,22 @@ parser.add_argument(
 LOGS_URL = 'https://api.osf.io/v2/registrations/{}/logs/?page[size]=100'
 
 def json_with_pagination(path, guid, page, url):
+	# Get JSON of registration logs
 	response = requests.get(url)
+
 	if response.status_code == 404:
 		raise ValueError('Project not found. Check GUID and try again.')
 
+	# Craft filename based on page number
 	json_filename = guid + '-' + str(page) + '.json'
 	file_location = os.path.join(path, json_filename)
-	with open(file_location, 'wb') as file:
-		file.write(response.content)
+	json_data = json.loads(response.content)['data']
+	with open(file_location, 'w') as file:
+		json.dump(json_data, file)
 	return json.loads(response.content)
 
 def main(default_args=True):
+	# Arg Parsing
 	if (default_args):
 		args = parser.parse_args(['--guid', 'default', '--directory', 'default'])
 	else:
@@ -37,20 +42,25 @@ def main(default_args=True):
 	guid = args.guid
 	directory = args.directory
 
+	# Args handling
 	if not guid:
 		raise ValueError('Project GUID must be specified! Use -g')
 	if not directory:
 		# Setting default to current directory
 		directory = '.'
 
+	# Creating directories
 	path = os.path.join(directory,guid)
 	if not os.path.exists(path):
 		os.mkdir(path)
 	path = os.path.join(path,'logs')
 	os.mkdir(path)
 
+	# Retrieving page 1
 	response = json_with_pagination(path, guid, 1, LOGS_URL.format(guid))
 	page_num = 2
+
+	# Retrieve the rest of the pages (if applicable)
 	while response['links']['next']:
 		next_link = response['links']['next']
 		response = json_with_pagination(path, guid, page_num, next_link)
