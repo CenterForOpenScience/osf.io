@@ -15,7 +15,13 @@ parser.add_argument(
 	help='This is the target Directory for the project and its files'
 )
 
-LOGS_URL = 'https://api.osf.io/v2/registrations/{}/logs/?page[size]=100'
+parser.add_argument(
+	'-p',
+	'--pagesize',
+	help='How many logs should appear per file? Default is 100'
+)
+
+LOGS_URL = 'https://api.test.osf.io/v2/registrations/{}/logs/?page[size]={}'
 
 def json_with_pagination(path, guid, page, url):
 	# Get JSON of registration logs
@@ -41,6 +47,7 @@ def main(default_args=True):
 	args = parser.parse_args()
 	guid = args.guid
 	directory = args.directory
+	pagesize = args.pagesize
 
 	# Args handling
 	if not guid:
@@ -48,6 +55,8 @@ def main(default_args=True):
 	if not directory:
 		# Setting default to current directory
 		directory = '.'
+	if not pagesize:
+		pagesize = 100
 
 	# Creating directories
 	path = os.path.join(directory,guid)
@@ -57,7 +66,7 @@ def main(default_args=True):
 	os.mkdir(path)
 
 	# Retrieving page 1
-	response = json_with_pagination(path, guid, 1, LOGS_URL.format(guid))
+	response = json_with_pagination(path, guid, 1, LOGS_URL.format(guid, pagesize))
 	page_num = 2
 
 	# Retrieve the rest of the pages (if applicable)
