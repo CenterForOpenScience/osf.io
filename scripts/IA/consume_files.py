@@ -16,7 +16,6 @@ parser.add_argument(
 )
 
 def main(default_args=True):
-	print ('start')
 	if (default_args):
 		args = parser.parse_args(['--guid', 'default', '--directory', 'default'])
 	else:
@@ -25,13 +24,22 @@ def main(default_args=True):
 	guid = args.guid
 	directory = args.directory
 
-	zip_url = 'https://files.osf.io/v1/resources/{}/providers/osfstorage/?zip='
+	if not guid:
+		raise ValueError('Project GUID must be specified! Use -g')
+	if not directory:
+		# Setting default to current directory
+		directory = '.'
+
+	zip_url = 'https://files.osf.io/v1/resources/xxxxx/providers/osfstorage/?zip='
 	path = os.path.join(directory,guid)
 	os.mkdir(path)
 	path = os.path.join(path,'files')
 	os.mkdir(path)
+
 	response = requests.get(zip_url.format(guid))
-	print ('getting...')
+	if response.status_code == 404:
+		raise ValueError('Project not found. Check GUID and try again.')
+
 	zipfile_location = os.path.join(path, (guid+'.zip'))
 	with open(zipfile_location, 'wb') as file:
 		file.write(response.content)
@@ -40,7 +48,7 @@ def main(default_args=True):
 		zipObj.extractall(path)
 
 	os.remove(zipfile_location)
-	print('DONE!')
+	print('File data successfully transferred!')
 
 
 
