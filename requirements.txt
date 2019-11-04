@@ -5,6 +5,7 @@
 # To install dev requirements: inv requirements --dev
 # To install release requirements: inv requirements --release
 
+future==0.18.2
 invoke==0.15.0
 Werkzeug==0.16.0
 Flask==0.12.4

@@ -133,7 +133,7 @@ services:
       - /bin/bash
       - -c
       - invoke install --develop &&
-        (python3 -m compileall /usr/local/lib/python3.5 || true) &&
+        (python -m compileall /usr/local/lib/python3.5 || true) &&
         rm -Rf /python3.5/* &&
         cp -Rf -p /usr/local/lib/python3.5 /
     restart: 'no'
