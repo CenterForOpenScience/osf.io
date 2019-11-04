@@ -105,7 +105,7 @@ class ChronosSerializer(object):
         if contributor._order == 0:
             contribution = 'firstAuthor'
         else:
-            contribution = 'submittingAuthor'
+            contribution = 'Author'
         ret.update({
             'CONTRIBUTION': contribution,
             'ORGANIZATION': '',
