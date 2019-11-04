@@ -37,7 +37,7 @@ class UserSettings(BaseUserSettings):
 
     def verify_code(self, code):
         accepted, drift = accept_totp(key=self.totp_secret,
-                                      response=code,
+                                      response=str(code),
                                       drift=self.totp_drift)
         if accepted:
             self.totp_drift = drift
