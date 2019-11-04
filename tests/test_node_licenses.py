@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# Python 3.x incompatible, use import builtins instead
 import builtins
 import json
 import unittest
