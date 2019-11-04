@@ -1,0 +1,576 @@
+{
+    "data": [
+        {
+            "relationships": {
+                "node": {
+                    "data": {
+                        "type": "registrations",
+                        "id": "fxehm"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "wm28y"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/users/wm28y/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/comments/?filter%5Btarget%5D=bxk3w",
+                            "meta": {}
+                        }
+                    }
+                }
+            },
+            "links": {
+                "info": "http://localhost:8000/v2/wikis/bxk3w/",
+                "download": "http://localhost:8000/v2/wikis/bxk3w/content/",
+                "self": "http://localhost:8000/v2/wikis/bxk3w/"
+            },
+            "attributes": {
+                "kind": "file",
+                "name": "test10",
+                "date_modified": "2019-11-04T14:24:33.026155Z",
+                "extra": {
+                    "version": 1
+                },
+                "content_type": "text/markdown",
+                "path": "/bxk3w",
+                "current_user_can_comment": true,
+                "materialized_path": "/bxk3w",
+                "size": 52
+            },
+            "type": "wikis",
+            "id": "bxk3w"
+        },
+        {
+            "relationships": {
+                "node": {
+                    "data": {
+                        "type": "registrations",
+                        "id": "fxehm"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "wm28y"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/users/wm28y/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/comments/?filter%5Btarget%5D=j358x",
+                            "meta": {}
+                        }
+                    }
+                }
+            },
+            "links": {
+                "info": "http://localhost:8000/v2/wikis/j358x/",
+                "download": "http://localhost:8000/v2/wikis/j358x/content/",
+                "self": "http://localhost:8000/v2/wikis/j358x/"
+            },
+            "attributes": {
+                "kind": "file",
+                "name": "test9",
+                "date_modified": "2019-11-04T14:24:32.976166Z",
+                "extra": {
+                    "version": 1
+                },
+                "content_type": "text/markdown",
+                "path": "/j358x",
+                "current_user_can_comment": true,
+                "materialized_path": "/j358x",
+                "size": 52
+            },
+            "type": "wikis",
+            "id": "j358x"
+        },
+        {
+            "relationships": {
+                "node": {
+                    "data": {
+                        "type": "registrations",
+                        "id": "fxehm"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "wm28y"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/users/wm28y/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/comments/?filter%5Btarget%5D=tnhuv",
+                            "meta": {}
+                        }
+                    }
+                }
+            },
+            "links": {
+                "info": "http://localhost:8000/v2/wikis/tnhuv/",
+                "download": "http://localhost:8000/v2/wikis/tnhuv/content/",
+                "self": "http://localhost:8000/v2/wikis/tnhuv/"
+            },
+            "attributes": {
+                "kind": "file",
+                "name": "test8",
+                "date_modified": "2019-11-04T14:24:32.925206Z",
+                "extra": {
+                    "version": 1
+                },
+                "content_type": "text/markdown",
+                "path": "/tnhuv",
+                "current_user_can_comment": true,
+                "materialized_path": "/tnhuv",
+                "size": 52
+            },
+            "type": "wikis",
+            "id": "tnhuv"
+        },
+        {
+            "relationships": {
+                "node": {
+                    "data": {
+                        "type": "registrations",
+                        "id": "fxehm"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "wm28y"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/users/wm28y/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/comments/?filter%5Btarget%5D=duj6b",
+                            "meta": {}
+                        }
+                    }
+                }
+            },
+            "links": {
+                "info": "http://localhost:8000/v2/wikis/duj6b/",
+                "download": "http://localhost:8000/v2/wikis/duj6b/content/",
+                "self": "http://localhost:8000/v2/wikis/duj6b/"
+            },
+            "attributes": {
+                "kind": "file",
+                "name": "test7",
+                "date_modified": "2019-11-04T14:24:32.873617Z",
+                "extra": {
+                    "version": 1
+                },
+                "content_type": "text/markdown",
+                "path": "/duj6b",
+                "current_user_can_comment": true,
+                "materialized_path": "/duj6b",
+                "size": 52
+            },
+            "type": "wikis",
+            "id": "duj6b"
+        },
+        {
+            "relationships": {
+                "node": {
+                    "data": {
+                        "type": "registrations",
+                        "id": "fxehm"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "wm28y"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/users/wm28y/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/comments/?filter%5Btarget%5D=etbp2",
+                            "meta": {}
+                        }
+                    }
+                }
+            },
+            "links": {
+                "info": "http://localhost:8000/v2/wikis/etbp2/",
+                "download": "http://localhost:8000/v2/wikis/etbp2/content/",
+                "self": "http://localhost:8000/v2/wikis/etbp2/"
+            },
+            "attributes": {
+                "kind": "file",
+                "name": "test6",
+                "date_modified": "2019-11-04T14:24:32.823941Z",
+                "extra": {
+                    "version": 1
+                },
+                "content_type": "text/markdown",
+                "path": "/etbp2",
+                "current_user_can_comment": true,
+                "materialized_path": "/etbp2",
+                "size": 52
+            },
+            "type": "wikis",
+            "id": "etbp2"
+        },
+        {
+            "relationships": {
+                "node": {
+                    "data": {
+                        "type": "registrations",
+                        "id": "fxehm"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "wm28y"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/users/wm28y/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/comments/?filter%5Btarget%5D=em2gy",
+                            "meta": {}
+                        }
+                    }
+                }
+            },
+            "links": {
+                "info": "http://localhost:8000/v2/wikis/em2gy/",
+                "download": "http://localhost:8000/v2/wikis/em2gy/content/",
+                "self": "http://localhost:8000/v2/wikis/em2gy/"
+            },
+            "attributes": {
+                "kind": "file",
+                "name": "test5",
+                "date_modified": "2019-11-04T14:24:32.775162Z",
+                "extra": {
+                    "version": 1
+                },
+                "content_type": "text/markdown",
+                "path": "/em2gy",
+                "current_user_can_comment": true,
+                "materialized_path": "/em2gy",
+                "size": 52
+            },
+            "type": "wikis",
+            "id": "em2gy"
+        },
+        {
+            "relationships": {
+                "node": {
+                    "data": {
+                        "type": "registrations",
+                        "id": "fxehm"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "wm28y"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/users/wm28y/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/comments/?filter%5Btarget%5D=fcs2t",
+                            "meta": {}
+                        }
+                    }
+                }
+            },
+            "links": {
+                "info": "http://localhost:8000/v2/wikis/fcs2t/",
+                "download": "http://localhost:8000/v2/wikis/fcs2t/content/",
+                "self": "http://localhost:8000/v2/wikis/fcs2t/"
+            },
+            "attributes": {
+                "kind": "file",
+                "name": "test4",
+                "date_modified": "2019-11-04T14:24:32.714625Z",
+                "extra": {
+                    "version": 1
+                },
+                "content_type": "text/markdown",
+                "path": "/fcs2t",
+                "current_user_can_comment": true,
+                "materialized_path": "/fcs2t",
+                "size": 52
+            },
+            "type": "wikis",
+            "id": "fcs2t"
+        },
+        {
+            "relationships": {
+                "node": {
+                    "data": {
+                        "type": "registrations",
+                        "id": "fxehm"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "wm28y"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/users/wm28y/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/comments/?filter%5Btarget%5D=r4pyn",
+                            "meta": {}
+                        }
+                    }
+                }
+            },
+            "links": {
+                "info": "http://localhost:8000/v2/wikis/r4pyn/",
+                "download": "http://localhost:8000/v2/wikis/r4pyn/content/",
+                "self": "http://localhost:8000/v2/wikis/r4pyn/"
+            },
+            "attributes": {
+                "kind": "file",
+                "name": "test3",
+                "date_modified": "2019-11-04T14:24:32.638847Z",
+                "extra": {
+                    "version": 2
+                },
+                "content_type": "text/markdown",
+                "path": "/r4pyn",
+                "current_user_can_comment": true,
+                "materialized_path": "/r4pyn",
+                "size": 88
+            },
+            "type": "wikis",
+            "id": "r4pyn"
+        },
+        {
+            "relationships": {
+                "node": {
+                    "data": {
+                        "type": "registrations",
+                        "id": "fxehm"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "wm28y"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/users/wm28y/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/comments/?filter%5Btarget%5D=dtns3",
+                            "meta": {}
+                        }
+                    }
+                }
+            },
+            "links": {
+                "info": "http://localhost:8000/v2/wikis/dtns3/",
+                "download": "http://localhost:8000/v2/wikis/dtns3/content/",
+                "self": "http://localhost:8000/v2/wikis/dtns3/"
+            },
+            "attributes": {
+                "kind": "file",
+                "name": "home",
+                "date_modified": "2019-10-31T14:55:02.352330Z",
+                "extra": {
+                    "version": 1
+                },
+                "content_type": "text/markdown",
+                "path": "/dtns3",
+                "current_user_can_comment": true,
+                "materialized_path": "/dtns3",
+                "size": 860
+            },
+            "type": "wikis",
+            "id": "dtns3"
+        },
+        {
+            "relationships": {
+                "node": {
+                    "data": {
+                        "type": "registrations",
+                        "id": "fxehm"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "wm28y"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/users/wm28y/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/comments/?filter%5Btarget%5D=md549",
+                            "meta": {}
+                        }
+                    }
+                }
+            },
+            "links": {
+                "info": "http://localhost:8000/v2/wikis/md549/",
+                "download": "http://localhost:8000/v2/wikis/md549/content/",
+                "self": "http://localhost:8000/v2/wikis/md549/"
+            },
+            "attributes": {
+                "kind": "file",
+                "name": "test1Ω≈ç√∫˜µ≤≥≥÷åß∂ƒ©˙∆∆˚¬…æ",
+                "date_modified": "2019-10-31T14:55:01.846744Z",
+                "extra": {
+                    "version": 2
+                },
+                "content_type": "text/markdown",
+                "path": "/md549",
+                "current_user_can_comment": true,
+                "materialized_path": "/md549",
+                "size": 632
+            },
+            "type": "wikis",
+            "id": "md549"
+        }
+    ],
+    "meta": {
+        "total": 11,
+        "per_page": 10,
+        "version": "2.18"
+    },
+    "links": {
+        "self": "http://localhost:8000/v2/registrations/fxehm/wikis/",
+        "first": null,
+        "last": "http://localhost:8000/v2/registrations/fxehm/wikis/?page=2",
+        "prev": null,
+        "next": "http://localhost:8000/v2/registrations/fxehm/wikis/?page=2"
+    }
+}

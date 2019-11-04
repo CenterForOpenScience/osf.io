@@ -1,0 +1,72 @@
+{
+    "data": [
+        {
+            "relationships": {
+                "node": {
+                    "data": {
+                        "type": "registrations",
+                        "id": "fxehm"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "user": {
+                    "data": {
+                        "type": "users",
+                        "id": "wm28y"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/users/wm28y/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "comments": {
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/registrations/fxehm/comments/?filter%5Btarget%5D=p8kxa",
+                            "meta": {}
+                        }
+                    }
+                }
+            },
+            "links": {
+                "info": "http://localhost:8000/v2/wikis/p8kxa/",
+                "download": "http://localhost:8000/v2/wikis/p8kxa/content/",
+                "self": "http://localhost:8000/v2/wikis/p8kxa/"
+            },
+            "attributes": {
+                "kind": "file",
+                "name": "test2",
+                "date_modified": "2019-10-31T14:55:01.288916Z",
+                "extra": {
+                    "version": 2
+                },
+                "content_type": "text/markdown",
+                "path": "/p8kxa",
+                "current_user_can_comment": true,
+                "materialized_path": "/p8kxa",
+                "size": 68
+            },
+            "type": "wikis",
+            "id": "p8kxa"
+        }
+    ],
+    "meta": {
+        "total": 11,
+        "per_page": 10,
+        "version": "2.18"
+    },
+    "links": {
+        "self": "http://localhost:8000/v2/registrations/fxehm/wikis/?page=2",
+        "first": "http://localhost:8000/v2/registrations/fxehm/wikis/",
+        "last": null,
+        "prev": "http://localhost:8000/v2/registrations/fxehm/wikis/",
+        "next": null
+    }
+}

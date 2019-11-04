@@ -1,0 +1,5 @@
+-r ../requirements.txt
+
+mock
+repsonses
+nose
