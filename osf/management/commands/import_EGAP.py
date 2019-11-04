@@ -123,6 +123,7 @@ def main(guid, creator_username):
 
     egap_assets_path = get_egap_assets(guid, creator_auth)
 
+    # __MACOSX is a hidden file created by the os when zipping
     directory_list = [directory for directory in os.listdir(egap_assets_path) if directory not in ('egap_assets.zip', '__MACOSX')]
 
     for epag_project_dir in directory_list:
@@ -172,12 +173,14 @@ class Command(BaseCommand):
         parser.add_argument(
             '-c',
             '--creator',
-            help='This should be the username of the initial adminstrator for the imported nodes'
+            help='This should be the username of the initial adminstrator for the imported nodes',
+            required=True
         )
         parser.add_argument(
             '-id',
             '--guid',
-            help='This should be the guid of the private project with the directory structure'
+            help='This should be the guid of the private project with the directory structure',
+            required=True
         )
 
     def handle(self, *args, **options):
