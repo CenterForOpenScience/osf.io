@@ -100,7 +100,7 @@ def created_by_external_idp_and_unconfirmed(user):
     external IdP and is unconfirmed.
     """
 
-    return 'CREATE' in set(sum([each.values() for each in user.external_identity.values()], []))
+    return 'CREATE' in set(sum([list(each.values()) for each in list(user.external_identity.values())], []))
 
 
 # Three customized DRF authentication classes: basic, session/cookie and access token.
