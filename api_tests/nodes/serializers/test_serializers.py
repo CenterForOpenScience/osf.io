@@ -1,4 +1,6 @@
+import datetime
 import pytest
+import pytz
 from future.moves.urllib.parse import urlparse
 
 from api.base.settings.defaults import API_BASE
@@ -188,6 +190,20 @@ class TestNodeRegistrationSerializer:
             else:
                 assert api_registrations_url in relationship_urls[relationship], 'For key {}'.format(
                     relationship)
+
+    def test_serialization_with_external_registered_date(self):
+        external_registered_date = datetime.datetime.now(pytz.UTC) - datetime.timedelta(days=10)
+        versioned_request = make_drf_request_with_version(version='2.2')
+        registration = RegistrationFactory(external_registered_date=external_registered_date)
+        result = RegistrationSerializer(
+            registration, context={
+                'request': versioned_request}).data
+        data = result['data']
+        attributes = data['attributes']
+        assert_datetime_equal(
+            attributes['date_registered'],
+            registration.external_registered_date
+        )
 
 
 @pytest.mark.django_db
