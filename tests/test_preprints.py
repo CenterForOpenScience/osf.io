@@ -2032,7 +2032,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         related_doi = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'workidentifier' and 'doi' in v['uri'])
         assert related_doi['creative_work'] == related_work
 
-        workidentifiers = nodes.pop(next(k for k, v in iter(nodes.items()) if v['@type'] == 'workidentifier'))
+        workidentifiers = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'workidentifier')
         assert workidentifiers['uri'] == urljoin(settings.DOMAIN, self.preprint._id + '/')
 
         relation = nodes.pop(list(nodes.keys())[0])
