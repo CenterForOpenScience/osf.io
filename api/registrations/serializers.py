@@ -526,7 +526,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             self.fields['registration_choice'] = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
 
     # For newer versions
-    embargo_end_date = VersionedDateTimeField(write_only=True, allow_null=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
+    embargo_end_date = VersionedDateTimeField(write_only=True, allow_null=True, default=None)
     included_node_ids = ser.ListField(write_only=True, required=False)
     # For older versions
     lift_embargo = VersionedDateTimeField(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
