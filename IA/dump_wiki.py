@@ -7,6 +7,9 @@ import argparse
 API_URL = 'http://localhost:8000'
 HERE = os.path.dirname(os.path.abspath(__file__))
 
+class WikiDumpError(Exception):
+    pass
+
 
 async def get_wiki_pages(guid, page, result={}):
     url = f'{API_URL}/v2/registrations/{guid}/wikis/?page={page}'
@@ -14,9 +17,18 @@ async def get_wiki_pages(guid, page, result={}):
     return result
 
 
-async def write_wiki_content(page):
+async def write_wiki_content(page, retries=3):
+    resp = requests.get(page['links']['download'])
+    try:
+        resp.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        retries -= 1
+        if retries > 0:
+            return await write_wiki_content(page, retries)
+        raise WikiDumpError(e)
+
     with open(os.path.join(HERE, f'/{page["attributes"]["name"]}.md'), 'wb') as fp:
-        fp.write(requests.get(page['links']['download']).content)
+        fp.write(resp.content)
 
 
 async def main(guid):

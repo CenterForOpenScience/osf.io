@@ -75,6 +75,58 @@ class TestWikiDumper(unittest.TestCase):
             ]
 
     @responses.activate
+    def test_wiki_dump_retry(self):
+        responses.add(
+            responses.Response(
+                responses.GET,
+                'http://localhost:8000/v2/registrations/fxehm/wikis/?page=1',
+                json=wiki_metadata(),
+            )
+        )
+        responses.add(
+            responses.Response(
+                responses.GET,
+                'http://localhost:8000/v2/wikis/dtns3/content/',
+                status=500,
+            ),
+        )
+        responses.add(
+            responses.Response(
+                responses.GET,
+                'http://localhost:8000/v2/wikis/dtns3/content/',
+                body=b'dtns3 data',
+            ),
+        )
+        responses.add(
+            responses.Response(
+                responses.GET,
+                'http://localhost:8000/v2/wikis/md549/content/',
+                body=b'md549 data',
+            ),
+        )
+        responses.add(
+            responses.Response(
+                responses.GET,
+                'http://localhost:8000/v2/wikis/p8kxa/content/',
+                body=b'p8kxa data',
+            ),
+        )
+
+        with mock.patch('builtins.open', mock.mock_open()) as m:
+            asyncio.run(main('fxehm'))
+            assert m.call_args_list == [
+                call('/home.md', 'wb'),
+                call('/test1Ω≈ç√∫˜µ≤≥≥÷åß∂ƒ©˙∆∆˚¬…æ.md', 'wb'),
+                call('/test2.md', 'wb')
+            ]
+            handle = m()
+            assert handle.write.call_args_list == [
+                call(b'dtns3 data'),
+                call(b'md549 data'),
+                call(b'p8kxa data')
+            ]
+
+    @responses.activate
     def test_wiki_dump_multiple_pages(self):
         page1, page2 = wiki_metadata_two_pages()
 
