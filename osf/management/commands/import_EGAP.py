@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime as dt
 import logging
 
 import os
@@ -6,8 +7,10 @@ import json
 import shutil
 import requests
 import tempfile
+
 from django.core.management.base import BaseCommand
-from osf.utils.permissions import WRITE
+from osf import exceptions
+from osf.utils.permissions import ADMIN, WRITE
 from osf.models import (
     RegistrationSchema,
     Node,
@@ -116,6 +119,26 @@ def get_egap_assets(guid, creator_auth):
 
     return temp_path
 
+def register_silently(draft_registration, auth, sanction_type, external_registered_date, embargo_end_date):
+    try:
+        registration = draft_registration.register(auth, save=True)
+    except exceptions.NodeStateError as err:
+        logger.info(str(err))
+
+    registration.external_registered_date = external_registered_date
+
+    if sanction_type == 'Embargo':
+        try:
+            registration.embargo_registration(auth.user, embargo_end_date)
+        except exceptions.ValidationError as err:
+            logger.info(str(err))
+    else:
+        try:
+            registration.require_approval(auth.user)
+        except exceptions.NodeStateError as err:
+            logger.info(str(err))
+
+    registration.save()
 
 def main(guid, creator_username):
     egap_schema = ensure_egap_schema()
@@ -162,6 +185,34 @@ def main(guid, creator_username):
         )
 
     shutil.rmtree(egap_assets_path)
+
+    # Retrieve all EGAP Draft Registrations
+    egap_draft_registrations = DraftRegistration.objects.filter(registration_schema__name='EGAP Registration')
+
+    for draft_registration in egap_draft_registrations:
+        project = draft_registration.branched_from
+        draft_registration_metadata = draft_registration.registration_metadata
+
+        # Retrieve EGAP registration date and potential embargo go-public date
+        egap_registration_date_string = draft_registration_metadata['q4']['value']
+        egap_embargo_public_date_string = draft_registration_metadata['q12']['value']
+
+        egap_registration_date = dt.strptime(egap_registration_date_string, '%m/%d/%Y')
+        egap_embargo_public_date = dt.strptime(egap_embargo_public_date_string, '%m/%d/%Y')
+
+        sanction_type = 'RegistrationApproval'
+        if egap_embargo_public_date > dt.today():
+            sanction_type = 'Embargo'
+
+        register_silently(draft_registration, Auth(creator), sanction_type, egap_registration_date, egap_embargo_public_date)
+
+        # Update contributors on project to Admin
+        contributors = project.contributor_set.all()
+        for contributor in contributors:
+            if contributor.user == creator:
+                pass
+            else:
+                project.update_contributor(contributor.user, permission=ADMIN, visible=True, auth=Auth(creator), save=True)
 
 
 class Command(BaseCommand):
