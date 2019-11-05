@@ -37,36 +37,6 @@ FORMAT_TYPE_TO_TYPE_MAP = {
     ('textarea-xl', 'string'): 'long-text-input',
 }
 
-# For registration_responses validation, expected format for files
-FILE_UPLOAD_SCHEMA = {
-    'type': 'object',
-    'additionalProperties': False,
-    'properties': {
-        'file_name': {'type': 'string'},
-        'file_id': {'type': 'string'},
-        'file_urls': {
-            'type': 'object',
-            'minProperties': 1,  # at least one identifying URL
-            'additionalProperties': False,
-            'properties': {
-                'html': {'type': 'string'},
-                'download': {'type': 'string'},
-            },
-            # a view link is required for converting to the legacy nested format
-            'required': ['html'],
-        },
-        'file_hashes': {
-            'type': 'object',
-            'minProperties': 1,  # at least one hash
-            'additionalProperties': False,
-            'properties': {
-                'sha256': {'type': 'string'},
-            },
-        },
-    },
-    'required': ['file_id', 'file_name', 'file_urls', 'file_hashes'],
-}
-
 def get_osf_models():
     """
     Helper function to retrieve all osf related models.
@@ -436,100 +406,6 @@ def unmap_schemablocks(*args):
     state = args[0]
     RegistrationSchemaBlock = state.get_model('osf', 'registrationschemablock')
     RegistrationSchemaBlock.objects.all().delete()
-
-
-# For registration_responses validation
-def get_multiple_choice_options(registration_schema, question, required_fields):
-    """
-    Returns a dictionary with an 'enum' key, and a value as
-    an array with the possible multiple choice answers for a given question.
-    Schema blocks are linked by schema_block_group_keys, so fetches multiple choice options
-    with the same schema_block_group_key as the given question
-    :question SchemaBlock with an registration_response_key
-    :required_fields boolean - do we want to enforce that required fields are present
-    """
-    options = registration_schema.schema_blocks.filter(
-        schema_block_group_key=question.schema_block_group_key,
-        block_type='select-input-option'
-    ).values_list('display_text', flat=True)
-
-    options = list(options)
-    # required is True if we want to both enforce required_fields
-    # and the question in particular is required.
-    required = required_fields and question.required
-    if not required and '' not in options:
-        options.append('')
-
-    return {
-        'enum': options
-    }
-
-# For registration_responses validation
-def get_jsonschema_type(block_type):
-    """
-    For a given schema block type, returns the corresponding
-    jsonschema type
-    :params block_type: string, SchemaBlock block_type
-    :return string
-    """
-    if block_type == 'file-input':
-        return 'array'
-    elif block_type == 'multi-select-input':
-        return 'array'
-    else:
-        return 'string'
-
-# For registration_responses validation
-def format_question_validation(registration_schema, question, required_fields):
-    """
-    Returns json for validating an individual question
-    :params question SchemaBlock
-    """
-    if question.block_type == 'single-select-input':
-        property = get_multiple_choice_options(registration_schema, question, required_fields)
-    elif question.block_type == 'multi-select-input':
-        property = {
-            'items': get_multiple_choice_options(registration_schema, question, required_fields)
-        }
-    elif question.block_type == 'file-input':
-        property = {
-            'items': FILE_UPLOAD_SCHEMA
-        }
-    else:
-        property = {}
-
-    property['type'] = get_jsonschema_type(question.block_type)
-    # Stashing the question title on the jsonschema's description field
-    property['description'] = registration_schema.schema_blocks.get(
-        schema_block_group_key=question.schema_block_group_key,
-        block_type='question-label'
-    ).display_text
-    return property
-
-# For registration_responses validation
-def build_flattened_jsonschema(registration_schema, required_fields):
-    """
-    Builds jsonschema for validating flattened registration_responses field
-    :params schema RegistrationSchema
-    :returns dictionary, jsonschema, for validation
-    """
-    properties = {}
-    # schema blocks corresponding to registration_responses
-    questions = registration_schema.schema_blocks.filter(registration_response_key__isnull=False)
-    for question in questions:
-        properties[question.registration_response_key] = format_question_validation(registration_schema, question, required_fields)
-
-    json_schema = {
-        'type': 'object',
-        'additionalProperties': False,
-        'properties': properties
-    }
-
-    required = questions.filter(required=True).values_list('registration_response_key', flat=True)
-    if required and required_fields:
-        json_schema['required'] = list(required)
-
-    return json_schema
 
 
 class UpdateRegistrationSchemas(Operation):
