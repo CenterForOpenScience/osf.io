@@ -178,6 +178,8 @@ def get_nested_answer(nested_response, block_type, keys):
     :returns array (files or multi-response answers) or a string
     """
     if isinstance(nested_response, dict):
+        if not keys:
+            raise SchemaBlockConversionError('Unexpected nested object (expected list or string)', nested_response)
         key = keys.pop(0)
         # Returns the value associated with the given key
         value = get_value_or_extra(nested_response, block_type, key, keys)
