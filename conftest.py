@@ -17,6 +17,7 @@ SILENT_LOGGERS = [
     'factory.containers',
     'framework.analytics',
     'framework.auth.core',
+    'framework.sentry',
     'website.app',
     'website.archiver.tasks',
     'website.mails',

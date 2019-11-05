@@ -70,7 +70,22 @@ NOT_ANALYZED_PROPERTY = {'type': 'string', 'index': 'not_analyzed'}
 # Perform stemming on the field it's applied to.
 ENGLISH_ANALYZER_PROPERTY = {'type': 'string', 'analyzer': 'english'}
 
+# INDEX is modified by tests. (TODO: INDEX is unnecessary for GRDM ver.)
 INDEX = settings.ELASTIC_INDEX
+
+def es_index_protected(index, private):
+    if not index:
+        # settings.ELASTIC_INDEX is modified by tests.
+        index = settings.ELASTIC_INDEX
+
+    if settings.ENABLE_PRIVATE_SEARCH and private and \
+       not index.startswith(settings.ELASTIC_INDEX_PRIVATE_PREFIX):
+        # allow only expected implementations to search private projects
+        index = settings.ELASTIC_INDEX_PRIVATE_PREFIX + index
+    return index
+
+def es_index(index=None):
+    return es_index_protected(index, True)
 
 CLIENT = None
 
@@ -149,7 +164,7 @@ def get_aggregations(query, doc_type):
         }
     }
 
-    res = client().search(index=INDEX, doc_type=doc_type, search_type='count', body=query)
+    res = client().search(index=es_index(), doc_type=doc_type, search_type='count', body=query)
     ret = {
         doc_type: {
             item['key']: item['doc_count']
@@ -171,7 +186,7 @@ def get_counts(count_query, clean=True):
         }
     }
 
-    res = client().search(index=INDEX, doc_type=None, search_type='count', body=count_query)
+    res = client().search(index=es_index(), doc_type=None, search_type='count', body=count_query)
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
     counts['total'] = sum([val for val in counts.values()])
@@ -193,13 +208,15 @@ def get_tags(query, index):
 
 
 @requires_search
-def search(query, index=None, doc_type='_all', raw=False, normalize=True):
+def search(query, index=None, doc_type='_all', raw=False, normalize=True, private=False):
     """Search for a query
 
     :param query: The substring of the username/project name/tag to search for
     :param index:
     :param doc_type:
-    :param normalize: normalize unicode strings
+    :param normalize: normalize unicode string
+    :param private: allow searching private data
+                    (ENABLE_PRIVATE_SEARCH is also required)
 
     :return: List of dictionaries, each containing the results, counts, tags and typeAliases
         results: All results returned by the query, that are within the index and search type
@@ -207,17 +224,14 @@ def search(query, index=None, doc_type='_all', raw=False, normalize=True):
         tags: A list of tags that are returned by the search query
         typeAliases: the doc_types that exist in the search database
     """
-    index = index or INDEX
+    index = es_index_protected(index, private)
 
     # Quote query string for mutilingual search.
-    # 本関数には4種類のElasticsearch生DSLがあることが現状では分かって
-    # いる
-    # - Webブラウザからくるもの(filteredを使用)
-    # - website.search.util.build_queryを使用して作成したもの(2種類)
-    # - website.search.util.build_private_search_queryを使用して作成し
-    #   たもの
-    # クオーティングをsearchを呼ぶ前に行うと散らばってしまうため、
-    # search内でひとまとめに行う。
+    # This search() is called from ...
+    #   - Web Browser  (filtered)
+    #   - website.search.util.build_private_search_query
+    #   - website.search.util.build_query
+    #   - website.search.util.build_query with GUID
     if settings.ENABLE_MULTILINGUAL_SEARCH:
         from_browser = 'filtered' in query['query']
         from_build_private_search_query = 'bool' in query['query'] and \
@@ -554,7 +568,7 @@ def serialize_group(group, category):
 @requires_search
 def update_node(node, index=None, bulk=False, async_update=False):
     from addons.osfstorage.models import OsfStorageFile
-    index = index or INDEX
+    index = es_index(index)
     for file_ in paginated(OsfStorageFile, Q(target_content_type=ContentType.objects.get_for_model(type(node)), target_object_id=node.id)):
         update_file(file_, index=index)
 
@@ -572,7 +586,7 @@ def update_node(node, index=None, bulk=False, async_update=False):
 @requires_search
 def update_preprint(preprint, index=None, bulk=False, async_update=False):
     from addons.osfstorage.models import OsfStorageFile
-    index = index or INDEX
+    index = es_index(index)
     for file_ in paginated(OsfStorageFile, Q(target_content_type=ContentType.objects.get_for_model(type(preprint)), target_object_id=preprint.id)):
         update_file(file_, index=index)
 
@@ -589,7 +603,7 @@ def update_preprint(preprint, index=None, bulk=False, async_update=False):
 
 @requires_search
 def update_group(group, index=None, bulk=False, async_update=False, deleted_id=None):
-    index = index or INDEX
+    index = es_index(index)
 
     if deleted_id:
         delete_group_doc(deleted_id, index=index)
@@ -609,7 +623,7 @@ def bulk_update_nodes(serialize, nodes, index=None, category=None):
     :param str index: Index of the nodes
     :return:
     """
-    index = index or INDEX
+    index = es_index(index)
     actions = []
     for node in nodes:
         serialized = serialize(node)
@@ -661,7 +675,7 @@ def serialize_cgm(cgm):
 
 @requires_search
 def bulk_update_cgm(cgms, actions=None, op='update', index=None):
-    index = index or INDEX
+    index = es_index(index)
     if not actions and cgms:
         actions = ({
             '_op_type': op,
@@ -706,7 +720,7 @@ def update_contributors_async(self, user_id):
 @requires_search
 def update_user(user, index=None):
 
-    index = index or INDEX
+    index = es_index(index)
     if not user.is_active:
         try:
             client().delete(index=index, doc_type='user', id=user._id, refresh=True, ignore=[404])
@@ -760,7 +774,7 @@ def update_user(user, index=None):
 
 @requires_search
 def update_file(file_, index=None, delete=False):
-    index = index or INDEX
+    index = es_index(index)
     target = file_.target
 
     # TODO: Can remove 'not file_.name' if we remove all base file nodes with name=None
@@ -848,7 +862,7 @@ def update_file(file_, index=None, delete=False):
 
 @requires_search
 def update_institution(institution, index=None):
-    index = index or INDEX
+    index = es_index(index)
     id_ = institution._id
     if institution.is_deleted:
         client().delete(index=index, doc_type='institution', id=id_, refresh=True, ignore=[404])
@@ -899,7 +913,7 @@ def update_cgm_async(self, cgm_id, collection_id=None, op='update', index=None):
 
 @requires_search
 def update_cgm(cgm, op='update', index=None):
-    index = index or INDEX
+    index = es_index(index)
     if op == 'delete':
         client().delete(index=index, doc_type='collectionSubmission', id=cgm._id, refresh=True, ignore=[404])
         return
@@ -908,7 +922,7 @@ def update_cgm(cgm, op='update', index=None):
 
 @requires_search
 def delete_all():
-    delete_index(INDEX)
+    delete_index(es_index())
 
 
 @requires_search
@@ -922,7 +936,7 @@ def create_index(index=None):
     """Creates index with some specified mappings to begin with,
     all of which are applied to all projects, components, preprints, and registrations.
     """
-    index = index or INDEX
+    index = es_index(index)
     document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint', 'collectionSubmission']
     project_like_types = PROJECT_LIKE_TYPES
     analyzed_fields = ['title', 'description']
@@ -987,7 +1001,7 @@ def create_index(index=None):
 
 @requires_search
 def delete_doc(elastic_document_id, node, index=None, category=None):
-    index = index or INDEX
+    index = es_index(index)
     if not category:
         if isinstance(node, Preprint):
             category = 'preprint'
@@ -999,7 +1013,7 @@ def delete_doc(elastic_document_id, node, index=None, category=None):
 
 @requires_search
 def delete_group_doc(deleted_id, index=None):
-    index = index or INDEX
+    index = es_index(index)
     client().delete(index=index, doc_type='group', id=deleted_id, refresh=True, ignore=[404])
 
 @requires_search
@@ -1050,7 +1064,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
             current_user.affiliated_institutions.values_list('_id', flat=True)
         ))
 
-    results = search(build_query(query, start=start, size=size, sort=None, user_guid=escaped_query), index=INDEX, doc_type='user', normalize=False)
+    results = search(build_query(query, start=start, size=size, sort=None, user_guid=escaped_query), index=None, doc_type='user', normalize=False, private=True)
     docs = results['results']
     pages = math.ceil(results['counts'].get('user', 0) / size)
     validate_page_num(page, pages)

@@ -24,6 +24,7 @@ from website.app import init_app
 from website.search.elastic_search import client as es_client
 from website.search.elastic_search import bulk_update_cgm
 from website.search.elastic_search import PROJECT_LIKE_TYPES
+from website.search.elastic_search import es_index
 from website.search.search import update_institution, bulk_update_collected_metadata
 from website.search.util import unicode_normalize
 
@@ -51,12 +52,13 @@ def normalize(docs):
             doc['doc']['normalized_user'] = normalized_names['fullname']
             doc['doc']['normalized_names'] = normalized_names
     elif doc_type == 'file':
-        name = doc['doc']['name']
-        doc['doc']['normalized_name'] = unicode_normalize(name)
-        normalized_tags = []
-        for tag in doc['doc']['tags']:
-            normalized_tags.append(unicode_normalize(tag))
-        doc['doc']['normalized_tags'] = normalized_tags
+        for doc in docs:
+            name = doc['doc']['name']
+            doc['doc']['normalized_name'] = unicode_normalize(name)
+            normalized_tags = []
+            for tag in doc['doc']['tags']:
+                normalized_tags.append(unicode_normalize(tag))
+            doc['doc']['normalized_tags'] = normalized_tags
     elif doc_type in PROJECT_LIKE_TYPES:
         for doc in docs:
             title = doc['doc']['title']
@@ -261,7 +263,7 @@ def migrate(delete, remove=False, index=None, app=None):
     :param str index: index alias to version and migrate
     :param App app: Flask app for context
     """
-    index = index or settings.ELASTIC_INDEX
+    index = es_index(index)
     app = app or init_app('website.settings', set_backends=True, routes=True)
 
     script_utils.add_file_logger(logger, __file__)

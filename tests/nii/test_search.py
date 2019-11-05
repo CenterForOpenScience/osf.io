@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
+import sys
+import inspect
 import functools
 
 import mock
@@ -9,12 +11,17 @@ from nose.tools import *  # noqa: F403
 
 from framework.auth.core import Auth
 from osf_tests import factories
+from osf_tests.test_elastic_search import retry_assertion
 from tests.base import OsfTestCase
+from tests.utils import run_celery_tasks
+
+from website import settings
 from website.util import web_url_for, api_url_for
 from website.views import find_bookmark_collection
 from addons.wiki.models import WikiPage
 
 from website.search.util import quote_query_string
+from website.search_migration.migrate import migrate
 
 ENABLE_DEBUG = False
 
@@ -57,11 +64,10 @@ def build_private_search_query(query_string):
 
 def DEBUG(name, obj):
     if ENABLE_DEBUG:
-        import sys
         print('{}:\n{}'.format(name, se(u2s(obj))), file=sys.stderr)
 
 
-# XXX FIXME: Python3では全てをUnicodeとして扱う
+# FIXME: use Unicode in Python3
 def s2u(obj):
     if isinstance(obj, str):
         return obj.decode('utf-8')
@@ -135,114 +141,140 @@ def enable_private_search(func):
 
     return wrapped
 
+def setup(cls, self):
+    super(cls, self).setUp()
+    import website.search.search as search
+    search.delete_all()
+
+    with run_celery_tasks():
+        self.user1 = factories.AuthUserFactory(fullname='日本語ユーザー1')
+        self.user2 = factories.AuthUserFactory(fullname='日本語ユーザー2')
+        self.user3 = factories.AuthUserFactory(
+            fullname=u'\u304b\u3099')  # か+濁点
+        self.user4 = factories.AuthUserFactory(
+            fullname=u'\u304e')  # ぎ
+
+        self.project_private_user1_1 = factories.ProjectFactory(
+            title='private日本語プロジェクト1_1',
+            creator=self.user1,
+            description=u'\u304f\u3099',  # く+濁点
+            is_public=False)
+        rootdir = self.project_private_user1_1.get_addon('osfstorage').get_root()
+        self.f1 = rootdir.append_file(u'日本語ファイル名.txt')
+        self.f1.add_tag('12345',
+                        Auth(self.user1), save=False)
+        self.f1.add_tag(u'\uff16\uff17\uff18\uff19\uff10',  # ６７８９０
+                        Auth(self.user1), save=False)
+        self.f1.save()
+        self.f2 = rootdir.append_file(u'\u305f\u3099')  # た+濁点
+        self.f3 = rootdir.append_file(u'\u3062')  # ぢ
+        self.project_private_user1_1.add_tag(u'日本語タグ',
+                                             Auth(self.user1),
+                                             save=False)
+        self.project_private_user1_1.add_tag(u'\u3064\u3099',  # つ+濁点
+                                             Auth(self.user1),
+                                             save=False)
+        self.project_private_user1_1.add_tag(u'\u3067',  # で
+                                             Auth(self.user1),
+                                             save=False)
+        self.project_private_user1_1.save()
+        self.wiki1 = WikiPage.objects.create_for_node(
+            self.project_private_user1_1,
+            u'\u3055\u3099',  # page name (wiki_names:): さ+濁点
+            u'\u3059\u3099',  # content (wikis:): す+濁点
+            Auth(self.user1))
+        self.wiki2 = WikiPage.objects.create_for_node(
+            self.project_private_user1_1,
+            u'\u3058',  # page name (wiki_names:): じ
+            u'\u305c',  # content (wikis:): ぜ
+            Auth(self.user1))
+
+        self.project_private_user1_2 = factories.ProjectFactory(
+            title='private日本語プロジェクト1_2',
+            creator=self.user1,
+            description=u'\u3052',  # げ
+            is_public=False)
+
+        self.project_private_user2_1 = factories.ProjectFactory(
+            title='private日本語プロジェクト2_1',
+            creator=self.user2,
+            is_public=False)
+        self.project_private_user2_2 = factories.ProjectFactory(
+            title='private日本語プロジェクト2_2',
+            creator=self.user2,
+            is_public=False)
+
+        self.project_public_user1 = factories.ProjectFactory(
+            title='public日本語プロジェクト1',
+            creator=self.user1,
+            is_public=True)
+        self.project_public_user2 = factories.ProjectFactory(
+            title='public日本語プロジェクト2',
+            creator=self.user2,
+            is_public=True)
+
+def tear_down(cls, self):
+    super(cls, self).tearDown()
+    import website.search.search as search
+    search.delete_all()
+
+def query_private_search(self, qs, user):
+    res = self.app.post_json(
+        api_url_for('search_search'),
+        build_private_search_query(qs),
+        auth=user.auth,
+        expect_errors=True
+    )
+    return res, res.json.get('results')
+
+def query_public_search(self, qs, user):
+    res = self.app.post_json(
+        api_url_for('search_search'),
+        build_query(qs),
+        auth=user.auth,
+        expect_errors=True
+    )
+    return res, res.json.get('results')
+
+def query_search_contributor(self, qs, user):
+    res = self.app.get(
+        api_url_for('search_contributor'),
+        {'query': qs, 'page': 0, 'size': 10},
+        expect_errors=True
+    )
+    DEBUG('query_search_contributor', res)
+    return res, res.json.get('users')
+
 # see osf_tests/test_search_view.py
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
-class TestSearch(OsfTestCase):
+class TestPrivateSearch(OsfTestCase):
 
     @enable_private_search
     def setUp(self):
-        super(TestSearch, self).setUp()
-        import website.search.search as search
-        search.delete_all()
-
-        from tests.utils import run_celery_tasks
-        with run_celery_tasks():
-            self.user1 = factories.AuthUserFactory(fullname='日本語ユーザー1')
-            self.user2 = factories.AuthUserFactory(fullname='日本語ユーザー2')
-            self.user3 = factories.AuthUserFactory(
-                fullname=u'\u304b\u3099')  # か+濁点
-            self.user4 = factories.AuthUserFactory(
-                fullname=u'\u304e')  # ぎ
-
-            self.project_private_user1_1 = factories.ProjectFactory(
-                title='private日本語プロジェクト1_1',
-                creator=self.user1,
-                description=u'\u304f\u3099',  # く+濁点
-                is_public=False)
-            rootdir = self.project_private_user1_1.get_addon('osfstorage').get_root()
-            self.f1 = rootdir.append_file(u'日本語ファイル名.txt')
-            self.f1.add_tag('12345',
-                            Auth(self.user1), save=False)
-            self.f1.add_tag(u'\uff16\uff17\uff18\uff19\uff10',  # ６７８９０
-                            Auth(self.user1), save=False)
-            self.f1.save()
-            self.f2 = rootdir.append_file(u'\u305f\u3099')  # た+濁点
-            self.f3 = rootdir.append_file(u'\u3062')  # ぢ
-            self.project_private_user1_1.add_tag(u'日本語タグ',
-                                                 Auth(self.user1),
-                                                 save=False)
-            self.project_private_user1_1.add_tag(u'\u3064\u3099',  # つ+濁点
-                                                 Auth(self.user1),
-                                                 save=False)
-            self.project_private_user1_1.add_tag(u'\u3067',  # で
-                                                 Auth(self.user1),
-                                                 save=False)
-            self.project_private_user1_1.save()
-            self.wiki1 = WikiPage.objects.create_for_node(
-                self.project_private_user1_1,
-                u'\u3055\u3099',  # page name (wiki_names:): さ+濁点
-                u'\u3059\u3099',  # content (wikis:): す+濁点
-                Auth(self.user1))
-            self.wiki2 = WikiPage.objects.create_for_node(
-                self.project_private_user1_1,
-                u'\u3058',  # page name (wiki_names:): じ
-                u'\u305c',  # content (wikis:): ぜ
-                Auth(self.user1))
-
-            self.project_private_user1_2 = factories.ProjectFactory(
-                title='private日本語プロジェクト1_2',
-                creator=self.user1,
-                description=u'\u3052',  # げ
-                is_public=False)
-
-            self.project_private_user2_1 = factories.ProjectFactory(
-                title='private日本語プロジェクト2_1',
-                creator=self.user2,
-                is_public=False)
-            self.project_private_user2_2 = factories.ProjectFactory(
-                title='private日本語プロジェクト2_2',
-                creator=self.user2,
-                is_public=False)
-
-            self.project_public_user1 = factories.ProjectFactory(
-                title='public日本語プロジェクト1',
-                creator=self.user1,
-                is_public=True)
-            self.project_public_user2 = factories.ProjectFactory(
-                title='public日本語プロジェクト2',
-                creator=self.user2,
-                is_public=True)
+        setup(TestPrivateSearch, self)
 
     @enable_private_search
     def tearDown(self):
-        super(TestSearch, self).tearDown()
-        import website.search.search as search
-        search.delete_all()
+        tear_down(TestPrivateSearch, self)
 
-    def query_private_search(self, qs, user):
-        res = self.app.post_json(
-            api_url_for('search_search'),
-            build_private_search_query(qs),
-            auth=user.auth
-        )
-        return res, res.json.get('results')
+    def test_search_not_allowed(self):
+        """
+        ENABLE_PRIVATE_SEARCH = False の場合には、
+        ENABLE_PRIVATE_SEARCH = True の際に格納したデータにアクセス
+        できず、検索できないことを確認する。
 
-    def query_public_search(self, qs, user):
-        res = self.app.post_json(
-            api_url_for('search_search'),
-            build_query(qs),
-            auth=user.auth
-        )
-        return res, res.json.get('results')
+        """
+        qs = '日本'
+        res, results = query_public_search(self, qs, self.user1)
+        assert_equal(res.status_code, 400)
+        DEBUG('results', results)
+        assert_equal(results, None)
 
-    def query_search_contributor(self, qs, user):
-        res = self.app.get(
-            api_url_for('search_contributor'),
-            {'query': qs, 'page': 0, 'size': 10},
-        )
-        DEBUG('query_search_contributor', res)
-        return res, res.json.get('users')
+        res, results = query_private_search(self, qs, self.user1)
+        assert_equal(res.status_code, 400)
+        DEBUG('results', results)
+        assert_equal(results, None)
 
     @enable_private_search
     def test_private_search_user1(self):
@@ -252,7 +284,7 @@ class TestSearch(OsfTestCase):
         プライベートなプロジェクトに所属するタグとファイル名が有る場合。
         """
         qs = '日本語'
-        res, results = self.query_private_search(qs, self.user1)
+        res, results = query_private_search(self, qs, self.user1)
         user_fullnames = get_user_fullnames(results)
         node_titles = get_node_titles(results)
         contributors = get_contributors(results, self.project_private_user1_1.title)
@@ -293,7 +325,7 @@ class TestSearch(OsfTestCase):
         プライベートなプロジェクトに所属するタグとファイル名が無い場合。
         """
         qs = '日本語'
-        res, results = self.query_private_search(qs, self.user2)
+        res, results = query_private_search(self, qs, self.user2)
         user_fullnames = get_user_fullnames(results)
         node_titles = get_node_titles(results)
         contributors = get_contributors(results, self.project_private_user2_1.title)
@@ -322,40 +354,13 @@ class TestSearch(OsfTestCase):
             s2u(contributors)
         )
 
-    def test_disable_multilingual(self):
-        """
-        ENABLE_MULTILINGUAL_SEARCH = False の場合は「本日」でも「日本」に
-        マッチすることを確認する。
-        """
-        qs = '本日'
-        res, results = self.query_public_search(qs, self.user2)
-        user_fullnames = get_user_fullnames(results)
-        node_titles = get_node_titles(results)
-        contributors = get_contributors(results, self.project_private_user2_1.title)
-        tags = get_tags(results, self.project_private_user2_1.title)
-        filenames = get_filenames(results)
-
-        DEBUG('results', results)
-        DEBUG('user_fullnames', user_fullnames)
-        DEBUG('node_titles', node_titles)
-        DEBUG('contributors', contributors)
-        DEBUG('tags', tags)
-        DEBUG('filenames', filenames)
-
-        assert_not_equal(len(results), 0)
-        assert_not_equal(len(user_fullnames), 0)
-        assert_not_equal(len(node_titles), 0)
-        assert_not_equal(len(contributors), 0)
-        #assert_equal(len(tags), 0)
-        assert_not_equal(len(filenames), 0)
-
     @enable_private_search
     def test_no_match(self):
         """
         「本日」は「日本」にマッチしないことを確認する。
         """
         qs = '本日'
-        res, results = self.query_private_search(qs, self.user2)
+        res, results = query_private_search(self, qs, self.user2)
         user_fullnames = get_user_fullnames(results)
         node_titles = get_node_titles(results)
         contributors = get_contributors(results, self.project_private_user2_1.title)
@@ -376,7 +381,6 @@ class TestSearch(OsfTestCase):
         assert_equal(len(tags), 0)
         assert_equal(len(filenames), 0)
 
-
     @enable_private_search
     def test_tags(self):
         """
@@ -384,7 +388,7 @@ class TestSearch(OsfTestCase):
         AND 式も使用して、タグ名に含まれる文字をさらに限定している。
         """
         qs = 'tags:("日本語") AND タグ'
-        res, results = self.query_private_search(qs, self.user1)
+        res, results = query_private_search(self, qs, self.user1)
         user_fullnames = get_user_fullnames(results)
         node_titles = get_node_titles(results)
         contributors = get_contributors(results, self.project_private_user1_1.title)
@@ -412,7 +416,7 @@ class TestSearch(OsfTestCase):
         AND 式も使用して、ファイル名に含まれる文字をさらに限定している。
         """
         qs = 'category:file && 日本語ファイル'
-        res, results = self.query_private_search(qs, self.user1)
+        res, results = query_private_search(self, qs, self.user1)
         user_fullnames = get_user_fullnames(results)
         node_titles = get_node_titles(results)
         contributors = get_contributors(results, self.project_private_user1_1.title)
@@ -437,7 +441,7 @@ class TestSearch(OsfTestCase):
     def _common_normalize(self, qs):
         # app.get() requires str
         qs = u2s(qs)
-        res, results = self.query_private_search(qs, self.user1)
+        res, results = query_private_search(self, qs, self.user1)
         return (res, results)
 
     def test_normalize_user1(self):
@@ -670,7 +674,7 @@ class TestSearch(OsfTestCase):
     def _common_normalize_search_contributor(self, qs):
         # app.get() requires str
         qs = u2s(qs)
-        res, results = self.query_search_contributor(qs, self.user1)
+        res, results = query_search_contributor(self, qs, self.user1)
 
         # get_user_fullnames() cannot be used for query_search_contributor().
         user_fullnames = [r['fullname'] for r in results]
@@ -758,6 +762,71 @@ class TestSearch(OsfTestCase):
         url = web_url_for('search_view', _absolute=True)
         res = self.app.get(url, auth=None)
         assert_equal(res.status_code, 302)
+
+    @retry_assertion(retries=10)
+    def retry_call_test(self, method_name):
+        getattr(self, method_name)()
+
+    @enable_private_search
+    def test_after_rebuild_search(self):
+        """
+        invoke rebuild_search 相当の migrate() を実行後、
+        TestPrivateSearch の各テストが成功することを確認する。
+        """
+        migrate(delete=False, remove=False,
+                index=None, app=self.app.app)
+
+        my_method_name = sys._getframe().f_code.co_name
+        EXCLUDES = (my_method_name,
+                    'test_search_not_allowed',)
+        for method_info in inspect.getmembers(self, inspect.ismethod):
+            method_name = method_info[0]
+            DEBUG('*** method_name ***', '{}'.format(method_name))
+            if method_name.startswith('test_') and \
+               not method_name in EXCLUDES:
+                # migrate() may not update elasticsearch-data immediately.
+                self.retry_call_test(method_name)
+
+
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
+class TestOriginalSearch(OsfTestCase):
+
+    def setUp(self):
+        setup(TestOriginalSearch, self)
+
+    def tearDown(self):
+        tear_down(TestOriginalSearch, self)
+
+    def test_multilingual_unsupported(self):
+        """
+        ENABLE_MULTILINGUAL_SEARCH = False の場合は「本日」でも「日本」に
+        マッチすることを確認する。
+        """
+        qs = '本日'
+        res, results = query_public_search(self, qs, self.user2)
+        user_fullnames = get_user_fullnames(results)
+        node_titles = get_node_titles(results)
+        priv_contributors = get_contributors(results, self.project_private_user2_1.title)
+        pub_contributors = get_contributors(results, self.project_public_user2.title)
+        tags = get_tags(results, self.project_private_user2_1.title)
+        filenames = get_filenames(results)
+
+        DEBUG('results', results)
+        DEBUG('user_fullnames', user_fullnames)
+        DEBUG('node_titles', node_titles)
+        DEBUG('priv_contributors', priv_contributors)
+        DEBUG('pub_contributors', pub_contributors)
+        DEBUG('tags', tags)
+        DEBUG('filenames', filenames)
+
+        assert_not_equal(len(results), 0)
+        assert_not_equal(len(user_fullnames), 0)
+        assert_not_equal(len(node_titles), 0)
+        assert_equal(len(priv_contributors), 0)  # cannot access
+        assert_equal(len(pub_contributors), 1)
+        assert_equal(len(tags), 0)  # cannot access
+        assert_equal(len(filenames), 0)  # cannot access
 
 
 class TestQuotingQueryString(OsfTestCase):
