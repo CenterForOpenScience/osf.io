@@ -194,14 +194,14 @@ def main(guid, creator_username):
         if egap_embargo_public_date > dt.today():
             sanction_type = 'Embargo'
 
-        with transaction.atomic():
-            try:
+        try:
+            with transaction.atomic():
                 register_silently(draft_registration, Auth(creator), sanction_type, egap_registration_date, egap_embargo_public_date)
-            except Exception as err:
-                logger.error(
-                    'Unexpected error raised when attempting to silently register'
-                    'project {}. Continuing...'.format(project._id))
-                logger.info(str(err))
+        except Exception as err:
+            logger.error(
+                'Unexpected error raised when attempting to silently register'
+                'project {}. Continuing...'.format(project._id))
+            logger.info(str(err))
 
         # Update contributors on project to Admin
         contributors = project.contributor_set.all()
