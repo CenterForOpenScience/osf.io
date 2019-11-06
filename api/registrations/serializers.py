@@ -1,6 +1,5 @@
 import pytz
 import json
-import datetime
 
 from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
@@ -528,8 +527,6 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             registration = draft.register(auth, save=True, child_ids=children)
         except NodeStateError as err:
             raise exceptions.ValidationError(err)
-
-        registration.external_registered_date = datetime.datetime(2019, 10, 1, tzinfo=pytz.utc)
 
         if registration_choice == 'embargo':
             if not embargo_lifted:
