@@ -15,48 +15,48 @@ from consume_files import consume_files
 
 class TestIAFiles(unittest.TestCase):
 
-	def tearDown(self):
-		if os.path.isdir(os.path.join(HERE, 'sgg32')):
-			shutil.rmtree(os.path.join(HERE, 'sgg32'))
-		if os.path.isdir(os.path.join(HERE, 'jj81a')):
-			shutil.rmtree(os.path.join(HERE, 'jj81a'))
+  def tearDown(self):
+    if os.path.isdir(os.path.join(HERE, 'sgg32')):
+      shutil.rmtree(os.path.join(HERE, 'sgg32'))
+    if os.path.isdir(os.path.join(HERE, 'jj81a')):
+      shutil.rmtree(os.path.join(HERE, 'jj81a'))
 
 
-	@responses.activate
-	def test_file_dump(self):
-		with open('tests/fixtures/sgg32.zip') as zipfile:
-			responses.add(
-				responses.Response(
-					responses.GET,
-					'https://files.osf.io/v1/resources/sgg32/providers/osfstorage/?zip=',
-					body = zipfile.read(), status=200,
-					stream=True
-				)
-			)
+  @responses.activate
+  def test_file_dump(self):
+    with open('tests/fixtures/sgg32.zip') as zipfile:
+      responses.add(
+        responses.Response(
+          responses.GET,
+          'https://files.osf.io/v1/resources/sgg32/providers/osfstorage/?zip=',
+          body = zipfile.read(), status=200,
+          stream=True
+        )
+      )
 
 
-		consume_files('sgg32', 'asdfasdfasdgfasg', '.')
+    consume_files('sgg32', 'asdfasdfasdgfasg', '.')
 
-		assert os.path.isdir(os.path.join(HERE,'sgg32/files'))
-		assert os.path.isfile(os.path.join(HERE, 'sgg32/files/test.txt'))
-
-
-	@responses.activate
-	def test_file_dump_multiple_levels(self):
-		with open('tests/fixtures/jj81a.zip') as zipfile:
-			responses.add(
-				responses.Response(
-					responses.GET,
-					'https://files.osf.io/v1/resources/jj81a/providers/osfstorage/?zip=',
-					body = zipfile.read(), status=200,
-					stream=True
-				)
-			)
+    assert os.path.isdir(os.path.join(HERE,'sgg32/files'))
+    assert os.path.isfile(os.path.join(HERE, 'sgg32/files/test.txt'))
 
 
-		consume_files('jj81a', 'asdfasdfasdgfasg', '.')
+  @responses.activate
+  def test_file_dump_multiple_levels(self):
+    with open('tests/fixtures/jj81a.zip') as zipfile:
+      responses.add(
+        responses.Response(
+          responses.GET,
+          'https://files.osf.io/v1/resources/jj81a/providers/osfstorage/?zip=',
+          body = zipfile.read(), status=200,
+          stream=True
+        )
+      )
 
-		assert os.path.isdir(os.path.join(HERE,'jj81a/files/Folder 1'))
-		assert os.path.isfile(os.path.join(HERE, 'jj81a/files/Folder 1/test.txt'))
-		assert os.path.isfile(os.path.join(HERE, 'jj81a/files/Folder 1/Folder two/test3.txt'))
+
+    consume_files('jj81a', 'asdfasdfasdgfasg', '.')
+
+    assert os.path.isdir(os.path.join(HERE,'jj81a/files/Folder 1'))
+    assert os.path.isfile(os.path.join(HERE, 'jj81a/files/Folder 1/test.txt'))
+    assert os.path.isfile(os.path.join(HERE, 'jj81a/files/Folder 1/Folder two/test3.txt'))
 
