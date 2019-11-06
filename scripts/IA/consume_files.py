@@ -1,7 +1,12 @@
 import requests
 import os
 import argparse
+import logging
+import time
 from zipfile import ZipFile
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
