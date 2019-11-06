@@ -1377,6 +1377,11 @@ class NodeStorageProviderSerializer(JSONAPISerializer):
         'new_folder': WaterbutlerLink(kind='folder'),
         'storage_addons': 'get_storage_addons_url',
     })
+    root_folder = RelationshipField(
+        related_view='files:file-detail',
+        related_view_kwargs={'file_id': '<root_folder._id>'},
+        help_text='The folder in which this file exists',
+    )
 
     class Meta:
         type_ = 'files'

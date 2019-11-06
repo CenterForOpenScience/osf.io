@@ -1401,15 +1401,16 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
 
 class NodeStorageProvider(object):
 
-    def __init__(self, provider, node):
+    def __init__(self, node, provider_name, storage_addon=None):
         self.path = '/'
         self.node = node
         self.kind = 'folder'
-        self.name = provider
-        self.provider = provider
+        self.name = provider_name
+        self.provider = provider_name
         self.node_id = node._id
         self.pk = node._id
         self.id = node.id
+        self.root_folder = storage_addon.root_node if storage_addon else None
 
     @property
     def target(self):
@@ -1434,12 +1435,12 @@ class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin)
 
     ordering = ('-id',)
 
-    def get_provider_item(self, provider):
-        return NodeStorageProvider(provider, self.get_node())
+    def get_provider_item(self, storage_addon):
+        return NodeStorageProvider(self.get_node(), storage_addon.config.short_name, storage_addon)
 
     def get_queryset(self):
         return [
-            self.get_provider_item(addon.config.short_name)
+            self.get_provider_item(addon)
             for addon
             in self.get_node().get_addons()
             if addon.config.has_hgrid_files
