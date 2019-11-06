@@ -56,7 +56,7 @@ def action_files_by_name(root, source_item, item_name):
 
 
 def audit_files(source_directory):
-    logger.info("Running audit. Source: {}".format(source_directory))
+    logger.info('Running audit. Source: {}'.format(source_directory))
 
     including = open('including.txt', 'w+')
     ignoring = open('ignoring.txt', 'w+')
@@ -95,7 +95,7 @@ def main(files_dir, metadata_dir, id_list=None):
     :param id_list: an optional list of project ids to limit what gets processed
     :return:
     """
-    logger.info("Processing files. Source: {} Destination: {}".format(files_dir, metadata_dir))
+    logger.info('Processing files. Source: {} Destination: {}'.format(files_dir, metadata_dir))
 
     project_dirs = os.listdir(files_dir)
     if id_list:
