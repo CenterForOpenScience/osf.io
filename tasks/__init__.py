@@ -360,6 +360,10 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     if params:
         params = [params] if isinstance(params, basestring) else params
         args.extend(params)
+
+    # report slowest tests
+    args.append('--durations=50')
+
     retcode = pytest.main(args)
     sys.exit(retcode)
 
