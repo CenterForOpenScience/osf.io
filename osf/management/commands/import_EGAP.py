@@ -7,9 +7,9 @@ import json
 import shutil
 import requests
 import tempfile
-
+from django.db import transaction
 from django.core.management.base import BaseCommand
-from osf import exceptions
+
 from osf.utils.permissions import ADMIN, WRITE
 from osf.models import (
     RegistrationSchema,
@@ -120,23 +120,13 @@ def get_egap_assets(guid, creator_auth):
     return temp_path
 
 def register_silently(draft_registration, auth, sanction_type, external_registered_date, embargo_end_date):
-    try:
-        registration = draft_registration.register(auth, save=True)
-    except exceptions.NodeStateError as err:
-        logger.info(str(err))
-
+    registration = draft_registration.register(auth, save=True)
     registration.external_registered_date = external_registered_date
 
     if sanction_type == 'Embargo':
-        try:
-            registration.embargo_registration(auth.user, embargo_end_date)
-        except exceptions.ValidationError as err:
-            logger.info(str(err))
+        registration.embargo_registration(auth.user, embargo_end_date)
     else:
-        try:
-            registration.require_approval(auth.user)
-        except exceptions.NodeStateError as err:
-            logger.info(str(err))
+        registration.require_approval(auth.user)
 
     registration.save()
 
@@ -204,7 +194,14 @@ def main(guid, creator_username):
         if egap_embargo_public_date > dt.today():
             sanction_type = 'Embargo'
 
-        register_silently(draft_registration, Auth(creator), sanction_type, egap_registration_date, egap_embargo_public_date)
+        with transaction.atomic():
+            try:
+                register_silently(draft_registration, Auth(creator), sanction_type, egap_registration_date, egap_embargo_public_date)
+            except Exception as err:
+                logger.error(
+                    'Unexpected error raised when attempting to silently register'
+                    'project {}. Continuing...'.format(project._id))
+                logger.info(str(err))
 
         # Update contributors on project to Admin
         contributors = project.contributor_set.all()
