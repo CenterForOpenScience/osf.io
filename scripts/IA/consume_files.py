@@ -19,15 +19,22 @@ parser.add_argument(
 	'--token',
 	help='This is the bearer token for auth. This is required'
 )
+parser.add_argument(
+	'-u',
+	'--url',
+	help='Base URL for OSF API.'
+)
 
-def consume_files(guid, token, directory):
+BASE_URL = 'https://files.osf.io/'
 
-	zip_url = 'https://files.osf.io/v1/resources/{}/providers/osfstorage/?zip='
+def consume_files(guid, token, directory, base_url=BASE_URL):
+
+	zip_url = '{}v1/resources/{}/providers/osfstorage/?zip='.format(base_url, guid)
 	path = os.path.join(directory,guid)
 	os.mkdir(path)
 	path = os.path.join(path,'files')
 	os.mkdir(path)
-	auth_header = {'Authorization': 'Bearer '+token}
+	auth_header = {'Authorization': 'Bearer {}'.format(token)}
 
 	try:
 		response = requests.get(zip_url.format(guid), headers=auth_header)
@@ -68,6 +75,7 @@ def main(default_args=True):
 	guid = args.guid
 	directory = args.directory
 	token = args.token
+	url = args.url
 
 	if not guid:
 		raise ValueError('Project GUID must be specified! Use -g')
@@ -76,8 +84,10 @@ def main(default_args=True):
 	if not directory:
 		# Setting default to current directory
 		directory = '.'
+	if not url:
+		url = BASE_URL
 
-	consume_files(guid, token, directory)
+	consume_files(guid, token, directory, url)
 
 
 
