@@ -2,7 +2,11 @@ import os
 import argparse
 import json
 import logging
+import time
 import requests
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
