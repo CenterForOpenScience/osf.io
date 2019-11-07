@@ -1,0 +1,573 @@
+{
+    "data": {
+        "relationships": {
+            "logs": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/logs/",
+                        "meta": {}
+                    }
+                }
+            },
+            "contributors": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/contributors/",
+                        "meta": {}
+                    }
+                }
+            },
+            "citation": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/citation/",
+                        "meta": {}
+                    }
+                }
+            },
+            "linked_registrations": {
+                "links": {
+                    "self": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/relationships/linked_registrations/",
+                        "meta": {}
+                    },
+                    "related": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/linked_registrations/",
+                        "meta": {}
+                    }
+                }
+            },
+            "children": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/children/",
+                        "meta": {}
+                    }
+                }
+            },
+            "view_only_links": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/view_only_links/",
+                        "meta": {}
+                    }
+                }
+            },
+            "comments": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/comments/?filter%5Btarget%5D=8gqkv",
+                        "meta": {}
+                    }
+                }
+            },
+            "linked_by_registrations": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/linked_by_registrations/",
+                        "meta": {}
+                    }
+                }
+            },
+            "subjects": {
+                "links": {
+                    "self": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/relationships/subjects/",
+                        "meta": {}
+                    },
+                    "related": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/subjects/",
+                        "meta": {}
+                    }
+                }
+            },
+            "provider": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/providers/registrations/osf/",
+                        "meta": {}
+                    }
+                }
+            },
+            "forks": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/forks/",
+                        "meta": {}
+                    }
+                }
+            },
+            "files": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/files/",
+                        "meta": {}
+                    }
+                }
+            },
+            "registration_schema": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/schemas/registrations/564c9395029bdb0c2f4dd900/",
+                        "meta": {}
+                    }
+                }
+            },
+            "parent": {
+                "data": {
+                    "type": "registrations",
+                    "id": "dgkjr"
+                },
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/registrations/dgkjr/",
+                        "meta": {}
+                    }
+                }
+            },
+            "template_node": {
+                "data": null
+            },
+            "registered_by": {
+                "data": {
+                    "type": "users",
+                    "id": "wm28y"
+                },
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/users/wm28y/",
+                        "meta": {}
+                    }
+                }
+            },
+            "registered_from": {
+                "data": {
+                    "type": "nodes",
+                    "id": "g752b"
+                },
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/g752b/",
+                        "meta": {}
+                    }
+                }
+            },
+            "bibliographic_contributors": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/bibliographic_contributors/",
+                        "meta": {}
+                    }
+                }
+            },
+            "affiliated_institutions": {
+                "links": {
+                    "self": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/relationships/institutions/",
+                        "meta": {}
+                    },
+                    "related": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/institutions/",
+                        "meta": {}
+                    }
+                }
+            },
+            "license": {
+                "data": {
+                    "type": "licenses",
+                    "id": "5637c51d029bdb519fe290b3"
+                },
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/licenses/5637c51d029bdb519fe290b3/",
+                        "meta": {}
+                    }
+                }
+            },
+            "region": {
+                "data": {
+                    "type": "regions",
+                    "id": "us"
+                },
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/regions/us/",
+                        "meta": {}
+                    }
+                }
+            },
+            "identifiers": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/identifiers/",
+                        "meta": {}
+                    }
+                }
+            },
+            "linked_by_nodes": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/linked_by_nodes/",
+                        "meta": {}
+                    }
+                }
+            },
+            "forked_from": {
+                "data": null
+            },
+            "linked_nodes": {
+                "links": {
+                    "self": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/relationships/linked_nodes/",
+                        "meta": {}
+                    },
+                    "related": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/linked_nodes/",
+                        "meta": {}
+                    }
+                }
+            },
+            "wikis": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/wikis/",
+                        "meta": {}
+                    }
+                }
+            },
+            "root": {
+                "data": {
+                    "type": "registrations",
+                    "id": "dgkjr"
+                },
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/registrations/dgkjr/",
+                        "meta": {}
+                    }
+                }
+            },
+            "implicit_contributors": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/registrations/8gqkv/implicit_contributors/",
+                        "meta": {}
+                    }
+                }
+            }
+        },
+        "links": {
+            "self": "http://localhost:8000/v2/registrations/8gqkv/",
+            "html": "http://localhost:5000/8gqkv/"
+        },
+        "embeds": {
+            "contributors": {
+                "data": [
+                    {
+                        "relationships": {
+                            "node": {
+                                "data": {
+                                    "type": "nodes",
+                                    "id": "8gqkv"
+                                },
+                                "links": {
+                                    "related": {
+                                        "href": "http://localhost:8000/v2/nodes/8gqkv/",
+                                        "meta": {}
+                                    }
+                                }
+                            },
+                            "users": {
+                                "data": {
+                                    "type": "users",
+                                    "id": "wm28y"
+                                },
+                                "links": {
+                                    "related": {
+                                        "href": "http://localhost:8000/v2/users/wm28y/",
+                                        "meta": {}
+                                    }
+                                }
+                            }
+                        },
+                        "links": {
+                            "self": "http://localhost:8000/v2/registrations/8gqkv/contributors/wm28y/"
+                        },
+                        "embeds": {
+                            "users": {
+                                "data": {
+                                    "relationships": {
+                                        "settings": {
+                                            "links": {
+                                                "related": {
+                                                    "href": "http://localhost:8000/v2/users/wm28y/settings/",
+                                                    "meta": {}
+                                                }
+                                            }
+                                        },
+                                        "default_region": {
+                                            "data": {
+                                                "type": "regions",
+                                                "id": "us"
+                                            },
+                                            "links": {
+                                                "related": {
+                                                    "href": "http://localhost:8000/v2/regions/us/",
+                                                    "meta": {}
+                                                }
+                                            }
+                                        },
+                                        "emails": {
+                                            "links": {
+                                                "related": {
+                                                    "href": "http://localhost:8000/v2/users/wm28y/settings/emails/",
+                                                    "meta": {}
+                                                }
+                                            }
+                                        },
+                                        "registrations": {
+                                            "links": {
+                                                "related": {
+                                                    "href": "http://localhost:8000/v2/users/wm28y/registrations/",
+                                                    "meta": {}
+                                                }
+                                            }
+                                        },
+                                        "quickfiles": {
+                                            "links": {
+                                                "download": {
+                                                    "href": "http://localhost:7777/v1/resources/yeam6z3jtx/providers/osfstorage/?zip=",
+                                                    "meta": {}
+                                                },
+                                                "upload": {
+                                                    "href": "http://localhost:7777/v1/resources/yeam6z3jtx/providers/osfstorage/",
+                                                    "meta": {}
+                                                },
+                                                "related": {
+                                                    "href": "http://localhost:8000/v2/users/wm28y/quickfiles/",
+                                                    "meta": {}
+                                                }
+                                            }
+                                        },
+                                        "groups": {
+                                            "links": {
+                                                "related": {
+                                                    "href": "http://localhost:8000/v2/users/wm28y/groups/",
+                                                    "meta": {}
+                                                }
+                                            }
+                                        },
+                                        "nodes": {
+                                            "links": {
+                                                "related": {
+                                                    "href": "http://localhost:8000/v2/users/wm28y/nodes/",
+                                                    "meta": {}
+                                                }
+                                            }
+                                        },
+                                        "institutions": {
+                                            "links": {
+                                                "self": {
+                                                    "href": "http://localhost:8000/v2/users/wm28y/relationships/institutions/",
+                                                    "meta": {}
+                                                },
+                                                "related": {
+                                                    "href": "http://localhost:8000/v2/users/wm28y/institutions/",
+                                                    "meta": {}
+                                                }
+                                            }
+                                        },
+                                        "preprints": {
+                                            "links": {
+                                                "related": {
+                                                    "href": "http://localhost:8000/v2/users/wm28y/preprints/",
+                                                    "meta": {}
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "links": {
+                                        "self": "http://localhost:8000/v2/users/wm28y/",
+                                        "html": "http://localhost:5000/wm28y/",
+                                        "profile_image": "https://secure.gravatar.com/avatar/a61b3827662ddbc604c78e1c8f6a3636?d=identicon"
+                                    },
+                                    "attributes": {
+                                        "family_name": "Tordoff",
+                                        "suffix": "",
+                                        "locale": "en_US",
+                                        "accepted_terms_of_service": true,
+                                        "can_view_reviews": [],
+                                        "date_registered": "2017-07-31T19:07:05.522576Z",
+                                        "middle_names": "",
+                                        "given_name": "John",
+                                        "full_name": "John Tordoff",
+                                        "social": {},
+                                        "active": true,
+                                        "timezone": "America/New_York",
+                                        "education": [],
+                                        "employment": []
+                                    },
+                                    "type": "users",
+                                    "id": "wm28y"
+                                }
+                            }
+                        },
+                        "attributes": {
+                            "index": 0,
+                            "unregistered_contributor": null,
+                            "bibliographic": true,
+                            "permission": "admin"
+                        },
+                        "type": "contributors",
+                        "id": "8gqkv-wm28y"
+                    }
+                ],
+                "meta": {
+                    "total": 1,
+                    "per_page": 10,
+                    "total_bibliographic": 1
+                },
+                "links": {
+                    "self": "http://localhost:8000/v2/registrations/8gqkv/contributors/",
+                    "first": null,
+                    "last": null,
+                    "prev": null,
+                    "next": null
+                }
+            },
+            "license": {
+                "data": {
+                    "links": {
+                        "self": "http://localhost:8000/v2/licenses/5637c51d029bdb519fe290b3/"
+                    },
+                    "attributes": {
+                        "url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+                        "text": "Statement of Purpose\n\nThe laws of most jurisdictions throughout the world automatically confer exclusive Copyright and Related Rights (defined below) upon the creator and subsequent owner(s) (each and all, an \"owner\") of an original work of authorship and/or a database (each, a \"Work\").\n\nCertain owners wish to permanently relinquish those rights to a Work for the purpose of contributing to a commons of creative, cultural and scientific works (\"Commons\") that the public can reliably and without fear of later claims of infringement build upon, modify, incorporate in other works, reuse and redistribute as freely as possible in any form whatsoever and for any purposes, including without limitation commercial purposes. These owners may contribute to the Commons to promote the ideal of a free culture and the further production of creative, cultural and scientific works, or to gain reputation or greater distribution for their Work in part through the use and efforts of others.\n\nFor these and/or other purposes and motivations, and without any expectation of additional consideration or compensation, the person associating CC0 with a Work (the \"Affirmer\"), to the extent that he or she is an owner of Copyright and Related Rights in the Work, voluntarily elects to apply CC0 to the Work and publicly distribute the Work under its terms, with knowledge of his or her Copyright and Related Rights in the Work and the meaning and intended legal effect of CC0 on those rights.\n\n1. Copyright and Related Rights. A Work made available under CC0 may be protected by copyright and related or neighboring rights (\"Copyright and Related Rights\"). Copyright and Related Rights include, but are not limited to, the following:\n\nthe right to reproduce, adapt, distribute, perform, display, communicate, and translate a Work;\nmoral rights retained by the original author(s) and/or performer(s);\npublicity and privacy rights pertaining to a person's image or likeness depicted in a Work;\nrights protecting against unfair competition in regards to a Work, subject to the limitations in paragraph 4(a), below;\nrights protecting the extraction, dissemination, use and reuse of data in a Work;\ndatabase rights (such as those arising under Directive 96/9/EC of the European Parliament and of the Council of 11 March 1996 on the legal protection of databases, and under any national implementation thereof, including any amended or successor version of such directive); and\nother similar, equivalent or corresponding rights throughout the world based on applicable law or treaty, and any national implementations thereof.\n2. Waiver. To the greatest extent permitted by, but not in contravention of, applicable law, Affirmer hereby overtly, fully, permanently, irrevocably and unconditionally waives, abandons, and surrenders all of Affirmer's Copyright and Related Rights and associated claims and causes of action, whether now known or unknown (including existing as well as future claims and causes of action), in the Work (i) in all territories worldwide, (ii) for the maximum duration provided by applicable law or treaty (including future time extensions), (iii) in any current or future medium and for any number of copies, and (iv) for any purpose whatsoever, including without limitation commercial, advertising or promotional purposes (the \"Waiver\"). Affirmer makes the Waiver for the benefit of each member of the public at large and to the detriment of Affirmer's heirs and successors, fully intending that such Waiver shall not be subject to revocation, rescission, cancellation, termination, or any other legal or equitable action to disrupt the quiet enjoyment of the Work by the public as contemplated by Affirmer's express Statement of Purpose.\n\n3. Public License Fallback. Should any part of the Waiver for any reason be judged legally invalid or ineffective under applicable law, then the Waiver shall be preserved to the maximum extent permitted taking into account Affirmer's express Statement of Purpose. In addition, to the extent the Waiver is so judged Affirmer hereby grants to each affected person a royalty-free, non transferable, non sublicensable, non exclusive, irrevocable and unconditional license to exercise Affirmer's Copyright and Related Rights in the Work (i) in all territories worldwide, (ii) for the maximum duration provided by applicable law or treaty (including future time extensions), (iii) in any current or future medium and for any number of copies, and (iv) for any purpose whatsoever, including without limitation commercial, advertising or promotional purposes (the \"License\"). The License shall be deemed effective as of the date CC0 was applied by Affirmer to the Work. Should any part of the License for any reason be judged legally invalid or ineffective under applicable law, such partial invalidity or ineffectiveness shall not invalidate the remainder of the License, and in such case Affirmer hereby affirms that he or she will not (i) exercise any of his or her remaining Copyright and Related Rights in the Work or (ii) assert any associated claims and causes of action with respect to the Work, in either case contrary to Affirmer's express Statement of Purpose.\n\n4. Limitations and Disclaimers.\n\nNo trademark or patent rights held by Affirmer are waived, abandoned, surrendered, licensed or otherwise affected by this document.\nAffirmer offers the Work as-is and makes no representations or warranties of any kind concerning the Work, express, implied, statutory or otherwise, including without limitation warranties of title, merchantability, fitness for a particular purpose, non infringement, or the absence of latent or other defects, accuracy, or the present or absence of errors, whether or not discoverable, all to the greatest extent permissible under applicable law.\nAffirmer disclaims responsibility for clearing rights of other persons that may apply to the Work or any use thereof, including without limitation any person's Copyright and Related Rights in the Work. Further, Affirmer disclaims responsibility for obtaining any necessary consents, permissions or other rights required for any use of the Work.\nAffirmer understands and acknowledges that Creative Commons is not a party to this document and has no duty or obligation with respect to this CC0 or use of the Work.\n",
+                        "required_fields": [],
+                        "name": "CC0 1.0 Universal"
+                    },
+                    "type": "licenses",
+                    "id": "5637c51d029bdb519fe290b3"
+                }
+            },
+            "provider": {
+                "data": {
+                    "relationships": {
+                        "licenses_acceptable": {
+                            "links": {
+                                "related": {
+                                    "href": "http://localhost:8000/v2/providers/registrations/osf/licenses/",
+                                    "meta": {}
+                                }
+                            }
+                        },
+                        "highlighted_subjects": {
+                            "links": {
+                                "related": {
+                                    "href": "http://localhost:8000/v2/providers/registrations/osf/subjects/highlighted/",
+                                    "meta": {
+                                        "has_highlighted_subjects": false
+                                    }
+                                }
+                            }
+                        },
+                        "subjects": {
+                            "links": {
+                                "related": {
+                                    "href": "http://localhost:8000/v2/providers/registrations/osf/subjects/",
+                                    "meta": {}
+                                }
+                            }
+                        },
+                        "primary_collection": {
+                            "data": {
+                                "type": "collections",
+                                "id": "y9kfe"
+                            },
+                            "links": {
+                                "related": {
+                                    "href": "http://localhost:8000/v2/collections/y9kfe/",
+                                    "meta": {}
+                                }
+                            }
+                        }
+                    },
+                    "links": {
+                        "self": "http://localhost:8000/v2/providers/registrations/osf/"
+                    },
+                    "attributes": {
+                        "advisory_board": "",
+                        "email_support": null,
+                        "name": "OSF Registries",
+                        "domain": "",
+                        "allow_commenting": false,
+                        "assets": null,
+                        "facebook_app_id": null,
+                        "footer_links": "",
+                        "allow_submissions": true,
+                        "example": null,
+                        "domain_redirect_enabled": false,
+                        "description": "<span>The <strong>open</strong> registries network</span>"
+                    },
+                    "type": "registration-providers",
+                    "id": "osf"
+                }
+            }
+        },
+        "attributes": {
+            "registration_supplement": "Open-Ended Registration",
+            "pending_embargo_approval": false,
+            "registration": true,
+            "embargo_end_date": null,
+            "wiki_enabled": true,
+            "withdrawn": false,
+            "withdrawal_justification": null,
+            "category": "",
+            "preprint": false,
+            "current_user_permissions": [
+                "admin",
+                "write",
+                "read"
+            ],
+            "title": "Test Component",
+            "article_doi": null,
+            "current_user_is_contributor_or_group_member": true,
+            "registered_meta": {
+                "summary": {
+                    "value": "",
+                    "extra": []
+                }
+            },
+            "analytics_key": "ad45ccb39e1255b1bd733da50fdf070818d8792ad04e601873cef6458e13291e9f603bae4e2beb6321a926c391e5799faab4eb92125f453c88c7ceab138f87b3bf2145cdce9e7427f685af1ca8365ab5f149a866503918d7515abe1ac33ddb9b46a8f77bb2671227fc68c56f10a4cf988a937cdbd0a3b2dfb30a6fafa9a17fe6549dd096790194094ca73a20206ef8aa",
+            "public": true,
+            "fork": false,
+            "date_withdrawn": null,
+            "description": "",
+            "tags": [],
+            "pending_registration_approval": false,
+            "collection": false,
+            "current_user_can_comment": true,
+            "embargoed": false,
+            "pending_embargo_termination_approval": false,
+            "current_user_is_contributor": true,
+            "date_modified": "2017-12-08T15:28:30.110842Z",
+            "custom_citation": null,
+            "access_requests_enabled": null,
+            "date_registered": "2017-12-20T16:03:47.291029Z",
+            "date_created": "2017-12-20T16:03:47.327319Z",
+            "pending_withdrawal": false,
+            "node_license": {
+                "copyright_holders": [
+                    ""
+                ],
+                "year": "2017"
+            },
+            "archiving": false
+        },
+        "type": "registrations",
+        "id": "8gqkv"
+    },
+    "meta": {
+        "version": "2.18"
+    }
+}
