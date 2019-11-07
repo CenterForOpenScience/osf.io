@@ -98,7 +98,6 @@ def create_file_tree_and_json(author_source, registry_source, target):
         for line in csv_reader:
             row = [cell for cell in line]
             project_id = row[id_index]
-            logger.info('Adding project ID: {}'.format(project_id))
             root_directory = os.path.join(top_dir, project_id)
             os.mkdir(root_directory)
             data_directory = os.path.join(root_directory, 'data')
@@ -106,8 +105,14 @@ def create_file_tree_and_json(author_source, registry_source, target):
             os.mkdir(os.path.join(data_directory, 'nonanonymous'))
             project_dict = make_project_dict(row, author_list, normalized_header_row)
             make_json_file(root_directory, project_dict, 'project')
-            registration_dict = make_registration_dict(row, normalized_header_row)
+            try:
+                registration_dict = make_registration_dict(row, normalized_header_row, project_id)
+            except Exception:
+                logger.warning('Error creating directory for {}'.format(project_id))
+                continue
             make_json_file(root_directory, registration_dict, 'registration')
+            logger.info('Successfully created directory for {}'.format(project_id))
+
 
 
 def create_author_dict(source):
@@ -160,13 +165,15 @@ def make_project_dict(row, author_list, normalized_header_row):
     return project
 
 
-def make_registration_dict(row, normalized_header_row):
+def make_registration_dict(row, normalized_header_row, project_id):
     registration = {}
 
     for question in schema_to_spreadsheet_mapping:
         qid = list(question.keys())[0]
         column_name = list(question.values())[0]
         value = build_question_response(normalized_header_row, row, qid, column_name)
+        if value['value'] == '':
+            continue
         validated_qid, other_response = validate_response(qid, value)
         registration[validated_qid] = value
         if other_response:
@@ -175,6 +182,7 @@ def make_registration_dict(row, normalized_header_row):
     # confirmation questions. Just marking as agree -
     registration['q35'] = build_nested_response('Agree')
     registration['q36'] = build_nested_response('Agree')
+    validate_all_responses(registration, project_id)
     return registration
 
 
@@ -499,6 +507,19 @@ def validate_response(qid, value):
         else:
             raise Exception(exc)
     return qid, None
+
+def validate_all_responses(value, project_id):
+    egap_schema = ensure_schema_structure(from_json('egap-registration.json'))
+    schema = create_jsonschema_from_metaschema(egap_schema,
+        required_fields=True,
+        is_reviewer=False)
+
+    try:
+        json_schema = jsonschema.validate(value, schema)
+    except ValidationError as exc:
+        with open('errors.txt', 'a+') as error_file:
+            error_file.write(', '+project_id)
+        raise Exception(exc)
 
 
 def main(default_args=False):
