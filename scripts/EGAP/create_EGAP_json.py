@@ -109,6 +109,7 @@ def create_file_tree_and_json(author_source, registry_source, target):
                 registration_dict = make_registration_dict(row, normalized_header_row, project_id)
             except Exception:
                 logger.warning('Error creating directory for {}'.format(project_id))
+                shutil.rmtree(root_directory)
                 continue
             make_json_file(root_directory, registration_dict, 'registration')
             logger.info('Successfully created directory for {}'.format(project_id))
