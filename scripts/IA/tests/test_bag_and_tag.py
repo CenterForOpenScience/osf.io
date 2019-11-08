@@ -1,4 +1,5 @@
 import os
+import mock
 import json
 import unittest
 import responses
@@ -6,12 +7,17 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 from nose.tools import assert_equal
 import xml.etree.ElementTree as ET
 
-from scripts.IA.bag_and_tag import build_metadata
+from scripts.IA.bag_and_tag import build_metadata, write_metadata_and_bag
 
 
 def node_metadata():
     with open(os.path.join(HERE, 'fixtures/metadata-resp-with-embeds.json'), 'r') as fp:
         return json.loads(fp.read())
+
+
+def datacite_xml():
+    with open(os.path.join(HERE, 'fixtures/datacite-metadata.xml'), 'r') as fp:
+        return fp.read()
 
 
 class TestWikiDumper(unittest.TestCase):
@@ -54,3 +60,10 @@ class TestWikiDumper(unittest.TestCase):
         for data in root.findall('{http://datacite.org/schema/kernel-4}rightsList'):
             rights = data.find('{http://datacite.org/schema/kernel-4}rights').text
             assert_equal(rights, 'CC0 1.0 Universal')
+
+    @mock.patch('scripts.IA.bag_and_tag.bagit.make_bag')
+    def test_bag_and_tag(self, mock_bagit):
+        with mock.patch('builtins.open', mock.mock_open()) as m:
+            write_metadata_and_bag(datacite_xml(), 'tests/test_directory')
+            m.assert_called_with(os.path.join(HERE, 'test_directory/datacite.xml'), 'w')
+            mock_bagit.assert_called_with('/Users/johntordoff/osf.io/scripts/IA/tests/test_directory')

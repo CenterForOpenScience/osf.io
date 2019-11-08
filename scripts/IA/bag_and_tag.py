@@ -1,10 +1,13 @@
 import os
+import bagit
 import argparse
 import datetime
 import requests
 from datacite import schema40
 DOI_FORMAT = '{prefix}/osf.io/{guid}'
 BASE_URL = 'http://localhost:8000/'
+
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 PREPRINT_DOI_NAMESPACE = {
     'osf': '10.31219',
@@ -87,11 +90,17 @@ def fetch_node(guid):
     return requests.get(f'{BASE_URL}v2/registrations/{guid}/?embed=provider&embed=contributors&embed=license').json()['data']
 
 
+def write_metadata_and_bag(xml_metadata, destination):
+    with open(os.path.join(HERE, destination, 'datacite.xml'), 'w') as fp:
+        fp.write(xml_metadata)
+
+    bagit.make_bag(os.path.join(HERE, destination))
+
+
 def main(guid, destination):
     json_data = fetch_node(guid)
     xml_metadata = build_metadata(json_data)
-    with open(os.path.join(destination, 'datacite.xml'), 'w') as fp:
-        fp.write(xml_metadata)
+    write_metadata_and_bag(xml_metadata, destination)
 
 
 if __name__ == '__main__':
