@@ -47,6 +47,11 @@ class RegistrationSchemaBlockSerializer(JSONAPISerializer):
         'self': 'get_absolute_url',
     })
 
+    schema = RelationshipField(
+        related_view='schemas:registration-schema-detail',
+        related_view_kwargs={'schema_id': '<schema._id>'},
+    )
+
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url
 
