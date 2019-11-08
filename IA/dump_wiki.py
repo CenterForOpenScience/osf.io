@@ -3,20 +3,28 @@ import math
 import asyncio
 import requests
 import argparse
+from ratelimit import limits, sleep_and_retry
 
 API_URL = 'http://localhost:8000'
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+TEN_SECONDS = 10
+
 
 class WikiDumpError(Exception):
     pass
 
 
+@sleep_and_retry
+@limits(calls=50, period=TEN_SECONDS)
 async def get_wiki_pages(guid, page, result={}):
     url = f'{API_URL}/v2/registrations/{guid}/wikis/?page={page}'
     result[page] = requests.get(url).json()['data']
     return result
 
 
+@sleep_and_retry
+@limits(calls=50, period=TEN_SECONDS)
 async def write_wiki_content(page, retries=3):
     resp = requests.get(page['links']['download'])
     try:
