@@ -78,7 +78,12 @@ async def main(guid):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-id', '--guid', help='The guid of the registration if who\'s wiki you want to dump.')
+    parser.add_argument(
+        '-id',
+        '--guid',
+        help='The guid of the registration if who\'s wiki you want to dump.',
+        required=True
+    )
     args = parser.parse_args()
 
     guid = args.guid
