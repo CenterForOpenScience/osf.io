@@ -156,10 +156,10 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
             },
             'permissions':
             {
-                u'チェックリスト': ['VISIBLE', 'WRITABLE'],
+                u'チェックリスト': [],
                 u'スキャン結果': [],
-                u'生データ': ['VISIBLE', 'WRITABLE'],
-                u'最終原稿・組図': ['VISIBLE', 'WRITABLE']
+                u'生データ': [],
+                u'最終原稿・組図': []
             }
         }
         assert_equal(settings, expected)
