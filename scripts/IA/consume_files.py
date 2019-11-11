@@ -39,7 +39,10 @@ def consume_files(guid, token, directory, base_url=BASE_URL):
     os.mkdir(path)
     path = os.path.join(path,'files')
     os.mkdir(path)
-    auth_header = {'Authorization': 'Bearer {}'.format(token)}
+    if token:
+        auth_header = {'Authorization': 'Bearer {}'.format(token)}
+    else:
+        auth_header = {}
 
     try:
         response = requests.get(zip_url.format(guid), headers=auth_header)
@@ -84,8 +87,6 @@ def main(default_args=True):
 
     if not guid:
         raise ValueError('Project GUID must be specified! Use -g')
-    if not token:
-        raise ValueError('Token must be provided! Use -t')
     if not directory:
         # Setting default to current directory
         directory = '.'

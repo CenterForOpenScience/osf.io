@@ -54,7 +54,7 @@ class TestIAFiles(unittest.TestCase):
             )
 
 
-        consume_files('jj81a', 'asdfasdfasdgfasg', '.')
+        consume_files('jj81a', None, '.')
 
         assert os.path.isdir(os.path.join(HERE,'jj81a/files/Folder 1'))
         assert os.path.isfile(os.path.join(HERE, 'jj81a/files/Folder 1/test.txt'))
