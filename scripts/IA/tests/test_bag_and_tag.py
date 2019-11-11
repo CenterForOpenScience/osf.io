@@ -3,11 +3,11 @@ import mock
 import json
 import unittest
 import responses
-HERE = os.path.dirname(os.path.abspath(__file__))
-from nose.tools import assert_equal
 import xml.etree.ElementTree as ET
-
+from nose.tools import assert_equal, assert_in
 from scripts.IA.bag_and_tag import build_metadata, write_metadata_and_bag
+
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def node_metadata():
@@ -42,7 +42,7 @@ class TestWikiDumper(unittest.TestCase):
 
         for data in root.findall('{http://datacite.org/schema/kernel-4}creators'):
             title = data.find('{http://datacite.org/schema/kernel-4}creator').find('{http://datacite.org/schema/kernel-4}creatorName').text
-            assert_equal(title, 'John Tordoff')
+            assert_equal(title, 'Brian Dawkins')
 
         for data in root.findall('{http://datacite.org/schema/kernel-4}titles'):
             title = data.find('{http://datacite.org/schema/kernel-4}title').text
@@ -66,4 +66,4 @@ class TestWikiDumper(unittest.TestCase):
         with mock.patch('builtins.open', mock.mock_open()) as m:
             write_metadata_and_bag(datacite_xml(), 'tests/test_directory')
             m.assert_called_with(os.path.join(HERE, 'test_directory/datacite.xml'), 'w')
-            mock_bagit.assert_called_with('/Users/johntordoff/osf.io/scripts/IA/tests/test_directory')
+            assert_in('osf.io/scripts/IA/tests/test_directory', mock_bagit.call_args_list[0][0][0])
