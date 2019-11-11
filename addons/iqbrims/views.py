@@ -467,7 +467,8 @@ def _iqbrims_set_status(node, status, auth=None):
             # mount container
             iqbrims.set_folder(root_folder, auth=auth)
             iqbrims.save()
-            _iqbrims_update_spreadsheet(node, management_node, register_type, all_status)
+            if 'is_dirty' not in all_status or not all_status['is_dirty']:
+                _iqbrims_update_spreadsheet(node, management_node, register_type, all_status)
 
         iqbrims.set_status(all_status)
     return all_status

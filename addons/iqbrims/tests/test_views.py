@@ -234,7 +234,8 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
         status = {
             'state': 'deposit',
             'labo_id': 'fake_labo_name',
-            'other_attribute': 'fake_other_attribute'
+            'other_attribute': 'fake_other_attribute',
+            'is_dirty': False
         }
         fake_folder = {
             'id': '382635482',
@@ -300,6 +301,71 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
             payload['data']['attributes'],
             secret
         ])
+
+    @mock.patch.object(IQBRIMSFlowableClient, 'start_workflow')
+    @mock.patch.object(iqbrims_views, '_iqbrims_update_spreadsheet')
+    @mock.patch.object(iqbrims_views, '_iqbrims_init_folders')
+    @mock.patch.object(iqbrims_views, '_iqbrims_import_auth_from_management_node')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    def test_set_status_to_confirm(self, mock_get_management_node, mock_import_auth_from_management_node,
+                                   mock_iqbrims_init_folders, mock_update_spreadsheet,
+                                   mock_flowable_start_workflow):
+        status = {
+            'state': 'deposit',
+            'labo_id': 'fake_labo_name',
+            'other_attribute': 'fake_other_attribute',
+            'is_dirty': True
+        }
+        fake_folder = {
+            'id': '382635482',
+            'path': 'fake/folder/path'
+        }
+        fake_management_project = ProjectFactory(creator=self.user)
+        mock_get_management_node.return_value = fake_management_project
+        mock_import_auth_from_management_node.return_value = None
+        mock_iqbrims_init_folders.return_value = fake_folder
+        mock_update_spreadsheet.return_value = None
+        mock_flowable_start_workflow.return_value = None
+
+        url = self.project.api_url_for('iqbrims_set_status')
+        payload = {
+            'data': {
+                'attributes': status
+            }
+        }
+        res = self.app.patch_json(url, params=payload, auth=self.user.auth)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, {
+            'data': {
+                'attributes': status,
+                'type': 'iqbrims-status',
+                'id': self.project._id
+            }
+        })
+
+        iqbrims = self.project.get_addon('iqbrims')
+        secret = iqbrims.get_secret()
+        assert_is_not_none(secret)
+        assert_equal(iqbrims.folder_id, fake_folder['id'])
+        assert_equal(iqbrims.folder_path, fake_folder['path'])
+
+        assert_equal(mock_import_auth_from_management_node.call_count, 1)
+        assert_items_equal(mock_import_auth_from_management_node.call_args[0], [
+            self.project,
+            iqbrims,
+            fake_management_project
+        ])
+
+        assert_equal(mock_iqbrims_init_folders.call_count, 1)
+        assert_items_equal(mock_iqbrims_init_folders.call_args[0], [
+            self.project,
+            fake_management_project,
+            status['state'],
+            status['labo_id']
+        ])
+
+        assert_equal(mock_update_spreadsheet.call_count, 0)
 
     @mock.patch.object(IQBRIMSFlowableClient, 'start_workflow')
     @mock.patch.object(iqbrims_views, '_iqbrims_update_spreadsheet')
