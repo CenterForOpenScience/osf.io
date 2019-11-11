@@ -857,17 +857,20 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         self_url = url['self']
         self_meta = self.get_meta_information(self.self_meta, value)
         relationship = format_relationship_links(related_url, self_url, related_meta, self_meta)
-        if related_url and (len(related_path.split('/')) & 1) == 1:
+        if related_url:
             resolved_url = resolve(related_path)
             related_class = resolved_url.func.view_class
             if issubclass(related_class, RetrieveModelMixin):
-                related_type = resolved_url.namespace
                 try:
+                    related_type = resolved_url.namespace
                     # TODO: change kwargs to preprint_provider_id and registration_id
                     if related_type == 'preprint_providers':
                         related_id = resolved_url.kwargs['provider_id']
                     elif related_type == 'registrations':
                         related_id = resolved_url.kwargs['node_id']
+                    elif related_type == 'schemas' and related_class.view_name == 'registration-schema-detail':
+                        related_id = resolved_url.kwargs['schema_id']
+                        related_type = 'registration-schemas'
                     else:
                         related_id = resolved_url.kwargs[related_type[:-1] + '_id']
                 except KeyError:
