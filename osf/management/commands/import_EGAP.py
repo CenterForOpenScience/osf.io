@@ -12,6 +12,7 @@ from django.core.management.base import BaseCommand
 
 from osf.utils.permissions import ADMIN, WRITE
 from osf.models import (
+    ApiOAuth2PersonalToken,
     RegistrationSchema,
     Node,
     DraftRegistration,
@@ -19,7 +20,6 @@ from osf.models import (
 )
 from website.project.metadata.schemas import ensure_schema_structure, from_json
 from website.settings import WATERBUTLER_INTERNAL_URL
-from osf_tests.factories import ApiOAuth2PersonalTokenFactory
 from framework.auth.core import Auth
 from zipfile import ZipFile
 
@@ -47,8 +47,11 @@ def ensure_egap_schema():
 
 def get_creator_auth_header(creator_username):
     creator = OSFUser.objects.get(username=creator_username)
-    token = ApiOAuth2PersonalTokenFactory(owner=creator)
-    token.save()
+
+    token, created = ApiOAuth2PersonalToken.objects.get_or_create(name='egap_creator', owner=creator)
+    if created:
+        token.save()
+
     return creator, {'Authorization': 'Bearer {}'.format(token.token_id)}
 
 
