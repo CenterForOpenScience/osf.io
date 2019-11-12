@@ -48,7 +48,7 @@ def ensure_egap_schema():
 def get_creator_auth_header(creator_username):
     creator = OSFUser.objects.get(username=creator_username)
 
-    token, created = ApiOAuth2PersonalToken.objects.get_or_create(name='egap_creator')
+    token, created = ApiOAuth2PersonalToken.objects.get_or_create(name='egap_creator', owner=creator)
     if created:
         token.save()
 
