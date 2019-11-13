@@ -32,7 +32,7 @@ def push_status_message(message, kind='warning', dismissible=True, trust=True, j
     try:
         statuses = session.data.get('status')
     except RuntimeError as e:
-        exception_message = getattr(e, 'message', None)
+        exception_message = str(e)
         if 'Working outside of request context.' in exception_message:
             # Working outside of request context, so should be a DRF issue. Status messages are not appropriate there.
             # If it's any kind of notification, then it doesn't make sense to send back to the API routes.

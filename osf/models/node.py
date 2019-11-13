@@ -2520,6 +2520,7 @@ class Node(AbstractNode):
         """For v1 compat"""
         return False
 
+
 def remove_addons(auth, resource_object_list):
     for config in AbstractNode.ADDONS_AVAILABLE:
         try:

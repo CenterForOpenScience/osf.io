@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import os
-from types import NoneType
-from xmlrpclib import DateTime
-
 import mock
 from nose.tools import *  # noqa: F403
 
@@ -17,8 +13,6 @@ from osf_tests.factories import (
 from framework.auth import Auth
 from website.util import rubeus
 from website.util.rubeus import sort_by_name
-
-from osf.utils import sanitize
 
 class TestRubeus(OsfTestCase):
 

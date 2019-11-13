@@ -14,7 +14,7 @@ from osf_tests.factories import (
 )
 from osf.utils.permissions import WRITE, READ
 from rest_framework import exceptions
-from test_node_draft_registration_list import DraftRegistrationTestCase
+from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
 
 SCHEMA_VERSION = 2
 

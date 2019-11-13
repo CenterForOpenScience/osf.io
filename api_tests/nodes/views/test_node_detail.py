@@ -31,7 +31,7 @@ from osf_tests.factories import (
 )
 from rest_framework import exceptions
 from tests.base import fake
-from tests.utils import assert_items_equal, assert_latest_log, assert_latest_log_not
+from tests.utils import assert_equals, assert_latest_log, assert_latest_log_not
 from website.views import find_bookmark_collection
 
 
@@ -168,7 +168,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is True
-        assert_items_equal(
+        assert_equals(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_write,
         )
@@ -1472,6 +1472,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
             make_node_payload(project_public, {'public': False}),
             auth=user.auth,  # self.user is creator/admin
         )
+
         assert res.status_code == 200
 
     @mock.patch('website.identifiers.tasks.update_doi_metadata_on_change.s')

@@ -63,12 +63,12 @@ class TestMigrateAnalytics(OsfTestCase):
         assert_equal(len(generated_events), 3)
         returned_dates = [event['keen']['timestamp'] for event in generated_events]
         expected_dates = ['2016-03-{}T00:00:00+00:00'.format(i) for i in range(13, 16)]
-        assert_items_equal(returned_dates, expected_dates)
+        assert_equals(returned_dates, expected_dates)
 
         # check the totals are the same as the first event
         returned_totals = [event['nodes']['total'] for event in generated_events]
         expected_totals = [self.keen_event['nodes']['total'] for i in range(len(generated_events))]
-        assert_items_equal(returned_totals, expected_totals)
+        assert_equals(returned_totals, expected_totals)
 
     def test_fill_in_event_gaps(self):
         filled_in_events = fill_in_event_gaps('test', [self.keen_event, self.keen_event_2, self.keen_event_3])
@@ -79,4 +79,4 @@ class TestMigrateAnalytics(OsfTestCase):
         returned_dates = [event['keen']['timestamp'] for event in filled_in_events]
         expected_dates = ['2016-03-{}T00:00:00+00:00'.format(i) for i in range(13, 16)]
         expected_dates += ['2016-03-{}T00:00:00+00:00'.format(i) for i in range(17, 19)]
-        assert_items_equal(returned_dates, expected_dates)
+        assert_equals(returned_dates, expected_dates)

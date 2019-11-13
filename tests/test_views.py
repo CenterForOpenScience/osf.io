@@ -41,7 +41,7 @@ from website import mailchimp_utils, mails, settings, language
 from addons.osfstorage import settings as osfstorage_settings
 from osf.models import AbstractNode, NodeLog, QuickFilesNode
 from website.profile.utils import add_contributor_json, serialize_unregistered
-from website.profile.views import fmt_date_or_none, update_osf_help_mails_subscription
+from website.profile.views import update_osf_help_mails_subscription
 from website.project.decorators import check_can_access
 from website.project.model import has_anonymous_link
 from website.project.signals import contributor_added
@@ -829,7 +829,7 @@ class TestProjectViews(OsfTestCase):
         node.suspended = True
         node.save()
         url = node.api_url
-        res = self.app.get(url, auth=Auth(self.user1), expect_errors=True)
+        res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 451)
 
     def test_private_link_edit_name(self):
@@ -1150,13 +1150,6 @@ class TestUserProfile(OsfTestCase):
     def setUp(self):
         super(TestUserProfile, self).setUp()
         self.user = AuthUserFactory()
-
-    def test_fmt_date_or_none(self):
-        with assert_raises(HTTPError) as cm:
-            #enter a date before 1900
-            fmt_date_or_none(dt.datetime(1890, 10, 31, 18, 23, 29, 227))
-        # error should be raised because date is before 1900
-        assert_equal(cm.exception.code, http_status.HTTP_400_BAD_REQUEST)
 
     def test_unserialize_social(self):
         url = api_url_for('unserialize_social')
@@ -4299,7 +4292,7 @@ class TestConfigureMailingListViews(OsfTestCase):
 
     def test_get_notifications(self):
         user = AuthUserFactory()
-        mailing_lists = dict(user.osf_mailing_lists.items() + user.mailchimp_mailing_lists.items())
+        mailing_lists = dict(list(user.osf_mailing_lists.items()) + list(user.mailchimp_mailing_lists.items()))
         url = api_url_for('user_notifications')
         res = self.app.get(url, auth=user.auth)
         assert_equal(mailing_lists, res.json['mailing_lists'])

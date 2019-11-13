@@ -311,7 +311,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         except PermissionsError as e:
             raise exceptions.PermissionDenied(detail=str(e))
         except (ValueError, ValidationError, NodeStateError) as e:
-            raise exceptions.ValidationError(detail=e.message)
+            raise exceptions.ValidationError(detail=str(e))
 
 
 class PreprintCreateSerializer(PreprintSerializer):

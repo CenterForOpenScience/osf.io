@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from past.builtins import basestring
 import furl
 from future.moves.urllib.parse import urlunsplit, urlsplit, parse_qs, urlencode
 from distutils.version import StrictVersion

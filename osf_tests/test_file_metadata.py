@@ -150,7 +150,7 @@ class TestFileMetadataRecord:
         assert node.logs.latest().action == NodeLog.FILE_METADATA_UPDATED
 
         # Make sure old fields are cleared
-        assert initial_metadata.keys() not in record.metadata.keys()
+        assert list(initial_metadata.keys()) not in list(record.metadata.keys())
 
         full_metadata = {
             'funders': [

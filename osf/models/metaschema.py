@@ -125,9 +125,9 @@ class RegistrationSchema(AbstractSchema):
                         raise ValidationError(
                             'For your registration your response to the \'{}\' field is invalid.'.format(question['title']),
                         )
-            raise ValidationError(e.message)
+            raise ValidationError(e)
         except jsonschema.SchemaError as e:
-            raise ValidationValueError(e.message)
+            raise ValidationValueError(e)
         return
 
 

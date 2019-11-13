@@ -255,15 +255,7 @@ class TokenApprovableSanction(Sanction):
         pass
 
     def ask(self, group):
-        """
-        :param list group: List of (user, node) tuples containing contributors to notify about the
-        sanction.
-        """
-        for contrib, node in group:
-            if contrib._id in self.approval_state:
-                self._notify_authorizer(contrib, node)
-            else:
-                self._notify_non_authorizer(contrib, node)
+        pass
 
     class Meta:
         abstract = True
@@ -289,6 +281,10 @@ class EmailApprovableSanction(TokenApprovableSanction):
     #   }
     # }
     stashed_urls = DateTimeAwareJSONField(default=dict, blank=True)
+
+    @property
+    def should_suppress_emails(self):
+        return bool(self._get_registration().external_registered_date)
 
     @staticmethod
     def _format_or_empty(template, context):
@@ -351,6 +347,19 @@ class EmailApprovableSanction(TokenApprovableSanction):
         else:
             raise NotImplementedError
 
+    def ask(self, group):
+        """
+        :param list group: List of (user, node) tuples containing contributors to notify about the
+        sanction.
+        """
+        if self.should_suppress_emails:
+            return
+        for contrib, node in group:
+            if contrib._id in self.approval_state:
+                self._notify_authorizer(contrib, node)
+            else:
+                self._notify_non_authorizer(contrib, node)
+
     def add_authorizer(self, user, node, **kwargs):
         super(EmailApprovableSanction, self).add_authorizer(
             user, node,
@@ -367,7 +376,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
         raise NotImplementedError
 
     def _on_complete(self, *args):
-        if self.notify_initiator_on_complete:
+        if self.notify_initiator_on_complete and not self.should_suppress_emails:
             self._notify_initiator()
 
     class Meta:
@@ -610,6 +619,9 @@ class Retraction(EmailApprovableSanction):
     initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
     justification = models.CharField(max_length=2048, null=True, blank=True)
     date_retracted = NonNaiveDateTimeField(null=True, blank=True)
+
+    def _get_registration(self):
+        return self.registrations.first()
 
     def _view_url_context(self, user_id, node):
         registration = self.registrations.first()

@@ -310,7 +310,7 @@ class TestSparseViewOnlyLinks:
             },
         )  # current_user_can_comment and contributors are anonymized fields, should be removed
         assert res.status_code == 200
-        assert res.json['data']['attributes'].keys() == ['title']
+        assert list(res.json['data']['attributes'].keys()) == ['title']
 
         embeds = res.json['data'].get('embeds', None)
         assert embeds is None or 'contributors' not in embeds

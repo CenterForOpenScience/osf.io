@@ -101,7 +101,7 @@ class ExternalProviderMeta(abc.ABCMeta):
             PROVIDER_LOOKUP[cls.short_name] = cls
 
 
-class ExternalProvider(with_metaclass(ExternalProviderMeta)):
+class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
     """A connection to an external service (ex: GitHub).
 
     This object contains no credentials, and is not saved in the database.

@@ -3,9 +3,7 @@ from __future__ import absolute_import
 import os
 from rest_framework import status as http_status
 import requests
-
 from future.moves.urllib.parse import urljoin
-
 import json
 
 import waffle

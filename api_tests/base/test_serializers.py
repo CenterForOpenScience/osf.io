@@ -287,11 +287,11 @@ class TestApiBaseSerializers(ApiTestCase):
                 continue
             if isinstance(relation, list):
                 for item in relation:
-                    link = item['links'].values()[0]
+                    link = list(item['links'].values())[0]
                     link_meta = link.get('meta', {})
                     assert_not_in('count', link_meta)
             else:
-                link = relation['links'].values()[0]
+                link = list(relation['links'].values())[0]
                 link_meta = link.get('meta', {})
                 assert_not_in('count', link_meta)
 
@@ -309,7 +309,7 @@ class TestApiBaseSerializers(ApiTestCase):
                 field = field.field
             related_meta = getattr(field, 'related_meta', {})
             if related_meta and related_meta.get('count', False):
-                link = relation['links'].values()[0]
+                link = list(relation['links'].values())[0]
                 assert_in('count', link['meta'], field)
 
     def test_related_counts_excluded_query_param_false(self):
@@ -325,7 +325,7 @@ class TestApiBaseSerializers(ApiTestCase):
                     link_meta = link.get('meta', {})
                     assert_not_in('count', link_meta)
             else:
-                link = relation['links'].values()[0]
+                link = list(relation['links'].values())[0]
                 link_meta = link.get('meta', {})
                 assert_not_in('count', link_meta)
 
@@ -379,7 +379,7 @@ class TestApiBaseSerializers(ApiTestCase):
                     else:
                         assert_not_in('count', link.get('meta', {}))
             elif relation != {'data': None}:
-                link = relation['links'].values()[0]
+                link = list(relation['links'].values())[0]
                 related_meta = getattr(field, 'related_meta', {})
                 if related_meta and related_meta.get('count', False) and key == 'children':
                     assert_in('count', link['meta'])
@@ -410,7 +410,7 @@ class TestApiBaseSerializers(ApiTestCase):
                     else:
                         assert_not_in('count', link.get('meta', {}))
             elif relation != {'data': None}:
-                link = relation['links'].values()[0]
+                link = list(relation['links'].values())[0]
                 related_meta = getattr(field, 'related_meta', {})
                 if related_meta and related_meta.get('count', False) and key == 'children' or key == 'contributors':
                     assert_in('count', link['meta'])

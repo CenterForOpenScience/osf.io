@@ -1348,28 +1348,28 @@ class TestSearchMigration(OsfTestCase):
     def test_first_migration_no_remove(self):
         migrate(delete=False, remove=False, index=settings.ELASTIC_INDEX, app=self.app.app)
         var = self.es.indices.get_aliases()
-        assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
+        assert_equal(list(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys())[0], settings.ELASTIC_INDEX)
 
     def test_multiple_migrations_no_remove(self):
         for n in range(1, 21):
             migrate(delete=False, remove=False, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
-            assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
+            assert_equal(list(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys())[0], settings.ELASTIC_INDEX)
 
     def test_first_migration_with_remove(self):
         migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
         var = self.es.indices.get_aliases()
-        assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
+        assert_equal(list(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys())[0], settings.ELASTIC_INDEX)
 
     def test_multiple_migrations_with_remove(self):
         for n in range(1, 21, 2):
             migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
-            assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
+            assert_equal(list(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys())[0], settings.ELASTIC_INDEX)
 
             migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
-            assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
+            assert_equal(list(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys())[0], settings.ELASTIC_INDEX)
             assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))
 
     def test_migration_institutions(self):

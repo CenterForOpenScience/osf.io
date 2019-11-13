@@ -10,7 +10,6 @@ from nose.tools import assert_equal, assert_not_equal
 
 from framework.auth import Auth
 from framework.celery_tasks.handlers import celery_teardown_request
-from framework.postcommit_tasks.handlers import postcommit_after_request
 from osf.models import Sanction
 from tests.base import get_default_metaschema
 from website.archiver import ARCHIVER_SUCCESS
@@ -98,7 +97,7 @@ def assert_not_logs(log_action, node_key, index=-1):
         return wrapper
     return outer_wrapper
 
-def assert_items_equal(item_one, item_two):
+def assert_equals(item_one, item_two):
     item_one.sort()
     item_two.sort()
     assert item_one == item_two

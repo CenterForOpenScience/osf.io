@@ -58,8 +58,7 @@ class QuerySetExplainMixin:
         cursor.execute('explain analyze verbose %s' % query, params)
         return '\n'.join(r[0] for r in cursor.fetchall())
 
-
-QuerySet.__bases__ += (QuerySetExplainMixin,)
+QuerySet = type('QuerySet', (QuerySetExplainMixin, QuerySet), dict(QuerySet.__dict__))
 
 
 class BaseModel(TimeStampedModel, QuerySetExplainMixin):

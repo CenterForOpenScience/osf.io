@@ -938,7 +938,9 @@ class TestContributorMethods:
 
         with pytest.raises(UserStateError) as excinfo:
             node.add_contributor(unregistered_user, auth=Auth(user))
-        assert 'This contributor cannot be added' in excinfo.value.message
+        assert str(excinfo.value) == 'This contributor cannot be added. ' \
+                                        'If the problem persists please report it to please report it to' \
+                                        ' <a href="mailto:support@osf.io">support@osf.io</a>.'
 
     def test_cant_add_creator_as_contributor_twice(self, node, user):
         node.add_contributor(contributor=user)
@@ -1056,7 +1058,7 @@ class TestContributorMethods:
     def test_set_visible_contributor_with_only_one_contributor(self, node, user):
         with pytest.raises(ValueError) as excinfo:
             node.set_visible(user=user, visible=False, auth=None)
-        assert excinfo.value.message == 'Must have at least one visible contributor'
+        assert str(excinfo.value) == 'Must have at least one visible contributor'
 
     def test_set_visible_missing(self, node):
         with pytest.raises(ValueError):
@@ -1279,12 +1281,12 @@ class TestNodeAddContributorRegisteredOrNot:
     def test_add_contributor_user_id_already_contributor(self, user, node):
         with pytest.raises(ValidationError) as excinfo:
             node.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id, save=True)
-        assert 'is already a contributor' in excinfo.value.message
+        assert 'is already a contributor' in str(excinfo.value)
 
     def test_add_contributor_invalid_user_id(self, user, node):
         with pytest.raises(ValueError) as excinfo:
             node.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde', save=True)
-        assert 'was not found' in excinfo.value.message
+        assert 'was not found' in str(excinfo.value)
 
     def test_add_contributor_fullname_email(self, user, node):
         contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
@@ -1899,7 +1901,7 @@ class TestRegisterNode:
                 auth=auth,
                 data=None,
             )
-        assert err.value.message == 'Cannot register deleted node.'
+        assert str(err.value) == 'Cannot register deleted node.'
 
     @mock.patch('website.project.signals.after_create_registration')
     def test_register_node_copies_subjects(self, mock_signal, subject):

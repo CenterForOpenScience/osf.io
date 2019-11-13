@@ -21,7 +21,7 @@ from osf.utils import permissions
 from osf.utils.workflows import DefaultStates
 from rest_framework import exceptions
 from tests.base import capture_signals, fake
-from tests.utils import assert_latest_log, assert_items_equal
+from tests.utils import assert_latest_log, assert_equals
 from website.project.signals import contributor_added, contributor_removed
 from api_tests.utils import disconnected_from_listeners
 
@@ -113,7 +113,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
             permissions.READ: [],
         }
         for i in range(0, 25):
-            perm = random.choice(users.keys())
+            perm = random.choice(list(users.keys()))
             user_two = AuthUserFactory()
 
             preprint_unpublished.add_contributor(user_two, permissions=perm)

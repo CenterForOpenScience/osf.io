@@ -532,8 +532,8 @@ def external_login_confirm_email_get(auth, uid, token):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     verification = user.email_verifications[token]
     email = verification['email']
-    provider = verification['external_identity'].keys()[0]
-    provider_id = verification['external_identity'][provider].keys()[0]
+    provider = list(verification['external_identity'].keys())[0]
+    provider_id = list(verification['external_identity'][provider].keys())[0]
     # wrong provider
     if provider not in user.external_identity:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
@@ -635,7 +635,7 @@ def confirm_email_get(token, auth=None, **kwargs):
     except exceptions.EmailConfirmTokenError as e:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
             'message_short': e.message_short,
-            'message_long': e.message_long
+            'message_long': str(e)
         })
 
     if is_initial_confirmation:
@@ -713,7 +713,7 @@ def unconfirmed_email_add(auth=None):
     except exceptions.EmailConfirmTokenError as e:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
             'message_short': e.message_short,
-            'message_long': e.message_long
+            'message_long': str(e)
         })
 
     user.save()
@@ -853,7 +853,7 @@ def register_user(**kwargs):
                 ),
             ),
         )
-    except BlacklistedEmailError as e:
+    except BlacklistedEmailError:
         raise HTTPError(
             http_status.HTTP_400_BAD_REQUEST,
             data=dict(message_long=language.BLACKLISTED_EMAIL)
@@ -861,7 +861,7 @@ def register_user(**kwargs):
     except ValidationError as e:
         raise HTTPError(
             http_status.HTTP_400_BAD_REQUEST,
-            data=dict(message_long=e.message)
+            data=dict(message_long=str(e))
         )
 
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:

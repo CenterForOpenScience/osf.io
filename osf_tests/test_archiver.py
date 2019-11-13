@@ -770,7 +770,7 @@ class TestArchiverTasks(ArchiverTestCase):
 
     def test_archive_success_same_file_in_component(self):
         file_tree = file_tree_factory(3, 3, 3)
-        selected = select_files_from_tree(file_tree).values()[0]
+        selected = list(select_files_from_tree(file_tree).values())[0]
 
         child_file_tree = file_tree_factory(0, 0, 0)
         child_file_tree['children'] = [selected]
@@ -1195,7 +1195,11 @@ class TestArchiverScripts(ArchiverTestCase):
             pending.append(reg)
         failed = Registration.find_failed_registrations()
         assert_equal(len(failed), 5)
-        assert_items_equal([f._id for f in failed], failures)
+        failures = list(failures)
+        failures.sort()
+        failed = list([f._id for f in failed])
+        failed.sort()
+        assert_equals(failed, failures)
         for pk in legacy:
             assert_false(pk in failed)
 

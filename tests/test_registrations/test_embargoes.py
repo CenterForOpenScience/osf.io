@@ -1115,7 +1115,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         })
 
 
-    @mock.patch('osf.models.sanctions.TokenApprovableSanction.ask')
+    @mock.patch('osf.models.sanctions.EmailApprovableSanction.ask')
     def test_embargoed_registration_set_privacy_requests_embargo_termination(self, mock_ask):
         # Initiate and approve embargo
         for i in range(3):
@@ -1173,7 +1173,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         for admin in admin_contributors:
             assert_true(any([each[0][0] == admin.username for each in mock_send_mail.call_args_list]))
 
-    @mock.patch('osf.models.sanctions.TokenApprovableSanction.ask')
+    @mock.patch('osf.models.sanctions.EmailApprovableSanction.ask')
     def test_make_child_embargoed_registration_public_asks_all_admins_in_tree(self, mock_ask):
         # Initiate and approve embargo
         node = NodeFactory(creator=self.user)

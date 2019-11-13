@@ -1377,7 +1377,6 @@ class UserProfileMixin(object):
         request_payload['data']['attributes'][request_key][0]['startYear'] = 'string'
         res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        print res.json['errors'][0]
         assert res.json['errors'][0]['detail'] == "For 'startYear' the field value u'string' is not of type u'integer'"
 
     def test_user_put_profile_date_validate_positive(self, app, user_one, user_one_url, request_payload, request_key):

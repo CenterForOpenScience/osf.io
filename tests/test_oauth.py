@@ -1,6 +1,6 @@
 from datetime import datetime
-from rest_framework import status as http_status
 import logging
+from rest_framework import status as http_status
 import json
 import logging
 import mock

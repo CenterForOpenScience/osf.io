@@ -19,7 +19,7 @@ from osf_tests.factories import (
 )
 from osf.utils.permissions import READ, WRITE
 from osf.utils.workflows import DefaultStates
-from tests.utils import assert_items_equal
+from tests.utils import assert_equals
 from website.identifiers.clients import DataCiteClient
 from website import settings
 
@@ -117,7 +117,7 @@ class TestRegistrationIdentifierList:
         IdentifierFactory(referent=registration, category='nopeid')
         identifiers_for_registration = registration.identifiers
         assert identifiers_for_registration.count() == 2
-        assert_items_equal(
+        assert_equals(
             list(
                 identifiers_for_registration.values_list(
                     'category',
@@ -229,7 +229,7 @@ class TestNodeIdentifierList:
         values_in_response = [
             identifier['attributes']['value'] for identifier in data_node_identifiers
         ]
-        assert_items_equal(values_in_response, values)
+        assert_equals(values_in_response, values)
 
     def test_identifier_filter_by_category(
             self, app, node, identifier_node, url_node_identifiers,
@@ -238,7 +238,7 @@ class TestNodeIdentifierList:
         identifiers_for_node = Identifier.objects.filter(object_id=node.id)
 
         assert identifiers_for_node.count() == 2
-        assert_items_equal(
+        assert_equals(
             [identifier.category for identifier in identifiers_for_node],
             ['carpid', 'nopeid'],
         )
