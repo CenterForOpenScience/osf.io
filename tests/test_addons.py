@@ -574,8 +574,8 @@ class TestCheckPreregAuth(OsfTestCase):
     def test_has_permission_write_prereg_challenge_admin(self):
         with assert_raises(HTTPError) as exc_info:
             views.check_access(self.draft_registration.branched_from,
-                Auth(user=self.prereg_challenge_admin_user), WRITE, None)
-            assert_equal(exc_info.exception.code, http.FORBIDDEN)
+            Auth(user=self.prereg_challenge_admin_user), WRITE, None)
+            assert_equal(exc_info.exception.code, http_status.HTTP_403_FORBIDDEN)
 
 class TestCheckOAuth(OsfTestCase):
 

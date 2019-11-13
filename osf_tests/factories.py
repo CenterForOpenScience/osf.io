@@ -186,6 +186,13 @@ class BaseNodeFactory(DjangoModelFactory):
     class Meta:
         model = models.Node
 
+    #Fix for adding the deleted date.
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        if kwargs.get('is_deleted', None):
+            kwargs['deleted'] = timezone.now()
+        return super(BaseNodeFactory, cls)._create(*args, **kwargs)
+
 
 class ProjectFactory(BaseNodeFactory):
     category = 'project'
@@ -269,6 +276,14 @@ class PrivateLinkFactory(DjangoModelFactory):
     key = factory.Faker('md5')
     anonymous = False
     creator = factory.SubFactory(UserFactory)
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        instance = super(PrivateLinkFactory, cls)._create(target_class, *args, **kwargs)
+        if instance.is_deleted and not instance.deleted:
+            instance.deleted = timezone.now()
+            instance.save()
+        return instance
 
 
 class CollectionFactory(DjangoModelFactory):
@@ -354,6 +369,7 @@ class RegistrationFactory(BaseNodeFactory):
         if project:
             user = project.creator
         user = kwargs.pop('user', None) or kwargs.get('creator') or user or UserFactory()
+        external_registered_date = kwargs.pop('external_registered_date', None)
         kwargs['creator'] = user
         provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
         # Original project to be registered
@@ -403,6 +419,8 @@ class RegistrationFactory(BaseNodeFactory):
                 reg.sanction.save()
         if is_public:
             reg.is_public = True
+        if external_registered_date:
+            reg.external_registered_date = external_registered_date
         reg.files_count = reg.registered_from.files.filter(deleted_on__isnull=True).count()
         reg.save()
         return reg
@@ -418,7 +436,7 @@ class WithdrawnRegistrationFactory(BaseNodeFactory):
 
         registration.retract_registration(user)
         withdrawal = registration.retraction
-        token = withdrawal.approval_state.values()[0]['approval_token']
+        token = list(withdrawal.approval_state.values())[0]['approval_token']
         with patch('osf.models.AbstractNode.update_search'):
             withdrawal.approve_retraction(user, token)
         withdrawal.save()
@@ -474,7 +492,7 @@ class EmbargoTerminationApprovalFactory(DjangoModelFactory):
                 registration = embargo._get_registration()
             else:
                 registration = RegistrationFactory(creator=user, user=user, embargo=embargo)
-        with mock.patch('osf.models.sanctions.TokenApprovableSanction.ask', mock.Mock()):
+        with mock.patch('osf.models.sanctions.EmailApprovableSanction.ask', mock.Mock()):
             approval = registration.request_embargo_termination(Auth(user))
             return approval
 

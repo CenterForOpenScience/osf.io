@@ -761,8 +761,8 @@ class TestWikiUuid(OsfTestCase):
         self.project.reload()
         private_uuid = self.project.wiki_private_uuids.get(self.wkey)
         assert_true(private_uuid)
-        assert_not_in(private_uuid, res.body)
-        assert_in(get_sharejs_uuid(self.project, self.wname), res.body)
+        assert_not_in(private_uuid, res.body.decode())
+        assert_in(get_sharejs_uuid(self.project, self.wname), res.body.decode())
 
         # Revisit page; uuid has not changed
         res = self.app.get(url, auth=self.user.auth)
@@ -781,13 +781,13 @@ class TestWikiUuid(OsfTestCase):
         self.project.reload()
         private_uuid = self.project.wiki_private_uuids.get(self.wkey)
         assert_true(private_uuid)
-        assert_not_in(private_uuid, res.body)
-        assert_in(get_sharejs_uuid(self.project, self.wname), res.body)
+        assert_not_in(private_uuid, res.body.decode())
+        assert_in(get_sharejs_uuid(self.project, self.wname), res.body.decode())
 
         # Users without write permission should not be able to access
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
-        assert_not_in(get_sharejs_uuid(self.project, self.wname), res.body)
+        assert_not_in(get_sharejs_uuid(self.project, self.wname), res.body.decode())
 
     def test_uuid_not_generated_without_write_permission(self):
         WikiPage.objects.create_for_node(self.project, self.wname, 'some content', Auth(self.user))

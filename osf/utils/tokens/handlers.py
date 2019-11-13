@@ -90,7 +90,7 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
         except TokenError as e:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': e.message_short,
-                'message_long': e.message_long
+                'message_long': str(e)
             })
         except PermissionsError as e:
             raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, data={

@@ -1023,7 +1023,7 @@ INSTITUTIONS = {
             },
             {
                 '_id': 'callutheran',
-                'name': 'California Lutheran University [Test]',
+                'name': 'California Lutheran University CAS-SSO [Test]',
                 'description': '',
                 'banner_name': 'callutheran-banner.png',
                 'logo_name': 'callutheran-shield.png',
@@ -1032,6 +1032,18 @@ INSTITUTIONS = {
                 'domains': ['test-osf-callutheran.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'cas-pac4j',
+            },
+            {
+                '_id': 'callutheran2',
+                'name': 'California Lutheran University SAML-SSO [Test]',
+                'description': '',
+                'banner_name': 'callutheran-banner.png',
+                'logo_name': 'callutheran-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('login.callutheran.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-callutheran2.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'capolicylab',

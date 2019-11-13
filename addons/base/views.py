@@ -613,11 +613,12 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
     # Allow file_node to be passed in so other views can delegate to this one
     file_node = kwargs.get('file_node') or TrashedFileNode.load(kwargs.get('trashed_id'))
 
-    deleted_by, deleted_on = None, None
+    deleted_by, deleted_on, deleted = None, None, None
     if isinstance(file_node, TrashedFileNode):
         deleted_by = file_node.deleted_by
         deleted_by_guid = file_node.deleted_by._id if deleted_by else None
         deleted_on = file_node.deleted_on.strftime('%c') + ' UTC'
+        deleted = deleted_on
         if getattr(file_node, 'suspended', False):
             error_type = 'FILE_SUSPENDED'
         elif file_node.deleted_by is None or (auth.private_key and auth.private_link.anonymous):
@@ -644,6 +645,7 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
         deleted_by=markupsafe.escape(getattr(deleted_by, 'fullname', None)),
         deleted_on=markupsafe.escape(deleted_on),
         provider=markupsafe.escape(provider_full),
+        deleted=markupsafe.escape(deleted),
     )
     if deleted_by:
         format_params['deleted_by_guid'] = markupsafe.escape(deleted_by_guid)
