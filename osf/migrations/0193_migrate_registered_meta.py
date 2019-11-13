@@ -35,10 +35,18 @@ def clear_registration_responses(state, schema):
     )
 
 def migrate_draft_registration_metadata(state, schema):
-    migrate_draft_registrations(dry_run=False, rows='all')
+    migrate_draft_registrations(
+        dry_run=False,
+        rows='all',
+        DraftRegistrationModel=state.get_model('osf', 'draftregistration')
+    )
 
 def migrate_registration_registered_meta(state, schema):
-    migrate_registrations(dry_run=False, rows='all')
+    migrate_registrations(
+        dry_run=False,
+        rows='all',
+        AbstractNodeModel=state.get_model('osf', 'abstractnode')
+    )
 
 class Migration(migrations.Migration):
 

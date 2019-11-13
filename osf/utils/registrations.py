@@ -63,6 +63,37 @@ FILE_VIEW_URL_REGEX = re.compile(r'/(?:project/)?(?P<node_id>\w{5})/files/osfsto
 FILE_HTML_URL_TEMPLATE = urljoin(settings.DOMAIN, '/project/{node_id}/files/osfstorage/{file_id}')
 FILE_DOWNLOAD_URL_TEMPLATE = urljoin(settings.DOMAIN, '/download/{file_id}')
 
+def flatten_registration_metadata(schema, registered_meta):
+    """
+    Extracts questions/nested registration_responses - makes use of schema block `registration_response_key`
+    and block_type to assemble flattened registration_responses.
+
+    For example, if the registration_response_key = "description-methods.planned-sample.question7b",
+    this will recurse through the registered_meta, looking for each key, starting with "description-methods",
+    then "planned-sample", and finally "question7b", returning the most deeply nested value corresponding
+    with the final key to flatten the dictionary.
+    :schema, RegistrationSchema instance
+    :registered_meta, dict containing the legacy "nested" registered_meta/registration_metadata
+    :returns dictionary, registration_responses, flattened dictionary with registration_response_keys
+    top-level
+    """
+    registration_responses = {}
+    registration_response_keys = schema.schema_blocks.filter(
+        registration_response_key__isnull=False
+    ).values(
+        'registration_response_key',
+        'block_type'
+    )
+
+    for registration_response_key_dict in registration_response_keys:
+        key = registration_response_key_dict['registration_response_key']
+        registration_responses[key] = get_nested_answer(
+            registered_meta,
+            registration_response_key_dict['block_type'],
+            key.split('.')
+        )
+    return registration_responses
+
 # For flatten_registration_metadata
 def build_file_ref(file):
     """
@@ -190,6 +221,45 @@ def get_nested_answer(nested_response, block_type, keys):
         if not isinstance(nested_response, (list, basestring)):
             raise SchemaBlockConversionError('Unexpected value type (expected list or string)', nested_response)
         return nested_response
+
+def expand_registration_responses(schema, registration_responses, file_storage_resource):
+    """
+    Expanding `registration_responses` into Draft.registration_metadata or
+    Registration.registered_meta. registration_responses are more flat;
+    "registration_response_keys" are top level.  Registration_metadata/registered_meta
+    will have a more deeply nested format.
+    :returns registration_metadata, dictionary
+    """
+    registration_responses = copy.deepcopy(registration_responses)
+
+    # Pull out all registration_response_keys and their block types
+    registration_response_keys = schema.schema_blocks.filter(
+        registration_response_key__isnull=False
+    ).values(
+        'registration_response_key',
+        'block_type'
+    )
+
+    metadata = {}
+
+    for registration_response_key_dict in registration_response_keys:
+        response_key = str(registration_response_key_dict['registration_response_key'])
+        # Turns "confirmatory-analyses-further.further.question2c" into
+        # ['confirmatory-analyses-further', 'value', 'further', 'value', 'question2c']
+        nested_keys = response_key.replace('.', '.value.').split('.')
+        block_type = registration_response_key_dict['block_type']
+
+        # Continues to add to metadata with every registration_response_key
+        metadata = build_registration_metadata_dict(
+            nested_keys,
+            metadata=metadata,
+            value=build_answer_block(
+                block_type,
+                registration_responses.get(response_key, ''),
+                file_storage_resource=file_storage_resource
+            )
+        )
+    return metadata
 
 # For expanding registration_responses
 def set_nested_values(nested_dictionary, keys, value):
