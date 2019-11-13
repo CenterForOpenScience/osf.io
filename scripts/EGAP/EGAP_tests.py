@@ -1,4 +1,5 @@
 import unittest
+from jsonschema.exceptions import ValidationError
 from create_EGAP_json import (schema_to_spreadsheet_mapping,
 	make_project_dict,
 	make_registration_dict,
@@ -54,6 +55,38 @@ TEST_ROW_WITH_OTHER = ['03/05/2017 - 17:00',
 	'Test background',
 	'test hypothesis',
 	'This is my testing plan',
+	'Switzerland',
+	'3242',
+	'This is a power analysis other response',
+	'This is an other irb response',
+	'343434',
+	'03/06/2017',
+	'This is an other intervention response',
+	'This is an other renumeration response',
+	'This is an other publication agreement response',
+	'Jel Code',
+	'Survey Methodology',
+	'Gender']
+
+# Testing row with missing required fields. i.e. Hypothesis, Background, testing plan.
+TEST_ROW_WITH_MISSING = ['03/05/2017 - 17:00',
+	'20170305AA',
+	'Status is not saved, so this field doesnt matter',
+	'The members of Nsync',
+	'Justin Timberlake | Joey Fatone | Lance Bass',
+	'doesnt@matter.com',
+	'We acknolowledge Chris Kirkpatrick',
+	'Justin Timberlake is a faculty Member',
+	'This is my other response for prospective',
+	'Yes',
+	'05/01/2017',
+	'05/01/2020',
+	'',
+	'No',
+	'No',
+	'',
+	'',
+	'',
 	'Switzerland',
 	'3242',
 	'This is a power analysis other response',
@@ -128,7 +161,7 @@ class TestProjectDict(unittest.TestCase):
 class TestRegistrationDict(unittest.TestCase):
 
 	def run_registration_test(self, row, header_row):
-		project_dict = make_registration_dict(row, header_row)
+		project_dict = make_registration_dict(row, header_row, row[1])
 		for question_dict in schema_to_spreadsheet_mapping:
 			question_key = question_dict.keys()[0]
 			spreadsheet_column = question_dict[question_key]
@@ -149,3 +182,6 @@ class TestRegistrationDict(unittest.TestCase):
 
 	def test_row(self):
 		self.run_registration_test(TEST_ROW, HEADER_ROW)
+
+	def test_row_with_errors(self):
+		self.assertRaises(Exception, make_registration_dict, TEST_ROW_WITH_MISSING, HEADER_ROW, TEST_ROW_WITH_MISSING[1])

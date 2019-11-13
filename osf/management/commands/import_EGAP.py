@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime as dt
 import logging
 
 import os
@@ -6,9 +7,12 @@ import json
 import shutil
 import requests
 import tempfile
+from django.db import transaction
 from django.core.management.base import BaseCommand
-from osf.utils.permissions import WRITE
+
+from osf.utils.permissions import ADMIN, WRITE
 from osf.models import (
+    ApiOAuth2PersonalToken,
     RegistrationSchema,
     Node,
     DraftRegistration,
@@ -16,7 +20,6 @@ from osf.models import (
 )
 from website.project.metadata.schemas import ensure_schema_structure, from_json
 from website.settings import WATERBUTLER_INTERNAL_URL
-from osf_tests.factories import ApiOAuth2PersonalTokenFactory
 from framework.auth.core import Auth
 from zipfile import ZipFile
 
@@ -44,8 +47,11 @@ def ensure_egap_schema():
 
 def get_creator_auth_header(creator_username):
     creator = OSFUser.objects.get(username=creator_username)
-    token = ApiOAuth2PersonalTokenFactory(owner=creator)
-    token.save()
+
+    token, created = ApiOAuth2PersonalToken.objects.get_or_create(name='egap_creator', owner=creator)
+    if created:
+        token.save()
+
     return creator, {'Authorization': 'Bearer {}'.format(token.token_id)}
 
 
@@ -116,6 +122,16 @@ def get_egap_assets(guid, creator_auth):
 
     return temp_path
 
+def register_silently(draft_registration, auth, sanction_type, external_registered_date, embargo_end_date):
+    registration = draft_registration.register(auth, save=True)
+    registration.external_registered_date = external_registered_date
+
+    if sanction_type == 'Embargo':
+        registration.embargo_registration(auth.user, embargo_end_date)
+    else:
+        registration.require_approval(auth.user)
+
+    registration.save()
 
 def main(guid, creator_username):
     egap_schema = ensure_egap_schema()
@@ -162,6 +178,41 @@ def main(guid, creator_username):
         )
 
     shutil.rmtree(egap_assets_path)
+
+    # Retrieve all EGAP Draft Registrations
+    egap_draft_registrations = DraftRegistration.objects.filter(registration_schema__name='EGAP Registration')
+
+    for draft_registration in egap_draft_registrations:
+        project = draft_registration.branched_from
+        draft_registration_metadata = draft_registration.registration_metadata
+
+        # Retrieve EGAP registration date and potential embargo go-public date
+        egap_registration_date_string = draft_registration_metadata['q4']['value']
+        egap_embargo_public_date_string = draft_registration_metadata['q12']['value']
+
+        egap_registration_date = dt.strptime(egap_registration_date_string, '%m/%d/%Y')
+        egap_embargo_public_date = dt.strptime(egap_embargo_public_date_string, '%m/%d/%Y')
+
+        sanction_type = 'RegistrationApproval'
+        if egap_embargo_public_date > dt.today():
+            sanction_type = 'Embargo'
+
+        try:
+            with transaction.atomic():
+                register_silently(draft_registration, Auth(creator), sanction_type, egap_registration_date, egap_embargo_public_date)
+        except Exception as err:
+            logger.error(
+                'Unexpected error raised when attempting to silently register'
+                'project {}. Continuing...'.format(project._id))
+            logger.info(str(err))
+
+        # Update contributors on project to Admin
+        contributors = project.contributor_set.all()
+        for contributor in contributors:
+            if contributor.user == creator:
+                pass
+            else:
+                project.update_contributor(contributor.user, permission=ADMIN, visible=True, auth=Auth(creator), save=True)
 
 
 class Command(BaseCommand):
