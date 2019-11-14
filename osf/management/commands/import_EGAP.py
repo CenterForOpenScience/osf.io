@@ -2,6 +2,7 @@
 from datetime import datetime as dt
 import logging
 
+import re
 import os
 import json
 import shutil
@@ -25,6 +26,8 @@ from zipfile import ZipFile
 
 logger = logging.getLogger(__name__)
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+check_id = lambda item: re.match(r'(^[0-9]{8}[A-Z]{2})', item)
 
 
 class EGAPUploadException(Exception):
@@ -119,11 +122,11 @@ def get_egap_assets(guid, creator_auth):
 
     with ZipFile(egap_assets_path, 'r') as zipObj:
         zipObj.extractall(temp_path)
-        zip_parent = [file for file in os.listdir(temp_path) if os.path.isdir(file) and file != '__MACOSX']
+        zip_parent = [file for file in os.listdir(temp_path) if file not in ('__MACOSX', 'egap_assets.zip') and not check_id(file)]
         if zip_parent:
-            zip_parent = os.listdir(temp_path)[0]
+            zip_parent = zip_parent[0]
             for i in os.listdir(os.path.join(temp_path, zip_parent)):
-                shutil.move(os.path.join(temp_path, zip_parent, i), temp_path)
+                shutil.move(os.path.join(temp_path, zip_parent, i), os.path.join(temp_path, i))
 
     if zip_parent:
         os.rmdir(os.path.join(temp_path, zip_parent))
@@ -148,7 +151,7 @@ def main(guid, creator_username):
     egap_assets_path = get_egap_assets(guid, creator_auth)
 
     # __MACOSX is a hidden file created by the os when zipping
-    directory_list = [directory for directory in os.listdir(egap_assets_path) if directory not in ('egap_assets.zip', '__MACOSX')]
+    directory_list = [directory for directory in os.listdir(egap_assets_path) if directory not in ('egap_assets.zip', '__MACOSX') and not directory.startswith('.')]
 
     for epag_project_dir in directory_list:
         node = create_node_from_project_json(egap_assets_path, epag_project_dir, creator=creator)
