@@ -506,10 +506,12 @@ def external_login_confirm_email_get(auth, uid, token):
 
     user = OSFUser.load(uid)
     if not user:
+        sentry.log_message('external_login_confirm_email_get::400 - Cannot find user')
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     destination = request.args.get('destination')
     if not destination:
+        sentry.log_message('external_login_confirm_email_get::400 - bad destination')
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     # if user is already logged in
@@ -538,12 +540,14 @@ def external_login_confirm_email_get(auth, uid, token):
     provider_id = list(verification['external_identity'][provider].keys())[0]
     # wrong provider
     if provider not in user.external_identity:
+        sentry.log_message('external_login_confirm_email_get::400 - Auth error...wrong provider')
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     external_status = user.external_identity[provider][provider_id]
 
     try:
         ensure_external_identity_uniqueness(provider, provider_id, user)
     except ValidationError as e:
+        sentry.log_message('external_login_confirm_email_get::403 - Validation Error')
         raise HTTPError(http_status.HTTP_403_FORBIDDEN, e.message)
 
     if not user.is_registered:
