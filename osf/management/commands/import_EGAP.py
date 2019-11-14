@@ -119,7 +119,13 @@ def get_egap_assets(guid, creator_auth):
 
     with ZipFile(egap_assets_path, 'r') as zipObj:
         zipObj.extractall(temp_path)
+        zip_parent = os.listdir(temp_path)
+        if zip_parent:
+            zip_parent = os.listdir(temp_path)[0]
+            for i in os.listdir(os.path.join(temp_path, zip_parent)):
+                shutil.move(os.path.join(temp_path, zip_parent, i), temp_path)
 
+    os.rmdir(os.path.join(temp_path, zip_parent))
     return temp_path
 
 def register_silently(draft_registration, auth, sanction_type, external_registered_date, embargo_end_date):
