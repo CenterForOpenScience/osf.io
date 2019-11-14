@@ -533,6 +533,7 @@ def external_login_confirm_email_get(auth, uid, token):
 
     # token is invalid
     if token not in user.email_verifications:
+        sentry.log_message('external_login_confirm_email_get::400 - bad token')
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     verification = user.email_verifications[token]
     email = verification['email']
