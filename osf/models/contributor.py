@@ -70,6 +70,22 @@ class InstitutionalContributor(AbstractBaseContributor):
         unique_together = ('user', 'institution')
 
 
+class DraftRegistrationContributor(AbstractBaseContributor):
+    draft_registration = models.ForeignKey('DraftRegistration', on_delete=models.CASCADE)
+
+    @property
+    def permission(self):
+        return get_contributor_permission(self, self.draft_registration)
+
+    @property
+    def _id(self):
+        return '{}-{}'.format(self.draft_registration._id, self.user._id)
+
+    class Meta:
+        unique_together = ('user', 'draft_registration')
+        order_with_respect_to = 'draft_registration'
+
+
 class RecentlyAddedContributor(models.Model):
     user = models.ForeignKey('OSFUser', on_delete=models.CASCADE)  # the user who added the contributor
     contributor = models.ForeignKey('OSFUser', related_name='recently_added_by', on_delete=models.CASCADE)  # the added contributor
@@ -77,6 +93,7 @@ class RecentlyAddedContributor(models.Model):
 
     class Meta:
         unique_together = ('user', 'contributor')
+
 
 def get_contributor_permission(contributor, resource):
     """
