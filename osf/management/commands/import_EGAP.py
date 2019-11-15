@@ -200,7 +200,7 @@ def main(guid, creator_username):
         # Retrieve EGAP registration date and potential embargo go-public date
         if draft_registration_metadata.get('q4'):
             egap_registration_date_string = draft_registration_metadata['q4']['value']
-            egap_registration_date = dt.strptime(egap_registration_date_string, '%m/%d/%Y')
+            egap_registration_date = dt.strptime(egap_registration_date_string, '%m/%d/%Y - %H:%M')
         else:
             logger.error(
                 'DraftRegistration associated with Project {}'
