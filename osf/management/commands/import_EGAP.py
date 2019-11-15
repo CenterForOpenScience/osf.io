@@ -58,21 +58,28 @@ def get_creator_auth_header(creator_username):
     return creator, {'Authorization': 'Bearer {}'.format(token.token_id)}
 
 
-def create_node_from_project_json(egap_assets_path, epag_project_dir, creator):
-    with open(os.path.join(egap_assets_path, epag_project_dir, 'project.json'), 'r') as fp:
+def create_node_from_project_json(egap_assets_path, egap_project_dir, creator):
+    with open(os.path.join(egap_assets_path, egap_project_dir, 'project.json'), 'r') as fp:
         project_data = json.load(fp)
         title = project_data['title']
         node = Node(title=title, creator=creator)
         node.save()  # must save before adding contribs for auth reasons
 
         for contributor in project_data['contributors']:
-            node.add_contributor_registered_or_not(
-                Auth(creator),
-                full_name=contributor['name'],
-                email=contributor['email'],
-                permissions=WRITE,
-                send_email='false'
-            )
+            try:
+                node.add_contributor_registered_or_not(
+                    Auth(creator),
+                    full_name=contributor['name'],
+                    email=contributor['email'].strip(),
+                    permissions=WRITE,
+                    send_email='false'
+                )
+            except Exception as err:
+                logger.error(
+                    'There was an error adding a contributor with the following email: {}'.format(contributor['email'])
+                )
+                logger.info(str(err))
+                continue
 
         node.set_visible(creator, visible=False, log=False, save=True)
 
@@ -153,39 +160,51 @@ def main(guid, creator_username):
     # __MACOSX is a hidden file created by the os when zipping
     directory_list = [directory for directory in os.listdir(egap_assets_path) if directory not in ('egap_assets.zip', '__MACOSX') and not directory.startswith('.')]
 
-    for epag_project_dir in directory_list:
-        node = create_node_from_project_json(egap_assets_path, epag_project_dir, creator=creator)
+    for egap_project_dir in directory_list:
+        logger.info(
+            'Attempting to import the follow directory: {}'.format(egap_project_dir)
+        )
+        try:
+            with transaction.atomic():
+                node = create_node_from_project_json(egap_assets_path, egap_project_dir, creator=creator)
 
-        non_anon_files = os.path.join(egap_assets_path, epag_project_dir, 'data', 'nonanonymous')
-        non_anon_metadata = recursive_upload(creator_auth, node, non_anon_files)
+                non_anon_files = os.path.join(egap_assets_path, egap_project_dir, 'data', 'nonanonymous')
+                non_anon_metadata = recursive_upload(creator_auth, node, non_anon_files)
 
-        anon_files = os.path.join(egap_assets_path, epag_project_dir, 'data', 'anonymous')
-        if os.path.isdir(anon_files):
-            anon_metadata = recursive_upload(creator_auth, node, anon_files)
-        else:
-            anon_metadata = {}
+                anon_files = os.path.join(egap_assets_path, egap_project_dir, 'data', 'anonymous')
+                if os.path.isdir(anon_files):
+                    anon_metadata = recursive_upload(creator_auth, node, anon_files)
+                else:
+                    anon_metadata = {}
 
-        with open(os.path.join(egap_assets_path, epag_project_dir, 'registration-schema.json'), 'r') as fp:
-            registration_metadata = json.load(fp)
+                with open(os.path.join(egap_assets_path, egap_project_dir, 'registration-schema.json'), 'r') as fp:
+                    registration_metadata = json.load(fp)
 
-        # add selectedFileName Just so filenames are listed in the UI
-        for data in non_anon_metadata:
-            data['selectedFileName'] = data['data']['attributes']['name']
+                # add selectedFileName Just so filenames are listed in the UI
+                for data in non_anon_metadata:
+                    data['selectedFileName'] = data['data']['attributes']['name']
 
-        for data in anon_metadata:
-            data['selectedFileName'] = data['data']['attributes']['name']
+                for data in anon_metadata:
+                    data['selectedFileName'] = data['data']['attributes']['name']
 
-        non_anon_titles = ', '.join([data['data']['attributes']['name'] for data in non_anon_metadata])
-        registration_metadata['q37'] = {'comments': [], 'extra': non_anon_metadata, 'value': non_anon_titles}
+                non_anon_titles = ', '.join([data['data']['attributes']['name'] for data in non_anon_metadata])
+                registration_metadata['q37'] = {'comments': [], 'extra': non_anon_metadata, 'value': non_anon_titles}
 
-        anon_titles = ', '.join([data['data']['attributes']['name'] for data in anon_metadata])
-        registration_metadata['q38'] = {'comments': [], 'extra': anon_metadata, 'value': anon_titles}
+                anon_titles = ', '.join([data['data']['attributes']['name'] for data in anon_metadata])
+                registration_metadata['q38'] = {'comments': [], 'extra': anon_metadata, 'value': anon_titles}
 
-        DraftRegistration.create_from_node(
-            node,
-            user=creator,
-            schema=egap_schema,
-            data=registration_metadata,
+                DraftRegistration.create_from_node(
+                    node,
+                    user=creator,
+                    schema=egap_schema,
+                    data=registration_metadata,
+                )
+        except Exception as err:
+            logger.error(str(err))
+            continue
+        logger.info(
+            'Based off {}, a Node was created, files were assocated with the node'
+            'and a DraftRegistration has been created'.format(egap_project_dir)
         )
 
     shutil.rmtree(egap_assets_path)
@@ -196,6 +215,10 @@ def main(guid, creator_username):
     for draft_registration in egap_draft_registrations:
         project = draft_registration.branched_from
         draft_registration_metadata = draft_registration.registration_metadata
+
+        logger.info(
+            'Attempting to create a Registration for Project {}'.format(project._id)
+        )
 
         # Retrieve EGAP registration date and potential embargo go-public date
         if draft_registration_metadata.get('q4'):
@@ -210,7 +233,7 @@ def main(guid, creator_username):
 
         if draft_registration_metadata.get('q12'):
             egap_embargo_public_date_string = draft_registration_metadata['q12']['value']
-            egap_embargo_public_date = dt.strptime(egap_embargo_public_date_string, '%m/%d/%Y')
+            egap_embargo_public_date = dt.strptime(egap_embargo_public_date_string, '%m/%d/%y')
         else:
             egap_embargo_public_date = None
 
