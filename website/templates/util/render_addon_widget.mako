@@ -6,7 +6,10 @@
                 <h3 class="panel-title">${addon_data['full_name']}</h3>
                 <div class="pull-right">
                     % if addon_data['has_page']:
-                        <a href="${node['url']}${addon_data['short_name']}/">  <i class="fa fa-external-link"></i> </a>
+                        <a href="${node['url']}${addon_data['short_name']}"><i class="fa fa-external-link"></i></a>
+                    % endif
+                    % if 'can_expand' in addon_data and addon_data['can_expand']:
+                        <button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
                     % endif
                 </div>
             </div>
@@ -163,40 +166,69 @@
                         <div style="margin: 0.5em;">No Linked JupyterHubs</div>
                         <!-- /ko -->
                       <!-- /ko -->
-                      <div id="jupyterSelectionDialog" class="modal fade">
-                          <div class="modal-dialog modal-lg">
-                              <div class="modal-content">
+                    </div>
+                % endif
 
-                                  <div class="modal-header">
-                                      <h3>Select JupyterHub</h3>
-                                  </div>
-
-                                  <form>
-                                      <div class="modal-body">
-
-                                          <div class="row">
-                                              <div class="col-sm-6">
-                                                <ul data-bind="foreach: availableLinks">
-                                                    <li>
-                                                        <a data-bind="attr: {href: url}, text: name" target="_blank"></a>
-                                                    </li>
-                                                </ul>
-                                              </div>
-                                          </div><!-- end row -->
-
-                                      </div><!-- end modal-body -->
-
-                                      <div class="modal-footer">
-
-                                          <a href="#" class="btn btn-default" data-bind="click: clearModal" data-dismiss="modal">Close</a>
-
-                                      </div><!-- end modal-footer -->
-
-                                  </form>
-
-                              </div><!-- end modal-content -->
+                % if addon_name == 'iqbrims':
+                    <div id="iqbrims-content" class="scripted">
+                      <!-- ko if: loading -->
+                      <div>Loading</div>
+                      <!-- /ko -->
+                      <!-- ko if: loadFailed -->
+                      <div class="text-danger">Error occurred</div>
+                      <!-- /ko -->
+                      <!-- ko if: loadCompleted -->
+                        <!-- ko if: modeAdmin -->
+                          <i>Management Project</i>
+                          <div>
+                            <a data-bind="attr: {href: flowableTaskUrl}" target="_blank">Flowable Task Service</a>
                           </div>
-                      </div>
+                        <!-- /ko -->
+                        <!-- ko ifnot: modeAdmin -->
+                          <!-- ko if: isModeSelected -->
+                            <!-- ko if: (!isSubmitted() && modeDeposit()) -->
+                              <div class="form-group">
+                                <button type="button" class="btn btn-primary"
+                                        data-bind="click: gotoDepositForm">Deposit Manuscript & Data</button>
+                                <small class="form-text text-muted" data-bind="text: depositHelp">
+                                </small>
+                              </div>
+                            <!-- /ko -->
+                            <!-- ko if: (!isSubmitted() && modeCheck()) -->
+                              <div class="form-group">
+                                <button type="button" class="btn btn-primary"
+                                        data-bind="click: gotoCheckForm">Image Scan Service</button>
+                                <small class="form-text text-muted" data-bind="text: checkHelp">
+                                </small>
+                              </div>
+                            <!-- /ko -->
+                            <!-- ko if: isSubmitted -->
+                              <div style="margin: 0.5em;">
+                                <div data-bind="foreach: formEntries">
+                                    <div class="col-sm-4 col-md-4" style="font-weight: bold;" data-bind="text: title">
+                                    </div>
+                                    <div class="col-sm-8 col-md-8" data-bind="text: value">
+                                    </div>
+                                </div>
+                              </div>
+                            <!-- /ko -->
+                          <!-- /ko -->
+                          <!-- ko ifnot: isModeSelected -->
+                          <div class="form-group">
+                            <button type="button" class="btn btn-primary"
+                                    data-bind="click: gotoDepositForm">Deposit Manuscript & Data</button>
+                            <small class="form-text text-muted" data-bind="text: depositHelp">
+                            </small>
+                          </div>
+                          <div class="form-group">
+                            <button type="button" class="btn btn-primary"
+                                    data-bind="click: gotoCheckForm">Image Scan Service</button>
+                            <small class="form-text text-muted" data-bind="text: checkHelp">
+                            </small>
+                          </div>
+                          <!-- /ko -->
+                        <!-- /ko -->
+                      <!-- /ko -->
                     </div>
                 % endif
 

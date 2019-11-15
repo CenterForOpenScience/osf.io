@@ -199,6 +199,7 @@ class BaseNodeFactory(DjangoModelFactory):
 
 class ProjectFactory(BaseNodeFactory):
     category = 'project'
+    map_group_key = factory.Faker('md5')
 
 
 class ProjectWithAddonFactory(ProjectFactory):

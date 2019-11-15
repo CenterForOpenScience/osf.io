@@ -24,3 +24,19 @@
 #addonSettings a {
   cursor: pointer;
 }
+
+#addonSettings .management-project-form .management-project-input {
+  margin-bottom: 4px;
+}
+
+#addonSettings .management-project-form .management-project-save {
+  margin-bottom: 2px;
+}
+
+#addonSettings .organizational-project-form .organizational-project-input {
+  margin-bottom: 4px;
+}
+
+#addonSettings .organizational-project-form .organizational-project-save {
+  margin-bottom: 2px;
+}

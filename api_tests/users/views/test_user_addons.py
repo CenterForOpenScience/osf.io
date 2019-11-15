@@ -19,6 +19,7 @@ from addons.mendeley.tests.factories import MendeleyAccountFactory
 from addons.owncloud.tests.factories import OwnCloudAccountFactory
 from addons.s3.tests.factories import S3AccountFactory
 from addons.zotero.tests.factories import ZoteroAccountFactory
+from addons.iqbrims.tests.factories import IQBRIMSAccountFactory
 
 
 class UserAddonListMixin(object):
@@ -482,3 +483,7 @@ class TestUserFigshareAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
 class TestUserInvalidAddon(UserAddonTestSuiteMixin, ApiAddonTestCase):
     addon_type = 'INVALID'
     short_name = 'fake'
+
+class TestUserIQBRIMSAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'iqbrims'
+    AccountFactory = IQBRIMSAccountFactory

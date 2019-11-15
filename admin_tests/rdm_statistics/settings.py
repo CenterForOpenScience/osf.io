@@ -127,6 +127,7 @@ INSTALLED_APPS = (
     'addons.owncloud',
     'addons.s3',
     'addons.zotero',
+    'addons.iqbrims',
 
     # Internal apps
     'admin.common_auth',
@@ -159,6 +160,7 @@ MIGRATION_MODULES = {
     'addons_owncloud': None,
     'addons_s3': None,
     'addons_zotero': None,
+    'addons_iqbrims': None,
 }
 
 USE_TZ = True

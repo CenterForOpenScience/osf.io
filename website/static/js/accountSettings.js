@@ -436,7 +436,7 @@ var DeactivateAccountViewModel = oop.defclass({
                 $osf.growl('Error', xhr.responseJSON.message_long, 'danger');
             } else {
                 $osf.growl('Error',
-                    'Deactivation request failed. Please contact <a href="mailto: nii-rdmp@meatmail.jp">nii-rdmp@meatmail.jp</a> if the problem persists.',
+                    'Deactivation request failed. Please contact <a href="mailto: rdm_support@nii.ac.jp">rdm_support@nii.ac.jp</a> if the problem persists.',
                     'danger'
                 );
             }

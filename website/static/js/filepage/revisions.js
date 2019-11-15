@@ -201,6 +201,7 @@ var FileRevisionsTable = {
         switch (file.provider) {
             // Note: Google Drive version identifiers often begin with the same sequence
             case 'googledrive':
+            case 'iqbrims':
                 revision.displayVersion = revision.version.substring(revision.version.length - 8);
                 break;
             // Note: Dataverse internal version names are ugly; Substitute our own

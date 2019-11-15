@@ -72,6 +72,7 @@ class BaseAddonAppConfig(AppConfig):
     routes = []
     owners = []
     categories = []
+    has_page_icon = True
 
     def __init__(self, *args, **kwargs):
         ret = super(BaseAddonAppConfig, self).__init__(*args, **kwargs).__init__()
@@ -162,6 +163,7 @@ class BaseAddonAppConfig(AppConfig):
             'icon': self.icon_url,
             'has_page': 'page' in self.views,
             'has_widget': 'widget' in self.views,
+            'has_page_icon': self.has_page_icon
         }
 
     # Override Appconfig

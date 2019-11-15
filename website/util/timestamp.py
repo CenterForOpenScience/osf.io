@@ -31,19 +31,19 @@ from website.util import waterbutler
 
 from django.contrib.contenttypes.models import ContentType
 from framework.celery_tasks import app as celery_app
-
+from inspect import currentframe
 
 logger = logging.getLogger(__name__)
 
 RESULT_MESSAGE = {
     api_settings.TIME_STAMP_TOKEN_CHECK_NG:
-        api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG,  # 'NG'
+        api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG,
     api_settings.TIME_STAMP_TOKEN_NO_DATA:
-        api_settings.TIME_STAMP_TOKEN_NO_DATA_MSG,  # 'TST missing(Retrieving Failed)'
+        api_settings.TIME_STAMP_TOKEN_NO_DATA_MSG,
     api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND:
-        api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG,  # 'TST missing(Unverify)'
+        api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG,
     api_settings.FILE_NOT_EXISTS:
-        api_settings.FILE_NOT_EXISTS_MSG,  # 'FILE missing'
+        api_settings.FILE_NOT_EXISTS_MSG,
     api_settings.TIME_STAMP_VERIFICATION_ERR:
         api_settings.TIME_STAMP_VERIFICATION_ERR_MSG,
     api_settings.TIME_STAMP_STORAGE_DISCONNECTED:
@@ -60,6 +60,17 @@ STATUS_NOT_ACCESSIBLE = [
     api_settings.TIME_STAMP_STORAGE_NOT_ACCESSIBLE
 ]
 
+FILE_TYPE_DICT = {
+    'box': 'addons.box.models.BoxFile',
+    'googledrive': 'addons.googledrive.models.GoogleDriveFile',
+    'nextcloud': 'addons.nextcloud.models.NextcloudFile',
+    'osfstorage': 'addons.osfstorage.models.OsfStorageFile',
+    'owncloud': 'addons.owncloud.models.OwncloudFile',
+    's3': 'addons.s3.models.S3File',
+    's3compat': 'addons.s3compat.models.S3CompatFile',
+    'swift': 'addons.swift.models.SwiftFile',
+    'github': 'addons.github.models.GithubFile',
+}
 
 class OSFAbortableAsyncResult(AbortableAsyncResult):
     """This class is a workaround to a celery bug that throws an AttributeError when it
@@ -296,16 +307,12 @@ def check_file_timestamp(uid, node, data):
     cookie = user.get_or_create_cookie()
     tmp_dir = None
     result = None
-
     try:
         file_node = BaseFileNode.objects.get(_id=data['file_id'])
         tmp_dir = tempfile.mkdtemp()
-
         if not os.path.exists(tmp_dir):
             os.mkdir(tmp_dir)
-
         download_file_path = waterbutler.download_file(cookie, file_node, tmp_dir)
-
         if download_file_path is None:
             intentional_remove_status = [
                 api_settings.FILE_NOT_EXISTS,
@@ -316,12 +323,9 @@ def check_file_timestamp(uid, node, data):
                     file_data.get().inspection_result_status not in intentional_remove_status:
                 file_data.update(inspection_result_status=api_settings.FILE_NOT_FOUND)
             return None
-
         if not userkey_generation_check(user._id):
             userkey_generation(user._id)
-
         verify_check = TimeStampTokenVerifyCheck()
-
         result = verify_check.timestamp_check(
             user._id, data, node._id, download_file_path, tmp_dir
         )
@@ -426,7 +430,6 @@ def add_token(uid, node, data):
         # Request To Download File
         tmp_dir = tempfile.mkdtemp()
         download_file_path = waterbutler.download_file(cookie, file_node, tmp_dir)
-
         if download_file_path is None:
             intentional_remove_status = [
                 api_settings.FILE_NOT_EXISTS,
@@ -491,6 +494,7 @@ def file_created_or_updated(node, metadata, user_id, created_flag):
         file_node.materialized_path = metadata.get('materialized')
 
         file_node.save()
+
         metadata['path'] = file_node._id
     created_at = metadata.get('created_utc')
     modified_at = metadata.get('modified_utc')
@@ -524,7 +528,7 @@ def file_created_or_updated(node, metadata, user_id, created_flag):
     verify_data.upload_file_size = file_info['size']
     verify_data.save()
 
-def file_node_moved(project_id, provider, src_path, dest_path):
+def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest_path, metadata, src_metadata=None):
     src_path = src_path if src_path[0] == '/' else '/' + src_path
     dest_path = dest_path if dest_path[0] == '/' else '/' + dest_path
     target_object_id = Guid.objects.get(_id=project_id,
@@ -532,42 +536,155 @@ def file_node_moved(project_id, provider, src_path, dest_path):
     deleted_files = RdmFileTimestamptokenVerifyResult.objects.filter(
         path__startswith=dest_path,
         project_id=project_id,
-        provider=provider
+        provider=dest_provider
     ).exclude(
         inspection_result_status=api_settings.FILE_NOT_EXISTS
     ).all()
-    for deleted_file in deleted_files:
-        file_node_overwitten(project_id, target_object_id, provider, dest_path)
 
+    for deleted_file in deleted_files:
+        file_node_overwitten(project_id, target_object_id, dest_provider, dest_path)
     moved_files = RdmFileTimestamptokenVerifyResult.objects.filter(
         path__startswith=src_path,
         project_id=project_id,
-        provider=provider
+        provider=src_provider
     ).exclude(
         inspection_result_status__in=STATUS_NOT_ACCESSIBLE
     ).all()
     for moved_file in moved_files:
         moved_file.path = moved_file.path.replace(src_path, dest_path, 1)
+        moved_file.provider = dest_provider
         moved_file.save()
-
-    if provider != 'osfstorage' and src_path[-1:] == '/':
+    if src_provider != 'osfstorage' and src_path[-1:] == '/':
         file_nodes = BaseFileNode.objects.filter(target_object_id=target_object_id,
-                                                 provider=provider,
+                                                 provider=src_provider,
                                                  deleted_on__isnull=True,
-                                                 _path__startswith=src_path).all()
+                                                 _materialized_path__startswith=src_path).all()
         for file_node in file_nodes:
             file_node._path = re.sub(r'^' + src_path, dest_path, file_node._path)
             file_node._materialized_path = re.sub(r'^' + src_path, dest_path, file_node._path)
-            file_node.save()
+            children = metadata.get('children', None)
+            if children is not None:
+                for child in metadata['children']:
+                    if file_node.name == child['name']:
+                        file_node._materialized_path = child.get('materialized')
+                        break
+            file_node = move_file_node_update(file_node, src_provider, dest_provider, metadata)
+            if dest_provider == 'osfstorage':
+                file_node.delete()
+                rft = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_node._id).first()
+                if rft is not None:
+                    temp_path = rft.path
+                    if file_node.name[0] != '/' and rft.path[0] == '/':
+                        temp_path = rft.path[1:]
+                    children = metadata.get('children', None)
+                    if children is not None:
+                        for child in metadata['children']:
+                            if file_node.name == child['name']:
+                                temp_path = child['name']
+                                break
+                    file_node = BaseFileNode.objects.filter(name=temp_path, provider=dest_provider).order_by('-id').first()
+                    if file_node is not None:
+                        rft.file_id = file_node._id
+                        rft.provider = 'osfstorage'
+                        rft.save()
+            provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
+
     else:
         file_nodes = BaseFileNode.objects.filter(target_object_id=target_object_id,
-                                                 provider=provider,
+                                                 provider=src_provider,
                                                  deleted_on__isnull=True,
-                                                 _path=src_path).all()
+                                                 _materialized_path=src_path).all()
         for file_node in file_nodes:
             file_node._path = dest_path
             file_node._materialized_path = dest_path
+            file_node = move_file_node_update(file_node, src_provider, dest_provider, metadata)
+            if dest_provider == 'osfstorage':
+                file_node.delete()
+                rft = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_node._id).first()
+                if rft is not None:
+                    temp_path = rft.path
+                    if file_node.name[0] != '/' and rft.path[0] == '/':
+                        temp_path = rft.path[1:]
+
+                    file_node = BaseFileNode.objects.filter(name=file_node.name, provider=dest_provider).order_by('-id').first()
+                    if file_node is not None:
+                        rft.file_id = file_node._id
+                        rft.provider = 'osfstorage'
+                        rft.save()
+            provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
+
+    if src_provider == 'osfstorage' and dest_provider != 'osfstorage':
+        node = AbstractNode.objects.get(pk=Guid.objects.filter(_id=metadata['node']['_id']).first().object_id)
+        temp_check = metadata.get('materialized', None)
+        if temp_check is not None:
+            temp_check = temp_check if temp_check[0] == '/' else '/' + temp_check
+            metadata['materialized'] = temp_check
+        if metadata['provider'] != 'osfstorage':
+            file_node = BaseFileNode.resolve_class(
+                metadata['provider'], BaseFileNode.FILE
+            ).get_or_create(node, '/' + metadata.get('path').lstrip('/'))
+            file_node.path = '/' + metadata.get('path').lstrip('/')
+            file_node.name = metadata.get('name')
+            file_node.materialized_path = metadata.get('materialized')
             file_node.save()
+            rft = RdmFileTimestamptokenVerifyResult.objects.filter(provider=dest_provider, path=metadata['materialized']).first()
+            rft.file_id = file_node._id
+            rft.save()
+            provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
+
+def move_file_node_update(file_node, src_provider, dest_provider, metadata=None):
+    file_node.type = file_node.type.replace(src_provider, dest_provider)
+    dest_file_type = dynamic_import(FILE_TYPE_DICT[dest_provider])
+    file_node.__class__ = dest_file_type
+    file_node.type = 'osf.{}file'.format(dest_provider)
+    file_node.provider = dest_provider
+    file_node._meta.model._provider = dest_provider
+    if metadata is not None:
+        path = metadata.get('path', None)
+        if path is not None and path is not '' and dest_provider != 'osfstorage':
+            if path[0] != '/':
+                path = '/' + path
+            file_node.path = path
+        children = metadata.get('children', None)
+        if children is not None and dest_provider != 'osfstorage':
+            for child in metadata['children']:
+                if file_node.name == child['name']:
+                    file_node.path = child['path']
+                    break
+    file_node.save()
+    return file_node
+def get_linenumber():
+    cf = currentframe()
+    return cf.f_back.f_lineno
+
+def dynamic_import(name):
+    components = name.split('.')
+    mod = __import__(components[0])
+    for comp in components[1:]:
+        mod = getattr(mod, comp)
+    return mod
+
+def provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider):
+    last_timestamp_result = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
+    path = ''
+    if file_node._materialized_path is not None and file_node._materialized_path != '':
+        path = file_node._materialized_path if file_node._materialized_path[0] == '/' else '/' + file_node._materialized_path
+    if dest_provider == 'googledrive':
+        path = file_node._materialized_path
+    if src_provider != dest_provider:
+        file_info = {
+            'file_id': file_node._id,
+            'file_name': file_node.name,
+            'file_path': path,
+            'created': file_node.created,
+            'modified': file_node.modified,
+            'provider': file_node.provider,
+            'size': last_timestamp_result.verify_file_size,
+        }
+        if dest_provider == 'osfstorage':
+            file_info['version'] = 1
+        res = check_file_timestamp(uid, file_node.target, file_info)
+        return res
 
 def file_node_overwitten(project_id, target_object_id, addon_name, src_path):
     src_path = src_path if src_path[0] == '/' else '/' + src_path
@@ -927,17 +1044,14 @@ class TimeStampTokenVerifyCheck:
     # timestamp token check
     def timestamp_check(self, guid, file_info, project_id, file_name, tmp_dir, verify_result=None):
         userid = Guid.objects.get(_id=guid, content_type_id=ContentType.objects.get_for_model(OSFUser).id).object_id
-
         # get verify result
         if verify_result is None:
             verify_result = RdmFileTimestamptokenVerifyResult.objects.filter(
                 file_id=file_info['file_id']).first()
-
         ret, baseFileNode, verify_result, verify_result_title = \
             self.timestamp_check_local(file_info, verify_result, project_id, userid)
 
         if ret == 0:
-
             if not api_settings.USE_UPKI:
                 timestamptoken_file = guid + '.tsr'
                 timestamptoken_file_path = os.path.join(tmp_dir, timestamptoken_file)

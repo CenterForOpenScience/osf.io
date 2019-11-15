@@ -66,5 +66,9 @@
     "nextcloud": {
         "fullName": "Nextcloud",
         "externalView": false
+    },
+    "iqbrims": {
+        "fullName": "IQB-RIMS",
+        "externalView": true
     }
 }

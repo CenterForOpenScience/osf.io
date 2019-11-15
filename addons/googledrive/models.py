@@ -6,6 +6,7 @@ import os
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
+
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from osf.models.external import ExternalProvider

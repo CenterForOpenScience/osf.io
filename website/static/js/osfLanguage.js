@@ -131,6 +131,23 @@ module.exports = {
             userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
                 'contact ' + $osf.osfSupportLink() + ' if the problem persists.',
         },
+        iqbrims: {
+            // Shown on clicking "Delete Access Token" for iqbrims
+            confirmDeauth: 'Are you sure you want to disconnect the IQB-RIMS account? ' +
+                'This will revoke access to IQB-RIMS for all projects you have ' +
+                'associated with this account.',
+            deauthError: 'Could not disconnect the IQB-RIMS account at this time',
+            depositHelp: 'Register a paper and apply for approval',
+            checkHelp: 'Perform image only scan service before submitting a paper',
+            labo: 'Research Field',
+            accepted_date: 'Accepted Date',
+            journal_name: 'Journal Name',
+            doi: 'DOI',
+            publish_date: 'Publish Date',
+            volume: 'Volume',
+            page_number: 'Page Number',
+            workflow_overall_state: 'Current Status'
+        },
     },
     apiOauth2Application: {
         discardUnchanged: 'Are you sure you want to discard your unsaved changes?',

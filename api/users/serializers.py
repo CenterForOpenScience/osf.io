@@ -20,6 +20,7 @@ from osf.models import Email
 from osf.exceptions import ValidationValueError, ValidationError, BlacklistedEmailError
 from osf.models import OSFUser, QuickFilesNode, Preprint
 from osf.utils.requests import string_type_request_headers
+from addons.osfstorage.models import Region
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL, OSF_SUPPORT_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from website import mails
@@ -216,12 +217,16 @@ class UserSerializer(JSONAPISerializer):
         return group_qs.exists() or obj.abstractprovideruserobjectpermission_set.filter(permission__codename='view_submissions')
 
     def get_default_region_id(self, obj):
+        region_id = Region.objects.first()._id
         try:
             # use the annotated value if possible
             region_id = obj.default_region
         except AttributeError:
             # use computed property if region annotation does not exist
-            region_id = obj.osfstorage_region._id
+            try:
+                region_id = obj.osfstorage_region._id
+            except Exception:
+                pass
         return region_id
 
     def get_accepted_terms_of_service(self, obj):

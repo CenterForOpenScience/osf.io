@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load static %}
+
+{% block top_includes %}
+<link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+<link rel="stylesheet" href="/static/css/rdm_addons.css">
+<link rel="stylesheet" href="/static/css/rdm_institutional_storage.css">
+{% endblock %}
+
+{% load user_extras %}
+{% load spam_extras %}
+
+{% block title %}
+<title>Institutional Storage</title>
+{% endblock title %}
+
+{% block content %}
+<h2>Institutional Storage <small>({{ institution.name }})</small></h2>
+
+<div id="content-main">
+    <form role="form" id="institutional_storage_form">
+        <div id="addonSettings">
+            <div class="row form-inline storage-name">
+                <div class="form-group">
+                    <label for="storage_name" class="label-large">Name:</label>
+                    <input type="text" required class="form-control" id="storage_name" name="storage_name" value="{{ region.name }}" oninvalid="this.setCustomValidity('This field is required.') " oninput="setCustomValidity('')" {% if selected_provider_short_name == 'osfstorage' %}disabled{% endif %}>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title label-large">Configure Institutional Storage Accounts</h3>
+                        </div>
+                        <div class="panel-body">
+
+                            <table class="table table-condensed">
+                                {% for provider_item in providers %}
+                                <tr>
+                                    <td class="is_allowed">
+                                        <div class="radio">
+                                            <label class="center-block">
+                                                <input type="radio" name="options" id="{{provider_item.short_name}}"
+                                                    value="{{provider_item.short_name}}"
+                                                    {% if selected_provider_short_name == provider_item.short_name %}checked{% endif %}>
+                                                <h4 class="addon-title">
+                                                    <img src="{{provider_item.icon_url_admin}}" class="addon-icon">
+                                                    <span>{{provider_item.full_name}}</span>
+                                                </h4>
+                                            </label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+
+                        </div>
+                    </div>
+                    <div class="pull-right">
+                        <button class="btn btn-default" type="reset">Cancel</button>
+                        <button class="btn btn-success next-btn" type="submit">Save</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </form>
+    {% for provider_item in providers %}
+    {% include provider_item.modal_path %}
+    {% endfor %}
+</div>
+
+<br class="clear">
+{% endblock content %}
+
+{% block bottom_js %}
+{% render_bundle 'rdm-institutional-storage-page' %}
+{% endblock %}

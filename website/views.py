@@ -440,7 +440,10 @@ def get_storage_region_list(user, node=False):
     if node:
         default_region = node.osfstorage_region
     else:
-        default_region = user.get_addon('osfstorage').default_region
+        user_settings = user.get_addon('osfstorage')
+        if user_settings is None:
+            user_settings = user.add_addon('osfstorage')
+        default_region = user_settings.default_region
 
     available_regions = [{'name': default_region.name, '_id': default_region._id}]
     institution = user.affiliated_institutions.first()

@@ -136,9 +136,9 @@ USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 
 # support email
-OSF_SUPPORT_EMAIL = 'nii-rdmp@meatmail.jp'
+OSF_SUPPORT_EMAIL = 'rdm_support@nii.ac.jp'
 # contact email
-OSF_CONTACT_EMAIL = 'rcos-office@nii.ac.jp'
+OSF_CONTACT_EMAIL = 'rdm_support@nii.ac.jp'
 
 # prereg email
 PREREG_EMAIL = 'prereg@cos.io'
@@ -518,7 +518,8 @@ class CeleryConfig:
                 'kwargs': {'dry_run': False, 'addons': {
                     'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
                     'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
-                    'mendeley': 14      # http://dev.mendeley.com/reference/topics/authorization_overview.html
+                    'mendeley': 14,     # http://dev.mendeley.com/reference/topics/authorization_overview.html
+                    'iqbrims': 14       # https://developers.google.com/identity/protocols/OAuth2#expiration
                 }},
             },
             'retract_registrations': {

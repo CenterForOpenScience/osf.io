@@ -1,32 +1,32 @@
 # -*- coding: utf-8 -*-
-from addons.osfstorage.models import Region
 from osf.models.region_external_account import RegionExternalAccount
-from osf.models.institution import Institution
-from osf.models.external import ExternalAccount
 
 
-def set_region_external_account(institution_id, account):
-    institution_object = Institution.objects.get(pk=institution_id)
-    region = Region.objects.filter(_id=institution_object._id).first()
-    obj, created = RegionExternalAccount.objects.update_or_create(
-        region=region,
-        defaults={
-            'external_account': account,
-            'region': region,
-        },
-    )
-    set_new_access_token(region.id, get_oauth_key_by_external_id(account.id))
+def set_region_external_account(region, account):
+    region_external_account = RegionExternalAccount.objects.filter(region=region).first()
+    if region_external_account is not None:
+        # Account is being updated, so delete the previous one and put the new one
+        if region_external_account.external_account != account:
+            region_external_account.external_account.delete()
+        region_external_account.external_account = account
+        region_external_account.save()
+    else:
+        RegionExternalAccount.objects.create(
+            region=region,
+            external_account=account,
+        )
 
-def set_new_access_token(region_id, access_token):
-    region = Region.objects.get(pk=region_id)
-    region.waterbutler_credentials['storage']['token'] = access_token
+def set_new_access_token(external_account, region=None):
+    if region is None:
+        region = RegionExternalAccount.objects.get(external_account=external_account).region
+    region.waterbutler_credentials['storage']['token'] = external_account.oauth_key
     region.save()
 
-def get_oauth_key_by_external_id(external_account_id):
-    return ExternalAccount.objects.get(pk=external_account_id).oauth_key
+def remove_region_external_account(region):
+    region_external_account = RegionExternalAccount.objects.filter(region=region).first()
+    if region_external_account is not None:
+        region_external_account.external_account.delete()
+        region_external_account.delete()
 
-def is_custom_googledrive(external_account_id):
-    return RegionExternalAccount.objects.filter(external_account_id=external_account_id).exists()
-
-def get_region_id_by_external_id(external_account_id):
-    return RegionExternalAccount.objects.get(external_account_id__exact=external_account_id).region_id
+def is_institutional_storage(external_account):
+    return RegionExternalAccount.objects.filter(external_account=external_account).exists()
