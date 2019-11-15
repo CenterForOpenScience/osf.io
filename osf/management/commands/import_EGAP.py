@@ -198,14 +198,24 @@ def main(guid, creator_username):
         draft_registration_metadata = draft_registration.registration_metadata
 
         # Retrieve EGAP registration date and potential embargo go-public date
-        egap_registration_date_string = draft_registration_metadata['q4']['value']
-        egap_embargo_public_date_string = draft_registration_metadata['q12']['value']
+        if draft_registration_metadata.get('q4'):
+            egap_registration_date_string = draft_registration_metadata['q4']['value']
+            egap_registration_date = dt.strptime(egap_registration_date_string, '%m/%d/%Y')
+        else:
+            logger.error(
+                'DraftRegistration associated with Project {}'
+                'does not have a valid registration date in registration_metadata'.format(project._id)
+            )
+            continue
 
-        egap_registration_date = dt.strptime(egap_registration_date_string, '%m/%d/%Y')
-        egap_embargo_public_date = dt.strptime(egap_embargo_public_date_string, '%m/%d/%Y')
+        if draft_registration_metadata.get('q12'):
+            egap_embargo_public_date_string = draft_registration_metadata['q12']['value']
+            egap_embargo_public_date = dt.strptime(egap_embargo_public_date_string, '%m/%d/%Y')
+        else:
+            egap_embargo_public_date = None
 
         sanction_type = 'RegistrationApproval'
-        if egap_embargo_public_date > dt.today():
+        if egap_embargo_public_date and (egap_embargo_public_date > dt.today()):
             sanction_type = 'Embargo'
 
         try:
@@ -216,6 +226,7 @@ def main(guid, creator_username):
                 'Unexpected error raised when attempting to silently register'
                 'project {}. Continuing...'.format(project._id))
             logger.info(str(err))
+            continue
 
         # Update contributors on project to Admin
         contributors = project.contributor_set.all()
