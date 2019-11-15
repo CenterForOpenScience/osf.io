@@ -246,16 +246,18 @@ def quote_query_string(chars):
 
     return qs
 
+NORMALIZED_FIELDS = ('user', 'names', 'title', 'description', 'name', 'tags')
+
 def replace_normalized_field(qs):
-    FIELDS = ('user', 'names', 'title', 'description', 'name', 'tags')
-    for name in FIELDS:
-        qs = re.sub('(^|[\\(\\s]?){}\\:'.format(name),
+    for name in NORMALIZED_FIELDS:
+        qs = re.sub('(^|[\\(\\s]){}\\:'.format(name),
                     '\\1normalized_{}:'.format(name), qs)
     return qs
 
 def convert_query_string(qs, normalize=False):
     qs = quote_query_string(qs)
     qs = replace_normalized_field(qs)
+    logger.debug(u'convert_query_string: {}'.format(qs))
     if normalize:
         return unicode_normalize(qs)
     else:

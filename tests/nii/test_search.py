@@ -20,7 +20,8 @@ from website.util import web_url_for, api_url_for
 from website.views import find_bookmark_collection
 from addons.wiki.models import WikiPage
 
-from website.search.util import quote_query_string
+from website.search.util import (quote_query_string, convert_query_string,
+                                 NORMALIZED_FIELDS)
 from website.search_migration.migrate import migrate
 
 ENABLE_DEBUG = False
@@ -829,7 +830,7 @@ class TestOriginalSearch(OsfTestCase):
         assert_equal(len(filenames), 0)  # cannot access
 
 
-class TestQuotingQueryString(OsfTestCase):
+class TestQueryString(OsfTestCase):
 
     def test_split_token_with_escapable_colon(self):
         """
@@ -954,3 +955,25 @@ class TestQuotingQueryString(OsfTestCase):
         self.assertEqual(quote_query_string(ur'あ*う'), ur'"あ*う"')
         self.assertEqual(quote_query_string(ur'あい*'), ur'"あい*"')
         self.assertEqual(quote_query_string(ur'あい*~'), ur'"あい*"~')
+
+    def test_replace_normalized_field(self):
+        """
+        normalized_* に対応したフィールドに関して、検索式中の tags:
+        などを normalized_tags: のように変換することを確認する。
+        """
+
+        c = convert_query_string
+        for name in NORMALIZED_FIELDS:
+            self.assertEqual(c(u'{}:abc'.format(name)),
+                             u'normalized_{}:abc'.format(name))
+            self.assertEqual(c(u'({}:abc)'.format(name)),
+                             u'(normalized_{}:abc)'.format(name))
+            self.assertEqual(c(u' {}:abc'.format(name)),
+                             u' normalized_{}:abc'.format(name))
+            self.assertEqual(c(u'normalized_{}:abc'.format(name)),
+                             u'normalized_{}:abc'.format(name))
+            self.assertEqual(c(u'ABC{}:abc'.format(name)),
+                             u'ABC{}:abc'.format(name))
+
+        self.assertEqual(c(u'tags:abc AND user:cde'),
+            u'normalized_{}:abc AND normalized_user:cde'.format(name))
