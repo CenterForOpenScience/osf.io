@@ -10,7 +10,7 @@ var changeAddonSettingsSuccess = function () {
 };
 
 var changeAddonSettingsFailure = function () {
-    var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: nii-rdmp@meatmail.jp">nii-rdmp@meatmail.jp</a>';
+    var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: rdm_support@nii.ac.jp">rdm_support@nii.ac.jp</a>';
     $osf.growl('Failure', msg, 'danger');
 };
 

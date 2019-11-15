@@ -1,0 +1,10 @@
+{
+    "iqbrims_file_added" : "A user added a file to IQB-RIMS in a project",
+    "iqbrims_file_removed" : "A user removed a file from IQB-RIMS in a project",
+    "iqbrims_file_updated" : "A user updated a file in IQB-RIMS in a project",
+    "iqbrims_folder_created" : "A user created a folder in IQB-RIMS in a project",
+    "iqbrims_folder_selected" : "A user linked a IQB-RIMS folder to a project",
+    "iqbrims_node_authorized" : "A user authorized the IQB-RIMS addon for a project",
+    "iqbrims_node_deauthorized" : "A user deauthorized the IQB-RIMS addon for a project",
+    "iqbrims_node_deauthorized_no_user" : "IQB-RIMS addon for a project deauthorized"
+}

@@ -45,7 +45,7 @@ function ViewModel(url) {
     self.messages = {
         userSettingsError: ko.pureComputed(function() {
             return 'Could not retrieve settings. Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                'contact <a href="mailto: rdm_support@nii.ac.jp">rdm_support@nii.ac.jp</a> if the ' +
                 'problem persists.';
         }),
         confirmDeauth: ko.pureComputed(function() {
@@ -66,7 +66,7 @@ function ViewModel(url) {
         authError: ko.pureComputed(function() {
             return 'Sorry, but there was a problem connecting to that instance of WEKO.' +
                 'If you have any questions or believe this to be an error, please contact ' +
-                'support@osf.io.';
+                'rdm_support@nii.ac.jp.';
         }),
         tokenImportSuccess: ko.pureComputed(function() {
             return 'Successfully imported access token from profile.';
@@ -77,7 +77,7 @@ function ViewModel(url) {
         updateAccountsError: ko.pureComputed(function() {
             return 'Could not retrieve ' + self.addonName + ' account list at ' +
                 'this time. Please refresh the page. If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.';
+                '<a href="mailto:rdm_support@nii.ac.jp">rdm_support@nii.ac.jp</a>.';
         }),
         setInfoSuccess: ko.pureComputed(function() {
             var filesUrl = window.contextVars.node.urls.web + 'files/';
@@ -86,7 +86,7 @@ function ViewModel(url) {
         }),
         setIndexError: ko.pureComputed(function() {
             return 'Could not connect to this index. Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                'contact <a href="mailto: rdm_support@nii.ac.jp">rdm_support@nii.ac.jp</a> if the ' +
                 'problem persists.';
         })
     };

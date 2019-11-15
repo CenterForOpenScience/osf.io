@@ -50,6 +50,7 @@ from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
 from website.util import rubeus, timestamp
 
+
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
 
@@ -418,7 +419,6 @@ def create_waterbutler_log(payload, **kwargs):
         node = kwargs.get('node') or kwargs.get('project') or Preprint.load(kwargs.get('nid')) or Preprint.load(kwargs.get('pid'))
 
         if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
-
             for bundle in ('source', 'destination'):
                 for key in ('provider', 'materialized', 'name', 'nid'):
                     if key not in payload[bundle]:
@@ -426,7 +426,6 @@ def create_waterbutler_log(payload, **kwargs):
 
             dest = payload['destination']
             src = payload['source']
-
             if src is not None and dest is not None:
                 dest_path = dest['materialized']
                 src_path = src['materialized']
@@ -440,7 +439,6 @@ def create_waterbutler_log(payload, **kwargs):
                     and dest['name'] != src['name']
                 ):
                     action = LOG_ACTION_MAP['rename']
-
             destination_node = node  # For clarity
             source_node = AbstractNode.load(src['nid']) or Preprint.load(src['nid'])
 
@@ -466,7 +464,6 @@ def create_waterbutler_log(payload, **kwargs):
                     'title': source_node.title,
                 }
             })
-
             payload['destination'].update({
                 'materialized': payload['destination']['materialized'].lstrip('/'),
                 'addon': destination.config.full_name if destination else 'osfstorage',
@@ -488,7 +485,6 @@ def create_waterbutler_log(payload, **kwargs):
                     auth=auth,
                     params=payload
                 )
-
             if payload.get('email') is True or payload.get('errors'):
                 mails.send_mail(
                     user.username,
@@ -502,7 +498,6 @@ def create_waterbutler_log(payload, **kwargs):
                     destination_addon=payload['destination']['addon'],
                     osf_support_email=settings.OSF_SUPPORT_EMAIL
                 )
-
             if payload.get('errors'):
                 # Action failed but our function succeeded
                 # Bail out to avoid file_signals
@@ -520,10 +515,13 @@ def create_waterbutler_log(payload, **kwargs):
                     timestamp.file_created_or_updated(node, metadata, user.id, created_flag)
             # Update moved, or renamed timestamp records
             elif action in (NodeLog.FILE_MOVED, NodeLog.FILE_RENAMED):
+                metadata = payload.get('metadata') or payload.get('destination')
                 src_path = payload['source']['materialized']
                 dest_path = payload['destination']['materialized']
-                provider = payload['source']['provider']
-                timestamp.file_node_moved(node._id, provider, src_path, dest_path)
+                src_provider = payload['source']['provider']
+                dest_provider = payload['destination']['provider']
+                src_metadata = payload.get('source', None)
+                timestamp.file_node_moved(auth.user.id, node._id, src_provider, dest_provider, src_path, dest_path, metadata, src_metadata)
             # Update status of deleted timestamp records
             elif action in (NodeLog.FILE_REMOVED):
                 src_path = payload['metadata']['materialized']
@@ -749,6 +747,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     # Note: Cookie is provided for authentication to waterbutler
     # it is overriden to force authentication as the current user
     # the auth header is also pass to support basic auth
+
     version = file_node.touch(
         request.headers.get('Authorization'),
         **dict(

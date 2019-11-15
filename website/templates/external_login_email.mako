@@ -8,7 +8,7 @@
     <div class="col-md-6 col-md-offset-3">
         <p class='help'>
             Please enter your email to finalize the login.
-            If you already have an GakuNin RDM account, this will link your ${external_id_provider} profile with GakuNin RDM.
+            If you already have a GakuNin RDM account, this will link your ${external_id_provider} profile with GakuNin RDM.
             If not, this will create a new account for you with your ${external_id_provider} profile.
         </p>
 

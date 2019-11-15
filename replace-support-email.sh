@@ -1,6 +1,6 @@
 #!/bin/bash
 
-REPLACED_EMAIL="nii-rdmp@meatmail.jp"
+REPLACED_EMAIL="rdm_support@nii.ac.jp"
 TARGET_SUPPORT_EMAIL_LIST="
 support@osf.io
 support@osfio

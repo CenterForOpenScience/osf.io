@@ -1,0 +1,18 @@
+.label-large {
+    vertical-align: middle;
+    font-size: large;
+}
+
+.storage-name {
+    margin-left: 0px;
+    margin-bottom: 5px;
+    margin-top: 10px;
+}
+
+.storage-name .form-control {
+    width: 400px;
+}
+
+.next-btn {
+    margin-left: 12px;
+}

@@ -156,7 +156,7 @@ class PreprintProviderDetail(GenericProviderDetail, generics.UpdateAPIView):
 
     def perform_update(self, serializer):
         if serializer.instance.is_reviewed:
-            raise Conflict('Reviews settings may be set only once. Contact nii-rdmp@meatmail.jp if you need to update them.')
+            raise Conflict('Reviews settings may be set only once. Contact rdm_support@nii.ac.jp if you need to update them.')
         super(PreprintProviderDetail, self).perform_update(serializer)
 
 

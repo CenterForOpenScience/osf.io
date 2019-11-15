@@ -59,6 +59,7 @@ from addons.wiki.models import WikiVersion
 from addons.dataverse.utils import serialize_dataverse_widget
 from addons.forward.utils import serialize_forward_widget
 from addons.jupyterhub.utils import serialize_jupyterhub_widget
+from addons.iqbrims.utils import serialize_iqbrims_widget
 from admin.rdm_addons.utils import validate_rdm_addons_allowed
 from api.base import settings as api_settings
 from website.util import quota
@@ -551,6 +552,9 @@ def view_project(auth, node, **kwargs):
 
     if 'jupyterhub' in ret['addons']:
         addons_widget_data['jupyterhub'] = serialize_jupyterhub_widget(node)
+
+    if 'iqbrims' in ret['addons']:
+        addons_widget_data['iqbrims'] = serialize_iqbrims_widget(node)
 
     ret.update({'addons_widget_data': addons_widget_data})
     try:
