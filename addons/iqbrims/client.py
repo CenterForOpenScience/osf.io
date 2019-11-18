@@ -626,6 +626,8 @@ class IQBRIMSFlowableClient(BaseClient):
                             else u'LaboID:{}'.format(labo_name)
         accepted_date = status['accepted_date'].split('T')[0] \
                         if 'accepted_date' in status else ''
+        accepted_datetime = status['accepted_date'] \
+                            if 'accepted_date' in status else ''
         payload = {'processDefinitionId': self.app_id,
                    'variables': [{'name': 'projectId',
                                   'type': 'string',
@@ -647,6 +649,9 @@ class IQBRIMSFlowableClient(BaseClient):
                                  {'name': 'acceptedDate',
                                   'type': 'string',
                                   'value': accepted_date},
+                                 {'name': 'acceptedDateTime',
+                                  'type': 'string',
+                                  'value': accepted_datetime},
                                  {'name': 'flowableWorkflowUrl',
                                   'type': 'string',
                                   'value': settings.FLOWABLE_TASK_URL},
