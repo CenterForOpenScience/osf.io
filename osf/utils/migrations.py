@@ -11,7 +11,7 @@ from django.db import connection
 from django.db.migrations.operations.base import Operation
 
 from osf.models.base import generate_object_id
-from osf.utils.sanitize import strip_html
+from osf.utils.sanitize import strip_html, unescape_entities
 from website import settings
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 
@@ -200,11 +200,11 @@ def create_schema_block(state, schema_id, block_type, display_text='', required=
         schema_id=schema_id,
         block_type=block_type,
         required=required,
-        display_text=display_text,
-        help_text=help_text,
+        display_text=unescape_entities(display_text),
+        help_text=unescape_entities(help_text),
         registration_response_key=registration_response_key,
         schema_block_group_key=schema_block_group_key,
-        example_text=example_text
+        example_text=unescape_entities(example_text)
     )
 
 # Split question multiple choice options into their own blocks
