@@ -255,7 +255,7 @@ def migrate_institutions(index):
     for inst in Institution.objects.filter(is_deleted=False):
         update_institution(inst, index)
 
-def migrate(delete, remove=False, index=None, app=None):
+def migrate(delete, remove=False, remove_all=False, index=None, app=None):
     """Reindexes relevant documents in ES
 
     :param bool delete: Delete documents that should not be indexed
@@ -289,6 +289,8 @@ def migrate(delete, remove=False, index=None, app=None):
 
     if remove:
         remove_old_index(new_index)
+    if remove_all:
+        remove_all_old_index(new_index)
 
     ctx.pop()
 
@@ -324,6 +326,7 @@ def set_up_alias(old_index, index):
 
 
 def remove_old_index(index):
+    logger.info('remove_old_index: {}'.format(index))
     old_version = int(index.split('_v')[1]) - 1
     if old_version < 1:
         logger.info('No index before {} to delete'.format(index))
@@ -333,6 +336,13 @@ def remove_old_index(index):
         logger.info('Deleting {}'.format(old_index))
         es_client().indices.delete(index=old_index, ignore=404)
 
+def remove_all_old_index(index):
+    logger.info('remove_all_old_index: {}'.format(index))
+    old_version = int(index.split('_v')[1]) - 1
+    for v in range(1, old_version + 1):
+        old_index = index.split('_v')[0] + '_v' + str(v)
+        logger.info('Deleting {}'.format(old_index))
+        es_client().indices.delete(index=old_index, ignore=404)
 
 if __name__ == '__main__':
     migrate(False)

@@ -221,7 +221,7 @@ def celery_beat(ctx, level='debug', schedule=None):
     ctx.run(bin_prefix(cmd), pty=True)
 
 @task
-def migrate_search(ctx, delete=True, remove=False, index=None):
+def migrate_search(ctx, delete=True, remove=False, remove_all=False, index=None):
     """Migrate the search-enabled models."""
     from website.app import init_app
     init_app(routes=False, set_backends=False)
@@ -233,7 +233,7 @@ def migrate_search(ctx, delete=True, remove=False, index=None):
     for logger in SILENT_LOGGERS:
         logging.getLogger(logger).setLevel(logging.ERROR)
 
-    migrate(delete, remove=remove, index=index)
+    migrate(delete, remove=remove, remove_all=remove_all, index=index)
 
 @task
 def rebuild_search(ctx):
@@ -243,6 +243,7 @@ def rebuild_search(ctx):
     # from website import settings
 
     init_app(routes=False, set_backends=True)
+
     # if not settings.ELASTIC_URI.startswith('http'):
     #     protocol = 'http://' if settings.DEBUG_MODE else 'https://'
     # else:
@@ -251,6 +252,7 @@ def rebuild_search(ctx):
     # from website.search.elastic_search import es_index
     # index = es_index()
 
+    ### NOTE: remove=True or remove_all=True can delete old index.
     # url = '{protocol}{uri}/{index}'.format(
     #     protocol=protocol,
     #     uri=settings.ELASTIC_URI.rstrip('/'),
@@ -260,10 +262,13 @@ def rebuild_search(ctx):
     # print('----- DELETE {}*'.format(url))
     # requests.delete(url + '*')
 
+    ### NOTE: set_up_index() can create index.
     # print('Creating index {}'.format(index))
     # print('----- PUT {}'.format(url))
     # requests.put(url)
-    migrate_search(ctx, delete=False)
+
+    # remove_all=True for development
+    migrate_search(ctx, delete=False, remove=True, remove_all=False)
 
 
 @task
