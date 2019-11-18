@@ -34,6 +34,7 @@ class NodesFilterMixin(ListFilterMixin):
         return super(NodesFilterMixin, self).param_queryset(query_params, queryset)
 
     def build_query_from_field(self, field_name, operation):
+        # import ipdb; ipdb.set_trace()
         if field_name == 'parent':
             if operation['op'] == 'eq':
                 if operation['value']:
@@ -47,7 +48,6 @@ class NodesFilterMixin(ListFilterMixin):
                     child_ids = (
                         NodeRelation.objects.filter(
                             is_node_link=False,
-                            child___contributors=self.get_user(),
                         )
                         .exclude(parent__type='osf.collection')
                         .exclude(child__is_deleted=True)
