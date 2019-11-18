@@ -1956,3 +1956,18 @@ MAPCORE_REFRESH_PATH = '/oauth/token.php'
 MAPCORE_AUTHCODE_MAGIC = 'GRDM_mAP_AuthCode'
 MAPCORE_CLIENTID = None
 MAPCORE_SECRET = None
+
+ENABLE_PRIVATE_SEARCH = False
+
+# Elasticsearchを用いた全文検索でラテン文字以外の文字(特に漢字)の検索
+# を実用可能にするオプション。
+# デフォルトのenglishアナライザーだと漢字等の単語が一文字ずつにトーク
+# ナイズされてしまい、各文字のOR検索となってしまう。
+# 多言語検索には対応する自然言語のアナライザーを用いて対応するのが一般
+# 的である。
+# https://www.elastic.co/jp/blog/how-to-search-ch-jp-kr-part-1
+# しかし、他のアナライザーを用いる方式は多くの改修が必要であるため、現
+# 状では比較的簡単な別の方法で幾らかの精度の向上を図っている。具体的に
+# は、englishアナライザーのまま漢字などをダブルクオートで囲ってひとま
+# とめにして検索する。
+ENABLE_MULTILINGUAL_SEARCH = False

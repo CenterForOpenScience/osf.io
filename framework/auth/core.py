@@ -104,7 +104,7 @@ def _get_current_user():
 
 
 # TODO: This should be a class method of User?
-def get_user(email=None, password=None, token=None, external_id_provider=None, external_id=None, eppn=None):
+def get_user(email=None, password=None, token=None, external_id_provider=None, external_id=None, eppn=None, log=True):
     """
     Get an instance of `User` matching the provided params.
 
@@ -112,12 +112,15 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
     2. email and password
     3  token
     4. external_id_provider and external_id
+    5. eppn
 
     :param token: the token in verification key
     :param email: user's email
     :param password: user's password
     :param external_id_provider: the external identity provider
     :param external_id: the external id
+    :param eppn: eppn
+    :param log: log error
     :rtype User or None
     """
     from osf.models import OSFUser, Email
@@ -139,7 +142,8 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
         try:
             user = qs.get()
         except Exception as err:
-            logger.error(err)
+            if log:
+                logger.error(err)
             user = None
         if user and not user.check_password(password):
             return False
@@ -158,7 +162,8 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
         user = qs.get()
         return user
     except Exception as err:
-        logger.error(err)
+        if log:
+            logger.error(err)
         return None
 
 

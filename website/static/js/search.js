@@ -361,6 +361,15 @@ var ViewModel = function(params) {
             from: self.currentIndex(),
             size: self.resultsPerPage()
         };
+        if (window.contextVars.enablePrivateSearch) {
+            jsonData = {
+                'api_version': {
+                    'vendor': 'grdm',
+                    'version': 1
+                },
+                'elasticsearch_dsl': jsonData
+            };
+        }
         var url = self.queryUrl + self.category().url();
 
         var shareQuery = {

@@ -23,9 +23,10 @@ var _buildLogUrl = function(node, page, limitLogs) {
     if (viewOnly) {
         query.view_only = viewOnly;
     }
-    var LogSearchKeyUser = $('#LogSearchKeyUser').val();
-    if (LogSearchKeyUser.length > 0) {
-        query['filter[user][eq]'] = Number(LogSearchKeyUser);
+    var LogSearchUserKeys = $('#LogSearchUserKeys').val();
+    if (LogSearchUserKeys.length > 0) {
+        // LogSearchUserKeys may have comma separator. Example: 1,23,456
+        query['filter[user][eq]'] = LogSearchUserKeys;
     }
     var LogFilterKeyS = $('#LogSearchS').val();
     if (LogFilterKeyS.length > 5) {

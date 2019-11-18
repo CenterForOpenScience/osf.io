@@ -24,6 +24,11 @@
                                 class="text-danger pull-right"
                                 data-bind="click: $parent.removeContent.bind($parent)"
                                 >Remove</a>
+                        <a
+                                style="margin-right: 15px"
+                                class="btn-link pull-right"
+                                data-bind="click: $parent.setContentFromIdP.bind($parent)"
+                                >Read IdP Profile</a>
                     </div>
 
                     <div class="form-group">

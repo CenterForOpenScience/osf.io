@@ -8,7 +8,6 @@ import functools
 import logging
 import math
 import re
-import unicodedata
 from framework import sentry
 
 import six
@@ -36,7 +35,7 @@ from website import settings
 from website.filters import profile_image_url
 from osf.models.licenses import serialize_node_license_record
 from website.search import exceptions
-from website.search.util import build_query, clean_splitters, es_escape
+from website.search.util import build_query, clean_splitters, es_escape, quote_query_string, normalize, quote
 from website.views import validate_page_num
 
 logger = logging.getLogger(__name__)
@@ -210,6 +209,40 @@ def search(query, index=None, doc_type='_all', raw=False):
         typeAliases: the doc_types that exist in the search database
     """
     index = index or INDEX
+
+    # Quote query string for mutilingual search.
+    # 本関数には4種類のElasticsearch生DSLがあることが現状では分かって
+    # いる
+    # - Webブラウザからくるもの(filteredを使用)
+    # - website.search.util.build_queryを使用して作成したもの(2種類)
+    # - website.search.util.build_private_search_queryを使用して作成し
+    #   たもの
+    # クオーティングをsearchを呼ぶ前に行うと散らばってしまうため、
+    # search内でひとまとめに行う。
+    if settings.ENABLE_MULTILINGUAL_SEARCH:
+        from_browser = 'filtered' in query['query']
+        from_build_private_search_query = 'bool' in query['query'] and \
+                                          'must' in query['query']['bool']
+        from_build_query = 'query_string' in query['query']
+        from_build_query_with_guid = 'bool' in query['query'] and \
+                                     'should' in query['query']['bool']
+        if from_browser:
+            q = query['query']['filtered']['query']['query_string']['query']
+            q = quote_query_string(q)
+            query['query']['filtered']['query']['query_string']['query'] = q
+        elif from_build_private_search_query:
+            q = query['query']['bool']['must'][0]['query_string']['query']
+            q = quote_query_string(q)
+            query['query']['bool']['must'][0]['query_string']['query'] = q
+        elif from_build_query:
+            q = query['query']['query_string']['query']
+            q = quote_query_string(q)
+            query['query']['query_string']['query'] = q
+        elif from_build_query_with_guid:
+            q = query['query']['bool']['should'][0]['query_string']['query']
+            q = quote_query_string(q)
+            query['query']['bool']['should'][0]['query_string']['query'] = q
+
     tag_query = copy.deepcopy(query)
     aggs_query = copy.deepcopy(query)
     count_query = copy.deepcopy(query)
@@ -398,13 +431,14 @@ def serialize_node(node, category):
         normalized_title = six.u(node.title)
     except TypeError:
         normalized_title = node.title
-    normalized_title = unicodedata.normalize('NFKD', normalized_title).encode('ascii', 'ignore')
+    normalized_title = normalize(normalized_title)
     elastic_document = {
         'id': node._id,
         'contributors': [
             {
                 'fullname': x['fullname'],
-                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
+                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None,
+                'id': x['guids___id']
             }
             for x in node._contributors.filter(contributor__visible=True).order_by('contributor___order')
             .values('fullname', 'guids___id', 'is_active')
@@ -452,13 +486,14 @@ def serialize_preprint(preprint, category):
         normalized_title = six.u(preprint.title)
     except TypeError:
         normalized_title = preprint.title
-    normalized_title = unicodedata.normalize('NFKD', normalized_title).encode('ascii', 'ignore')
+    normalized_title = normalize(normalized_title)
     elastic_document = {
         'id': preprint._id,
         'contributors': [
             {
                 'fullname': x['fullname'],
-                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
+                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None,
+                'id': x['guids___id']
             }
             for x in preprint._contributors.filter(preprintcontributor__visible=True).order_by('preprintcontributor___order')
             .values('fullname', 'guids___id', 'is_active')
@@ -487,7 +522,7 @@ def serialize_group(group, category):
         normalized_title = six.u(group.name)
     except TypeError:
         normalized_title = group.name
-    normalized_title = unicodedata.normalize('NFKD', normalized_title).encode('ascii', 'ignore')
+    normalized_title = normalize(normalized_title)
     elastic_document = {
         'id': group._id,
         'members': [
@@ -523,7 +558,7 @@ def update_node(node, index=None, bulk=False, async_update=False):
         update_file(file_, index=index)
 
     is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
-    if node.is_deleted or not node.is_public or node.archiving or node.is_spam or (node.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles or is_qa_node:
+    if node.is_deleted or (not settings.ENABLE_PRIVATE_SEARCH and not node.is_public) or node.archiving or node.is_spam or (node.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles or is_qa_node:
         delete_doc(node._id, node, index=index)
     else:
         category = get_doctype_from_node(node)
@@ -642,7 +677,8 @@ def serialize_contributors(node):
         'contributors': [
             {
                 'fullname': x['user__fullname'],
-                'url': '/{}/'.format(x['user__guids___id'])
+                'url': '/{}/'.format(x['user__guids___id']),
+                'id': x['user__guids___id']
             } for x in
             node.contributor_set.filter(visible=True, user__is_active=True).order_by('_order').values('user__fullname', 'user__guids___id')
         ]
@@ -699,7 +735,7 @@ def update_user(user, index=None):
                 val = six.u(val)
             except TypeError:
                 pass  # This is fine, will only happen in 2.x if val is already unicode
-            normalized_names[key] = unicodedata.normalize('NFKD', val).encode('ascii', 'ignore')
+            normalized_names[key] = normalize(val)
 
     user_doc = {
         'id': user._id,
@@ -732,7 +768,7 @@ def update_file(file_, index=None, delete=False):
     ) or bool(
         set(settings.DO_NOT_INDEX_LIST['tags']).intersection(target.tags.all().values_list('name', flat=True))
     ) or any(substring in target.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
-    if not file_.name or not target.is_public or delete or file_node_is_qa or getattr(target, 'is_deleted', False) or getattr(target, 'archiving', False) or target.is_spam or (
+    if not file_.name or (not settings.ENABLE_PRIVATE_SEARCH and not target.is_public) or delete or file_node_is_qa or getattr(target, 'is_deleted', False) or getattr(target, 'archiving', False) or target.is_spam or (
             target.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH):
         client().delete(
             index=index,
@@ -786,6 +822,14 @@ def update_file(file_, index=None, delete=False):
         'is_registration': getattr(target, 'is_registration', False),
         'is_retracted': getattr(target, 'is_retracted', False),
         'extra_search_terms': clean_splitters(file_.name),
+        'node_contributors': [
+            {
+                'id': x['guids___id']
+            }
+            for x in target._contributors.filter(contributor__visible=True).order_by('contributor___order')
+            .values('guids___id')
+        ],
+        'node_public': target.is_public
     }
 
     client().index(
@@ -978,15 +1022,29 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
             normalized_item = six.u(item)
         except TypeError:
             normalized_item = item
-        normalized_item = unicodedata.normalize('NFKD', normalized_item).encode('ascii', 'ignore')
+        normalized_item = normalize(normalized_item)
         normalized_items.append(normalized_item)
     items = normalized_items
 
-    query = '  AND '.join('{}*~'.format(es_escape(item)) for item in items) + \
+    def item_format_quote(item):
+        item, quoted = quote(es_escape(item))
+        if quoted:
+            return item
+        else:
+            return u'{}*~'.format(item)
+
+    def item_format_normal(item):
+        return u'{}*~'.format(es_escape(item))
+
+    item_format = item_format_normal
+    if settings.ENABLE_MULTILINGUAL_SEARCH:
+        item_format = item_format_quote
+
+    query = u'  AND '.join(item_format(item) for item in items) + \
             ''.join(' NOT id:"{}"'.format(excluded._id) for excluded in exclude)
     if current_user and current_user.affiliated_institutions.all().exists():
-        query = query + ' AND user_affiliated_institutions:({})'.format(' OR '.join(
-            '"{}"'.format(es_escape(inst_id)) for inst_id in
+        query = query + u' AND user_affiliated_institutions:({})'.format(u' OR '.join(
+            u'"{}"'.format(es_escape(inst_id)) for inst_id in
             current_user.affiliated_institutions.values_list('_id', flat=True)
         ))
 

@@ -728,6 +728,20 @@ def serialize_school(school):
     }
 
 
+# for job and school
+def append_idp_attr_common(data, user):
+    try:
+        idp_attr = user.ext.data['idp_attr']
+    except Exception:
+        # ignored
+        return
+
+    data['idp_attr'] = {
+        'institution': idp_attr.get('organization_name'),
+        'department': idp_attr.get('organizational_unit'),
+    }
+
+
 def serialize_contents(field, func, auth, uid=None):
     target = get_target_user(auth, uid)
     ret = {
@@ -736,6 +750,7 @@ def serialize_contents(field, func, auth, uid=None):
             for content in getattr(target, field)
         ]
     }
+    append_idp_attr_common(ret, target)
     append_editable(ret, auth, uid)
     return ret
 
