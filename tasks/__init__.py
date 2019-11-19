@@ -367,7 +367,7 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
         args.extend(params)
 
     # report slowest tests
-    args.append('--durations=50')
+    # args.append('--durations=50')
 
     retcode = pytest.main(args)
     sys.exit(retcode)
