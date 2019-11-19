@@ -297,7 +297,7 @@ def migrate(delete, remove=False, remove_all=False, index=None, app=None):
 def set_up_index(idx):
     try:
         alias = es_client().indices.get_aliases(index=idx)
-    except:
+    except Exception:
         alias = None
 
     if not alias or not alias.keys() or idx in alias.keys():
