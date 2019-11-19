@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime as dt
+import pytz
 import logging
 
 import re
@@ -223,7 +224,7 @@ def main(guid, creator_username):
         # Retrieve EGAP registration date and potential embargo go-public date
         if draft_registration_metadata.get('q4'):
             egap_registration_date_string = draft_registration_metadata['q4']['value']
-            egap_registration_date = dt.strptime(egap_registration_date_string, '%m/%d/%Y - %H:%M')
+            egap_registration_date = dt.strptime(egap_registration_date_string, '%m/%d/%Y - %H:%M').replace(tzinfo=pytz.UTC)
         else:
             logger.error(
                 'DraftRegistration associated with Project {} '
@@ -233,14 +234,17 @@ def main(guid, creator_username):
 
         if draft_registration_metadata.get('q12'):
             egap_embargo_public_date_string = draft_registration_metadata['q12']['value']
-            egap_embargo_public_date = dt.strptime(egap_embargo_public_date_string, '%m/%d/%y')
+            egap_embargo_public_date = dt.strptime(egap_embargo_public_date_string, '%m/%d/%y').replace(tzinfo=pytz.UTC)
         else:
             egap_embargo_public_date = None
 
         sanction_type = 'RegistrationApproval'
-        if egap_embargo_public_date and (egap_embargo_public_date > dt.today()):
+        if egap_embargo_public_date and (egap_embargo_public_date > dt.today().replace(tzinfo=pytz.UTC)):
             sanction_type = 'Embargo'
 
+        logger.info(
+            'Beginning atomic transaction to register {}'.format(project._id)
+        )
         try:
             with transaction.atomic():
                 register_silently(draft_registration, Auth(creator), sanction_type, egap_registration_date, egap_embargo_public_date)
