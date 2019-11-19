@@ -3,7 +3,6 @@ from __future__ import print_function
 import logging
 import re
 import unicodedata
-import six
 
 from website import settings
 
@@ -193,7 +192,7 @@ def quote_query_string(chars):
     """
 
     if not isinstance(chars, unicode):
-        raise TypeError('quote_query_string argument must be str type or unicode type.')
+        chars = chars.decode('utf-8')
 
     token = u''
     qs = u''
@@ -345,7 +344,7 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
                                     'category': [
                                         'user',
                                         'institution',
-                                        'collectionSubmission'
+                                        'collectionsubmission'
                                     ]
                                 }
                             }
@@ -363,10 +362,8 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
     }
 
 def unicode_normalize(text):
-    try:
-        text = six.u(text)
-    except TypeError:
-        pass
+    if not isinstance(text, unicode):
+        text = text.decode('utf-8')
     normalized = unicodedata.normalize('NFKD', text)
     if not settings.ENABLE_MULTILINGUAL_SEARCH:
         normalized = normalized.encode('ascii', 'ignore')

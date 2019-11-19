@@ -3,12 +3,14 @@
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from rest_framework.exceptions import NotAuthenticated
 
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.pagination import SearchPagination
 from api.base.parsers import SearchParser
-from api.base.settings import REST_FRAMEWORK, MAX_PAGE_SIZE
+from api.base.settings import REST_FRAMEWORK, MAX_PAGE_SIZE, osf_settings
+from api.base.utils import get_user_auth
 from api.files.serializers import FileSerializer
 from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
@@ -23,8 +25,10 @@ from osf.models import Institution, BaseFileNode, AbstractNode, OSFUser, Collect
 
 from website.search import search
 from website.search.exceptions import MalformedQueryError
-from website.search.util import build_query
+from website.search.util import build_query, build_private_search_query
 
+import logging
+logger = logging.getLogger(__name__)
 
 class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
 
@@ -57,14 +61,40 @@ class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
         page = int(self.request.query_params.get('page', '1'))
         page_size = min(int(self.request.query_params.get('page[size]', REST_FRAMEWORK['PAGE_SIZE'])), MAX_PAGE_SIZE)
         start = (page - 1) * page_size
+
+        # ENABLE_PRIVATE_SEARCH=True requires logged_in
+        private = False
         if query:
+            if osf_settings.ENABLE_PRIVATE_SEARCH:
+                # ENABLE_PRIVATE_SEARCH=True expects
+                # 'collectionSubmission' and logged_in.
+                if not self.doc_type == 'collectionSubmission':
+                    raise NotImplementedError
+                auth = get_user_auth(self.request)
+                if not auth.logged_in:
+                    raise NotAuthenticated
+                private = True
+
             # Parser has built query, but needs paging info
             query['from'] = start
             query['size'] = page_size
+        elif not osf_settings.ENABLE_PRIVATE_SEARCH:
+            qs = self.request.query_params.get('q', '*')
+            query = build_query(qs, start=start, size=page_size)
         else:
-            query = build_query(self.request.query_params.get('q', '*'), start=start, size=page_size)
+            auth = get_user_auth(self.request)
+            if not auth.logged_in:
+                raise NotAuthenticated
+            else:
+                qs = self.request.query_params.get('q', '*')
+                query = build_private_search_query(
+                    auth.user, qs,
+                    start=start, size=page_size,
+                )
+                private = True
+
         try:
-            results = search.search(query, doc_type=self.doc_type, raw=True)
+            results = search.search(query, doc_type=self.doc_type, raw=True, private=private)
         except MalformedQueryError as e:
             raise ValidationError(e.message)
         return results
