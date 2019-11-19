@@ -295,13 +295,17 @@ def migrate(delete, remove=False, remove_all=False, index=None, app=None):
     ctx.pop()
 
 def set_up_index(idx):
-    alias = es_client().indices.get_aliases(index=idx)
+    try:
+        alias = es_client().indices.get_aliases(index=idx)
+    except:
+        alias = None
 
     if not alias or not alias.keys() or idx in alias.keys():
         # Deal with empty indices or the first migration
         index = '{}_v1'.format(idx)
         search.create_index(index=index)
         logger.info('Reindexing {0} to {1}_v1'.format(idx, idx))
+        es_client().indices.create(index=idx, ignore=[400])  # HTTP 400 if index already exists
         helpers.reindex(es_client(), idx, index)
         logger.info('Deleting {} index'.format(idx))
         es_client().indices.delete(index=idx)
