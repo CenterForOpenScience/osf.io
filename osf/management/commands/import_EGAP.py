@@ -142,7 +142,8 @@ def get_egap_assets(guid, creator_auth):
 
 def register_silently(draft_registration, auth, sanction_type, external_registered_date, embargo_end_date):
     registration = draft_registration.register(auth, save=True)
-    registration.external_registered_date = external_registered_date
+    registration.external_registration = True
+    registration.registered_date = external_registered_date
 
     if sanction_type == 'Embargo':
         registration.embargo_registration(auth.user, embargo_end_date)
@@ -164,39 +165,43 @@ def main(guid, creator_username):
         logger.info(
             'Attempting to import the follow directory: {}'.format(egap_project_dir)
         )
-        node = create_node_from_project_json(egap_assets_path, egap_project_dir, creator=creator)
+        try:
+            node = create_node_from_project_json(egap_assets_path, egap_project_dir, creator=creator)
 
-        non_anon_files = os.path.join(egap_assets_path, egap_project_dir, 'data', 'nonanonymous')
-        non_anon_metadata = recursive_upload(creator_auth, node, non_anon_files)
+            non_anon_files = os.path.join(egap_assets_path, egap_project_dir, 'data', 'nonanonymous')
+            non_anon_metadata = recursive_upload(creator_auth, node, non_anon_files)
 
-        anon_files = os.path.join(egap_assets_path, egap_project_dir, 'data', 'anonymous')
-        if os.path.isdir(anon_files):
-            anon_metadata = recursive_upload(creator_auth, node, anon_files)
-        else:
-            anon_metadata = {}
+            anon_files = os.path.join(egap_assets_path, egap_project_dir, 'data', 'anonymous')
+            if os.path.isdir(anon_files):
+                anon_metadata = recursive_upload(creator_auth, node, anon_files)
+            else:
+                anon_metadata = {}
 
-        with open(os.path.join(egap_assets_path, egap_project_dir, 'registration-schema.json'), 'r') as fp:
-            registration_metadata = json.load(fp)
+            with open(os.path.join(egap_assets_path, egap_project_dir, 'registration-schema.json'), 'r') as fp:
+                registration_metadata = json.load(fp)
 
-        # add selectedFileName Just so filenames are listed in the UI
-        for data in non_anon_metadata:
-            data['selectedFileName'] = data['data']['attributes']['name']
+            # add selectedFileName Just so filenames are listed in the UI
+            for data in non_anon_metadata:
+                data['selectedFileName'] = data['data']['attributes']['name']
 
-        for data in anon_metadata:
-            data['selectedFileName'] = data['data']['attributes']['name']
+            for data in anon_metadata:
+                data['selectedFileName'] = data['data']['attributes']['name']
 
-        non_anon_titles = ', '.join([data['data']['attributes']['name'] for data in non_anon_metadata])
-        registration_metadata['q37'] = {'comments': [], 'extra': non_anon_metadata, 'value': non_anon_titles}
+            non_anon_titles = ', '.join([data['data']['attributes']['name'] for data in non_anon_metadata])
+            registration_metadata['q37'] = {'comments': [], 'extra': non_anon_metadata, 'value': non_anon_titles}
 
-        anon_titles = ', '.join([data['data']['attributes']['name'] for data in anon_metadata])
-        registration_metadata['q38'] = {'comments': [], 'extra': anon_metadata, 'value': anon_titles}
+            anon_titles = ', '.join([data['data']['attributes']['name'] for data in anon_metadata])
+            registration_metadata['q38'] = {'comments': [], 'extra': anon_metadata, 'value': anon_titles}
 
-        DraftRegistration.create_from_node(
-            node,
-            user=creator,
-            schema=egap_schema,
-            data=registration_metadata,
-        )
+            DraftRegistration.create_from_node(
+                node,
+                user=creator,
+                schema=egap_schema,
+                data=registration_metadata,
+            )
+        except Exception as err:
+            logger.error(str(err))
+            continue
         logger.info(
             'Based off {}, a Node was created, files were assocated with the node '
             'and a DraftRegistration has been created'.format(egap_project_dir)

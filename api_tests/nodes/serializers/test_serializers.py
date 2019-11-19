@@ -1,3 +1,4 @@
+from dateutil.parser import parse as parse_date
 import pytest
 from future.moves.urllib.parse import urlparse
 
@@ -160,7 +161,7 @@ class TestNodeRegistrationSerializer:
         # Attributes
         attributes = data['attributes']
         assert_datetime_equal(
-            attributes['date_registered'],
+            parse_date(attributes['date_registered']),
             registration.registered_date
         )
         assert attributes['withdrawn'] == registration.is_retracted
