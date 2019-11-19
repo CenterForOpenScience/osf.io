@@ -24,8 +24,7 @@ from website.search.util import (quote_query_string, convert_query_string,
                                  NORMALIZED_FIELDS)
 from website.search_migration.migrate import migrate
 
-#ENABLE_DEBUG = False
-ENABLE_DEBUG = True
+ENABLE_DEBUG = False
 
 def build_query(query_string):
     return {
