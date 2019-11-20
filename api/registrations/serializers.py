@@ -28,17 +28,12 @@ from framework.sentry import log_exception
 
 class RegistrationSerializer(NodeSerializer):
     admin_only_editable_fields = [
-        'affiliated_institutions',
-        'article_doi',
         'custom_citation',
-        'description',
         'is_pending_retraction',
         'is_public',
         'license',
         'license_type',
-        'subjects',
         'withdrawal_justification',
-        'category',
     ]
 
     # Remember to add new RegistrationSerializer fields to this list
