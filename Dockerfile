@@ -212,6 +212,8 @@ RUN invoke admin.assets --dev
 ARG GIT_COMMIT=
 ENV GIT_COMMIT ${GIT_COMMIT}
 
+RUN pybabel compile -d ./website/translations
+
 RUN for module in \
         api.base.settings \
         admin.base.settings \
