@@ -85,6 +85,10 @@ class NodesListFilteringMixin(object):
         return '{}filter[parent]='.format(url)
 
     @pytest.fixture()
+    def parent_url_ne(self, url):
+        return '{}filter[parent][ne]=null'.format(url)
+
+    @pytest.fixture()
     def root_url(self, url):
         return '{}filter[root]='.format(url)
 
@@ -108,7 +112,7 @@ class NodesListFilteringMixin(object):
             great_grandchild_node_two,
             root_ne_url, parent_url, root_url,
             contributors_url, parent_project_one,
-            child_project_one
+            child_project_one, parent_url_ne
     ):
 
         #   test_parent_filter_null
@@ -134,6 +138,16 @@ class NodesListFilteringMixin(object):
             '{}{}'.format(
                 parent_url,
                 parent_project._id
+            ),
+            auth=user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert set(expected) == set(actual)
+
+    #   test_parent_filter_ne_null
+        expected = [child_node_one._id, child_node_two._id]
+        res = app.get(
+            '{}'.format(
+                parent_url_ne
             ),
             auth=user.auth)
         actual = [node['id'] for node in res.json['data']]
