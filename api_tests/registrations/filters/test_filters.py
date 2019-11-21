@@ -51,7 +51,7 @@ class RegistrationListFilteringMixin(object):
         assert_equal(set(expected), set(actual))
 
     def test_parent_filter_ne_null(self):
-        expected = []
+        expected = [self.node_C._id]
         res = self.app.get(
             '{}null'.format(
                 self.parent_url_ne),
