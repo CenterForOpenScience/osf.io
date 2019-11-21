@@ -34,7 +34,7 @@ class RegistrationListFilteringMixin(object):
         self.node_B2 = RegistrationFactory(project=self.B2, creator=self.user)
 
         self.parent_url = '{}filter[parent]='.format(self.url)
-        self.parent_url_ne = '{}filter[parent][ne]=null'.format(self.url)
+        self.parent_url_ne = '{}filter[parent][ne]='.format(self.url)
         self.root_url = '{}filter[root]='.format(self.url)
         self.tags_url = '{}filter[tags]='.format(self.url)
         self.contributors_url = '{}filter[contributors]='.format(self.url)
@@ -49,8 +49,10 @@ class RegistrationListFilteringMixin(object):
         assert_equal(set(expected), set(actual))
 
     def test_parent_filter_ne_null(self):
-        expected = list(Registration.objects.exclude(parent_nodes=None).values_list('guids___id', flat=True))
-        res = self.app.get(self.parent_url_ne,
+        expected = [self.node_A._id, self.node_B2._id]
+        res = self.app.get(
+            '{}null'.format(
+                self.parent_url),
             auth=self.user.auth)
         actual = [node['id'] for node in res.json['data']]
         assert_equal(set(expected), set(actual))
