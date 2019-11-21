@@ -3280,33 +3280,33 @@ class TestLogMethods:
     def node(self, parent):
         return NodeFactory(parent=parent)
 
-    def test_get_aggregate_logs_queryset_does_not_recurse(self, parent, node, auth):
+    def test_get_logs_queryset_does_not_recurse(self, parent, node, auth):
         grandchild = NodeFactory(parent=node)
         parent_log = parent.add_log(NodeLog.FILE_ADDED, auth=auth, params={'node': parent._id}, save=True)
         child_log = node.add_log(NodeLog.FILE_ADDED, auth=auth, params={'node': node._id}, save=True)
         grandchild_log = grandchild.add_log(NodeLog.FILE_ADDED, auth=auth, params={'node': grandchild._id}, save=True)
-        logs = parent.get_aggregate_logs_queryset(auth)
+        logs = parent.get_logs_queryset(auth)
         assert parent_log in list(logs)
         assert child_log not in list(logs)
         assert grandchild_log not in list(logs)
 
     # copied from tests/test_models.py#TestNode
-    def test_get_aggregate_logs_queryset_doesnt_return_hidden_logs(self, parent, auth):
-        n_orig_logs = len(parent.get_aggregate_logs_queryset(auth))
+    def test_get_logs_queryset_doesnt_return_hidden_logs(self, parent, auth):
+        n_orig_logs = len(parent.get_logs_queryset(auth))
 
         log = parent.logs.latest()
         log.should_hide = True
         log.save()
 
-        n_new_logs = len(parent.get_aggregate_logs_queryset(auth))
+        n_new_logs = len(parent.get_logs_queryset(auth))
         # Hidden log is not returned
         assert n_new_logs == n_orig_logs - 1
 
     def test_excludes_logs_for_linked_nodes(self, parent):
         pointee = ProjectFactory()
-        n_logs_before = parent.get_aggregate_logs_queryset(auth=Auth(parent.creator)).count()
+        n_logs_before = parent.get_logs_queryset(auth=Auth(parent.creator)).count()
         parent.add_node_link(pointee, auth=Auth(parent.creator))
-        n_logs_after = parent.get_aggregate_logs_queryset(auth=Auth(parent.creator)).count()
+        n_logs_after = parent.get_logs_queryset(auth=Auth(parent.creator)).count()
         # one more log for adding the node link
         assert n_logs_after == n_logs_before + 1
 
@@ -3918,7 +3918,7 @@ class TestRemoveNode:
         assert project.is_deleted
         # parent node should have a log of the event
         assert (
-            parent_project.get_aggregate_logs_queryset(auth)[0].action ==
+            parent_project.get_logs_queryset(auth)[0].action ==
             'node_removed'
         )
 
