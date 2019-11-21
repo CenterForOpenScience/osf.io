@@ -367,9 +367,9 @@ services:
       - /bin/bash
       - -c
       - invoke requirements --all &&
-        (python -m compileall /usr/local/lib/python2.7 || true) &&
+        (python -m compileall /usr/lib/python2.7 || true) &&
         rm -Rf /python2.7/* &&
-        cp -Rf -p /usr/local/lib/python2.7 /
+        cp -Rf -p /usr/lib/python2.7 /
     restart: 'no'
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
@@ -383,9 +383,10 @@ services:
     restart: unless-stopped
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
+      LANG: en_US.UTF-8
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
@@ -396,9 +397,10 @@ services:
     restart: unless-stopped
     environment:
       DJANGO_SETTINGS_MODULE: admin.base.settings
+      LANG: en_US.UTF-8
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/lib/python2.7
       - osf_node_modules_vol:/code/node_modules  # needed due to admin references of ../webpack.<...>.js configurations.
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
@@ -450,7 +452,7 @@ services:
       - .docker-compose.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
 #      - ./ssl/ca-chain.cert.pem:/etc/ssl/certs/ca-chain.cert.pem:ro
@@ -475,7 +477,7 @@ services:
     stdin_open: true
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
@@ -497,7 +499,7 @@ services:
       - .docker-compose.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
@@ -519,7 +521,7 @@ services:
       - .docker-compose.sharejs.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - ember_osf_web_dist_vol:/ember_osf_web

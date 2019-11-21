@@ -106,6 +106,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     is_deleted = False
     deleted_on = NonNaiveDateTimeField(blank=True, null=True)
+    deleted = NonNaiveDateTimeField(blank=True, null=True)
     deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True, on_delete=models.CASCADE)
 
     objects = BaseFileNodeManager()
@@ -351,11 +352,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         """Assembles a string to retrieve the correct file data from the pagecounter collection,
         then calls get_basic_counters to retrieve the total count. Limit to version if specified.
         """
-        parts = [count_type, self.target._id, self._id]
-        if version is not None:
-            parts.append(version)
-        page = ':'.join([format(part) for part in parts])
-        _, count = get_basic_counters(page)
+        _, count = get_basic_counters(self.target.guids.first(), self, version=version, action=count_type)
 
         return count or 0
 
@@ -422,14 +419,20 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         :param deleted_on:
         :return:
         """
-        self.deleted_by = user
-        self.deleted_on = deleted_on = deleted_on or timezone.now()
+        deleted = deleted_on
+        if not self.is_root:
+            self.deleted_by = user
+            self.deleted = deleted_on or timezone.now()
+            deleted = self.deleted
+            # This will need to be removed
+            self.deleted_on = deleted
 
         if not self.is_file:
-            self.recast(TrashedFolder._typedmodels_type)
+            if not self.is_root:
+                self.recast(TrashedFolder._typedmodels_type)
 
             for child in BaseFileNode.objects.filter(parent=self.id).exclude(type__in=TrashedFileNode._typedmodels_subtypes):
-                child.delete(user=user, save=save, deleted_on=deleted_on)
+                child.delete(user=user, save=save, deleted_on=deleted)
         else:
             self.recast(TrashedFile._typedmodels_type)
 

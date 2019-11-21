@@ -351,10 +351,12 @@ class UserFormView(PermissionRequiredMixin, FormView):
         if guid or email:
             if email:
                 try:
-                    user = OSFUser.objects.filter(Q(username=email) | Q(emails__address=email)).get()
+                    user = OSFUser.objects.filter(Q(username=email) | Q(emails__address=email)).distinct('id').get()
                     guid = user.guids.first()._id
                 except OSFUser.DoesNotExist:
                     return page_not_found(self.request, AttributeError('User with email address {} not found.'.format(email)))
+                except OSFUser.MultipleObjectsReturned:
+                    return page_not_found(self.request, AttributeError('Multiple users with email address {} found, please notify DevOps.'.format(email)))
             self.redirect_url = reverse('users:user', kwargs={'guid': guid})
         elif name:
             self.redirect_url = reverse('users:search_list', kwargs={'name': name})

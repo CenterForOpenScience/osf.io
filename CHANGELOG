@@ -2,6 +2,24 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.31.0 (2019-11-7)
+===================
+- EGAP: Parse project structure, add contributors, add files, ingest the draft registration, and add a Jupyter notebook
+- Modify a Chronos field for proper contributor classification
+
+19.30.0 (2019-10-16)
+===================
+- Fix weirdness around deleted nodes by not deleing OSF Storage
+- Make deleted fields on models and addons into date fields
+- API v2: Chronos users can have more name options
+- Python 3 backwards compatibility changes
+
+19.29.0 (2019-10-02)
+===================
+- Use new pagecounter fields for increased query efficiency
+- Allow meetings to be sorted on download count
+- Remove old permissions fields now that we have Guardian
+
 19.28.0 (2019-09-24)
 ===================
 - API v2: Use consistent naming for JSON API type (kebab-case)

@@ -32,11 +32,6 @@ class AbstractBaseContributor(models.Model):
 
 
 class Contributor(AbstractBaseContributor):
-    # TO BE DELETED (read/write/admin fields)
-    read = models.BooleanField(default=False)
-    write = models.BooleanField(default=False)
-    admin = models.BooleanField(default=False)
-
     node = models.ForeignKey('AbstractNode', on_delete=models.CASCADE)
 
     @property
@@ -69,11 +64,6 @@ class PreprintContributor(AbstractBaseContributor):
 
 
 class InstitutionalContributor(AbstractBaseContributor):
-    # TO BE DELETED (read/write/admin fields)
-    read = models.BooleanField(default=False)
-    write = models.BooleanField(default=False)
-    admin = models.BooleanField(default=False)
-
     institution = models.ForeignKey('Institution', on_delete=models.CASCADE)
 
     class Meta:
