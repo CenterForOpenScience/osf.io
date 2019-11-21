@@ -144,7 +144,8 @@ class NodesListFilteringMixin(object):
         assert set(expected) == set(actual)
 
     #   test_parent_filter_ne_null
-        expected = [child_node_two._id, grandchild_node_one, grandchild_node_two, great_grandchild_node_two, child_project_one]
+        expected = [child_node_two._id, grandchild_node_one._id, grandchild_node_two,
+            great_grandchild_node_two._id, child_project_one._id]
         res = app.get(
             '{}'.format(
                 parent_url_ne
