@@ -96,7 +96,7 @@ class InstitutionAuthentication(BaseAuthentication):
 
         USE_EPPN = login_by_eppn()
 
-        #logger.info('---InstitutionAuthentication.authenticate.user:{}'.format(provider))
+        logger.info('---InstitutionAuthentication.authenticate.user:{}'.format(provider))
 
         username = provider['user'].get('username')
         fullname = provider['user'].get('fullname')
