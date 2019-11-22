@@ -654,14 +654,14 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             id=private_registration._id,
             attributes={'description': 'Updated description'}
         )
-        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth)
         assert res.status_code == 200
 
         payload = make_payload(
             id=private_registration._id,
             attributes={'title': 'Updated title'}
         )
-        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth)
         assert res.status_code == 200
 
         #  test_read_write_contributor_cannot_update_category
@@ -669,7 +669,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             id=private_registration._id,
             attributes={'category': 'instrumentation'}
         )
-        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth)
         assert res.status_code == 200
 
         #  test_read_write_contributor_cannot_update_article_doi
@@ -677,7 +677,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             id=private_registration._id,
             attributes={'article_doi': '10.123/456/789'}
         )
-        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth)
         assert res.status_code == 200
 
         #  test_read_write_contributor_cannot_update_affiliated_institution
@@ -692,7 +692,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             }
         }
         del payload['data']['attributes']  # just check permissions on institutions relationship
-        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth)
         assert res.status_code == 200
 
 
