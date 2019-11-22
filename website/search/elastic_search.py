@@ -961,6 +961,7 @@ def create_index(index=None):
             mapping = {
                 'properties': {
                     'tags': NOT_ANALYZED_PROPERTY,
+                    'normalized_tags': NOT_ANALYZED_PROPERTY,
                     'license': {
                         'properties': {
                             'id': NOT_ANALYZED_PROPERTY,

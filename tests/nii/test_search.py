@@ -147,6 +147,8 @@ def setup(cls, self):
     import website.search.search as search
     search.delete_all()
 
+    search.create_index(None)
+
     with run_celery_tasks():
         self.user1 = factories.AuthUserFactory(fullname='日本語ユーザー1')
         self.user2 = factories.AuthUserFactory(fullname='日本語ユーザー2')
@@ -246,7 +248,7 @@ def query_search_contributor(self, qs, user):
     DEBUG('query_search_contributor', res)
     return res, res.json.get('users')
 
-# see osf_tests/test_search_view.py
+# see osf_tests/test_search_views.py
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
 class TestPrivateSearch(OsfTestCase):
@@ -386,9 +388,9 @@ class TestPrivateSearch(OsfTestCase):
     def test_tags(self):
         """
         タグを検索できることを確認する。
-        AND 式も使用して、タグ名に含まれる文字をさらに限定している。
+        tagsフィールド全体に完全一致する必要がある。
         """
-        qs = 'tags:("日本語") AND タグ'
+        qs = 'tags:("日本語タグ")'
         res, results = query_private_search(self, qs, self.user1)
         user_fullnames = get_user_fullnames(results)
         node_titles = get_node_titles(results)
@@ -409,6 +411,34 @@ class TestPrivateSearch(OsfTestCase):
         assert_equal(len(contributors), 1)
         assert_equal(len(tags), 3)
         assert_equal(len(filenames), 0)
+
+    @enable_private_search
+    def test_tags_no_match(self):
+        """
+        タグを部分一致で検索できないことを確認する。
+        """
+        qs = 'tags:日本語'
+        res, results = query_private_search(self, qs, self.user1)
+        user_fullnames = get_user_fullnames(results)
+        node_titles = get_node_titles(results)
+        contributors = get_contributors(results, self.project_private_user1_1.title)
+        tags = get_tags(results, self.project_private_user1_1.title)
+        filenames = get_filenames(results)
+
+        DEBUG('results', results)
+        DEBUG('user_fullnames', user_fullnames)
+        DEBUG('node_titles', node_titles)
+        DEBUG('contributors', contributors)
+        DEBUG('tags', tags)
+        DEBUG('filenames', filenames)
+
+        assert_equal(len(results), 0)
+        assert_equal(len(user_fullnames), 0)
+        assert_equal(len(node_titles), 0)
+        assert_equal(len(contributors), 0)
+        assert_equal(len(tags), 0)
+        assert_equal(len(filenames), 0)
+
 
     @enable_private_search
     def test_file(self):
