@@ -243,11 +243,13 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         assert_true(self.registration.is_pending_registration)
 
     def test_should_suppress_emails(self):
-        test_external_registered_date = datetime.datetime.now() - datetime.timedelta(days=10)
-        self.registration = RegistrationFactory(project=self.project, external_registered_date=test_external_registered_date)
+        self.registration = RegistrationFactory(project=self.project)
+        self.registration.external_registration = True
+        self.registration.save()
+
         contributors = self.project.get_active_contributors_recursive(unique_users=True)
 
-        assert_true(self.registration.external_registered_date)
+        assert_true(self.registration.external_registration)
         assert_true(self.registration.registration_approval.should_suppress_emails)
 
         # Tests email suppression for on_complete_notify_initiator

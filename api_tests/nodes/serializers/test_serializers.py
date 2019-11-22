@@ -1,4 +1,4 @@
-import datetime
+from dateutil.parser import parse as parse_date
 import pytest
 from future.moves.urllib.parse import urlparse
 
@@ -161,7 +161,7 @@ class TestNodeRegistrationSerializer:
         # Attributes
         attributes = data['attributes']
         assert_datetime_equal(
-            attributes['date_registered'],
+            parse_date(attributes['date_registered']),
             registration.registered_date
         )
         assert attributes['withdrawn'] == registration.is_retracted
@@ -190,19 +190,6 @@ class TestNodeRegistrationSerializer:
                 assert api_registrations_url in relationship_urls[relationship], 'For key {}'.format(
                     relationship)
 
-    def test_serialization_with_external_registered_date(self):
-        external_registered_date = datetime.datetime.now() - datetime.timedelta(days=10)
-        versioned_request = make_drf_request_with_version(version='2.2')
-        registration = RegistrationFactory(external_registered_date=external_registered_date)
-        result = RegistrationSerializer(
-            registration, context={
-                'request': versioned_request}).data
-        data = result['data']
-        attributes = data['attributes']
-        assert_datetime_equal(
-            attributes['date_registered'],
-            registration.external_registered_date
-        )
 
 @pytest.mark.django_db
 class TestSparseRegistrationSerializer:

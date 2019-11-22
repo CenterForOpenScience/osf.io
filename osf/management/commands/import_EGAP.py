@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime as dt
+import pytz
 import logging
 
 import re
@@ -58,18 +59,23 @@ def get_creator_auth_header(creator_username):
     return creator, {'Authorization': 'Bearer {}'.format(token.token_id)}
 
 
-def create_node_from_project_json(egap_assets_path, epag_project_dir, creator):
-    with open(os.path.join(egap_assets_path, epag_project_dir, 'project.json'), 'r') as fp:
+def create_node_from_project_json(egap_assets_path, egap_project_dir, creator):
+    with open(os.path.join(egap_assets_path, egap_project_dir, 'project.json'), 'r') as fp:
         project_data = json.load(fp)
         title = project_data['title']
         node = Node(title=title, creator=creator)
         node.save()  # must save before adding contribs for auth reasons
 
         for contributor in project_data['contributors']:
+            email = ''
+            if contributor.get('email'):
+                email = contributor.get('email').strip()
+                email = email.split('\\u00a0')[0]
+
             node.add_contributor_registered_or_not(
                 Auth(creator),
                 full_name=contributor['name'],
-                email=contributor['email'],
+                email=email,
                 permissions=WRITE,
                 send_email='false'
             )
@@ -77,6 +83,22 @@ def create_node_from_project_json(egap_assets_path, epag_project_dir, creator):
         node.set_visible(creator, visible=False, log=False, save=True)
 
     return node
+
+
+def rollback_node_from_project_json(egap_assets_path, egap_project_dir, creator):
+    with open(os.path.join(egap_assets_path, egap_project_dir, 'project.json'), 'r') as fp:
+        project_data = json.load(fp)
+        title = project_data['title']
+        try:
+            node = Node.objects.filter(title=title, creator=creator).get()
+        except Exception:
+            logger.error(
+                'Attempted rollback on Node titled {}. Node was not created.'.format(title)
+            )
+            return
+        node.delete()
+
+    return
 
 
 def recursive_upload(auth, node, dir_path, parent='', metadata=list()):
@@ -135,7 +157,8 @@ def get_egap_assets(guid, creator_auth):
 
 def register_silently(draft_registration, auth, sanction_type, external_registered_date, embargo_end_date):
     registration = draft_registration.register(auth, save=True)
-    registration.external_registered_date = external_registered_date
+    registration.external_registration = True
+    registration.registered_date = external_registered_date
 
     if sanction_type == 'Embargo':
         registration.embargo_registration(auth.user, embargo_end_date)
@@ -153,19 +176,37 @@ def main(guid, creator_username):
     # __MACOSX is a hidden file created by the os when zipping
     directory_list = [directory for directory in os.listdir(egap_assets_path) if directory not in ('egap_assets.zip', '__MACOSX') and not directory.startswith('.')]
 
-    for epag_project_dir in directory_list:
-        node = create_node_from_project_json(egap_assets_path, epag_project_dir, creator=creator)
+    for egap_project_dir in directory_list:
+        logger.info(
+            'Attempting to import the follow directory: {}'.format(egap_project_dir)
+        )
+        # Node Creation
+        try:
+            node = create_node_from_project_json(egap_assets_path, egap_project_dir, creator=creator)
+        except Exception as err:
+            logger.error(
+                'There was an error attempting to create a node from the '
+                '{} directory. Attempting to rollback node and contributor creation'.format(egap_project_dir)
+            )
+            logger.error(str(err))
+            try:
+                rollback_node_from_project_json(egap_assets_path, egap_project_dir, creator=creator)
+            except Exception as err:
+                logger.error(str(err))
+            continue
 
-        non_anon_files = os.path.join(egap_assets_path, epag_project_dir, 'data', 'nonanonymous')
+        # Node File Upload
+        non_anon_files = os.path.join(egap_assets_path, egap_project_dir, 'data', 'nonanonymous')
         non_anon_metadata = recursive_upload(creator_auth, node, non_anon_files)
 
-        anon_files = os.path.join(egap_assets_path, epag_project_dir, 'data', 'anonymous')
+        anon_files = os.path.join(egap_assets_path, egap_project_dir, 'data', 'anonymous')
         if os.path.isdir(anon_files):
             anon_metadata = recursive_upload(creator_auth, node, anon_files)
         else:
             anon_metadata = {}
 
-        with open(os.path.join(egap_assets_path, epag_project_dir, 'registration-schema.json'), 'r') as fp:
+        # DraftRegistration Metadata Handling
+        with open(os.path.join(egap_assets_path, egap_project_dir, 'registration-schema.json'), 'r') as fp:
             registration_metadata = json.load(fp)
 
         # add selectedFileName Just so filenames are listed in the UI
@@ -181,60 +222,65 @@ def main(guid, creator_username):
         anon_titles = ', '.join([data['data']['attributes']['name'] for data in anon_metadata])
         registration_metadata['q38'] = {'comments': [], 'extra': anon_metadata, 'value': anon_titles}
 
-        DraftRegistration.create_from_node(
+        # DraftRegistration Creation
+        draft_registration = DraftRegistration.create_from_node(
             node,
             user=creator,
             schema=egap_schema,
             data=registration_metadata,
         )
 
-    shutil.rmtree(egap_assets_path)
-
-    # Retrieve all EGAP Draft Registrations
-    egap_draft_registrations = DraftRegistration.objects.filter(registration_schema__name='EGAP Registration')
-
-    for draft_registration in egap_draft_registrations:
-        project = draft_registration.branched_from
-        draft_registration_metadata = draft_registration.registration_metadata
+        # Registration Creation
+        logger.info(
+            'Attempting to create a Registration for Project {}'.format(node._id)
+        )
 
         # Retrieve EGAP registration date and potential embargo go-public date
-        if draft_registration_metadata.get('q4'):
-            egap_registration_date_string = draft_registration_metadata['q4']['value']
-            egap_registration_date = dt.strptime(egap_registration_date_string, '%m/%d/%Y')
+        if registration_metadata.get('q4'):
+            egap_registration_date_string = registration_metadata['q4']['value']
+            egap_registration_date = dt.strptime(egap_registration_date_string, '%m/%d/%Y - %H:%M').replace(tzinfo=pytz.UTC)
         else:
             logger.error(
-                'DraftRegistration associated with Project {}'
-                'does not have a valid registration date in registration_metadata'.format(project._id)
+                'DraftRegistration associated with Project {} '
+                'does not have a valid registration date in registration_metadata'.format(node._id)
             )
             continue
 
-        if draft_registration_metadata.get('q12'):
-            egap_embargo_public_date_string = draft_registration_metadata['q12']['value']
-            egap_embargo_public_date = dt.strptime(egap_embargo_public_date_string, '%m/%d/%Y')
+        if registration_metadata.get('q12'):
+            if bool(registration_metadata['q12'].get('value')):
+                egap_embargo_public_date_string = registration_metadata['q12']['value']
+                egap_embargo_public_date = dt.strptime(egap_embargo_public_date_string, '%m/%d/%y').replace(tzinfo=pytz.UTC)
+            else:
+                egap_embargo_public_date = None
         else:
             egap_embargo_public_date = None
 
         sanction_type = 'RegistrationApproval'
-        if egap_embargo_public_date and (egap_embargo_public_date > dt.today()):
+        if egap_embargo_public_date and (egap_embargo_public_date > dt.today().replace(tzinfo=pytz.UTC)):
             sanction_type = 'Embargo'
 
+        logger.info(
+            'Beginning atomic transaction to register {}'.format(node._id)
+        )
         try:
             with transaction.atomic():
                 register_silently(draft_registration, Auth(creator), sanction_type, egap_registration_date, egap_embargo_public_date)
         except Exception as err:
             logger.error(
-                'Unexpected error raised when attempting to silently register'
-                'project {}. Continuing...'.format(project._id))
+                'Unexpected error raised when attempting to silently register '
+                'project {}. Continuing...'.format(node._id))
             logger.info(str(err))
             continue
 
         # Update contributors on project to Admin
-        contributors = project.contributor_set.all()
+        contributors = node.contributor_set.all()
         for contributor in contributors:
             if contributor.user == creator:
                 pass
             else:
-                project.update_contributor(contributor.user, permission=ADMIN, visible=True, auth=Auth(creator), save=True)
+                node.update_contributor(contributor.user, permission=ADMIN, visible=True, auth=Auth(creator), save=True)
+
+    shutil.rmtree(egap_assets_path)
 
 
 class Command(BaseCommand):
