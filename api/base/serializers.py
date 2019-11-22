@@ -988,7 +988,7 @@ class TargetField(ser.Field):
                 self.link_type: {
                     'href': obj.get_absolute_url(),
                     'meta': meta,
-                }
+                },
             },
             'data': {
                 'type': meta['type'],
