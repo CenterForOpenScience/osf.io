@@ -33,20 +33,18 @@ def get_registration_schema(registration_or_draft):
         schema = registration_or_draft.registered_schema.first()
     return schema
 
-def migrate_registrations(dry_run, rows='all', AbstractNodeModel=None):
+def migrate_registrations(dry_run, rows='all', RegistrationModel=None):
     """
     Loops through registrations whose registration_responses have not been migrated,
     and pulls this information from the "registered_meta" and flattens it, with
     keys being the "registration_response_key"s and values being the most deeply
     nested user response in registered_meta
     """
-    if AbstractNodeModel is None:
-        AbstractNodeModel = apps.get_model('osf.AbstractNode')
+    if RegistrationModel is None:
+        RegistrationModel = apps.get_model('osf.Registration')
 
-    registrations = AbstractNodeModel.objects.exclude(
+    registrations = RegistrationModel.objects.exclude(
         registration_responses_migrated=True,
-    ).filter(
-        type='osf.registration'
     )
     return migrate_responses(registrations, 'registrations', dry_run, rows)
 
@@ -110,6 +108,8 @@ def migrate_responses(resources, resource_name, dry_run=False, rows='all'):
     logger.info('Successfully migrated {} out of {} {}.'.format(success_count, total_count, resource_name))
     if error_count:
         logger.warn('Encountered errors on {} out of {} {}.'.format(error_count, total_count, resource_name))
+        if not success_count:
+            sentry.log_message('`migrate_registration_responses` has only errors left ({} errors)'.format(error_count))
 
     if dry_run:
         logger.info('DRY RUN; discarding changes.')

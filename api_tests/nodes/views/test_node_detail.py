@@ -64,7 +64,7 @@ class TestNodeDetail:
     @pytest.fixture()
     def wiki_private(self, user, project_private):
         with mock.patch('osf.models.AbstractNode.update_search'):
-            wiki_page = WikiFactory(node=project_private, user=user)
+            wiki_page = WikiFactory(page_name='foo', node=project_private, user=user)
             WikiVersionFactory(wiki_page=wiki_page)
         return wiki_page
 

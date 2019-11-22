@@ -45,7 +45,7 @@ def migrate_registration_registered_meta(state, schema):
     migrate_registrations(
         dry_run=False,
         rows='all',
-        AbstractNodeModel=state.get_model('osf', 'abstractnode')
+        RegistrationModel=state.get_model('osf', 'registration')
     )
 
 class Migration(migrations.Migration):
