@@ -20,6 +20,7 @@ from osf.models import (
     DraftRegistration,
     OSFUser
 )
+from osf.models.nodelog import NodeLog
 from website.project.metadata.schemas import ensure_schema_structure, from_json
 from website.settings import WATERBUTLER_INTERNAL_URL
 from framework.auth.core import Auth
@@ -159,6 +160,23 @@ def register_silently(draft_registration, auth, sanction_type, external_register
     registration = draft_registration.register(auth, save=True)
     registration.external_registration = True
     registration.registered_date = external_registered_date
+
+    registration.registered_from.add_log(
+        action=NodeLog.EXTERNAL_REGISTRATION_CREATED,
+        params={
+            'node': registration.registered_from._id,
+            'registration': registration._id
+        },
+        auth=auth,
+        log_date=external_registered_date)
+    registration.registered_from.add_log(
+        action=NodeLog.EXTERNAL_REGISTRATION_IMPORTED,
+        params={
+            'node': registration.registered_from._id,
+            'registration': registration._id
+        },
+        auth=auth,
+        log_date=dt.now().replace(tzinfo=pytz.utc))
 
     if sanction_type == 'Embargo':
         registration.embargo_registration(auth.user, embargo_end_date)
