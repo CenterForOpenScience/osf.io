@@ -628,6 +628,9 @@ class IQBRIMSFlowableClient(BaseClient):
                         if 'accepted_date' in status else ''
         accepted_datetime = status['accepted_date'] \
                             if 'accepted_date' in status else ''
+        has_paper = status['has_paper'] if 'has_paper' in status else True
+        has_raw = status['has_raw'] if 'has_raw' in status else True
+        has_checklist = status['has_checklist'] if 'has_checklist' in status else True
         payload = {'processDefinitionId': self.app_id,
                    'variables': [{'name': 'projectId',
                                   'type': 'string',
@@ -652,6 +655,15 @@ class IQBRIMSFlowableClient(BaseClient):
                                  {'name': 'acceptedDateTime',
                                   'type': 'string',
                                   'value': accepted_datetime},
+                                 {'name': 'hasPaper',
+                                  'type': 'boolean',
+                                  'value': has_paper},
+                                 {'name': 'hasRaw',
+                                  'type': 'boolean',
+                                  'value': has_raw},
+                                 {'name': 'hasChecklist',
+                                  'type': 'boolean',
+                                  'value': has_checklist},
                                  {'name': 'flowableWorkflowUrl',
                                   'type': 'string',
                                   'value': settings.FLOWABLE_TASK_URL},
