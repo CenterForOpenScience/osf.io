@@ -263,10 +263,14 @@ def iqbrims_get_storage(**kwargs):
                   urllib.quote(f['title'].encode('utf8'))
             management_urls.append({'title': f['title'], 'url': url})
     logger.info('Urls: node={}, management={}'.format(node_urls, management_urls))
+    status = iqbrims.get_status()
+    comment_key = folder + '_comment'
+    comment = status[comment_key] if comment_key in status else ''
 
     return {'status': 'complete' if len(files) > 0 else 'processing',
             'root_folder': root_folder_path,
             'urls': node_urls,
+            'comment': comment,
             'management': {'id': management_node._id,
                            'urls': management_urls}}
 
