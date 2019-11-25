@@ -369,7 +369,6 @@ class RegistrationFactory(BaseNodeFactory):
         if project:
             user = project.creator
         user = kwargs.pop('user', None) or kwargs.get('creator') or user or UserFactory()
-        external_registered_date = kwargs.pop('external_registered_date', None)
         kwargs['creator'] = user
         provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
         # Original project to be registered
@@ -419,8 +418,6 @@ class RegistrationFactory(BaseNodeFactory):
                 reg.sanction.save()
         if is_public:
             reg.is_public = True
-        if external_registered_date:
-            reg.external_registered_date = external_registered_date
         reg.files_count = reg.registered_from.files.filter(deleted_on__isnull=True).count()
         reg.save()
         return reg

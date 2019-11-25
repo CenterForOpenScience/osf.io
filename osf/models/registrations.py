@@ -42,7 +42,10 @@ class Registration(AbstractNode):
     ]
     provider = models.ForeignKey('RegistrationProvider', related_name='registrations', null=True)
     registered_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
-    external_registered_date = NonNaiveDateTimeField(null=True, blank=True)
+
+    # This is a NullBooleanField because of inheritance issues with using a BooleanField
+    # TODO: Update to BooleanField(default=False, null=True) when Django is updated to >=2.1
+    external_registration = models.NullBooleanField(default=False)
     registered_user = models.ForeignKey(OSFUser,
                                         related_name='related_to',
                                         on_delete=models.SET_NULL,

@@ -9,7 +9,7 @@ import osf.utils.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0190_auto_20191021_1849'),
+        ('osf', '0189_deleted_field_data'),
     ]
 
     operations = [

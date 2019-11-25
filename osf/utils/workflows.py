@@ -9,7 +9,7 @@ from enum import unique
 class ChoiceEnum(Enum):
     @classmethod
     def choices(cls):
-        return tuple((v, str(v).title()) for v in cls.values() if v is not None)
+        return tuple((v, str(v).title()) for v in cls.values())
 
     @classmethod
     def values(cls):
