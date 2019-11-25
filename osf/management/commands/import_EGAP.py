@@ -102,7 +102,11 @@ def rollback_node_from_project_json(egap_assets_path, egap_project_dir, creator)
     return
 
 
-def recursive_upload(auth, node, dir_path, parent='', metadata=list()):
+def recursive_upload(auth, node, dir_path, parent='', metadata=None):
+
+    if metadata is None:
+        metadata = []
+
     try:
         for item in os.listdir(dir_path):
             item_path = os.path.join(dir_path, item)
