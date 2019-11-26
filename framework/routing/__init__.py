@@ -32,6 +32,7 @@ _TPL_LOOKUP = TemplateLookup(
     ],
     imports=[
         'from flask_babel import gettext as _',
+        'from markupsafe import escape as h',
     ],
     directories=[
         TEMPLATE_DIR,
@@ -49,6 +50,7 @@ _TPL_LOOKUP_SAFE = TemplateLookup(
     imports=[
         'from website.util.sanitize import temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
         'from flask_babel import gettext as _',
+        'from markupsafe import escape as h',
     ],
     directories=[
         TEMPLATE_DIR,
