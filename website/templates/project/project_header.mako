@@ -126,7 +126,7 @@
             % if not node['is_pending_registration']:
                 % if file_name and urls.get('archived_from'):
                         <div class="alert alert-info">${ _("This file is part of a registration and is being shown in its archived version (and cannot be altered).")}
-                            _{("The <a %(archived_from_url)s>active file</a> is viewable from within the <a %(registered_from_url)s>live%(node_type)s</a>.") % dict(archived_from_url='class="link-solid" href="' + urls['archived_from'] +'"',registered_from_url='class="link-solid" href="' + node['registered_from_url'] + '"',node_type=node['node_type'] )}</div>
+                            ${_("The <a %(archived_from_url)s>active file</a> is viewable from within the <a %(registered_from_url)s>live%(node_type)s</a>.") % dict(archived_from_url='class="link-solid" href="' + urls['archived_from'] +'"',registered_from_url='class="link-solid" href="' + node['registered_from_url'] + '"',node_type=node['node_type'] ) | n}</div>
                 % else:
                     <div class="alert alert-info">${ _('This registration is a frozen, non-editable version of <a class="link-solid" href="%(registeredfromurl)s">this %(nodetype)s</a>',registeredfromurl=node['registered_from_url'],nodetype=node['node_type']) }</div>
                 % endif
