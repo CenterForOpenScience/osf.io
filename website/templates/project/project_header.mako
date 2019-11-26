@@ -126,19 +126,19 @@
             % if not node['is_pending_registration']:
                 % if file_name and urls.get('archived_from'):
                         <div class="alert alert-info">This file is part of a registration and is being shown in its archived version (and cannot be altered).
-                            ${_("The <a %(archived_from_url)s>active file</a> is viewable from within the <a %(registered_from_url)s>live%(node_type)s</a>.") % dict(archived_from_url='class="link-solid" href="' + urls['archived_from'] +'"',registered_from_url='class="link-solid" href="' + node['registered_from_url'] + '"',node_type=node['node_type'] ) | n}</div>
+                            The <a class="link-solid" href="${urls['archived_from']}">active file</a> is viewable from within the <a class="link-solid" href="${node['registered_from_url']}">live ${node['node_type']}</a>.</div>
                 % else:
-                    <div class="alert alert-info">${ _('This registration is a frozen, non-editable version of <a class="link-solid" href="%(registeredfromurl)s">this %(nodetype)s</a>',registeredfromurl=node['registered_from_url'],nodetype=node['node_type']) }</div>
+                    <div class="alert alert-info">This registration is a frozen, non-editable version of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a></div>
                 % endif
             % else:
                 <div class="alert alert-info">
-                    <div>${ _('This is a pending registration of <a %(registered_from_url)s>this %(node_type)s</a>, awaiting approval from project administrators. This registration will be final when all project administrators approve the registration or 48 hours pass, whichever comes first.') % dict(registered_from_url='class="link-solid" href="' + h(node['registered_from_url']) + '"', node_type=h(node['node_type'])) | n }</div>
+                    <div>This is a pending registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>, awaiting approval from project administrators. This registration will be final when all project administrators approve the registration or 48 hours pass, whichever comes first.</div>
 
                     % if 'permissions.ADMIN' in user['permissions']:
                         <div>
                             <br>
                             <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
-                                ${ _("Cancel registration") }
+                                Cancel registration
                             </button>
                         </div>
                         <%include file="modal_confirm_cancel_registration.mako"/>
@@ -156,21 +156,21 @@
         % endif
 
         % if node['is_pending_retraction']:
-            <div class="alert alert-info">${ _("This %(nodetype)s is currently pending withdrawal.") % dict(nodetype=node['node_type']) }</div>
+            <div class="alert alert-info">This ${node['node_type']} is currently pending withdrawal.</div>
         % endif
 
         % if node['is_retracted']:
-            <div class="alert alert-danger">${ _('This %(nodetype)s is a withdrawn registration of <a class="link-solid" href="%(registeredfromurl)s">this %(nodetype)s</a>; the content of the %(nodetype)s has been taken down for the reason(s) stated below.') % dict(nodetype=node['node_type'],registeredfromurl=node['registered_from_url']) | n }</div>
+            <div class="alert alert-danger">This ${node['node_type']} is a withdrawn registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been taken down for the reason(s) stated below.</div>
         % endif
 
         % if node['is_pending_embargo']:
             <div
-                class="alert alert-info">${ _('This %(nodetype)s is currently pending registration, awaiting approval from project administrators. This registration will be final and enter the embargo period when all project administrators approve the registration or 48 hours pass, whichever comes first. The embargo will keep the registration private until the embargo period ends.',nodetype=node['node_type']) }
+                class="alert alert-info">This ${node['node_type']} is currently pending registration, awaiting approval from project administrators. This registration will be final and enter the embargo period when all project administrators approve the registration or 48 hours pass, whichever comes first. The embargo will keep the registration private until the embargo period ends.
                 % if permissions.ADMIN in user['permissions']:
                         <div>
                             <br>
                             <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
-                                ${ _("Cancel registration") }
+                                Cancel registration
                             </button>
                         </div>
                         <%include file="modal_confirm_cancel_registration.mako"/>
@@ -179,25 +179,25 @@
         % endif
 
         % if node['is_embargoed']:
-            <div class="alert alert-danger">${ _('This registration is currently embargoed. It will remain private until its embargo end date, %(embargoenddate)s.') % dict(embargoenddate=node['embargo_end_date']) }</div>
+            <div class="alert alert-danger">This registration is currently embargoed. It will remain private until its embargo end date, ${ node['embargo_end_date'] }.</div>
         % endif
 
     % endif  ## End registration undismissable labels
 
     % if node['is_supplemental_project'] and user['is_contributor_or_group_member'] and not node['is_public']:
-        <div class="alert alert-info">${ _('This %(nodetype)s contains supplemental materials for a preprint, but has been made Private. Make your supplemental materials discoverable by making this %(nodetype)s Public.') % dict(nodetype=node['node_type']) }</div>
+        <div class="alert alert-info">This ${node['node_type']} contains supplemental materials for a preprint, but has been made Private. Make your supplemental materials discoverable by making this ${node['node_type']} Public.</div>
     % endif
 
     % if node['anonymous'] and user['is_contributor_or_group_member']:
-        <div class="alert alert-info">${ _('This %(nodetype)s is being viewed through an anonymized, view-only link. If you want to view it as a contributor, click <a class="link-solid" href="%(redirecturl)s">here</a>.') % dict(nodetype=node['node_type'],redirecturl=node['redirect_url']) }</div>
+        <div class="alert alert-info">This ${node['node_type']} is being viewed through an anonymized, view-only link. If you want to view it as a contributor, click <a class="link-solid" href="${node['redirect_url']}">here</a>.</div>
     % endif
 
     % if node['link'] and not node['is_public'] and not user['is_contributor_or_group_member']:
-        <div class="alert alert-info">${ _('This %(nodetype)s is being viewed through a private, view-only link. Anyone with the link can view this project. Keep the link safe.') % dict(nodetype=node['node_type']) }</div>
+        <div class="alert alert-info">This ${node['node_type']} is being viewed through a private, view-only link. Anyone with the link can view this project. Keep the link safe.</div>
     % endif
 
     % if disk_saving_mode:
-        <div class="alert alert-info">${ _("<strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the GakuNin RDM undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.") | n }</div>
+        <div class="alert alert-info"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the GakuNin RDM undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
     % endif
 
 </div>
