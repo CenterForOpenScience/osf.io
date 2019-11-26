@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-11-21 15:02+0900\n"
-"PO-Revision-Date: 2019-11-21 15:02+0900\n"
+"POT-Creation-Date: 2019-11-26 18:35+0900\n"
+"PO-Revision-Date: 2019-11-26 18:35+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -16,9 +16,147 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.5.1\n"
+"Generated-By: Babel 2.7.0\n"
 
 #: templates/search.mako:96
 msgid "Type your search terms in the box above."
-msgstr "検索文字列を入力してください"
+msgstr ""
+
+#: templates/project/project_header.mako:16
+msgid "Project"
+msgstr "プロジェクト"
+
+#: templates/project/project_header.mako:16
+msgid "Component"
+msgstr "コンポーネント"
+
+#: templates/project/project_header.mako:16
+msgid "Navigation"
+msgstr "ナビゲーション"
+
+#: templates/project/project_header.mako:40
+msgid "Files"
+msgstr "ファイル"
+
+#: templates/project/project_header.mako:61
+msgid "Analytics"
+msgstr "分析"
+
+#: templates/project/project_header.mako:67
+msgid "Registrations"
+msgstr "登録"
+
+#: templates/project/project_header.mako:72
+msgid "Contributors"
+msgstr "コントリビュータ"
+
+#: templates/project/project_header.mako:76
+msgid "Add-ons"
+msgstr "アドオン"
+
+#: templates/project/project_header.mako:80
+msgid "Settings"
+msgstr "設定"
+
+#: templates/project/project_header.mako:86
+msgid "Comments"
+msgstr "コメント"
+
+#: templates/project/project_header.mako:96
+msgid "Timestamp"
+msgstr "タイムスタンプ"
+
+#: templates/project/project_header.mako:128
+msgid ""
+"This file is part of a registration and is being shown in its archived "
+"version (and cannot be altered)."
+msgstr "このファイルは登録の一部であり、アーカイブバージョンで表示されています（変更できません）。"
+
+#: templates/project/project_header.mako:129
+#, python-format
+msgid ""
+"The <a %(archived_from_url)s>active file</a> is viewable from within the "
+"<a %(registered_from_url)s>live%(node_type)s</a>."
+msgstr "<a %(archived_from_url)s>アクティブファイル</a>は<a %(registered_from_url)s>%(node_type)sのライブ</a>内から表示できます。"
+
+#: templates/project/project_header.mako:131
+#, python-format
+msgid ""
+"This registration is a frozen, non-editable version of <a class=\"link-"
+"solid\" href=\"%(registeredfromurl)s\">this %(nodetype)s</a>"
+msgstr "この登録は、この%(nodetype)sの凍結された編集不可バージョンです"
+
+#: templates/project/project_header.mako:135
+#, python-format
+msgid ""
+"This is a pending registration of <a %(registered_from_url)s>this "
+"%(node_type)s</a>, awaiting approval from project administrators. This "
+"registration will be final when all project administrators approve the "
+"registration or 48 hours pass, whichever comes first."
+msgstr "これはこの<a %(registered_from_url)s>this %(node_type)s</a>の保留中の登録であり、プロジェクト管理者からの承認を待っています。 この登録は、すべてのプロジェクト管理者が登録または48時間のパスのいずれか早い方を承認したときに最終となります。"
+
+#: templates/project/project_header.mako:141
+#: templates/project/project_header.mako:173
+msgid "Cancel registration"
+msgstr "登録をキャンセル"
+
+#: templates/project/project_header.mako:159
+#, python-format
+msgid "This %(nodetype)s is currently pending withdrawal."
+msgstr "この%(nodetype)sは現在、保留中です。"
+
+#: templates/project/project_header.mako:163
+#, python-format
+msgid ""
+"This %(nodetype)s is a withdrawn registration of <a class=\"link-solid\" "
+"href=\"%(registeredfromurl)s\">this %(nodetype)s</a>; the content of the "
+"%(nodetype)s has been taken down for the reason(s) stated below."
+msgstr "この%(nodetype)sは、この%(nodetype)sの登録の取り消しです。%(nodetype)sのコンテンツは、下記の理由により削除されました。"
+
+#: templates/project/project_header.mako:168
+#, python-format
+msgid ""
+"This %(nodetype)s is currently pending registration, awaiting approval "
+"from project administrators. This registration will be final and enter "
+"the embargo period when all project administrators approve the "
+"registration or 48 hours pass, whichever comes first. The embargo will "
+"keep the registration private until the embargo period ends."
+msgstr "この%(nodetype)sは現在登録を保留しており、プロジェクト管理者からの承認を待っています。 この登録は最終的なものであり、すべてのプロジェクト管理者が登録を承認するか、48時間のパスのいずれか早い方を承認した時点で禁止期間に入ります。 禁止措置は、禁止期間が終了するまで登録を非公開にします。"
+
+#: templates/project/project_header.mako:182
+#, python-format
+msgid ""
+"This registration is currently embargoed. It will remain private until "
+"its embargo end date, %(embargoenddate)s."
+msgstr "この登録は現在禁止されています。 禁止終了日（%(embargoenddate)s）まで非公開のままです。"
+
+#: templates/project/project_header.mako:188
+#, python-format
+msgid ""
+"This %(nodetype)s contains supplemental materials for a preprint, but has"
+" been made Private. Make your supplemental materials discoverable by "
+"making this %(nodetype)s Public."
+msgstr "この%(nodetype)sには、プレプリントの補足資料が含まれていますが、非公開になっています。 この%(nodetype)sを公開することで、補足資料を見つけやすくします。"
+
+#: templates/project/project_header.mako:192
+#, python-format
+msgid ""
+"This %(nodetype)s is being viewed through an anonymized, view-only link. "
+"If you want to view it as a contributor, click <a class=\"link-solid\" "
+"href=\"%(redirecturl)s\">here</a>."
+msgstr "「この%(nodetype)s は匿名化された参照用リンクで表示されています。コントリビュータとして表示する場合は、<a class=\"link-solid\" href=\"%(redirecturl)s\">ここ</a>をクリックしてください。"
+
+#: templates/project/project_header.mako:196
+#, python-format
+msgid ""
+"This %(nodetype)s is being viewed through a private, view-only link. "
+"Anyone with the link can view this project. Keep the link safe."
+msgstr "この%(nodetype)sは、プライベートな参照用リンクを介して表示されています。 リンクを知っている全員がこのプロジェクトを閲覧できます。 リンクを安全に保ちます。"
+
+#: templates/project/project_header.mako:200
+msgid ""
+"<strong>NOTICE: </strong>Forks, registrations, and uploads will be "
+"temporarily disabled while the GakuNin RDM undergoes a hardware upgrade. "
+"These features will return shortly. Thank you for your patience."
+msgstr "<strong>注意: </strong>GakuNin RDMのハードウェアアップグレード中は、フォーク、登録、アップロードが一時的に無効になります。 これらの機能はまもなく戻ります。 おまたせして申し訳ありません。"
 
