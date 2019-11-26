@@ -40,7 +40,7 @@
                                 ${_("Files")}
                             </a>
                         </li>
-                        <!-- Add-on tabs -->
+                        <!-- Add-on tabs  -->
                         % for addon in addons_enabled:
 
                             % if addons[addon]['has_page']:
