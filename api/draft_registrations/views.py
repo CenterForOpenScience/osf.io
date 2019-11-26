@@ -2,6 +2,7 @@ from api.nodes.serializers import DraftRegistrationDetailSerializer
 from api.nodes.permissions import IsAdminContributorOrReviewer
 from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
+from api.base.exceptions import Gone
 from rest_framework import generics, permissions as drf_permissions
 from framework.auth.oauth_scopes import CoreScopes
 from api.base.utils import get_object_or_error
@@ -40,6 +41,9 @@ class DraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
             if draft.requires_approval and draft.is_approved and (not registered_and_deleted):
                 raise PermissionDenied('This draft has already been approved and cannot be modified.')
+        else:
+            if draft.registered_node and not draft.registered_node.is_deleted:
+                raise Gone(detail='This draft has already been registered.')
 
         self.check_object_permissions(self.request, draft.branched_from)
         return draft
