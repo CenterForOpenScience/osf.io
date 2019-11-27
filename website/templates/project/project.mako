@@ -19,7 +19,7 @@
                         </h2>
                     % else:
                         <h2 class="node-parent-title unavailable">
-                            <span>${_("Private Project")}</span>&nbsp;/
+                            <span>Private Project</span>&nbsp;/
                         </h2>
                     % endif
                 % endif
@@ -42,7 +42,7 @@
                     % endif
                     <div class="btn-group">
                     % if not node["is_public"]:
-                        <button class="btn btn-default disabled">${_("Private")}</button>
+                        <button class="btn btn-default disabled">Private</button>
                         % if project_makepublic:
                         % if permissions.ADMIN in user['permissions'] and not (node['is_pending_registration'] or node['is_pending_embargo']) and not (node['is_embargoed'] and parent_node['exists']):
                         <a disabled data-bind="attr: {'disabled': false}, css: {'disabled': nodeIsPendingEmbargoTermination}" class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">
@@ -55,14 +55,14 @@
                         % endif
                     % else:
                         % if permissions.ADMIN in user['permissions'] and not node['is_registration']:
-                            <a class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">${_("Make Private")}</a>
+                            <a class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">${_("Public")}</button>
                     % endif
                     </div>
                     <div class="btn-group"
                         % if not user_name:
-                            data-bind="tooltip: {title: '${_("Log in or create an account to duplicate this project")}', placement: 'top'}"
+                            data-bind="tooltip: {title: 'Log in or create an account to duplicate this project', placement: 'top'}"
                         % endif
                         >
                             <div class="dropdown">
