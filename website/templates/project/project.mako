@@ -437,7 +437,7 @@
         <!-- Files -->
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
-                <h3 class="panel-title">Files</h3>
+                <h3 class="panel-title">${_("Files")}</h3>
                 <div class="pull-right">
                    <a href="${node['url']}files/"> <i class="fa fa-external-link"></i> </a>
                 </div>
@@ -457,7 +457,7 @@
                             <div class="ball-scale ball-scale-blue">
                                 <div></div>
                             </div>
-                             <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                             <p class="m-t-sm fg-load-message"> ${_("Loading files...")}  </p>
                         </div>
                     </div>
                 </div><!-- end .panel-body -->

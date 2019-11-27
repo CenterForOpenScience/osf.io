@@ -190,13 +190,21 @@ msgid ""
 "searchable.'.format(preprint_word=preprint['word'])%>"
 msgstr "<% icon_tooltip = 'この{preprint_word}は一般公開も検索もできません。'.format(preprint_word=preprint['word'])%>"
 
+#: templates/project/project.mako:440 templates/project/project_header.mako:40
+msgid "Files"
+msgstr "ファイル"
+
 #: templates/project/project.mako:448
 msgid "Click on a storage provider or drag and drop to upload"
 msgstr "ストレージプロバイダーをクリックするか、ドラッグ&ドロップしてアップロードします"
 
+#: templates/project/project.mako:460
+msgid "Loading files..."
+msgstr "ファイルをロード中"
+
 #: templates/project/project.mako:501
 msgid "Citation"
-msgstr ""
+msgstr "引用"
 
 #: templates/project/project.mako:513
 msgid "Loading citations..."
@@ -239,7 +247,7 @@ msgstr "保存"
 
 #: templates/project/project.mako:586
 msgid "Tags"
-msgstr ""
+msgstr "タグ"
 
 #: templates/project/project.mako:600
 msgid "Recent Activity"
