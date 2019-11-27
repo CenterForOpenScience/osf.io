@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-11-27 18:17+0900\n"
+"POT-Creation-Date: 2019-11-27 18:36+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -208,6 +208,18 @@ msgstr ""
 
 #: templates/project/project.mako:601
 msgid "Refresh"
+msgstr ""
+
+#: templates/project/project.mako:607
+msgid "Parts of User's Fullname"
+msgstr ""
+
+#: templates/project/project.mako:612
+msgid "Start Date[yyyy-mm-dd]"
+msgstr ""
+
+#: templates/project/project.mako:615
+msgid "End Date[yyyy-mm-dd]"
 msgstr ""
 
 #: templates/project/project.mako:623

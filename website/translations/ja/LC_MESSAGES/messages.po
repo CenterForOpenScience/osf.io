@@ -257,6 +257,18 @@ msgstr "最近の活動"
 msgid "Refresh"
 msgstr "更新"
 
+#: templates/project/project.mako:607
+msgid "Parts of User's Fullname"
+msgstr "ユーザのフルネームの一部"
+
+#: templates/project/project.mako:612
+msgid "Start Date[yyyy-mm-dd]"
+msgstr "開始日[yyyy-mm-dd]"
+
+#: templates/project/project.mako:615
+msgid "End Date[yyyy-mm-dd]"
+msgstr "終了日[yyyy-mm-dd]"
+
 #: templates/project/project.mako:623
 msgid "Loading logs..."
 msgstr "ログをロード中..."

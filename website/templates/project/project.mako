@@ -604,15 +604,15 @@
                 <div class="db-poFilter m-r-xs row">
                      <div class="db-buttonRow col-xs-10 col-sm-6 col-lg-4">
                          <form>
-                             <input type="text" id="LogSearchName" placeholder="Parts of User's Fullname">
+                             <input type="text" id="LogSearchName" placeholder='${_("Parts of User's Fullname")}'>
                          </form>
                          <input type="hidden" id="LogSearchUserKeys">
                      </div>
                      <div class="db-buttonRow col-xs-10 col-sm-6 col-lg-4">
-                         <input type="text" id="LogSearchS" placeholder="Start Date[yyyy-mm-dd]">
+                         <input type="text" id="LogSearchS" placeholder='${_("Start Date[yyyy-mm-dd]")}'>
                      </div>
                      <div class="db-buttonRow col-xs-10 col-sm-6 col-lg-4">
-                         <input type="text" id="LogSearchE" placeholder="End Date[yyyy-mm-dd]">
+                         <input type="text" id="LogSearchE" placeholder='${_("End Date[yyyy-mm-dd]")}'>
                      </div>
                 </div>
                 <div id="logFeed">
