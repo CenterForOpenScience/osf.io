@@ -31,6 +31,7 @@ FORMAT_TYPE_TO_TYPE_MAP = {
     ('singleselect', 'choose'): 'single-select-input',
     ('text', 'string'): 'short-text-input',
     ('textarea', 'osf-author-import'): 'contributors-input',
+    ('textarea', None): 'long-text-input',
     ('textarea', 'string'): 'long-text-input',
     ('textarea-lg', None): 'long-text-input',
     ('textarea-lg', 'string'): 'long-text-input',
