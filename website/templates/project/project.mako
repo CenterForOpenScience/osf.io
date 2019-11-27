@@ -583,7 +583,7 @@
         %if node['tags'] or permissions.WRITE in user['permissions']:
          <div class="tags panel panel-default">
             <div class="panel-heading clearfix">
-                <h3 class="panel-title">Tags </h3>
+                <h3 class="panel-title">${_("Tags")} </h3>
                 <div class="pull-right">
                 </div>
             </div>

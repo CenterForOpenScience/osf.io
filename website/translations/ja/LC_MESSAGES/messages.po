@@ -194,6 +194,10 @@ msgstr "<% icon_tooltip = 'この{preprint_word}は一般公開も検索もで�
 msgid "Click on a storage provider or drag and drop to upload"
 msgstr "ストレージプロバイダーをクリックするか、ドラッグ&ドロップしてアップロードします"
 
+#: templates/project/project.mako:501
+msgid "Citation"
+msgstr ""
+
 #: templates/project/project.mako:513
 msgid "Loading citations..."
 msgstr "引用をロード中..."
@@ -232,6 +236,10 @@ msgstr "除外"
 #: templates/project/project.mako:569
 msgid "Save"
 msgstr "保存"
+
+#: templates/project/project.mako:586
+msgid "Tags"
+msgstr ""
 
 #: templates/project/project.mako:600
 msgid "Recent Activity"
