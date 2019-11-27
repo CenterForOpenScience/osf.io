@@ -184,6 +184,11 @@ class BaseFileSerializer(JSONAPISerializer):
     current_version = ser.IntegerField(help_text='Latest file version', read_only=True, source='current_version_number')
     delete_allowed = ser.BooleanField(read_only=True, required=False)
 
+    parent_folder = RelationshipField(
+        related_view='files:file-detail',
+        related_view_kwargs={'file_id': '<parent._id>'},
+        help_text='The folder in which this file exists',
+    )
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
         related_view_kwargs={'node_id': '<target._id>', 'path': '<path>', 'provider': '<provider>'},

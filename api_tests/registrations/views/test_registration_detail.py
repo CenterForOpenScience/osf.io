@@ -424,7 +424,8 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             public_url,
             invalid_public_payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == '"Dr.Strange" is not a valid boolean.'
 
