@@ -19,7 +19,7 @@
                         </h2>
                     % else:
                         <h2 class="node-parent-title unavailable">
-                            <span>Private Project</span>&nbsp;/
+                            <span>${_("Private Project")}</span>&nbsp;/
                         </h2>
                     % endif
                 % endif
@@ -42,7 +42,7 @@
                     % endif
                     <div class="btn-group">
                     % if not node["is_public"]:
-                        <button class="btn btn-default disabled">Private</button>
+                        <button class="btn btn-default disabled">${_("Private")}</button>
                         % if project_makepublic:
                         % if permissions.ADMIN in user['permissions'] and not (node['is_pending_registration'] or node['is_pending_embargo']) and not (node['is_embargoed'] and parent_node['exists']):
                         <a disabled data-bind="attr: {'disabled': false}, css: {'disabled': nodeIsPendingEmbargoTermination}" class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">
@@ -55,7 +55,7 @@
                         % endif
                     % else:
                         % if permissions.ADMIN in user['permissions'] and not node['is_registration']:
-                            <a class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">Make Private</a>
+                            <a class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">${_("Make Private")}</a>
                         % endif
                         <button class="btn btn-default disabled">${_("Public")}</button>
                     % endif
@@ -215,8 +215,8 @@
                 % endif
                 % if node['is_fork']:
                     <p>
-                    ${ _('Forked from <a class="node-forked-from" href="/%(forked_from_id)s/">%(forked_from_display_absolute_url)s</a> on\
-                    <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>') % dict(forked_from_id=node['forked_from_id'],forked_from_display_absolute_url=node['forked_from_display_absolute_url']) | n }
+                    Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
+                    <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
                     </p>
                 % endif
                 % if node['is_registration']:
@@ -404,16 +404,16 @@
                             <% icon_tooltip = ''%>
                             % if preprint['state'] == 'pending':
                                 % if preprint['provider']['workflow'] == 'post-moderation':
-                                    ${ _("<% icon_tooltip = 'This {preprint_word} is publicly available and searchable but is subject to' \
-                                    ' removal by a moderator.'.format(preprint_word=preprint['word'])%>") | n }
+                                    <% icon_tooltip = 'This {preprint_word} is publicly available and searchable but is subject to' \
+                                    ' removal by a moderator.'.format(preprint_word=preprint['word'])%>
                                 % else:
-                                    ${ _("<% icon_tooltip = 'This {preprint_word} is not publicly available or searchable until approved ' \
-                                    'by a moderator.'.format(preprint_word=preprint['word'])%>") | n }
+                                    <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable until approved ' \
+                                    'by a moderator.'.format(preprint_word=preprint['word'])%>
                                 % endif
                             % elif preprint['state'] == 'accepted':
-                                ${ _("<% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=preprint['word'])%>") | n }
+                                <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=preprint['word'])%>
                             % else:
-                                ${ _("<% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=preprint['word'])%>") | n }
+                                <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=preprint['word'])%>
                             % endif
                             <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>
                         % endif
@@ -544,8 +544,8 @@
                                      <div class="col-xs-1">
                                          <span id="custom-citation-copy-button" type="button" data-bind="attr: {'data-clipboard-text': customCitation}" class="btn btn-sm btn-default"><i class="fa fa-copy"></i></span>
                                      </div>
-                                         ${ _('<div class="f-w-xl">Cite as:</div>\
-                                         <span data-bind="text: customCitation"></span>') | n }
+                                     <div class="col-xs-9 m-l-sm">
+                                         <div class="f-w-xl">Cite as:</div>
                                          <span data-bind="text: customCitation"></span>
                                      </div>
                                  </div>
