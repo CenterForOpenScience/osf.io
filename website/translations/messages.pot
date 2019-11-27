@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-11-26 18:35+0900\n"
+"POT-Creation-Date: 2019-11-27 18:17+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,6 +19,223 @@ msgstr ""
 
 #: templates/search.mako:96
 msgid "Type your search terms in the box above."
+msgstr ""
+
+#: templates/project/project.mako:22
+msgid "Private Project"
+msgstr ""
+
+#: templates/project/project.mako:45
+msgid "Private"
+msgstr ""
+
+#: templates/project/project.mako:49
+msgid "Make Public"
+msgstr ""
+
+#: templates/project/project.mako:58
+msgid "Make Private"
+msgstr ""
+
+#: templates/project/project.mako:60
+msgid "Public"
+msgstr ""
+
+#: templates/project/project.mako:65
+msgid "Log in or create an account to duplicate this project"
+msgstr ""
+
+#: templates/project/project.mako:100
+#, python-format
+msgid "View Forks %(forkcount)s"
+msgstr ""
+
+#: templates/project/project.mako:115
+msgid "Bookmark"
+msgstr ""
+
+#: templates/project/project.mako:118
+msgid "Remove from bookmarks"
+msgstr ""
+
+#: templates/project/project.mako:127
+msgid "Create view-only link"
+msgstr ""
+
+#: templates/project/project.mako:137
+msgid "Share"
+msgstr ""
+
+#: templates/project/project.mako:150
+msgid "Log in to request access"
+msgstr ""
+
+#: templates/project/project.mako:163 templates/project/project_header.mako:72
+msgid "Contributors"
+msgstr ""
+
+#: templates/project/project.mako:165
+msgid "Contributors:"
+msgstr ""
+
+#: templates/project/project.mako:169
+msgid "Anonymous Contributors"
+msgstr ""
+
+#: templates/project/project.mako:192
+msgid "Affiliated Institutions:"
+msgstr ""
+
+#: templates/project/project.mako:202
+msgid "None"
+msgstr ""
+
+#: templates/project/project.mako:224
+msgid "Date registered:"
+msgstr ""
+
+#: templates/project/project.mako:229
+msgid "Date created:"
+msgstr ""
+
+#: templates/project/project.mako:232
+msgid "| Last Updated:"
+msgstr ""
+
+#: templates/project/project.mako:247
+msgid "Creating DOI. Please wait..."
+msgstr ""
+
+#: templates/project/project.mako:253
+msgid "Create DOI"
+msgstr ""
+
+#: templates/project/project.mako:258
+msgid "Category:"
+msgstr ""
+
+#: templates/project/project.mako:290
+msgid "View Registration Form"
+msgstr ""
+
+#: templates/project/project.mako:295
+msgid "View Registration Forms"
+msgstr ""
+
+#: templates/project/project.mako:340
+msgid "Type:"
+msgstr ""
+
+#: templates/project/project.mako:344 templates/project/project.mako:395
+msgid "Status:"
+msgstr ""
+
+#: templates/project/project.mako:348
+msgid "Volume:"
+msgstr ""
+
+#: templates/project/project.mako:352
+msgid "Issue:"
+msgstr ""
+
+#: templates/project/project.mako:356
+msgid "Program Area:"
+msgstr ""
+
+#: templates/project/project.mako:362
+msgid "Subjects:"
+msgstr ""
+
+#: templates/project/project.mako:398
+msgid "Withdrawn"
+msgstr ""
+
+#: templates/project/project.mako:440 templates/project/project_header.mako:40
+msgid "Files"
+msgstr ""
+
+#: templates/project/project.mako:448
+msgid "Click on a storage provider or drag and drop to upload"
+msgstr ""
+
+#: templates/project/project.mako:460
+msgid "Loading files..."
+msgstr ""
+
+#: templates/project/project.mako:501
+msgid "Citation"
+msgstr ""
+
+#: templates/project/project.mako:513
+msgid "Loading citations..."
+msgstr ""
+
+#: templates/project/project.mako:518
+msgid "Customize"
+msgstr ""
+
+#: templates/project/project.mako:526
+msgid "Chicago"
+msgstr ""
+
+#: templates/project/project.mako:530
+msgid "Get more citations"
+msgstr ""
+
+#: templates/project/project.mako:538
+msgid "Edit"
+msgstr ""
+
+#: templates/project/project.mako:567
+msgid "Cancel"
+msgstr ""
+
+#: templates/project/project.mako:568
+msgid "Remove"
+msgstr ""
+
+#: templates/project/project.mako:569
+msgid "Save"
+msgstr ""
+
+#: templates/project/project.mako:586
+msgid "Tags"
+msgstr ""
+
+#: templates/project/project.mako:600
+msgid "Recent Activity"
+msgstr ""
+
+#: templates/project/project.mako:601
+msgid "Refresh"
+msgstr ""
+
+#: templates/project/project.mako:623
+msgid "Loading logs..."
+msgstr ""
+
+#: templates/project/project.mako:629
+msgid "Download as file"
+msgstr ""
+
+#: templates/project/project.mako:630
+msgid "Download"
+msgstr ""
+
+#: templates/project/project.mako:643
+msgid "Components"
+msgstr ""
+
+#: templates/project/project.mako:647
+msgid "Add Component"
+msgstr ""
+
+#: templates/project/project.mako:649
+msgid "Link Projects"
+msgstr ""
+
+#: templates/project/project.mako:659
+msgid "Add components to organize your project."
 msgstr ""
 
 #: templates/project/project_header.mako:16
@@ -33,20 +250,12 @@ msgstr ""
 msgid "Navigation"
 msgstr ""
 
-#: templates/project/project_header.mako:40
-msgid "Files"
-msgstr ""
-
 #: templates/project/project_header.mako:61
 msgid "Analytics"
 msgstr ""
 
 #: templates/project/project_header.mako:67
 msgid "Registrations"
-msgstr ""
-
-#: templates/project/project_header.mako:72
-msgid "Contributors"
 msgstr ""
 
 #: templates/project/project_header.mako:76
