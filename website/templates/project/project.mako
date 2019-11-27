@@ -62,7 +62,7 @@
                     </div>
                     <div class="btn-group"
                         % if not user_name:
-                            data-bind="tooltip: {title: 'Log in or create an account to duplicate this project', placement: 'top'}"
+                            data-bind="tooltip: {title: '${_("Log in or create an account to duplicate this project")}', placement: 'top'}"
                         % endif
                         >
                             <div class="dropdown">
@@ -97,7 +97,7 @@
                                     % if not disk_saving_mode:
                                     <li class="p-h-md">
                                         <span class="btn btn-primary btn-block m-v-sm" onclick="NodeActions.redirectForkPage();">
-                                            ${_("View Forks %(fork_count)s") % dict(fork_count=node['fork_count'])}
+                                            ${_("View Forks %(forkcount)s") % dict(forkcount=node['fork_count'])}
                                         </span>
                                     </li>
                                     %endif
@@ -498,7 +498,7 @@
 
          <div class="citations panel panel-default">
              <div class="panel-heading clearfix">
-                <h3 class="panel-title"  style="padding-top: 3px">Citation</h3>
+                <h3 class="panel-title"  style="padding-top: 3px">${_("Citation")}</h3>
                 <div class="pull-right">
                     <button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
                 </div>
