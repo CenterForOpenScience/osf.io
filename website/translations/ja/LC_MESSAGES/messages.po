@@ -150,7 +150,7 @@ msgstr "次のユーザーがこのプロジェクトへのアクセスをリク
 #: templates/project/contributors.mako:162 templates/project/settings.mako:30
 #: templates/project/settings.mako:203
 msgid "View-only Links"
-msgstr ""
+msgstr "参照用リンク"
 
 #: templates/project/contributors.mako:167 templates/project/settings.mako:207
 msgid ""
@@ -572,14 +572,14 @@ msgid ""
 "This %(nodetype)s is being viewed through an anonymized, view-only link. "
 "If you want to view it as a contributor, click <a class=\"link-solid\" "
 "href=\"%(redirecturl)s\">here</a>."
-msgstr "「この%(nodetype)s は匿名化された参照用リンクで表示されています。コントリビュータとして表示する場合は、<a class=\"link-solid\" href=\"%(redirecturl)s\">ここ</a>をクリックしてください。"
+msgstr "「この%(nodetype)s は匿名化された参照専用リンクで表示されています。コントリビュータとして表示する場合は、<a class=\"link-solid\" href=\"%(redirecturl)s\">ここ</a>をクリックしてください。"
 
 #: templates/project/project_header.mako:196
 #, python-format
 msgid ""
 "This %(nodetype)s is being viewed through a private, view-only link. "
 "Anyone with the link can view this project. Keep the link safe."
-msgstr "この%(nodetype)sは、プライベートな参照用リンクを介して表示されています。 リンクを知っている全員がこのプロジェクトを閲覧できます。 リンクを安全に保ちます。"
+msgstr "この%(nodetype)sは、プライベートな参照専用リンクを介して表示されています。 リンクを知っている全員がこのプロジェクトを閲覧できます。 リンクを安全に保ちます。"
 
 #: templates/project/project_header.mako:200
 msgid ""
@@ -590,67 +590,67 @@ msgstr "<strong>注意: </strong>GakuNin RDMのハードウェアアップグレ
 
 #: templates/project/settings.mako:22 templates/project/settings.mako:179
 msgid "Storage Location"
-msgstr ""
+msgstr "ストレージロケーション"
 
 #: templates/project/settings.mako:30 templates/project/settings.mako:203
 msgid "View-only Links"
-msgstr ""
+msgstr "参照用リンク"
 
 #: templates/project/settings.mako:34 templates/project/settings.mako:226
 msgid "Access Requests"
-msgstr ""
+msgstr "アクセスリクエスト"
 
 #: templates/project/settings.mako:37 templates/project/settings.mako:258
 msgid "Wiki"
-msgstr ""
+msgstr "ウィキ"
 
 #: templates/project/settings.mako:40 templates/project/settings.mako:319
 msgid "Commenting"
-msgstr ""
+msgstr "コメントする"
 
 #: templates/project/settings.mako:43 templates/project/settings.mako:360
 msgid "Email Notifications"
-msgstr ""
+msgstr "Eメール通知"
 
 #: templates/project/settings.mako:45 templates/project/settings.mako:392
 msgid "Redirect Link"
-msgstr ""
+msgstr "リダイレクトリンク"
 
 #: templates/project/settings.mako:52
 msgid "Withdraw Public Registration"
-msgstr ""
+msgstr "公開登録を取り下げる"
 
 #: templates/project/settings.mako:58 templates/project/settings.mako:470
 msgid "Project Affiliation / Branding"
-msgstr ""
+msgstr "プロジェクト所属/ブランディング"
 
 #: templates/project/settings.mako:83
 msgid "(For descriptive purposes)"
-msgstr ""
+msgstr "説明のため"
 
 #: templates/project/settings.mako:88
 msgid "Uncategorized"
-msgstr ""
+msgstr "未分類"
 
 #: templates/project/settings.mako:102
 msgid "Title:"
-msgstr ""
+msgstr "タイトル:"
 
 #: templates/project/settings.mako:108
 msgid "Description:"
-msgstr ""
+msgstr "説明:"
 
 #: templates/project/settings.mako:115
 msgid "Select Timestamp Function:"
-msgstr ""
+msgstr "タイムスタンプ機能を選択:"
 
 #: templates/project/settings.mako:118 templates/project/settings.mako:123
 msgid "Timestamp only"
-msgstr ""
+msgstr "タイムスタンプのみ"
 
 #: templates/project/settings.mako:134
 msgid "Save changes"
-msgstr ""
+msgstr "変更を保存"
 
 #: templates/project/settings.mako:142
 msgid ""
@@ -658,79 +658,79 @@ msgid ""
 "                                To delete a parent project, you must "
 "first delete all child components                                by "
 "visiting their settings pages."
-msgstr ""
+msgstr "プロジェクトにコンポーネントがある場合、プロジェクトを削除することはできません。親プロジェクトを削除するには、まず設定ページにアクセスして、すべての子コンポーネントを削除する必要があります。"
 
 #: templates/project/settings.mako:151 templates/project/settings.mako:164
 #, python-format
 msgid "Delete %(node_type)s"
-msgstr ""
+msgstr "%(node_type)sを削除する"
 
 #: templates/project/settings.mako:157
 #, python-format
 msgid ""
 "A project which is related to a external group (%(group)s) cannot be "
 "deleted."
-msgstr ""
+msgstr "外部グループ(%(group)s)に関連するプロジェクトは削除できません。"
 
 #: templates/project/settings.mako:186
 msgid "Storage location cannot be changed after project is created."
-msgstr ""
+msgstr "プロジェクトの作成後、保存場所を変更することはできません。"
 
 #: templates/project/settings.mako:238
 msgid "Allow users to request access to this project."
-msgstr ""
+msgstr "ユーザーがこのプロジェクトへのアクセスをリクエストできるようにします。"
 
 #: templates/project/settings.mako:271
 #, python-format
 msgid "Enable the wiki in <b>%(title)s</b>."
-msgstr ""
+msgstr "<b>%(title)s</b>内でウィキを有効にする"
 
 #: templates/project/settings.mako:284
 msgid "Configure"
-msgstr ""
+msgstr "構成"
 
 #: templates/project/settings.mako:287
 #, python-format
 msgid "Control who can edit the wiki of <b>%(title)s</b>"
-msgstr ""
+msgstr "<b>%(title)s</b>内のWikiを編集できるユーザーを制御します"
 
 #: templates/project/settings.mako:289
 #, python-format
 msgid ""
 "Control who can edit your wiki. To allow all GakuNin RDM users to edit "
 "the wiki, <b>%(title)s</b> must be public."
-msgstr ""
+msgstr "Wikiを編集できるユーザーを制御します。 すべてのGakuNin RDMユーザーがwikiを編集できるようにするには、<b>%(title)s</b>を公開する必要があります。"
 
 #: templates/project/settings.mako:299
 msgid "Loading wiki settings..."
-msgstr ""
+msgstr "ウィキの設定をロード中..."
 
 #: templates/project/settings.mako:329
 msgid "Only contributors can post comments"
-msgstr ""
+msgstr "コントリビュータのみがコメントを投稿できます"
 
 #: templates/project/settings.mako:335
 #, python-format
 msgid "When the %(node_type)s is public, any GakuNin RDM user can post comments"
-msgstr ""
+msgstr "%(node_type)sがパブリックの場合、GakuNin RDMユーザーはコメントを投稿できます"
 
 #: templates/project/settings.mako:364
 msgid ""
 "These notification settings only apply to you. They do NOT affect any "
 "other contributor on this project."
-msgstr ""
+msgstr "これらの通知設定は自分にのみ適用されます。 このプロジェクトの他のコントリビュータには影響しません。"
 
 #: templates/project/settings.mako:372
 msgid "Loading notification settings..."
-msgstr ""
+msgstr "通知設定をロード中..."
 
 #: templates/project/settings.mako:403
 msgid "Redirect visitors from your project page to an external webpage"
-msgstr ""
+msgstr "訪問者をプロジェクトページから外部Webページにリダイレクトする"
 
 #: templates/project/settings.mako:428 templates/project/settings.mako:450
 msgid "Withdraw Registration"
-msgstr ""
+msgstr "登録を取り下げる"
 
 #: templates/project/settings.mako:436
 #, python-format
@@ -738,7 +738,7 @@ msgid ""
 "Withdrawing children components of a registration is not allowed. Should "
 "you wish to                                  withdraw this component, "
 "please withdraw its parent registration <a %(web_url_for)s>here</a>."
-msgstr ""
+msgstr "登録の子コンポーネントの撤回は許可されていません。このコンポーネントを撤回する場合は、<a %(web_url_for)s>ここ</a>でその親登録を撤回してください。"
 
 #: templates/project/settings.mako:443
 msgid ""
@@ -749,45 +749,105 @@ msgid ""
 "of the withdrawal, should you wish to provide it. Withdrawn"
 "                                    registrations will be marked with a "
 "<strong>withdrawn</strong> tag."
-msgstr ""
+msgstr "登録を取り消すと、コンテンツがGakuNin RDMから削除されますが、基本的なメタデータは残されます。 取り下げられた登録のタイトルとそのコントリビュータリストは、引き取りの正当化または説明と同様に、もしあなたがそれを提供したいなら、残ります。 取り下げられた登録には、<strong>取り下げられた</strong>タグが付いています。"
 
 #: templates/project/settings.mako:452
 msgid "This registration is already pending withdrawal."
-msgstr ""
+msgstr "この登録は既に取り下げが保留されています。"
 
 #: templates/project/settings.mako:475
 msgid ""
 "Contributors with read-only permissions to this project cannot add or "
 "remove institutional affiliations."
-msgstr ""
+msgstr "このプロジェクトの参照専用権限を持つコントリビュータは、所属機関を追加または削除できません。"
 
 #: templates/project/settings.mako:478
 msgid ""
 "Projects can be affiliated with institutions that have created GakuNin "
 "RDM for Institutions accounts."
-msgstr ""
+msgstr "プロジェクトは、機関向けGakuNin RDMアカウントを作成した機関と提携できます。"
 
 #: templates/project/settings.mako:479
 msgid "This allows:"
-msgstr ""
+msgstr "これにより"
 
 #: templates/project/settings.mako:481
 msgid "institutional logos to be displayed on public projects"
-msgstr ""
+msgstr "公開プロジェクトに表示される機関のロゴ"
 
 #: templates/project/settings.mako:482
 msgid "public projects to be discoverable on specific institutional landing pages"
-msgstr ""
+msgstr "特定の機関のリンク先ページで発見できる公開プロジェクト"
 
 #: templates/project/settings.mako:483
 msgid "single sign-on to the GakuNin RDM with institutional credentials"
-msgstr ""
+msgstr "機関証明書を使用したGakuNin RDMへのシングルサインオン"
 
 #: templates/project/settings.mako:484
 msgid "FAQ"
-msgstr ""
+msgstr "FAQ"
 
 #: templates/project/settings.mako:512
 msgid "Available Institutions:"
-msgstr ""
+msgstr "利用可能な機関:"
+
+#: templates/project/timestamp.mako:10
+msgid "Timestamp Control"
+msgstr "タイムスタンプ管理"
+
+#: templates/project/timestamp.mako:27
+msgid "Timestamp Error"
+msgstr "タイムスタンプエラー"
+
+#: templates/project/timestamp.mako:41
+msgid "Start Date"
+msgstr "開始日"
+
+#: templates/project/timestamp.mako:47
+msgid "End Date"
+msgstr "終了日"
+
+#: templates/project/timestamp.mako:53
+msgid "User"
+msgstr "ユーザー"
+
+#: templates/project/timestamp.mako:60
+msgid "Apply"
+msgstr "適用"
+
+#: templates/project/timestamp.mako:69
+msgid "Verify"
+msgstr "確認"
+
+#: templates/project/timestamp.mako:70
+msgid "Request Trusted Timestamp"
+msgstr "信頼できるタイムスタンプをリクエスト"
+
+#: templates/project/timestamp.mako:81
+msgid "Processing, please wait..."
+msgstr "処理しています。お待ちください..."
+
+#: templates/project/timestamp.mako:99
+msgid "per page:"
+msgstr "1ページあたり"
+
+#: templates/project/timestamp.mako:122
+msgid "Provider"
+msgstr "プロバイダ"
+
+#: templates/project/timestamp.mako:129
+msgid "File Path"
+msgstr "ファイルパス"
+
+#: templates/project/timestamp.mako:136
+msgid "Timestamp by"
+msgstr "タイムスタンプ押印者"
+
+#: templates/project/timestamp.mako:143
+msgid "Updated at"
+msgstr "更新日時"
+
+#: templates/project/timestamp.mako:150
+msgid "Timestamp Verification"
+msgstr "タイムスタンプの検証"
 
