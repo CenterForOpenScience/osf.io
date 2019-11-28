@@ -91,14 +91,17 @@ msgid "Filter by name"
 msgstr "名前でフィルタ"
 
 #: templates/project/contributors.mako:24
+#: templates/project/contributors.mako:75
 msgid "Administrator"
 msgstr "管理者"
 
 #: templates/project/contributors.mako:27
+#: templates/project/contributors.mako:76
 msgid "Read + Write"
-msgstr "読込み + 書込み
+msgstr "読込み / 書込み
 
 #: templates/project/contributors.mako:30
+#: templates/project/contributors.mako:77
 msgid "Read"
 msgstr "読込み"
 
@@ -119,7 +122,8 @@ msgstr "非書誌"
 #: templates/project/contributors.mako:57
 #: templates/project/contributors.mako:164
 #: templates/project/contributors.mako:337
-#: templates/project/contributors.mako:385
+#: templates/project/contributors.mako:385 templates/project/settings.mako:210
+#: templates/project/settings.mako:523
 msgid "Add"
 msgstr "追加"
 
@@ -143,7 +147,12 @@ msgstr "親プロジェクトの管理者が見つかりません"
 msgid "The following users have requested access to this project."
 msgstr "次のユーザーがこのプロジェクトへのアクセスをリクエストしています。"
 
-#: templates/project/contributors.mako:167
+#: templates/project/contributors.mako:162 templates/project/settings.mako:30
+#: templates/project/settings.mako:203
+msgid "View-only Links"
+msgstr ""
+
+#: templates/project/contributors.mako:167 templates/project/settings.mako:207
 msgid ""
 "Create a link to share this project so those who have the link can "
 "view&mdash;but not edit&mdash;the project."
@@ -155,6 +164,7 @@ msgstr "許可"
 
 #: templates/project/contributors.mako:332
 #: templates/project/contributors.mako:387 templates/project/project.mako:569
+#: templates/project/settings.mako:499 templates/project/settings.mako:502
 msgid "Remove"
 msgstr "除外"
 
@@ -236,7 +246,7 @@ msgstr "コントリビュータ:"
 msgid "Anonymous Contributors"
 msgstr "匿名コントリビュータ"
 
-#: templates/project/project.mako:192
+#: templates/project/project.mako:192 templates/project/settings.mako:489
 msgid "Affiliated Institutions:"
 msgstr "所属機関:"
 
@@ -272,7 +282,7 @@ msgstr "DOIを作成しています。お待ち下さい..."
 msgid "Create DOI"
 msgstr "DOIを作成"
 
-#: templates/project/project.mako:258
+#: templates/project/project.mako:259 templates/project/settings.mako:82
 msgid "Category:"
 msgstr "カテゴリー:"
 
@@ -375,7 +385,7 @@ msgid ""
 "<span %(data_bind)s></span>"
 msgstr "<span %(data_bind)s></span>として<div %(f_x_xl)s>引用</div> "
 
-#: templates/project/project.mako:567
+#: templates/project/project.mako:568 templates/project/settings.mako:132
 msgid "Cancel"
 msgstr "キャンセル"
 
@@ -471,7 +481,8 @@ msgstr "コントリビュータ"
 msgid "Add-ons"
 msgstr "アドオン"
 
-#: templates/project/project_header.mako:80
+#: templates/project/project_header.mako:80 templates/project/settings.mako:2
+#: templates/project/settings.mako:5
 msgid "Settings"
 msgstr "設定"
 
@@ -575,5 +586,208 @@ msgid ""
 "<strong>NOTICE: </strong>Forks, registrations, and uploads will be "
 "temporarily disabled while the GakuNin RDM undergoes a hardware upgrade. "
 "These features will return shortly. Thank you for your patience."
-msgstr "<strong>注意: </strong>GakuNin RDMのハードウェアアップグレード中は、フォーク、登録、アップロードが一時的に無効になります。 これらの機能はまもなく戻ります。 おまたせして申し訳ありません。"
+msgstr "<strong>注意: </strong>GakuNin RDMのハードウェアアップグレード中は、フォーク、登録、アップロードが一時的に無効になります。 これらの機能はまもなく戻ります。 お待たせして申し訳ありません。"
+
+#: templates/project/settings.mako:22 templates/project/settings.mako:179
+msgid "Storage Location"
+msgstr ""
+
+#: templates/project/settings.mako:30 templates/project/settings.mako:203
+msgid "View-only Links"
+msgstr ""
+
+#: templates/project/settings.mako:34 templates/project/settings.mako:226
+msgid "Access Requests"
+msgstr ""
+
+#: templates/project/settings.mako:37 templates/project/settings.mako:258
+msgid "Wiki"
+msgstr ""
+
+#: templates/project/settings.mako:40 templates/project/settings.mako:319
+msgid "Commenting"
+msgstr ""
+
+#: templates/project/settings.mako:43 templates/project/settings.mako:360
+msgid "Email Notifications"
+msgstr ""
+
+#: templates/project/settings.mako:45 templates/project/settings.mako:392
+msgid "Redirect Link"
+msgstr ""
+
+#: templates/project/settings.mako:52
+msgid "Withdraw Public Registration"
+msgstr ""
+
+#: templates/project/settings.mako:58 templates/project/settings.mako:470
+msgid "Project Affiliation / Branding"
+msgstr ""
+
+#: templates/project/settings.mako:83
+msgid "(For descriptive purposes)"
+msgstr ""
+
+#: templates/project/settings.mako:88
+msgid "Uncategorized"
+msgstr ""
+
+#: templates/project/settings.mako:102
+msgid "Title:"
+msgstr ""
+
+#: templates/project/settings.mako:108
+msgid "Description:"
+msgstr ""
+
+#: templates/project/settings.mako:115
+msgid "Select Timestamp Function:"
+msgstr ""
+
+#: templates/project/settings.mako:118 templates/project/settings.mako:123
+msgid "Timestamp only"
+msgstr ""
+
+#: templates/project/settings.mako:134
+msgid "Save changes"
+msgstr ""
+
+#: templates/project/settings.mako:142
+msgid ""
+"A project cannot be deleted if it has any components within it."
+"                                To delete a parent project, you must "
+"first delete all child components                                by "
+"visiting their settings pages."
+msgstr ""
+
+#: templates/project/settings.mako:151 templates/project/settings.mako:164
+#, python-format
+msgid "Delete %(node_type)s"
+msgstr ""
+
+#: templates/project/settings.mako:157
+#, python-format
+msgid ""
+"A project which is related to a external group (%(group)s) cannot be "
+"deleted."
+msgstr ""
+
+#: templates/project/settings.mako:186
+msgid "Storage location cannot be changed after project is created."
+msgstr ""
+
+#: templates/project/settings.mako:238
+msgid "Allow users to request access to this project."
+msgstr ""
+
+#: templates/project/settings.mako:271
+#, python-format
+msgid "Enable the wiki in <b>%(title)s</b>."
+msgstr ""
+
+#: templates/project/settings.mako:284
+msgid "Configure"
+msgstr ""
+
+#: templates/project/settings.mako:287
+#, python-format
+msgid "Control who can edit the wiki of <b>%(title)s</b>"
+msgstr ""
+
+#: templates/project/settings.mako:289
+#, python-format
+msgid ""
+"Control who can edit your wiki. To allow all GakuNin RDM users to edit "
+"the wiki, <b>%(title)s</b> must be public."
+msgstr ""
+
+#: templates/project/settings.mako:299
+msgid "Loading wiki settings..."
+msgstr ""
+
+#: templates/project/settings.mako:329
+msgid "Only contributors can post comments"
+msgstr ""
+
+#: templates/project/settings.mako:335
+#, python-format
+msgid "When the %(node_type)s is public, any GakuNin RDM user can post comments"
+msgstr ""
+
+#: templates/project/settings.mako:364
+msgid ""
+"These notification settings only apply to you. They do NOT affect any "
+"other contributor on this project."
+msgstr ""
+
+#: templates/project/settings.mako:372
+msgid "Loading notification settings..."
+msgstr ""
+
+#: templates/project/settings.mako:403
+msgid "Redirect visitors from your project page to an external webpage"
+msgstr ""
+
+#: templates/project/settings.mako:428 templates/project/settings.mako:450
+msgid "Withdraw Registration"
+msgstr ""
+
+#: templates/project/settings.mako:436
+#, python-format
+msgid ""
+"Withdrawing children components of a registration is not allowed. Should "
+"you wish to                                  withdraw this component, "
+"please withdraw its parent registration <a %(web_url_for)s>here</a>."
+msgstr ""
+
+#: templates/project/settings.mako:443
+msgid ""
+"Withdrawing a registration will remove its content from the GakuNin RDM, "
+"but leave basic metadata                                    behind. The "
+"title of a withdrawn registration and its contributor list will remain, "
+"as will                                    justification or explanation "
+"of the withdrawal, should you wish to provide it. Withdrawn"
+"                                    registrations will be marked with a "
+"<strong>withdrawn</strong> tag."
+msgstr ""
+
+#: templates/project/settings.mako:452
+msgid "This registration is already pending withdrawal."
+msgstr ""
+
+#: templates/project/settings.mako:475
+msgid ""
+"Contributors with read-only permissions to this project cannot add or "
+"remove institutional affiliations."
+msgstr ""
+
+#: templates/project/settings.mako:478
+msgid ""
+"Projects can be affiliated with institutions that have created GakuNin "
+"RDM for Institutions accounts."
+msgstr ""
+
+#: templates/project/settings.mako:479
+msgid "This allows:"
+msgstr ""
+
+#: templates/project/settings.mako:481
+msgid "institutional logos to be displayed on public projects"
+msgstr ""
+
+#: templates/project/settings.mako:482
+msgid "public projects to be discoverable on specific institutional landing pages"
+msgstr ""
+
+#: templates/project/settings.mako:483
+msgid "single sign-on to the GakuNin RDM with institutional credentials"
+msgstr ""
+
+#: templates/project/settings.mako:484
+msgid "FAQ"
+msgstr ""
+
+#: templates/project/settings.mako:512
+msgid "Available Institutions:"
+msgstr ""
 

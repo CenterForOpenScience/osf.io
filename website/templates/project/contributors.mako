@@ -72,9 +72,9 @@
                     filter: '.permission-filter',
                     type: 'text',
                     buttons: {
-                        admins: 'Administrator',
-                        write: 'Read + Write',
-                        read: 'Read'
+                        admins: '${_("Administrator")}',
+                        write: '${_("Read + Write")}',
+                        read: '${_("Read")}'
                     }
                 },
                 visibleFilter: {
@@ -159,7 +159,7 @@
       % if not use_viewonlylinks:
         <div style="display: none;">
       % endif
-        <h3 class="m-t-xl">View-only Links
+        <h3 class="m-t-xl">${_("View-only Links")}
             <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm m-l-md">
               <i class="fa fa-plus"></i> ${_("Add")}
             </a>
