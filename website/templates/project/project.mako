@@ -215,8 +215,9 @@
                 % endif
                 % if node['is_fork']:
                     <p>
-                    Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
-                    <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
+                    ${_('Forked from <a %(forked_form_id)s>%(forked_from_display_absolute_url)s</a> on\
+                    <span %(data_bind)s></span>') % dict(forked_form_id='class="node-forked-from"' + ' href="/' + h(node['forked_from_id']) + '/"',\
+                    forked_from_display_absolute_url=h(node['forked_from_display_absolute_url']),data_bind='data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"') | n}
                     </p>
                 % endif
                 % if node['is_registration']:
@@ -404,16 +405,16 @@
                             <% icon_tooltip = ''%>
                             % if preprint['state'] == 'pending':
                                 % if preprint['provider']['workflow'] == 'post-moderation':
-                                    <% icon_tooltip = 'This {preprint_word} is publicly available and searchable but is subject to' \
-                                    ' removal by a moderator.'.format(preprint_word=preprint['word'])%>
+                                    <% icon_tooltip = _('This {preprint_word} is publicly available and searchable but is subject to' \
+                                    ' removal by a moderator.').format(preprint_word=preprint['word'])%>
                                 % else:
-                                    <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable until approved ' \
-                                    'by a moderator.'.format(preprint_word=preprint['word'])%>
+                                    <% icon_tooltip = _('This {preprint_word} is not publicly available or searchable until approved ' \
+                                    'by a moderator.').format(preprint_word=preprint['word'])%>
                                 % endif
                             % elif preprint['state'] == 'accepted':
-                                <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=preprint['word'])%>
+                                <% icon_tooltip = _('This {preprint_word} is publicly available and searchable.').format(preprint_word=preprint['word'])%>
                             % else:
-                                <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=preprint['word'])%>
+                                <% icon_tooltip = _('This {preprint_word} is not publicly available or searchable.').format(preprint_word=preprint['word'])%>
                             % endif
                             <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>
                         % endif
@@ -545,8 +546,8 @@
                                          <span id="custom-citation-copy-button" type="button" data-bind="attr: {'data-clipboard-text': customCitation}" class="btn btn-sm btn-default"><i class="fa fa-copy"></i></span>
                                      </div>
                                      <div class="col-xs-9 m-l-sm">
-                                         <div class="f-w-xl">Cite as:</div>
-                                         <span data-bind="text: customCitation"></span>
+                                         ${_('<div %(f_x_xl)s>Cite as:</div>\
+                                         <span %(data_bind)s></span>') % dict(f_x_xl='class="f-w-xl"',data_bind='data-bind="text: customCitation"') | n}
                                      </div>
                                  </div>
                              </div>

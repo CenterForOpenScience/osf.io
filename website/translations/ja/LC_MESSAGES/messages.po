@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-11-27 12:59+0900\n"
-"PO-Revision-Date: 2019-11-27 12:59+0900\n"
+"POT-Creation-Date: 2019-11-28 15:42+0900\n"
+"PO-Revision-Date: 2019-11-28 15:42+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -22,344 +22,462 @@ msgstr ""
 msgid "Type your search terms in the box above."
 msgstr ""
 
+#: templates/project/addons.mako:14 templates/project/addons.mako:33
+msgid "Select Add-ons"
+msgstr ""
+
+#: templates/project/addons.mako:15 templates/project/addons.mako:111
+msgid "Configure Add-ons"
+msgstr ""
+
+#: templates/project/addons.mako:38
+msgid ""
+"Sync your projects with external services to help stay connected and "
+"organized. Select a category and browse the options."
+msgstr ""
+
+#: templates/project/addons.mako:44
+msgid "Categories"
+msgstr ""
+
+#: templates/project/addons.mako:47
+msgid "Search..."
+msgstr ""
+
+#: templates/project/addons.mako:56
+msgid "All"
+msgstr ""
+
+#: templates/project/addons.mako:82
+msgid "(This is a default addon)"
+msgstr ""
+
+#: templates/project/addons.mako:84
+msgid "Disable"
+msgstr ""
+
+#: templates/project/addons.mako:86
+msgid "Enable"
+msgstr ""
+
+#: templates/project/addons.mako:128
+msgid "Don’t see your GitHub organization repositories?"
+msgstr ""
+
+#: templates/project/addons.mako:130
+msgid "You may need to reauthorize your GitHub access token."
+msgstr ""
+
+#: templates/project/addons.mako:131
+#, python-format
+msgid "Follow the steps in the <a %(tags)s>help guide</a> to resolve the issue."
+msgstr ""
+
+#: templates/project/addons.mako:135
+#, python-format
+msgid ""
+"Please contact <a %(tags)s>rdm_support@nii.ac.jp</a> if you have "
+"questions."
+msgstr ""
+
+#: templates/project/contributors.mako:2 templates/project/contributors.mako:8
+#: templates/project/contributors.mako:54 templates/project/project.mako:163
+#: templates/project/project_header.mako:72
+msgid "Contributors"
+msgstr ""
+
+#: templates/project/contributors.mako:13
+msgid "Filter by name"
+msgstr ""
+
+#: templates/project/contributors.mako:24
+msgid "Administrator"
+msgstr ""
+
+#: templates/project/contributors.mako:27
+msgid "Read + Write"
+msgstr ""
+
+#: templates/project/contributors.mako:30
+msgid "Read"
+msgstr ""
+
+#: templates/project/contributors.mako:33
+#: templates/project/contributors.mako:196
+#: templates/project/contributors.mako:242
+msgid "Bibliographic Contributor"
+msgstr ""
+
+#: templates/project/contributors.mako:43
+msgid "Bibliographic"
+msgstr ""
+
+#: templates/project/contributors.mako:46
+msgid "Non-Bibliographic"
+msgstr ""
+
+#: templates/project/contributors.mako:57
+#: templates/project/contributors.mako:164
+#: templates/project/contributors.mako:337
+#: templates/project/contributors.mako:385
+msgid "Add"
+msgstr ""
+
+#: templates/project/contributors.mako:63
+msgid "Drag and drop contributors to change listing order."
+msgstr ""
+
+#: templates/project/contributors.mako:106
+msgid "No contributors found"
+msgstr ""
+
+#: templates/project/contributors.mako:111
+msgid "Admins on Parent Projects"
+msgstr ""
+
+#: templates/project/contributors.mako:135
+msgid "No administrators from parent project found."
+msgstr ""
+
+#: templates/project/contributors.mako:144
+msgid "The following users have requested access to this project."
+msgstr ""
+
+#: templates/project/contributors.mako:167
+msgid ""
+"Create a link to share this project so those who have the link can "
+"view&mdash;but not edit&mdash;the project."
+msgstr ""
+
+#: templates/project/contributors.mako:186
+msgid "Permissions"
+msgstr ""
+
+#: templates/project/contributors.mako:332
+#: templates/project/contributors.mako:387 templates/project/project.mako:569
+msgid "Remove"
+msgstr ""
+
+#: templates/project/contributors.mako:396
+msgid "Discard Changes"
+msgstr ""
+
+#: templates/project/contributors.mako:397
+msgid "Save Changes"
+msgstr ""
+
+#: templates/project/files.mako:2 templates/project/files.mako:5
+#: templates/project/project.mako:441 templates/project/project_header.mako:40
+msgid "Files"
+msgstr ""
+
+#: templates/project/files.mako:8 templates/project/project.mako:449
+msgid "Click on a storage provider or drag and drop to upload"
+msgstr ""
+
 #: templates/project/project.mako:22
 msgid "Private Project"
-msgstr "非公開プロジェクト"
+msgstr ""
 
 #: templates/project/project.mako:45
 msgid "Private"
-msgstr "非公開"
+msgstr ""
 
 #: templates/project/project.mako:49
 msgid "Make Public"
-msgstr "公開にする"
+msgstr ""
 
 #: templates/project/project.mako:58
 msgid "Make Private"
-msgstr "非公開にする"
+msgstr ""
 
 #: templates/project/project.mako:60
 msgid "Public"
-msgstr "公開"
+msgstr ""
 
 #: templates/project/project.mako:65
 msgid "Log in or create an account to duplicate this project"
-msgstr "このプロジェクトを複製するには、ログインするかアカウントを作成してください"
+msgstr ""
 
 #: templates/project/project.mako:100
 #, python-format
-msgid "View Forks %(fork_count)s"
-msgstr "フォークを表示する %(fork_count)s"
+msgid "View Forks %(forkcount)s"
+msgstr ""
 
 #: templates/project/project.mako:115
 msgid "Bookmark"
-msgstr "ブックマーク"
+msgstr ""
 
 #: templates/project/project.mako:118
 msgid "Remove from bookmarks"
-msgstr "ブックマークから除外"
+msgstr ""
 
 #: templates/project/project.mako:127
 msgid "Create view-only link"
-msgstr "参照用リンクを作成"
+msgstr ""
 
 #: templates/project/project.mako:137
 msgid "Share"
-msgstr "共有"
+msgstr ""
 
 #: templates/project/project.mako:150
 msgid "Log in to request access"
-msgstr "ログインしてアクセスをリクエスト"
-
-#: templates/project/project.mako:163 templates/project/project_header.mako:72
-msgid "Contributors"
-msgstr "コントリビュータ"
+msgstr ""
 
 #: templates/project/project.mako:165
 msgid "Contributors:"
-msgstr "コントリビュータ:"
+msgstr ""
 
 #: templates/project/project.mako:169
 msgid "Anonymous Contributors"
-msgstr "匿名コントリビュータ"
+msgstr ""
 
 #: templates/project/project.mako:192
 msgid "Affiliated Institutions:"
-msgstr "所属機関:"
+msgstr ""
 
 #: templates/project/project.mako:202
 msgid "None"
-msgstr "無し"
+msgstr ""
 
 #: templates/project/project.mako:218
 #, python-format
 msgid ""
-"Forked from <a class=\"node-forked-from\" "
-"href=\"/%(forked_from_id)s/\">%(forked_from_display_absolute_url)s</a> on"
-"                    <span data-bind=\"text: dateForked.local, tooltip: "
-"{title: dateForked.utc}\"></span>"
-msgstr "<span data-bind=\"text: dateForked.local, tooltip: {title: dateForked.utc}\"></span>の<a class=\"node-forked-from\" href=\"/%(forked_from_id)s/\">%(forked_from_display_absolute_url)s</a>からフォークする"
+"Forked from <a "
+"%(forked_form_id)s>%(forked_from_display_absolute_url)s</a> on"
+"                    <span %(data_bind)s></span>"
+msgstr ""
 
-#: templates/project/project.mako:224
+#: templates/project/project.mako:225
 msgid "Date registered:"
-msgstr "登録日"
+msgstr ""
 
-#: templates/project/project.mako:229
+#: templates/project/project.mako:230
 msgid "Date created:"
-msgstr "作成日"
+msgstr ""
 
-#: templates/project/project.mako:232
+#: templates/project/project.mako:233
 msgid "| Last Updated:"
-msgstr "| 最終更新日"
+msgstr ""
 
-#: templates/project/project.mako:247
+#: templates/project/project.mako:248
 msgid "Creating DOI. Please wait..."
-msgstr "DOIを作成しています。お待ち下さい..."
+msgstr ""
 
-#: templates/project/project.mako:253
+#: templates/project/project.mako:254
 msgid "Create DOI"
-msgstr "DOIを作成"
+msgstr ""
 
-#: templates/project/project.mako:258
+#: templates/project/project.mako:259
 msgid "Category:"
-msgstr "カテゴリー:"
+msgstr ""
 
-#: templates/project/project.mako:290
+#: templates/project/project.mako:291
 msgid "View Registration Form"
-msgstr "登録フォームを表示"
+msgstr ""
 
-#: templates/project/project.mako:295
+#: templates/project/project.mako:296
 msgid "View Registration Forms"
-msgstr "登録フォームを表示"
+msgstr ""
 
-#: templates/project/project.mako:340
+#: templates/project/project.mako:341
 msgid "Type:"
-msgstr "タイプ:"
+msgstr ""
 
-#: templates/project/project.mako:344 templates/project/project.mako:395
+#: templates/project/project.mako:345 templates/project/project.mako:396
 msgid "Status:"
-msgstr "ステータス:"
+msgstr ""
 
-#: templates/project/project.mako:348
+#: templates/project/project.mako:349
 msgid "Volume:"
-msgstr "ボリューム:"
+msgstr ""
 
-#: templates/project/project.mako:352
+#: templates/project/project.mako:353
 msgid "Issue:"
-msgstr "イシュー:"
+msgstr ""
 
-#: templates/project/project.mako:356
+#: templates/project/project.mako:357
 msgid "Program Area:"
-msgstr "プログラムエリア"
+msgstr ""
 
-#: templates/project/project.mako:362
+#: templates/project/project.mako:363
 msgid "Subjects:"
-msgstr "学科:"
+msgstr ""
 
-#: templates/project/project.mako:398
+#: templates/project/project.mako:399
 msgid "Withdrawn"
-msgstr "取り下げ"
+msgstr ""
 
-#: templates/project/project.mako:407
-#, python-format
+#: templates/project/project.mako:408
 msgid ""
-"<% icon_tooltip = 'This {preprint_word} is publicly available and "
-"searchable but is subject to'                                     ' "
-"removal by a moderator.'.format(preprint_word=preprint['word'])%>"
-msgstr "<% icon_tooltip = 'この{preprint_word}は一般公開されており検索可能ですが、モデレーターによる削除の対象となります。'.format(preprint_word=preprint['word'])%>'"
+"This {preprint_word} is publicly available and searchable but is subject "
+"to removal by a moderator."
+msgstr ""
 
-#: templates/project/project.mako:410
-#, python-format
+#: templates/project/project.mako:411
 msgid ""
-"<% icon_tooltip = 'This {preprint_word} is not publicly available or "
-"searchable until approved '                                     'by a "
-"moderator.'.format(preprint_word=preprint['word'])%>"
-msgstr "<% icon_tooltip = 'この{preprint_word}は、モデレーターによって承認されるまで公開または検索できません。'.format(preprint_word=preprint['word'])%>"
+"This {preprint_word} is not publicly available or searchable until "
+"approved by a moderator."
+msgstr ""
 
-#: templates/project/project.mako:414
-#, python-format
-msgid ""
-"<% icon_tooltip = 'This {preprint_word} is publicly available and "
-"searchable.'.format(preprint_word=preprint['word'])%>"
-msgstr "<% icon_tooltip = 'この{preprint_word}は公開されており、検索可能です。'.format(preprint_word=preprint['word'])%>"
+#: templates/project/project.mako:415
+msgid "This {preprint_word} is publicly available and searchable."
+msgstr ""
 
-#: templates/project/project.mako:416
-#, python-format
-msgid ""
-"<% icon_tooltip = 'This {preprint_word} is not publicly available or "
-"searchable.'.format(preprint_word=preprint['word'])%>"
-msgstr "<% icon_tooltip = 'この{preprint_word}は一般公開も検索もできません。'.format(preprint_word=preprint['word'])%>"
+#: templates/project/project.mako:417
+msgid "This {preprint_word} is not publicly available or searchable."
+msgstr ""
 
-#: templates/project/project.mako:440 templates/project/project_header.mako:40
-msgid "Files"
-msgstr "ファイル"
-
-#: templates/project/project.mako:448
-msgid "Click on a storage provider or drag and drop to upload"
-msgstr "ストレージプロバイダーをクリックするか、ドラッグ&ドロップしてアップロードします"
-
-#: templates/project/project.mako:460
+#: templates/project/project.mako:461
 msgid "Loading files..."
-msgstr "ファイルをロード中"
+msgstr ""
 
-#: templates/project/project.mako:501
+#: templates/project/project.mako:502
 msgid "Citation"
-msgstr "引用"
+msgstr ""
 
-#: templates/project/project.mako:513
+#: templates/project/project.mako:514
 msgid "Loading citations..."
-msgstr "引用をロード中..."
+msgstr ""
 
-#: templates/project/project.mako:518
+#: templates/project/project.mako:519
 msgid "Customize"
-msgstr "カスタマイズ"
+msgstr ""
 
-#: templates/project/project.mako:526
+#: templates/project/project.mako:527
 msgid "Chicago"
-msgstr "シカゴ"
+msgstr ""
 
-#: templates/project/project.mako:530
+#: templates/project/project.mako:531
 msgid "Get more citations"
-msgstr "より多くの引用を取得"
+msgstr ""
 
-#: templates/project/project.mako:538
+#: templates/project/project.mako:539
 msgid "Edit"
-msgstr "編集"
+msgstr ""
 
-#: templates/project/project.mako:547
+#: templates/project/project.mako:549
+#, python-format
 msgid ""
-"<div class=\"f-w-xl\">Cite as:</div>"
-"                                         <span data-bind=\"text: "
-"customCitation\"></span>"
-msgstr "<div class=\"f-w-xl\"><span data-bind=\"text: customCitation\"></span>として引用する</div>"
-
-#: templates/project/project.mako:567
-msgid "Cancel"
-msgstr "キャンセル"
+"<div %(f_x_xl)s>Cite as:</div>                                         "
+"<span %(data_bind)s></span>"
+msgstr ""
 
 #: templates/project/project.mako:568
-msgid "Remove"
-msgstr "除外"
+msgid "Cancel"
+msgstr ""
 
-#: templates/project/project.mako:569
+#: templates/project/project.mako:570
 msgid "Save"
-msgstr "保存"
+msgstr ""
 
-#: templates/project/project.mako:586
+#: templates/project/project.mako:587
 msgid "Tags"
-msgstr "タグ"
-
-#: templates/project/project.mako:600
-msgid "Recent Activity"
-msgstr "最近の活動"
+msgstr ""
 
 #: templates/project/project.mako:601
+msgid "Recent Activity"
+msgstr ""
+
+#: templates/project/project.mako:602
 msgid "Refresh"
-msgstr "更新"
+msgstr ""
 
-#: templates/project/project.mako:607
+#: templates/project/project.mako:608
 msgid "Parts of User's Fullname"
-msgstr "ユーザのフルネームの一部"
+msgstr ""
 
-#: templates/project/project.mako:612
+#: templates/project/project.mako:613
 msgid "Start Date[yyyy-mm-dd]"
-msgstr "開始日[yyyy-mm-dd]"
+msgstr ""
 
-#: templates/project/project.mako:615
+#: templates/project/project.mako:616
 msgid "End Date[yyyy-mm-dd]"
-msgstr "終了日[yyyy-mm-dd]"
+msgstr ""
 
-#: templates/project/project.mako:623
+#: templates/project/project.mako:624
 msgid "Loading logs..."
-msgstr "ログをロード中..."
-
-#: templates/project/project.mako:629
-msgid "Download as file"
-msgstr "ファイルをダウンロード"
+msgstr ""
 
 #: templates/project/project.mako:630
+msgid "Download as file"
+msgstr ""
+
+#: templates/project/project.mako:631
 msgid "Download"
-msgstr "ダウンロード"
+msgstr ""
 
-#: templates/project/project.mako:643
+#: templates/project/project.mako:644
 msgid "Components"
-msgstr "コンポーネント"
+msgstr ""
 
-#: templates/project/project.mako:647
+#: templates/project/project.mako:648
 msgid "Add Component"
-msgstr "コンポーネントを追加"
+msgstr ""
 
-#: templates/project/project.mako:649
+#: templates/project/project.mako:650
 msgid "Link Projects"
-msgstr "プロジェクトをリンクする"
+msgstr ""
 
-#: templates/project/project.mako:659
+#: templates/project/project.mako:660
 msgid "Add components to organize your project."
-msgstr "コンポーネントを追加して、プロジェクトを整理します。"
+msgstr ""
 
 #: templates/project/project_header.mako:16
 msgid "Project"
-msgstr "プロジェクト"
+msgstr ""
 
 #: templates/project/project_header.mako:16
 msgid "Component"
-msgstr "コンポーネント"
+msgstr ""
 
 #: templates/project/project_header.mako:16
 msgid "Navigation"
-msgstr "ナビゲーション"
-
-#: templates/project/project_header.mako:40
-msgid "Files"
-msgstr "ファイル"
+msgstr ""
 
 #: templates/project/project_header.mako:61
 msgid "Analytics"
-msgstr "分析"
+msgstr ""
 
 #: templates/project/project_header.mako:67
 msgid "Registrations"
-msgstr "登録"
-
-#: templates/project/project_header.mako:72
-msgid "Contributors"
-msgstr "コントリビュータ"
+msgstr ""
 
 #: templates/project/project_header.mako:76
 msgid "Add-ons"
-msgstr "アドオン"
+msgstr ""
 
 #: templates/project/project_header.mako:80
 msgid "Settings"
-msgstr "設定"
+msgstr ""
 
 #: templates/project/project_header.mako:86
 msgid "Comments"
-msgstr "コメント"
+msgstr ""
 
 #: templates/project/project_header.mako:96
 msgid "Timestamp"
-msgstr "タイムスタンプ"
+msgstr ""
 
 #: templates/project/project_header.mako:128
 msgid ""
 "This file is part of a registration and is being shown in its archived "
 "version (and cannot be altered)."
-msgstr "このファイルは登録の一部であり、アーカイブバージョンで表示されています（変更できません）。"
+msgstr ""
 
 #: templates/project/project_header.mako:129
 #, python-format
 msgid ""
 "The <a %(archived_from_url)s>active file</a> is viewable from within the "
 "<a %(registered_from_url)s>live%(node_type)s</a>."
-msgstr "<a %(archived_from_url)s>アクティブファイル</a>は<a %(registered_from_url)s>%(node_type)sのライブ</a>内から表示できます。"
+msgstr ""
 
 #: templates/project/project_header.mako:131
 #, python-format
 msgid ""
 "This registration is a frozen, non-editable version of <a class=\"link-"
 "solid\" href=\"%(registeredfromurl)s\">this %(nodetype)s</a>"
-msgstr "この登録は、この%(nodetype)sの凍結された編集不可バージョンです"
+msgstr ""
 
 #: templates/project/project_header.mako:135
 #, python-format
@@ -368,17 +486,17 @@ msgid ""
 "%(node_type)s</a>, awaiting approval from project administrators. This "
 "registration will be final when all project administrators approve the "
 "registration or 48 hours pass, whichever comes first."
-msgstr "これは<a %(registered_from_url)s>この %(node_type)s</a>の保留中の登録であり、プロジェクト管理者からの承認を待っています。 この登録は、すべてのプロジェクト管理者が登録または48時間のパスのいずれか早い方を承認したときに最終となります。"
+msgstr ""
 
 #: templates/project/project_header.mako:141
 #: templates/project/project_header.mako:173
 msgid "Cancel registration"
-msgstr "登録をキャンセル"
+msgstr ""
 
 #: templates/project/project_header.mako:159
 #, python-format
 msgid "This %(nodetype)s is currently pending withdrawal."
-msgstr "この%(nodetype)sは現在、保留中です。"
+msgstr ""
 
 #: templates/project/project_header.mako:163
 #, python-format
@@ -386,7 +504,7 @@ msgid ""
 "This %(nodetype)s is a withdrawn registration of <a class=\"link-solid\" "
 "href=\"%(registeredfromurl)s\">this %(nodetype)s</a>; the content of the "
 "%(nodetype)s has been taken down for the reason(s) stated below."
-msgstr "この%(nodetype)sは、この%(nodetype)sの登録の取り消しです。%(nodetype)sのコンテンツは、下記の理由により削除されました。"
+msgstr ""
 
 #: templates/project/project_header.mako:168
 #, python-format
@@ -396,14 +514,14 @@ msgid ""
 "the embargo period when all project administrators approve the "
 "registration or 48 hours pass, whichever comes first. The embargo will "
 "keep the registration private until the embargo period ends."
-msgstr "この%(nodetype)sは現在登録を保留しており、プロジェクト管理者からの承認を待っています。 この登録は最終的なものであり、すべてのプロジェクト管理者が登録を承認するか、48時間のパスのいずれか早い方を承認した時点で禁止期間に入ります。 禁止措置は、禁止期間が終了するまで登録を非公開にします。"
+msgstr ""
 
 #: templates/project/project_header.mako:182
 #, python-format
 msgid ""
 "This registration is currently embargoed. It will remain private until "
 "its embargo end date, %(embargoenddate)s."
-msgstr "この登録は現在禁止されています。 禁止終了日（%(embargoenddate)s）まで非公開のままです。"
+msgstr ""
 
 #: templates/project/project_header.mako:188
 #, python-format
@@ -411,7 +529,7 @@ msgid ""
 "This %(nodetype)s contains supplemental materials for a preprint, but has"
 " been made Private. Make your supplemental materials discoverable by "
 "making this %(nodetype)s Public."
-msgstr "この%(nodetype)sには、プレプリントの補足資料が含まれていますが、非公開になっています。 この%(nodetype)sを公開することで、補足資料を見つけやすくします。"
+msgstr ""
 
 #: templates/project/project_header.mako:192
 #, python-format
@@ -419,19 +537,19 @@ msgid ""
 "This %(nodetype)s is being viewed through an anonymized, view-only link. "
 "If you want to view it as a contributor, click <a class=\"link-solid\" "
 "href=\"%(redirecturl)s\">here</a>."
-msgstr "「この%(nodetype)s は匿名化された参照用リンクで表示されています。コントリビュータとして表示する場合は、<a class=\"link-solid\" href=\"%(redirecturl)s\">ここ</a>をクリックしてください。"
+msgstr ""
 
 #: templates/project/project_header.mako:196
 #, python-format
 msgid ""
 "This %(nodetype)s is being viewed through a private, view-only link. "
 "Anyone with the link can view this project. Keep the link safe."
-msgstr "この%(nodetype)sは、プライベートな参照用リンクを介して表示されています。 リンクを知っている全員がこのプロジェクトを閲覧できます。 リンクを安全に保ちます。"
+msgstr ""
 
 #: templates/project/project_header.mako:200
 msgid ""
 "<strong>NOTICE: </strong>Forks, registrations, and uploads will be "
 "temporarily disabled while the GakuNin RDM undergoes a hardware upgrade. "
 "These features will return shortly. Thank you for your patience."
-msgstr "<strong>注意: </strong>GakuNin RDMのハードウェアアップグレード中は、フォーク、登録、アップロードが一時的に無効になります。 これらの機能はまもなく戻ります。 おまたせして申し訳ありません。"
+msgstr ""
 
