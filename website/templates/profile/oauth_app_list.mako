@@ -1,7 +1,7 @@
 <%inherit file="base.mako"/>
-<%def name="title()">Developer Applications</%def>
+<%def name="title()">${_("Developer Applications")}</%def>
 <%def name="content()">
-<h2 class="page-header">Settings</h2>
+<h2 class="page-header">${_("Settings")}</h2>
 
 <div id="applicationListPage" class="row">
     <div class="col-sm-3 affix-parent">
@@ -12,26 +12,26 @@
 
         <div id="appList" class="panel panel-default scripted" style="display:none;" data-bind="visible: true">
             <div class="panel-heading clearfix">
-                <h3 class="panel-title" style="padding-bottom: 5px; padding-top: 5px;">Developer Applications</h3>
+                <h3 class="panel-title" style="padding-bottom: 5px; padding-top: 5px;">${_("Developer Applications")}</h3>
                 <div class="pull-right">
-                    <a data-bind="attr: {href: webCreateUrl}" role="button" class="btn btn-sm btn-default">New application</a>
+                    <a data-bind="attr: {href: webCreateUrl}" role="button" class="btn btn-sm btn-default">${_("New application")}</a>
                 </div>
             </div>
             <div class="panel-body">
 
-                <p>The GakuNin RDM allows third-party web applications to connect to the GakuNin RDM on behalf of other users via the OAuth 2.0 web application flow.</p>
+                <p>${_("The GakuNin RDM allows third-party web applications to connect to the GakuNin RDM on behalf of other users via the OAuth 2.0 web application flow.")}</p>
 
-                <p data-bind="visible: (appData().length == 0)">You have not registered any applications that can connect to the GakuNin RDM on behalf of other users.</p>
+                <p data-bind="visible: (appData().length == 0)">${_("You have not registered any applications that can connect to the GakuNin RDM on behalf of other users.")}</p>
                 <div id="if-apps" data-bind="visible: (appData().length > 0)">
-                    <p>You have registered the following applications that can connect to the GakuNin RDM on behalf of other users:</p>
+                    <p>${_("You have registered the following applications that can connect to the GakuNin RDM on behalf of other users:")}</p>
 
                     <table class="table table-condensed">
                         <thead>
                         <tr>
-                            <th>Application</th>
+                            <th>${_("Application")}</th>
                             <th>
                                 <span class="pull-right">
-                                    Deactivate
+                                    ${_("Deactivate")}
                                 </span>
                             </th>
                         </tr>
@@ -40,7 +40,7 @@
                             <tr>
                                 <td>
                                     <a href="#" data-bind="attr: {href: webDetailUrl  }"><span data-bind="text: name"></span></a>
-                                    <p>Client ID: <span class="text-muted" data-bind="text: clientId"></span></p>
+                                    <p>${_("Client ID:")} <span class="text-muted" data-bind="text: clientId"></span></p>
                                 </td>
                                 <td>
                                     <a href="#" data-bind="click: $root.deleteApplication.bind($root)"><i class="fa fa-times text-danger pull-right"></i></a>

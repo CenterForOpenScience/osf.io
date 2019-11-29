@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-11-29 14:06+0900\n"
+"POT-Creation-Date: 2019-11-29 14:47+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -28,6 +28,8 @@ msgstr "アカウント設定"
 
 #: templates/profile/account.mako:8 templates/profile/add_email.mako:14
 #: templates/profile/addons.mako:19 templates/profile/notifications.mako:6
+#: templates/profile/oauth_app_list.mako:4
+#: templates/profile/personal_tokens_detail.mako:5
 #: templates/project/project_header.mako:80 templates/project/settings.mako:2
 #: templates/project/settings.mako:5
 msgid "Settings"
@@ -238,7 +240,9 @@ msgid ""
 "                    service that allows users to easily control their "
 "identity                    and profile on multiple service across the "
 "Internet."
-msgstr "GakuNin RDMのアバターは<a href=\"http://gravatar.org/\">gravatar.org</a>を使用します。これは、ユーザーがインターネット上の複数のサービスで自分のIDとプロファイルを簡単に制御できるようにする無料のサービスです。"
+msgstr ""
+"GakuNin RDMのアバターは<a "
+"href=\"http://gravatar.org/\">gravatar.org</a>を使用します。これは、ユーザーがインターネット上の複数のサービスで自分のIDとプロファイルを簡単に制御できるようにする無料のサービスです。"
 
 #: templates/profile/modal_change_avatar.mako:14
 msgid ""
@@ -246,7 +250,10 @@ msgid ""
 "                   <a href=\"http://gravatar.org/\">gravatar.org</a>, and"
 " add the                   email address you use on the GakuNin RDM to "
 "your Gravatar account."
-msgstr "アバター画像を変更するには、<a href=\"http://gravatar.org/\">gravatar.org</a>でログインまたは登録し、GakuNin RDMで使用するメールアドレスをGravatarアカウントに追加してください。"
+msgstr ""
+"アバター画像を変更するには、<a "
+"href=\"http://gravatar.org/\">gravatar.org</a>でログインまたは登録し、GakuNin "
+"RDMで使用するメールアドレスをGravatarアカウントに追加してください。"
 
 #: templates/profile/modal_change_avatar.mako:20
 #: templates/project/view_file.mako:117 templates/project/view_file.mako:137
@@ -285,6 +292,169 @@ msgstr "注：選択した設定に関係なく、GakuNin RDMは引き続きト�
 #: templates/profile/notifications.mako:64 templates/project/settings.mako:372
 msgid "Loading notification settings..."
 msgstr "通知設定をロード中..."
+
+#: templates/profile/oauth_app_detail.mako:2
+#: templates/profile/oauth_app_detail.mako:5
+msgid "Application Detail"
+msgstr "アプリケーション詳細"
+
+#: templates/profile/oauth_app_detail.mako:16
+msgid "Return to list of registered applications"
+msgstr "登録済みアプリケーションのリストに戻る"
+
+#: templates/profile/oauth_app_detail.mako:25
+msgid "The unique identifier for the application. May be seen publicly by others."
+msgstr "アプリケーションの一意の識別子。 他人に公開される可能性があります。"
+
+#: templates/profile/oauth_app_detail.mako:32
+msgid ""
+"The client secret is known only to you and the GakuNin RDM. Do not "
+"display or expose this information."
+msgstr "クライアントシークレットは、あなたとGakuNin RDMのみが知っています。 この情報を表示または公開しないでください。"
+
+#: templates/profile/oauth_app_detail.mako:39
+msgid "Hide"
+msgstr "隠す"
+
+#: templates/profile/oauth_app_detail.mako:40
+msgid "Show"
+msgstr "表示する"
+
+#: templates/profile/oauth_app_detail.mako:42
+msgid "Reset Secret"
+msgstr "シークレットをリセット"
+
+#: templates/profile/oauth_app_detail.mako:44
+msgid ""
+"Resetting the client secret will render your application unusable until "
+"it is updated with the new client secret, and all users must reauthorize "
+"access. Previously issued access tokens will no longer work."
+msgstr "クライアントシークレットをリセットすると、新しいクライアントシークレットで更新されるまでアプリケーションが使用できなくなり、すべてのユーザーがアクセスを再認証する必要があります。 以前に発行されたアクセストークンは機能しなくなります。"
+
+#: templates/profile/oauth_app_detail.mako:48
+msgid "Deactivate application"
+msgstr "非アクティブアプリケーション"
+
+#: templates/profile/oauth_app_detail.mako:54
+msgid "Application name"
+msgstr "アプリケーション名"
+
+#: templates/profile/oauth_app_detail.mako:55
+#: templates/profile/oauth_app_detail.mako:61
+#: templates/profile/oauth_app_detail.mako:73
+#: templates/profile/personal_tokens_detail.mako:26
+msgid "Required"
+msgstr "必須"
+
+#: templates/profile/oauth_app_detail.mako:60
+msgid "Project homepage URL"
+msgstr "プロジェクトホームページURL"
+
+#: templates/profile/oauth_app_detail.mako:66
+msgid "Application description"
+msgstr "アプリケーションの説明"
+
+#: templates/profile/oauth_app_detail.mako:67
+msgid "Optional"
+msgstr "任意"
+
+#: templates/profile/oauth_app_detail.mako:72
+msgid "Authorization callback URL"
+msgstr "認証コールバックURL"
+
+#: templates/profile/oauth_app_detail.mako:84
+#: templates/profile/personal_tokens_detail.mako:49
+#: templates/project/project.mako:568 templates/project/settings.mako:132
+#: templates/project/timestamp.mako:71
+msgid "Cancel"
+msgstr "キャンセル"
+
+#: templates/profile/oauth_app_detail.mako:86
+#: templates/profile/personal_tokens_detail.mako:51
+msgid "Create"
+msgstr "作成"
+
+#: templates/profile/oauth_app_detail.mako:88
+#: templates/profile/personal_tokens_detail.mako:55
+#: templates/project/project.mako:570
+msgid "Save"
+msgstr "保存"
+
+#: templates/profile/oauth_app_list.mako:2
+#: templates/profile/oauth_app_list.mako:15
+msgid "Developer Applications"
+msgstr "開発者向けアプリケーション"
+
+#: templates/profile/oauth_app_list.mako:17
+msgid "New application"
+msgstr "新しいアプリケーション"
+
+#: templates/profile/oauth_app_list.mako:22
+msgid ""
+"The GakuNin RDM allows third-party web applications to connect to the "
+"GakuNin RDM on behalf of other users via the OAuth 2.0 web application "
+"flow."
+msgstr "GakuNin RDMを使用すると、サードパーティのWebアプリケーションがOAuth 2.0 Webアプリケーションフローを介して他のユーザーに代わってGakuNin RDMに接続できます。"
+
+#: templates/profile/oauth_app_list.mako:24
+msgid ""
+"You have not registered any applications that can connect to the GakuNin "
+"RDM on behalf of other users."
+msgstr "他のユーザーに代わってGakuNin RDMに接続できるアプリケーションを登録していません。"
+
+#: templates/profile/oauth_app_list.mako:26
+msgid ""
+"You have registered the following applications that can connect to the "
+"GakuNin RDM on behalf of other users:"
+msgstr "他のユーザーに代わってGakuNin RDMに接続できる次のアプリケーションを登録しました。"
+
+#: templates/profile/oauth_app_list.mako:31
+msgid "Application"
+msgstr "アプリケーション"
+
+#: templates/profile/oauth_app_list.mako:34
+msgid "Deactivate"
+msgstr "非アクティブ"
+
+#: templates/profile/oauth_app_list.mako:43
+msgid "Client ID:"
+msgstr "クライアントID"
+
+#: templates/profile/personal_tokens_detail.mako:2
+msgid "Personal Token Detail"
+msgstr "個人トークンの詳細"
+
+#: templates/profile/personal_tokens_detail.mako:16
+msgid "Return to list of registered tokens"
+msgstr "登録済みトークンのリストに戻る"
+
+#: templates/profile/personal_tokens_detail.mako:25
+msgid "What this token is for."
+msgstr "このトークンの目的"
+
+#: templates/profile/personal_tokens_detail.mako:31
+msgid "Scopes:"
+msgstr "スコープ"
+
+#: templates/profile/personal_tokens_detail.mako:32
+msgid "Scopes limit access for personal access tokens."
+msgstr "スコープは、個人アクセストークンのアクセスを制限します。"
+
+#: templates/profile/personal_tokens_detail.mako:53
+msgid "Delete"
+msgstr "削除"
+
+#: templates/profile/personal_tokens_detail.mako:65
+msgid "This is the only time your token will be displayed."
+msgstr "トークンが表示されるのは彼だけです。"
+
+#: templates/profile/personal_tokens_detail.mako:67
+msgid "ID used to authenticate with this token. This will be shown only once."
+msgstr "このトークンでの認証に使用されるID。 これは一度だけ表示されます。"
+
+#: templates/profile/personal_tokens_detail.mako:70
+msgid "Copy to clipboard"
+msgstr "クリップボードにコピー"
 
 #: templates/project/addons.mako:14 templates/project/addons.mako:33
 msgid "Select Add-ons"
@@ -638,15 +808,6 @@ msgid ""
 "<div %(f_x_xl)s>Cite as:</div>                                         "
 "<span %(data_bind)s></span>"
 msgstr "<span %(data_bind)s></span>として<div %(f_x_xl)s>引用</div> "
-
-#: templates/project/project.mako:568 templates/project/settings.mako:132
-#: templates/project/timestamp.mako:71
-msgid "Cancel"
-msgstr "キャンセル"
-
-#: templates/project/project.mako:570
-msgid "Save"
-msgstr "保存"
 
 #: templates/project/project.mako:587 templates/project/view_file.mako:76
 msgid "Tags"
