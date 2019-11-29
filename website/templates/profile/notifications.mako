@@ -1,9 +1,9 @@
 <%inherit file="base.mako"/>
-<%def name="title()">Notifications</%def>
+<%def name="title()">${_("Notifications")}</%def>
 
 <%def name="content()">
 <% from website import settings%>
-<h2 class="page-header">Settings</h2>
+<h2 class="page-header">${_("Settings")}</h2>
 
 <div id="notificationSettings" class="row">
     <div class="col-sm-3 affix-parent">
@@ -13,7 +13,7 @@
     <div class="col-sm-9 col-md-7">
         <div style="display: none;">
         <div class="panel panel-default scripted" id="selectLists">
-            <div class="panel-heading clearfix"><h3 class="panel-title">Configure Email Preferences</h3></div>
+            <div class="panel-heading clearfix"><h3 class="panel-title">${_("Configure Email Preferences")}</h3></div>
             <div class="panel-body">
                  <h3>Emails</h3>
                     </br>
@@ -23,7 +23,7 @@
                                 data-bind="checked: subscribed"
                                 value="${settings.MAILCHIMP_GENERAL_LIST}"/>
                               <label>${settings.MAILCHIMP_GENERAL_LIST}</label>
-                            <p class="text-muted" style="padding-left: 15px">Receive general notifications about the GakuNin RDM every 2-3 weeks.</p>
+                            <p class="text-muted" style="padding-left: 15px">${_("Receive general notifications about the GakuNin RDM every 2-3 weeks.")}</p>
                         </div>
                     </form>
                     <form>
@@ -32,7 +32,7 @@
                                 data-bind="checked: subscribed"
                                 value="${settings.OSF_HELP_LIST}"/>
                               <label>${settings.OSF_HELP_LIST}</label>
-                            <p class="text-muted" style="padding-left: 15px">Receive helpful tips on how to make the most of the GakuNin RDM, up to once per week.</p>
+                            <p class="text-muted" style="padding-left: 15px">${_("Receive helpful tips on how to make the most of the GakuNin RDM, up to once per week.")}</p>
                         </div>
                         <div class="p-t-md p-b-md">
                         <button
@@ -50,10 +50,10 @@
         </div>
         </div>
         <div class="panel panel-default">
-            <div class="panel-heading clearfix"><h3 class="panel-title">Configure Notification Preferences</h3></div>
+            <div class="panel-heading clearfix"><h3 class="panel-title">${_("Configure Notification Preferences")}</h3></div>
             <div class="panel-body">
                 <div class="help-block">
-                     <p class="text-muted"> NOTE: Regardless of your selected preferences, GakuNin RDM will continue to provide transactional and administrative service emails.</p>
+                     <p class="text-muted"> ${_("NOTE: Regardless of your selected preferences, GakuNin RDM will continue to provide transactional and administrative service emails.")}</p>
                 </div>
                 <form id="selectNotifications" class="osf-treebeard-minimal">
                     <div id="grid">
@@ -61,7 +61,7 @@
                             <div class="ball-scale ball-scale-blue">
                                 <div></div>
                             </div>
-                            <p class="m-t-sm fg-load-message"> Loading notification settings... </p>
+                            <p class="m-t-sm fg-load-message"> ${_("Loading notification settings...")} </p>
                         </div>
                     </div>
                     <div class="help-block" style="padding-left: 15px">
