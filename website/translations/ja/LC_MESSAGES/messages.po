@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-11-27 12:59+0900\n"
+"POT-Creation-Date: 2019-11-29 13:34+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -22,51 +22,54 @@ msgstr ""
 msgid "Type your search terms in the box above."
 msgstr ""
 
-#: templates/profile/account.mako:4
+#: templates/profile/account.mako:4 templates/profile/add_email.mako:4
 msgid "Account Settings"
 msgstr "アカウント設定"
 
-#: templates/profile/account.mako:8 templates/project/project_header.mako:80
-#: templates/project/settings.mako:2 templates/project/settings.mako:5
+#: templates/profile/account.mako:8 templates/profile/add_email.mako:14
+#: templates/project/project_header.mako:80 templates/project/settings.mako:2
+#: templates/project/settings.mako:5
 msgid "Settings"
 msgstr "設定"
 
-#: templates/profile/account.mako:15
+#: templates/profile/account.mako:15 templates/profile/add_email.mako:21
 msgid "Connected Emails"
 msgstr "Eメールに接続しました"
 
-#: templates/profile/account.mako:20
+#: templates/profile/account.mako:20 templates/profile/add_email.mako:27
 msgid "Primary Email"
 msgstr "プライマリメール"
 
-#: templates/profile/account.mako:34
+#: templates/profile/account.mako:34 templates/profile/add_email.mako:57
 msgid "Alternate Emails"
 msgstr "代替メール"
 
-#: templates/profile/account.mako:40
+#: templates/profile/account.mako:40 templates/profile/add_email.mako:63
 msgid "make&nbsp;primary"
 msgstr "プライマリにする"
 
-#: templates/profile/account.mako:48
+#: templates/profile/account.mako:48 templates/profile/add_email.mako:72
 msgid "Unconfirmed Emails"
 msgstr "未確認のメール"
 
-#: templates/profile/account.mako:55
+#: templates/profile/account.mako:55 templates/profile/add_email.mako:79
 msgid "resend&nbsp;confirmation"
 msgstr "確認を再送する"
 
-#: templates/profile/account.mako:64
+#: templates/profile/account.mako:64 templates/profile/add_email.mako:88
 msgid ""
 "To merge an existing account with this one or to log in with multiple "
 "email addresses, add an alternate email address below."
 msgstr "既存のアカウントをこのアカウントと統合するか、複数のメールアドレスでログインするには、下に別のメールアドレスを追加します。"
 
-#: templates/profile/account.mako:65
+#: templates/profile/account.mako:65 templates/profile/add_email.mako:89
 msgid ""
 "Merging accounts will move all projects and components associated with "
 "two emails into one account. All projects and components will be "
 "displayed under the email address listed as primary."
-msgstr "アカウントを統合すると、2つのメールに関連付けられたすべてのプロジェクトとコンポーネントが1つのアカウントに移動します。 すべてのプロジェクトとコンポーネントは、プライマリとしてリストされているメールアドレスの下に表示されます。"
+msgstr ""
+"アカウントを統合すると、2つのメールに関連付けられたすべてのプロジェクトとコンポーネントが1つのアカウントに移動します。 "
+"すべてのプロジェクトとコンポーネントは、プライマリとしてリストされているメールアドレスの下に表示されます。"
 
 #: templates/profile/account.mako:68
 msgid ""
@@ -88,87 +91,89 @@ msgstr "この場所は、新しいプロジェクトとコンポーネントに
 msgid "Update location"
 msgstr "ロケーションを更新"
 
-#: templates/profile/account.mako:109
+#: templates/profile/account.mako:109 templates/profile/add_email.mako:117
 msgid "Connected Identities"
 msgstr "接続されたアイデンティティ"
 
-#: templates/profile/account.mako:111
+#: templates/profile/account.mako:111 templates/profile/add_email.mako:119
 msgid ""
 "Connected identities allow you to log in to the GakuNin RDM via a third-"
 "party service."
 msgstr "接続されたアイデンティティにより、サードパーティのサービスを介してGakuNin RDMにログインできます。"
 
-#: templates/profile/account.mako:112
+#: templates/profile/account.mako:112 templates/profile/add_email.mako:120
 msgid "You can revoke these authorizations here."
 msgstr "ここでこれらの承認を取り消すことができます。"
 
-#: templates/profile/account.mako:115
+#: templates/profile/account.mako:115 templates/profile/add_email.mako:123
 msgid ""
 "You have not authorized any external services to log in to the GakuNin "
 "RDM."
 msgstr "GakuNin RDMにログインする外部サービスを許可していません。"
 
-#: templates/profile/account.mako:125
+#: templates/profile/account.mako:125 templates/profile/add_email.mako:133
 msgid "Verified"
 msgstr "検証済"
 
-#: templates/profile/account.mako:127
+#: templates/profile/account.mako:127 templates/profile/add_email.mako:135
 msgid "Pending"
 msgstr "保留中"
 
-#: templates/profile/account.mako:145
+#: templates/profile/account.mako:145 templates/profile/add_email.mako:155
 msgid "Change Password"
 msgstr "パスワードを変更する"
 
-#: templates/profile/account.mako:149
+#: templates/profile/account.mako:149 templates/profile/add_email.mako:159
 msgid "Old password"
 msgstr "古いパスワード"
 
-#: templates/profile/account.mako:154
+#: templates/profile/account.mako:154 templates/profile/add_email.mako:164
 msgid "Old Password"
 msgstr "古いパスワード"
 
-#: templates/profile/account.mako:166
+#: templates/profile/account.mako:166 templates/profile/add_email.mako:176
 msgid "New password"
 msgstr "新しいパスワード"
 
-#: templates/profile/account.mako:171
+#: templates/profile/account.mako:171 templates/profile/add_email.mako:181
 msgid "New Password"
 msgstr "新しいパスワード"
 
-#: templates/profile/account.mako:201
+#: templates/profile/account.mako:201 templates/profile/add_email.mako:211
 msgid "Confirm new password"
 msgstr "新しいパスワードを確認"
 
-#: templates/profile/account.mako:206
+#: templates/profile/account.mako:206 templates/profile/add_email.mako:216
 msgid "Verify Password"
 msgstr "パスワードを照合"
 
-#: templates/profile/account.mako:217
+#: templates/profile/account.mako:217 templates/profile/add_email.mako:227
 msgid "Update password"
 msgstr "パスワードを更新"
 
-#: templates/profile/account.mako:223
+#: templates/profile/account.mako:223 templates/profile/add_email.mako:232
 msgid "Security Settings"
 msgstr "セキュリティ設定"
 
-#: templates/profile/account.mako:235
+#: templates/profile/account.mako:235 templates/profile/add_email.mako:245
 msgid "Export Account Data"
 msgstr "アカウントデータをエクスポート"
 
-#: templates/profile/account.mako:237
+#: templates/profile/account.mako:237 templates/profile/add_email.mako:247
 msgid ""
 "Exporting your account data allows you to keep a permanent copy of the "
 "current state of your account. Keeping a copy of your account data can "
 "provide peace of mind or assist in transferring your information to "
 "another provider."
-msgstr "アカウントデータをエクスポートすると、アカウントの現在の状態の永続的なコピーを保持できます。 アカウントデータのコピーを保存しておくと、安心して他のプロバイダーに情報を転送するのに役立ちます。"
+msgstr ""
+"アカウントデータをエクスポートすると、アカウントの現在の状態の永続的なコピーを保持できます。 "
+"アカウントデータのコピーを保存しておくと、安心して他のプロバイダーに情報を転送するのに役立ちます。"
 
-#: templates/profile/account.mako:238
+#: templates/profile/account.mako:238 templates/profile/add_email.mako:248
 msgid "Request export"
 msgstr "エクスポートをリクエスト"
 
-#: templates/profile/account.mako:242
+#: templates/profile/account.mako:242 templates/profile/add_email.mako:254
 msgid "Deactivate Account"
 msgstr "アカウントを非アクティブにする"
 
@@ -178,25 +183,44 @@ msgid ""
 "effects are irreversible."
 msgstr "<strong>警告:</strong> 非アクティブ化が承認されると、元に戻せません。"
 
-#: templates/profile/account.mako:245
+#: templates/profile/account.mako:245 templates/profile/add_email.mako:259
 msgid ""
 "Deactivating your account will remove you from all public projects to "
 "which you are a contributor. Your account will no longer be associated "
 "with GakuNin RDM projects, and your work on the GakuNin RDM will be "
 "inaccessible."
-msgstr "アカウントを非アクティブにすると、投稿者であるすべての公開プロジェクトから削除されます。 アカウントはGakuNin RDMプロジェクトに関連付けられなくなり、GakuNin RDMでの作業にアクセスできなくなります。"
+msgstr ""
+"アカウントを非アクティブにすると、投稿者であるすべての公開プロジェクトから削除されます。 アカウントはGakuNin "
+"RDMプロジェクトに関連付けられなくなり、GakuNin RDMでの作業にアクセスできなくなります。"
 
-#: templates/profile/account.mako:246
+#: templates/profile/account.mako:246 templates/profile/add_email.mako:263
 msgid "Your account is currently pending deactivation."
 msgstr "アカウントは現在、非アクティブ化が保留されています。"
 
-#: templates/profile/account.mako:247
+#: templates/profile/account.mako:247 templates/profile/add_email.mako:261
 msgid "Request deactivation"
 msgstr "非アクティブ化をリクエスト"
 
 #: templates/profile/account.mako:248
 msgid "Cancel deactivation request"
 msgstr "非アクティブ化をキャンセル"
+
+#: templates/profile/add_email.mako:42
+msgid "eduPersonPrincipalName (ePPN)"
+msgstr ""
+
+#: templates/profile/add_email.mako:92
+msgid "Add an email address below."
+msgstr "以下にメールアドレスを追加してください。"
+
+#: templates/profile/add_email.mako:257
+msgid "<strong>Warning:</strong> This action is irreversible."
+msgstr "<strong>警告:</strong> この操作は元に戻せません。"
+
+#: templates/profile/addon_permissions.mako:4
+#, python-format
+msgid "Authorized by <em>%(name)s</em>"
+msgstr "承認者:<em>%(name)s</em>"
 
 #: templates/project/addons.mako:14 templates/project/addons.mako:33
 msgid "Select Add-ons"
@@ -274,7 +298,7 @@ msgstr "管理者"
 #: templates/project/contributors.mako:27
 #: templates/project/contributors.mako:76
 msgid "Read + Write"
-msgstr "読込み / 書込み
+msgstr "読込み / 書込"
 
 #: templates/project/contributors.mako:30
 #: templates/project/contributors.mako:77
@@ -387,8 +411,8 @@ msgstr "このプロジェクトを複製するには、ログインするかア
 
 #: templates/project/project.mako:100
 #, python-format
-msgid "View Forks %(fork_count)s"
-msgstr "フォークを表示する %(fork_count)s"
+msgid "View Forks %(forkcount)s"
+msgstr ""
 
 #: templates/project/project.mako:115
 msgid "Bookmark"
@@ -409,10 +433,6 @@ msgstr "共有"
 #: templates/project/project.mako:150
 msgid "Log in to request access"
 msgstr "ログインしてアクセスをリクエスト"
-
-#: templates/project/project.mako:163 templates/project/project_header.mako:72
-msgid "Contributors"
-msgstr "コントリビュータ"
 
 #: templates/project/project.mako:165
 msgid "Contributors:"
@@ -436,25 +456,27 @@ msgid ""
 "Forked from <a "
 "%(forked_form_id)s>%(forked_from_display_absolute_url)s</a> on"
 "                    <span %(data_bind)s></span>"
-msgstr "<span %(data_bind)s></span>に<a %(forked_form_id)s>%(forked_from_display_absolute_url)s</a>からフォークした"
+msgstr ""
+"<span %(data_bind)s></span>に<a "
+"%(forked_form_id)s>%(forked_from_display_absolute_url)s</a>からフォークした"
 
-#: templates/project/project.mako:224
+#: templates/project/project.mako:225
 msgid "Date registered:"
 msgstr "登録日"
 
-#: templates/project/project.mako:229
+#: templates/project/project.mako:230
 msgid "Date created:"
 msgstr "作成日"
 
-#: templates/project/project.mako:232
+#: templates/project/project.mako:233
 msgid "| Last Updated:"
 msgstr "| 最終更新日"
 
-#: templates/project/project.mako:247
+#: templates/project/project.mako:248
 msgid "Creating DOI. Please wait..."
 msgstr "DOIを作成しています。お待ち下さい..."
 
-#: templates/project/project.mako:253
+#: templates/project/project.mako:254
 msgid "Create DOI"
 msgstr "DOIを作成"
 
@@ -462,39 +484,39 @@ msgstr "DOIを作成"
 msgid "Category:"
 msgstr "カテゴリー:"
 
-#: templates/project/project.mako:290
+#: templates/project/project.mako:291
 msgid "View Registration Form"
 msgstr "登録フォームを表示"
 
-#: templates/project/project.mako:295
+#: templates/project/project.mako:296
 msgid "View Registration Forms"
 msgstr "登録フォームを表示"
 
-#: templates/project/project.mako:340
+#: templates/project/project.mako:341
 msgid "Type:"
 msgstr "タイプ:"
 
-#: templates/project/project.mako:344 templates/project/project.mako:395
+#: templates/project/project.mako:345 templates/project/project.mako:396
 msgid "Status:"
 msgstr "ステータス:"
 
-#: templates/project/project.mako:348
+#: templates/project/project.mako:349
 msgid "Volume:"
 msgstr "ボリューム:"
 
-#: templates/project/project.mako:352
+#: templates/project/project.mako:353
 msgid "Issue:"
 msgstr "イシュー:"
 
-#: templates/project/project.mako:356
+#: templates/project/project.mako:357
 msgid "Program Area:"
 msgstr "プログラムエリア"
 
-#: templates/project/project.mako:362
+#: templates/project/project.mako:363
 msgid "Subjects:"
 msgstr "学科:"
 
-#: templates/project/project.mako:398
+#: templates/project/project.mako:399
 msgid "Withdrawn"
 msgstr "取り下げ"
 
@@ -518,39 +540,31 @@ msgstr "この{preprint_word}は公開されており、検索可能です。"
 msgid "This {preprint_word} is not publicly available or searchable."
 msgstr "この{preprint_word}は一般公開も検索もできません。"
 
-#: templates/project/project.mako:440 templates/project/project_header.mako:40
-msgid "Files"
-msgstr "ファイル"
-
-#: templates/project/project.mako:448
-msgid "Click on a storage provider or drag and drop to upload"
-msgstr "ストレージプロバイダーをクリックするか、ドラッグ&ドロップしてアップロードします"
-
-#: templates/project/project.mako:460
+#: templates/project/project.mako:461 templates/project/view_file.mako:57
 msgid "Loading files..."
 msgstr "ファイルをロード中"
 
-#: templates/project/project.mako:501
+#: templates/project/project.mako:502
 msgid "Citation"
 msgstr "引用"
 
-#: templates/project/project.mako:513
+#: templates/project/project.mako:514
 msgid "Loading citations..."
 msgstr "引用をロード中..."
 
-#: templates/project/project.mako:518
+#: templates/project/project.mako:519
 msgid "Customize"
 msgstr "カスタマイズ"
 
-#: templates/project/project.mako:526
+#: templates/project/project.mako:527
 msgid "Chicago"
 msgstr "シカゴ"
 
-#: templates/project/project.mako:530
+#: templates/project/project.mako:531
 msgid "Get more citations"
 msgstr "より多くの引用を取得"
 
-#: templates/project/project.mako:538
+#: templates/project/project.mako:539
 msgid "Edit"
 msgstr "編集"
 
@@ -562,66 +576,63 @@ msgid ""
 msgstr "<span %(data_bind)s></span>として<div %(f_x_xl)s>引用</div> "
 
 #: templates/project/project.mako:568 templates/project/settings.mako:132
+#: templates/project/timestamp.mako:71
 msgid "Cancel"
 msgstr "キャンセル"
 
-#: templates/project/project.mako:568
-msgid "Remove"
-msgstr "除外"
-
-#: templates/project/project.mako:569
+#: templates/project/project.mako:570
 msgid "Save"
 msgstr "保存"
 
-#: templates/project/project.mako:586
+#: templates/project/project.mako:587 templates/project/view_file.mako:76
 msgid "Tags"
 msgstr "タグ"
 
-#: templates/project/project.mako:600
+#: templates/project/project.mako:601
 msgid "Recent Activity"
 msgstr "最近の活動"
 
-#: templates/project/project.mako:601
+#: templates/project/project.mako:602
 msgid "Refresh"
 msgstr "更新"
 
-#: templates/project/project.mako:607
+#: templates/project/project.mako:608
 msgid "Parts of User's Fullname"
 msgstr "ユーザのフルネームの一部"
 
-#: templates/project/project.mako:612
+#: templates/project/project.mako:613
 msgid "Start Date[yyyy-mm-dd]"
 msgstr "開始日[yyyy-mm-dd]"
 
-#: templates/project/project.mako:615
+#: templates/project/project.mako:616
 msgid "End Date[yyyy-mm-dd]"
 msgstr "終了日[yyyy-mm-dd]"
 
-#: templates/project/project.mako:623
+#: templates/project/project.mako:624
 msgid "Loading logs..."
 msgstr "ログをロード中..."
 
-#: templates/project/project.mako:629
+#: templates/project/project.mako:630
 msgid "Download as file"
 msgstr "ファイルをダウンロード"
 
-#: templates/project/project.mako:630
+#: templates/project/project.mako:631 templates/project/timestamp.mako:206
 msgid "Download"
 msgstr "ダウンロード"
 
-#: templates/project/project.mako:643
+#: templates/project/project.mako:644
 msgid "Components"
 msgstr "コンポーネント"
 
-#: templates/project/project.mako:647
+#: templates/project/project.mako:648
 msgid "Add Component"
 msgstr "コンポーネントを追加"
 
-#: templates/project/project.mako:649
+#: templates/project/project.mako:650
 msgid "Link Projects"
 msgstr "プロジェクトをリンクする"
 
-#: templates/project/project.mako:659
+#: templates/project/project.mako:660
 msgid "Add components to organize your project."
 msgstr "コンポーネントを追加して、プロジェクトを整理します。"
 
@@ -637,10 +648,6 @@ msgstr "コンポーネント"
 msgid "Navigation"
 msgstr "ナビゲーション"
 
-#: templates/project/project_header.mako:40
-msgid "Files"
-msgstr "ファイル"
-
 #: templates/project/project_header.mako:61
 msgid "Analytics"
 msgstr "分析"
@@ -649,24 +656,15 @@ msgstr "分析"
 msgid "Registrations"
 msgstr "登録"
 
-#: templates/project/project_header.mako:72
-msgid "Contributors"
-msgstr "コントリビュータ"
-
 #: templates/project/project_header.mako:76
 msgid "Add-ons"
 msgstr "アドオン"
-
-#: templates/project/project_header.mako:80 templates/project/settings.mako:2
-#: templates/project/settings.mako:5
-msgid "Settings"
-msgstr "設定"
 
 #: templates/project/project_header.mako:86
 msgid "Comments"
 msgstr "コメント"
 
-#: templates/project/project_header.mako:96
+#: templates/project/project_header.mako:96 templates/project/timestamp.mako:2
 msgid "Timestamp"
 msgstr "タイムスタンプ"
 
@@ -681,7 +679,9 @@ msgstr "このファイルは登録の一部であり、アーカイブバージ
 msgid ""
 "The <a %(archived_from_url)s>active file</a> is viewable from within the "
 "<a %(registered_from_url)s>live%(node_type)s</a>."
-msgstr "<a %(archived_from_url)s>アクティブファイル</a>は<a %(registered_from_url)s>%(node_type)sのライブ</a>内から表示できます。"
+msgstr ""
+"<a %(archived_from_url)s>アクティブファイル</a>は<a "
+"%(registered_from_url)s>%(node_type)sのライブ</a>内から表示できます。"
 
 #: templates/project/project_header.mako:131
 #, python-format
@@ -697,7 +697,10 @@ msgid ""
 "%(node_type)s</a>, awaiting approval from project administrators. This "
 "registration will be final when all project administrators approve the "
 "registration or 48 hours pass, whichever comes first."
-msgstr "これは<a %(registered_from_url)s>この %(node_type)s</a>の保留中の登録であり、プロジェクト管理者からの承認を待っています。 この登録は、すべてのプロジェクト管理者が登録または48時間のパスのいずれか早い方を承認したときに最終となります。"
+msgstr ""
+"これは<a %(registered_from_url)s>この "
+"%(node_type)s</a>の保留中の登録であり、プロジェクト管理者からの承認を待っています。 "
+"この登録は、すべてのプロジェクト管理者が登録または48時間のパスのいずれか早い方を承認したときに最終となります。"
 
 #: templates/project/project_header.mako:141
 #: templates/project/project_header.mako:173
@@ -725,7 +728,10 @@ msgid ""
 "the embargo period when all project administrators approve the "
 "registration or 48 hours pass, whichever comes first. The embargo will "
 "keep the registration private until the embargo period ends."
-msgstr "この%(nodetype)sは現在登録を保留しており、プロジェクト管理者からの承認を待っています。 この登録は最終的なものであり、すべてのプロジェクト管理者が登録を承認するか、48時間のパスのいずれか早い方を承認した時点で禁止期間に入ります。 禁止措置は、禁止期間が終了するまで登録を非公開にします。"
+msgstr ""
+"この%(nodetype)sは現在登録を保留しており、プロジェクト管理者からの承認を待っています。 "
+"この登録は最終的なものであり、すべてのプロジェクト管理者が登録を承認するか、48時間のパスのいずれか早い方を承認した時点で禁止期間に入ります。 "
+"禁止措置は、禁止期間が終了するまで登録を非公開にします。"
 
 #: templates/project/project_header.mako:182
 #, python-format
@@ -740,7 +746,9 @@ msgid ""
 "This %(nodetype)s contains supplemental materials for a preprint, but has"
 " been made Private. Make your supplemental materials discoverable by "
 "making this %(nodetype)s Public."
-msgstr "この%(nodetype)sには、プレプリントの補足資料が含まれていますが、非公開になっています。 この%(nodetype)sを公開することで、補足資料を見つけやすくします。"
+msgstr ""
+"この%(nodetype)sには、プレプリントの補足資料が含まれていますが、非公開になっています。 "
+"この%(nodetype)sを公開することで、補足資料を見つけやすくします。"
 
 #: templates/project/project_header.mako:192
 #, python-format
@@ -748,29 +756,32 @@ msgid ""
 "This %(nodetype)s is being viewed through an anonymized, view-only link. "
 "If you want to view it as a contributor, click <a class=\"link-solid\" "
 "href=\"%(redirecturl)s\">here</a>."
-msgstr "「この%(nodetype)s は匿名化された参照専用リンクで表示されています。コントリビュータとして表示する場合は、<a class=\"link-solid\" href=\"%(redirecturl)s\">ここ</a>をクリックしてください。"
+msgstr ""
+"「この%(nodetype)s は匿名化された参照専用リンクで表示されています。コントリビュータとして表示する場合は、<a class"
+"=\"link-solid\" href=\"%(redirecturl)s\">ここ</a>をクリックしてください。"
 
 #: templates/project/project_header.mako:196
 #, python-format
 msgid ""
 "This %(nodetype)s is being viewed through a private, view-only link. "
 "Anyone with the link can view this project. Keep the link safe."
-msgstr "この%(nodetype)sは、プライベートな参照専用リンクを介して表示されています。 リンクを知っている全員がこのプロジェクトを閲覧できます。 リンクを安全に保ちます。"
+msgstr ""
+"この%(nodetype)sは、プライベートな参照専用リンクを介して表示されています。 リンクを知っている全員がこのプロジェクトを閲覧できます。 "
+"リンクを安全に保ちます。"
 
 #: templates/project/project_header.mako:200
 msgid ""
 "<strong>NOTICE: </strong>Forks, registrations, and uploads will be "
 "temporarily disabled while the GakuNin RDM undergoes a hardware upgrade. "
 "These features will return shortly. Thank you for your patience."
-msgstr "<strong>注意: </strong>GakuNin RDMのハードウェアアップグレード中は、フォーク、登録、アップロードが一時的に無効になります。 これらの機能はまもなく戻ります。 お待たせして申し訳ありません。"
+msgstr ""
+"<strong>注意: </strong>GakuNin "
+"RDMのハードウェアアップグレード中は、フォーク、登録、アップロードが一時的に無効になります。 これらの機能はまもなく戻ります。 "
+"お待たせして申し訳ありません。"
 
 #: templates/project/settings.mako:22 templates/project/settings.mako:179
 msgid "Storage Location"
 msgstr "ストレージロケーション"
-
-#: templates/project/settings.mako:30 templates/project/settings.mako:203
-msgid "View-only Links"
-msgstr "参照用リンク"
 
 #: templates/project/settings.mako:34 templates/project/settings.mako:226
 msgid "Access Requests"
@@ -875,7 +886,9 @@ msgstr "<b>%(title)s</b>内のWikiを編集できるユーザーを制御しま�
 msgid ""
 "Control who can edit your wiki. To allow all GakuNin RDM users to edit "
 "the wiki, <b>%(title)s</b> must be public."
-msgstr "Wikiを編集できるユーザーを制御します。 すべてのGakuNin RDMユーザーがwikiを編集できるようにするには、<b>%(title)s</b>を公開する必要があります。"
+msgstr ""
+"Wikiを編集できるユーザーを制御します。 すべてのGakuNin "
+"RDMユーザーがwikiを編集できるようにするには、<b>%(title)s</b>を公開する必要があります。"
 
 #: templates/project/settings.mako:299
 msgid "Loading wiki settings..."
@@ -914,7 +927,9 @@ msgid ""
 "Withdrawing children components of a registration is not allowed. Should "
 "you wish to                                  withdraw this component, "
 "please withdraw its parent registration <a %(web_url_for)s>here</a>."
-msgstr "登録の子コンポーネントの撤回は許可されていません。このコンポーネントを撤回する場合は、<a %(web_url_for)s>ここ</a>でその親登録を撤回してください。"
+msgstr ""
+"登録の子コンポーネントの撤回は許可されていません。このコンポーネントを撤回する場合は、<a "
+"%(web_url_for)s>ここ</a>でその親登録を撤回してください。"
 
 #: templates/project/settings.mako:443
 msgid ""
@@ -925,7 +940,10 @@ msgid ""
 "of the withdrawal, should you wish to provide it. Withdrawn"
 "                                    registrations will be marked with a "
 "<strong>withdrawn</strong> tag."
-msgstr "登録を取り消すと、コンテンツがGakuNin RDMから削除されますが、基本的なメタデータは残されます。 取り下げられた登録のタイトルとそのコントリビュータリストは、引き取りの正当化または説明と同様に、もしあなたがそれを提供したいなら、残ります。 取り下げられた登録には、<strong>取り下げられた</strong>タグが付いています。"
+msgstr ""
+"登録を取り消すと、コンテンツがGakuNin RDMから削除されますが、基本的なメタデータは残されます。 "
+"取り下げられた登録のタイトルとそのコントリビュータリストは、引き取りの正当化または説明と同様に、もしあなたがそれを提供したいなら、残ります。 "
+"取り下げられた登録には、<strong>取り下げられた</strong>タグが付いています。"
 
 #: templates/project/settings.mako:452
 msgid "This registration is already pending withdrawal."
@@ -1045,7 +1063,9 @@ msgid ""
 " made will be visible to          contributors with write permission in "
 "real time. Changes will be stored          but not published until you "
 "click the \"Save\" button."
-msgstr "このページは現在、共有ファイル編集に接続されています。 行われたすべての編集は、書き込み許可を持つコントリビュータにリアルタイムで表示されます。 変更は保存されますが、[保存]ボタンをクリックするまで公開されません。"
+msgstr ""
+"このページは現在、共有ファイル編集に接続されています。 行われたすべての編集は、書き込み許可を持つコントリビュータにリアルタイムで表示されます。 "
+"変更は保存されますが、[保存]ボタンをクリックするまで公開されません。"
 
 #: templates/project/view_file.mako:117 templates/project/view_file.mako:137
 #: templates/project/view_file.mako:157 templates/project/view_file.mako:177
@@ -1086,4 +1106,7 @@ msgid ""
 "Your browser does not support collaborative editing. You may continue to "
 "make edits."
 msgstr "お使いのブラウザは共有編集をサポートしていません。 引き続き編集を行うことができます。"
+
+#~ msgid "View Forks %(fork_count)s"
+#~ msgstr "フォークを表示する %(fork_count)s"
 
