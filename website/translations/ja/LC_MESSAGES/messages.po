@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-02 10:43+0900\n"
+"POT-Creation-Date: 2019-12-02 14:57+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -368,6 +368,12 @@ msgstr "認証コールバックURL"
 
 #: templates/profile/oauth_app_detail.mako:84
 #: templates/profile/personal_tokens_detail.mako:49
+#: templates/project/modal_add_contributor.mako:340
+#: templates/project/modal_generate_private_link.mako:86
+#: templates/project/modal_remove_contributor.mako:95
+#: templates/project/modal_remove_contributor.mako:104
+#: templates/project/modal_remove_contributor.mako:113
+#: templates/project/modal_remove_contributor.mako:122
 #: templates/project/project.mako:568 templates/project/settings.mako:132
 #: templates/project/timestamp.mako:71
 msgid "Cancel"
@@ -491,9 +497,10 @@ msgstr "次の個人用アクセストークンを生成しました。"
 
 #: templates/profile/settings.mako:11
 msgid "View your profile"
-msgstr ""プロフィールを表示
+msgstr "\"プロフィールを表"
 
 #: templates/profile/settings.mako:38
+#: templates/project/modal_add_contributor.mako:216
 msgid "Name"
 msgstr "名前"
 
@@ -611,6 +618,7 @@ msgstr "読込み"
 #: templates/project/contributors.mako:33
 #: templates/project/contributors.mako:196
 #: templates/project/contributors.mako:242
+#: templates/project/modal_add_contributor.mako:218
 msgid "Bibliographic Contributor"
 msgstr "書誌コントリビュータ"
 
@@ -625,8 +633,11 @@ msgstr "非書誌"
 #: templates/project/contributors.mako:57
 #: templates/project/contributors.mako:164
 #: templates/project/contributors.mako:337
-#: templates/project/contributors.mako:385 templates/project/settings.mako:210
-#: templates/project/settings.mako:523
+#: templates/project/contributors.mako:385
+#: templates/project/modal_add_contributor.mako:346
+#: templates/project/modal_add_contributor.mako:350
+#: templates/project/modal_add_contributor.mako:356
+#: templates/project/settings.mako:210 templates/project/settings.mako:523
 msgid "Add"
 msgstr "追加"
 
@@ -662,12 +673,17 @@ msgid ""
 msgstr "このプロジェクトを共有するリンクを作成して、リンクを知っているユーザーがプロジェクトを表示できるようにします。&mdash;編集はできません&mdash;"
 
 #: templates/project/contributors.mako:186
+#: templates/project/modal_add_contributor.mako:227
 msgid "Permissions"
 msgstr "許可"
 
 #: templates/project/contributors.mako:332
-#: templates/project/contributors.mako:387 templates/project/project.mako:569
-#: templates/project/settings.mako:499 templates/project/settings.mako:502
+#: templates/project/contributors.mako:387
+#: templates/project/modal_remove_contributor.mako:96
+#: templates/project/modal_remove_contributor.mako:105
+#: templates/project/modal_remove_contributor.mako:114
+#: templates/project/project.mako:569 templates/project/settings.mako:499
+#: templates/project/settings.mako:502
 msgid "Remove"
 msgstr "除外"
 
@@ -687,6 +703,235 @@ msgstr "ファイル"
 #: templates/project/files.mako:8 templates/project/project.mako:449
 msgid "Click on a storage provider or drag and drop to upload"
 msgstr "ストレージプロバイダーをクリックするか、ドラッグ&ドロップしてアップロードします"
+
+#: templates/project/modal_add_contributor.mako:25
+msgid "Invite new contributor by e-mail"
+msgstr "電子メールで新しいコントリビュータを招待する"
+
+#: templates/project/modal_add_contributor.mako:46
+msgid "Results"
+msgstr "結果"
+
+#: templates/project/modal_add_contributor.mako:47
+msgid "Add all"
+msgstr "全て追加する"
+
+#: templates/project/modal_add_contributor.mako:66
+msgid "Already added"
+msgstr "追加済"
+
+#: templates/project/modal_add_contributor.mako:164
+#: templates/project/modal_add_contributor.mako:254
+msgid "(unregistered)"
+msgstr "(未登録)"
+
+#: templates/project/modal_add_contributor.mako:181
+#, python-format
+msgid ""
+"<a %(taga)s>Add <strong><em %(data_bind)s></em></strong> as an "
+"unregistered contributor</a>."
+msgstr ""
+"<a %(taga)s>は、未登録のコントリビュータとして<strong><em "
+"%(data_bind)s></em></strong>を追加します。"
+
+#: templates/project/modal_add_contributor.mako:186
+msgid "Searching contributors..."
+msgstr "コントリビュータを検索しています..."
+
+#: templates/project/modal_add_contributor.mako:190
+msgid "No results found. Try a more specific search."
+msgstr "結果が見つかりません。より具体的な検索を試してください。"
+
+#: templates/project/modal_add_contributor.mako:193
+msgid "No results found. Try a more specific search"
+msgstr "結果が見つかりません。より具体的な検索を試してください"
+
+#: templates/project/modal_add_contributor.mako:196
+#, python-format
+msgid ""
+"<a %(taga)s>add <strong><em %(data_bind)s></em></strong> as an "
+"unregistered contributor</a>."
+msgstr ""
+"<a %(taga)s>は、未登録のコントリビュータとして<strong><em "
+"%(data_bind)s></em></strong>を追加します。"
+
+#: templates/project/modal_add_contributor.mako:200
+msgid ""
+"It looks like you are trying to search by email address. Please try your "
+"search again using your collaborator's name. You will be able to add "
+"users without GakuNin RDM accounts as unregistered contributors."
+msgstr ""
+"メールアドレスで検索しようとしているようです。 共同編集者の名前を使用して検索を再試行してください。 GakuNin "
+"RDMアカウントを持たないユーザーを未登録のコントリビュータとして追加できます。"
+
+#: templates/project/modal_add_contributor.mako:207
+msgid "Adding"
+msgstr "追加注"
+
+#: templates/project/modal_add_contributor.mako:208
+msgid "Remove all"
+msgstr "全て除外"
+
+#: templates/project/modal_add_contributor.mako:281
+msgid "Adding contributor(s)"
+msgstr "光景ン車を追加中"
+
+#: templates/project/modal_add_contributor.mako:289
+msgid ""
+"You can also add the contributor(s) to any components on which you are an"
+" admin."
+msgstr "管理者であるコンポーネントにコントリビュータを追加することもできます。"
+
+#: templates/project/modal_add_contributor.mako:294
+#: templates/project/modal_generate_private_link.mako:71
+msgid "Select all"
+msgstr "全て選択"
+
+#: templates/project/modal_add_contributor.mako:296
+msgid "Select none"
+msgstr "何も選択しない"
+
+#: templates/project/modal_add_contributor.mako:309
+msgid "Loading projects and components..."
+msgstr "プロジェクトとコンポーネントの読み込み..."
+
+#: templates/project/modal_add_contributor.mako:320
+msgid "Full Name"
+msgstr "フルネーム"
+
+#: templates/project/modal_add_contributor.mako:325
+msgid "Email"
+msgstr "Eメール"
+
+#: templates/project/modal_add_contributor.mako:330
+msgid "We will notify the user that they have been added to your project."
+msgstr "プロジェクトに追加されたことをユーザーに通知します。"
+
+#: templates/project/modal_add_contributor.mako:343
+#: templates/project/modal_add_contributor.mako:355
+#: templates/project/modal_remove_contributor.mako:112
+msgid "Back"
+msgstr "戻る"
+
+#: templates/project/modal_add_contributor.mako:351
+msgid "Next"
+msgstr "次へ"
+
+#: templates/project/modal_generate_private_link.mako:5
+msgid "Create a new link to share your project"
+msgstr "プロジェクトを共有するための新しいリンクを作成します"
+
+#: templates/project/modal_generate_private_link.mako:13
+msgid "Link name"
+msgstr "リンク名"
+
+#: templates/project/modal_generate_private_link.mako:18
+msgid "Optional link name (e.g., For peer review, Sharing data, Share project)"
+msgstr "オプションのリンク名（例：査読、データの共有、プロジェクトの共有）"
+
+#: templates/project/modal_generate_private_link.mako:30
+msgid ""
+"<strong>Anonymize</strong> contributor list for this link (e.g., for "
+"blind peer review)."
+msgstr "このリンクの投稿者リストを匿名化します（例：ブラインドピアレビュー用）。"
+
+#: templates/project/modal_generate_private_link.mako:32
+msgid ""
+"Ensure the wiki pages, files, registration forms and add-ons do not "
+"contain identifying information."
+msgstr "Wikiページ、ファイル、登録フォーム、アドオンに識別情報が含まれていないことを確認してください。"
+
+#: templates/project/modal_generate_private_link.mako:39
+msgid ""
+"<strong>Which components would you like to associate with this "
+"link?</strong>"
+msgstr "このリンクにどのコンポーネントを関連付けますか？"
+
+#: templates/project/modal_generate_private_link.mako:40
+msgid ""
+"Anyone with the private link can view&mdash;but not edit&mdash;the"
+"                        components associated with the link."
+msgstr "プライベートリンクを持つユーザーは誰でも、リンクに関連付けられているコンポーネントを表示できますが、編集することはできません。"
+
+#: templates/project/modal_generate_private_link.mako:51
+#, python-format
+msgid "(current component<span %(data_bind)s>, public</span>)"
+msgstr "（現在のコンポーネント<span %(data_bind)s>, 公開</span>）"
+
+#: templates/project/modal_generate_private_link.mako:59
+msgid "Parent needs to be checked"
+msgstr "親を確認する必要があります"
+
+#: templates/project/modal_generate_private_link.mako:62
+msgid "(public)"
+msgstr "（公開）"
+
+#: templates/project/modal_generate_private_link.mako:74
+msgid "De-select all"
+msgstr "全選択解除"
+
+#: templates/project/modal_remove_contributor.mako:15
+#, python-format
+msgid ""
+"<span>Do you want to remove <b %(data_bind1)s></b> from"
+"                                <b %(data_bind2)s></b>, or from <b "
+"%(data_bind3)s></b> and every component in it?</span>"
+msgstr ""
+"<b %(data_bind1)s></b>を<b %(data_bind2)s></b>から、または<b %(data_bind3)s></b>"
+" とその中のすべてのコンポーネントから削除しますか？"
+
+#: templates/project/modal_remove_contributor.mako:21
+#, python-format
+msgid ""
+"Remove <b %(data_bind)s></b> from                                    "
+"<span %(class_data_bind)s></span>."
+msgstr " <b %(data_bind)s></b>を<span %(class_data_bind)s></span>から削除します。"
+
+#: templates/project/modal_remove_contributor.mako:28
+#, python-format
+msgid ""
+"Remove <b %(data_bind)s></b> from                                    "
+"<span %(class_data_bind)s></span> and every component in it."
+msgstr ""
+"<b %(data_bind)s></b>およびその中のすべてのコンポーネントから<span "
+"%(class_data_bind)s></span>を削除します。"
+
+#: templates/project/modal_remove_contributor.mako:37
+#, python-format
+msgid "Remove <b %(data_bind1)s></b> from <span %(data_bind2)s></span>?"
+msgstr "<span %(data_bind2)s></span>から<b %(data_bind1)s></b>を削除しますか？"
+
+#: templates/project/modal_remove_contributor.mako:48
+#, python-format
+msgid ""
+"<b %(data_bind)s>                                        </b> will be "
+"removed from the following projects and/or components."
+msgstr "<b %(data_bind)s></b>は、以下のプロジェクトおよび/またはコンポーネントから削除されます。"
+
+#: templates/project/modal_remove_contributor.mako:65
+#, python-format
+msgid ""
+"<b %(data_bind)s>                                        </b> cannot be "
+"removed from the following projects and/or components."
+msgstr "以下のプロジェクトやコンポーネントから<b %(data_bind)s></b>を削除できません。"
+
+#: templates/project/modal_remove_contributor.mako:81
+#, python-format
+msgid ""
+"<b %(data_bind)s></b> cannot be                        removed as a "
+"contributor.  You need at least one administrator, bibliographic "
+"contributor, and registered user."
+msgstr "<b %(data_bind)s></b>はコントリビュータとして削除できません。 少なくとも1人の管理者、書誌コントリビュータ、および登録ユーザーが必要です。"
+
+#: templates/project/modal_remove_contributor.mako:85
+msgid ""
+"Please save or discard your existing changes before removing a "
+"contributor."
+msgstr "コントリビュータを削除する前に、既存の変更を保存または破棄してください。"
+
+#: templates/project/modal_remove_contributor.mako:97
+msgid "Continue"
+msgstr "続ける"
 
 #: templates/project/project.mako:22
 msgid "Private Project"
@@ -1394,4 +1639,10 @@ msgstr "お使いのブラウザは共有編集をサポートしていません
 
 #~ msgid "View Forks %(fork_count)s"
 #~ msgstr "フォークを表示する %(fork_count)s"
+
+#~ msgid ""
+#~ "<b %(data_bind)s>                                        "
+#~ "</b> cannot be removed from the "
+#~ "following projects and/or components.</span>"
+#~ msgstr "以下のプロジェクトやコンポーネントから<b %(data_bind)s></b>を削除できません。"
 
