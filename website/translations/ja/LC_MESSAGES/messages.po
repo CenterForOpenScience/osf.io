@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-11-29 14:47+0900\n"
+"POT-Creation-Date: 2019-12-02 10:43+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -30,6 +30,8 @@ msgstr "アカウント設定"
 #: templates/profile/addons.mako:19 templates/profile/notifications.mako:6
 #: templates/profile/oauth_app_list.mako:4
 #: templates/profile/personal_tokens_detail.mako:5
+#: templates/profile/personal_tokens_list.mako:4
+#: templates/profile/settings.mako:2 templates/profile/settings.mako:9
 #: templates/project/project_header.mako:80 templates/project/settings.mako:2
 #: templates/project/settings.mako:5
 msgid "Settings"
@@ -329,7 +331,9 @@ msgid ""
 "Resetting the client secret will render your application unusable until "
 "it is updated with the new client secret, and all users must reauthorize "
 "access. Previously issued access tokens will no longer work."
-msgstr "クライアントシークレットをリセットすると、新しいクライアントシークレットで更新されるまでアプリケーションが使用できなくなり、すべてのユーザーがアクセスを再認証する必要があります。 以前に発行されたアクセストークンは機能しなくなります。"
+msgstr ""
+"クライアントシークレットをリセットすると、新しいクライアントシークレットで更新されるまでアプリケーションが使用できなくなり、すべてのユーザーがアクセスを再認証する必要があります。"
+" 以前に発行されたアクセストークンは機能しなくなります。"
 
 #: templates/profile/oauth_app_detail.mako:48
 msgid "Deactivate application"
@@ -394,7 +398,9 @@ msgid ""
 "The GakuNin RDM allows third-party web applications to connect to the "
 "GakuNin RDM on behalf of other users via the OAuth 2.0 web application "
 "flow."
-msgstr "GakuNin RDMを使用すると、サードパーティのWebアプリケーションがOAuth 2.0 Webアプリケーションフローを介して他のユーザーに代わってGakuNin RDMに接続できます。"
+msgstr ""
+"GakuNin RDMを使用すると、サードパーティのWebアプリケーションがOAuth 2.0 "
+"Webアプリケーションフローを介して他のユーザーに代わってGakuNin RDMに接続できます。"
 
 #: templates/profile/oauth_app_list.mako:24
 msgid ""
@@ -413,6 +419,7 @@ msgid "Application"
 msgstr "アプリケーション"
 
 #: templates/profile/oauth_app_list.mako:34
+#: templates/profile/personal_tokens_list.mako:34
 msgid "Deactivate"
 msgstr "非アクティブ"
 
@@ -455,6 +462,68 @@ msgstr "このトークンでの認証に使用されるID。 これは一度だ
 #: templates/profile/personal_tokens_detail.mako:70
 msgid "Copy to clipboard"
 msgstr "クリップボードにコピー"
+
+#: templates/profile/personal_tokens_list.mako:2
+#: templates/profile/personal_tokens_list.mako:15
+#: templates/profile/personal_tokens_list.mako:31
+msgid "Personal Access Tokens"
+msgstr "パーソナルアクセストークン"
+
+#: templates/profile/personal_tokens_list.mako:17
+msgid "New token"
+msgstr "新しいトークン"
+
+#: templates/profile/personal_tokens_list.mako:22
+msgid ""
+"Personal access tokens function like ordinary OAuth access tokens. They "
+"can be used to authenticate to the API."
+msgstr "個人用アクセストークンは、通常のOAuthアクセストークンのように機能します。 APIの認証に使用できます。"
+
+#: templates/profile/personal_tokens_list.mako:24
+msgid ""
+"You have not created any access tokens that can connect to the GakuNin "
+"RDM."
+msgstr "GakuNin RDMに接続できるアクセストークンを作成していません。"
+
+#: templates/profile/personal_tokens_list.mako:26
+msgid "You have generated the following personal access tokens:"
+msgstr "次の個人用アクセストークンを生成しました。"
+
+#: templates/profile/settings.mako:11
+msgid "View your profile"
+msgstr ""プロフィールを表示
+
+#: templates/profile/settings.mako:38
+msgid "Name"
+msgstr "名前"
+
+#: templates/profile/settings.mako:39
+msgid "Social"
+msgstr "社会"
+
+#: templates/profile/settings.mako:40
+msgid "Employment"
+msgstr "仕事"
+
+#: templates/profile/settings.mako:41
+msgid "Education"
+msgstr "教育"
+
+#: templates/profile/user_settings_default.mako:9
+msgid "Connect or Reauthorize Account"
+msgstr "アカウントの接続または再認証"
+
+#: templates/profile/user_settings_default.mako:14
+msgid "Disconnect Account"
+msgstr "アカウントを切断"
+
+#: templates/profile/user_settings_default.mako:20
+msgid "Authorized by "
+msgstr "承認者:"
+
+#: templates/profile/user_settings_default.mako:28
+msgid "Private project"
+msgstr "非公開プロジェクト"
 
 #: templates/project/addons.mako:14 templates/project/addons.mako:33
 msgid "Select Add-ons"
