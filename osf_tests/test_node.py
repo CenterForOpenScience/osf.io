@@ -6,11 +6,20 @@ import pytest
 import pytz
 import random
 import string
+<<<<<<< HEAD
 import builtins
 
 from django.utils import timezone
 from django.db.utils import IntegrityError
 from nose.tools import assert_equal, assert_is_not_none, assert_not_equal, assert_false, assert_raises
+=======
+# Python 3.x incompatible, use import builtins instead
+import __builtin__ as builtins
+
+from django.utils import timezone
+from django.db.utils import IntegrityError
+from nose.tools import *  # noqa: F403
+>>>>>>> Adds model tests for the DraftNode model changes
 from framework.celery_tasks import handlers
 from framework.exceptions import PermissionsError
 from framework.sessions import set_session
@@ -3685,8 +3694,13 @@ class TestNodeUpdate:
 
         logs = node.logs.order_by('-date')
         last_log, penultimate_log = logs[:2]
+<<<<<<< HEAD
         assert penultimate_log.action == NodeLog.EDITED_TITLE
         assert last_log.action == NodeLog.CATEGORY_UPDATED
+=======
+        assert penultimate_log.action == NodeLog.CATEGORY_UPDATED
+        assert last_log.action == NodeLog.EDITED_TITLE
+>>>>>>> Adds model tests for the DraftNode model changes
 
     def test_set_access_requests(self, node, auth):
         assert node.access_requests_enabled is True
