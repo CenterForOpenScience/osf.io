@@ -385,9 +385,9 @@ class TestSetDraftRegistrationEditableFields(TestNodeEditableFieldsMixin):
         return DraftRegistration
 
 
-class TestDraftRegistrationContributorMethods:
+class TestDraftRegistrationContributorMethods(TestContributorMethods):
     @pytest.fixture()
-    def draft_registration(self, project):
+    def resource(self, project):
         return factories.DraftRegistrationFactory(branched_from=project, title='That Was Then', description='A description')
 
     @pytest.fixture()
@@ -654,6 +654,8 @@ class TestDraftRegistrationContributorMethods:
                 auth=auth
             )
 
+=======
+>>>>>>> Adds model tests for the DraftNode model changes
 
 class TestDraftRegistrationAffiliatedInstitutions:
     def test_affiliated_institutions(self, draft_registration):
