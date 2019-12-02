@@ -244,29 +244,6 @@ def rebuild_search(ctx):
 
     init_app(routes=False, set_backends=True)
 
-    # if not settings.ELASTIC_URI.startswith('http'):
-    #     protocol = 'http://' if settings.DEBUG_MODE else 'https://'
-    # else:
-    #     protocol = ''
-
-    # from website.search.elastic_search import es_index
-    # index = es_index()
-
-    ### NOTE: remove=True or remove_all=True can delete old index.
-    # url = '{protocol}{uri}/{index}'.format(
-    #     protocol=protocol,
-    #     uri=settings.ELASTIC_URI.rstrip('/'),
-    #     index=index,
-    # )
-    # print('Deleting index {}'.format(index))
-    # print('----- DELETE {}*'.format(url))
-    # requests.delete(url + '*')
-
-    ### NOTE: set_up_index() can create index.
-    # print('Creating index {}'.format(index))
-    # print('----- PUT {}'.format(url))
-    # requests.put(url)
-
     # remove_all=True for development
     migrate_search(ctx, delete=False, remove=True, remove_all=False)
 
@@ -365,9 +342,6 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     if params:
         params = [params] if isinstance(params, basestring) else params
         args.extend(params)
-
-    # report slowest tests
-    # args.append('--durations=50')
 
     retcode = pytest.main(args)
     sys.exit(retcode)
