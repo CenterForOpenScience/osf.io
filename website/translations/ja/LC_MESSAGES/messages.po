@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-02 14:57+0900\n"
+"POT-Creation-Date: 2019-12-02 16:38+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -731,7 +731,7 @@ msgid ""
 "<a %(taga)s>Add <strong><em %(data_bind)s></em></strong> as an "
 "unregistered contributor</a>."
 msgstr ""
-"<a %(taga)s>は、未登録のコントリビュータとして<strong><em "
+"未登録のコントリビュータとして<strong><em "
 "%(data_bind)s></em></strong>を追加します。"
 
 #: templates/project/modal_add_contributor.mako:186
@@ -746,13 +746,17 @@ msgstr "結果が見つかりません。より具体的な検索を試してく
 msgid "No results found. Try a more specific search"
 msgstr "結果が見つかりません。より具体的な検索を試してください"
 
+#: templates/project/modal_add_contributor.mako:195
+msgid "or"
+msgstr "または"
+
 #: templates/project/modal_add_contributor.mako:196
 #, python-format
 msgid ""
 "<a %(taga)s>add <strong><em %(data_bind)s></em></strong> as an "
 "unregistered contributor</a>."
 msgstr ""
-"<a %(taga)s>は、未登録のコントリビュータとして<strong><em "
+"未登録のコントリビュータとして<strong><em "
 "%(data_bind)s></em></strong>を追加します。"
 
 #: templates/project/modal_add_contributor.mako:200
@@ -766,7 +770,7 @@ msgstr ""
 
 #: templates/project/modal_add_contributor.mako:207
 msgid "Adding"
-msgstr "追加注"
+msgstr "追加中"
 
 #: templates/project/modal_add_contributor.mako:208
 msgid "Remove all"
@@ -774,7 +778,7 @@ msgstr "全て除外"
 
 #: templates/project/modal_add_contributor.mako:281
 msgid "Adding contributor(s)"
-msgstr "光景ン車を追加中"
+msgstr "コントリビュータを追加中"
 
 #: templates/project/modal_add_contributor.mako:289
 msgid ""
@@ -921,7 +925,9 @@ msgid ""
 "<b %(data_bind)s></b> cannot be                        removed as a "
 "contributor.  You need at least one administrator, bibliographic "
 "contributor, and registered user."
-msgstr "<b %(data_bind)s></b>はコントリビュータとして削除できません。 少なくとも1人の管理者、書誌コントリビュータ、および登録ユーザーが必要です。"
+msgstr ""
+"<b %(data_bind)s></b>はコントリビュータとして削除できません。 "
+"少なくとも1人の管理者、書誌コントリビュータ、および登録ユーザーが必要です。"
 
 #: templates/project/modal_remove_contributor.mako:85
 msgid ""
