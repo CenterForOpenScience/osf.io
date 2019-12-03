@@ -10,7 +10,7 @@ GIT_STATUS_FILE = os.path.join('website', 'static', 'built', 'git_branch.txt')
 
 def gather_pr_data(current_branch='develop', master_branch='master'):
     import requests
-    regex = re.compile(ur'\(#([\d]{4,})\)|Merge pull request #([\d]{4,})')
+    regex = re.compile(r'\(#([\d]{4,})\)|Merge pull request #([\d]{4,})')
     pr_data = []
     headers = {
         'Authorization': 'token %s' % GITHUB_API_TOKEN,
