@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 """Asynchronous task queue module."""
+import sys
+RECURSION_LIMIT = 2000  # [GRDM-9050]
+sys.setrecursionlimit(RECURSION_LIMIT)  # [GRDM-9050]
+
 from celery import Celery
 from celery.utils.log import get_task_logger
 

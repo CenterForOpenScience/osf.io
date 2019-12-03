@@ -70,5 +70,9 @@
     "iqbrims": {
         "fullName": "IQB-RIMS",
         "externalView": true
+    },
+    "dropboxbusiness": {
+        "fullName": "Dropbox Business",
+        "externalView": false
     }
 }

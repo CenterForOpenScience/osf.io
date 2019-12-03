@@ -1,0 +1,10 @@
+{
+    "dropboxbusiness_file_added" : "A user added a file to Dropbox Business in a project",
+    "dropboxbusiness_file_removed" : "A user removed a file from Dropbox Business in a project",
+    "dropboxbusiness_file_updated" : "A user  updated a file in Dropbox Business in a project",
+    "dropboxbusiness_folder_created" : "A user created a folder in Dropbox Business in a project",
+    "dropboxbusiness_folder_selected" : "A user linked a Dropbox Business folder in a project",
+    "dropboxbusiness_node_authorized" : "A user authorized the Dropbox Business addon for a project",
+    "dropboxbusiness_node_deauthorized" : "A user deauthorized the Dropbox Business addon for a project",
+    "dropboxbusiness_node_deauthorized_no_user" : "Dropbox Business addon for a project deauthorized"
+}

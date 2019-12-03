@@ -118,6 +118,7 @@ INSTALLED_APPS = (
     'addons.weko',
     'addons.jupyterhub',
     'addons.iqbrims',
+    'addons.dropboxbusiness',
 )
 
 # local development using https
