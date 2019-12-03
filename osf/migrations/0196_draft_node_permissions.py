@@ -66,7 +66,7 @@ drop_draft_reg_group_object_permission_table = """
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0194_merge_20191113_1611'),
+        ('osf', '0195_draft_node_models'),
     ]
 
     operations = [
