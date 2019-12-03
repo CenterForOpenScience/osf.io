@@ -1,4 +1,4 @@
-FROM node:8-alpine
+FROM node:8-alpine3.9
 
 # Source: https://github.com/docker-library/httpd/blob/7976cabe162268bd5ad2d233d61e340447bfc371/2.4/alpine/Dockerfile#L3
 RUN set -x \
