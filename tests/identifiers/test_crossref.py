@@ -45,7 +45,7 @@ def preprint():
 
 @pytest.fixture()
 def crossref_success_response():
-    return """
+    return b"""
         \n\n\n\n<html>\n<head><title>SUCCESS</title>\n</head>\n<body>\n<h2>SUCCESS</h2>\n<p>
         Your batch submission was successfully received.</p>\n</body>\n</html>\n
         """
@@ -122,6 +122,7 @@ class TestCrossRefClient:
         assert set(metadata_date_parts) == set(preprint_date_parts)
 
     @responses.activate
+    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated', mock.Mock())
     def test_metadata_for_deleted_node(self, crossref_client, preprint):
         responses.add(
             responses.Response(

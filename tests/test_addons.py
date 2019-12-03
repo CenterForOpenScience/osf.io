@@ -22,7 +22,7 @@ from osf_tests import factories
 from tests.base import OsfTestCase, get_default_metaschema
 from api_tests.utils import create_test_file
 from osf_tests.factories import (AuthUserFactory, ProjectFactory,
-                             RegistrationFactory)
+                             RegistrationFactory, DraftRegistrationFactory,)
 from website import settings
 from addons.base import views
 from addons.github.exceptions import ApiError
@@ -1091,7 +1091,7 @@ class TestAddonFileViews(OsfTestCase):
         registered_node = self.project.register_node(
             schema=get_default_metaschema(),
             auth=Auth(self.user),
-            data=None,
+            draft_registration=DraftRegistrationFactory(branched_from=self.project),
         )
 
         archived_from_url = views.get_archived_from_url(registered_node, file_node)
@@ -1106,7 +1106,7 @@ class TestAddonFileViews(OsfTestCase):
         registered_node = self.project.register_node(
             schema=get_default_metaschema(),
             auth=Auth(self.user),
-            data=None,
+            draft_registration=DraftRegistrationFactory(branched_from=self.project),
         )
         archived_from_url = views.get_archived_from_url(registered_node, file_node)
         assert_false(archived_from_url)
@@ -1119,7 +1119,7 @@ class TestAddonFileViews(OsfTestCase):
         self.project.register_node(
             schema=get_default_metaschema(),
             auth=Auth(self.user),
-            data=None,
+            draft_registration=DraftRegistrationFactory(branched_from=self.project),
         )
         trashed_node = second_file_node.delete()
         assert_false(trashed_node.copied_from)

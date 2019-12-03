@@ -6,7 +6,8 @@ from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
 from osf_tests.factories import (
     EmbargoFactory, NodeFactory, ProjectFactory,
-    RegistrationFactory, UserFactory, UnconfirmedUserFactory
+    RegistrationFactory, RegistrationApprovalFactory, UserFactory,
+    UnconfirmedUserFactory
 )
 
 from framework.exceptions import PermissionsError
@@ -15,6 +16,7 @@ from osf.exceptions import (
 )
 from osf.utils import tokens
 from osf.models.sanctions import (
+    EmailApprovableSanction,
     Sanction,
     PreregCallbackMixin,
     RegistrationApproval,
@@ -34,8 +36,6 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         self.user = UserFactory()
         self.project = ProjectFactory(creator=self.user)
         self.registration = RegistrationFactory(project=self.project)
-        self.embargo = EmbargoFactory(user=self.user)
-        self.valid_embargo_end_date = timezone.now() + datetime.timedelta(days=3)
 
     def test__require_approval_saves_approval(self):
         initial_count = RegistrationApproval.objects.all().count()
@@ -241,6 +241,35 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         )
         self.registration.save()
         assert_true(self.registration.is_pending_registration)
+
+    def test_should_suppress_emails(self):
+        self.registration = RegistrationFactory(project=self.project)
+        self.registration.external_registration = True
+        self.registration.save()
+
+        contributors = self.project.get_active_contributors_recursive(unique_users=True)
+
+        assert_true(self.registration.external_registration)
+        assert_true(self.registration.registration_approval.should_suppress_emails)
+
+        # Tests email suppression for on_complete_notify_initiator
+        self.registration.require_approval(
+            self.user,
+            notify_initiator_on_complete=True
+        )
+        self.registration.save()
+        with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify_initiator:
+            self.registration.registration_approval._on_complete(self.user)
+        assert_equal(mock_notify_initiator.call_count, 0)
+
+        # Tests email suppression for ask()
+        with mock.patch.object(EmailApprovableSanction, '_notify_authorizer') as mock_notify_authorizer:
+            self.registration.sanction.ask(contributors)
+        assert_equal(mock_notify_authorizer.call_count, 0)
+
+        with mock.patch.object(EmailApprovableSanction, '_notify_non_authorizer') as mock_notify_non_authorizer:
+            self.registration.sanction.ask(contributors)
+        assert_equal(mock_notify_non_authorizer.call_count, 0)
 
     def test_on_complete_notify_initiator(self):
         self.registration.require_approval(

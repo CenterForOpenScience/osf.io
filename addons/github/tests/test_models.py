@@ -9,7 +9,7 @@ from addons.base.tests.models import (OAuthAddonNodeSettingsTestSuiteMixin,
                                       OAuthAddonUserSettingTestSuiteMixin)
 from addons.github.models import NodeSettings
 from addons.github.tests import factories
-from osf_tests.factories import ProjectFactory, UserFactory
+from osf_tests.factories import ProjectFactory, UserFactory, DraftRegistrationFactory
 
 from nose.tools import (assert_equal, assert_false, assert_in, assert_is,
                         assert_not_equal, assert_not_in, assert_true)
@@ -308,7 +308,7 @@ class TestCallbacks(OsfTestCase):
         registration = self.project.register_node(
             schema=get_default_metaschema(),
             auth=Auth(user=self.project.creator),
-            data='hodor',
+            draft_registration=DraftRegistrationFactory(branched_from=self.project),
         )
         assert_false(registration.has_addon('github'))
 

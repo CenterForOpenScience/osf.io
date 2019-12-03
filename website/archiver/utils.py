@@ -219,6 +219,15 @@ def get_file_map(node, file_map):
             yield (key, value, node_id)
 
 def find_registration_file(value, node):
+    """
+    some annotations:
+
+    - `value` is  the `extra` from a file upload in `registered_meta`
+        (see `Uploader.addFile` in website/static/js/registrationEditorExtensions.js)
+    - `node` is a Registration instance
+    - returns a `(file_info, node_id)` or `(None, None)` tuple, where `file_info` is from waterbutler's api
+        (see `addons.base.models.BaseStorageAddon._get_fileobj_child_metadata` and `waterbutler.core.metadata.BaseMetadata`)
+    """
     from osf.models import AbstractNode
     orig_sha256 = value['sha256']
     orig_name = unescape_entities(
@@ -230,13 +239,21 @@ def find_registration_file(value, node):
     )
     orig_node = value['nodeId']
     file_map = get_file_map(node)
-    for sha256, value, node_id in file_map:
+    for sha256, file_info, node_id in file_map:
         registered_from_id = AbstractNode.load(node_id).registered_from._id
-        if sha256 == orig_sha256 and registered_from_id == orig_node and orig_name == value['name']:
-            return value, node_id
+        if sha256 == orig_sha256 and registered_from_id == orig_node and orig_name == file_info['name']:
+            return file_info, node_id
     return None, None
 
 def find_registration_files(values, node):
+    """
+    some annotations:
+
+    - `values` is from `registered_meta`, e.g. `{ comments: [], value: '', extra: [] }`
+    - `node` is a Registration model instance
+    - returns a list of `(file_info, node_id, index)` or `(None, None, index)` tuples,
+        where `file_info` is from `find_registration_file` above
+    """
     ret = []
     for i in range(len(values.get('extra', []))):
         ret.append(find_registration_file(values['extra'][i], node) + (i,))
@@ -260,6 +277,14 @@ def get_title_for_question(schema, path):
     return title
 
 def find_selected_files(schema, metadata):
+    """
+    some annotations:
+
+    - `schema` is a RegistrationSchema instance
+    - `metadata` is from `registered_meta` (for the given schema)
+    - returns a dict that maps from each `osf-upload` question id (`.`-delimited path) to its chunk of metadata,
+        e.g. `{ 'q1.uploader': { comments: [], extra: [...], value: 'foo.pdf' } }`
+    """
     targets = []
     paths = [('', p) for p in schema.schema['pages']]
     while len(paths):
@@ -282,7 +307,7 @@ def find_selected_files(schema, metadata):
             selected[t] = value
     return selected
 
-VIEW_FILE_URL_TEMPLATE = '/project/{node_id}/files/osfstorage/{path}/'
+VIEW_FILE_URL_TEMPLATE = '/project/{node_id}/files/osfstorage/{file_id}/'
 
 def deep_get(obj, path):
     parts = path.split('.')
@@ -298,21 +323,28 @@ def migrate_file_metadata(dst, schema):
     metadata = dst.registered_meta[schema._id]
     missing_files = []
     selected_files = find_selected_files(schema, metadata)
+
     for path, selected in selected_files.items():
-        for registration_file, node_id, index in find_registration_files(selected, dst):
-            if not registration_file:
+        target = deep_get(metadata, path)
+
+        for archived_file_info, node_id, index in find_registration_files(selected, dst):
+            if not archived_file_info:
                 missing_files.append({
                     'file_name': selected['extra'][index]['selectedFileName'],
                     'question_title': get_title_for_question(schema.schema, path)
                 })
                 continue
-            target = deep_get(metadata, path)
-            target['extra'][index]['viewUrl'] = VIEW_FILE_URL_TEMPLATE.format(node_id=node_id, path=registration_file['path'].lstrip('/'))
+            archived_file_id = archived_file_info['path'].lstrip('/')
+            target['extra'][index]['viewUrl'] = VIEW_FILE_URL_TEMPLATE.format(node_id=node_id, file_id=archived_file_id)
+
     if missing_files:
         from website.archiver.tasks import ArchivedFileNotFound
         raise ArchivedFileNotFound(
             registration=dst,
             missing_files=missing_files
         )
+
     dst.registered_meta[schema._id] = metadata
+    dst.registration_responses = dst.flatten_registration_metadata()
+
     dst.save()

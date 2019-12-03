@@ -199,6 +199,22 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         }
 
     @pytest.fixture()
+    def payload_with_registration_responses(self, draft_registration):
+        return {
+            'data': {
+                'id': draft_registration._id,
+                'type': 'draft_registrations',
+                'attributes': {
+                    'registration_responses': {
+                        'datacompletion': 'No, data collection has not begun',
+                        'looked': 'No',
+                        'comments': 'This is my first registration.'
+                    }
+                }
+            }
+        }
+
+    @pytest.fixture()
     def administer_permission(self):
         return Permission.objects.get(codename='administer_prereg')
 
@@ -229,6 +245,12 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         data = res.json['data']
         assert schema._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['attributes']['registration_metadata'] == payload['data']['attributes']['registration_metadata']
+        # A write to registration_metadata, also updates registration_responses
+        assert data['attributes']['registration_responses'] == {
+            'datacompletion': 'No, data collection has not begun',
+            'looked': 'No',
+            'comments': 'This is my first registration.'
+        }
 
     def test_draft_must_be_branched_from_node(
             self, app, user, project_other, draft_registration, payload):
@@ -293,19 +315,6 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             auth=group_mem.auth
         )
         assert res.status_code == 403
-
-    def test_registration_metadata_must_be_supplied(
-            self, app, user, payload, url_draft_registrations):
-        payload['data']['attributes'] = {}
-
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
-        errors = res.json['errors'][0]
-        assert res.status_code == 400
-        assert errors['source']['pointer'] == '/data/attributes/registration_metadata'
-        assert errors['detail'] == 'This field is required.'
 
     def test_registration_metadata_must_be_a_dictionary(
             self, app, user, payload, url_draft_registrations):
@@ -426,6 +435,90 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert res.status_code == 200
         assert res.json['data']['attributes']['registration_metadata']['q2']['value'] == 'New response'
         assert 'q1' not in res.json['data']['attributes']['registration_metadata']
+
+    def test_required_registration_responses_questions_not_required_on_update(
+            self, app, user, project_public, draft_registration_prereg):
+
+        url = '/{}nodes/{}/draft_registrations/{}/'.format(
+            API_BASE, project_public._id, draft_registration_prereg._id)
+
+        registration_responses = {
+            'q1': 'First question answered'
+        }
+
+        draft_registration_prereg.registration_responses = {}
+        draft_registration_prereg.registration_metadata = {}
+        draft_registration_prereg.save()
+
+        payload = {
+            'data': {
+                'id': draft_registration_prereg._id,
+                'type': 'draft_registrations',
+                'attributes': {
+                    'registration_responses': registration_responses
+                }
+            }
+        }
+
+        res = app.put_json_api(
+            url, payload, auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['registration_metadata']['q1']['value'] == registration_responses['q1']
+        assert res.json['data']['attributes']['registration_responses']['q1'] == registration_responses['q1']
+
+    def test_registration_responses_must_be_a_dictionary(
+            self, app, user, payload_with_registration_responses, url_draft_registrations):
+        payload_with_registration_responses['data']['attributes']['registration_responses'] = 'Registration data'
+
+        res = app.put_json_api(
+            url_draft_registrations,
+            payload_with_registration_responses, auth=user.auth,
+            expect_errors=True)
+        errors = res.json['errors'][0]
+        assert res.status_code == 400
+        assert errors['source']['pointer'] == '/data/attributes/registration_responses'
+        assert errors['detail'] == 'Expected a dictionary of items but got type "str".'
+
+    def test_registration_responses_question_values_should_not_be_dicts(
+            self, app, user, payload_with_registration_responses, url_draft_registrations):
+        payload_with_registration_responses['data']['attributes']['registration_responses']['datacompletion'] = {'value': 'No, data collection has not begun'}
+
+        res = app.put_json_api(
+            url_draft_registrations,
+            payload_with_registration_responses, auth=user.auth,
+            expect_errors=True)
+        errors = res.json['errors'][0]
+        assert res.status_code == 400
+        assert errors['detail'] == 'For your registration, your response to the \'Has data collection begun for this project?\'' \
+                                   ' field is invalid, your response must be one of the provided options.'
+
+    def test_question_in_registration_responses_must_be_in_schema(
+            self, app, user, payload_with_registration_responses, url_draft_registrations):
+        payload_with_registration_responses['data']['attributes']['registration_responses']['q11'] = {
+            'value': 'No, data collection has not begun'
+        }
+
+        res = app.put_json_api(
+            url_draft_registrations,
+            payload_with_registration_responses, auth=user.auth,
+            expect_errors=True)
+        errors = res.json['errors'][0]
+        assert res.status_code == 400
+        assert errors['detail'] == 'Additional properties are not allowed (\'q11\' was unexpected)'
+
+    def test_multiple_choice_question_value_in_registration_responses_must_match_value_in_schema(
+            self, app, user, payload_with_registration_responses, url_draft_registrations):
+        payload_with_registration_responses['data']['attributes']['registration_responses']['datacompletion'] = 'Nope, data collection has not begun'
+
+        res = app.put_json_api(
+            url_draft_registrations,
+            payload_with_registration_responses, auth=user.auth,
+            expect_errors=True)
+        errors = res.json['errors'][0]
+        assert res.status_code == 400
+        assert errors['detail'] == 'For your registration, your response to the \'Has data collection begun for this project?\' field' \
+                                   ' is invalid, your response must be one of the provided options.'
 
     def test_reviewer_can_update_draft_registration(
             self, app, project_public,

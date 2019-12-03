@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.31.0 (2019-11-7)
+===================
+- EGAP: Parse project structure, add contributors, add files, ingest the draft registration, and add a Jupyter notebook
+- Modify a Chronos field for proper contributor classification
+
 19.30.0 (2019-10-16)
 ===================
 - Fix weirdness around deleted nodes by not deleing OSF Storage
