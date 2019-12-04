@@ -91,7 +91,7 @@ def render_content(content, node):
 
 
 def build_wiki_url(node, label, base, end):
-    return '/{pid}/wiki/{wname}/'.format(pid=node._id, wname=label)
+    return u'/{pid}/wiki/{wname}/'.format(pid=node._id, wname=label)
 
 
 class WikiVersionNodeManager(models.Manager):
