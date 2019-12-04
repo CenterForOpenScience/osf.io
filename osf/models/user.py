@@ -1789,7 +1789,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.suffix = ''
         self.jobs = []
         self.schools = []
-        self.social = []
+        self.social = {}
         self.unclaimed_records = {}
         self.notifications_configured = {}
         # Scrub all external accounts
