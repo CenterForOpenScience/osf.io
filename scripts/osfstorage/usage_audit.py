@@ -71,8 +71,10 @@ def get_usage(node):
     return list(map(sum, zip(*([(usage, trashed_usage)] + [get_usage(child) for child in node.nodes_primary]))))  # Adds tuples together, map(sum, zip((a, b), (c, d))) -> (a+c, b+d)
 
 
-def limit_filter(limit, (item, usage)):
-    """Note: usage is a tuple(current_usage, deleted_usage)"""
+def limit_filter(limit, item_usage_tuple):
+    """Note: item_usage_tuple is a tuple(str(guid), tuple(current_usage, deleted_usage))"""
+    item = item_usage_tuple[0]
+    usage = item_usage_tuple[1]
     return item not in WHITE_LIST and sum(usage) >= limit
 
 
