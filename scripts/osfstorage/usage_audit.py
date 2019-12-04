@@ -63,7 +63,7 @@ def get_usage(node):
     node_content_type = ContentType.objects.get_for_model(Node)
 
     vids = [each for each in BaseFileNode.active.filter(provider='osfstorage', target_object_id=node.id, target_content_type=node_content_type).values_list('versions', flat=True) if each]
-    t_vids = [each for eac in TrashedFile.objects.filter(provider='osfstorage', target_object_id=node.id, target_content_type=node_content_type).values_list('versions', flat=True) if each]
+    t_vids = [each for each in TrashedFile.objects.filter(provider='osfstorage', target_object_id=node.id, target_content_type=node_content_type).values_list('versions', flat=True) if each]
 
     usage = sum([v.size or 0 for v in FileVersion.objects.filter(id__in=vids)])
     trashed_usage = sum([v.size or 0 for v in FileVersion.objects.filter(id__in=t_vids)])
