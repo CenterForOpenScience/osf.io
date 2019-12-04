@@ -360,6 +360,9 @@ def get_auth(auth, **kwargs):
         credentials = node.serialize_waterbutler_credentials(provider_name)
         waterbutler_settings = node.serialize_waterbutler_settings(provider_name)
 
+    if isinstance(credentials.get('token'), bytes):
+        credentials['token'] = credentials.get('token').decode()
+
     return {'payload': jwe.encrypt(jwt.encode({
         'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
         'data': {
