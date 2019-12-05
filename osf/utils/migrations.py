@@ -427,6 +427,25 @@ class UpdateRegistrationSchemas(Operation):
         return 'Updated registration schemas'
 
 
+class UpdateRegistrationSchemasAndSchemaBlocks(Operation):
+    """Custom migration operation to update registration schemas
+    """
+    reversible = True
+
+    def state_forwards(self, app_label, state):
+        pass
+
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        ensure_schemas(to_state.apps)
+        map_schemas_to_schemablocks(to_state.apps)
+
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        warnings.warn('Reversing UpdateRegistrationSchemasAndSchemaBlocks is a noop')
+
+    def describe(self):
+        return 'Updated registration schemas and its schema blocks'
+
+
 class AddWaffleFlags(Operation):
     """Custom migration operation to add waffle flags
 
