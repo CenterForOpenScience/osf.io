@@ -2106,6 +2106,9 @@ class RegistrationResponseMixin(models.Model):
             self.file_storage_resource,
         )
 
+    class Meta:
+        abstract = True
+
 
 class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, ContributorMixin,
         NodeLicenseMixin, Taggable, TaxonomizableMixin, AffiliatedInstitutionMixin):
