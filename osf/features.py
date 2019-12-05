@@ -7,6 +7,7 @@ INSTITUTIONAL_LANDING_FLAG = 'institutions_nav_bar'
 STORAGE_I18N = 'storage_i18n'
 OSF_PREREGISTRATION = 'osf_preregistration'
 OSF_GROUPS = 'osf_groups'
+ENABLE_CHRONOS = 'enable_chronos'
 
 EMBER_AB_TESTING_HOME_PAGE_VERSION_B = 'ab_testing_home_page_version_b'
 EMBER_AUTH_REGISTER = 'ember_auth_register'
