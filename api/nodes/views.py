@@ -1298,7 +1298,7 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
             obj = self.get_addon_settings(provider=addon, fail_if_absent=False, check_object_permissions=False)
             if obj:
                 qs.append(obj)
-        qs.sort()
+        sorted(qs, key=lambda addon: addon.id, reverse=True)
         return qs
 
     get_queryset = get_default_queryset
