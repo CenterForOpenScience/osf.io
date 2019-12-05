@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-02 16:38+0900\n"
+"POT-Creation-Date: 2019-12-05 17:48+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -18,16 +18,68 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.7.0\n"
 
-#: templates/search.mako:96
-msgid "Type your search terms in the box above."
-msgstr ""
+#: templates/my_projects.mako:8
+msgid ""
+"<strong>NOTICE: </strong>Forks, registrations, and uploads will be "
+"temporarily disabled while the GakuNin RDM undergoes a hardware upgrade. "
+"These features will return shortly. Thank you for your patience.</div>"
+msgstr "<strong>注意: </strong>GakuNin RDMのハードウェアアップグレード中は、フォーク、登録、アップロードが一時的に無効になります。 これらの機能はまもなく戻ります。 お待ちいただいてありがとうございます。"
 
-#: templates/profile/account.mako:4 templates/profile/add_email.mako:4
-msgid "Account Settings"
-msgstr "アカウント設定"
+#: templates/nav.mako:23
+msgid "HOME"
+msgstr ""ホーム
 
-#: templates/profile/account.mako:8 templates/profile/add_email.mako:14
-#: templates/profile/addons.mako:19 templates/profile/notifications.mako:6
+#: templates/nav.mako:24
+msgid "PREPRINTS"
+msgstr "プレプリント"
+
+#: templates/nav.mako:25
+msgid "REGISTRIES"
+msgstr "レジストリー"
+
+#: templates/nav.mako:26
+msgid "MEETINGS"
+msgstr "ミーティング"
+
+#: templates/nav.mako:28
+msgid "INSTITUTIONS"
+msgstr "インスティチューション"
+
+#: templates/nav.mako:34
+msgid "Toggle navigation"
+msgstr "ナビゲーションを切り替える"
+
+#: templates/nav.mako:49
+msgid "My Quick Files"
+msgstr "マイクイックファイル"
+
+#: templates/nav.mako:51
+msgid "My Projects"
+msgstr "マイプロジェクト"
+
+#: templates/nav.mako:54
+msgid "Search"
+msgstr "検索"
+
+#: templates/nav.mako:59
+msgid "Support"
+msgstr "サポート"
+
+#: templates/nav.mako:63
+msgid "Donate"
+msgstr "寄付"
+
+#: templates/nav.mako:78
+msgid "My Profile"
+msgstr "マイプロフィール"
+
+#: templates/nav.mako:80
+msgid "RDM Support"
+msgstr "RDM サポート"
+
+#: templates/nav.mako:82 templates/profile/account.mako:8
+#: templates/profile/add_email.mako:14 templates/profile/addons.mako:19
+#: templates/profile/notifications.mako:6
 #: templates/profile/oauth_app_list.mako:4
 #: templates/profile/personal_tokens_detail.mako:5
 #: templates/profile/personal_tokens_list.mako:4
@@ -36,6 +88,123 @@ msgstr "アカウント設定"
 #: templates/project/settings.mako:5
 msgid "Settings"
 msgstr "設定"
+
+#: templates/nav.mako:83
+msgid "Log out"
+msgstr "ログアウト"
+
+#: templates/nav.mako:92
+msgid "Sign in"
+msgstr "サインイン"
+
+#: templates/nav.mako:102
+msgid "Sign Up"
+msgstr "サインアップ"
+
+#: templates/nav.mako:104
+msgid "Sign In"
+msgstr "サインイン"
+
+#: templates/nav.mako:140
+msgid "Notice:"
+msgstr "注意:"
+
+#: templates/nav.mako:144
+msgid ""
+"The site will undergo maintenance between <span "
+"id=\"maintenanceTime\"></span>."
+msgstr "\<span id=\"maintenanceTime\"></span>の間メンテナスが行われます。"
+
+#: templates/nav.mako:145
+msgid "Thank you for your patience."
+msgstr "お待たせしてすみません。"
+
+#: templates/prereg_landing_page.mako:5
+msgid "GakuNin RDM Preregistration"
+msgstr "GakuNin RDM 事前登録"
+
+#: templates/prereg_landing_page.mako:7
+msgid "GakuNin RDM Prereg Challenge"
+msgstr "GakuNin RDM プレレグチャレンジ"
+
+#: templates/prereg_landing_page.mako:22
+msgid "Please provide a title for your project:"
+msgstr "プロジェクトのタイトルを入力してください:"
+
+#: templates/prereg_landing_page.mako:24
+#: templates/project/modal_remove_contributor.mako:97
+msgid "Continue"
+msgstr "続ける"
+
+#: templates/prereg_landing_page.mako:30
+msgid "Go to an existing preregistration:"
+msgstr "既存の事前登録に移動します:"
+
+#: templates/prereg_landing_page.mako:32 templates/prereg_landing_page.mako:41
+#: templates/prereg_landing_page.mako:71 templates/prereg_landing_page.mako:115
+msgid "Preregister"
+msgstr "事前登録"
+
+#: templates/prereg_landing_page.mako:39
+msgid "Preregister an existing project:"
+msgstr "既存のプロジェクトを事前登録する"
+
+#: templates/prereg_landing_page.mako:55
+#, python-format
+msgid ""
+"<p>Improve your research with <a %(target)s>preregistration</a>. By "
+"writing out specific details such as data collection methods, analysis "
+"plans, and rules for data exclusion, you can make important decisions "
+"early on and have a clear record of these choices. This can help reduce "
+"biases that occur once the data are in front of you.</p>"
+msgstr "<p><a %(target)s>事前登録</a>で研究を改善します。 データ収集方法、分析計画、データ除外ルールなどの特定の詳細を書き出すことで、重要な決定を早期に行い、これらの選択を明確に記録できます。 これは、データが目の前にあるときに発生するバイアスを減らすのに役立ちます。</p>"
+
+#: templates/prereg_landing_page.mako:56
+#, python-format
+msgid ""
+"<p>Use <a %(target)s>OSF Registries</a> to discover previously registered"
+" work.</p>"
+msgstr "<p><a %(target)s>OSFレジストリ</a>を使用して、以前に登録した作品を発見します。</p>"
+
+#: templates/prereg_landing_page.mako:58
+#, python-format
+msgid ""
+"<p><strong> Articles must be published by an <a %(target)s>approved</a> "
+"journal by December 31, 2018, to be eligible for a prize. Please use this"
+" this helpful workflow to preregister, even if you are not seeking a "
+"prize. </strong></p>"
+msgstr "<p><strong>賞品の対象となるためには、2018年12月31日までに<a %(target)s>承認された</a>雑誌によって記事を公開する必要があります。 賞品を探していない場合でも、この便利なワークフローを使用して事前登録してください。</strong></p>"
+
+#: templates/prereg_landing_page.mako:59
+#, python-format
+msgid ""
+"<p> Improve your research with preregistration. The process of creating a"
+" <a %(href)s> preregistration</a> is beneficial to both the scientific "
+"field and to you, the scientist. By writing out detailed data collection "
+"methods, analysis plans, and rules for excluding or missing data, you can"
+" make important decisions that affect your workflow earlier, without the "
+"biases that occur once the data are in front of you.</p>"
+msgstr "<p> <a %(href)s>事前登録</a>で研究を改善します。 事前登録を作成するプロセスは、科学分野にとっても、科学者であるあなたにとっても有益です。 詳細なデータ収集方法、分析計画、およびデータの除外または欠落に関するルールを記述することにより、データが目の前に発生するバイアスをかけることなく、ワークフローに影響を与える重要な決定を早期に行うことができます。</p>"
+
+#: templates/prereg_landing_page.mako:64 templates/prereg_landing_page.mako:110
+msgid "Start a new preregistration"
+msgstr "新しい事前登録を開始する"
+
+#: templates/prereg_landing_page.mako:76 templates/prereg_landing_page.mako:121
+msgid "Continue working on an existing draft preregistration"
+msgstr "既存の事前登録ドラフトの作業を続行します"
+
+#: templates/prereg_landing_page.mako:84 templates/prereg_landing_page.mako:126
+msgid "Preregister a project you already have on the GakuNin RDM"
+msgstr "GakuNin RDMに既にあるプロジェクトを事前登録する"
+
+#: templates/search.mako:96
+msgid "Type your search terms in the box above."
+msgstr ""
+
+#: templates/profile/account.mako:4 templates/profile/add_email.mako:4
+msgid "Account Settings"
+msgstr "アカウント設定"
 
 #: templates/profile/account.mako:15 templates/profile/add_email.mako:21
 msgid "Connected Emails"
@@ -459,7 +628,7 @@ msgstr "削除"
 
 #: templates/profile/personal_tokens_detail.mako:65
 msgid "This is the only time your token will be displayed."
-msgstr "トークンが表示されるのは彼だけです。"
+msgstr "これは、トークンが表示される唯一の時間です。"
 
 #: templates/profile/personal_tokens_detail.mako:67
 msgid "ID used to authenticate with this token. This will be shown only once."
@@ -497,7 +666,7 @@ msgstr "次の個人用アクセストークンを生成しました。"
 
 #: templates/profile/settings.mako:11
 msgid "View your profile"
-msgstr "\"プロフィールを表"
+msgstr "プロフィールを表示"
 
 #: templates/profile/settings.mako:38
 #: templates/project/modal_add_contributor.mako:216
@@ -730,9 +899,7 @@ msgstr "(未登録)"
 msgid ""
 "<a %(taga)s>Add <strong><em %(data_bind)s></em></strong> as an "
 "unregistered contributor</a>."
-msgstr ""
-"未登録のコントリビュータとして<strong><em "
-"%(data_bind)s></em></strong>を追加します。"
+msgstr "未登録のコントリビュータとして<strong><em %(data_bind)s></em></strong>を追加します。"
 
 #: templates/project/modal_add_contributor.mako:186
 msgid "Searching contributors..."
@@ -755,9 +922,7 @@ msgstr "または"
 msgid ""
 "<a %(taga)s>add <strong><em %(data_bind)s></em></strong> as an "
 "unregistered contributor</a>."
-msgstr ""
-"未登録のコントリビュータとして<strong><em "
-"%(data_bind)s></em></strong>を追加します。"
+msgstr "未登録のコントリビュータとして<strong><em %(data_bind)s></em></strong>を追加します。"
 
 #: templates/project/modal_add_contributor.mako:200
 msgid ""
@@ -934,10 +1099,6 @@ msgid ""
 "Please save or discard your existing changes before removing a "
 "contributor."
 msgstr "コントリビュータを削除する前に、既存の変更を保存または破棄してください。"
-
-#: templates/project/modal_remove_contributor.mako:97
-msgid "Continue"
-msgstr "続ける"
 
 #: templates/project/project.mako:22
 msgid "Private Project"
