@@ -96,7 +96,7 @@
             "nav": "Other",
             "type": "string",
             "format": "textarea",
-            "description": "If 'other' was selected above, describe the type of study you're registering." 
+            "description": "If 'other' was selected above, describe the type of study you're registering."
         }]
     }]
 }
