@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-05 17:48+0900\n"
+"POT-Creation-Date: 2019-12-06 11:01+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -23,11 +23,14 @@ msgid ""
 "<strong>NOTICE: </strong>Forks, registrations, and uploads will be "
 "temporarily disabled while the GakuNin RDM undergoes a hardware upgrade. "
 "These features will return shortly. Thank you for your patience.</div>"
-msgstr "<strong>注意: </strong>GakuNin RDMのハードウェアアップグレード中は、フォーク、登録、アップロードが一時的に無効になります。 これらの機能はまもなく戻ります。 お待ちいただいてありがとうございます。"
+msgstr ""
+"<strong>注意: </strong>GakuNin "
+"RDMのハードウェアアップグレード中は、フォーク、登録、アップロードが一時的に無効になります。 これらの機能はまもなく戻ります。 "
+"お待たせしてすみません。"
 
 #: templates/nav.mako:23
 msgid "HOME"
-msgstr ""ホーム
+msgstr "ホーム"
 
 #: templates/nav.mako:24
 msgid "PREPRINTS"
@@ -57,7 +60,7 @@ msgstr "マイクイックファイル"
 msgid "My Projects"
 msgstr "マイプロジェクト"
 
-#: templates/nav.mako:54
+#: templates/nav.mako:54 templates/search.mako:2
 msgid "Search"
 msgstr "検索"
 
@@ -113,7 +116,7 @@ msgstr "注意:"
 msgid ""
 "The site will undergo maintenance between <span "
 "id=\"maintenanceTime\"></span>."
-msgstr "\<span id=\"maintenanceTime\"></span>の間メンテナスが行われます。"
+msgstr "<span id=\"maintenanceTime\"></span>の間メンテナスが行われます。"
 
 #: templates/nav.mako:145
 msgid "Thank you for your patience."
@@ -157,7 +160,10 @@ msgid ""
 "plans, and rules for data exclusion, you can make important decisions "
 "early on and have a clear record of these choices. This can help reduce "
 "biases that occur once the data are in front of you.</p>"
-msgstr "<p><a %(target)s>事前登録</a>で研究を改善します。 データ収集方法、分析計画、データ除外ルールなどの特定の詳細を書き出すことで、重要な決定を早期に行い、これらの選択を明確に記録できます。 これは、データが目の前にあるときに発生するバイアスを減らすのに役立ちます。</p>"
+msgstr ""
+"<p><a %(target)s>事前登録</a>で研究を改善します。 "
+"データ収集方法、分析計画、データ除外ルールなどの特定の詳細を書き出すことで、重要な決定を早期に行い、これらの選択を明確に記録できます。 "
+"これは、データが目の前にあるときに発生するバイアスを減らすのに役立ちます。</p>"
 
 #: templates/prereg_landing_page.mako:56
 #, python-format
@@ -173,7 +179,10 @@ msgid ""
 "journal by December 31, 2018, to be eligible for a prize. Please use this"
 " this helpful workflow to preregister, even if you are not seeking a "
 "prize. </strong></p>"
-msgstr "<p><strong>賞品の対象となるためには、2018年12月31日までに<a %(target)s>承認された</a>雑誌によって記事を公開する必要があります。 賞品を探していない場合でも、この便利なワークフローを使用して事前登録してください。</strong></p>"
+msgstr ""
+"<p><strong>賞品の対象となるためには、2018年12月31日までに<a "
+"%(target)s>承認された</a>雑誌によって記事を公開する必要があります。 "
+"賞品を探していない場合でも、この便利なワークフローを使用して事前登録してください。</strong></p>"
 
 #: templates/prereg_landing_page.mako:59
 #, python-format
@@ -184,7 +193,10 @@ msgid ""
 "methods, analysis plans, and rules for excluding or missing data, you can"
 " make important decisions that affect your workflow earlier, without the "
 "biases that occur once the data are in front of you.</p>"
-msgstr "<p> <a %(href)s>事前登録</a>で研究を改善します。 事前登録を作成するプロセスは、科学分野にとっても、科学者であるあなたにとっても有益です。 詳細なデータ収集方法、分析計画、およびデータの除外または欠落に関するルールを記述することにより、データが目の前に発生するバイアスをかけることなく、ワークフローに影響を与える重要な決定を早期に行うことができます。</p>"
+msgstr ""
+"<p> <a %(href)s>事前登録</a>で研究を改善します。 "
+"事前登録を作成するプロセスは、科学分野にとっても、科学者であるあなたにとっても有益です。 "
+"詳細なデータ収集方法、分析計画、およびデータの除外または欠落に関するルールを記述することにより、データが目の前に発生するバイアスをかけることなく、ワークフローに影響を与える重要な決定を早期に行うことができます。</p>"
 
 #: templates/prereg_landing_page.mako:64 templates/prereg_landing_page.mako:110
 msgid "Start a new preregistration"
@@ -198,9 +210,117 @@ msgstr "既存の事前登録ドラフトの作業を続行します"
 msgid "Preregister a project you already have on the GakuNin RDM"
 msgstr "GakuNin RDMに既にあるプロジェクトを事前登録する"
 
+#: templates/search.mako:36
+msgid "Improve your search:"
+msgstr "検索を改善する:"
+
+#: templates/search.mako:69
+msgid "Filter by license:"
+msgstr "ライセンスでフィルタ"
+
+#: templates/search.mako:93
+msgid "No results found."
+msgstr "結果が見つかりません。"
+
 #: templates/search.mako:96
 msgid "Type your search terms in the box above."
+msgstr "上のボックスに検索キーワードを入力します。"
+
+#: templates/search.mako:104
+msgid "Previous Page"
+msgstr "前のページ"
+
+#: templates/search.mako:110
+msgid "Next Page"
+msgstr "次のページ"
+
+#: templates/search.mako:123
+#, python-format
+msgid ""
+"(<span %(class_data_bind)s>Withdrawn </span><span "
+"%(data_bind)s>Registration </span>File)"
+msgstr "（<span %(class_data_bind)s>取り下げられた</span><span %(data_bind)s>登録</span>ファイル"
+
+#: templates/search.mako:126
+msgid "(Preprint File)"
+msgstr "(プレプリントファイル)"
+
+#: templates/search.mako:263
+msgid "Affiliated institutions:"
+msgstr "所属機関"
+
+#: templates/search.mako:277 templates/search.mako:368
+msgid "Jump to:"
+msgstr "次へジャンプ"
+
+#: templates/search.mako:291
+msgid "(Preprint)"
+msgstr "(プレプリント)"
+
+#: templates/project/settings.mako:108 templates/search.mako:292
+#: templates/search.mako:348
+msgid "Description:"
+msgstr "説明:"
+
+#: templates/project/project.mako:165 templates/search.mako:295
+#: templates/search.mako:352
+msgid "Contributors:"
+msgstr "コントリビュータ:"
+
+#: templates/search.mako:314
+msgid "Managers:"
+msgstr "マネージャ:"
+
+#: templates/search.mako:327
+msgid "Members:"
+msgstr "メンバー:"
+
+#: templates/search.mako:341 templates/search.mako:344
+#, python-format
+msgid "(<span %(class_data_bind)s>Withdrawn </span>Registration)"
+msgstr "(<span %(class_data_bind)s>取り下げられた</span>登録)"
+
+#: templates/project/settings.mako:37 templates/project/settings.mako:258
+#: templates/search.mako:370
+msgid "Wiki"
+msgstr "ウィキ"
+
+#: templates/project/files.mako:2 templates/project/files.mako:5
+#: templates/project/project.mako:441 templates/project/project_header.mako:40
+#: templates/search.mako:372
+msgid "Files"
+msgstr "ファイル"
+
+#: templates/search.mako:376
+msgid "Tags:"
+msgstr "タグ"
+
+#: templates/search_bar.mako:7 templates/search_bar.mako:8
+msgid "GakuNin RDM Search"
+msgstr "GakuNin RDM 検索"
+
+#: templates/search_bar_help_modal.mako:6
+msgid "Search help"
 msgstr ""
+
+#: templates/search_bar_help_modal.mako:9
+msgid "Queries"
+msgstr "クエリ"
+
+#: templates/search_bar_help_modal.mako:10
+#, python-format
+msgid ""
+"<p>Search uses the <a %(href)s>Lucene search syntax</a>.This gives you "
+"many options, but can be very simple as well. Examples of valid searches "
+"include:</p>"
+msgstr "<p>検索では<a %(href)s>Lucene検索構文</a>を使用します。これにより多くのオプションが提供されますが、非常に単純な場合もあります。 有効な検索の例は次のとおりです。</p>"
+
+#: templates/profile/modal_change_avatar.mako:20
+#: templates/project/view_file.mako:117 templates/project/view_file.mako:137
+#: templates/project/view_file.mako:157 templates/project/view_file.mako:177
+#: templates/search_bar_help_modal.mako:18
+msgid "Close"
+msgstr "閉じる"
 
 #: templates/profile/account.mako:4 templates/profile/add_email.mako:4
 msgid "Account Settings"
@@ -425,12 +545,6 @@ msgstr ""
 "アバター画像を変更するには、<a "
 "href=\"http://gravatar.org/\">gravatar.org</a>でログインまたは登録し、GakuNin "
 "RDMで使用するメールアドレスをGravatarアカウントに追加してください。"
-
-#: templates/profile/modal_change_avatar.mako:20
-#: templates/project/view_file.mako:117 templates/project/view_file.mako:137
-#: templates/project/view_file.mako:157 templates/project/view_file.mako:177
-msgid "Close"
-msgstr "閉じる"
 
 #: templates/profile/notifications.mako:2
 msgid "Notifications"
@@ -864,11 +978,6 @@ msgstr "変更を破棄"
 msgid "Save Changes"
 msgstr "変更を保存"
 
-#: templates/project/files.mako:2 templates/project/files.mako:5
-#: templates/project/project.mako:441 templates/project/project_header.mako:40
-msgid "Files"
-msgstr "ファイル"
-
 #: templates/project/files.mako:8 templates/project/project.mako:449
 msgid "Click on a storage provider or drag and drop to upload"
 msgstr "ストレージプロバイダーをクリックするか、ドラッグ&ドロップしてアップロードします"
@@ -1126,8 +1235,8 @@ msgstr "このプロジェクトを複製するには、ログインするかア
 
 #: templates/project/project.mako:100
 #, python-format
-msgid "View Forks %(forkcount)s"
-msgstr ""
+msgid "View Forks %(fork_count)s"
+msgstr "フォークを表示する %(fork_count)s"
 
 #: templates/project/project.mako:115
 msgid "Bookmark"
@@ -1148,10 +1257,6 @@ msgstr "共有"
 #: templates/project/project.mako:150
 msgid "Log in to request access"
 msgstr "ログインしてアクセスをリクエスト"
-
-#: templates/project/project.mako:165
-msgid "Contributors:"
-msgstr "コントリビュータ:"
 
 #: templates/project/project.mako:169
 msgid "Anonymous Contributors"
@@ -1493,10 +1598,6 @@ msgstr "ストレージロケーション"
 msgid "Access Requests"
 msgstr "アクセスリクエスト"
 
-#: templates/project/settings.mako:37 templates/project/settings.mako:258
-msgid "Wiki"
-msgstr "ウィキ"
-
 #: templates/project/settings.mako:40 templates/project/settings.mako:319
 msgid "Commenting"
 msgstr "コメントする"
@@ -1528,10 +1629,6 @@ msgstr "未分類"
 #: templates/project/settings.mako:102
 msgid "Title:"
 msgstr "タイトル:"
-
-#: templates/project/settings.mako:108
-msgid "Description:"
-msgstr "説明:"
 
 #: templates/project/settings.mako:115
 msgid "Select Timestamp Function:"
@@ -1803,13 +1900,4 @@ msgid ""
 "Your browser does not support collaborative editing. You may continue to "
 "make edits."
 msgstr "お使いのブラウザは共有編集をサポートしていません。 引き続き編集を行うことができます。"
-
-#~ msgid "View Forks %(fork_count)s"
-#~ msgstr "フォークを表示する %(fork_count)s"
-
-#~ msgid ""
-#~ "<b %(data_bind)s>                                        "
-#~ "</b> cannot be removed from the "
-#~ "following projects and/or components.</span>"
-#~ msgstr "以下のプロジェクトやコンポーネントから<b %(data_bind)s></b>を削除できません。"
 
