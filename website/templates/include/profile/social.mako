@@ -7,7 +7,7 @@
 
         <form role="form" data-bind="submit: submit">
 
-            <label>Your websites</label>
+            <label>${_("Your websites")}</label>
             <div data-bind="sortable: {
                         data: profileWebsites,
                         options: {
@@ -28,10 +28,10 @@
                     </div>
                 </div>
             </div>
-            <div data-bind="ifnot: hasValidWebsites" class="text-danger">Please enter a valid website</div>
+            <div data-bind="ifnot: hasValidWebsites" class="text-danger">${_("Please enter a valid website")}</div>
             <div class="p-t-sm p-b-sm">
                 <a class="btn btn-default" data-bind="click: addWebsiteInput">
-                    Add website
+                    ${_("Add website")}
                 </a>
             </div>
 
@@ -177,11 +177,11 @@
         </table>
 
         <div data-bind="ifnot: hasValues()">
-            <div class="well well-sm">Not provided</div>
+            <div class="well well-sm">${_("Not provided")}</div>
         </div>
 
         <div data-bind="if: editAllowed">
-            <a class="btn btn-primary" data-bind="click: edit">Edit</a>
+            <a class="btn btn-primary" data-bind="click: edit">${_("Edit")}</a>
         </div>
 
     </div>
