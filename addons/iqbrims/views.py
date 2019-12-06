@@ -146,10 +146,14 @@ def iqbrims_post_notify(**kwargs):
                      if 'notify_body_md' in data else None
     use_mail = data['use_mail'] if 'use_mail' in data else False
     nodes = []
+    mgmtnode = _get_management_node(node)
     if 'user' in to:
-        nodes.append((node, 'iqbrims_user'))
+        admin_emails = reduce(lambda x, y: x + y,
+                              [[e.address for e in u.emails.all()]
+                               for u in mgmtnode.contributors])
+        nodes.append((node, admin_emails, 'iqbrims_user'))
     if 'admin' in to:
-        nodes.append((_get_management_node(node), 'iqbrims_management'))
+        nodes.append((mgmtnode, None, 'iqbrims_management'))
     action = 'iqbrims_{}'.format(notify_type)
     if notify_body is None:
         log_actions = get_log_actions()
@@ -170,7 +174,7 @@ def iqbrims_post_notify(**kwargs):
                          if notify_body is not None else ''
     if notify_title is None:
         notify_title = action
-    for n, email_template in nodes:
+    for n, cc_addrs, email_template in nodes:
         comment = add_comment(node=n, user=n.creator,
                               title=notify_title,
                               body=notify_body_md)
@@ -183,16 +187,17 @@ def iqbrims_post_notify(**kwargs):
             },
             auth=Auth(user=node.creator),
         )
-        if not use_mail:
+        if not use_mail or len(n.contributors) == 0:
             continue
         emails = reduce(lambda x, y: x + y,
                         [[e.address for e in u.emails.all()]
                          for u in n.contributors])
-        for email in emails:
-            send_mail(email, Mail(email_template, notify_title),
-                      title=n.title, guid=n._id, author=node.creator,
-                      notify_type=notify_type, mimetype='html',
-                      notify_body=notify_body, notify_title=notify_title)
+        send_mail(','.join(emails), Mail(email_template, notify_title),
+                  cc_addr=','.join(cc_addrs) if cc_addrs is not None else None,
+                  replyto=cc_addrs[0] if cc_addrs is not None else None,
+                  title=n.title, guid=n._id, author=node.creator,
+                  notify_type=notify_type, mimetype='html',
+                  notify_body=notify_body, notify_title=notify_title)
     return {'status': 'complete'}
 
 @must_be_valid_project

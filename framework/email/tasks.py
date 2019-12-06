@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 
 @app.task
 def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True, login=True,
-                username=None, password=None, categories=None, attachment_name=None, attachment_content=None):
+                username=None, password=None, categories=None, attachment_name=None, attachment_content=None,
+                cc_addr=None, replyto=None):
     """Send email to specified destination.
     Email is sent from the email specified in FROM_EMAIL settings in the
     settings module.
@@ -20,7 +21,7 @@ def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True,
     Uses the Sendgrid API if ``settings.SENDGRID_API_KEY`` is set.
 
     :param from_addr: A string, the sender email
-    :param to_addr: A string, the recipient
+    :param to_addr: A string, the recipient(s)
     :param subject: subject of email
     :param message: body of message
     :param tuple categories: Categories to add to the email using SendGrid's
@@ -37,6 +38,8 @@ def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True,
         return _send_with_sendgrid(
             from_addr=from_addr,
             to_addr=to_addr,
+            cc_addr=cc_addr,
+            replyto=replyto,
             subject=subject,
             message=message,
             mimetype=mimetype,
@@ -48,6 +51,8 @@ def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True,
         return _send_with_smtp(
             from_addr=from_addr,
             to_addr=to_addr,
+            cc_addr=cc_addr,
+            replyto=replyto,
             subject=subject,
             message=message,
             mimetype=mimetype,
@@ -58,7 +63,8 @@ def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True,
         )
 
 
-def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=True, login=True, username=None, password=None):
+def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=True, login=True, username=None, password=None,
+                    cc_addr=None, replyto=None):
     username = username or settings.MAIL_USERNAME
     password = password or settings.MAIL_PASSWORD
 
@@ -70,6 +76,13 @@ def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=
     msg['Subject'] = subject
     msg['From'] = from_addr
     msg['To'] = to_addr
+    to_addrs = to_addr.split(',')
+
+    if cc_addr is not None:
+        msg['Cc'] = cc_addr
+        to_addrs += cc_addr.split(',')
+    if replyto is not None:
+        msg['Reply-To'] = replyto
 
     s = smtplib.SMTP(settings.MAIL_SERVER, settings.MAIL_PORT)
     s.ehlo()
@@ -80,19 +93,24 @@ def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=
         s.login(username, password)
     s.sendmail(
         from_addr=from_addr,
-        to_addrs=[to_addr],
+        to_addrs=[a for a in to_addrs if len(a) > 0],
         msg=msg.as_string()
     )
     s.quit()
     return True
 
 
-def _send_with_sendgrid(from_addr, to_addr, subject, message, mimetype='html', categories=None, attachment_name=None, attachment_content=None, client=None):
+def _send_with_sendgrid(from_addr, to_addr, subject, message, mimetype='html', categories=None, attachment_name=None, attachment_content=None, client=None,
+                    cc_addr=None, replyto=None):
     if (settings.SENDGRID_WHITELIST_MODE and to_addr in settings.SENDGRID_EMAIL_WHITELIST) or settings.SENDGRID_WHITELIST_MODE is False:
         client = client or sendgrid.SendGridClient(settings.SENDGRID_API_KEY)
         mail = sendgrid.Mail()
         mail.set_from(from_addr)
         mail.add_to(to_addr)
+        if cc_addr is not None:
+            mail.add_cc(cc_addr)
+        if replyto is not None:
+            mail.set_replyto(replyto)
         mail.set_subject(subject)
         if mimetype == 'html':
             mail.set_html(message)

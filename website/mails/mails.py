@@ -79,7 +79,7 @@ def render_message(tpl_name, **context):
 def send_mail(
         to_addr, mail, mimetype='html', from_addr=None, mailer=None, celery=True,
         username=None, password=None, callback=None, attachment_name=None,
-        attachment_content=None, **context):
+        attachment_content=None, cc_addr=None, replyto=None, **context):
     """Send an email from the GakuNin RDM.
     Example: ::
 
@@ -87,7 +87,7 @@ def send_mail(
 
         mails.send_email('foo@bar.com', mails.TEST, name="Foo")
 
-    :param str to_addr: The recipient's email address
+    :param str to_addr: The recipient's email address(es)
     :param Mail mail: The mail object
     :param str mimetype: Either 'plain' or 'html'
     :param function callback: celery task to execute after send_mail completes
@@ -118,6 +118,8 @@ def send_mail(
     kwargs = dict(
         from_addr=from_addr,
         to_addr=to_addr,
+        cc_addr=cc_addr,
+        replyto=replyto,
         subject=subject,
         message=message,
         mimetype=mimetype,
