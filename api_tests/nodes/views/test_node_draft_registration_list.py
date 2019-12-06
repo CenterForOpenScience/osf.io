@@ -88,7 +88,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
     def schema(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
-            schema_version=SCHEMA_VERSION)
+            schema_version=3)
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -210,7 +210,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
     def metaschema_open_ended(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
-            schema_version=SCHEMA_VERSION)
+            schema_version=3)
 
     @pytest.fixture()
     def payload(self, metaschema_open_ended, provider):
