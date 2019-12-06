@@ -5,6 +5,7 @@ import mock
 from nose.tools import *  # noqa
 import pytest
 import re
+import urllib
 
 from addons.base.tests.views import OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin
 from addons.iqbrims.tests.utils import mock_folders as sample_folder_data
@@ -597,8 +598,9 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
     @mock.patch.object(IQBRIMSClient, 'create_folder')
     @mock.patch.object(IQBRIMSClient, 'rename_folder')
     @mock.patch.object(IQBRIMSClient, 'folders')
-    def test_reject_checklist_storage(self, mock_folders, mock_rename_folder,
-                                      mock_create_folder,
+    @mock.patch.object(IQBRIMSClient, 'files')
+    def test_reject_checklist_storage(self, mock_files, mock_folders,
+                                      mock_rename_folder, mock_create_folder,
                                       mock_get_management_node):
         management_project = ProjectFactory()
         management_project.add_addon('googledrive', auth=None)
@@ -608,6 +610,8 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         mock_get_management_node.return_value = management_project
         mock_folders.return_value = [{'id': 'rmfolderid123',
                                       'title': u'チェックリスト'}]
+        mock_files.return_value = [{'id': 'file123', 'title': 'test1.pdf'},
+                                   {'id': 'file456', 'title': 'test2.pdf'}]
 
         node_settings = self.project.get_addon('iqbrims')
         node_settings.secret = 'secret123'
@@ -622,23 +626,42 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         res = self.app.delete(url, headers={'X-RDM-Token': token})
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'rejected',
-                                'root_folder': 'iqb123/'})
+
+        assert_equal(res.json['status'], 'rejected')
         mock_rename_folder.assert_called_once()
         cargs, _ = mock_rename_folder.call_args
         assert_equal(cargs[0], 'rmfolderid123')
+        foldername = cargs[1]
         assert_true(re.match(r'(.*)\.[0-9]+\-[0-9]+',
-                             cargs[1]).group(1) == u'チェックリスト')
+                             foldername).group(1) == u'チェックリスト')
         mock_create_folder.assert_called_once()
         assert_equal(mock_create_folder.call_args,
                      (('1234567890', u'チェックリスト'),))
 
+        folderurlpath = '/' + urllib.quote(foldername.encode('utf8'))
+        assert_equal(res.json['management']['id'], management_project._id)
+        assert_equal(len(res.json['management']['urls']), 2)
+        assert_equal(res.json['management']['urls'][0]['title'], 'test1.pdf')
+        assert_true(res.json['management']['urls'][0]['url'].endswith(folderurlpath + '/test1.pdf'))
+        assert_equal(res.json['management']['urls'][1]['title'], 'test2.pdf')
+        assert_true(res.json['management']['urls'][1]['url'].endswith(folderurlpath + '/test2.pdf'))
+        assert_equal(len(res.json['urls']), 2)
+        assert_equal(res.json['urls'][0]['title'], 'test1.pdf')
+        assert_true(res.json['urls'][0]['url'].endswith(folderurlpath + '/test1.pdf'))
+        assert_equal(res.json['urls'][1]['title'], 'test2.pdf')
+        assert_true(res.json['urls'][1]['url'].endswith(folderurlpath + '/test2.pdf'))
+        assert_equal(res.json['root_folder'], 'iqb123/')
+
     @mock.patch.object(iqbrims_views, '_get_management_node')
-    @mock.patch.object(IQBRIMSClient, 'delete_file')
     @mock.patch.object(IQBRIMSClient, 'folders')
     @mock.patch.object(IQBRIMSClient, 'files')
-    def test_reject_scan_storage(self, mock_files, mock_folders,
-                                 mock_delete_file, mock_get_management_node):
+    @mock.patch.object(SpreadsheetClient, 'sheets')
+    @mock.patch.object(SpreadsheetClient, 'get_column_values')
+    @mock.patch.object(SpreadsheetClient, 'update_row')
+    def test_reject_index_storage(self, mock_update_row,
+                                  mock_get_column_values, mock_sheets,
+                                  mock_files, mock_folders,
+                                  mock_get_management_node):
         management_project = ProjectFactory()
         management_project.add_addon('googledrive', auth=None)
         gdsettings = management_project.get_addon('googledrive')
@@ -646,8 +669,13 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         gdsettings.save()
         mock_get_management_node.return_value = management_project
         mock_folders.return_value = [{'id': 'rmfolderid123',
-                                      'title': u'スキャン結果'}]
-        mock_files.return_value = [{'id': 'rmfileid123', 'title': 'scan.pdf'}]
+                                      'title': u'生データ'}]
+        mock_files.return_value = [{'id': 'rmfileid123', 'title': 'Raw Files'}]
+        sgp = {'columnCount': 2}
+        mock_sheets.return_value = [{'properties': {'title': 'Files',
+                                                    'sheetId': 'ss123',
+                                                    'gridProperties': sgp}}]
+        mock_get_column_values.return_value = ['Filled']
 
         node_settings = self.project.get_addon('iqbrims')
         node_settings.secret = 'secret123'
@@ -658,14 +686,14 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                 self.project._id).encode('utf8')).hexdigest()
 
         url = self.project.api_url_for('iqbrims_reject_storage',
-                                       folder='scan')
+                                       folder='index')
         res = self.app.delete(url, headers={'X-RDM-Token': token})
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json, {'status': 'rejected',
                                 'root_folder': 'iqb123/'})
-        mock_delete_file.assert_called_once()
-        assert_equal(mock_delete_file.call_args, (('rmfileid123',),))
+        mock_update_row.assert_called_once()
+        assert_equal(mock_update_row.call_args, (('Files', ['FALSE'], 2),))
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')

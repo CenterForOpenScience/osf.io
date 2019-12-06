@@ -296,27 +296,28 @@ def iqbrims_reject_storage(**kwargs):
     node = kwargs['node'] or kwargs['project']
     iqbrims = node.get_addon('iqbrims')
     folder = kwargs['folder']
-    folder_name = None
-    file_name = None
-    if folder == 'index':
-        folder_name = REVIEW_FOLDERS['raw']
-    elif folder == 'scan':
-        folder_name = REVIEW_FOLDERS[folder]
-        file_name = 'scan.pdf'
-    else:
-        folder_name = REVIEW_FOLDERS[folder]
     try:
         access_token = iqbrims.fetch_access_token()
     except exceptions.InvalidAuthError:
         raise HTTPError(403)
+
     client = IQBRIMSClient(access_token)
+    folder_name = None
+    file_name = None
+    reject = lambda f: client.delete_file(f['id'])
+    if folder == 'index':
+        folder_name = REVIEW_FOLDERS['raw']
+        file_name = settings.INDEXSHEET_FILENAME
+        reject = lambda f: _iqbrims_reset_index(access_token, f)
+    else:
+        folder_name = REVIEW_FOLDERS[folder]
     folders = client.folders(folder_id=iqbrims.folder_id)
     folders = [f for f in folders if f['title'] == folder_name]
-    if file_name is not None and len(folders) > 0:
+    if len(folders) > 0:
         files = client.files(folder_id=folders[0]['id'])
-        files = [f for f in files if f['title'] == file_name]
     else:
         files = []
+    files = [f for f in files if file_name is None or f['title'] == file_name]
 
     folder_path = iqbrims.folder_path
     management_node = _get_management_node(node)
@@ -333,7 +334,7 @@ def iqbrims_reject_storage(**kwargs):
         logger.info(u'Rejecting Storage: {}, {}, {}'.format(folder,
                                                             file_name,
                                                             files[0]['id']))
-        client.delete_file(files[0]['id'])
+        reject(files[0])
         return {'status': 'rejected',
                 'root_folder': root_folder_path}
     else:
@@ -349,8 +350,25 @@ def iqbrims_reject_storage(**kwargs):
         rejected_name = u'{}.{}'.format(folder_name, dtid)
         client.rename_folder(folders[0]['id'], rejected_name)
         client.create_folder(iqbrims.folder_id, folder_name)
+        node_urls = []
+        management_urls = []
+        for f in files:
+            url = website_settings.DOMAIN.rstrip('/') + '/' + node._id + \
+                '/files/iqbrims/' + \
+                urllib.quote(rejected_name.encode('utf8')) + '/' + \
+                urllib.quote(f['title'].encode('utf8'))
+            node_urls.append({'title': f['title'], 'url': url})
+            url = website_settings.DOMAIN.rstrip('/') + '/' + management_node._id + \
+                  '/files/googledrive' + \
+                  urllib.quote(root_folder_path.encode('utf8')) + \
+                  urllib.quote(rejected_name.encode('utf8')) + '/' + \
+                  urllib.quote(f['title'].encode('utf8'))
+            management_urls.append({'title': f['title'], 'url': url})
         return {'status': 'rejected',
-                'root_folder': root_folder_path}
+                'root_folder': root_folder_path,
+                'urls': node_urls,
+                'management': {'id': management_node._id,
+                               'urls': management_urls}}
 
 @must_be_valid_project
 @must_have_addon(SHORT_NAME, 'node')
@@ -603,6 +621,20 @@ def _iqbrims_filled_index(access_token, f):
     fills = sclient.get_row_values(sheet_id, columns.index('Filled'), 2)
     procs = [fill for fill in fills if fill != 'TRUE']
     return len(procs) == 0
+
+def _iqbrims_reset_index(access_token, f):
+    sclient = SpreadsheetClient(f['id'], access_token)
+    sheets = [s
+              for s in sclient.sheets()
+              if s['properties']['title'] == settings.INDEXSHEET_SHEET_NAME]
+    assert len(sheets) == 1
+    sheet_props = sheets[0]['properties']
+    sheet_id = sheet_props['title']
+    col_count = sheet_props['gridProperties']['columnCount']
+    columns = sclient.get_column_values(sheet_id, 1, col_count)
+    row = sclient.get_column_values(sheet_id, 2, columns.index('Filled'))
+    row[-1] = 'FALSE'
+    sclient.update_row(sheet_id, row, 2)
 
 def _iqbrims_fill_spreadsheet_values(node, status, folder_link, columns,
                                      values, user_settings):
