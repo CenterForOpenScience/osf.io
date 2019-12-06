@@ -865,7 +865,7 @@ def addon_view_file(auth, node, file_node, version):
         sharejs_uuid = None
 
     internal_furl = furl.furl(settings.INTERNAL_DOMAIN)
-    download_url = furl.furl(request.url.encode('utf-8')).set(
+    download_url = furl.furl(request.url).set(
         netloc=internal_furl.netloc,
         args=dict(request.args, **{
             'direct': None,
