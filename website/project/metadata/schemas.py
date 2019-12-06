@@ -52,4 +52,5 @@ METASCHEMA_ORDERING = (
     'Election Research Preacceptance Competition',
     'RIDIE Registration - Study Initiation',
     'RIDIE Registration - Study Complete',
+    'EGAP Registration',
 )
