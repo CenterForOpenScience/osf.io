@@ -1,5 +1,5 @@
 <%inherit file="base.mako"/>
-<%def name="title()">My Projects</%def>
+<%def name="title()">${_("My Projects")}</%def>
 
 <%def name="container_class()">container-xxl</%def>
 
