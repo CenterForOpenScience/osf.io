@@ -16,7 +16,7 @@
                 <div>
 
                     <div class="well well-sm sort-handle">
-                        <span>Position <span data-bind="text: $index() + 1"></span></span>
+                        <span>${_("Position")} <span data-bind="text: $index() + 1"></span></span>
                         <span data-bind="visible: $parent.contentsLength() > 1">
                             [ drag to reorder ]
                         </span>
@@ -55,7 +55,7 @@
                         <div class="row">
                             <div class ="col-md-3">
                                 <select class="form-control" data-bind="options: months,
-                                         optionsCaption: '-- Month --',
+                                         optionsCaption: '${_("-- Month --")}',
                                          value: startMonth">
                                 </select>
                             </div>
@@ -70,7 +70,7 @@
                             <div class="row">
                                 <div class ="col-md-3">
                                     <select class="form-control" data-bind="options: months,
-                                         optionsCaption: '-- Month --',
+                                         optionsCaption: '${_("-- Month --")}',
                                          value: endMonth">
                                     </select>
                                 </div>

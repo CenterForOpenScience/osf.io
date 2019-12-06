@@ -106,7 +106,7 @@
                         </div>
                         <div class="form-group">
                             <label for="description">${_("Description:")}</label>
-                            <textarea placeholder="Optional" data-bind="value: description,
+                            <textarea placeholder="${_('Optional')}" data-bind="value: description,
                                              valueUpdate: 'afterkeydown'",
                             class="form-control resize-vertical" style="max-width: 100%"></textarea>
                         </div>

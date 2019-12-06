@@ -16,25 +16,25 @@
                 <div>
 
                     <div class="well well-sm sort-handle">
-                        <span>Position <span data-bind="text: $index() + 1"></span></span>
+                        <span>${_("Position")} <span data-bind="text: $index() + 1"></span></span>
                         <span data-bind="visible: $parent.contentsLength() > 1">
                             [ drag to reorder ]
                         </span>
                         <a
                                 class="text-danger pull-right"
                                 data-bind="click: $parent.removeContent.bind($parent)"
-                                >Remove</a>
+                                >${_("Remove")}</a>
                         <a
                                 style="margin-right: 15px"
                                 class="btn-link pull-right"
                                 data-bind="click: $parent.setContentFromIdP.bind($parent)"
-                                >Read IdP Profile</a>
+                                >${_("Read IdP Profile")}</a>
                     </div>
 
                     <div class="form-group">
                         <label>${_("Institution / Employer")}</label>
                         <input class="form-control" data-bind="value: institution"
-                            placeholder="Required"/>
+                            placeholder="${_('Required')}"/>
                         <div data-bind="visible: $parent.showMessages, css:'text-danger'">
                             <p data-bind="validationMessage: institution"></p>
                         </div>
@@ -55,12 +55,12 @@
                         <div class="row">
                             <div class ="col-md-3">
                                 <select class="form-control" data-bind="options: months,
-                                         optionsCaption: '-- Month --',
+                                         optionsCaption: '${_("-- Month --")}',
                                          value: startMonth">
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <input class="form-control" placeholder="Year" data-bind="value: startYear" />
+                                <input class="form-control" placeholder="${_('Year')}" data-bind="value: startYear" />
                             </div>
                         </div>
                     </div>
@@ -70,12 +70,12 @@
                             <div class="row">
                                 <div class ="col-md-3">
                                     <select class="form-control" data-bind="options: months,
-                                         optionsCaption: '-- Month --',
+                                         optionsCaption: '${_("-- Month --")}',
                                          value: endMonth">
                                     </select>
                                 </div>
                                 <div class="col-md-3">
-                                    <input class="form-control" placeholder="Year" data-bind="value: endYear" />
+                                    <input class="form-control" placeholder="${_('Year')}" data-bind="value: endYear" />
                                 </div>
                             </div>
                     </div>

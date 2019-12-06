@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-06 11:45+0900\n"
+"POT-Creation-Date: 2019-12-06 13:40+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -301,7 +301,7 @@ msgstr "GakuNin RDM 検索"
 
 #: templates/search_bar_help_modal.mako:6
 msgid "Search help"
-msgstr ""
+msgstr "検索ヘルプ"
 
 #: templates/search_bar_help_modal.mako:9
 msgid "Queries"
@@ -325,9 +325,40 @@ msgstr ""
 msgid "Close"
 msgstr "閉じる"
 
+#: templates/include/profile/jobs.mako:19
+#: templates/include/profile/schools.mako:19
+msgid "Position"
+msgstr "ポジション"
+
+#: templates/include/profile/jobs.mako:26
+#: templates/include/profile/schools.mako:26
+#: templates/project/contributors.mako:332
+#: templates/project/contributors.mako:387
+#: templates/project/modal_remove_contributor.mako:96
+#: templates/project/modal_remove_contributor.mako:105
+#: templates/project/modal_remove_contributor.mako:114
+#: templates/project/project.mako:569 templates/project/settings.mako:499
+#: templates/project/settings.mako:502
+msgid "Remove"
+msgstr "除外"
+
+#: templates/include/profile/jobs.mako:31
+#: templates/include/profile/schools.mako:31
+msgid "Read IdP Profile"
+msgstr "IdPプロファイルの読込み"
+
 #: templates/include/profile/jobs.mako:35
 msgid "Institution / Employer"
 msgstr "機関 / 雇用者"
+
+#: templates/include/profile/jobs.mako:37
+#: templates/include/profile/schools.mako:37
+#: templates/profile/oauth_app_detail.mako:55
+#: templates/profile/oauth_app_detail.mako:61
+#: templates/profile/oauth_app_detail.mako:73
+#: templates/profile/personal_tokens_detail.mako:26
+msgid "Required"
+msgstr "必須"
 
 #: templates/include/profile/jobs.mako:44
 msgid "Department / Institute"
@@ -340,6 +371,20 @@ msgstr "職名"
 #: templates/include/profile/jobs.mako:54
 msgid "Start date"
 msgstr "開始日"
+
+#: templates/include/profile/jobs.mako:58
+#: templates/include/profile/jobs.mako:73
+#: templates/include/profile/schools.mako:58
+#: templates/include/profile/schools.mako:73
+msgid "-- Month --"
+msgstr "-- 月 --"
+
+#: templates/include/profile/jobs.mako:63
+#: templates/include/profile/jobs.mako:78
+#: templates/include/profile/schools.mako:63
+#: templates/include/profile/schools.mako:78
+msgid "Year"
+msgstr "年"
 
 #: templates/include/profile/jobs.mako:69
 #: templates/include/profile/schools.mako:69
@@ -401,7 +446,9 @@ msgid ""
 "citations, you can use the            \"Auto-fill\" button to "
 "automatically infer your first name, last            name, etc., or edit "
 "the fields directly below."
-msgstr "上記のフルネームは、プロフィールに表示される名前です。引用での名前の表示方法を制御するには、[自動入力]ボタンを使用して、名、姓などを自動的に推測できます。 、または下のフィールドを編集します。"
+msgstr ""
+"上記のフルネームは、プロフィールに表示される名前です。引用での名前の表示方法を制御するには、[自動入力]ボタンを使用して、名、姓などを自動的に推測できます。"
+" 、または下のフィールドを編集します。"
 
 #: templates/include/profile/names.mako:22
 msgid "Auto-fill"
@@ -431,32 +478,9 @@ msgstr "スタイル"
 msgid "Citation format"
 msgstr "引用形式"
 
-#: templates/include/profile/schools.mako:26
-#: templates/project/contributors.mako:332
-#: templates/project/contributors.mako:387
-#: templates/project/modal_remove_contributor.mako:96
-#: templates/project/modal_remove_contributor.mako:105
-#: templates/project/modal_remove_contributor.mako:114
-#: templates/project/project.mako:569 templates/project/settings.mako:499
-#: templates/project/settings.mako:502
-msgid "Remove"
-msgstr "除外"
-
-#: templates/include/profile/schools.mako:31
-msgid "Read IdP Profile"
-msgstr "IdPプロファイルの読込み"
-
 #: templates/include/profile/schools.mako:35
 msgid "Institution"
 msgstr "機関"
-
-#: templates/include/profile/schools.mako:37
-#: templates/profile/oauth_app_detail.mako:55
-#: templates/profile/oauth_app_detail.mako:61
-#: templates/profile/oauth_app_detail.mako:73
-#: templates/profile/personal_tokens_detail.mako:26
-msgid "Required"
-msgstr "必須"
 
 #: templates/include/profile/schools.mako:44
 msgid "Department"
@@ -465,11 +489,6 @@ msgstr "部門"
 #: templates/include/profile/schools.mako:49
 msgid "Degree"
 msgstr "学位"
-
-#: templates/include/profile/schools.mako:63
-#: templates/include/profile/schools.mako:78
-msgid "Year"
-msgstr "年"
 
 #: templates/include/profile/schools.mako:155
 msgid "Department:"
@@ -520,6 +539,23 @@ msgstr "有効なウェブサイトを入力してください"
 #: templates/include/profile/social.mako:34
 msgid "Add website"
 msgstr "ウェブサイトを追加"
+
+#: templates/include/profile/social.mako:66
+msgid "username"
+msgstr "ユーザ名"
+
+#: templates/include/profile/social.mako:88
+#: templates/include/profile/social.mako:96
+#: templates/include/profile/social.mako:104
+#: templates/include/profile/social.mako:114
+#: templates/include/profile/social.mako:122
+#: templates/include/profile/social.mako:130
+msgid "profileID"
+msgstr "プロフィールID"
+
+#: templates/include/profile/social.mako:112
+msgid "institution"
+msgstr "機関"
 
 #: templates/profile/account.mako:4 templates/profile/add_email.mako:4
 msgid "Account Settings"
@@ -830,6 +866,7 @@ msgid "Application description"
 msgstr "アプリケーションの説明"
 
 #: templates/profile/oauth_app_detail.mako:67
+#: templates/project/settings.mako:109
 msgid "Optional"
 msgstr "任意"
 
