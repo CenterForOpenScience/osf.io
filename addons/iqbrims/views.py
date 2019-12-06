@@ -560,7 +560,7 @@ def _iqbrims_update_spreadsheet(node, management_node, register_type, status):
         access_token = management_node_addon.fetch_access_token()
     except exceptions.InvalidAuthError:
         raise HTTPError(403)
-    client = IQBRIMSClient(access_token, folder_id)
+    client = IQBRIMSClient(access_token)
     user_settings = IQBRIMSWorkflowUserSettings(access_token, folder_id);
     _, rootr = client.create_folder_if_not_exists(folder_id, register_type)
     _, r = client.create_spreadsheet_if_not_exists(rootr['id'],
