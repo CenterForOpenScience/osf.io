@@ -15,7 +15,8 @@ from tests.base import OsfTestCase
 from addons.iqbrims.client import (
     IQBRIMSClient,
     IQBRIMSFlowableClient,
-    SpreadsheetClient
+    SpreadsheetClient,
+    IQBRIMSWorkflowUserSettings
 )
 from addons.iqbrims.serializer import IQBRIMSSerializer
 import addons.iqbrims.views as iqbrims_views
@@ -115,6 +116,12 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
 
     def setUp(self):
         super(TestStatusViews, self).setUp()
+        self.mock_load_settings = mock.patch.object(
+            IQBRIMSWorkflowUserSettings,
+            'load'
+        )
+        self.mock_load_settings.return_value = {'settings': {}}
+        self.mock_load_settings.start()
         self.mock_about = mock.patch.object(
             IQBRIMSClient,
             'about'
@@ -140,6 +147,7 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
         self.mock_fetch.start()
 
     def tearDown(self):
+        self.mock_load_settings.stop()
         self.mock_about.stop()
         self.mock_get_folder_info.stop()
         self.mock_rename_folder.stop()
@@ -148,7 +156,9 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     def test_get_status(self, mock_get_management_node):
-        mock_get_management_node.return_value = mock.MagicMock(_id='fake_management_node_id')
+        fake_management_project = ProjectFactory(creator=self.user)
+        fake_management_project.add_addon('iqbrims', auth=None)
+        mock_get_management_node.return_value = fake_management_project
 
         url = self.project.api_url_for('iqbrims_get_status')
         res = self.app.get(url, auth=self.user.auth)
@@ -166,7 +176,7 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     def test_get_status_with_admin(self, mock_get_management_node):
-        mock_get_management_node.return_value = mock.MagicMock(_id=self.project._id)
+        mock_get_management_node.return_value = self.project
 
         url = self.project.api_url_for('iqbrims_get_status')
         res = self.app.get(url, auth=self.user.auth)
@@ -187,7 +197,9 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
     @mock.patch.object(iqbrims_views, '_get_management_node')
     def test_get_status_with_other_state(self, mock_get_management_node):
         state = 'check'
-        mock_get_management_node.return_value = mock.MagicMock(_id='fake_management_node_id')
+        fake_management_project = ProjectFactory(creator=self.user)
+        fake_management_project.add_addon('iqbrims', auth=None)
+        mock_get_management_node.return_value = fake_management_project
         self.project.get_addon('iqbrims').status = state
 
         url = self.project.api_url_for('iqbrims_get_status')
@@ -243,6 +255,7 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
             'path': 'fake/folder/path'
         }
         fake_management_project = ProjectFactory(creator=self.user)
+        fake_management_project.add_addon('iqbrims', auth=None)
         mock_get_management_node.return_value = fake_management_project
         mock_import_auth_from_management_node.return_value = None
         mock_iqbrims_init_folders.return_value = fake_folder
@@ -322,6 +335,7 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
             'path': 'fake/folder/path'
         }
         fake_management_project = ProjectFactory(creator=self.user)
+        fake_management_project.add_addon('iqbrims', auth=None)
         mock_get_management_node.return_value = fake_management_project
         mock_import_auth_from_management_node.return_value = None
         mock_iqbrims_init_folders.return_value = fake_folder
@@ -386,6 +400,7 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
             'path': 'fake/folder/path'
         }
         fake_management_project = ProjectFactory(creator=self.user)
+        fake_management_project.add_addon('iqbrims', auth=None)
         mock_get_management_node.return_value = fake_management_project
         mock_import_auth_from_management_node.return_value = None
         mock_iqbrims_init_folders.return_value = fake_folder

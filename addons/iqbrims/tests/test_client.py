@@ -5,7 +5,13 @@ import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 import pytest
 
-from addons.iqbrims.client import SpreadsheetClient, IQBRIMSFlowableClient
+from addons.iqbrims.client import (
+    IQBRIMSClient,
+    SpreadsheetClient,
+    IQBRIMSFlowableClient,
+    IQBRIMSWorkflowUserSettings,
+    _user_settings_cache
+)
 from addons.iqbrims.tests.utils import MockResponse
 from addons.iqbrims import settings
 
@@ -258,6 +264,98 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       }
                     }
                   }]})
+
+
+class TestIQBRIMSWorkflowUserSettings(OsfTestCase):
+
+    @mock.patch.object(IQBRIMSClient, 'files')
+    @mock.patch.object(IQBRIMSClient, 'create_spreadsheet')
+    @mock.patch.object(SpreadsheetClient, 'sheets')
+    @mock.patch.object(SpreadsheetClient, 'ensure_columns')
+    @mock.patch.object(SpreadsheetClient, 'get_row_values')
+    def test_load_flowable(self, mock_get_row_values, mock_ensure_columns,
+                           mock_sheets, mock_create_spreadsheet, mock_files):
+        mock_files.return_value = []
+        mock_create_spreadsheet.return_value = {'id': 'test_spreadsheet'}
+        gp = {'rowCount': 1}
+        mock_sheets.return_value = [
+          {'properties': {'title': settings.USER_SETTINGS_SHEET_SHEET_NAME,
+                          'gridProperties': gp}}
+        ]
+        mock_ensure_columns.side_effect = lambda sid, cols: cols
+        keys = ['FLOWABLE_USER', 'FLOWABLE_PASSWORD', 'FLOWABLE_HOST',
+                'FLOWABLE_RESEARCH_APP_ID', 'FLOWABLE_SCAN_APP_ID']
+        values = ['john', 'test', 'https://test.someuniv.ac.jp/test/',
+                  'workflow123', 'workflow456']
+        mock_get_row_values.side_effect = lambda sid, col, rcount: keys if col == 0 else values
+        if 'loadedTime' in _user_settings_cache:
+            del _user_settings_cache['loadedTime']
+
+        client = IQBRIMSWorkflowUserSettings('0001', 'test_folder')
+        assert_equal(client.LABO_LIST, settings.LABO_LIST)
+        assert_equal(client.FLOWABLE_HOST, 'https://test.someuniv.ac.jp/test/')
+        assert_equal(client.FLOWABLE_USER, 'john')
+        assert_equal(client.FLOWABLE_PASSWORD, 'test')
+        assert_equal(client.FLOWABLE_RESEARCH_APP_ID, 'workflow123')
+        assert_equal(client.FLOWABLE_SCAN_APP_ID, 'workflow456')
+
+        assert_equal(len(mock_sheets.mock_calls), 1)
+
+    @mock.patch.object(IQBRIMSClient, 'files')
+    @mock.patch.object(IQBRIMSClient, 'create_spreadsheet')
+    @mock.patch.object(SpreadsheetClient, 'sheets')
+    @mock.patch.object(SpreadsheetClient, 'ensure_columns')
+    @mock.patch.object(SpreadsheetClient, 'get_row_values')
+    def test_load_labo_list(self, mock_get_row_values, mock_ensure_columns,
+                            mock_sheets, mock_create_spreadsheet, mock_files):
+        mock_files.return_value = []
+        mock_create_spreadsheet.return_value = {'id': 'test_spreadsheet'}
+        gp = {'rowCount': 1}
+        mock_sheets.return_value = [
+          {'properties': {'title': settings.USER_SETTINGS_SHEET_SHEET_NAME,
+                          'gridProperties': gp}}
+        ]
+        mock_ensure_columns.side_effect = lambda sid, cols: cols
+        keys = ['LABO_LIST']
+        values = ['[{"id": "xxx", "text": "XXX"}, {"id": "yyy", "text": "YYY"}]']
+        mock_get_row_values.side_effect = lambda sid, col, rcount: keys if col == 0 else values
+        if 'loadedTime' in _user_settings_cache:
+            del _user_settings_cache['loadedTime']
+
+        client = IQBRIMSWorkflowUserSettings('0001', 'test_folder')
+        assert_equal(client.LABO_LIST, [{'id': 'xxx', 'text': 'XXX'}, {'id': 'yyy', 'text': 'YYY'}])
+        assert_equal(client.FLOWABLE_HOST, settings.FLOWABLE_HOST)
+        assert_equal(client.FLOWABLE_USER, settings.FLOWABLE_USER)
+        assert_equal(client.FLOWABLE_PASSWORD, settings.FLOWABLE_PASSWORD)
+        assert_equal(client.FLOWABLE_RESEARCH_APP_ID, settings.FLOWABLE_RESEARCH_APP_ID)
+        assert_equal(client.FLOWABLE_SCAN_APP_ID, settings.FLOWABLE_SCAN_APP_ID)
+
+        assert_equal(len(mock_sheets.mock_calls), 1)
+
+    @mock.patch.object(IQBRIMSClient, 'files')
+    @mock.patch.object(IQBRIMSClient, 'create_spreadsheet')
+    @mock.patch.object(SpreadsheetClient, 'sheets')
+    @mock.patch.object(SpreadsheetClient, 'ensure_columns')
+    @mock.patch.object(SpreadsheetClient, 'get_row_values')
+    def test_load_invalid_labo_list(self, mock_get_row_values, mock_ensure_columns,
+                                    mock_sheets, mock_create_spreadsheet, mock_files):
+        mock_files.return_value = []
+        mock_create_spreadsheet.return_value = {'id': 'test_spreadsheet'}
+        gp = {'rowCount': 1}
+        mock_sheets.return_value = [
+          {'properties': {'title': settings.USER_SETTINGS_SHEET_SHEET_NAME,
+                          'gridProperties': gp}}
+        ]
+        mock_ensure_columns.side_effect = lambda sid, cols: cols
+        keys = ['LABO_LIST']
+        values = ['[{"id": "xxx", "tet": "XXX"}, {"id": "yyy", "text": "YYY"}]']
+        mock_get_row_values.side_effect = lambda sid, col, rcount: keys if col == 0 else values
+        if 'loadedTime' in _user_settings_cache:
+            del _user_settings_cache['loadedTime']
+
+        client = IQBRIMSWorkflowUserSettings('0001', 'test_folder')
+        assert_equal(client.LABO_LIST, [{'text': u"No text: {u'tet': u'XXX', u'id': u'xxx'}", 'id': 'error'}])
+
 
 class TestIQBRIMSFlowableClient(OsfTestCase):
 

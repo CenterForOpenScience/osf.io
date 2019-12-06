@@ -279,14 +279,15 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         self.status = json.dumps(status)
         self.save()
 
-    def get_process_definition_id(self, register_type=None):
+    def get_process_definition_id(self, user_settings=None, register_type=None):
         if register_type is None:
             return self.process_definition_id
         app_id = None
+        assert user_settings is not None
         if register_type == 'deposit':
-            app_id = drive_settings.FLOWABLE_RESEARCH_APP_ID
+            app_id = user_settings.FLOWABLE_RESEARCH_APP_ID
         elif register_type == 'check':
-            app_id = drive_settings.FLOWABLE_SCAN_APP_ID
+            app_id = user_settings.FLOWABLE_SCAN_APP_ID
         else:
             return None
         if self.process_definition_id is None:

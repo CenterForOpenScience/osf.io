@@ -15,6 +15,7 @@ from addons.iqbrims.client import (
     IQBRIMSClient,
     IQBRIMSFlowableClient,
     SpreadsheetClient,
+    IQBRIMSWorkflowUserSettings
 )
 from framework.auth import Auth
 from website.mails import Mail, send_mail
@@ -105,14 +106,23 @@ def iqbrims_folder_list(node_addon, **kwargs):
 def iqbrims_get_status(**kwargs):
     node = kwargs['node'] or kwargs['project']
     iqbrims = node.get_addon('iqbrims')
+    management_node = _get_management_node(node)
+    management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
+    if management_node_addon is None:
+        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
+    try:
+        access_token = management_node_addon.fetch_access_token()
+    except exceptions.InvalidAuthError:
+        raise HTTPError(403)
+    user_settings = IQBRIMSWorkflowUserSettings(access_token, management_node_addon.folder_id)
     status = iqbrims.get_status()
     status['labo_list'] = [u'{}:{}'.format(l['id'], l['text'])
-                           for l in settings.LABO_LIST]
+                           for l in user_settings.LABO_LIST]
     status['review_folders'] = REVIEW_FOLDERS
-    is_admin = _get_management_node(node)._id == node._id
+    is_admin = management_node._id == node._id
     status['is_admin'] = is_admin
     if is_admin:
-        status['task_url'] = settings.FLOWABLE_TASK_URL
+        status['task_url'] = user_settings.FLOWABLE_TASK_URL
     return {'data': {'id': node._id, 'type': 'iqbrims-status',
                      'attributes': status}}
 
@@ -459,13 +469,21 @@ def _iqbrims_set_status(node, status, auth=None):
             register_type = all_status['state']
             labo_name = all_status['labo_id']
 
+            management_node = _get_management_node(node)
+            management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
+            if management_node_addon is None:
+                raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
             if last_status['state'] != register_type:
-                app_id = iqbrims.get_process_definition_id(register_type)
-                flowable = IQBRIMSFlowableClient(app_id)
+                try:
+                    access_token = management_node_addon.fetch_access_token()
+                except exceptions.InvalidAuthError:
+                    raise HTTPError(403)
+                user_settings = IQBRIMSWorkflowUserSettings(access_token, management_node_addon.folder_id)
+                app_id = iqbrims.get_process_definition_id(register_type=register_type, user_settings=user_settings)
+                flowable = IQBRIMSFlowableClient(app_id, user_settings)
                 logger.info('Starting...: app_id={} project_id={}'.format(app_id, node._id))
                 flowable.start_workflow(node._id, node.title, all_status,
                                         iqbrims.get_secret())
-            management_node = _get_management_node(node)
 
             # import auth
             _iqbrims_import_auth_from_management_node(node, iqbrims, management_node)
@@ -524,7 +542,8 @@ def _iqbrims_update_spreadsheet(node, management_node, register_type, status):
         access_token = management_node_addon.fetch_access_token()
     except exceptions.InvalidAuthError:
         raise HTTPError(403)
-    client = IQBRIMSClient(access_token)
+    client = IQBRIMSClient(access_token, folder_id)
+    user_settings = IQBRIMSWorkflowUserSettings(access_token, folder_id);
     _, rootr = client.create_folder_if_not_exists(folder_id, register_type)
     _, r = client.create_spreadsheet_if_not_exists(rootr['id'],
                                                    settings.APPSHEET_FILENAME)
@@ -556,7 +575,8 @@ def _iqbrims_update_spreadsheet(node, management_node, register_type, status):
     if node._id not in values:
         logger.info('Inserting: {}'.format(node._id))
         v = _iqbrims_fill_spreadsheet_values(node, status, folder_link,
-                                             columns, ['' for c in columns])
+                                             columns, ['' for c in columns],
+                                             user_settings)
         sclient.add_row(sheet_id, v)
     else:
         logger.info('Updating: {}'.format(node._id))
@@ -564,7 +584,8 @@ def _iqbrims_update_spreadsheet(node, management_node, register_type, status):
         v = sclient.get_row(sheet_id, row_index, len(columns))
         v += ['' for __ in range(len(v), len(columns))]
         v = _iqbrims_fill_spreadsheet_values(node, status, folder_link,
-                                             columns, v)
+                                             columns, v,
+                                             user_settings)
         sclient.update_row(sheet_id, v, row_index)
 
 def _iqbrims_filled_index(access_token, f):
@@ -584,7 +605,7 @@ def _iqbrims_filled_index(access_token, f):
     return len(procs) == 0
 
 def _iqbrims_fill_spreadsheet_values(node, status, folder_link, columns,
-                                     values):
+                                     values, user_settings):
     assert len(columns) == len(values), values
     acolumns = settings.APPSHEET_DEPOSIT_COLUMNS \
                if status['state'] == 'deposit' \
@@ -609,7 +630,7 @@ def _iqbrims_fill_spreadsheet_values(node, status, folder_link, columns,
             values[i] = node.title
         elif tcol == '_labo_name':
             labos = [l['text']
-                     for l in settings.LABO_LIST
+                     for l in user_settings.LABO_LIST
                      if l['id'] == status['labo_id']]
             values[i] = labos[0] if len(labos) > 0 \
                         else 'Unknown ID: {}'.format(status['labo_id'])
