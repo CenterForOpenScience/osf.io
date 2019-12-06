@@ -23,6 +23,7 @@ from addons.iqbrims.serializer import IQBRIMSSerializer
 import addons.iqbrims.views as iqbrims_views
 from addons.iqbrims import settings
 from website import mails
+from addons.iqbrims.tests.utils import MockResponse
 
 pytestmark = pytest.mark.django_db
 
@@ -237,14 +238,14 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
             }
         })
 
-    @mock.patch.object(IQBRIMSFlowableClient, 'start_workflow')
+    @mock.patch.object(IQBRIMSFlowableClient, '_make_request')
     @mock.patch.object(iqbrims_views, '_iqbrims_update_spreadsheet')
     @mock.patch.object(iqbrims_views, '_iqbrims_init_folders')
     @mock.patch.object(iqbrims_views, '_iqbrims_import_auth_from_management_node')
     @mock.patch.object(iqbrims_views, '_get_management_node')
     def test_set_status_to_deposit(self, mock_get_management_node, mock_import_auth_from_management_node,
                                    mock_iqbrims_init_folders, mock_update_spreadsheet,
-                                   mock_flowable_start_workflow):
+                                   mock_flowable_make_request):
         status = {
             'state': 'deposit',
             'labo_id': 'fake_labo_name',
@@ -261,7 +262,8 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
         mock_import_auth_from_management_node.return_value = None
         mock_iqbrims_init_folders.return_value = fake_folder
         mock_update_spreadsheet.return_value = None
-        mock_flowable_start_workflow.return_value = None
+        mock_flowable_make_request.return_value = MockResponse('{"test": 1}',
+                                                               200)
 
         url = self.project.api_url_for('iqbrims_set_status')
         payload = {
@@ -309,13 +311,23 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
             payload['data']['attributes']
         ])
 
-        assert_equal(mock_flowable_start_workflow.call_count, 1)
-        assert_items_equal(mock_flowable_start_workflow.call_args[0], [
-            self.project._id,
-            self.project.title,
-            payload['data']['attributes'],
-            secret
-        ])
+        assert_equal(mock_flowable_make_request.call_count, 1)
+        name, args, kwargs = mock_flowable_make_request.mock_calls[0]
+        assert_equal(args, ('POST', settings.FLOWABLE_HOST +
+                                    'service/runtime/process-instances'))
+        assert_equal(json.loads(kwargs['data'])['processDefinitionId'],
+                     settings.FLOWABLE_RESEARCH_APP_ID)
+        vars = json.loads(kwargs['data'])['variables']
+        assert_equal([v for v in vars if v['name'] == 'projectId'][0], {
+          'name': 'projectId',
+          'type': 'string',
+          'value': self.project._id
+        })
+        assert_equal([v for v in vars if v['name'] == 'paperFolderPattern'][0], {
+          'name': 'paperFolderPattern',
+          'type': 'string',
+          'value': 'deposit/fake_labo_name/%-{}/'.format(self.project._id)
+        })
 
     @mock.patch.object(IQBRIMSFlowableClient, 'start_workflow')
     @mock.patch.object(iqbrims_views, '_iqbrims_update_spreadsheet')
@@ -383,14 +395,14 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(mock_update_spreadsheet.call_count, 0)
 
-    @mock.patch.object(IQBRIMSFlowableClient, 'start_workflow')
+    @mock.patch.object(IQBRIMSFlowableClient, '_make_request')
     @mock.patch.object(iqbrims_views, '_iqbrims_update_spreadsheet')
     @mock.patch.object(iqbrims_views, '_iqbrims_init_folders')
     @mock.patch.object(iqbrims_views, '_iqbrims_import_auth_from_management_node')
     @mock.patch.object(iqbrims_views, '_get_management_node')
     def test_set_status_to_check(self, mock_get_management_node, mock_import_auth_from_management_node,
                                  mock_iqbrims_init_folders, mock_update_spreadsheet,
-                                 mock_flowable_start_workflow):
+                                 mock_flowable_make_request):
         status = {
             'state': 'check',
             'labo_id': 'fake_labo_name',
@@ -406,7 +418,8 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
         mock_import_auth_from_management_node.return_value = None
         mock_iqbrims_init_folders.return_value = fake_folder
         mock_update_spreadsheet.return_value = None
-        mock_flowable_start_workflow.return_value = None
+        mock_flowable_make_request.return_value = MockResponse('{"test": 1}',
+                                                               200)
 
         url = self.project.api_url_for('iqbrims_set_status')
         payload = {
@@ -454,13 +467,121 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
             payload['data']['attributes']
         ])
 
-        assert_equal(mock_flowable_start_workflow.call_count, 1)
-        assert_items_equal(mock_flowable_start_workflow.call_args[0], [
-            self.project._id,
-            self.project.title,
-            payload['data']['attributes'],
-            secret
+        assert_equal(mock_flowable_make_request.call_count, 1)
+        name, args, kwargs = mock_flowable_make_request.mock_calls[0]
+        assert_equal(args, ('POST', settings.FLOWABLE_HOST +
+                                    'service/runtime/process-instances'))
+        assert_equal(json.loads(kwargs['data'])['processDefinitionId'],
+                     settings.FLOWABLE_SCAN_APP_ID)
+        vars = json.loads(kwargs['data'])['variables']
+        assert_equal([v for v in vars if v['name'] == 'projectId'][0], {
+          'name': 'projectId',
+          'type': 'string',
+          'value': self.project._id
+        })
+        assert_equal([v for v in vars if v['name'] == 'paperFolderPattern'][0], {
+          'name': 'paperFolderPattern',
+          'type': 'string',
+          'value': 'check/fake_labo_name/%-{}/'.format(self.project._id)
+        })
+
+    @mock.patch.object(IQBRIMSFlowableClient, '_make_request')
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
+    @mock.patch.object(iqbrims_views, '_iqbrims_update_spreadsheet')
+    @mock.patch.object(iqbrims_views, '_iqbrims_init_folders')
+    @mock.patch.object(iqbrims_views, '_iqbrims_import_auth_from_management_node')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    def test_set_status_to_custom_deposit(self, mock_get_management_node,
+                                          mock_import_auth_from_management_node,
+                                          mock_iqbrims_init_folders,
+                                          mock_update_spreadsheet,
+                                          mock_workflow_user_settings,
+                                          mock_flowable_make_request):
+        status = {
+            'state': 'deposit',
+            'labo_id': 'fake_labo_name',
+            'other_attribute': 'fake_other_attribute',
+            'is_dirty': False
+        }
+        fake_folder = {
+            'id': '382635482',
+            'path': 'fake/folder/path'
+        }
+        fake_management_project = ProjectFactory(creator=self.user)
+        fake_management_project.add_addon('iqbrims', auth=None)
+        mock_get_management_node.return_value = fake_management_project
+        mock_import_auth_from_management_node.return_value = None
+        mock_iqbrims_init_folders.return_value = fake_folder
+        mock_update_spreadsheet.return_value = None
+        user_settings = {'FLOWABLE_HOST': 'https://test.somehost.ac.jp/',
+                         'FLOWABLE_RESEARCH_APP_ID': 'latest_workflow_id'}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
+        mock_flowable_make_request.return_value = MockResponse('{"test": 1}',
+                                                               200)
+
+        url = self.project.api_url_for('iqbrims_set_status')
+        payload = {
+            'data': {
+                'attributes': status
+            }
+        }
+        res = self.app.patch_json(url, params=payload, auth=self.user.auth)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, {
+            'data': {
+                'attributes': status,
+                'type': 'iqbrims-status',
+                'id': self.project._id
+            }
+        })
+
+        iqbrims = self.project.get_addon('iqbrims')
+        secret = iqbrims.get_secret()
+        assert_is_not_none(secret)
+        assert_equal(iqbrims.folder_id, fake_folder['id'])
+        assert_equal(iqbrims.folder_path, fake_folder['path'])
+
+        assert_equal(mock_import_auth_from_management_node.call_count, 1)
+        assert_items_equal(mock_import_auth_from_management_node.call_args[0], [
+            self.project,
+            iqbrims,
+            fake_management_project
         ])
+
+        assert_equal(mock_iqbrims_init_folders.call_count, 1)
+        assert_items_equal(mock_iqbrims_init_folders.call_args[0], [
+            self.project,
+            fake_management_project,
+            status['state'],
+            status['labo_id']
+        ])
+
+        assert_equal(mock_update_spreadsheet.call_count, 1)
+        assert_items_equal(mock_update_spreadsheet.call_args[0], [
+            self.project,
+            fake_management_project,
+            status['state'],
+            payload['data']['attributes']
+        ])
+
+        assert_equal(mock_flowable_make_request.call_count, 1)
+        name, args, kwargs = mock_flowable_make_request.mock_calls[0]
+        assert_equal(args, ('POST', 'https://test.somehost.ac.jp/' +
+                                    'service/runtime/process-instances'))
+        assert_equal(json.loads(kwargs['data'])['processDefinitionId'],
+                     'latest_workflow_id')
+        vars = json.loads(kwargs['data'])['variables']
+        assert_equal([v for v in vars if v['name'] == 'projectId'][0], {
+          'name': 'projectId',
+          'type': 'string',
+          'value': self.project._id
+        })
+        assert_equal([v for v in vars if v['name'] == 'paperFolderPattern'][0], {
+          'name': 'paperFolderPattern',
+          'type': 'string',
+          'value': 'deposit/fake_labo_name/%-{}/'.format(self.project._id)
+        })
 
 
 class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
