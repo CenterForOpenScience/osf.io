@@ -440,7 +440,8 @@ class UpdateRegistrationSchemasAndSchemaBlocks(Operation):
         map_schemas_to_schemablocks(to_state.apps)
 
     def database_backwards(self, app_label, schema_editor, from_state, to_state):
-        warnings.warn('Reversing UpdateRegistrationSchemasAndSchemaBlocks is a noop')
+        RegistrationSchemaBlock = to_state.apps.get_model('osf', 'registrationschemablock')
+        RegistrationSchemaBlock.objects.all().delete()
 
     def describe(self):
         return 'Updated registration schemas and its schema blocks'
