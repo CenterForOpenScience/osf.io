@@ -15,6 +15,8 @@ from addons.base import exceptions
 from addons.dropboxbusiness import settings, utils
 from addons.dropboxbusiness.apps import DropboxBusinessAddonAppConfig
 from website import settings as website_settings
+from admin.rdm_addons.utils import get_rdm_addon_option
+from admin.rdm.utils import get_institution_id
 
 logger = logging.getLogger(__name__)
 
@@ -173,29 +175,30 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         return self.file_access_token and self.management_access_token and \
             self.admin_dbmid
 
+def is_enabled(node, addon_name):
+    institution_id = get_institution_id(node.creator)
+    if institution_id is None:
+        return False
+    rdm_addon_option = get_rdm_addon_option(institution_id, addon_name)
+    if rdm_addon_option:
+        # TODO check two external accounts
+        return True
+    return False
 
-@receiver(post_save, sender=Node)
-def add_addon(sender, instance, created, **kwargs):
-    addon_name = DropboxBusinessAddonAppConfig.short_name
-
-    if addon_name not in website_settings.ADDONS_AVAILABLE_DICT or \
-       not created:
-        return
-
-    instance.add_addon(addon_name, auth=None, log=False)
-
+def init_addon(node, addon_name):
+    if is_enabled(node, addon_name):
+        node.add_addon(addon_name, auth=None, log=True)
 
 @receiver(post_save, sender=Node)
 def on_node_updated(sender, instance, created, **kwargs):
     addon_name = DropboxBusinessAddonAppConfig.short_name
-
-    if addon_name not in website_settings.ADDONS_AVAILABLE_DICT or \
-       created:
+    if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
         return
-
-    ns = instance.get_addon(addon_name)
-    if ns is None or not ns.complete:
-        return
-
-    ns.sync_members()
-    ns.rename_team_folder()
+    if created:
+        init_addon(instance, addon_name)
+    else:
+        ns = instance.get_addon(addon_name)
+        if ns is None or not ns.complete:  # disabled
+            return
+        ns.sync_members()
+        ns.rename_team_folder()
