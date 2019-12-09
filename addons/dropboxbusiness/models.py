@@ -179,7 +179,8 @@ def is_enabled(node, addon_name):
     institution_id = get_institution_id(node.creator)
     if institution_id is None:
         return False
-    rdm_addon_option = get_rdm_addon_option(institution_id, addon_name)
+    rdm_addon_option = get_rdm_addon_option(institution_id, addon_name,
+                                            create=False)
     if rdm_addon_option:
         # TODO check two external accounts
         return True

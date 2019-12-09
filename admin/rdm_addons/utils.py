@@ -58,8 +58,23 @@ def collect_addon_js(addons):
             js_url_list.append(js_url)
     return js_url_list
 
-def get_rdm_addon_option(institution_id, addon_name):
+def _get_rdm_addon_option_get(institution_id, addon_name):
+    try:
+        if institution_id:
+            rdm_addon_option = RdmAddonOption.objects.get(
+                institution_id=institution_id,
+                provider=addon_name)
+        else:
+            rdm_addon_option = RdmAddonNoInstitutionOption.objects.get(
+                provider=addon_name)
+        return rdm_addon_option
+    except Exception:
+        return None
+
+def get_rdm_addon_option(institution_id, addon_name, create=True):
     """get model objects of RdmAddonOption or RdmAddonNoInstitutionOption"""
+    if not create:
+        return _get_rdm_addon_option_get(institution_id, addon_name)
     if institution_id:
         rdm_addon_option, _ = RdmAddonOption.objects.get_or_create(institution_id=institution_id,
             provider=addon_name)
