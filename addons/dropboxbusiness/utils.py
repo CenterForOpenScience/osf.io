@@ -3,10 +3,10 @@ import logging
 import time
 
 import dropbox
-from dropbox.dropbox import Dropbox, DropboxTeam
-from dropbox.exceptions import ApiError, DropboxException
+from dropbox.dropbox import DropboxTeam
+from dropbox.exceptions import ApiError
 from dropbox.sharing import MemberSelector
-from dropbox.team import (GroupMembersAddError,GroupMembersRemoveError,
+from dropbox.team import (GroupMembersAddError, GroupMembersRemoveError,
                           GroupSelector, UserSelectorArg, GroupAccessType,
                           MemberAccess)
 from addons.dropboxbusiness import settings
@@ -41,7 +41,7 @@ def poll_team_groups_job(management_client, job):
     :raises: dropbox.exceptions.DropboxException
     """
 
-    # why: [GRDM-15875]
+    # [GRDM-15875]
     if job.async_job_id and job.async_job_id.isspace():
         return
 

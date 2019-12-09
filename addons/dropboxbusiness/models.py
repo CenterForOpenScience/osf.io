@@ -1,28 +1,19 @@
 # -*- coding: utf-8 -*-
-import httplib as http
 import logging
-import os
-import time
 
-from addons.base.models import (BaseNodeSettings, BaseStorageAddon)
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-import dropbox
-from dropbox.dropbox import Dropbox, DropboxTeam
-from dropbox.exceptions import ApiError, DropboxException
-from dropbox.files import FolderMetadata
-from flask import request
-from framework.auth import Auth
-from framework.exceptions import HTTPError
-from framework.sessions import session
+
+from dropbox.dropbox import DropboxTeam
+from dropbox.exceptions import DropboxException
+
 from osf.models.node import Node
-from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
+from addons.base.models import (BaseNodeSettings, BaseStorageAddon)
 from addons.base import exceptions
 from addons.dropboxbusiness import settings, utils
 from addons.dropboxbusiness.apps import DropboxBusinessAddonAppConfig
-from website.util import api_v2_url, web_url_for
 from website import settings as website_settings
 
 logger = logging.getLogger(__name__)
@@ -121,6 +112,8 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         self.save()
 
     def on_add(self):
+        if not self.has_auth:  # no access tokens -> disabled
+            return
         if self.complete:
             return
 

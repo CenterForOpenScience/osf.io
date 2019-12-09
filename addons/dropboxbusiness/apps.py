@@ -1,4 +1,4 @@
-from addons.base.apps import BaseAddonAppConfig, generic_root_folder
+from addons.base.apps import BaseAddonAppConfig
 from addons.dropboxbusiness.settings import MAX_UPLOAD_SIZE
 from website.util import rubeus
 

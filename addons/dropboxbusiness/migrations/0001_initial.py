@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 import addons.base.models
+from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
 import django_extensions.db.fields
@@ -14,7 +15,8 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('osf', '0175_auto_20191128_0921'),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ('osf', '0001_initial'),
     ]
 
     operations = [
