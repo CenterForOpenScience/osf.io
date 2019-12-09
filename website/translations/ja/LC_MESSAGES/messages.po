@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-06 13:40+0900\n"
+"POT-Creation-Date: 2019-12-09 10:56+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -17,6 +17,138 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.7.0\n"
+
+#: templates/base.mako:110
+msgid "Title"
+msgstr "タイトル"
+
+#: templates/base.mako:111
+msgid "Date Merged"
+msgstr "合併日"
+
+#: templates/base.mako:134
+msgid "<strong>WARNING</strong>: This site is running in development mode."
+msgstr "<strong>警告</strong>: このサイトは開発モードで実行されています。"
+
+#: templates/base.mako:145
+msgid ""
+"OSF does not support the use of Internet Explorer. For optimal "
+"performance, please switch to another browser."
+msgstr "OSFはInternet Explorerの使用をサポートしていません。 最適なパフォーマンスを得るには、別のブラウザに切り替えてください。"
+
+#: templates/base.mako:148 templates/base.mako:159
+msgid "Accept"
+msgstr "同意"
+
+#: templates/base.mako:154
+#, python-format
+msgid ""
+"This website relies on cookies to help provide a better user experience. "
+"By clicking Accept or continuing to use the site, you agree. For more "
+"information,            see our <a %(href1)s>Privacy Policy</a>"
+"            and information on <a %(href2)s>cookie use</a>."
+msgstr ""
+"このWebサイトは、ユーザーエクスペリエンスを向上させるためにCookieに依存しています。[同意する]をクリックするか、サイトの使用を継続することにより、同意します。"
+" 詳細については、<a %(href1)s>プライバシーポリシー</a>および<a "
+"%(href2)s>Cookieの使用</a>に関する情報をご覧ください。"
+
+#: templates/base.mako:170
+msgid "Start managing your projects on the GakuNin RDM today."
+msgstr "GakuNin RDMでプロジェクトの管理を今すぐ始めましょう。"
+
+#: templates/base.mako:171
+msgid ""
+"Free and easy to use, the GakuNin RDM supports the entire research "
+"lifecycle: planning, execution, reporting, archiving, and discovery."
+msgstr "使いやすいGakuNin RDMは、計画、実行、レポート、アーカイブ、および発見という研究ライフサイクル全体をサポートします。"
+
+#: templates/base.mako:173
+msgid "Create an Account"
+msgstr "\"アカウント作"
+
+#: templates/base.mako:175
+msgid "Learn More"
+msgstr "もっと詳しく知る"
+
+#: templates/base.mako:176
+msgid "Hide this message"
+msgstr "このメッセージを非表示"
+
+#: templates/claim_account.mako:2
+msgid "Claim Account"
+msgstr "アカウントを請求"
+
+#: templates/claim_account.mako:4
+msgid "Set Password"
+msgstr "パスワードを設定"
+
+#: templates/claim_account.mako:9
+#, python-format
+msgid "Hello %(firstname)s! Please set a password to claim your account."
+msgstr "こんにちは%(firstname)sさん！アカウントを申請するにはパスワードを設定してください。"
+
+#: templates/claim_account.mako:10
+#, python-format
+msgid "E-mail: <strong>%(email)s</strong>"
+msgstr "Eメール: <strong>%(email)s</strong>"
+
+#: templates/claim_account.mako:93
+#, python-format
+msgid ""
+"I have read and agree to the <a %(target_href1)s>Terms of Use</a> and <a "
+"%(target_href2)s>Privacy Policy</a>."
+msgstr "<a %(target_href1)s>利用規約</a>と<a %(target_href2)s>プライバシーポリシー</a>を読み、同意します。"
+
+#: templates/claim_account.mako:105
+#, python-format
+msgid ""
+"If you are not %(fullname)s, or if you were erroneously added as a "
+"contributor to the project described in the email invitation, please "
+"email <a %(href)s>%(osf_contact_email)s</a>"
+msgstr "あなたが%(fullname)sでない場合、または招待メールに記載されているプロジェクトに誤って貢献者として追加された場合は、<a %(href)s>%(osf_contact_email)s</a>にメールしてください。"
+
+#: templates/claim_account.mako:112 templates/include/profile/jobs.mako:120
+#: templates/include/profile/names.mako:79
+#: templates/include/profile/schools.mako:120
+#: templates/profile/oauth_app_detail.mako:88
+#: templates/profile/personal_tokens_detail.mako:55
+#: templates/project/project.mako:570
+msgid "Save"
+msgstr "保存"
+
+#: templates/claim_account_eppn.mako:2 templates/claim_account_eppn.mako:4
+msgid "Claim Contributor"
+msgstr "コントリビュータを請求"
+
+#: templates/claim_account_eppn.mako:9
+msgid "Please confirm to continue."
+msgstr "続行するには確認してください。"
+
+#: templates/claim_account_eppn.mako:12
+msgid "Full name (can be changed later):"
+msgstr "フルネーム(後で変更できます):"
+
+#: templates/claim_account_eppn.mako:16
+msgid "Primary Email (Username) (can be changed later):"
+msgstr ""プライマリメール(ユーザ名)(後で変更できます):
+
+#: templates/claim_account_eppn.mako:21
+msgid "Alternate Email (can be changed later):"
+msgstr "代替Eメール(後で変更できます)"
+
+#: templates/claim_account_eppn.mako:27
+#, python-format
+msgid "I am <strong>not</strong> <em>%(username)s</em>."
+msgstr "私は<em>%(username)s</em>では<strong>ありません</strong>。"
+
+#: templates/claim_account_eppn.mako:29 templates/prereg_landing_page.mako:24
+#: templates/project/modal_remove_contributor.mako:97
+msgid "Continue"
+msgstr "続ける"
+
+#: templates/my_projects.mako:2 templates/nav.mako:51
+msgid "My Projects"
+msgstr "マイプロジェクト"
 
 #: templates/my_projects.mako:8
 msgid ""
@@ -55,10 +187,6 @@ msgstr "ナビゲーションを切り替える"
 #: templates/nav.mako:49
 msgid "My Quick Files"
 msgstr "マイクイックファイル"
-
-#: templates/nav.mako:51
-msgid "My Projects"
-msgstr "マイプロジェクト"
 
 #: templates/nav.mako:54 templates/search.mako:2
 msgid "Search"
@@ -133,11 +261,6 @@ msgstr "GakuNin RDM プレレグチャレンジ"
 #: templates/prereg_landing_page.mako:22
 msgid "Please provide a title for your project:"
 msgstr "プロジェクトのタイトルを入力してください:"
-
-#: templates/prereg_landing_page.mako:24
-#: templates/project/modal_remove_contributor.mako:97
-msgid "Continue"
-msgstr "続ける"
 
 #: templates/prereg_landing_page.mako:30
 msgid "Go to an existing preregistration:"
@@ -406,15 +529,6 @@ msgstr "別を追加"
 #: templates/include/profile/schools.mako:114
 msgid "Discard changes"
 msgstr "変更を破棄"
-
-#: templates/include/profile/jobs.mako:120
-#: templates/include/profile/names.mako:79
-#: templates/include/profile/schools.mako:120
-#: templates/profile/oauth_app_detail.mako:88
-#: templates/profile/personal_tokens_detail.mako:55
-#: templates/project/project.mako:570
-msgid "Save"
-msgstr "保存"
 
 #: templates/include/profile/jobs.mako:136
 #: templates/include/profile/schools.mako:136
