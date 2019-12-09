@@ -20,7 +20,7 @@
 
 <%def name="content()">
 % if profile['is_merged']:
-<div class="alert alert-info">This account has been merged with <a class="alert-link" href="${profile['merged_by']['url']}">${profile['merged_by']['absolute_url']}</a>
+<div class="alert alert-info">${_("This account has been merged with <a %(class_href)s%(profile)s%(q_mark)s>%(profile2)") % dict(class_href='class="alert-link" href="',profile=h(profile['merged_by']['url']),q_mark='"',profile2=h(profile['merged_by']['absolute_url'])) | n}</a>
 </div>
 % endif
 
@@ -40,7 +40,7 @@
         </span>
         <span class="edit-profile-settings">
             % if user['is_profile']:
-                <a href="/settings/"><i class="fa fa-pencil m-r-xs"></i> Edit your profile</a>
+                <a href="/settings/"><i class="fa fa-pencil m-r-xs"></i> ${_("Edit your profile")}</a>
             % endif
         </span>
     </div>
@@ -54,13 +54,13 @@
         <table class="table table-plain">
             % if profile.get('date_registered'):
                 <tr>
-                    <td>Member&nbsp;Since</td>
+                    <td>${_("Member&nbsp;Since")}</td>
                     <td>${profile['date_registered']}</td>
                 </tr>
             % endif
             % if profile.get('url') and profile.get('display_absolute_url'):
                 <tr>
-                    <td>Public&nbsp;Profile</td>
+                    <td>${_("Public&nbsp;Profile")}</td>
                     <td><a href="${profile['url']}">${profile['display_absolute_url']}</a></td>
                 </tr>
             % endif
@@ -79,9 +79,9 @@
 
 
         <ul class="nav nav-tabs">
-            <li class="active"><a href="#social" data-toggle="tab">Social</a></li>
-            <li><a href="#jobs" data-toggle="tab">Employment</a></li>
-            <li><a href="#schools" data-toggle="tab">Education</a></li>
+            <li class="active"><a href="#social" data-toggle="tab">${_("Social")}</a></li>
+            <li><a href="#jobs" data-toggle="tab">${_("Employment")}</a></li>
+            <li><a href="#schools" data-toggle="tab">${_("Education")}</a></li>
         </ul>
 
         <div class="tab-content" id="containDrag">
@@ -112,7 +112,7 @@
         %endif
                 <div class="panel panel-default">
                     <div class="panel-heading clearfix">
-                      <h3 class="panel-title" >Public projects</h3>
+                      <h3 class="panel-title" >${_("Public projects")}</h3>
                     </div>
                     <div class="panel-body clearfix" id="publicProjects">
                         <div class="ball-pulse ball-scale-blue text-center">
@@ -132,7 +132,7 @@
             %endif
                 <div class="panel panel-default">
                     <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Public components</h3>
+                        <h3 class="panel-title">${_("Public components")}</h3>
                     </div>
                     <div class="panel-body clearfix" id="publicComponents">
                       <div class="ball-pulse ball-scale-blue text-center">
@@ -149,7 +149,7 @@
     <div class="col-sm-6">
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
-                <h3 class="panel-title">Quick files</h3>
+                <h3 class="panel-title">${_("Quick files")}</h3>
             </div>
             <div class="panel-body clearfix" id="quickFiles">
               <div class="ball-pulse ball-scale-blue text-center">

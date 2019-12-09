@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-09 10:56+0900\n"
+"POT-Creation-Date: 2019-12-09 13:10+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -64,7 +64,7 @@ msgstr "使いやすいGakuNin RDMは、計画、実行、レポート、アー�
 
 #: templates/base.mako:173
 msgid "Create an Account"
-msgstr "\"アカウント作"
+msgstr "アカウント作成"
 
 #: templates/base.mako:175
 msgid "Learn More"
@@ -105,7 +105,9 @@ msgid ""
 "If you are not %(fullname)s, or if you were erroneously added as a "
 "contributor to the project described in the email invitation, please "
 "email <a %(href)s>%(osf_contact_email)s</a>"
-msgstr "あなたが%(fullname)sでない場合、または招待メールに記載されているプロジェクトに誤って貢献者として追加された場合は、<a %(href)s>%(osf_contact_email)s</a>にメールしてください。"
+msgstr ""
+"あなたが%(fullname)sでない場合、または招待メールに記載されているプロジェクトに誤って貢献者として追加された場合は、<a "
+"%(href)s>%(osf_contact_email)s</a>にメールしてください。"
 
 #: templates/claim_account.mako:112 templates/include/profile/jobs.mako:120
 #: templates/include/profile/names.mako:79
@@ -117,6 +119,8 @@ msgid "Save"
 msgstr "保存"
 
 #: templates/claim_account_eppn.mako:2 templates/claim_account_eppn.mako:4
+#: templates/claim_account_registered.mako:2
+#: templates/claim_account_registered.mako:4
 msgid "Claim Contributor"
 msgstr "コントリビュータを請求"
 
@@ -130,7 +134,7 @@ msgstr "フルネーム(後で変更できます):"
 
 #: templates/claim_account_eppn.mako:16
 msgid "Primary Email (Username) (can be changed later):"
-msgstr ""プライマリメール(ユーザ名)(後で変更できます):
+msgstr "\"プライマリメール(ユーザ名)(後で変更できます)"
 
 #: templates/claim_account_eppn.mako:21
 msgid "Alternate Email (can be changed later):"
@@ -141,10 +145,67 @@ msgstr "代替Eメール(後で変更できます)"
 msgid "I am <strong>not</strong> <em>%(username)s</em>."
 msgstr "私は<em>%(username)s</em>では<strong>ありません</strong>。"
 
-#: templates/claim_account_eppn.mako:29 templates/prereg_landing_page.mako:24
+#: templates/claim_account_eppn.mako:29
+#: templates/claim_account_registered.mako:25
+#: templates/prereg_landing_page.mako:24
 #: templates/project/modal_remove_contributor.mako:97
 msgid "Continue"
 msgstr "続ける"
+
+#: templates/claim_account_registered.mako:9
+msgid "Please enter your credentials to continue."
+msgstr "続行するには資格情報を入力してください。"
+
+#: templates/claim_account_registered.mako:23
+msgid "I am <strong>not</strong> <em>%(user.fullname)s</em>.</a>"
+msgstr "私は<em>%(user.fullname)s</em>では<strong>ありません</strong>。"
+
+#: templates/copyright.mako:7 templates/copyright.mako:12
+#: templates/footer.mako:11
+msgid "National Institute of Informatics"
+msgstr "国立情報学研究所"
+
+#: templates/copyright.mako:8
+msgid "Terms of Use"
+msgstr "利用規約"
+
+#: templates/copyright.mako:9
+msgid "Privacy Policy"
+msgstr "プライバシーポリシー"
+
+#: templates/footer.mako:17
+msgid "Terms&nbsp;of&nbsp;Use"
+msgstr "利用&nbsp;規約"
+
+#: templates/footer.mako:23
+msgid "Privacy&nbsp;Policy"
+msgstr "プライバシー&nbsp;ポリシー"
+
+#: templates/footer.mako:30
+msgid "Status"
+msgstr "ステータス"
+
+#: templates/footer.mako:44
+msgid "TOP Guidelines"
+msgstr "トップガイドライン"
+
+#: templates/footer.mako:52
+msgid "Reproducibility&nbsp;Project: Psychology"
+msgstr "再現性&nbsp;プロジェクト：心理学"
+
+#: templates/footer.mako:60
+msgid "Reproducibility&nbsp;Project: Cancer Biology"
+msgstr "再現性&nbsp;プロジェクト：がん生物学"
+
+#: templates/institution.mako:8 templates/project/project_header.mako:200
+msgid ""
+"<strong>NOTICE: </strong>Forks, registrations, and uploads will be "
+"temporarily disabled while the GakuNin RDM undergoes a hardware upgrade. "
+"These features will return shortly. Thank you for your patience."
+msgstr ""
+"<strong>注意: </strong>GakuNin "
+"RDMのハードウェアアップグレード中は、フォーク、登録、アップロードが一時的に無効になります。 これらの機能はまもなく戻ります。 "
+"お待たせして申し訳ありません。"
 
 #: templates/my_projects.mako:2 templates/nav.mako:51
 msgid "My Projects"
@@ -332,6 +393,49 @@ msgstr "既存の事前登録ドラフトの作業を続行します"
 #: templates/prereg_landing_page.mako:84 templates/prereg_landing_page.mako:126
 msgid "Preregister a project you already have on the GakuNin RDM"
 msgstr "GakuNin RDMに既にあるプロジェクトを事前登録する"
+
+#: templates/profile.mako:23
+#, python-format
+msgid ""
+"This account has been merged with <a "
+"%(class_href)s%(profile)s%(q_mark)s>%(profile2)"
+msgstr ""
+
+#: templates/profile.mako:43
+msgid "Edit your profile"
+msgstr "プロフィールを編集"
+
+#: templates/profile.mako:57
+msgid "Member&nbsp;Since"
+msgstr ""
+
+#: templates/profile.mako:63
+msgid "Public&nbsp;Profile"
+msgstr "公開&nbsp;プロフィール"
+
+#: templates/profile.mako:82 templates/profile/settings.mako:39
+msgid "Social"
+msgstr "社会"
+
+#: templates/profile.mako:83 templates/profile/settings.mako:40
+msgid "Employment"
+msgstr "仕事"
+
+#: templates/profile.mako:84 templates/profile/settings.mako:41
+msgid "Education"
+msgstr "教育"
+
+#: templates/profile.mako:115
+msgid "Public projects"
+msgstr "公開プロジェクト"
+
+#: templates/profile.mako:135
+msgid "Public components"
+msgstr "公開コンポーネント"
+
+#: templates/profile.mako:152
+msgid "Quick files"
+msgstr "クイックファイル"
 
 #: templates/search.mako:36
 msgid "Improve your search:"
@@ -1120,18 +1224,6 @@ msgstr "プロフィールを表示"
 msgid "Name"
 msgstr "名前"
 
-#: templates/profile/settings.mako:39
-msgid "Social"
-msgstr "社会"
-
-#: templates/profile/settings.mako:40
-msgid "Employment"
-msgstr "仕事"
-
-#: templates/profile/settings.mako:41
-msgid "Education"
-msgstr "教育"
-
 #: templates/profile/user_settings_default.mako:9
 msgid "Connect or Reauthorize Account"
 msgstr "アカウントの接続または再認証"
@@ -1898,16 +1990,6 @@ msgid ""
 msgstr ""
 "この%(nodetype)sは、プライベートな参照専用リンクを介して表示されています。 リンクを知っている全員がこのプロジェクトを閲覧できます。 "
 "リンクを安全に保ちます。"
-
-#: templates/project/project_header.mako:200
-msgid ""
-"<strong>NOTICE: </strong>Forks, registrations, and uploads will be "
-"temporarily disabled while the GakuNin RDM undergoes a hardware upgrade. "
-"These features will return shortly. Thank you for your patience."
-msgstr ""
-"<strong>注意: </strong>GakuNin "
-"RDMのハードウェアアップグレード中は、フォーク、登録、アップロードが一時的に無効になります。 これらの機能はまもなく戻ります。 "
-"お待たせして申し訳ありません。"
 
 #: templates/project/settings.mako:22 templates/project/settings.mako:179
 msgid "Storage Location"
