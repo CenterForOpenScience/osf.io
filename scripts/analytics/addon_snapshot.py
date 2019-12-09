@@ -89,7 +89,7 @@ class AddonSnapshot(SnapshotAnalytics):
                 for node_settings in paginated(node_settings_model):
                     if node_settings.owner and not node_settings.owner.all_tags.filter(name='old_node_collection', system=True).exists():
                         connected_count += 1
-                deleted_count = addon.models['nodesettings'].objects.filter(deleted=True).count() if addon.models.get('nodesettings') else 0
+                deleted_count = addon.models['nodesettings'].objects.filter(deleted__isnull=False).count() if addon.models.get('nodesettings') else 0
                 if has_external_account:
                     disconnected_count = addon.models['nodesettings'].objects.filter(external_account__isnull=True, is_deleted=False).count() if addon.models.get('nodesettings') else 0
                 else:
