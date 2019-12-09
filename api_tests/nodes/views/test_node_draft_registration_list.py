@@ -88,7 +88,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
     def schema(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
-            schema_version=SCHEMA_VERSION)
+            schema_version=3)
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -210,7 +210,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
     def metaschema_open_ended(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
-            schema_version=SCHEMA_VERSION)
+            schema_version=3)
 
     @pytest.fixture()
     def payload(self, metaschema_open_ended, provider):
@@ -755,7 +755,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'For your registration, your response to the \'Has data collection begun for this project?\' field' \
+        assert errors['detail'] == 'For your registration, your response to the \'Data collection status\' field' \
                                    ' is invalid, your response must be one of the provided options.'
 
     def test_question_in_registration_responses_must_be_in_schema(
@@ -792,7 +792,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'For your registration, your response to the \'Has data collection begun for this project?\'' \
+        assert errors['detail'] == 'For your registration, your response to the \'Data collection status\'' \
                                    ' field is invalid, your response must be one of the provided options.'
 
     def test_reviewer_cannot_create_draft_registration(

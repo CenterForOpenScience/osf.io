@@ -18,7 +18,7 @@ def update_schemaless_registrations(state, schema):
     RegistrationSchema = state.get_model('osf', 'registrationschema')
     AbstractNode = state.get_model('osf', 'abstractnode')
 
-    open_ended_schema = RegistrationSchema.objects.get(name='Open-Ended Registration')
+    open_ended_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
     open_ended_meta = {
         '{}'.format(open_ended_schema._id): {
             'summary': {
