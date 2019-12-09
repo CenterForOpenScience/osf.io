@@ -3,7 +3,7 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h3>Connect an Azure Blob Storage Account</h3>
+                <h3>${_("Connect an Azure Blob Storage Account")}</h3>
             </div>
 
             <form>
@@ -14,11 +14,11 @@
 
                         <div class="col-sm-6">
                             <div class="form-group">
-                                <label for="azureblobstorageAddon">Account Name</label>
+                                <label for="azureblobstorageAddon">${_("Account Name")}</label>
                                 <input class="form-control" data-bind="value: accessKey" name="access_key" ${'disabled' if disabled else ''} />
                             </div>
                             <div class="form-group">
-                                <label for="azureblobstorageAddon">Account Key</label>
+                                <label for="azureblobstorageAddon">${_("Account Key")}</label>
                                 <input type="password" class="form-control" data-bind="value: secretKey" name="secret_key" ${'disabled' if disabled else ''} />
                             </div>
                         </div>
@@ -33,10 +33,10 @@
 
                 <div class="modal-footer">
 
-                    <a href="#" class="btn btn-default" data-bind="click: clearModal" data-dismiss="modal">Cancel</a>
+                    <a href="#" class="btn btn-default" data-bind="click: clearModal" data-dismiss="modal">${_("Cancel")}</a>
 
                     <!-- Save Button -->
-                    <button data-bind="click: connectAccount" class="btn btn-success">Save</button>
+                    <button data-bind="click: connectAccount" class="btn btn-success">${_("Save")}</button>
 
                 </div><!-- end modal-footer -->
 
