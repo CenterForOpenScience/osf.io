@@ -5,24 +5,20 @@
     "pages": [{
         "id": "page1",
         "title": "Summary",
-        "questions": [{
-            "qid": "summary",
-            "nav": "Summary",
-            "type": "object",
-            "description": "Provide a narrative summary of what is contained in this registration or how it differs from prior registrations. If this project contains documents for a preregistration, please note that here.",
-            "properties": [
-                {
-                    "id": "question",
-                    "type": "string",
-                    "format": "textarea",
-                    "required": true
-                },
-                {
-                    "id": "uploader",
-                    "type": "osf-upload",
-                    "format": "osf-upload-toggle"
-                }
-            ]
-        }]
+        "questions": [
+            {
+                "qid": "summary",
+                "type": "string",
+                "format": "textarea",
+                "nav": "Summary",
+                "description": "Provide a narrative summary of what is contained in this registration or how it differs from prior registrations. If this project contains documents for a preregistration, please note that here.",
+                "required": true
+            },
+            {
+                "qid": "uploader",
+                "type": "osf-upload",
+                "format": "osf-upload-toggle"
+            }
+        ]
     }]
 }
