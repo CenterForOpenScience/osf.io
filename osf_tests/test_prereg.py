@@ -123,7 +123,8 @@ class TestPreregLandingPage(OsfTestCase):
             prereg_schema = RegistrationSchema.objects.get(name='OSF Preregistration')
             factories.DraftRegistrationFactory(
                 initiator=self.user,
-                registration_schema=prereg_schema
+                registration_schema=prereg_schema,
+                branched_from=project
             )
             assert_equal(
                 landing_page(user=self.user),
