@@ -35,7 +35,7 @@
             "format": "textarea",
             "title": "Description",
             "description": "Please give a brief description of your study, including some background, the purpose of the study, or broad research questions.",
-            "help": "Though there is strong evidence to suggest that sugar affects taste preferences, the effect has never been demonstrated in brownies. Therefore, we will measure taste preference for four different levels of sugar concentration in a standard brownie recipe to determine if the effect exists in this pastry. <br><br> The description should be no longer than the length of an abstract. It can give some context for the proposed study, but great detail is not needed here for your preregistration."
+            "help": "Though there is strong evidence to suggest that sugar affects taste preferences, the effect has never been demonstrated in brownies. Therefore, we will measure taste preference for four different levels of sugar concentration in a standard brownie recipe to determine if the effect exists in this pastry."
         }, {
             "qid": "q4",
             "nav": "Hypotheses",
