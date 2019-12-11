@@ -287,27 +287,13 @@ def find_title_description_help_example(rs, question):
 
     return title, description, help, example
 
-def clean_schema_subquestion(question, subquestion, index):
+def get_subquestion_qid(question, subquestion):
     """
     For mapping schemas to schema blocks:
-    Modify a subquestion (aka 'property') to ensure qid, title, description,
-    and help text, because these are often absent.
-    - Modify a subquestion's qid to be of the format "parent-id.current-id", to
-      reflect its nested nature, to ensure uniqueness
-    - For the first nested subquestion, transfer the parent's title, description, and help.
+    Return a qid in the format "parent-id.current-id", to reflect its nested nature and ensure uniqueness
     """
-    subquestion['qid'] = '{}.{}'.format(get_registration_response_key(question) or '', subquestion.get('id', ''))
-    if not index:
-        title = question.get('title', '')
-        description = question.get('description', '')
-        help = question.get('help', '')
-        if not subquestion.get('title', '') and not subquestion.get('description'):
-            subquestion['title'] = title
-        if not subquestion.get('description', ''):
-            subquestion['description'] = description
-        if not subquestion.get('help', ''):
-            subquestion['help'] = help
-    return subquestion
+
+    return '{}.{}'.format(get_registration_response_key(question) or '', subquestion.get('id', ''))
 
 
 def create_schema_blocks_for_question(state, rs, question, sub=False):
@@ -317,16 +303,29 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
     which have the same schema_block_group_key, to link them.
     """
     # If there are subquestions, recurse and format subquestions
-    if question.get('properties'):
-        # Creates section or subsection
-        create_schema_block(
-            state,
-            rs.id,
-            block_type='subsection-heading' if sub else 'section-heading',
-            display_text=question.get('title', '') or question.get('description', ''),
-        )
-        for index, subquestion in enumerate(question.get('properties')):
-            create_schema_blocks_for_question(state, rs, clean_schema_subquestion(question, subquestion, index), sub=True)
+    properties = question.get('properties')
+    if properties:
+        first_subquestion = properties[0]
+        first_subq_text = first_subquestion.get('title') or first_subquestion.get('description', '')
+
+        if first_subq_text:
+            # the first subquestion has text, so this seems like an actual [sub]section
+            create_schema_block(
+                state,
+                rs.id,
+                block_type='subsection-heading' if sub else 'section-heading',
+                display_text=question.get('title', '') or question.get('description', ''),
+            )
+        else:
+            # the first subquestion has no text, so the "section" heading is better interpreted as a question label
+            first_subquestion['title'] = question.get('title', '')
+            first_subquestion['description'] = question.get('description', '')
+            if not first_subquestion.get('help'):
+                first_subquestion['help'] = question.get('help', '')
+
+        for subquestion in properties:
+            subquestion['qid'] = get_subquestion_qid(question, subquestion)
+            create_schema_blocks_for_question(state, rs, subquestion, sub=True)
     else:
         # All schema blocks related to a particular question share the same schema_block_group_key.
         schema_block_group_key = generate_object_id()
