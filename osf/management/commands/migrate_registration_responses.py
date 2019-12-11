@@ -33,17 +33,19 @@ def get_registration_schema(registration_or_draft):
         schema = registration_or_draft.registered_schema.first()
     return schema
 
-def migrate_registrations(dry_run, rows='all', RegistrationModel=None):
+def migrate_registrations(dry_run, rows='all', AbstractNodeModel=None):
     """
     Loops through registrations whose registration_responses have not been migrated,
     and pulls this information from the "registered_meta" and flattens it, with
     keys being the "registration_response_key"s and values being the most deeply
     nested user response in registered_meta
     """
-    if RegistrationModel is None:
-        RegistrationModel = apps.get_model('osf.Registration')
+    if AbstractNodeModel is None:
+        AbstractNodeModel = apps.get_model('osf', 'abstractnode')
 
-    registrations = RegistrationModel.objects.exclude(
+    registrations = AbstractNodeModel.objects.filter(
+        type='osf.registration',
+    ).exclude(
         registration_responses_migrated=True,
     )
     return migrate_responses(registrations, 'registrations', dry_run, rows)
@@ -56,7 +58,7 @@ def migrate_draft_registrations(dry_run, rows='all', DraftRegistrationModel=None
     :params rows
     """
     if DraftRegistrationModel is None:
-        DraftRegistrationModel = apps.get_model('osf.DraftRegistration')
+        DraftRegistrationModel = apps.get_model('osf', 'draftregistration')
 
     draft_registrations = DraftRegistrationModel.objects.exclude(
         registration_responses_migrated=True
