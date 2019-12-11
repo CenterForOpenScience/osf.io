@@ -205,7 +205,13 @@ def create_schema_block(state, schema_id, block_type, display_text='', required=
         help_text=unescape_entities(help_text),
         registration_response_key=registration_response_key,
         schema_block_group_key=schema_block_group_key,
-        example_text=unescape_entities(example_text)
+        example_text=unescape_entities(
+            example_text,
+            safe={
+                '&lt;': '<',
+                '&gt;': '>'
+            }
+        )
     )
 
 # Split question multiple choice options into their own blocks
