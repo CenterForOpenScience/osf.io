@@ -17,7 +17,8 @@
             {
                 "qid": "uploader",
                 "type": "osf-upload",
-                "format": "osf-upload-toggle"
+                "format": "osf-upload-toggle",
+                "description": "Add supplemental files or additional information"
             }
         ]
     }]
