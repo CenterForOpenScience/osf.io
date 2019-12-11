@@ -454,8 +454,12 @@ def subscribe_user_to_notifications(node, user):
     """
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
     Preprint = apps.get_model('osf.Preprint')
+    DraftRegistration = apps.get_model('osf.DraftRegistration')
     if isinstance(node, Preprint):
         raise InvalidSubscriptionError('Preprints are invalid targets for subscriptions at this time.')
+
+    if isinstance(node, DraftRegistration):
+        raise InvalidSubscriptionError('DraftRegistrations are invalid targets for subscriptions at this time.')
 
     if node.is_collection:
         raise InvalidSubscriptionError('Collections are invalid targets for subscriptions')
