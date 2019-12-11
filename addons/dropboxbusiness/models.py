@@ -1,20 +1,24 @@
 # -*- coding: utf-8 -*-
+import httplib as http
 import logging
 
+from flask import request
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
 from dropbox.dropbox import DropboxTeam
 from dropbox.exceptions import DropboxException
+from dropbox import oauth
 
 from osf.models.node import Node
 from osf.models.files import File, Folder, BaseFileNode
 from addons.base.models import (BaseNodeSettings, BaseStorageAddon)
 from addons.base import exceptions
+from addons.dropbox.models import Provider as DropboxProvider
 from addons.dropboxbusiness import settings, utils
 from addons.dropboxbusiness.apps import DropboxBusinessAddonAppConfig
 from website import settings as website_settings
+from framework.exceptions import HTTPError
 from admin.rdm_addons.utils import get_rdm_addon_option
 from admin.rdm.utils import get_institution_id
 
@@ -36,6 +40,48 @@ class DropboxBusinessFile(DropboxBusinessFileNode, File):
             return {'Dropbox Business content_hash': self._history[-1]['extra']['hashes']['dropboxbusiness']}
         except (IndexError, KeyError):
             return None
+
+
+class DropboxBusinessFileaccessProvider(DropboxProvider):
+    name = 'Dropbox Business Team member file access'
+    short_name = 'dropboxbusiness'
+
+    client_id = settings.DROPBOX_BUSINESS_FILE_KEY
+    client_secret = settings.DROPBOX_BUSINESS_FILE_SECRET
+
+    # Override : See addons.dropbox.models.Provider
+    def auth_callback(self, user):
+        # TODO: consider not using client library during auth flow
+        try:
+            access_token = self.oauth_flow.finish(request.values).access_token
+        except (oauth.NotApprovedException, oauth.BadStateException):
+            # 1) user cancelled and client library raised exc., or
+            # 2) the state was manipulated, possibly due to time.
+            # Either way, return and display info about how to properly connect.
+            return
+        except (oauth.ProviderException, oauth.CsrfException):
+            raise HTTPError(http.FORBIDDEN)
+        except oauth.BadRequestException:
+            raise HTTPError(http.BAD_REQUEST)
+
+        self.client = DropboxTeam(access_token)
+        info = self.client.team_get_info()
+        return self._set_external_account(
+            user,
+            {
+                'key': access_token,
+                'provider_id': info.team_id,
+                'display_name': info.name
+            }
+        )
+
+
+class DropboxBusinessManagementProvider(DropboxBusinessFileaccessProvider):
+    name = 'Dropbox Business Team member management'
+    short_name = 'dropboxbusiness_manage'
+
+    client_id = settings.DROPBOX_BUSINESS_MANAGEMENT_KEY
+    client_secret = settings.DROPBOX_BUSINESS_MANAGEMENT_SECRET
 
 
 class NodeSettings(BaseNodeSettings, BaseStorageAddon):
@@ -175,6 +221,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         return self.file_access_token and self.management_access_token and \
             self.admin_dbmid
 
+
 def is_enabled(node, addon_name):
     institution_id = get_institution_id(node.creator)
     if institution_id is None:
@@ -186,9 +233,11 @@ def is_enabled(node, addon_name):
         return True
     return False
 
+
 def init_addon(node, addon_name):
     if is_enabled(node, addon_name):
         node.add_addon(addon_name, auth=None, log=True)
+
 
 @receiver(post_save, sender=Node)
 def on_node_updated(sender, instance, created, **kwargs):
