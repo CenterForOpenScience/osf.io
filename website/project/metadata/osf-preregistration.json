@@ -250,7 +250,7 @@
             "nav": "Indices",
             "type": "object",
             "title": "Indices",
-            "description": "If applicable, please define how measures will be combined into an index (or even a mean) and what measures will be used. Include either a formula or a precise description of the method. If your are using a more complicated statistical method to combine measures (e.g. a factor analysis), please note that here but describe the exact method in the analysis plan section.",
+            "description": "If applicable, please define how measures will be combined into an index (or even a mean) and what measures will be used. Include either a formula or a precise description of the method. If you are using a more complicated statistical method to combine measures (e.g. a factor analysis), please note that here but describe the exact method in the analysis plan section.",
             "help": "We will take the mean of the two questions above to create a single measure of ‘brownie enjoyment.’",
             "properties": [
                 {
