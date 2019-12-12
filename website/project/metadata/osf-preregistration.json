@@ -58,8 +58,8 @@
             "type": "choose",
             "format": "singleselect",
             "options": [
-                "Experiment - A researcher randomly assigns treatments to study subjects. This includes field or lab experiments, intervention experiments, and randomized controlled trials.",
-                "Observational Study - Data is collected from study subjects not randomly assigned to a treatment. This includes surveys, natural experiments, and regression discontinuity designs.",
+                "Experiment - A researcher randomly assigns treatments to study subjects, this includes field or lab experiments. This is also known as an intervention experiment and includes randomized controlled trials.",
+                "Observational Study - Data is collected from study subjects that are not randomly assigned to a treatment. This includes surveys, “natural experiments,” and regression discontinuity designs.",
                 "Meta-Analysis - A systematic review of published studies.",
                 "Other"
             ],
@@ -73,8 +73,8 @@
             "format": "multiselect",
             "options": [
                 "No blinding is involved in this study.",
-                "Subjects will not know the treatment group to which they have been assigned.",
-                "Personnel who interact directly with the study participants or subjects will not be aware of the assigned treatments. (Commonly known as “double blind”)",
+                "For studies that involve human subjects, they will not know the treatment group to which they have been assigned.",
+                "Personnel who interact directly with the study subjects (either human or non-human subjects) will not be aware of the assigned treatments. (Commonly known as “double blind”)",
                 "Personnel who analyze the data collected from the study are not aware of the treatment applied to any given group."
             ],
             "required": true
