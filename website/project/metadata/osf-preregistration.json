@@ -294,7 +294,7 @@
             "qid": "q20",
             "nav": "Transformations",
             "title": "Transformations",
-            "description": "If you plan on transforming, centering, recoding the data, or will require a coding scheme for categorical variables, please describe that process.",
+            "description": "If you plan on transforming, centering, recoding the data, or requiring a coding scheme for categorical variables, please describe that process.",
             "help": "The “Effect of sugar on brownie tastiness” does not require any additional transformations. However, if it were using a regression analysis and each level of sweet had been categorically described (e.g. not sweet, somewhat sweet, sweet, and very sweet), ‘sweet’ could be dummy coded with ‘not sweet’ as the reference category. <br><br> If any categorical predictors are included in a regression, indicate how those variables will be coded (e.g. dummy coding, summation coding, etc.) and what the reference category will be.",
             "type": "string",
             "format": "textarea"
