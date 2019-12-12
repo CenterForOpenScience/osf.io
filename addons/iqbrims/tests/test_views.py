@@ -703,7 +703,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         management_project = ProjectFactory()
         management_project.add_addon('googledrive', auth=None)
         gdsettings = management_project.get_addon('googledrive')
-        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.folder_path = 'testgdpath'
         gdsettings.save()
         mock_get_management_node.return_value = management_project
         def mock_folders_effect(folder_id):
@@ -738,6 +738,21 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['status'], 'complete')
+        assert_equal(len(res.json['management']['urls']), 2)
+        assert_equal(res.json['management']['urls'][0]['mfr_url'],
+            'http://localhost:7778/export?url=http%3A//localhost%3A5000/' +
+            management_project._id + '/' +
+            'files/googledrive/iqb123/%25E6%259C%2580%25E7%25B5%2582%25E5%258E' +
+            '%259F%25E7%25A8%25BF%25E3%2583%25BB%25E7%25B5%2584%25E5%259B%25B3/' +
+            '%25E3%2582%25B9%25E3%2582%25AD%25E3%2583%25A3%25E3%2583%25B3%25E7' +
+            '%2594%25BB%25E5%2583%258F/test.png')
+        assert_equal(res.json['management']['urls'][1]['mfr_url'],
+            'http://localhost:7778/export?url=http%3A//localhost%3A5000/' +
+            management_project._id + '/' +
+            'files/googledrive/iqb123/%25E6%259C%2580%25E7%25B5%2582%25E5%258E' +
+            '%259F%25E7%25A8%25BF%25E3%2583%25BB%25E7%25B5%2584%25E5%259B%25B3/' +
+            '%25E3%2582%25B9%25E3%2582%25AD%25E3%2583%25A3%25E3%2583%25B3%25E7' +
+            '%2594%25BB%25E5%2583%258F/files.txt')
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')

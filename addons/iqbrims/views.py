@@ -236,6 +236,7 @@ def iqbrims_get_storage(**kwargs):
     sub_folder_name = None
     file_name = None
     validate = None
+    urls_for_all_files = False
     if folder == 'index':
         folder_name = REVIEW_FOLDERS['raw']
         file_name = settings.INDEXSHEET_FILENAME
@@ -244,6 +245,7 @@ def iqbrims_get_storage(**kwargs):
         folder_name = REVIEW_FOLDERS['paper']
         sub_folder_name = settings.IMAGELIST_FOLDERNAME
         file_name = settings.IMAGELIST_FILENAME
+        urls_for_all_files = True
     else:
         folder_name = REVIEW_FOLDERS[folder]
     try:
@@ -255,13 +257,16 @@ def iqbrims_get_storage(**kwargs):
     folders = [f for f in folders if f['title'] == folder_name]
     assert len(folders) > 0
     if sub_folder_name is not None:
-        folders = client.folders(folder_id=folders[0]['id'])
-        folders = [f for f in folders if f['title'] == sub_folder_name]
-        if len(folders) == 0:
+        main_folders = folders
+        sub_folders = client.folders(folder_id=main_folders[0]['id'])
+        sub_folders = [f for f in sub_folders if f['title'] == sub_folder_name]
+        if len(sub_folders) == 0:
             return {'status': 'processing', 'comment': ''}
+        folders = sub_folders
     logger.info(u'Checking Storage: {}, {}, {}'.format(folder, folder_name,
                                                        folders[0]['id']))
-    files = client.files(folder_id=folders[0]['id'])
+    all_files = client.files(folder_id=folders[0]['id'])
+    files = all_files
     logger.debug(u'Result files: {}'.format([f['title'] for f in files]))
     if file_name is not None:
         files = [f for f in files
@@ -274,19 +279,26 @@ def iqbrims_get_storage(**kwargs):
     logger.debug(u'Folder path: {}'.format(root_folder_path))
     node_urls = []
     management_urls = []
-    if len(files) > 0:
-        for f in files:
-            url = website_settings.DOMAIN.rstrip('/') + '/' + node._id + \
-                '/files/iqbrims/' + \
-                urllib.quote(folders[0]['title'].encode('utf8')) + '/' + \
-                urllib.quote(f['title'].encode('utf8'))
-            node_urls.append({'title': f['title'], 'url': url})
-            url = website_settings.DOMAIN.rstrip('/') + '/' + management_node._id + \
-                  '/files/googledrive' + \
-                  urllib.quote(root_folder_path.encode('utf8')) + \
-                  urllib.quote(folders[0]['title'].encode('utf8')) + '/' + \
-                  urllib.quote(f['title'].encode('utf8'))
-            management_urls.append({'title': f['title'], 'url': url})
+    url_files = all_files if urls_for_all_files else files
+    for f in url_files:
+        if sub_folder_name is not None:
+            url_folder_path = urllib.quote(main_folders[0]['title'].encode('utf8')) + \
+                              '/' + urllib.quote(sub_folders[0]['title'].encode('utf8'))
+        else:
+            url_folder_path = urllib.quote(folders[0]['title'].encode('utf8'))
+        url = website_settings.DOMAIN.rstrip('/') + '/' + node._id + \
+            '/files/iqbrims/' + url_folder_path + '/' + \
+            urllib.quote(f['title'].encode('utf8'))
+        node_urls.append({'title': f['title'], 'url': url})
+        url = website_settings.DOMAIN.rstrip('/') + '/' + management_node._id + \
+              '/files/googledrive' + \
+              urllib.quote(root_folder_path.encode('utf8')) + \
+              url_folder_path + '/' + urllib.quote(f['title'].encode('utf8'))
+        mfr_url = website_settings.MFR_SERVER_URL.rstrip('/') + '/export?url=' + \
+                  urllib.quote(url)
+        management_urls.append({'title': f['title'],
+                                'url': url,
+                                'mfr_url': mfr_url})
     logger.info('Urls: node={}, management={}'.format(node_urls, management_urls))
     status = iqbrims.get_status()
     comment_key = folder + '_comment'
