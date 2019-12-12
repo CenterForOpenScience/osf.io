@@ -58,8 +58,8 @@
             "type": "choose",
             "format": "singleselect",
             "options": [
-                "Experiment - A researcher randomly assigns treatments to study subjects. This includes field or lab experiments, intervention experiments, and randomized controlled trials.",
-                "Observational Study - Data is collected from study subjects not randomly assigned to a treatment. This includes surveys, natural experiments, and regression discontinuity designs.",
+                "Experiment - A researcher randomly assigns treatments to study subjects, this includes field or lab experiments. This is also known as an intervention experiment and includes randomized controlled trials.",
+                "Observational Study - Data is collected from study subjects that are not randomly assigned to a treatment. This includes surveys, “natural experiments,” and regression discontinuity designs.",
                 "Meta-Analysis - A systematic review of published studies.",
                 "Other"
             ],
@@ -73,8 +73,8 @@
             "format": "multiselect",
             "options": [
                 "No blinding is involved in this study.",
-                "Subjects will not know the treatment group to which they have been assigned.",
-                "Personnel who interact directly with the study participants or subjects will not be aware of the assigned treatments. (Commonly known as “double blind”)",
+                "For studies that involve human subjects, they will not know the treatment group to which they have been assigned.",
+                "Personnel who interact directly with the study subjects (either human or non-human subjects) will not be aware of the assigned treatments. (Commonly known as “double blind”)",
                 "Personnel who analyze the data collected from the study are not aware of the treatment applied to any given group."
             ],
             "required": true
@@ -109,7 +109,7 @@
             "qid": "q9",
             "nav": "Randomization",
             "title": "Randomization",
-            "description": "If you are doing a randomized study, state how will you randomize, and at what level. Typical randomization techniques include: simple, block, stratified, and adaptive covariate randomization. If randomization is required for the study, the method should be specified here, not simply the source of random numbers.",
+            "description": "If you are doing a randomized study, state how you will randomize, and at what level. Typical randomization techniques include: simple, block, stratified, and adaptive covariate randomization. If randomization is required for the study, the method should be specified here, not simply the source of random numbers.",
             "help": "We will use block randomization, where each participant will be randomly assigned to one of the four equally sized, predetermined blocks. The random number list used to create these four blocks will be created using the web applications available at http://random.org.",
             "type": "string",
             "format": "textarea"
@@ -250,7 +250,7 @@
             "nav": "Indices",
             "type": "object",
             "title": "Indices",
-            "description": "If applicable, please define how measures will be combined into an index (or even a mean) and what measures will be used. Include either a formula or a precise description of the method. If your are using a more complicated statistical method to combine measures (e.g. a factor analysis), please note that here but describe the exact method in the analysis plan section.",
+            "description": "If applicable, please define how measures will be combined into an index (or even a mean) and what measures will be used. Include either a formula or a precise description of the method. If you are using a more complicated statistical method to combine measures (e.g. a factor analysis), please note that here but describe the exact method in the analysis plan section.",
             "help": "We will take the mean of the two questions above to create a single measure of ‘brownie enjoyment.’",
             "properties": [
                 {
@@ -294,7 +294,7 @@
             "qid": "q20",
             "nav": "Transformations",
             "title": "Transformations",
-            "description": "If you plan on transforming, centering, recoding the data, or will require a coding scheme for categorical variables, please describe that process.",
+            "description": "If you plan on transforming, centering, recoding the data, or requiring a coding scheme for categorical variables, please describe that process.",
             "help": "The “Effect of sugar on brownie tastiness” does not require any additional transformations. However, if it were using a regression analysis and each level of sweet had been categorically described (e.g. not sweet, somewhat sweet, sweet, and very sweet), ‘sweet’ could be dummy coded with ‘not sweet’ as the reference category. <br><br> If any categorical predictors are included in a regression, indicate how those variables will be coded (e.g. dummy coding, summation coding, etc.) and what the reference category will be.",
             "type": "string",
             "format": "textarea"
