@@ -109,7 +109,7 @@
             "qid": "q9",
             "nav": "Randomization",
             "title": "Randomization",
-            "description": "If you are doing a randomized study, state how will you randomize, and at what level. Typical randomization techniques include: simple, block, stratified, and adaptive covariate randomization. If randomization is required for the study, the method should be specified here, not simply the source of random numbers.",
+            "description": "If you are doing a randomized study, state how you will randomize, and at what level. Typical randomization techniques include: simple, block, stratified, and adaptive covariate randomization. If randomization is required for the study, the method should be specified here, not simply the source of random numbers.",
             "help": "We will use block randomization, where each participant will be randomly assigned to one of the four equally sized, predetermined blocks. The random number list used to create these four blocks will be created using the web applications available at http://random.org.",
             "type": "string",
             "format": "textarea"
