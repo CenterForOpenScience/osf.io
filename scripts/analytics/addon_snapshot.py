@@ -94,7 +94,7 @@ class AddonSnapshot(SnapshotAnalytics):
                     disconnected_count = addon.models['nodesettings'].objects.filter(external_account__isnull=True, is_deleted=False).count() if addon.models.get('nodesettings') else 0
                 else:
                     if addon.models.get('nodesettings'):
-                        for nsm in addon.models['nodesettings'].objects.filter(deleted=False):
+                        for nsm in addon.models['nodesettings'].objects.filter(deleted__isnull=True):
                             if nsm.configured and not nsm.complete:
                                 disconnected_count += 1
             total = connected_count + deleted_count + disconnected_count
