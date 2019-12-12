@@ -695,6 +695,136 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['status'], 'complete')
 
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    @mock.patch.object(IQBRIMSClient, 'folders')
+    @mock.patch.object(IQBRIMSClient, 'files')
+    def test_get_imagelist_storage(self, mock_files, mock_folders,
+                                   mock_get_management_node):
+        management_project = ProjectFactory()
+        management_project.add_addon('googledrive', auth=None)
+        gdsettings = management_project.get_addon('googledrive')
+        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.save()
+        mock_get_management_node.return_value = management_project
+        def mock_folders_effect(folder_id):
+            if folder_id == '1234567890':
+                return [{'id': 'folderid123', 'title': u'最終原稿・組図'}]
+            if folder_id == 'folderid123':
+                return [{'id': 'folderid456', 'title': u'スキャン画像'}]
+            assert False, folder_id
+
+        def mock_files_effect(folder_id):
+            if folder_id == 'folderid123':
+                return []
+            if folder_id == 'folderid456':
+                return [{'id': 'fileid456a', 'title': 'test.png'},
+                        {'id': 'fileid456b', 'title': 'files.txt'}]
+            assert False, folder_id
+
+        mock_folders.side_effect = mock_folders_effect
+        mock_files.side_effect = mock_files_effect
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.folder_path = 'testgdpath/iqb123/'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_get_storage',
+                                       folder='imagelist')
+        res = self.app.get(url, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'complete')
+
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    @mock.patch.object(IQBRIMSClient, 'folders')
+    @mock.patch.object(IQBRIMSClient, 'files')
+    def test_get_working_imagelist_storage_1(self, mock_files, mock_folders,
+                                             mock_get_management_node):
+        management_project = ProjectFactory()
+        management_project.add_addon('googledrive', auth=None)
+        gdsettings = management_project.get_addon('googledrive')
+        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.save()
+        mock_get_management_node.return_value = management_project
+        def mock_folders_effect(folder_id):
+            if folder_id == '1234567890':
+                return [{'id': 'folderid123', 'title': u'最終原稿・組図'}]
+            if folder_id == 'folderid123':
+                return []
+            assert False, folder_id
+
+        def mock_files_effect(folder_id):
+            if folder_id == 'folderid123':
+                return []
+            if folder_id == 'folderid456':
+                return [{'id': 'fileid456b', 'title': 'files.txt'}]
+            assert False, folder_id
+
+        mock_folders.side_effect = mock_folders_effect
+        mock_files.side_effect = mock_files_effect
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.folder_path = 'testgdpath/iqb123/'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_get_storage',
+                                       folder='imagelist')
+        res = self.app.get(url, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'processing')
+
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    @mock.patch.object(IQBRIMSClient, 'folders')
+    @mock.patch.object(IQBRIMSClient, 'files')
+    def test_get_working_imagelist_storage_2(self, mock_files, mock_folders,
+                                             mock_get_management_node):
+        management_project = ProjectFactory()
+        management_project.add_addon('googledrive', auth=None)
+        gdsettings = management_project.get_addon('googledrive')
+        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.save()
+        mock_get_management_node.return_value = management_project
+        def mock_folders_effect(folder_id):
+            if folder_id == '1234567890':
+                return [{'id': 'folderid123', 'title': u'最終原稿・組図'}]
+            if folder_id == 'folderid123':
+                return [{'id': 'folderid456', 'title': u'スキャン画像'}]
+            assert False, folder_id
+
+        def mock_files_effect(folder_id):
+            if folder_id == 'folderid123':
+                return []
+            if folder_id == 'folderid456':
+                return [{'id': 'fileid456a', 'title': 'test.png'}]
+            assert False, folder_id
+
+        mock_folders.side_effect = mock_folders_effect
+        mock_files.side_effect = mock_files_effect
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.folder_path = 'testgdpath/iqb123/'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_get_storage',
+                                       folder='imagelist')
+        res = self.app.get(url, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'processing')
+
     def test_unauthorized_reject_storage(self):
         node_settings = self.project.get_addon('iqbrims')
         node_settings.secret = 'secret123'

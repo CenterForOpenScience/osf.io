@@ -233,12 +233,17 @@ def iqbrims_get_storage(**kwargs):
     iqbrims = node.get_addon('iqbrims')
     folder = kwargs['folder']
     folder_name = None
+    sub_folder_name = None
     file_name = None
     validate = None
     if folder == 'index':
         folder_name = REVIEW_FOLDERS['raw']
         file_name = settings.INDEXSHEET_FILENAME
         validate = _iqbrims_filled_index
+    elif folder == 'imagelist':
+        folder_name = REVIEW_FOLDERS['paper']
+        sub_folder_name = settings.IMAGELIST_FOLDERNAME
+        file_name = settings.IMAGELIST_FILENAME
     else:
         folder_name = REVIEW_FOLDERS[folder]
     try:
@@ -249,6 +254,11 @@ def iqbrims_get_storage(**kwargs):
     folders = client.folders(folder_id=iqbrims.folder_id)
     folders = [f for f in folders if f['title'] == folder_name]
     assert len(folders) > 0
+    if sub_folder_name is not None:
+        folders = client.folders(folder_id=folders[0]['id'])
+        folders = [f for f in folders if f['title'] == sub_folder_name]
+        if len(folders) == 0:
+            return {'status': 'processing', 'comment': ''}
     logger.info(u'Checking Storage: {}, {}, {}'.format(folder, folder_name,
                                                        folders[0]['id']))
     files = client.files(folder_id=folders[0]['id'])
