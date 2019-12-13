@@ -2,24 +2,24 @@
 import httplib as http
 import logging
 
-from flask import request
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from dropbox.dropbox import DropboxTeam
 from dropbox.exceptions import DropboxException
-from dropbox import oauth
 
 from osf.models.node import Node
 from osf.models.files import File, Folder, BaseFileNode
+from osf.models.institution import Institution
+from osf.models.external import ExternalAccount
 from addons.base.models import (BaseNodeSettings, BaseStorageAddon)
 from addons.base import exceptions
 from addons.dropbox.models import Provider as DropboxProvider
 from addons.dropboxbusiness import settings, utils
 from addons.dropboxbusiness.apps import DropboxBusinessAddonAppConfig
 from website import settings as website_settings
+from framework.auth import Auth
 from framework.exceptions import HTTPError
-from admin.rdm_addons.utils import get_rdm_addon_option
 from admin.rdm.utils import get_institution_id
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,10 @@ class DropboxBusinessFile(DropboxBusinessFileNode, File):
     @property
     def _hashes(self):
         try:
-            return {'Dropbox Business content_hash': self._history[-1]['extra']['hashes']['dropboxbusiness']}
+            val = self._history[-1]['extra']['hashes']['dropboxbusiness']
+            return {'Dropbox content_hash': val,
+                    'Dropbox Business content_hash': val,
+                    'sha256': val}
         except (IndexError, KeyError):
             return None
 
@@ -46,27 +49,30 @@ class DropboxBusinessFileaccessProvider(DropboxProvider):
     name = 'Dropbox Business Team member file access'
     short_name = 'dropboxbusiness'
 
-    client_id = settings.DROPBOX_BUSINESS_FILE_KEY
-    client_secret = settings.DROPBOX_BUSINESS_FILE_SECRET
+    client_id = settings.DROPBOX_BUSINESS_FILEACCESS_KEY
+    client_secret = settings.DROPBOX_BUSINESS_FILEACCESS_SECRET
 
     # Override : See addons.dropbox.models.Provider
     def auth_callback(self, user):
-        # TODO: consider not using client library during auth flow
-        try:
-            access_token = self.oauth_flow.finish(request.values).access_token
-        except (oauth.NotApprovedException, oauth.BadStateException):
-            # 1) user cancelled and client library raised exc., or
-            # 2) the state was manipulated, possibly due to time.
-            # Either way, return and display info about how to properly connect.
-            return
-        except (oauth.ProviderException, oauth.CsrfException):
-            raise HTTPError(http.FORBIDDEN)
-        except oauth.BadRequestException:
-            raise HTTPError(http.BAD_REQUEST)
+        # NOTE: user must be RdmAddonOption
 
+        access_token = self.auth_callback_common()
+        if access_token is None:
+            return False
         self.client = DropboxTeam(access_token)
         info = self.client.team_get_info()
-        return self._set_external_account(
+
+        if user.external_accounts.filter(
+                provider=self.short_name,
+                provider_id=info.team_id).exists():
+            # use existing ExternalAccount and set
+            pass
+        elif user.external_accounts.count() > 0:
+            logger.info('Do not add multiple ExternalAccount for dropboxbusiness.')
+            raise HTTPError(http.BAD_REQUEST)
+        # else: create ExternalAccount and set
+
+        result = self._set_external_account(
             user,
             {
                 'key': access_token,
@@ -74,6 +80,12 @@ class DropboxBusinessFileaccessProvider(DropboxProvider):
                 'display_name': info.name
             }
         )
+        if result:
+            try:
+                utils.update_admin_dbmid(info.team_id)
+            except Exception:
+                pass
+        return result
 
 
 class DropboxBusinessManagementProvider(DropboxBusinessFileaccessProvider):
@@ -85,12 +97,42 @@ class DropboxBusinessManagementProvider(DropboxBusinessFileaccessProvider):
 
 
 class NodeSettings(BaseNodeSettings, BaseStorageAddon):
-    file_access_token = settings.DEBUG_FILE_ACCESS_TOKEN
-    management_access_token = settings.DEBUG_MANAGEMENT_ACCESS_TOKEN
-    admin_dbmid = settings.DEBUG_ADMIN_DBMID
-
+    fileaccess_account = models.ForeignKey(
+        ExternalAccount, null=True, blank=True,
+        related_name='dropboxbusiness_fileaccess_node_settings',
+        on_delete=models.CASCADE)
+    management_account = models.ForeignKey(
+        ExternalAccount, null=True, blank=True,
+        related_name='dropboxbusiness_management_node_settings',
+        on_delete=models.CASCADE)
+    _admin_dbmid = models.CharField(null=True, blank=True, max_length=255)
+    list_cursor = models.TextField(null=True, blank=True)
     team_folder_id = models.CharField(null=True, blank=True, max_length=255)
     group_id = models.CharField(null=True, blank=True, max_length=255)
+
+    @property
+    def fileaccess_token(self):
+        if settings.DEBUG_FILEACCESS_TOKEN:
+            return settings.DEBUG_FILEACCESS_TOKEN
+        if self.fileaccess_account:
+            return self.fileaccess_account.oauth_key
+        return None
+
+    @property
+    def management_token(self):
+        if settings.DEBUG_MANAGEMENT_TOKEN:
+            return settings.DEBUG_MANAGEMENT_TOKEN
+        if self.management_account:
+            return self.management_account.oauth_key
+        return None
+
+    @property
+    def admin_dbmid(self):
+        if settings.DEBUG_ADMIN_DBMID:
+            return settings.DEBUG_ADMIN_DBMID
+        if self._admin_dbmid:
+            return self._admin_dbmid
+        return None
 
     # Required (e.g. addons.base.apps.generic_root_folder)
     def fetch_folder_name(self):
@@ -102,14 +144,13 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         return '/ (Full Dropbox Business)'
 
     def team_folder_name(self):
-        return u'{} ({})'.format(self.owner.title, self.owner._id)
+        return u'{}{} ({})'.format(settings.TEAM_FOLDER_NAME_PREFIX,
+                                   self.owner.title, self.owner._id)
 
     def group_name(self):
-        return u'grdm-project-{}'.format(self.owner._id)
+        return u'{}{}'.format(settings.GROUP_NAME_PREFIX, self.owner._id)
 
     def sync_members(self):
-        """best effort sync_members
-        """
         members = [
             utils.eppn_to_email(c.eppn)
             for c in self.owner.contributors.all()
@@ -118,7 +159,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
 
         try:
             utils.sync_members(
-                self.management_access_token,
+                self.management_token,
                 self.group_id,
                 members
             )
@@ -126,11 +167,8 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
             logger.exception('Unexpected error')
 
     def rename_team_folder(self):
-        """best effort rename team folder
-        """
-
         try:
-            fclient = DropboxTeam(self.file_access_token)
+            fclient = DropboxTeam(self.fileaccess_token)
             fclient.team_team_folder_rename(
                 self.team_folder_id,
                 self.team_folder_name()
@@ -138,14 +176,13 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         except DropboxException:
             logger.exception('Unexpected error')
 
-    def create_team_folder(self, grdm_member_email_list):
-        """best effort create_team_folder
-        """
-
+    def create_team_folder(self, grdm_member_email_list, save=False):
+        if not self.has_auth:
+            return
         try:
             team_folder_id, group_id = utils.create_team_folder(
-                self.file_access_token,
-                self.management_access_token,
+                self.fileaccess_token,
+                self.management_token,
                 self.admin_dbmid,
                 self.team_folder_name(),
                 self.group_name(),
@@ -157,22 +194,18 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
 
         self.team_folder_id = team_folder_id
         self.group_id = group_id
-        self.save()
+        if save:
+            self.save()
 
-    def on_add(self):
-        if not self.has_auth:  # no access tokens -> disabled
-            return
-        if self.complete:
-            return
-
-        # On post_save of Node, self.owner.contributors is empty.
-        self.create_team_folder([utils.eppn_to_email(self.owner.creator.eppn)])
+    # Not override
+    # def on_add(self):
+    #     pass
 
     # Required
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.file_access_token}
+        return {'token': self.fileaccess_token}
 
     # Required
     def serialize_waterbutler_settings(self):
@@ -218,25 +251,51 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
 
     @property
     def has_auth(self):
-        return self.file_access_token and self.management_access_token and \
+        return self.fileaccess_token and self.management_token and \
             self.admin_dbmid
 
+    def set_two_auth(self, f_account, m_account, save=False):
+        self.fileaccess_account = f_account
+        self.management_account = m_account
+        if save:
+            self.save()
 
-def is_enabled(node, addon_name):
+    def set_admin_dbmid(self, admin_dbmid, save=False):
+        self._admin_dbmid = admin_dbmid
+        if save:
+            self.save()
+
+
+# mount dropboxbusiness automatically
+def init_addon(node, addon_name):
+    if node.creator.eppn is None:
+        # logger.info(u'{} has no ePPN.'.format(node.creator.username))
+        return  # disabled
     institution_id = get_institution_id(node.creator)
     if institution_id is None:
-        return False
-    rdm_addon_option = get_rdm_addon_option(institution_id, addon_name,
-                                            create=False)
-    if rdm_addon_option:
-        # TODO check two external accounts
-        return True
-    return False
+        # logger.info(u'{} has no institution.'.format(node.creator.username))
+        return  # disabled
+    fm = utils.get_two_external_accounts(institution_id)
+    if fm is None:
+        institution = Institution.objects.get(id=institution_id)
+        logger.info(u'Institution({}) has no valid access tokens.'.format(institution.name))
+        return  # disabled
 
+    ### ----- enabled -----
+    f_account, m_account = fm
 
-def init_addon(node, addon_name):
-    if is_enabled(node, addon_name):
-        node.add_addon(addon_name, auth=None, log=True)
+    # checking the validity of Dropbox API here
+    team_info = utils.TeamInfo(f_account, m_account)
+
+    addon = node.add_addon(addon_name, auth=Auth(node.creator), log=True)
+    addon.set_two_auth(f_account, m_account)
+    addon.set_admin_dbmid(team_info.admin_dbmid)
+
+    #TODO create a group for admins and set the group to the team folder
+
+    # On post_save of Node, self.owner.contributors is empty.
+    addon.create_team_folder([utils.eppn_to_email(node.creator.eppn)],
+                             save=True)
 
 
 @receiver(post_save, sender=Node)
