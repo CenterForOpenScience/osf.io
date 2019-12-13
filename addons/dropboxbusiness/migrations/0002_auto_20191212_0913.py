@@ -9,7 +9,6 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0175_auto_20191128_0921'),
         ('addons_dropboxbusiness', '0001_initial'),
     ]
 
