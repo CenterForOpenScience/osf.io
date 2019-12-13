@@ -201,8 +201,20 @@ def create_schema_block(state, schema_id, block_type, display_text='', required=
         schema_id=schema_id,
         block_type=block_type,
         required=required,
-        display_text=unescape_entities(display_text),
-        help_text=unescape_entities(help_text),
+        display_text=unescape_entities(
+            display_text,
+            safe={
+                '&lt;': '<',
+                '&gt;': '>'
+            }
+        ),
+        help_text=unescape_entities(
+            help_text,
+            safe={
+                '&lt;': '<',
+                '&gt;': '>'
+            }
+        ),
         registration_response_key=registration_response_key,
         schema_block_group_key=schema_block_group_key,
         example_text=unescape_entities(
