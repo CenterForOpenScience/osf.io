@@ -1,6 +1,6 @@
 {
     "name": "Registered Report Protocol Preregistration",
-    "version": 2,
+    "version": 3,
     "config": {
       "hasFiles": true
     },
@@ -30,12 +30,13 @@
         "title": "Publication Information",
         "questions": [{
             "qid": "q3",
-            "title": "In order to complete this registration your study must be granted an \"in-principle acceptance\" from a journal that offers Registered Reports.",
+            "title": "In-principle acceptance",
             "format": "singleselect",
             "type": "choose",
             "options": ["I confirm this study has been granted in-principle acceptance."],
             "nav": "In-principle acceptance?",
-            "required": true
+            "required": true,
+            "description": "In order to complete this registration your study must be granted an \"in-principle acceptance\" from a journal that offers Registered Reports. Completed papers with results may not use this form."
         }, {
             "qid": "q4",
             "title": "Journal title",
@@ -61,7 +62,7 @@
             "nav": "Manuscript",
             "type": "osf-upload",
             "format": "osf-upload-open",
-            "description":"Please attach the manuscript that has been accepted for publication as a Registered Report.",
+            "description":"Please attach the protocol that has been accepted for publication as a Registered Report. Completed studies with final results may not use this form.",
             "required":true
         }]
     }, {
@@ -77,7 +78,7 @@
         }, {
             "qid": "q8",
             "title": "Other information",
-            "description":"Please include any other relevant information. This may include the date of acceptance, the anticipated date of study completion, or other important information not covered in the manuscript.",
+            "description":"Please include any other relevant information such as the anticipated date of study completion or any notable changes if this is a revision of a study that was already granted in-principle acceptance.",
             "type": "string",
             "format": "textarea",
             "nav": "Other information"
