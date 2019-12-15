@@ -27,7 +27,8 @@
         "dropboxbusiness"
     ],
     "addons_default": [
-        "osfstorage"
+        "osfstorage",
+        "dropboxbusiness"
     ],
     "addons_archivable": {
         "osfstorage": "full",
