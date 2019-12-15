@@ -11,7 +11,7 @@ from dropbox.exceptions import DropboxException
 from osf.models.node import Node
 from osf.models.files import File, Folder, BaseFileNode
 from osf.models.institution import Institution
-from osf.models.external import ExternalAccount
+from osf.models.rdm_addons import RdmAddonOption
 from addons.base.models import (BaseNodeSettings, BaseStorageAddon)
 from addons.base import exceptions
 from addons.dropbox.models import Provider as DropboxProvider
@@ -54,7 +54,7 @@ class DropboxBusinessFileaccessProvider(DropboxProvider):
 
     # Override : See addons.dropbox.models.Provider
     def auth_callback(self, user):
-        # NOTE: user must be RdmAddonOption
+        # NOTE: "user" must be RdmAddonOption
 
         access_token = self.auth_callback_common()
         if access_token is None:
@@ -65,15 +65,15 @@ class DropboxBusinessFileaccessProvider(DropboxProvider):
         if user.external_accounts.filter(
                 provider=self.short_name,
                 provider_id=info.team_id).exists():
-            # use existing ExternalAccount and set
+            # use existing ExternalAccount and set it to the RdmAddonOption
             pass
         elif user.external_accounts.count() > 0:
             logger.info('Do not add multiple ExternalAccount for dropboxbusiness.')
             raise HTTPError(http.BAD_REQUEST)
-        # else: create ExternalAccount and set
+        # else: create ExternalAccount and set it to the RdmAddonOption
 
         result = self._set_external_account(
-            user,
+            user,  # RdmAddonOption
             {
                 'key': access_token,
                 'provider_id': info.team_id,
@@ -97,34 +97,38 @@ class DropboxBusinessManagementProvider(DropboxBusinessFileaccessProvider):
 
 
 class NodeSettings(BaseNodeSettings, BaseStorageAddon):
-    fileaccess_account = models.ForeignKey(
-        ExternalAccount, null=True, blank=True,
-        related_name='dropboxbusiness_fileaccess_node_settings',
+    fileaccess_option = models.ForeignKey(
+        RdmAddonOption, null=True, blank=True,
+        related_name='dropboxbusiness_fileaccess_option',
         on_delete=models.CASCADE)
-    management_account = models.ForeignKey(
-        ExternalAccount, null=True, blank=True,
-        related_name='dropboxbusiness_management_node_settings',
+    management_option = models.ForeignKey(
+        RdmAddonOption, null=True, blank=True,
+        related_name='dropboxbusiness_management_option',
         on_delete=models.CASCADE)
     _admin_dbmid = models.CharField(null=True, blank=True, max_length=255)
     list_cursor = models.TextField(null=True, blank=True)
     team_folder_id = models.CharField(null=True, blank=True, max_length=255)
     group_id = models.CharField(null=True, blank=True, max_length=255)
 
+    def _get_token(self, name):
+        # DEBUG_FILEACCESS_TOKEN, DEBUG_MANAGEMENT_TOKEN
+        debug = getattr(settings, 'DEBUG_{}_TOKEN'.format(name.upper()), None)
+        if debug:
+            return debug
+
+        # fileacces_option, management_option
+        option = getattr(self, '{}_option'.format(name.lower()), None)
+        if not option:
+            return None
+        return utils.addon_option_to_token(option)
+
     @property
     def fileaccess_token(self):
-        if settings.DEBUG_FILEACCESS_TOKEN:
-            return settings.DEBUG_FILEACCESS_TOKEN
-        if self.fileaccess_account:
-            return self.fileaccess_account.oauth_key
-        return None
+        return self._get_token('fileaccess')
 
     @property
     def management_token(self):
-        if settings.DEBUG_MANAGEMENT_TOKEN:
-            return settings.DEBUG_MANAGEMENT_TOKEN
-        if self.management_account:
-            return self.management_account.oauth_key
-        return None
+        return self._get_token('management')
 
     @property
     def admin_dbmid(self):
@@ -254,9 +258,9 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         return self.fileaccess_token and self.management_token and \
             self.admin_dbmid
 
-    def set_two_auth(self, f_account, m_account, save=False):
-        self.fileaccess_account = f_account
-        self.management_account = m_account
+    def set_two_options(self, f_option, m_option, save=False):
+        self.fileaccess_option = f_option
+        self.management_option = m_option
         if save:
             self.save()
 
@@ -275,20 +279,24 @@ def init_addon(node, addon_name):
     if institution_id is None:
         # logger.info(u'{} has no institution.'.format(node.creator.username))
         return  # disabled
-    fm = utils.get_two_external_accounts(institution_id)
+    fm = utils.get_two_addon_options(institution_id)
     if fm is None:
         institution = Institution.objects.get(id=institution_id)
-        logger.info(u'Institution({}) has no valid access tokens.'.format(institution.name))
+        logger.info(u'Institution({}) has no valid oauth keys.'.format(institution.name))
+        return  # disabled
+
+    f_option, m_option = fm
+    f_account = utils.addon_option_to_token(f_option)
+    m_account = utils.addon_option_to_token(m_option)
+    if f_account is None or m_account is None:
         return  # disabled
 
     ### ----- enabled -----
-    f_account, m_account = fm
-
     # checking the validity of Dropbox API here
     team_info = utils.TeamInfo(f_account, m_account)
 
     addon = node.add_addon(addon_name, auth=Auth(node.creator), log=True)
-    addon.set_two_auth(f_account, m_account)
+    addon.set_two_options(f_option, m_option)
     addon.set_admin_dbmid(team_info.admin_dbmid)
 
     #TODO create a group for admins and set the group to the team folder

@@ -159,7 +159,7 @@ def create_team_folder(
     return (team_folder.team_folder_id, group.get_group_id())
 
 
-def get_two_external_accounts(institution_id):
+def get_two_addon_options(institution_id):
     # avoid "ImportError: cannot import name"
     from addons.dropboxbusiness.models import \
         (DropboxBusinessFileaccessProvider,
@@ -176,14 +176,15 @@ def get_two_external_accounts(institution_id):
     if not fileaccess_addon_option.is_allowed:
         return None
     # NOTE: management_addon_option.is_allowed is not used.
-    try:
-        f_account = fileaccess_addon_option.external_accounts.first()
-        m_account = management_addon_option.external_accounts.first()
-    except Exception:
+    return (fileaccess_addon_option, management_addon_option)
+
+
+def addon_option_to_token(addon_option):
+    if not addon_option:
         return None
-    if f_account.provider_id == m_account.provider_id:  # same team_id
-        return (f_account, m_account)
-    return None
+    if not addon_option.external_accounts.exists():
+        return None
+    return addon_option.external_accounts.first().oauth_key
 
 
 def update_admin_dbmid(team_id):
@@ -237,9 +238,9 @@ class TeamInfo(object):
     team_folder_names = {}  # team_folder name -> TeamFolder
     cursor = None
 
-    def __init__(self, fileaccess_account, management_account):
-        self.fileaccess_token = fileaccess_account.oauth_key
-        self.management_token = management_account.oauth_key
+    def __init__(self, fileaccess_token, management_token):
+        self.fileaccess_token = fileaccess_token
+        self.management_token = management_token
         #self._setup_team_info()  #TODO necessary?
         self._setup_members()
         self._setup_admin()
@@ -314,11 +315,11 @@ class TeamInfo(object):
         DEBUG('email_to_dbmid: ' + pf(self.email_to_dbmid))
 
     def _setup_admin(self):
-        self.admin_list = []
+        self.admin_dbmid_all = []
         for k, role in self.dbmid_to_role.items():
             if role.is_team_admin():
-                self.admin_list.append(k)
-        DEBUG('admin_list: ' + pf(self.admin_list))
+                self.admin_dbmid_all.append(k)
+        DEBUG('admin_dbmid_all: ' + pf(self.admin_dbmid_all))
 
     def _update_team_folders(self):
         cursor = None
