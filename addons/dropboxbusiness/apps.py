@@ -1,7 +1,14 @@
+import os
+
 from addons.base.apps import BaseAddonAppConfig
 from addons.dropboxbusiness.settings import MAX_UPLOAD_SIZE
 from website.util import rubeus
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+TEMPLATE_PATH = os.path.join(
+    HERE,
+    'templates'
+)
 
 def dropboxbusiness_root(addon_config, node_settings, auth, **kwargs):
     node = node_settings.owner
@@ -27,6 +34,9 @@ class DropboxBusinessAddonAppConfig(BaseAddonAppConfig):
     max_file_size = MAX_UPLOAD_SIZE
     owners = ['user', 'node']
     categories = ['storage']
+
+    user_settings_template = os.path.join(TEMPLATE_PATH, 'dropboxbusiness_user_settings.mako')
+    # node_settings_template is not used.
 
     get_hgrid_data = dropboxbusiness_root
 
