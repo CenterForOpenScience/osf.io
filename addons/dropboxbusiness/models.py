@@ -52,6 +52,8 @@ class DropboxBusinessFileaccessProvider(DropboxProvider):
     client_id = settings.DROPBOX_BUSINESS_FILEACCESS_KEY
     client_secret = settings.DROPBOX_BUSINESS_FILEACCESS_SECRET
 
+    is_allowed_default = False
+
     # Override : See addons.dropbox.models.Provider
     def auth_callback(self, user):
         # NOTE: "user" must be RdmAddonOption

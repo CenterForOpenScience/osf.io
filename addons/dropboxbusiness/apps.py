@@ -40,6 +40,9 @@ class DropboxBusinessAddonAppConfig(BaseAddonAppConfig):
 
     get_hgrid_data = dropboxbusiness_root
 
+    # default value for RdmAddonOption.is_allowed for GRDM Admin
+    is_allowed_default = False
+
     @property
     def node_settings(self):
         return self.get_model('NodeSettings')

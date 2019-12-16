@@ -77,10 +77,19 @@ def get_rdm_addon_option(institution_id, addon_name, create=True):
     if not create:
         return _get_rdm_addon_option_get_only(institution_id, addon_name)
     if institution_id:
-        rdm_addon_option, _ = RdmAddonOption.objects.get_or_create(institution_id=institution_id,
-            provider=addon_name)
+        rdm_addon_option, created = RdmAddonOption.objects.get_or_create(
+            institution_id=institution_id, provider=addon_name)
     else:
-        rdm_addon_option, _ = RdmAddonNoInstitutionOption.objects.get_or_create(provider=addon_name)
+        rdm_addon_option, created = RdmAddonNoInstitutionOption.objects.get_or_create(provider=addon_name)
+    if not created:
+        return rdm_addon_option
+
+    app = settings.ADDONS_AVAILABLE_DICT.get(addon_name)
+    if app:
+        is_allowed_default = getattr(app, 'is_allowed_default', True)
+        if is_allowed_default is False:
+            rdm_addon_option.is_allowed = False
+            rdm_addon_option.save()
     return rdm_addon_option
 
 def update_with_rdm_addon_settings(addon_setting, user):
