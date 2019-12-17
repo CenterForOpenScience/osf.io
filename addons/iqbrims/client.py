@@ -744,6 +744,8 @@ class IQBRIMSFlowableClient(BaseClient):
         has_paper = status['has_paper'] if 'has_paper' in status else True
         has_raw = status['has_raw'] if 'has_raw' in status else True
         has_checklist = status['has_checklist'] if 'has_checklist' in status else True
+        input_overview = status['input_overview'] if 'input_overview' in status else ''
+
         payload = {'processDefinitionId': self.app_id,
                    'variables': [{'name': 'projectId',
                                   'type': 'string',
@@ -777,6 +779,9 @@ class IQBRIMSFlowableClient(BaseClient):
                                  {'name': 'hasChecklist',
                                   'type': 'boolean',
                                   'value': has_checklist},
+                                 {'name': 'inputOverview',
+                                  'type': 'string',
+                                  'value': input_overview},
                                  {'name': 'flowableWorkflowUrl',
                                   'type': 'string',
                                   'value': self.user_settings.FLOWABLE_TASK_URL},
