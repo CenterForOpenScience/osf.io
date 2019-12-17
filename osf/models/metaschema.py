@@ -141,8 +141,12 @@ class RegistrationSchema(AbstractSchema):
                                     question['title'],
                                 ),
                             )
+                        if 'title' in question:
+                            raise ValidationError(
+                                'For your registration your response to the \'{}\' field is invalid.'.format(question['title']),
+                            )
                         raise ValidationError(
-                            'For your registration your response to the \'{}\' field is invalid.'.format(question['title']),
+                            'For your registration your response to the field with qid: \'{}\' is invalid.'.format(question['qid']),
                         )
             raise ValidationError(e)
         except jsonschema.SchemaError as e:
