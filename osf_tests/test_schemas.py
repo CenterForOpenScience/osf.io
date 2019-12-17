@@ -119,7 +119,7 @@ class TestRegistrationSchemaValidation:
             osf_standard_schema.validate_registration_responses(bad_multiple_choice)
 
         assert excinfo.value.message == 'For your registration, your response to ' + \
-            "the 'Has data collection begun for this project?' field is invalid, your response must be one of the provided options."
+            "the 'Data collection status' field is invalid, your response must be one of the provided options."
 
     def test_uploader_validation(self, prereg_schema, prereg_test_data):
         """

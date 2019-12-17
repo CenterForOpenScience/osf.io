@@ -339,7 +339,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\'' \
+        assert errors['detail'] == 'For your registration your response to the \'Data collection status\'' \
                                    ' field is invalid, your response must be one of the provided options.'
 
     def test_registration_metadata_question_keys_must_be_value(
@@ -353,7 +353,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\'' \
+        assert errors['detail'] == 'For your registration your response to the \'Data collection status\'' \
                                    ' field is invalid, your response must be one of the provided options.'
 
     def test_question_in_registration_metadata_must_be_in_schema(
@@ -382,7 +382,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\' field' \
+        assert errors['detail'] == 'For your registration your response to the \'Data collection status\' field' \
                                    ' is invalid, your response must be one of the provided options.'
 
     def test_cannot_update_registration_schema(
@@ -490,7 +490,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'For your registration, your response to the \'Has data collection begun for this project?\'' \
+        assert errors['detail'] == 'For your registration, your response to the \'Data collection status\'' \
                                    ' field is invalid, your response must be one of the provided options.'
 
     def test_question_in_registration_responses_must_be_in_schema(
@@ -517,7 +517,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'For your registration, your response to the \'Has data collection begun for this project?\' field' \
+        assert errors['detail'] == 'For your registration, your response to the \'Data collection status\' field' \
                                    ' is invalid, your response must be one of the provided options.'
 
     def test_reviewer_can_update_draft_registration(
