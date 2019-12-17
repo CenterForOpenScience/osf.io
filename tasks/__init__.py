@@ -22,7 +22,6 @@ logging.getLogger('invoke').setLevel(logging.CRITICAL)
 HERE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
 CONSTRAINTS_PATH = os.path.join(HERE, 'requirements', 'constraints.txt')
-RECURSION_LIMIT = 2000  # [GRDM-9050]
 
 ns = Collection()
 
@@ -53,7 +52,7 @@ def task(*args, **kwargs):
 def server(ctx, host=None, port=5000, debug=True, gitlogs=False):
     """Run the app server."""
 
-    sys.setrecursionlimit(RECURSION_LIMIT)  # [GRDM-9050]
+    sys.setrecursionlimit(settings.RECURSION_LIMIT)  # [GRDM-9050, GRDM-16889]
 
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not debug:
         if os.environ.get('WEB_REMOTE_DEBUG', None):
