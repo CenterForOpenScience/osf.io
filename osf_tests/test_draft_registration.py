@@ -5,10 +5,9 @@ import datetime
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from osf.exceptions import UserNotAffiliatedError, DraftRegistrationStateError
-from osf.models import RegistrationSchema, DraftRegistration, DraftRegistrationContributor, NodeLicense, Node
+from osf.models import RegistrationSchema, DraftRegistration, DraftRegistrationContributor, NodeLicense, Node, NodeLog
 from osf.utils.permissions import ADMIN, READ, WRITE
 from osf_tests.test_node import TestNodeEditableFieldsMixin, TestTagging, TestNodeLicenses, TestNodeSubjects
-from tests.test_preprints import TestContributorMethods
 
 from website import settings
 
@@ -375,9 +374,9 @@ class TestSetDraftRegistrationEditableFields(TestNodeEditableFieldsMixin):
         return DraftRegistration
 
 
-class TestDraftRegistrationContributorMethods(TestContributorMethods):
+class TestDraftRegistrationContributorMethods:
     @pytest.fixture()
-    def resource(self, project):
+    def draft_registration(self, project):
         return factories.DraftRegistrationFactory(branched_from=project, title='That Was Then', description='A description')
 
     @pytest.fixture()
@@ -401,6 +400,255 @@ class TestDraftRegistrationContributorMethods(TestContributorMethods):
             contrib_exists = DraftRegistrationContributor.objects.filter(user=user, draft_registration=resource, visible=visible).exists()
             return contrib_exists
         return query_contributor
+
+    def test_add_contributor(self, draft_registration, user, auth):
+        # A user is added as a contributor
+        user = factories.UserFactory()
+        draft_registration.add_contributor(contributor=user, auth=auth)
+        draft_registration.save()
+        assert draft_registration.is_contributor(user) is True
+        assert draft_registration.has_permission(user, ADMIN) is False
+        assert draft_registration.has_permission(user, WRITE) is True
+        assert draft_registration.has_permission(user, READ) is True
+
+        last_log = draft_registration.logs.all().order_by('-created')[0]
+        assert last_log.action == 'contributor_added'
+        assert last_log.params['contributors'] == [user._id]
+
+    def test_add_contributors(self, draft_registration, auth):
+        user1 = factories.UserFactory()
+        user2 = factories.UserFactory()
+        draft_registration.add_contributors(
+            [
+                {'user': user1, 'permissions': ADMIN, 'visible': True},
+                {'user': user2, 'permissions': WRITE, 'visible': False}
+            ],
+            auth=auth
+        )
+        last_log = draft_registration.logs.all().order_by('-created')[0]
+        assert (
+            last_log.params['contributors'] ==
+            [user1._id, user2._id]
+        )
+        assert draft_registration.is_contributor(user1)
+        assert draft_registration.is_contributor(user2)
+        assert user1._id in draft_registration.visible_contributor_ids
+        assert user2._id not in draft_registration.visible_contributor_ids
+        assert draft_registration.get_permissions(user1) == [READ, WRITE, ADMIN]
+        assert draft_registration.get_permissions(user2) == [READ, WRITE]
+        last_log = draft_registration.logs.all().order_by('-created')[0]
+        assert (
+            last_log.params['contributors'] ==
+            [user1._id, user2._id]
+        )
+
+    def test_cant_add_creator_as_contributor_twice(self, draft_registration, user):
+        draft_registration.add_contributor(contributor=user)
+        draft_registration.save()
+        assert len(draft_registration.contributors) == 1
+
+    def test_cant_add_same_contributor_twice(self, draft_registration):
+        contrib = factories.UserFactory()
+        draft_registration.add_contributor(contributor=contrib)
+        draft_registration.save()
+        draft_registration.add_contributor(contributor=contrib)
+        draft_registration.save()
+        assert len(draft_registration.contributors) == 2
+
+    def test_remove_unregistered_conributor_removes_unclaimed_record(self, draft_registration, auth):
+        new_user = draft_registration.add_unregistered_contributor(fullname='David Davidson',
+            email='david@davidson.com', auth=auth)
+        draft_registration.save()
+        assert draft_registration.is_contributor(new_user)  # sanity check
+        assert draft_registration._primary_key in new_user.unclaimed_records
+        draft_registration.remove_contributor(
+            auth=auth,
+            contributor=new_user
+        )
+        draft_registration.save()
+        new_user.refresh_from_db()
+        assert draft_registration.is_contributor(new_user) is False
+        assert draft_registration._primary_key not in new_user.unclaimed_records
+
+    def test_is_contributor(self, draft_registration):
+        contrib, noncontrib = factories.UserFactory(), factories.UserFactory()
+        DraftRegistrationContributor.objects.create(user=contrib, draft_registration=draft_registration)
+
+        assert draft_registration.is_contributor(contrib) is True
+        assert draft_registration.is_contributor(noncontrib) is False
+        assert draft_registration.is_contributor(None) is False
+
+    def test_visible_contributor_ids(self, draft_registration, user):
+        visible_contrib = factories.UserFactory()
+        invisible_contrib = factories.UserFactory()
+        DraftRegistrationContributor.objects.create(user=visible_contrib, draft_registration=draft_registration, visible=True)
+        DraftRegistrationContributor.objects.create(user=invisible_contrib, draft_registration=draft_registration, visible=False)
+        assert visible_contrib._id in draft_registration.visible_contributor_ids
+        assert invisible_contrib._id not in draft_registration.visible_contributor_ids
+
+    def test_visible_contributors(self, draft_registration, user):
+        visible_contrib = factories.UserFactory()
+        invisible_contrib = factories.UserFactory()
+        DraftRegistrationContributor.objects.create(user=visible_contrib, draft_registration=draft_registration, visible=True)
+        DraftRegistrationContributor.objects.create(user=invisible_contrib, draft_registration=draft_registration, visible=False)
+        assert visible_contrib in draft_registration.visible_contributors
+        assert invisible_contrib not in draft_registration.visible_contributors
+
+    def test_set_visible_false(self, draft_registration, auth):
+        contrib = factories.UserFactory()
+        DraftRegistrationContributor.objects.create(user=contrib, draft_registration=draft_registration, visible=True)
+        draft_registration.set_visible(contrib, visible=False, auth=auth)
+        draft_registration.save()
+        assert DraftRegistrationContributor.objects.filter(user=contrib, draft_registration=draft_registration, visible=False).exists() is True
+
+        last_log = draft_registration.logs.all().order_by('-created')[0]
+        assert last_log.user == auth.user
+        assert last_log.action == NodeLog.MADE_CONTRIBUTOR_INVISIBLE
+
+    def test_set_visible_true(self, draft_registration, auth):
+        contrib = factories.UserFactory()
+        DraftRegistrationContributor.objects.create(user=contrib, draft_registration=draft_registration, visible=False)
+        draft_registration.set_visible(contrib, visible=True, auth=auth)
+        draft_registration.save()
+        assert DraftRegistrationContributor.objects.filter(user=contrib, draft_registration=draft_registration, visible=True).exists() is True
+
+        last_log = draft_registration.logs.all().order_by('-created')[0]
+        assert last_log.user == auth.user
+        assert last_log.action == NodeLog.MADE_CONTRIBUTOR_VISIBLE
+
+    def test_set_visible_is_noop_if_visibility_is_unchanged(self, draft_registration, auth):
+        visible, invisible = factories.UserFactory(), factories.UserFactory()
+        DraftRegistrationContributor.objects.create(user=visible, draft_registration=draft_registration, visible=True)
+        DraftRegistrationContributor.objects.create(user=invisible, draft_registration=draft_registration, visible=False)
+        original_log_count = draft_registration.logs.count()
+        draft_registration.set_visible(invisible, visible=False, auth=auth)
+        draft_registration.set_visible(visible, visible=True, auth=auth)
+        draft_registration.save()
+        assert draft_registration.logs.count() == original_log_count
+
+    def test_set_visible_contributor_with_only_one_contributor(self, draft_registration, user):
+        with pytest.raises(ValueError) as excinfo:
+            draft_registration.set_visible(user=user, visible=False, auth=None)
+        assert str(excinfo.value) == 'Must have at least one visible contributor'
+
+    def test_set_visible_missing(self, draft_registration):
+        with pytest.raises(ValueError):
+            draft_registration.set_visible(factories.UserFactory(), True)
+
+    def test_remove_contributor(self, draft_registration, auth):
+        # A user is added as a contributor
+        user2 = factories.UserFactory()
+        draft_registration.add_contributor(contributor=user2, auth=auth, save=True)
+        assert user2 in draft_registration.contributors
+        assert draft_registration.has_permission(user2, WRITE)
+        # The user is removed
+        draft_registration.remove_contributor(auth=auth, contributor=user2)
+        draft_registration.reload()
+
+        assert user2 not in draft_registration.contributors
+        assert draft_registration.get_permissions(user2) == []
+        assert draft_registration.logs.latest().action == 'contributor_removed'
+        assert draft_registration.logs.latest().params['contributors'] == [user2._id]
+
+    def test_remove_contributors(self, draft_registration, auth):
+        user1 = factories.UserFactory()
+        user2 = factories.UserFactory()
+        draft_registration.add_contributors(
+            [
+                {'user': user1, 'permissions': WRITE, 'visible': True},
+                {'user': user2, 'permissions': WRITE, 'visible': True}
+            ],
+            auth=auth
+        )
+        assert user1 in draft_registration.contributors
+        assert user2 in draft_registration.contributors
+        assert draft_registration.has_permission(user1, WRITE)
+        assert draft_registration.has_permission(user2, WRITE)
+
+        draft_registration.remove_contributors(auth=auth, contributors=[user1, user2], save=True)
+        draft_registration.reload()
+
+        assert user1 not in draft_registration.contributors
+        assert user2 not in draft_registration.contributors
+        assert draft_registration.get_permissions(user1) == []
+        assert draft_registration.get_permissions(user2) == []
+        assert draft_registration.logs.latest().action == 'contributor_removed'
+
+    def test_replace_contributor(self, draft_registration):
+        contrib = factories.UserFactory()
+        draft_registration.add_contributor(contrib, auth=Auth(draft_registration.creator))
+        draft_registration.save()
+        assert contrib in draft_registration.contributors.all()  # sanity check
+        replacer = factories.UserFactory()
+        old_length = draft_registration.contributors.count()
+        draft_registration.replace_contributor(contrib, replacer)
+        draft_registration.save()
+        new_length = draft_registration.contributors.count()
+        assert contrib not in draft_registration.contributors.all()
+        assert replacer in draft_registration.contributors.all()
+        assert old_length == new_length
+
+        # test unclaimed_records is removed
+        assert (
+            draft_registration._id not in
+            contrib.unclaimed_records.keys()
+        )
+
+    def test_permission_override_fails_if_no_admins(self, draft_registration, user):
+        # User has admin permissions because they are the creator
+        # Cannot lower permissions
+        with pytest.raises(DraftRegistrationStateError):
+            draft_registration.add_contributor(user, permissions=WRITE)
+
+    def test_update_contributor(self, draft_registration, auth):
+        new_contrib = factories.AuthUserFactory()
+        draft_registration.add_contributor(new_contrib, permissions=WRITE, auth=auth)
+
+        assert draft_registration.get_permissions(new_contrib) == [READ, WRITE]
+        assert draft_registration.get_visible(new_contrib) is True
+
+        draft_registration.update_contributor(
+            new_contrib,
+            READ,
+            False,
+            auth=auth
+        )
+        assert draft_registration.get_permissions(new_contrib) == [READ]
+        assert draft_registration.get_visible(new_contrib) is False
+
+    def test_update_contributor_non_admin_raises_error(self, draft_registration, auth):
+        non_admin = factories.AuthUserFactory()
+        draft_registration.add_contributor(
+            non_admin,
+            permissions=WRITE,
+            auth=auth
+        )
+        with pytest.raises(PermissionsError):
+            draft_registration.update_contributor(
+                non_admin,
+                None,
+                False,
+                auth=Auth(non_admin)
+            )
+
+    def test_update_contributor_only_admin_raises_error(self, draft_registration, auth):
+        with pytest.raises(DraftRegistrationStateError):
+            draft_registration.update_contributor(
+                auth.user,
+                WRITE,
+                True,
+                auth=auth
+            )
+
+    def test_update_contributor_non_contrib_raises_error(self, draft_registration, auth):
+        non_contrib = factories.AuthUserFactory()
+        with pytest.raises(ValueError):
+            draft_registration.update_contributor(
+                non_contrib,
+                ADMIN,
+                True,
+                auth=auth
+            )
 
 
 class TestDraftRegistrationAffiliatedInstitutions:
