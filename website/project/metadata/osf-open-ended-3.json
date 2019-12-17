@@ -1,0 +1,25 @@
+{
+    "name": "Open-Ended Registration",
+    "version": 3,
+    "description": "You will be asked to provide a narrative summary of what is contained in your project. There is no minimum character length.",
+    "pages": [{
+        "id": "page1",
+        "title": "Summary",
+        "questions": [
+            {
+                "qid": "summary",
+                "type": "string",
+                "format": "textarea",
+                "nav": "Summary",
+                "description": "Provide a narrative summary of what is contained in this registration or how it differs from prior registrations. If this project contains documents for a preregistration, please note that here.",
+                "required": true
+            },
+            {
+                "qid": "uploader",
+                "type": "osf-upload",
+                "format": "osf-upload-toggle",
+                "description": "Add supplemental files or additional information"
+            }
+        ]
+    }]
+}

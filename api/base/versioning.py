@@ -14,6 +14,8 @@ from api.base.settings import LATEST_VERSIONS
 # Note that this version will not deprecate snake_case yet.
 KEBAB_CASE_VERSION = '2.18'
 
+CREATE_REGISTRATION_FIELD_CHANGE_VERSION = '2.19'
+
 def get_major_version(version):
     return int(version.split('.')[0])
 

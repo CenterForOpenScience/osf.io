@@ -7,6 +7,7 @@ from tests.base import get_default_metaschema
 
 from framework.auth import Auth
 
+from osf_tests.factories import DraftRegistrationFactory
 from addons.figshare.tests.factories import (
     FigshareUserSettingsFactory,
     FigshareNodeSettingsFactory,
@@ -44,7 +45,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, unittest.Tes
         registration = self.node.register_node(
             schema=get_default_metaschema(),
             auth=Auth(user=self.node.creator),
-            data='hodor'
+            draft_registration=DraftRegistrationFactory(branched_from=self.node)
         )
         assert_false(registration.has_addon('figshare'))
 
