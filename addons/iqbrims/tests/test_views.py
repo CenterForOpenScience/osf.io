@@ -1523,3 +1523,46 @@ URL: http://test.test<br>
         assert_equal(mock_send_mail.call_args_list[1][0][0], management_project.contributors[0].emails.all()[0].address)
         assert_true(mock_send_mail.call_args_list[1][1]['cc_addr'] is None)
         assert_true(mock_send_mail.call_args_list[1][1]['replyto'] is None)
+
+    @mock.patch.object(iqbrims_views, 'send_mail')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    def test_post_notify_too_large_body(self, mock_get_management_node, mock_send_mail):
+        management_project = ProjectFactory()
+        mock_get_management_node.return_value = management_project
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
+        url = self.project.api_url_for('iqbrims_post_notify')
+        body_html = ''.join([u'0123456789' for _ in range(0, 101)])
+        comment_html = u'**iqbrims_test_notify** ' + body_html[:797] + '...'
+        res = self.app.post_json(url, {
+          'notify_type': 'test_notify',
+          'to': ['admin', 'user'],
+          'notify_body': body_html,
+          'use_mail': True,
+        }, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_items_equal(res.json, {'status': 'complete'})
+        assert_equal(self.project.logs.count(), 3)
+        assert_equal(management_project.logs.count(), 2)
+        user_comments = Comment.objects.filter(node=self.project)
+        assert_equal(user_comments.count(), 1)
+        assert user_comments.get().content == comment_html
+        admin_comments = Comment.objects.filter(node=management_project)
+        assert_equal(admin_comments.count(), 1)
+        assert admin_comments.get().content == comment_html
+        assert_equal(len(mock_send_mail.call_args_list), 2)
+        assert_equal(mock_send_mail.call_args_list[0][0][0], self.project.contributors[0].emails.all()[0].address)
+        assert_equal(mock_send_mail.call_args_list[0][1]['cc_addr'], management_project.contributors[0].emails.all()[0].address)
+        assert_equal(mock_send_mail.call_args_list[0][1]['replyto'], management_project.contributors[0].emails.all()[0].address)
+        assert_equal(mock_send_mail.call_args_list[1][0][0], management_project.contributors[0].emails.all()[0].address)
+        assert_true(mock_send_mail.call_args_list[1][1]['cc_addr'] is None)
+        assert_true(mock_send_mail.call_args_list[1][1]['replyto'] is None)

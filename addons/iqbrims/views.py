@@ -40,7 +40,8 @@ from addons.iqbrims.utils import (
     get_log_actions,
     must_have_valid_hash,
     get_folder_title,
-    add_comment
+    add_comment,
+    to_comment_string,
 )
 
 logger = logging.getLogger(__name__)
@@ -178,9 +179,7 @@ def iqbrims_post_notify(**kwargs):
             nname = 'Paper <a href="{1}">{0}</a>'.format(node.title, href)
             notify_body = notify_body.replace('${node}', nname)
     if notify_body_md is None:
-        a_pat = re.compile(r'<a\s+href=[\'"]?(https?://[^>\'"]+)[\'"]?>' +
-                           r'(https?://[^>]+)</a>')
-        notify_body_md = a_pat.sub(r'\1', notify_body) \
+        notify_body_md = to_comment_string(notify_body) \
                          if notify_body is not None else ''
     if notify_title is None:
         notify_title = action

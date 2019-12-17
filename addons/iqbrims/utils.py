@@ -7,6 +7,7 @@ import httplib as http
 import json
 import logging
 import os
+import re
 
 from flask import request
 
@@ -17,6 +18,8 @@ from website.util import api_v2_url
 
 logger = logging.getLogger(__name__)
 _log_actions = None
+
+MAX_COMMENT_LENGTH = 800
 
 
 def get_log_actions():
@@ -170,3 +173,11 @@ def must_have_valid_hash():
         return wrapped
 
     return wrapper
+
+def to_comment_string(notify_body):
+    a_pat = re.compile(r'<a\s+href=[\'"]?(https?://[^>\'"]+)[\'"]?>' +
+                       r'(https?://[^>]+)</a>')
+    notify_body = a_pat.sub(r'\1', notify_body)
+    if len(notify_body) < MAX_COMMENT_LENGTH:
+        return notify_body
+    return notify_body[:MAX_COMMENT_LENGTH - 3] + '...'
