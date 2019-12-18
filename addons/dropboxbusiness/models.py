@@ -113,15 +113,18 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     group_id = models.CharField(null=True, blank=True, max_length=255)
 
     def _get_token(self, name):
+        # fileacces_option, management_option
+        option = getattr(self, '{}_option'.format(name.lower()), None)
+        if not option:
+            return None
+        if name == 'fileaccess' and option.is_allowed is False:
+            return None
+
         # DEBUG_FILEACCESS_TOKEN, DEBUG_MANAGEMENT_TOKEN
         debug = getattr(settings, 'DEBUG_{}_TOKEN'.format(name.upper()), None)
         if debug:
             return debug
 
-        # fileacces_option, management_option
-        option = getattr(self, '{}_option'.format(name.lower()), None)
-        if not option:
-            return None
         return utils.addon_option_to_token(option)
 
     @property
