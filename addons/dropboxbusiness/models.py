@@ -153,11 +153,15 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         return '/ (Full Dropbox Business)'
 
     def team_folder_name(self):
-        return u'{}{} ({})'.format(settings.TEAM_FOLDER_NAME_PREFIX,
-                                   self.owner.title, self.owner._id)
+        return u'{} ({}{}{})'.format(self.owner.title,
+                                     settings.TEAM_FOLDER_NAME_PREFIX,
+                                     self.owner._id,
+                                     settings.TEAM_FOLDER_NAME_SUFFIX)
 
     def group_name(self):
-        return u'{}{}'.format(settings.GROUP_NAME_PREFIX, self.owner._id)
+        return u'{}{}{}'.format(settings.GROUP_NAME_PREFIX,
+                                self.owner._id,
+                                settings.GROUP_NAME_SUFFIX)
 
     def sync_members(self):
         members = [
