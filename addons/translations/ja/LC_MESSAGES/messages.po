@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-09 18:04+0900\n"
+"POT-Creation-Date: 2019-12-19 15:27+0900\n"
 "PO-Revision-Date: 2019-12-09 18:08+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -32,20 +32,28 @@ msgstr "アカウントキー"
 
 #: azureblobstorage/templates/azureblobstorage_credentials_modal.mako:36
 #: azureblobstorage/templates/azureblobstorage_node_settings.mako:77
+#: dataverse/templates/dataverse_credentials_modal.mako:75
 msgid "Cancel"
 msgstr "キャンセル"
 
 #: azureblobstorage/templates/azureblobstorage_credentials_modal.mako:39
 #: azureblobstorage/templates/azureblobstorage_node_settings.mako:79
+#: dataverse/templates/dataverse_credentials_modal.mako:78
+#: dataverse/templates/dataverse_node_settings.mako:118
 msgid "Save"
 msgstr "保存"
 
 #: azureblobstorage/templates/azureblobstorage_node_settings.mako:14
 #: azureblobstorage/templates/azureblobstorage_user_settings.mako:18
+#: bitbucket/templates/bitbucket_node_settings.mako:15
+#: dataverse/templates/dataverse_node_settings.mako:15
+#: dataverse/templates/dataverse_user_settings.mako:18
 msgid "Disconnect Account"
 msgstr "アカウントを切断"
 
 #: azureblobstorage/templates/azureblobstorage_node_settings.mako:21
+#: bitbucket/templates/bitbucket_node_settings.mako:21
+#: dataverse/templates/dataverse_node_settings.mako:22
 msgid "Import Account from Profile"
 msgstr "プロフィールからアカウントをインポート"
 
@@ -54,10 +62,12 @@ msgid "Loading ..."
 msgstr "ロード中..."
 
 #: azureblobstorage/templates/azureblobstorage_node_settings.mako:35
+#: dataverse/templates/dataverse_node_settings.mako:29
 msgid "Connect  Account"
 msgstr "アカウントを接続"
 
 #: azureblobstorage/templates/azureblobstorage_node_settings.mako:50
+#: bitbucket/templates/bitbucket_node_settings.mako:65
 msgid "None"
 msgstr "無し"
 
@@ -75,6 +85,7 @@ msgid "Connect <b>&ldquo;<span %(data_bind)s></span>&rdquo;</b>?"
 msgstr "<b>&ldquo;<span %(data_bind)s></span>&rdquo;</b>へ接続しますか？"
 
 #: azureblobstorage/templates/azureblobstorage_user_settings.mako:12
+#: dataverse/templates/dataverse_user_settings.mako:12
 msgid "Connect or Reauthorize Account"
 msgstr "アカウントの接続または再認証"
 
@@ -83,6 +94,96 @@ msgid "Authorized by <em><span data-bind=\"text: name\"></span></em>"
 msgstr "承認者:<em><span data-bind=\"text: name\"></span></em>"
 
 #: azureblobstorage/templates/azureblobstorage_user_settings.mako:32
+#: dataverse/templates/dataverse_user_settings.mako:31
 msgid "Private project"
 msgstr "非公開プロジェクト"
+
+#: bitbucket/templates/bitbucket_node_settings.mako:25
+msgid "Connect Account"
+msgstr "アカウントに接続"
+
+#: bitbucket/templates/bitbucket_node_settings.mako:74
+#, python-format
+msgid ""
+"Could not retrieve Bitbucket settings at this time. The Bitbucket addon "
+"credentials                may no longer be valid. Try deauthorizing and "
+"reauthorizing Bitbucket on your                <a "
+"%(href)s%(addons_url)s%(quotation)s>account settings page</a>."
+msgstr ""
+"現在、Bitbucket設定を取得できませんでした。 Bitbucketアドオンの資格情報が無効になる場合があります。 <a "
+"%(href)s%(addons_url)s%(quotation)s>アカウント設定ページ</a>でBitbucketの認証解除と再認証を試してください。"
+
+#: bitbucket/templates/bitbucket_node_settings.mako:78
+#, python-format
+msgid ""
+"Could not retrieve Bitbucket settings at this time. The Bitbucket addon "
+"credentials                may no longer be valid. Contact "
+"%(auth_osf_name)s to verify."
+msgstr ""
+"現在、Bitbucket設定を取得できませんでした。 Bitbucketアドオンの資格情報が無効になる場合があります。 "
+"確認するには%(auth_osf_name)sにお問い合わせください。"
+
+#: dataverse/templates/dataverse_credentials_modal.mako:6
+msgid "Connect a Dataverse Account"
+msgstr "Dataverseアカウントに接続する"
+
+#: dataverse/templates/dataverse_credentials_modal.mako:18
+msgid "Dataverse Repository"
+msgstr "Dataverseレポジトリ"
+
+#: dataverse/templates/dataverse_credentials_modal.mako:22
+msgid "Select a Dataverse repository"
+msgstr "Dataverseレポジトリを選択する"
+
+#: dataverse/templates/dataverse_credentials_modal.mako:35
+msgid "Only Dataverse repositories v4.0 or higher are supported."
+msgstr "Dataverseリポジトリv4.0以降のみがサポートされています。"
+
+#: dataverse/templates/dataverse_credentials_modal.mako:46
+msgid "API Token"
+msgstr "APIトークン"
+
+#: dataverse/templates/dataverse_credentials_modal.mako:50
+#, python-format
+msgid "(Get from Dataverse <i %(classTag)s></i>)"
+msgstr "（Dataverse<i %(classTag)s></i>から取得する）"
+
+#: dataverse/templates/dataverse_node_settings.mako:43
+msgid "Dataverse Repository:"
+msgstr "Dataverseレポジトリ："
+
+#: dataverse/templates/dataverse_node_settings.mako:49
+msgid "Current Dataset:"
+msgstr "現在のデータセット："
+
+#: dataverse/templates/dataverse_node_settings.mako:65
+msgid "The current dataset was not found on Dataverse."
+msgstr "現在のデータセットがDataverseで見つかりませんでした。"
+
+#: dataverse/templates/dataverse_node_settings.mako:74
+msgid "Dataverse:"
+msgstr "Dataverse："
+
+#: dataverse/templates/dataverse_node_settings.mako:86
+msgid "Dataset:"
+msgstr "データセット："
+
+#: dataverse/templates/dataverse_node_settings.mako:97
+msgid "No datasets available."
+msgstr "利用可能なデータセットがありません。"
+
+#: dataverse/templates/dataverse_node_settings.mako:103
+msgid "Retrieving datasets..."
+msgstr "データセットを取得しています..."
+
+#: dataverse/templates/dataverse_node_settings.mako:110
+msgid ""
+"There are no dataverses, datasets, or files associated with the connected"
+" account."
+msgstr "接続されたアカウントに関連付けられたdataverse、データセット、またはファイルはありません。"
+
+#: dataverse/templates/dataverse_user_settings.mako:23
+#, python-format
+msgid "Authorized on <a %(data_bind1)s><em %(data_bind2)s></em></a>"
+msgstr "<a %(data_bind1)s><em %(data_bind2)s></em></a>で承認済み"
 
