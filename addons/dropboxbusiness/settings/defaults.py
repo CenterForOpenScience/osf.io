@@ -11,6 +11,8 @@ TEAM_FOLDER_NAME_SUFFIX = ''
 GROUP_NAME_PREFIX = 'GRDM-'
 GROUP_NAME_SUFFIX = ''
 
+ADMIN_GROUP_NAME = 'GRDM-ADMIN'
+
 # Max file size permitted by frontend in megabytes
 MAX_UPLOAD_SIZE = 150
 

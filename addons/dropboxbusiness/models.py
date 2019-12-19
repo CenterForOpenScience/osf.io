@@ -86,6 +86,9 @@ class DropboxBusinessFileaccessProvider(DropboxProvider):
             try:
                 utils.update_admin_dbmid(info.team_id)
             except Exception:
+                logger.exception(
+                    u'cannot update admin_dbmid for team.name={}'.format(
+                        info.name))
                 pass
         return result
 
@@ -152,12 +155,14 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     def folder_name(self):
         return '/ (Full Dropbox Business)'
 
+    @property
     def team_folder_name(self):
         return u'{} ({}{}{})'.format(self.owner.title,
                                      settings.TEAM_FOLDER_NAME_PREFIX,
                                      self.owner._id,
                                      settings.TEAM_FOLDER_NAME_SUFFIX)
 
+    @property
     def group_name(self):
         return u'{}{}{}'.format(settings.GROUP_NAME_PREFIX,
                                 self.owner._id,
@@ -184,12 +189,13 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
             fclient = DropboxTeam(self.fileaccess_token)
             fclient.team_team_folder_rename(
                 self.team_folder_id,
-                self.team_folder_name()
+                self.team_folder_name
             )
         except DropboxException:
-            logger.exception('Unexpected error')
+            logger.exception('cannot rename the team folder: {}'.format(self.team_folder_name))
 
-    def create_team_folder(self, grdm_member_email_list, save=False):
+    def create_team_folder(self, grdm_member_email_list,
+                           admin_group, save=False):
         if not self.has_auth:
             return
         try:
@@ -197,13 +203,15 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
                 self.fileaccess_token,
                 self.management_token,
                 self.admin_dbmid,
-                self.team_folder_name(),
-                self.group_name(),
-                grdm_member_email_list
+                self.team_folder_name,
+                self.group_name,
+                grdm_member_email_list,
+                admin_group
             )
         except DropboxException:
-            logger.exception('Unexpected error')
-            return
+            msg = 'Failed to auto mount of Dropbox Business.'
+            logger.exception(msg)
+            raise exceptions.AddonError(msg)
 
         self.team_folder_id = team_folder_id
         self.group_id = group_id
@@ -295,23 +303,33 @@ def init_addon(node, addon_name):
         return  # disabled
 
     f_option, m_option = fm
-    f_account = utils.addon_option_to_token(f_option)
-    m_account = utils.addon_option_to_token(m_option)
-    if f_account is None or m_account is None:
+    f_token = utils.addon_option_to_token(f_option)
+    m_token = utils.addon_option_to_token(m_option)
+    if f_token is None or m_token is None:
         return  # disabled
 
     ### ----- enabled -----
     # checking the validity of Dropbox API here
-    team_info = utils.TeamInfo(f_account, m_account)
+    try:
+        team_info = utils.TeamInfo(f_token, m_token,
+                                   admin=True, groups=True)
+        admin_group = utils.get_or_create_admin_group(f_token, m_token,
+                                                      team_info=team_info)
+        utils.sync_members(m_token,
+                           admin_group.get_group_id(),
+                           team_info.admin_email_all)
+    except Exception:
+        msg = 'Dropbox Business API Error'
+        logger.exception(msg)
+        raise exceptions.AddonError(msg)
 
     addon = node.add_addon(addon_name, auth=Auth(node.creator), log=True)
     addon.set_two_options(f_option, m_option)
     addon.set_admin_dbmid(team_info.admin_dbmid)
 
-    #TODO create a group for admins and set the group to the team folder
-
     # On post_save of Node, self.owner.contributors is empty.
     addon.create_team_folder([utils.eppn_to_email(node.creator.eppn)],
+                             admin_group,
                              save=True)
 
 

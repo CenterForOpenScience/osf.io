@@ -6,16 +6,28 @@ import time
 import dropbox
 from dropbox.dropbox import DropboxTeam
 from dropbox.exceptions import ApiError
-from dropbox.sharing import MemberSelector
+from dropbox.sharing import MemberSelector, AccessLevel
 from dropbox.team import (GroupMembersAddError, GroupMembersRemoveError,
                           GroupSelector, UserSelectorArg, GroupAccessType,
                           MemberAccess)
 
+from osf.models.rdm_addons import RdmAddonOption
 from osf.models.external import ExternalAccount
 from addons.dropboxbusiness import settings
 from admin.rdm_addons.utils import get_rdm_addon_option
 
 logger = logging.getLogger(__name__)
+
+ENABLE_DEBUG = True  # TODO
+
+
+from pprint import pformat as pf
+
+def DEBUG(msg):
+    if ENABLE_DEBUG:
+        logger.error(u'DEBUG_dropboxbusiness: ' + msg)
+    else:
+        logger.debug(msg)
 
 
 def eppn_to_email(eppn):
@@ -58,49 +70,49 @@ def poll_team_groups_job(management_client, job):
         interval *= 2
 
 
-def get_member_profile_list(manage_client, group, chunk_size=1000):
+def get_member_profile_list(management_client, group, chunk_size=1000):
     """
     :raises: dropbox.exceptions.DropboxException
     """
 
     # get first user chunk
-    res = manage_client.team_groups_members_list(group, chunk_size)
+    res = management_client.team_groups_members_list(group, chunk_size)
     member_profile_list = [m.profile for m in res.members]
 
     # get rest of user chunk
     while res.has_more:
-        res = manage_client.team_groups_members_list_continue(res.cursor)
+        res = management_client.team_groups_members_list_continue(res.cursor)
         member_profile_list += [m.profile for m in res.members]
 
     return member_profile_list
 
 
-def get_member_email_list(manage_client, group):
+def get_member_email_list(management_client, group):
     """
     :raises: dropbox.exceptions.DropboxException
     """
 
-    return [p.email for p in get_member_profile_list(manage_client, group)]
+    return [p.email for p in get_member_profile_list(management_client, group)]
 
 
-def sync_members(management_access_token, group_id, grdm_member_email_list):
+def sync_members(management_token, group_id, member_email_list):
     """synchronization of members.
     :raises: dropbox.exceptions.DropboxException
     """
 
-    manage_client = DropboxTeam(management_access_token)
+    management_client = DropboxTeam(management_token)
     group = GroupSelector.group_id(group_id)
 
-    grdm_member_email_set = set(grdm_member_email_list)
-    db_member_email_set = set(get_member_email_list(manage_client, group))
+    member_email_set = set(member_email_list)
+    db_member_email_set = set(get_member_email_list(management_client, group))
 
     add_member_list = [
         member_access(email)
-        for email in grdm_member_email_set - db_member_email_set
+        for email in member_email_set - db_member_email_set
     ]
     remove_member_list = [
         member_access(email).user
-        for email in db_member_email_set - grdm_member_email_set
+        for email in db_member_email_set - member_email_set
     ]
 
     poll_jobs = []
@@ -108,17 +120,18 @@ def sync_members(management_access_token, group_id, grdm_member_email_list):
     for memb in add_member_list:
         try:
             poll_jobs.append(
-                manage_client.team_groups_members_add(group, [memb])
+                management_client.team_groups_members_add(group, [memb])
             )
         except ApiError as e:
             if not isinstance(e.error, GroupMembersAddError) or \
-               not e.error.is_users_not_found():
+               (not e.error.is_users_not_found() and
+                    not e.error.is_duplicate_user()):
                 raise  # reraise
 
     for memb in remove_member_list:
         try:
             poll_jobs.append(
-                manage_client.team_groups_members_remove(group, [memb])
+                management_client.team_groups_members_remove(group, [memb])
             )
         except ApiError as e:
             if not isinstance(e.error, GroupMembersRemoveError) or \
@@ -126,7 +139,32 @@ def sync_members(management_access_token, group_id, grdm_member_email_list):
                 raise  # reraise
 
     for job in poll_jobs:
-        poll_team_groups_job(manage_client, job)
+        poll_team_groups_job(management_client, job)
+
+
+def get_or_create_admin_group(f_token, m_token, team_info=None):
+    group_name = settings.ADMIN_GROUP_NAME
+    try_count = 2  # consider race condition
+    while try_count > 0:
+        if not team_info:
+            team_info = TeamInfo(f_token, m_token, admin=False, group=True)
+        mclient = team_info.management_client
+        group_id = team_info.group_name_to_id.get(group_name)
+
+        if not group_id:
+            try:
+                group_info = mclient.team_groups_create(group_name)
+                group_id = group_info.group_id
+            except Exception:
+                group_id = None
+                team_info = None
+                if try_count == 1:
+                    raise
+        if group_id:
+            return group_selector(group_id)
+        try_count -= 1
+    # not reached
+    raise Exception('Unexpected condition')
 
 
 def create_team_folder(
@@ -135,7 +173,8 @@ def create_team_folder(
         admin_dbmid,
         team_folder_name,
         group_name,
-        grdm_member_email_list
+        grdm_member_email_list,
+        admin_group
 ):
     """
     :raises: dropbox.exceptions.DropboxException
@@ -144,18 +183,32 @@ def create_team_folder(
 
     fclient = DropboxTeam(fileaccess_token)
     mclient = DropboxTeam(management_token)
+    jobs = []
 
+    # create a group for the team members.
     members = [member_access(email) for email in grdm_member_email_list]
+    group = group_selector(mclient.team_groups_create(group_name).group_id)
+    jobs.append(mclient.team_groups_members_add(group, members))
+
+    for job in jobs:
+        poll_team_groups_job(mclient, job)
 
     team_folder = fclient.team_team_folder_create(team_folder_name)
-    group = group_selector(mclient.team_groups_create(group_name).group_id)
-    job = mclient.team_groups_members_add(group, members)
-    poll_team_groups_job(mclient, job)
     fclient.as_admin(admin_dbmid).sharing_add_folder_member(
         team_folder.team_folder_id,
-        [file_owner(group.get_group_id())]
+        [file_owner(group.get_group_id()),
+         file_owner(admin_group.get_group_id())],
     )
-
+    fclient.as_admin(admin_dbmid).sharing_update_folder_member(
+        team_folder.team_folder_id,
+        MemberSelector.dropbox_id(group.get_group_id()),
+        AccessLevel.editor
+    )
+    fclient.as_admin(admin_dbmid).sharing_update_folder_member(
+        team_folder.team_folder_id,
+        MemberSelector.dropbox_id(admin_group.get_group_id()),
+        AccessLevel.editor
+    )
     return (team_folder.team_folder_id, group.get_group_id())
 
 
@@ -175,7 +228,7 @@ def get_two_addon_options(institution_id):
         return None
     if not fileaccess_addon_option.is_allowed:
         return None
-    # NOTE: management_addon_option.is_allowed is not used.
+    # NOTE: management_addon_option.is_allowed is ignored.
     return (fileaccess_addon_option, management_addon_option)
 
 
@@ -187,25 +240,90 @@ def addon_option_to_token(addon_option):
     return addon_option.external_accounts.first().oauth_key
 
 
+# group_id to group_name
+def dict_folder_groups(client, team_folder_id):
+    grouo_id_to_name = {}
+    cursor = None
+    has_more = True
+    while has_more:
+        if cursor is None:
+            lst = client.sharing_list_folder_members(team_folder_id)
+        else:
+            lst = client.sharing_list_folder_members_continue(cursor)
+        cursor = lst.cursor
+        if not cursor:
+            has_more = False
+        for group in lst.groups:
+            # group: dropbox.sharing.GroupMembershipInfo
+            # group_info: dropbox.sharing.GroupInfo
+            #         and dropbox.team_common.GroupSummary
+            group_info = group.group
+            grouo_id_to_name[group_info.group_id] = group_info.group_name
+    return grouo_id_to_name
+
 def update_admin_dbmid(team_id):
-    for account in ExternalAccount.objects.filter(provider_id=team_id):
-        for addon in account.dropboxbusiness_management_node_settings.all():
-            # NodeSetting
-            if addon.fileaccess_account is None or \
-               addon.management_account is None:
-                continue  # skip
-            info = TeamInfo(addon.fileaccess_account, addon.management_account)
-            if addon.admin_dbmid not in info.admin_dbmid_all:
-                logger.info(u'update admin_dbmid: {} -> {}'.format(
-                    addon.admin_dbmid, info.admin_dbmid))
-                addon.update_admin_dbmid(info.admin_dbmid)
-                addon.cursor = None
-                addon.save()
+    # avoid "ImportError: cannot import name"
+    from addons.dropboxbusiness.models import \
+        DropboxBusinessManagementProvider
+    from addons.dropboxbusiness.models import NodeSettings
 
+    provider_name = DropboxBusinessManagementProvider.short_name
+    account = ExternalAccount.objects.get(
+        provider=provider_name, provider_id=team_id)
+    opt = RdmAddonOption.objects.get(
+        provider=provider_name, external_accounts=account)
+    info = None
+    for addon in NodeSettings.objects.filter(management_option=opt):
+        # NodeSettings per a project
+        if addon.fileaccess_token is None or \
+           addon.management_token is None:
+            continue  # skip this project
+        try:
+            info = TeamInfo(addon.fileaccess_token,
+                            addon.management_token,
+                            admin=True, groups=True)
+            break
+        except Exception:
+            logger.exception('Unexpected error')
+            continue  # skip this project
+    if info is None:
+        return  # do nothing
 
-from pprint import pformat as pf  # TODO unnecessary
-def DEBUG(msg):  # TODO unnecessary
-    logger.error(u'DEBUG: ' + msg)
+    admin_group = get_or_create_admin_group(info.management_client,
+                                            info.group_name_to_id,
+                                            team_info=info)
+    admin_group_id = admin_group.get_group_id()
+    sync_members(info.management_token, admin_group_id,
+                 info.admin_email_all)
+
+    for addon in NodeSettings.objects.filter(management_option=opt):
+        # NodeSettings per a project
+        if addon.admin_dbmid not in info.admin_dbmid_all:
+            logger.info(u'update dropbox admin_dbmid: {} -> {}'.format(
+                addon.admin_dbmid, info.admin_dbmid))
+            addon.update_admin_dbmid(info.admin_dbmid)
+            addon.cursor = None
+            addon.save()
+
+        # check existence of ADMIN_GROUP_NAME group in the team folder members.
+        group_id_to_name = dict_folder_groups(info.fileaccess_client_admin,
+                                              addon.team_folder_id)
+        DEBUG('group_id_to_name=' + pf(group_id_to_name))
+        admin_name = group_id_to_name.get(admin_group_id)
+        if not admin_name:
+            logger.info(u'Admin group for the team folder (GUID={}) is updated. (Because Admin group may be removed from the team folder or settings.ADMIN_GROUP_NAME may be changed.)'.format(addon.owner._id))
+
+            # add admin_group to the team folder
+            info.fileaccess_client_admin.sharing_add_folder_member(
+                addon.team_folder_id,
+                [file_owner(admin_group_id)],
+            )
+            info.fileaccess_client_admin.sharing_update_folder_member(
+                addon.team_folder_id,
+                MemberSelector.dropbox_id(admin_group_id),
+                AccessLevel.editor
+            )
+
 
 class TeamFolder(object):
     team_folder_id = None
@@ -234,16 +352,25 @@ class TeamInfo(object):
     dbid_to_account_id = {}
     email_to_dbmid = {}
     admin_dbmid_all = []
+    admin_email_all = []
+    group_name_to_id = {}
+    group_id_to_name = {}
     team_folders = {}  # team_folder_id -> TeamFolder
     team_folder_names = {}  # team_folder name -> TeamFolder
     cursor = None
 
-    def __init__(self, fileaccess_token, management_token):
+    def __init__(self, fileaccess_token, management_token,
+                 team_info=False, members=False, admin=False, groups=False):
         self.fileaccess_token = fileaccess_token
         self.management_token = management_token
-        #self._setup_team_info()  #TODO necessary?
-        self._setup_members()
-        self._setup_admin()
+        if team_info:
+            self._setup_team_info()
+        if admin or members:
+            self._setup_members()
+        if admin:
+            self._setup_admin()  # require members
+        if groups:
+            self._setup_groups()
 
     @property
     def admin_dbmid(self):
@@ -316,10 +443,34 @@ class TeamInfo(object):
 
     def _setup_admin(self):
         self.admin_dbmid_all = []
-        for k, role in self.dbmid_to_role.items():
+        self.admin_email_all = []
+        for dbmid, role in self.dbmid_to_role.items():
             if role.is_team_admin():
-                self.admin_dbmid_all.append(k)
+                self.admin_dbmid_all.append(dbmid)
+                email = self.dbmid_to_email.get(dbmid)
+                if email:
+                    self.admin_email_all.append(email)
         DEBUG('admin_dbmid_all: ' + pf(self.admin_dbmid_all))
+        DEBUG('admin_email_all: ' + pf(self.admin_email_all))
+
+    def _setup_groups(self):
+        self.group_name_to_id = {}
+        self.group_id_to_name = {}
+        cursor = None
+        has_more = True
+        client = self.management_client
+        while has_more:
+            if cursor is None:
+                lst = client.team_groups_list()
+            else:
+                lst = client.team_groups_list_continue()
+            has_more = lst.has_more
+            cursor = lst.cursor
+            for g in lst.groups:
+                self.group_name_to_id[g.group_name] = g.group_id
+                self.group_id_to_name[g.group_id] = g.group_name
+        DEBUG('group_name_to_id: ' + pf(self.group_name_to_id))
+        DEBUG('group_id_to_name: ' + pf(self.group_id_to_name))
 
     def _update_team_folders(self):
         cursor = None
