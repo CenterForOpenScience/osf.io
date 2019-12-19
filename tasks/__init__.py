@@ -242,8 +242,6 @@ def migrate_search(ctx, delete=True, remove=False, remove_all=False, index=None)
 def rebuild_search(ctx):
     """Delete and recreate the index for elasticsearch"""
     from website.app import init_app
-    # import requests
-    # from website import settings
 
     init_app(routes=False, set_backends=True)
 
