@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import httplib as http
-import logging
 
 from django.db import models
 from django.db.models.signals import post_save
@@ -20,6 +19,7 @@ from addons.dropboxbusiness.apps import DropboxBusinessAddonAppConfig
 from website import settings as website_settings
 from framework.auth import Auth
 from framework.exceptions import HTTPError
+from framework.logging import logging
 from admin.rdm.utils import get_institution_id
 
 logger = logging.getLogger(__name__)
