@@ -18,7 +18,7 @@ from admin.rdm_addons.utils import get_rdm_addon_option
 
 logger = logging.getLogger(__name__)
 
-ENABLE_DEBUG = True  # TODO
+ENABLE_DEBUG = False
 
 
 from pprint import pformat as pf
