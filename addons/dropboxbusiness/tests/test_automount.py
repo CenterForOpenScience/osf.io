@@ -1,6 +1,6 @@
 import unittest
 
-from mock import patch
+from mock import patch, Mock
 import pytest
 from nose.tools import *  # noqa (PEP8 asserts)
 
@@ -57,6 +57,7 @@ class TestDropboxBusiness(unittest.TestCase):
              patch(DBXBIZ + '.utils.sync_members') as mock4, \
              patch(DBXBIZ + '.utils.create_team_folder') as mock5:
             mock1().admin_dbmid = 'dbmid:dummy'
+            mock2.return_value = (Mock(), False)
             mock5.return_value = ('dbtid:dummy', 'g:dummy')
             self.project = ProjectFactory(creator=self.user)
 
