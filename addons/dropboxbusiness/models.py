@@ -313,8 +313,8 @@ def init_addon(node, addon_name):
     try:
         team_info = utils.TeamInfo(f_token, m_token,
                                    admin=True, groups=True)
-        admin_group = utils.get_or_create_admin_group(f_token, m_token,
-                                                      team_info=team_info)
+        admin_group, _ = utils.get_or_create_admin_group(
+            f_token, m_token, team_info=team_info)
         utils.sync_members(m_token,
                            admin_group.get_group_id(),
                            team_info.admin_email_all)

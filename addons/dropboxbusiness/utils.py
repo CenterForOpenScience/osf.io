@@ -95,13 +95,21 @@ def get_member_email_list(management_client, group):
     return [p.email for p in get_member_profile_list(management_client, group)]
 
 
+def get_member_dbmid_list(management_client, group):
+    """
+    :raises: dropbox.exceptions.DropboxException
+    """
+
+    return [p.team_member_id for p in get_member_profile_list(management_client, group)]
+
+
 def sync_members(management_token, group_id, member_email_list):
     """synchronization of members.
     :raises: dropbox.exceptions.DropboxException
     """
 
     management_client = DropboxTeam(management_token)
-    group = GroupSelector.group_id(group_id)
+    group = group_selector(group_id)
 
     member_email_set = set(member_email_list)
     db_member_email_set = set(get_member_email_list(management_client, group))
@@ -151,17 +159,19 @@ def get_or_create_admin_group(f_token, m_token, team_info=None):
         mclient = team_info.management_client
         group_id = team_info.group_name_to_id.get(group_name)
 
+        created = False
         if not group_id:
             try:
                 group_info = mclient.team_groups_create(group_name)
                 group_id = group_info.group_id
+                created = True
             except Exception:
                 group_id = None
                 team_info = None
                 if try_count == 1:
                     raise
         if group_id:
-            return group_selector(group_id)
+            return group_selector(group_id), created
         try_count -= 1
     # not reached
     raise Exception('Unexpected condition')
@@ -264,46 +274,67 @@ def dict_folder_groups(client, team_folder_id):
 def update_admin_dbmid(team_id):
     # avoid "ImportError: cannot import name"
     from addons.dropboxbusiness.models import \
-        DropboxBusinessManagementProvider
+        (DropboxBusinessFileaccessProvider,
+         DropboxBusinessManagementProvider)
     from addons.dropboxbusiness.models import NodeSettings
 
-    provider_name = DropboxBusinessManagementProvider.short_name
-    account = ExternalAccount.objects.get(
-        provider=provider_name, provider_id=team_id)
-    opt = RdmAddonOption.objects.get(
-        provider=provider_name, external_accounts=account)
-    info = None
-    for addon in NodeSettings.objects.filter(management_option=opt):
-        # NodeSettings per a project
-        if addon.fileaccess_token is None or \
-           addon.management_token is None:
-            continue  # skip this project
-        try:
-            info = TeamInfo(addon.fileaccess_token,
-                            addon.management_token,
-                            admin=True, groups=True)
-            break
-        except Exception:
-            logger.exception('Unexpected error')
-            continue  # skip this project
-    if info is None:
-        return  # do nothing
+    f_provider_name = DropboxBusinessFileaccessProvider.short_name
+    f_account = ExternalAccount.objects.get(
+        provider=f_provider_name, provider_id=team_id)
+    f_opt = RdmAddonOption.objects.get(
+        provider=f_provider_name, external_accounts=f_account)
+    m_provider_name = DropboxBusinessManagementProvider.short_name
+    m_account = ExternalAccount.objects.get(
+        provider=m_provider_name, provider_id=team_id)
+    m_opt = RdmAddonOption.objects.get(
+        provider=m_provider_name, external_accounts=m_account)
+    f_token = addon_option_to_token(f_opt)
+    m_token = addon_option_to_token(m_opt)
+    info = TeamInfo(f_token, m_token, team_info=True, admin=True, groups=True)
 
-    admin_group = get_or_create_admin_group(info.management_client,
-                                            info.group_name_to_id,
-                                            team_info=info)
+    admin_group, created = get_or_create_admin_group(info.management_client,
+                                                     info.group_name_to_id,
+                                                     team_info=info)
     admin_group_id = admin_group.get_group_id()
-    sync_members(info.management_token, admin_group_id,
-                 info.admin_email_all)
+    should_update = False
+    if created:
+        should_update = True
+    else:
+        # to update admin_dbmid based on the admin group (GRDM-ADMIN)
+        admin_dbmid_list = get_member_dbmid_list(info.management_client,
+                                                 admin_group)
+        if len(admin_dbmid_list) == 0:
+            should_update = True
+        elif len(set(admin_dbmid_list) - set(info.admin_dbmid_all)) > 0:
+            should_update = True
+    if should_update:
+        sync_members(info.management_token, admin_group_id,
+                     info.admin_email_all)
+        admin_dbmid_list = info.admin_dbmid_all
+    candidate_admin_dbmid = admin_dbmid_list[0]
 
-    for addon in NodeSettings.objects.filter(management_option=opt):
+    update_dispname_once = True
+    log_once = True
+    for addon in NodeSettings.objects.filter(management_option=m_opt):
         # NodeSettings per a project
-        if addon.admin_dbmid not in info.admin_dbmid_all:
-            logger.info(u'update dropbox admin_dbmid: {} -> {}'.format(
-                addon.admin_dbmid, info.admin_dbmid))
-            addon.update_admin_dbmid(info.admin_dbmid)
+        if addon.admin_dbmid not in admin_dbmid_list:
+            if log_once:
+                logger.info(u'update dropbox admin_dbmid of {}: {} -> {}'.format(
+                    info.name, addon.admin_dbmid, candidate_admin_dbmid))
+                log_once = False
+            addon.set_admin_dbmid(candidate_admin_dbmid)
             addon.cursor = None
             addon.save()
+
+        if update_dispname_once:
+            admin_email = info.dbmid_to_email.get(addon.admin_dbmid)
+            if admin_email:
+                dispname = u'{} ({})'.format(admin_email, info.name)
+                f_account.display_name = dispname
+                f_account.save()
+                m_account.display_name = dispname
+                m_account.save()
+            update_dispname_once = False
 
         # check existence of ADMIN_GROUP_NAME group in the team folder members.
         group_id_to_name = dict_folder_groups(info.fileaccess_client_admin,
