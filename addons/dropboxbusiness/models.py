@@ -338,6 +338,9 @@ def init_addon(node, addon_name):
 
 @receiver(post_save, sender=Node)
 def on_node_updated(sender, instance, created, **kwargs):
+    if instance.is_deleted:
+        return
+
     addon_name = DropboxBusinessAddonAppConfig.short_name
     if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
         return

@@ -291,6 +291,7 @@ def get_current_admin_group_and_sync(team_info):
         if len(admin_dbmid_list) == 0:
             should_update = True
         elif len(set(admin_dbmid_list) - set(team_info.admin_dbmid_all)) > 0:
+            # Non-admin users exist in the GRDM-ADMIN group
             should_update = True
     if should_update:
         sync_members(team_info.management_token, admin_group_id,
@@ -306,7 +307,7 @@ def get_current_admin_dbmid(m_option, admin_dbmid_list):
     for addon in NodeSettings.objects.filter(management_option=m_option):
         dbmid_list.append(addon.admin_dbmid)
     if len(dbmid_list) == 0:
-        return None
+        return admin_dbmid_list[0]
     c = collections.Counter(dbmid_list)
     # select majority
     most = c.most_common()
