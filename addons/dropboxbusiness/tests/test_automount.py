@@ -52,13 +52,12 @@ class TestDropboxBusiness(unittest.TestCase):
 
     def _new_project(self):
         with patch(DBXBIZ + '.utils.TeamInfo') as mock1, \
-             patch(DBXBIZ + '.utils.get_or_create_admin_group') as mock2, \
-             patch(DBXBIZ + '.utils.sync_members') as mock3, \
-             patch(DBXBIZ + '.utils.sync_members') as mock4, \
-             patch(DBXBIZ + '.utils.create_team_folder') as mock5:
-            mock1().admin_dbmid = 'dbmid:dummy'
-            mock2.return_value = (Mock(), False)
-            mock5.return_value = ('dbtid:dummy', 'g:dummy')
+             patch(DBXBIZ + '.utils.get_current_admin_group_and_sync') as mock2, \
+             patch(DBXBIZ + '.utils.get_current_admin_dbmid') as mock3, \
+             patch(DBXBIZ + '.utils.create_team_folder') as mock4:
+            mock2.return_value = (Mock(), Mock())
+            mock3.return_value = 'dbmid:dummy'
+            mock4.return_value = ('dbtid:dummy', 'g:dummy')
             self.project = ProjectFactory(creator=self.user)
 
     def _allowed(self):
