@@ -2,6 +2,8 @@
 import os
 import logging
 import time
+import collections
+import threading
 
 import dropbox
 from dropbox.dropbox import DropboxTeam
@@ -271,6 +273,49 @@ def dict_folder_groups(client, team_folder_id):
             grouo_id_to_name[group_info.group_id] = group_info.group_name
     return grouo_id_to_name
 
+
+def get_current_admin_group_and_sync(team_info):
+    admin_group, created = get_or_create_admin_group(
+        team_info.management_client,
+        team_info.group_name_to_id,
+        team_info=team_info)
+    admin_group_id = admin_group.get_group_id()
+    should_update = False
+    admin_dbmid_list = []
+    if created:
+        should_update = True
+    else:
+        # to update admin_dbmid based on the admin group (GRDM-ADMIN)
+        admin_dbmid_list = get_member_dbmid_list(team_info.management_client,
+                                                 admin_group)
+        if len(admin_dbmid_list) == 0:
+            should_update = True
+        elif len(set(admin_dbmid_list) - set(team_info.admin_dbmid_all)) > 0:
+            should_update = True
+    if should_update:
+        sync_members(team_info.management_token, admin_group_id,
+                     team_info.admin_email_all)
+        admin_dbmid_list = team_info.admin_dbmid_all
+    return admin_group, admin_dbmid_list
+
+
+def get_current_admin_dbmid(m_option, admin_dbmid_list):
+    from addons.dropboxbusiness.models import NodeSettings
+
+    dbmid_list = []
+    for addon in NodeSettings.objects.filter(management_option=m_option):
+        dbmid_list.append(addon.admin_dbmid)
+    if len(dbmid_list) == 0:
+        return None
+    c = collections.Counter(dbmid_list)
+    # select majority
+    most = c.most_common()
+    current_admin_dbmid = most[0][0]
+    if current_admin_dbmid not in admin_dbmid_list:
+        current_admin_dbmid = admin_dbmid_list[0]
+    return current_admin_dbmid
+
+
 def update_admin_dbmid(team_id):
     # avoid "ImportError: cannot import name"
     from addons.dropboxbusiness.models import \
@@ -290,70 +335,71 @@ def update_admin_dbmid(team_id):
         provider=m_provider_name, external_accounts=m_account)
     f_token = addon_option_to_token(f_opt)
     m_token = addon_option_to_token(m_opt)
-    info = TeamInfo(f_token, m_token, team_info=True, admin=True, groups=True)
 
-    admin_group, created = get_or_create_admin_group(info.management_client,
-                                                     info.group_name_to_id,
-                                                     team_info=info)
+    MAX_THREAD_NUM = 10
+    team_info = TeamInfo(f_token, m_token,
+                         max_connections=MAX_THREAD_NUM,
+                         team_info=True, admin=True, groups=True)
+    admin_group, admin_dbmid_list = get_current_admin_group_and_sync(team_info)
+    new_admin_dbmid = get_current_admin_dbmid(m_opt, admin_dbmid_list)
+    # update admin_dbmid for fileaccess_client_admin
+    team_info.set_admin_dbmid(new_admin_dbmid)
+
     admin_group_id = admin_group.get_group_id()
-    should_update = False
-    if created:
-        should_update = True
-    else:
-        # to update admin_dbmid based on the admin group (GRDM-ADMIN)
-        admin_dbmid_list = get_member_dbmid_list(info.management_client,
-                                                 admin_group)
-        if len(admin_dbmid_list) == 0:
-            should_update = True
-        elif len(set(admin_dbmid_list) - set(info.admin_dbmid_all)) > 0:
-            should_update = True
-    if should_update:
-        sync_members(info.management_token, admin_group_id,
-                     info.admin_email_all)
-        admin_dbmid_list = info.admin_dbmid_all
-    candidate_admin_dbmid = admin_dbmid_list[0]
-
     update_dispname_once = True
     log_once = True
     for addon in NodeSettings.objects.filter(management_option=m_opt):
         # NodeSettings per a project
-        if addon.admin_dbmid not in admin_dbmid_list:
+        if addon.admin_dbmid != new_admin_dbmid:
             if log_once:
                 logger.info(u'update dropbox admin_dbmid of {}: {} -> {}'.format(
-                    info.name, addon.admin_dbmid, candidate_admin_dbmid))
+                    team_info.name, addon.admin_dbmid, new_admin_dbmid))
                 log_once = False
-            addon.set_admin_dbmid(candidate_admin_dbmid)
+            addon.set_admin_dbmid(new_admin_dbmid)
             addon.cursor = None
             addon.save()
 
         if update_dispname_once:
-            admin_email = info.dbmid_to_email.get(addon.admin_dbmid)
+            admin_email = team_info.dbmid_to_email.get(new_admin_dbmid)
             if admin_email:
-                dispname = u'{} ({})'.format(admin_email, info.name)
+                dispname = u'{} ({})'.format(admin_email, team_info.name)
                 f_account.display_name = dispname
                 f_account.save()
                 m_account.display_name = dispname
                 m_account.save()
             update_dispname_once = False
 
-        # check existence of ADMIN_GROUP_NAME group in the team folder members.
-        group_id_to_name = dict_folder_groups(info.fileaccess_client_admin,
-                                              addon.team_folder_id)
-        DEBUG('group_id_to_name=' + pf(group_id_to_name))
-        admin_name = group_id_to_name.get(admin_group_id)
-        if not admin_name:
-            logger.info(u'Admin group for the team folder (GUID={}) is updated. (Because Admin group may be removed from the team folder or settings.ADMIN_GROUP_NAME may be changed.)'.format(addon.owner._id))
+    threads = []
+    for addon in NodeSettings.objects.filter(management_option=m_opt):
+        def set_admin_group():
+            # check existence of ADMIN_GROUP_NAME group
+            # in the team folder members.
+            group_id_to_name = dict_folder_groups(
+                team_info.fileaccess_client_admin,
+                addon.team_folder_id)
+            DEBUG('group_id_to_name=' + pf(group_id_to_name))
+            admin_name = group_id_to_name.get(admin_group_id)
+            if not admin_name:
+                logger.info(u'Admin group for the team folder (GUID={}) is updated. (Because Admin group may be removed from the team folder or settings.ADMIN_GROUP_NAME may be changed.)'.format(addon.owner._id))
+                # add admin_group to the team folder
+                team_info.fileaccess_client_admin.sharing_add_folder_member(
+                    addon.team_folder_id,
+                    [file_owner(admin_group_id)],
+                )
+                team_info.fileaccess_client_admin.sharing_update_folder_member(
+                    addon.team_folder_id,
+                    MemberSelector.dropbox_id(admin_group_id),
+                    AccessLevel.editor
+                )
+        if len(threads) >= MAX_THREAD_NUM:
+            th = threads.pop(0)
+            th.join()
+        th = threading.Thread(target=set_admin_group)
+        th.start()
+        threads.append(th)
 
-            # add admin_group to the team folder
-            info.fileaccess_client_admin.sharing_add_folder_member(
-                addon.team_folder_id,
-                [file_owner(admin_group_id)],
-            )
-            info.fileaccess_client_admin.sharing_update_folder_member(
-                addon.team_folder_id,
-                MemberSelector.dropbox_id(admin_group_id),
-                AccessLevel.editor
-            )
+    for th in threads:
+        th.join()
 
 
 class TeamFolder(object):
@@ -382,6 +428,7 @@ class TeamInfo(object):
     dbid_to_role = {}
     dbid_to_account_id = {}
     email_to_dbmid = {}
+    _admin_dbmid = None
     admin_dbmid_all = []
     admin_email_all = []
     group_name_to_id = {}
@@ -391,9 +438,13 @@ class TeamInfo(object):
     cursor = None
 
     def __init__(self, fileaccess_token, management_token,
+                 max_connections=8,
                  team_info=False, members=False, admin=False, groups=False):
         self.fileaccess_token = fileaccess_token
         self.management_token = management_token
+        self.session = dropbox.dropbox.create_session(
+            max_connections=max_connections)
+
         if team_info:
             self._setup_team_info()
         if admin or members:
@@ -405,17 +456,26 @@ class TeamInfo(object):
 
     @property
     def admin_dbmid(self):
-        return self.admin_dbmid_all[0]  # select one admin user
+        if not self._admin_dbmid:
+            # select one admin user
+            self._admin_dbmid = self.admin_dbmid_all[0]
+        return self._admin_dbmid
+
+    def set_admin_dbmid(self, admin_dbmid):
+        if admin_dbmid in self.admin_dbmid_all:
+            self._admin_dbmid = admin_dbmid
 
     @property
     def management_client(self):
         if self._management_client is None:
-            self._management_client = DropboxTeam(self.management_token)
+            self._management_client = DropboxTeam(
+                self.management_token, session=self.session)
         return self._management_client
 
     def _fileaccess_client_check(self):
         if self._fileaccess_client is None:
-            self._fileaccess_client = DropboxTeam(self.fileaccess_token)
+            self._fileaccess_client = DropboxTeam(
+                self.fileaccess_token, session=self.session)
 
     @property
     def fileaccess_client_team(self):

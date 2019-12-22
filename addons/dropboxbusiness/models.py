@@ -287,6 +287,20 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
             self.save()
 
 
+def get_admin_info(f_option, m_option, f_token, m_token):
+    try:
+        team_info = utils.TeamInfo(f_token, m_token,
+                                   admin=True, groups=True)
+        admin_group, admin_dbmid_list = utils.get_current_admin_group_and_sync(
+            team_info)
+        admin_dbmid = utils.get_current_admin_dbmid(m_option, admin_dbmid_list)
+        return admin_group, admin_dbmid
+    except Exception:
+        msg = 'Dropbox Business API Error'
+        logger.exception(msg)
+        raise exceptions.AddonError(msg)
+
+
 # mount dropboxbusiness automatically
 def init_addon(node, addon_name):
     if node.creator.eppn is None:
@@ -310,22 +324,11 @@ def init_addon(node, addon_name):
 
     ### ----- enabled -----
     # checking the validity of Dropbox API here
-    try:
-        team_info = utils.TeamInfo(f_token, m_token,
-                                   admin=True, groups=True)
-        admin_group, _ = utils.get_or_create_admin_group(
-            f_token, m_token, team_info=team_info)
-        utils.sync_members(m_token,
-                           admin_group.get_group_id(),
-                           team_info.admin_email_all)
-    except Exception:
-        msg = 'Dropbox Business API Error'
-        logger.exception(msg)
-        raise exceptions.AddonError(msg)
-
+    admin_group, admin_dbmid = get_admin_info(f_option, m_option,
+                                              f_token, m_token)
     addon = node.add_addon(addon_name, auth=Auth(node.creator), log=True)
     addon.set_two_options(f_option, m_option)
-    addon.set_admin_dbmid(team_info.admin_dbmid)
+    addon.set_admin_dbmid(admin_dbmid)
 
     # On post_save of Node, self.owner.contributors is empty.
     addon.create_team_folder([utils.eppn_to_email(node.creator.eppn)],
