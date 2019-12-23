@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+import datetime
 import httplib as http
 
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 from dropbox.dropbox import DropboxTeam
 from dropbox.exceptions import DropboxException
 
@@ -335,9 +337,13 @@ def init_addon(node, addon_name):
                              admin_group,
                              save=True)
 
+SYNC_CACHE_TIME = 5
+sync_time = None
 
 @receiver(post_save, sender=Node)
 def on_node_updated(sender, instance, created, **kwargs):
+    global sync_time
+
     if instance.is_deleted:
         return
 
@@ -346,9 +352,16 @@ def on_node_updated(sender, instance, created, **kwargs):
         return
     if created:
         init_addon(instance, addon_name)
+        sync_time = timezone.now()
     else:
+        # skip immediately after init_addon() and sync_members()
+        if sync_time is not None and \
+           timezone.now() < \
+           sync_time + datetime.timedelta(seconds=SYNC_CACHE_TIME):
+            return
         ns = instance.get_addon(addon_name)
         if ns is None or not ns.complete:  # disabled
             return
         ns.sync_members()
         ns.rename_team_folder()
+        sync_time = timezone.now()

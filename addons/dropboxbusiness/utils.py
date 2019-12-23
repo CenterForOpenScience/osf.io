@@ -305,6 +305,8 @@ def get_current_admin_dbmid(m_option, admin_dbmid_list):
 
     dbmid_list = []
     for addon in NodeSettings.objects.filter(management_option=m_option):
+        if addon.owner.is_deleted:
+            continue
         dbmid_list.append(addon.admin_dbmid)
     if len(dbmid_list) == 0:
         return admin_dbmid_list[0]
@@ -350,6 +352,9 @@ def update_admin_dbmid(team_id):
     update_dispname_once = True
     log_once = True
     for addon in NodeSettings.objects.filter(management_option=m_opt):
+        if addon.owner.is_deleted:
+            continue
+
         # NodeSettings per a project
         if addon.admin_dbmid != new_admin_dbmid:
             if log_once:
@@ -372,6 +377,9 @@ def update_admin_dbmid(team_id):
 
     threads = []
     for addon in NodeSettings.objects.filter(management_option=m_opt):
+        if addon.owner.is_deleted:
+            continue
+
         def set_admin_group():
             # check existence of ADMIN_GROUP_NAME group
             # in the team folder members.
