@@ -5,7 +5,6 @@ import httplib as http
 import json
 import logging
 import urllib
-import re
 
 from django.db import transaction
 from django.db.models import Subquery
@@ -179,8 +178,7 @@ def iqbrims_post_notify(**kwargs):
             nname = 'Paper <a href="{1}">{0}</a>'.format(node.title, href)
             notify_body = notify_body.replace('${node}', nname)
     if notify_body_md is None:
-        notify_body_md = to_comment_string(notify_body) \
-                         if notify_body is not None else ''
+        notify_body_md = to_comment_string(notify_body) if notify_body is not None else ''
     if notify_title is None:
         notify_title = action
     for n, cc_addrs, email_template in nodes:
@@ -585,7 +583,7 @@ def _iqbrims_update_spreadsheet(node, management_node, register_type, status):
     except exceptions.InvalidAuthError:
         raise HTTPError(403)
     client = IQBRIMSClient(access_token)
-    user_settings = IQBRIMSWorkflowUserSettings(access_token, folder_id);
+    user_settings = IQBRIMSWorkflowUserSettings(access_token, folder_id)
     _, rootr = client.create_folder_if_not_exists(folder_id, register_type)
     _, r = client.create_spreadsheet_if_not_exists(rootr['id'],
                                                    settings.APPSHEET_FILENAME)
