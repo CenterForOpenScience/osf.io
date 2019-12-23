@@ -15,17 +15,17 @@
                             </a>
                         % if not is_registration:
                             <a id="gitlabRemoveToken" class="text-danger pull-right addon-auth" >
-                              Disconnect Account
+                              ${_("Disconnect Account")}
                             </a>
                         % endif
                     % else:
                         % if user_has_auth:
                             <a id="gitlabImportToken" class="text-primary pull-right addon-auth">
-                               Import Account from Profile
+                               ${_("Import Account from Profile")}
                             </a>
                         % else:
                             <a href="#gitlabInputCredentials" data-toggle="modal" class="text-primary pull-right addon-auth">
-                               Connect Account
+                               ${_("Connect Account")}
                             </a>
                         % endif
                     % endif
@@ -39,7 +39,7 @@
             <input type="hidden" id="gitlabRepo" name="gitlab_repo" value="${gitlab_repo}" />
             <input type="hidden" id="gitlabRepoId" name="gitlab_repo_id" value="${gitlab_repo_id}" />
 
-            <p><strong>Current Repo: </strong>
+            <p><strong>${_("Current Repo: ")}</strong>
 
             % if is_owner and not is_registration:
             </p>
@@ -61,14 +61,14 @@
 
                 <div class="col-md-6 m-b-sm">
                     <button class="btn btn-success addon-settings-submit">
-                        Save
+                        ${_("Save")}
                     </button>
                 </div>
             </div>
             % elif gitlab_repo_full_name:
                 <a href="${files_url}">${gitlab_repo_full_name}</a></p>
             % else:
-                <span>None</span></p>
+                <span>${_("None")}</span></p>
             % endif
         % endif
 
@@ -77,12 +77,12 @@
         % if node_has_auth and not valid_credentials:
             <div class="addon-settings-message text-danger p-t-sm">
                 % if is_owner:
-                    Could not retrieve GitLab settings at this time. The GitLab addon credentials
-                    may no longer be valid. Try deauthorizing and reauthorizing GitLab on your
-                    <a href="${addons_url}">account settings page</a>.
+                    ${_('Could not retrieve GitLab settings at this time. The GitLab addon credentials\
+                    may no longer be valid. Try deauthorizing and reauthorizing GitLab on your\
+                    <a href="%(addons_url)s">account settings page</a>.') % dict(addons_url=h(addons_url)) | n}
                 % else:
-                    Could not retrieve GitLab settings at this time. The GitLab addon credentials
-                    may no longer be valid. Contact ${auth_osf_name} to verify.
+                    ${_('Could not retrieve GitLab settings at this time. The GitLab addon credentials\
+                    may no longer be valid. Contact %(auth_osf_name)s to verify.') % dict(auth_osf_name=auth_osf_name)}
                 % endif
             </div>
         % else:

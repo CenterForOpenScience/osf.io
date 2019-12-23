@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-23 17:48+0900\n"
+"POT-Creation-Date: 2019-12-23 18:13+0900\n"
 "PO-Revision-Date: 2019-12-09 18:08+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -44,6 +44,7 @@ msgstr "キャンセル"
 #: forward/templates/forward_node_settings.mako:36
 #: github/templates/github_node_settings.mako:54
 #: gitlab/templates/gitlab_credentials_modal.mako:57
+#: gitlab/templates/gitlab_node_settings.mako:64
 msgid "Save"
 msgstr "保存"
 
@@ -53,6 +54,8 @@ msgstr "保存"
 #: dataverse/templates/dataverse_node_settings.mako:15
 #: dataverse/templates/dataverse_user_settings.mako:18
 #: github/templates/github_node_settings.mako:15
+#: gitlab/templates/gitlab_node_settings.mako:18
+#: gitlab/templates/gitlab_user_settings.mako:18
 msgid "Disconnect Account"
 msgstr "アカウントを切断"
 
@@ -60,6 +63,7 @@ msgstr "アカウントを切断"
 #: bitbucket/templates/bitbucket_node_settings.mako:21
 #: dataverse/templates/dataverse_node_settings.mako:22
 #: github/templates/github_node_settings.mako:21
+#: gitlab/templates/gitlab_node_settings.mako:24
 msgid "Import Account from Profile"
 msgstr "プロフィールからアカウントをインポート"
 
@@ -75,6 +79,7 @@ msgstr "アカウントを接続"
 #: azureblobstorage/templates/azureblobstorage_node_settings.mako:50
 #: bitbucket/templates/bitbucket_node_settings.mako:65
 #: github/templates/github_node_settings.mako:62
+#: gitlab/templates/gitlab_node_settings.mako:71
 msgid "None"
 msgstr "無し"
 
@@ -93,6 +98,7 @@ msgstr "<b>&ldquo;<span %(data_bind)s></span>&rdquo;</b>へ接続しますか？
 
 #: azureblobstorage/templates/azureblobstorage_user_settings.mako:12
 #: dataverse/templates/dataverse_user_settings.mako:12
+#: gitlab/templates/gitlab_user_settings.mako:12
 msgid "Connect or Reauthorize Account"
 msgstr "アカウントの接続または再認証"
 
@@ -102,11 +108,13 @@ msgstr "承認者:<em><span data-bind=\"text: name\"></span></em>"
 
 #: azureblobstorage/templates/azureblobstorage_user_settings.mako:32
 #: dataverse/templates/dataverse_user_settings.mako:31
+#: gitlab/templates/gitlab_user_settings.mako:31
 msgid "Private project"
 msgstr "非公開プロジェクト"
 
 #: bitbucket/templates/bitbucket_node_settings.mako:25
 #: github/templates/github_node_settings.mako:25
+#: gitlab/templates/gitlab_node_settings.mako:28
 msgid "Connect Account"
 msgstr "アカウントに接続"
 
@@ -191,6 +199,7 @@ msgid ""
 msgstr "接続されたアカウントに関連付けられたdataverse、データセット、またはファイルはありません。"
 
 #: dataverse/templates/dataverse_user_settings.mako:23
+#: gitlab/templates/gitlab_user_settings.mako:23
 #, python-format
 msgid "Authorized on <a %(data_bind1)s><em %(data_bind2)s></em></a>"
 msgstr "<a %(data_bind1)s><em %(data_bind2)s></em></a>で承認済み"
@@ -204,6 +213,7 @@ msgid "Optional"
 msgstr "任意"
 
 #: github/templates/github_node_settings.mako:38
+#: gitlab/templates/gitlab_node_settings.mako:42
 msgid "Current Repo: "
 msgstr "現在のレポジトリ："
 
@@ -219,7 +229,9 @@ msgid ""
 "reauthorizing GitHub on your                <a "
 "%(href)s%(addons_url)s%(quotation)s%(quotation)s>account settings "
 "page</a>."
-msgstr "現時点ではGitHub設定を取得できませんでした。 GitHubアドオンの資格情報が無効になる場合があります。<a %(href)s%(addons_url)s%(quotation)s%(quotation)s>アカウント設定ページ</a>でGitHubの認証解除と再認証を試みてください。"
+msgstr ""
+"現時点ではGitHub設定を取得できませんでした。 GitHubアドオンの資格情報が無効になる場合があります。<a "
+"%(href)s%(addons_url)s%(quotation)s%(quotation)s>アカウント設定ページ</a>でGitHubの認証解除と再認証を試みてください。"
 
 #: github/templates/github_node_settings.mako:75
 #, python-format
@@ -227,7 +239,9 @@ msgid ""
 "Could not retrieve GitHub settings at this time. The GitHub addon "
 "credentials                may no longer be valid. Contact "
 "%(auth_osf_name)s to verify."
-msgstr "現時点ではGitHub設定を取得できませんでした。 GitHubアドオンの資格情報が無効になる場合があります。 確認するには%(auth_osf_name)sにお問い合わせください。"
+msgstr ""
+"現時点ではGitHub設定を取得できませんでした。 GitHubアドオンの資格情報が無効になる場合があります。 "
+"確認するには%(auth_osf_name)sにお問い合わせください。"
 
 #: gitlab/templates/gitlab_credentials_modal.mako:4
 msgid "Connect a GitLab Account"
@@ -261,4 +275,21 @@ msgstr "GitLab"
 #: gitlab/templates/gitlab_node_settings.mako:12
 msgid "authorized by"
 msgstr "承認者："
+
+#: gitlab/templates/gitlab_node_settings.mako:80
+#, python-format
+msgid ""
+"Could not retrieve GitLab settings at this time. The GitLab addon "
+"credentials                    may no longer be valid. Try deauthorizing "
+"and reauthorizing GitLab on your                    <a "
+"href=\"%(addons_url)s\">account settings page</a>."
+msgstr "現時点ではGitLab設定を取得できませんでした。 GitLabアドオンの資格情報が無効になる場合があります。<a href=\"%(addons_url)s\">アカウント設定ページ</a>でGitLabの認証解除と再認証を試してください。"
+
+#: gitlab/templates/gitlab_node_settings.mako:84
+#, python-format
+msgid ""
+"Could not retrieve GitLab settings at this time. The GitLab addon "
+"credentials                    may no longer be valid. Contact "
+"%(auth_osf_name)s to verify."
+msgstr "現時点ではGitLab設定を取得できませんでした。 GitLabアドオンの資格情報が無効になる場合があります。 確認するには%(auth_osf_name)sにお問い合わせください。"
 
