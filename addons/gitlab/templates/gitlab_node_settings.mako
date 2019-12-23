@@ -6,10 +6,10 @@
         <div>
             <h4 class="addon-title">
                 <img class="addon-icon" src="${addon_icon_url}">
-                GitLab
+                ${_("GitLab")}
                 <small class="authorized-by">
                     % if node_has_auth:
-                            authorized by
+                            ${_("authorized by")}
                             <a href="${auth_osf_url}" target="_blank">
                                 ${auth_osf_name}
                             </a>
