@@ -727,7 +727,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         node_settings = self.project.get_addon('iqbrims')
         node_settings.secret = 'secret123'
         node_settings.process_definition_id = 'process456'
-        node_settings.folder_path = 'testgdpath/iqb123/'
+        node_settings.folder_path = 'testgdpath/iqb123'
         node_settings.save()
         token = hashlib.sha256(('secret123' + 'process456' +
                                 self.project._id).encode('utf8')).hexdigest()
@@ -739,20 +739,10 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['status'], 'complete')
         assert_equal(len(res.json['management']['urls']), 2)
-        assert_equal(res.json['management']['urls'][0]['mfr_url'],
-            'http://localhost:7778/export?url=http%3A//localhost%3A5000/' +
-            management_project._id + '/' +
-            'files/googledrive/iqb123/%25E6%259C%2580%25E7%25B5%2582%25E5%258E' +
-            '%259F%25E7%25A8%25BF%25E3%2583%25BB%25E7%25B5%2584%25E5%259B%25B3/' +
-            '%25E3%2582%25B9%25E3%2582%25AD%25E3%2583%25A3%25E3%2583%25B3%25E7' +
-            '%2594%25BB%25E5%2583%258F/test.png')
-        assert_equal(res.json['management']['urls'][1]['mfr_url'],
-            'http://localhost:7778/export?url=http%3A//localhost%3A5000/' +
-            management_project._id + '/' +
-            'files/googledrive/iqb123/%25E6%259C%2580%25E7%25B5%2582%25E5%258E' +
-            '%259F%25E7%25A8%25BF%25E3%2583%25BB%25E7%25B5%2584%25E5%259B%25B3/' +
-            '%25E3%2582%25B9%25E3%2582%25AD%25E3%2583%25A3%25E3%2583%25B3%25E7' +
-            '%2594%25BB%25E5%2583%258F/files.txt')
+        assert_equal(res.json['management']['urls'][0]['path'], u'iqb123/最終原稿・組図/スキャン画像/test.png')
+        assert_true(res.json['management']['urls'][0]['mfr_url'].startswith('http://localhost:7778/export?url=http://localhost:5000/'))
+        assert_equal(res.json['management']['urls'][1]['path'], u'iqb123/最終原稿・組図/スキャン画像/files.txt')
+        assert_true(res.json['management']['urls'][1]['mfr_url'].startswith('http://localhost:7778/export?url=http://localhost:5000/'))
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')

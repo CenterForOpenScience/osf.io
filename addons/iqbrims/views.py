@@ -21,7 +21,7 @@ from framework.auth import Auth
 from website.mails import Mail, send_mail
 from framework.exceptions import HTTPError
 
-from osf.models import RdmAddonOption
+from osf.models import (BaseFileNode, RdmAddonOption)
 from website.project.decorators import (
     must_have_addon,
     must_be_valid_project,
@@ -281,23 +281,26 @@ def iqbrims_get_storage(**kwargs):
     url_files = all_files if urls_for_all_files else files
     for f in url_files:
         if sub_folder_name is not None:
-            url_folder_path = urllib.quote(main_folders[0]['title'].encode('utf8')) + \
-                              '/' + urllib.quote(sub_folders[0]['title'].encode('utf8'))
+            url_folder_path = u'{}/{}'.format(main_folders[0]['title'], sub_folders[0]['title'])
         else:
-            url_folder_path = urllib.quote(folders[0]['title'].encode('utf8'))
-        url = website_settings.DOMAIN.rstrip('/') + '/' + node._id + \
-            '/files/iqbrims/' + url_folder_path + '/' + \
-            urllib.quote(f['title'].encode('utf8'))
-        node_urls.append({'title': f['title'], 'url': url})
-        url = website_settings.DOMAIN.rstrip('/') + '/' + management_node._id + \
-              '/files/googledrive' + \
-              urllib.quote(root_folder_path.encode('utf8')) + \
-              url_folder_path + '/' + urllib.quote(f['title'].encode('utf8'))
-        mfr_url = website_settings.MFR_SERVER_URL.rstrip('/') + '/export?url=' + \
-                  urllib.quote(url)
-        management_urls.append({'title': f['title'],
-                                'url': url,
-                                'mfr_url': mfr_url})
+            url_folder_path = folders[0]['title']
+        with transaction.atomic():
+            path = u'{}/{}'.format(url_folder_path, f['title'])
+            logger.info(u'Node URL: {}'.format(path))
+            file_node = BaseFileNode.resolve_class('iqbrims', BaseFileNode.FILE).get_or_create(node, path)
+            url = website_settings.DOMAIN.rstrip('/') + '/' + file_node.get_guid(create=True)._id + '/'
+            node_urls.append({'title': f['title'], 'url': url, 'path': path})
+        with transaction.atomic():
+            path = u'{}/{}/{}'.format(root_folder_path[1:] if root_folder_path.startswith('/') else root_folder_path,
+                                      url_folder_path, f['title'])
+            logger.info(u'Management URL: {}'.format(path))
+            file_node = BaseFileNode.resolve_class('googledrive', BaseFileNode.FILE).get_or_create(management_node, path)
+            url = website_settings.DOMAIN.rstrip('/') + '/' + file_node.get_guid(create=True)._id + '/'
+            mfr_url = website_settings.MFR_SERVER_URL.rstrip('/') + '/export?url=' + url
+            management_urls.append({'title': f['title'],
+                                    'path': path,
+                                    'url': url,
+                                    'mfr_url': mfr_url})
     logger.info('Urls: node={}, management={}'.format(node_urls, management_urls))
     status = iqbrims.get_status()
     comment_key = folder + '_comment'
