@@ -658,7 +658,7 @@ def _iqbrims_reset_index(access_token, f):
     columns = sclient.get_column_values(sheet_id, 1, col_count)
     row = sclient.get_column_values(sheet_id, 2, columns.index('Filled'))
     row[-1] = 'FALSE'
-    sclient.update_row(sheet_id, row, 2)
+    sclient.update_row(sheet_id, row, 0)
 
 def _iqbrims_fill_spreadsheet_values(node, status, folder_link, columns,
                                      values, user_settings):
