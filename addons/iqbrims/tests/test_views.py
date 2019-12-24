@@ -727,7 +727,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         node_settings = self.project.get_addon('iqbrims')
         node_settings.secret = 'secret123'
         node_settings.process_definition_id = 'process456'
-        node_settings.folder_path = 'testgdpath/iqb123'
+        node_settings.folder_path = 'testgdpath/iqb123/'
         node_settings.save()
         token = hashlib.sha256(('secret123' + 'process456' +
                                 self.project._id).encode('utf8')).hexdigest()

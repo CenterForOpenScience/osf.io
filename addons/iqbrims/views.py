@@ -290,8 +290,8 @@ def iqbrims_get_storage(**kwargs):
             url = website_settings.DOMAIN.rstrip('/') + '/' + file_node.get_guid(create=True)._id + '/'
             node_urls.append({'title': f['title'], 'url': url, 'path': path})
         with transaction.atomic():
-            path = u'{}/{}/{}'.format(root_folder_path[1:] if root_folder_path.startswith('/') else root_folder_path,
-                                      url_folder_path, f['title'])
+            sroot_folder_path = root_folder_path.strip('/')
+            path = u'{}/{}/{}'.format(sroot_folder_path, url_folder_path, f['title'])
             path = urllib.quote(path.encode('utf8'))
             logger.info(u'Management URL: {}'.format(path))
             file_node = BaseFileNode.resolve_class('googledrive', BaseFileNode.FILE).get_or_create(management_node, path)
