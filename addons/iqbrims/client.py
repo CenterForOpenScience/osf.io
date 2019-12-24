@@ -733,10 +733,12 @@ class IQBRIMSFlowableClient(BaseClient):
                                   else False
         register_type = status['state']
         labo_name = status['labo_id']
-        labos = [l['text'] for l in self.user_settings.LABO_LIST
+        labos = [l for l in self.user_settings.LABO_LIST
                  if l['id'] == labo_name]
-        labo_display_name = labos[0] if len(labos) > 0 \
+        labo_display_name = labos[0]['text'] if len(labos) > 0 \
                             else u'LaboID:{}'.format(labo_name)
+        labo_display_name_en = (labos[0]['en'] if 'en' in labos[0] else labos[0]['text']) \
+                               if len(labos) > 0 else u'LaboID:{}'.format(labo_name)
         accepted_date = status['accepted_date'].split('T')[0] \
                         if 'accepted_date' in status else ''
         accepted_datetime = status['accepted_date'] \
@@ -761,6 +763,9 @@ class IQBRIMSFlowableClient(BaseClient):
                                  {'name': 'laboName',
                                   'type': 'string',
                                   'value': labo_display_name},
+                                 {'name': 'laboNameEN',
+                                  'type': 'string',
+                                  'value': labo_display_name_en},
                                  {'name': 'isDirectlySubmitData',
                                   'type': 'boolean',
                                   'value': is_directly_submit_data},

@@ -60,9 +60,9 @@ FLOWABLE_USER = 'testuser'
 FLOWABLE_PASSWORD = 'testpass'
 FLOWABLE_TASK_URL = 'http://localhost:9999/flowable-task/'
 
-LABO_LIST = [{'id': 'rna', 'text': u'RNA分野'},
-             {'id': 'xxx', 'text': u'XXX分野'},
-             {'id': 'yyy', 'text': u'YYY分野'}]
+LABO_LIST = [{'id': 'rna', 'text': u'RNA分野', 'en': 'Laboratory of RNA'},
+             {'id': 'xxx', 'text': u'XXX分野', 'en': 'Laboratory of XXX'},
+             {'id': 'yyy', 'text': u'YYY分野', 'en': 'Laboratory of YYY'}]
 
 USER_SETTINGS_SHEET_FILENAME = 'Settings'
 USER_SETTINGS_SHEET_SHEET_NAME = 'Settings'
