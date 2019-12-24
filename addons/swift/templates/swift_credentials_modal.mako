@@ -3,7 +3,7 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h3>Connect an OpenStack Swift Account</h3>
+                <h3>${_("Connect an OpenStack Swift Account")}</h3>
             </div>
 
             <form>
@@ -14,31 +14,31 @@
 
                         <div class="col-sm-6">
                             <div class="form-group">
-                                <label for="swiftAddon">Authentication(Keystone) Version</label>
+                                <label for="swiftAddon">${_("Authentication(Keystone) Version")}</label>
                                 <select class="form-control" data-bind="value: authVersion, options: ['v2', 'v3']" name="auth_version" ${'disabled' if disabled else ''} ></select>
                             </div>
                             <div class="form-group">
-                                <label for="swiftAddon">Authentication URL</label>
+                                <label for="swiftAddon">${_("Authentication URL")}</label>
                                 <input class="form-control" data-bind="value: authUrl" name="auth_url" ${'disabled' if disabled else ''} />
                             </div>
                             <div class="form-group">
-                                <label for="swiftAddon">Tenant name</label>
+                                <label for="swiftAddon">${_("Tenant name")}</label>
                                 <input class="form-control" data-bind="value: tenantName" name="tenant_name" ${'disabled' if disabled else ''} />
                             </div>
                             <div class="form-group">
-                                <label for="swiftAddon">Project Domain name</label>
+                                <label for="swiftAddon">${_("Project Domain name")}</label>
                                 <input class="form-control" data-bind="value: projectDomainName, enable: authVersion() == 'v3'" name="project_domain_name" ${'disabled' if disabled else ''} />
                             </div>
                             <div class="form-group">
-                                <label for="swiftAddon">Username</label>
+                                <label for="swiftAddon">${_("Username")}</label>
                                 <input class="form-control" data-bind="value: accessKey" name="access_key" ${'disabled' if disabled else ''} />
                             </div>
                             <div class="form-group">
-                                <label for="swiftAddon">User Domain name</label>
+                                <label for="swiftAddon">${_("User Domain name")}</label>
                                 <input class="form-control" data-bind="value: userDomainName, enable: authVersion() == 'v3'" name="user_domain_name" ${'disabled' if disabled else ''} />
                             </div>
                             <div class="form-group">
-                                <label for="swiftAddon">Password</label>
+                                <label for="swiftAddon">${_("Password")}</label>
                                 <input type="password" class="form-control" data-bind="value: secretKey" name="secret_key" ${'disabled' if disabled else ''} />
                             </div>
                         </div>
@@ -53,10 +53,10 @@
 
                 <div class="modal-footer">
 
-                    <a href="#" class="btn btn-default" data-bind="click: clearModal" data-dismiss="modal">Cancel</a>
+                    <a href="#" class="btn btn-default" data-bind="click: clearModal" data-dismiss="modal">${_("Cancel")}</a>
 
                     <!-- Save Button -->
-                    <button data-bind="click: connectAccount" class="btn btn-success">Save</button>
+                    <button data-bind="click: connectAccount" class="btn btn-success">${_("Save")}</button>
 
                 </div><!-- end modal-footer -->
 

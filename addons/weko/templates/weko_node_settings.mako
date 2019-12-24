@@ -12,21 +12,21 @@
                 authorized by <a data-bind="attr: {href: urls().owner}, text: ownerName"></a>
                 % if not is_registration:
                     <a data-bind="click: deauthorize"
-                        class="text-danger pull-right addon-auth">Disconnect Account</a>
+                        class="text-danger pull-right addon-auth">${_("Disconnect Account")}</a>
                 % endif
             </span>
 
              <!-- Import Access Token Button -->
             <span data-bind="if: showImport">
                 <a data-bind="click: importAuth" href="#" class="text-primary pull-right addon-auth">
-                    Import Account from Profile
+                    ${_("Import Account from Profile")}
                 </a>
             </span>
 
             <!-- Oauth Start Button -->
             <span data-bind="if: showTokenCreateButton">
                 <a href="#wekoInputCredentials" data-toggle="modal" class="pull-right text-primary addon-auth">
-                    Connect  Account
+                    ${_("Connect  Account")}
                 </a>
             </span>
 
@@ -40,13 +40,13 @@
 
                 <!-- The linked index -->
                 <p>
-                    <strong>Current Index:</strong>
+                    <strong>${_("Current Index:")}</strong>
                     <span data-bind="ifnot: submitting">
                         <span data-bind="if: showLinkedIndex">
                             <a data-bind="attr: {href: savedIndexUrl()}, text: savedIndexTitle"></a>
                         </span>
                         <span data-bind="ifnot: showLinkedIndex" class="text-muted">
-                            None
+                            ${_("None")}
                         </span>
                     </span>
                     <span data-bind="if: submitting">
@@ -60,7 +60,7 @@
 
                             <!--  Picker -->
                             <div class="col-md-6">
-                                Index:
+                                ${_("Index:")}
                                 <select class="form-control"
                                         data-bind="options: indices,
                                                    optionsValue: 'id',
@@ -72,7 +72,7 @@
                     </span>
 
                     <span class="text-info" data-bind="ifnot: hasIndices">
-                         There are no indices associated with the connected account.
+                         ${_("There are no indices associated with the connected account.")}
                    </span>
 
                 <!-- Save button for set info -->
@@ -80,7 +80,7 @@
                         <br>
                         <button data-bind="enable: enableSubmitIndex, click: setInfo"
                                 class="btn btn-success pull-right">
-                            Save
+                            ${_("Save")}
                         </button>
                     </span>
                 </div>

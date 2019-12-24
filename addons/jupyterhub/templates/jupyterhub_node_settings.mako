@@ -10,12 +10,12 @@
               <span>
                 <a href="#jupyterServiceDialog" data-toggle="modal"
                    class="btn btn-primary">
-                  <i class="fa fa-plus" aria-hidden="true"></i> New
+                  <i class="fa fa-plus" aria-hidden="true"></i> ${_("New")}
                 </a>
               </span>
               <div class="pull-right">
                 <button class="btn btn-success" data-bind="enable: dirtyCount, click: submit">
-                  Save
+                  ${_("Save")}
                 </button>
               </div>
             </div>
@@ -28,8 +28,8 @@
               <table class="table table-striped table-sm" style="margin: 0.5em;">
                 <thead>
                   <tr>
-                    <th>Service Name</th>
-                    <th>Base URL</th>
+                    <th>${_("Service Name")}</th>
+                    <th>${_("Base URL")}</th>
                   </tr>
                 </thead>
                 <tbody data-bind="foreach: services">
@@ -53,7 +53,7 @@
               </table>
               <!-- /ko -->
               <!-- ko if: services().length == 0 -->
-                <div style="margin: 1em;">No JupyterHubs</div>
+                <div style="margin: 1em;">${_("No JupyterHubs")}</div>
               <!-- /ko -->
             </div>
             <!-- end col -->
@@ -66,7 +66,7 @@
             <div class="modal-content">
 
                 <div class="modal-header">
-                    <h3>Link JupyterHub</h3>
+                    <h3>${_("Link JupyterHub")}</h3>
                 </div>
 
                 <form>
@@ -77,11 +77,11 @@
 
                             <div class="col-sm-6">
                                 <div class="form-group">
-                                    <label for="jupyterService">Service Name</label>
+                                    <label for="jupyterService">${_("Service Name")}</label>
                                     <input class="form-control" data-bind="value: serviceName" id="service_name" name="service_name" ${'disabled' if disabled else ''} />
                                 </div>
                                 <div class="form-group">
-                                    <label for="jupyterService">Service Base URL</label>
+                                    <label for="jupyterService">${_("Service Base URL")}</label>
                                     <input class="form-control" data-bind="value: serviceBaseUrl" id="service_base_url" name="service_base_url" ${'disabled' if disabled else ''} />
                                 </div>
                             </div>
@@ -96,10 +96,10 @@
 
                     <div class="modal-footer">
 
-                        <a href="#" class="btn btn-default" data-bind="click: clearModal" data-dismiss="modal">Cancel</a>
+                        <a href="#" class="btn btn-default" data-bind="click: clearModal" data-dismiss="modal">${_("Cancel")}</a>
 
                         <!-- Save Button -->
-                        <button data-bind="click: submitService" class="btn btn-success">OK</button>
+                        <button data-bind="click: submitService" class="btn btn-success">${_("OK")}</button>
 
                     </div><!-- end modal-footer -->
 
