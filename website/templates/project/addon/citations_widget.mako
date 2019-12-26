@@ -13,6 +13,6 @@ window.contextVars = $.extend(true, {}, window.contextVars, {
         <div class="ball-scale ball-scale-blue">
             <div></div>
         </div>
-        <p class="m-t-sm fg-load-message"> Loading citations...</p>
+        <p class="m-t-sm fg-load-message"> ${_("Loading citations...")}</p>
     </div>
 </div>

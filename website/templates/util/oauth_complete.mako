@@ -6,7 +6,7 @@
             window.close();
         </script>
         <meta charset="UTF-8">
-        <title>OAuth Complete</title>
+        <title>${_("OAuth Complete")}</title>
     </head>
     <body></body>
 </html>

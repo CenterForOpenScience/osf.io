@@ -1,5 +1,5 @@
 <%inherit file="base.mako"/>
-<%def name="title()">Request Access</%def>
+<%def name="title()">${_("Request Access")}</%def>
 <%def name="content()">
 
 
@@ -8,10 +8,10 @@
         <div class="row no-gutters">
             <div class="col-lg-8 col-md-12 cite-container">
                 <h2 class="node-title">
-                    You Need Permission
+                    ${_("You Need Permission")}
                 </h2>
-                <p data-bind="visible: !accessRequestPendingOrDenied()">Ask for access, or switch to an account with permission.</p>
-                <p data-bind="visible: accessRequestPendingOrDenied()">Your request for access has been sent. You will receive an email if and when your request is approved.</p>
+                <p data-bind="visible: !accessRequestPendingOrDenied()">${_("Ask for access, or switch to an account with permission.")}</p>
+                <p data-bind="visible: accessRequestPendingOrDenied()">${_("Your request for access has been sent. You will receive an email if and when your request is approved.")}</p>
                 <div>
 
                     <button class="btn btn-success btn-success-high-contrast f-w-xl request-access"
@@ -20,7 +20,7 @@
                                        css: {'disabled': accessRequestPendingOrDenied()},
                                        tooltip: {title: accessRequestTooltip(),'disabled': true, 'placement': 'top'}">
                     </button>
-                    <a type="button" class="btn btn-default" href="${web_url_for('auth_logout', next=node['url'])}" >Switch account</a>
+                    <a type="button" class="btn btn-default" href="${web_url_for('auth_logout', next=node['url'])}" >${_("Switch account")}</a>
                 </div>
                 <div>
                     <p style="margin-top: 10px;" data-bind="html: supportMessage"></p>
