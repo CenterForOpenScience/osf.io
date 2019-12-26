@@ -949,7 +949,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_equal(res.json, {'status': 'rejected',
                                 'root_folder': 'iqb123/'})
         mock_update_row.assert_called_once()
-        assert_equal(mock_update_row.call_args, (('Files', ['FALSE'], 2),))
+        assert_equal(mock_update_row.call_args, (('Files', ['FALSE'], 0),))
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
