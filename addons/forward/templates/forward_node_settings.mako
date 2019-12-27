@@ -21,7 +21,7 @@
                             id="forwardLabel"
                             class="form-control"
                             data-bind="value: label"
-                            placeholder="${_('Optional')}"
+                            placeholder="Optional"
                         />
                 </div>
 
