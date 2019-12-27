@@ -14,7 +14,6 @@ from osf.models.files import File, Folder, BaseFileNode
 from osf.models.institution import Institution
 from osf.models.rdm_addons import RdmAddonOption
 from addons.base.models import (BaseNodeSettings, BaseStorageAddon)
-from addons.base import exceptions
 from addons.dropbox.models import Provider as DropboxProvider
 from addons.dropboxbusiness import settings, utils
 from addons.dropboxbusiness.apps import DropboxBusinessAddonAppConfig
@@ -81,7 +80,7 @@ class DropboxBusinessFileaccessProvider(DropboxProvider):
             {
                 'key': access_token,
                 'provider_id': info.team_id,
-                'display_name': info.name
+                'display_name': u'({})'.format(info.name)
             }
         )
         if result:
@@ -89,9 +88,9 @@ class DropboxBusinessFileaccessProvider(DropboxProvider):
                 utils.update_admin_dbmid(info.team_id)
             except Exception:
                 logger.exception(
-                    u'cannot update admin_dbmid for team.name={}'.format(
+                    u'admin_dbmid cannot be updated: team name={}'.format(
                         info.name))
-                pass
+                # ignored
         return result
 
 
@@ -184,7 +183,8 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
                 members
             )
         except DropboxException:
-            logger.exception('Unexpected error')
+            logger.exception('Unexpected error: node={}, group_id={}'.format(self.owner._id, self.group_id))
+            # ignored
 
     def rename_team_folder(self):
         try:
@@ -194,10 +194,11 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
                 self.team_folder_name
             )
         except DropboxException:
-            logger.exception('cannot rename the team folder: {}'.format(self.team_folder_name))
+            logger.exception(u'Team folder cannot be renamed: node={}, team_folder_id={}, name={}'.format(self.owner._id, self.team_folder_id, self.team_folder_name))
+            # ignored
 
     def create_team_folder(self, grdm_member_email_list,
-                           admin_group, save=False):
+                           admin_group, team_name, save=False):
         if not self.has_auth:
             return
         try:
@@ -208,12 +209,12 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
                 self.team_folder_name,
                 self.group_name,
                 grdm_member_email_list,
-                admin_group
+                admin_group,
+                team_name
             )
         except DropboxException:
-            msg = 'Failed to auto mount of Dropbox Business.'
-            logger.exception(msg)
-            raise exceptions.AddonError(msg)
+            logger.exception('Failed to auto mount of Dropbox Business.: team_folder_id={}'.format(team_folder_id))
+            raise
 
         self.team_folder_id = team_folder_id
         self.group_id = group_id
@@ -227,13 +228,15 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     # Required
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
-            raise exceptions.AddonError('Addon is not authorized')
+            logger.info('Addon is not authorized: node={}'.format(self.owner._id))
+            return None
         return {'token': self.fileaccess_token}
 
     # Required
     def serialize_waterbutler_settings(self):
         if not self.configured:
-            raise exceptions.AddonError('Addon is not configured')
+            logger.info('Addon is not configured: node={}'.format(self.owner._id))
+            return None
         return {
             'folder': '/',
             'admin_dbmid': self.admin_dbmid,
@@ -289,18 +292,17 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
             self.save()
 
 
-def get_admin_info(f_option, m_option, f_token, m_token):
+def get_admin_info(node, f_option, m_option, f_token, m_token):
     try:
         team_info = utils.TeamInfo(f_token, m_token,
                                    admin=True, groups=True)
         admin_group, admin_dbmid_list = utils.get_current_admin_group_and_sync(
             team_info)
         admin_dbmid = utils.get_current_admin_dbmid(m_option, admin_dbmid_list)
-        return admin_group, admin_dbmid
+        return team_info.name, admin_group, admin_dbmid
     except Exception:
-        msg = 'Dropbox Business API Error'
-        logger.exception(msg)
-        raise exceptions.AddonError(msg)
+        logger.exception('Dropbox Business API Error: node={}'.format(node._id))
+        raise
 
 
 # mount dropboxbusiness automatically
@@ -326,15 +328,16 @@ def init_addon(node, addon_name):
 
     ### ----- enabled -----
     # checking the validity of Dropbox API here
-    admin_group, admin_dbmid = get_admin_info(f_option, m_option,
-                                              f_token, m_token)
+    team_name, admin_group, admin_dbmid = get_admin_info(node,
+                                                         f_option, m_option,
+                                                         f_token, m_token)
     addon = node.add_addon(addon_name, auth=Auth(node.creator), log=True)
     addon.set_two_options(f_option, m_option)
     addon.set_admin_dbmid(admin_dbmid)
 
     # On post_save of Node, self.owner.contributors is empty.
     addon.create_team_folder([utils.eppn_to_email(node.creator.eppn)],
-                             admin_group,
+                             admin_group, team_name,
                              save=True)
 
 SYNC_CACHE_TIME = 5

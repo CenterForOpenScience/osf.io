@@ -186,7 +186,8 @@ def create_team_folder(
         team_folder_name,
         group_name,
         grdm_member_email_list,
-        admin_group
+        admin_group,
+        team_name
 ):
     """
     :raises: dropbox.exceptions.DropboxException
@@ -200,27 +201,59 @@ def create_team_folder(
     # create a group for the team members.
     members = [member_access(email) for email in grdm_member_email_list]
     group = group_selector(mclient.team_groups_create(group_name).group_id)
-    jobs.append(mclient.team_groups_members_add(group, members))
 
+    def delete_unused_group():
+        try:
+            mclient.team_groups_delete(group)
+        except Exception:
+            logger.exception('The team group({}@{}) cannot be deleted.'.format(group_name, team_name))
+            # ignored
+
+    try:
+        job = mclient.team_groups_members_add(group, members)
+        jobs.append(job)
+    except Exception:
+        delete_unused_group()
+        raise
     for job in jobs:
         poll_team_groups_job(mclient, job)
 
-    team_folder = fclient.team_team_folder_create(team_folder_name)
-    fclient.as_admin(admin_dbmid).sharing_add_folder_member(
-        team_folder.team_folder_id,
-        [file_owner(group.get_group_id()),
-         file_owner(admin_group.get_group_id())],
-    )
-    fclient.as_admin(admin_dbmid).sharing_update_folder_member(
-        team_folder.team_folder_id,
-        MemberSelector.dropbox_id(group.get_group_id()),
-        AccessLevel.editor
-    )
-    fclient.as_admin(admin_dbmid).sharing_update_folder_member(
-        team_folder.team_folder_id,
-        MemberSelector.dropbox_id(admin_group.get_group_id()),
-        AccessLevel.editor
-    )
+    try:
+        team_folder = fclient.team_team_folder_create(team_folder_name)
+    except Exception:
+        delete_unused_group()
+        raise
+
+    def delete_unused_team_folder():
+        try:
+            fclient.team_team_folder_archive(
+                team_folder.team_folder_id, force_async_off=True)
+            fclient.team_team_folder_permanently_delete(
+                team_folder.team_folder_id)
+        except Exception:
+            logger.exception('The team Folder({}@{}) cannot be deleted.'.format(team_folder_name, team_name))
+            # ignored
+
+    try:
+        fclient.as_admin(admin_dbmid).sharing_add_folder_member(
+            team_folder.team_folder_id,
+            [file_owner(group.get_group_id()),
+             file_owner(admin_group.get_group_id())],
+        )
+        fclient.as_admin(admin_dbmid).sharing_update_folder_member(
+            team_folder.team_folder_id,
+            MemberSelector.dropbox_id(group.get_group_id()),
+            AccessLevel.editor
+        )
+        fclient.as_admin(admin_dbmid).sharing_update_folder_member(
+            team_folder.team_folder_id,
+            MemberSelector.dropbox_id(admin_group.get_group_id()),
+            AccessLevel.editor
+        )
+    except Exception:
+        delete_unused_team_folder()
+        delete_unused_group()
+        raise
     return (team_folder.team_folder_id, group.get_group_id())
 
 
@@ -358,7 +391,7 @@ def update_admin_dbmid(team_id):
         # NodeSettings per a project
         if addon.admin_dbmid != new_admin_dbmid:
             if log_once:
-                logger.info(u'update dropbox admin_dbmid of {}: {} -> {}'.format(
+                logger.info(u'update dropbox admin_dbmid (team={}): {} -> {}'.format(
                     team_info.name, addon.admin_dbmid, new_admin_dbmid))
                 log_once = False
             addon.set_admin_dbmid(new_admin_dbmid)
@@ -389,7 +422,7 @@ def update_admin_dbmid(team_id):
             DEBUG('group_id_to_name=' + pf(group_id_to_name))
             admin_name = group_id_to_name.get(admin_group_id)
             if not admin_name:
-                logger.info(u'Admin group for the team folder (GUID={}) is updated. (Because Admin group may be removed from the team folder or settings.ADMIN_GROUP_NAME may be changed.)'.format(addon.owner._id))
+                logger.info(u'Admin group for the team folder (node={}) is updated. (Because Admin group may be removed from the team folder or settings.ADMIN_GROUP_NAME may be changed.)'.format(addon.owner._id))
                 # add admin_group to the team folder
                 team_info.fileaccess_client_admin.sharing_add_folder_member(
                     addon.team_folder_id,
@@ -400,6 +433,7 @@ def update_admin_dbmid(team_id):
                     MemberSelector.dropbox_id(admin_group_id),
                     AccessLevel.editor
                 )
+
         if len(threads) >= MAX_THREAD_NUM:
             th = threads.pop(0)
             th.join()
