@@ -530,23 +530,23 @@ def create_waterbutler_log(payload, **kwargs):
                 provider = payload['metadata']['provider']
                 timestamp.file_node_deleted(node._id, provider, src_path)
 
-    def prepare_file_node():
+    def prepare_file_node(provider):
         with transaction.atomic():
             # to reduce possibility of MultipleObjectsReturned.
             # [GRDM-13530, 15698, 17045, 17065]
             # (MultipleObjectsReturned may occur when creation of
             #  BaseFileNode is called in long transaction.)
             BaseFileNode.resolve_class(
-                metadata['provider'], BaseFileNode.FILE
+                provider, BaseFileNode.FILE
             ).get_or_create(node, '/' + metadata.get('path').lstrip('/'))
 
     if file_created_or_updated:
-        prepare_file_node()
+        prepare_file_node(metadata['provider'])
         with transaction.atomic():  # long transaction
             timestamp.file_created_or_updated(node, metadata, user.id,
                                               created_flag)
     elif file_node_moved:
-        prepare_file_node()
+        prepare_file_node(dest_provider)
         with transaction.atomic():  # long transaction
             timestamp.file_node_moved(auth.user.id, node._id,
                                       src_provider, dest_provider,
