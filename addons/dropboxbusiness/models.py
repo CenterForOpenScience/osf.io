@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
-import datetime
 import httplib as http
 
 from django.db import models
-from django.db.models.signals import post_save
+from django.db.models.signals import pre_save, post_save, post_delete
 from django.dispatch import receiver
-from django.utils import timezone
 from dropbox.dropbox import DropboxTeam
 from dropbox.exceptions import DropboxException
 
 from osf.models.node import Node
+from osf.models.contributor import Contributor
 from osf.models.files import File, Folder, BaseFileNode
 from osf.models.institution import Institution
 from osf.models.rdm_addons import RdmAddonOption
@@ -340,13 +339,43 @@ def init_addon(node, addon_name):
                              admin_group, team_name,
                              save=True)
 
-SYNC_CACHE_TIME = 5
-sync_time = None
+
+# store values in a short time to detect changed fields
+class SyncInfo(object):
+    sync_info_dict = {}  # Node.id -> SyncInfo
+
+    def __init__(self):
+        self.old_node_title = None
+        self.need_to_update_members = False
+
+    @classmethod
+    def get(cls, id):
+        info = cls.sync_info_dict.get(id)
+        if info is None:
+            info = SyncInfo()
+            cls.sync_info_dict[id] = info
+        return info
+
+
+@receiver(pre_save, sender=Node)
+def node_pre_save(sender, instance, **kwargs):
+    if instance.is_deleted:
+        return
+
+    addon_name = DropboxBusinessAddonAppConfig.short_name
+    if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
+        return
+
+    try:
+        old_node = Node.objects.get(id=instance.id)
+        syncinfo = SyncInfo.get(old_node.id)
+        syncinfo.old_node_title = old_node.title
+    except Exception:
+        pass
+
 
 @receiver(post_save, sender=Node)
-def on_node_updated(sender, instance, created, **kwargs):
-    global sync_time
-
+def node_post_save(sender, instance, created, **kwargs):
     if instance.is_deleted:
         return
 
@@ -355,16 +384,30 @@ def on_node_updated(sender, instance, created, **kwargs):
         return
     if created:
         init_addon(instance, addon_name)
-        sync_time = timezone.now()
     else:
         # skip immediately after init_addon() and sync_members()
-        if sync_time is not None and \
-           timezone.now() < \
-           sync_time + datetime.timedelta(seconds=SYNC_CACHE_TIME):
-            return
         ns = instance.get_addon(addon_name)
         if ns is None or not ns.complete:  # disabled
             return
-        ns.sync_members()
-        ns.rename_team_folder()
-        sync_time = timezone.now()
+        syncinfo = SyncInfo.get(instance.id)
+        if ns.owner.title != syncinfo.old_node_title:
+            ns.rename_team_folder()
+        if syncinfo.need_to_update_members:
+            ns.sync_members()
+            syncinfo.need_to_update_members = False
+
+
+@receiver(post_save, sender=Contributor)
+@receiver(post_delete, sender=Contributor)
+def update_group_members(sender, instance, **kwargs):
+    addon_name = DropboxBusinessAddonAppConfig.short_name
+    if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
+        return
+    node = instance.node
+    if node.is_deleted:
+        return
+    ns = node.get_addon(addon_name)
+    if ns is None or not ns.complete:  # disabled
+        return
+    syncinfo = SyncInfo.get(node.id)
+    syncinfo.need_to_update_members = True
