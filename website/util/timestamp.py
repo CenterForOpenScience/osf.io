@@ -60,18 +60,6 @@ STATUS_NOT_ACCESSIBLE = [
     api_settings.TIME_STAMP_STORAGE_NOT_ACCESSIBLE
 ]
 
-FILE_TYPE_DICT = {
-    'box': 'addons.box.models.BoxFile',
-    'googledrive': 'addons.googledrive.models.GoogleDriveFile',
-    'nextcloud': 'addons.nextcloud.models.NextcloudFile',
-    'osfstorage': 'addons.osfstorage.models.OsfStorageFile',
-    'owncloud': 'addons.owncloud.models.OwncloudFile',
-    's3': 'addons.s3.models.S3File',
-    's3compat': 'addons.s3compat.models.S3CompatFile',
-    'swift': 'addons.swift.models.SwiftFile',
-    'github': 'addons.github.models.GithubFile',
-}
-
 class OSFAbortableAsyncResult(AbortableAsyncResult):
     """This class is a workaround to a celery bug that throws an AttributeError when it
     should not.
@@ -554,7 +542,11 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
         moved_file.path = moved_file.path.replace(src_path, dest_path, 1)
         moved_file.provider = dest_provider
         moved_file.save()
-    if src_provider != 'osfstorage' and src_path[-1:] == '/':
+
+    def is_folder(path):
+        return path[-1:] == '/'
+
+    if src_provider != 'osfstorage' and is_folder(src_path):
         file_nodes = BaseFileNode.objects.filter(target_object_id=target_object_id,
                                                  provider=src_provider,
                                                  deleted_on__isnull=True,
@@ -587,9 +579,10 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
                         rft.file_id = file_node._id
                         rft.provider = 'osfstorage'
                         rft.save()
-            provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
+            if file_node is not None:
+                provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
 
-    else:
+    else:  # "any file -> any file" OR "osfstorage folder -> any folder"
         file_nodes = BaseFileNode.objects.filter(target_object_id=target_object_id,
                                                  provider=src_provider,
                                                  deleted_on__isnull=True,
@@ -611,14 +604,17 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
                         rft.file_id = file_node._id
                         rft.provider = 'osfstorage'
                         rft.save()
-            provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
+            if file_node is not None:
+                provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
 
-    if src_provider == 'osfstorage' and dest_provider != 'osfstorage':
+    if src_provider == 'osfstorage' and dest_provider != 'osfstorage' \
+       and not is_folder(src_path):
         node = AbstractNode.objects.get(pk=Guid.objects.filter(_id=metadata['node']['_id']).first().object_id)
         temp_check = metadata.get('materialized', None)
         if temp_check is not None:
             temp_check = temp_check if temp_check[0] == '/' else '/' + temp_check
             metadata['materialized'] = temp_check
+        # TODO always "dest_provider == metadata['provider']" ?
         if metadata['provider'] != 'osfstorage':
             file_node = BaseFileNode.resolve_class(
                 metadata['provider'], BaseFileNode.FILE
@@ -627,18 +623,26 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
             file_node.name = metadata.get('name')
             file_node.materialized_path = metadata.get('materialized')
             file_node.save()
-            rft = RdmFileTimestamptokenVerifyResult.objects.filter(provider=dest_provider, path=metadata['materialized']).first()
-            rft.file_id = file_node._id
-            rft.save()
-            provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
+
+            rft = RdmFileTimestamptokenVerifyResult.objects.filter(provider=dest_provider, path=metadata['materialized'], project_id=node._id).first()
+            rft2 = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_node._id).first()
+            if rft and rft2 and rft.file_id != rft2.file_id:
+                rft2.delete()
+            if rft:
+                rft.file_id = file_node._id
+                rft.save()
+                provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
+            else:
+                file_created_or_updated(node, metadata, uid, True)
+
 
 def move_file_node_update(file_node, src_provider, dest_provider, metadata=None):
-    file_node.type = file_node.type.replace(src_provider, dest_provider)
-    dest_file_type = dynamic_import(FILE_TYPE_DICT[dest_provider])
-    file_node.__class__ = dest_file_type
-    file_node.type = 'osf.{}file'.format(dest_provider)
-    file_node.provider = dest_provider
-    file_node._meta.model._provider = dest_provider
+    if src_provider != dest_provider:
+        cls = BaseFileNode.resolve_class(dest_provider, BaseFileNode.FILE)
+        file_node.recast(cls._typedmodels_type)
+        file_node.provider = dest_provider
+        file_node._meta.model._provider = dest_provider
+
     if metadata is not None:
         path = metadata.get('path', None)
         if path is not None and path is not '' and dest_provider != 'osfstorage':
@@ -665,7 +669,10 @@ def dynamic_import(name):
     return mod
 
 def provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider):
-    last_timestamp_result = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
+    last_timestamp_result = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_node._id).first()
+    if last_timestamp_result is None:  # TODO unexpected?
+        logger.info('last_timestamp_result is None')
+        return
     path = ''
     if file_node._materialized_path is not None and file_node._materialized_path != '':
         path = file_node._materialized_path if file_node._materialized_path[0] == '/' else '/' + file_node._materialized_path
