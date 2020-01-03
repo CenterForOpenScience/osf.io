@@ -292,11 +292,20 @@ def get_full_list(uid, pid, node):
 
 def check_file_timestamp(uid, node, data):
     user = OSFUser.objects.get(id=uid)
+    file_node = BaseFileNode.objects.get(_id=data['file_id'])
+    if not userkey_generation_check(user._id):
+        userkey_generation(user._id)
+
+    if hash_timestamp_is_enabled(file_node.provider):
+        hash_info = get_hash(file_node)
+        if hash_info:
+            return TimeStampTokenVerifyCheckHash.timestamp_check(
+                hash_info, user._id, data, node._id)
+
     cookie = user.get_or_create_cookie()
     tmp_dir = None
     result = None
     try:
-        file_node = BaseFileNode.objects.get(_id=data['file_id'])
         tmp_dir = tempfile.mkdtemp()
         if not os.path.exists(tmp_dir):
             os.mkdir(tmp_dir)
@@ -311,8 +320,6 @@ def check_file_timestamp(uid, node, data):
                     file_data.get().inspection_result_status not in intentional_remove_status:
                 file_data.update(inspection_result_status=api_settings.FILE_NOT_FOUND)
             return None
-        if not userkey_generation_check(user._id):
-            userkey_generation(user._id)
         verify_check = TimeStampTokenVerifyCheck()
         result = verify_check.timestamp_check(
             user._id, data, node._id, download_file_path, tmp_dir
@@ -403,11 +410,22 @@ def cancel_celery_task(node):
     return result
 
 def add_token(uid, node, data):
-    user = OSFUser.objects.get(id=uid)
+    try:
+        user = OSFUser.objects.get(id=uid)
+        file_node = BaseFileNode.objects.get(_id=data['file_id'])
+    except Exception as e:
+        DEBUG(str(e))
+        return None
+
+    if hash_timestamp_is_enabled(file_node.provider):
+        hash_info = get_hash(file_node)
+        if hash_info:
+            return AddTimestampHash.add_timestamp(
+                user._id, data, node._id, hash_info
+            )
+
     cookie = user.get_or_create_cookie()
     tmp_dir = None
-
-    file_node = BaseFileNode.objects.get(_id=data['file_id'])
 
     # Check access to provider
     root_file_nodes = waterbutler.get_node_info(cookie, node._id, data['provider'], '/')
@@ -917,7 +935,6 @@ class AddTimestamp:
 
     def add_timestamp(self, guid, file_info, project_id, file_name, tmp_dir):
         user_id = Guid.objects.get(_id=guid, content_type_id=ContentType.objects.get_for_model(OSFUser).id).object_id
-
         key_file_name = RdmUserKey.objects.get(
             guid=user_id, key_kind=api_settings.PUBLIC_KEY_VALUE
         ).key_name
@@ -964,15 +981,17 @@ class TimeStampTokenVerifyCheck:
         return abstractNode
 
     # get baseFileNode filepath
-    def get_filenameStruct(self, fsnode, fname):
+    @classmethod
+    def get_filenameStruct(cls, fsnode, fname):
         if fsnode.parent is not None:
-            fname = self.get_filenameStruct(fsnode.parent, fname) + '/' + fsnode.name
+            fname = cls.get_filenameStruct(fsnode.parent, fname) + '/' + fsnode.name
         else:
             fname = fsnode.name
         return fname
 
+    @classmethod
     def create_rdm_filetimestamptokenverify(
-            self, file_id, project_id, provider, path, inspection_result_status, userid):
+            cls, file_id, project_id, provider, path, inspection_result_status, userid):
 
         userKey = RdmUserKey.objects.get(guid=userid, key_kind=api_settings.PUBLIC_KEY_VALUE)
         create_data = RdmFileTimestamptokenVerifyResult()
@@ -986,7 +1005,8 @@ class TimeStampTokenVerifyCheck:
         create_data.verify_date = timezone.now()
         return create_data
 
-    def timestamp_check_local(self, file_info, verify_result, project_id, userid):
+    @classmethod
+    def timestamp_check_local(cls, file_info, verify_result, project_id, userid):
         """
         Check the local database for the situation of the file.
 
@@ -1010,7 +1030,7 @@ class TimeStampTokenVerifyCheck:
             if baseFileNode.is_deleted and not verify_result:
                 ret = api_settings.FILE_NOT_EXISTS
                 verify_result_title = api_settings.FILE_NOT_EXISTS_MSG  # 'FILE missing'
-                verify_result = self.create_rdm_filetimestamptokenverify(
+                verify_result = cls.create_rdm_filetimestamptokenverify(
                     file_id, project_id, provider, path, ret, userid)
 
             elif baseFileNode.is_deleted and verify_result:
@@ -1022,7 +1042,7 @@ class TimeStampTokenVerifyCheck:
                 ret = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
                 verify_result_title = \
                     api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG
-                verify_result = self.create_rdm_filetimestamptokenverify(
+                verify_result = cls.create_rdm_filetimestamptokenverify(
                     file_id, project_id, provider, path, ret, userid)
 
             elif not baseFileNode.is_deleted and not verify_result.timestamp_token:
@@ -1034,7 +1054,7 @@ class TimeStampTokenVerifyCheck:
             if not verify_result:
                 ret = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
                 verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG
-                verify_result = self.create_rdm_filetimestamptokenverify(
+                verify_result = cls.create_rdm_filetimestamptokenverify(
                     file_id, project_id, provider, path, ret, userid)
 
             elif not verify_result.timestamp_token:
@@ -1161,3 +1181,281 @@ class TimeStampTokenVerifyCheck:
             'verify_result_title': verify_result_title,
             'filepath': filepath
         }
+
+
+#ENABLE_DEBUG = False
+ENABLE_DEBUG = True #TODO
+
+def DEBUG(msg):
+    if ENABLE_DEBUG:
+        logger.error(u'DEBUG: ' + msg)
+
+
+class AddTimestampHash:
+    @classmethod
+    def add_timestamp(cls, user_guid, file_info, node_id, hash_info):
+        user_id = Guid.objects.get(_id=user_guid, content_type_id=ContentType.objects.get_for_model(OSFUser).id).object_id
+        key_file_name = RdmUserKey.objects.get(
+            guid=user_id, key_kind=api_settings.PUBLIC_KEY_VALUE
+        ).key_name
+        verify_data, created = RdmFileTimestamptokenVerifyResult.objects.get_or_create(
+            file_id=file_info['file_id'])
+        if created:
+            verify_data = RdmFileTimestamptokenVerifyResult()
+            verify_data.project_id = node_id
+            verify_data.provider = file_info['provider']
+            verify_data.path = file_info['file_path']
+            verify_data.inspection_result_status = api_settings.TIME_STAMP_TOKEN_UNCHECKED
+        verify_data.key_file_name = key_file_name
+        verify_data.timestamp_token = cls.generate_timestamp(hash_info)
+        verify_data.save()
+
+        return TimeStampTokenVerifyCheckHash.timestamp_check(
+            hash_info, user_guid, file_info, node_id, verify_data)
+
+    @classmethod
+    def generate_timestamp(cls, hash_info):
+        try:
+            if not api_settings.USE_UPKI:
+                req_out = cls.get_timestamp_request(hash_info)
+                tsa_response = cls.get_timestamp_response(req_out)
+            else:
+                tsa_response = cls.get_timestamp_upki(hash_info)
+        except Exception as e:
+            logger.exception('get_timestamp: ' + str(e))
+            tsa_response = None
+        return tsa_response
+
+    @classmethod
+    def get_timestamp_request(cls, hash_info):
+        digest = hash_info.hash_value
+        digest_type = hash_type_to_openssl_digest_type(hash_info.hash_type)
+        fmt = api_settings.SSL_CREATE_TIMESTAMP_HASH_REQUEST
+        cmd = shlex.split(fmt.format(digest=digest, digest_type=digest_type))
+        DEBUG(str(cmd))
+        process = subprocess.Popen(
+            cmd, shell=False, stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout_data, stderr_data = process.communicate()
+        return stdout_data
+
+    @classmethod
+    def get_timestamp_response(cls, ts_request):
+        res_content = None
+        retries = Retry(
+            total=api_settings.REQUEST_TIME_OUT, backoff_factor=1,
+            status_forcelist=api_settings.ERROR_HTTP_STATUS)
+        session = requests.Session()
+        session.mount('http://',
+                      requests.adapters.HTTPAdapter(max_retries=retries))
+        session.mount('https://',
+                      requests.adapters.HTTPAdapter(max_retries=retries))
+        res = session.post(
+            api_settings.TIME_STAMP_AUTHORITY_URL,
+            headers=api_settings.REQUEST_HEADER,
+            data=ts_request, stream=True)
+        res_content = res.content
+        res.close()
+        return res_content
+
+    @classmethod
+    def get_timestamp_upki(cls, hash_info):
+        digest_type = hash_type_to_upki_digest_type(hash_info.hash_type)
+        fmt = api_settings.UPKI_CREATE_TIMESTAMP_HASH
+        DEBUG(str(cmd))
+        cmd = shlex.split(fmt.format(
+            digest=hash_info.hash_value,
+            digest_type=digest_type,
+            output='/dev/stdout'
+        ))
+        process = subprocess.Popen(
+            cmd, shell=False, stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout_data, stderr_data = process.communicate()
+        return stdout_data
+
+
+class TimeStampTokenVerifyCheckHash:
+    @classmethod
+    def verify(cls, tmp_dir, hash_info, user_guid, project_id, verify_result):
+        timestamptoken_file = user_guid + '.tmp'
+        timestamptoken_file_path = os.path.join(
+            tmp_dir, timestamptoken_file)
+        with open(timestamptoken_file_path, 'wb') as fout:
+            fout.write(verify_result.timestamp_token)
+        digest = hash_info.hash_value
+        ret = 0
+        if not api_settings.USE_UPKI:
+            digest_type = hash_type_to_openssl_digest_type(hash_info.hash_type)
+            fmt = api_settings.SSL_GET_TIMESTAMP_HASH_RESPONSE
+            cmd = shlex.split(fmt.format(
+                digest=digest,
+                digest_type=digest_type,
+                input=timestamptoken_file_path,
+                ca=os.path.join(api_settings.KEY_SAVE_PATH,
+                                api_settings.VERIFY_ROOT_CERTIFICATE)
+            ))
+            DEBUG(str(cmd))
+            # exec timestamptoken verification
+            try:
+                prc = subprocess.Popen(
+                    cmd, shell=False, stdin=subprocess.PIPE,
+                    stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+                stdout_data, stderr_data = prc.communicate()
+                ret = api_settings.TIME_STAMP_TOKEN_UNCHECKED
+                if stdout_data.__str__().find(api_settings.OPENSSL_VERIFY_RESULT_OK) > -1:
+                    ret = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS
+                    verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG  # 'OK'
+                else:
+                    logger.error('timestamp verification error occured.({}) : {}'.format(verify_result.provider, stderr_data))
+                    ret = api_settings.TIME_STAMP_TOKEN_CHECK_NG
+                    verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG  # 'file modified'
+            except Exception as err:
+                logger.error('timestamp verification error occured.({}): {}'.format(verify_result.provider, err))
+                ret = api_settings.TIME_STAMP_VERIFICATION_ERR
+                verify_result_title = api_settings.TIME_STAMP_VERIFICATION_ERR_MSG  # 'NG'
+        else:  # USE_UPKI=True
+            hash_type_to_upki_digest_type(hash_info.hash_type)  # check only
+            fmt = api_settings.UPKI_VERIFY_TIMESTAMP_HASH
+            cmd = shlex.split(fmt.format(
+                digest=digest,
+                input=timestamptoken_file_path
+            ))
+            DEBUG(str(cmd))
+            try:
+                process = subprocess.Popen(
+                    cmd, shell=False, stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                stdout_data, stderr_data = process.communicate()
+                if not stderr_data:
+                    ret = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS
+                    verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG  # 'OK'
+                elif stderr_data.__str__().find(api_settings.UPKI_VERIFY_INVALID_MSG) > -1:
+                    ret = api_settings.TIME_STAMP_TOKEN_CHECK_NG
+                    verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG  # 'OK'
+                else:
+                    ret = api_settings.TIME_STAMP_VERIFICATION_ERR
+                    verify_result_title = api_settings.TIME_STAMP_VERIFICATION_ERR_MSG  # 'FAIL'
+                    logger.error(
+                        'Trusted Timestamp Token Verification failed({}:{}:{}):{}'.format(
+                            project_id,
+                            verify_result.provider,
+                            verify_result.path,
+                            stderr_data.__str__()))
+            except Exception as err:
+                ret = api_settings.TIME_STAMP_VERIFICATION_ERR
+                verify_result_title = api_settings.TIME_STAMP_VERIFICATION_ERR_MSG  # 'FAIL'
+                logger.error('upki verify error:{}'.format(err))
+        verify_result.inspection_result_status = ret
+        return verify_result, verify_result_title
+
+    @classmethod
+    def timestamp_check(cls, hash_info, guid, file_info, project_id, verify_result=None):
+        userid = Guid.objects.get(
+            _id=guid,
+            content_type_id=ContentType.objects.get_for_model(OSFUser).id).object_id
+        # get verify result
+        if verify_result is None:
+            verify_result = RdmFileTimestamptokenVerifyResult.objects.filter(
+                file_id=file_info['file_id']).first()
+            # may be None
+        ret, baseFileNode, verify_result, verify_result_title = \
+            TimeStampTokenVerifyCheck.timestamp_check_local(
+                file_info, verify_result, project_id, userid)
+
+        if ret == 0:  # OK
+            tmp_dir = tempfile.mkdtemp()
+            try:
+                verify_result, verify_result_title = cls.verify(
+                    tmp_dir, hash_info, guid, project_id, verify_result)
+            except Exception:
+                shutil.rmtree(tmp_dir)
+                raise
+            shutil.rmtree(tmp_dir)
+
+        file_created_at = file_info.get('created')
+        file_modified_at = file_info.get('modified')
+        file_size = file_info.get('size')
+
+        if not file_created_at:
+            file_created_at = None
+        if not file_modified_at:
+            file_modified_at = None
+        if not file_size:
+            file_size = None
+
+        verify_result.verify_date = timezone.now()
+        verify_result.verify_user = userid
+        verify_result.verify_file_created_at = file_created_at
+        verify_result.verify_file_modified_at = file_modified_at
+        verify_result.verify_file_size = file_size
+        verify_result.save()
+
+        # RDMINFO: TimeStampVerify
+        if file_info['provider'] == 'osfstorage':
+            if not baseFileNode._path:
+                filename = TimeStampTokenVerifyCheck.get_filenameStruct(baseFileNode, '')
+            else:
+                filename = baseFileNode._path
+            filepath = baseFileNode.provider + filename
+        else:
+            filepath = file_info['provider'] + file_info['file_path']
+
+        DEBUG('verify_result_title={}, filepath={}'.format(verify_result_title, filepath))
+        return {
+            'verify_result': ret,
+            'verify_result_title': verify_result_title,
+            'filepath': filepath
+        }
+
+
+DROPBOX_BUSINESS = 'dropboxbusiness'
+
+HASH_TYPE_SHA256 = 'sha256'
+HASH_TYPE_SHA256_DROPBOX = 'Dropbox content_hash'
+HASH_TYPE_SHA512 = 'sha512'
+
+def hash_type_to_openssl_digest_type(hash_type):
+    if hash_type == HASH_TYPE_SHA512:
+        digest_type = '-sha512'
+    elif hash_type == HASH_TYPE_SHA256:
+        digest_type = '-sha256'
+    else:
+        raise Exception('unknown hash_type: ' + hash_type)
+    return digest_type
+
+def hash_type_to_upki_digest_type(hash_type):
+    if hash_type == HASH_TYPE_SHA512:
+        digest_type = 's512'
+    else:
+        raise Exception('unknown hash_type: ' + hash_type)
+    return digest_type
+
+
+class HashInfo():
+    def __init__(self, hash_type, hash_value):
+        self.hash_type = hash_type
+        self.hash_value = hash_value
+
+def sha256_to_sha512(val):
+    return val + \
+        '0000000000000000000000000000000000000000000000000000000000000000'
+
+def hash_timestamp_is_enabled(provider):
+    return provider == DROPBOX_BUSINESS
+
+def get_hash(file_node):
+    meta = file_node.last_known_metadata
+    if meta:
+        hashes = meta.get('hashes')
+        if hashes:
+            if file_node.provider == DROPBOX_BUSINESS:
+                sha256 = hashes.get(HASH_TYPE_SHA256_DROPBOX)
+                if sha256:
+                    DEBUG('HASH_TYPE_SHA256_DROPBOX value={}'.format(sha256))
+                    sha512 = sha256_to_sha512(sha256)
+                    return HashInfo(HASH_TYPE_SHA512, sha512)
+            else:
+                # not implemented yet
+                pass
+    return None
