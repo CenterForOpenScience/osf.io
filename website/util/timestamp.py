@@ -1183,8 +1183,7 @@ class TimeStampTokenVerifyCheck:
         }
 
 
-#ENABLE_DEBUG = False
-ENABLE_DEBUG = True #TODO
+ENABLE_DEBUG = False
 
 def DEBUG(msg):
     if ENABLE_DEBUG:
@@ -1262,12 +1261,12 @@ class AddTimestampHash:
     def get_timestamp_upki(cls, hash_info):
         digest_type = hash_type_to_upki_digest_type(hash_info.hash_type)
         fmt = api_settings.UPKI_CREATE_TIMESTAMP_HASH
-        DEBUG(str(cmd))
         cmd = shlex.split(fmt.format(
             digest=hash_info.hash_value,
             digest_type=digest_type,
             output='/dev/stdout'
         ))
+        DEBUG(str(cmd))
         process = subprocess.Popen(
             cmd, shell=False, stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
