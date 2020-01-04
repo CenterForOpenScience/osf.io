@@ -498,9 +498,7 @@ def file_created_or_updated(node, metadata, user_id, created_flag):
         file_node.path = '/' + metadata.get('path').lstrip('/')
         file_node.name = metadata.get('name')
         file_node.materialized_path = metadata.get('materialized')
-
         file_node.save()
-
         metadata['path'] = file_node._id
     created_at = metadata.get('created_utc')
     modified_at = metadata.get('modified_utc')
@@ -1147,7 +1145,12 @@ class TimeStampTokenVerifyCheck:
                     logger.error('upki verify error({}):{}'.format(file_name.encode('utf-8'), err))
 
             verify_result.inspection_result_status = ret
+        return self.generate_verify_result(
+            baseFileNode, file_info, userid,
+            verify_result, verify_result_title, ret)
 
+    @classmethod
+    def generate_verify_result(cls, baseFileNode, file_info, userid, verify_result, verify_result_title, ret):
         file_created_at = file_info.get('created')
         file_modified_at = file_info.get('modified')
         file_size = file_info.get('size')
@@ -1169,7 +1172,7 @@ class TimeStampTokenVerifyCheck:
         # RDMINFO: TimeStampVerify
         if file_info['provider'] == 'osfstorage':
             if not baseFileNode._path:
-                filename = self.get_filenameStruct(baseFileNode, '')
+                filename = cls.get_filenameStruct(baseFileNode, '')
             else:
                 filename = baseFileNode._path
             filepath = baseFileNode.provider + filename
@@ -1346,7 +1349,7 @@ class TimeStampTokenVerifyCheckHash:
                 verify_result_title = api_settings.TIME_STAMP_VERIFICATION_ERR_MSG  # 'FAIL'
                 logger.error('upki verify error:{}'.format(err))
         verify_result.inspection_result_status = ret
-        return verify_result, verify_result_title
+        return verify_result, verify_result_title, ret
 
     @classmethod
     def timestamp_check(cls, hash_info, guid, file_info, project_id, verify_result=None):
@@ -1365,47 +1368,15 @@ class TimeStampTokenVerifyCheckHash:
         if ret == 0:  # OK
             tmp_dir = tempfile.mkdtemp()
             try:
-                verify_result, verify_result_title = cls.verify(
+                verify_result, verify_result_title, ret = cls.verify(
                     tmp_dir, hash_info, guid, project_id, verify_result)
             except Exception:
                 shutil.rmtree(tmp_dir)
                 raise
             shutil.rmtree(tmp_dir)
-
-        file_created_at = file_info.get('created')
-        file_modified_at = file_info.get('modified')
-        file_size = file_info.get('size')
-
-        if not file_created_at:
-            file_created_at = None
-        if not file_modified_at:
-            file_modified_at = None
-        if not file_size:
-            file_size = None
-
-        verify_result.verify_date = timezone.now()
-        verify_result.verify_user = userid
-        verify_result.verify_file_created_at = file_created_at
-        verify_result.verify_file_modified_at = file_modified_at
-        verify_result.verify_file_size = file_size
-        verify_result.save()
-
-        # RDMINFO: TimeStampVerify
-        if file_info['provider'] == 'osfstorage':
-            if not baseFileNode._path:
-                filename = TimeStampTokenVerifyCheck.get_filenameStruct(baseFileNode, '')
-            else:
-                filename = baseFileNode._path
-            filepath = baseFileNode.provider + filename
-        else:
-            filepath = file_info['provider'] + file_info['file_path']
-
-        DEBUG('verify_result_title={}, filepath={}'.format(verify_result_title, filepath))
-        return {
-            'verify_result': ret,
-            'verify_result_title': verify_result_title,
-            'filepath': filepath
-        }
+        return TimeStampTokenVerifyCheck.generate_verify_result(
+            baseFileNode, file_info, userid,
+            verify_result, verify_result_title, ret)
 
 
 DROPBOX_BUSINESS = 'dropboxbusiness'

@@ -4,6 +4,7 @@ import logging
 import time
 import collections
 import threading
+from pprint import pformat as pf
 
 import dropbox
 from dropbox.dropbox import DropboxTeam
@@ -13,17 +14,20 @@ from dropbox.team import (GroupMembersAddError, GroupMembersRemoveError,
                           GroupSelector, UserSelectorArg, GroupAccessType,
                           MemberAccess)
 
-from osf.models.rdm_addons import RdmAddonOption
+from celery.contrib.abortable import AbortableTask
+
+from osf.models import BaseFileNode, OSFUser
 from osf.models.external import ExternalAccount
+from osf.models.rdm_addons import RdmAddonOption
 from addons.dropboxbusiness import settings
 from admin.rdm_addons.utils import get_rdm_addon_option
+from website.util import timestamp, waterbutler
+from api.base import settings as api_settings
+from framework.celery_tasks import app as celery_app
 
 logger = logging.getLogger(__name__)
 
 ENABLE_DEBUG = False
-
-
-from pprint import pformat as pf
 
 def DEBUG(msg):
     if ENABLE_DEBUG:
@@ -395,7 +399,7 @@ def update_admin_dbmid(team_id):
                     team_info.name, addon.admin_dbmid, new_admin_dbmid))
                 log_once = False
             addon.set_admin_dbmid(new_admin_dbmid)
-            addon.cursor = None
+            addon.list_cursor = None
             addon.save()
 
         if update_dispname_once:
@@ -447,7 +451,6 @@ def update_admin_dbmid(team_id):
 
 class TeamFolder(object):
     team_folder_id = None
-    cursor = None
     metadata = None
 
     def __init__(self, metadata):
@@ -459,6 +462,7 @@ class TeamFolder(object):
 
     def update_metadata(self, metadata):
         self.metadata = metadata
+
 
 class TeamInfo(object):
     team_id = None
@@ -478,7 +482,6 @@ class TeamInfo(object):
     group_id_to_name = {}
     team_folders = {}  # team_folder_id -> TeamFolder
     team_folder_names = {}  # team_folder name -> TeamFolder
-    cursor = None
 
     def __init__(self, fileaccess_token, management_token,
                  max_connections=8,
@@ -609,7 +612,7 @@ class TeamInfo(object):
     def _update_team_folders(self):
         cursor = None
         has_more = True
-        # NOTE: client = self.management_client
+        # NOTE: using "client = self.management_client"
         #       -> ERROR: Your API app is not allowed to call this function.
         client = self.fileaccess_client_team
         while has_more:
@@ -631,10 +634,11 @@ class TeamInfo(object):
 
     # return (team_folder_id, team_folder_name, subpath)
     def team_folder_path(self, path_display):
+        # NOTE: team_folder name is path_display.
         p = path_display
         team_folder_name = None
         while True:
-            head, tail = os.path.split(p)
+            head, tail = os.path.split(p)  # dirname + basename
             if head == '/':
                 team_folder_name = tail
                 break
@@ -646,3 +650,153 @@ class TeamInfo(object):
             return None
         subpath = path_display[len(u'/' + team_folder_name):]
         return (tf.team_folder_id, team_folder_name, subpath)
+
+    def list_updated_files(self, cursor):
+        self._update_team_folders()
+        client = self.fileaccess_client_user(self.admin_dbmid)
+        has_more = True
+        has_entry = False
+        files = []
+        while has_more:
+            if not cursor:
+                lst = client.files_list_folder('', recursive=True)
+            else:
+                lst = client.files_list_folder_continue(cursor)
+            has_more = lst.has_more
+            cursor = lst.cursor  # save
+            for ent in lst.entries:
+                if not ENABLE_DEBUG:
+                    # DeletedMetadata and FolderMetadata are ignored.
+                    if not isinstance(ent, dropbox.files.FileMetadata):
+                        continue
+                else:  # debug
+                    path = u'{}, path_display={}'.format(
+                        ent.path_lower, ent.path_display)
+                    sharing_info = None
+                    if isinstance(ent, dropbox.files.FileMetadata):
+                        sharing_info = ent.sharing_info
+                        p = u'[FILE] {}, content_hash={}'.format(
+                            path, ent.content_hash)
+                    elif isinstance(ent, dropbox.files.FolderMetadata):
+                        sharing_info = ent.sharing_info
+                        p = u'[DIR] {}, id={}, shared_folder_id={}'.format(
+                            path, ent.id, ent.shared_folder_id)
+                    elif isinstance(ent, dropbox.files.DeletedMetadata):
+                        p = u'[DELETED] {}'.format(path)
+
+                    if sharing_info is not None:
+                        psf_id = sharing_info.parent_shared_folder_id
+                        p += ', parent_sharing_folder_id={}'.format(psf_id)
+                        tf = self.team_folders.get(psf_id)
+                        if tf:
+                            p += u', team_folder_name={}'.format(
+                                tf.metadata.name)
+                        else:
+                            p += ', <IN NOT A TEAM FOLDER>'
+                    DEBUG(p)
+
+                if isinstance(ent, dropbox.files.FileMetadata):
+                    r = self.team_folder_path(ent.path_display)
+                    if r:
+                        files.append(r)
+                has_entry = True
+        if not has_entry:
+            DEBUG('no updated file')
+        return files, cursor
+
+
+PROVIDER_NAME = 'dropboxbusiness'
+
+def select_user(node, team_info):
+    def select(dbmid):
+        try:
+            email = team_info.dbmid_to_email[dbmid]
+            eppn = email_to_eppn(email)
+            user = OSFUser.objects.get(eppn=eppn)
+            return user
+        except Exception:
+            return None
+    user = select(team_info.admin_dbmid)
+    if user:
+        return user
+    # select from admin contributors
+    for user in node.contributors.all():
+        if user.is_disabled or user.eppn is None:
+            continue
+        if node.is_admin_contributor(user):
+            return user
+    raise Exception('unexpected condition')
+
+def add_timestamp(team_folder_id, path, team_info, user, user_cookie):
+    from addons.dropboxbusiness.models import NodeSettings
+
+    def check_and_add(addon):
+        node = addon.owner
+        cls = BaseFileNode.resolve_class(PROVIDER_NAME, BaseFileNode.FILE)
+        file_node = cls.get_or_create(node, path)
+        waterbutler_json_res = waterbutler.get_node_info(
+            user_cookie, node._id, PROVIDER_NAME, path)
+        if waterbutler_json_res is None:
+            return
+        file_data = waterbutler_json_res.get('data')
+        if file_data is None:
+            return
+        DEBUG('file_data: ' + str(file_data))
+        attrs = file_data['attributes']
+        file_node.update(None, attrs, user=user)  # update content_hash
+        file_info = {
+            'file_id': file_node._id,
+            'file_name': attrs.get('name'),
+            'file_path': attrs.get('materialized'),
+            'size': attrs.get('size'),
+            'created': attrs.get('created_utc'),
+            'modified': attrs.get('modified_utc'),
+            'file_version': '',
+            'provider': PROVIDER_NAME
+        }
+        verify_result = timestamp.check_file_timestamp(
+            user.id, node, file_info)
+        DEBUG('BEFORE: ' + str(verify_result))
+        if verify_result['verify_result'] == \
+           api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS:
+            return
+        verify_result = timestamp.add_token(user.id, node, file_info)
+        DEBUG('AFTER: ' + str(verify_result))
+
+    # team_folder_id of NodeSettings is not UNIQUE,
+    # but two or more NodeSettings do not exist.
+    for addon in NodeSettings.objects.filter(team_folder_id=team_folder_id):
+        try:
+            check_and_add(addon)
+        except Exception:
+            logger.exception('project guid={}'.format(addon.owner._id))
+
+@celery_app.task(bind=True, base=AbortableTask)
+def celery_check_and_add_timestamp(self, team_ids):
+    from addons.dropboxbusiness.models import NodeSettings
+
+    def update_team_files(dbtid):
+        ea = ExternalAccount.objects.get(
+            provider=PROVIDER_NAME, provider_id=dbtid)
+        opt = RdmAddonOption.objects.get(
+            provider=PROVIDER_NAME, external_accounts=ea)
+        node_settings = NodeSettings.objects.filter(fileaccess_option=opt)
+        first = node_settings.order_by('id').first()
+        team_info = TeamInfo(first.fileaccess_token, first.management_token,
+                             admin=True)
+        team_info.set_admin_dbmid(first.admin_dbmid)
+        user = select_user(first.owner, team_info)
+        files, cursor = team_info.list_updated_files(first.list_cursor)
+        for f in files:
+            i, n, p = f
+            DEBUG(u'team_folder_id={}, name={}, path={}'.format(i, n, p))
+            user_cookie = user.get_or_create_cookie()
+            add_timestamp(i, p, team_info, user, user_cookie)
+        first.list_cursor = cursor
+        first.save()
+
+    for dbtid in team_ids:
+        try:
+            update_team_files(dbtid)
+        except Exception:
+            logger.exception('dropbox Team ID={}'.format(dbtid))

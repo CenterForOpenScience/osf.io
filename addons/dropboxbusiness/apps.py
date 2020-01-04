@@ -46,3 +46,8 @@ class DropboxBusinessAddonAppConfig(BaseAddonAppConfig):
     @property
     def node_settings(self):
         return self.get_model('NodeSettings')
+
+    @property
+    def routes(self):
+        from . import routes
+        return [routes.auth_routes, routes.api_routes]
