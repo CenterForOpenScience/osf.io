@@ -43,7 +43,7 @@ CAST(osf_retraction.date_retracted AS DATE),
             FROM toplevel_regs
             JOIN osf_registrationschema
             ON toplevel_regs.json_object_keys = osf_registrationschema._id
-            GROUP BY json_object_keys, osf_registrationschema.name, toplevel_regs.registered_date),
+            GROUP BY osf_registrationschema.name, toplevel_regs.registered_date),
         /* count up retraction events by day by form */
         retracts_by_date AS (
             SELECT osf_registrationschema.name, toplevel_regs.date_retracted AS event_date,
@@ -51,15 +51,17 @@ CAST(osf_retraction.date_retracted AS DATE),
                 FROM toplevel_regs
                 JOIN osf_registrationschema
                 ON toplevel_regs.json_object_keys = osf_registrationschema._id
-                GROUP BY json_object_keys, osf_registrationschema.name, toplevel_regs.date_retracted
+                GROUP BY osf_registrationschema.name, toplevel_regs.date_retracted
         ),
         /* create list of all dates from last month */
         dates AS (SELECT event_date::date from generate_series(date_trunc('month', CURRENT_DATE - '1 month'::interval),
         date_trunc('month', current_date)::date -1, '1 day'::interval) event_date),
         /* crossjoin with all registration types to get a row for all combinations */
-        setup AS (SELECT dates.event_date, osf_registrationschema.name
+        setup AS (SELECT dates.event_date, name
             FROM dates
-            CROSS JOIN osf_registrationschema)
+            CROSS JOIN (SELECT name
+                            FROM osf_registrationschema
+                            GROUP BY name) as schema)
 
 /* join retraction and registrations onto crossjoin so that we have an entry for each registration form for each date */
 
