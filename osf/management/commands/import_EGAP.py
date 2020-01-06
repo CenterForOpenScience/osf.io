@@ -260,7 +260,7 @@ def main(guid, creator_username):
 
         # DraftRegistration Creation
         draft_registration = DraftRegistration.create_from_node(
-            node,
+            node=node,
             user=creator,
             schema=egap_schema,
             data=registration_metadata,
