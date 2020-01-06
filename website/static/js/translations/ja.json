@@ -1,0 +1,174 @@
+{
+  "translations": {
+      "": {
+          "myProject.js": {
+		    "msgid": "myProject.js",
+		    "msgstr": ["myProject.js"]
+			},
+          "Browse and organize all your projects": {
+		    "msgid": "Browse and organize all your projects",
+		    "msgstr": ["すべてのプロジェクトを参照して整理する。"]
+			},
+          "We're having some trouble contacting our servers. Try reloading the page.": {
+		    "msgid": "We\\'re having some trouble contacting our servers. Try reloading the page.",
+		    "msgstr": ["サーバーへの接続に問題があります。 ページを再読み込みしてください。"]
+			},
+          "Something went wrong!": {
+		    "msgid": "Something went wrong!",
+		    "msgstr": ["何かが上手くいきませんでした！"]
+			},
+          "Error loading project category names.": {
+		    "msgid": "Error loading project category names.",
+		    "msgstr": ["プロジェクトカテゴリ名の読み込みエラー"]
+			},
+          "Some projects": {
+		    "msgid": "Some projects",
+		    "msgstr": ["いくつかのプロジェクト"]
+			},
+          " could not be removed from the collection": {
+		    "msgid": " could not be removed from the collection",
+		    "msgstr": ["がコレクションから除外されました。"]
+			},
+          "Please try again.": {
+		    "msgid": "Please try again.",
+		    "msgstr": ["もう一度試してください。"]
+			},
+          "You have not created any projects yet.": {
+		    "msgid": "You have not created any projects yet.",
+		    "msgstr": ["プロジェクトはまだ作成されていません。"]
+			},
+          "You have no bookmarks. You can add projects or registrations by dragging them into your bookmarks or by clicking the Add to Bookmark button on the project or registration.": {
+		    "msgid": "You have no bookmarks. You can add projects or registrations by dragging them into your bookmarks or by clicking the Add to Bookmark button on the project or registration.",
+		    "msgstr": ["ブックマークがありません。 プロジェクトまたは登録を追加するには、それらをブックマークにドラッグするか、プロジェクトまたは登録の[ブックマークに追加]ボタンをクリックします。"]
+			},
+          "There have been no completed registrations for this institution, but you can view the ": {
+		    "msgid": "There have been no completed registrations for this institution, but you can view the ",
+		    "msgstr": ["この機関の登録は完了していませんが、表示できます："]
+			},
+          "newest public registrations": {
+		    "msgid": "newest public registrations",
+		    "msgstr": ["最新の公的登録"]
+			},
+          "popular public registrations.": {
+		    "msgid": "popular public registrations.",
+		    "msgstr": ["人気のある公的な登録"]
+			},
+          " or ": {
+		    "msgid": " or ",
+		    "msgstr": ["または"]
+			},
+          "You have not made any registrations yet. Go to ": {
+		    "msgid": "You have not made any registrations yet. Go to ",
+		    "msgstr": ["まだ登録していません。こちらへ："]
+			},
+          "Guides": {
+		    "msgid": "Guides",
+		    "msgstr": ["ガイド"]
+			},
+          " to learn how registrations work.": {
+		    "msgid": " to learn how registrations work.",
+		    "msgstr": ["登録の仕組みを学習するために。"]
+			},
+          "(You have not made any preprints yet. Learn more about preprints in the ": {
+		    "msgid": "(You have not made any preprints yet. Learn more about preprints in the ",
+		    "msgstr": ["まだプレプリントを作成していません。 プレプリントの詳細については、"]
+			},
+          "OSF Guides": {
+		    "msgid": "OSF Guides",
+		    "msgstr": ["OSFガイド"]
+			},
+          "make one now.": {
+		    "msgid": "make one now.",
+		    "msgstr": ["を読むか、今すぐ作りましょう。"]
+			},
+          "You have no bookmarks. You can add projects or registrations by dragging them into your bookmarks or by clicking the Add to Bookmark button on the project or registration.": {
+		    "msgid": "You have no bookmarks. You can add projects or registrations by dragging them into your bookmarks or by clicking the Add to Bookmark button on the project or registration.",
+		    "msgstr": ["ブックマークがありません。 プロジェクトまたは登録を追加するには、それらをブックマークにドラッグするか、プロジェクトまたは登録の[ブックマークに追加]ボタンをクリックします。"]
+			},
+          "This collection is empty.": {
+		    "msgid": "This collection is empty.",
+		    "msgstr": ["このコレクションは空です。"]
+			},
+          " You can add projects, registrations, or preprints by dragging them into the collection.": {
+		    "msgid": " You can add projects, registrations, or preprints by dragging them into the collection.",
+		    "msgstr": ["プロジェクト、登録、またはプレプリントをコレクションにドラッグして追加できます。"]
+			},
+          "No components to display. Either there are no components, or there are private components in which you are not a contributor.": {
+		    "msgid": "No components to display. Either there are no components, or there are private components in which you are not a contributor.",
+		    "msgstr": ["表示するコンポーネントはありません。 コンポーネントがないか、コントリビュータではないプライベートコンポーネントがあります。"]
+			},
+          "Collections could not be loaded.": {
+		    "msgid": "Collections could not be loaded.",
+		    "msgstr": ["コレクションをロードできませんでした。"]
+			},
+          "Please reload the page.": {
+		    "msgid": "Please reload the page.",
+		    "msgstr": ["ページをリロードしてください。"]
+			},
+          "\" collection could not be created.": {
+		    "msgid": "\" collection could not be created.",
+		    "msgstr": ["\"コレクションを作成できませんでした。"]
+			},
+          "\" could not be deleted.": {
+		    "msgid": "\\" could not be deleted.",
+		    "msgstr": ["は削除できませんでした。"]
+			},
+          "\" could not be renamed.": {
+		    "msgid": "\" could not be renamed.",
+		    "msgstr": ["はリネームできませんでした。"]
+			},
+          "\" is already in \"": {
+		    "msgid": "\" is already in \"",
+		    "msgstr": ["はすでに入っています："]
+			},
+          "\"Bookmarks\" is a reserved collection name. Please use another name.": {
+		    "msgid": "\"Bookmarks\" is a reserved collection name. Please use another name.",
+		    "msgstr": ["「ブックマーク」は予約済みのコレクション名です。 別の名前を使用してください。"]
+			},
+          "Collections are groups of projects. You can create custom collections. Drag and drop your projects or bookmarked projects to add them.": {
+		    "msgid": "Collections are groups of projects. You can create custom collections. Drag and drop your projects or bookmarked projects to add them.",
+		    "msgstr": ["コレクションはプロジェクトのグループです。 カスタムコレクションを作成できます。 プロジェクトまたはブックマークしたプロジェクトをドラッグアンドドロップして追加します。"]
+			},
+          "Collections are groups of projects that help you organize your work. After you create your collection, you can add projects by dragging them into the collection.": {
+		    "msgid": "Collections are groups of projects that help you organize your work. After you create your collection, you can add projects by dragging them into the collection.",
+		    "msgstr": ["コレクションは、作業の整理に役立つプロジェクトのグループです。 コレクションを作成したら、プロジェクトをコレクションにドラッグして追加できます。"]
+			},
+          "e.g.  My Replications": {
+		    "msgid": "e.g.  My Replications",
+		    "msgstr": ["例：私の複製"]
+			},
+          "Rename": {
+		    "msgid": "Rename",
+		    "msgstr": ["リネーム"]
+			},
+          "This will delete your collection, but your projects will not be deleted.": {
+		    "msgid": "This will delete your collection, but your projects will not be deleted.",
+		    "msgstr": ["これによりコレクションが削除されますが、プロジェクトは削除されません。"]
+			},
+          "Create component": {
+		    "msgid": "Create component",
+		    "msgstr": ["コンポーネントを作成"]
+			},
+          "No contributors to display in this collection. Project administrators can add contributors.": {
+		    "msgid": "No contributors to display in this collection. Project administrators can add contributors.",
+		    "msgstr": ["このコレクションに表示するコントリビュータはいません。 プロジェクト管理者はコントリビュータを追加できます。"]
+			},
+          "No tags to display in this collection. Project administrators and write contributors can add tags.": {
+		    "msgid": "No tags to display in this collection. Project administrators and write contributors can add tags.",
+		    "msgstr": ["このコレクションに表示するタグはありません。 プロジェクト管理者と寄稿者はタグを追加できます。"]
+			},
+          "Click a contributor\\'s name to see projects that you have in common.": {
+		    "msgid": "Click a contributor\\'s name to see projects that you have in common.",
+		    "msgstr": ["コントリビュータの名前をクリックして、共通のプロジェクトを表示します。"]
+			},
+          "Select a row to view project details.": {
+		    "msgid": "Select a row to view project details.",
+		    "msgstr": ["行を選択して、プロジェクトの詳細を表示します。"]
+			},
+          "Remove selected from collection": {
+		    "msgid": "Remove selected from collection",
+		    "msgstr": ["コレクションから選択を削除"]
+			}
+      }
+  }
+}
