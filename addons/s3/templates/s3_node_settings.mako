@@ -11,28 +11,28 @@
                 authorized by <a data-bind="attr: {href: urls().owner}, text: ownerName"></a>
                 % if not is_registration:
                     <a data-bind="click: deauthorize, visible: validCredentials"
-                        class="text-danger pull-right addon-auth">${_("Disconnect Account")}</a>
+                        class="text-danger pull-right addon-auth">Disconnect Account</a>
                 % endif
             </span>
 
              <!-- Import Access Token Button -->
             <span data-bind="if: showImport">
                 <a data-bind="click: importAuth" href="#" class="text-primary pull-right addon-auth">
-                    ${_("Import Account from Profile")}
+                    Import Account from Profile
                 </a>
             </span>
 
             <!-- Loading Import Text -->
             <span data-bind="if: showLoading">
                 <p class="text-muted pull-right addon-auth">
-                    ${_("Loading ...")}
+                    Loading ...
                 </p>
             </span>
 
             <!-- Oauth Start Button -->
             <span data-bind="if: showTokenCreateButton">
                 <a href="#s3InputCredentials" data-toggle="modal" class="pull-right text-primary addon-auth">
-                    ${_("Connect  Account")}
+                    Connect  Account
                 </a>
             </span>
         </small>
@@ -42,12 +42,12 @@
         <div class="row">
             <div class="col-md-12">
                 <p class="break-word">
-                    <strong>${_("Current Bucket:")}</strong>
+                    <strong>Current Bucket:</strong>
                     <span data-bind="if: folderName">
                         <a data-bind="attr: {href: urls().files}, text: folderName"></a>
                     </span>
                     <span class="text-muted" data-bind="ifnot: folderName">
-                        ${_("None")}
+                        None
                     </span>
                 </p>
                 <!-- Folder buttons -->
@@ -55,12 +55,12 @@
                     <button data-bind="click: togglePicker,
                                        css: {active: currentDisplay() === PICKER}" class="btn btn-primary">
                                        <span data-bind="text: toggleChangeText"></span></button>
-                    <button data-bind="visible: userIsOwner() && validCredentials(), click: openCreateBucket" class="btn btn-success" id="newBucket">${_("Create bucket")}</button>
+                    <button data-bind="visible: userIsOwner() && validCredentials(), click: openCreateBucket" class="btn btn-success" id="newBucket">Create bucket</button>
                 </div>
                 <!-- Folder picker -->
                 <div class="m-t-sm addon-folderpicker-widget ${addon_short_name}-widget">
                     <p class="text-muted text-center ${addon_short_name}-loading-text" data-bind="visible: loading">
-                        ${_("Loading buckets...")}</p>
+                        Loading buckets...</p>
                     <div data-bind="visible: currentDisplay() === PICKER">
                         <div id="${addon_short_name}Grid" class="filebrowser ${addon_short_name}-folder-picker"></div>
                     </div>
@@ -69,14 +69,14 @@
                         <form data-bind="submit: submitSettings">
                             <div class="break-word">
                                 <div data-bind="if: selected" class="alert alert-info ${addon_short_name}-confirm-dlg">
-                                    ${_('Connect <b>&ldquo;<span %(data_bind)s></span>&rdquo;</b>?') % dict(data_bind='data-bind="text: selectedFolderName"') | n}
+                                    Connect <b>&ldquo;<span data-bind="text: selectedFolderName"></span>&rdquo;</b>?
                                 </div>
                             </div>
                             <div class="pull-right">
                                 <button class="btn btn-default" data-bind="click: cancelSelection">
-                                    ${_("Cancel")}
+                                    Cancel
                                 </button>
-                                <input type="submit" class="btn btn-success" value="${_('Save')}" />
+                                <input type="submit" class="btn btn-success" value="Save" />
                             </div>
                         </form>
                     </div>
