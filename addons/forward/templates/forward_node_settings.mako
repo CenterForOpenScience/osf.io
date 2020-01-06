@@ -11,7 +11,7 @@
                         id="forwardUrl"
                         class="form-control"
                         data-bind="value: url"
-                        placeholder="${_('Send people who visit your GakuNin RDM project page to this link instead')}"
+                        placeholder="Send people who visit your GakuNin RDM project page to this link instead"
                         />
             </div>
 
@@ -33,7 +33,7 @@
                 <div class="col-md-2">
                     <input type="submit"
                            class="btn btn-success pull-right"
-                           value="${_('Save')}"
+                           value="Save"
                     />
                 </div>
             </div>
