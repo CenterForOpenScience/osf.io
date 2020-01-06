@@ -110,7 +110,7 @@
 		    "msgstr": ["\"コレクションを作成できませんでした。"]
 			},
           "\" could not be deleted.": {
-		    "msgid": "\\" could not be deleted.",
+		    "msgid": "\" could not be deleted.",
 		    "msgstr": ["は削除できませんでした。"]
 			},
           "\" could not be renamed.": {
