@@ -232,6 +232,10 @@ CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
     'contributor_added_preprint_node_from_osf',
     subject='You have been added as a contributor to an OSF project.'
 )
+CONTRIBUTOR_ADDED_DRAFT_REGISTRATION = Mail(
+    'contributor_added_draft_registration',
+    subject='You have been added as a contributor to a draft registration.'
+)
 MODERATOR_ADDED = lambda provider: Mail(
     'moderator_added',
     subject='You have been added as a moderator for {}'.format(provider.name)

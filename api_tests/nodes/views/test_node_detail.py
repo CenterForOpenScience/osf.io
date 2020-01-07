@@ -28,10 +28,11 @@ from osf_tests.factories import (
     ForkFactory,
     OSFGroupFactory,
     WithdrawnRegistrationFactory,
+    DraftNodeFactory,
 )
 from rest_framework import exceptions
 from tests.base import fake
-from tests.utils import assert_equals, assert_latest_log, assert_latest_log_not
+from tests.utils import assert_items_equal, assert_latest_log, assert_latest_log_not
 from website.views import find_bookmark_collection
 
 
@@ -55,18 +56,15 @@ class TestNodeDetail:
             creator=user)
 
     @pytest.fixture()
+    def draft_node(self, user):
+        return DraftNodeFactory(creator=user)
+
+    @pytest.fixture()
     def project_private(self, user):
         return ProjectFactory(
             title='Project Two',
             is_public=False,
             creator=user)
-
-    @pytest.fixture()
-    def wiki_private(self, user, project_private):
-        with mock.patch('osf.models.AbstractNode.update_search'):
-            wiki_page = WikiFactory(page_name='foo', node=project_private, user=user)
-            WikiVersionFactory(wiki_page=wiki_page)
-        return wiki_page
 
     @pytest.fixture()
     def component_public(self, user, project_public):
@@ -99,7 +97,7 @@ class TestNodeDetail:
     def test_return_project_details(
             self, app, user, user_two, project_public,
             project_private, url_public, url_private,
-            permissions_read, permissions_admin):
+            permissions_read, permissions_admin, draft_node):
 
         #   test_return_public_project_details_logged_out
         res = app.get(url_public)
@@ -159,6 +157,11 @@ class TestNodeDetail:
         assert res.status_code == 200
         assert project_private.has_permission(user_two, permissions.WRITE) is True
 
+    #   test_draft_node_not_returned_under_node_detail_endpoint
+        draft_node_url = '/{}nodes/{}/'.format(API_BASE, draft_node._id)
+        res = app.get(draft_node_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
+
     def test_return_private_project_details_logged_in_write_contributor(
             self, app, user, user_two, project_private, url_private, permissions_write):
         project_private.add_contributor(
@@ -170,7 +173,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is True
-        assert_equals(
+        assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_write)
 
@@ -1369,7 +1372,6 @@ class TestNodeUpdate(NodeCRUDTestCase):
             make_node_payload(project_public, {'public': False}),
             auth=user.auth  # self.user is creator/admin
         )
-
         assert res.status_code == 200
 
     @mock.patch('website.identifiers.tasks.update_doi_metadata_on_change.s')

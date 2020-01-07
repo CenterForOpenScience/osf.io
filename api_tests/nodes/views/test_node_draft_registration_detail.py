@@ -14,7 +14,7 @@ from osf_tests.factories import (
 )
 from osf.utils.permissions import WRITE, READ
 from rest_framework import exceptions
-from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
+from test_node_draft_registration_list import DraftRegistrationTestCase
 
 SCHEMA_VERSION = 2
 
@@ -55,7 +55,10 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         assert data['id'] == draft_registration._id
         assert data['attributes']['registration_metadata'] == {}
 
-    #   test_group_mem_admin_can_view
+    def test_admin_group_member_can_view(
+        self, app, user, draft_registration, project_public,
+            schema, url_draft_registrations, group_mem):
+
         res = app.get(url_draft_registrations, auth=group_mem.auth)
         assert res.status_code == 200
 
@@ -199,22 +202,6 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         }
 
     @pytest.fixture()
-    def payload_with_registration_responses(self, draft_registration):
-        return {
-            'data': {
-                'id': draft_registration._id,
-                'type': 'draft_registrations',
-                'attributes': {
-                    'registration_responses': {
-                        'datacompletion': 'No, data collection has not begun',
-                        'looked': 'No',
-                        'comments': 'This is my first registration.'
-                    }
-                }
-            }
-        }
-
-    @pytest.fixture()
     def administer_permission(self):
         return Permission.objects.get(codename='administer_prereg')
 
@@ -245,12 +232,6 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         data = res.json['data']
         assert schema._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['attributes']['registration_metadata'] == payload['data']['attributes']['registration_metadata']
-        # A write to registration_metadata, also updates registration_responses
-        assert data['attributes']['registration_responses'] == {
-            'datacompletion': 'No, data collection has not begun',
-            'looked': 'No',
-            'comments': 'This is my first registration.'
-        }
 
     def test_draft_must_be_branched_from_node(
             self, app, user, project_other, draft_registration, payload):
@@ -316,6 +297,16 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         )
         assert res.status_code == 403
 
+    def test_registration_metadata_does_not_need_to_be_supplied(
+            self, app, user, payload, url_draft_registrations):
+        payload['data']['attributes'] = {}
+
+        res = app.put_json_api(
+            url_draft_registrations,
+            payload, auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 200
+
     def test_registration_metadata_must_be_a_dictionary(
             self, app, user, payload, url_draft_registrations):
         payload['data']['attributes']['registration_metadata'] = 'Registration data'
@@ -339,7 +330,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'For your registration your response to the \'Data collection status\'' \
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\'' \
                                    ' field is invalid, your response must be one of the provided options.'
 
     def test_registration_metadata_question_keys_must_be_value(
@@ -353,7 +344,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'For your registration your response to the \'Data collection status\'' \
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\'' \
                                    ' field is invalid, your response must be one of the provided options.'
 
     def test_question_in_registration_metadata_must_be_in_schema(
@@ -382,7 +373,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'For your registration your response to the \'Data collection status\' field' \
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\' field' \
                                    ' is invalid, your response must be one of the provided options.'
 
     def test_cannot_update_registration_schema(
@@ -519,7 +510,6 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert res.status_code == 400
         assert errors['detail'] == 'For your registration, your response to the \'Data collection status\' field' \
                                    ' is invalid, your response must be one of the provided options.'
-
     def test_reviewer_can_update_draft_registration(
             self, app, project_public,
             draft_registration_prereg,
