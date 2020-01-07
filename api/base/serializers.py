@@ -14,6 +14,7 @@ from rest_framework.fields import get_attribute as get_nested_attributes
 from rest_framework.mixins import RetrieveModelMixin
 
 from api.base import utils
+from osf.models import DraftRegistration
 from osf.utils import permissions as osf_permissions
 from osf.utils import sanitize
 from osf.utils import functional
@@ -202,6 +203,19 @@ class HideIfPreprint(ConditionalField):
         return not isinstance(self.field, RelationshipField)
 
 
+class HideIfDraft(ConditionalField):
+    """
+    If object is a draft registration, or related to a draft registration, hide the field.
+    """
+
+    def should_hide(self, instance):
+        return isinstance(instance, DraftRegistration) \
+            or isinstance(getattr(instance, 'draft_registration', False), DraftRegistration)
+
+    def should_be_none(self, instance):
+        return not isinstance(self.field, RelationshipField)
+
+
 class NoneIfWithdrawal(ConditionalField):
     """
     If preprint is withdrawn, this field (attribute or relationship) should return None instead of hidden.
@@ -335,7 +349,7 @@ def _url_val(val, obj, serializer, request, **kwargs):
     url = None
     if isinstance(val, Link):  # If a Link is passed, get the url value
         url = val.resolve_url(obj, request)
-    elif isinstance(val, str):  # if a string is passed, it's a method of the serializer
+    elif isinstance(val, basestring):  # if a string is passed, it's a method of the serializer
         if getattr(serializer, 'field', None):
             serializer = serializer.parent
         url = getattr(serializer, val)(obj) if obj is not None else None
@@ -857,20 +871,17 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         self_url = url['self']
         self_meta = self.get_meta_information(self.self_meta, value)
         relationship = format_relationship_links(related_url, self_url, related_meta, self_meta)
-        if related_url:
+        if related_url and (len(related_path.split('/')) & 1) == 1:
             resolved_url = resolve(related_path)
             related_class = resolved_url.func.view_class
             if issubclass(related_class, RetrieveModelMixin):
+                related_type = resolved_url.namespace
                 try:
-                    related_type = resolved_url.namespace
                     # TODO: change kwargs to preprint_provider_id and registration_id
                     if related_type == 'preprint_providers':
                         related_id = resolved_url.kwargs['provider_id']
                     elif related_type == 'registrations':
                         related_id = resolved_url.kwargs['node_id']
-                    elif related_type == 'schemas' and related_class.view_name == 'registration-schema-detail':
-                        related_id = resolved_url.kwargs['schema_id']
-                        related_type = 'registration-schemas'
                     else:
                         related_id = resolved_url.kwargs[related_type[:-1] + '_id']
                 except KeyError:
@@ -928,6 +939,10 @@ class TargetField(ser.Field):
             'view': 'preprints:preprint-detail',
             'lookup_kwarg': 'preprint_id',
         },
+        'draft-node': {
+            'view': 'draft-nodes:node-detail',
+            'lookup_kwarg': 'node_id',
+        },
         'comment': {
             'view': 'comments:comment-detail',
             'lookup_kwarg': 'comment_id',
@@ -983,18 +998,7 @@ class TargetField(ser.Field):
         """
         meta = functional.rapply(self.meta, _url_val, obj=value, serializer=self.parent, request=self.context['request'])
         obj = getattr(value, 'referent', value)
-        return {
-            'links': {
-                self.link_type: {
-                    'href': obj.get_absolute_url(),
-                    'meta': meta,
-                },
-            },
-            'data': {
-                'type': meta['type'],
-                'id': obj._id,
-            },
-        }
+        return {'links': {self.link_type: {'href': obj.get_absolute_url(), 'meta': meta}}}
 
 
 class LinksField(ser.Field):

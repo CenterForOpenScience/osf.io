@@ -61,6 +61,9 @@ class CoreScopes(object):
     PREPRINT_CONTRIBUTORS_READ = 'preprints.contributors_read'
     PREPRINT_CONTRIBUTORS_WRITE = 'preprints.contributors_write'
 
+    DRAFT_CONTRIBUTORS_READ = 'draft_registrations.contributors_read'
+    DRAFT_CONTRIBUTORS_WRITE = 'draft_registrations.contributors_write'
+
     NODE_FILE_READ = 'nodes.files_read'
     NODE_FILE_WRITE = 'nodes.files_write'
 
@@ -92,6 +95,9 @@ class CoreScopes(object):
 
     NODE_DRAFT_REGISTRATIONS_READ = 'nodes.draft_registrations_read'
     NODE_DRAFT_REGISTRATIONS_WRITE = 'nodes.draft_registrations_write'
+
+    DRAFT_REGISTRATIONS_READ = 'draft_registrations.draft_registrations_read'
+    DRAFT_REGISTRATIONS_WRITE = 'draft_registrations.draft_registrations_write'
 
     NODE_REGISTRATIONS_READ = 'nodes.registrations_read'
     NODE_REGISTRATIONS_WRITE = 'nodes.registrations_write'

@@ -21,10 +21,11 @@ from osf_tests.factories import (
     InstitutionFactory,
     RegionFactory,
     OSFGroupFactory,
+    DraftNodeFactory,
 )
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 from rest_framework import exceptions
-from tests.utils import assert_equals
+from tests.utils import assert_items_equal
 from website.views import find_bookmark_collection
 from osf.utils.workflows import DefaultStates
 
@@ -69,9 +70,13 @@ class TestNodeList:
         preprint.save()
         return preprint
 
+    @pytest.fixture()
+    def draft_node(self, user):
+        return DraftNodeFactory(creator=user)
+
     @pytest.mark.parametrize('is_sparse', [True, False])
     def test_return(
-            self, app, user, non_contrib, deleted_project,
+            self, app, user, non_contrib, deleted_project, draft_node,
             private_project, public_project, url, sparse_url, is_sparse):
 
         #   test_only_returns_non_deleted_public_projects
@@ -83,6 +88,7 @@ class TestNodeList:
         assert public_project._id in ids
         assert deleted_project._id not in ids
         assert private_project._id not in ids
+        assert draft_node._id not in ids
 
     #   test_return_public_node_list_logged_out_user
         res = app.get(url)
@@ -91,6 +97,7 @@ class TestNodeList:
         ids = [each['id'] for each in res.json['data']]
         assert public_project._id in ids
         assert private_project._id not in ids
+        assert draft_node._id not in ids
 
     #   test_return_public_node_list_logged_in_user
         res = app.get(url, auth=non_contrib)
@@ -99,12 +106,14 @@ class TestNodeList:
         ids = [each['id'] for each in res.json['data']]
         assert public_project._id in ids
         assert private_project._id not in ids
+        assert draft_node._id not in ids
 
     #   test_return_private_node_list_logged_out_user
         res = app.get(url)
         ids = [each['id'] for each in res.json['data']]
         assert public_project._id in ids
         assert private_project._id not in ids
+        assert draft_node._id not in ids
 
     #   test_return_private_node_list_logged_in_contributor
         res = app.get(url, auth=user.auth)
@@ -113,12 +122,14 @@ class TestNodeList:
         ids = [each['id'] for each in res.json['data']]
         assert public_project._id in ids
         assert private_project._id in ids
+        assert draft_node._id not in ids
 
     #   test_return_private_node_list_logged_in_non_contributor
         res = app.get(url, auth=non_contrib.auth)
         ids = [each['id'] for each in res.json['data']]
         assert public_project._id in ids
         assert private_project._id not in ids
+        assert draft_node._id not in ids
 
     #   test_returns_nodes_through_which_you_have_perms_through_osf_groups
         group = OSFGroupFactory(creator=user)
@@ -3391,12 +3402,12 @@ class TestNodeBulkUpdateSkipUneditable:
         assert res.status_code == 200
         edited = res.json['data']
         skipped = res.json['errors']
-        assert_equals(
+        assert_items_equal(
             [edited[0]['id'], edited[1]['id']],
             [user_one_public_project_one._id,
              user_one_public_project_two._id]
         )
-        assert_equals(
+        assert_items_equal(
             [skipped[0]['_id'], skipped[1]['_id']],
             [user_two_public_project_one._id,
              user_two_public_project_two._id]
@@ -3425,12 +3436,12 @@ class TestNodeBulkUpdateSkipUneditable:
         assert res.status_code == 200
         edited = res.json['data']
         skipped = res.json['errors']
-        assert_equals(
+        assert_items_equal(
             [edited[0]['id'], edited[1]['id']],
             [user_one_public_project_one._id,
              user_one_public_project_two._id]
         )
-        assert_equals(
+        assert_items_equal(
             [skipped[0]['_id'], skipped[1]['_id']],
             [user_two_public_project_one._id,
              user_two_public_project_two._id]
@@ -4004,13 +4015,13 @@ class TestNodeBulkDeleteSkipUneditable:
         res = app.delete_json_api(url, payload, auth=user_one.auth, bulk=True)
         assert res.status_code == 200
         skipped = res.json['errors']
-        assert_equals(
+        assert_items_equal(
             [skipped[0]['id'], skipped[1]['id']],
             [public_project_three._id, public_project_four._id]
         )
 
         res = app.get('/{}nodes/'.format(API_BASE), auth=user_one.auth)
-        assert_equals(
+        assert_items_equal(
             [res.json['data'][0]['id'], res.json['data'][1]['id']],
             [public_project_three._id, public_project_four._id]
         )

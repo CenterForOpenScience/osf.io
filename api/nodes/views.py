@@ -91,8 +91,8 @@ from api.nodes.serializers import (
     NodeForksSerializer,
     NodeDetailSerializer,
     NodeStorageProviderSerializer,
-    DraftRegistrationSerializer,
-    DraftRegistrationDetailSerializer,
+    DraftRegistrationSerializerLegacy,
+    DraftRegistrationDetailLegacySerializer,
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
     NodeInstitutionsRelationshipSerializer,
@@ -149,14 +149,14 @@ class NodeMixin(object):
     serializer_class = NodeSerializer
     node_lookup_url_kwarg = 'node_id'
 
-    def get_node(self, check_object_permissions=True):
+    def get_node(self, check_object_permissions=True, node_id=None):
         node = None
 
         if self.kwargs.get('is_embedded') is True:
             # If this is an embedded request, the node might be cached somewhere
             node = self.request.parents[Node].get(self.kwargs[self.node_lookup_url_kwarg])
 
-        node_id = self.kwargs[self.node_lookup_url_kwarg]
+        node_id = node_id or self.kwargs[self.node_lookup_url_kwarg]
         if node is None:
             node = get_object_or_error(
                 Node.objects.filter(guids___id=node_id).annotate(region=F('addons_osfstorage_node_settings__region___id')).exclude(region=None),
@@ -175,16 +175,24 @@ class NodeMixin(object):
 
 class DraftMixin(object):
 
-    serializer_class = DraftRegistrationSerializer
+    serializer_class = DraftRegistrationSerializerLegacy
 
-    def get_draft(self, draft_id=None):
+    def check_branched_from(self, draft):
         node_id = self.kwargs['node_id']
+
+        if not draft.branched_from._id == node_id:
+            raise ValidationError('This draft registration is not created from the given node.')
+
+    def check_resource_permissions(self, resource):
+        # Old workflow checks permissions on attached node, not draft
+        return self.check_object_permissions(self.request, resource.branched_from)
+
+    def get_draft(self, draft_id=None, check_object_permissions=True):
         if draft_id is None:
             draft_id = self.kwargs['draft_id']
         draft = get_object_or_error(DraftRegistration, draft_id, self.request)
 
-        if not draft.branched_from._id == node_id:
-            raise ValidationError('This draft registration is not created from the given node.')
+        self.check_branched_from(draft)
 
         if self.request.method not in drf_permissions.SAFE_METHODS:
             registered_and_deleted = draft.registered_node and draft.registered_node.is_deleted
@@ -201,7 +209,9 @@ class DraftMixin(object):
             if draft.registered_node and not draft.registered_node.is_deleted:
                 raise Gone(detail='This draft has already been registered.')
 
-        self.check_object_permissions(self.request, draft.branched_from)
+        if check_object_permissions:
+            self.check_resource_permissions(draft)
+
         return draft
 
 
@@ -587,6 +597,10 @@ class NodeBibliographicContributorsList(BaseContributorList, NodeMixin):
 
 class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_draft_registrations_list).
+
+    This endpoint supports the older registries submission workflow and will soon be deprecated.
+    Use DraftRegistrationsList endpoint instead.
+
     """
     permission_classes = (
         IsAdminContributor,
@@ -599,8 +613,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
 
-    serializer_class = DraftRegistrationSerializer
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON, )
+    serializer_class = DraftRegistrationSerializerLegacy
     view_category = 'nodes'
     view_name = 'node-draft-registrations'
 
@@ -614,6 +627,9 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
 
 class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, DraftMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_draft_registrations_read).
+
+    This endpoint supports the older registries submission workflow and will soon be deprecated.
+    Use DraftRegistrationDetail endpoint instead.
     """
     permission_classes = (
         IsAdminContributorOrReviewer,
@@ -625,7 +641,7 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
     required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
 
-    serializer_class = DraftRegistrationDetailSerializer
+    serializer_class = DraftRegistrationDetailLegacySerializer
     view_category = 'nodes'
     view_name = 'node-draft-registration-detail'
 
@@ -674,7 +690,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         """Create a registration from a draft.
         """
         # On creation, make sure that current user is the creator
-        draft_id = self.request.data.get('draft_registration', None) or self.request.data.get('draft_registration_id', None)
+        draft_id = self.request.data.get('draft_registration', None)
         draft = self.get_draft(draft_id)
         serializer.save(draft=draft)
 
@@ -1404,16 +1420,15 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
 
 class NodeStorageProvider(object):
 
-    def __init__(self, node, provider_name, storage_addon=None):
+    def __init__(self, provider, node):
         self.path = '/'
         self.node = node
         self.kind = 'folder'
-        self.name = provider_name
-        self.provider = provider_name
+        self.name = provider
+        self.provider = provider
         self.node_id = node._id
         self.pk = node._id
         self.id = node.id
-        self.root_folder = storage_addon.root_node if storage_addon else None
 
     @property
     def target(self):
@@ -1438,12 +1453,12 @@ class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin)
 
     ordering = ('-id',)
 
-    def get_provider_item(self, storage_addon):
-        return NodeStorageProvider(self.get_node(), storage_addon.config.short_name, storage_addon)
+    def get_provider_item(self, provider):
+        return NodeStorageProvider(provider, self.get_node())
 
     def get_queryset(self):
         return [
-            self.get_provider_item(addon)
+            self.get_provider_item(addon.config.short_name)
             for addon
             in self.get_node().get_addons()
             if addon.config.has_hgrid_files
@@ -1468,7 +1483,7 @@ class NodeStorageProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeM
     view_name = 'node-storage-provider-detail'
 
     def get_object(self):
-        return NodeStorageProvider(self.get_node(), self.kwargs['provider'])
+        return NodeStorageProvider(self.kwargs['provider'], self.get_node())
 
 
 class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):
@@ -1576,9 +1591,12 @@ class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixi
 
     ordering = ('-id',)
 
+    def get_resource(self):
+        return self.get_node()
+
     def get_queryset(self):
-        node = self.get_node()
-        return node.affiliated_institutions.all() or []
+        resource = self.get_resource()
+        return resource.affiliated_institutions.all() or []
 
 
 class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, NodeMixin):
@@ -1651,8 +1669,11 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
     view_category = 'nodes'
     view_name = 'node-relationships-institutions'
 
+    def get_resource(self):
+        return self.get_node(check_object_permissions=False)
+
     def get_object(self):
-        node = self.get_node(check_object_permissions=False)
+        node = self.get_resource()
         obj = {
             'data': node.affiliated_institutions.all(),
             'self': node,
@@ -2051,7 +2072,6 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
     def perform_destroy(self, link):
         assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
         link.is_deleted = True
-        link.deleted = timezone.now()
         link.save()
         # FIXME: Doesn't work because instance isn't JSON-serializable
         # enqueue_postcommit_task(ban_url, (self.get_node(),), {}, celery=False, once_per_request=True)
