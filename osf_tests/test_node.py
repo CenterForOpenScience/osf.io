@@ -11,7 +11,7 @@ import __builtin__ as builtins
 
 from django.utils import timezone
 from django.db.utils import IntegrityError
-from nose.tools import *  # noqa: F403
+from nose.tools import assert_equal, assert_is_not_none, assert_not_equal, assert_false, assert_raises
 from framework.celery_tasks import handlers
 from framework.exceptions import PermissionsError
 from framework.sessions import set_session
