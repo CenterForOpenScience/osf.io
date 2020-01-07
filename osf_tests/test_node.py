@@ -7,7 +7,7 @@ import pytz
 import random
 import string
 # Python 3.x incompatible, use import builtins instead
-import __builtin__ as builtins
+import builtins
 
 from django.utils import timezone
 from django.db.utils import IntegrityError
