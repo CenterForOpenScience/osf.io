@@ -662,7 +662,7 @@ def verify_claim_token(user, token, pid):
 def check_external_auth(user):
     if user:
         return not user.has_usable_password() and (
-            'VERIFIED' in sum([list(each.values()) for each in user.external_identity.values()], [])
+            'VERIFIED' in sum([each.values() for each in user.external_identity.values()], [])
         )
     return False
 

@@ -2169,6 +2169,8 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
 
         if save:
             self.save()
+        return
+
 
     class Meta:
         abstract = True

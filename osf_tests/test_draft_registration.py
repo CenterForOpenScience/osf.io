@@ -405,6 +405,16 @@ class TestDraftRegistrationContributorMethods:
             return contrib
         return make_contributor
 
+<<<<<<< HEAD
+=======
+    @pytest.fixture()
+    def contributor_exists(self, user, resource, visible=True):
+        def query_contributor(user, resource, visible):
+            contrib_exists = DraftRegistrationContributor.objects.filter(user=user, draft_registration=resource, visible=visible).exists()
+            return contrib_exists
+        return query_contributor
+
+>>>>>>> Merging branches together
     def test_add_contributor(self, draft_registration, user, auth):
         # A user is added as a contributor
         user = factories.UserFactory()

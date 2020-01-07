@@ -33,7 +33,7 @@ from osf_tests.factories import (
 )
 from rest_framework import exceptions
 from tests.base import fake
-from tests.utils import assert_latest_log, assert_latest_log_not
+from tests.utils import assert_items_equal, assert_latest_log, assert_latest_log_not
 from website.views import find_bookmark_collection
 
 
@@ -174,7 +174,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is True
-        assert_equals(
+        assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_write)
 
