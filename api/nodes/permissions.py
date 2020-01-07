@@ -61,6 +61,7 @@ class IsAdminContributor(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
+        # Old Registration workflow checks permissions on Node
         if isinstance(obj, DraftRegistration):
             obj = obj.branched_from
         auth = get_user_auth(request)

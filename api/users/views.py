@@ -1,7 +1,8 @@
 import pytz
 
 from django.apps import apps
-from django.db.models import F, Q
+from django.db.models import F
+from guardian.shortcuts import get_objects_for_user
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
@@ -26,7 +27,7 @@ from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.throttling import SendEmailThrottle, SendEmailDeactivationThrottle
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
-from api.nodes.serializers import DraftRegistrationSerializer
+from api.nodes.serializers import DraftRegistrationSerializerLegacy
 from api.nodes.utils import NodeOptimizationMixin
 from api.osf_groups.serializers import GroupSerializer
 from api.preprints.serializers import PreprintSerializer
@@ -83,7 +84,6 @@ from osf.models import (
     OSFUser,
     Email,
 )
-from osf.utils import permissions
 from website import mails, settings
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
 
@@ -103,7 +103,7 @@ class UserMixin(object):
         # of the query cache
         if hasattr(self.request, 'parents') and len(self.request.parents.get(Contributor, {})) == 1:
             # We expect one parent contributor view, so index into the first item
-            contrib_id, contrib = list(self.request.parents[Contributor].items())[0]
+            contrib_id, contrib = self.request.parents[Contributor].items()[0]
             user = contrib.user
             if user.is_disabled:
                 raise UserGone(user=user)
@@ -496,21 +496,21 @@ class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
 
-    serializer_class = DraftRegistrationSerializer
+    serializer_class = DraftRegistrationSerializerLegacy
     view_category = 'users'
     view_name = 'user-draft-registrations'
 
     ordering = ('-modified',)
 
     def get_queryset(self):
-        user = self.get_user()
-        node_qs = Node.objects.get_nodes_for_user(user, permissions.ADMIN_NODE)
-        return DraftRegistration.objects.filter(
-            Q(registered_node__isnull=True) |
-            Q(registered_node__is_deleted=True),
-            branched_from__in=list(node_qs),
-            deleted__isnull=True,
-        )
+        requested_user = self.get_user()
+        requesting_user = self.request.user
+        if requesting_user.is_anonymous:
+            # User making requests is unauthenticated so they can't see any Drafts
+            raise DraftRegistration.objects.none()
+        # Returns DraftRegistrations for which requested user is a contributor, and requesting user can view
+        drafts = requested_user.draft_registrations_active
+        return get_objects_for_user(requesting_user, 'read_draft_registration', drafts, with_superuser=False)
 
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
@@ -608,7 +608,7 @@ class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Use
         except KeyError:
             raise NotFound('Requested external identity could not be found.')
 
-        return {'_id': identity_id, 'external_id': list(identity.keys())[0], 'status': list(identity.values())[0]}
+        return {'_id': identity_id, 'external_id': identity.keys()[0], 'status': identity.values()[0]}
 
     def perform_destroy(self, instance):
         user = self.get_user()
@@ -838,7 +838,7 @@ class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIVi
             serialized_email = UserEmail(email_id=hashed_id, address=email.address, confirmed=True, verified=True, primary=primary)
             serialized_emails.append(serialized_email)
         email_verifications = user.email_verifications or {}
-        for token, detail in email_verifications.items():
+        for token, detail in email_verifications.iteritems():
             is_merge = Email.objects.filter(address=detail['email']).exists()
             serialized_unconfirmed_email = UserEmail(
                 email_id=token,
