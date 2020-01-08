@@ -1,4 +1,5 @@
 import pytest
+from nose.tools import *  # noqa:
 
 from django.utils import timezone
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
@@ -25,7 +26,6 @@ from osf_tests.factories import (
 )
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 from rest_framework import exceptions
-from tests.utils import assert_items_equal
 from website.views import find_bookmark_collection
 from osf.utils.workflows import DefaultStates
 
