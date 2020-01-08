@@ -6,7 +6,6 @@ import pytest
 import pytz
 import random
 import string
-# Python 3.x incompatible, use import builtins instead
 import builtins
 
 from django.utils import timezone
