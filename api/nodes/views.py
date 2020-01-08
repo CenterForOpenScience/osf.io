@@ -1420,12 +1420,12 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
 
 class NodeStorageProvider(object):
 
-    def __init__(self, provider, node):
+    def __init__(self, node, provider_name):
         self.path = '/'
         self.node = node
         self.kind = 'folder'
-        self.name = provider
-        self.provider = provider
+        self.name = provider_name
+        self.provider = provider_name
         self.node_id = node._id
         self.pk = node._id
         self.id = node.id
