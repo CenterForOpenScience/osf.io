@@ -393,8 +393,9 @@ class RegistrationSerializer(NodeSerializer):
             registration_schema = RegistrationSchema.objects.get(_id=obj.registered_schema_id)
             for page in registration_schema.schema['pages']:
                 for question in page['questions']:
-                    if question['title'] in ANONYMIZED_TITLES and meta_values.get(question.get('qid')):
-                        del meta_values[question['qid']]
+                    if hasattr(question, 'title'):
+                        if question['title'] in ANONYMIZED_TITLES and meta_values.get(question.get('qid')):
+                            del meta_values[question['qid']]
         return meta_values
 
     def check_admin_perms(self, registration, user, validated_data):
