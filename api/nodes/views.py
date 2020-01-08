@@ -1454,7 +1454,7 @@ class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin)
     ordering = ('-id',)
 
     def get_provider_item(self, provider):
-        return NodeStorageProvider(provider, self.get_node())
+        return NodeStorageProvider(self.get_node(), provider)
 
     def get_queryset(self):
         return [
@@ -1483,7 +1483,7 @@ class NodeStorageProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeM
     view_name = 'node-storage-provider-detail'
 
     def get_object(self):
-        return NodeStorageProvider(self.kwargs['provider'], self.get_node())
+        return NodeStorageProvider(self.get_node(), self.kwargs['provider'])
 
 
 class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):
