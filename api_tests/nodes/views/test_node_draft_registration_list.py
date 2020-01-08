@@ -17,7 +17,7 @@ from osf_tests.factories import (
 from osf.utils import permissions
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 @pytest.mark.django_db
 class DraftRegistrationTestCase:
