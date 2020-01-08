@@ -3,6 +3,7 @@ from datetime import datetime
 import mock
 import pytest
 import random
+from nose.tools import *  # noqa:
 
 from api.base.settings.defaults import API_BASE
 from api.nodes.serializers import NodeContributorsCreateSerializer
@@ -19,7 +20,6 @@ from osf_tests.factories import (
 from osf.utils import permissions
 from rest_framework import exceptions
 from tests.base import capture_signals, fake
-from tests.utils import assert_items_equal
 from website.project.signals import contributor_added, contributor_removed
 from api_tests.utils import disconnected_from_listeners
 
