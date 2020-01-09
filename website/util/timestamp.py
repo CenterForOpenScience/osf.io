@@ -1419,7 +1419,7 @@ class TimeStampTokenVerifyCheckHash:
                     ret = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS
                     verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG  # 'OK'
                 elif stderr_data.__str__().find(api_settings.UPKI_VERIFY_INVALID_MSG) > -1:
-                    logger.error('UPKI_VERIFY_INVALID_MSG("{}") is found'.format(api_settings.UPKI_VERIFY_INVALID_MSG))
+                    DEBUG('UPKI_VERIFY_INVALID_MSG("{}") is found'.format(api_settings.UPKI_VERIFY_INVALID_MSG))
                     ret = api_settings.TIME_STAMP_TOKEN_CHECK_NG
                     verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG  # 'OK'
                 else:

@@ -21,7 +21,7 @@ from celery.contrib.abortable import AbortableTask
 from osf.models import BaseFileNode, OSFUser
 from osf.models.external import ExternalAccount
 from osf.models.rdm_addons import RdmAddonOption
-from addons.dropboxbusiness import settings
+from addons.dropboxbusiness import settings, lock
 from admin.rdm_addons.utils import get_rdm_addon_option
 from website.util import timestamp, waterbutler
 from api.base import settings as api_settings
@@ -518,6 +518,7 @@ class TeamInfo(object):
                  admin=False, admin_dbmid=None,
                  groups=False,
                  file_properties=False, timestamp=False):
+        DEBUG('init TeamInfo()')
         self.fileaccess_token = fileaccess_token
         self.management_token = management_token
         self.session = dropbox.dropbox.create_session(
@@ -1087,32 +1088,24 @@ def celery_check_and_add_timestamp(self, team_ids):
         first.list_cursor = cursor
         first.save()
 
-    def _trylock():
-        return True
-
-    def _unlock():
-        return
-
-    def _add_plan(team_ids):
-        return
-
-    def _get_plan(team_ids):
-        return team_ids
-
-    if _trylock() is False:
-        _add_plan(team_ids)
+    if not lock.LOCK_RUN.trylock():
+        lock.add_plan(team_ids)
         return  # exit
 
-    team_ids = _get_plan(team_ids)
+    while True:
+        team_ids = lock.get_plan(team_ids)
+        if len(team_ids) == 0:
+            break
+        for dbtid in team_ids:
+            institution = team_id_to_instituion(dbtid)
+            name = u'Institution={}, Dropbox Team ID={}'.format(
+                institution, dbtid)
+            try:
+                DEBUG(u'update timestamp: {}'.format(name))
+                logger.info(u'update timestamp: {}'.format(name))
+                _update_team_files(dbtid)
+            except Exception:
+                logger.exception(name)
+        team_ids = []
 
-    for dbtid in team_ids:
-        institution = team_id_to_instituion(dbtid)
-        name = u'Institution={}, Dropbox Team ID={}'.format(institution, dbtid)
-        try:
-            DEBUG(u'update timestamp: {}'.format(name))
-            logger.info(u'update timestamp: {}'.format(name))
-            _update_team_files(dbtid)
-        except Exception:
-            logger.exception(name)
-
-    _unlock()
+    lock.LOCK_RUN.unlock()
