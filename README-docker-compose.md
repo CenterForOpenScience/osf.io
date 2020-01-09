@@ -7,7 +7,7 @@
     - docker: https://docs.docker.com/engine/installation/linux/ubuntulinux
     - docker-compose: https://docs.docker.com/compose/install/
   - Windows: https://www.docker.com/products/docker#/windows
-2. Grant the docker client additional memory and cpu (minimum of 4GB and 2 CPU)
+2. Grant the docker client additional resources (recommended minimums of 1 CPU, 8GB memory, 2GB swap, and 32GB disk image size)
    - OSX: https://docs.docker.com/docker-for-mac/#/preferences
    - Ubuntu: N/A
    - Windows: https://docs.docker.com/docker-for-windows/#advanced
