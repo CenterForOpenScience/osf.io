@@ -298,13 +298,12 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
 
-    category_choices = settings.NODE_CATEGORY_MAP.items()
+    category_choices = list(settings.NODE_CATEGORY_MAP.items())
     category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
 
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text='Choices: ' + category_choices_string)
-
     custom_citation = ser.CharField(allow_blank=True, required=False)
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
@@ -1089,7 +1088,7 @@ class NodeDetailSerializer(NodeSerializer):
 
 class NodeForksSerializer(NodeSerializer):
 
-    category_choices = settings.NODE_CATEGORY_MAP.items()
+    category_choices = list(settings.NODE_CATEGORY_MAP.items())
     category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
 
     title = ser.CharField(required=False)
@@ -1230,7 +1229,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
             raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
         if user_id and email:
             raise exceptions.ValidationError(detail='Do not provide an email when providing this user_id.')
-        if index > len(node.contributors):
+        if index is not None and index > len(node.contributors):
             raise exceptions.ValidationError(detail='{} is not a valid contributor index for node with id {}'.format(index, node._id))
 
     def create(self, validated_data):
@@ -1377,6 +1376,11 @@ class NodeStorageProviderSerializer(JSONAPISerializer):
         'new_folder': WaterbutlerLink(kind='folder'),
         'storage_addons': 'get_storage_addons_url',
     })
+    root_folder = RelationshipField(
+        related_view='files:file-detail',
+        related_view_kwargs={'file_id': '<root_folder._id>'},
+        help_text='The folder in which this file exists',
+    )
 
     class Meta:
         type_ = 'files'
@@ -1466,6 +1470,7 @@ class DraftRegistrationSerializerLegacy(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     registration_metadata = ser.DictField(required=False)
+    registration_responses = ser.DictField(required=False)
     datetime_initiated = VersionedDateTimeField(read_only=True)
     datetime_updated = VersionedDateTimeField(read_only=True)
 
@@ -1499,6 +1504,32 @@ class DraftRegistrationSerializerLegacy(JSONAPISerializer):
 
     def get_absolute_url(self, obj):
         return obj.absolute_url
+
+    def update_metadata(self, draft, metadata, reviewer, required_fields=False):
+        try:
+            # Required fields are only required when creating the actual registration, not updating the draft.
+            draft.validate_metadata(metadata=metadata, reviewer=reviewer, required_fields=required_fields)
+        except ValidationError as e:
+            raise exceptions.ValidationError(e.message)
+        draft.update_metadata(metadata)
+        draft.save()
+
+    def update_registration_responses(self, draft, registration_responses, required_fields=False):
+        # New workflow - at some point `registration_metadata` will be deprecated, but for now,
+        # we support data coming in on either field, registration_metadata (expanded) or registration_responses (flat)
+        try:
+            draft.validate_registration_responses(registration_responses=registration_responses, required_fields=required_fields)
+        except ValidationError as e:
+            raise exceptions.ValidationError(e.message)
+        draft.update_registration_responses(registration_responses)
+        draft.save()
+
+    def enforce_metadata_or_registration_responses(self, metadata=None, registration_responses=None):
+        if metadata and registration_responses:
+            raise exceptions.ValidationError(
+                'You cannot include both `registration_metadata` and `registration_responses` in your request. Please use' +
+                ' `registration_responses` as `registration_metadata` will be deprecated in the future.',
+            )
 
     def get_node(self, validated_data=None):
         return self.context['view'].get_node()
