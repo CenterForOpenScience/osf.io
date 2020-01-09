@@ -17,7 +17,8 @@ from osf_tests.factories import (
 from osf.utils import permissions
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 
-SCHEMA_VERSION = 3
+OPEN_ENDED_SCHEMA_VERSION = 3
+SCHEMA_VERSION = 2
 
 @pytest.mark.django_db
 class DraftRegistrationTestCase:
@@ -90,7 +91,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
     def schema(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
-            schema_version=SCHEMA_VERSION)
+            schema_version=OPEN_ENDED_SCHEMA_VERSION)
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -214,7 +215,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
     def metaschema_open_ended(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
-            schema_version=SCHEMA_VERSION)
+            schema_version=OPEN_ENDED_SCHEMA_VERSION)
 
     @pytest.fixture()
     def payload(self, metaschema_open_ended, provider):
