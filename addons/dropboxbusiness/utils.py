@@ -1053,6 +1053,16 @@ def _add_timestamp_for_celery(team_folder_id, path, team_info, user, user_cookie
         except Exception:
             logger.exception('project guid={}'.format(addon.owner._id))
 
+def team_id_to_instituion(team_id):
+    try:
+        ea = ExternalAccount.objects.get(
+            provider=PROVIDER_NAME, provider_id=team_id)
+        opt = RdmAddonOption.objects.get(
+            provider=PROVIDER_NAME, external_accounts=ea)
+        return opt.institution
+    except Exception:
+        return None
+
 @celery_app.task(bind=True, base=AbortableTask)
 def celery_check_and_add_timestamp(self, team_ids):
     from addons.dropboxbusiness.models import NodeSettings
@@ -1077,10 +1087,32 @@ def celery_check_and_add_timestamp(self, team_ids):
         first.list_cursor = cursor
         first.save()
 
+    def _trylock():
+        return True
+
+    def _unlock():
+        return
+
+    def _add_plan(team_ids):
+        return
+
+    def _get_plan(team_ids):
+        return team_ids
+
+    if _trylock() is False:
+        _add_plan(team_ids)
+        return  # exit
+
+    team_ids = _get_plan(team_ids)
+
     for dbtid in team_ids:
+        institution = team_id_to_instituion(dbtid)
+        name = u'Institution={}, Dropbox Team ID={}'.format(institution, dbtid)
         try:
-            logger.info('update timestamp: Dropbox team_id={}'.format(dbtid))
+            DEBUG(u'update timestamp: {}'.format(name))
+            logger.info(u'update timestamp: {}'.format(name))
             _update_team_files(dbtid)
         except Exception:
-            # TODO print institution name
-            logger.exception('dropbox Team ID={}'.format(dbtid))
+            logger.exception(name)
+
+    _unlock()

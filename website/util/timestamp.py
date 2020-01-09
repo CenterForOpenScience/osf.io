@@ -35,7 +35,7 @@ from inspect import currentframe
 
 logger = logging.getLogger(__name__)
 
-ENABLE_DEBUG = True#DEBUG
+ENABLE_DEBUG = False
 
 def DEBUG(msg):
     if ENABLE_DEBUG:
@@ -296,13 +296,13 @@ def get_full_list(uid, pid, node):
 
     return provider_list
 
-def check_file_timestamp(uid, node, data):
+def check_file_timestamp(uid, node, data, verify_external_only=False):
     user = OSFUser.objects.get(id=uid)
     file_node = BaseFileNode.objects.get(_id=data['file_id'])
     if not userkey_generation_check(user._id):
         userkey_generation(user._id)
 
-    ext_info = ExternalInfo(node, user, file_node)
+    ext_info = ExternalInfo(node, user, file_node, verify_external_only)
     if ext_info.hash_value:
         if ext_info.file_exists:
             return TimeStampTokenVerifyCheckHash.timestamp_check(
@@ -426,7 +426,7 @@ def add_token(uid, node, data):
     if not userkey_generation_check(user._id):
         userkey_generation(user._id)
 
-    ext_info = ExternalInfo(node, user, file_node)
+    ext_info = ExternalInfo(node, user, file_node, False)
     if ext_info.hash_value:
         if ext_info.file_exists:
             return AddTimestampHash.add_timestamp(
@@ -1055,18 +1055,32 @@ class TimeStampTokenVerifyCheck:
 
     @classmethod
     def _timestamp_check_external(cls, ext_info, file_info, project_id, userid):
-        use_local = False
-        if not ext_info.has_timestamp:
-            use_local = True
-        else:
+        if ext_info.verify_external_only:
             ret = ext_info.timestamp_status
-            verify_result_title = TIMESTAMP_MSG_MAP.get(ret)
-            if verify_result_title is None:  # unknown status
-                use_local = True
-        if use_local:
-            verify_result_local = None
-            return cls._timestamp_check_local(file_info, verify_result_local,
-                                              project_id, userid)
+            if ret is not None:
+                verify_result_title = TIMESTAMP_MSG_MAP.get(ret)
+                if verify_result_title is None:  # unknown status
+                    ret = None
+            if ret is None:
+                ret = api_settings.TIME_STAMP_TOKEN_UNCHECKED
+                if ext_info.file_exists:
+                    verify_result_title = api_settings.TIME_STAMP_TOKEN_NO_DATA_MSG
+                else:
+                    verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
+        else:
+            verify_result_title = None
+            if ext_info.has_timestamp:
+                ret = ext_info.timestamp_status
+                if ret:
+                    verify_result_title = TIMESTAMP_MSG_MAP.get(ret)
+            if verify_result_title is None:  # no status or unknown status
+                verify_result_local = None
+                return cls._timestamp_check_local(
+                    file_info, verify_result_local,
+                    project_id, userid)
+
+        assert(ret is not None)
+        assert(verify_result_title is not None)
 
         file_id = file_info['file_id']
         provider = file_info['provider']
@@ -1269,23 +1283,21 @@ class AddTimestampHash:
             user_guid_to_id(user_guid))
 
         verify_data.timestamp_token = cls._generate_timestamp(ext_info)
-        if ext_info:
-            # set new timestamp into ext_info
-            ext_info.timestamp_data = verify_data.timestamp_token
-            if ext_info.has_timestamp:
-                # set old status before timestamp_check()
-                verify_data.inspection_result_status = ext_info.timestamp_status
-            else:
-                ext_info.timestamp_status = verify_data.inspection_result_status
+        # set new timestamp into ext_info
+        ext_info.timestamp_data = verify_data.timestamp_token
+        if ext_info.has_timestamp:
+            # set old status before timestamp_check()
+            verify_data.inspection_result_status = ext_info.timestamp_status
+        else:
+            ext_info.timestamp_status = verify_data.inspection_result_status
         verify_data.save()
 
         result = TimeStampTokenVerifyCheckHash.timestamp_check(
             ext_info, user_guid, file_info, node_id, verify_data)
 
-        if ext_info:
-            # update external timestamp
-            ext_info.timestamp_status = result.get('verify_result')
-            ext_info.update_timestamp()
+        # update external timestamp
+        ext_info.timestamp_status = result.get('verify_result')
+        ext_info.update_timestamp()
 
         return result
 
@@ -1485,13 +1497,14 @@ def select_timestamp_token(verify_result, ext_info):
     return verify_result.timestamp_token
 
 class ExternalInfo():
-    def __init__(self, node, user, file_node):
+    def __init__(self, node, user, file_node, verify_external_only):
         self.node = node
         self.user = user
         self.file_node = file_node
         self._init_hash()
         self._init_timestamp()
         self._file_exists = None
+        self.verify_external_only = verify_external_only
 
     @property
     def has_timestamp(self):
