@@ -47,10 +47,11 @@ class DropboxBusinessFile(DropboxBusinessFileNode, File):
 
     # return (hash_type, hash_value)
     def get_hash_for_timestamp(self):
-        dropbox_sha256 = self._hashes.get(self.HASH_KEY_NAME)
-        if dropbox_sha256:
-            sha512 = timestamp.sha256_to_sha512(dropbox_sha256)
-            return timestamp.HASH_TYPE_SHA512, sha512
+        if self._hashes:
+            dropbox_sha256 = self._hashes.get(self.HASH_KEY_NAME)
+            if dropbox_sha256:
+                sha512 = timestamp.sha256_to_sha512(dropbox_sha256)
+                return timestamp.HASH_TYPE_SHA512, sha512
         return None, None  # unsupported
 
     def _my_node_settings(self):
