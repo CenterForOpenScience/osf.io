@@ -297,6 +297,8 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
     def parse_file(self, f):
         parsed_file = ''
         for chunk in f.chunks():
+            if isinstance(chunk, bytes):
+                chunk = chunk.decode()
             parsed_file += chunk
         return parsed_file
 
