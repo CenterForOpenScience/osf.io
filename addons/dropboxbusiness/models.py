@@ -310,6 +310,10 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         return self.fileaccess_token and self.management_token and \
             self.admin_dbmid
 
+    def after_fork(self, node, fork, user, save=True):
+        # dropboxbusiness-addon cannot not use parent NodeSettings.
+        pass
+
     def set_two_options(self, f_option, m_option, save=False):
         self.fileaccess_option = f_option
         self.management_option = m_option
