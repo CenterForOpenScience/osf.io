@@ -17,6 +17,7 @@ from addons.dropbox.models import Provider as DropboxProvider
 from addons.dropboxbusiness import settings, utils
 from addons.dropboxbusiness.apps import DropboxBusinessAddonAppConfig
 from website import settings as website_settings
+from website.util import timestamp
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.logging import logging
@@ -34,15 +35,45 @@ class DropboxBusinessFolder(DropboxBusinessFileNode, Folder):
 
 
 class DropboxBusinessFile(DropboxBusinessFileNode, File):
+    HASH_KEY_NAME = 'Dropbox content_hash'
+
     @property
     def _hashes(self):
         try:
             val = self._history[-1]['extra']['hashes']['dropboxbusiness']
-            return {'Dropbox content_hash': val,
-                    'Dropbox Business content_hash': val,
-                    'sha256': val}
+            return {self.HASH_KEY_NAME: val}
         except (IndexError, KeyError):
             return None
+
+    # return (hash_type, hash_value)
+    def get_hash_for_timestamp(self):
+        dropbox_sha256 = self._hashes.get(self.HASH_KEY_NAME)
+        if dropbox_sha256:
+            sha512 = timestamp.sha256_to_sha512(dropbox_sha256)
+            return timestamp.HASH_TYPE_SHA512, sha512
+        return None, None  # unsupported
+
+    def _my_node_settings(self):
+        node = self.target
+        if node:
+            addon = node.get_addon(self.provider)
+            if addon:
+                return addon
+        return None
+
+    # return (timestamp_data, timestamp_status, context)
+    def get_timestamp(self):
+        node_settings = self._my_node_settings()
+        if node_settings:
+            return utils.get_timestamp(node_settings, self.path)
+        return None, None, None
+
+    def set_timestamp(self, timestamp_data, timestamp_status, context):
+        node_settings = self._my_node_settings()
+        if node_settings:
+            utils.set_timestamp(node_settings, self.path,
+                                timestamp_data, timestamp_status,
+                                team_info=context)
 
 
 class DropboxBusinessFileaccessProvider(DropboxProvider):

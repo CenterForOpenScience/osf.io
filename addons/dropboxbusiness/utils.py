@@ -5,9 +5,11 @@ import time
 import collections
 import threading
 from pprint import pformat as pf
+import base64
+import math
 
 import dropbox
-from dropbox.dropbox import DropboxTeam
+from dropbox.dropbox import Dropbox, DropboxTeam
 from dropbox.exceptions import ApiError
 from dropbox.sharing import MemberSelector, AccessLevel
 from dropbox.team import (GroupMembersAddError, GroupMembersRemoveError,
@@ -448,6 +450,23 @@ def update_admin_dbmid(team_id):
     for th in threads:
         th.join()
 
+# return (timestamp_data, timestamp_status, context)
+def get_timestamp(node_settings, path):
+    team_info = TeamInfo(node_settings.fileaccess_token,
+                         node_settings.management_token,
+                         timestamp=True,
+                         admin_dbmid=node_settings.admin_dbmid)
+    return team_info.get_timestamp(node_settings.team_folder_id, path)
+
+def set_timestamp(node_settings, path, timestamp_data, timestamp_status, team_info=None):
+    if team_info is None:
+        team_info = TeamInfo(node_settings.fileaccess_token,
+                             node_settings.management_token,
+                             timestamp=True,
+                             admin_dbmid=node_settings.admin_dbmid)
+    team_info.set_timestamp(node_settings.team_folder_id, path,
+                            timestamp_data, timestamp_status)
+
 
 class TeamFolder(object):
     team_folder_id = None
@@ -470,6 +489,7 @@ class TeamInfo(object):
     fileaccess_token = None
     management_token = None
     _fileaccess_client = None
+    _fileaccess_client2 = None  # for bugfix
     _management_client = None
     dbid_to_email = {}
     dbid_to_role = {}
@@ -482,23 +502,40 @@ class TeamInfo(object):
     group_id_to_name = {}
     team_folders = {}  # team_folder_id -> TeamFolder
     team_folder_names = {}  # team_folder name -> TeamFolder
+    property_fields = set()
+    property_template_id = None
 
     def __init__(self, fileaccess_token, management_token,
                  max_connections=8,
-                 team_info=False, members=False, admin=False, groups=False):
+                 team_info=False, members=False,
+                 admin=False, admin_dbmid=None,
+                 groups=False,
+                 file_properties=False, timestamp=False):
         self.fileaccess_token = fileaccess_token
         self.management_token = management_token
         self.session = dropbox.dropbox.create_session(
             max_connections=max_connections)
 
+        if timestamp:
+            if admin_dbmid is None:
+                admin = True
+            file_properties = True
+        if admin:
+            members = True
+
         if team_info:
             self._setup_team_info()
-        if admin or members:
+        if members:
             self._setup_members()
         if admin:
             self._setup_admin()  # require members
         if groups:
             self._setup_groups()
+        if file_properties:
+            self._setup_file_properties()
+
+        if admin_dbmid:
+            self.set_admin_dbmid(admin_dbmid)
 
     @property
     def admin_dbmid(self):
@@ -508,8 +545,7 @@ class TeamInfo(object):
         return self._admin_dbmid
 
     def set_admin_dbmid(self, admin_dbmid):
-        if admin_dbmid in self.admin_dbmid_all:
-            self._admin_dbmid = admin_dbmid
+        self._admin_dbmid = admin_dbmid
 
     @property
     def management_client(self):
@@ -528,6 +564,16 @@ class TeamInfo(object):
         self._fileaccess_client_check()
         return self._fileaccess_client
 
+    def _fileaccess_client2_check(self):
+        if self._fileaccess_client2 is None:
+            self._fileaccess_client2 = Dropbox(
+                self.fileaccess_token, session=self.session)
+
+    @property
+    def fileaccess_client_team2(self):
+        self._fileaccess_client2_check()
+        return self._fileaccess_client2
+
     @property
     def fileaccess_client_admin(self):
         self._fileaccess_client_check()
@@ -535,7 +581,7 @@ class TeamInfo(object):
         return self._fileaccess_client.as_admin(self.admin_dbmid)
 
     ### not property
-    def fileaccess_client_with_path_root(self, namespace_id):
+    def fileaccess_client_admin_with_path_root(self, namespace_id):
         self._fileaccess_client_check()
         pr = dropbox.common.PathRoot.namespace_id(namespace_id)
         return self._fileaccess_client.with_path_root(pr).as_admin(self.admin_dbmid)
@@ -544,6 +590,12 @@ class TeamInfo(object):
     def fileaccess_client_user(self, member_id):
         self._fileaccess_client_check()
         return self._fileaccess_client.as_user(member_id)
+
+    ### not property
+    def fileaccess_client_user_with_path_root(self, dbmid, namespace_id):
+        self._fileaccess_client_check()
+        pr = dropbox.common.PathRoot.namespace_id(namespace_id)
+        return self._fileaccess_client.with_path_root(pr).as_user(dbmid)
 
     def _setup_team_info(self):
         i = self.management_client.team_get_info()
@@ -633,7 +685,7 @@ class TeamInfo(object):
                     self.team_folder_names[meta.name] = tf
 
     # return (team_folder_id, team_folder_name, subpath)
-    def team_folder_path(self, path_display):
+    def _team_folder_path(self, path_display):
         # NOTE: team_folder name is path_display.
         p = path_display
         team_folder_name = None
@@ -696,7 +748,7 @@ class TeamInfo(object):
                     DEBUG(p)
 
                 if isinstance(ent, dropbox.files.FileMetadata):
-                    r = self.team_folder_path(ent.path_display)
+                    r = self._team_folder_path(ent.path_display)
                     if r:
                         files.append(r)
                 has_entry = True
@@ -704,11 +756,234 @@ class TeamInfo(object):
             DEBUG('no updated file')
         return files, cursor
 
+    def _prop_split_key(self, name, s):
+        return '{}-{}'.format(name, s)
+
+    def _prop_split_data_num_key(self, name):
+        return self._prop_split_key(name, 'num')
+
+    def _setup_file_properties(self):
+        self.property_fields = set()
+        self.property_template_id = None
+
+        prop_group_name = settings.PROPERTY_GROUP_NAME
+
+        client = self.fileaccess_client_team
+        if not hasattr(client, 'file_properties_templates_list_for_team'):
+            # NOTE: @ dropbox==8.7.1
+            #   AttributeError: 'DropboxTeam' object has no attribute 'file_properties_templates_list_for_team
+            client = self.fileaccess_client_team2
+
+        res = client.file_properties_templates_list_for_team()
+
+        REMOVE = False  # WARNING: remove template for debug
+        REMOVE_ALL = False  # WARNING: remove all properties template for debug
+        if REMOVE:
+            for template_id in res.template_ids:
+                prop_group = client.file_properties_templates_get_for_team(
+                    template_id)
+                if REMOVE_ALL is False and prop_group.name != prop_group_name:
+                    continue
+                # for GRDM
+                DEBUG('remove template: ' + template_id)
+                client.file_properties_templates_remove_for_team(template_id)
+            res = client.file_properties_templates_list_for_team()
+
+        found_template_id = None
+        for template_id in res.template_ids:
+            prop_group = client.file_properties_templates_get_for_team(
+                template_id)
+            if prop_group.name != prop_group_name:
+                DEBUG('ignored template_id: ' + template_id)
+                continue
+            # property group for GRDM
+            DEBUG('found template_id: ' + template_id)
+            found_template_id = template_id
+            for field in prop_group.fields:
+                self.property_fields.add(field.name)
+                # DEBUG('existing prop field: ' + field.name)
+            break
+
+        check_keys = []
+
+        # for splited data
+        for name, conf in settings.PROPERTY_SPLIT_DATA_CONF.items():
+            max_size = float(conf['max_size'])
+            num = int(math.ceil(max_size / settings.PROPERTY_MAX_DATA_SIZE))
+            check_keys.append(self._prop_split_data_num_key(name))
+            for i in range(num):
+                key = self._prop_split_key(name, i)
+                check_keys.append(key)
+
+        # for simple data
+        for key in settings.PROPERTY_KEYS:
+            check_keys.append(key)
+
+        add_fields = []
+        for key in check_keys:
+            if key in self.property_fields:
+                continue  # existing field
+            f = dropbox.file_properties.PropertyFieldTemplate(
+                key, '',
+                dropbox.file_properties.PropertyType.string)
+            add_fields.append(f)
+            DEBUG('new prop field: ' + key)
+
+        if found_template_id is None:
+            DEBUG('create new prop fieldss')
+            res = client.file_properties_templates_add_for_team(
+                prop_group_name, prop_group_name,
+                add_fields)
+            self.property_template_id = res.template_id
+        elif len(add_fields) > 0:
+            DEBUG('add prop fields')
+            res = client.file_properties_templates_update_for_team(
+                found_template_id, prop_group_name, prop_group_name,
+                add_fields)
+            self.property_template_id = res.template_id
+        else:
+            DEBUG('not update prop fields: ' + found_template_id)
+            self.property_template_id = found_template_id
+
+        DEBUG('property_template_id: ' + self.property_template_id)
+
+    def _update_file_properties(self, team_folder_id, path, properties):
+        DEBUG(u'_update_file_properties: team_folder_id={}, path={}'.format(team_folder_id, path))
+        template_id = self.property_template_id
+        old_properties = self._get_file_properties(team_folder_id, path)
+        old_properties.update(properties)
+        new_properties = old_properties
+        add_or_update_fields = []
+
+        # for splited data
+        for name, conf in settings.PROPERTY_SPLIT_DATA_CONF.items():
+            data = new_properties.get(name)
+            if data is None:
+                continue
+            max_size = int(conf['max_size'])
+            if len(data) > max_size:
+                logger.error('too large property: path={}, prop name={}'.format(path, name))
+                continue
+            data_b64 = base64.b64encode(data)
+
+            def slice_string(s, size):
+                return [s[i: i + size] for i in range(0, len(s), size)]
+
+            split_values = slice_string(data_b64,
+                                        settings.PROPERTY_MAX_DATA_SIZE)
+            add_or_update_fields.append(
+                dropbox.file_properties.PropertyField(
+                    self._prop_split_data_num_key(name),
+                    str(len(split_values))))
+            for i, value in enumerate(split_values):
+                key = self._prop_split_key(name, i)
+                field = dropbox.file_properties.PropertyField(key, value)
+                add_or_update_fields.append(field)
+                DEBUG('update property: key={}'.format(key))
+
+        # for simple data
+        for key in settings.PROPERTY_KEYS:
+            value = new_properties.get(key)
+            if value:
+                add_or_update_fields.append(
+                    dropbox.file_properties.PropertyField(
+                        key, str(value)))
+                DEBUG('update property: key={}'.format(key))
+
+        property_groups = [
+            dropbox.file_properties.PropertyGroup(
+                template_id,
+                fields=add_or_update_fields)]
+        client = self.fileaccess_client_user_with_path_root(
+            self.admin_dbmid, team_folder_id)
+        client.file_properties_properties_overwrite(
+            path, property_groups)
+        DEBUG(u'file_properties_properties_overwrite(path={}): done'.format(path))
+
+    def _get_file_properties(self, team_folder_id, path):
+        DEBUG(u'_get_file_properties: team_folder_id={}, path={}'.format(team_folder_id, path))
+        template_id = self.property_template_id
+        client = self.fileaccess_client_admin_with_path_root(team_folder_id)
+        meta = client.files_get_metadata(
+            path,
+            include_property_groups=dropbox.file_properties.TemplateFilterBase.filter_some([template_id]))
+        if not isinstance(meta, dropbox.files.FileMetadata):
+            DEBUG(u'is not a FILE: ' + path)
+            return None
+
+        raw_properties = {}
+        for prop_group in meta.property_groups:
+            if prop_group.template_id != template_id:
+                continue
+            for field in prop_group.fields:
+                raw_properties[field.name] = field.value
+                # DEBUG(u'raw_properties[{}] = {}'.format(field.name, field.value))
+
+        result_properties = {}
+
+        # for splited data
+        for name, conf in settings.PROPERTY_SPLIT_DATA_CONF.items():
+            num = raw_properties.get(self._prop_split_data_num_key(name))
+            if num is None:
+                continue
+            split_values = []
+            for i in range(int(num)):
+                key = self._prop_split_key(name, i)
+                val = raw_properties.get(key)
+                if val is None:
+                    DEBUG(u'not found: ' + key)
+                    break
+                split_values.append(val)
+                # DEBUG('split data: {}={}'.format(key, val))
+                DEBUG('split data key: {}'.format(key))
+            data_b64 = ''.join(split_values)
+            data = base64.b64decode(data_b64)
+            result_properties[name] = data
+
+        # for simple data
+        for key in settings.PROPERTY_KEYS:
+            data = raw_properties.get(key)
+            if data:
+                result_properties[key] = data
+                DEBUG('simple data: {}={}'.format(key, data))
+
+        return result_properties
+
+    def set_timestamp(self, team_folder_id, path, timesamp_data, timestamp_status):
+        properties = {
+            'timestamp': timesamp_data,
+            settings.PROPERTY_KEY_TIMESTAMP_STATUS: str(timestamp_status)
+        }
+        self._update_file_properties(team_folder_id, path, properties)
+
+    # return (timestamp_data, timestamp_status, context)
+    def get_timestamp(self, team_folder_id, path):
+        try:
+            properties = self._get_file_properties(team_folder_id, path)
+        except ApiError as e:
+            properties = None
+            if not isinstance(e.error, dropbox.files.GetMetadataError):
+                logger.exception(u'unexpected error: team_folder_id={}, path={}'.format(team_folder_id, path))
+            else:
+                DEBUG('GetMetadataError: {}'.format(e.error.get_path()))
+        except Exception:
+            logger.exception(u'unexpected error: team_folder_id={}, path={}'.format(team_folder_id, path))
+            properties = None
+        if properties:
+            status = properties.get(settings.PROPERTY_KEY_TIMESTAMP_STATUS)
+            try:
+                status = int(status)
+            except Exception:
+                status = None
+            return (properties.get('timestamp'), status, self)
+        else:
+            return (None, None, None)
+
 
 PROVIDER_NAME = 'dropboxbusiness'
 
-def select_user(node, team_info):
-    def select(dbmid):
+def _select_user(node, team_info):
+    def _select(dbmid):
         try:
             email = team_info.dbmid_to_email[dbmid]
             eppn = email_to_eppn(email)
@@ -716,7 +991,7 @@ def select_user(node, team_info):
             return user
         except Exception:
             return None
-    user = select(team_info.admin_dbmid)
+    user = _select(team_info.admin_dbmid)
     if user:
         return user
     # select from admin contributors
@@ -727,10 +1002,10 @@ def select_user(node, team_info):
             return user
     raise Exception('unexpected condition')
 
-def add_timestamp(team_folder_id, path, team_info, user, user_cookie):
+def _add_timestamp_for_celery(team_folder_id, path, team_info, user, user_cookie):
     from addons.dropboxbusiness.models import NodeSettings
 
-    def check_and_add(addon):
+    def _check_and_add(addon):
         node = addon.owner
         cls = BaseFileNode.resolve_class(PROVIDER_NAME, BaseFileNode.FILE)
         file_node = cls.get_or_create(node, path)
@@ -741,7 +1016,7 @@ def add_timestamp(team_folder_id, path, team_info, user, user_cookie):
         file_data = waterbutler_json_res.get('data')
         if file_data is None:
             return
-        DEBUG('file_data: ' + str(file_data))
+        DEBUG(u'file_data: ' + str(file_data))
         attrs = file_data['attributes']
         file_node.update(None, attrs, user=user)  # update content_hash
         file_info = {
@@ -756,18 +1031,18 @@ def add_timestamp(team_folder_id, path, team_info, user, user_cookie):
         }
         verify_result = timestamp.check_file_timestamp(
             user.id, node, file_info)
-        DEBUG('BEFORE: ' + str(verify_result))
+        DEBUG('BEFORE: ' + str(verify_result.get('verify_result_title')))
         if verify_result['verify_result'] == \
            api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS:
             return
         verify_result = timestamp.add_token(user.id, node, file_info)
-        DEBUG('AFTER: ' + str(verify_result))
+        DEBUG('AFTER: ' + str(verify_result.get('verify_result_title')))
 
     # team_folder_id of NodeSettings is not UNIQUE,
     # but two or more NodeSettings do not exist.
     for addon in NodeSettings.objects.filter(team_folder_id=team_folder_id):
         try:
-            check_and_add(addon)
+            _check_and_add(addon)
         except Exception:
             logger.exception('project guid={}'.format(addon.owner._id))
 
@@ -775,7 +1050,7 @@ def add_timestamp(team_folder_id, path, team_info, user, user_cookie):
 def celery_check_and_add_timestamp(self, team_ids):
     from addons.dropboxbusiness.models import NodeSettings
 
-    def update_team_files(dbtid):
+    def _update_team_files(dbtid):
         ea = ExternalAccount.objects.get(
             provider=PROVIDER_NAME, provider_id=dbtid)
         opt = RdmAddonOption.objects.get(
@@ -785,18 +1060,20 @@ def celery_check_and_add_timestamp(self, team_ids):
         team_info = TeamInfo(first.fileaccess_token, first.management_token,
                              admin=True)
         team_info.set_admin_dbmid(first.admin_dbmid)
-        user = select_user(first.owner, team_info)
+        user = _select_user(first.owner, team_info)
         files, cursor = team_info.list_updated_files(first.list_cursor)
         for f in files:
             i, n, p = f
             DEBUG(u'team_folder_id={}, name={}, path={}'.format(i, n, p))
             user_cookie = user.get_or_create_cookie()
-            add_timestamp(i, p, team_info, user, user_cookie)
+            _add_timestamp_for_celery(i, p, team_info, user, user_cookie)
         first.list_cursor = cursor
         first.save()
 
     for dbtid in team_ids:
         try:
-            update_team_files(dbtid)
+            logger.info('update timestamp: Dropbox team_id={}'.format(dbtid))
+            _update_team_files(dbtid)
         except Exception:
+            # TODO print institution name
             logger.exception('dropbox Team ID={}'.format(dbtid))
