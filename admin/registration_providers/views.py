@@ -2,11 +2,13 @@ import json
 
 from django.http import HttpResponse
 from django.core import serializers
+from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.core.urlresolvers import reverse_lazy
 from django.shortcuts import redirect
 from django.views.generic import View, CreateView, ListView, DetailView, UpdateView, DeleteView, TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib import messages
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
 
@@ -252,12 +254,18 @@ class ImportRegistrationProvider(PermissionRequiredMixin, View):
             file_str = self.parse_file(request.FILES['file'])
             file_json = json.loads(file_str)
             cleaned_result = file_json['fields']
-            registration_provider = self.create_or_update_provider(cleaned_result)
+            try:
+                registration_provider = self.create_or_update_provider(cleaned_result)
+            except ValidationError:
+                messages.error(request, 'A Validation Error occured, this JSON is invalid or shares an id with an already existing provider.')
+                return redirect('registration_providers:create')
             return redirect('registration_providers:detail', registration_provider_id=registration_provider.id)
 
     def parse_file(self, f):
         parsed_file = ''
         for chunk in f.chunks():
+            if isinstance(chunk, bytes):
+                chunk = chunk.decode()
             parsed_file += chunk
         return parsed_file
 
