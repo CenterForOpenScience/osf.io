@@ -40,6 +40,7 @@ def add_contributor(node_guid, token, contrib_guid, dry_run=False):
             return
 
         resp.raise_for_status()
+    logger.info('User {} added to node {} dry run={}'.format(contrib_guid, node_guid, dry_run))
 
 
 def get_file_from_guid(token, guid, filename):
