@@ -1062,11 +1062,8 @@ class TimeStampTokenVerifyCheck:
                 if verify_result_title is None:  # unknown status
                     ret = None
             if ret is None:
-                ret = api_settings.TIME_STAMP_TOKEN_UNCHECKED
-                if ext_info.file_exists:
-                    verify_result_title = api_settings.TIME_STAMP_TOKEN_NO_DATA_MSG
-                else:
-                    verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
+                ret = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
+                verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
         else:
             verify_result_title = None
             if ext_info.has_timestamp:
