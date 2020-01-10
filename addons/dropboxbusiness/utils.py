@@ -1076,8 +1076,7 @@ def celery_check_and_add_timestamp(self, team_ids):
         node_settings = NodeSettings.objects.filter(fileaccess_option=opt)
         first = node_settings.order_by('id').first()
         team_info = TeamInfo(first.fileaccess_token, first.management_token,
-                             admin=True)
-        team_info.set_admin_dbmid(first.admin_dbmid)
+                             admin_dbmid=first.admin_dbmid)
         user = _select_user(first.owner, team_info)
         files, cursor = team_info.list_updated_files(first.list_cursor)
         for f in files:
