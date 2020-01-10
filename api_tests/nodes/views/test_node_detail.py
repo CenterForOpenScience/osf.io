@@ -2,7 +2,6 @@
 import mock
 import pytest
 from future.moves.urllib.parse import urlparse
-from nose.tools import *  # noqa:
 
 
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
@@ -33,7 +32,7 @@ from osf_tests.factories import (
 )
 from rest_framework import exceptions
 from tests.base import fake
-from tests.utils import assert_latest_log, assert_latest_log_not
+from tests.utils import assert_items_equal, assert_latest_log, assert_latest_log_not
 from website.views import find_bookmark_collection
 
 
