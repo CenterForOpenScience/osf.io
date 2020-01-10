@@ -1038,7 +1038,7 @@ def _add_timestamp_for_celery(team_folder_id, path, team_info, user, user_cookie
             'provider': PROVIDER_NAME
         }
         verify_result = timestamp.check_file_timestamp(
-            user.id, node, file_info)
+            user.id, node, file_info, verify_external_only=True)
         DEBUG('BEFORE: ' + str(verify_result.get('verify_result_title')))
         if verify_result['verify_result'] == \
            api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS:
