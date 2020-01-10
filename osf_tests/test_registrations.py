@@ -5,7 +5,7 @@ from addons.wiki.models import WikiVersion
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from framework.auth.core import Auth
-from osf.models import Node, Registration, Sanction, RegistrationSchema, NodeLog
+from osf.models import Node, Registration, Sanction, NodeLog
 from addons.wiki.models import WikiPage
 from osf.utils.permissions import ADMIN
 
@@ -15,12 +15,6 @@ from . import factories
 from .utils import assert_datetime_equal, mock_archive
 from .factories import get_default_metaschema, DraftRegistrationFactory
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
-from osf_tests.management_commands.test_migration_registration_responses import (
-    prereg_registration_responses,
-    prereg_registration_metadata_built,
-    veer_registration_responses,
-    veer_condensed
-)
 
 pytestmark = pytest.mark.django_db
 
@@ -570,51 +564,3 @@ class TestDOIValidation:
         reg.article_doi = doi
         reg.save()
         assert reg.article_doi == doi
-
-
-class TestRegistrationMixin:
-    @pytest.fixture()
-    def draft_prereg(self, prereg_schema):
-        return factories.DraftRegistrationFactory(
-            registration_schema=prereg_schema,
-            registration_metadata={},
-        )
-
-    @pytest.fixture()
-    def draft_veer(self, veer_schema):
-        return factories.DraftRegistrationFactory(
-            registration_schema=veer_schema,
-            registration_metadata={},
-        )
-
-    @pytest.fixture()
-    def prereg_schema(self):
-        return RegistrationSchema.objects.get(
-            name='Prereg Challenge',
-            schema_version=2
-        )
-
-    @pytest.fixture()
-    def veer_schema(self):
-        return RegistrationSchema.objects.get(
-            name__icontains='Pre-Registration in Social Psychology',
-            schema_version=2
-        )
-
-    def test_expand_registration_responses(self, draft_prereg):
-        draft_prereg.registration_responses = prereg_registration_responses
-        draft_prereg.save()
-        assert draft_prereg.registration_metadata == {}
-
-        registration_metadata = draft_prereg.expand_registration_responses()
-
-        assert registration_metadata == prereg_registration_metadata_built
-
-    def test_expand_registration_responses_veer(self, draft_veer):
-        draft_veer.registration_responses = veer_registration_responses
-        draft_veer.save()
-        assert draft_veer.registration_metadata == {}
-
-        registration_metadata = draft_veer.expand_registration_responses()
-
-        assert registration_metadata == veer_condensed
