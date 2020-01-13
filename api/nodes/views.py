@@ -687,7 +687,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         """Create a registration from a draft.
         """
         # On creation, make sure that current user is the creator
-        draft_id = self.request.data.get('draft_registration', None)
+        draft_id = self.request.data.get('draft_registration', None) or self.request.data.get('draft_registration_id', None)
         draft = self.get_draft(draft_id)
         serializer.save(draft=draft)
 
@@ -1417,7 +1417,7 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
 
 class NodeStorageProvider(object):
 
-    def __init__(self, node, provider_name):
+    def __init__(self, node, provider_name, storage_addon=None):
         self.path = '/'
         self.node = node
         self.kind = 'folder'
@@ -1426,6 +1426,7 @@ class NodeStorageProvider(object):
         self.node_id = node._id
         self.pk = node._id
         self.id = node.id
+        self.root_folder = storage_addon.root_node if storage_addon else None
 
     @property
     def target(self):
@@ -1450,12 +1451,12 @@ class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin)
 
     ordering = ('-id',)
 
-    def get_provider_item(self, provider):
-        return NodeStorageProvider(self.get_node(), provider)
+    def get_provider_item(self, storage_addon):
+        return NodeStorageProvider(self.get_node(), storage_addon.config.short_name, storage_addon)
 
     def get_queryset(self):
         return [
-            self.get_provider_item(addon.config.short_name)
+            self.get_provider_item(addon)
             for addon
             in self.get_node().get_addons()
             if addon.config.has_hgrid_files
@@ -2069,6 +2070,7 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
     def perform_destroy(self, link):
         assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
         link.is_deleted = True
+        link.deleted = timezone.now()
         link.save()
         # FIXME: Doesn't work because instance isn't JSON-serializable
         # enqueue_postcommit_task(ban_url, (self.get_node(),), {}, celery=False, once_per_request=True)
