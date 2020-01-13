@@ -1538,6 +1538,7 @@ class DraftRegistrationSerializerLegacy(JSONAPISerializer):
         initiator = get_user_auth(self.context['request']).user
         node = self.get_node(validated_data)
         metadata = validated_data.pop('registration_metadata', None)
+        registration_responses = validated_data.pop('registration_responses', None)
         schema = validated_data.pop('registration_schema')
 
         provider = validated_data.pop('provider', None) or RegistrationProvider.load('osf')
@@ -1545,17 +1546,17 @@ class DraftRegistrationSerializerLegacy(JSONAPISerializer):
         # if not provider.schemas_acceptable.filter(id=schema.id).exists():
         #     raise exceptions.ValidationError('Invalid schema for provider.')
 
+        self.enforce_metadata_or_registration_responses(metadata, registration_responses)
+
         draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema, provider=provider)
         reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
 
         if metadata:
-            try:
-                # Required fields are only required when creating the actual registration, not updating the draft.
-                draft.validate_metadata(metadata=metadata, reviewer=reviewer, required_fields=False)
-            except ValidationError as e:
-                raise exceptions.ValidationError(e.message)
-            draft.update_metadata(metadata)
-            draft.save()
+            self.update_metadata(draft, metadata, reviewer)
+
+        if registration_responses:
+            self.update_registration_responses(draft, registration_responses)
+
         return draft
 
     class Meta:
@@ -1590,15 +1591,15 @@ class DraftRegistrationDetailLegacySerializer(DraftRegistrationSerializerLegacy)
         Update draft instance with the validated metadata.
         """
         metadata = validated_data.pop('registration_metadata', None)
+        registration_responses = validated_data.pop('registration_responses', None)
         reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
+
+        self.enforce_metadata_or_registration_responses(metadata, registration_responses)
+
         if metadata:
-            try:
-                # Required fields are only required when creating the actual registration, not updating the draft.
-                draft.validate_metadata(metadata=metadata, reviewer=reviewer, required_fields=False)
-            except ValidationError as e:
-                raise exceptions.ValidationError(e.message)
-            draft.update_metadata(metadata)
-            draft.save()
+            self.update_metadata(draft, metadata, reviewer)
+        if registration_responses:
+            self.update_registration_responses(draft, registration_responses)
         return draft
 
 
