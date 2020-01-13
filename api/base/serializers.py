@@ -202,7 +202,6 @@ class HideIfPreprint(ConditionalField):
     def should_be_none(self, instance):
         return not isinstance(self.field, RelationshipField)
 
-
 class HideIfDraft(ConditionalField):
     """
     If object is a draft registration, or related to a draft registration, hide the field.
