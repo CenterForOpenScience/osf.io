@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import httplib as http
+import six
 
 from django.db import models
 from django.db.models.signals import pre_save, post_save, post_delete
@@ -189,16 +190,15 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
 
     @property
     def team_folder_name(self):
-        return u'{} ({}{}{})'.format(self.owner.title,
-                                     settings.TEAM_FOLDER_NAME_PREFIX,
-                                     self.owner._id,
-                                     settings.TEAM_FOLDER_NAME_SUFFIX)
+        fmt = six.u(settings.TEAM_FOLDER_NAME_FORMAT)
+        return fmt.format(title=self.owner.title,
+                          guid=self.owner._id)
 
     @property
     def group_name(self):
-        return u'{}{}{}'.format(settings.GROUP_NAME_PREFIX,
-                                self.owner._id,
-                                settings.GROUP_NAME_SUFFIX)
+        fmt = six.u(settings.GROUP_NAME_FORMAT)
+        return fmt.format(title=self.owner.title,
+                          guid=self.owner._id)
 
     def sync_members(self):
         members = [
@@ -226,6 +226,13 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
             )
         except DropboxException:
             logger.exception(u'Team folder cannot be renamed: node={}, team_folder_id={}, name={}'.format(self.owner._id, self.team_folder_id, self.team_folder_name))
+            # ignored
+
+        try:
+            mclient = DropboxTeam(self.management_token)
+            utils.rename_group(mclient, self.group_id, self.group_name)
+        except DropboxException:
+            logger.exception(u'Team group cannot be renamed: node={}, team_folder_id={}, group name={}'.format(self.owner._id, self.team_folder_id, self.group_name))
             # ignored
 
     def create_team_folder(self, grdm_member_email_list,
@@ -434,7 +441,6 @@ def node_post_save(sender, instance, created, **kwargs):
     if created:
         init_addon(instance, addon_name)
     else:
-        # skip immediately after init_addon() and sync_members()
         ns = instance.get_addon(addon_name)
         if ns is None or not ns.complete:  # disabled
             return

@@ -457,6 +457,11 @@ def update_admin_dbmid(team_id):
     for th in threads:
         th.join()
 
+def rename_group(mclient, group_id, new_group_name):
+    mclient.team_groups_update(group_selector(group_id),
+                               return_members=False,
+                               new_group_name=new_group_name)
+
 def create_folder(team_info, team_folder_id, path):
     client = team_info.fileaccess_client_admin_with_path_root(team_folder_id)
     try:
