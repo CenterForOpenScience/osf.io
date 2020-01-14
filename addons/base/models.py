@@ -33,6 +33,9 @@ lookup = TemplateLookup(
         # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it
         # gets re-escaped by Markupsafe. See [#OSF-4432]
         'from website.util.sanitize import temp_ampersand_fixer',
+        'from flask_babel import gettext as _',
+        'from flask_babel import ngettext',
+        'from markupsafe import escape as h',
     ]
 )
 
