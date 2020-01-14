@@ -457,6 +457,58 @@ def update_admin_dbmid(team_id):
     for th in threads:
         th.join()
 
+def create_folder(team_info, team_folder_id, path):
+    client = team_info.fileaccess_client_admin_with_path_root(team_folder_id)
+    try:
+        client.files_create_folder(path)
+        DEBUG(u'create folder: {}'.format(path))
+        return True
+    except ApiError:
+        logger.exception(u'cannot create a folder: {}'.format(path))
+        return False
+
+def are_same_team(addon1, addon2):
+    return addon1.fileaccess_option == addon2.fileaccess_option
+
+def copy_folders(team_info, src_addon, src_path, dest_addon, dest_path):
+    if not are_same_team(src_addon, dest_addon):
+        return
+
+    src_team_folder_id = src_addon.team_folder_id
+    dest_team_folder_id = dest_addon.team_folder_id
+
+    client = team_info.fileaccess_client_admin_with_path_root(
+        src_team_folder_id)
+    if src_path == '/':
+        src_path = ''  # '/' is not supported by files_list_folder()
+    cursor = None
+    has_more = True
+    folders = []
+    while has_more:
+        if not cursor:
+            lst = client.files_list_folder(src_path, recursive=False)
+        else:
+            lst = client.files_list_folder_continue(cursor)
+        has_more = lst.has_more
+        cursor = lst.cursor  # save
+        for ent in lst.entries:
+            if isinstance(ent, dropbox.files.FolderMetadata):
+                folders.append(ent.path_display)
+
+    for child_src_folder in folders:
+        folder_name = os.path.basename(child_src_folder.rstrip('/'))
+        child_dest_folder = os.path.join(dest_path, folder_name)
+        DEBUG(u'child_src_folder={}, child_dest_folder={}'.format(child_src_folder, child_dest_folder))
+        res = create_folder(team_info, dest_team_folder_id, child_dest_folder)
+        if res:
+            copy_folders(team_info,
+                         src_addon, child_src_folder,
+                         dest_addon, child_dest_folder)
+        else:
+            dest_node = dest_addon.owner
+            dest_provider = dest_addon.short_name
+            logger.error(u'cannot create new folder: node guid={}, provider={}, path={}'.format(dest_node._id, dest_provider, child_dest_folder))
+
 # return (timestamp_data, timestamp_status, context)
 def get_timestamp(node_settings, path):
     team_info = TeamInfo(node_settings.fileaccess_token,

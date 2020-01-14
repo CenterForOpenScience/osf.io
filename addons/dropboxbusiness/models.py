@@ -315,6 +315,19 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         # dropboxbusiness-addon cannot not use parent NodeSettings.
         pass
 
+    def after_template(self, tmpl_node, new_node, user, save=True):
+        if not self.has_auth:
+            return
+        dest_addon = new_node.get_addon(self.short_name)
+        if not dest_addon:
+            return
+        if not dest_addon.has_auth:
+            return
+        team_info = utils.TeamInfo(self.fileaccess_token,
+                                   self.management_token,
+                                   admin_dbmid=self.admin_dbmid)
+        utils.copy_folders(team_info, self, '/', dest_addon, '/')
+
     def set_two_options(self, f_option, m_option, save=False):
         self.fileaccess_option = f_option
         self.management_option = m_option
