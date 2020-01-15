@@ -104,7 +104,7 @@ def render_citation(node, style='apa'):
 def add_period_to_title(cit):
     title_split = cit.split('”')  # quote is ” (\xe2\x80\x9d) not normal "
     if len(title_split) == 2 and title_split[0][-1] != '.':
-        cit = (title_split[0] + '.' + '\xe2\x80\x9d' + title_split[1])
+        cit = (title_split[0] + '.' + '”' + title_split[1])  # quote is ” (\xe2\x80\x9d) not normal "
     return cit
 
 def apa_reformat(node, cit):
