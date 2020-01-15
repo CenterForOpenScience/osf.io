@@ -65,7 +65,7 @@ function WikiMenu(data, wikiID, canEdit) {
             var tb = this;  // jshint ignore: line
             for (var i = 0; i < tb.treeData.children.length; i++) {
                 var parent = tb.treeData.children[i];
-                if (parent.data.title === _('Project Wiki Pages')) {
+                if (parent.data.title === 'Project Wiki Pages') {
                     tb.updateFolder(null, parent);
                 }
             }
