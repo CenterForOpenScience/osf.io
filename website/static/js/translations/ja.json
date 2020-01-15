@@ -563,7 +563,7 @@
 			},
           " if the problem persists.": {
 		    "msgid": " if the problem persists.",
-		    "msgstr": [""]
+		    "msgstr": [" "]
 			},
           "Error requesting project access": {
 		    "msgid": "Error requesting project access",
@@ -671,7 +671,7 @@
 			},
           "collaborator": {
 		    "msgid": "collaborator",
-		    "msgstr": [""]
+		    "msgstr": [" "]
 			},
           " This file has been checked out by a ": {
 		    "msgid": " This file has been checked out by a ",
@@ -682,7 +682,7 @@
 		    "msgstr": ["変更を行う前にチェックインする必要があります。"]
 			},
           "Are you sure you want to delete <strong>": {
-		    "msgid": "",
+		    "msgid": "Are you sure you want to delete <strong>",
 		    "msgstr": ["次のファイルを削除してもよろしいですか？：<strong>"]
 			},
           "</strong>?": {
@@ -856,10 +856,6 @@
           "Create": {
 		    "msgid": "Create",
 		    "msgstr": ["作成"]
-			},
-          "We could not create the identifier at this time. ": {
-		    "msgid": "We could not create the identifier at this time. ",
-		    "msgstr": [""]
 			},
           "We could not create the identifier at this time. ": {
 		    "msgid": "We could not create the identifier at this time. ",
@@ -1435,7 +1431,7 @@
 			},
           "pointers.js": {
 		    "msgid": "pointers.js",
-		    "msgstr": [""]
+		    "msgstr": ["pointers.js"]
 			},
           "Search all projects": {
 		    "msgid": "Search all projects",
@@ -2371,11 +2367,11 @@
 			},
           "Change privacy settings": {
 		    "msgid": "Change privacy settings",
-		    "msgstr": [""]
+		    "msgstr": ["非公開設定の変更"]
 			},
           "Projects and components affected": {
 		    "msgid": "Projects and components affected",
-		    "msgstr": [""]
+		    "msgstr": ["影響を受けるプロジェクトとコンポーネント"]
 			},
           "Updating Privacy": {
 		    "msgid": "Updating Privacy",
@@ -3066,8 +3062,8 @@
 		    "msgstr": ["を認証解除できませんでした"]
 			},
           "Disconnect ": {
-		    "msgid": "切断しますか？：",
-		    "msgstr": [""]
+		    "msgid": "Disconnect ",
+		    "msgstr": ["切断しますか？："]
 			},
           "Disconnect": {
 		    "msgid": "Disconnect",
@@ -3243,19 +3239,15 @@
 			},
           "This folder and all of its contents will be deleted. This folder is linked to ": {
 		    "msgid": "This folder and all of its contents will be deleted. This folder is linked to ",
-		    "msgstr": [""]
+		    "msgstr": ["このフォルダーとその内容はすべて削除されます。 このフォルダーは、"]
 			},
           "your wiki(s). Deleting it will remove images embedded in your wiki(s). ": {
 		    "msgid": "your wiki(s). Deleting it will remove images embedded in your wiki(s). ",
-		    "msgstr": [""]
-			},
-          "This action is irreversible.": {
-		    "msgid": "This action is irreversible.",
-		    "msgstr": [""]
+		    "msgstr": ["Wikiにリンクされています。 削除すると、Wikiに埋め込まれた画像が削除されます。"]
 			},
           "This folder and ALL its contents will be deleted. This action is irreversible.": {
 		    "msgid": "This folder and ALL its contents will be deleted. This action is irreversible.",
-		    "msgstr": [""]
+		    "msgstr": ["このフォルダーとその内容はすべて削除されます。 このアクションは元に戻せません。"]
 			},
           "You don\\'t have permission to delete this file.": {
 		    "msgid": "You don\\'t have permission to delete this file.",
