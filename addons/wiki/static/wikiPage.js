@@ -9,6 +9,10 @@ var mdQuick = require('js/markdown').quick;
 var mdOld = require('js/markdown').old;
 var diffTool = require('js/diffTool');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 var THROTTLE = 500;
 
 //<div id="preview" data-bind="mathjaxify">
@@ -89,9 +93,9 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
                         if (resp.wiki_content){
                             var rawContent = resp.wiki_content
                         } else if(window.contextVars.currentUser.canEdit) {
-                            var rawContent = '*Add important information, links, or images here to describe your project.*';
+                            var rawContent = _('*Add important information, links, or images here to describe your project.*');
                         } else {
-                            var rawContent = '*No wiki content.*';
+                            var rawContent = _('*No wiki content.*');
                         }
                         if (resp.rendered_before_update) {
                             // Use old md renderer. Don't mathjaxify
@@ -215,13 +219,13 @@ function ViewModel(options){
     self.viewVersionDisplay = ko.computed(function() {
         var versionString = '';
         if (self.viewVersion() === 'preview') {
-            versionString = 'Live preview';
+            versionString = _('Live preview');
         } else if (self.viewVersion() === 'current'){
-            versionString = 'Current version';
+            versionString = _('Current version');
         } else if (self.viewVersion() === 'previous'){
-            versionString = 'Previous version';
+            versionString = _('Previous version');
         } else {
-            versionString = 'Version ' + self.viewVersion();
+            versionString = _('Version ') + self.viewVersion();
         }
         return versionString;
     });

@@ -3432,6 +3432,70 @@
           "% of your quota.": {
 		    "msgid": "% of your quota.",
 		    "msgstr": ["%以上を使用しました"]
+			},
+          "WikiEditor.js": {
+		    "msgid": "WikiEditor.js",
+		    "msgstr": ["WikiEditor.js"]
+			},
+          "Live editing mode": {
+		    "msgid": "Live editing mode",
+		    "msgstr": ["ライブ編集モード"]
+			},
+          "Attempting to connect": {
+		    "msgid": "Attempting to connect",
+		    "msgstr": ["接続中"]
+			},
+          "Unsupported browser": {
+		    "msgid": "Unsupported browser",
+		    "msgstr": ["サポートされていないブラウザ"]
+			},
+          "Unavailable: Live editing": {
+		    "msgid": "Unavailable: Live editing",
+		    "msgstr": ["使用不可：ライブ編集"]
+			},
+          "The wiki content could not be loaded.": {
+		    "msgid": "The wiki content could not be loaded.",
+		    "msgstr": ["Wikiコンテンツをロードできませんでした。"]
+			},
+          "Could not GET wiki contents.": {
+		    "msgid": "Could not GET wiki contents.",
+		    "msgstr": ["Wikiコンテンツを取得できませんでした。"]
+			},
+          "There are unsaved changes to your wiki. If you exit ": {
+		    "msgid": "There are unsaved changes to your wiki. If you exit ",
+		    "msgstr": ["wikiに保存されていない変更があります。 ここでページを終了すると、"]
+			},
+          "the page now, those changes may be lost.": {
+		    "msgid": "the page now, those changes may be lost.",
+		    "msgstr": ["これらの変更が失われる可能性があります。"]
+			},
+          "wikiPage.js": {
+		    "msgid": "wikiPage.js",
+		    "msgstr": ["wikiPage.js"]
+			},
+          "*Add important information, links, or images here to describe your project.*": {
+		    "msgid": "*Add important information, links, or images here to describe your project.*",
+		    "msgstr": ["*プロジェクトを説明する重要な情報、リンク、または画像をここに追加します*"]
+			},
+          "*No wiki content.*": {
+		    "msgid": "*No wiki content.*",
+		    "msgstr": ["* Wikiコンテンツはありません。*"]
+			},
+          "Live preview": {
+		    "msgid": "Live preview",
+		    "msgstr": ["ライブプレビュー"]
+			},
+          "Current version": {
+		    "msgid": "Current version",
+		    "msgstr": ["現行バージョン"]
+			},
+          "Previous version": {
+		    "msgid": "Previous version",
+		    "msgstr": ["前バージョン"]
+			},
+          "Version ": {
+		    "msgid": "Version ",
+		    "msgstr": ["バージョン"]
 			}
       }
   }
