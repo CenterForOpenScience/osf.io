@@ -1,6 +1,10 @@
 'use strict';
 var $ = require('jquery');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 var SaveManager = function(url, method, opts) {
     var self = this;
     self.url = url;
@@ -19,7 +23,7 @@ var SaveManager = function(url, method, opts) {
     if (warn) {
         $(window).on('beforeunload', function() {
             if (self.blocking || self.dirty())  {
-                return 'You have unsaved changes.';
+                return _('You have unsaved changes.');
             }
         });
     }

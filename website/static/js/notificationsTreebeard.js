@@ -6,6 +6,10 @@ var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 function expandOnLoad() {
     var tb = this;  // jshint ignore: line
     for (var i = 0; i < tb.treeData.children.length; i++) {
@@ -53,19 +57,19 @@ function subscribe(item, notification_type) {
         payload
     ).done(function(){
         //'notfiy-success' is to override default class 'success' in treebeard
-        item.notify.update('Settings updated', 'notify-success', 1, 2000);
+        item.notify.update(_('Settings updated'), 'notify-success', 1, 2000);
         item.data.event.notificationType = notification_type;
     }).fail(function() {
-        item.notify.update('Could not update settings', 'notify-danger', 1, 2000);
+        item.notify.update(_('Could not update settings'), 'notify-danger', 1, 2000);
     });
 }
 
 function displayParentNotificationType(item){
     var notificationTypeDescriptions = {
-        'email_transactional': 'Instantly',
-        'email_digest': 'Daily',
-        'adopt_parent': 'Adopt setting from parent project',
-        'none': 'Never'
+        'email_transactional': _('Instantly'),
+        'email_digest': _('Daily'),
+        'adopt_parent': _('Adopt setting from parent project'),
+        'none': _('Never')
     };
 
     if (item.data.event.parent_notification_type) {
@@ -111,7 +115,7 @@ function ProjectNotifications(data) {
                             return m('div[style="padding-left:5px"]',
                                         [m ('p', [
                                                 m('b', item.data.node.title + ': '),
-                                                m('span[class="text-muted"]', ' No configured projects.')]
+                                                m('span[class="text-muted"]', _(' No configured projects.'))]
                                         )]
                             );
                         }
@@ -178,9 +182,9 @@ function ProjectNotifications(data) {
                         else {
                             var type = item.data.event.notificationType;
                             notificationOptions = [
-                                m('option', {value: 'none', selected : type === 'none' ? 'selected': ''}, 'Never'),
-                                m('option', {value: 'email_transactional', selected : type === 'email_transactional' ? 'selected': ''}, 'Instantly'),
-                                m('option', {value: 'email_digest', selected : type === 'email_digest' ? 'selected': ''}, 'Daily')
+                                m('option', {value: 'none', selected : type === 'none' ? 'selected': ''}, _('Never')),
+                                m('option', {value: 'email_transactional', selected : type === 'email_transactional' ? 'selected': ''}, _('Instantly')),
+                                m('option', {value: 'email_digest', selected : type === 'email_digest' ? 'selected': ''}, _('Daily'))
                             ];
                         }
                         return m('div[style="padding-right:10px"]',
@@ -220,10 +224,10 @@ function ProjectNotifications(data) {
                                 [
                                     m('option', {value: 'adopt_parent',
                                                  selected: item.data.event.notificationType === 'adopt_parent' ? 'selected' : ''},
-                                                 'Adopt setting from parent project ' + displayParentNotificationType(item)),
-                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
-                                    m('option', {value: 'email_transactional',  selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
-                                    m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily')
+                                                 _('Adopt setting from parent project ') + displayParentNotificationType(item)),
+                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, _('Never')),
+                                    m('option', {value: 'email_transactional',  selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, _('Instantly')),
+                                    m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, _('Daily'))
                             ])
                         ]);
                     }

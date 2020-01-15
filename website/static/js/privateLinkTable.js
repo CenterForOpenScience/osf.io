@@ -11,6 +11,10 @@ require('bootstrap-editable');
 
 var ctx = window.contextVars;
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 function LinkViewModel(data, $root) {
 
     var self = this;
@@ -31,7 +35,7 @@ function LinkViewModel(data, $root) {
     self.anonymousDisplay = ko.computed(function() {
         var openTag = '<span>';
         var closeTag = '</span>';
-        var text = data.anonymous ? 'Yes' : 'No' ;
+        var text = data.anonymous ? _('Yes') : _('No') ;
         return [openTag, text, closeTag].join('');
     });
 
@@ -66,9 +70,9 @@ function ViewModel(url, nodeIsPublic, table) {
     }
 
     function onFetchError() {
-        $osf.growl('Could not retrieve view-only links.', 'Please refresh the page or ' +
-                'contact ' + $osf.osfSupportLink() + ' if the ' +
-                'problem persists.');
+        $osf.growl(_('Could not retrieve view-only links.'), _('Please refresh the page or ') +
+                _('contact ') + $osf.osfSupportLink() + _(' if the ') +
+                _('problem persists.'));
     }
 
     function fetch() {
@@ -90,8 +94,8 @@ function ViewModel(url, nodeIsPublic, table) {
             'private_link_id': data.id
         };
         bootbox.confirm({
-            title: 'Remove view-only link?',
-            message: 'Are you sure you want to remove this view-only link?',
+            title: _('Remove view-only link?'),
+            message: _('Are you sure you want to remove this view-only link?'),
             callback: function(result) {
                 if(result) {
                     $.ajax({
@@ -103,13 +107,13 @@ function ViewModel(url, nodeIsPublic, table) {
                 }).done(function() {
                     self.privateLinks.remove(data);
                 }).fail(function() {
-                    $osf.growl('Error:','Failed to delete the private link.');
+                    $osf.growl('Error:',_('Failed to delete the private link.'));
                 });
                 }
             },
             buttons:{
                 confirm:{
-                    label:'Remove',
+                    label:_('Remove'),
                     className:'btn-danger'
                 }
             }
@@ -129,7 +133,7 @@ function ViewModel(url, nodeIsPublic, table) {
                 contentType: 'application/json'
             },
             send: 'always',
-            title: 'Edit Link Name',
+            title: _('Edit Link Name'),
             params: function(params){
                 // Send JSON data
                 params.pk = data.id;

@@ -155,7 +155,7 @@
 			},
           "No tags to display in this collection. Project administrators and write contributors can add tags.": {
 		    "msgid": "No tags to display in this collection. Project administrators and write contributors can add tags.",
-		    "msgstr": ["このコレクションに表示するタグはありません。 プロジェクト管理者と寄稿者はタグを追加できます。"]
+		    "msgstr": ["このコレクションに表示するタグはありません。 プロジェクト管理者とコントリビュータはタグを追加できます。"]
 			},
           "Click a contributor\\'s name to see projects that you have in common.": {
 		    "msgid": "Click a contributor\\'s name to see projects that you have in common.",
@@ -168,6 +168,3278 @@
           "Remove selected from collection": {
 		    "msgid": "Remove selected from collection",
 		    "msgstr": ["コレクションから選択を削除"]
+			},
+          "All my projects": {
+		    "msgid": "All my projects",
+		    "msgstr": ["すべてのプロジェクト"]
+			},
+          "Collections ": {
+		    "msgid": "Collections ",
+		    "msgstr": ["コレクション"]
+			},
+          "Contributors ": {
+		    "msgid": "Contributors ",
+		    "msgstr": ["コントリビュータ"]
+			},
+          "Tags": {
+		    "msgid": "Tags",
+		    "msgstr": ["タグ"]
+			},
+          "Cancel": {
+		    "msgid": "Cancel",
+		    "msgstr": ["キャンセル"]
+			},
+          "Add": {
+		    "msgid": "Add",
+		    "msgstr": ["追加"]
+			},
+          "Add new collection": {
+		    "msgid": "Add new collection",
+		    "msgstr": ["新しいコレクションを追加"]
+			},
+          "Collection name": {
+		    "msgid": "Collection name",
+		    "msgstr": ["コレクション名"]
+			},
+          "Fetching more projects": {
+		    "msgid": "Fetching more projects",
+		    "msgstr": ["より多くのプロジェクトを取得中"]
+			},
+          "Rename collection": {
+		    "msgid": "Rename collection",
+		    "msgstr": ["コレクションをリネームする"]
+			},
+          "Rename to: ": {
+		    "msgid": "Rename to: ",
+		    "msgstr": ["変更するコレクション名"]
+			},
+          "Delete collection \"": {
+		    "msgid": "Delete collection \"",
+		    "msgstr": ["コレクションを削除しますか？："]
+			},
+          "\"?": {
+		    "msgid": "\"?",
+		    "msgstr": [" "]
+			},
+          "Parent projects": {
+		    "msgid": "Parent projects",
+		    "msgstr": ["親プロジェクト"]
+			},
+          "Visibility: ": {
+		    "msgid": "Visibility: ",
+		    "msgstr": ["可視性："]
+			},
+          "Public": {
+		    "msgid": "Public",
+		    "msgstr": ["公開"]
+			},
+          "Private": {
+		    "msgid": "Private",
+		    "msgstr": ["非公開"]
+			},
+          "Category: ": {
+		    "msgid": "Category: ",
+		    "msgstr": ["カテゴリー："]
+			},
+          "Permission: ": {
+		    "msgid": "Permission: ",
+		    "msgstr": ["許可："]
+			},
+          "Last Modified on: ": {
+		    "msgid": "Last Modified on: ",
+		    "msgstr": ["最終更新日："]
+			},
+          "profile.js": {
+		    "msgid": "profile.js",
+		    "msgstr": ["profile.js"]
+			},
+          "January": {
+		    "msgid": "January",
+		    "msgstr": ["1月"]
+			},
+          "February": {
+		    "msgid": "February",
+		    "msgstr": ["2月"]
+			},
+          "March": {
+		    "msgid": "March",
+		    "msgstr": ["3月"]
+			},
+          "April": {
+		    "msgid": "April",
+		    "msgstr": ["4月"]
+			},
+          "May": {
+		    "msgid": "May",
+		    "msgstr": ["5月"]
+			},
+          "June": {
+		    "msgid": "June",
+		    "msgstr": ["6月"]
+			},
+          "July": {
+		    "msgid": "July",
+		    "msgstr": ["7月"]
+			},
+          "August": {
+		    "msgid": "August",
+		    "msgstr": ["8月"]
+			},
+          "September": {
+		    "msgid": "September",
+		    "msgstr": ["9月"]
+			},
+          "October": {
+		    "msgid": "October",
+		    "msgstr": ["10月"]
+			},
+          "November": {
+		    "msgid": "November",
+		    "msgstr": ["11月"]
+			},
+          "December": {
+		    "msgid": "December",
+		    "msgstr": ["12月"]
+			},
+          "Please enter a year for the start date.": {
+		    "msgid": "Please enter a year for the start date.",
+		    "msgstr": ["開始日の年を入力してください。"]
+			},
+          "Please enter an end date or mark as ongoing.": {
+		    "msgid": "Please enter an end date or mark as ongoing.",
+		    "msgstr": ["終了日を入力するか、継続中としてマークしてください。"]
+			},
+          "Please enter a year for the end date.": {
+		    "msgid": "Please enter a year for the end date.",
+		    "msgstr": ["終了日の年を入力してください。"]
+			},
+          "There are unsaved changes to your settings.": {
+		    "msgid": "There are unsaved changes to your settings.",
+		    "msgstr": ["設定に保存されていない変更があります。"]
+			},
+          "Please save or discard your changes before switching ": {
+		    "msgid": "Please save or discard your changes before switching ",
+		    "msgstr": ["タブを切り替える前に変更を保存または破棄してください"]
+			},
+          "tabs.": {
+		    "msgid": "tabs.",
+		    "msgstr": [" "]
+			},
+          "Settings updated": {
+		    "msgid": "Settings updated",
+		    "msgstr": ["設定が更新されました"]
+			},
+          "Could not update settings": {
+		    "msgid": "Could not update settings",
+		    "msgstr": ["設定を更新できませんでした"]
+			},
+          "Could not fetch data": {
+		    "msgid": "Could not fetch data",
+		    "msgstr": ["データを取得できませんでした"]
+			},
+          "Are you sure you want to discard your unsaved changes?": {
+		    "msgid": "Are you sure you want to discard your unsaved changes?",
+		    "msgstr": ["保存していない変更を破棄してもよろしいですか？"]
+			},
+          "Discard changes?": {
+		    "msgid": "Discard changes?",
+		    "msgstr": ["変更を破棄？"]
+			},
+          "Discard": {
+		    "msgid": "Discard",
+		    "msgstr": ["破棄"]
+			},
+          "Are you sure you want to remove this website from your profile?": {
+		    "msgid": "Are you sure you want to remove this website from your profile?",
+		    "msgstr": ["このウェブサイトをプロフィールから削除してもよろしいですか？"]
+			},
+          "Website removed": {
+		    "msgid": "Website removed",
+		    "msgstr": ["ウェブサイトを除外しました"]
+			},
+          "Remove": {
+		    "msgid": "Remove",
+		    "msgstr": ["除外"]
+			},
+          "Please update your website": {
+		    "msgid": "Please update your website",
+		    "msgstr": ["ウェブサイトを更新してください"]
+			},
+          "Remove Institution?": {
+		    "msgid": "Remove Institution?",
+		    "msgstr": ["機関を除外しますか？"]
+			},
+          "Are you sure you want to remove this institution?": {
+		    "msgid": "Are you sure you want to remove this institution?",
+		    "msgstr": ["この機関を除外してもよろしいですか？"]
+			},
+          "Institution Removed": {
+		    "msgid": "Institution Removed",
+		    "msgstr": ["機関が除外されました"]
+			},
+          "Remove": {
+		    "msgid": "Remove",
+		    "msgstr": ["除外"]
+			},
+          "Institution/Employer required": {
+		    "msgid": "Institution/Employer required",
+		    "msgstr": ["機関/雇用者が必要です"]
+			},
+          "Institution required": {
+		    "msgid": "Institution required",
+		    "msgstr": ["必要な機関"]
+			},
+          "project-organizer.js": {
+		    "msgid": "project-organizer.js",
+		    "msgstr": ["project-organizer.js"]
+			},
+          "project-organizer.js": {
+		    "msgid": "project-organizer.js",
+		    "msgstr": ["project-organizer.js"]
+			},
+          "Name": {
+		    "msgid": "Name",
+		    "msgstr": ["名前"]
+			},
+          "Contributors": {
+		    "msgid": "Contributors",
+		    "msgstr": ["コントリビュータ"]
+			},
+          "Modified": {
+		    "msgid": "Modified",
+		    "msgstr": ["最終更新日"]
+			},
+          "project.js": {
+		    "msgid": "project.js",
+		    "msgstr": ["project.js"]
+			},
+          "<h4>Are you sure you want to fork this project?</h4>": {
+		    "msgid": "<h4>Are you sure you want to fork this project?</h4>",
+		    "msgstr": ["<h4>このプロジェクトをフォークしてもよろしいですか？</h4>"]
+			},
+          "Fork": {
+		    "msgid": "Fork",
+		    "msgstr": ["フォーク"]
+			},
+          "Fork created successfully!": {
+		    "msgid": "Fork created successfully!",
+		    "msgstr": ["フォークが正常に作成されました！"]
+			},
+          "Go to new fork": {
+		    "msgid": "Go to new fork",
+		    "msgstr": ["新しいフォークに行く"]
+			},
+          "Keep working here": {
+		    "msgid": "Keep working here",
+		    "msgstr": ["ここで作業を続ける"]
+			},
+          "Your fork is being created. You\\'ll receive an email when it is complete.": {
+		    "msgid": "Your fork is being created. You\\'ll receive an email when it is complete.",
+		    "msgstr": ["フォークを作成しています。 完了するとメールが届きます。"]
+			},
+          "Are you sure you want to fork this project?": {
+		    "msgid": "Are you sure you want to fork this project?",
+		    "msgstr": ["このプロジェクトをフォークしてもよろしいですか？"]
+			},
+          "Could not fork link.": {
+		    "msgid": "Could not fork link.",
+		    "msgstr": ["リンクをフォークできませんでした。"]
+			},
+          "<h4>Are you sure you want to create a new project using this project as a template?</h4>": {
+		    "msgid": "<h4>Are you sure you want to create a new project using this project as a template?</h4>",
+		    "msgstr": ["<h4>このプロジェクトをテンプレートとして使用して新しいプロジェクトを作成してもよろしいですか？</h4>"]
+			},
+          "<p>Any add-ons configured for this project will not be authenticated in the new project.</p>": {
+		    "msgid": "<p>Any add-ons configured for this project will not be authenticated in the new project.</p>",
+		    "msgstr": ["<p>このプロジェクト用に設定されたアドオンは、新しいプロジェクトでは認証されません。</p>"]
+			},
+          "<h4>Are you sure you want to create a new project using this registration as a template?</h4>": {
+		    "msgid": "<h4>Are you sure you want to create a new project using this registration as a template?</h4>",
+		    "msgstr": ["<h4>この登録をテンプレートとして使用して新しいプロジェクトを作成してもよろしいですか？</h4>"]
+			},
+          "<dt>Read</dt>": {
+		    "msgid": "<dt>Read</dt>",
+		    "msgstr": ["<dt>読込み</dt>"]
+			},
+          "<dd><ul><li>View project content and comment</li></ul></dd>": {
+		    "msgid": "<dd><ul><li>View project content and comment</li></ul></dd>",
+		    "msgstr": ["<dd><ul><li>プロジェクトのコンテンツとコメントを表示</li></ul></dd>"]
+			},
+          "<dt>Read + Write</dt>": {
+		    "msgid": "<dt>Read + Write</dt>",
+		    "msgstr": ["<dt>読込み/書込み</dt>"]
+			},
+          "<dd><ul><li>Read privileges</li> ": {
+		    "msgid": "<dd><ul><li>Read privileges</li> ",
+		    "msgstr": ["<dd><ul><li>読込み権限</li> "]
+			},
+          "<li>Add and configure components</li> ": {
+		    "msgid": "<li>Add and configure components</li> ",
+		    "msgstr": ["<li>コンポーネントを追加および構成する</li> "]
+			},
+          "<li>Add and edit content</li></ul></dd>": {
+		    "msgid": "<li>Add and edit content</li></ul></dd>",
+		    "msgstr": ["<li>コンテンツの追加と編集</li></ul></dd>"]
+			},
+          "<dt>Administrator</dt><dd><ul>": {
+		    "msgid": "<dt>Administrator</dt><dd><ul>",
+		    "msgstr": ["<dt>管理者</dt><dd><ul>"]
+			},
+          "<li>Read and write privileges</li>": {
+		    "msgid": "<li>Read and write privileges</li>",
+		    "msgstr": ["<li>読込み/書込み権限</li>"]
+			},
+          "<li>Delete and register project</li><li>Public-private settings</li></ul></dd>": {
+		    "msgid": "<li>Delete and register project</li><li>Public-private settings</li></ul></dd>",
+		    "msgstr": ["<li>プロジェクトの削除と登録</li><li>公開/非公開設定</li></ul></dd>"]
+			},
+          "Only bibliographic contributors will be displayed in the Contributors list and in project citations. Non-bibliographic contributors can read and modify the project as normal.": {
+		    "msgid": "Only bibliographic contributors will be displayed in the Contributors list and in project citations. Non-bibliographic contributors can read and modify the project as normal.",
+		    "msgstr": ["コントリビュータリストおよびプロジェクトの引用には、書誌のコントリビュータのみが表示されます。 書誌以外のコントリビュータは、通常どおりプロジェクトを読んで修正できます。"]
+			},
+          "Are you sure you want to remove this link? This will not remove the project this link refers to.": {
+		    "msgid": "Are you sure you want to remove this link? This will not remove the project this link refers to.",
+		    "msgstr": ["このリンクを削除してもよろしいですか？このリンクが参照するプロジェクトは削除されません。"]
+			},
+          "Remove this link?": {
+		    "msgid": "Remove this link?",
+		    "msgstr": ["このリンクを除外しますか？"]
+			},
+          "projectSettingsTreebeardBase.js": {
+		    "msgid": "projectSettingsTreebeardBase.js",
+		    "msgstr": ["projectSettingsTreebeardBase.js"]
+			},
+          "Project": {
+		    "msgid": "Project",
+		    "msgstr": ["プロジェクト"]
+			},
+          "Editing Toggle": {
+		    "msgid": "Editing Toggle",
+		    "msgstr": ["編集トグル"]
+			},
+          "qToggle.js": {
+		    "msgid": "qToggle.js",
+		    "msgstr": ["qToggle.js"]
+			},
+          "qtoggle needs a target to be defined by adding data-qtoggle-target to the trigger element for the  following item :": {
+		    "msgid": "qtoggle needs a target to be defined by adding data-qtoggle-target to the trigger element for the  following item :",
+		    "msgstr": ["qtoggleでは、次の項目のトリガー要素にdata-qtoggle-targetを追加して、ターゲットを定義する必要があります。"]
+			},
+          "rdm-firebase.js  ": {
+		    "msgid": "rdm-firebase.js",
+		    "msgstr": ["rdm-firebase.js"]
+			},
+          "Unable to get permission to notify.": {
+		    "msgid": "Unable to get permission to notify.",
+		    "msgstr": ["通知する許可を取得できません。"]
+			},
+          "Token refreshed.": {
+		    "msgid": "Token refreshed.",
+		    "msgstr": ["トークンが更新されました。"]
+			},
+          "Unable to retrieve refreshed token ": {
+		    "msgid": "Unable to retrieve refreshed token ",
+		    "msgstr": ["更新されたトークンを取得できません"]
+			},
+          "No Instance ID token available. Request permission to generate one.": {
+		    "msgid": "No Instance ID token available. Request permission to generate one.",
+		    "msgstr": ["使用可能なインスタンスIDトークンはありません。 生成する許可をリクエストします。"]
+			},
+          "An error occurred while retrieving token. ": {
+		    "msgid": "An error occurred while retrieving token. ",
+		    "msgstr": ["トークンの取得中にエラーが発生しました。"]
+			},
+          "An error has occured.": {
+		    "msgid": "An error has occured.",
+		    "msgstr": ["エラーが発生しました。"]
+			},
+          "requestAccess.js": {
+		    "msgid": "requestAccess.js",
+		    "msgstr": ["requestAccess.js"]
+			},
+          "Access request failed. Please contact ": {
+		    "msgid": "Access request failed. Please contact ",
+		    "msgstr": ["アクセス要求が失敗しました。 問題が解決しない場合は次のリンクへお問い合わせください:"]
+			},
+          " if the problem persists.": {
+		    "msgid": " if the problem persists.",
+		    "msgstr": [""]
+			},
+          "Error requesting project access": {
+		    "msgid": "Error requesting project access",
+		    "msgstr": ["ロジェクトアクセスのリクエストエラー"]
+			},
+          "If this should not have occurred, please contact ": {
+		    "msgid": "If this should not have occurred, please contact ",
+		    "msgstr": ["これが発生しないはずの場合は、次のリンクへお問い合わせください"]
+			},
+          ".": {
+		    "msgid": ".",
+		    "msgstr": ["。"]
+			},
+          "saveManager.js": {
+		    "msgid": "saveManager.js  ",
+		    "msgstr": ["saveManager.js  "]
+			},
+          "You have unsaved changes.": {
+		    "msgid": "You have unsaved changes.",
+		    "msgstr": ["保存してない変更があります。"]
+			},
+          "search.js": {
+		    "msgid": "search.js",
+		    "msgstr": ["search.js"]
+			},
+          "Search help": {
+		    "msgid": "Search help",
+		    "msgstr": ["検索ヘルプ"]
+			},
+          "Queries": {
+		    "msgid": "Queries",
+		    "msgstr": ["クエリ"]
+			},
+          "<p>Search uses the <a href=\"http://extensions.xwiki.org/xwiki/bin/view/Extension/Search+Application+Query+Syntax\">Lucene search syntax</a>": {
+		    "msgid": "<p>Search uses the <a href=\"http://extensions.xwiki.org/xwiki/bin/view/Extension/Search+Application+Query+Syntax\">Lucene search syntax</a>",
+		    "msgstr": ["<p>検索機能は<a href=\"http://extensions.xwiki.org/xwiki/bin/view/Extension/Search+Application+Query+Syntax\">Lucene検索構文</a>を使用します。"]
+			},
+          "This gives you many options, but can be very simple as well. ": {
+		    "msgid": "This gives you many options, but can be very simple as well. ",
+		    "msgstr": ["これにより多くのオプションが提供されますが、非常に簡単な場合もあります。"]
+			},
+          "Examples of valid searches include:": {
+		    "msgid": "Examples of valid searches include:",
+		    "msgstr": ["有効な検索の例は次のとおりです。"]
+			},
+          "GakuNin RDM | Search": {
+		    "msgid": "OSF | Search",
+		    "msgstr": ["GakuNin RDM | 検索"]
+			},
+          "wikiMenu.js": {
+		    "msgid": "wikiMenu.js",
+		    "msgstr": ["wikiMenu.js  "]
+			},
+          "Component Wiki Pages": {
+		    "msgid": "Component Wiki Pages",
+		    "msgstr": ["コンポーネントWikiページ"]
+			},
+          "Project Wiki Pages": {
+		    "msgid": "Project Wiki Pages",
+		    "msgstr": ["プロジェクトWikiページ"]
+			},
+          "editor.js": {
+		    "msgid": "editor.js",
+		    "msgstr": ["editor.js"]
+			},
+          "The file content could not be loaded.": {
+		    "msgid": "The file content could not be loaded.",
+		    "msgstr": ["ファイルの内容をロードできませんでした。"]
+			},
+          "Could not GET file contents.": {
+		    "msgid": "Could not GET file contents.",
+		    "msgstr": ["ファイルの内容を取得できませんでした。"]
+			},
+          "Could not update file. Insufficient storage space in your Dropbox.": {
+		    "msgid": "Could not update file. Insufficient storage space in your Dropbox.",
+		    "msgstr": ["ファイルを更新できませんでした。 Dropboxのストレージ容量が不足しています。"]
+			},
+          "The file could not be updated.": {
+		    "msgid": "The file could not be updated.",
+		    "msgstr": ["ファイルを更新できませんでした。"]
+			},
+          "Could not PUT file content.": {
+		    "msgid": "Could not PUT file content.",
+		    "msgstr": ["ファイルコンテンツをPUTできませんでした。"]
+			},
+          "index.js": {
+		    "msgid": "index.js",
+		    "msgstr": ["index.js"]
+			},
+          "Direct iframe with fixed height and width": {
+		    "msgid": "Direct iframe with fixed height and width",
+		    "msgstr": ["高さと幅を固定したiframeを管理する"]
+			},
+          "File is checked out.": {
+		    "msgid": "File is checked out.",
+		    "msgstr": ["ファイルはチェックアウトされています。"]
+			},
+          " This file has been checked out by a COS Preregistration Challenge Reviewer and will become available when review is complete.": {
+		    "msgid": " This file has been checked out by a COS Preregistration Challenge Reviewer and will become available when review is complete.",
+		    "msgstr": ["このファイルはCOS Preregistration Challenge Reviewerによってチェックアウトされており、レビューが完了すると利用可能になります。"]
+			},
+          "File is checked out.": {
+		    "msgid": "File is checked out.",
+		    "msgstr": ["ファイルはチェックアウトされています。"]
+			},
+          "collaborator": {
+		    "msgid": "collaborator",
+		    "msgstr": [""]
+			},
+          " This file has been checked out by a ": {
+		    "msgid": " This file has been checked out by a ",
+		    "msgstr": ["このファイルはコラボーレータによってチェックアウトされました。"]
+			},
+          ". It needs to be checked in before any changes can be made.": {
+		    "msgid": ". It needs to be checked in before any changes can be made.",
+		    "msgstr": ["変更を行う前にチェックインする必要があります。"]
+			},
+          "Are you sure you want to delete <strong>": {
+		    "msgid": "",
+		    "msgstr": ["次のファイルを削除してもよろしいですか？：<strong>"]
+			},
+          "</strong>?": {
+		    "msgid": "</strong>?",
+		    "msgstr": ["</strong>"]
+			},
+          "Could not delete file.": {
+		    "msgid": "Could not delete file.",
+		    "msgstr": ["ファイルを削除できませんでした。"]
+			},
+          "Confirm file check out?": {
+		    "msgid": "Confirm file check out?",
+		    "msgstr": ["ファイルのチェックアウトを確認しますか？"]
+			},
+          "This would mean ": {
+		    "msgid": "This would mean ",
+		    "msgstr": ["これはチェックアウトされている限り、他の貢献者がこのファイルの新しいバージョンを編集、削除、またはアップロードできないことを意味します。 いつでもチェックインできます。"]
+			},
+          "other contributors cannot edit, delete or upload new versions of this file ": {
+		    "msgid": "other contributors cannot edit, delete or upload new versions of this file ",
+		    "msgstr": [" "]
+			},
+          "as long as it is checked out. You can check it back in at anytime.": {
+		    "msgid": "as long as it is checked out. You can check it back in at anytime.",
+		    "msgstr": [" "]
+			},
+          "Unable to check out file": {
+		    "msgid": "Unable to check out file",
+		    "msgstr": ["ファイルをチェックアウトできません"]
+			},
+          "Check out file": {
+		    "msgid": "Check out file",
+		    "msgstr": ["ファイルをチェックアウトする"]
+			},
+          "Unable to check in file": {
+		    "msgid": "Unable to check in file",
+		    "msgstr": ["ファイルをチェックインできません"]
+			},
+          "Force check in file?": {
+		    "msgid": "Force check in file?",
+		    "msgstr": ["ファイルを強制的にチェックインしますか？"]
+			},
+          "This will check in the file for all users, allowing it to be edited. Are you sure?": {
+		    "msgid": "This will check in the file for all users, allowing it to be edited. Are you sure?",
+		    "msgstr": ["これにより、すべてのユーザーのファイルがチェックインされ、編集できるようになります。 よろしいですか？"]
+			},
+          "Force check in": {
+		    "msgid": "Force check in",
+		    "msgstr": ["強制チェックイン"]
+			},
+          "Unable to force check in file. Make sure you have admin privileges.": {
+		    "msgid": "Unable to force check in file. Make sure you have admin privileges.",
+		    "msgstr": ["ファイルを強制的にチェックインできません。 管理者権限があることを確認してください。"]
+			},
+          "Live editing mode ": {
+		    "msgid": "Live editing mode ",
+		    "msgstr": ["ライブ編集モード"]
+			},
+          "Attempting to connect ": {
+		    "msgid": "Attempting to connect ",
+		    "msgstr": ["接続しようとしています"]
+			},
+          "Unsupported browser ": {
+		    "msgid": "Unsupported browser ",
+		    "msgstr": ["サポートされていないブラウザ"]
+			},
+          "Saving... ": {
+		    "msgid": "Saving... ",
+		    "msgstr": ["保存しています..."]
+			},
+          "View this file on ": {
+		    "msgid": "View this file on ",
+		    "msgstr": ["このファイルを表示："]
+			},
+          "Force check in": {
+		    "msgid": "Force check in",
+		    "msgstr": ["強制チェックイン"]
+			},
+          "Check out": {
+		    "msgid": "Check out",
+		    "msgstr": ["チェックアウト"]
+			},
+          "Check in": {
+		    "msgid": "Check in",
+		    "msgstr": ["チェックイン"]
+			},
+          "Request Trusted Timestamp": {
+		    "msgid": "Request Trusted Timestamp",
+		    "msgstr": ["信頼できるタイムスタンプをリクエスト"]
+			},
+          "Delete": {
+		    "msgid": "Delete",
+		    "msgstr": ["削除"]
+			},
+          "Download": {
+		    "msgid": "Download",
+		    "msgstr": ["ダウンロード"]
+			},
+          "Toggle view: ": {
+		    "msgid": "Toggle view: ",
+		    "msgstr": ["ビューの切り替え："]
+			},
+          "revisions.js": {
+		    "msgid": "revisions.js",
+		    "msgstr": ["revisions.js"]
+			},
+          "Unable to fetch versions": {
+		    "msgid": "Unable to fetch versions",
+		    "msgstr": ["バージョンを取得できません"]
+			},
+          "MD5 is an algorithm used to verify data integrity.": {
+		    "msgid": "MD5 is an algorithm used to verify data integrity.",
+		    "msgstr": ["MD5は、データの整合性を検証するために使用されるアルゴリズムです。"]
+			},
+          "SHA-2 is a cryptographic hash function designed by the NSA used to verify data integrity.": {
+		    "msgid": "SHA-2 is a cryptographic hash function designed by the NSA used to verify data integrity.",
+		    "msgstr": ["SHA-2は、データの整合性を検証するために使用されるNSAによって設計された暗号化ハッシュ関数です。"]
+			},
+          "util.js": {
+		    "msgid": "util.js",
+		    "msgstr": ["util.js"]
+			},
+          " Loading... ": {
+		    "msgid": " Loading... ",
+		    "msgstr": ["ロード中"]
+			},
+          "scheduledBannerPlugin.js  ": {
+		    "msgid": "scheduledBannerPlugin.js  ",
+		    "msgstr": ["scheduledBannerPlugin.js  "]
+			},
+          "Error in request to ": {
+		    "msgid": "Error in request to ",
+		    "msgstr": ["リクエストエラー："]
+			},
+          "nodeControl.js": {
+		    "msgid": "nodeControl.js",
+		    "msgstr": ["nodeControl.js"]
+			},
+          "A request to make this registration public is pending": {
+		    "msgid": "A request to make this registration public is pending",
+		    "msgstr": ["この登録を公開するリクエストは保留中です"]
+			},
+          "Title cannot be blank.": {
+		    "msgid": "Title cannot be blank.",
+		    "msgstr": ["タイトルを空白にすることはできません。"]
+			},
+          "Title cannot exceed 512 characters.": {
+		    "msgid": "Title cannot exceed 512 characters.",
+		    "msgstr": ["タイトルは512文字を超えることはできません。"]
+			},
+          "Add a brief description to your ": {
+		    "msgid": "Add a brief description to your ",
+		    "msgstr": ["プロジェクト又はコンポーネントに関する簡単な説明を追加します"]
+			},
+          "The project could not be removed": {
+		    "msgid": "The project could not be removed",
+		    "msgstr": ["プロジェクトを削除できませんでした"]
+			},
+          "Are you sure you want to create a DOI for this ": {
+		    "msgid": "Are you sure you want to create a DOI for this ",
+		    "msgstr": ["次のためのDOIを作成してもよろしいですか？："]
+			},
+          "? A DOI": {
+		    "msgid": "? A DOI",
+		    "msgstr": ["DOIは永続的であり、常にこのページに解決されます。"]
+			},
+          " is persistent and will always resolve to this page.": {
+		    "msgid": " is persistent and will always resolve to this page.",
+		    "msgstr": [" "]
+			},
+          "Create": {
+		    "msgid": "Create",
+		    "msgstr": ["作成"]
+			},
+          "We could not create the identifier at this time. ": {
+		    "msgid": "We could not create the identifier at this time. ",
+		    "msgstr": [""]
+			},
+          "We could not create the identifier at this time. ": {
+		    "msgid": "We could not create the identifier at this time. ",
+		    "msgstr": ["現時点では識別子を作成できませんでした。"]
+			},
+          "The DOI acquisition service may be down right now. ": {
+		    "msgid": "The DOI acquisition service may be down right now. ",
+		    "msgstr": ["DOI取得サービスは現在停止している可能性があります。"]
+			},
+          "Please try again soon and/or contact ": {
+		    "msgid": "Please try again soon and/or contact ",
+		    "msgstr": ["すぐに再試行するか、お問い合わせください："]
+			},
+          "Could not create doi": {
+		    "msgid": "Could not create doi",
+		    "msgstr": ["DOIを作成できませんでした。"]
+			},
+          "wiki-edit-page.js": {
+		    "msgid": "wiki-edit-page.js",
+		    "msgstr": ["wiki-edit-page.js"]
+			},
+          "The wiki page name cannot be empty.": {
+		    "msgid": "The wiki page name cannot be empty.",
+		    "msgstr": ["Wikiページ名を空にすることはできません。"]
+			},
+          "The wiki page name cannot be more than 100 characters.": {
+		    "msgid": "The wiki page name cannot be more than 100 characters.",
+		    "msgstr": ["Wikiページ名は100文字を超えることはできません。"]
+			},
+          "Error in renaming wiki": {
+		    "msgid": "Error in renaming wiki",
+		    "msgstr": ["Wikiの名前変更中のエラー"]
+			},
+          "An unexpected error occurred. Please try again.": {
+		    "msgid": "An unexpected error occurred. Please try again.",
+		    "msgstr": ["予期しないエラーが発生しました。 もう一度やり直してください。"]
+			},
+          "<p>Could not retrieve wiki pages. If this issue persists, ": {
+		    "msgid": "<p>Could not retrieve wiki pages. If this issue persists, ",
+		    "msgstr": ["<p> Wikiページを取得できませんでした。 この問題が続く場合、"]
+			},
+          "please report it to ": {
+		    "msgid": "please report it to ",
+		    "msgstr": ["報告をお願いします："]
+			},
+          "Could not GET wiki menu pages": {
+		    "msgid": "Could not GET wiki menu pages",
+		    "msgstr": ["Wikiメニューページを取得できませんでした"]
+			},
+          "citationGrid.js": {
+		    "msgid": "citationGrid.js",
+		    "msgstr": ["citationGrid.js"]
+			},
+          "Copy citation": {
+		    "msgid": "Copy citation",
+		    "msgstr": ["サイテーションをコピー"]
+			},
+          "View original document": {
+		    "msgid": "View original document",
+		    "msgstr": ["元のドキュメントを表示"]
+			},
+          "View on ": {
+		    "msgid": "View on ",
+		    "msgstr": ["表示："]
+			},
+          "Citation": {
+		    "msgid": "Citation",
+		    "msgstr": ["サイテーション"]
+			},
+          "Actions": {
+		    "msgid": "Actions",
+		    "msgstr": ["アクション"]
+			},
+          "Only 200 citations may be displayed": {
+		    "msgid": "Only 200 citations may be displayed",
+		    "msgstr": ["200件のサイテーションのみが表示されます"]
+			},
+          "citationWidget.js": {
+		    "msgid": "citationWidget.js",
+		    "msgstr": ["citationWidget.js"]
+			},
+          "Enter citation style (e.g. \"APA\")": {
+		    "msgid": "Enter citation style (e.g. \"APA\")",
+		    "msgstr": ["サイテーションスタイルを入力します（例：「APA」）"]
+			},
+          "Error while selecting citation style: ": {
+		    "msgid": "Error while selecting citation style: ",
+		    "msgstr": ["サイテーションスタイルの選択中にエラーが発生しました："]
+			},
+          "<em>Could not render entry. Please check the contents of your citations for correctness.</em>": {
+		    "msgid": "<em>Could not render entry. Please check the contents of your citations for correctness.</em>",
+		    "msgstr": ["<em>エントリをレンダリングできませんでした。 サイテーションの内容が正しいかどうかを確認してください。</em>"]
+			},
+          "citationList.js": {
+		    "msgid": "citationList.js",
+		    "msgstr": ["citationList.js"]
+			},
+          "Your custom citation not updated. Please refresh the page and try ": {
+		    "msgid": "Your custom citation not updated. Please refresh the page and try ",
+		    "msgstr": ["カスタムサイテーションは更新されません。問題が解決しない場合、ページを更新してもう一度お試しいただくか、こちらにお問い合わせください："]
+			},
+          "again or contact ": {
+		    "msgid": "again or contact ",
+		    "msgstr": [" "]
+			},
+          " if the problem persists.": {
+		    "msgid": " if the problem persists.",
+		    "msgstr": [" "]
+			},
+          "Could not load citations": {
+		    "msgid": "Could not load citations",
+		    "msgstr": ["引用を読み込めませんでした"]
+			},
+          "Citation render failed": {
+		    "msgid": "Citation render failed",
+		    "msgstr": ["サイテーションのレンダリングに失敗しました"]
+			},
+          "The requested citation format generated an error.": {
+		    "msgid": "The requested citation format generated an error.",
+		    "msgstr": ["要求されたサイテーション形式はエラーを生成しました。"]
+			},
+          "Unexpected error when fetching citation": {
+		    "msgid": "Unexpected error when fetching citation",
+		    "msgstr": ["サイテーションを取得する際の予期しないエラー"]
+			},
+          "profile-settings-addons-page.js": {
+		    "msgid": "profile-settings-addons-page.js",
+		    "msgstr": ["profile-settings-addons-page.js"]
+			},
+          "Confirm": {
+		    "msgid": "Confirm",
+		    "msgstr": ["確認"]
+			},
+          "Sorry, we had trouble saving your settings. If this persists please contact ": {
+		    "msgid": "Sorry, we had trouble saving your settings. If this persists please contact ",
+		    "msgstr": ["申し訳ありませんが、設定を保存できませんでした。 これが続く場合はお問い合わせください"]
+			},
+          "Request failed": {
+		    "msgid": "Request failed",
+		    "msgstr": ["要求が失敗しました"]
+			},
+          "Close": {
+		    "msgid": "Close",
+		    "msgstr": ["閉じる"]
+			},
+          "Are you sure you want to remove the add-ons you have deselected? ": {
+		    "msgid": "Are you sure you want to remove the add-ons you have deselected? ",
+		    "msgstr": ["選択を解除したアドオンを削除してもよろしいですか？"]
+			},
+          "Remove": {
+		    "msgid": "Remove",
+		    "msgstr": ["除外"]
+			},
+          "The changes on addon setting are not submitted!": {
+		    "msgid": "The changes on addon setting are not submitted!",
+		    "msgstr": ["アドオン設定の変更は送信されません！"]
+			},
+          "project-addons-page.js": {
+		    "msgid": "project-addons-page.js",
+		    "msgstr": ["project-addons-page.js"]
+			},
+          "Your add-on settings have been successfully changed.": {
+		    "msgid": "Your add-on settings have been successfully changed.",
+		    "msgstr": ["アドオン設定が正常に変更されました。"]
+			},
+          "Disable Add-on?": {
+		    "msgid": "Disable Add-on?",
+		    "msgstr": ["アドオンを無効にしますか？"]
+			},
+          "Are you sure you want to disable this add-on?": {
+		    "msgid": "Are you sure you want to disable this add-on?",
+		    "msgstr": ["このアドオンを無効にしてもよろしいですか？"]
+			},
+          "Disable": {
+		    "msgid": "Disable",
+		    "msgstr": ["無効にする"]
+			},
+          "project-dashboard-page.js": {
+		    "msgid": "project-dashboard-page.js",
+		    "msgstr": ["project-dashboard-page.js  "]
+			},
+          "Create new component": {
+		    "msgid": "Create new component",
+		    "msgstr": ["新しいコンポーネントを作成"]
+			},
+          "Error retrieving filebrowser": {
+		    "msgid": "Error retrieving filebrowser",
+		    "msgstr": ["ファイルブラウザの取得エラー"]
+			},
+          "Add a tag to enhance discoverability": {
+		    "msgid": "Add a tag to enhance discoverability",
+		    "msgstr": ["タグを追加して発見しやすくする"]
+			},
+          "Failed to add tag": {
+		    "msgid": "Failed to add tag",
+		    "msgstr": ["タグを追加できませんでした"]
+			},
+          "Could not remove tag": {
+		    "msgid": "Could not remove tag",
+		    "msgstr": ["タグを除外できませんでした"]
+			},
+          "Failed to remove tag": {
+		    "msgid": "Failed to remove tag",
+		    "msgstr": ["タグを除外できませんでした"]
+			},
+          "*Add important information, links, or images here to describe your project.*": {
+		    "msgid": "*Add important information, links, or images here to describe your project.*",
+		    "msgstr": ["*プロジェクトを説明する重要な情報、リンク、または画像をここに追加します*"]
+			},
+          "*No wiki content.*": {
+		    "msgid": "*No wiki content.*",
+		    "msgstr": ["* Wikiコンテンツはありません。*"]
+			},
+          "project-settings-page.js": {
+		    "msgid": "project-settings-page.js",
+		    "msgstr": ["project-settings-page.js"]
+			},
+          "Could not retrieve notification settings.": {
+		    "msgid": "Could not retrieve notification settings.",
+		    "msgstr": ["通知設定を取得できませんでした。"]
+			},
+          "Could not GET notification settings.": {
+		    "msgid": "Could not GET notification settings.",
+		    "msgstr": ["通知設定を取得できませんでした。"]
+			},
+          "Could not retrieve wiki settings.": {
+		    "msgid": "Could not retrieve wiki settings.",
+		    "msgstr": ["ウィキ設定を取得できませんでした。"]
+			},
+          "Could not GET wiki settings.": {
+		    "msgid": "Could not GET wiki settings.",
+		    "msgstr": ["ウィキ設定を取得できませんでした。"]
+			},
+          "Successfully updated settings.": {
+		    "msgid": "Successfully updated settings.",
+		    "msgstr": ["設定を更新しました。"]
+			},
+          "Could not set commenting configuration. Please try again.": {
+		    "msgid": "Could not set commenting configuration. Please try again.",
+		    "msgstr": ["コメント設定を設定できませんでした。 もう一度やり直してください。"]
+			},
+          "Unable to update settings": {
+		    "msgid": "Unable to update settings",
+		    "msgstr": ["設定を更新できません"]
+			},
+          "Could not update settings.": {
+		    "msgid": "Could not update settings.",
+		    "msgstr": ["設定を更新できませんでした。"]
+			},
+          "rdm-profile-settings-addons-page.js": {
+		    "msgid": "rdm-profile-settings-addons-page.js",
+		    "msgstr": ["rdm-profile-settings-addons-page.js"]
+			},
+          "Import Account from Admin": {
+		    "msgid": "Import Account from Admin",
+		    "msgstr": ["管理者からアカウントをインポート"]
+			},
+          "Successfully imported the account.": {
+		    "msgid": "Successfully imported the account.",
+		    "msgstr": ["アカウントを正常にインポートしました。"]
+			},
+          "Failed to import the account": {
+		    "msgid": "Failed to import the account",
+		    "msgstr": ["アカウントをインポートできませんでした"]
+			},
+          "Failed to import the account.": {
+		    "msgid": "Failed to import the account.",
+		    "msgstr": ["アカウントのインポートに失敗しました。"]
+			},
+          "clipboard.js  ": {
+		    "msgid": "clipboard.js  ",
+		    "msgstr": ["clipboard.js  "]
+			},
+          "Copied!": {
+		    "msgid": "Copied!",
+		    "msgstr": ["コピーしました！"]
+			},
+          "Copy failed!": {
+		    "msgid": "Copy failed!",
+		    "msgstr": ["コピーに失敗しました！"]
+			},
+          "conference.js": {
+		    "msgid": "conference.js",
+		    "msgstr": ["conference.js"]
+			},
+          "Title": {
+		    "msgid": "Title",
+		    "msgstr": ["タイトル"]
+			},
+          "Author": {
+		    "msgid": "Author",
+		    "msgstr": ["著者"]
+			},
+          "Category": {
+		    "msgid": "Category",
+		    "msgstr": ["カテゴリー"]
+			},
+          "Date Created": {
+		    "msgid": "Date Created",
+		    "msgstr": ["作成日"]
+			},
+          "Downloads": {
+		    "msgid": "Downloads",
+		    "msgstr": ["ダウンロード"]
+			},
+          "filesWidget.js": {
+		    "msgid": "filesWidget.js",
+		    "msgstr": ["filesWidget.js"]
+			},
+          "Could not GET files": {
+		    "msgid": "Could not GET files",
+		    "msgstr": ["ファイルを取得できませんでした"]
+			},
+          "Sorry, we could not load files right now. ": {
+		    "msgid": "Sorry, we could not load files right now. ",
+		    "msgstr": ["申し訳ありませんが、現在ファイルをロードできませんでした。"]
+			},
+          "firebase-messaging-sw.js": {
+		    "msgid": "firebase-messaging-sw.js",
+		    "msgstr": ["firebase-messaging-sw.js"]
+			},
+          "RDM Announcements": {
+		    "msgid": "RDM Announcements",
+		    "msgstr": ["RDMのお知らせ"]
+			},
+          "Background Message body.": {
+		    "msgid": "Background Message body.",
+		    "msgstr": ["背景メッセージ本文"]
+			},
+          "folderpicker.js": {
+		    "msgid": "folderpicker.js",
+		    "msgstr": ["folderpicker.js"]
+			},
+          "Folders": {
+		    "msgid": "Folders",
+		    "msgstr": ["フォルダ"]
+			},
+          "Select": {
+		    "msgid": "Select",
+		    "msgstr": ["選択"]
+			},
+          "institutionNodes.js": {
+		    "msgid": "institutionNodes.js",
+		    "msgstr": ["institutionNodes.js"]
+			},
+          "Failed to load Institution\\'s nodes": {
+		    "msgid": "Failed to load Institution\\'s nodes",
+		    "msgstr": ["機関のノードを読み込めませんでした"]
+			},
+          "addonHelper.js": {
+		    "msgid": "addonHelper.js",
+		    "msgstr": ["addonHelper.js"]
+			},
+          "Settings updated": {
+		    "msgid": "Settings updated",
+		    "msgstr": ["設定が更新されました"]
+			},
+          "Settings not updated.": {
+		    "msgid": "Settings not updated.",
+		    "msgstr": ["設定が更新されませんでした。"]
+			},
+          "timestamp-common.js": {
+		    "msgid": "timestamp-common.js",
+		    "msgstr": ["timestamp-common.js"]
+			},
+          "A verify request is being processed!": {
+		    "msgid": "A verify request is being processed!",
+		    "msgstr": ["確認リクエストが処理されています！"]
+			},
+          "Something went wrong with the Verify request.": {
+		    "msgid": "Something went wrong with the Verify request.",
+		    "msgstr": ["確認リクエストで問題が発生しました。"]
+			},
+          "Using the checkbox, please select the files to request timestamp.": {
+		    "msgid": "Using the checkbox, please select the files to request timestamp.",
+		    "msgstr": ["チェックボックスを使用して、タイムスタンプを要求するファイルを選択してください。"]
+			},
+          "Timestamp is being added to the selected files!": {
+		    "msgid": "Timestamp is being added to the selected files!",
+		    "msgstr": ["選択したファイルにタイムスタンプが追加されています！"]
+			},
+          "Something went wrong with the Request Trusted Timestamp request.": {
+		    "msgid": "Something went wrong with the Request Trusted Timestamp request.",
+		    "msgstr": ["Request Trusted Timestampリクエストで問題が発生しました。"]
+			},
+          "The task has been cancelled.": {
+		    "msgid": "The task has been cancelled.",
+		    "msgstr": ["タスクはキャンセルされました。"]
+			},
+          "The task already finished.": {
+		    "msgid": "The task already finished.",
+		    "msgstr": ["タスクはすでに終了しています。"]
+			},
+          "Something went wrong in the cancel request.": {
+		    "msgid": "Something went wrong in the cancel request.",
+		    "msgstr": ["キャンセルリクエストで問題が発生しました。"]
+			},
+          "Using the checkbox, please select the files to download.": {
+		    "msgid": "Using the checkbox, please select the files to download.",
+		    "msgstr": ["チェックボックスを使用して、ダウンロードするファイルを選択してください。"]
+			},
+          "koHelpers.js": {
+		    "msgid": "koHelpers.js",
+		    "msgstr": ["koHelpers.js"]
+			},
+          "End date must be greater than or equal to the start date.": {
+		    "msgid": "End date must be greater than or equal to the start date.",
+		    "msgstr": ["終了日は開始日以降でなければなりません。"]
+			},
+          "Date must be greater than or equal to 1900.": {
+		    "msgid": "Date must be greater than or equal to 1900.",
+		    "msgstr": ["日付は1900以上でなければなりません。"]
+			},
+          "Please enter a date prior to the current date.": {
+		    "msgid": "Please enter a date prior to the current date.",
+		    "msgstr": ["現在の日付より前の日付を入力してください。"]
+			},
+          "Please enter a valid year.": {
+		    "msgid": "Please enter a valid year.",
+		    "msgstr": ["有効な年を入力してください。"]
+			},
+          "Please enter a valid URL.": {
+		    "msgid": "Please enter a valid URL.",
+		    "msgstr": ["有効なURLを入力してください。"]
+			},
+          "The field does not match the required input.": {
+		    "msgid": "The field does not match the required input.",
+		    "msgstr": ["フィールドが必要な入力と一致しません。"]
+			},
+          "licensePicker.js": {
+		    "msgid": "licensePicker.js",
+		    "msgstr": ["licensePicker.js"]
+			},
+          "Year": {
+		    "msgid": "Year",
+		    "msgstr": ["年"]
+			},
+          "Copyright Holders": {
+		    "msgid": "Copyright Holders",
+		    "msgstr": ["著作権者"]
+			},
+          "No license": {
+		    "msgid": "No license",
+		    "msgstr": ["ライセンスなし"]
+			},
+          "Add a license": {
+		    "msgid": "Add a license",
+		    "msgstr": ["ライセンスを追加する"]
+			},
+          "Please specify a valid year.": {
+		    "msgid": "Please specify a valid year.",
+		    "msgstr": ["有効な年を指定してください。"]
+			},
+          "Future years are not allowed.": {
+		    "msgid": "Future years are not allowed.",
+		    "msgstr": ["将来の年は許可されていません。"]
+			},
+          "License updated successfully.": {
+		    "msgid": "License updated successfully.",
+		    "msgstr": ["ライセンスが正常に更新されました。"]
+			},
+          "There was a problem updating your license. Please try again.": {
+		    "msgid": "There was a problem updating your license. Please try again.",
+		    "msgstr": ["ライセンスの更新中に問題が発生しました。 もう一度やり直してください。"]
+			},
+          "Error fetching user profile": {
+		    "msgid": "Error fetching user profile",
+		    "msgstr": ["ユーザープロフィールの取得エラー"]
+			},
+          "Your Own License": {
+		    "msgid": "Your Own License",
+		    "msgstr": ["自分のライセンス"]
+			},
+          "You have opted to use your own license. Please upload a license file named \"license.txt\" into the GakuNin RDM Storage of this project.": {
+		    "msgid": "You have opted to use your own license. Please upload a license file named \"license.txt\" into the GakuNin RDM Storage of this project.",
+		    "msgstr": ["独自のライセンスを使用することを選択しました。 「license.txt」という名前のライセンスファイルを、このプロジェクトのGakuNin RDMストレージにアップロードしてください。"]
+			},
+          "Add license": {
+		    "msgid": "Add license",
+		    "msgstr": ["ライセンスを追加"]
+			},
+          "meetings.js": {
+		    "msgid": "meetings.js",
+		    "msgstr": ["meetings.js"]
+			},
+          "Submissions": {
+		    "msgid": "Submissions",
+		    "msgstr": ["提出"]
+			},
+          "Location": {
+		    "msgid": "Location",
+		    "msgstr": ["ロケーション"]
+			},
+          "Date": {
+		    "msgid": "Date",
+		    "msgstr": ["日付"]
+			},
+          "osfHelpers.js": {
+		    "msgid": "osfHelpers.js",
+		    "msgstr": ["osfHelpers.js"]
+			},
+          "Please refresh the page and try again or contact ": {
+		    "msgid": "Please refresh the page and try again or contact ",
+		    "msgstr": ["問題が解決しない場合は、ページを更新して再試行するか、こちらに連絡してください："]
+			},
+          "GakuNin RDM was unable to resolve your request. If this issue persists, ": {
+		    "msgid": "GakuNin RDM was unable to resolve your request. If this issue persists, ",
+		    "msgstr": ["GakuNin RDMはリクエストを解決できませんでした。 この問題が解決しない場合は、こちらへ報告してください："]
+			},
+          "Unexpected error occurred in JSON request": {
+		    "msgid": "Unexpected error occurred in JSON request",
+		    "msgstr": ["JSONリクエストで予期しないエラーが発生しました"]
+			},
+          "Unexpected error occurred in an editable input": {
+		    "msgid": "Unexpected error occurred in an editable input",
+		    "msgstr": ["編集可能な入力で予期しないエラーが発生しました"]
+			},
+          "Please wait": {
+		    "msgid": "Please wait",
+		    "msgstr": ["お待ちください"]
+			},
+          "<p>Type the following to continue: <strong>": {
+		    "msgid": "<p>Type the following to continue: <strong>",
+		    "msgstr": ["<p>次を入力して続行します：<strong>"]
+			},
+          "paginator.js": {
+		    "msgid": "paginator.js",
+		    "msgstr": ["paginator.js"]
+			},
+          "Paginator subclass must define a \"fetchResults\" method.": {
+		    "msgid": "Paginator subclass must define a \"fetchResults\" method.",
+		    "msgstr": ["Paginatorサブクラスは、「fetchResults」メソッドを定義する必要があります。"]
+			},
+          "Passwords must match.": {
+		    "msgid": "Passwords must match.",
+		    "msgstr": ["パスワードが一致する必要があります。"]
+			},
+          "passwordForms.js": {
+		    "msgid": "passwordForms.js",
+		    "msgstr": ["passwordForms.js"]
+			},
+          "Please enter a more complex password.": {
+		    "msgid": "Please enter a more complex password.",
+		    "msgstr": ["より複雑なパスワードを入力してください。"]
+			},
+          "Your password cannot be the same as your email address.": {
+		    "msgid": "Your password cannot be the same as your email address.",
+		    "msgstr": ["パスワードをメールアドレスと同じにすることはできません。"]
+			},
+          "Your new password cannot be the same as your old password.": {
+		    "msgid": "Your new password cannot be the same as your old password.",
+		    "msgstr": ["新しいパスワードを古いパスワードと同じにすることはできません。"]
+			},
+          "This field is required.": {
+		    "msgid": "This field is required.",
+		    "msgstr": ["この項目は必須です。"]
+			},
+          "Passwords must match.": {
+		    "msgid": "Passwords must match.",
+		    "msgstr": ["パスワードが一致する必要があります。"]
+			},
+          "Email addresses must match.": {
+		    "msgid": "Email addresses must match.",
+		    "msgstr": ["メールアドレスは一致する必要があります。"]
+			},
+          "You have already submitted. You cannot sign up more than once.": {
+		    "msgid": "You have already submitted. You cannot sign up more than once.",
+		    "msgstr": ["あなたはすでに提出しました。 複数回サインアップすることはできません。"]
+			},
+          "Please complete reCAPTCHA": {
+		    "msgid": "Please complete reCAPTCHA",
+		    "msgstr": ["reCAPTCHAを完了してください"]
+			},
+          "pointers.js": {
+		    "msgid": "pointers.js",
+		    "msgstr": [""]
+			},
+          "Search all projects": {
+		    "msgid": "Search all projects",
+		    "msgstr": ["すべてのプロジェクトを検索"]
+			},
+          "Search my projects": {
+		    "msgid": "Search my projects",
+		    "msgstr": ["私のプロジェクトを検索"]
+			},
+          "Searching...": {
+		    "msgid": "Searching...",
+		    "msgstr": ["検索中..."]
+			},
+          "Error retrieving nodes": {
+		    "msgid": "Error retrieving nodes",
+		    "msgstr": ["ノードの取得エラー"]
+			},
+          "Unable to retrieve": {
+		    "msgid": "Unable to retrieve",
+		    "msgstr": ["次のタイプのプロジェクトを取得できません："]
+			},
+          " projects": {
+		    "msgid": " projects",
+		    "msgstr": [" "]
+			},
+          "Unable to link project": {
+		    "msgid": "Unable to link project",
+		    "msgstr": ["プロジェクトをリンクできません"]
+			},
+          "Unable to remove nodelink": {
+		    "msgid": "Unable to remove nodelink",
+		    "msgstr": ["ノードリンクを削除できません"]
+			},
+          "Unable to retrieve project nodelinks": {
+		    "msgid": "Unable to retrieve project nodelinks",
+		    "msgstr": ["プロジェクトのノードリンクを取得できません"]
+			},
+          "Registered: ": {
+		    "msgid": "Registered: ",
+		    "msgstr": ["登録日："]
+			},
+          "Created: ": {
+		    "msgid": "Created: ",
+		    "msgstr": ["作成日："]
+			},
+          "\nModified: ": {
+		    "msgid": "\nModified: ",
+		    "msgstr": ["\n最終更新日："]
+			},
+          "Could not get links": {
+		    "msgid": "Could not get links",
+		    "msgstr": ["リンクを取得できませんでした"]
+			},
+          "privateLinkManager.js": {
+		    "msgid": "privateLinkManager.js",
+		    "msgstr": ["privateLinkManager.js"]
+			},
+          "Could not retrieve projects.": {
+		    "msgid": "Could not retrieve projects.",
+		    "msgstr": ["プロジェクトを取得できませんでした。"]
+			},
+          "Please refresh the page or ": {
+		    "msgid": "Please refresh the page or ",
+		    "msgstr": ["問題が解決しない場合は、ページを更新するか"]
+			},
+          "contact ": {
+		    "msgid": "contact ",
+		    "msgstr": ["こちらに連絡してください："]
+			},
+          " if the ": {
+		    "msgid": " if the ",
+		    "msgstr": [" "]
+			},
+          "problem persists.": {
+		    "msgid": "problem persists.",
+		    "msgstr": [" "]
+			},
+          "privateLinkTable.js": {
+		    "msgid": "privateLinkTable.js",
+		    "msgstr": ["privateLinkTable.js"]
+			},
+          "Yes": {
+		    "msgid": "Yes",
+		    "msgstr": ["はい"]
+			},
+          "": {
+		    "msgid": "No",
+		    "msgstr": ["いいえ"]
+			},
+          "Could not retrieve view-only links.": {
+		    "msgid": "Could not retrieve view-only links.",
+		    "msgstr": ["参照専用リンクを取得できませんでした。"]
+			},
+          "Remove view-only link?": {
+		    "msgid": "Remove view-only link?",
+		    "msgstr": ["参照専用リンクを削除しますか？"]
+			},
+          "Are you sure you want to remove this view-only link?": {
+		    "msgid": "Are you sure you want to remove this view-only link?",
+		    "msgstr": ["この参照専用リンクを削除してもよろしいですか？"]
+			},
+          "Failed to delete the private link.": {
+		    "msgid": "Failed to delete the private link.",
+		    "msgstr": ["プライベートリンクを削除できませんでした。"]
+			},
+          "Edit Link Name": {
+		    "msgid": "Edit Link Name",
+		    "msgstr": ["リンク名を編集"]
+			},
+          "notifications-config-page.js": {
+		    "msgid": "notifications-config-page.js",
+		    "msgstr": ["notifications-config-page.js"]
+			},
+          "Could not retrieve notification settings.": {
+		    "msgid": "Could not retrieve notification settings.",
+		    "msgstr": ["通知設定を取得できませんでした。"]
+			},
+          "dashboard-page.js": {
+		    "msgid": "dashboard-page.js",
+		    "msgstr": ["dashboard-page.js"]
+			},
+          "Could not set user timezone or locale": {
+		    "msgid": "Could not set user timezone or locale",
+		    "msgstr": ["ユーザーのタイムゾーンまたはロケールを設定できませんでした"]
+			},
+          "This is taking longer than normal. <br>  Try reloading the page. If the problem persist, please contact us at ": {
+		    "msgid": "This is taking longer than normal. <br>  Try reloading the page. If the problem persist, please contact us at ",
+		    "msgstr": ["これには通常より時間がかかります。 <br>  ページを再読み込みしてください。 問題が解決しない場合は、こちらまでお問い合わせください："]
+			},
+          "autocomplete.js": {
+		    "msgid": "autocomplete.js",
+		    "msgstr": ["autocomplete.js"]
+			},
+          "Could not GET autocomplete data": {
+		    "msgid": "Could not GET autocomplete data",
+		    "msgstr": ["オートコンプリートデータを取得できませんでした"]
+			},
+          "Initiated by: ": {
+		    "msgid": "Initiated by: ",
+		    "msgstr": ["発起人："]
+			},
+          "Initiated: ": {
+		    "msgid": "Initiated: ",
+		    "msgstr": ["開始日"]
+			},
+          "Last updated: ": {
+		    "msgid": "Last updated: ",
+		    "msgstr": ["最終更新日"]
+			},
+          "logFeed.js": {
+		    "msgid": "logFeed.js",
+		    "msgstr": ["logFeed.js"]
+			},
+          "Error retrieving logs": {
+		    "msgid": "Error retrieving logs",
+		    "msgstr": ["ログの取得エラー"]
+			},
+          "Unable to retrieve logs at this time. Please refresh the page or contact ": {
+		    "msgid": "Unable to retrieve logs at this time. Please refresh the page or contact ",
+		    "msgstr": ["現在、ログを取得できません。問題が解決しない場合はページを更新するか、こちらに連絡してください"]
+			},
+          "Error retrieving projects": {
+		    "msgid": "Error retrieving projects",
+		    "msgstr": ["プロジェクトの取得エラー"]
+			},
+          "A contributor": {
+		    "msgid": "A contributor",
+		    "msgstr": ["コントリビュータ"]
+			},
+          " more": {
+		    "msgid": " more",
+		    "msgstr": ["もっと"]
+			},
+          "-- private project -- / ": {
+		    "msgid": "-- private project -- / ",
+		    "msgstr": ["-- 非公開プロジェクト -- / "]
+			},
+          "Unable to retrieve public ": {
+		    "msgid": "Unable to retrieve public ",
+		    "msgstr": ["現在、次のパブリックを取得できません："]
+			},
+          " at this time. Please refresh the page or contact ": {
+		    "msgid": " at this time. Please refresh the page or contact ",
+		    "msgstr": ["ページを更新するか、こちらに連絡してください"]
+			},
+          "You have no public ": {
+		    "msgid": "You have no public ",
+		    "msgstr": ["あなたは次のパブリックを持っていません："]
+			},
+          "Find out how to make your ": {
+		    "msgid": "Find out how to make your ",
+		    "msgstr": ["次の作成方法をご覧ください："]
+			},
+          "public": {
+		    "msgid": "public",
+		    "msgstr": ["公開"]
+			},
+          "This user has no public ": {
+		    "msgid": "This user has no public ",
+		    "msgstr": ["このユーザーは次のパブリックを持っていません："]
+			},
+          "Missing required option: ": {
+		    "msgid": "Missing required option: ",
+		    "msgstr": ["必須オプションがありません："]
+			},
+          "base-page.js": {
+		    "msgid": "base-page.js",
+		    "msgstr": ["base-page.js"]
+			},
+          "Merge account": {
+		    "msgid": "Merge account",
+		    "msgstr": ["アカウントを統合"]
+			},
+          "Would you like to merge \\<b>": {
+		    "msgid": "Would you like to merge \\<b>",
+		    "msgstr": ["次のメールアドレスをあなたのアカウントに統合しますか？： \\<b>"]
+			},
+          "\\</b> into your account?  ": {
+		    "msgid": "\\</b> into your account?  ",
+		    "msgstr": ["\\</b>"]
+			},
+          "This action is irreversible.": {
+		    "msgid": "This action is irreversible.",
+		    "msgstr": ["このアクションは元に戻せません。"]
+			},
+          "\\</b> has been merged into your account.": {
+		    "msgid": "\\</b> has been merged into your account.",
+		    "msgstr": ["\\</b> がアカウントに統合されました。"]
+			},
+          "You have chosen to not merge \\<b>": {
+		    "msgid": "You have chosen to not merge \\<b>",
+		    "msgstr": ["次のメールアドレスをあなたのアカウントにマージしないことを選択しました： \\<b>"]
+			},
+          "If you change your mind, visit the \\<a href=\"/settings/account/\">user settings page</a>.": {
+		    "msgid": "If you change your mind, visit the \\<a href=\"/settings/account/\">user settings page</a>.",
+		    "msgstr": ["考えが変わったら、\\<a href=\"/settings/account/\">ユーザー設定ページ</a>にアクセスしてください。"]
+			},
+          "Add email": {
+		    "msgid": "Add email",
+		    "msgstr": ["メールを追加"]
+			},
+          "Would you like to add \\<b>": {
+		    "msgid": "Would you like to add \\<b>",
+		    "msgstr": ["アカウントに次のを追加しますか？：\\<b>"]
+			},
+          "\\</b> to your account?": {
+		    "msgid": "\\</b> to your account?",
+		    "msgstr": ["\\</b>"]
+			},
+          "\\</b> has been added into your account.": {
+		    "msgid": "\\</b> has been added into your account.",
+		    "msgstr": ["\\</b>がアカウントに追加されました。"]
+			},
+          "You have chosen not to add \\<b>": {
+		    "msgid": "You have chosen not to add \\<b>",
+		    "msgstr": ["次のメールアドレスをアカウントに追加しないことを選択しました：\\<b>"]
+			},
+          "There was a problem adding \\<b>": {
+		    "msgid": "There was a problem adding \\<b>",
+		    "msgstr": ["次のメールアドレスの追加中に問題が発生しました：\\<b>"]
+			},
+          "\\</b>. Please contact ": {
+		    "msgid": "\\</b>. Please contact ",
+		    "msgstr": ["問題が解決しない場合は、こちらへお問い合わせください："]
+			},
+          "There was a problem removing \\<b>": {
+		    "msgid": "There was a problem removing \\<b>",
+		    "msgstr": ["次のメールアドレスの除外中に問題が発生しました：\\<b>"]
+			},
+          "Do not add email": {
+		    "msgid": "Do not add email",
+		    "msgstr": ["メールを追加しないでください"]
+			},
+          "Could not remove email": {
+		    "msgid": "Could not remove email",
+		    "msgstr": ["メールを削除できませんでした"]
+			},
+          "Add email": {
+		    "msgid": "Add email",
+		    "msgstr": ["メールを追加"]
+			},
+          "Could not add email": {
+		    "msgid": "Could not add email",
+		    "msgstr": ["メールを追加できませんでした"]
+			},
+          "file-page.js": {
+		    "msgid": "file-page.js",
+		    "msgstr": ["file-page.js"]
+			},
+          "Add a tag to enhance discoverability": {
+		    "msgid": "Add a tag to enhance discoverability",
+		    "msgstr": ["タグを追加して発見しやすくする"]
+			},
+          "Could not add tag.": {
+		    "msgid": "Could not add tag.",
+		    "msgstr": ["タグを追加できませんでした。"]
+			},
+          "Failed to add tag": {
+		    "msgid": "Failed to add tag",
+		    "msgstr": ["タグを追加できませんでした"]
+			},
+          "Could not remove tag.": {
+		    "msgid": "Could not remove tag.",
+		    "msgstr": ["タグを削除できませんでした。"]
+			},
+          "Failed to remove tag": {
+		    "msgid": "Failed to remove tag",
+		    "msgstr": ["タグを削除できませんでした"]
+			},
+          "The file title cannot be empty.": {
+		    "msgid": "The file title cannot be empty.",
+		    "msgstr": ["ファイルのタイトルを空欄にすることはできません。"]
+			},
+          "The file title cannot be more than 100 characters.": {
+		    "msgid": "The file title cannot be more than 100 characters.",
+		    "msgstr": ["ファイルのタイトルは100文字を超えることはできません。"]
+			},
+          "Your file was successfully renamed. To view the new filename in the file tree below, refresh the page.": {
+		    "msgid": "Your file was successfully renamed. To view the new filename in the file tree below, refresh the page.",
+		    "msgstr": ["ファイルの名前が正常に変更されました。 下のファイルツリーで新しいファイル名を表示するには、ページを更新します。"]
+			},
+          "institution-page.js": {
+		    "msgid": "institution-page.js",
+		    "msgstr": ["institution-page.js"]
+			},
+          "All Projects": {
+		    "msgid": "All Projects",
+		    "msgstr": ["すべてのプロジェクト"]
+			},
+          "This is taking longer than normal. <br>  Try reloading the page. If the problem persist, please contact us at ": {
+		    "msgid": "This is taking longer than normal. <br>  Try reloading the page. If the problem persist, please contact us at ",
+		    "msgstr": ["これには通常より時間がかかります。<br>ページを再読み込みしてください。 問題が解決しない場合は、こちらまでお問い合わせください："]
+			},
+          "citationsNodeConfig.js": {
+		    "msgid": "citationsNodeConfig.js",
+		    "msgstr": ["citationsNodeConfig.js"]
+			},
+          "Successfully linked \"": {
+		    "msgid": "Successfully linked \"",
+		    "msgstr": ["正常にリンクされました："]
+			},
+          "\". Go to the <a href=\"": {
+		    "msgid": "\". Go to the <a href=\"",
+		    "msgstr": [" <a href=\""]
+			},
+          ">Overview page</a> to view your citations.": {
+		    "msgid": ">Overview page</a> to view your citations.",
+		    "msgstr": ["概要ページに移動してサイテーションを表示します。"]
+			},
+          "\". Next, choose which folder to link above.": {
+		    "msgid": "\". Next, choose which folder to link above.",
+		    "msgstr": [" 次に、上記のリンクするフォルダーを選択します。"]
+			},
+          "Could not GET ": {
+		    "msgid": "Could not GET ",
+		    "msgstr": [" "]
+			},
+          " accounts for user": {
+		    "msgid": " accounts for user",
+		    "msgstr": ["ユーザアカウントを取得できませんでした。"]
+			},
+          "Choose ": {
+		    "msgid": "Choose ",
+		    "msgstr": ["インポートする"]
+			},
+          " Access Token to Import": {
+		    "msgid": " Access Token to Import",
+		    "msgstr": ["アクセストークンを選択"]
+			},
+          "Import ": {
+		    "msgid": "Import ",
+		    "msgstr": ["インポートしますか？"]
+			},
+          " access token": {
+		    "msgid": " access token",
+		    "msgstr": ["アクセストークンをインポート"]
+			},
+          "Import": {
+		    "msgid": "Import",
+		    "msgstr": ["インポート"]
+			},
+          "comment.js": {
+		    "msgid": "comment.js",
+		    "msgstr": ["comment.js"]
+			},
+          "Error getting contributors and group members": {
+		    "msgid": "Error getting contributors and group members",
+		    "msgstr": ["投稿者とグループメンバーの取得エラー"]
+			},
+          "Spam or advertising": {
+		    "msgid": "Spam or advertising",
+		    "msgstr": ["スパムまたは広告"]
+			},
+          "Hate speech": {
+		    "msgid": "Hate speech",
+		    "msgstr": ["ヘイトスピーチ"]
+			},
+          "Violence or harmful behavior": {
+		    "msgid": "Violence or harmful behavior",
+		    "msgstr": ["暴力や有害な行動"]
+			},
+          "Commenting": {
+		    "msgid": "Commenting",
+		    "msgstr": ["コメント中"]
+			},
+          "Comment": {
+		    "msgid": "Comment",
+		    "msgstr": ["コメント"]
+			},
+          "Exceeds character limit. Please reduce to ": {
+		    "msgid": "Exceeds character limit. Please reduce to ",
+		    "msgstr": ["文字制限を超えています。文字以下に減らしてください。"]
+			},
+          "characters or less.": {
+		    "msgid": "characters or less.",
+		    "msgstr": ["文字以下に減らしてください。"]
+			},
+          "Please enter a comment": {
+		    "msgid": "Please enter a comment",
+		    "msgstr": ["コメントを入力してください"]
+			},
+          "comments": {
+		    "msgid": "comments",
+		    "msgstr": ["コメント"]
+			},
+          "Could not submit comment": {
+		    "msgid": "Could not submit comment",
+		    "msgstr": ["コメントを送信できませんでした"]
+			},
+          "Error creating comment": {
+		    "msgid": "Error creating comment",
+		    "msgstr": ["コメント作成エラー"]
+			},
+          "Error editing comment": {
+		    "msgid": "Error editing comment",
+		    "msgstr": ["コメント編集エラー"]
+			},
+          "Could not report abuse.": {
+		    "msgid": "Could not report abuse.",
+		    "msgstr": ["不正行為を報告できませんでした。"]
+			},
+          "Error reporting abuse": {
+		    "msgid": "Error reporting abuse",
+		    "msgstr": ["不正行為の報告エラー"]
+			},
+          "Error deleting comment": {
+		    "msgid": "Error deleting comment",
+		    "msgstr": ["コメントの削除エラー"]
+			},
+          "Error undeleting comment": {
+		    "msgid": "Error undeleting comment",
+		    "msgstr": ["コメントの削除解除エラー"]
+			},
+          "Error unreporting comment": {
+		    "msgid": "Error unreporting comment",
+		    "msgstr": ["コメントの報告エラー"]
+			},
+          "Your comments have unsaved changes. Are you sure ": {
+		    "msgid": "Your comments have unsaved changes. Are you sure ",
+		    "msgstr": ["コメントには未保存の変更があります。 このページから移動してもよろしいですか？"]
+			},
+          "you want to leave this page?": {
+		    "msgid": "you want to leave this page?",
+		    "msgstr": [" "]
+			},
+          "Could not update comment timestamp": {
+		    "msgid": "Could not update comment timestamp",
+		    "msgstr": ["コメントのタイムスタンプを更新できませんでした"]
+			},
+          "commentpane.js": {
+		    "msgid": "commentpane.js",
+		    "msgstr": ["commentpane.js"]
+			},
+          "Option `toggleWidth` must be greater than or equal to ": {
+		    "msgid": "Option `toggleWidth` must be greater than or equal to ",
+		    "msgstr": ["オプション「toggleWidth」は、オプション「maxWidthProp」以上でなければなりません。"]
+			},
+          "option `maxWidthProp`.": {
+		    "msgid": "option `maxWidthProp`.",
+		    "msgstr": [" "]
+			},
+          "contribAdder.js": {
+		    "msgid": "contribAdder.js",
+		    "msgstr": ["contribAdder.js"]
+			},
+          " project in common": {
+		    "msgid": " project in common",
+		    "msgstr": ["プロジェクト共通"]
+			},
+          " projects in common": {
+		    "msgid": " projects in common",
+		    "msgstr": ["プロジェクト共通"]
+			},
+          "Yourself": {
+		    "msgid": "Yourself",
+		    "msgstr": ["あなた自身"]
+			},
+          "Read": {
+		    "msgid": "Read",
+		    "msgstr": ["読込み"]
+			},
+          "Read + Write": {
+		    "msgid": "Read + Write",
+		    "msgstr": ["読込 / 書込み"]
+			},
+          "Administrator": {
+		    "msgid": "Administrator",
+		    "msgstr": ["管理者"]
+			},
+          "Add Contributors": {
+		    "msgid": "Add Contributors",
+		    "msgstr": ["コントリビュータを追加"]
+			},
+          "Select Components": {
+		    "msgid": "Select Components",
+		    "msgstr": ["コンポーネントを選択"]
+			},
+          "Invite new contributor by e-mail": {
+		    "msgid": "Invite new contributor by e-mail",
+		    "msgstr": ["電子メールで新しいコントリビュータを招待する"]
+			},
+          "Add Unregistered Contributor": {
+		    "msgid": "Add Unregistered Contributor",
+		    "msgstr": ["未登録のコントリビュータを追加"]
+			},
+          "Full Name is required.": {
+		    "msgid": "Full Name is required.",
+		    "msgstr": ["フルネームが必要です。"]
+			},
+          "Not a valid email address.": {
+		    "msgid": "Not a valid email address.",
+		    "msgstr": ["有効な電子メールアドレスではありません。"]
+			},
+          " is already in queue.": {
+		    "msgid": " is already in queue.",
+		    "msgstr": ["は既にキューに入っています。"]
+			},
+          "There was a problem trying to add contributors.": {
+		    "msgid": "There was a problem trying to add contributors.",
+		    "msgstr": ["コントリビュータを追加しようとして問題が発生しました。"]
+			},
+          "Could not add contributors": {
+		    "msgid": "Could not add contributors",
+		    "msgstr": ["コントリビュータを追加できませんでした"]
+			},
+          "Error adding contributors": {
+		    "msgid": "Error adding contributors",
+		    "msgstr": ["コントリビュータの追加エラー"]
+			},
+          "Could not add contributors": {
+		    "msgid": "Could not add contributors",
+		    "msgstr": ["投稿者を追加できませんでした"]
+			},
+          "Unable to retrieve project settings": {
+		    "msgid": "Unable to retrieve project settings",
+		    "msgstr": ["プロジェクト設定を取得できません"]
+			},
+          "Could not GET project settings.": {
+		    "msgid": "Could not GET project settings.",
+		    "msgstr": ["プロジェクト設定を取得できませんでした。"]
+			},
+          "contribManager.js": {
+		    "msgid": "contribManager.js",
+		    "msgstr": ["contribManager.js"]
+			},
+          "There was a problem trying to add the contributor. ": {
+		    "msgid": "There was a problem trying to add the contributor. ",
+		    "msgstr": ["コントリビュータを追加しようとして問題が発生しました。"]
+			},
+          "Must have at least one registered admin contributor": {
+		    "msgid": "Must have at least one registered admin contributor",
+		    "msgstr": ["登録された管理コントリビューターが少なくとも1人必要です"]
+			},
+          "Must have at least one bibliographic contributor": {
+		    "msgid": "Must have at least one bibliographic contributor",
+		    "msgstr": ["少なくとも1人の書誌コントリビュータが必要"]
+			},
+          "Your contributor list has unsaved changes. Please ": {
+		    "msgid": "Your contributor list has unsaved changes. Please ",
+		    "msgstr": ["投稿者リストには未保存の変更があります。 投稿者を追加する前に、変更を保存またはキャンセルしてください。"]
+			},
+          "save or cancel your changes before adding ": {
+		    "msgid": "save or cancel your changes before adding ",
+		    "msgstr": [" "]
+			},
+          "contributors.": {
+		    "msgid": "contributors.",
+		    "msgstr": [" "]
+			},
+          "There are unsaved changes to your contributor settings": {
+		    "msgid": "There are unsaved changes to your contributor settings",
+		    "msgstr": ["コントリビュータの設定に保存されていない変更があります"]
+			},
+          "Save changes?": {
+		    "msgid": "Save changes?",
+		    "msgstr": ["変更を保存しますか？"]
+			},
+          "Are you sure you want to save these changes?": {
+		    "msgid": "Are you sure you want to save these changes?",
+		    "msgstr": ["これらの変更を保存してもよろしいですか？"]
+			},
+          "Submission failed: ": {
+		    "msgid": "Submission failed: ",
+		    "msgstr": ["送信に失敗しました："]
+			},
+          "Save": {
+		    "msgid": "Save",
+		    "msgstr": ["保存"]
+			},
+          "contribRemover.js": {
+		    "msgid": "contribRemover.js",
+		    "msgstr": ["contribRemover.js"]
+			},
+          "Remove Contributor": {
+		    "msgid": "Remove Contributor",
+		    "msgstr": ["コントリビュータを除外"]
+			},
+          "Unable to retrieve projects and components": {
+		    "msgid": "Unable to retrieve projects and components",
+		    "msgstr": ["プロジェクトとコンポーネントを取得できません"]
+			},
+          "Unable to retrieve projects and components": {
+		    "msgid": "Unable to retrieve projects and components",
+		    "msgstr": ["プロジェクトとコンポーネントを取得できません"]
+			},
+          "Unable to delete Contributor": {
+		    "msgid": "Unable to delete Contributor",
+		    "msgstr": ["コントリビュータを削除できません"]
+			},
+          "Could not DELETE Contributor.": {
+		    "msgid": "Could not DELETE Contributor.",
+		    "msgstr": ["コントリビュータを削除できませんでした。"]
+			},
+          "Unable to delete Contributor": {
+		    "msgid": "Unable to delete Contributor",
+		    "msgstr": ["コントリビュータを削除できませんでした。"]
+			},
+          "institutionProjectSettings.js": {
+		    "msgid": "institutionProjectSettings.js",
+		    "msgstr": ["institutionProjectSettings.js"]
+			},
+          "Add institution": {
+		    "msgid": "Add institution",
+		    "msgstr": ["機関を追加"]
+			},
+          "Remove institution": {
+		    "msgid": "Remove institution",
+		    "msgstr": ["機関を除外"]
+			},
+          "Add <b>": {
+		    "msgid": "Add <b>",
+		    "msgstr": ["<b>"]
+			},
+          "</b> to <b>": {
+		    "msgid": "</b> to <b>",
+		    "msgstr": ["を"]
+			},
+          "</b> or to <b>": {
+		    "msgid": "</b> or to <b>",
+		    "msgstr": ["へまたは"]
+			},
+          "Add to <b>": {
+		    "msgid": "Add to <b>",
+		    "msgstr": ["<b>"]
+			},
+          "</b> and every component in it?<br><br>": {
+		    "msgid": "</b> and every component in it?<br><br>",
+		    "msgstr": ["とその中のすべてのコンポーネントへ追加しますか？"]
+			},
+          "</b> and every component for which you have permission.": {
+		    "msgid": "</b> and every component for which you have permission.",
+		    "msgstr": ["</b>および許可されているすべてのコンポーネントへ追加します。"]
+			},
+          "Remove <b>": {
+		    "msgid": "Remove <b>",
+		    "msgstr": ["<b>"]
+			},
+          "</b> from <b>": {
+		    "msgid": "</b> from <b>",
+		    "msgstr": ["を"]
+			},
+          "</b> or from <b>": {
+		    "msgid": "</b> or from <b>",
+		    "msgstr": ["からまたは"]
+			},
+          "Remove from <b>": {
+		    "msgid": "Remove from <b>",
+		    "msgstr": ["<b>"]
+			},
+          "</b> and every component in it?<br><br>": {
+		    "msgid": "</b> and every component in it?<br><br>",
+		    "msgstr": ["とその中の全てのコンポーネントから除外しますか？"]
+			},
+          "Warning, you are not affiliated with <b>": {
+		    "msgid": "Warning, you are not affiliated with <b>",
+		    "msgstr": ["警告、あなたはこちらと提携していません："]
+			},
+          "</b>.  If you remove it from your project, you cannot add it back.</div></br>": {
+		    "msgid": "</b>.  If you remove it from your project, you cannot add it back.</div></br>",
+		    "msgstr": ["</b>。プロジェクトから削除した場合、元に戻すことはできません。</div></br>"]
+			},
+          "Updating affiliation... this may take a minute.": {
+		    "msgid": "Updating affiliation... this may take a minute.",
+		    "msgstr": ["所属を更新しています...これには数分かかる場合があります。"]
+			},
+          "Unable to modify the institution on this node. Please try again. If the problem persists, email ": {
+		    "msgid": "Unable to modify the institution on this node. Please try again. If the problem persists, email ",
+		    "msgstr": ["このノードの機関を変更できません。 もう一度やり直してください。 問題が解決しない場合は、こちらにお問い合わせください："]
+			},
+          "Unable to modify this institution!": {
+		    "msgid": "Unable to modify this institution!",
+		    "msgstr": ["この機関を変更できません！"]
+			},
+          "Unable to retrieve project settings": {
+		    "msgid": "Unable to retrieve project settings",
+		    "msgstr": ["プロジェクト設定を取得できません"]
+			},
+          "Could not GET project settings.": {
+		    "msgid": "Could not GET project settings.",
+		    "msgstr": ["プロジェクト設定を取得できませんでした。"]
+			},
+          "nodesDelete.js": {
+		    "msgid": "nodesDelete.js",
+		    "msgstr": ["nodesDelete.js"]
+			},
+          "This ": {
+		    "msgid": "This ",
+		    "msgstr": ["この"]
+			},
+          " also contains supplemental materials for a <strong>preprint</strong>.  It will": {
+		    "msgid": " also contains supplemental materials for a <strong>preprint</strong>.  It will",
+		    "msgstr": ["には、プレプリントの補足資料も含まれています。"]
+			},
+          " no longer be available to contributors or connected to the preprint.": {
+		    "msgid": " no longer be available to contributors or connected to the preprint.",
+		    "msgstr": ["コントリビュータは利用できなくなり、プレプリントに接続できなくなります。"]
+			},
+          "It will no longer be available to other contributors on the project.": {
+		    "msgid": "It will no longer be available to other contributors on the project.",
+		    "msgstr": ["プロジェクトの他のコントリビュータは利用できなくなります。"]
+			},
+          "Are you sure you want to delete this ": {
+		    "msgid": "Are you sure you want to delete this ",
+		    "msgstr": ["こちらを削除してもよろしいですか？："]
+			},
+          "?": {
+		    "msgid": "?",
+		    "msgstr": [" "]
+			},
+          "Unable to delete ": {
+		    "msgid": "Unable to delete ",
+		    "msgstr": ["こちらを削除できません。"]
+			},
+          "Problem deleting ": {
+		    "msgid": "Problem deleting ",
+		    "msgstr": ["こちらを削除中に問題が発生しました："]
+			},
+          "Could not delete ": {
+		    "msgid": "Could not delete ",
+		    "msgstr": ["こちらを削除できませんでした："]
+			},
+          "<br><br>This ": {
+		    "msgid": "<br><br>This ",
+		    "msgstr": ["<br><br>この"]
+			},
+          " also contains supplemental materials for a <strong>preprint</strong>, and one or more of its ": {
+		    "msgid": " also contains supplemental materials for a <strong>preprint</strong>, and one or more of its ",
+		    "msgstr": ["には、<strong>プレプリントの補足資料も含まれ、</strong>"]
+			},
+          " also contains supplemental materials for a <strong>preprint</strong>.": {
+		    "msgid": " also contains supplemental materials for a <strong>preprint</strong>.",
+		    "msgstr": ["の1つ以上には<strong>プレプリントの補足資料が含まれます。</strong>"]
+			},
+          " also has one or more ": {
+		    "msgid": " also has one or more ",
+		    "msgstr": ["には、"]
+			},
+          " that contain supplemental materials for a <strong>preprint</strong>.": {
+		    "msgid": " that contain supplemental materials for a <strong>preprint</strong>.",
+		    "msgstr": ["<strong>プレプリントの補足資料を含む1つ以上のタイプもあります。</strong>"]
+			},
+          "Delete ": {
+		    "msgid": "Delete ",
+		    "msgstr": ["削除します："]
+			},
+          " and ": {
+		    "msgid": " and ",
+		    "msgstr": ["と"]
+			},
+          " contains ": {
+		    "msgid": " contains ",
+		    "msgstr": ["はこちらを含みます："]
+			},
+          ". To delete this ": {
+		    "msgid": ". To delete this ",
+		    "msgstr": ["これを削除するには"]
+			},
+          ", you must also delete all ": {
+		    "msgid": ", you must also delete all ",
+		    "msgstr": ["こちらも全て削除する必要があります："]
+			},
+          " The following ": {
+		    "msgid": " The following ",
+		    "msgstr": ["以下の"]
+			},
+          " will be deleted.": {
+		    "msgid": " will be deleted.",
+		    "msgstr": ["は削除されます。"]
+			},
+          "This action is irreversible.": {
+		    "msgid": "This action is irreversible.",
+		    "msgstr": ["このアクションは元に戻せません。"]
+			},
+          "Please note that deleting your ": {
+		    "msgid": "Please note that deleting your ",
+		    "msgstr": ["あなたの"]
+			},
+          " will erase all your ": {
+		    "msgid": " will erase all your ",
+		    "msgstr": ["を削除することはあなたの"]
+			},
+          " data and this process is IRREVERSIBLE. Deleted ": {
+		    "msgid": " data and this process is IRREVERSIBLE. Deleted ",
+		    "msgstr": ["のデータを消去し、このプロセスは不可逆的です。削除された"]
+			},
+          " will no longer be available to other contributors on the ": {
+		    "msgid": " will no longer be available to other contributors on the ",
+		    "msgstr": ["は他のコントリビュータが利用できなくなります。"]
+			},
+          " and will be disconnected from your preprints.": {
+		    "msgid": " and will be disconnected from your preprints.",
+		    "msgstr": ["また、プレプリントから切断されます。"]
+			},
+          "Could not batch delete project and its components.": {
+		    "msgid": "Could not batch delete project and its components.",
+		    "msgstr": ["プロジェクトとそのコンポーネントをバッチ削除できませんでした。"]
+			},
+          "nodesDeleteTreebeard.js": {
+		    "msgid": "nodesDeleteTreebeard.js",
+		    "msgstr": ["nodesDeleteTreebeard.js"]
+			},
+          "checkBox": {
+		    "msgid": "checkBox",
+		    "msgstr": ["チェックボックス"]
+			},
+          "project": {
+		    "msgid": "project",
+		    "msgstr": ["プロジェクト"]
+			},
+          "You must have admin permissions on this component to be able to delete it.": {
+		    "msgid": "You must have admin permissions on this component to be able to delete it.",
+		    "msgstr": ["このコンポーネントを削除するには、このコンポーネントの管理者権限が必要です。"]
+			},
+          "nodesPrivacy.js": {
+		    "msgid": "nodesPrivacy.js",
+		    "msgstr": ["nodesPrivacy.js"]
+			},
+          "Please review your projects, components, and add-ons for sensitive or restricted information before making them public.": {
+		    "msgid": "Please review your projects, components, and add-ons for sensitive or restricted information before making them public.",
+		    "msgstr": ["公開する前に、機密情報または制限された情報について、プロジェクト、コンポーネント、およびアドオンを確認してください。"]
+			},
+          "<br><br>Once they are made public, you should assume they will always be public. You can ": {
+		    "msgid": "<br><br>Once they are made public, you should assume they will always be public. You can ",
+		    "msgstr": ["<br><br>それらが公開されると、それらは常に公開されると想定する必要があります。"]
+			},
+          "return them to private later, but search engines (including Google’s cache) or others may access files, wiki pages, or analytics before you do.": {
+		    "msgid": "return them to private later, but search engines (including Google’s cache) or others may access files, wiki pages, or analytics before you do.",
+		    "msgstr": ["後でプライベートに戻すことができますが、検索エンジン（Googleのキャッシュを含む）または他のユーザーは、ファイル、Wikiページ、または分析にアクセスする前にアクセスする場合があります。"]
+			},
+          "<ul><li>Public forks and registrations of this project will remain public.</li>": {
+		    "msgid": "<ul><li>Public forks and registrations of this project will remain public.</li>",
+		    "msgstr": ["<ul><li>このプロジェクトのパブリックフォークと登録はパブリックのままです。</li>"]
+			},
+          "<li>Search engines (including Google\\'s cache) or others may have accessed files, wiki pages, or analytics while this project was public.</li></ul>": {
+		    "msgid": "<li>Search engines (including Google\\'s cache) or others may have accessed files, wiki pages, or analytics while this project was public.</li></ul>",
+		    "msgstr": ["<li>このプロジェクトが公開されている間に、検索エンジン（Googleのキャッシュを含む）または他のユーザーがファイル、Wikiページ、または分析にアクセスした可能性があります。</li></ul>"]
+			},
+          "<ul><li>Preprints will remain public.</li><li>Public forks and registrations of this project will remain public.</li>": {
+		    "msgid": "<ul><li>Preprints will remain public.</li><li>Public forks and registrations of this project will remain public.</li>",
+		    "msgstr": ["<ul><li>プレプリントは公開されます。</li><li>このプロジェクトの公開フォークと登録は公開されます。</li>"]
+			},
+          "By clicking confirm, an email will be sent to project administrator(s) to approve ending the embargo. If approved, this registration, including any components, will be made public immediately. This action is irreversible.": {
+		    "msgid": "By clicking confirm, an email will be sent to project administrator(s) to approve ending the embargo. If approved, this registration, including any components, will be made public immediately. This action is irreversible.",
+		    "msgstr": ["[確認]をクリックすると、Eメールがプロジェクト管理者に送信され、禁輸の終了を承認します。 承認されると、コンポーネントを含むこの登録はすぐに公開されます。 このアクションは元に戻せません。"]
+			},
+          "End embargo early": {
+		    "msgid": "End embargo early",
+		    "msgstr": ["禁止措置を早期に終了する"]
+			},
+          "Adjust your privacy settings by checking the boxes below.": {
+		    "msgid": "Adjust your privacy settings by checking the boxes below.",
+		    "msgstr": ["下のチェックボックスをオンにしてプライバシー設定を調整します。"]
+			},
+          "<br><br><b>Checked</b> projects and components will be <b>public</b>.  <br><b>Unchecked</b> components will be <b>private</b>.": {
+		    "msgid": "<br><br><b>Checked</b> projects and components will be <b>public</b>.  <br><b>Unchecked</b> components will be <b>private</b>.",
+		    "msgstr": ["<br><br><b>チェックされた</b>プロジェクトとコンポーネントは<b>公開</b>になり、<br><b>チェックされていない</b>コンポーネントは<b>非公開</b>になります"]
+			},
+          "The following projects and components will be made <b>public</b>.": {
+		    "msgid": "The following projects and components will be made <b>public</b>.",
+		    "msgstr": ["次のプロジェクトとコンポーネントが<b>公開</b>されます。"]
+			},
+          "The following projects and components will be made <b>private</b>.": {
+		    "msgid": "The following projects and components will be made <b>private</b>.",
+		    "msgstr": ["次のプロジェクトとコンポーネントは<b>非公開</b>になります。"]
+			},
+          "No privacy settings were changed. Go back to make a change.": {
+		    "msgid": "No privacy settings were changed. Go back to make a change.",
+		    "msgstr": ["プライバシー設定は変更されていません。 戻って変更を加えます。"]
+			},
+          "You can only change the privacy of 100 projects and components at a time.  Please go back and limit your selection.": {
+		    "msgid": "You can only change the privacy of 100 projects and components at a time.  Please go back and limit your selection.",
+		    "msgstr": ["一度に変更できるのは、100個のプロジェクトとコンポーネントのプライバシーのみです。 戻って選択を制限してください。"]
+			},
+          "This project/component contains supplemental materials for a preprint.": {
+		    "msgid": "This project/component contains supplemental materials for a preprint.",
+		    "msgstr": ["このプロジェクト/コンポーネントには、プレプリントの補足資料が含まれています。"]
+			},
+          "<p><strong>Making this project/component private will prevent others from accessing it.</strong></p>": {
+		    "msgid": "<p><strong>Making this project/component private will prevent others from accessing it.</strong></p>",
+		    "msgstr": ["<p><strong>このプロジェクト/コンポーネントを非公開にすると、他の人がアクセスできなくなります。</strong></p>"]
+			},
+          "Make": {
+		    "msgid": "Make",
+		    "msgstr": [" "]
+			},
+          " private": {
+		    "msgid": " private",
+		    "msgstr": ["を非公開にする"]
+			},
+          "Warning": {
+		    "msgid": "Warning",
+		    "msgstr": ["警告"]
+			},
+          "Change privacy settings": {
+		    "msgid": "Change privacy settings",
+		    "msgstr": [""]
+			},
+          "Projects and components affected": {
+		    "msgid": "Projects and components affected",
+		    "msgstr": [""]
+			},
+          "Updating Privacy": {
+		    "msgid": "Updating Privacy",
+		    "msgstr": ["プライバシーの更新"]
+			},
+          "Unable to update project privacy": {
+		    "msgid": "Unable to update project privacy",
+		    "msgstr": ["プロジェクトのプライバシーを更新できません"]
+			},
+          "Problem changing privacy": {
+		    "msgid": "Problem changing privacy",
+		    "msgstr": ["非公開の変更注に問題が発生しました。"]
+			},
+          "Could not PATCH project settings.": {
+		    "msgid": "Could not PATCH project settings.",
+		    "msgstr": ["プロジェクト設定をパッチできませんでした。"]
+			},
+          "Submitting request to end embargo early ...": {
+		    "msgid": "Submitting request to end embargo early ...",
+		    "msgstr": ["禁止措置を早期に終了する要求を送信しています..."]
+			},
+          "The administrator(s) can approve or cancel the action within 48 hours. If 48 hours pass without any action taken, then the registration will become public.": {
+		    "msgid": "The administrator(s) can approve or cancel the action within 48 hours. If 48 hours pass without any action taken, then the registration will become public.",
+		    "msgstr": ["管理者は、48時間以内にアクションを承認またはキャンセルできます。 48時間経過してもアクションが実行されない場合、登録は公開されます。"]
+			},
+          "notificationsConfig.js": {
+		    "msgid": "notificationsConfig.js",
+		    "msgstr": ["notificationsConfig.js"]
+			},
+          "Could not retrieve settings information.": {
+		    "msgid": "Could not retrieve settings information.",
+		    "msgstr": ["設定情報を取得できませんでした。"]
+			},
+          "Could not update email preferences at this time. If this issue persists, ": {
+		    "msgid": "Could not update email preferences at this time. If this issue persists, ",
+		    "msgstr": ["現在、メール設定を更新できませんでした。 この問題が続く場合、"]
+			},
+          "notificationsTreebeard.js": {
+		    "msgid": "notificationsTreebeard.js",
+		    "msgstr": ["notificationsTreebeard.js"]
+			},
+          "Instantly": {
+		    "msgid": "Instantly",
+		    "msgstr": ["すぐに"]
+			},
+          "Daily": {
+		    "msgid": "Daily",
+		    "msgstr": ["毎日"]
+			},
+          "Adopt setting from parent project": {
+		    "msgid": "Adopt setting from parent project",
+		    "msgstr": ["親プロジェクトから設定を採用"]
+			},
+          "Never": {
+		    "msgid": "Never",
+		    "msgstr": ["無し"]
+			},
+          " No configured projects.": {
+		    "msgid": " No configured projects.",
+		    "msgstr": ["設定済みのプロジェクトはありません。"]
+			},
+          "oauthAddonNodeConfig.js": {
+		    "msgid": "oauthAddonNodeConfig.js",
+		    "msgstr": ["oauthAddonNodeConfig.js"]
+			},
+          "\">Files page</a> to view your content.": {
+		    "msgid": "\">Files page</a> to view your content.",
+		    "msgstr": ["ファイルページに移動して内容を表示します。"]
+			},
+          " Account to Import": {
+		    "msgid": " Account to Import",
+		    "msgstr": ["アカウントを選択"]
+			},
+          " Account?": {
+		    "msgid": " Account?",
+		    "msgstr": [" "]
+			},
+          "addProjectPlugin.js": {
+		    "msgid": "addProjectPlugin.js",
+		    "msgstr": ["addProjectPlugin.js"]
+			},
+          "Create new project": {
+		    "msgid": "Create new project",
+		    "msgstr": ["新しいプロジェクトを作成する"]
+			},
+          "There was an unknown error. Please try again later.": {
+		    "msgid": "There was an unknown error. Please try again later.",
+		    "msgstr": ["不明なエラーがありました。 後でもう一度やり直してください。"]
+			},
+          "Affiliation": {
+		    "msgid": "Affiliation",
+		    "msgstr": ["所属"]
+			},
+          "Remove all": {
+		    "msgid": "Remove all",
+		    "msgstr": ["全て除外"]
+			},
+          "Select all": {
+		    "msgid": "Select all",
+		    "msgstr": ["すべて選択"]
+			},
+          "Enter ": {
+		    "msgid": "Enter ",
+		    "msgstr": [" "]
+			},
+          " title": {
+		    "msgid": " title",
+		    "msgstr": ["のタイトルを入力"]
+			},
+          "Storage location": {
+		    "msgid": "Storage location",
+		    "msgstr": ["ストレージロケーション"]
+			},
+          " Add contributors from ": {
+		    "msgid": " Add contributors from ",
+		    "msgstr": ["こちらからコントリビュータを追加する："]
+			},
+          " Admins of ": {
+		    "msgid": " Admins of ",
+		    "msgstr": [" "]
+			},
+          " will have read access to this component.": {
+		    "msgid": " will have read access to this component.",
+		    "msgstr": ["の管理者はこのコンポーネントへの読み取りアクセス権があります。"]
+			},
+          " Add tags from ": {
+		    "msgid": " Add tags from ",
+		    "msgstr": ["こちらからタグを追加する："]
+			},
+          "License": {
+		    "msgid": "License",
+		    "msgstr": ["ライセンス"]
+			},
+          " This component will inherit the same license as ": {
+		    "msgid": " This component will inherit the same license as ",
+		    "msgstr": ["このコンポーネントは、次と同じライセンスを継承します："]
+			},
+          "Learn more.": {
+		    "msgid": "Learn more.",
+		    "msgstr": ["もっと詳しく見る"]
+			},
+          " More": {
+		    "msgid": " More",
+		    "msgstr": ["もっと"]
+			},
+          " description": {
+		    "msgid": " description",
+		    "msgstr": ["説明を入力"]
+			},
+          "Uncategorized": {
+		    "msgid": "Uncategorized",
+		    "msgstr": ["未分類"]
+			},
+          "Empty category": {
+		    "msgid": "Empty category",
+		    "msgstr": ["空のカテゴリ"]
+			},
+          "Start typing to search your projects. Selecting project as template will duplicate its ": {
+		    "msgid": "Start typing to search your projects. Selecting project as template will duplicate its ",
+		    "msgstr": ["入力を開始してプロジェクトを検索します。 プロジェクトをテンプレートとして選択すると、"]
+			},
+          "structure in the new project without importing the content of that project.": {
+		    "msgid": "structure in the new project without importing the content of that project.",
+		    "msgstr": ["そのプロジェクトのコンテンツをインポートすることなく、新しいプロジェクトでその構造が複製されます。"]
+			},
+          "Saving your ": {
+		    "msgid": "Saving your ",
+		    "msgstr": ["次を保存中："]
+			},
+          "New ": {
+		    "msgid": "New ",
+		    "msgstr": ["新しい"]
+			},
+          " created successfully!": {
+		    "msgid": " created successfully!",
+		    "msgstr": ["が作成されました！"]
+			},
+          "Keep working here": {
+		    "msgid": "Keep working here",
+		    "msgstr": ["このページに留まる"]
+			},
+          "Go to new ": {
+		    "msgid": "Go to new ",
+		    "msgstr": ["新しいものへ移動："]
+			},
+          "Could not add institution affiliation to your new ": {
+		    "msgid": "Could not add institution affiliation to your new ",
+		    "msgstr": ["新しいものに所属機関を追加できませんでした："]
+			},
+          "Select a project to use as a template": {
+		    "msgid": "Select a project to use as a template",
+		    "msgstr": ["テンプレートとして使用するプロジェクトを選択します"]
+			},
+          " (for descriptive purposes)": {
+		    "msgid": " (for descriptive purposes)",
+		    "msgstr": ["(説明のため)"]
+			},
+          "alertsManager.js": {
+		    "msgid": "alertsManager.js",
+		    "msgstr": ["alertsManager.js"]
+			},
+          "Could not dismiss alert. Please refresh page and try again.": {
+		    "msgid": "Could not dismiss alert. Please refresh page and try again.",
+		    "msgstr": ["アラートを却下できませんでした。 ページを更新してもう一度お試しください。"]
+			},
+          "Error fetching user alerts": {
+		    "msgid": "Error fetching user alerts",
+		    "msgstr": ["ユーザーアラートの取得エラー"]
+			},
+          "Could not fetch alerts for this page. Please refresh page and try again.": {
+		    "msgid": "Could not fetch alerts for this page. Please refresh page and try again.",
+		    "msgstr": ["このページのアラートを取得できませんでした。 ページを更新してもう一度お試しください。"]
+			},
+          "Error fetching list of registered applications": {
+		    "msgid": "Error fetching list of registered applications",
+		    "msgstr": ["登録済みアプリケーションのリストの取得エラー"]
+			},
+          "Deactivate application?": {
+		    "msgid": "Deactivate application?",
+		    "msgstr": ["アプリケーションを無効にしますか？"]
+			},
+          "There are unsaved changes on this page.": {
+		    "msgid": "There are unsaved changes on this page.",
+		    "msgstr": ["このページには未保存の変更があります。"]
+			},
+          "Error fetching application data": {
+		    "msgid": "Error fetching application data",
+		    "msgstr": ["アプリケーションデータの取得エラー"]
+			},
+          "Error updating instance": {
+		    "msgid": "Error updating instance",
+		    "msgstr": ["インスタンスの更新エラー"]
+			},
+          "Error registering new OAuth2 application": {
+		    "msgid": "Error registering new OAuth2 application",
+		    "msgstr": ["新しいOAuth2アプリケーションの登録エラー"]
+			},
+          "Reset client secret?": {
+		    "msgid": "Reset client secret?",
+		    "msgstr": ["クライアントシークレットをリセットしますか？"]
+			},
+          "Error resetting instance secret": {
+		    "msgid": "Error resetting instance secret",
+		    "msgstr": ["インスタンスシークレットのリセットエラー"]
+			},
+          "Reset Secret": {
+		    "msgid": "Reset Secret",
+		    "msgstr": ["シークレットをリセット"]
+			},
+          "Error fetching list of registered personal access tokens": {
+		    "msgid": "Error fetching list of registered personal access tokens",
+		    "msgstr": ["登録済みの個人アクセストークンのリストの取得エラー"]
+			},
+          "Deactivate personal access token?": {
+		    "msgid": "Deactivate personal access token?",
+		    "msgstr": ["個人用アクセストークンを無効にしますか？"]
+			},
+          " has been deactivated": {
+		    "msgid": " has been deactivated",
+		    "msgstr": ["は無効化されました"]
+			},
+          "Deactivate": {
+		    "msgid": "Deactivate",
+		    "msgstr": ["無効化"]
+			},
+          "Error fetching token data": {
+		    "msgid": "Error fetching token data",
+		    "msgstr": ["トークンデータの取得エラー"]
+			},
+          "Error updating instance": {
+		    "msgid": "Error updating instance",
+		    "msgstr": ["インスタンスの更新エラー"]
+			},
+          "Error registering new OAuth2 personal access token": {
+		    "msgid": "Error registering new OAuth2 personal access token",
+		    "msgstr": ["新しいOAuth2個人用アクセストークンの登録エラー"]
+			},
+          "There was a problem trying to ": {
+		    "msgid": "There was a problem trying to ",
+		    "msgstr": ["ユーザーからのリクエスト"]
+			},
+          "accessRequestManager.js": {
+		    "msgid": "accessRequestManager.js",
+		    "msgstr": ["accessRequestManager.js"]
+			},
+          " the request from the user. ": {
+		    "msgid": " the request from the user. ",
+		    "msgstr": ["しようとして問題が発生しました。"]
+			},
+          "Could not ": {
+		    "msgid": "Could not ",
+		    "msgstr": ["アクセスリクエストを"]
+			},
+          " access request": {
+		    "msgid": " access request",
+		    "msgstr": ["できませんでした。"]
+			},
+          "accountClaimer.js": {
+		    "msgid": "accountClaimer.js",
+		    "msgstr": ["accountClaimer.js"]
+			},
+          "Email will arrive shortly": {
+		    "msgid": "Email will arrive shortly",
+		    "msgstr": ["メールはまもなく届きます"]
+			},
+          "Please check <em>": {
+		    "msgid": "Please check <em>",
+		    "msgstr": ["こちらのメールアドレスをチェックしてください。<em>"]
+			},
+          "If you claim this account, a contributor of this project ": {
+		    "msgid": "If you claim this account, a contributor of this project ",
+		    "msgstr": ["このアカウントを申請すると、このプロジェクトのコントリビュータ"]
+			},
+          "will be emailed to confirm your identity.": {
+		    "msgid": "will be emailed to confirm your identity.",
+		    "msgstr": ["にメールで本人確認が行われます。"]
+			},
+          "Claim": {
+		    "msgid": "Claim",
+		    "msgstr": ["請求"]
+			},
+          "Is this you? Click to claim": {
+		    "msgid": "Is this you? Click to claim",
+		    "msgstr": ["あなたですか？ クリックして申し立てる"]
+			},
+          "Enter email…": {
+		    "msgid": "Enter email…",
+		    "msgstr": ["メールアドレスを入力…"]
+			},
+          "Not a valid email.": {
+		    "msgid": "Not a valid email.",
+		    "msgstr": ["有効なメールではありません。"]
+			},
+          "Claim Account": {
+		    "msgid": "Claim Account",
+		    "msgstr": ["アカウント請求"]
+			},
+          "accountSettings.js": {
+		    "msgid": "accountSettings.js",
+		    "msgstr": ["accountSettings.js"]
+			},
+          "Could not fetch user profile.": {
+		    "msgid": "Could not fetch user profile.",
+		    "msgstr": ["ユーザープロフィールを取得できませんでした。"]
+			},
+          "Error fetching user profile": {
+		    "msgid": "Error fetching user profile",
+		    "msgstr": ["ユーザープロフィールの取得エラー"]
+			},
+          "Duplicate Email": {
+		    "msgid": "Duplicate Email",
+		    "msgstr": ["メールアドレスが重複"]
+			},
+          "Confirmation email sent": {
+		    "msgid": "Confirmation email sent",
+		    "msgstr": ["確認メールを送信しました"]
+			},
+          "Please click the link in your email to confirm this action. You will be required to enter your password.": {
+		    "msgid": "Please click the link in your email to confirm this action. You will be required to enter your password.",
+		    "msgstr": ["このアクションを確認するには、メールのリンクをクリックしてください。 パスワードを入力する必要があります。"]
+			},
+          "Email cannot be empty.": {
+		    "msgid": "Email cannot be empty.",
+		    "msgstr": ["メールを空にすることはできません。"]
+			},
+          " Please log out of this account and check your email to confirm this action.": {
+		    "msgid": " Please log out of this account and check your email to confirm this action.",
+		    "msgstr": ["このアカウントからログアウトし、メールを確認してこのアクションを確認してください。"]
+			},
+          "Please refresh the page and try again.": {
+		    "msgid": "Please refresh the page and try again.",
+		    "msgstr": ["ページを更新してもう一度お試しください。"]
+			},
+          "Please refresh the page and try again.": {
+		    "msgid": "Please refresh the page and try again.",
+		    "msgstr": ["ページを更新してもう一度お試しください。"]
+			},
+          "You have revoked this connected identity.": {
+		    "msgid": "You have revoked this connected identity.",
+		    "msgstr": ["この接続されたIDを取り消しました。"]
+			},
+          "Error revoking connected identity": {
+		    "msgid": "Error revoking connected identity",
+		    "msgstr": ["接続されたIDの取り消しエラー"]
+			},
+          "Remove authorization?": {
+		    "msgid": "Remove authorization?",
+		    "msgstr": ["認証を削除しますか？"]
+			},
+          "Are you sure you want to remove this authorization?": {
+		    "msgid": "Are you sure you want to remove this authorization?",
+		    "msgstr": ["この承認を削除してもよろしいですか？"]
+			},
+          "Error updating default storage location ": {
+		    "msgid": "Error updating default storage location ",
+		    "msgstr": ["デフォルトの保管場所の更新エラー"]
+			},
+          "An GakuNin RDM administrator will contact you shortly to confirm your deactivation request.": {
+		    "msgid": "An GakuNin RDM administrator will contact you shortly to confirm your deactivation request.",
+		    "msgstr": ["GakuNin RDM管理者がすぐに連絡して、非アクティブ化リクエストを確認します。"]
+			},
+          "Error requesting account deactivation": {
+		    "msgid": "Error requesting account deactivation",
+		    "msgstr": ["アカウントの無効化のリクエストエラー"]
+			},
+          "An GakuNin RDM account is no longer up for review.": {
+		    "msgid": "An GakuNin RDM account is no longer up for review.",
+		    "msgstr": ["GakuNin RDMアカウントのレビューは終了しました。"]
+			},
+          "Deactivation request failed. Please contact ": {
+		    "msgid": "Deactivation request failed. Please contact ",
+		    "msgstr": ["非アクティブ化要求が失敗しました。問題が解決しない場合は、こちらへお問い合わせください："]
+			},
+          "Request account deactivation?": {
+		    "msgid": "Request account deactivation?",
+		    "msgstr": ["アカウントの無効化をリクエストしますか？"]
+			},
+          "Are you sure you want to request account deactivation? A GakuNinRDM administrator will review your request. If accepted, you ": {
+		    "msgid": "Are you sure you want to request account deactivation? A GakuNinRDM administrator will review your request. If accepted, you ",
+		    "msgstr": ["アカウントの無効化をリクエストしてもよろしいですか？ GakuNinRDM管理者がリクエストを確認します。 承認された場合、"]
+			},
+          "will <strong>NOT</strong> be able to reactivate your account.": {
+		    "msgid": "will <strong>NOT</strong> be able to reactivate your account.",
+		    "msgstr": ["アカウントを再開することはできません。"]
+			},
+          "addonPermissions.js": {
+		    "msgid": "addonPermissions.js",
+		    "msgstr": ["addonPermissions.js"]
+			},
+          "Remove addon?": {
+		    "msgid": "Remove addon?",
+		    "msgstr": ["アドオンを削除しますか？"]
+			},
+          "Are you sure you want to disconnnect the ": {
+		    "msgid": "Are you sure you want to disconnnect the ",
+		    "msgstr": ["このプロジェクトから"]
+			},
+          " account from this project?": {
+		    "msgid": " account from this project?",
+		    "msgstr": ["のアカウントを切断してもよろしいですか？"]
+			},
+          "An error occurred, the account is still connected to the project. ": {
+		    "msgid": "An error occurred, the account is still connected to the project. ",
+		    "msgstr": ["エラーが発生しました。アカウントはまだプロジェクトに接続されています。"]
+			},
+          "If the issue persists, please report it to ": {
+		    "msgid": "If the issue persists, please report it to ",
+		    "msgstr": ["問題が解決しない場合は、こちらへお問い合わせください："]
+			},
+          "addonSettings.js": {
+		    "msgid": "addonSettings.js",
+		    "msgstr": ["addonSettings.js"]
+			},
+          "Error deauthorizing node: ": {
+		    "msgid": "Error deauthorizing node: ",
+		    "msgstr": ["ノードの認証解除エラー："]
+			},
+          "Remove addon?": {
+		    "msgid": "Remove addon?",
+		    "msgstr": ["アドオンを削除しますか？"]
+			},
+          "Are you sure you want to remove the ": {
+		    "msgid": "Are you sure you want to remove the ",
+		    "msgstr": ["このプロジェクトから"]
+			},
+          " authorization from this project?": {
+		    "msgid": " authorization from this project?",
+		    "msgstr": ["認証を削除してもよろしいですか？"]
+			},
+          "Error deauthorizing node: ": {
+		    "msgid": "Error deauthorizing node: ",
+		    "msgstr": ["ノードの認証解除エラー："]
+			},
+          "Add-on successfully authorized. If you wish to link a different account, log out of dropbox.com before attempting to connect to a second Dropbox account on the GakuNin RDM. This will clear the credentials stored in your browser.": {
+		    "msgid": "Add-on successfully authorized. If you wish to link a different account, log out of dropbox.com before attempting to connect to a second Dropbox account on the GakuNin RDM. This will clear the credentials stored in your browser.",
+		    "msgstr": ["アドオンが正常に認証されました。 別のアカウントをリンクする場合は、GakuNin RDMの2番目のDropboxアカウントに接続する前に、dropbox.comからログアウトしてください。 これにより、ブラウザに保存されている資格情報がクリアされます。"]
+			},
+          "Add-on successfully authorized. If you wish to link a different account, log out of bitbucket.org before attempting to connect to a second Bitbucket account on the GakuNin RDM. This will clear the credentials stored in your browser.": {
+		    "msgid": "Add-on successfully authorized. If you wish to link a different account, log out of bitbucket.org before attempting to connect to a second Bitbucket account on the GakuNin RDM. This will clear the credentials stored in your browser.",
+		    "msgstr": ["アドオンが正常に認証されました。 別のアカウントをリンクする場合は、GakuNin RDMの2つ目のBitbucketアカウントに接続する前に、bitbucket.orgからログアウトしてください。 これにより、ブラウザに保存されている資格情報がクリアされます。"]
+			},
+          "Add-on successfully authorized. If you wish to link a different account, log out of onedrive.live.com before attempting to connect to a second OneDrive account on the GakuNin RDM. This will clear the credentials stored in your browser.": {
+		    "msgid": "Add-on successfully authorized. If you wish to link a different account, log out of onedrive.live.com before attempting to connect to a second OneDrive account on the GakuNin RDM. This will clear the credentials stored in your browser.",
+		    "msgstr": ["アドオンが正常に認証されました。 別のアカウントをリンクする場合は、GakuNin RDMの2つ目のOneDriveアカウントに接続する前にonedrive.live.comからログアウトします。 これにより、ブラウザに保存されている資格情報がクリアされます。"]
+			},
+          ", and choose content to connect.": {
+		    "msgid": ", and choose content to connect.",
+		    "msgstr": ["、接続するコンテンツを選択します。"]
+			},
+          "Error while authorizing add-on. Please log in to your ": {
+		    "msgid": "Error while authorizing add-on. Please log in to your ",
+		    "msgstr": ["アドオンの承認中にエラーが発生しました。"]
+			},
+          " account and grant access to the GakuNin RDM to enable this add-on.": {
+		    "msgid": " account and grant access to the GakuNin RDM to enable this add-on.",
+		    "msgstr": ["このアドオンを有効にするには、アカウントにログインし、GakuNin RDMへのアクセスを許可してください。"]
+			},
+          "Disconnect Account?": {
+		    "msgid": "Disconnect Account?",
+		    "msgstr": ["アカウントを切断しますか？"]
+			},
+          "Are you sure you want to disconnect the ": {
+		    "msgid": "Are you sure you want to disconnect the ",
+		    "msgstr": [" "]
+			},
+          " account <strong>": {
+		    "msgid": " account <strong>",
+		    "msgstr": ["のアカウントを切断してもよろしいですか？"]
+			},
+          "</strong>? This will revoke access to ": {
+		    "msgid": "</strong>? This will revoke access to ",
+		    "msgstr": ["</strong>これにより、あなたが許可したすべてのプロジェクトの"]
+			},
+          " for all projects you have authorized.": {
+		    "msgid": " for all projects you have authorized.",
+		    "msgstr": ["へのアクセスが取り消されます。"]
+			},
+          "Disconnect": {
+		    "msgid": "Disconnect",
+		    "msgstr": ["切断"]
+			},
+          "Error while updating addon account": {
+		    "msgid": "Error while updating addon account",
+		    "msgstr": ["アドオンアカウントの更新中にエラーが発生しました"]
+			},
+          "keen.js": {
+		    "msgid": "keen.js",
+		    "msgstr": ["keen.js"]
+			},
+          "Error sending Keen data to ": {
+		    "msgid": "Error sending Keen data to ",
+		    "msgstr": ["Keenデータのこちらへの送信エラー："]
+			},
+          "Error sending Keen data for multiple events: <": {
+		    "msgid": "Error sending Keen data for multiple events: <",
+		    "msgstr": ["複数のイベントのKeenデータの送信エラー：<"]
+			},
+          "Cannot instantiate another KeenTracker instance.": {
+		    "msgid": "Cannot instantiate another KeenTracker instance.",
+		    "msgstr": ["別のKeenTrackerインスタンスをインスタンス化できません。"]
+			},
+          "folderPickerNodeConfig.js": {
+		    "msgid": "folderPickerNodeConfig.js",
+		    "msgstr": ["folderPickerNodeConfig.js"]
+			},
+          "Could not retrieve ": {
+		    "msgid": "Could not retrieve ",
+		    "msgstr": ["現在、"]
+			},
+          " settings at ": {
+		    "msgid": " settings at ",
+		    "msgstr": ["の設定を取得できませんでした。"]
+			},
+          "this time. The credentials associated with this ": {
+		    "msgid": "this time. The credentials associated with this ",
+		    "msgstr": ["この"]
+			},
+          " account may no longer be valid.": {
+		    "msgid": " account may no longer be valid.",
+		    "msgstr": ["アカウントに関連付けられた資格情報が無効になる場合があります。"]
+			},
+          " Try disconnecting and reconnecting the ": {
+		    "msgid": " Try disconnecting and reconnecting the ",
+		    "msgstr": [" "]
+			},
+          " account on your ": {
+		    "msgid": " account on your ",
+		    "msgstr": ["アカウントを切断して再接続してみてください："]
+			},
+          ">account settings page</a>.": {
+		    "msgid": ">account settings page</a>.",
+		    "msgstr": [">アカウント設定ページ</a>."]
+			},
+          "this time. The ": {
+		    "msgid": "this time. The ",
+		    "msgstr": [" "]
+			},
+          " addon credentials may no longer be valid.": {
+		    "msgid": " addon credentials may no longer be valid.",
+		    "msgstr": ["アドオン資格情報が無効になる場合があります。"]
+			},
+          " Contact ": {
+		    "msgid": " Contact ",
+		    "msgstr": [" "]
+			},
+          " to verify.": {
+		    "msgid": " to verify.",
+		    "msgstr": ["に連絡して確認してください。"]
+			},
+          "this time. Please refresh ": {
+		    "msgid": "this time. Please refresh ",
+		    "msgstr": ["ページを更新してください。"]
+			},
+          "the page. If the problem persists, email ": {
+		    "msgid": "the page. If the problem persists, email ",
+		    "msgstr": [" 問題が解決しない場合は、メールでお問い合わせください："]
+			},
+          " account list at ": {
+		    "msgid": " account list at ",
+		    "msgstr": ["アカウントのリストを取得できませんでした。"]
+			},
+          "this time. Please refresh the page. If the problem persists, email ": {
+		    "msgid": "this time. Please refresh the page. If the problem persists, email ",
+		    "msgstr": ["ページを更新してください。 問題が解決しない場合は、メールでお問い合わせください："]
+			},
+          "Disconnected ": {
+		    "msgid": "Disconnected ",
+		    "msgstr": ["切断しました："]
+			},
+          "Could not disconnect ": {
+		    "msgid": "Could not disconnect ",
+		    "msgstr": ["エラーのため、"]
+			},
+          " account because of an error. Please try again later.": {
+		    "msgid": " account because of an error. Please try again later.",
+		    "msgstr": ["アカウントを切断できませんでした。 後でもう一度やり直してください。"]
+			},
+          "Successfully connected a ": {
+		    "msgid": "Successfully connected a ",
+		    "msgstr": ["アカウントの接続に成功しました："]
+			},
+          " account": {
+		    "msgid": " account",
+		    "msgstr": [" "]
+			},
+          "Error while authorizing addon. Please log in to your ": {
+		    "msgid": "Error while authorizing addon. Please log in to your ",
+		    "msgstr": ["アドオンの承認中にエラーが発生しました。"]
+			},
+          " account and grant access to the GakuNin RDM to enable this addon.": {
+		    "msgid": " account and grant access to the GakuNin RDM to enable this addon.",
+		    "msgstr": ["アカウントにログインし、GakuNin RDMへのアクセスを許可してこのアドオンを有効にしてください。"]
+			},
+          "Could not change ": {
+		    "msgid": "Could not change ",
+		    "msgstr": [" "]
+			},
+          " settings. Please try again later.": {
+		    "msgid": " settings. Please try again later.",
+		    "msgstr": ["の設定を変更できませんでした。後でやり直してください。"]
+			},
+          "Are you sure you want to remove this ": {
+		    "msgid": "Are you sure you want to remove this ",
+		    "msgstr": ["こちらのアカウントを除外してよろしいですか？"]
+			},
+          "Are you sure you want to link your ": {
+		    "msgid": "Are you sure you want to link your ",
+		    "msgstr": [" "]
+			},
+          " account with this project?": {
+		    "msgid": " account with this project?",
+		    "msgstr": ["アカウントをこのプロジェクトにリンクしてもよろしいですか？"]
+			},
+          "Successfully imported ": {
+		    "msgid": "Successfully imported ",
+		    "msgstr": [" "]
+			},
+          " account from profile.": {
+		    "msgid": " account from profile.",
+		    "msgstr": ["アカウントをプロフィールからインポートしました。"]
+			},
+          "Error occurred while importing ": {
+		    "msgid": "Error occurred while importing ",
+		    "msgstr": ["こちらのアカウントをインポート中にエラーが発生しました："]
+			},
+          " group libraries.": {
+		    "msgid": " group libraries.",
+		    "msgstr": ["グループライブラリ"]
+			},
+          "Could not connect to ": {
+		    "msgid": "Could not connect to ",
+		    "msgstr": ["現在、"]
+			},
+          " at this time. Please try again later.": {
+		    "msgid": " at this time. Please try again later.",
+		    "msgstr": ["に接続できませんでした。後でやり直してください。"]
+			},
+          " settings": {
+		    "msgid": " settings",
+		    "msgstr": ["の設定を取得できませんでした。"]
+			},
+          "Could not deauthorize ": {
+		    "msgid": "Could not deauthorize ",
+		    "msgstr": ["ノードから"]
+			},
+          " account from node": {
+		    "msgid": " account from node",
+		    "msgstr": ["を認証解除できませんでした"]
+			},
+          "Disconnect ": {
+		    "msgid": "切断しますか？：",
+		    "msgstr": [""]
+			},
+          "Disconnect": {
+		    "msgid": "Disconnect",
+		    "msgstr": ["切断"]
+			},
+          "Could not GET get ": {
+		    "msgid": "Could not GET get ",
+		    "msgstr": [" "]
+			},
+          " contents.": {
+		    "msgid": " contents.",
+		    "msgstr": ["のコンテンツを取得できませんでした。"]
+			},
+          "fangorn.js": {
+		    "msgid": "fangorn.js",
+		    "msgstr": ["fangorn.js"]
+			},
+          "Upload pending...": {
+		    "msgid": "Upload pending...",
+		    "msgstr": ["アップロード保留中"]
+			},
+          "Copying ": {
+		    "msgid": "Copying ",
+		    "msgstr": ["コピー中"]
+			},
+          "Deleting ": {
+		    "msgid": "Deleting ",
+		    "msgstr": ["削除中"]
+			},
+          "Moving ": {
+		    "msgid": "Moving ",
+		    "msgstr": ["移動中"]
+			},
+          "Renaming ": {
+		    "msgid": "Renaming ",
+		    "msgstr": ["リネーム中"]
+			},
+          "Not allowed: Private folder": {
+		    "msgid": "Not allowed: Private folder",
+		    "msgstr": ["許可されない：非公開フォルダ"]
+			},
+          "You cannot replace the Wiki images folder": {
+		    "msgid": "You cannot replace the Wiki images folder",
+		    "msgstr": ["Wiki画像フォルダーを置き換えることはできません"]
+			},
+          "An item named ": {
+		    "msgid": "An item named ",
+		    "msgstr": [" "]
+			},
+          " already exists in this location.": {
+		    "msgid": " already exists in this location.",
+		    "msgstr": ["という名前のアイテムはこの場所に既に存在します。"]
+			},
+          "Keep Both": {
+		    "msgid": "Keep Both",
+		    "msgstr": ["[両方を保持]"]
+			},
+          " will retain both files (and their version histories) in this location.": {
+		    "msgid": " will retain both files (and their version histories) in this location.",
+		    "msgstr": ["はこの場所に両方のファイル（およびそれらのバージョン履歴）が保持されます。"]
+			},
+          "Replace": {
+		    "msgid": "Replace",
+		    "msgstr": ["置換"]
+			},
+          " will overwrite the existing file in this location. ": {
+		    "msgid": " will overwrite the existing file in this location. ",
+		    "msgstr": ["はこの場所にある既存のファイルを上書きします。"]
+			},
+          "You will lose previous versions of the overwritten file. ": {
+		    "msgid": "You will lose previous versions of the overwritten file. ",
+		    "msgstr": ["上書きされたファイルの以前のバージョンは失われます。"]
+			},
+          "You will keep previous versions of the moved file.": {
+		    "msgid": "You will keep previous versions of the moved file.",
+		    "msgstr": ["移動したファイルの以前のバージョンを保持します。"]
+			},
+          "\"Skip\" will skip the current file.": {
+		    "msgid": "\"Skip\" will skip the current file.",
+		    "msgstr": ["[スキップ]は現在のファイルをスキップします。"]
+			},
+          "\"Stop\" will only move files with no conflicts.": {
+		    "msgid": "\"Stop\" will only move files with no conflicts.",
+		    "msgstr": ["[停止]は、競合のないファイルのみを移動します。"]
+			},
+          "You cannot replace the Wiki images folder": {
+		    "msgid": "You cannot replace the Wiki images folder",
+		    "msgstr": ["Wiki画像フォルダーを置き換えることはできません"]
+			},
+          "Replace ": {
+		    "msgid": "Replace ",
+		    "msgstr": ["置換しますか？："]
+			},
+          " will cancel the move.": {
+		    "msgid": " will cancel the move.",
+		    "msgstr": ["は移動をキャンセルします。"]
+			},
+          "We\\'ll send you an email when it has finished.": {
+		    "msgid": "We\\'ll send you an email when it has finished.",
+		    "msgstr": ["終了したらメールをお送りします。"]
+			},
+          "In the mean time you can leave this page; your ": {
+		    "msgid": "In the mean time you can leave this page; your ",
+		    "msgstr": ["それまでの間、このページを離れることができます。"]
+			},
+          " will still be completed.": {
+		    "msgid": " will still be completed.",
+		    "msgstr": ["は引き続き完了します"]
+			},
+          "Successfully ": {
+		    "msgid": "Successfully ",
+		    "msgstr": ["成功しました："]
+			},
+          "Failed to move or copy file": {
+		    "msgid": "Failed to move or copy file",
+		    "msgstr": ["ファイルの移動またはコピーに失敗しました"]
+			},
+          "Could not upload file. The file may be invalid ": {
+		    "msgid": "Could not upload file. The file may be invalid ",
+		    "msgstr": ["ファイルをアップロードできませんでした。 ファイルが無効である"]
+			},
+          "or the file folder has been deleted.": {
+		    "msgid": "or the file folder has been deleted.",
+		    "msgstr": ["か、ファイルフォルダーが削除されている可能性があります。"]
+			},
+          "Cannot upload folders.": {
+		    "msgid": "Cannot upload folders.",
+		    "msgstr": ["フォルダをアップロードできません。"]
+			},
+          "Cannot upload file due to insufficient storage.": {
+		    "msgid": "Cannot upload file due to insufficient storage.",
+		    "msgstr": ["ストレージが不十分なため、ファイルをアップロードできません。"]
+			},
+          "Could not upload file. Possible reasons: <br>": {
+		    "msgid": "Could not upload file. Possible reasons: <br>",
+		    "msgstr": ["ファイルをアップロードできませんでした。 考えられる理由：<br>"]
+			},
+          "1. Cannot upload folders. <br>2. ": {
+		    "msgid": "1. Cannot upload folders. <br>2. ",
+		    "msgstr": ["1.フォルダーをアップロードできません。 <br> 2."]
+			},
+          "Unable to reach the provider, please try again later. ": {
+		    "msgid": "Unable to reach the provider, please try again later. ",
+		    "msgstr": ["プロバイダーに到達できません。しばらくしてからもう一度お試しください。"]
+			},
+          "If the problem persists, please contact ": {
+		    "msgid": "If the problem persists, please contact ",
+		    "msgstr": ["問題が解決しない場合は、お問い合わせください："]
+			},
+          "Please enter a folder name.": {
+		    "msgid": "Please enter a folder name.",
+		    "msgstr": ["フォルダー名を入力してください。"]
+			},
+          "Folder name contains illegal characters.": {
+		    "msgid": "Folder name contains illegal characters.",
+		    "msgstr": ["フォルダー名に無効な文字が含まれています。"]
+			},
+          "New folder created!": {
+		    "msgid": "New folder created!",
+		    "msgstr": ["新しいフォルダーが作成されました！"]
+			},
+          "Folder creation failed.": {
+		    "msgid": "Folder creation failed.",
+		    "msgstr": ["フォルダーの作成に失敗しました。"]
+			},
+          "<i> Deleting...</i>": {
+		    "msgid": "<i> Deleting...</i>",
+		    "msgstr": ["<i>削除中...</i>"]
+			},
+          "Delete failed.": {
+		    "msgid": "Delete failed.",
+		    "msgstr": ["削除が失敗しました。"]
+			},
+          "This folder and all of its contents will be deleted. This folder is linked to ": {
+		    "msgid": "This folder and all of its contents will be deleted. This folder is linked to ",
+		    "msgstr": [""]
+			},
+          "your wiki(s). Deleting it will remove images embedded in your wiki(s). ": {
+		    "msgid": "your wiki(s). Deleting it will remove images embedded in your wiki(s). ",
+		    "msgstr": [""]
+			},
+          "This action is irreversible.": {
+		    "msgid": "This action is irreversible.",
+		    "msgstr": [""]
+			},
+          "This folder and ALL its contents will be deleted. This action is irreversible.": {
+		    "msgid": "This folder and ALL its contents will be deleted. This action is irreversible.",
+		    "msgstr": [""]
+			},
+          "You don\\'t have permission to delete this file.": {
+		    "msgid": "You don\\'t have permission to delete this file.",
+		    "msgstr": ["このファイルを削除する権限がありません。"]
+			},
+          "This file may be linked to your wiki(s). Deleting it will remove the": {
+		    "msgid": "This file may be linked to your wiki(s). Deleting it will remove the",
+		    "msgstr": ["このファイルはWikiにリンクされている場合があります。 削除すると、。"]
+			},
+          " image embedded in your wiki(s). ": {
+		    "msgid": " image embedded in your wiki(s). ",
+		    "msgstr": ["Wikiに埋め込まれた画像が除外されます"]
+			},
+          "This action is irreversible.": {
+		    "msgid": "This action is irreversible.",
+		    "msgstr": ["このアクションは元に戻せません。"]
+			},
+          "Some of the selected items are folders. This will delete the folder(s) and ALL of their content.": {
+		    "msgid": "Some of the selected items are folders. This will delete the folder(s) and ALL of their content.",
+		    "msgstr": ["選択したアイテムの一部はフォルダーです。 これにより、フォルダーとそのすべてのコンテンツが削除されます。"]
+			},
+          " may be linked to": {
+		    "msgid": " may be linked to",
+		    "msgstr": ["ウィキにリンクされている可能性があります。"]
+			},
+          " your wiki(s). Deleting them will remove images embedded in your wiki(s). ": {
+		    "msgid": " your wiki(s). Deleting them will remove images embedded in your wiki(s). ",
+		    "msgstr": ["それらを削除すると、ウィキに埋め込まれた画像が削除されます。"]
+			},
+          "Some of these files can\\'t be deleted but you can delete the ones highlighted with green. This action is irreversible.": {
+		    "msgid": "Some of these files can\\'t be deleted but you can delete the ones highlighted with green. This action is irreversible.",
+		    "msgstr": ["これらのファイルの一部は削除できませんが、緑色で強調表示されているファイルは削除できます。 このアクションは元に戻せません。"]
+			},
+          "Delete All": {
+		    "msgid": "Delete All",
+		    "msgstr": ["全て削除"]
+			},
+          "Delete Some": {
+		    "msgid": "Delete Some",
+		    "msgstr": ["一部を削除"]
+			},
+          "Delete multiple files?": {
+		    "msgid": "Delete multiple files?",
+		    "msgstr": ["複数のファイルを削除しますか？"]
+			},
+          "Unable to check out file. This is most likely due to the file being already checked-out": {
+		    "msgid": "Unable to check out file. This is most likely due to the file being already checked-out",
+		    "msgstr": ["ファイルをチェックアウトできません。 これは、ファイルが別のユーザーによって既にチェックアウトされていることが原因である可能性があります。"]
+			},
+          " by another user.": {
+		    "msgid": " by another user.",
+		    "msgstr": [" "]
+			},
+          "Size": {
+		    "msgid": "Size",
+		    "msgstr": ["サイズ"]
+			},
+          "Version": {
+		    "msgid": "Version",
+		    "msgstr": ["バージョン"]
+			},
+          "Downloads": {
+		    "msgid": "Downloads",
+		    "msgstr": ["ダウンロード"]
+			},
+          "Modified": {
+		    "msgid": "Modified",
+		    "msgstr": ["最終更新日"]
+			},
+          "Unable to retrieve components.": {
+		    "msgid": "Unable to retrieve components.",
+		    "msgstr": ["コンポーネントを取得できません。"]
+			},
+          "Unable to retrieve components for node ": {
+		    "msgid": "Unable to retrieve components for node ",
+		    "msgstr": ["ノードのコンポーネントを取得できません"]
+			},
+          "You cannot rename your Wiki images folder.": {
+		    "msgid": "You cannot rename your Wiki images folder.",
+		    "msgstr": ["Wiki画像フォルダの名前を変更することはできません。"]
+			},
+          "This would mean ": {
+		    "msgid": "This would mean ",
+		    "msgstr": ["これは、"]
+			},
+          "other contributors cannot edit, delete or upload new versions of this file ": {
+		    "msgid": "other contributors cannot edit, delete or upload new versions of this file ",
+		    "msgstr": ["チェックアウトされている限り他のコントリビュータがこのファイルの新しいバージョンを編集、削除、またはアップロードできないことを意味します。"]
+			},
+          "as long as it is checked-out. You can check it back in at anytime.": {
+		    "msgid": "as long as it is checked-out. You can check it back in at anytime.",
+		    "msgstr": ["いつでもチェックインできます。"]
+			},
+          "Confirm file check-out?": {
+		    "msgid": "Confirm file check-out?",
+		    "msgstr": ["ファイルのチェックアウトを確認しますか？"]
+			},
+          "Download as zip": {
+		    "msgid": "Download as zip",
+		    "msgstr": ["Zipでダウンロード"]
+			},
+          "New folder name": {
+		    "msgid": "New folder name",
+		    "msgstr": ["新しいフォルダ名"]
+			},
+          "Enter name": {
+		    "msgid": "Enter name",
+		    "msgstr": ["名前を入力"]
+			},
+          "Cancel Pending Uploads": {
+		    "msgid": "Cancel Pending Uploads",
+		    "msgstr": ["保留中のアップロードをキャンセル"]
+			},
+          "Delete Multiple": {
+		    "msgid": "Delete Multiple",
+		    "msgstr": ["複数削除"]
+			},
+          " Click on a row (outside the add-on, file, or folder name) to show further actions in the toolbar. Use Command or Shift keys to select multiple files.": {
+		    "msgid": " Click on a row (outside the add-on, file, or folder name) to show further actions in the toolbar. Use Command or Shift keys to select multiple files.",
+		    "msgstr": ["行（アドオン、ファイル、またはフォルダー名の外側）をクリックして、ツールバーにさらにアクションを表示します。 複数のファイルを選択するには、コマンドまたはShiftキーを使用します。"]
+			},
+          " Click a file name to go to view the file in the GakuNin RDM.": {
+		    "msgid": " Click a file name to go to view the file in the GakuNin RDM.",
+		    "msgstr": ["ファイル名をクリックして、GakuNin RDMでファイルを表示します。"]
+			},
+          " Press Command (Ctrl in Windows) and click a file name to open it in a new tab.": {
+		    "msgid": " Press Command (Ctrl in Windows) and click a file name to open it in a new tab.",
+		    "msgstr": ["コマンド（WindowsではCtrl）を押し、ファイル名をクリックして新しいタブで開きます。"]
+			},
+          " Click on the row of an add-on or folder and click the Download as Zip button in the toolbar.": {
+		    "msgid": " Click on the row of an add-on or folder and click the Download as Zip button in the toolbar.",
+		    "msgstr": ["アドオンまたはフォルダーの行をクリックし、ツールバーの[zipでダウンロード]ボタンをクリックします。"]
+			},
+          " Not available for all storage add-ons.": {
+		    "msgid": " Not available for all storage add-ons.",
+		    "msgstr": ["すべてのストレージアドオンで利用できるわけではありません。"]
+			},
+          "How to Use the File Browser": {
+		    "msgid": "How to Use the File Browser",
+		    "msgstr": ["ファイルブラウザの使用方法"]
+			},
+          "Please wait for current action to complete": {
+		    "msgid": "Please wait for current action to complete",
+		    "msgstr": ["ファイルブラウザの使用方法"]
+			},
+          " files succeeded.": {
+		    "msgid": " files succeeded.",
+		    "msgstr": ["ファイルが成功しました。"]
+			},
+          " files successfully moved.": {
+		    "msgid": " files successfully moved.",
+		    "msgstr": ["ファイルが移動成功しました。"]
+			},
+          "You have pending uploads, if you leave this page they may not complete.": {
+		    "msgid": "You have pending uploads, if you leave this page they may not complete.",
+		    "msgstr": ["保留中のアップロードがあります。このページを離れると、アップロードが完了しない場合があります。"]
+			},
+          "You have pending file operations, if you leave this page they may not complete.": {
+		    "msgid": "You have pending file operations, if you leave this page they may not complete.",
+		    "msgstr": ["保留中のファイル操作があります。このページを離れると、完了しない場合があります。"]
+			},
+          "This file is too large (": {
+		    "msgid": "This file is too large (",
+		    "msgstr": ["このファイルは大きすぎます("]
+			},
+          "). Max file size is ": {
+		    "msgid": "). Max file size is ",
+		    "msgstr": [")。最大のサイズは"]
+			},
+          "Not enough quota to upload the file.": {
+		    "msgid": "Not enough quota to upload the file.",
+		    "msgstr": ["ファイルをアップロードするのに十分なクォータがありません。"]
+			},
+          "Quota usage alert": {
+		    "msgid": "Quota usage alert",
+		    "msgstr": ["クォータ使用量アラート"]
+			},
+          "You have used more than ": {
+		    "msgid": "You have used more than ",
+		    "msgstr": [" "]
+			},
+          "% of your quota.": {
+		    "msgid": "% of your quota.",
+		    "msgstr": ["%以上を使用しました"]
 			}
       }
   }

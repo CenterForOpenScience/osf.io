@@ -5,6 +5,9 @@ var Raven = require('raven-js');
 
 var $osf = require('js/osfHelpers');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
 
 var ViewModel = function(context) {
     var self = this;
@@ -22,7 +25,7 @@ var ViewModel = function(context) {
         ).done( function(response){
             self.allNodes(response.data.embeds.nodes.data);
         }).fail(function(xhr, status, error){
-            Raven.captureMessage('Failed to load Institution\'s nodes', {
+            Raven.captureMessage(_('Failed to load Institution\'s nodes'), {
                 extra: {
                     url: url,
                     textStatus: status,

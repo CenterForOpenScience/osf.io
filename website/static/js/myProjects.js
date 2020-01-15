@@ -15,7 +15,6 @@ var AddProject = require('js/addProjectPlugin');
 var mC = require('js/mithrilComponents');
 var lodashGet = require('lodash.get');
 var lodashFind = require('lodash.find');
-
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
@@ -307,7 +306,7 @@ NodeFetcher.prototype = {
     Raven.captureMessage('Error loading nodes with nodeType ' + this.type + ' at url ' + this.nextLink, {
         extra: {requestReturn: result}
     });
-    $osf.growl('We\'re having some trouble contacting our servers. Try reloading the page.', 'Something went wrong!', 'danger', 5000);
+    $osf.growl(_('We\'re having some trouble contacting our servers. Try reloading the page.'), _('Something went wrong!'), 'danger', 5000);
   },
   _onFinish: function() {
     this.forceRedraw = true;
@@ -432,7 +431,7 @@ var MyProjects = {
 
         // Add All my Projects and All my registrations to collections
         self.systemCollections = options.systemCollections || [
-            new LinkObject('collection', { nodeType : 'projects'}, 'All my projects')
+            new LinkObject('collection', { nodeType : 'projects'}, _('All my projects'))
         ];
 
         self.fetchers = {};
@@ -460,7 +459,7 @@ var MyProjects = {
                     self.categoryList = results.actions.POST.category.choices;
                 }
             }, function _error(results){
-                var message = 'Error loading project category names.';
+                var message = _('Error loading project category names.');
                 Raven.captureMessage(message, {extra: {requestReturn: results}});
             });
             return promise;
@@ -664,13 +663,13 @@ var MyProjects = {
                       });
                       self.updateList();
                     }, function _removeProjectFromCollectionsFail(result){
-                        var message = 'Some projects';
+                        var message = _('Some projects');
                         if(data.data.length === 1) {
                             message = self.selected()[0].data.name;
                         } else {
-                            message += ' could not be removed from the collection';
+                            message += _(' could not be removed from the collection');
                         }
-                        $osf.growl(message, 'Please try again.', 'danger', 5000);
+                        $osf.growl(message, _('Please try again.'), 'danger', 5000);
                     });
                 }
             });
@@ -763,27 +762,27 @@ var MyProjects = {
                 if(lastcrumb.type === 'collection'){
                     if(lastcrumb.data.nodeType === 'projects'){
                         template = m('.db-non-load-template.m-md.p-md.osf-box',
-                            'You have not created any projects yet.');
+                            _('You have not created any projects yet.'));
                     } else if (lastcrumb.data.nodeType === 'registrations'){
                         if (self.institutionId) {
                             template = m('.db-non-load-template.m-md.p-md.osf-box',
-                                'There have been no completed registrations for this institution, but you can view the ',
-                                m('a', {href: 'https://rdm.nii.ac.jp/explore/activity/#newPublicRegistrations'}, 'newest public registrations'),
-                                ' or ',
-                                m('a', {href: 'https://rdm.nii.ac.jp/explore/activity/#popularPublicRegistrations'}, 'popular public registrations.'));
+                                _('There have been no completed registrations for this institution, but you can view the '),
+                                m('a', {href: 'https://rdm.nii.ac.jp/explore/activity/#newPublicRegistrations'}, _('newest public registrations')),
+                                _(' or '),
+                                m('a', {href: 'https://rdm.nii.ac.jp/explore/activity/#popularPublicRegistrations'}, _('popular public registrations.')));
                         } else {
                             template = m('.db-non-load-template.m-md.p-md.osf-box',
-                            'You have not made any registrations yet. Go to ',
-                            m('a', {href: 'https://openscience.zendesk.com/hc/en-us/categories/360001550953'}, 'Guides'), ' to learn how registrations work.' );
+                            _('You have not made any registrations yet. Go to '),
+                            m('a', {href: 'https://openscience.zendesk.com/hc/en-us/categories/360001550953'}, _('Guides')), _(' to learn how registrations work.') );
                         }
                     } else if (lastcrumb.data.nodeType === 'preprints'){
-                        template = m('.db-non-load-template.m-md.p-md.osf-box', [m('span', 'You have not made any preprints yet. Learn more about preprints in the '), m('a[href="https://openscience.zendesk.com/hc/en-us/categories/360001530554"]', 'OSF Guides'), m('span', ' or '), m('a[href="/preprints/"]', 'make one now.')]);
+                        template = m('.db-non-load-template.m-md.p-md.osf-box', [m('span', _('You have not made any preprints yet. Learn more about preprints in the ')), m('a[href="https://openscience.zendesk.com/hc/en-us/categories/360001530554"]', _('OSF Guides')), m('span', _(' or ')), m('a[href="/preprints/"]', _('make one now.'))]);
                     } else if (lodashGet(lastcrumb, 'data.node.attributes.bookmarks')) {
-                        template = m('.db-non-load-template.m-md.p-md.osf-box', 'You have no bookmarks. You can add projects or registrations by dragging them into your bookmarks or by clicking the Add to Bookmark button on the project or registration.');
+                        template = m('.db-non-load-template.m-md.p-md.osf-box', _('You have no bookmarks. You can add projects or registrations by dragging them into your bookmarks or by clicking the Add to Bookmark button on the project or registration.'));
                     } else {
-                        var helpText = 'This collection is empty.';
+                        var helpText = _('This collection is empty.');
                         if (!self.viewOnly) {
-                            helpText +=' You can add projects, registrations, or preprints by dragging them into the collection.';
+                            helpText +=_(' You can add projects, registrations, or preprints by dragging them into the collection.');
                         }
                         template = m('.db-non-load-template.m-md.p-md.osf-box', helpText);
                     }
@@ -794,7 +793,7 @@ var MyProjects = {
                         );
                     } else {
                         template = m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
-                            'No components to display. Either there are no components, or there are private components in which you are not a contributor.'
+                            _('No components to display. Either there are no components, or there are private components in which you are not a contributor.')
                         ]);
                     }
                 }
@@ -965,8 +964,8 @@ var MyProjects = {
                     self.loadCollections(result.links.next);
                 }
             }, function(){
-                var message = 'Collections could not be loaded.';
-                $osf.growl(message, 'Please reload the page.');
+                var message = _('Collections could not be loaded.');
+                $osf.growl(message, _('Please reload the page.'));
                 Raven.captureMessage(message, {extra: { url: url }});
             });
             return promise;
@@ -1171,7 +1170,7 @@ var MyProjects = {
                 ctrl.loadValue() < 100 ? m('.line-loader', [
                     m('.line-empty'),
                     m('.line-full.bg-color-blue', { style : 'width: ' + ctrl.loadValue() +'%'}),
-                    m('.load-message', 'Fetching more projects')
+                    m('.load-message', _('Fetching more projects'))
                 ]) : '',
                 ctrl.nonLoadTemplate(),
                 m('.db-poOrganizer', {
@@ -1277,8 +1276,8 @@ var Collections = {
                 args.sidebarInit();
             }, function(){
                 var name = self.newCollectionName();
-                var message = '"' + name + '" collection could not be created.';
-                $osf.growl(message, 'Please try again', 'danger', 5000);
+                var message = '"' + name + _('" collection could not be created.');
+                $osf.growl(message, _('Please try again'), 'danger', 5000);
                 Raven.captureMessage(message, {extra: { url: url, data : data }});
                 self.newCollectionName('');
             });
@@ -1309,8 +1308,8 @@ var Collections = {
                 self.calculateTotalPages();
             }, function(){
                 var name = self.collectionMenuObject().item.label;
-                var message = '"' + name + '" could not be deleted.';
-                $osf.growl(message, 'Please try again', 'danger', 5000);
+                var message = '"' + name + _('" could not be deleted.');
+                $osf.growl(message, _('Please try again'), 'danger', 5000);
                 Raven.captureMessage(message, {extra: {collectionObject: self.collectionMenuObject() }});
             });
             self.dismissModal();
@@ -1334,8 +1333,8 @@ var Collections = {
                 self.collectionMenuObject().item.label = title;
             }, function(){
                 var name = self.collectionMenuObject().item.label;
-                var message = '"' + name + '" could not be renamed.';
-                $osf.growl(message, 'Please try again', 'danger', 5000);
+                var message = '"' + name + _('" could not be renamed.');
+                $osf.growl(message, _('Please try again'), 'danger', 5000);
                 Raven.captureMessage(message, {extra: {collectionObject: self.collectionMenuObject() }});
             });
             self.dismissModal();
@@ -1382,7 +1381,7 @@ var Collections = {
                           }
                           else {
                               var name = projectName ? projectName : args.selected()[index] ? args.selected()[index].data.name : 'Item ';
-                              var message = '"' + name + '" is already in "' + collection.label + '"' ;
+                              var message = '"' + name + _('" is already in "') + collection.label + '"' ;
                               $osf.growl(message,null, 'warning', 4000);
                               save(index + 1, data);
                           }
@@ -1468,10 +1467,10 @@ var Collections = {
         };
         var collectionListTemplate = [
             m('h5.clearfix', [
-                'Collections ',
+                _('Collections '),
                  viewOnly ? '' : m('i.fa.fa-question-circle.text-muted', {
                     'data-toggle':  'tooltip',
-                    'title':  'Collections are groups of projects. You can create custom collections. Drag and drop your projects or bookmarked projects to add them.',
+                    'title':  _('Collections are groups of projects. You can create custom collections. Drag and drop your projects or bookmarked projects to add them.'),
                     'data-placement' : 'bottom'
                 }, ''),
                 !viewOnly ? m('button.btn.btn-xs.btn-default[data-toggle="modal"][data-target="#addColl"].m-h-xs', {onclick: function() {
@@ -1527,12 +1526,12 @@ var Collections = {
                         }}, [
                             m('span[aria-hidden="true"]','×')
                         ]),
-                        m('h3.modal-title', 'Add new collection')
+                        m('h3.modal-title', _('Add new collection'))
                     ]),
                     body : m('.modal-body', [
-                        m('p', 'Collections are groups of projects that help you organize your work. After you create your collection, you can add projects by dragging them into the collection.'),
+                        m('p', _('Collections are groups of projects that help you organize your work. After you create your collection, you can add projects by dragging them into the collection.')),
                         m('.form-group', [
-                            m('label[for="addCollInput].f-w-lg.text-bigger', 'Collection name'),
+                            m('label[for="addCollInput].f-w-lg.text-bigger', _('Collection name')),
                             m('input[type="text"].form-control#addCollInput', {
                                 onkeyup: function (ev){
                                     var val = $(this).val();
@@ -1547,7 +1546,7 @@ var Collections = {
                                 onchange: function() {
                                     $osf.trackClick('myProjects', 'add-collection', 'type-collection-name');
                                 },
-                                placeholder : 'e.g.  My Replications'
+                                placeholder : _('e.g.  My Replications')
                             }),
                             m('span.help-block', ctrl.validationError())
                         ])
@@ -1559,12 +1558,12 @@ var Collections = {
                                     ctrl.resetAddCollection();
                                     $osf.trackClick('myProjects', 'add-collection', 'click-cancel-button');
                                 }
-                            }, 'Cancel'),
+                            }, _('Cancel')),
                         ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : function() {
                             ctrl.addCollection();
                             $osf.trackClick('myProjects', 'add-collection', 'click-add-button');
                         }},'Add')
-                            : m('button[type="button"].btn.btn-success[disabled]', 'Add')
+                            : m('button[type="button"].btn.btn-success[disabled]', _('Add'))
                     ])
                 }),
                 m.component(mC.modal, {
@@ -1575,12 +1574,12 @@ var Collections = {
                         }}, [
                             m('span[aria-hidden="true"]','×')
                         ]),
-                        m('h3.modal-title', 'Rename collection')
+                        m('h3.modal-title', _('Rename collection'))
                     ]),
                     body: m('.modal-body', [
                         m('.form-inline', [
                             m('.form-group', [
-                                m('label[for="addCollInput]', 'Rename to: '),
+                                m('label[for="addCollInput]', _('Rename to: ')),
                                 m('input[type="text"].form-control.m-l-sm',{
                                     onkeyup: function(ev){
                                         var val = $(this).val();
@@ -1612,7 +1611,7 @@ var Collections = {
                             ctrl.renameCollection();
                             $osf.trackClick('myProjects', 'edit-collection', 'click-rename-button');
                         }},'Rename')
-                            : m('button[type="button"].btn.btn-success[disabled]', 'Rename')
+                            : m('button[type="button"].btn.btn-success[disabled]', _('Rename'))
                     ])
                 }),
                 m.component(mC.modal, {
@@ -1626,7 +1625,7 @@ var Collections = {
                         m('h3.modal-title', 'Delete collection "' + ctrl.collectionMenuObject().item.label + '"?')
                     ]),
                     body: m('.modal-body', [
-                        m('p', 'This will delete your collection, but your projects will not be deleted.')
+                        m('p', _('This will delete your collection, but your projects will not be deleted.'))
                     ]),
                     footer : m('.modal-footer', [
                         m('button[type="button"].btn.btn-default[data-dismiss="modal"]', {onclick: function() {
@@ -1736,7 +1735,7 @@ var Breadcrumbs = {
                                 }}, [
                                     m('span[aria-hidden="true"]','×')
                                 ]),
-                                m('h4', 'Parent projects'),
+                                m('h4', _('Parent projects')),
                                 args.breadcrumbs().map(function(item, index, array){
                                     if(index === array.length-1){
                                         return m('.db-parent-row.btn', {
@@ -1785,7 +1784,7 @@ var Breadcrumbs = {
                             addProjectTemplate = m.component(AddProject, {
                                 buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
                                     $osf.trackClick('myProjects', 'add-component', 'open-add-component-modal');
-                                }}, [m('i.fa.fa-plus.m-r-xs', {style: 'font-size: 10px;'}), 'Create component']),
+                                }}, [m('i.fa.fa-plus.m-r-xs', {style: 'font-size: 10px;'}), _('Create component')]),
                                 parentID: linkObject.data.id,
                                 parentTitle: $osf.decodeText(linkObject.data.name),
                                 modalID: 'addSubComponent',
@@ -1874,7 +1873,7 @@ var Filters = {
 
         var returnNameFilters = function _returnNameFilters(){
             if (args.currentView().fetcher.isEmpty() || args.nameFilters.length < 1)
-                return m('.text-muted.text-smaller', 'No contributors to display in this collection. Project administrators can add contributors.');
+                return m('.text-muted.text-smaller', _('No contributors to display in this collection. Project administrators can add contributors.'));
             var list = [];
             var item;
             var i;
@@ -1897,7 +1896,7 @@ var Filters = {
         };
         var returnTagFilters = function _returnTagFilters(){
             if (args.currentView().fetcher.isEmpty() || args.tagFilters.length < 1)
-                return m('.text-muted.text-smaller', 'No tags to display in this collection. Project administrators and write contributors can add tags.');
+                return m('.text-muted.text-smaller', _('No tags to display in this collection. Project administrators and write contributors can add tags.'));
 
             var list = [];
             var selectedCSS;
@@ -1923,10 +1922,10 @@ var Filters = {
         return m('.db-filters.m-t-lg',
             [
                 m('h5.m-t-sm', [
-                    'Contributors ',
+                    _('Contributors '),
                     args.viewOnly ? '' : m('i.fa.fa-question-circle.text-muted', {
                         'data-toggle':  'tooltip',
-                        'title': 'Click a contributor\'s name to see projects that you have in common.',
+                        'title': _('Click a contributor\'s name to see projects that you have in common.'),
                         'data-placement' : 'bottom'
                     }, ''),
                     m('.pull-right',
@@ -1937,7 +1936,7 @@ var Filters = {
                     args.currentView().fetcher.loaded === 0 && !args.currentView().fetcher.isEmpty() ? m('.ball-beat.text-center.m-t-md', m('')) : returnNameFilters()
                 ]),
                 m('h5.m-t-sm', [
-                    'Tags',
+                    _('Tags'),
                     m('.pull-right',
                         args.tagFilters.length && ctrl.tagTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }) : ''
                         )
@@ -1962,7 +1961,7 @@ var Information = {
         var showRemoveFromCollection;
         var collectionFilter = args.currentView().collection;
         if (args.selected().length === 0) {
-            template = m('.db-info-empty.text-muted.p-lg', 'Select a row to view project details.');
+            template = m('.db-info-empty.text-muted.p-lg', _('Select a row to view project details.'));
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
@@ -2004,21 +2003,21 @@ var Information = {
                             m('p.db-info-meta.text-muted', [
                                 resourceType === 'preprints' && item.attributes.reviews_state !== 'initial' && item.attributes.reviews_state !== null ? m('.text-capitalize', 'Status: ' + item.attributes.reviews_state) : resourceType === 'preprints' && item.attributes.date_withdrawn !== null ? 'Status: Withdrawn' : '',  // is a preprint, has a state, provider uses moderation
                                 resourceType === 'preprints' && item.attributes.is_published === true ? m('.text-capitalize', 'Published: ' + item.attributes.is_published) : '',
-                                m('', 'Visibility: ' + (item.attributes.public ? 'Public' : 'Private')),
+                                m('', _('Visibility: ') + (item.attributes.public ? _('Public') : _('Private'))),
                                 m('', [
-                                  m('span', 'Category: '),
+                                  m('span', _('Category: ')),
                                   m('span', { className : mHelpers.getIcon(category) }),
                                   m('span.text-capitalize', ' ' + category)
                                 ]),
-                                m('.text-capitalize', 'Permission: ' + permission),
-                                m('', 'Last Modified on: ' + (item.date ? item.date.local : ''))
+                                m('.text-capitalize', _('Permission: ') + permission),
+                                m('', _('Last Modified on: ') + (item.date ? item.date.local : ''))
                             ]),
                             m('p', [
                                 m('span', {style: 'white-space:pre-wrap'}, $osf.decodeText(item.attributes.description))
                             ]),
                             item.attributes.tags.length > 0 ?
                             m('p.m-t-md', [
-                                m('h5', 'Tags'),
+                                m('h5', _('Tags')),
                                 item.attributes.tags.map(function(tag){
                                     return m('a.tag', { href : '/search/?q=(tags:' + tag + ')', onclick: function(){
                                         $osf.trackClick('myProjects', 'information-panel', 'navigate-to-search-by-tag');
@@ -2039,7 +2038,7 @@ var Information = {
                 showRemoveFromCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.p-xs.text-danger.pull-right', { onclick : function() {
                     args.removeProjectFromCollections();
                     $osf.trackClick('myProjects', 'information-panel', 'remove-multiple-projects-from-collections');
-                } }, 'Remove selected from collection')) : '',
+                } }, _('Remove selected from collection'))) : '',
                 args.selected().map(function(item){
                     var resourceType = item.data.type;
                     if (resourceType === 'preprints') {

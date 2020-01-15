@@ -1,6 +1,9 @@
 var m = require('mithril');
 var Treebeard = require('treebeard');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
 
 function Meetings(data) {
     //  Treebeard 'All Meetings' Grid
@@ -14,25 +17,25 @@ function Meetings(data) {
         columnTitles : function() {
             return [
                 {
-                    title: 'Name',
+                    title: _('Name'),
                     width: '45%',
                     sortType : 'text',
                     sort : true
                 },
                 {
-                    title: 'Submissions',
+                    title: _('Submissions'),
                     width : '15%',
                     sortType : 'number',
                     sort : true
                 },
                 {
-                    title: 'Location',
+                    title: _('Location'),
                     width : '20%',
                     sortType : 'text',
                     sort : true
                 },
                 {
-                    title: 'Date',
+                    title: _('Date'),
                     width: '20%',
                     sortType: 'date',
                     sort: true

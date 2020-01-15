@@ -19,6 +19,10 @@ var $osf = require('./osfHelpers');
 var oop = require('js/oop');
 var language = require('js/osfLanguage');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 /*
  *  Store the data related to a single API application
  */
@@ -190,7 +194,7 @@ var ApplicationsListViewModel = oop.defclass({
                 language.apiOauth2Application.dataListFetchError,
                 'danger');
 
-            Raven.captureMessage('Error fetching list of registered applications', {
+            Raven.captureMessage(_('Error fetching list of registered applications'), {
                 extra: {
                     url: this.apiListUrl,
                     status: status,
@@ -201,7 +205,7 @@ var ApplicationsListViewModel = oop.defclass({
     },
     deleteApplication: function (appData) {
         bootbox.confirm({
-            title: 'Deactivate application?',
+            title: _('Deactivate application?'),
             message: language.apiOauth2Application.deactivateConfirm,
             callback: function (confirmed) {
                 if (confirmed) {
@@ -209,7 +213,7 @@ var ApplicationsListViewModel = oop.defclass({
                     request.done(function () {
                             this.appData.destroy(appData);
                             var appName = $osf.htmlEscape(appData.name());
-                            $osf.growl('Deletion', '"' + appName + '" has been deactivated', 'success');
+                            $osf.growl('Deletion', '"' + appName + '"' + _(' has been deactivated'), 'success');
                     }.bind(this));
                     request.fail(function () {
                             $osf.growl('Error',
@@ -220,7 +224,7 @@ var ApplicationsListViewModel = oop.defclass({
             }.bind(this),
             buttons:{
                 confirm:{
-                    label:'Deactivate',
+                    label:_('Deactivate'),
                     className:'btn-danger'
                 }
             }
@@ -267,7 +271,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
             // Add listener to prevent user from leaving page if there are unsaved changes
             $(window).on('beforeunload', function () {
                 if (this.dirty() && !this.allowExit()) {
-                    return 'There are unsaved changes on this page.';
+                    return _('There are unsaved changes on this page.');
                 }
             }.bind(this));
 
@@ -281,7 +285,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                              language.apiOauth2Application.dataFetchError,
                             'danger');
 
-                Raven.captureMessage('Error fetching application data', {
+                Raven.captureMessage(_('Error fetching application data'), {
                     extra: {
                         url: this.apiDetailUrl(),
                         status: status,
@@ -316,7 +320,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                        language.apiOauth2Application.dataSendError,
                        'danger');
 
-            Raven.captureMessage('Error updating instance', {
+            Raven.captureMessage(_('Error updating instance'), {
                 extra: {
                     url: this.apiDetailUrl,
                     status: status,
@@ -342,7 +346,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                        language.apiOauth2Application.dataSendError,
                        'danger');
 
-            Raven.captureMessage('Error registering new OAuth2 application', {
+            Raven.captureMessage(_('Error registering new OAuth2 application'), {
                 extra: {
                     url: this.apiDetailUrl,
                     status: status,
@@ -368,7 +372,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
     deleteApplication: function () {
         var appData = this.appData();
         bootbox.confirm({
-            title: 'Deactivate application?',
+            title: _('Deactivate application?'),
             message: language.apiOauth2Application.deactivateConfirm,
             callback: function (confirmed) {
                 if (confirmed) {
@@ -388,7 +392,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
             }.bind(this),
             buttons:{
                 confirm:{
-                    label:'Deactivate',
+                    label:_('Deactivate'),
                     className:'btn-danger'
                 }
             }
@@ -398,7 +402,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
         var appData = this.appData();
         var self = this;
         bootbox.confirm({
-            title: 'Reset client secret?',
+            title: _('Reset client secret?'),
             message: language.apiOauth2Application.resetSecretConfirm,
             callback: function (confirmed) {
                 if (confirmed){
@@ -416,7 +420,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                             language.apiOauth2Application.resetSecretError,
                             'danger');
 
-                        Raven.captureMessage('Error resetting instance secret', {
+                        Raven.captureMessage(_('Error resetting instance secret'), {
                             extra: {
                                 url: appData.apiResetUrl,
                                 status: status,
@@ -428,7 +432,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
             },
             buttons: {
                 confirm: {
-                    label: 'Reset Secret',
+                    label: _('Reset Secret'),
                     className: 'btn-danger'
                 }
             }
@@ -452,7 +456,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                 }.bind(this),
                 buttons: {
                     confirm: {
-                        label:'Discard',
+                        label:_('Discard'),
                         className:'btn-danger'
                     }
                 }

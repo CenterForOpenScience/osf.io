@@ -3,6 +3,10 @@ var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 var util = require('./util.js');
 var makeClient = require('js/clipboard');
 
@@ -68,7 +72,7 @@ var FileRevisionsTable = {
                 model.loaded(true);
                 model.errorMessage = response.responseJSON ?
                     response.responseJSON.message || 'Unable to fetch versions' :
-                    'Unable to fetch versions';
+                    _('Unable to fetch versions');
                 m.endComputation();
 
                 // model.errorMessage(err);
@@ -108,10 +112,10 @@ var FileRevisionsTable = {
                     model.hasUser ? m('th', 'User') : false,
                     m('th[colspan=2]', 'Download'),
                     model.hasHashes ? m('th', [
-                        'MD5 ', m('.fa.fa-question-circle[data-content="MD5 is an algorithm used to verify data integrity."][rel="popover"]' +
+                        'MD5 ', m('.fa.fa-question-circle[data-content=_("MD5 is an algorithm used to verify data integrity.")][rel="popover"]' +
                             '[data-placement="top"][data-trigger="hover"]', {config: popOver}) ]) : false,
                     model.hasHashes ? m('th', [
-                        'SHA2 ', m('.fa.fa-question-circle[data-content="SHA-2 is a cryptographic hash function designed by the NSA used to verify data integrity."][rel="popover"]' +
+                        'SHA2 ', m('.fa.fa-question-circle[data-content=_("SHA-2 is a cryptographic hash function designed by the NSA used to verify data integrity.")][rel="popover"]' +
                             '[data-placement="top"][data-trigger="hover"]', {config: popOver}) ]) : false,
                 ].filter(TRUTHY))
             ]);

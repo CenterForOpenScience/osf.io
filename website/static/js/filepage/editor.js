@@ -10,6 +10,9 @@ var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
 require('imports-loader?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
 
 var util = require('./util.js');
 
@@ -78,8 +81,8 @@ var FileEditor = {
             });
 
             response.fail(function (xhr, textStatus, error) {
-                $osf.growl('Error','The file content could not be loaded.');
-                Raven.captureMessage('Could not GET file contents.', {
+                $osf.growl('Error',_('The file content could not be loaded.'));
+                Raven.captureMessage(_('Could not GET file contents.'), {
                     extra: {
                         url: self.url,
                         textStatus: textStatus,
@@ -109,16 +112,16 @@ var FileEditor = {
             }).fail(function(xhr, textStatus, err) {
                 var message;
                 if (xhr.status === 507) {
-                    message = 'Could not update file. Insufficient storage space in your Dropbox.';
+                    message = _('Could not update file. Insufficient storage space in your Dropbox.');
                 } else {
-                    message = 'The file could not be updated.';
+                    message = _('The file could not be updated.');
                 }
                 model.editor.setReadOnly(false);
                 self.unthrottledStatus(oldstatus);
                 $(document).trigger('fileviewpage:reload');
                 model.editor.setValue(self.initialText);
                 $osf.growl('Error', message);
-                Raven.captureMessage('Could not PUT file content.', {
+                Raven.captureMessage(_('Could not PUT file content.'), {
                     extra: {
                         textStatus: textStatus,
                         url: self.url

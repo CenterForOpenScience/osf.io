@@ -8,6 +8,10 @@ new NotificationsConfig('#selectLists', window.contextVars.mailingLists);
 var ProjectNotifications = require('../notificationsTreebeard.js');
 var $notificationsMsg = $('#configureNotificationsMessage');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 $.ajax({
     url: '/api/v1/subscriptions',
     type: 'GET',
@@ -16,5 +20,5 @@ $.ajax({
     new ProjectNotifications(response);
 }).fail( function() {
     $notificationsMsg.addClass('text-danger');
-    $notificationsMsg.text('Could not retrieve notification settings.');
+    $notificationsMsg.text(_('Could not retrieve notification settings.'));
 });

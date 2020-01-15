@@ -12,6 +12,9 @@ var DEFAULT_LICENSE = siteLicenses.DEFAULT_LICENSE;
 
 var $osf = require('js/osfHelpers');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
 
 // Disable IE Caching of JSON
 $.ajaxSetup({ cache: false });
@@ -573,7 +576,7 @@ var ViewModel = function(params) {
         //Indicate that we've just pushed a state so the
         //Call back does not process this push as a state change
         self.stateJustPushed = true;
-        History.pushState(state, 'OSF | Search', url);
+        History.pushState(state, _('GakuNin RDM | Search'), url);
     };
 
     self.setCategory = function(cat) {
@@ -600,7 +603,7 @@ function Search(selector, url, appURL) {
         filter: $osf.urlParams().filter
     };
     //Ensure our state keeps its URL paramaters
-    History.replaceState(data, 'OSF | Search', location.search);
+    History.replaceState(data, _('OSF | Search'), location.search);
     //Set out observables from the newly replaced state
     self.viewModel.loadState();
     //Preform search from url params

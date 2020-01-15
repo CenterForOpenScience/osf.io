@@ -7,6 +7,10 @@ var ko = require('knockout');
 var Treebeard = require('treebeard');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 function expandOnLoad() {
     var tb = this;  // jshint ignore: line
     for (var i = 0; i < tb.treeData.children.length; i++) {
@@ -54,10 +58,10 @@ function subscribe(item, notification_type) {
         payload
     ).done(function(){
         //'notfiy-success' is to override default class 'success' in treebeard
-        item.notify.update('Settings updated', 'notify-success', 1, 2000);
+        item.notify.update(_('Settings updated'), 'notify-success', 1, 2000);
         item.data.event.notificationType = notification_type;
     }).fail(function() {
-        item.notify.update('Could not update settings', 'notify-danger', 1, 2000);
+        item.notify.update(_('Could not update settings'), 'notify-danger', 1, 2000);
     });
 }
 
@@ -76,13 +80,13 @@ function NodeSelectTreebeard(divID, data, nodesState) {
         columnTitles : function() {
             return [
                 {
-                    title: 'checkBox',
+                    title: _('checkBox'),
                     width: '4%',
                     sortType : 'text',
                     sort : true
                 },
                 {
-                    title: 'project',
+                    title: _('project'),
                     width : '96%',
                     sortType : 'text',
                     sort: true

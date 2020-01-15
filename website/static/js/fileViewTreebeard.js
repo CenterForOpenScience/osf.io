@@ -2,6 +2,10 @@ var Fangorn = require('js/fangorn').Fangorn;
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 function FileViewTreebeard(data) {
 
     // Set item.branch to show the branch of the rendered GitHub / Bitbucket file instead of the default branch
@@ -57,7 +61,7 @@ function FileViewTreebeard(data) {
         },
         columnTitles: function () {
             return [{
-                title: 'Name',
+                title: _('Name'),
                 width: '100%'
             }];
         },

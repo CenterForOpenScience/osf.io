@@ -11,6 +11,9 @@ var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var FolderPickerViewModel = require('js/folderPickerNodeConfig');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
 
 /**
  * View model to support instances of AddonNodeConfig (folder picker widget)
@@ -35,8 +38,8 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         });
         self.messages.submitSettingsSuccess =  ko.pureComputed(function() {
             var name = self.options.decodeFolder($osf.htmlEscape(self.folder().name));
-            return 'Successfully linked "' + name + '". Go to the <a href="' +
-                self.urls().files + '">Files page</a> to view your content.';
+            return _('Successfully linked "') + name + _('". Go to the <a href="') +
+                self.urls().files + _('">Files page</a> to view your content.');
         });
         // Overrides
         var defaults = {

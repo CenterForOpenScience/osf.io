@@ -14,6 +14,10 @@ var LOG_PAGE_SIZE_LIMITED = 3;
 var LOG_PAGE_SIZE = 6;
 var PROFILE_IMAGE_SIZE = 16;
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 var _buildLogUrl = function(node, page, limitLogs) {
     var logPage = page || 1;
     var urlPrefix = (node.isRegistration || node.is_registration) ? 'registrations' : 'nodes';
@@ -212,9 +216,9 @@ var LogFeed = {
         return m('.db-activity-list.m-t-md', [
             // Error message if the log request fails
             ctrl.failed ? m('p', [
-                'Unable to retrieve logs at this time. Please refresh the page or contact ',
+                _('Unable to retrieve logs at this time. Please refresh the page or contact '),
                 m('a', {'href': 'mailto:' + OSF_SUPPORT_EMAIL}, OSF_SUPPORT_EMAIL),
-                ' if the problem persists.'
+                _(' if the problem persists.')
             ]) :
             // Show OSF spinner while there is a pending log request
             ctrl.logRequestPending() ?  m('.spinner-loading-wrapper', [

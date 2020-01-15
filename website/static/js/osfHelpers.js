@@ -11,6 +11,10 @@ var lodashGet = require('lodash.get');
 var KeenTracker = require('js/keen');
 var linkify = require('linkifyjs/html');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 // TODO: For some reason, this require is necessary for custom ko validators to work
 // Why?!
 require('js/koHelpers');
@@ -305,12 +309,12 @@ function osfSupportLink() {
 }
 
 function refreshOrSupport() {
-    return 'Please refresh the page and try again or contact ' + osfSupportLink() + ' if the problem persists.';
+    return _('Please refresh the page and try again or contact ') + osfSupportLink() + _(' if the problem persists.');
 }
 
 var errorDefaultLong = function(){
-    return 'OSF was unable to resolve your request. If this issue persists, ' +
-        'please report it to ' + osfSupportLink() + '.';
+    return _('GakuNin RDM was unable to resolve your request. If this issue persists, ') +
+        _('please report it to ') + osfSupportLink() + _('.');
 };
 
 var handleAddonApiHTTPError = function(error){
@@ -333,12 +337,12 @@ var handleJSONError = function(response) {
     // case, response.status === 0, and we don't want to show an error message.
     if (response && response.status && response.status >= 400) {
         $.osf.growl(title, message);
-        Raven.captureMessage('Unexpected error occurred in JSON request');
+        Raven.captureMessage(_('Unexpected error occurred in JSON request'));
     }
 };
 
 var handleEditableError = function(response) {
-    Raven.captureMessage('Unexpected error occurred in an editable input');
+    Raven.captureMessage(_('Unexpected error occurred in an editable input'));
     return 'Error: ' + response.responseJSON.message_long;
 };
 
@@ -355,7 +359,7 @@ var block = function(message, $element) {
                 opacity: 0.5,
                 color: '#fff'
             },
-            message: message || 'Please wait'
+            message: message || _('Please wait')
         }
     );
 };
@@ -790,11 +794,11 @@ var confirmDangerousAction = function (options) {
         confirmText: confirmationString,
         buttons: {
             cancel: {
-                label: 'Cancel',
+                label: _('Cancel'),
                 className: 'btn-default'
             },
             success: {
-                label: 'Confirm',
+                label: _('Confirm'),
                 className: 'btn-danger',
                 callback: handleConfirmAttempt
             }
@@ -805,7 +809,7 @@ var confirmDangerousAction = function (options) {
     var bootboxOptions = $.extend(true, {}, defaults, options);
 
     bootboxOptions.message += [
-        '<p>Type the following to continue: <strong>',
+        _('<p>Type the following to continue: <strong>'),
         htmlEscape(confirmationString),
         '</strong></p>',
         '<input id="bbConfirmText" class="form-control">'
@@ -891,7 +895,7 @@ var dialog = function(title, message, actionButtonLabel, options) {
     var ret = $.Deferred();
     options = $.extend({}, {
         actionButtonClass: 'btn-success',
-        cancelButtonLabel: 'Cancel',
+        cancelButtonLabel: _('Cancel'),
         cancelButtonClass: 'btn-default'
     }, options || {});
 

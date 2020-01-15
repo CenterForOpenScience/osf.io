@@ -14,6 +14,10 @@ var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 require('typeahead.js');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 var MethodNotDefined = function(methodName) {
     this.name = 'MethodNotDefined';
     this.message = methodName;
@@ -79,7 +83,7 @@ $.extend(BaseSearchViewModel.prototype, {
         var self = this;
         return $.get(self.dataUrl).fail(
             function(xhr, status, error) {
-                Raven.captureMessage('Could not GET autocomplete data', {
+                Raven.captureMessage(_('Could not GET autocomplete data'), {
                     extra: {
                         url: self.dataUrl,
                         textStatus: status,
@@ -145,19 +149,19 @@ $.extend(DraftRegistrationsSearchViewModel.prototype, BaseSearchViewModel.protot
                     $('<p>').append(
                         $('<small>', {
                             className: 'm-l-md text-muted',
-                            text: 'Initiated by: ' + item.value.initiator.name
+                            text: _('Initiated by: ') + item.value.initiator.name
                         })
                     ),
                     $('<p>').append(
                         $('<small>', {
                             className: 'm-l-md text-muted',
-                            text: 'Initiated: ' + dateInitiated.local
+                            text: _('Initiated: ') + dateInitiated.local
                         })
                     ),
                     $('<p>').append(
                         $('<small>', {
                             className: 'm-l-md text-muted',
-                            text: 'Last updated: ' + dateUpdated.local
+                            text: _('Last updated: ') + dateUpdated.local
                         })
                     )
                 ]

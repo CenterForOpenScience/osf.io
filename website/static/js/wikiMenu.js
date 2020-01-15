@@ -2,6 +2,11 @@
 var m = require('mithril');
 var iconmap = require('js/iconmap');
 var Treebeard = require('treebeard');
+
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 require('../css/fangorn.css');
 
 function resolveToggle(item) {
@@ -52,7 +57,7 @@ function WikiMenu(data, wikiID, canEdit) {
         resolveToggle : resolveToggle,
         columnTitles: function () {
             return[{
-                title: 'Name',
+                title: _('Name'),
                 width: '100%'
             }];
         },
@@ -60,7 +65,7 @@ function WikiMenu(data, wikiID, canEdit) {
             var tb = this;  // jshint ignore: line
             for (var i = 0; i < tb.treeData.children.length; i++) {
                 var parent = tb.treeData.children[i];
-                if (parent.data.title === 'Project Wiki Pages') {
+                if (parent.data.title === _('Project Wiki Pages')) {
                     tb.updateFolder(null, parent);
                 }
             }

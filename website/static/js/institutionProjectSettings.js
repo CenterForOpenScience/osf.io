@@ -7,6 +7,9 @@ var bootbox = require('bootbox');
 var $osf = require('js/osfHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
 
 var ViewModel = function(data) {
     var self = this;
@@ -42,7 +45,7 @@ var ViewModel = function(data) {
 
     self.buttonInfo = ko.computed(function() {
         return {
-            buttonLabel: self.isAddInstitution() ? 'Add institution' : 'Remove institution',
+            buttonLabel: self.isAddInstitution() ? _('Add institution') : _('Remove institution'),
             buttonColor: self.isAddInstitution() ? 'btn-success' : 'btn-danger'
         };
     });
@@ -54,20 +57,20 @@ var ViewModel = function(data) {
         var modifyAllMessage;
         var htmlMessage;
         if (self.isAddInstitution()) {
-            message = 'Add <b>' + item.name + '</b> to <b>' + data.node.title + '</b> or to <b>' +
-                data.node.title + '</b> and every component in it?<br><br>';
-            modifyOneMessage = 'Add to <b>' +  data.node.title + '</b>.',
-            modifyAllMessage = 'Add to <b>' +  data.node.title + '</b> and every component for which you have permission.';
+            message = _('Add <b>') + item.name + _('</b> to <b>') + data.node.title + _('</b> or to <b>') +
+                data.node.title + _('</b> and every component in it?<br><br>');
+            modifyOneMessage = _('Add to <b>') +  data.node.title + '</b>.',
+            modifyAllMessage = _('Add to <b>') +  data.node.title + _('</b> and every component for which you have permission.');
         }
         else {
-            message = 'Remove <b>' + item.name + '</b> from <b>' + data.node.title + '</b> or from <b>' +
-                data.node.title + '</b> and every component in it?<br><br>';
-            modifyOneMessage = 'Remove from <b>' +  data.node.title + '</b>.',
-            modifyAllMessage = 'Remove from <b>' +  data.node.title + '</b> and every component for which you have permission.';
+            message = _('Remove <b>') + item.name + _('</b> from <b>') + data.node.title + _('</b> or from <b>') +
+                data.node.title + _('</b> and every component in it?<br><br>');
+            modifyOneMessage = _('Remove from <b>') +  data.node.title + '</b>.',
+            modifyAllMessage = _('Remove from <b>') +  data.node.title + _('</b> and every component for which you have permission.');
         }
         if (self.needsWarning()) {
-            message += '<div class="text-danger f-w-xl">Warning, you are not affiliated with <b>' + item.name +
-                    '</b>.  If you remove it from your project, you cannot add it back.</div></br>';
+            message += '<div class="text-danger f-w-xl">' + _('Warning, you are not affiliated with <b>') + item.name +
+                    _('</b>.  If you remove it from your project, you cannot add it back.</div></br>');
         }
         //If the Institution has children, give the choice to select.  If not, that means a warning is necessary.
         if (self.childExists()) {
@@ -82,9 +85,9 @@ var ViewModel = function(data) {
                         modifyAllMessage + ' </label> ' + '</div>' + '</div>';
         }
         else {
-            message = 'Remove <b>' + item.name + '</b> from <b>' + data.node.title + '</b>.<br><br>' +
-                '<div class="text-danger f-w-xl">Warning, you are not affiliated with <b>' + item.name +
-                '</b>.  If you remove it from your project, you cannot add it back.</div></br>';
+            message = _('Remove <b>') + item.name + _('</b> from <b>') + data.node.title + '</b>.<br><br>' +
+                '<div class="text-danger f-w-xl">' + _('Warning, you are not affiliated with <b>') + item.name +
+                _('</b>.  If you remove it from your project, you cannot add it back.</div></br>');
             htmlMessage = '<div class="row">  ' +
                         '<div class="col-md-12"> ' +
                         '<span>' + message + '</span> ' +
@@ -124,7 +127,7 @@ var ViewModel = function(data) {
     };
 
     self.pageTitle = ko.computed(function () {
-        return self.isAddInstitution() ? 'Add institution' : 'Remove institution';
+        return self.isAddInstitution() ? _('Add institution') : _('Remove institution');
     });
 
     self.submitInst = function (item) {
@@ -154,7 +157,7 @@ var ViewModel = function(data) {
         self.loadingBootbox = bootbox.dialog({
             backdrop: true,
             closeButton: false,
-            message: '<div class="spinner-loading-wrapper"><div class="ball-scale ball-scale-blue"><div></div></div><p class="m-t-sm fg-load-message"> Updating affiliation... this may take a minute.</p></div>',
+            message: '<div class="spinner-loading-wrapper"><div class="ball-scale ball-scale-blue"><div></div></div><p class="m-t-sm fg-load-message"> ' + _('Updating affiliation... this may take a minute.') + '</p></div>',
         });
         var url = '';
         var nodesToModify = [];
@@ -199,8 +202,8 @@ var ViewModel = function(data) {
                 }
             }
         }).fail(function (xhr, status, error) {
-            $osf.growl('Unable to modify the institution on this node. Please try again. If the problem persists, email ' + $osf.osfSupportLink());
-            Raven.captureMessage('Unable to modify this institution!', {
+            $osf.growl(_('Unable to modify the institution on this node. Please try again. If the problem persists, email ') + $osf.osfSupportLink());
+            Raven.captureMessage(_('Unable to modify this institution!'), {
                 extra: {
                     url: url,
                     status: status,
@@ -251,8 +254,8 @@ ViewModel.prototype.fetchNodes = function(url) {
         self.formatNodes(rawNodes);
 
     }).fail(function (xhr, status, error) {
-        $osf.growl('Error', 'Unable to retrieve project settings');
-        Raven.captureMessage('Could not GET project settings.', {
+        $osf.growl('Error', _('Unable to retrieve project settings'));
+        Raven.captureMessage(_('Could not GET project settings.'), {
             extra: {
                 url: url, status: status, error: error
             }

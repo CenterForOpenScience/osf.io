@@ -5,6 +5,10 @@ var ko = require('knockout');
 var $osf = require('./osfHelpers');
 var Raven = require('raven-js');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 var AlertsViewModel = function() {
     var self = this;
 
@@ -71,8 +75,8 @@ var AlertsViewModel = function() {
         });
         request.fail(function(xhr, status, error){
             self.loading(false);
-            $osf.growl('Error', 'Could not fetch alerts for this page. Please refresh page and try again.', 'danger');
-            Raven.captureMessage('Error fetching user alerts', {
+            $osf.growl('Error', _('Could not fetch alerts for this page. Please refresh page and try again.'), 'danger');
+            Raven.captureMessage(_('Error fetching user alerts'), {
                 extra: {
                     url: url,
                     status: status,

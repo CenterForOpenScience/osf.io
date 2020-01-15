@@ -19,6 +19,9 @@ var $osf = require('./osfHelpers');
 var oop = require('js/oop');
 var language = require('js/osfLanguage');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
 
 /*
  *  Store the data related to a single API Personal Token
@@ -171,7 +174,7 @@ var TokensListViewModel = oop.defclass({
                 language.apiOauth2Token.dataListFetchError,
                 'danger');
 
-            Raven.captureMessage('Error fetching list of registered personal access tokens', {
+            Raven.captureMessage(_('Error fetching list of registered personal access tokens'), {
                 extra: {
                     url: this.apiListUrl,
                     status: status,
@@ -182,7 +185,7 @@ var TokensListViewModel = oop.defclass({
     },
     deleteToken: function (tokenData) {
         bootbox.confirm({
-            title: 'Deactivate personal access token?',
+            title: _('Deactivate personal access token?'),
             message: language.apiOauth2Token.deactivateConfirm,
             callback: function (confirmed) {
                 if (confirmed) {
@@ -190,7 +193,7 @@ var TokensListViewModel = oop.defclass({
                     request.done(function () {
                             this.tokenData.destroy(tokenData);
                             var tokenName = $osf.htmlEscape(tokenData.name());
-                            $osf.growl('Deletion', '"' + tokenName + '" has been deactivated', 'success');
+                            $osf.growl('Deletion', '"' + tokenName + '"' + _(' has been deactivated'), 'success');
                     }.bind(this));
                     request.fail(function () {
                             $osf.growl('Error',
@@ -201,7 +204,7 @@ var TokensListViewModel = oop.defclass({
             }.bind(this),
             buttons:{
                 confirm:{
-                    label:'Deactivate',
+                    label:_('Deactivate'),
                     className:'btn-danger'
                 }
             }
@@ -248,7 +251,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
             // Add listener to prevent user from leaving page if there are unsaved changes
             $(window).on('beforeunload', function () {
                 if (this.dirty() && !this.allowExit()) {
-                    return 'There are unsaved changes on this page.';
+                    return _('There are unsaved changes on this page.');
                 }
             }.bind(this));
 
@@ -262,7 +265,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
                              language.apiOauth2Token.dataFetchError,
                             'danger');
 
-                Raven.captureMessage('Error fetching token data', {
+                Raven.captureMessage(_('Error fetching token data'), {
                     extra: {
                         url: this.apiDetailUrl(),
                         status: status,
@@ -297,7 +300,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
                        language.apiOauth2Token.dataSendError,
                        'danger');
 
-            Raven.captureMessage('Error updating instance', {
+            Raven.captureMessage(_('Error updating instance'), {
                 extra: {
                     url: this.apiDetailUrl,
                     status: status,
@@ -323,7 +326,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
                        language.apiOauth2Token.dataSendError,
                        'danger');
 
-            Raven.captureMessage('Error registering new OAuth2 personal access token', {
+            Raven.captureMessage(_('Error registering new OAuth2 personal access token'), {
                 extra: {
                     url: this.apiDetailUrl,
                     status: status,
@@ -393,7 +396,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
                 }.bind(this),
                 buttons: {
                     confirm: {
-                        label:'Discard',
+                        label:_('Discard'),
                         className:'btn-danger'
                     }
                 }

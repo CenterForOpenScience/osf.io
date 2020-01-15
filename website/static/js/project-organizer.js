@@ -18,6 +18,10 @@ var lodashGet = require('lodash.get');
 var lodashFind = require('lodash.find');
 var iconmap = require('js/iconmap');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 var LinkObject;
 var NodeFetcher;
 var formatDataforPO;
@@ -184,23 +188,23 @@ function _poColumnTitles() {
     var mobile = window.innerWidth < MOBILE_WIDTH; // true if mobile view
     if(!mobile){
         columns.push({
-            title: 'Name',
+            title: _('Name'),
             width : '55%',
             sort : true,
             sortType : 'text'
         },{
-            title : 'Contributors',
+            title : _('Contributors'),
             width : '25%',
             sort : false
         }, {
-            title : 'Modified',
+            title : _('Modified'),
             width : '20%',
             sort : true,
             sortType : 'date'
         });
     } else {
         columns.push({
-            title: 'Name',
+            title: _('Name'),
             width : '90%',
             sort : true,
             sortType : 'text'

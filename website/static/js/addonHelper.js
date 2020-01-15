@@ -2,6 +2,10 @@
 var $ = require('jquery');
 var $osf = require('./osfHelpers');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 var AddonHelper = (function() {
 
     /**
@@ -33,7 +37,7 @@ var AddonHelper = (function() {
             url,
             formToObj($this)
         ).done(function() {
-            msgElm.text('Settings updated')
+            msgElm.text(_('Settings updated'))
                 .removeClass('text-danger').addClass('text-success')
                 .fadeOut(100).fadeIn();
         }).fail(function(response) {
@@ -42,7 +46,7 @@ var AddonHelper = (function() {
             if (response && response.message) {
                 message = response.message;
             } else {
-                message = 'Settings not updated.';
+                message = _('Settings not updated.');
             }
             msgElm.text(message)
                 .removeClass('text-success').addClass('text-danger')

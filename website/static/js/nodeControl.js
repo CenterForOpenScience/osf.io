@@ -15,6 +15,10 @@ var iconmap = require('js/iconmap');
 var NodeActions = require('js/project.js');
 var NodesPrivacy = require('js/nodesPrivacy').NodesPrivacy;
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 var RequestAccess = require('js/requestAccess.js');
 
 /**
@@ -55,7 +59,7 @@ var ProjectViewModel = function(data, options) {
     self.nodeIsPendingEmbargoTermination = ko.observable(data.node.is_pending_embargo_termination);
     self.makePublicTooltip = ko.computed(function() {
         if(self.nodeIsPendingEmbargoTermination()) {
-            return 'A request to make this registration public is pending';
+            return _('A request to make this registration public is pending');
         }
         return null;
     });
@@ -100,10 +104,10 @@ var ProjectViewModel = function(data, options) {
             tpl: '<input type="text" maxlength="512">',
             validate: function (value) {
                 if ($.trim(value) === '') {
-                    return 'Title cannot be blank.';
+                    return _('Title cannot be blank.');
                 }
                 else if(value.length > 512){
-                    return 'Title cannot exceed 512 characters.';
+                    return _('Title cannot exceed 512 characters.');
                 }
             }
         }));
@@ -112,7 +116,7 @@ var ProjectViewModel = function(data, options) {
         $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
             name: 'description',
             title: 'Edit Description',
-            emptytext: 'Add a brief description to your ' + project_or_component_label,
+            emptytext: _('Add a brief description to your ') + project_or_component_label,
             emptyclass: 'text-muted',
             value: $osf.decodeText(self.description()),
             success: function(response, newValue) {
@@ -169,7 +173,7 @@ var ProjectViewModel = function(data, options) {
             'isCors': true
         }).fail(function() {
             self.inDashboard(true);
-            $osf.growl('Error', 'The project could not be removed', 'danger');
+            $osf.growl('Error', _('The project could not be removed'), 'danger');
         });
     };
 
@@ -208,9 +212,9 @@ var ProjectViewModel = function(data, options) {
         bootbox.confirm({
             title: 'Create DOI',
             message: '<p class="overflow">' +
-                'Are you sure you want to create a DOI for this ' +
-                $osf.htmlEscape(self.nodeType) + '? A DOI' +
-                ' is persistent and will always resolve to this page.',
+                _('Are you sure you want to create a DOI for this ') +
+                $osf.htmlEscape(self.nodeType) + _('? A DOI') +
+                _(' is persistent and will always resolve to this page.'),
             callback: function(confirmed) {
                 if (confirmed) {
                     self.createIdentifiers();
@@ -218,7 +222,7 @@ var ProjectViewModel = function(data, options) {
             },
             buttons:{
                 confirm:{
-                    label:'Create'
+                    label:_('Create')
                 }
             }
         });
@@ -236,11 +240,11 @@ var ProjectViewModel = function(data, options) {
             self.doi(resp.doi);
             self.ark(resp.ark);
         }).fail(function(xhr) {
-            var message = 'We could not create the identifier at this time. ' +
-                'The DOI acquisition service may be down right now. ' +
-                'Please try again soon and/or contact ' + $osf.osfSupportLink();
+            var message = _('We could not create the identifier at this time. ') +
+                _('The DOI acquisition service may be down right now. ') +
+                _('Please try again soon and/or contact ') + $osf.osfSupportLink();
             $osf.growl('Error', message, 'danger');
-            Raven.captureMessage('Could not create doi', {extra: {url: url, status: xhr.status}});
+            Raven.captureMessage(_('Could not create doi'), {extra: {url: url, status: xhr.status}});
         }).always(function() {
             clearTimeout(timeout);
             self.idCreationInProgress(false); // hide loading indicator

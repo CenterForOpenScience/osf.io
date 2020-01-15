@@ -14,6 +14,9 @@ var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var FolderPickerViewModel = require('js/folderPickerNodeConfig');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
 
 /**
  * View model to support instances of CitationsNodeConfig (folder picker widget)
@@ -33,12 +36,12 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         self.accounts = ko.observable([]);
 
         self.messages.submitSettingsSuccess = ko.pureComputed(function(){
-            return 'Successfully linked "' + $osf.htmlEscape(self.folder().name) + '". Go to the <a href="' +
-                self.urls().files + '">Overview page</a> to view your citations.';
+            return _('Successfully linked "') + $osf.htmlEscape(self.folder().name) + _('". Go to the <a href="') +
+                self.urls().files + _('">Overview page</a> to view your citations.');
         });
 
         self.messages.submitLibrarySettingsSuccess = ko.pureComputed(function(){
-            return 'Successfully linked "' + $osf.htmlEscape(self.library().name) + '". Next, choose which folder to link above.';
+            return _('Successfully linked "') + $osf.htmlEscape(self.library().name) + _('". Next, choose which folder to link above.');
         });
 
         self.treebeardOptions = $.extend(
@@ -77,7 +80,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         });
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.updateAccountsError(), 'text-danger');
-            Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
+            Raven.captureMessage(_('Could not GET ') + self.addonName + _(' accounts for user'), {
                 extra: {
                     url: self.url,
                     textStatus: textStatus,
@@ -143,7 +146,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             .then(function(){
                 if (self.accounts().length > 1) {
                     bootbox.prompt({
-                        title: 'Choose ' + $osf.htmlEscape(self.addonName) + ' Access Token to Import',
+                        title: _('Choose ') + $osf.htmlEscape(self.addonName) + _(' Access Token to Import'),
                         inputType: 'select',
                         inputOptions: ko.utils.arrayMap(
                             self.accounts(),
@@ -162,13 +165,13 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                         },
                         buttons:{
                             confirm:{
-                                label: 'Import'
+                                label: _('Import')
                             }
                         }
                     });
                 } else {
                     bootbox.confirm({
-                        title: 'Import ' + $osf.htmlEscape(self.addonName) + ' access token',
+                        title: _('Import ') + $osf.htmlEscape(self.addonName) + _(' access token'),
                         message: self.messages.confirmAuth(),
                         callback: function(confirmed) {
                             if (confirmed) {
@@ -177,7 +180,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                         },
                         buttons:{
                             confirm:{
-                                label:'Import'
+                                label:_('Import')
                             }
                         }
                     });

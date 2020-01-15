@@ -1,3 +1,8 @@
+
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 (function(window, document, $) {
 
     'use strict';
@@ -26,8 +31,8 @@
         options = $.extend({}, defaults, options);
         if (options.maxWidthProp < options.toggleWidth) {
             throw(
-                'Option `toggleWidth` must be greater than or equal to ' +
-                'option `maxWidthProp`.'
+                _('Option `toggleWidth` must be greater than or equal to ') +
+                _('option `maxWidthProp`.')
             );
         }
 
