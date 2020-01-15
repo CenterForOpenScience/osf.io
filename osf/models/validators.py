@@ -5,7 +5,7 @@ import jsonschema
 from django.core.validators import URLValidator, validate_email as django_validate_email
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.deconstruct import deconstructible
-from django.utils.six import string_types
+from past.builtins import basestring
 
 from website.notifications.constants import NOTIFICATION_TYPES
 
@@ -40,7 +40,7 @@ def validate_year(item):
         except ValueError:
             raise ValidationValueError('Please enter a valid year.')
         else:
-            if isinstance(item, string_types) and len(item) != 4:
+            if isinstance(item, basestring) and len(item) != 4:
                 raise ValidationValueError('Please enter a valid year.')
 
 

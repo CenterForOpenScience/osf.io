@@ -327,7 +327,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         errors = res.json['errors'][0]
         assert res.status_code == 400
         assert errors['source']['pointer'] == '/data/attributes/registration_metadata'
-        assert errors['detail'] == 'Expected a dictionary of items but got type "unicode".'
+        assert errors['detail'] == 'Expected a dictionary of items but got type "str".'
 
     def test_registration_metadata_question_values_must_be_dictionaries(
             self, app, user, payload, url_draft_registrations):
@@ -478,7 +478,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         errors = res.json['errors'][0]
         assert res.status_code == 400
         assert errors['source']['pointer'] == '/data/attributes/registration_responses'
-        assert errors['detail'] == 'Expected a dictionary of items but got type "unicode".'
+        assert errors['detail'] == 'Expected a dictionary of items but got type "str".'
 
     def test_registration_responses_question_values_should_not_be_dicts(
             self, app, user, payload_with_registration_responses, url_draft_registrations):
@@ -505,7 +505,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'Additional properties are not allowed (u\'q11\' was unexpected)'
+        assert errors['detail'] == 'Additional properties are not allowed (\'q11\' was unexpected)'
 
     def test_multiple_choice_question_value_in_registration_responses_must_match_value_in_schema(
             self, app, user, payload_with_registration_responses, url_draft_registrations):
@@ -1059,7 +1059,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
                         'nodeId': project_public._id,
                         'viewUrl': '/project/{}/files/osfstorage/{}'.format(project_public._id, draft_registration_prereg._id),
                         'selectedFileName': 'Screen Shot 2016-03-30 at 7.02.05 PM.png',
-                        'sha256': binascii.hexlify(sha256)
+                        'sha256': binascii.hexlify(sha256).decode()
                     }]
                 }
             }
@@ -1086,7 +1086,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
                         'nodeId': project_public._id,
                         'viewUrl': '/project/{}/files/osfstorage/{}'.format(project_public._id, draft_registration_prereg._id),
                         'selectedFileNames': 'Screen Shot 2016-03-30 at 7.02.05 PM.png',
-                        'sha256': binascii.hexlify(sha256)
+                        'sha256': binascii.hexlify(sha256).decode()
                     }]
                 }
             }

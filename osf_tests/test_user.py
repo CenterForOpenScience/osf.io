@@ -809,7 +809,7 @@ class TestCookieMethods:
         })
         session.save()
 
-        assert signer.unsign(user.get_or_create_cookie(super_secret_key)) == session._id
+        assert signer.unsign(user.get_or_create_cookie(super_secret_key)).decode() == session._id
 
     def test_user_get_cookie_no_session(self):
         user = UserFactory()
@@ -823,7 +823,7 @@ class TestCookieMethods:
 
         session = Session.objects.filter(data__auth_user_id=user._id).first()
 
-        assert session._id == signer.unsign(cookie)
+        assert session._id == signer.unsign(cookie).decode()
         assert session.data['auth_user_id'] == user._id
         assert session.data['auth_user_username'] == user.username
         assert session.data['auth_user_fullname'] == user.fullname
@@ -2293,7 +2293,7 @@ class TestUserGdprDelete:
 
         assert user.fullname == 'Deleted user'
         assert user.suffix == ''
-        assert user.social == []
+        assert user.social == {}
         assert user.schools == []
         assert user.jobs == []
         assert user.external_identity == {}
@@ -2406,7 +2406,7 @@ class TestUserSpam:
                 'degree': degree,
                 'institution': institution
             })
-            expected_content += '{} {} '.format(institution, degree)
+            expected_content += '{} {} '.format(degree, institution)
         saved_fields = {'schools': schools_list}
 
         spam_content = user._get_spam_content(saved_fields)

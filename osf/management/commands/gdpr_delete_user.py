@@ -1,7 +1,7 @@
 """Delete a user to GDPR specifications
 
 
-    python manage.py gdpr_delete_user guid1
+    python3 manage.py gdpr_delete_user guid1
 
 Erroring deletions will be logged and skipped.
 """

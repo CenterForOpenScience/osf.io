@@ -118,7 +118,7 @@ class TestBaseVersioning:
         assert res.status_code == 200
         assert '&quot;version&quot;: &quot;{}&quot'.format(
             LATEST_VERSIONS[2]
-        ) in res.body
+        ) in res.body.decode()
 
     def test_browsable_api_query_version(self, app):
         url = '/v2/?format=api&version=2.5'

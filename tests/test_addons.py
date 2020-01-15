@@ -61,7 +61,7 @@ class TestAddonAuth(OsfTestCase):
         self.node = ProjectFactory(creator=self.user)
         self.session = Session(data={'auth_user_id': self.user._id})
         self.session.save()
-        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
+        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id).decode()
         self.configure_addon()
         self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
@@ -820,7 +820,7 @@ class TestAddonFileViews(OsfTestCase):
         )
 
         assert_equals(resp.status_code, 302)
-        assert_equals(resp.location, 'http://localhost:80/{}/'.format(guid._id))
+        assert_equals(resp.location, 'http://localhost/{}/'.format(guid._id))
 
     def test_action_download_redirects_to_download_with_param(self):
         file_node = self.get_test_file()
@@ -840,7 +840,7 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 302)
         location = furl.furl(resp.location)
-        assert_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, version='', format='pdf'))
+        assert_equal(location.url, file_node.generate_waterbutler_url(format='pdf', action='download', direct=None, version=''))
 
 
     def test_action_download_redirects_to_download_with_path_uppercase(self):
@@ -851,7 +851,7 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 302)
         location = furl.furl(resp.location)
-        assert_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, version='', format='pdf'))
+        assert_equal(location.url, file_node.generate_waterbutler_url( format='pdf', action='download', direct=None, version=''))
 
 
     def test_action_download_redirects_to_download_with_version(self):
@@ -1164,7 +1164,7 @@ class TestAddonFileViews(OsfTestCase):
             'modified': '2016-08-22T13:54:32.100900'
         }
         file_node.update(revision=None, user=None, data=data)
-        mock_capture.assert_called_with(unicode('update() receives metatdata older than the newest entry in file history.'), extra={'session': {}})
+        mock_capture.assert_called_with(str('update() receives metatdata older than the newest entry in file history.'), extra={'session': {}})
 
 class TestLegacyViews(OsfTestCase):
 

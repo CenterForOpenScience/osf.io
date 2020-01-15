@@ -1,3 +1,4 @@
+from past.builtins import basestring
 from rest_framework import serializers as ser
 
 from api.base.serializers import (

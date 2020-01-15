@@ -809,7 +809,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                             permissions=contributor.permission, existing_user=contributor.user,
                         )
                     except ValidationError as e:
-                        raise InvalidModelValueError(detail=str(e[0]))
+                        raise InvalidModelValueError(detail=list(e)[0])
             node.add_contributors(contributors, auth=auth, log=True, save=True)
             for group in parent.osf_groups:
                 if group.is_manager(user):
@@ -1962,7 +1962,7 @@ class NodeGroupsCreateSerializer(NodeGroupsSerializer):
             raise exceptions.PermissionDenied(detail=str(e))
         except ValueError as e:
             # permission is in writeable_method_fields, so validation happens on OSF Group model
-            raise exceptions.ValidationError(detail=str(e.message))
+            raise exceptions.ValidationError(detail=str(e))
         return group
 
 
@@ -1984,5 +1984,5 @@ class NodeGroupsDetailSerializer(NodeGroupsSerializer):
             raise exceptions.PermissionDenied(detail=str(e.message))
         except ValueError as e:
             # permission is in writeable_method_fields, so validation happens on OSF Group model
-            raise exceptions.ValidationError(detail=str(e.message))
+            raise exceptions.ValidationError(detail=str(e))
         return obj

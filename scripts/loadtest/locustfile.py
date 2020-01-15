@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 """Load testing for file upload, listing, and download with OSF Storage.
 """

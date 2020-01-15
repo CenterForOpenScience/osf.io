@@ -1,3 +1,4 @@
+from past.builtins import basestring
 from osf.models import Institution
 
 from .factories import InstitutionFactory

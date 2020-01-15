@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Invoke tasks. To run a task, run ``$ invoke <COMMAND>``. To see a list of
 commands, run ``$ invoke --list``.
@@ -116,7 +116,7 @@ def apiserver(ctx, port=8000, wait=True, autoreload=True, host='127.0.0.1', pty=
 def adminserver(ctx, port=8001, host='127.0.0.1', pty=True):
     """Run the Admin server."""
     env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
-    cmd = '{} python manage.py runserver {}:{} --nothreading'.format(env, host, port)
+    cmd = '{} python3 manage.py runserver {}:{} --nothreading'.format(env, host, port)
     if settings.SECURE_MODE:
         cmd = cmd.replace('runserver', 'runsslserver')
         cmd += ' --certificate {} --key {}'.format(settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
@@ -124,7 +124,7 @@ def adminserver(ctx, port=8001, host='127.0.0.1', pty=True):
 
 @task
 def shell(ctx, transaction=True, print_sql=False, notebook=False):
-    cmd = 'DJANGO_SETTINGS_MODULE="api.base.settings" python manage.py osf_shell'
+    cmd = 'DJANGO_SETTINGS_MODULE="api.base.settings" python3 manage.py osf_shell'
     if print_sql:
         cmd += ' --print-sql'
     if notebook:
@@ -226,7 +226,7 @@ def rebuild_search(ctx):
 @task
 def mailserver(ctx, port=1025):
     """Run a SMTP test server."""
-    cmd = 'python -m smtpd -n -c DebuggingServer localhost:{port}'.format(port=port)
+    cmd = 'python3 -m smtpd -n -c DebuggingServer localhost:{port}'.format(port=port)
     ctx.run(bin_prefix(cmd), pty=True)
 
 
@@ -281,14 +281,15 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, all=Fa
                 echo=True
             )
     # fix URITemplate name conflict h/t @github
-    ctx.run('pip uninstall uritemplate.py --yes || true')
-    ctx.run('pip install --no-cache-dir uritemplate.py==0.3.0')
+    ctx.run('pip3 uninstall uritemplate.py --yes || true')
+    ctx.run('pip3 install --no-cache-dir uritemplate.py==0.3.0')
 
 
 @task
 def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=None, coverage=False, testmon=False):
     """Helper for running tests.
     """
+    from past.builtins import basestring
     os.environ['DJANGO_SETTINGS_MODULE'] = 'osf_tests.settings'
     import pytest
     if not numprocesses:
@@ -534,7 +535,7 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
             if os.path.isdir(path):
                 req_file = os.path.join(path, 'requirements.txt')
                 if os.path.exists(req_file):
-                    cmd = 'pip wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
+                    cmd = 'pip3 wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
                         WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH, CONSTRAINTS_PATH,
                     )
                     ctx.run(cmd, pty=pty)
@@ -544,7 +545,7 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
         req_file = os.path.join(HERE, 'requirements', 'dev.txt')
     else:
         req_file = os.path.join(HERE, 'requirements.txt')
-    cmd = 'pip wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
+    cmd = 'pip3 wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
         WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH, CONSTRAINTS_PATH,
     )
     ctx.run(cmd, pty=pty)
