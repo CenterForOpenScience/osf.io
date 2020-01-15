@@ -960,7 +960,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # The user can log in if they have set a password OR
         # have a verified external ID, e.g an ORCID
         can_login = self.has_usable_password() or (
-            'VERIFIED' in sum([each.values() for each in self.external_identity.values()], [])
+            'VERIFIED' in sum([list(each.values()) for each in self.external_identity.values()], [])
         )
         self.is_active = (
             self.is_registered and
@@ -1689,7 +1689,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 for item in contents:
                     for key, value in item.items():
                         if key in self.SPAM_USER_PROFILE_FIELDS[field]:
-                            content.append(value.encode('utf-8'))
+                            content.append(value)
         return ' '.join(content).strip()
 
     def check_spam(self, saved_fields, request_headers):
@@ -1789,7 +1789,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.suffix = ''
         self.jobs = []
         self.schools = []
-        self.social = []
+        self.social = {}
         self.unclaimed_records = {}
         self.notifications_configured = {}
         # Scrub all external accounts

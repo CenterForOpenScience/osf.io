@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import
@@ -116,7 +116,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_is_not_none(self.draft.approval)
         assert_equal(self.draft.approval.meta, {
             u'registration_choice': 'embargo',
-            u'embargo_end_date': unicode(self.embargo_payload['data']['attributes']['lift_embargo'])
+            u'embargo_end_date': str(self.embargo_payload['data']['attributes']['lift_embargo'])
         })
 
     def test_submit_draft_for_review_invalid(self):

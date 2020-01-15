@@ -343,7 +343,7 @@ class NodeLinkMixin(models.Model):
             self.check_node_link(child_node=node, parent_node=self)
             self.check_node_link(child_node=self, parent_node=node)
         except ValueError as e:
-            raise ValueError(e.message)
+            raise ValueError(e)
 
         if self.is_registration:
             raise self.state_error('Cannot add a node link to a registration')
@@ -1713,7 +1713,7 @@ class SpamOverrideMixin(SpamMixin):
             content.extend([name.encode('utf-8') for name in self.all_tags.values_list('name', flat=True)])
         if not content:
             return None
-        return ' '.join(content)
+        return b' '.join(content).decode()
 
     def check_spam(self, user, saved_fields, request_headers):
         if not settings.SPAM_CHECK_ENABLED:

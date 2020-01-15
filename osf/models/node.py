@@ -1,3 +1,4 @@
+from past.builtins import basestring
 import functools
 import itertools
 import logging
@@ -472,7 +473,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         self._is_templated_clone = False
         super(AbstractNode, self).__init__(*args, **kwargs)
 
-    def __unicode__(self):
+    def __repr__(self):
         return ('(title={self.title!r}, category={self.category!r}) '
                 'with guid {self._id!r}').format(self=self)
 

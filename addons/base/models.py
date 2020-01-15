@@ -573,7 +573,7 @@ class BaseStorageAddon(object):
         if cookie:
             kwargs['cookie'] = cookie
         elif user:
-            kwargs['cookie'] = user.get_or_create_cookie()
+            kwargs['cookie'] = user.get_or_create_cookie().decode()
 
         metadata_url = waterbutler_api_url_for(
             self.owner._id,

@@ -1,3 +1,4 @@
+from past.builtins import basestring
 from datetime import datetime
 
 from django import forms

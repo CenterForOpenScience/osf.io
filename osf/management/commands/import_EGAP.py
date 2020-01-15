@@ -143,7 +143,7 @@ def get_egap_assets(guid, creator_auth):
 
     egap_assets_path = os.path.join(temp_path, 'egap_assets.zip')
 
-    with open(egap_assets_path, 'w') as fp:
+    with open(egap_assets_path, 'wb') as fp:
         fp.write(zip_file)
 
     with ZipFile(egap_assets_path, 'r') as zipObj:

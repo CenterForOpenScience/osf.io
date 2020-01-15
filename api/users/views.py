@@ -227,7 +227,7 @@ class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, User
 
     def get_queryset(self):
         qs = [addon for addon in self.get_user().get_addons() if 'accounts' in addon.config.configs]
-        qs.sort()
+        sorted(qs, key=lambda addon: addon.id, reverse=True)
         return qs
 
 

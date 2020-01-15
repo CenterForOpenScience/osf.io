@@ -105,7 +105,7 @@ def upload_to_storage(file_path, upload_url, params):
 def encode_row(row):
     row_to_write = []
     for s in row:
-        item = s.encode('utf-8') if isinstance(s, (str, unicode)) else s
+        item = s.encode('utf-8') if isinstance(s, str) else s
         row_to_write.append(item)
     return row_to_write
 

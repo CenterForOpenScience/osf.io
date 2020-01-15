@@ -3564,8 +3564,8 @@ class TestNodeUpdate:
 
         logs = node.logs.order_by('-date')
         last_log, penultimate_log = logs[:2]
-        assert penultimate_log.action == NodeLog.CATEGORY_UPDATED
-        assert last_log.action == NodeLog.EDITED_TITLE
+        assert penultimate_log.action == NodeLog.EDITED_TITLE
+        assert last_log.action == NodeLog.CATEGORY_UPDATED
 
     def test_set_title_works_with_valid_title(self, user, auth):
         proj = ProjectFactory(title='That Was Then', creator=user)

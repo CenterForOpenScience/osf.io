@@ -1,3 +1,4 @@
+from past.builtins import basestring
 import copy
 import re
 
@@ -309,7 +310,7 @@ def build_extra_file_dict(file_ref):
 def build_answer_block(block_type, value, file_storage_resource=None):
     extra = []
     if block_type == 'file-input':
-        extra = map(build_extra_file_dict, value)
+        extra = list(map(build_extra_file_dict, value))
         value = ''
     return {
         'comments': [],

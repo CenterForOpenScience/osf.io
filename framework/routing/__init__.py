@@ -362,7 +362,7 @@ class JSONRenderer(Renderer):
                 try:
                     return obj.to_json()
                 except TypeError:  # BS4 objects have to_json that isn't callable
-                    return unicode(obj)
+                    return str(obj)
             return json.JSONEncoder.default(self, obj)
 
     def handle_error(self, error):
@@ -512,7 +512,7 @@ class WebRenderer(Renderer):
             except Exception as error:
                 logger.exception(error)
                 if error_msg:
-                    return '<div>{}</div>'.format(markupsafe.escape(unicode(error_msg))), is_replace
+                    return '<div>{}</div>'.format(markupsafe.escape(str(error_msg))), is_replace
                 return '<div>Error retrieving URI {}: {}</div>'.format(
                     uri,
                     repr(error)

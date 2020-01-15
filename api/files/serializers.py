@@ -544,12 +544,12 @@ def get_file_download_link(obj, version=None, view_only=None):
 
 
 def get_file_render_link(mfr_url, download_url, version=None):
-    download_url_args = {
-        'direct': None,
-        'mode': 'render',
-    }
+    download_url_args = {}
     if version:
         download_url_args['revision'] = version
+
+    download_url_args['direct'] = None
+    download_url_args['mode'] = 'render'
 
     render_url = furl.furl(mfr_url).set(
         path=['render'],
