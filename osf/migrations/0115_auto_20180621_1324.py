@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='providerassetfile',
             name='name',
-            field=models.CharField(choices=[(b'favicon', b'favicon'), (b'powered_by_share', b'powered_by_share'), (b'sharing', b'sharing'), (b'square_color_no_transparent', b'square_color_no_transparent'), (b'square_color_transparent', b'square_color_transparent'), (b'style', b'style'), (b'wide_black', b'wide_black'), (b'wide_color', b'wide_color'), (b'wide_white', b'wide_white')], max_length=63),
+            field=models.CharField(choices=[('favicon', 'favicon'), ('powered_by_share', 'powered_by_share'), ('sharing', 'sharing'), ('square_color_no_transparent', 'square_color_no_transparent'), ('square_color_transparent', 'square_color_transparent'), ('style', 'style'), ('wide_black', 'wide_black'), ('wide_color', 'wide_color'), ('wide_white', 'wide_white')], max_length=63),
         ),
     ]
