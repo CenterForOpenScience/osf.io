@@ -40,7 +40,7 @@ class Migration(migrations.Migration):
                 ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
                 ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
                 ('name', models.CharField(max_length=63)),
-                ('file', models.FileField(upload_to=b'assets')),
+                ('file', models.FileField(upload_to='assets')),
                 ('providers', models.ManyToManyField(blank=True, related_name='asset_files', to='osf.AbstractProvider')),
             ],
             options={
@@ -70,7 +70,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='preprintservice',
             name='retraction_justification',
-            field=models.TextField(blank=True, default=b''),
+            field=models.TextField(blank=True, default=''),
         ),
         migrations.AddField(
             model_name='preprintservice',
@@ -90,7 +90,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='scheduledbanner',
             name='link',
-            field=models.URLField(blank=True, default=b'https://www.crowdrise.com/centerforopenscience'),
+            field=models.URLField(blank=True, default='https://www.crowdrise.com/centerforopenscience'),
         ),
         migrations.AlterUniqueTogether(
             name='dismissedalert',

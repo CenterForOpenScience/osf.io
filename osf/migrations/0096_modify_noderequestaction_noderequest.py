@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='noderequestaction',
             name='permissions',
-            field=models.CharField(choices=[(b'admin', 'Admin'), (b'read', 'Read'), (b'write', 'Write')], default=b'read', max_length=5),
+            field=models.CharField(choices=[('admin', 'Admin'), ('read', 'Read'), ('write', 'Write')], default='read', max_length=5),
         ),
         migrations.AddField(
             model_name='noderequestaction',
