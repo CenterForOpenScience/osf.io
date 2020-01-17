@@ -330,10 +330,13 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
             return
         if not dest_addon.has_auth:
             return
-        team_info = utils.TeamInfo(self.fileaccess_token,
-                                   self.management_token,
-                                   admin_dbmid=self.admin_dbmid)
-        utils.copy_folders(team_info, self, '/', dest_addon, '/')
+        try:
+            team_info = utils.TeamInfo(self.fileaccess_token,
+                                       self.management_token,
+                                       admin_dbmid=self.admin_dbmid)
+            utils.copy_folders(team_info, self, '/', dest_addon, '/')
+        except Exception:
+            logger.exception('cannot copy folders. Dropbox Business API Error: template node={}, new node={}'.format(tmpl_node._id, new_node._id))
 
     def set_two_options(self, f_option, m_option, save=False):
         self.fileaccess_option = f_option
