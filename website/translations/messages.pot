@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-01-14 16:45+0900\n"
+"POT-Creation-Date: 2020-01-17 11:36+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -108,6 +108,7 @@ msgstr ""
 #: templates/include/profile/schools.mako:120
 #: templates/profile/oauth_app_detail.mako:88
 #: templates/profile/personal_tokens_detail.mako:55
+#: templates/project/addon/node_settings_default.mako:74
 #: templates/project/addon/user_settings.mako:13
 #: templates/project/project.mako:570
 msgid "Save"
@@ -1106,6 +1107,7 @@ msgstr ""
 
 #: templates/profile/oauth_app_detail.mako:84
 #: templates/profile/personal_tokens_detail.mako:49
+#: templates/project/addon/node_settings_default.mako:72
 #: templates/project/modal_add_contributor.mako:340
 #: templates/project/modal_generate_private_link.mako:86
 #: templates/project/modal_remove_contributor.mako:95
@@ -1240,6 +1242,7 @@ msgid "Connect or Reauthorize Account"
 msgstr ""
 
 #: templates/profile/user_settings_default.mako:14
+#: templates/project/addon/node_settings_default.mako:10
 msgid "Disconnect Account"
 msgstr ""
 
@@ -1684,6 +1687,7 @@ msgstr ""
 msgid "Affiliated Institutions:"
 msgstr ""
 
+#: templates/project/addon/node_settings_default.mako:46
 #: templates/project/project.mako:202
 msgid "None"
 msgstr ""
@@ -2281,6 +2285,31 @@ msgstr ""
 
 #: templates/project/addon/node_settings.mako:15
 msgid "Submit"
+msgstr ""
+
+#: templates/project/addon/node_settings_default.mako:17
+msgid "Import Account from Profile"
+msgstr ""
+
+#: templates/project/addon/node_settings_default.mako:24
+msgid "Loading ..."
+msgstr ""
+
+#: templates/project/addon/node_settings_default.mako:31
+msgid "Connect Account"
+msgstr ""
+
+#: templates/project/addon/node_settings_default.mako:41
+msgid "Current Folder:"
+msgstr ""
+
+#: templates/project/addon/node_settings_default.mako:58
+msgid "Loading folders..."
+msgstr ""
+
+#: templates/project/addon/node_settings_default.mako:67
+#, python-format
+msgid "Connect <b>&ldquo;<span %(data_bind)s></span>&rdquo;</b>?"
 msgstr ""
 
 #: templates/project/addon/page.mako:4

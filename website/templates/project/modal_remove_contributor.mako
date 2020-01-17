@@ -34,7 +34,7 @@
                     <!-- removeNoChildren page -->
                     <div data-bind='if:page() === REMOVE_NO_CHILDREN'>
                         <div class="form-group" data-bind="if:contributorToRemove">
-                            <span>${_('Remove <b %(data_bind1)s></b> from <span %(data_bind2)s></span>?') % dict(data_bind1='data-bind="text:removeSelf() ? \'yourself\' : contributorToRemove()[\'fullname\']"',data_bind2='data-bind="text: title"')}</span>
+                            <span>${_('Remove <b %(data_bind1)s></b> from <span %(data_bind2)s></span>?') % dict(data_bind1='data-bind="text:removeSelf() ? \'yourself\' : contributorToRemove()[\'fullname\']"',data_bind2='data-bind="text: title"') | n}</span>
                         </div>
 
                     </div><!-- end removeNoChildren page -->
