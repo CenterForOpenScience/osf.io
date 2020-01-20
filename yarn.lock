@@ -91,6 +91,11 @@ after@0.8.2:
   resolved "https://registry.yarnpkg.com/after/-/after-0.8.2.tgz#fedb394f9f0e02aa9768e702bda23b505fae7e1f"
   integrity sha1-/ts5T58OAqqXaOcCvaI7UF+ufh8=
 
+agh.sprintf@^0.0.11:
+  version "0.0.11"
+  resolved "https://registry.yarnpkg.com/agh.sprintf/-/agh.sprintf-0.0.11.tgz#1bf26223364e28880ec95a6369811329189a08ab"
+  integrity sha1-G/JiIzZOKIgOyVpjaYETKRiaCKs=
+
 ajv-keywords@^2.0.0:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/ajv-keywords/-/ajv-keywords-2.1.1.tgz#617997fc5f60576894c435f940d819e135b80762"

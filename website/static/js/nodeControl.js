@@ -18,6 +18,7 @@ var NodesPrivacy = require('js/nodesPrivacy').NodesPrivacy;
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 var RequestAccess = require('js/requestAccess.js');
 
@@ -116,7 +117,7 @@ var ProjectViewModel = function(data, options) {
         $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
             name: 'description',
             title: 'Edit Description',
-            emptytext: _('Add a brief description to your ') + project_or_component_label,
+            emptytext: _(agh.sprintf('Add a brief description to your %1$s',project_or_component_label)),
             emptyclass: 'text-muted',
             value: $osf.decodeText(self.description()),
             success: function(response, newValue) {
