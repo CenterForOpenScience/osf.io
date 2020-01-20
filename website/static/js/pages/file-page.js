@@ -6,6 +6,10 @@ var Raven = require('raven-js');
 
 require('jquery-tagsinput');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 m.mount(document.getElementsByClassName('file-view-panels')[0], FileViewPage(window.contextVars));
 
 var tagUrl = '/api/v1/' + window.contextVars.node.id + '/osfstorage' + window.contextVars.file.path + '/tags/';
