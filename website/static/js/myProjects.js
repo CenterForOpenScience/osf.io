@@ -1113,10 +1113,10 @@ var MyProjects = {
                 m('.col-xs-4.p-sm', m('.pull-right', m.component(AddProject, {
                     buttonTemplate: m('.btn.btn-success.btn-success-high-contrast.f-w-xl[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
                         $osf.trackClick('myProjects', 'add-project', 'open-add-project-modal');
-                    }}, 'Create Project'),
+                    }}, _('Create Project')),
                     parentID: null,
                     modalID: 'addProject',
-                    title: 'Create new project',
+                    title: _('Create new project'),
                     categoryList: ctrl.categoryList,
                     stayCallback: function () {
                         var ap = this; // AddProject controller
@@ -1381,7 +1381,7 @@ var Collections = {
                           }
                           else {
                               var name = projectName ? projectName : args.selected()[index] ? args.selected()[index].data.name : 'Item ';
-                              var message = '"' + name + _('" is already in "') + collection.label + '"' ;
+                              var message = '"' + name + agh.sprintf(_('" is already in "%1$s"') , collection.label ) ;
                               $osf.growl(message,null, 'warning', 4000);
                               save(index + 1, data);
                           }
@@ -1499,7 +1499,7 @@ var Collections = {
                             }
                         }, [
                             m('i.fa.fa-pencil'),
-                            ' Rename'
+                            _(' Rename')
                         ]),
                         m('li[data-toggle="modal"][data-target="#removeColl"].pointer',{
                             onclick : function (e) {
@@ -1508,7 +1508,7 @@ var Collections = {
                             }
                         }, [
                             m('i.fa.fa-trash'),
-                            ' Delete'
+                            _(' Delete')
                         ])
                     ])
                 ]) : ''
@@ -1606,7 +1606,7 @@ var Collections = {
                                 ctrl.isValid(false);
                                 $osf.trackClick('myProjects', 'edit-collection', 'click-cancel-rename-button');
                             }
-                        },'Cancel'),
+                        },_('Cancel')),
                         ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : function() {
                             ctrl.renameCollection();
                             $osf.trackClick('myProjects', 'edit-collection', 'click-rename-button');
@@ -1622,7 +1622,7 @@ var Collections = {
                         }}, [
                             m('span[aria-hidden="true"]','×')
                         ]),
-                        m('h3.modal-title', 'Delete collection "' + ctrl.collectionMenuObject().item.label + '"?')
+                        m('h3.modal-title', agh.sprintf(_('Delete collection "%1$s"?') , ctrl.collectionMenuObject().item.label))
                     ]),
                     body: m('.modal-body', [
                         m('p', _('This will delete your collection, but your projects will not be deleted.'))
@@ -1630,12 +1630,12 @@ var Collections = {
                     footer : m('.modal-footer', [
                         m('button[type="button"].btn.btn-default[data-dismiss="modal"]', {onclick: function() {
                             $osf.trackClick('myProjects', 'edit-collection', 'click-cancel-delete-collection');
-                        }}, 'Cancel'),
+                        }}, _('Cancel')),
                         m('button[type="button"].btn.btn-danger', {
                             onclick : function() {
                                 ctrl.deleteCollection();
                                 $osf.trackClick('myProjects', 'edit-collection', 'click-delete-collection-button');
-                            }},'Delete')
+                            }},_('Delete'))
                     ])
                 })
             ])
@@ -1992,11 +1992,11 @@ var Information = {
                     m('ul.nav.nav-tabs.m-b-md[role="tablist"]', [
                         m('li[role="presentation"].active', m('a[href="#tab-information"][aria-controls="information"][role="tab"][data-toggle="tab"]', {onclick: function(){
                             $osf.trackClick('myProjects', 'information-panel', 'open-information-tab');
-                        }}, 'Information')),
+                        }}, _('Information'))),
                         resourceType === 'preprints' ? '' : m('li[role="presentation"]', m('a[href="#tab-activity"][aria-controls="activity"][role="tab"][data-toggle="tab"]', {onclick : function() {
                             args.getCurrentLogs();
                             $osf.trackClick('myProjects', 'information-panel', 'open-activity-tab');
-                        }}, 'Activity'))
+                        }}, _('Activity')))
                     ]),
                     m('.tab-content', [
                         m('[role="tabpanel"].tab-pane.active#tab-information',[

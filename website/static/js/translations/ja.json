@@ -59,7 +59,7 @@
 			},
           "You have not made any registrations yet. Go to ": {
 		    "msgid": "You have not made any registrations yet. Go to ",
-		    "msgstr": ["まだ登録していません。こちらへ："]
+		    "msgstr": ["まだ登録していません。登録の仕組みを学習するためにはこちらへ："]
 			},
           "Guides": {
 		    "msgid": "Guides",
@@ -67,7 +67,7 @@
 			},
           " to learn how registrations work.": {
 		    "msgid": " to learn how registrations work.",
-		    "msgstr": ["登録の仕組みを学習するために。"]
+		    "msgstr": [" "]
 			},
           "(You have not made any preprints yet. Learn more about preprints in the ": {
 		    "msgid": "(You have not made any preprints yet. Learn more about preprints in the ",
@@ -105,6 +105,14 @@
 		    "msgid": "Please reload the page.",
 		    "msgstr": ["ページをリロードしてください。"]
 			},
+          "Create Project": {
+		    "msgid": "Create Project",
+		    "msgstr": ["プロジェクト作成"]
+			},
+          "Create new project": {
+		    "msgid": "Create new project",
+		    "msgstr": ["新しいプロジェクトを作成"]
+			},
           "\" collection could not be created.": {
 		    "msgid": "\" collection could not be created.",
 		    "msgstr": ["\"コレクションを作成できませんでした。"]
@@ -117,9 +125,9 @@
 		    "msgid": "\" could not be renamed.",
 		    "msgstr": ["はリネームできませんでした。"]
 			},
-          "\" is already in \"": {
-		    "msgid": "\" is already in \"",
-		    "msgstr": ["はすでに入っています："]
+          "\" is already in \"%1$s\"": {
+		    "msgid": "\" is already in \"%1$s\"",
+		    "msgstr": ["はすでに「%1$s」に入っています"]
 			},
           "\"Bookmarks\" is a reserved collection name. Please use another name.": {
 		    "msgid": "\"Bookmarks\" is a reserved collection name. Please use another name.",
@@ -140,6 +148,14 @@
           "Rename": {
 		    "msgid": "Rename",
 		    "msgstr": ["リネーム"]
+			},
+          " Rename": {
+		    "msgid": " Rename",
+		    "msgstr": [" リネーム"]
+			},
+          " Delete": {
+		    "msgid": " Delete",
+		    "msgstr": [" 削除"]
 			},
           "This will delete your collection, but your projects will not be deleted.": {
 		    "msgid": "This will delete your collection, but your projects will not be deleted.",
@@ -213,17 +229,21 @@
 		    "msgid": "Rename to: ",
 		    "msgstr": ["変更するコレクション名"]
 			},
-          "Delete collection \"": {
-		    "msgid": "Delete collection \"",
-		    "msgstr": ["コレクションを削除しますか？："]
-			},
-          "\"?": {
-		    "msgid": "\"?",
-		    "msgstr": [" "]
+          "Delete collection \"%1$s\"?": {
+		    "msgid": "Delete collection \"%1$s\"?",
+		    "msgstr": ["コレクション「%1$s」を削除しますか？"]
 			},
           "Parent projects": {
 		    "msgid": "Parent projects",
 		    "msgstr": ["親プロジェクト"]
+			},
+          "Information": {
+		    "msgid": "Information",
+		    "msgstr": ["情報"]
+			},
+          "Activity": {
+		    "msgid": "Activity",
+		    "msgstr": ["活動"]
 			},
           "Visibility: ": {
 		    "msgid": "Visibility: ",
@@ -243,7 +263,7 @@
 			},
           "Permission: ": {
 		    "msgid": "Permission: ",
-		    "msgstr": ["許可："]
+		    "msgstr": ["権限："]
 			},
           "Last Modified on: ": {
 		    "msgid": "Last Modified on: ",
