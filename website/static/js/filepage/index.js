@@ -17,6 +17,8 @@ var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
 
+var agh = require('agh.sprintf');
+
 var History = require('exports-loader?History!history');
 var SocialShare = require('js/components/socialshare');
 
@@ -135,8 +137,7 @@ var FileViewPage = {
             } else if ((self.file.checkoutUser) && (self.file.checkoutUser !== self.context.currentUser.id)) {
                 m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m('span', [
                     m('strong', _('File is checked out.')),
-                    _(' This file has been checked out by a '),
-                    m('a[href="/' + self.file.checkoutUser + '"]', _('collaborator')),
+                    _(agh.sprintf(' This file has been checked out by a %1$s',m('a[href="/' + self.file.checkoutUser + '"]', _('collaborator')))),
                     _('. It needs to be checked in before any changes can be made.')
                 ])));
             }

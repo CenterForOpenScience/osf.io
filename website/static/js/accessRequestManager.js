@@ -16,6 +16,8 @@ var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
 
+var agh = require('agh.sprintf');
+
 var AccessRequestModel = function(accessRequest, pageOwner, isRegistration, isParentAdmin, options) {
     var self = this;
     self.options = options;

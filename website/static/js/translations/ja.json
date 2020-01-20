@@ -43,15 +43,15 @@
 			},
           "There have been no completed registrations for this institution, but you can view the ": {
 		    "msgid": "There have been no completed registrations for this institution, but you can view the ",
-		    "msgstr": ["この機関の登録は完了していませんが、表示できます："]
+		    "msgstr": ["この機関の登録は完了していませんが、こちらを表示できます："]
 			},
           "newest public registrations": {
 		    "msgid": "newest public registrations",
-		    "msgstr": ["最新の公的登録"]
+		    "msgstr": ["最新の公開登録"]
 			},
           "popular public registrations.": {
 		    "msgid": "popular public registrations.",
-		    "msgstr": ["人気のある公的な登録"]
+		    "msgstr": ["人気のある公開登録"]
 			},
           " or ": {
 		    "msgid": " or ",
@@ -671,11 +671,11 @@
 			},
           "collaborator": {
 		    "msgid": "collaborator",
-		    "msgstr": [" "]
+		    "msgstr": ["コラボレータ"]
 			},
-          " This file has been checked out by a ": {
-		    "msgid": " This file has been checked out by a ",
-		    "msgstr": ["このファイルはコラボーレータによってチェックアウトされました。"]
+          "This file has been checked out by a %1$s": {
+		    "msgid": "This file has been checked out by a %1$s",
+		    "msgstr": ["このファイルは%1$sによってチェックアウトされました。"]
 			},
           ". It needs to be checked in before any changes can be made.": {
 		    "msgid": ". It needs to be checked in before any changes can be made.",
@@ -833,9 +833,9 @@
 		    "msgid": "Title cannot exceed 512 characters.",
 		    "msgstr": ["タイトルは512文字を超えることはできません。"]
 			},
-          "Add a brief description to your ": {
-		    "msgid": "Add a brief description to your ",
-		    "msgstr": ["プロジェクト又はコンポーネントに関する簡単な説明を追加します"]
+          "Add a brief description to your %1$s": {
+		    "msgid": "Add a brief description to your %1$s",
+		    "msgstr": ["%1$sに関する簡単な説明を追加します"]
 			},
           "The project could not be removed": {
 		    "msgid": "The project could not be removed",
