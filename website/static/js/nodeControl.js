@@ -113,7 +113,7 @@ var ProjectViewModel = function(data, options) {
             }
         }));
 
-        var project_or_component_label = self.categoryValue() === 'project' ? 'project' : 'component';
+        var project_or_component_label = self.categoryValue() === 'project' ? _('project') : _('component');
         $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
             name: 'description',
             title: 'Edit Description',

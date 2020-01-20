@@ -833,6 +833,14 @@
 		    "msgid": "Title cannot exceed 512 characters.",
 		    "msgstr": ["タイトルは512文字を超えることはできません。"]
 			},
+          "project": {
+		    "msgid": "project",
+		    "msgstr": ["プロジェクト"]
+			},
+          "component": {
+		    "msgid": "component",
+		    "msgstr": ["コンポーネント"]
+			},
           "Add a brief description to your %1$s": {
 		    "msgid": "Add a brief description to your %1$s",
 		    "msgstr": ["%1$sに関する簡単な説明を追加します"]
