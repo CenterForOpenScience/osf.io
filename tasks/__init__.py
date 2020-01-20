@@ -51,6 +51,9 @@ def task(*args, **kwargs):
 @task
 def server(ctx, host=None, port=5000, debug=True, gitlogs=False):
     """Run the app server."""
+
+    sys.setrecursionlimit(settings.RECURSION_LIMIT)  # [GRDM-9050, GRDM-16889]
+
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not debug:
         if os.environ.get('WEB_REMOTE_DEBUG', None):
             import pydevd

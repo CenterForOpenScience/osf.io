@@ -1,0 +1,81 @@
+<!-- Team member file access -->
+<div class="addon-oauth"
+     data-addon-short-name="{{ addon.addon_short_name }}"
+     data-addon-name="{{ addon.addon_full_name }} / Team member file access"
+     data-institution-id="{{ institution.id }}">
+    <h4 class="addon-title">
+      <img class="addon-icon" src="{{ addon.addon_icon_url }}">
+      <span data-bind="text:properName">{# addon.addon_full_name #}</span>
+      {% if addon.is_supported_force_to_use %}
+      <small data-bind="visible: accounts().length == 0">
+        <a data-bind="click: connectAccount" class="pull-right text-primary">Connect Account</a>
+      </small>
+      <small data-bind="visible: accounts().length > 0">
+        <a data-bind="click: connectAccount" class="pull-right text-primary">Reauthorize Account</a>
+      </small>
+      {% endif %}
+    </h4>
+
+    {% if addon.is_supported_force_to_use %}
+    <div class="addon-auth-table" id="{{ addon.addon_short_name }}-header">
+        <!-- ko foreach: accounts -->
+        <a data-bind="click: $root.askDisconnect.bind($root)" class="text-danger pull-right default-authorized-by">Disconnect Account</a>
+
+        <div class="m-h-lg">
+            <table class="table table-hover">
+                <thead>
+                    <tr class="user-settings-addon-auth">
+                        <th class="text-muted default-authorized-by">Authorized by <em><span data-bind="text: name"></span></em></th><th></th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        <!-- /ko -->
+    </div>
+    <!-- Flashed Messages -->
+    <div class="help-block">
+        <p data-bind="html: message, attr: { class: messageClass }"></p>
+    </div>
+    {% endif %}
+</div>
+
+
+<!-- Team member management -->
+<div class="addon-oauth"
+     data-addon-short-name="{{ addon.addon_short_name }}_manage"
+     data-addon-name="{{ addon.addon_full_name }} / Team member management"
+     data-institution-id="{{ institution.id }}">
+    <h4 class="addon-title">
+      <img class="addon-icon" src="{{ addon.addon_icon_url }}">
+      <span data-bind="text:properName">{# addon.addon_full_name #}</span>
+      {% if addon.is_supported_force_to_use %}
+      <small data-bind="visible: accounts().length == 0">
+        <a data-bind="click: connectAccount" class="pull-right text-primary">Connect Account</a>
+      </small>
+      <small data-bind="visible: accounts().length > 0">
+        <a data-bind="click: connectAccount" class="pull-right text-primary">Reauthorize Account</a>
+      </small>
+      {% endif %}
+    </h4>
+    {% if addon.is_supported_force_to_use %}
+    <div class="addon-auth-table" id="{{ addon.addon_short_name }}-management-header">
+        <!-- ko foreach: accounts -->
+        <a data-bind="click: $root.askDisconnect.bind($root)" class="text-danger pull-right default-authorized-by">Disconnect Account</a>
+
+        <div class="m-h-lg">
+            <table class="table table-hover">
+                <thead>
+                    <tr class="user-settings-addon-auth">
+                        <th class="text-muted default-authorized-by">Authorized by <em><span data-bind="text: name"></span></em></th><th></th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        <!-- /ko -->
+    </div>
+    <!-- Flashed Messages -->
+    <div class="help-block">
+        <p data-bind="html: message, attr: { class: messageClass }"></p>
+    </div>
+    {% endif %}
+</div>

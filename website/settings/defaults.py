@@ -31,6 +31,8 @@ BCRYPT_LOG_ROUNDS = 12
 LOG_LEVEL = logging.INFO
 TEST_ENV = False
 
+RECURSION_LIMIT = 2000  # [GRDM-9050, GRDM-16889]
+
 with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
     VERSION = json.load(fobj)['version']
 
