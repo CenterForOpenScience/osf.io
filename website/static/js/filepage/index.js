@@ -137,7 +137,7 @@ var FileViewPage = {
             } else if ((self.file.checkoutUser) && (self.file.checkoutUser !== self.context.currentUser.id)) {
                 m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m('span', [
                     m('strong', _('File is checked out.')),
-                    agh.sprintf(_(' This file has been checked out by a %1$s'),JSON.stringify(m('a[href="/' + self.file.checkoutUser + '"]', _('collaborator')))),
+                    agh.sprintf(_(' This file has been checked out by a %1$s'),m('a[href="/' + self.file.checkoutUser + '"]', 'collaborator')),
                     _('. It needs to be checked in before any changes can be made.')
                 ])));
             }
