@@ -221,7 +221,7 @@ def celery_beat(ctx, level='debug', schedule=None):
     ctx.run(bin_prefix(cmd), pty=True)
 
 @task
-def migrate_search(ctx, delete=True, remove=False, index=settings.ELASTIC_INDEX):
+def migrate_search(ctx, delete=True, remove=False, remove_all=False, index=None):
     """Migrate the search-enabled models."""
     from website.app import init_app
     init_app(routes=False, set_backends=False)
@@ -233,32 +233,17 @@ def migrate_search(ctx, delete=True, remove=False, index=settings.ELASTIC_INDEX)
     for logger in SILENT_LOGGERS:
         logging.getLogger(logger).setLevel(logging.ERROR)
 
-    migrate(delete, remove=remove, index=index)
+    migrate(delete, remove=remove, remove_all=remove_all, index=index)
 
 @task
 def rebuild_search(ctx):
     """Delete and recreate the index for elasticsearch"""
     from website.app import init_app
-    import requests
-    from website import settings
 
     init_app(routes=False, set_backends=True)
-    if not settings.ELASTIC_URI.startswith('http'):
-        protocol = 'http://' if settings.DEBUG_MODE else 'https://'
-    else:
-        protocol = ''
-    url = '{protocol}{uri}/{index}'.format(
-        protocol=protocol,
-        uri=settings.ELASTIC_URI.rstrip('/'),
-        index=settings.ELASTIC_INDEX,
-    )
-    print('Deleting index {}'.format(settings.ELASTIC_INDEX))
-    print('----- DELETE {}*'.format(url))
-    requests.delete(url + '*')
-    print('Creating index {}'.format(settings.ELASTIC_INDEX))
-    print('----- PUT {}'.format(url))
-    requests.put(url)
-    migrate_search(ctx, delete=False)
+
+    # remove_all=True for development
+    migrate_search(ctx, delete=False, remove=True, remove_all=False)
 
 
 @task
@@ -355,6 +340,7 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     if params:
         params = [params] if isinstance(params, basestring) else params
         args.extend(params)
+
     retcode = pytest.main(args)
     sys.exit(retcode)
 

@@ -11,11 +11,13 @@ logger = logging.getLogger(__name__)
 
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
+    'api.base.rdmlogger',
     'api.caching.tasks',
     'factory.generate',
     'factory.containers',
     'framework.analytics',
     'framework.auth.core',
+    'framework.sentry',
     'website.app',
     'website.archiver.tasks',
     'website.mails',
