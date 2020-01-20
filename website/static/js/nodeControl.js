@@ -117,7 +117,7 @@ var ProjectViewModel = function(data, options) {
         $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
             name: 'description',
             title: 'Edit Description',
-            emptytext: _(agh.sprintf('Add a brief description to your %1$s',project_or_component_label)),
+            emptytext: agh.sprintf(_('Add a brief description to your %1$s'),project_or_component_label),
             emptyclass: 'text-muted',
             value: $osf.decodeText(self.description()),
             success: function(response, newValue) {
