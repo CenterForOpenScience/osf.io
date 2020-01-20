@@ -397,6 +397,8 @@ DOWNLOAD_ACTIONS = set([
 @no_auto_transaction
 @must_be_valid_project(quickfiles_valid=True, preprints_valid=True)
 def create_waterbutler_log(payload, **kwargs):
+    file_created_or_updated = False
+    file_node_moved = False
     with transaction.atomic():
         try:
             auth = payload['auth']
@@ -512,7 +514,7 @@ def create_waterbutler_log(payload, **kwargs):
                 metadata = payload.get('metadata') or payload.get('destination')
                 if metadata['kind'] == 'file':
                     created_flag = action == NodeLog.FILE_ADDED
-                    timestamp.file_created_or_updated(node, metadata, user.id, created_flag)
+                    file_created_or_updated = True
             # Update moved, or renamed timestamp records
             elif action in (NodeLog.FILE_MOVED, NodeLog.FILE_RENAMED):
                 metadata = payload.get('metadata') or payload.get('destination')
@@ -521,12 +523,35 @@ def create_waterbutler_log(payload, **kwargs):
                 src_provider = payload['source']['provider']
                 dest_provider = payload['destination']['provider']
                 src_metadata = payload.get('source', None)
-                timestamp.file_node_moved(auth.user.id, node._id, src_provider, dest_provider, src_path, dest_path, metadata, src_metadata)
+                file_node_moved = True
             # Update status of deleted timestamp records
             elif action in (NodeLog.FILE_REMOVED):
                 src_path = payload['metadata']['materialized']
                 provider = payload['metadata']['provider']
                 timestamp.file_node_deleted(node._id, provider, src_path)
+
+    def prepare_file_node(provider):
+        with transaction.atomic():
+            # to reduce possibility of MultipleObjectsReturned.
+            # [GRDM-13530, 15698, 17045, 17065]
+            # (MultipleObjectsReturned may occur when creation of
+            #  BaseFileNode is called in long transaction.)
+            BaseFileNode.resolve_class(
+                provider, BaseFileNode.FILE
+            ).get_or_create(node, '/' + metadata.get('path').lstrip('/'))
+
+    if file_created_or_updated:
+        prepare_file_node(metadata['provider'])
+        with transaction.atomic():  # long transaction
+            timestamp.file_created_or_updated(node, metadata, user.id,
+                                              created_flag)
+    elif file_node_moved:
+        prepare_file_node(dest_provider)
+        with transaction.atomic():  # long transaction
+            timestamp.file_node_moved(auth.user.id, node._id,
+                                      src_provider, dest_provider,
+                                      src_path, dest_path,
+                                      metadata, src_metadata)
 
     with transaction.atomic():
         file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)

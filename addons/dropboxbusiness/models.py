@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-import datetime
 import httplib as http
+import six
 
 from django.db import models
-from django.db.models.signals import post_save
+from django.db.models.signals import pre_save, post_save, post_delete
 from django.dispatch import receiver
-from django.utils import timezone
 from dropbox.dropbox import DropboxTeam
 from dropbox.exceptions import DropboxException
 
 from osf.models.node import Node
+from osf.models.contributor import Contributor
 from osf.models.files import File, Folder, BaseFileNode
 from osf.models.institution import Institution
 from osf.models.rdm_addons import RdmAddonOption
@@ -18,6 +18,7 @@ from addons.dropbox.models import Provider as DropboxProvider
 from addons.dropboxbusiness import settings, utils
 from addons.dropboxbusiness.apps import DropboxBusinessAddonAppConfig
 from website import settings as website_settings
+from website.util import timestamp
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.logging import logging
@@ -35,15 +36,46 @@ class DropboxBusinessFolder(DropboxBusinessFileNode, Folder):
 
 
 class DropboxBusinessFile(DropboxBusinessFileNode, File):
+    HASH_KEY_NAME = 'Dropbox content_hash'
+
     @property
     def _hashes(self):
         try:
             val = self._history[-1]['extra']['hashes']['dropboxbusiness']
-            return {'Dropbox content_hash': val,
-                    'Dropbox Business content_hash': val,
-                    'sha256': val}
+            return {self.HASH_KEY_NAME: val}
         except (IndexError, KeyError):
             return None
+
+    # return (hash_type, hash_value)
+    def get_hash_for_timestamp(self):
+        if self._hashes:
+            dropbox_sha256 = self._hashes.get(self.HASH_KEY_NAME)
+            if dropbox_sha256:
+                sha512 = timestamp.sha256_to_sha512(dropbox_sha256)
+                return timestamp.HASH_TYPE_SHA512, sha512
+        return None, None  # unsupported
+
+    def _my_node_settings(self):
+        node = self.target
+        if node:
+            addon = node.get_addon(self.provider)
+            if addon:
+                return addon
+        return None
+
+    # return (timestamp_data, timestamp_status, context)
+    def get_timestamp(self):
+        node_settings = self._my_node_settings()
+        if node_settings:
+            return utils.get_timestamp(node_settings, self.path)
+        return None, None, None
+
+    def set_timestamp(self, timestamp_data, timestamp_status, context):
+        node_settings = self._my_node_settings()
+        if node_settings:
+            utils.set_timestamp(node_settings, self.path,
+                                timestamp_data, timestamp_status,
+                                team_info=context)
 
 
 class DropboxBusinessFileaccessProvider(DropboxProvider):
@@ -158,16 +190,15 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
 
     @property
     def team_folder_name(self):
-        return u'{} ({}{}{})'.format(self.owner.title,
-                                     settings.TEAM_FOLDER_NAME_PREFIX,
-                                     self.owner._id,
-                                     settings.TEAM_FOLDER_NAME_SUFFIX)
+        fmt = six.u(settings.TEAM_FOLDER_NAME_FORMAT)
+        return fmt.format(title=self.owner.title,
+                          guid=self.owner._id)
 
     @property
     def group_name(self):
-        return u'{}{}{}'.format(settings.GROUP_NAME_PREFIX,
-                                self.owner._id,
-                                settings.GROUP_NAME_SUFFIX)
+        fmt = six.u(settings.GROUP_NAME_FORMAT)
+        return fmt.format(title=self.owner.title,
+                          guid=self.owner._id)
 
     def sync_members(self):
         members = [
@@ -195,6 +226,13 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
             )
         except DropboxException:
             logger.exception(u'Team folder cannot be renamed: node={}, team_folder_id={}, name={}'.format(self.owner._id, self.team_folder_id, self.team_folder_name))
+            # ignored
+
+        try:
+            mclient = DropboxTeam(self.management_token)
+            utils.rename_group(mclient, self.group_id, self.group_name)
+        except DropboxException:
+            logger.exception(u'Team group cannot be renamed: node={}, team_folder_id={}, group name={}'.format(self.owner._id, self.team_folder_id, self.group_name))
             # ignored
 
     def create_team_folder(self, grdm_member_email_list,
@@ -280,6 +318,26 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         return self.fileaccess_token and self.management_token and \
             self.admin_dbmid
 
+    def after_fork(self, node, fork, user, save=True):
+        # dropboxbusiness-addon cannot not use parent NodeSettings.
+        pass
+
+    def after_template(self, tmpl_node, new_node, user, save=True):
+        if not self.has_auth:
+            return
+        dest_addon = new_node.get_addon(self.short_name)
+        if not dest_addon:
+            return
+        if not dest_addon.has_auth:
+            return
+        try:
+            team_info = utils.TeamInfo(self.fileaccess_token,
+                                       self.management_token,
+                                       admin_dbmid=self.admin_dbmid)
+            utils.copy_folders(team_info, self, '/', dest_addon, '/')
+        except Exception:
+            logger.exception('cannot copy folders. Dropbox Business API Error: template node={}, new node={}'.format(tmpl_node._id, new_node._id))
+
     def set_two_options(self, f_option, m_option, save=False):
         self.fileaccess_option = f_option
         self.management_option = m_option
@@ -340,13 +398,43 @@ def init_addon(node, addon_name):
                              admin_group, team_name,
                              save=True)
 
-SYNC_CACHE_TIME = 5
-sync_time = None
+
+# store values in a short time to detect changed fields
+class SyncInfo(object):
+    sync_info_dict = {}  # Node.id -> SyncInfo
+
+    def __init__(self):
+        self.old_node_title = None
+        self.need_to_update_members = False
+
+    @classmethod
+    def get(cls, id):
+        info = cls.sync_info_dict.get(id)
+        if info is None:
+            info = SyncInfo()
+            cls.sync_info_dict[id] = info
+        return info
+
+
+@receiver(pre_save, sender=Node)
+def node_pre_save(sender, instance, **kwargs):
+    if instance.is_deleted:
+        return
+
+    addon_name = DropboxBusinessAddonAppConfig.short_name
+    if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
+        return
+
+    try:
+        old_node = Node.objects.get(id=instance.id)
+        syncinfo = SyncInfo.get(old_node.id)
+        syncinfo.old_node_title = old_node.title
+    except Exception:
+        pass
+
 
 @receiver(post_save, sender=Node)
-def on_node_updated(sender, instance, created, **kwargs):
-    global sync_time
-
+def node_post_save(sender, instance, created, **kwargs):
     if instance.is_deleted:
         return
 
@@ -355,16 +443,29 @@ def on_node_updated(sender, instance, created, **kwargs):
         return
     if created:
         init_addon(instance, addon_name)
-        sync_time = timezone.now()
     else:
-        # skip immediately after init_addon() and sync_members()
-        if sync_time is not None and \
-           timezone.now() < \
-           sync_time + datetime.timedelta(seconds=SYNC_CACHE_TIME):
-            return
         ns = instance.get_addon(addon_name)
         if ns is None or not ns.complete:  # disabled
             return
-        ns.sync_members()
-        ns.rename_team_folder()
-        sync_time = timezone.now()
+        syncinfo = SyncInfo.get(instance.id)
+        if ns.owner.title != syncinfo.old_node_title:
+            ns.rename_team_folder()
+        if syncinfo.need_to_update_members:
+            ns.sync_members()
+            syncinfo.need_to_update_members = False
+
+
+@receiver(post_save, sender=Contributor)
+@receiver(post_delete, sender=Contributor)
+def update_group_members(sender, instance, **kwargs):
+    addon_name = DropboxBusinessAddonAppConfig.short_name
+    if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
+        return
+    node = instance.node
+    if node.is_deleted:
+        return
+    ns = node.get_addon(addon_name)
+    if ns is None or not ns.complete:  # disabled
+        return
+    syncinfo = SyncInfo.get(node.id)
+    syncinfo.need_to_update_members = True

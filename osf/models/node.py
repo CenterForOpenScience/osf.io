@@ -1909,6 +1909,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         new.root = None
         new.save()  # Recompute root on save()
+
+        # After template callback
+        for addon in self.get_addons():
+            method = getattr(addon, 'after_template', None)
+            if method:
+                method(self, new, auth.user)
+
         return new
 
     def next_descendants(self, auth, condition=lambda auth, node: True):

@@ -6,12 +6,24 @@ DROPBOX_BUSINESS_MANAGEMENT_SECRET = None
 
 DROPBOX_BUSINESS_AUTH_CSRF_TOKEN = 'dropboxbusiness-auth-csrf-token'
 
-TEAM_FOLDER_NAME_PREFIX = 'GRDM-'
-TEAM_FOLDER_NAME_SUFFIX = ''
-GROUP_NAME_PREFIX = 'GRDM-'
-GROUP_NAME_SUFFIX = ''
+TEAM_FOLDER_NAME_FORMAT = '{title}_GRDM_{guid}'  # available: {title} {guid}
+GROUP_NAME_FORMAT = 'GRDM_{guid}'  # available: {title} {guid}
 
 ADMIN_GROUP_NAME = 'GRDM-ADMIN'
+
+USE_PROPERTY_TIMESTAMP = True
+PROPERTY_GROUP_NAME = 'GRDM'
+PROPERTY_KEY_TIMESTAMP_STATUS = 'timestamp-status'
+
+PROPERTY_KEYS = (PROPERTY_KEY_TIMESTAMP_STATUS,)
+
+PROPERTY_MAX_DATA_SIZE = 1000
+
+PROPERTY_SPLIT_DATA_CONF = {
+    'timestamp': {
+        'max_size': 5000,
+    }
+}
 
 # Max file size permitted by frontend in megabytes
 MAX_UPLOAD_SIZE = 150
