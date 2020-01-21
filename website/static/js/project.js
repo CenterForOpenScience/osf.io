@@ -89,7 +89,7 @@ NodeActions.forkNode = function() {
 
 NodeActions.forkPointer = function(nodeId) {
     bootbox.confirm({
-        title: 'Fork this project?',
+        title: _('Fork this project?'),
         message: _('Are you sure you want to fork this project?'),
         callback: function(result) {
             if(result) {

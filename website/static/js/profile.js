@@ -715,7 +715,7 @@ var SocialViewModel = function(urls, modes, preventUnsaved) {
     self.removeWebsite = function(profileWebsite) {
         var profileWebsites = ko.toJS(self.profileWebsites());
             bootbox.confirm({
-                title: 'Remove website?',
+                title: _('Remove website?'),
                 message: _('Are you sure you want to remove this website from your profile?'),
                 callback: function(confirmed) {
                     if (confirmed) {

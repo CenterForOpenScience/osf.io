@@ -363,11 +363,15 @@
 			},
           "Discard changes?": {
 		    "msgid": "Discard changes?",
-		    "msgstr": ["変更を破棄？"]
+		    "msgstr": ["変更を破棄しますか？"]
 			},
           "Discard": {
 		    "msgid": "Discard",
 		    "msgstr": ["破棄"]
+			},
+          "Remove website?": {
+		    "msgid": "Remove website?",
+		    "msgstr": ["ウェブサイトを除外しますか？"]
 			},
           "Are you sure you want to remove this website from your profile?": {
 		    "msgid": "Are you sure you want to remove this website from your profile?",
@@ -413,10 +417,6 @@
 		    "msgid": "project-organizer.js",
 		    "msgstr": ["project-organizer.js"]
 			},
-          "project-organizer.js": {
-		    "msgid": "project-organizer.js",
-		    "msgstr": ["project-organizer.js"]
-			},
           "Name": {
 		    "msgid": "Name",
 		    "msgstr": ["名前"]
@@ -428,6 +428,10 @@
           "Modified": {
 		    "msgid": "Modified",
 		    "msgstr": ["最終更新日"]
+			},
+          "A contributor": {
+		    "msgid": "A contributor",
+		    "msgstr": ["一人のコントリビュータ"]
 			},
           "project.js": {
 		    "msgid": "project.js",
@@ -456,6 +460,10 @@
           "Your fork is being created. You\\'ll receive an email when it is complete.": {
 		    "msgid": "Your fork is being created. You\\'ll receive an email when it is complete.",
 		    "msgstr": ["フォークを作成しています。 完了するとメールが届きます。"]
+			},
+          "Fork this project?": {
+		    "msgid": "Fork this project?",
+		    "msgstr": ["このプロジェクトをフォークしますか？"]
 			},
           "Are you sure you want to fork this project?": {
 		    "msgid": "Are you sure you want to fork this project?",
@@ -545,60 +553,24 @@
 		    "msgid": "qtoggle needs a target to be defined by adding data-qtoggle-target to the trigger element for the  following item :",
 		    "msgstr": ["qtoggleでは、次の項目のトリガー要素にdata-qtoggle-targetを追加して、ターゲットを定義する必要があります。"]
 			},
-          "rdm-firebase.js  ": {
-		    "msgid": "rdm-firebase.js",
-		    "msgstr": ["rdm-firebase.js"]
-			},
-          "Unable to get permission to notify.": {
-		    "msgid": "Unable to get permission to notify.",
-		    "msgstr": ["通知する許可を取得できません。"]
-			},
-          "Token refreshed.": {
-		    "msgid": "Token refreshed.",
-		    "msgstr": ["トークンが更新されました。"]
-			},
-          "Unable to retrieve refreshed token ": {
-		    "msgid": "Unable to retrieve refreshed token ",
-		    "msgstr": ["更新されたトークンを取得できません"]
-			},
-          "No Instance ID token available. Request permission to generate one.": {
-		    "msgid": "No Instance ID token available. Request permission to generate one.",
-		    "msgstr": ["使用可能なインスタンスIDトークンはありません。 生成する許可をリクエストします。"]
-			},
-          "An error occurred while retrieving token. ": {
-		    "msgid": "An error occurred while retrieving token. ",
-		    "msgstr": ["トークンの取得中にエラーが発生しました。"]
-			},
-          "An error has occured.": {
-		    "msgid": "An error has occured.",
-		    "msgstr": ["エラーが発生しました。"]
-			},
           "requestAccess.js": {
 		    "msgid": "requestAccess.js",
 		    "msgstr": ["requestAccess.js"]
 			},
-          "Access request failed. Please contact ": {
-		    "msgid": "Access request failed. Please contact ",
-		    "msgstr": ["アクセス要求が失敗しました。 問題が解決しない場合は次のリンクへお問い合わせください:"]
-			},
-          " if the problem persists.": {
-		    "msgid": " if the problem persists.",
-		    "msgstr": [" "]
+          "Access request failed. Please contact %1$s if the problem persists.": {
+		    "msgid": "Access request failed. Please contact %1$s if the problem persists.",
+		    "msgstr": ["アクセス要求が失敗しました。 問題が解決しない場合は%1$sへお問い合わせください"]
 			},
           "Error requesting project access": {
 		    "msgid": "Error requesting project access",
 		    "msgstr": ["ロジェクトアクセスのリクエストエラー"]
 			},
-          "If this should not have occurred, please contact ": {
-		    "msgid": "If this should not have occurred, please contact ",
-		    "msgstr": ["これが発生しないはずの場合は、次のリンクへお問い合わせください"]
-			},
-          ".": {
-		    "msgid": ".",
-		    "msgstr": ["。"]
+          "If this should not have occurred, please contact %1$s.": {
+		    "msgid": "If this should not have occurred, please contact %1$s.",
+		    "msgstr": ["これが発生しないはずの場合は、%1$sへお問い合わせください。"]
 			},
           "saveManager.js": {
-		    "msgid": "saveManager.js  ",
+		    "msgid": "saveManager.js",
 		    "msgstr": ["saveManager.js  "]
 			},
           "You have unsaved changes.": {
@@ -609,13 +581,17 @@
 		    "msgid": "search.js",
 		    "msgstr": ["search.js"]
 			},
+          "Page %1$s of %2$s": {
+		    "msgid": "Page %1$s of %2$s",
+		    "msgstr": ["ページ %1$s / %2$s"]
+			},
           "Search help": {
 		    "msgid": "Search help",
 		    "msgstr": ["検索ヘルプ"]
 			},
-          "Queries": {
-		    "msgid": "Queries",
-		    "msgstr": ["クエリ"]
+          "<h4>Queries</h4>": {
+		    "msgid": "<h4>Queries</h4>",
+		    "msgstr": ["<h4>クエリ</h4>"]
 			},
           "<p>Search uses the <a href=\"http://extensions.xwiki.org/xwiki/bin/view/Extension/Search+Application+Query+Syntax\">Lucene search syntax</a>": {
 		    "msgid": "<p>Search uses the <a href=\"http://extensions.xwiki.org/xwiki/bin/view/Extension/Search+Application+Query+Syntax\">Lucene search syntax</a>",
@@ -630,7 +606,7 @@
 		    "msgstr": ["有効な検索の例は次のとおりです。"]
 			},
           "GakuNin RDM | Search": {
-		    "msgid": "OSF | Search",
+		    "msgid": "GakuNin RDM | Search",
 		    "msgstr": ["GakuNin RDM | 検索"]
 			},
           "wikiMenu.js": {

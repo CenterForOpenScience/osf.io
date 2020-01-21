@@ -188,7 +188,7 @@ var ViewModel = function(params) {
     });
 
     self.navLocation = ko.pureComputed(function() {
-        return 'Page ' + self.currentPage() + ' of ' + self.totalPages();
+        return agh.sprintf(_('Page %1$s of %2$s') ,self.currentPage(),self.totalPages());
     });
 
     self.queryObject = ko.pureComputed(function(){
@@ -268,11 +268,11 @@ var ViewModel = function(params) {
 
     self.help = function() {
         bootbox.dialog({
-            title: 'Search help',
-            message: '<h4>Queries</h4>'+
-                '<p>Search uses the <a href="http://extensions.xwiki.org/xwiki/bin/view/Extension/Search+Application+Query+Syntax">Lucene search syntax</a>. ' +
-                'This gives you many options, but can be very simple as well. ' +
-                'Examples of valid searches include:' +
+            title: _('Search help'),
+            message: _('<h4>Queries</h4>')+
+                _('<p>Search uses the <a href="http://extensions.xwiki.org/xwiki/bin/view/Extension/Search+Application+Query+Syntax">Lucene search syntax</a>. ') +
+                _('This gives you many options, but can be very simple as well. ') +
+                _('Examples of valid searches include:') +
                 '<ul><li><a href="/search/?q=repro*">repro*</a></li>' +
                 '<li><a href="/search/?q=brian+AND+title%3Amany">brian AND title:many</a></li>' +
                 '<li><a href="/search/?q=tags%3A%28psychology%29">tags:(psychology)</a></li></ul>' +
@@ -603,7 +603,7 @@ function Search(selector, url, appURL) {
         filter: $osf.urlParams().filter
     };
     //Ensure our state keeps its URL paramaters
-    History.replaceState(data, _('OSF | Search'), location.search);
+    History.replaceState(data, _('GakuNin RDM | Search'), location.search);
     //Set out observables from the newly replaced state
     self.viewModel.loadState();
     //Preform search from url params

@@ -98,7 +98,7 @@ function _poContributors(item) {
         } else if(fullName){
             name = fullName;
         } else {
-            name = 'A contributor';
+            name = _('A contributor');
         }
         var comma;
         if (index === 0) {
