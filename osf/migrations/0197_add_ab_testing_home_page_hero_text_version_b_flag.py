@@ -9,7 +9,7 @@ from osf.utils.migrations import AddWaffleFlags, DeleteWaffleFlags
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0189_deleted_field_data.py'),
+        ('osf', '0196_update_schemas.py'),
     ]
 
     operations = [
