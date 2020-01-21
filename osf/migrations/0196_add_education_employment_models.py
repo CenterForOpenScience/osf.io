@@ -100,7 +100,7 @@ def put_jobs_and_schools_back(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0155_merge_20190115_1437'),
+        ('osf', '0196_merge_20190115_1437'),
     ]
 
     operations = [

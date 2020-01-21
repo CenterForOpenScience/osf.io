@@ -8,7 +8,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0156_add_education_employment_models'),
+        ('osf', '0196_add_education_employment_models'),
     ]
 
     operations = [
