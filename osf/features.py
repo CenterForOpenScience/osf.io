@@ -10,6 +10,7 @@ OSF_GROUPS = 'osf_groups'
 ENABLE_CHRONOS = 'enable_chronos'
 
 EMBER_AB_TESTING_HOME_PAGE_VERSION_B = 'ab_testing_home_page_version_b'
+EMBER_AB_TESTING_HOME_PAGE_HERO_TEXT_VERSION_B = 'ab_testing_home_page_hero_text_version_b'
 EMBER_AUTH_REGISTER = 'ember_auth_register'
 EMBER_CREATE_DRAFT_REGISTRATION = 'ember_create_draft_registration_page'
 EMBER_EDIT_DRAFT_REGISTRATION = 'ember_edit_draft_registration_page'
