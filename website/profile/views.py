@@ -735,19 +735,6 @@ def unserialize_contents(field, func, auth):
         contents
     )
     user.save()
-            profile_object.save()
-            new_order.append(profile_object.id)
-
-    # Remove relationships that aren't present in current payload
-    user_object_manager = getattr(user, attribute_name)
-    current_user_relationships = user_object_manager.values_list('id', flat=True)
-    removed_relationships = set(current_user_relationships) - set(new_order)
-    # TODO - is there a better way? new_order has normal ids, but the remove method on the user uses _id
-    model.objects.filter(id__in=removed_relationships).delete()
-
-    # set the order with respect to the user for the objects sent back by the frontend
-    # Django
-    getattr(user, 'set_user{}_order'.format(attribute_name))(new_order)
 
     if contents:
         saved_fields = {field: contents}

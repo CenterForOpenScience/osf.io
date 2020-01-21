@@ -19,7 +19,6 @@ from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_
 from api.base.serializers import BaseProfileSerializer
 from api.files.serializers import QuickFilesSerializer
 
-from osf.models import OSFUser, QuickFilesNode, Email, Education, Employment
 from osf.exceptions import ValidationValueError, ValidationError, BlacklistedEmailError
 from osf.models import OSFUser, QuickFilesNode, Preprint, Email, UserEducation, UserEmployment
 from osf.utils.requests import string_type_request_headers
@@ -27,7 +26,7 @@ from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGI
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
 from api.nodes.serializers import NodeSerializer, RegionRelationshipField
-from api.base.schemas.utils import validate_user_json, from_json
+from api.base.schemas.utils import from_json
 from framework.auth.views import send_confirm_email
 from api.base.versioning import get_kebab_snake_case_field
 
