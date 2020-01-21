@@ -197,6 +197,9 @@ class DraftMixin(object):
 
             if draft.requires_approval and draft.is_approved and (not registered_and_deleted):
                 raise PermissionDenied('This draft has already been approved and cannot be modified.')
+        else:
+            if draft.registered_node and not draft.registered_node.is_deleted:
+                raise Gone(detail='This draft has already been registered.')
 
         self.check_object_permissions(self.request, draft.branched_from)
         return draft
