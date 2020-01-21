@@ -18,6 +18,7 @@ var lodashFind = require('lodash.find');
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 var MOBILE_WIDTH = 767; // Mobile view break point for responsiveness
 var NODE_PAGE_SIZE = 10; // Load 10 nodes at a time from server
