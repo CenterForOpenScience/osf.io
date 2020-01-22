@@ -26,6 +26,7 @@ from framework.utils import throttle_period_expired
 from osf import features
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode, UserEducation, UserEmployment
 from osf.exceptions import BlacklistedEmailError
+from osf.utils.requests import string_type_request_headers
 from website import mails
 from website import mailchimp_utils
 from website import settings
@@ -739,6 +740,8 @@ def unserialize_contents(model, auth, attribute_name):
             for key, value in entry.items():
                 if key != 'institution' and hasattr(model, key):
                     setattr(profile_object, key, value)
+                    request_headers = string_type_request_headers(request)
+                    user.check_spam(saved_fields={key: value}, request_headers=request_headers)
 
             start_year = entry.get('startYear', None)
             start_month = entry['startMonth'] if start_year else None
@@ -761,6 +764,7 @@ def unserialize_contents(model, auth, attribute_name):
     model.objects.filter(id__in=removed_relationships).delete()
 
     # set the order with respect to the user for the objects sent back by the frontend
+    # Django
     getattr(user, 'set_user{}_order'.format(attribute_name))(new_order)
 
 @must_be_logged_in

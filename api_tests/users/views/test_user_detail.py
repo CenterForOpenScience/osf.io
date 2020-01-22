@@ -1263,11 +1263,6 @@ class UserProfileMixin(object):
             assert getattr(user_one, user_attr) == request_payload['data']['attributes'][request_key]
             assert mock_check_spam.called
 
-    def test_user_put_profile_400(self, app, user_one, user_one_url, bad_request_payload):
-        res = app.put_json_api(user_one_url, bad_request_payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "Additional properties are not allowed ('bad_key' was unexpected)"
-
     def test_user_put_profile_401(self, app, user_one, user_one_url, request_payload):
         res = app.put_json_api(user_one_url, request_payload, expect_errors=True)
         assert res.status_code == 401
