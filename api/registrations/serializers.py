@@ -22,8 +22,8 @@ from api.base.serializers import (
     ShowIfVersion, VersionedDateTimeField, ValuesListField,
 )
 from framework.auth.core import Auth
-from osf.exceptions import ValidationValueError, AbstractNode, NodeStateError
-from osf.models import Node, RegistrationSchema
+from osf.exceptions import ValidationValueError, NodeStateError
+from osf.models import Node, RegistrationSchema, AbstractNode
 from website.settings import ANONYMIZED_TITLES
 from framework.sentry import log_exception
 
