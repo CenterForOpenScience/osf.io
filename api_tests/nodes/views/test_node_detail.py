@@ -32,8 +32,8 @@ from osf_tests.factories import (
     DraftNodeFactory,
 )
 from rest_framework import exceptions
-from tests.base import fake
-from tests.utils import assert_items_equal, assert_latest_log, assert_latest_log_not
+from tests.base import fake, ApiTestCase
+from tests.utils import assert_latest_log, assert_latest_log_not, assert_items_equals
 from website.views import find_bookmark_collection
 
 
@@ -43,7 +43,7 @@ def user():
 
 
 @pytest.mark.django_db
-class TestNodeDetail:
+class TestNodeDetail(ApiTestCase):
 
     @pytest.fixture()
     def user_two(self):

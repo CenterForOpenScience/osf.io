@@ -19,7 +19,7 @@ from osf_tests.factories import (
 )
 from osf.utils import permissions
 from rest_framework import exceptions
-from tests.base import capture_signals, fake
+from tests.base import capture_signals, fake, ApiTestCase
 from tests.utils import assert_items_equal
 from website.project.signals import contributor_added, contributor_removed
 from api_tests.utils import disconnected_from_listeners
@@ -1544,7 +1544,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
-class TestNodeContributorBulkCreate(NodeCRUDTestCase):
+class TestNodeContributorBulkCreate(NodeCRUDTestCase, ApiTestCase):
 
     @pytest.fixture()
     def user_three(self):
@@ -1766,7 +1766,7 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
-class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
+class TestNodeContributorBulkUpdate(NodeCRUDTestCase, ApiTestCase):
 
     @pytest.fixture()
     def user_three(self):
@@ -2212,7 +2212,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
-class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
+class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase, ApiTestCase):
 
     @pytest.fixture()
     def user_three(self):
