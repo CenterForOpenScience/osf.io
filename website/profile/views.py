@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 from rest_framework import status as http_status
+from datetime import datetime
 
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -25,7 +26,6 @@ from framework.utils import throttle_period_expired
 from osf import features
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode, UserEducation, UserEmployment
 from osf.exceptions import BlacklistedEmailError
-from osf.utils.requests import string_type_request_headers
 from website import mails
 from website import mailchimp_utils
 from website import settings
@@ -722,24 +722,46 @@ def unserialize_social(auth, **kwargs):
         ))
 
 
-def unserialize_contents(field, func, auth):
+def unserialize_contents(model, auth, attribute_name):
     user = auth.user
     json_data = escape_html(request.get_json())
-    contents = [
-        func(content)
-        for content in json_data.get('contents', [])
-    ]
-    setattr(
-        user,
-        field,
-        contents
-    )
-    user.save()
+    new_order = []
+    for entry in json_data.get('contents', []):
+        institution = entry.get('institution')
+        _id = entry.get('_id')
+        if institution:
+            if _id:
+                profile_object = model.objects.get(_id=_id)
+                profile_object.institution = institution
+            else:
+                profile_object = model(institution=institution, user=user)
 
-    if contents:
-        saved_fields = {field: contents}
-        request_headers = string_type_request_headers(request)
-        user.check_spam(saved_fields=saved_fields, request_headers=request_headers)
+            for key, value in entry.items():
+                if key != 'institution' and hasattr(model, key):
+                    setattr(profile_object, key, value)
+
+            start_year = entry.get('startYear', None)
+            start_month = entry['startMonth'] if start_year else None
+            if start_year and start_month:
+                profile_object.start_date = datetime.strptime('{} {}'.format(start_month, start_year), '%m %Y')
+
+            end_year = entry.get('endYear', None)
+            end_month = entry['endMonth'] if end_year else None
+            if end_year and end_month:
+                profile_object.end_date = datetime.strptime('{} {}'.format(end_month, end_year), '%m %Y')
+
+            profile_object.save()
+            new_order.append(profile_object.id)
+
+    # Remove relationships that aren't present in current payload
+    user_object_manager = getattr(user, attribute_name)
+    current_user_relationships = user_object_manager.values_list('id', flat=True)
+    removed_relationships = set(current_user_relationships) - set(new_order)
+    # TODO - is there a better way? new_order has normal ids, but the remove method on the user uses _id
+    model.objects.filter(id__in=removed_relationships).delete()
+
+    # set the order with respect to the user for the objects sent back by the frontend
+    getattr(user, 'set_user{}_order'.format(attribute_name))(new_order)
 
 @must_be_logged_in
 def unserialize_jobs(auth, **kwargs):
