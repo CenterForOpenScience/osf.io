@@ -406,6 +406,29 @@ class RegistrationSerializer(NodeSerializer):
                         del meta_values[question['qid']]
         return meta_values
 
+    def anonymize_registration_responses(self, obj):
+        """
+        For any questions that have a `contributor-input` block type, delete
+        that question's response from registration_responses.
+        We want to make sure author's names that need to be anonymized
+        aren't surfaced when viewed through an anonymous VOL
+        """
+        return self.anonymize_fields(obj, obj.registration_responses)
+
+    def anonymize_fields(self, obj, data):
+        """
+        Consolidates logic to anonymize fields with contributor information
+        on both registered_meta and registration_responses
+        """
+        if is_anonymized(self.context['request']):
+            anonymous_registration_response_keys = obj.get_contributor_registration_response_keys()
+
+            for key in anonymous_registration_response_keys:
+                if key in data:
+                    del data[key]
+
+        return data
+
     def check_admin_perms(self, registration, user, validated_data):
         """
         While admin/write users can make both make modifications to registrations,
