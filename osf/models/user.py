@@ -38,14 +38,14 @@ from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
 from osf.exceptions import reraise_django_validation_errors, MaxRetriesError, UserStateError
-from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
+from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet, ObjectIDMixin
 from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
 from osf.models.spam import SpamMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
-from osf.models.validators import validate_email, validate_social, validate_history_item
+from osf.models.validators import validate_email, validate_social
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from osf.utils.names import impute_names
@@ -116,6 +116,36 @@ class Email(BaseModel):
         return self.address
 
 
+class AbstractBaseProfileModel(ObjectIDMixin, BaseModel):
+    institution = models.CharField(max_length=650)
+    department = models.CharField(max_length=650, null=True, blank=True)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    ongoing = models.BooleanField(default=False)
+
+    class Meta:
+        abstract = True
+
+    def __unicode__(self):
+        return '{} for user {}'.format(self.institution, self.user._id)
+
+
+class UserEmployment(AbstractBaseProfileModel):
+    user = models.ForeignKey('OSFUser', on_delete=models.CASCADE, related_name='employment')
+    title = models.CharField(max_length=650, null=True, blank=True)
+
+    class Meta:
+        order_with_respect_to = 'user'
+
+
+class UserEducation(AbstractBaseProfileModel):
+    user = models.ForeignKey('OSFUser', on_delete=models.CASCADE, related_name='education')
+    degree = models.CharField(max_length=650, null=True, blank=True)
+
+    class Meta:
+        order_with_respect_to = 'user'
+
+
 class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin, SpamMixin):
     FIELD_ALIASES = {
         '_id': 'guids___id',
@@ -134,8 +164,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'merged_by',
         'date_disabled',
         'date_confirmed',
-        'jobs',
-        'schools',
         'social',
     }
 
@@ -301,34 +329,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #       ...
     #   },
     #   ...
-    # }
-
-    # Employment history
-    jobs = DateTimeAwareJSONField(default=list, blank=True, validators=[validate_history_item])
-    # Format: list of {
-    #     'title': <position or job title>,
-    #     'institution': <institution or organization>,
-    #     'department': <department>,
-    #     'location': <location>,
-    #     'startMonth': <start month>,
-    #     'startYear': <start year>,
-    #     'endMonth': <end month>,
-    #     'endYear': <end year>,
-    #     'ongoing: <boolean>
-    # }
-
-    # Educational history
-    schools = DateTimeAwareJSONField(default=list, blank=True, validators=[validate_history_item])
-    # Format: list of {
-    #     'degree': <position or job title>,
-    #     'institution': <institution or organization>,
-    #     'department': <department>,
-    #     'location': <location>,
-    #     'startMonth': <start month>,
-    #     'startYear': <start year>,
-    #     'endMonth': <end month>,
-    #     'endYear': <end year>,
-    #     'ongoing: <boolean>
     # }
 
     # Social links
@@ -697,11 +697,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.is_staff = self.is_staff or user.is_staff
 
         # copy over profile only if this user has no profile info
-        if user.jobs and not self.jobs:
-            self.jobs = user.jobs
+        education = user.education.all()
+        if education:
+            self.education.set(education)
 
-        if user.schools and not self.schools:
-            self.schools = user.schools
+        employment = user.employment.all()
+        if employment:
+            self.employment.set(employment)
 
         if user.social and not self.social:
             self.social = user.social
@@ -1626,6 +1628,24 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.affiliated_institutions.remove(inst)
             return True
 
+    def remove_education(self, education_id):
+        try:
+            education = self.education.get(_id=education_id)
+        except UserEducation.DoesNotExist:
+            return False
+        else:
+            education.delete()
+            return True
+
+    def remove_employment(self, employment_id):
+        try:
+            employment = self.employment.get(_id=employment_id)
+        except UserEmployment.DoesNotExist:
+            return False
+        else:
+            employment.delete()
+            return True
+
     def get_activity_points(self):
         return analytics.get_total_activity_count(self._id)
 
@@ -1787,9 +1807,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.osf_mailing_lists = {}
         self.verification_key = None
         self.suffix = ''
-        self.jobs = []
-        self.schools = []
-        self.social = {}
+        self.social = []
         self.unclaimed_records = {}
         self.notifications_configured = {}
         # Scrub all external accounts

@@ -146,6 +146,15 @@ class TestUserDetail:
         href_url = user_json['relationships']['registrations']['links']['related']['href']
         assert registration_url in href_url
 
+    def test_education_employment_relationships(self, app, user_one):
+        url = '/{}users/{}/'.format(API_BASE, user_one._id)
+        education_url = '/{}users/{}/education/'.format(API_BASE, user_one._id)
+        employment_url = '/{}users/{}/employment/'.format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one)
+        user_json = res.json['data']
+        assert education_url in user_json['relationships']['education']['links']['related']['href']
+        assert employment_url in user_json['relationships']['employment']['links']['related']['href']
+
     def test_nodes_relationship_is_absent(self, app, user_one):
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
         res = app.get(url, auth=user_one)
@@ -1250,13 +1259,9 @@ class UserProfileMixin(object):
         res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth)
         user_one.reload()
         assert res.status_code == 200
-        assert getattr(user_one, user_attr) == request_payload['data']['attributes'][request_key]
-        assert mock_check_spam.called
-
-    def test_user_put_profile_400(self, app, user_one, user_one_url, bad_request_payload):
-        res = app.put_json_api(user_one_url, bad_request_payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "Additional properties are not allowed ('bad_key' was unexpected)"
+        if user_attr != 'schools' and user_attr != 'jobs':
+            assert getattr(user_one, user_attr) == request_payload['data']['attributes'][request_key]
+            assert mock_check_spam.called
 
     def test_user_put_profile_401(self, app, user_one, user_one_url, request_payload):
         res = app.put_json_api(user_one_url, request_payload, expect_errors=True)
@@ -1267,90 +1272,6 @@ class UserProfileMixin(object):
         res = app.put_json_api(user_one_url, request_payload, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
-
-    def test_user_put_profile_validate_dict(self, app, user_one, user_one_url, request_payload, request_key):
-        # Tests to make sure profile's fields have correct structure
-        request_payload['data']['attributes'][request_key] = {}
-        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
-
-    def test_user_put_profile_validation_list(self, app, user_one, user_one_url, request_payload, request_key):
-        # Tests to make sure structure is lists of dicts consisting of proper fields
-        request_payload['data']['attributes'][request_key] = [{}]
-        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "'institution' is a required property"
-
-    def test_user_put_profile_validation_empty_string(self, app, user_one, user_one_url, request_payload, request_key):
-        # Tests to make sure institution is not empty string
-        request_payload['data']['attributes'][request_key][0]['institution'] = ''
-        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "For 'institution' the field value '' is too short"
-
-    def test_user_put_profile_validation_start_year_dependency(self, app, user_one, user_one_url, request_payload, request_key):
-        # Tests to make sure ongoing is bool
-        del request_payload['data']['attributes'][request_key][0]['ongoing']
-        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "'ongoing' is a dependency of 'startYear'"
-
-    def test_user_put_profile_date_validate_int(self, app, user_one, user_one_url, request_payload, request_key):
-        # Not valid datatypes for dates
-
-        request_payload['data']['attributes'][request_key][0]['startYear'] = 'string'
-        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "For 'startYear' the field value 'string' is not of type 'integer'"
-
-    def test_user_put_profile_date_validate_positive(self, app, user_one, user_one_url, request_payload, request_key):
-        # Not valid values for dates
-        request_payload['data']['attributes'][request_key][0]['startYear'] = -2
-        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "For 'startYear' the field value -2 is less than the minimum of 1900"
-
-    def test_user_put_profile_date_validate_ongoing_position(self, app, user_one, user_one_url, request_payload, request_key):
-        # endDates for ongoing position
-        request_payload['data']['attributes'][request_key][0]['ongoing'] = True
-        del request_payload['data']['attributes'][request_key][0]['endYear']
-        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "For 'ongoing' the field value True is not valid under any of the given schemas"
-
-    def test_user_put_profile_date_validate_end_date(self, app, user_one, user_one_url, request_payload, request_key):
-        # End date is greater then start date
-        request_payload['data']['attributes'][request_key][0]['startYear'] = 2000
-        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'End date must be greater than or equal to the start date.'
-
-    def test_user_put_profile_date_validate_end_month_dependency(self, app, user_one, user_one_url, end_month_dependency_payload):
-        # No endMonth with endYear
-        res = app.put_json_api(user_one_url, end_month_dependency_payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "'endYear' is a dependency of 'endMonth'"
-
-    def test_user_put_profile_date_validate_start_month_dependency(self, app, user_one, user_one_url, start_month_dependency_payload):
-        # No endMonth with endYear
-        res = app.put_json_api(user_one_url, start_month_dependency_payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "'startYear' is a dependency of 'startMonth'"
-
-    def test_user_put_profile_date_validate_start_date_no_end_date_not_ongoing(self, app, user_one, user_attr, user_one_url, start_dates_no_end_dates_payload, request_key):
-        # End date is greater then start date
-        res = app.put_json_api(user_one_url, start_dates_no_end_dates_payload, auth=user_one.auth, expect_errors=True)
-        user_one.reload()
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "For 'ongoing' the field value True is not valid under any of the given schemas"
-
-    def test_user_put_profile_date_validate_end_date_no_start_date(self, app, user_one, user_attr, user_one_url, end_dates_no_start_dates_payload, request_key):
-        # End dates, but no start dates
-        res = app.put_json_api(user_one_url, end_dates_no_start_dates_payload, auth=user_one.auth, expect_errors=True)
-        user_one.reload()
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "'startYear' is a dependency of 'endYear'"
 
 
 @pytest.mark.django_db

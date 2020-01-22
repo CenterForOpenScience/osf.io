@@ -2,7 +2,7 @@
 from framework import auth
 
 from website import settings
-from osf.models import Contributor
+from osf.models import Contributor, UserEducation, UserEmployment
 from addons.osfstorage.models import Region
 from website.filters import profile_image_url
 from osf.utils.permissions import READ
@@ -143,11 +143,17 @@ def add_contributor_json(user, current_user=None, node=None):
     current_employment = None
     education = None
 
-    if user.jobs:
-        current_employment = user.jobs[0]['institution']
+    if user.employment.exists():
+        try:
+            current_employment = user.employment.get(end_date=None).institution
+        except UserEmployment.DoesNotExist:
+            current_employment = None
 
-    if user.schools:
-        education = user.schools[0]['institution']
+    if user.education.exists():
+        try:
+            education = user.education.all().first().institution
+        except UserEducation.DoesNotExist:
+            education = None
 
     contributor_json = {
         'fullname': user.fullname,

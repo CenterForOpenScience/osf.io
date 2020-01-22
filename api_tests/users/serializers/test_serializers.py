@@ -195,8 +195,6 @@ class TestUserSerializer:
         assert attributes['family_name'] == user.family_name
         assert attributes['given_name'] == user.given_name
         assert attributes['active'] == user.is_active
-        assert attributes['employment'] == user.jobs
-        assert attributes['education'] == user.schools
 
         # Relationships
         relationships = data['relationships']

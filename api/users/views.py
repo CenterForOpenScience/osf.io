@@ -31,17 +31,26 @@ from api.nodes.utils import NodeOptimizationMixin
 from api.osf_groups.serializers import GroupSerializer
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
+from api.users.serializers import (
+    UserEducationSerializer,
+    UserEducationDetailSerializer,
+    UserEmploymentSerializer,
+    UserEmploymentDetailSerializer,
+)
 
 from api.users.permissions import (
     CurrentUser, ReadOnlyOrCurrentUser,
     ReadOnlyOrCurrentUserRelationship,
     ClaimUserPermission,
+    ReadOnlyOrCurrentUserProfile,
 )
 from api.users.serializers import (
     UserAddonSettingsSerializer,
     UserDetailSerializer,
     UserIdentitiesSerializer,
     UserInstitutionsRelationshipSerializer,
+    UserEducationRelationshipSerializer,
+    UserEmploymentRelationshipSerializer,
     UserSerializer,
     UserEmail,
     UserEmailsSerializer,
@@ -82,6 +91,8 @@ from osf.models import (
     OSFGroup,
     OSFUser,
     Email,
+    UserEducation,
+    UserEmployment,
 )
 from osf.utils import permissions
 from website import mails, settings
@@ -430,6 +441,98 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
         return self.get_queryset_from_request()
 
 
+class UserEducationList(JSONAPIBaseView, generics.ListCreateAPIView, UserMixin, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyOrCurrentUserProfile,
+    )
+
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.EDUCATION_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.EDUCATION_WRITE]
+
+    ordering = ('-created')
+
+    serializer_class = UserEducationSerializer
+    view_category = 'users'
+    view_name = 'user-education'
+
+    def get_default_queryset(self):
+        user = self.get_user(check_permissions=True)
+        return UserEducation.objects.filter(user=user)
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+
+class UserEducationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyOrCurrentUserProfile,
+    )
+
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.EDUCATION_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.EDUCATION_WRITE]
+
+    ordering = ('-created')
+
+    serializer_class = UserEducationDetailSerializer
+    view_category = 'users'
+    view_name = 'user-education-detail'
+
+    def get_object(self):
+        education = get_object_or_error(UserEducation, self.kwargs['education_id'], self.request)
+        self.check_object_permissions(self.request, education)
+        return education
+
+
+class UserEmploymentList(JSONAPIBaseView, generics.ListCreateAPIView, UserMixin, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyOrCurrentUserProfile,
+    )
+
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.EMPLOYMENT_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.EMPLOYMENT_WRITE]
+
+    ordering = ('-created')
+
+    serializer_class = UserEmploymentSerializer
+    view_category = 'users'
+    view_name = 'user-employment'
+
+    def get_default_queryset(self):
+        user = self.get_user(check_permissions=True)
+        return UserEmployment.objects.filter(user=user)
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+
+class UserEmploymentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyOrCurrentUserProfile,
+    )
+
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.EMPLOYMENT_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.EMPLOYMENT_WRITE]
+
+    ordering = ('-created')
+
+    serializer_class = UserEmploymentDetailSerializer
+    view_category = 'users'
+    view_name = 'user-employment-detail'
+
+    def get_object(self):
+        employment = get_object_or_error(UserEmployment, self.kwargs['employment_id'], self.request)
+        self.check_object_permissions(self.request, employment)
+        return employment
+
+
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_institutions_list).
     """
@@ -548,9 +651,84 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         for val in data:
             if val['type'] != get_meta_type(self.serializer_class, self.request):
                 raise Conflict()
-        for val in data:
             if val['id'] in current_institutions:
                 user.remove_institution(val['id'])
+        user.save()
+
+
+class UserEducationRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyOrCurrentUserRelationship,
+    )
+
+    required_read_scopes = [CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE]
+
+    serializer_class = UserEducationRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    view_category = 'users'
+    view_name = 'user-education-relationship'
+
+    # TODO - If the front end submits a PATCH request that has a mismatch relationship that you have stored,
+    # give a 409 CONFLICT response.
+
+    def get_object(self):
+        user = self.get_user(check_permissions=False)
+        obj = {
+            'data': user.education.all(),
+            'self': user,
+        }
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        user = self.request.user
+        for val in data:
+            education = get_object_or_error(UserEducation, Q(_id=val['id']), self.request)
+            if education in user.education.all():
+                user.remove_education(val['id'])
+        user.save()
+
+
+class UserEmploymentRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyOrCurrentUserRelationship,
+    )
+
+    required_read_scopes = [CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE]
+
+    serializer_class = UserEmploymentRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    view_category = 'users'
+    view_name = 'user-employment-relationship'
+
+    # TODO - If the front end submits a PATCH request that has a mismatch relationship that you have stored,
+    # give a 409 CONFLICT response.
+
+    def get_object(self):
+        user = self.get_user(check_permissions=False)
+        obj = {
+            'data': user.employment.all(),
+            'self': user,
+        }
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        user = self.request.user
+        for val in data:
+            employment = get_object_or_error(UserEmployment, Q(_id=val['id']), self.request)
+            if employment in user.employment.all():
+                user.remove_employment(val['id'])
         user.save()
 
 

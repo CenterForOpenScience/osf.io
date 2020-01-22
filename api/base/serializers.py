@@ -19,6 +19,7 @@ from osf.utils import sanitize
 from osf.utils import functional
 from api.base import exceptions as api_exceptions
 from api.base.settings import BULK_SETTINGS
+from api.base.schemas.utils import validate_user_json
 from framework.auth import core as auth_core
 from osf.models import AbstractNode, MaintenanceState, Preprint
 from website import settings
@@ -1837,3 +1838,41 @@ class MaintenanceStateSerializer(ser.ModelSerializer):
     class Meta:
         model = MaintenanceState
         fields = ('level', 'message', 'start', 'end')
+
+
+class BaseProfileSerializer(JSONAPISerializer):
+    filterable_fields = frozenset([
+        'institution',
+    ])
+
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+
+    institution = ser.CharField(required=True, allow_null=False)
+    department = ser.CharField(required=False)
+    start_date = ser.DateField(required=False)
+    end_date = ser.DateField(required=False)
+    ongoing = ser.BooleanField(default=False, required=False)
+
+    user = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<user._id>'},
+    )
+
+    links = LinksField({'self': 'self_url'})
+
+    class Meta:
+        type_ = 'base-profile'
+
+    def self_url(self, obj):
+        raise NotImplementedError
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
+    def run_validation(self, *args, **kwargs):
+        to_validate = self.initial_data.copy()
+        to_validate.pop('id')
+        to_validate.pop('type')
+        validate_user_json(to_validate, self.schema)
+        return super(BaseProfileSerializer, self).run_validation(*args, **kwargs)

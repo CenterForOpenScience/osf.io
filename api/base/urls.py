@@ -40,6 +40,8 @@ urlpatterns = [
                 url(r'^collections/', include('api.collections.urls', namespace='collections')),
                 url(r'^comments/', include('api.comments.urls', namespace='comments')),
                 url(r'^docs/', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version}),
+                url(r'^education/', include('api.education.urls', namespace='education')),
+                url(r'^employment/', include('api.employment.urls', namespace='employment')),
                 url(r'^files/', include('api.files.urls', namespace='files')),
                 url(r'^groups/', include('api.osf_groups.urls', namespace='groups')),
                 url(r'^guids/', include('api.guids.urls', namespace='guids')),

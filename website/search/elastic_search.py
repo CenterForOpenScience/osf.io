@@ -707,13 +707,14 @@ def update_user(user, index=None):
         'normalized_user': normalized_names['fullname'],
         'normalized_names': normalized_names,
         'names': names,
-        'job': user.jobs[0]['institution'] if user.jobs else '',
-        'job_title': user.jobs[0]['title'] if user.jobs else '',
-        'all_jobs': [job['institution'] for job in user.jobs[1:]],
-        'school': user.schools[0]['institution'] if user.schools else '',
-        'all_schools': [school['institution'] for school in user.schools],
+        # TODO: elastic search will need to be updated to utilize the new education/employment fields
+        # 'job': user.jobs[0]['institution'] if user.jobs else '',
+        # 'job_title': user.jobs[0]['title'] if user.jobs else '',
+        # 'all_jobs': [job['institution'] for job in user.jobs[1:]],
+        # 'school': user.schools[0]['institution'] if user.schools else '',
+        # 'all_schools': [school['institution'] for school in user.schools],
         'category': 'user',
-        'degree': user.schools[0]['degree'] if user.schools else '',
+        #'degree': user.schools[0]['degree'] if user.schools else '',
         'social': user.social_links,
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
     }
@@ -1005,11 +1006,11 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
             current_employment = None
             education = None
 
-            if user.jobs:
-                current_employment = user.jobs[0]['institution']
+            if user.employment.exists():
+                current_employment = user.employment.filter(ongoing=True).institution
 
-            if user.schools:
-                education = user.schools[0]['institution']
+            if user.education.exists():
+                education = user.education.all().first().institution
 
             users.append({
                 'fullname': doc['user'],

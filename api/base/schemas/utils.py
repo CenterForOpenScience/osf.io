@@ -1,6 +1,6 @@
 import os
 import json
-import datetime
+from datetime import datetime
 import jsonschema
 
 from api.base.exceptions import InvalidModelValueError
@@ -25,16 +25,15 @@ def validate_user_json(value, json_schema):
     validate_dates(value)
 
 
-def validate_dates(info):
-    for history in info:
+def validate_dates(history):
+    if history.get('start_date'):
+        start_date = datetime.strptime(history['start_date'], '%Y-%m-%d')
 
-        if history.get('startYear'):
-            startDate = datetime.date(history['startYear'], history.get('startMonth', 1), 1)
-
-        if not history['ongoing']:
-            if history.get('endYear'):
-                endDate = datetime.date(history['endYear'], history.get('endMonth', 1), 1)
-
-            if history.get('startYear') and history.get('endYear'):
-                if (endDate - startDate).days <= 0:
+        if history.get('ongoing', False):
+            if history.get('end_date'):
+                raise InvalidModelValueError(detail='End date should not be provided if ongoing is true.')
+        else:
+            if history.get('end_date'):
+                end_date = datetime.strptime(history['end_date'], '%Y-%m-%d')
+                if (end_date - start_date).days < 0:
                     raise InvalidModelValueError(detail='End date must be greater than or equal to the start date.')

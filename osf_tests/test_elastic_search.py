@@ -331,38 +331,6 @@ class TestUserUpdate(OsfTestCase):
         assert_equal(len(query_user(user.fullname)['results']), 1)
         assert_equal(len(query_user(merged_user.fullname)['results']), 0)
 
-    def test_employment(self):
-        user = factories.UserFactory(fullname='Helga Finn')
-        user.save()
-        institution = 'Finn\'s Fine Filers'
-
-        docs = query_user(institution)['results']
-        assert_equal(len(docs), 0)
-        user.jobs.append({
-            'institution': institution,
-            'title': 'The Big Finn',
-        })
-        user.save()
-
-        docs = query_user(institution)['results']
-        assert_equal(len(docs), 1)
-
-    def test_education(self):
-        user = factories.UserFactory(fullname='Henry Johnson')
-        user.save()
-        institution = 'Henry\'s Amazing School!!!'
-
-        docs = query_user(institution)['results']
-        assert_equal(len(docs), 0)
-        user.schools.append({
-            'institution': institution,
-            'degree': 'failed all classes',
-        })
-        user.save()
-
-        docs = query_user(institution)['results']
-        assert_equal(len(docs), 1)
-
     def test_name_fields(self):
         names = ['Bill Nye', 'William', 'the science guy', 'Sanford', 'the Great']
         user = factories.UserFactory(fullname=names[0])
@@ -1204,64 +1172,6 @@ def job(**kwargs):
         else:
             job[key] = kwargs.get(key, 'test_{}'.format(key))
     return job
-
-
-@pytest.mark.enable_search
-@pytest.mark.enable_enqueue_task
-class TestUserSearchResults(OsfTestCase):
-    def setUp(self):
-        with run_celery_tasks():
-            super(TestUserSearchResults, self).setUp()
-            self.user_one = factories.UserFactory(jobs=[job(institution='Oxford'),
-                                                        job(institution='Star Fleet')],
-                                                  fullname='Date Soong')
-
-            self.user_two = factories.UserFactory(jobs=[job(institution='Grapes la Picard'),
-                                                        job(institution='Star Fleet')],
-                                                  fullname='Jean-Luc Picard')
-
-            self.user_three = factories.UserFactory(jobs=[job(institution='Star Fleet'),
-                                                      job(institution='Federation Medical')],
-                                                    fullname='Beverly Crusher')
-
-            self.user_four = factories.UserFactory(jobs=[job(institution='Star Fleet')],
-                                                   fullname='William Riker')
-
-            self.user_five = factories.UserFactory(jobs=[job(institution='Traveler intern'),
-                                                         job(institution='Star Fleet Academy'),
-                                                         job(institution='Star Fleet Intern')],
-                                                   fullname='Wesley Crusher')
-
-            for i in range(25):
-                factories.UserFactory(jobs=[job()])
-
-        self.current_starfleet = [
-            self.user_three,
-            self.user_four,
-        ]
-
-        self.were_starfleet = [
-            self.user_one,
-            self.user_two,
-            self.user_three,
-            self.user_four,
-            self.user_five
-        ]
-
-    @unittest.skip('Cannot guarentee always passes')
-    def test_current_job_first_in_results(self):
-        results = query_user('Star Fleet')['results']
-        result_names = [r['names']['fullname'] for r in results]
-        current_starfleet_names = [u.fullname for u in self.current_starfleet]
-        for name in result_names[:2]:
-            assert_in(name, current_starfleet_names)
-
-    def test_had_job_in_results(self):
-        results = query_user('Star Fleet')['results']
-        result_names = [r['names']['fullname'] for r in results]
-        were_starfleet_names = [u.fullname for u in self.were_starfleet]
-        for name in result_names:
-            assert_in(name, were_starfleet_names)
 
 
 @pytest.mark.enable_search

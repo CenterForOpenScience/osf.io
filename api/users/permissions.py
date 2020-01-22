@@ -14,6 +14,18 @@ class ReadOnlyOrCurrentUser(permissions.BasePermission):
         else:
             return obj == request_user
 
+class ReadOnlyOrCurrentUserProfile(permissions.BasePermission):
+    """ Check to see if the request is coming from the currently logged user
+    """
+
+    def has_permission(self, request, view):
+        requested_user = view.get_user()
+        assert isinstance(requested_user, OSFUser), 'obj must be a User, got {}'.format(requested_user)
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        else:
+            return requested_user == request.user
+
 class CurrentUser(permissions.BasePermission):
     """ Check to see if the request is coming from the currently logged user
     """

@@ -148,6 +148,12 @@ class CoreScopes(object):
 
     WAFFLE_READ = 'waffle_read'
 
+    EDUCATION_READ = 'education_read'
+    EMPLOYMENT_READ = 'employment_read'
+
+    EDUCATION_WRITE = 'education_write'
+    EMPLOYMENT_WRITE = 'education_write'
+
     NULL = 'null'
 
     # NOTE: Use with extreme caution.

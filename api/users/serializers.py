@@ -1,6 +1,7 @@
 import jsonschema
 from django.utils import timezone
 
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
@@ -9,22 +10,23 @@ from api.base.exceptions import InvalidModelValueError, Conflict
 from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
     VersionedDateTimeField, HideIfDisabled, IDField,
-    Link, LinksField, TypeField, RelationshipField, JSONAPIListField,
+    Link, LinksField, TypeField, RelationshipField,
     WaterbutlerLink, ShowIfCurrentUser,
 )
 from api.base.utils import default_node_list_queryset
 from osf.models import Registration, Node
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated, hashids
+from api.base.serializers import BaseProfileSerializer
 from api.files.serializers import QuickFilesSerializer
-from osf.models import Email
+
 from osf.exceptions import ValidationValueError, ValidationError, BlacklistedEmailError
-from osf.models import OSFUser, QuickFilesNode, Preprint
+from osf.models import OSFUser, QuickFilesNode, Preprint, Email, UserEducation, UserEmployment
 from osf.utils.requests import string_type_request_headers
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
 from api.nodes.serializers import NodeSerializer, RegionRelationshipField
-from api.base.schemas.utils import validate_user_json, from_json
+from api.base.schemas.utils import from_json
 from framework.auth.views import send_confirm_email
 from api.base.versioning import get_kebab_snake_case_field
 
@@ -95,8 +97,6 @@ class UserSerializer(JSONAPISerializer):
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
     social = SocialField(required=False, min_version='2.10')
-    employment = JSONAPIListField(required=False, source='jobs')
-    education = JSONAPIListField(required=False, source='schools')
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
     accepted_terms_of_service = ShowIfCurrentUser(ser.SerializerMethodField())
 
@@ -164,6 +164,20 @@ class UserSerializer(JSONAPISerializer):
         read_only=True,
     ))
 
+    education = HideIfDisabled(RelationshipField(
+        related_view='users:user-education',
+        related_view_kwargs={'user_id': '<_id>'},
+        self_view='users:user-education-relationship',
+        self_view_kwargs={'user_id': '<_id>'},
+    ))
+
+    employment = HideIfDisabled(RelationshipField(
+        related_view='users:user-employment',
+        related_view_kwargs={'user_id': '<_id>'},
+        self_view='users:user-employment-relationship',
+        self_view_kwargs={'user_id': '<_id>'},
+    ))
+
     class Meta:
         type_ = 'users'
 
@@ -228,14 +242,6 @@ class UserSerializer(JSONAPISerializer):
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
         return user.profile_image_url(size=size)
-
-    def validate_employment(self, value):
-        validate_user_json(value, 'employment-schema.json')
-        return value
-
-    def validate_education(self, value):
-        validate_user_json(value, 'education-schema.json')
-        return value
 
     def validate_social(self, value):
         schema = from_json('social-schema.json')
@@ -381,6 +387,178 @@ class UserInstitutionsRelationshipSerializer(BaseAPISerializer):
 
     class Meta:
         type_ = 'institutions'
+
+
+class UserEducationSerializer(BaseProfileSerializer):
+    degree = ser.CharField(required=False)
+    schema = 'education-schema.json'
+
+    class Meta:
+        type_ = 'user-education'
+
+    def self_url(self, obj):
+        return absolute_reverse(
+            'users:user-education-detail', kwargs={
+                'education_id': obj._id,
+                'user_id': obj.user._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        education = UserEducation(user=user, **validated_data)
+        education.save()
+        return education
+
+
+class UserEducationDetailSerializer(UserEducationSerializer):
+    institution = ser.CharField(required=False)
+    id = IDField(source='_id', required=True)
+
+    def update(self, education, validated_data):
+        for attr, value in validated_data.items():
+            setattr(education, attr, value)
+        education.save()
+        return education
+
+
+class UserEmploymentSerializer(BaseProfileSerializer):
+    title = ser.CharField(required=False)
+    schema = 'employment-schema.json'
+
+    class Meta:
+        type_ = 'user-employment'
+
+    def self_url(self, obj):
+        return absolute_reverse(
+            'users:user-employment-detail', kwargs={
+                'employment_id': obj._id,
+                'user_id': obj.user._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        employment = UserEmployment(user=user, **validated_data)
+        employment.save()
+        return employment
+
+
+class UserEmploymentDetailSerializer(UserEmploymentSerializer):
+    institution = ser.CharField(required=False)
+    id = IDField(source='_id', required=True)
+
+    def update(self, employment, validated_data):
+        for attr, value in validated_data.items():
+            setattr(employment, attr, value)
+        employment.save()
+        return employment
+
+
+class RelatedEducation(JSONAPIRelationshipSerializer):
+    id = ser.CharField(required=False, allow_null=True, source='_id')
+    class Meta:
+        type_ = 'education'
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
+
+class UserEducationRelationshipSerializer(BaseAPISerializer):
+    # TODO - consolodate these into a user relationship serializer?
+    # include this, UserInstitutionsRelationshipSerializer and UserEmploymentRelationshipSerializer
+    data = ser.ListField(child=RelatedEducation())
+    links = LinksField({
+        'self': 'get_self_url',
+        'html': 'get_related_url',
+    })
+
+    def update(self, obj, validated_data):
+        user = obj['self']
+        new_order = []
+        new_data = []
+        for entry in validated_data['data']:
+            education = get_object_or_404(UserEducation, _id=entry['_id'])
+            new_order.append(education.id)
+            new_data.append(education)
+        user.set_usereducation_order(new_order)
+        obj['data'] = new_data
+        return obj
+
+    def get_self_url(self, obj):
+        return absolute_reverse(
+            'users:user-education-relationship', kwargs={
+                'user_id': obj['self']._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    def get_related_url(self, obj):
+        return absolute_reverse(
+            'users:user-education', kwargs={
+                'user_id': obj['self']._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
+    class Meta:
+        type_ = 'user-education'
+
+
+class RelatedEmployment(JSONAPIRelationshipSerializer):
+    id = ser.CharField(required=False, allow_null=True, source='_id')
+    class Meta:
+        type_ = 'employment'
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
+
+class UserEmploymentRelationshipSerializer(BaseAPISerializer):
+    data = ser.ListField(child=RelatedEmployment())
+    links = LinksField({
+        'self': 'get_self_url',
+        'html': 'get_related_url',
+    })
+
+    def update(self, obj, validated_data):
+        user = obj['self']
+        new_order = []
+        new_data = []
+        for entry in validated_data['data']:
+            employment = get_object_or_404(UserEmployment, _id=entry['_id'])
+            new_order.append(employment.id)
+            new_data.append(employment)
+        user.set_useremployment_order(new_order)
+        obj['data'] = new_data
+        return obj
+
+    def get_self_url(self, obj):
+        return absolute_reverse(
+            'users:user-employment-relationship', kwargs={
+                'user_id': obj['self']._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    def get_related_url(self, obj):
+        return absolute_reverse(
+            'users:user-employment', kwargs={
+                'user_id': obj['self']._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
+    class Meta:
+        type_ = 'user-employment'
 
 
 class UserIdentitiesSerializer(JSONAPISerializer):
