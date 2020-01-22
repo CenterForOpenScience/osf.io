@@ -22,9 +22,9 @@ from api.base.serializers import (
     ShowIfVersion, VersionedDateTimeField, ValuesListField,
 )
 from framework.auth.core import Auth
-from osf.exceptions import ValidationValueError, NodeStateError
-from osf.models import Node, AbstractNode
-from osf.utils.registrations import strip_registered_meta_comments
+from osf.exceptions import ValidationValueError, AbstractNode, NodeStateError
+from osf.models import Node, RegistrationSchema
+from website.settings import ANONYMIZED_TITLES
 from framework.sentry import log_exception
 
 class RegistrationSerializer(NodeSerializer):
@@ -394,35 +394,17 @@ class RegistrationSerializer(NodeSerializer):
     def anonymize_registered_meta(self, obj):
         """
         Looks at every question on every page of the schema, for any titles
-        that have a contributor-input block type.  If present, deletes that question's response
+        matching ANONYMIZED_TITLES.  If present, deletes that question's response
         from meta_values.
         """
-        cleaned_registered_meta = strip_registered_meta_comments(obj.registered_meta.values()[0])
-        return self.anonymize_fields(obj, cleaned_registered_meta)
-
-    def anonymize_registration_responses(self, obj):
-        """
-        For any questions that have a `contributor-input` block type, delete
-        that question's response from registration_responses.
-
-        We want to make sure author's names that need to be anonymized
-        aren't surfaced when viewed through an anonymous VOL
-        """
-        return self.anonymize_fields(obj, obj.registration_responses)
-
-    def anonymize_fields(self, obj, data):
-        """
-        Consolidates logic to anonymize fields with contributor information
-        on both registered_meta and registration_responses
-        """
+        meta_values = obj.registered_meta.values()[0]
         if is_anonymized(self.context['request']):
-            anonymous_registration_response_keys = obj.get_contributor_registration_response_keys()
-
-            for key in anonymous_registration_response_keys:
-                if key in data:
-                    del data[key]
-
-        return data
+            registration_schema = RegistrationSchema.objects.get(_id=obj.registered_schema_id)
+            for page in registration_schema.schema['pages']:
+                for question in page['questions']:
+                    if question['title'] in ANONYMIZED_TITLES and meta_values.get(question.get('qid')):
+                        del meta_values[question['qid']]
+        return meta_values
 
     def check_admin_perms(self, registration, user, validated_data):
         """
