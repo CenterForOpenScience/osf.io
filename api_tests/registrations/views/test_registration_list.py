@@ -31,7 +31,7 @@ SCHEMA_VERSION = 2
 
 
 @pytest.mark.enable_quickfiles_creation
-class TestRegistrationList(ApiTestCase):
+class TestRegistrationList:
 
     def setUp(self):
         super(TestRegistrationList, self).setUp()

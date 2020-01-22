@@ -383,28 +383,8 @@ class RegistrationSerializer(NodeSerializer):
         that have a contributor-input block type.  If present, deletes that question's response
         from meta_values.
         """
-
-    def anonymize_registration_responses(self, obj):
-        """
-        For any questions that have a `contributor-input` block type, delete
-        that question's response from registration_responses.
-        We want to make sure author's names that need to be anonymized
-        aren't surfaced when viewed through an anonymous VOL
-        """
-        return self.anonymize_fields(obj, obj.registration_responses)
-
-    def anonymize_fields(self, obj, data):
-        """
-        Consolidates logic to anonymize fields with contributor information
-        on both registered_meta and registration_responses
-        """
-        if is_anonymized(self.context['request']):
-            registration_schema = RegistrationSchema.objects.get(_id=obj.registered_schema_id)
-            for page in registration_schema.schema['pages']:
-                for question in page['questions']:
-                    if question['title'] in ANONYMIZED_TITLES and meta_values.get(question.get('qid')):
-                        del meta_values[question['qid']]
-        return meta_values
+        cleaned_registered_meta = strip_registered_meta_comments(list(obj.registered_meta.values())[0])
+        return self.anonymize_fields(obj, cleaned_registered_meta)
 
     def anonymize_registration_responses(self, obj):
         """
