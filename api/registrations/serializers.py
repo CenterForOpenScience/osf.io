@@ -380,7 +380,7 @@ class RegistrationSerializer(NodeSerializer):
     def anonymize_registered_meta(self, obj):
         """
         Looks at every question on every page of the schema, for any titles
-        matching ANONYMIZED_TITLES.  If present, deletes that question's response
+        that have a contributor-input block type.  If present, deletes that question's response
         from meta_values.
         """
 

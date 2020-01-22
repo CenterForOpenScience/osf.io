@@ -174,7 +174,7 @@ class TestNodeDetail(ApiTestCase):
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is True
-        assert_items_equal(
+        assert_equals(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_write)
 
