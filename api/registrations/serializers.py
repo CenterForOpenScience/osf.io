@@ -397,7 +397,7 @@ class RegistrationSerializer(NodeSerializer):
         matching ANONYMIZED_TITLES.  If present, deletes that question's response
         from meta_values.
         """
-        meta_values = obj.registered_meta.values()[0]
+        meta_values = list(obj.registered_meta.values())[0]
         if is_anonymized(self.context['request']):
             registration_schema = RegistrationSchema.objects.get(_id=obj.registered_schema_id)
             for page in registration_schema.schema['pages']:
