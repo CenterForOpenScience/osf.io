@@ -383,8 +383,6 @@ class RegistrationSerializer(NodeSerializer):
         matching ANONYMIZED_TITLES.  If present, deletes that question's response
         from meta_values.
         """
-        cleaned_registered_meta = strip_registered_meta_comments(list(obj.registered_meta.values())[0])
-        return self.anonymize_fields(obj, cleaned_registered_meta)
 
     def anonymize_registration_responses(self, obj):
         """
