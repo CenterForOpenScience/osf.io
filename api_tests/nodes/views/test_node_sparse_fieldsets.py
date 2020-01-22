@@ -152,7 +152,7 @@ class TestNodeSparseFieldsDetail:
         assert list(node_json['attributes'].keys()) == ['title']
         assert set(list(node_json['embeds']['children']['data'][0].keys())) == set(
             ['links', 'type', 'id', 'attributes', 'relationships'])
-        assert node_json['embeds']['children']['data'][0]['attributes'].keys() == [
+        assert list(node_json['embeds']['children']['data'][0]['attributes'].keys()) == [
             'title']
         assert node_json['embeds']['children']['data'][0]['attributes']['title'] == child.title
 
@@ -178,7 +178,7 @@ class TestNodeSparseFieldsDetail:
 
         assert set(list(node_json.keys())) == set(
             ['links', 'type', 'id', 'attributes', 'embeds', 'relationships'])
-        assert len(node_json['attributes'].keys()) > 1
+        assert len(list(node_json['attributes'].keys())) > 1
         assert len(node_json['embeds']['contributors']['data']) == 1
         assert node_json['embeds']['contributors']['data'][0]['id'] == '{}-{}'.format(
             node._id, user._id)
@@ -193,11 +193,11 @@ class TestNodeSparseFieldsDetail:
 
         assert set(list(node_json.keys())) == set(
             ['links', 'type', 'id', 'attributes', 'embeds', 'relationships'])
-        assert node_json['attributes'].keys() == ['title']
+        assert list(node_json['attributes'].keys()) == ['title']
         assert len(node_json['embeds']['contributors']['data']) == 1
         assert node_json['embeds']['contributors']['data'][0]['id'] == '{}-{}'.format(
             node._id, user._id)
-        assert node_json['embeds']['contributors']['data'][0]['attributes'].keys() == [
+        assert list(node_json['embeds']['contributors']['data'][0]['attributes'].keys()) == [
             'bibliographic']
 
     def test_update_with_sparse_fields(self, app, user, node, url):
@@ -275,7 +275,7 @@ class TestSparseViewOnlyLinks:
             'embed': 'contributors'
         })  # current_user_can_comment and contributors are anonymized fields, should be removed
         assert res.status_code == 200
-        assert res.json['data']['attributes'].keys() == ['title']
+        assert list(res.json['data']['attributes'].keys()) == ['title']
 
         embeds = res.json['data'].get('embeds', None)
         assert embeds is None or 'contributors' not in embeds
