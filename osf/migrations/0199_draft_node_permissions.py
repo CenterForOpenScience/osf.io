@@ -21,7 +21,7 @@ def post_migrate_signal(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0196_draft_node_models'),
+        ('osf', '0198_draft_node_models'),
     ]
 
     operations = [
