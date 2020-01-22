@@ -692,4 +692,3 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 403
-
