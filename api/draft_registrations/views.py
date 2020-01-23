@@ -32,7 +32,6 @@ class DraftRegistrationMixin(DraftMixin):
     """
     Old DraftMixin was built under the assumption that a node was provided from the start.
     All permission checking went through the node, not the draft.
-
     New draft registration endpoints do permission checking on the draft registration.
     """
 
