@@ -1298,7 +1298,7 @@ class BaseAPISerializer(ser.Serializer, SparseFieldsetMixin):
         super(BaseAPISerializer, self).__init__(*args, **kwargs)
         self.model_field_names = [
             name if field.source == '*' else field.source
-            for name, field in self.fields.items()
+            for name, field in list(self.fields.items())
         ]
 
 
