@@ -134,7 +134,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
             permissions.READ: []
         }
         for i in range(0, 25):
-            perm = random.choice(users.keys())
+            perm = random.choice(list(users.keys()))
             user = AuthUserFactory()
 
             project_private.add_contributor(user, permissions=perm)
@@ -1671,9 +1671,9 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
             {'data': [payload_one, payload_two]},
             auth=user.auth, bulk=True)
         assert res.status_code == 201
-        assert_items_equal([res.json['data'][0]['attributes']['bibliographic'],
+        assert_equals([res.json['data'][0]['attributes']['bibliographic'],
                             res.json['data'][1]['attributes']['bibliographic']], [True, False])
-        assert_items_equal([res.json['data'][0]['attributes']['permission'],
+        assert_equals([res.json['data'][0]['attributes']['permission'],
                             res.json['data'][1]['attributes']['permission']], [permissions.ADMIN, permissions.READ])
         assert res.content_type == 'application/vnd.api+json'
 
@@ -1686,9 +1686,9 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
                                 auth=user.auth, expect_errors=True, bulk=True)
         assert res.status_code == 201
         assert len(res.json['data']) == 2
-        assert_items_equal([res.json['data'][0]['attributes']['bibliographic'],
+        assert_equals([res.json['data'][0]['attributes']['bibliographic'],
                             res.json['data'][1]['attributes']['bibliographic']], [True, False])
-        assert_items_equal([res.json['data'][0]['attributes']['permission'],
+        assert_equals([res.json['data'][0]['attributes']['permission'],
                             res.json['data'][1]['attributes']['permission']], [permissions.ADMIN, permissions.READ])
         assert res.content_type == 'application/vnd.api+json'
 
@@ -1906,7 +1906,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -1925,7 +1925,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -1944,7 +1944,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_private, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -1963,7 +1963,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_private, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -1982,7 +1982,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_private, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2091,7 +2091,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2121,7 +2121,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2188,7 +2188,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
         )
         assert res.status_code == 200
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission']],
             [permissions.ADMIN, permissions.WRITE]
@@ -2203,7 +2203,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
         )
         assert res.status_code == 200
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission']],
             [permissions.ADMIN, permissions.WRITE]
@@ -2348,7 +2348,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2364,7 +2364,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2381,7 +2381,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_private, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2398,7 +2398,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_private, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2416,7 +2416,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_private, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2513,7 +2513,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2539,7 +2539,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2553,7 +2553,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             auth=user.auth, bulk=True)
         assert res.status_code == 200
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission']],
             [permissions.ADMIN, permissions.WRITE])
@@ -2566,7 +2566,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             auth=user.auth, bulk=True)
         assert res.status_code == 200
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission']],
             [permissions.ADMIN, permissions.WRITE])

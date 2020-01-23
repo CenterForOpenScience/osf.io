@@ -3402,12 +3402,12 @@ class TestNodeBulkUpdateSkipUneditable:
         assert res.status_code == 200
         edited = res.json['data']
         skipped = res.json['errors']
-        assert_items_equal(
-            [edited[0]['id'], edited[1]['id']],
+        assert_equals(
+            [edited[1]['id'], edited[0]['id']],
             [user_one_public_project_one._id,
              user_one_public_project_two._id]
         )
-        assert_items_equal(
+        assert_equals(
             [skipped[0]['_id'], skipped[1]['_id']],
             [user_two_public_project_one._id,
              user_two_public_project_two._id]
@@ -3436,12 +3436,12 @@ class TestNodeBulkUpdateSkipUneditable:
         assert res.status_code == 200
         edited = res.json['data']
         skipped = res.json['errors']
-        assert_items_equal(
-            [edited[0]['id'], edited[1]['id']],
+        assert_equals(
+            [edited[1]['id'], edited[0]['id']],
             [user_one_public_project_one._id,
              user_one_public_project_two._id]
         )
-        assert_items_equal(
+        assert_equals(
             [skipped[0]['_id'], skipped[1]['_id']],
             [user_two_public_project_one._id,
              user_two_public_project_two._id]
@@ -4015,14 +4015,14 @@ class TestNodeBulkDeleteSkipUneditable:
         res = app.delete_json_api(url, payload, auth=user_one.auth, bulk=True)
         assert res.status_code == 200
         skipped = res.json['errors']
-        assert_items_equal(
+        assert_equals(
             [skipped[0]['id'], skipped[1]['id']],
             [public_project_three._id, public_project_four._id]
         )
 
         res = app.get('/{}nodes/'.format(API_BASE), auth=user_one.auth)
-        assert_items_equal(
-            [res.json['data'][0]['id'], res.json['data'][1]['id']],
+        assert_equals(
+            [res.json['data'][1]['id'], res.json['data'][0]['id']],
             [public_project_three._id, public_project_four._id]
         )
 
