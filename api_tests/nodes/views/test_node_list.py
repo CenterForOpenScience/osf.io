@@ -3404,7 +3404,7 @@ class TestNodeBulkUpdateSkipUneditable:
         edited = res.json['data']
         skipped = res.json['errors']
         assert_equals(
-            [edited[0]['id'], edited[1]['id']],
+            [edited[1]['id'], edited[0]['id']],
             [user_one_public_project_one._id,
              user_one_public_project_two._id]
         )
