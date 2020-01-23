@@ -14,7 +14,7 @@ from osf_tests.factories import (
 )
 from osf.utils.permissions import WRITE, READ
 from rest_framework import exceptions
-from test_node_draft_registration_list import DraftRegistrationTestCase
+from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
 
 SCHEMA_VERSION = 2
 
@@ -966,7 +966,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
                         'nodeId': project_public._id,
                         'viewUrl': '/project/{}/files/osfstorage/{}'.format(project_public._id, draft_registration_prereg._id),
                         'selectedFileName': 'Screen Shot 2016-03-30 at 7.02.05 PM.png',
-                        'sha256': binascii.hexlify(sha256).decode()
+                        'sha256': binascii.hexlify(sha256)
                     }]
                 }
             }
@@ -993,7 +993,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
                         'nodeId': project_public._id,
                         'viewUrl': '/project/{}/files/osfstorage/{}'.format(project_public._id, draft_registration_prereg._id),
                         'selectedFileNames': 'Screen Shot 2016-03-30 at 7.02.05 PM.png',
-                        'sha256': binascii.hexlify(sha256).decode()
+                        'sha256': binascii.hexlify(sha256)
                     }]
                 }
             }
@@ -1008,9 +1008,9 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
 
     def test_multiple_choice_questions_incorrect_choice(
             self, app, user, payload, url_draft_registrations):
-        payload['data']['attributes']['registration_metadata']['q15'] = {
+        payload['data']['attributes']['registration_metadata']['q15'] = '''{
             'value': ['This is my answer.']
-        }
+        }'''
         res = app.put_json_api(
             url_draft_registrations,
             payload, auth=user.auth,
