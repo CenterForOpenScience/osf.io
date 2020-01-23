@@ -621,7 +621,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         if callable(lookup_url_kwarg):
             lookup_url_kwarg = lookup_url_kwarg(getattr(resource, field_name))
 
-        kwargs = {attr_name: self.lookup_attribute(resource, attr) for (attr_name, attr) in lookup_url_kwarg.items()}
+        kwargs = {attr_name: self.lookup_attribute(resource, attr) for (attr_name, attr) in list(lookup_url_kwarg.items())}
         kwargs.update({'version': request.parser_context['kwargs']['version']})
 
         view = self.view_name
@@ -725,7 +725,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
         kwargs_retrieval = {}
 
-        for lookup_url_kwarg, lookup_field in kwargs_dict.items():
+        for lookup_url_kwarg, lookup_field in list(kwargs_dict.items()):
 
             if _tpl(lookup_field):
                 lookup_value = self.lookup_attribute(obj, lookup_field)
@@ -740,7 +740,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
     # Overrides HyperlinkedIdentityField
     def get_url(self, obj, view_name, request, format):
         urls = {}
-        for view_name, view in self.views.items():
+        for view_name, view in list(self.views.items()):
             if view is None:
                 urls[view_name] = {}
             else:
@@ -906,7 +906,7 @@ class TypedRelationshipField(RelationshipField):
             else:
                 view_parts.insert(1, get_meta_type(self.root, request).replace('_', '-'))
             self.view_name = view_name = ':'.join(view_parts)
-            for k, v in self.views.items():
+            for k, v in list(self.views.items()):
                 if v == untyped_view:
                     self.views[k] = view_name
         return super(TypedRelationshipField, self).get_url(obj, view_name, request, format)
@@ -1042,7 +1042,7 @@ class LinksField(ser.Field):
 
     def to_representation(self, obj):
         ret = {}
-        for name, value in self.links.items():
+        for name, value in list(self.links.items()):
             try:
                 url = _url_val(value, obj=obj, serializer=self.parent, request=self.context['request'])
             except SkipField:
@@ -1108,10 +1108,10 @@ class Link(object):
         self.query_kwargs = query_kwargs or {}
 
     def resolve_url(self, obj, request):
-        kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.kwargs.items()}
+        kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in list(self.kwargs.items())}
         kwarg_values.update({'version': request.parser_context['kwargs']['version']})
         arg_values = [_get_attr_from_tpl(attr_tpl, obj) for attr_tpl in self.args]
-        query_kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.query_kwargs.items()}
+        query_kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in list(self.query_kwargs.items())}
         # Presumably, if you have are expecting a value but the value is empty, then the link is invalid.
         for item in kwarg_values:
             if kwarg_values[item] is None:
@@ -1220,7 +1220,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
         ret = {'data': []}
 
-        for resource_id, resource in instance_mapping.items():
+        for resource_id, resource in list(instance_mapping.items()):
             data = data_mapping.pop(resource_id, None)
             ret['data'].append(self.child.update(resource, data))
 
