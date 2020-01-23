@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import uuid
 from django.conf import settings as api_settings
 from django.middleware.csrf import _get_new_csrf_token, _sanitize_token
 from framework.auth.core import get_current_user_id
@@ -31,7 +32,7 @@ def before_request():
 
 
 def after_request(resp):
-    """Set a cookie specified by api_settings.CSRF_COOKI_NAME so that
+    """Set a cookie specified by api_settings.CSRF_COOKIE_NAME so that
     session-authenticated requests from the legacy frontend can pass
     CSRF verification.
     """
@@ -43,6 +44,15 @@ def after_request(resp):
             api_settings.CSRF_COOKIE_NAME,
             csrf_token,
             max_age=api_settings.CSRF_COOKIE_AGE,
+            domain=api_settings.CSRF_COOKIE_DOMAIN,
+            path=api_settings.CSRF_COOKIE_PATH,
+            httponly=api_settings.CSRF_COOKIE_HTTPONLY,
+        )
+
+    if not request.cookies.get(api_settings.SLOAN_ID):
+        resp.set_cookie(
+            api_settings.SLOAN_ID,
+            str(uuid.uuid4()),
             domain=api_settings.CSRF_COOKIE_DOMAIN,
             path=api_settings.CSRF_COOKIE_PATH,
             httponly=api_settings.CSRF_COOKIE_HTTPONLY,
