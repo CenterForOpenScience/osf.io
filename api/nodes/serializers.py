@@ -35,12 +35,10 @@ from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from addons.osfstorage.models import Region
 from osf.exceptions import NodeStateError
 from osf.models import (
-    Comment, DraftRegistration, Institution,
-    RegistrationSchema, AbstractNode, PrivateLink,
+    Comment, DraftRegistration, ExternalAccount, Institution,
+    RegistrationSchema, AbstractNode, PrivateLink, Preprint,
     RegistrationProvider, OSFGroup, NodeLicense,
 )
-from osf.models.external import ExternalAccount
-from osf.models.preprint import Preprint
 from website.project import new_private_link
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
@@ -304,6 +302,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text='Choices: ' + category_choices_string)
+
     custom_citation = ser.CharField(allow_blank=True, required=False)
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
@@ -1505,6 +1504,9 @@ class DraftRegistrationSerializerLegacy(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return obj.absolute_url
 
+    def get_node(self, validated_data=None):
+        return self.context['view'].get_node()
+
     def update_metadata(self, draft, metadata, reviewer, required_fields=False):
         try:
             # Required fields are only required when creating the actual registration, not updating the draft.
@@ -1537,6 +1539,7 @@ class DraftRegistrationSerializerLegacy(JSONAPISerializer):
     def create(self, validated_data):
         initiator = get_user_auth(self.context['request']).user
         node = self.get_node(validated_data)
+        # Old workflow - deeply nested
         metadata = validated_data.pop('registration_metadata', None)
         registration_responses = validated_data.pop('registration_responses', None)
         schema = validated_data.pop('registration_schema')
@@ -1567,7 +1570,7 @@ class DraftRegistrationSerializerLegacy(JSONAPISerializer):
 
 class DraftRegistrationDetailLegacySerializer(DraftRegistrationSerializerLegacy):
     """
-    Overrides DraftRegistrationSerializerLegacy to make id and registration_metadata required.
+    Overrides DraftRegistrationSerializerLegacy to make id required.
     registration_supplement cannot be changed after draft has been created.
 
     Also makes registration_supplement read-only.

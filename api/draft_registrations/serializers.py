@@ -109,7 +109,10 @@ class DraftRegistrationSerializer(DraftRegistrationSerializerLegacy, Taxonomizab
         """Determines whether subjects should be serialized as a relationship.
         Older serializers expect subjects as attributes for earlier versions,
         but this new serializer does not have to adhere to that same behavior.
+<<<<<<< HEAD
 
+=======
+>>>>>>> Initial commit pulling out DraftRegistrationRelationship endpoints code from Dawn's PR
         :param object request: Request object
         :return bool: Subjects should be serialized as relationships
         """
@@ -197,7 +200,10 @@ class DraftRegistrationContributorsSerializer(NodeContributorsSerializer):
 class DraftRegistrationContributorsCreateSerializer(NodeContributorsCreateSerializer, DraftRegistrationContributorsSerializer):
     """
     Overrides DraftRegistrationContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
+<<<<<<< HEAD
 
+=======
+>>>>>>> Initial commit pulling out DraftRegistrationRelationship endpoints code from Dawn's PR
     id and index redefined because of the two serializers we've inherited
     """
     id = IDField(source='_id', required=False, allow_null=True)
@@ -209,7 +215,10 @@ class DraftRegistrationContributorsCreateSerializer(NodeContributorsCreateSerial
 class DraftRegistrationContributorDetailSerializer(NodeContributorDetailSerializer, DraftRegistrationContributorsSerializer):
     """
     Overrides NodeContributorDetailSerializer to set the draft registration instead of the node
+<<<<<<< HEAD
 
+=======
+>>>>>>> Initial commit pulling out DraftRegistrationRelationship endpoints code from Dawn's PR
     id and index redefined because of the two serializers we've inherited
     """
     id = IDField(required=True, source='_id')

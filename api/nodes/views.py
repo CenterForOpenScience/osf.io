@@ -596,11 +596,10 @@ class NodeBibliographicContributorsList(BaseContributorList, NodeMixin):
 
 
 class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_draft_registrations_list).
-
+    """
+    The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_draft_registrations_list).
     This endpoint supports the older registries submission workflow and will soon be deprecated.
     Use DraftRegistrationsList endpoint instead.
-
     """
     permission_classes = (
         IsAdminContributor,
@@ -626,8 +625,8 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
 
 
 class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, DraftMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_draft_registrations_read).
-
+    """
+    The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_draft_registrations_read).
     This endpoint supports the older registries submission workflow and will soon be deprecated.
     Use DraftRegistrationDetail endpoint instead.
     """
