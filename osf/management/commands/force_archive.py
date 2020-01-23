@@ -5,16 +5,16 @@ USE WITH CARE.
 Usage:
 
     # Check if Registration abc12 and qwe34 are stuck
-    python manage.py force_archive --check --guids abc12 qwe34
+    python3 manage.py force_archive --check --guids abc12 qwe34
 
     # Dry-run a force-archive of abc12 and qwe34. Verifies that the force-archive can occur.
-    python manage.py force_archive --dry --guids abc12 qwe34
+    python3 manage.py force_archive --dry --guids abc12 qwe34
 
     # Force-archive abc12 and qwe34
-    python manage.py force_archive --guids abc12 qwe34
+    python3 manage.py force_archive --guids abc12 qwe34
 
     # Force archive OSFS and Dropbox on abc12
-    python manage.py force_archive --addons dropbox --guids abc12
+    python3 manage.py force_archive --addons dropbox --guids abc12
 """
 from __future__ import unicode_literals
 

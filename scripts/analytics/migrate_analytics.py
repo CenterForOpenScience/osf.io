@@ -444,13 +444,13 @@ def main():
 
     Usage:
         * Transfer all events from the 'institution_analytics' to the 'institution_summary' collection:
-            `python -m scripts.analytics.migrate_analytics -d -t -sc institution_analytics -dc institution_summary`
+            `python3 -m scripts.analytics.migrate_analytics -d -t -sc institution_analytics -dc institution_summary`
         * Fill in the gaps in analytics for the 'addon_snapshot' collection between 2016-11-01 and 2016-11-15:
-            `python -m scripts.analytics.migrate_analytics -d -sm -sc addon_snapshot -s 2016-11-01 -e 2016-11-15`
+            `python3 -m scripts.analytics.migrate_analytics -d -sm -sc addon_snapshot -s 2016-11-01 -e 2016-11-15`
         * Reverse the above action by adding -r:
-            `python -m scripts.analytics.migrate_analytics -d -sm -sc addon_snapshot -s 2016-11-01 -e 2016-11-15 -r`
+            `python3 -m scripts.analytics.migrate_analytics -d -sm -sc addon_snapshot -s 2016-11-01 -e 2016-11-15 -r`
         * Parse old analytics from the old analytics CSV stored on your filesystem:
-            `python -m scripts.analytics.migrate_analytics -o -d`
+            `python3 -m scripts.analytics.migrate_analytics -o -d`
     """
     args = parse_args()
     client = get_keen_client()

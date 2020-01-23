@@ -15,12 +15,12 @@ from addons.base.exceptions import HookError
 pytestmark = pytest.mark.django_db
 
 def make_signature(secret, data):
-    return hmac.new(secret, data, hashlib.sha1).hexdigest()
+    return hmac.new(secret.encode(), data, hashlib.sha1).hexdigest()
 
 HOOK_PAYLOAD = json.dumps({
     'files': [],
     'message': 'fake commit',
-})
+}).encode()
 
 
 class TestHookVerify(OsfTestCase):

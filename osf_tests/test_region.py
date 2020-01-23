@@ -7,7 +7,8 @@ from osf.models import RegistrationSchema, Registration
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
-    RegionFactory
+    RegionFactory,
+    DraftRegistrationFactory,
 )
 
 
@@ -56,7 +57,8 @@ class TestRegion:
         :return:
         """
         schema = RegistrationSchema.objects.first()
-        project_with_different_regions.register_node(schema, Auth(user=user), '41-33')
+        draft_reg = DraftRegistrationFactory(branched_from=project_with_different_regions)
+        project_with_different_regions.register_node(schema, Auth(user=user), draft_reg)
 
         regs = Registration.objects.all()
 

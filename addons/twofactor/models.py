@@ -14,7 +14,7 @@ class UserSettings(BaseUserSettings):
 
     @property
     def totp_secret_b32(self):
-        return b32encode(unhexlify(self.totp_secret))
+        return b32encode(unhexlify(self.totp_secret)).decode()
 
     @property
     def otpauth_url(self):
@@ -37,7 +37,7 @@ class UserSettings(BaseUserSettings):
 
     def verify_code(self, code):
         accepted, drift = accept_totp(key=self.totp_secret,
-                                      response=code,
+                                      response=str(code),
                                       drift=self.totp_drift)
         if accepted:
             self.totp_drift = drift

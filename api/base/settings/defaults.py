@@ -169,6 +169,7 @@ REST_FRAMEWORK = {
         '2.16',
         '2.17',
         '2.18',
+        '2.19',
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
@@ -272,8 +273,8 @@ NODE_CATEGORY_MAP = osf_settings.NODE_CATEGORY_MAP
 
 DEBUG_TRANSACTIONS = DEBUG
 
-JWT_SECRET = 'osf_api_cas_login_jwt_secret_32b'
-JWE_SECRET = 'osf_api_cas_login_jwe_secret_32b'
+JWT_SECRET = b'osf_api_cas_login_jwt_secret_32b'
+JWE_SECRET = b'osf_api_cas_login_jwe_secret_32b'
 
 ENABLE_VARNISH = osf_settings.ENABLE_VARNISH
 ENABLE_ESI = osf_settings.ENABLE_ESI

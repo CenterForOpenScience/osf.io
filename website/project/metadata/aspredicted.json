@@ -7,7 +7,7 @@
         "id": "page1",
         "questions": [{
             "qid": "data",
-            "title": "Data collection. Have any data been collected for this study already?",
+            "title": "Data collection",
             "nav": "Data Collection",
             "type": "choose",
             "format": "singleselect",
@@ -16,60 +16,68 @@
                 "No, no data have been collected for this study yet.",
                 "It's complicated. We have already collected some data but explain in Question 8 why readers may consider this a valid pre-registration nevertheless."
             ],
-            "description": "Please choose. Note: 'Yes' is a discouraged answer for this preregistration form."
+            "description": "Have any data been collected for this study already? Note: 'Yes' is a discouraged answer for this preregistration form."
         },{
             "qid": "hypothesis",
-            "title": "Hypothesis. What's the main question being asked or hypothesis being tested in this study?",
+            "title": "Hypothesis",
             "nav": "Hypothesis",
             "type": "string",
-            "format": "textarea"
+            "format": "textarea",
+            "description": "What's the main question being asked or hypothesis being tested in this study?"
         },{
             "qid": "dependent",
-            "title": "Dependent variable. Describe the key dependent variable(s) specifying how they will be measured.",
+            "title": "Dependent variable",
             "nav": "Dependent variables",
             "type": "string",
-            "format": "textarea"
+            "format": "textarea",
+            "description": "Describe the key dependent variable(s) specifying how they will be measured."
         },{
             "qid": "conditions",
-            "title": "Conditions. How many and which conditions will participants be assigned to?",
+            "title": "Conditions",
             "nav": "Conditions",
             "type": "string",
-            "format": "textarea"
+            "format": "textarea",
+            "description": "How many and which conditions will participants be assigned to?"
         },{
             "qid": "analyses",
-            "title": "Analyses. Specify exactly which analyses you will conduct to examine the main question/hypothesis.",
+            "title": "Analyses",
             "nav": "Analyses",
             "type": "string",
-            "format": "textarea"
+            "format": "textarea",
+            "description": "Specify exactly which analyses you will conduct to examine the main question/hypothesis."
         },{
             "qid": "outliers",
-            "title": "Outliers and Exclusions. Describe exactly how outliers will be defined and handled, and your precise rule(s) for excluding observations.",
+            "title": "Outliers and Exclusions",
             "nav": "Outliers and Exclusions",
             "type": "string",
-            "format": "textarea"
+            "format": "textarea",
+            "description": "Describe exactly how outliers will be defined and handled, and your precise rule(s) for excluding observations."
         },{
             "qid": "sample",
-            "title": "Sample Size. How many observations will be collected or what will determine sample size? No need to justify decision, but be precise about exactly how the number will be determined.",
+            "title": "Sample Size",
             "nav": "Sample size",
             "type": "string",
-            "format": "textarea"
+            "format": "textarea",
+            "description": "How many observations will be collected or what will determine sample size? No need to justify decision, but be precise about exactly how the number will be determined."
         },{
             "qid": "other",
-            "title": "Other. Anything else you would like to pre-register? (e.g., secondary analyses, variables collected for exploratory purposes, unusual analyses planned?)",
+            "title": "Other",
             "nav": "Other",
             "type": "string",
-            "format": "textarea"
+            "format": "textarea",
+            "description": "Anything else you would like to pre-register? (e.g., secondary analyses, variables collected for exploratory purposes, unusual analyses planned?)"
         },
         {
             "qid": "name",
-            "title": "Name. Give a title for this AsPredicted pre-registration. Suggestion: use the name of the project, followed by study description.",
+            "title": "Name",
             "nav": "Name",
             "type": "string",
-            "format": "textarea"
+            "format": "textarea",
+            "description": "Give a title for this AsPredicted pre-registration. Suggestion: use the name of the project, followed by study description."
         },
         {
             "qid": "study_type",
-            "title": "Finally. For record keeping purposes, please tell us the type of study you are pre-registering.",
+            "title": "Finally",
             "nav": "Study type",
             "type": "choose",
             "format": "singleselect",
@@ -79,14 +87,16 @@
                 "Survey",
                 "Observational/archival study",
                 "Other (describe below)"
-            ]
+            ],
+            "description": "For record keeping purposes, please tell us the type of study you are pre-registering."
         },
         {
             "qid": "study_type_other",
             "title": "Other",
             "nav": "Other",
             "type": "string",
-            "format": "textarea"
+            "format": "textarea",
+            "description": "If 'other' was selected above, describe the type of study you're registering."
         }]
     }]
 }

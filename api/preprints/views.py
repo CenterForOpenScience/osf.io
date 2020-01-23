@@ -532,8 +532,8 @@ class PreprintStorageProvidersList(NodeStorageProvidersList, PreprintMixin):
     view_category = 'preprints'
     view_name = 'preprint-storage-providers'
 
-    def get_provider_item(self, provider):
-        return NodeStorageProvider(provider, self.get_preprint())
+    def get_provider_item(self, provider_name):
+        return NodeStorageProvider(self.get_preprint(), provider_name)
 
     def get_queryset(self):
         # Preprints Providers restricted so only osfstorage is allowed
