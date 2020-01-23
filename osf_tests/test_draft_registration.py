@@ -186,14 +186,25 @@ class TestDraftRegistrations:
 
     def test_draft_registrations_active(self):
         project = factories.ProjectFactory()
+
         registration = factories.RegistrationFactory(project=project)
-        deleted_registration = factories.RegistrationFactory(project=project, is_deleted=True)
+        deleted_registration = factories.RegistrationFactory(project=project)
+        deleted_registration.is_deleted = True
+        deleted_registration.save()
+
         draft = factories.DraftRegistrationFactory(branched_from=project, user=project.creator)
-        draft2 = factories.DraftRegistrationFactory(branched_from=project, user=project.creator, registered_node=deleted_registration)
-        finished_draft = factories.DraftRegistrationFactory(branched_from=project, user=project.creator, registered_node=registration)
+
+        draft2 = factories.DraftRegistrationFactory(branched_from=project, user=project.creator)
+        draft2.registered_node = deleted_registration
+        draft2.save()
+
+        finished_draft = factories.DraftRegistrationFactory(branched_from=project, user=project.creator)
+        finished_draft.registered_node = registration
+        finished_draft.save()
+
         assert draft in project.draft_registrations_active.all()
         assert draft2 in project.draft_registrations_active.all()
-        assert finished_draft in project.draft_registrations_active.all()
+        assert finished_draft not in project.draft_registrations_active.all()
 
     def test_update_metadata_interleaves_comments_by_created_timestamp(self, project):
         draft = factories.DraftRegistrationFactory(branched_from=project)
@@ -393,13 +404,6 @@ class TestDraftRegistrationContributorMethods:
             contrib = DraftRegistrationContributor.objects.create(user=user, draft_registration=resource, visible=visible)
             return contrib
         return make_contributor
-
-    @pytest.fixture()
-    def contributor_exists(self, user, resource, visible=True):
-        def query_contributor(user, resource, visible):
-            contrib_exists = DraftRegistrationContributor.objects.filter(user=user, draft_registration=resource, visible=visible).exists()
-            return contrib_exists
-        return query_contributor
 
     def test_add_contributor(self, draft_registration, user, auth):
         # A user is added as a contributor
