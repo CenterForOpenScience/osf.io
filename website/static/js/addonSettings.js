@@ -106,7 +106,7 @@ var OAuthAddonSettingsViewModel = oop.defclass({
                         self.setMessage(agh.sprintf(_('Add-on successfully authorized. To link this add-on to an GakuNin RDM project, go to the settings page of the project, enable %1$s, and choose content to connect.'),self.properName), 'text-success');
                     }
                 } else {
-                    self.setMessage(agh.sprintf_('Error while authorizing add-on. Please log in to your %1$s account and grant access to the GakuNin RDM to enable this add-on.'),self.properName), 'text-danger');
+                    self.setMessage(agh.sprintf(_('Error while authorizing add-on. Please log in to your %1$s account and grant access to the GakuNin RDM to enable this add-on.'),self.properName), 'text-danger');
                 }
             });
         };

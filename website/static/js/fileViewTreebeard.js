@@ -119,7 +119,7 @@ function FileViewTreebeard(data) {
                         folderIcons: true,
                         filter: true,
                         custom: function () {
-                            return m('span.text-muted', agh.sprintf(_('Uploading %1$s...'), item.data.name );
+                            return m('span.text-muted', agh.sprintf(_('Uploading %1$s...'), item.data.name ));
                         }
                     }
                 ];

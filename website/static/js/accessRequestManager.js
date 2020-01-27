@@ -85,7 +85,7 @@ var AccessRequestModel = function(accessRequest, pageOwner, isRegistration, isPa
 
         request.fail(function(xhr, status, error){
             $osf.unblock();
-            var errorMessage = lodashGet(xhr, 'responseJSON.message') || (agh.sprintf(_('There was a problem trying to %1$s the request from the user. %2$s'),trigger,osfLanguage.REFRESH_OR_SUPPORT);
+            var errorMessage = lodashGet(xhr, 'responseJSON.message') || (agh.sprintf(_('There was a problem trying to %1$s the request from the user. %2$s'),trigger,osfLanguage.REFRESH_OR_SUPPORT));
             $osf.growl(agh.sprintf(_('Could not %1$s access request'),trigger), errorMessage);
             Raven.captureMessage(agh.sprintf(_('Could not %1$s access request'),trigger), {
                 extra: {

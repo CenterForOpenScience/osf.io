@@ -544,7 +544,7 @@ function checkConflictsRename(tb, item, name, cb) {
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')}, 'Replace')
                 ],
-                m('h3.break-word.modal-title', agh.sprintf(_('Replace "%1$s"?'),child.data.name)
+                m('h3.break-word.modal-title', agh.sprintf(_('Replace "%1$s"?'),child.data.name))
             );
             return;
         }

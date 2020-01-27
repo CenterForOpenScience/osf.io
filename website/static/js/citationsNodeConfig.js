@@ -37,7 +37,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         self.accounts = ko.observable([]);
 
         self.messages.submitSettingsSuccess = ko.pureComputed(function(){
-            return agh.sprintf(_('Successfully linked "%1$s".') , $osf.htmlEscape(self.folder().name)) + _(' Go to the <a href="%1$s">Overview page</a> to view your citations.'),self.urls().files);
+            return agh.sprintf(_('Successfully linked "%1$s".') , $osf.htmlEscape(self.folder().name)) + agh.sprintf(_(' Go to the <a href="%1$s">Overview page</a> to view your citations.'),self.urls().files);
         });
 
         self.messages.submitLibrarySettingsSuccess = ko.pureComputed(function(){

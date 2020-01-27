@@ -107,22 +107,18 @@ var FolderPickerViewModel = oop.defclass({
 
         self.messages = {
             invalidCredOwner: ko.pureComputed(function() {
-                return agh.sprintf(_('Could not retrieve %1$s settings at \
-                    this time. The credentials associated with this %1$s account may no longer be valid.'),addonSafeName) +
+                return agh.sprintf(_('Could not retrieve %1$s settings at this time. The credentials associated with this %1$s account may no longer be valid.'),addonSafeName) +
                     agh.sprintf(_(' Try disconnecting and reconnecting the %1$s account on your <a href="%2$s">account settings page</a>.'),addonSafeName,self.urls().settings);
             }),
             invalidCredNotOwner: ko.pureComputed(function() {
-                return agh.sprintf(_('Could not retrieve %1$s settings at \
-                    this time. The %1$s addon credentials may no longer be valid.'),addonSafeName) +
+                return agh.sprintf(_('Could not retrieve %1$s settings at this time. The %1$s addon credentials may no longer be valid.'),addonSafeName) +
                     agh.sprintf(_(' Contact %1$s to verify.') , $osf.htmlEscape(self.ownerName()));
             }),
             cantRetrieveSettings: ko.pureComputed(function() {
-                return agh.sprintf(_('Could not retrieve %1$s settings at \
-                    this time. Please refresh the page. If the problem persists, email %2$s'.),addonSafeName,$osf.osfSupportLink());
+                return agh.sprintf(_('Could not retrieve %1$s settings at this time. Please refresh the page. If the problem persists, email %2$s'.),addonSafeName,$osf.osfSupportLink());
             }),
             updateAccountsError: ko.pureComputed(function() {
-                return agh.sprintf(_('Could not retrieve %1$s account list at \
-                    this time. Please refresh the page. If the problem persists, email %2$s.',addonSafeName,$osf.osfSupportLink());
+                return agh.sprintf(_('Could not retrieve %1$s account list at this time. Please refresh the page. If the problem persists, email %2$s.'),addonSafeName,$osf.osfSupportLink());
             }),
             deauthorizeSuccess: ko.pureComputed(function() {
                 return agh.sprintf(_('Disconnected %1$s.') , addonSafeName );
