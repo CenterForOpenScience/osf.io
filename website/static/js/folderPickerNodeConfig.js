@@ -115,7 +115,7 @@ var FolderPickerViewModel = oop.defclass({
                     agh.sprintf(_(' Contact %1$s to verify.') , $osf.htmlEscape(self.ownerName()));
             }),
             cantRetrieveSettings: ko.pureComputed(function() {
-                return agh.sprintf(_('Could not retrieve %1$s settings at this time. Please refresh the page. If the problem persists, email %2$s'.),addonSafeName,$osf.osfSupportLink());
+                return agh.sprintf(_('Could not retrieve %1$s settings at this time. Please refresh the page. If the problem persists, email %2$s.'),addonSafeName,$osf.osfSupportLink());
             }),
             updateAccountsError: ko.pureComputed(function() {
                 return agh.sprintf(_('Could not retrieve %1$s account list at this time. Please refresh the page. If the problem persists, email %2$s.'),addonSafeName,$osf.osfSupportLink());

@@ -332,7 +332,7 @@ function batchNodesDelete(nodes) {
     return $.when.apply($, requests).then(function (_) {
             bootbox.alert({
                 message: agh.sprintf(_('Your %1$s has been successfully deleted.'),self.nodeType),
-                callback: function (confirmed) {.
+                callback: function (confirmed) {
                     window.location = self.nodeType === 'project' ?
                       '/dashboard/' :
                       window.contextVars.node.parentUrl || window.contextVars.node.urls.web;
