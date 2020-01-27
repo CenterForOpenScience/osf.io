@@ -10,6 +10,7 @@ var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 function expandOnLoad() {
     var tb = this;  // jshint ignore: line
@@ -24,8 +25,8 @@ function beforeChangePermissions(item, permission){
     if(permission === 'public'){
         bootbox.dialog({
             title: _('Make publicly editable'),
-            message: _('Are you sure you want to make the wiki of <b>') + safeTitle +
-                _('</b> publicly editable? This will allow any logged in user to edit the content of this wiki. ') +
+            message: agh.sprintf(_('Are you sure you want to make the wiki of <b>%1$s\
+                 </b> publicly editable? This will allow any logged in user to edit the content of this wiki. '),safeTitle) +
                 _('<b>Note</b>: Users without write access will not be able to add, delete, or rename pages.'),
             buttons: {
                 cancel : {
@@ -114,7 +115,8 @@ function ProjectWiki(data) {
                         if(!item.parent().data.permissions.admin){
                             return _('Only admins may change permissions of this wiki.');
                         } else {
-                            return item.parent().data.node.is_public ? 'Select who can edit' : 'This feature is disabled for wikis of private '  + item.parent().data.nodeType + 's.';
+                            return item.parent().data.node.is_public ? agh.sprintf(ngettext('Select who can edit' : 'This feature is disabled for wikis of private %1$s.',\
+                            'Select who can edit' : 'This feature is disabled for wikis of private %1$ss.',item.parent().data.nodeType),item.parent().data.nodeType);
                         }
                     }
                 },

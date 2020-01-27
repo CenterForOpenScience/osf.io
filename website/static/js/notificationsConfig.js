@@ -62,7 +62,7 @@ var ViewModel = function(list) {
         request.fail(function (xhr) {
             if (xhr.responseJSON.error_type !== 'not_subscribed') {
                 var message = _('Could not update email preferences at this time. If this issue persists, ') +
-                    _('please report it to ') + $osf.osfSupportLink() + '.';
+                    agh.sprintf(_('please report it to %1$s.') , $osf.osfSupportLink());
                 self.changeMessage(message, 'text-danger', 5000);
             }
         });

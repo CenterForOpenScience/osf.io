@@ -117,7 +117,7 @@ $(document).ready(function() {
                 message: _('Could not set commenting configuration. Please try again.'),
                 buttons:{
                     ok:{
-                        label:'Close',
+                        label:_('Close'),
                         className:'btn-default'
                     }
                 }

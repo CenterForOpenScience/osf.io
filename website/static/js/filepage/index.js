@@ -16,7 +16,6 @@ var CommentModel = require('js/comment');
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
-
 var agh = require('agh.sprintf');
 
 var History = require('exports-loader?History!history');
@@ -184,10 +183,10 @@ var FileViewPage = {
         }
 
         $(document).on('fileviewpage:delete', function() {
-            var title = 'Delete file?';
+            var title = _('Delete file?');
             var message = '<p class="overflow">' +
-                    _('Are you sure you want to delete <strong>') +
-                    self.file.safeName + _('</strong>?') + '</p>';
+                    agh.sprintf(_('Are you sure you want to delete <strong>%1$s</strong>?'),self.file.safeName) +
+                    + '</p>';
 
 
             bootbox.confirm({
@@ -209,7 +208,7 @@ var FileViewPage = {
                 },
                 buttons:{
                     confirm:{
-                        label:'Delete',
+                        label:_('Delete'),
                         className:'btn-danger'
                     }
                 }
@@ -343,8 +342,8 @@ var FileViewPage = {
                                             connected: _('Live editing mode '),
                                             connecting: _('Attempting to connect '),
                                             unsupported: _('Unsupported browser '),
-                                            saving: -('Saving... ')
-                                        }[self.shareJSObservables.status()] || 'Unavailable: Live editing ',
+                                            saving: _('Saving... ')
+                                        }[self.shareJSObservables.status()] || _('Unavailable: Live editing '),
                                         m('i.fa.fa-question-circle.fa-large')
                                     ])
                                 ])
@@ -537,11 +536,11 @@ var FileViewPage = {
                         if (!ctrl.mfrIframeParent.is(':visible') || panelsShown > 1) {
                             ctrl.mfrIframeParent.toggle();
                             ctrl.revisions.selected = false;
-                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'view'));
+                            History.pushState(state, 'GakuNin RDM | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'view'));
                         } else if (ctrl.mfrIframeParent.is(':visible') && !ctrl.editor){
                             ctrl.mfrIframeParent.toggle();
                             ctrl.revisions.selected = true;
-                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'revision'));
+                            History.pushState(state, 'GakuNin RDM | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'revision'));
                         }
                     }
                 }, 'View'), editButton())
@@ -558,14 +557,14 @@ var FileViewPage = {
                             ctrl.editor.selected = false;
                         }
                         ctrl.revisions.selected = true;
-                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'revision'));
+                        History.pushState(state, 'GakuNin RDM | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'revision'));
                     } else {
                         ctrl.mfrIframeParent.toggle();
                         if (ctrl.editor) {
                             ctrl.editor.selected = false;
                         }
                         ctrl.revisions.selected = false;
-                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'view'));
+                        History.pushState(state, 'GakuNin RDM | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'view'));
                     }
                 }}, 'Revisions')
             ])

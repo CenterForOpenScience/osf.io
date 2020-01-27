@@ -14,6 +14,7 @@ var $osf = require('js/osfHelpers');
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 var currentUserId = window.contextVars.currentUser.id;
 
@@ -39,7 +40,7 @@ function onClickIfLoggedIn() {
     var pk = $(this).data('pk');
     if (pk !== currentUserId) {
         bootbox.confirm({
-            title: 'Claim as ' + $osf.htmlEscape(global.contextVars.currentUser.username) + '?',
+            title: agh.sprintf(_('Claim as %1$s?'),$osf.htmlEscape(global.contextVars.currentUser.username)),
             message: _('If you claim this account, a contributor of this project ') +
                     _('will be emailed to confirm your identity.'),
             callback: function(confirmed) {

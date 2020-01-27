@@ -14,6 +14,7 @@ var NodesPrivacyTreebeard = require('js/nodesPrivacySettingsTreebeard');
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 var MESSAGES = {
     makeProjectPublicWarning:
@@ -153,7 +154,7 @@ var NodesPrivacyViewModel = function(node, onSetPrivacy) {
 
         return {
             warning: self.parentIsPublic ?
-                _('Make ') + self.parentNodeType + _(' private') :
+                agh.sprintf(_('Make %1$s private'),self.parentNodeType) :
                 _('Warning'),
             select: _('Change privacy settings'),
             confirm: _('Projects and components affected')
@@ -322,7 +323,7 @@ NodesPrivacyViewModel.prototype.makeEmbargoPublic = function() {
         $('.modal').modal('hide');
         self.onSetPrivacy(nodesChanged, true);
         $osf.growl(
-            'Email sent',
+            _('Email sent'),
             _('The administrator(s) can approve or cancel the action within 48 hours. If 48 hours pass without any action taken, then the registration will become public.'),
             'success'
         );

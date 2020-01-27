@@ -21,6 +21,7 @@ var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 function Contributor(data) {
     $.extend(this, data);
@@ -340,7 +341,7 @@ AddContributorViewModel = oop.extend(Paginator, {
             if (contrib.email) {
                 var contribEmail = contrib.email.toLowerCase().trim();
                 if (contribEmail === self.inviteEmail().toLowerCase().trim()) {
-                    return self.inviteEmail() + ' is already in queue.';
+                    return agh.sprintf(_('%1$s is already in queue.'),self.inviteEmail());
                 }
             }
         }
@@ -459,7 +460,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         }).fail(function (xhr, status, error) {
             self.hide();
             $osf.unblock();
-            var errorMessage = lodashGet(xhr, 'responseJSON.message') || (_('There was a problem trying to add contributors.') + osfLanguage.REFRESH_OR_SUPPORT);
+            var errorMessage = lodashGet(xhr, 'responseJSON.message') || (agh.sprintf(_('There was a problem trying to add contributors%1$s.') , osfLanguage.REFRESH_OR_SUPPORT));
             $osf.growl(_('Could not add contributors'), errorMessage);
             Raven.captureMessage(_('Error adding contributors'), {
                 extra: {

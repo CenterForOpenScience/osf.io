@@ -5,6 +5,7 @@ var $osf = require('js/osfHelpers');
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 function FileViewTreebeard(data) {
 
@@ -118,7 +119,7 @@ function FileViewTreebeard(data) {
                         folderIcons: true,
                         filter: true,
                         custom: function () {
-                            return m('span.text-muted', 'Uploading ' + item.data.name + '...');
+                            return m('span.text-muted', agh.sprintf(_('Uploading %1$s...'), item.data.name );
                         }
                     }
                 ];

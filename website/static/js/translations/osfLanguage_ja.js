@@ -7,131 +7,130 @@ module.exports = {
     makePublic: null,
     makePrivate: null,
     registrations: {
-        registrationFailed: 'Registration failed. If this problem persists, please contact ' + $osf.osfSupportEmail() + '.',
-        invalidEmbargoTitle: 'Invalid embargo end date',
-        invalidEmbargoMessage: 'Please choose a date more than two days, but less than four years, from today.',
-        registerConfirm: 'Before you continue...',
-        registerSkipAddons: 'If you choose to continue with the registration at this time we will exclude the contents of any addons that are not copyable. These files will not appear in the final registration.',
-        registerFail: 'There was a problem completing your registration. Please try again later. If this should not have occurred and the issue persists, please report it to ' + $osf.osfSupportLink() + '.',
-        submitForReviewFail: 'There was a problem submitting this draft for review right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + $osf.osfSupportLink() + '.',
-        beforeEditIsApproved: 'This draft registration is currently approved. Please note that if you make any changes (excluding comments) this approval status will be revoked and you will need to submit for approval again.',
-        beforeEditIsPendingReview: 'This draft registration is currently pending review. Please note that if you make any changes (excluding comments) this request will be cancelled and you will need to submit for approval again.',
+        registrationFailed: '登録に失敗しました。 この問題が解決しない場合は、' + $osf.osfSupportEmail() + 'までご連絡ください。' ,
+        invalidEmbargoTitle: '無効な禁止終了日',
+        invalidEmbargoMessage: '今日から2日以上4年未満の日付を選択してください。',
+        registerConfirm: '続行する前に...',
+        registerSkipAddons: 'この時点で登録を続行することを選択した場合、コピーできないアドオンのコンテンツは除外されます。 これらのファイルは、最終登録には表示されません。',
+        registerFail: '登録の完了中に問題が発生しました。 後でもう一度やり直してください。 これが発生するはずがなく、問題が解決しない場合は、' + $osf.osfSupportLink() + 'に報告してください。',
+        submitForReviewFail: '現在、このドラフトをレビュー用に送信中に問題が発生しました。 後でもう一度やり直してください。 これが発生するはずがなく、問題が解決しない場合は、' + $osf.osfSupportLink() + 'に報告してください。',
+        beforeEditIsApproved: 'このドラフト登録は現在承認されています。 変更（コメントを除く）を行うと、この承認ステータスは取り消され、再度承認を受けるために送信する必要があることに注意してください。',
+        beforeEditIsPendingReview: 'このドラフト登録は現在審査中です。 変更（コメントを除く）を行うと、このリクエストはキャンセルされ、再度承認を受けるために送信する必要があります。',
     },
     Addons: {
         dataverse: {
-            userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
-                'contact ' + $osf.osfSupportLink() + ' if the problem persists.',
-            confirmUserDeauth: 'Are you sure you want to unlink your Dataverse ' +
-                'Account? This will revoke access to Dataverse for all ' +
-                'projects you have authorized.',
-            confirmNodeDeauth: 'Are you sure you want to unlink this Dataverse Account? This will ' +
-                'revoke the ability to view, download, modify, and upload files ' +
-                'to studies on the Dataverse from the OSF. This will not remove your ' +
-                'Dataverse authorization from your <a href="/settings/addons/">user settings</a> ' +
-                'page.',
-            deauthError: 'Could not disconnect the Dataverse Account at this time.',
-            deauthSuccess: 'Succesfully disconnected the connected Dataverse Account.',
-            authError: 'Sorry, but there was a problem connecting to that instance of Dataverse. It ' +
-                'is likely that the instance hasn\'t been upgraded to Dataverse 4.0. If you ' +
-                'have any questions or believe this to be an error, please contact ' + $osf.osfSupportEmail(),
-            authInvalid: 'Your Dataverse API token is invalid.',
-            authSuccess: 'Your Dataverse account was linked.',
-            datasetDeaccessioned: 'This dataset has already been deaccessioned on the Dataverse ' +
-                'and cannot be connected to the OSF.',
-            forbiddenCharacters: 'This dataset cannot be connected due to forbidden characters ' +
-                'in one or more of the dataset\'s file names. This issue has been forwarded to our ' +
-                'development team.',
-            setDatasetError: 'Could not connect to this dataset.',
-            widgetInvalid: 'The credentials associated with this Dataverse account ' +
-                'appear to be invalid.',
-            widgetError: 'There was a problem connecting to the Dataverse.'
+            userSettingsError: '設定を取得できませんでした。 ページを更新するか、' +
+                '問題が解決しない場合は' + $osf.osfSupportLink() + 'へお問い合わせください。',
+            confirmUserDeauth: 'Dataverseアカウントのリンクを解除してもよろしいですか？' +
+                'これにより、承認したすべてのプロジェクトのDataverseへの' +
+                ' アクセスが取り消されます。',
+            confirmNodeDeauth: 'このDataverseアカウントのリンクを解除してもよろしいですか？ これにより、' +
+                'OSFからDataverseの調査のファイルを表示、ダウンロード、変更、およびアップロードする機能が' +
+                '無効になります。 これにより、' +
+                '<a href="/settings/addons/">ユーザー設定</a>ページからDataverse認証が削除されることはありません。 ' ,
+            deauthError: '現在、Dataverseアカウントを切断できませんでした。',
+            deauthSuccess: 'Dataverseアカウントの切断と接続に成功しました。',
+            authError: '申し訳ありませんが、Dataverseのそのインスタンスへの接続に問題がありました。' +
+                'インスタンスがDataverse 4.0にアップグレードされていない可能性があります。' +
+                'ご質問がある場合、またはこれがエラーだと思われる場合は、' + $osf.osfSupportEmail() + 'お問い合わせください。' ,
+            authInvalid: 'Dataverse APIトークンが無効です。',
+            authSuccess: 'Dataverseアカウントがリンクされました。',
+            datasetDeaccessioned: 'このデータセットは既にDataverseでアクセス解除されており、' +
+                'GakuNin RDMに接続できません。',
+            forbiddenCharacters: 'このデータセットは、1つ以上のデータセットのファイル名に' +
+                '使用できない文字があるため、接続できません。 この問題は開発チームに' +
+                '転送されました。',
+            setDatasetError: 'このデータセットに接続できませんでした。',
+            widgetInvalid: 'このDataverseアカウントに関連付けられた資格情報は' +
+                '無効のようです。',
+            widgetError: 'Dataverseへの接続に問題がありました。'
         },
         dropbox: {
             // Shown on clicking "Delete Access Token" for dropbox
-            confirmDeauth: 'Are you sure you want to disconnect the Dropbox account? ' +
-                'This will revoke access to Dropbox for all projects you have ' +
-                'associated with this account.',
-            deauthError: 'Could not disconnect Dropbox account at this time',
+            confirmDeauth: '本当にDropboxアカウントを切断しますか？' +
+                'これにより、このアカウントに関連付けたすべてのプロジェクトのDropboxへの' +
+                'アクセスが取り消されます。',
+            deauthError: '現時点ではDropboxアカウントを切断できませんでした',
         },
         figshare: {
-            confirmDeauth: 'Are you sure you want to disconnect the figshare account? ' +
-                'This will revoke access to figshare for all projects you have ' +
-                'associated with this account.',
+            confirmDeauth: 'figshareアカウントを切断してもよろしいですか？' +
+                'これにより、このアカウントに関連付けられているすべてのプロジェクトのfigshareへの' +
+                'アクセスが取り消されます。',
         },
         github: {
-            confirmDeauth: 'Are you sure you want to disconnect the GitHub account? ' +
-                'This will revoke access to GitHub for all projects you have ' +
-                'associated with this account.',
-            userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
-                'contact ' + $osf.osfSupportLink() + ' if the problem persists.',
+            confirmDeauth: 'GitHubアカウントを切断してもよろしいですか？' +
+                'これにより、このアカウントに関連付けたすべてのプロジェクトのGitHubへの' +
+                'アクセスが取り消されます。',
+            userSettingsError: '設定を取得できませんでした。 ページを更新するか、' +
+                '問題が解決しない場合は' + $osf.osfSupportLink() + 'へお問い合わせください。',
         },
         bitbucket: {
-            confirmDeauth: 'Are you sure you want to disconnect the Bitbucket account? ' +
-                'This will revoke access to Bitbucket for all projects you have ' +
-                'associated with this account.',
+            confirmDeauth: 'Bitbucketアカウントを切断してもよろしいですか？' +
+                'これにより、このアカウントに関連付けたすべてのプロジェクトのBitbucketへの' +
+                'アクセスが取り消されます。',
         },
         gitlab: {
-            confirmDeauth: 'Are you sure you want to disconnect the GitLab account? ' +
-                'This will revoke access to GitLab for all projects you have ' +
-                'associated with this account.',
+            confirmDeauth: 'GitLabアカウントを切断してもよろしいですか？' +
+                'これにより、このアカウントに関連付けたすべてのプロジェクトのGitLabへの' +
+                'アクセスが取り消されます。',
         },
         s3:{
-            authError: 'Could not connect to Amazon S3 at this time. Please try again later.',
-            userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
-                'contact ' + $osf.osfSupportLink() + ' if the problem persists.',
+            authError: '現在、Amazon S3に接続できませんでした。 後でもう一度やり直してください。',
+            userSettingsError: '設定を取得できませんでした。 ページを更新するか、' +
+                '問題が解決しない場合は、' + $osf.osfSupportLink() + 'へお問い合わせください。',
         },
         googledrive: {
           // Shown on clicking "Delete Access Token" for googledrive
-            confirmDeauth: 'Are you sure you want to disconnect the Google Drive account? ' +
-                'This will revoke access to Google Drive for all projects you have ' +
-                'associated with this account.',
-            deauthError: 'Could not disconnect the Google Drive account at this time',
+            confirmDeauth: 'Googleドライブアカウントを切断してもよろしいですか？' +
+                'これにより、このアカウントに関連付けたすべてのプロジェクトのGoogleドライブへの' +
+                'アクセスが取り消されます。',
+            deauthError: '現在、Googleドライブアカウントを切断できませんでした',
         },
         onedrive: {
             // Shown on clicking "Delete Access Token" for onedrive
-            confirmDeauth: 'Are you sure you want to disconnect the Microsoft OneDrive account? ' +
-                'This will revoke access to Microsoft OneDrive for all projects you have ' +
-                'associated with this account.',
-            deauthError: 'Could not disconnect the Microsoft OneDrive account at this time',
+            confirmDeauth: 'Microsoft OneDriveアカウントを切断してもよろしいですか？' +
+                'これにより、このアカウントに関連付けたすべてのプロジェクトのMicrosoft OneDriveへの' +
+                'アクセスが取り消されます。',
+            deauthError: '現在、Microsoft OneDriveアカウントを切断できませんでした',
         },
         owncloud: {
-            authError: 'Invalid ownCloud server',
-            authInvalid: 'Invalid credentials. Please enter a valid username and password.',
-            userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
-                'contact ' + $osf.osfSupportLink() + ' if the problem persists.',
-            confirmAuth : 'Are you sure you want to authorize this project with your ownCloud credentials?',
-            updateAccountsError : 'Could not retrieve ownCloud account list at ' +
-                        'this time. Please refresh the page. If the problem persists, email ' +
+            authError: '無効なownCloudサーバー',
+            authInvalid: '無効な資格情報。 有効なユーザー名とパスワードを入力してください。',
+            userSettingsError: '設定を取得できませんでした。 ページを更新するか、' +
+                '問題が解決しない場合は' + $osf.osfSupportLink() + 'へお問い合わせください。' ,
+            confirmAuth : 'ownCloud認証情報でこのプロジェクトを承認してもよろしいですか？',
+            updateAccountsError : '現在、ownCloudアカウントリストを取得できませんでした。' +
+                        'ページを更新してください。 問題が解決しない場合は、こちらにメールをして下さい：' +
                         $osf.osfSupportLink(),
-            submitSettingsSuccess : 'Folder Successfully linked',
+            submitSettingsSuccess : 'フォルダーが正常にリンクされました',
         },
     },
     apiOauth2Application: {
-        discardUnchanged: 'Are you sure you want to discard your unsaved changes?',
-        deactivateConfirm: 'Are you sure you want to deactivate this application for all users and revoke all access tokens? This cannot be reversed.',
-        deactivateError: 'Could not deactivate application. Please wait a few minutes and try again, or contact ' + $osf.osfSupportLink() + ' if the problem persists.',
-        dataFetchError: 'Data not loaded. ' + $osf.refreshOrSupport(),
-        dataListFetchError: 'Could not load list of developer applications at this time. ' + $osf.refreshOrSupport(),
-        dataSendError: 'Error sending data to the server. Check that all fields are valid, or contact ' + $osf.osfSupportLink() + ' if the problem persists.',
-        creationSuccess: 'Successfully registered new application',
-        dataUpdated: 'Application data updated',
-        resetSecretConfirm: 'Are you sure you want to reset the client secret? This cannot be reversed. Your application will be unusable until it is updated with the new client secret, and all users must reauthorize access. Previously issued access tokens will no longer work.',
-        resetSecretError: 'Could not reset client secret. Please wait a few minutes and try again, or contact ' + $osf.osfSupportLink() + 'if the problem persists.',
+        discardUnchanged: '保存していない変更を破棄してもよろしいですか？',
+        deactivateConfirm: 'すべてのユーザーに対してこのアプリケーションを無効にし、すべてのアクセストークンを取り消してもよろしいですか？ これを元に戻すことはできません。',
+        deactivateError: 'アプリケーションを無効にできませんでした。 数分待ってからもう一度試すか、問題が解決しない場合は' + $osf.osfSupportLink() + 'へお問い合わせください。',
+        dataFetchError: 'データがロードされていません。' + $osf.refreshOrSupport(),
+        dataListFetchError: '現在、開発者アプリケーションのリストを読み込めませんでした。' + $osf.refreshOrSupport(),
+        dataSendError: 'サーバーへのデータ送信エラー。 すべてのフィールドが有効であることを確認するか、問題が解決しない場合は'+ $osf.osfSupportLink() + 'へお問い合わせください。' ,
+        creationSuccess: '新規アプリケーションが正常に登録されました',
+        dataUpdated: '更新されたアプリケーションデータ',
+        resetSecretConfirm: 'クライアントシークレットをリセットしてもよろしいですか？ これを元に戻すことはできません。 アプリケーションは、新しいクライアントシークレットで更新されるまで使用できなくなり、すべてのユーザーがアクセスを再承認する必要があります。 以前に発行されたアクセストークンは機能しなくなります。',
+        resetSecretError: 'クライアントシークレットをリセットできませんでした。 数分待ってからもう一度試すか、問題が解決しない場合は' + $osf.osfSupportLink() + 'へお問い合わせください。',
     },
     apiOauth2Token: {
-        discardUnchanged: 'Are you sure you want to discard your unsaved changes?',
+        discardUnchanged: '保存していない変更を破棄してもよろしいですか？',
         deactivateConfirm: 'Are you sure you want to deactivate this token? This cannot be reversed.',
-        deactivateError: 'Could not deactivate token. Please wait a few minutes and try again, or contact ' + $osf.osfSupportLink() + ' if the problem persists.',
-        dataFetchError: 'Data not loaded. ' + $osf.refreshOrSupport(),
+        deactivateError: 'トークンを無効にできませんでした。 数分待ってからもう一度試すか、問題が解決しない場合は' + $osf.osfSupportLink() + 'へお問い合わせください。' ,
+        dataFetchError: 'データがロードされていません。' + $osf.refreshOrSupport(),
         dataListFetchError: 'Could not load list of personal access tokens at this time. ' + $osf.refreshOrSupport(),
-        dataSendError: 'Error sending data to the server: check that all fields are valid, or contact ' + $osf.osfSupportLink() + ' if the problem persists.',
-        creationSuccess: 'Successfully generated new personal access token. This token will never expire. This token should never be shared with others. If it is accidentally revealed publicly, it should be deactivated immediately.',
-        dataUpdated: 'Token data updated'
+        dataSendError: 'サーバーへのデータ送信エラー：すべてのフィールドが有効であることを確認するか、問題が解決しない場合は' + $osf.osfSupportLink() + 'へお問い合わせください。',
+        creationSuccess: '新しい個人用アクセストークンが正常に生成されました。 このトークンは期限切れになりません。 このトークンを他の人と共有しないでください。 誤って公開された場合は、すぐに無効にする必要があります。',
+        dataUpdated: 'トークンデータが更新されました'
     },
     projectSettings: {
         updateSuccessMessage: 'プロジェクトの設定を更新しました。',
-        updateErrorMessage400: 'Error updating project settings. Check that all fields are valid.',
-        updateErrorMessage: 'Could not update project settings. ' + $osf.refreshOrSupport(),
-        instantiationErrorMessage: 'Trying to instantiate ProjectSettings view model without an update URL'
+        updateErrorMessage400: 'プロジェクト設定の更新エラーです。 すべてのフィールドが有効であることを確認してください。',
+        updateErrorMessage: 'プロジェクト設定を更新できませんでした。' + $osf.refreshOrSupport(),
+        instantiationErrorMessage: '更新URLなしでProjectSettingsビューモデルをインスタンス化しようとしています'
     }
 };

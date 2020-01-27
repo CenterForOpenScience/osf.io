@@ -8,6 +8,7 @@ require('osf-panel');
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 var WikiPage = require('wikiPage');
 
@@ -107,7 +108,7 @@ $(document).ready(function () {
         grid.addClass('hidden');
         errorMsg.removeClass('hidden');
         errorMsg.append(_('<p>Could not retrieve wiki pages. If this issue persists, ') +
-            _('please report it to ') + $osf.osfSupportLink());
+            agh.sprintf(_('please report it to %1$s') , $osf.osfSupportLink()));
         Raven.captureMessage(_('Could not GET wiki menu pages'), {
             extra: { url: ctx.urls.grid, status: status, error: error }
         });

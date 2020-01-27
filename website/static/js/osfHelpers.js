@@ -14,6 +14,7 @@ var linkify = require('linkifyjs/html');
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
 // Why?!
@@ -309,12 +310,12 @@ function osfSupportLink() {
 }
 
 function refreshOrSupport() {
-    return _('Please refresh the page and try again or contact ') + osfSupportLink() + _(' if the problem persists.');
+    return agh.sprintf(_('Please refresh the page and try again or contact %1$s') , osfSupportLink()) + _(' if the problem persists.');
 }
 
 var errorDefaultLong = function(){
     return _('GakuNin RDM was unable to resolve your request. If this issue persists, ') +
-        _('please report it to ') + osfSupportLink() + _('.');
+        agh.sprintf(_('please report it to %1$s.') , osfSupportLink());
 };
 
 var handleAddonApiHTTPError = function(error){

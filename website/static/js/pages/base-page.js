@@ -26,6 +26,7 @@ var bootbox = require('bootbox');
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 // Prevent IE from caching responses
 $.ajaxSetup({cache: false});
@@ -129,25 +130,25 @@ function confirmEmails(emailsToAdd) {
         var nopeMessage;
         if (email.user_merge) {
             title = _('Merge account');
-            requestMessage = _('Would you like to merge \<b>') + email.address + _('\</b> into your account?  ') +
+            requestMessage = agh.sprintf(_('Would you like to merge \<b>%1$s\</b> into your account?  ') , email.address ) +
                 _('This action is irreversible.');
-            confirmMessage = '\<b>' + email.address + _('\</b> has been merged into your account.');
-            nopeMessage = _('You have chosen to not merge \<b>') + email.address + _('\</b>  into your account. ') +
+            confirmMessage = agh.sprintf(_('\<b>%1$s\</b> has been merged into your account.') , email.address);
+            nopeMessage = agh.sprintf(_('You have chosen to not merge \<b>%1$s\</b>  into your account. '),email.address) +
                 _('If you change your mind, visit the \<a href="/settings/account/">user settings page</a>.');
         }
         else {
             title = _('Add email');
-            requestMessage = _('Would you like to add \<b>') + email.address + _('\</b> to your account?');
-            confirmMessage = '\<b>' + email.address + _('\</b> has been added into your account.');
-            nopeMessage = _('You have chosen not to add \<b>') + email.address + _('\</b> to your account. ') +
+            requestMessage = agh.sprintf(_('Would you like to add \<b>%1$s\</b> to your account?'),email.address);
+            confirmMessage = agh.sprintf(_('\<b>%1$s\</b> has been added into your account.'),email.address);
+            nopeMessage = agh.sprintf(_('You have chosen not to add \<b>%1$s\</b> to your account. '),email.address) +
                 _('If you change your mind, visit the \<a href="/settings/account/">user settings page</a>.');
         }
 
         var confirmFailMessage = _('There was a problem adding \<b>') + email.address +
-            _('\</b>. Please contact ') + $osf.osfSupportLink() + _(' if the problem persists.');
+            agh.sprintf(_('\</b>. Please contact %1$s if the problem persists.'),$osf.osfSupportLink());
 
-        var cancelFailMessage = 'There was a problem removing \<b>' + email.address +
-            _('\</b>. Please contact ') + $osf.osfSupportLink() + _(' if the problem persists.');
+        var cancelFailMessage = agh.sprintf(_('There was a problem removing \<b>%1$s') , email.address) +
+            agh.sprintf(_('\</b>. Please contact %1$s if the problem persists.'),$osf.osfSupportLink());
 
         bootbox.dialog({
             title: title,
@@ -289,7 +290,7 @@ $(function() {
         $('#maintenanceTime').html(
             '<strong>' +
             startMaintenance.format('lll') +
-                ' and ' +
+                _(' and ') +
                     endMaintenance.format('lll') + '</strong>' +
                         ' (' + startMaintenance.format('ZZ') + ' UTC)'
         );

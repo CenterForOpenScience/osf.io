@@ -18,6 +18,7 @@ var atMention = require('js/atMention');
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 // Cached contributor and group member data, to prevent multiple fetches for @mentions
 var __contributorCache = null;
@@ -227,7 +228,7 @@ BaseComment.prototype.handleEditableUpdate = function(element) {
     var underOrEqualMaxLength = inputTextLength <= parseInt(charLimit) + 1 || charLimit == undefined;  // jshint ignore: line
     self.currentCount(showLength);
     self.underMaxLength(underOrEqualMaxLength);
-    self.errorMessage(underOrEqualMaxLength ? '' : _('Exceeds character limit. Please reduce to ') + charLimit + _(' characters or less.'));
+    self.errorMessage(underOrEqualMaxLength ? '' : agh.sprintf(_('Exceeds character limit. Please reduce to %1$s characters or less.')),charLimit);
 };
 
 BaseComment.prototype.abuseLabel = function(item) {
@@ -329,11 +330,11 @@ BaseComment.prototype.configureCommentsVisibility = function() {
 BaseComment.prototype.getTargetType = function() {
     var self = this;
     if (self.id() === window.contextVars.node.id) {
-        return 'nodes';
+        return _('nodes');
     } else if (self.id() === self.$root.rootId() && self.page() === FILES) {
-        return 'files';
+        return _('files');
     } else if (self.id() === self.$root.rootId() && self.page() === WIKI) {
-        return 'wiki';
+        return _('wiki');
     } else {
         return _('comments');
     }

@@ -14,6 +14,7 @@ var NodesDeleteTreebeard = require('js/nodesDeleteTreebeard');
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 var BULK_DELETE_LIMIT = 100;
 
@@ -36,8 +37,7 @@ var QuickDeleteViewModel = function (nodeType, isSupplementalProject, nodeApiUrl
     self.nodeType = nodeType;
     self.nodeApiUrl = nodeApiUrl;
     self.isSupplementalProject = isSupplementalProject;
-    self.preprintMessage = 'This ' + self.nodeType +
-     _(' also contains supplemental materials for a <strong>preprint</strong>.  It will') +
+    self.preprintMessage = agh.sprintf(_('This %1$s also contains supplemental materials for a <strong>preprint</strong>.  It will'),self.nodeType) +
      _(' no longer be available to contributors or connected to the preprint.');
 
     self.message = ko.computed(function () {
@@ -48,7 +48,7 @@ var QuickDeleteViewModel = function (nodeType, isSupplementalProject, nodeApiUrl
     self.atMaxLength = ko.observable(false);
     self.nodesDeleted = ko.observable(true);
     self.pageTitle = ko.computed(function () {
-        return _('Are you sure you want to delete this ') + self.nodeType + _('?');
+        return agh.sprintf(_('Are you sure you want to delete this %1$s?'),self.nodeType);
     });
 };
 
@@ -79,12 +79,12 @@ QuickDeleteViewModel.prototype.confirmChanges = function () {
         window.location.href = response.url;
     });
     request.fail( function (xhr, status, error) {
-        var errorMessage = _('Unable to delete ') + self.nodeType;
+        var errorMessage = agh.sprintf(_('Unable to delete %1$s') , self.nodeType);
         if (xhr.responseJSON && xhr.responseJSON.errors) {
             errorMessage = xhr.responseJSON.errors[0].detail;
         }
-        $osf.growl(_('Problem deleting ') + self.nodeType, errorMessage);
-        Raven.captureMessage(_('Could not delete ') + self.nodeType, {
+        $osf.growl(agh.sprintf(_('Problem deleting %1$s') , self.nodeType, errorMessage));
+        Raven.captureMessage(agh.sprintf(_('Could not delete %$1s') , self.nodeType), {
             extra: {
                 url: self.nodeApiUrl, status: status, error: error
             }
@@ -115,15 +115,13 @@ var NodesDeleteViewModel = function (nodeType, isSupplementalProject, nodeApiUrl
     self.hasSupplementalProjects = ko.observable(false);
     self.preprintMessage = ko.computed(function() {
         if (self.isSupplementalProject && self.hasSupplementalProjects()) {
-            return _('<br><br>This ') + self.nodeType + _(' also contains supplemental materials for a <strong>preprint</strong>, and one or more of its ') +
-               self.termForChildren() + _(' contains supplemental materials for a <strong>preprint</strong>.');
+            return agh.sprintf(_('<br><br>This %1$s also contains supplemental materials for a <strong>preprint</strong>, and one or more of its %2$s contains supplemental materials for a <strong>preprint</strong>.'),self.nodeType,self.termForChildren());
         }
          if (self.isSupplementalProject && !self.hasSupplementalProjects()) {
-            return _('<br><br>This ') + self.nodeType + _(' also contains supplemental materials for a <strong>preprint</strong>.');
+            return agh.sprintf(_('<br><br>This %1$s also contains supplemental materials for a <strong>preprint</strong>.'),self.nodeType);
         }
          if (!self.isSupplementalProject && self.hasSupplementalProjects()) {
-            return _('<br><br>This ') + self.nodeType + _(' also has one or more ') + self.termForChildren() +
-                _(' that contain supplemental materials for a <strong>preprint</strong>.');
+            return agh.sprintf(_('<br><br>This %1$s also has one or more %2$s that contain supplemental materials for a <strong>preprint</strong>.'),self.nodeType,self.termForChildren());
         }
     });
 
@@ -151,16 +149,15 @@ var NodesDeleteViewModel = function (nodeType, isSupplementalProject, nodeApiUrl
 
     self.pageTitle = ko.computed(function () {
         return {
-            select: _('Delete ') + self.nodeType,
-            confirm: _('Delete ') + self.nodeType + _(' and ') + self.termForChildren()
+            select: agh.sprintf(_('Delete %1$s') , self.nodeType),
+            confirm: agh.sprintf(_('Delete %1$s and %2$s') ,self.nodeType,self.termForChildren())
         }[self.page()];
     });
 
     self.message = ko.computed(function () {
-        var message = _('This ') + self.nodeType + _(' contains ') + self.termForChildren() + _('. To delete this ') +
-          self.nodeType + _(', you must also delete all ') + self.termForChildren() + '.';
+        var message = agh.sprintf(_('This %1$s contains %2$s.') ,self.nodeType,self.termForChildren()) + agh.sprintf(_(' To delete this %1$s, you must also delete all %2$s.') ,self.nodeType,self.termForChildren());
 
-        var confirm_message = _(' The following ') + self.nodeType + _(' and ') + self.termForChildren() + _(' will be deleted.');
+        var confirm_message = agh.sprintf(_(' The following %1$s and %2$s will be deleted.'),self.nodeType,self.termForChildren());
 
         return {
             select: message + ((self.isSupplementalProject || self.hasSupplementalProjects()) ? self.preprintMessage() : _(' This action is irreversible.')),
@@ -169,9 +166,8 @@ var NodesDeleteViewModel = function (nodeType, isSupplementalProject, nodeApiUrl
     });
 
     self.warning = ko.computed(function () {
-        var message = _('Please note that deleting your ') + self.nodeType + _(' will erase all your ') +
-            self.nodeType + _(' data and this process is IRREVERSIBLE. Deleted ')+ self.nodeType +  _(' and ') +
-            self.termForChildren() + _(' will no longer be available to other contributors on the ') + self.nodeType;
+        var message = agh.sprintf(_('Please note that deleting your %1$s will erase all your %2$s data and this process is IRREVERSIBLE. Deleted %3$s and \
+            %4$s will no longer be available to other contributors on the %5$s') ,self.nodeType,self.nodeType,self.nodeType,self.termForChildren(),self.nodeType);
         return self.hasSupplementalProjects() ? message + _(' and will be disconnected from your preprints.') : message + _('.');
     });
 };
@@ -335,8 +331,8 @@ function batchNodesDelete(nodes) {
 
     return $.when.apply($, requests).then(function (_) {
             bootbox.alert({
-                message: _('Your ') + self.nodeType + _(' has been successfully deleted.'),
-                callback: function (confirmed) {
+                message: agh.sprintf(_('Your %1$s has been successfully deleted.'),self.nodeType),
+                callback: function (confirmed) {.
                     window.location = self.nodeType === 'project' ?
                       '/dashboard/' :
                       window.contextVars.node.parentUrl || window.contextVars.node.urls.web;
@@ -344,11 +340,11 @@ function batchNodesDelete(nodes) {
             });
         }, function (xhr) {
             $osf.unblock();
-            var errorMessage = _('Unable to delete ') + self.nodeType;
+            var errorMessage = agh.sprintf(_('Unable to delete %1$s') , self.nodeType);
             if (xhr.responseJSON && xhr.responseJSON.errors) {
                 errorMessage = xhr.responseJSON.errors[0].detail;
             }
-            $osf.growl(_('Problem deleting ') + self.nodeType, errorMessage);
+            $osf.growl(agh.sprintf(_('Problem deleting %1$s') , self.nodeType), errorMessage);
             Raven.captureMessage(_('Could not batch delete project and its components.'));
             self.clear();
             $('#nodesDelete').modal('hide');

@@ -33,6 +33,7 @@ var currentUserRequestState = ctx.currentUserRequestState;
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 // Listen for the nodeLoad event (prevents multiple requests for data)
 $('body').on('nodeLoad', function(event, data) {
@@ -118,7 +119,7 @@ $(document).ready(function () {
     var AddComponentButton = m.component(AddProject, {
         buttonTemplate: m('.btn.btn-sm.btn-default[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
             $osf.trackClick('project-dashboard', 'add-component', 'open-add-project-modal');
-        }}, 'Add Component'),
+        }}, _('Add Component')),
         modalID: 'addSubComponent',
         title: _('Create new component'),
         parentID: window.contextVars.node.id,
@@ -327,7 +328,7 @@ $(document).ready(function () {
                             }
                         }
                         if (!found) {
-                            $osf.growl('no user matched', '"' + and_list.join(' AND ')  + '"', 'warning');
+                            $osf.growl(_('no user matched'), '"' + and_list.join(' AND ')  + '"', 'warning');
                         }
                     }
                     var userKeys = Object.keys(userKeyDict);

@@ -6,6 +6,7 @@ var waterbutler = require('js/waterbutler');
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 var util = require('./util.js');
 var makeClient = require('js/clipboard');
@@ -71,7 +72,7 @@ var FileRevisionsTable = {
                 m.startComputation();
                 model.loaded(true);
                 model.errorMessage = response.responseJSON ?
-                    response.responseJSON.message || 'Unable to fetch versions' :
+                    response.responseJSON.message || _('Unable to fetch versions') :
                     _('Unable to fetch versions');
                 m.endComputation();
 
@@ -132,7 +133,7 @@ var FileRevisionsTable = {
                   m('a', {href: parseInt(revision.displayVersion) === model.revisions.length ? self.baseUrl : revision.osfViewUrl}, revision.displayVersion)
                 ),
                 model.hasDate ? m('td', revision.displayDate) : false,
-                model.hasUser ? window.contextVars.node.anonymous ? m('td', 'Anonymous Contributor') :
+                model.hasUser ? window.contextVars.node.anonymous ? m('td', _('Anonymous Contributor')) :
                     m('td', revision.extra.user.url ?
                             m('a', {href: revision.extra.user.url}, revision.extra.user.name) :
                             revision.extra.user.name
@@ -172,7 +173,7 @@ var FileRevisionsTable = {
     },
     view: function(ctrl) {
         return m('#revisionsPanel.panel.panel-default', [
-            m('.panel-heading.clearfix', m('h3.panel-title', 'Revisions')),
+            m('.panel-heading.clearfix', m('h3.panel-title', _('Revisions'))),
             m('.panel-body', {style:{'padding-right': '0','padding-left':'0', 'padding-bottom' : '0',
                 'overflow': 'auto'}}, (function() {
                 if (!model.loaded()) {

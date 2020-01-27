@@ -8,6 +8,7 @@ var Raven = require('raven-js');
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 var AlertsViewModel = function() {
     var self = this;
@@ -41,8 +42,8 @@ var AlertsViewModel = function() {
 
         });
         request.fail(function (xhr, status, error) {
-            $osf.growl('Error', 'Could not dismiss alert. Please refresh page and try again.', 'danger');
-            Raven.captureMessage('Error fetching user alerts', {
+            $osf.growl('Error', _('Could not dismiss alert. Please refresh page and try again.'), 'danger');
+            Raven.captureMessage(_('Error fetching user alerts'), {
                 extra: {
                     url: url,
                     status: status,

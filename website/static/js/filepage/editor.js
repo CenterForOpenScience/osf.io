@@ -13,6 +13,7 @@ require('imports-loader?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 var util = require('./util.js');
 
@@ -177,9 +178,9 @@ var FileEditor = {
             m('[style=position:inherit]', [
                 m('.row', m('.col-sm-12', [
                     m('.pull-right', [
-                        m('button#fileEditorRevert.btn.btn-sm.btn-danger', {onclick: function(){ctrl.loadFile(true);}}, 'Revert'),
+                        m('button#fileEditorRevert.btn.btn-sm.btn-danger', {onclick: function(){ctrl.loadFile(true);}}, _('Revert')),
                         ' ',
-                        m('button#fileEditorSave.btn.btn-sm.btn-success', {onclick: function() {ctrl.saveFile();}}, 'Save')
+                        m('button#fileEditorSave.btn.btn-sm.btn-success', {onclick: function() {ctrl.saveFile();}}, _('Save'))
                     ])
                 ]))
             ])

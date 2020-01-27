@@ -15,6 +15,7 @@ var SelectableInstitution = institutionComponents.SelectableInstitution;
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 var AddProject = {
     controller : function (options) {
@@ -197,7 +198,7 @@ var AddProject = {
                                     //  This will not be reliably running!
                                     $osf.trackClick(options.trackingCategory, options.trackingAction, 'type-project-name');
                                 },
-                                placeholder : _('Enter ') + ctrl.nodeType + _(' title'),
+                                placeholder : agh.sprintf(_('Enter %1$s title'),ctrl.nodeType),
                                 name : 'projectName'
                             })
                         ]),
@@ -294,7 +295,7 @@ var AddProject = {
                                         $osf.trackClick(options.trackingCategory, options.trackingAction, 'type-project-description');
                                     },
                                     name : 'projectDesc',
-                                    placeholder : _('Enter ') + ctrl.nodeType + ' description'
+                                    placeholder : agh.sprintf(_('Enter %1$s description'),ctrl.nodeType)
                                 })
                             ]),
                             ctrl.options.parentID !== null ? [
@@ -329,7 +330,7 @@ var AddProject = {
 
                             ] : '',
                              ctrl.options.parentID === null ? m('.form-group.m-v-md', [
-                                m('label[for="projectTemplate].f-w-lg.text-bigger', 'Template (optional)'),
+                                m('label[for="projectTemplate].f-w-lg.text-bigger', _('Template (optional)')),
                                 m('p.f-w-xs.help-text', _('Start typing to search your projects. Selecting project as template will duplicate its ') +
                                     _('structure in the new project without importing the content of that project.')),
                                 m.component(Select2Template, {
@@ -346,7 +347,7 @@ var AddProject = {
                     m('button[type="button"].btn.btn-default[data-dismiss="modal"]', { onclick : function(){
                         ctrl.reset();
                         $osf.trackClick(options.trackingCategory, options.trackingAction, 'click-cancel-button');
-                    }},  'Cancel'),
+                    }},  _('Cancel')),
                     ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : function(){
                         ctrl.add();
                         $osf.trackClick(options.trackingCategory, options.trackingAction, 'click-create-button');
@@ -375,7 +376,7 @@ var AddProject = {
                             }}, [
                                 m('span[aria-hidden="true"]','×')
                             ]),
-                            m('h4.add-project-success.text-success', _('New ') + ctrl.nodeType + _(' created successfully!'))
+                            m('h4.add-project-success.text-success', agh.sprintf(_('New %1$s created successfully!')),ctrl.nodeType)
                         ]
                     ),
                     m('.modal-footer', [
@@ -391,7 +392,7 @@ var AddProject = {
                             onclick: function(){
                             $osf.trackClick(options.trackingCategory, options.trackingAction, 'go-to-new-project');
                             }
-                        },_('Go to new ') + ctrl.nodeType + '')
+                        },agh.sprintf(_('Go to new %1$s'),ctrl.nodeType))
                     ])
                 )
             ]),
@@ -404,7 +405,7 @@ var AddProject = {
                                 }}, [
                                 m('span[aria-hidden="true"]','×')
                             ]),
-                            m('h4.add-project-error.text-danger', 'Couldn\'t create your ' + ctrl.nodeType + ''),
+                            m('h4.add-project-error.text-danger', agh.sprintf(_('Couldn\'t create your %1$s'),ctrl.nodeType)),
                             m('p', ctrl.errorMessage[ctrl.errorMessageType()])
                         ]
                     ),
@@ -423,7 +424,7 @@ var AddProject = {
                                 }}, [
                                 m('span[aria-hidden="true"]','×')
                             ]),
-                            m('h4.add-project-error.text-danger', _('Could not add institution affiliation to your new ') + ctrl.nodeType + ''),
+                            m('h4.add-project-error.text-danger', agh.sprintf(_('Could not add institution affiliation to your new %1$s') , ctrl.nodeType)),
                             m('p', ctrl.errorMessage[ctrl.errorMessageType()])
                         ]
                     ),
@@ -436,7 +437,7 @@ var AddProject = {
                         },  _('Keep working here')),
                         m('a.btn.btn-success', {
                             href : ctrl.goToProjectLink()
-                        },_('Go to new ') + ctrl.nodeType + '')
+                        },agh.sprintf(_('Go to new %1$s') , ctrl.nodeType))
                     ])
                 )
             ])

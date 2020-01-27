@@ -352,7 +352,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
     deleteToken: function () {
         var tokenData = this.tokenData();
         bootbox.confirm({
-            title: 'Deactivate token?',
+            title: _('Deactivate token?'),
             message: language.apiOauth2Token.deactivateConfirm,
             callback: function (confirmed) {
                 if (confirmed) {
@@ -372,7 +372,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
             }.bind(this),
             buttons:{
                 confirm:{
-                    label:'Deactivate',
+                    label:_('Deactivate'),
                     className:'btn-danger'
                 }
             }
@@ -386,7 +386,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
             this.visitList();
         } else {
             bootbox.confirm({
-                title: 'Discard changes?',
+                title: _('Discard changes?'),
                 message: language.apiOauth2Token.discardUnchanged,
                 callback: function(confirmed) {
                     if (confirmed) {

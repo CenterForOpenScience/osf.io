@@ -25,6 +25,7 @@ var nodeLinksUrl = $osf.apiV2Url(
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 var SEARCH_ALL_SUBMIT_TEXT = _('Search all projects');
 var SEARCH_MY_PROJECTS_SUBMIT_TEXT = _('Search my projects');
@@ -131,7 +132,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
             var nodes = response.data;
             var count = nodes.length;
             if (!count){
-                self.errorMsg('No results found.');
+                self.errorMsg(_('No results found.'));
                 self.doneSearching();
                 return;
             }
@@ -190,7 +191,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 }
             });
             var typeProjects = self.includePublic() ? 'all' : 'user';
-            self.logErrors(url, status, error, _('Unable to retrieve ') + typeProjects + _(' projects'));
+            self.logErrors(url, status, error, 'Unable to retrieve ' + typeProjects + ' projects');
             self.doneSearching();
         });
     },
@@ -226,7 +227,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
             self.dirty = true;
         });
         request.fail(function(xhr, status, error){
-            self.logErrors(addUrl, status, error, _('Unable to link project'));
+            self.logErrors(addUrl, status, error, 'Unable to link project');
             self.processing(false);
         });
     },
@@ -263,12 +264,12 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 self.processing(false);
                 self.dirty = true;
             }).fail(function(xhr, status, error){
-                self.logErrors(deleteUrl, status, error, _('Unable to remove nodelink'));
+                self.logErrors(deleteUrl, status, error, 'Unable to remove nodelink');
                 self.processing(false);
             });
         });
         requestNodeLinks.fail(function(xhr, status, error){
-            self.logErrors(nodeLinksUrl, status, error, _('Unable to retrieve project nodelinks'));
+            self.logErrors(nodeLinksUrl, status, error, 'Unable to retrieve project nodelinks');
         });
     },
     selected: function(data){

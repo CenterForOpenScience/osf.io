@@ -101,7 +101,7 @@ var ProjectViewModel = function(data, options) {
         $.fn.editable.defaults.mode = 'inline';
         $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
             name: 'title',
-            title: 'Edit Title',
+            title: _('Edit Title'),
             tpl: '<input type="text" maxlength="512">',
             validate: function (value) {
                 if ($.trim(value) === '') {
@@ -116,7 +116,7 @@ var ProjectViewModel = function(data, options) {
         var project_or_component_label = self.categoryValue() === 'project' ? _('project') : _('component');
         $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
             name: 'description',
-            title: 'Edit Description',
+            title: _('Edit Description'),
             emptytext: agh.sprintf(_('Add a brief description to your %1$s'),project_or_component_label),
             emptyclass: 'text-muted',
             value: $osf.decodeText(self.description()),
@@ -134,7 +134,7 @@ var ProjectViewModel = function(data, options) {
         $('#nodeCategoryEditable').editable($.extend({}, editableOptions, {
             type: 'select',
             name: 'category',
-            title: 'Select a category',
+            title: _('Select a category'),
             value: self.categoryValue(),
             source: categoryOptions,
             success: function(response, newValue) {
@@ -211,10 +211,10 @@ var ProjectViewModel = function(data, options) {
     self.askCreateIdentifiers = function() {
         var self = this;
         bootbox.confirm({
-            title: 'Create DOI',
+            title: _('Create DOI'),
             message: '<p class="overflow">' +
-                _('Are you sure you want to create a DOI for this ') +
-                $osf.htmlEscape(self.nodeType) + _('? A DOI') +
+                agh.sprintf(_('Are you sure you want to create a DOI for this %1$s') ,
+                $osf.htmlEscape(self.nodeType)) + _('? A DOI') +
                 _(' is persistent and will always resolve to this page.'),
             callback: function(confirmed) {
                 if (confirmed) {

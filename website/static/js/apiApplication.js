@@ -22,6 +22,7 @@ var language = require('js/osfLanguage');
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 /*
  *  Store the data related to a single API application
@@ -446,7 +447,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
             this.visitList();
         } else {
             bootbox.confirm({
-                title: 'Discard changes?',
+                title: _('Discard changes?'),
                 message: language.apiOauth2Application.discardUnchanged,
                 callback: function(confirmed) {
                     if (confirmed) {

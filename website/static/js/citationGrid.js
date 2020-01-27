@@ -14,6 +14,7 @@ var errorPage = require('raw-loader!citations_load_error.html');
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 require('css/fangorn.css');
 
@@ -200,7 +201,7 @@ var renderActions = function(item, col) {
                 name: '',
                 icon: 'fa fa-link',
                 css: 'btn btn-default btn-xs',
-                tooltip: _('View on ') + self.provider,
+                tooltip: agh.sprintf(_('View on %1$s') , self.provider),
                 onclick: function(event) {
                     window.open(item.data.serviceUrl);
                 }
@@ -211,7 +212,7 @@ var renderActions = function(item, col) {
             name: '',
             icon: 'fa fa-arrow-circle-o-down',
             css: 'btn btn-default btn-xs',
-            tooltip: 'Download citations',
+            tooltip: _('Download citations'),
             config: function(elm, isInit, ctx) {
                 // In JS, double-backlashes escape in-string backslashes,
                 // Quick overview of RTF file formatting (see https://msdn.microsoft.com/en-us/library/aa140284%28v=office.10%29.aspx for more):
