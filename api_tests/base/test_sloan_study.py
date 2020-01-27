@@ -1,12 +1,20 @@
 import pytest
 import mock
 
+from waffle.models import Flag
+
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintFactory
 )
 
 from osf.features import (
+    SLOAN_DATA,
+    SLOAN_PREREG,
+    SLOAN_COI
+)
+
+SLOAN_FLAGS = (
     SLOAN_DATA,
     SLOAN_PREREG,
     SLOAN_COI
@@ -22,6 +30,10 @@ class TestSloanStudyWaffling:
     @pytest.fixture()
     def preprint(self, user):
         return PreprintFactory(creator=user)
+
+    @pytest.fixture(autouse=True)
+    def flags(self, user):
+        Flag.objects.filter(name__in=SLOAN_FLAGS, percent=50).update(everyone=None)
 
     @pytest.mark.enable_quickfiles_creation
     @mock.patch('api.base.views.Flag.is_active')
