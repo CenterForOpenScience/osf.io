@@ -55,7 +55,7 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
         return ('(name={self.name!r}, default_license={self.default_license!r}, '
                 'allow_submissions={self.allow_submissions!r}) with id {self.id!r}').format(self=self)
 
-    def __unicode__(self):
+    def __str__(self):
         return '[{}] {} - {}'.format(self.readable_type, self.name, self.id)
 
     @property
