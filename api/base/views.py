@@ -43,7 +43,22 @@ from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Contributor, MaintenanceState, BaseFileNode
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, READ, WRITE, ADMIN
 from waffle.models import Flag, Switch, Sample
-from waffle import flag_is_active, sample_is_active
+from waffle import sample_is_active
+
+from website.settings import DOMAIN
+from osf.models import PreprintProvider
+
+from osf.features import (
+    SLOAN_COI,
+    SLOAN_PREREG,
+    SLOAN_DATA,
+)
+
+SLOAN_FLAGS = (
+    SLOAN_COI,
+    SLOAN_PREREG,
+    SLOAN_DATA,
+)
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
@@ -404,13 +419,21 @@ def root(request, format=None, **kwargs):
     The documentation for the Open Science Framework API can be found at [developer.osf.io](https://developer.osf.io).
     The contents of this endpoint are variable and subject to change without notification.
     """
-    if request.user and not request.user.is_anonymous:
-        user = request.user
+    user = request.user
+    if user and not user.is_anonymous:
         current_user = UserSerializer(user, context={'request': request}).data
     else:
         current_user = None
 
-    flags = [name for name in Flag.objects.values_list('name', flat=True) if flag_is_active(request._request, name)]
+    flags = []
+    sloan_data = {}
+    for flag in Flag.objects.all():
+        active = flag.is_active(request._request)
+        if flag.name in SLOAN_FLAGS and flag.everyone is None:
+            sloan_data[flag.name] = active
+        if active:
+            flags.append(flag.name)
+
     samples = [name for name in Sample.objects.values_list('name', flat=True) if sample_is_active(name)]
     switches = list(Switch.objects.filter(active=True).values_list('name', flat=True))
 
@@ -437,7 +460,27 @@ def root(request, format=None, **kwargs):
     if utils.has_admin_scope(request):
         return_val['meta']['admin'] = True
 
-    return Response(return_val)
+    resp = Response(return_val)
+
+    # This is used exclusively for our partnership with Sloan and can be deleted after their study is complete.
+    referer_url = request.environ.get('HTTP_REFERER', '')
+    if DOMAIN + 'preprints/' in referer_url:
+        provider = PreprintProvider.objects.get(_id=referer_url.split('/')[4])
+        if provider.in_sloan_study:
+            for key in sloan_data.keys():
+                set_tags_and_cookies_for_sloan(user, sloan_data[key], resp, key)
+
+    return resp
+
+
+def set_tags_and_cookies_for_sloan(user, value, resp, FLAG_NAME):
+    if user and not user.is_anonymous and not user.all_tags.filter(Q(name=FLAG_NAME) | Q(name='no_{}'.format(FLAG_NAME))):
+        if value:  # 50/50 chance flag is active
+            user.add_system_tag(FLAG_NAME)
+        else:
+            user.add_system_tag('no_{}'.format(FLAG_NAME))
+    resp.set_cookie(FLAG_NAME, value)
+
 
 @api_view(('GET',))
 @throttle_classes([RootAnonThrottle, UserRateThrottle])
