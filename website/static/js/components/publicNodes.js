@@ -190,7 +190,7 @@ var PublicNodes = {
             // Error message if the request fails
             ctrl.failed ? m('p', [
                 agh.sprintf(_('Unable to retrieve public %1$s') , ctrl.nodeType) + _(' at this time. Please refresh the page or contact '),
-                m('a', {'href': _('mailto:') + OSF_SUPPORT_EMAIL}, OSF_SUPPORT_EMAIL),
+                m('a', {'href': 'mailto:' + OSF_SUPPORT_EMAIL}, OSF_SUPPORT_EMAIL),
                 _(' if the problem persists.')
             ]) :
 

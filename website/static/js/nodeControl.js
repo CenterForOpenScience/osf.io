@@ -243,7 +243,7 @@ var ProjectViewModel = function(data, options) {
         }).fail(function(xhr) {
             var message = _('We could not create the identifier at this time. ') +
                 _('The DOI acquisition service may be down right now. ') +
-                _('Please try again soon and/or contact ') + $osf.osfSupportLink();
+                agh.sprintf(_('Please try again soon and/or contact %1$s') , $osf.osfSupportLink());
             $osf.growl('Error', message, 'danger');
             Raven.captureMessage(_('Could not create doi'), {extra: {url: url, status: xhr.status}});
         }).always(function() {

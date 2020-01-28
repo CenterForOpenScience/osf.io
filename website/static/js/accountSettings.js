@@ -111,8 +111,7 @@ var UserProfileClient = oop.defclass({
                 $osf.growl('Error', xhr.responseJSON.message_long);
 
             } else {
-                $osf.growl('Error', agh.sprintf(_('User profile not updated. Please refresh the page and try \
-                again or contact %1$s if the problem persists.'),$osf.osfSupportLink()), 'danger');
+                $osf.growl('Error', agh.sprintf(_('User profile not updated. Please refresh the page and try again or contact %1$s if the problem persists.'),$osf.osfSupportLink()), 'danger');
             }
 
             Raven.captureMessage(_('Error fetching user profile'), {

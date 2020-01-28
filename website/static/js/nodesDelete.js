@@ -166,8 +166,7 @@ var NodesDeleteViewModel = function (nodeType, isSupplementalProject, nodeApiUrl
     });
 
     self.warning = ko.computed(function () {
-        var message = agh.sprintf(_('Please note that deleting your %1$s will erase all your %2$s data and this process is IRREVERSIBLE. Deleted %3$s and \
-            %4$s will no longer be available to other contributors on the %5$s') ,self.nodeType,self.nodeType,self.nodeType,self.termForChildren(),self.nodeType);
+        var message = agh.sprintf(_('Please note that deleting your %1$s will erase all your %2$s data and this process is IRREVERSIBLE. Deleted %3$s and %4$s will no longer be available to other contributors on the %5$s') ,self.nodeType,self.nodeType,self.nodeType,self.termForChildren(),self.nodeType);
         return self.hasSupplementalProjects() ? message + _(' and will be disconnected from your preprints.') : message + _('.');
     });
 };

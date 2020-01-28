@@ -121,7 +121,7 @@ var QuickFiles = {
             // Error message if the request fails
             ctrl.failed ? m('p', [
                     _('Unable to retrieve quickfiles at this time. Please refresh the page or contact '),
-                    m('a', {'href': _('mailto:rdm_support@nii.ac.jp')}, 'rdm_support@nii.ac.jp'),
+                    m('a', {'href': 'mailto:rdm_support@nii.ac.jp'}, 'rdm_support@nii.ac.jp'),
                     _(' if the problem persists.')
                 ]) :
 

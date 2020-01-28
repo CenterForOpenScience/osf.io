@@ -147,7 +147,7 @@ function confirmEmails(emailsToAdd) {
         var confirmFailMessage = _('There was a problem adding \<b>') + email.address +
             agh.sprintf(_('\</b>. Please contact %1$s if the problem persists.'),$osf.osfSupportLink());
 
-        var cancelFailMessage = agh.sprintf(_('There was a problem removing \<b>%1$s') , email.address) +
+        var cancelFailMessage = _('There was a problem removing \<b>') + email.address +
             agh.sprintf(_('\</b>. Please contact %1$s if the problem persists.'),$osf.osfSupportLink());
 
         bootbox.dialog({
