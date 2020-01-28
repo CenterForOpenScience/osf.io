@@ -63,7 +63,7 @@ var ViewModel = function(data) {
             modifyAllMessage = agh.sprintf(_('Add to <b>%1$s</b> and every component for which you have permission.'),data.node.title);
         }
         else {
-            message = agh.sprintf(_('Remove <b>%1$s</b> from <b>%2$s</b> or from <b>%3$s</b> and every component in it?<br><br>'),item.name,data.node.title,data.node.title,);
+            message = agh.sprintf(_('Remove <b>%1$s</b> from <b>%2$s</b> or from <b>%3$s</b> and every component in it?<br><br>'),item.name,data.node.title,data.node.title);
             modifyOneMessage = agh.sprintf(_('Remove from <b>%1$s</b>.'),data.node.title),
             modifyAllMessage = agh.sprintf(_('Remove from <b>%1$s</b> and every component for which you have permission.'),data.node.title);
         }
