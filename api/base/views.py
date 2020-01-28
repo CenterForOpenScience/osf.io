@@ -420,17 +420,27 @@ def root(request, format=None, **kwargs):
     The contents of this endpoint are variable and subject to change without notification.
     """
     user = request.user
+    flags = []
     if user and not user.is_anonymous:
         current_user = UserSerializer(user, context={'request': request}).data
     else:
         current_user = None
 
-    flags = []
     sloan_data = {}
     for flag in Flag.objects.all():
         active = flag.is_active(request._request)
         if flag.name in SLOAN_FLAGS and flag.everyone is None:
             sloan_data[flag.name] = active
+
+        # User tags should override any cookie info
+        if user and not user.is_anonymous:
+            if user.all_tags.filter(name=flag.name):
+                sloan_data[flag.name] = True
+                active = True
+            if user.all_tags.filter(name=f'no_{flag.name}'):
+                sloan_data[flag.name] = False
+                active = False
+
         if active:
             flags.append(flag.name)
 
@@ -464,22 +474,31 @@ def root(request, format=None, **kwargs):
 
     # This is used exclusively for our partnership with Sloan and can be deleted after their study is complete.
     referer_url = request.environ.get('HTTP_REFERER', '')
-    if DOMAIN + 'preprints/' in referer_url:
+    provider_domains = list(PreprintProvider.objects.exclude(domain='').values_list('domain', flat=True))
+
+    provider_domains = [domains for i, domains in enumerate(provider_domains) if referer_url.startswith(domains)]
+
+    provider = None
+    if provider_domains:
+        provider = PreprintProvider.objects.get(domain=provider_domains[0])
+
+    if referer_url.startswith(DOMAIN + 'preprints/'):
         provider = PreprintProvider.objects.get(_id=referer_url.split('/')[4])
-        if provider.in_sloan_study:
-            for key in sloan_data.keys():
-                set_tags_and_cookies_for_sloan(user, sloan_data[key], resp, key)
+
+    if provider and provider.in_sloan_study:
+        for key, value in sloan_data.items():
+            set_tags_and_cookies_for_sloan(user, resp, key, value)
 
     return resp
 
 
-def set_tags_and_cookies_for_sloan(user, value, resp, FLAG_NAME):
-    if user and not user.is_anonymous and not user.all_tags.filter(Q(name=FLAG_NAME) | Q(name='no_{}'.format(FLAG_NAME))):
-        if value:  # 50/50 chance flag is active
-            user.add_system_tag(FLAG_NAME)
+def set_tags_and_cookies_for_sloan(user, resp, flag_name, flag_value):
+    if user and not user.is_anonymous and not user.all_tags.filter(Q(name=flag_name) | Q(name=f'no_{flag_name}')):
+        if flag_value:  # 50/50 chance flag is active
+            user.add_system_tag(flag_name)
         else:
-            user.add_system_tag('no_{}'.format(FLAG_NAME))
-    resp.set_cookie(FLAG_NAME, value)
+            user.add_system_tag(f'no_{flag_name}')
+    resp.set_cookie(flag_name, flag_value)
 
 
 @api_view(('GET',))
