@@ -570,7 +570,7 @@ var MyProjects = {
             }
             // Uses replaceState instead of pushState because back buttons will not reset the filter on back without forcing a page refresh
             // A bug in history causes titles not to change despite setting them here.
-            window.history.replaceState({setFilter: index}, 'OSF | ' + filter.title, '/myprojects/' + filter.name);
+            window.history.replaceState({setFilter: index}, 'GakuNin RDM | ' + filter.title, '/myprojects/' + filter.name);
         };
 
         /**

@@ -25,7 +25,7 @@ module.exports = {
                 'これにより、承認したすべてのプロジェクトのDataverseへの' +
                 ' アクセスが取り消されます。',
             confirmNodeDeauth: 'このDataverseアカウントのリンクを解除してもよろしいですか？ これにより、' +
-                'OSFからDataverseの調査のファイルを表示、ダウンロード、変更、およびアップロードする機能が' +
+                'GakuNin RDMからDataverseの調査のファイルを表示、ダウンロード、変更、およびアップロードする機能が' +
                 '無効になります。 これにより、' +
                 '<a href="/settings/addons/">ユーザー設定</a>ページからDataverse認証が削除されることはありません。 ' ,
             deauthError: '現在、Dataverseアカウントを切断できませんでした。',
