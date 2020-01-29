@@ -52,7 +52,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='preprintprovider',
             name='reviews_workflow',
-            field=models.CharField(blank=True, choices=[(None, 'None'), ('post-moderation', 'Post-Moderation'), ('pre-moderation', 'Pre-Moderation')], max_length=15, null=True),
+            field=models.CharField(blank=True, choices=[(None, 'None'), ('pre-moderation', 'Pre-Moderation'), ('post-moderation', 'Post-Moderation')], max_length=15, null=True),
         ),
         migrations.AddField(
             model_name='preprintservice',

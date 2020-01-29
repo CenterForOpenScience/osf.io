@@ -11,6 +11,13 @@
     <title>Create Preprint Provider</title>
 {% endblock title %}
 {% block content %}
+{% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-12">

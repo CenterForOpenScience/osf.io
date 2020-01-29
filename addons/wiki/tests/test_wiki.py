@@ -399,7 +399,7 @@ class TestWikiViews(OsfTestCase):
         self.sec_wiki.update(self.user, long_content)
         res = serialize_wiki_widget(self.second_project)
         assert_less(len(res['wiki_content']), 520)  # wiggle room for closing tags
-        assert_in('...', res['wiki_content'])
+        assert_in('...', res['wiki_content'].decode())
         assert_true(res['more'])
 
     def test_wiki_widget_with_multiple_short_pages_has_more(self):
@@ -888,7 +888,7 @@ class TestWikiUuid(OsfTestCase):
         assert_equal(res.status_code, 200)
         self.project.reload()
         assert_equal(original_private_uuid, self.project.wiki_private_uuids.get(self.wkey))
-        assert_in(original_sharejs_uuid, res.body)
+        assert_in(original_sharejs_uuid, res.body.decode())
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_uuid_persists_after_rename(self, mock_sharejs):
@@ -925,7 +925,7 @@ class TestWikiUuid(OsfTestCase):
         assert_equal(res.status_code, 200)
         self.project.reload()
         assert_not_equal(original_private_uuid, self.project.wiki_private_uuids.get(self.wkey))
-        assert_not_in(original_sharejs_uuid, res.body)
+        assert_not_in(original_sharejs_uuid, res.body.decode())
 
 
 @pytest.mark.skip('#TODO: Fix or mock mongodb for sharejs')

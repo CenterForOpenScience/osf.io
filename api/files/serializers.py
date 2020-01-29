@@ -184,6 +184,11 @@ class BaseFileSerializer(JSONAPISerializer):
     current_version = ser.IntegerField(help_text='Latest file version', read_only=True, source='current_version_number')
     delete_allowed = ser.BooleanField(read_only=True, required=False)
 
+    parent_folder = RelationshipField(
+        related_view='files:file-detail',
+        related_view_kwargs={'file_id': '<parent._id>'},
+        help_text='The folder in which this file exists',
+    )
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
         related_view_kwargs={'node_id': '<target._id>', 'path': '<path>', 'provider': '<provider>'},
@@ -539,12 +544,12 @@ def get_file_download_link(obj, version=None, view_only=None):
 
 
 def get_file_render_link(mfr_url, download_url, version=None):
-    download_url_args = {
-        'direct': None,
-        'mode': 'render',
-    }
+    download_url_args = {}
     if version:
         download_url_args['revision'] = version
+
+    download_url_args['direct'] = None
+    download_url_args['mode'] = 'render'
 
     render_url = furl.furl(mfr_url).set(
         path=['render'],

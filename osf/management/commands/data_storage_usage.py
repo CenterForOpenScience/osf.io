@@ -454,7 +454,7 @@ def write_raw_data(cursor, zip_file, filename):
     for row in cursor.fetchall():
         row_to_write = []
         for s in row:
-            item = s.encode('utf-8') if isinstance(s, (str, unicode)) else s
+            item = s.encode('utf-8') if isinstance(s, str) else s
             row_to_write.append(item)
         writer.writerow(row_to_write)
     zip_file.writestr(filename, data_buffer.getvalue())

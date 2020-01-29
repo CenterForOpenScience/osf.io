@@ -185,37 +185,37 @@ class TestCommentModel:
         {
             'comment_content': '',
             'expected_signals': set(),
-            'expected_error_msg': "{'content': [u'This field cannot be blank.']}",
+            'expected_error_msg': "{'content': ['This field cannot be blank.']}",
         },
         # Make sure comments aren't whitespace
         {
             'comment_content': '       ',
             'expected_signals': set(),
-            'expected_error_msg': "{'content': [u'Value must not be empty.']}",
+            'expected_error_msg': "{'content': ['Value must not be empty.']}",
         },
         # Make sure unreg contributors don't send mentions
         {
             'comment_content': comment_mention_unreg_contributor,
             'expected_signals': set(),
-            'expected_error_msg': "[u'User does not exist or is not active.']",
+            'expected_error_msg': "['User does not exist or is not active.']",
         },
         # Make sure non-contributors don't send mentions
         {
             'comment_content': comment_mention_non_contributor,
             'expected_signals': set(),
-            'expected_error_msg': "[u'Mentioned user is not a contributor or group member.']",
+            'expected_error_msg': "['Mentioned user is not a contributor or group member.']",
         },
         # Make sure mentions with invalid guids don't send signals
         {
             'comment_content': comment_invalid_user_mentioned,
             'expected_signals': set(),
-            'expected_error_msg': "[u'User does not exist or is not active.']",
+            'expected_error_msg': "['User does not exist or is not active.']",
         },
         # Test to prevent user from entering a comment that's too long
         {
             'comment_content': comment_too_long,
             'expected_signals': set(),
-            'expected_error_msg': "{'content': [u'Ensure this field has no more than 1000 characters.']}",
+            'expected_error_msg': "{'content': ['Ensure this field has no more than 1000 characters.']}",
         },
 
     ]
@@ -236,7 +236,7 @@ class TestCommentModel:
         {
             'comment_content': None,
             'expected_signals': set(),
-            'expected_error_msg': "{'content': [u'This field cannot be null.']}",
+            'expected_error_msg': "{'content': ['This field cannot be null.']}",
         },
         # User makes valid comment
         {
@@ -254,7 +254,7 @@ class TestCommentModel:
         {
             'comment_content': comment_too_long_with_mention,
             'expected_signals': set(),
-            'expected_error_msg': "{'content': [u'Ensure this field has no more than 1000 characters.']}",
+            'expected_error_msg': "{'content': ['Ensure this field has no more than 1000 characters.']}",
         },
     ]
     edit_cases = [

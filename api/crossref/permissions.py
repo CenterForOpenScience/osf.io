@@ -24,17 +24,17 @@ class RequestComesFromMailgun(permissions.BasePermission):
         if not settings.MAILGUN_API_KEY:
             return False
         signature = hmac.new(
-            key=settings.MAILGUN_API_KEY,
+            key=settings.MAILGUN_API_KEY.encode(),
             msg='{}{}'.format(
                 data['timestamp'],
                 data['token'],
-            ),
+            ).encode(),
             digestmod=hashlib.sha256,
         ).hexdigest()
         if 'signature' not in data:
             error_message = 'Signature required in request body'
             sentry.log_message(error_message)
             raise exceptions.ParseError(error_message)
-        if not hmac.compare_digest(unicode(signature), unicode(data['signature'])):
+        if not hmac.compare_digest(str(signature), str(data['signature'])):
             raise exceptions.ParseError('Invalid signature')
         return True

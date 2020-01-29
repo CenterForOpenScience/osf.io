@@ -2,6 +2,16 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.1.0 (2020-01-15)
+===================
+- Switch to Python 3
+
+19.32.0 (2019-12-16)
+===================
+- Add SchemaBlocks, normalization for Registration.registered_meta
+- Update RegistrationSchemas
+- EGAP Ingestor improvements
+
 19.31.0 (2019-11-7)
 ===================
 - EGAP: Parse project structure, add contributors, add files, ingest the draft registration, and add a Jupyter notebook

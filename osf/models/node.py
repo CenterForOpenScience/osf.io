@@ -1,3 +1,4 @@
+from past.builtins import basestring
 import functools
 import itertools
 import logging
@@ -43,7 +44,7 @@ from osf.models.collection import CollectionSubmission
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
 from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable, ContributorMixin, GuardianMixin,
-                               NodeLinkMixin, Taggable, TaxonomizableMixin, SpamOverrideMixin)
+                               NodeLinkMixin, Taggable, TaxonomizableMixin, SpamOverrideMixin, RegistrationResponseMixin)
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.sanctions import RegistrationApproval
@@ -224,7 +225,7 @@ class AbstractNodeManager(TypedModelManager, IncludeManager):
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin, GuardianMixin,
                    NodeLinkMixin, CommentableMixin, SpamOverrideMixin, TaxonomizableMixin,
-                   ContributorMixin, Taggable, Loggable, GuidMixin, BaseModel):
+                   ContributorMixin, Taggable, Loggable, GuidMixin, RegistrationResponseMixin, BaseModel):
     """
     All things that inherit from AbstractNode will appear in
     the same table and will be differentiated by the `type` column.
@@ -472,7 +473,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         self._is_templated_clone = False
         super(AbstractNode, self).__init__(*args, **kwargs)
 
-    def __unicode__(self):
+    def __repr__(self):
         return ('(title={self.title!r}, category={self.category!r}) '
                 'with guid {self._id!r}').format(self=self)
 
@@ -1407,12 +1408,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.add_permission(contrib.user, permission, save=True)
         Contributor.objects.bulk_create(contribs)
 
-    def register_node(self, schema, auth, data, parent=None, child_ids=None, provider=None):
+    def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
         :param auth: All the auth information including user, API key.
-        :param data: Form data
+        :param draft registration: Draft registration
         :param parent Node: parent registration of registration to be created
         :param provider RegistrationProvider: provider to submit the registration to
         """
@@ -1446,9 +1447,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.registered_user = auth.user
         registered.registered_from = original
         registered.provider = provider
-        if not registered.registered_meta:
-            registered.registered_meta = {}
-        registered.registered_meta[schema._id] = data
 
         registered.forked_from = self.forked_from
         registered.creator = self.creator
@@ -1463,6 +1461,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.tags.add(*self.all_tags.values_list('pk', flat=True))
         registered.subjects.add(*self.subjects.values_list('pk', flat=True))
         registered.affiliated_institutions.add(*self.affiliated_institutions.values_list('pk', flat=True))
+
+        # Sets registration_metadata and registration_responses
+        registered.copy_registered_meta_and_registration_responses(draft_registration, save=False)
 
         # Clone each log from the original node for this registration.
         self.clone_logs(registered)
@@ -1503,7 +1504,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 node_contained.register_node(
                     schema=schema,
                     auth=auth,
-                    data=data,
+                    draft_registration=draft_registration,
                     provider=provider,
                     parent=registered,
                     child_ids=child_ids,

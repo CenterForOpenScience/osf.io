@@ -307,7 +307,7 @@ def conference_submissions(**kwargs):
 def conference_view(**kwargs):
     meetings = []
     for conf in Conference.objects.all():
-        if conf.valid_submissions < settings.CONFERENCE_MIN_COUNT:
+        if len(conf.valid_submissions) < settings.CONFERENCE_MIN_COUNT:
             continue
         if (hasattr(conf, 'is_meeting') and (conf.is_meeting is False)):
             continue

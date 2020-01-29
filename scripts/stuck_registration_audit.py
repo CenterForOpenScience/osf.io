@@ -93,7 +93,7 @@ def main():
                     'registered_from_public']
         filename = 'stuck_registrations_{}.csv'.format(timezone.now().isoformat())
 
-        output = io.BytesIO()
+        output = io.StringIO()
         dict_writer = csv.DictWriter(output, fieldnames)
         dict_writer.writeheader()
         dict_writer.writerows(broken_registrations)

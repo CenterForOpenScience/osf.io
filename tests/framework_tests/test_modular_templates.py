@@ -152,7 +152,7 @@ class WebRendererTestCase(OsfTestCase):
 
         self.assertIn(
             'foo:bar',
-            resp.data
+            resp.data.decode()
         )
 
     def test_http_error_raised(self):
@@ -172,7 +172,7 @@ class WebRendererTestCase(OsfTestCase):
 
         self.assertIn(
             err.to_data()['message_short'],
-            resp[0],
+            resp[0].decode(),
         )
         self.assertEqual(
             http_status.HTTP_404_NOT_FOUND,

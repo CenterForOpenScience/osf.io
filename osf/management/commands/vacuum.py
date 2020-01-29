@@ -12,9 +12,9 @@ class Command(BaseCommand):
 
     Examples:
 
-        python manage.py vacuum --dry osf.OSFUser
-        python manage.py vacuum --analyze osf.OSFUser
-        python manage.py vacuum osf.OSFUser osf.Node
+        python3 manage.py vacuum --dry osf.OSFUser
+        python3 manage.py vacuum --analyze osf.OSFUser
+        python3 manage.py vacuum osf.OSFUser osf.Node
     """
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
