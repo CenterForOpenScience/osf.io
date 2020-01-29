@@ -139,7 +139,7 @@ def validate_file_list(client, file_list, all_files):
     filenames = client.get_content(file_list['id'])
     all_filenames = [f['title'] for f in all_files]
     for filename in filenames.decode('utf8').split('\n'):
-        if filename not in all_filenames:
+        if len(filename) and filename not in all_filenames:
             return False
     return True
 
