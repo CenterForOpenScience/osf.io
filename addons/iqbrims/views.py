@@ -34,13 +34,14 @@ from addons.iqbrims import settings
 from addons.base import generic_views, exceptions
 from addons.iqbrims.serializer import IQBRIMSSerializer
 from addons.iqbrims.models import NodeSettings as IQBRIMSNodeSettings
-from addons.iqbrims.models import REVIEW_FOLDERS
+from addons.iqbrims.models import REVIEW_FOLDERS, REVIEW_FILE_LIST
 from addons.iqbrims.utils import (
     get_log_actions,
     must_have_valid_hash,
     get_folder_title,
     add_comment,
     to_comment_string,
+    validate_file_list
 )
 
 logger = logging.getLogger(__name__)
@@ -245,6 +246,7 @@ def iqbrims_get_storage(**kwargs):
         urls_for_all_files = True
     else:
         folder_name = REVIEW_FOLDERS[folder]
+        file_name = REVIEW_FILE_LIST
     try:
         access_token = iqbrims.fetch_access_token()
     except exceptions.InvalidAuthError:
@@ -268,6 +270,8 @@ def iqbrims_get_storage(**kwargs):
     if file_name is not None:
         files = [f for f in files
                  if f['title'] == file_name and (validate is None or validate(access_token, f))]
+    if len(files) > 0 and file_name == REVIEW_FILE_LIST:
+        files = files if validate_file_list(client, files[0], all_files) else []
     folder_path = iqbrims.folder_path
     management_node = _get_management_node(node)
     base_folder_path = management_node.get_addon('googledrive').folder_path

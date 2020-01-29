@@ -636,7 +636,8 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
     @mock.patch.object(IQBRIMSClient, 'files')
-    def test_get_checklist_storage(self, mock_files, mock_folders,
+    @mock.patch.object(IQBRIMSClient, 'get_content')
+    def test_get_checklist_storage(self, mock_get_content, mock_files, mock_folders,
                                    mock_get_management_node):
         management_project = ProjectFactory()
         management_project.add_addon('googledrive', auth=None)
@@ -647,7 +648,10 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         mock_folders.return_value = [{'id': 'folderid123',
                                       'title': u'チェックリスト'}]
         mock_files.return_value = [{'id': 'fileid123',
-                                    'title': 'dummy.txt'}]
+                                    'title': 'dummy.txt'},
+                                   {'id': 'fileidlist',
+                                    'title': '.files.txt'}]
+        mock_get_content.return_value = b'dummy.txt'
 
         node_settings = self.project.get_addon('iqbrims')
         node_settings.secret = 'secret123'
@@ -667,7 +671,8 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
     @mock.patch.object(IQBRIMSClient, 'files')
-    def test_get_checklist_ja_storage(self, mock_files, mock_folders,
+    @mock.patch.object(IQBRIMSClient, 'get_content')
+    def test_get_checklist_ja_storage(self, mock_get_content, mock_files, mock_folders,
                                       mock_get_management_node):
         management_project = ProjectFactory()
         management_project.add_addon('googledrive', auth=None)
@@ -678,7 +683,10 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         mock_folders.return_value = [{'id': 'folderid123',
                                       'title': u'チェックリスト'}]
         mock_files.return_value = [{'id': 'fileid123',
-                                    'title': u'ダミー.txt'}]
+                                    'title': u'ダミー.txt'},
+                                   {'id': 'fileidlist',
+                                    'title': '.files.txt'}]
+        mock_get_content.return_value = u'ダミー.txt'.encode('utf8')
 
         node_settings = self.project.get_addon('iqbrims')
         node_settings.secret = 'secret123'
