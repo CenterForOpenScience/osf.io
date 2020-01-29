@@ -40,7 +40,6 @@ class TestMigrationSQL197:
         draft_registration.save()
         draft_reg_group_obj_perm = DraftRegistrationGroupObjectPermission.objects.filter(content_object=draft_registration)[0]
         draft_reg_group_obj_perm_id = draft_reg_group_obj_perm.id
-        assert(draft_reg_group_obj_perm)
         with connection.cursor() as cursor:
             cursor.execute(drop_draft_reg_group_object_permission_table)
         with pytest.raises(ObjectDoesNotExist):
