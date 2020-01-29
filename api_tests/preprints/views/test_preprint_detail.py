@@ -4,7 +4,10 @@ import datetime
 
 from django.utils import timezone
 from rest_framework import exceptions
-from waffle.testutils import override_switch
+from waffle.testutils import (
+    override_switch,
+    override_flag
+)
 
 from osf import features
 from osf.utils.permissions import READ
@@ -12,7 +15,7 @@ from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
 from api_tests.subjects.mixins import UpdateSubjectsMixin
 from framework.auth.core import Auth
-from osf.models import NodeLicense, PreprintContributor
+from osf.models import NodeLicense, PreprintContributor, PreprintLog
 from osf.utils.permissions import WRITE
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import (
@@ -534,6 +537,34 @@ class TestPreprintUpdate:
         preprint_detail = app.get(url, auth=user.auth).json['data']
         assert preprint_detail['links']['doi'] == 'https://doi.org/{}'.format(
             new_doi)
+
+    def test_update_conflict_of_interest_statement(self, app, user, preprint, url):
+        update_payload = build_preprint_update_payload(
+            preprint._id,
+            attributes={'conflict_of_interest_statement': 'Owns shares in Closed Science Inc.'}
+        )
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'You do not have ability to edit a conflict of interest ' \
+                                                  'statement at this time.'
+
+        contrib = AuthUserFactory()
+        preprint.add_contributor(contrib, READ)
+        res = app.patch_json_api(url, update_payload, auth=contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+
+        with override_flag(features.SLOAN_COI, active=True):
+            res = app.patch_json_api(url, update_payload, auth=user.auth)
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['conflict_of_interest_statement'] == 'Owns shares in Closed Science Inc.'
+
+        preprint.reload()
+        assert preprint.conflict_of_interest_statement == 'Owns shares in Closed Science Inc.'
+        log = preprint.logs.first()
+        assert log.action == PreprintLog.COI_STATEMENT_CHANGED
+        assert log.params == {'preprint': preprint._id, 'user': user._id}
 
     def test_title_has_a_512_char_limit(self, app, user, preprint, url):
         new_title = 'a' * 513

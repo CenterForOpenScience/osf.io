@@ -31,6 +31,8 @@ from osf.exceptions import NodeStateError
 from osf.models import BaseFileNode, Preprint, PreprintProvider, Node, NodeLicense
 from osf.utils import permissions as osf_permissions
 
+from osf.features import SLOAN_COI
+from waffle import flag_is_active
 
 class PrimaryFileRelationshipField(RelationshipField):
     def get_object(self, file_id):
@@ -104,6 +106,8 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     preprint_doi_created = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
     date_withdrawn = VersionedDateTimeField(read_only=True, allow_null=True)
     withdrawal_justification = HideIfNotWithdrawal(ser.CharField(required=False, read_only=True, allow_blank=True))
+    conflict_of_interest_statement = ser.CharField(required=False, allow_blank=True, allow_null=True)
+
     current_user_permissions = ser.SerializerMethodField(
         help_text='List of strings representing the permissions '
         'for the current user on this preprint.',
@@ -286,6 +290,16 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         if 'original_publication_date' in validated_data:
             preprint.original_publication_date = validated_data['original_publication_date'] or None
             save_preprint = True
+
+        if 'conflict_of_interest_statement' in validated_data:
+            if flag_is_active(self.context['request'], SLOAN_COI):
+                coi_statement = validated_data.get('conflict_of_interest_statement')
+                preprint.set_conflict_of_interest_statement(coi_statement, auth=auth)
+            else:
+                raise exceptions.ValidationError(
+                    detail='You do not have ability to edit a conflict of interest '
+                    'statement at this time.',
+                )
 
         if published is not None:
             if not preprint.primary_file:

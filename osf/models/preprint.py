@@ -175,6 +175,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         'admin': ('read_preprint', 'write_preprint', 'admin_preprint',)
     }
     group_format = 'preprint_{self.id}_{group}'
+    conflict_of_interest_statement = models.CharField(blank=True, null=True, max_length=5000)
 
     class Meta:
         permissions = (
@@ -821,6 +822,26 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
         return True
+
+    def set_conflict_of_interest_statement(self, coi_statement, auth, log=True, save=True):
+        """Set the conflict of interest statement for this preprint.
+
+        :param auth: All the auth information including user, API key.
+        :param bool log: Whether to add a NodeLog for the privacy change.
+        """
+        self.conflict_of_interest_statement = coi_statement
+
+        if log:
+            self.add_log(
+                action=PreprintLog.COI_STATEMENT_CHANGED,
+                params={
+                    'user': auth.user._id,
+                    'preprint': self._id,
+                },
+                auth=auth,
+            )
+        if save:
+            self.save()
 
     def can_view(self, auth):
         if not auth.user:
