@@ -435,7 +435,8 @@ class SpreadsheetClient(BaseClient):
         logger.info('Updated: {}'.format(res.json()))
         return ecolumns + new_columns
 
-    def add_files(self, sheet_id, sheet_idx, files):
+    def add_files(self, files_sheet_id, files_sheet_idx,
+                  mgmt_sheet_id, mgmt_sheet_idx, files):
         top = {'depth': 0, 'name': None, 'files': [], 'dirs': []}
         max_depth = 0
         for f in files:
@@ -462,15 +463,18 @@ class SpreadsheetClient(BaseClient):
                     target['dirs'].append(d)
                     next_target = d
                 target = next_target
-        self.ensure_columns(sheet_id, ['Filled'], row=1)
+        fc = self.ensure_columns(mgmt_sheet_id, ['Filled'], row=1)
+        self.update_row(mgmt_sheet_id,
+                        ['FALSE' if c == 'Filled' else '' for c in fc],
+                        0)
         fcolumns = ['Persons Involved', 'Remarks', 'Software Used']
-        c = self.ensure_columns(sheet_id,
+        c = self.ensure_columns(files_sheet_id,
                                 ['L{}'.format(i)
                                  for i in range(0, max_depth + 2)] +
                                 ['{}(File)'.format(col) for col in fcolumns] +
                                 ['Extension'] +
                                 ['{}(Extension)'.format(col) for col in fcolumns],
-                                row=3)
+                                row=1)
         values = self._to_file_list(top, [])
         exts = sorted(set([os.path.splitext(v[-1])[-1]
                            for v, t in values if t == 'file']))
@@ -478,7 +482,7 @@ class SpreadsheetClient(BaseClient):
         exts += ['' for i in range(0, len(values) - len(exts))]
         values = [self._to_file_row(c, t, v, ex)
                   for (v, t), ex in zip(values, exts)]
-        r = u'{0}!A3:{1}3'.format(sheet_id, self._row_name(len(c)))
+        r = u'{0}!A1:{1}1'.format(files_sheet_id, self._row_name(len(c)))
         res = self._make_request(
             'POST',
             self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
@@ -507,24 +511,11 @@ class SpreadsheetClient(BaseClient):
             },
             data=json.dumps({
                 'requests': [{
-                    'setDataValidation': {
-                        'range': {'sheetId': sheet_idx,
-                                  'startColumnIndex': 0,
-                                  'endColumnIndex': 1,
-                                  'startRowIndex': 1,
-                                  'endRowIndex': 2},
-                        'rule': {
-                            'condition': {
-                                'type': 'BOOLEAN'
-                            }
-                        }
-                    }
-                }, {
                     'addProtectedRange': {
                         'protectedRange': {
-                            'range': {'sheetId': sheet_idx,
+                            'range': {'sheetId': files_sheet_idx,
                                       'startColumnIndex': 0,
-                                      'endColumnIndex': 1,
+                                      'endColumnIndex': col_count,
                                       'startRowIndex': 0,
                                       'endRowIndex': 1},
                             'warningOnly': True
@@ -533,33 +524,22 @@ class SpreadsheetClient(BaseClient):
                 }, {
                     'addProtectedRange': {
                         'protectedRange': {
-                            'range': {'sheetId': sheet_idx,
-                                      'startColumnIndex': 0,
-                                      'endColumnIndex': col_count,
-                                      'startRowIndex': 2,
-                                      'endRowIndex': 3},
-                            'warningOnly': True
-                        }
-                    }
-                }, {
-                    'addProtectedRange': {
-                        'protectedRange': {
-                            'range': {'sheetId': sheet_idx,
+                            'range': {'sheetId': files_sheet_idx,
                                       'startColumnIndex': 0,
                                       'endColumnIndex': max_depth + 2,
-                                      'startRowIndex': 3,
-                                      'endRowIndex': 3 + len(values)},
+                                      'startRowIndex': 1,
+                                      'endRowIndex': 1 + len(values)},
                             'warningOnly': True
                         }
                     }
                 }, {
                     'addProtectedRange': {
                         'protectedRange': {
-                            'range': {'sheetId': sheet_idx,
+                            'range': {'sheetId': files_sheet_idx,
                                       'startColumnIndex': ext_col_index,
                                       'endColumnIndex': ext_col_index + 1,
-                                      'startRowIndex': 3,
-                                      'endRowIndex': 3 + len(values)},
+                                      'startRowIndex': 1,
+                                      'endRowIndex': 1 + len(values)},
                             'warningOnly': True
                         }
                     }

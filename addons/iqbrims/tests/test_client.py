@@ -28,34 +28,30 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
             with mock.patch.object(client, '_make_request',
                                    return_value=MockResponse('{"test": true}',
                                                              200)) as mkreq:
-                client.add_files('sheet01', 1,
+                client.add_files('sheet01', 1, 'sheet02', 2,
                                  ['file1.txt', 'file2.txt'])
+                assert_equal(len(mkreq.mock_calls), 3)
                 name, args, kwargs = mkreq.mock_calls[0]
                 assert_equal(json.loads(kwargs['data']), {
-                  'range': 'sheet01!A3:J3',
-                  'values': [[u'\u251c\u2212\u2212', 'file1.txt', '', '', '', '.txt', '', '', ''],
-                             [u'\u2514\u2212\u2212', 'file2.txt', '', '', '', '', '', '', '']],
+                  'range': 'sheet02!A2:C2',
+                  'values': [['FALSE']],
                   'majorDimension': 'ROWS'
                 })
                 name, args, kwargs = mkreq.mock_calls[1]
                 assert_equal(json.loads(kwargs['data']), {
+                  'range': 'sheet01!A1:J1',
+                  'values': [[u'\u251c\u2212\u2212', 'file1.txt', '', '', '', '.txt', '', '', ''],
+                             [u'\u2514\u2212\u2212', 'file2.txt', '', '', '', '', '', '', '']],
+                  'majorDimension': 'ROWS'
+                })
+                name, args, kwargs = mkreq.mock_calls[2]
+                assert_equal(json.loads(kwargs['data']), {
                   'requests': [{
-                    'setDataValidation': {
-                      'range': {
-                        'endRowIndex': 2,
-                        'endColumnIndex': 1,
-                        'sheetId': 1,
-                        'startColumnIndex': 0,
-                        'startRowIndex': 1
-                      },
-                      'rule': {'condition': {'type': 'BOOLEAN'}}
-                    }
-                  }, {
                     'addProtectedRange': {
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 1,
-                          'endColumnIndex': 1,
+                          'endColumnIndex': 9,
                           'sheetId': 1,
                           'startColumnIndex': 0,
                           'startRowIndex': 0
@@ -68,23 +64,10 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 3,
-                          'endColumnIndex': 9,
-                          'sheetId': 1,
-                          'startColumnIndex': 0,
-                          'startRowIndex': 2
-                        },
-                        'warningOnly': True
-                      }
-                    }
-                  }, {
-                    'addProtectedRange': {
-                      'protectedRange': {
-                        'range': {
-                          'endRowIndex': 5,
                           'endColumnIndex': 2,
                           'sheetId': 1,
                           'startColumnIndex': 0,
-                          'startRowIndex': 3
+                          'startRowIndex': 1
                         },
                         'warningOnly': True
                       }
@@ -93,11 +76,11 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                     'addProtectedRange': {
                       'protectedRange': {
                         'range': {
-                          'endRowIndex': 5,
+                          'endRowIndex': 3,
                           'endColumnIndex': 6,
                           'sheetId': 1,
                           'startColumnIndex': 5,
-                          'startRowIndex': 3
+                          'startRowIndex': 1
                         },
                         'warningOnly': True
                       }
@@ -106,36 +89,32 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
             with mock.patch.object(client, '_make_request',
                                    return_value=MockResponse('{"test": true}',
                                                              200)) as mkreq:
-                client.add_files('sheet01', 1,
+                client.add_files('sheet01', 1, 'sheet02', 2,
                                  ['file1.txt', 'file2.txt', 'test/file3.txt'])
+                assert_equal(len(mkreq.mock_calls), 3)
                 name, args, kwargs = mkreq.mock_calls[0]
                 assert_equal(json.loads(kwargs['data']), {
-                  'range': 'sheet01!A3:K3',
+                  'range': 'sheet02!A2:C2',
+                  'values': [['FALSE']],
+                  'majorDimension': 'ROWS'
+                })
+                name, args, kwargs = mkreq.mock_calls[1]
+                assert_equal(json.loads(kwargs['data']), {
+                  'range': 'sheet01!A1:K1',
                   'values': [[u'\u251c\u2212\u2212', 'test', '', '', '', '', '.txt', '', '', ''],
                              [u'\u2502', u'\u2514\u2212\u2212', 'file3.txt', '', '', '', '', '', '', ''],
                              [u'\u251c\u2212\u2212', 'file1.txt', '', '', '', '', '', '', '', ''],
                              [u'\u2514\u2212\u2212', 'file2.txt', '', '', '', '', '', '', '', '']],
                   'majorDimension': 'ROWS'
                 })
-                name, args, kwargs = mkreq.mock_calls[1]
+                name, args, kwargs = mkreq.mock_calls[2]
                 assert_equal(json.loads(kwargs['data']), {
                   'requests': [{
-                    'setDataValidation': {
-                      'range': {
-                        'endRowIndex': 2,
-                        'endColumnIndex': 1,
-                        'sheetId': 1,
-                        'startColumnIndex': 0,
-                        'startRowIndex': 1
-                      },
-                      'rule': {'condition': {'type': 'BOOLEAN'}}
-                    }
-                  }, {
                     'addProtectedRange': {
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 1,
-                          'endColumnIndex': 1,
+                          'endColumnIndex': 10,
                           'sheetId': 1,
                           'startColumnIndex': 0,
                           'startRowIndex': 0
@@ -147,24 +126,11 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                     'addProtectedRange': {
                       'protectedRange': {
                         'range': {
-                          'endRowIndex': 3,
-                          'endColumnIndex': 10,
-                          'sheetId': 1,
-                          'startColumnIndex': 0,
-                          'startRowIndex': 2
-                        },
-                        'warningOnly': True
-                      }
-                    }
-                  }, {
-                    'addProtectedRange': {
-                      'protectedRange': {
-                        'range': {
-                          'endRowIndex': 7,
+                          'endRowIndex': 5,
                           'endColumnIndex': 3,
                           'sheetId': 1,
                           'startColumnIndex': 0,
-                          'startRowIndex': 3
+                          'startRowIndex': 1
                         },
                         'warningOnly': True
                       }
@@ -173,11 +139,11 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                     'addProtectedRange': {
                       'protectedRange': {
                         'range': {
-                          'endRowIndex': 7,
+                          'endRowIndex': 5,
                           'endColumnIndex': 7,
                           'sheetId': 1,
                           'startColumnIndex': 6,
-                          'startRowIndex': 3
+                          'startRowIndex': 1
                         },
                         'warningOnly': True
                       }
@@ -186,37 +152,33 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
             with mock.patch.object(client, '_make_request',
                                    return_value=MockResponse('{"test": true}',
                                                              200)) as mkreq:
-                client.add_files('sheet01', 1,
+                client.add_files('sheet01', 1, 'sheet02', 2,
                                  [u'ファイル1.txt', u'ファイル2.txt',
                                   u'テスト/ファイル3.txt'])
+                assert_equal(len(mkreq.mock_calls), 3)
                 name, args, kwargs = mkreq.mock_calls[0]
                 assert_equal(json.loads(kwargs['data']), {
-                  'range': 'sheet01!A3:K3',
+                  'range': 'sheet02!A2:C2',
+                  'values': [['FALSE']],
+                  'majorDimension': 'ROWS'
+                })
+                name, args, kwargs = mkreq.mock_calls[1]
+                assert_equal(json.loads(kwargs['data']), {
+                  'range': 'sheet01!A1:K1',
                   'values': [[u'\u251c\u2212\u2212', u'テスト', '', '', '', '', '.txt', '', '', ''],
                              [u'\u2502', u'\u2514\u2212\u2212', u'ファイル3.txt', '', '', '', '', '', '', ''],
                              [u'\u251c\u2212\u2212', u'ファイル1.txt', '', '', '', '', '', '', '', ''],
                              [u'\u2514\u2212\u2212', u'ファイル2.txt', '', '', '', '', '', '', '', '']],
                   'majorDimension': 'ROWS'
                 })
-                name, args, kwargs = mkreq.mock_calls[1]
+                name, args, kwargs = mkreq.mock_calls[2]
                 assert_equal(json.loads(kwargs['data']), {
                   'requests': [{
-                    'setDataValidation': {
-                      'range': {
-                        'endRowIndex': 2,
-                        'endColumnIndex': 1,
-                        'sheetId': 1,
-                        'startColumnIndex': 0,
-                        'startRowIndex': 1
-                      },
-                      'rule': {'condition': {'type': 'BOOLEAN'}}
-                    }
-                  }, {
                     'addProtectedRange': {
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 1,
-                          'endColumnIndex': 1,
+                          'endColumnIndex': 10,
                           'sheetId': 1,
                           'startColumnIndex': 0,
                           'startRowIndex': 0
@@ -228,24 +190,11 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                     'addProtectedRange': {
                       'protectedRange': {
                         'range': {
-                          'endRowIndex': 3,
-                          'endColumnIndex': 10,
-                          'sheetId': 1,
-                          'startColumnIndex': 0,
-                          'startRowIndex': 2
-                        },
-                        'warningOnly': True
-                      }
-                    }
-                  }, {
-                    'addProtectedRange': {
-                      'protectedRange': {
-                        'range': {
-                          'endRowIndex': 7,
+                          'endRowIndex': 5,
                           'endColumnIndex': 3,
                           'sheetId': 1,
                           'startColumnIndex': 0,
-                          'startRowIndex': 3
+                          'startRowIndex': 1
                         },
                         'warningOnly': True
                       }
@@ -254,11 +203,11 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                     'addProtectedRange': {
                       'protectedRange': {
                         'range': {
-                          'endRowIndex': 7,
+                          'endRowIndex': 5,
                           'endColumnIndex': 7,
                           'sheetId': 1,
                           'startColumnIndex': 6,
-                          'startRowIndex': 3
+                          'startRowIndex': 1
                         },
                         'warningOnly': True
                       }

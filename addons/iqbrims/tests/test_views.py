@@ -972,7 +972,9 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         mock_files.return_value = [{'id': 'rmfileid123', 'title': 'Raw Files'}]
         sgp = {'columnCount': 2}
         mock_sheets.return_value = [{'properties': {'title': 'Files',
-                                                    'sheetId': 'ss123',
+                                                    'sheetId': 'ss123'}},
+                                    {'properties': {'title': 'Management',
+                                                    'sheetId': 'ss456',
                                                     'gridProperties': sgp}}]
         mock_get_column_values.return_value = ['Filled']
 
@@ -992,7 +994,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_equal(res.json, {'status': 'rejected',
                                 'root_folder': 'iqb123/'})
         mock_update_row.assert_called_once()
-        assert_equal(mock_update_row.call_args, (('Files', ['FALSE'], 0),))
+        assert_equal(mock_update_row.call_args, (('Management', ['FALSE'], 0),))
 
     @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -1058,7 +1060,9 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         mock_files.return_value = [{'id': 'fileid123', 'title': 'files.txt'}]
         mock_create_spreadsheet.return_value = {'id': 'sheet123'}
         mock_sheets.return_value = [{'properties': {'title': 'Files',
-                                                    'sheetId': 'ss123'}}]
+                                                    'sheetId': 'ss123'}},
+                                    {'properties': {'title': 'Management',
+                                                    'sheetId': 'ss456'}}]
         mock_grant_access_from_anyone.return_value = {}
         mock_get_file_link.return_value = 'https://a.b/sheet123'
         user_settings = {}
@@ -1086,7 +1090,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                      (('sheet123',),))
         mock_add_files.assert_called_once()
         assert_equal(mock_add_files.call_args,
-                     (('Files', 'ss123',
+                     (('Files', 'ss123', 'Management', 'ss456',
                        ['f1.txt', 'f2.txt', 'test/file3.txt', '']),))
 
     @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
@@ -1118,7 +1122,9 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         mock_files.return_value = [{'id': 'fileid123', 'title': 'files.txt'}]
         mock_create_spreadsheet.return_value = {'id': 'sheet123'}
         mock_sheets.return_value = [{'properties': {'title': 'Files',
-                                                    'sheetId': 'ss123'}}]
+                                                    'sheetId': 'ss123'}},
+                                    {'properties': {'title': 'Management',
+                                                    'sheetId': 'ss456'}}]
         mock_grant_access_from_anyone.return_value = {}
         mock_get_file_link.return_value = 'https://a.b/sheet123'
         user_settings = {}
@@ -1146,7 +1152,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                      (('sheet123',),))
         mock_add_files.assert_called_once()
         assert_equal(mock_add_files.call_args,
-                     (('Files', 'ss123',
+                     (('Files', 'ss123', 'Management', 'ss456',
                        ['f1.txt', 'f2.txt', u'test/ファイル3.txt', '']),))
 
     @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
@@ -1178,7 +1184,9 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         mock_files.return_value = [{'id': 'fileid123', 'title': 'files.txt'}]
         mock_copy_file.return_value = {'id': 'sheet123'}
         mock_sheets.return_value = [{'properties': {'title': 'Files',
-                                                    'sheetId': 'ss123'}}]
+                                                    'sheetId': 'ss123'}},
+                                    {'properties': {'title': 'Management',
+                                                    'sheetId': 'ss456'}}]
         mock_grant_access_from_anyone.return_value = {}
         mock_get_file_link.return_value = 'https://a.b/sheet123'
         user_settings = {'FLOWABLE_DATALIST_TEMPLATE_ID': '1234567890'}
@@ -1206,7 +1214,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                      (('sheet123',),))
         mock_add_files.assert_called_once()
         assert_equal(mock_add_files.call_args,
-                     (('Files', 'ss123',
+                     (('Files', 'ss123', 'Management', 'ss456',
                        ['f1.txt', 'f2.txt', u'test/ファイル3.txt', '']),))
         mock_copy_file.assert_called_once()
 

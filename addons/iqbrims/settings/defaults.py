@@ -48,7 +48,8 @@ APPSHEET_CHECK_COLUMNS = [('Updated', '_updated'),
                           ('Manuscript', None),
                           ('Folder', '_drive_url')]
 INDEXSHEET_FILENAME = 'Raw Files'
-INDEXSHEET_SHEET_NAME = 'Files'
+INDEXSHEET_FILES_SHEET_NAME = 'Files'
+INDEXSHEET_MANAGEMENT_SHEET_NAME = 'Management'
 
 IMAGELIST_FOLDERNAME = u'スキャン画像'
 IMAGELIST_FILENAME = 'files.txt'

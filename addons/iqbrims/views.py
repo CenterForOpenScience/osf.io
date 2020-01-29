@@ -433,18 +433,37 @@ def iqbrims_create_index(**kwargs):
                                               folders[0]['id'],
                                               settings.INDEXSHEET_FILENAME)
     sclient = SpreadsheetClient(r['id'], access_token)
-    sheets = [s
-              for s in sclient.sheets()
-              if s['properties']['title'] == settings.INDEXSHEET_SHEET_NAME]
-    logger.info('Spreadsheet: id={}, sheet={}'.format(r['id'], sheets))
-    if len(sheets) == 0:
-        sclient.add_sheet(settings.INDEXSHEET_SHEET_NAME)
-        sheets = [s
-                  for s in sclient.sheets()
-                  if s['properties']['title'] == settings.INDEXSHEET_SHEET_NAME]
-    assert len(sheets) == 1
-    sheet_id = sheets[0]['properties']['title']
-    sclient.add_files(sheet_id, sheets[0]['properties']['sheetId'], files)
+    all_sheets = sclient.sheets()
+    files_sheets = [s
+                    for s in all_sheets
+                    if s['properties']['title'] == settings.INDEXSHEET_FILES_SHEET_NAME]
+    mgmt_sheets = [s
+                   for s in all_sheets
+                   if s['properties']['title'] == settings.INDEXSHEET_MANAGEMENT_SHEET_NAME]
+    logger.info('Spreadsheet: id={}, sheet={}'.format(r['id'], files_sheets))
+    added = False
+    if len(files_sheets) == 0:
+        sclient.add_sheet(settings.INDEXSHEET_FILES_SHEET_NAME)
+        added = True
+    if len(mgmt_sheets) == 0:
+        sclient.add_sheet(settings.INDEXSHEET_MANAGEMENT_SHEET_NAME)
+        added = True
+    if added:
+        all_sheets = sclient.sheets()
+        files_sheets = [s
+                        for s in all_sheets
+                        if s['properties']['title'] == settings.INDEXSHEET_FILES_SHEET_NAME]
+        mgmt_sheets = [s
+                       for s in all_sheets
+                       if s['properties']['title'] == settings.INDEXSHEET_MANAGEMENT_SHEET_NAME]
+    assert len(files_sheets) == 1 and len(mgmt_sheets) == 1
+    files_sheet_id = files_sheets[0]['properties']['title']
+    mgmt_sheet_id = mgmt_sheets[0]['properties']['title']
+    sclient.add_files(files_sheet_id,
+                      files_sheets[0]['properties']['sheetId'],
+                      mgmt_sheet_id,
+                      mgmt_sheets[0]['properties']['sheetId'],
+                      files)
     result = client.grant_access_from_anyone(r['id'])
     logger.info('Grant access: {}'.format(result))
     link = client.get_file_link(r['id'])
@@ -649,7 +668,7 @@ def _iqbrims_filled_index(access_token, f):
     sclient = SpreadsheetClient(f['id'], access_token)
     sheets = [s
               for s in sclient.sheets()
-              if s['properties']['title'] == settings.INDEXSHEET_SHEET_NAME]
+              if s['properties']['title'] == settings.INDEXSHEET_MANAGEMENT_SHEET_NAME]
     assert len(sheets) == 1
     sheet_props = sheets[0]['properties']
     sheet_id = sheet_props['title']
@@ -665,7 +684,7 @@ def _iqbrims_reset_index(access_token, f):
     sclient = SpreadsheetClient(f['id'], access_token)
     sheets = [s
               for s in sclient.sheets()
-              if s['properties']['title'] == settings.INDEXSHEET_SHEET_NAME]
+              if s['properties']['title'] == settings.INDEXSHEET_MANAGEMENT_SHEET_NAME]
     assert len(sheets) == 1
     sheet_props = sheets[0]['properties']
     sheet_id = sheet_props['title']
