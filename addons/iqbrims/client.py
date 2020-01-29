@@ -237,6 +237,34 @@ class IQBRIMSClient(BaseClient):
         else:
             return True, self.create_spreadsheet(folder_id, title)
 
+    def copy_file(self, src_file_id, folder_id, title):
+        res = self._make_request(
+            'POST',
+            self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files',
+                            src_file_id, 'copy'),
+            headers={
+                'Content-Type': 'application/json',
+            },
+            data=json.dumps({
+                'title': title,
+                'parents': [{
+                    'id': folder_id
+                }],
+            }),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.json()
+
+    def copy_file_if_not_exists(self, src_file_id, folder_id, title):
+        items = self.files(folder_id)
+        exists = filter(lambda item: item['title'] == title, items)
+
+        if len(exists) > 0:
+            return False, exists[0]
+        else:
+            return True, self.copy_file(src_file_id, folder_id, title)
+
 
 class SpreadsheetClient(BaseClient):
 
@@ -718,6 +746,13 @@ class IQBRIMSWorkflowUserSettings(object):
         if 'FLOWABLE_SCAN_APP_ID' in current['settings']:
             return current['settings']['FLOWABLE_SCAN_APP_ID']
         return settings.FLOWABLE_SCAN_APP_ID
+
+    @property
+    def FLOWABLE_DATALIST_TEMPLATE_ID(self):
+        current = self.load()
+        if 'FLOWABLE_DATALIST_TEMPLATE_ID' in current['settings']:
+            return current['settings']['FLOWABLE_DATALIST_TEMPLATE_ID']
+        return settings.FLOWABLE_DATALIST_TEMPLATE_ID
 
 
 class IQBRIMSFlowableClient(BaseClient):

@@ -409,6 +409,12 @@ def iqbrims_create_index(**kwargs):
         access_token = iqbrims.fetch_access_token()
     except exceptions.InvalidAuthError:
         raise HTTPError(403)
+    management_node = _get_management_node(node)
+    management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
+    if management_node_addon is None:
+        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
+    user_settings = IQBRIMSWorkflowUserSettings(access_token, management_node_addon.folder_id)
+
     client = IQBRIMSClient(access_token)
     folders = client.folders(folder_id=iqbrims.folder_id)
     folders = [f for f in folders if f['title'] == folder_name]
@@ -419,8 +425,13 @@ def iqbrims_create_index(**kwargs):
     if len(files) == 0:
         return {'status': 'processing'}
     files = client.get_content(files[0]['id']).decode('utf8').split('\n')
-    _, r = client.create_spreadsheet_if_not_exists(folders[0]['id'],
-                                                   settings.INDEXSHEET_FILENAME)
+    if user_settings.FLOWABLE_DATALIST_TEMPLATE_ID is None:
+        _, r = client.create_spreadsheet_if_not_exists(folders[0]['id'],
+                                                       settings.INDEXSHEET_FILENAME)
+    else:
+        _, r = client.copy_file_if_not_exists(user_settings.FLOWABLE_DATALIST_TEMPLATE_ID,
+                                              folders[0]['id'],
+                                              settings.INDEXSHEET_FILENAME)
     sclient = SpreadsheetClient(r['id'], access_token)
     sheets = [s
               for s in sclient.sheets()

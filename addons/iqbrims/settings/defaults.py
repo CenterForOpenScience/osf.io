@@ -60,6 +60,8 @@ FLOWABLE_USER = 'testuser'
 FLOWABLE_PASSWORD = 'testpass'
 FLOWABLE_TASK_URL = 'http://localhost:9999/flowable-task/'
 
+FLOWABLE_DATALIST_TEMPLATE_ID = None
+
 LABO_LIST = [{'id': 'rna', 'text': u'RNA分野', 'en': 'Laboratory of RNA'},
              {'id': 'xxx', 'text': u'XXX分野', 'en': 'Laboratory of XXX'},
              {'id': 'yyy', 'text': u'YYY分野', 'en': 'Laboratory of YYY'}]
