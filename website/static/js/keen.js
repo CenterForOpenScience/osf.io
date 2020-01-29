@@ -113,7 +113,7 @@ var KeenTracker = (function() {
                 var adBlockError = document.getElementsByTagName('iframe').item(0) === null;
                 var uselessError = 'An error occurred!' === err;
                 if(!adBlockError || !uselessError) {
-                    Raven.captureMessage(agh.sprintf(_('Error sending Keen data to %1$s:<%2$s>') , collection , err )), {
+                    Raven.captureMessage(agh.sprintf(_('Error sending Keen data to %1$s:<%2$s>') , collection , err ), {
                         extra: {payload: eventData}
                     });
                 }
