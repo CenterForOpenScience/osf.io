@@ -467,12 +467,15 @@ class SpreadsheetClient(BaseClient):
         self.update_row(mgmt_sheet_id,
                         ['FALSE' if c == 'Filled' else '' for c in fc],
                         0)
-        fcolumns = ['Persons Involved', 'Remarks', 'Software Used']
+        num_of_fcolumns = 2
+        fcolumns = ['Remarks']
         c = self.ensure_columns(files_sheet_id,
                                 ['L{}'.format(i)
                                  for i in range(0, max_depth + 2)] +
+                                ['Persons Involved(File)'] +
                                 ['{}(File)'.format(col) for col in fcolumns] +
                                 ['Extension'] +
+                                ['Software Used(Extension)'] +
                                 ['{}(Extension)'.format(col) for col in fcolumns],
                                 row=1)
         values = self._to_file_list(top, [])
@@ -500,8 +503,8 @@ class SpreadsheetClient(BaseClient):
             throws=HTTPError(401)
         )
         logger.info('Inserted: {}'.format(res.json()))
-        ext_col_index = max_depth + 2 + len(fcolumns)
-        col_count = ext_col_index + 1 + len(fcolumns)
+        ext_col_index = max_depth + 2 + num_of_fcolumns
+        col_count = ext_col_index + 1 + num_of_fcolumns
         res = self._make_request(
             'POST',
             self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
