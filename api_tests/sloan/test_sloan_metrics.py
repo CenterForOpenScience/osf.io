@@ -19,7 +19,11 @@ from website.util import api_url_for
 from waffle.testutils import override_switch
 
 from osf.models import Session
-from osf.features import ELASTICSEARCH_METRICS
+from osf.features import (
+    ELASTICSEARCH_METRICS,
+    SLOAN_COI,
+    SLOAN_DATA
+)
 
 
 class TestSloanMetrics(OsfTestCase):
@@ -54,6 +58,8 @@ class TestSloanMetrics(OsfTestCase):
         resp = self.app.get('/dashboard/')
         sloan_cookie_value = resp.headers['Set-Cookie'].split('=')[1].split(';')[0]
 
+        self.app.set_cookie(SLOAN_COI, 'True')
+        self.app.set_cookie(SLOAN_DATA, 'False')
         with override_switch(ELASTICSEARCH_METRICS, active=True):
             self.app.get(self.build_url(path=test_file.path))
 
@@ -62,8 +68,8 @@ class TestSloanMetrics(OsfTestCase):
             preprint=self.preprint,
             user=None,
             version='1',
-            sloan_coi=None,
-            sloan_data=None,
+            sloan_coi='True',
+            sloan_data='False',
             sloan_id=sloan_cookie_value,
             sloan_prereg=None,
         )

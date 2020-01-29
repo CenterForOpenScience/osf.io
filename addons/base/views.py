@@ -347,9 +347,9 @@ def get_auth(auth, **kwargs):
                             metric_class = get_metric_class_for_action(action, from_mfr=from_mfr)
                             if metric_class:
                                 sloan_flag = {
-                                    SLOAN_COI: request.cookies.get(SLOAN_COI),
-                                    SLOAN_DATA: request.cookies.get(SLOAN_DATA),
-                                    SLOAN_PREREG: request.cookies.get(SLOAN_PREREG),
+                                    'sloan_coi': request.cookies.get(SLOAN_COI),
+                                    'sloan_data': request.cookies.get(SLOAN_DATA),
+                                    'sloan_prereg': request.cookies.get(SLOAN_PREREG),
                                     api_settings.SLOAN_ID: request.cookies.get(api_settings.SLOAN_ID)
                                 }
                                 try:
