@@ -442,11 +442,11 @@ def iqbrims_create_index(**kwargs):
                    if s['properties']['title'] == settings.INDEXSHEET_MANAGEMENT_SHEET_NAME]
     logger.info('Spreadsheet: id={}, sheet={}'.format(r['id'], files_sheets))
     added = False
-    if len(files_sheets) == 0:
-        sclient.add_sheet(settings.INDEXSHEET_FILES_SHEET_NAME)
-        added = True
     if len(mgmt_sheets) == 0:
         sclient.add_sheet(settings.INDEXSHEET_MANAGEMENT_SHEET_NAME)
+        added = True
+    if len(files_sheets) == 0:
+        sclient.add_sheet(settings.INDEXSHEET_FILES_SHEET_NAME)
         added = True
     if added:
         all_sheets = sclient.sheets()
