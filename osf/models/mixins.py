@@ -30,8 +30,10 @@ from osf.models.spam import SpamMixin, SpamStatus
 from osf.models.tag import Tag
 from osf.models.validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
 from osf.utils.permissions import ADMIN, REVIEW_GROUPS, READ, WRITE
+from osf.utils.registrations import flatten_registration_metadata, expand_registration_responses
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils.requests import get_request_and_user_id
 from website.project import signals as project_signals
@@ -341,7 +343,7 @@ class NodeLinkMixin(models.Model):
             self.check_node_link(child_node=node, parent_node=self)
             self.check_node_link(child_node=self, parent_node=node)
         except ValueError as e:
-            raise ValueError(e.message)
+            raise ValueError(e)
 
         if self.is_registration:
             raise self.state_error('Cannot add a node link to a registration')
@@ -1711,7 +1713,7 @@ class SpamOverrideMixin(SpamMixin):
             content.extend([name.encode('utf-8') for name in self.all_tags.values_list('name', flat=True)])
         if not content:
             return None
-        return ' '.join(content)
+        return b' '.join(content).decode()
 
     def check_spam(self, user, saved_fields, request_headers):
         if not settings.SPAM_CHECK_ENABLED:
@@ -1782,3 +1784,53 @@ class SpamOverrideMixin(SpamMixin):
             )
             log.should_hide = True
             log.save()
+
+
+class RegistrationResponseMixin(models.Model):
+    """
+    Mixin to be shared between DraftRegistrations and Registrations.
+    """
+    registration_responses = DateTimeAwareJSONField(default=dict, blank=True)
+    registration_responses_migrated = models.NullBooleanField(default=True, db_index=True)
+
+    def get_registration_metadata(self, schema):
+        raise NotImplementedError()
+
+    @property
+    def file_storage_resource(self):
+        # Where the original files were stored (the node)
+        raise NotImplementedError()
+
+    def flatten_registration_metadata(self):
+        """
+        Extracts questions/nested registration_responses - makes use of schema block `registration_response_key`
+        and block_type to assemble flattened registration_responses.
+
+        For example, if the registration_response_key = "description-methods.planned-sample.question7b",
+        this will recurse through the registered_meta, looking for each key, starting with "description-methods",
+        then "planned-sample", and finally "question7b", returning the most deeply nested value corresponding
+        with the final key to flatten the dictionary.
+        :self, DraftRegistration or Registration
+        :returns dictionary, registration_responses, flattened dictionary with registration_response_keys
+        top-level
+        """
+        schema = self.registration_schema
+        registered_meta = self.get_registration_metadata(schema)
+        return flatten_registration_metadata(schema, registered_meta)
+
+    def expand_registration_responses(self):
+        """
+        Expanding `registration_responses` into Draft.registration_metadata or
+        Registration.registered_meta. registration_responses are more flat;
+        "registration_response_keys" are top level.  Registration_metadata/registered_meta
+        will have a more deeply nested format.
+        :returns registration_metadata, dictionary
+        """
+        return expand_registration_responses(
+            self.registration_schema,
+            self.registration_responses,
+            self.file_storage_resource,
+        )
+
+    class Meta:
+        abstract = True

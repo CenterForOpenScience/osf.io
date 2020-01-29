@@ -14,7 +14,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
 from include import IncludeQuerySet
-from six import string_types
+from past.builtins import basestring
 
 from osf.utils.caching import cached_property
 from osf.exceptions import ValidationError
@@ -50,7 +50,7 @@ class QuerySetExplainMixin:
     def explain(self, *args):
         extra_arguments = ''
         for item in args:
-            extra_arguments = '{} {}'.format(extra_arguments, item) if isinstance(item, string_types) else extra_arguments
+            extra_arguments = '{} {}'.format(extra_arguments, item) if isinstance(item, basestring) else extra_arguments
         cursor = connections[self.db].cursor()
         query, params = self.query.sql_with_params()
         cursor.execute('explain analyze verbose %s' % query, params)

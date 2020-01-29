@@ -65,6 +65,8 @@
     "retraction_approved":  "${user} approved a withdrawal of a registration of ${node}",
     "retraction_approved_no_user":  "A withdrawal of a registration of ${node} was approved",
     "retraction_cancelled":     "${user} cancelled withdrawal of a registration of ${node}",
+    "external_registration_created":    "A registration of ${node} was created on an external registry.",
+    "external_registration_imported":   "A registration of ${node} was imported to OSF from an external registry.",
     "registration_initiated":   "${user} initiated a registration of ${node}",
     "registration_approved":    "${user} approved a registration of ${node}",
     "registration_approved_no_user": "Registration of ${node} was approved",

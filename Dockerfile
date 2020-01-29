@@ -1,4 +1,4 @@
-FROM node:8-alpine
+FROM node:8-alpine3.9
 
 # Source: https://github.com/docker-library/httpd/blob/7976cabe162268bd5ad2d233d61e340447bfc371/2.4/alpine/Dockerfile#L3
 RUN set -x \
@@ -8,8 +8,7 @@ RUN set -x \
 RUN apk add --no-cache --virtual .run-deps \
     su-exec \
     bash \
-    python \
-    py-pip \
+    python3 \
     git \
     # lxml2
     libxml2 \
@@ -52,7 +51,7 @@ RUN set -ex \
     && apk add --no-cache --virtual .build-deps \
         build-base \
         linux-headers \
-        python-dev \
+        python3-dev \
         # lxml2
         musl-dev \
         libxml2-dev \
@@ -66,12 +65,12 @@ RUN set -ex \
         /code/requirements/release.txt \
         /code/addons/*/requirements.txt \
     ; do \
-        pip install --no-cache-dir -c /code/requirements/constraints.txt -r "$reqs_file" \
+        pip3 install --no-cache-dir -c /code/requirements/constraints.txt -r "$reqs_file" \
     ; done \
-    && (pip uninstall uritemplate.py --yes || true) \
-    && pip install --no-cache-dir uritemplate.py==0.3.0 \
+    && (pip3 uninstall uritemplate.py --yes || true) \
+    && pip3 install --no-cache-dir uritemplate.py==0.3.0 \
     # Fix: https://github.com/CenterForOpenScience/osf.io/pull/6783
-    && python -m compileall /usr/lib/python2.7 || true \
+    && python3 -m compileall /usr/lib/python3.6 || true \
     && apk del .build-deps
 
 # Settings
@@ -153,7 +152,7 @@ RUN for module in \
         admin.base.settings \
     ; do \
         export DJANGO_SETTINGS_MODULE=$module \
-        && python manage.py collectstatic --noinput --no-init-app \
+        && python3 manage.py collectstatic --noinput --no-init-app \
     ; done \
     && for file in \
         ./website/templates/_log_templates.mako \

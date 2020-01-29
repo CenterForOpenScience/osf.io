@@ -71,5 +71,5 @@ class TestLogContributors(LogsTestCase):
         data = res.json['data']
         assert 'attributes' in data
         assert 'params' not in data['attributes']
-        body = res.body
+        body = res.body.decode()
         assert user_one._id not in body

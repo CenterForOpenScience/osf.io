@@ -71,7 +71,7 @@ class TestWelcomeToApi(ApiTestCase):
     def test_cookie_has_admin(self):
         session = Session(data={'auth_user_id': self.user._id})
         session.save()
-        cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(session._id)
+        cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(session._id).decode()
         self.app.set_cookie(settings.COOKIE_NAME, str(cookie))
 
         res = self.app.get(self.url)

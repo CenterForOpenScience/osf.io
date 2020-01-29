@@ -251,7 +251,7 @@ def serialize_wiki_widget(node):
 
     wiki_widget_data = {
         'complete': True,
-        'wiki_content': unicode(wiki_html) if wiki_html else None,
+        'wiki_content': wiki_html if wiki_html else None,
         'wiki_content_url': node.api_url_for('wiki_page_content', wname='home'),
         'rendered_before_update': rendered_before_update,
         'more': more,

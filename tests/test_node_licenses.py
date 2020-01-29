@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-# Python 3.x incompatible, use import builtins instead
-import __builtin__ as builtins
+import builtins
 import json
 import unittest
 import mock

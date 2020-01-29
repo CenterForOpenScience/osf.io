@@ -361,7 +361,7 @@ class RegistrationFactory(BaseNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, is_public=False,
-                schema=None, data=None,
+                schema=None, draft_registration=None,
                 archive=False, embargo=None, registration_approval=None, retraction=None,
                 provider=None,
                 *args, **kwargs):
@@ -369,7 +369,6 @@ class RegistrationFactory(BaseNodeFactory):
         if project:
             user = project.creator
         user = kwargs.pop('user', None) or kwargs.get('creator') or user or UserFactory()
-        external_registered_date = kwargs.pop('external_registered_date', None)
         kwargs['creator'] = user
         provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
         # Original project to be registered
@@ -385,12 +384,12 @@ class RegistrationFactory(BaseNodeFactory):
 
         # Default registration parameters
         schema = schema or get_default_metaschema()
-        data = data or {'some': 'data'}
+        draft_registration = draft_registration or DraftRegistrationFactory(branched_from=project, initator=user, registration_schema=schema)
         auth = Auth(user=user)
         register = lambda: project.register_node(
             schema=schema,
             auth=auth,
-            data=data,
+            draft_registration=draft_registration,
             provider=provider,
         )
 
@@ -419,8 +418,6 @@ class RegistrationFactory(BaseNodeFactory):
                 reg.sanction.save()
         if is_public:
             reg.is_public = True
-        if external_registered_date:
-            reg.external_registered_date = external_registered_date
         reg.files_count = reg.registered_from.files.filter(deleted_on__isnull=True).count()
         reg.save()
         return reg
@@ -513,17 +510,20 @@ class DraftRegistrationFactory(DjangoModelFactory):
             if initiator:
                 project_params['creator'] = initiator
             branched_from = ProjectFactory(**project_params)
-        initiator = branched_from.creator
+        initiator = branched_from.creator if branched_from else kwargs.get('initiator', None)
+        initiator = initiator or kwargs.get('user', None) or kwargs.get('creator', None) or UserFactory()
         registration_schema = registration_schema or models.RegistrationSchema.objects.first()
         registration_metadata = registration_metadata or {}
         provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
         draft = models.DraftRegistration.create_from_node(
-            branched_from,
+            node=branched_from,
             user=initiator,
             schema=registration_schema,
             data=registration_metadata,
             provider=provider,
         )
+        draft.registration_responses = draft.flatten_registration_metadata()
+        draft.save()
         return draft
 
 class CommentFactory(DjangoModelFactory):

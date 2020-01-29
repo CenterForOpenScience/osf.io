@@ -2,12 +2,12 @@
 
 To print out whether a node is classified as spam or ham:
 
-    python manage.py check_spam abc12
+    python3 manage.py check_spam abc12
 
 
 To check and flag a node:
 
-    python manage.py check_spam abc12 --flag
+    python3 manage.py check_spam abc12 --flag
 """
 import logging
 

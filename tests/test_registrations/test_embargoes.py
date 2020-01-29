@@ -1095,7 +1095,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         self.valid_embargo_payload = json.dumps({
             'data': {
                 'attributes': {
-                    u'lift_embargo': unicode(valid_date.strftime('%a, %d, %B %Y %H:%M:%S')) + u' GMT',
+                    u'lift_embargo': str(valid_date.strftime('%a, %d, %B %Y %H:%M:%S')) + u' GMT',
                     u'registration_choice': 'embargo',
                 },
                 'type': 'registrations',

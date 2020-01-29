@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import
@@ -23,7 +23,8 @@ from website.util import api_url_for
 from website.project.views import drafts as draft_views
 
 from osf_tests.factories import (
-    NodeFactory, AuthUserFactory, DraftRegistrationFactory, RegistrationFactory, Auth
+    NodeFactory, AuthUserFactory, DraftRegistrationFactory, RegistrationFactory,
+    Auth, DraftRegistrationFactory
 )
 from tests.test_registrations.base import RegistrationsTestBase
 
@@ -43,7 +44,8 @@ class TestRegistrationViews(RegistrationsTestBase):
 
     @mock.patch('website.archiver.tasks.archive')
     def test_node_register_page_registration(self, mock_archive):
-        reg = self.node.register_node(get_default_metaschema(), self.auth, '', None)
+        draft_reg = DraftRegistrationFactory(branched_from=self.node, user=self.node.creator)
+        reg = self.node.register_node(get_default_metaschema(), self.auth, draft_reg, None)
         url = reg.web_url_for('node_register_page')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, http_status.HTTP_200_OK)
@@ -114,7 +116,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_is_not_none(self.draft.approval)
         assert_equal(self.draft.approval.meta, {
             u'registration_choice': 'embargo',
-            u'embargo_end_date': unicode(self.embargo_payload['data']['attributes']['lift_embargo'])
+            u'embargo_end_date': str(self.embargo_payload['data']['attributes']['lift_embargo'])
         })
 
     def test_submit_draft_for_review_invalid(self):

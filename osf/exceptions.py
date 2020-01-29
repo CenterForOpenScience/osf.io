@@ -142,3 +142,10 @@ class BlacklistedEmailError(OSFError):
     in the blacklisted domains list
     """
     pass
+
+class SchemaBlockConversionError(OSFError):
+    """Raised if unexpected data breaks the conversion between the legacy
+    nested registration schema/metadata format and the new, flattened,
+    'schema block' format.
+    """
+    pass

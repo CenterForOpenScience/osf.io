@@ -176,9 +176,9 @@ class GroupMemberCreateSerializer(GroupMemberSerializer):
                 else:
                     user = group.add_unregistered_member(full_name, email, auth, role)
         except ValueError as e:
-            raise exceptions.ValidationError(detail=str(e.message))
+            raise exceptions.ValidationError(detail=str(e))
         except ValidationError as e:
-            raise InvalidModelValueError(detail=str(e[0]))
+            raise InvalidModelValueError(detail=list(e)[0])
 
         return user
 
@@ -195,6 +195,6 @@ class GroupMemberDetailSerializer(GroupMemberSerializer):
             # Making sure the one-manager rule isn't violated
             self.get_member_method(self.context['group'], role)(user, auth)
         except ValueError as e:
-            raise exceptions.ValidationError(detail=str(e.message))
+            raise exceptions.ValidationError(detail=str(e))
 
         return user

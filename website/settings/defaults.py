@@ -409,6 +409,7 @@ class CeleryConfig:
         'osf.management.commands.migrate_pagecounter_data',
         'osf.management.commands.migrate_deleted_date',
         'osf.management.commands.addon_deleted_date',
+        'osf.management.commands.migrate_registration_responses',
     }
 
     med_pri_modules = {
@@ -603,6 +604,9 @@ class CeleryConfig:
             #   'task': 'management.commands.migrate_pagecounter_data',
             #   'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
             # },
+            # 'migrate_registration_responses': {
+            #   'task': 'management.commands.migrate_registration_responses',
+            #   'schedule': crontab(minute=32, hour=7),  # Daily 2:32 a.m.
             # 'migrate_deleted_date': {
             #   'task': 'management.commands.migrate_deleted_date',
             #   'schedule': crontab(minute=0, hour=3),

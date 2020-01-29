@@ -7,7 +7,6 @@
         "title": "Summary",
         "questions": [{
             "qid": "summary",
-            "title": "Summary",
             "nav": "Summary",
             "type": "string",
             "format": "textarea",
