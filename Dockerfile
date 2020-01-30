@@ -142,8 +142,6 @@ RUN bower install --production --allow-root \
 COPY ./package.json ./.yarnrc ./yarn.lock ./
 RUN yarn install --frozen-lockfile \
     && yarn cache clean
-    
-RUN node ./website/static/js/rdmPoToJson.js
 
 COPY ./tasks/ ./tasks/
 COPY ./website/settings/ ./website/settings/
