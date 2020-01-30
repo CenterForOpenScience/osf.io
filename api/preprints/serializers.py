@@ -28,9 +28,16 @@ from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
 from website.project import signals as project_signals
 from osf.exceptions import NodeStateError
-from osf.models import BaseFileNode, Preprint, PreprintProvider, Node, NodeLicense
+from osf.models import (
+    BaseFileNode,
+    Preprint,
+    PreprintProvider,
+    Node,
+    NodeLicense,
+)
 from osf.utils import permissions as osf_permissions
-
+from osf.features import SLOAN_DATA
+from waffle import flag_is_active
 
 class PrimaryFileRelationshipField(RelationshipField):
     def get_object(self, file_id):
@@ -177,6 +184,10 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         },
     )
 
+    has_data_links = ser.NullBooleanField(required=False)
+    why_no_data = ser.CharField(required=False, allow_blank=True, allow_null=True)
+    data_links = ser.ListField(child=ser.URLField())
+
     class Meta:
         type_ = 'preprints'
 
@@ -286,6 +297,27 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         if 'original_publication_date' in validated_data:
             preprint.original_publication_date = validated_data['original_publication_date'] or None
             save_preprint = True
+
+        if 'has_data_links' in validated_data:
+            if not flag_is_active(self.context['request'], SLOAN_DATA):
+                raise exceptions.ValidationError(
+                    detail='You do not have ability to edit your data link availability at this time.',
+                )
+
+            has_data_links = validated_data['has_data_links']
+            preprint.update_has_data_links(auth, has_data_links)
+
+        if 'why_no_data' in validated_data:
+            if not flag_is_active(self.context['request'], SLOAN_DATA):
+                raise exceptions.ValidationError(
+                    detail='You do not have ability to edit your data link availability at this time.',
+                )
+
+            why_no_data = validated_data['why_no_data']
+            if preprint.has_data_links is False:
+                preprint.update_why_no_data(auth, why_no_data)
+            else:
+                raise exceptions.ValidationError(detail='You cannot edit this statement while your data links availability is set to true or is unanswered.')
 
         if published is not None:
             if not preprint.primary_file:
