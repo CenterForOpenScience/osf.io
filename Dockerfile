@@ -142,6 +142,8 @@ RUN bower install --production --allow-root \
 COPY ./package.json ./.yarnrc ./yarn.lock ./
 RUN yarn install --frozen-lockfile \
     && yarn cache clean
+    
+RUN node ./website/static/js/rdmPoToJson.js
 
 COPY ./tasks/ ./tasks/
 COPY ./website/settings/ ./website/settings/
@@ -213,7 +215,6 @@ ARG GIT_COMMIT=
 ENV GIT_COMMIT ${GIT_COMMIT}
 
 RUN pybabel compile -d ./website/translations
-RUN node ./website/static/js/rdmPoToJson.js
 
 RUN for module in \
         api.base.settings \
