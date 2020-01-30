@@ -214,6 +214,11 @@ ENV GIT_COMMIT ${GIT_COMMIT}
 
 RUN pybabel compile -d ./website/translations
 
+COPY ./package.json ./.yarnrc ./yarn.lock ./
+RUN yarn install --frozen-lockfile \
+    && yarn cache clean
+RUN node ./website/static/js/rdmPoToJson.js
+
 RUN for module in \
         api.base.settings \
         admin.base.settings \
