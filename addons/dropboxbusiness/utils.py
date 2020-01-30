@@ -18,7 +18,7 @@ from dropbox.team import (GroupMembersAddError, GroupMembersRemoveError,
 
 from celery.contrib.abortable import AbortableTask
 
-from osf.models import BaseFileNode, OSFUser
+from osf.models import BaseFileNode
 from osf.models.external import ExternalAccount
 from osf.models.rdm_addons import RdmAddonOption
 from addons.dropboxbusiness import settings, lock
@@ -1047,39 +1047,34 @@ class TeamInfo(object):
 
 PROVIDER_NAME = 'dropboxbusiness'
 
-def _select_user(node, team_info):
-    def _select(dbmid):
-        try:
-            email = team_info.dbmid_to_email[dbmid]
-            eppn = email_to_eppn(email)
-            user = OSFUser.objects.get(eppn=eppn)
-            return user
-        except Exception:
-            return None
-    user = _select(team_info.admin_dbmid)
-    if user:
-        return user
+def _select_admin(node):
     # select from admin contributors
     for user in node.contributors.all():
         if user.is_disabled or user.eppn is None:
             continue
         if node.is_admin_contributor(user):
+            DEBUG('selected user for timestamp: username={}, eppn={}, eppn_to_email={}'.format(user.username, user.eppn, eppn_to_email(user.eppn)))
             return user
     raise Exception('unexpected condition')
 
-def _add_timestamp_for_celery(team_folder_id, path, team_info, user, user_cookie):
+def _add_timestamp_for_celery(team_folder_id, path, team_info):
     from addons.dropboxbusiness.models import NodeSettings
 
     def _check_and_add(addon):
         node = addon.owner
+        user = _select_admin(node)
+        user_cookie = user.get_or_create_cookie()
+
         cls = BaseFileNode.resolve_class(PROVIDER_NAME, BaseFileNode.FILE)
         file_node = cls.get_or_create(node, path)
         waterbutler_json_res = waterbutler.get_node_info(
             user_cookie, node._id, PROVIDER_NAME, path)
         if waterbutler_json_res is None:
+            DEBUG(u'waterbutler.get_node_info() is None: path={}'.format(path))
             return
         file_data = waterbutler_json_res.get('data')
         if file_data is None:
+            DEBUG(u'waterbutler.get_node_info().get("data") is None: path={}'.format(path))
             return
         DEBUG(u'file_data: ' + str(file_data))
         attrs = file_data['attributes']
@@ -1134,13 +1129,11 @@ def celery_check_and_add_timestamp(self, team_ids):
         first = node_settings.order_by('id').first()
         team_info = TeamInfo(first.fileaccess_token, first.management_token,
                              admin_dbmid=first.admin_dbmid)
-        user = _select_user(first.owner, team_info)
         files, cursor = team_info.list_updated_files(first.list_cursor)
         for f in files:
             i, n, p = f
             DEBUG(u'team_folder_id={}, name={}, path={}'.format(i, n, p))
-            user_cookie = user.get_or_create_cookie()
-            _add_timestamp_for_celery(i, p, team_info, user, user_cookie)
+            _add_timestamp_for_celery(i, p, team_info)
         first.list_cursor = cursor
         first.save()
 
