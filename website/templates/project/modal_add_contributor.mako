@@ -178,7 +178,7 @@
                                     </ul>
                                     <p>
                                         <div data-bind='ifnot: emailSearch'>
-                                            ${_('<a %(taga)s>Add <strong><em %(data_bind)s></em></strong> as an unregistered contributor</a>.') % dict(taga='href="#" data-bind="click:gotoInvite"',data_bind='data_bind="text: query"') | n}
+                                            ${_('<a %(taga)s>Add <strong><em %(data_bind)s></em></strong> as an unregistered contributor</a>.') % dict(taga='href="#" data-bind="click:gotoInvite"',data_bind='data-bind="text: query"') | n}
                                         </div>
                                     </p>
                                 </div>
