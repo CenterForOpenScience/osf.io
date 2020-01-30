@@ -145,24 +145,20 @@ class TestSloanStudyWaffling:
     @pytest.mark.enable_quickfiles_creation
     def test_unauth_user_logs_in(self, app, user, preprint):
         user.add_system_tag(SLOAN_COI)
-        user.add_system_tag(SLOAN_DATA)
         user.add_system_tag(SLOAN_PREREG)
 
         cookies = {
             SLOAN_COI: 'False',
-            SLOAN_DATA: 'False',
-            SLOAN_PREREG: 'False',
+            SLOAN_DATA: 'True',
         }
 
         headers = {'Referer': preprint.absolute_url}
         resp = app.get('/v2/', auth=user.auth, headers=headers, cookies=cookies)
 
         assert SLOAN_COI in resp.json['meta']['active_flags']
-        assert SLOAN_DATA in resp.json['meta']['active_flags']
         assert SLOAN_PREREG in resp.json['meta']['active_flags']
 
         cookies = resp.headers.getall('Set-Cookie')
 
         assert f' {SLOAN_COI}=True; Path=/' in cookies
-        assert f' {SLOAN_DATA}=True; Path=/' in cookies
         assert f' {SLOAN_PREREG}=True; Path=/' in cookies
