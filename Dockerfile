@@ -213,6 +213,7 @@ ARG GIT_COMMIT=
 ENV GIT_COMMIT ${GIT_COMMIT}
 
 RUN pybabel compile -d ./website/translations
+RUN node ./website/static/js/rdmPoToJson.js
 
 RUN for module in \
         api.base.settings \
