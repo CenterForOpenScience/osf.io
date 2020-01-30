@@ -1499,7 +1499,7 @@ msgstr "または"
 msgid ""
 "<a %(taga)s>add <strong><em %(data_bind)s></em></strong> as an "
 "unregistered contributor</a>."
-msgstr "未登録のコントリビュータとして<strong><em %(data_bind)s></em></strong>を追加します。"
+msgstr "<a %(taga)s>未登録のコントリビュータとして<strong><em %(data_bind)s></em></strong>を追加します。"
 
 #: templates/project/modal_add_contributor.mako:200
 msgid ""
