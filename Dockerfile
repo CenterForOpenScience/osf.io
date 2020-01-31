@@ -142,6 +142,10 @@ RUN bower install --production --allow-root \
 COPY ./package.json ./.yarnrc ./yarn.lock ./
 RUN yarn install --frozen-lockfile \
     && yarn cache clean
+    && yarn update
+    && yarn add gettext-parser
+RUN node ./scripts/translations/rdmPoToJson.js
+RUN yarn remove gettext-parser
 
 COPY ./tasks/ ./tasks/
 COPY ./website/settings/ ./website/settings/
