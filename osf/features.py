@@ -8,6 +8,10 @@ STORAGE_I18N = 'storage_i18n'
 OSF_PREREGISTRATION = 'osf_preregistration'
 OSF_GROUPS = 'osf_groups'
 ENABLE_CHRONOS = 'enable_chronos'
+
+
+# SLOAN_STUDY is a switch that allows user to input the sloan data, other sloan flag control that features visibility.
+SLOAN_STUDY = 'waffle:sloan|study'
 SLOAN_COI = 'waffle:sloan|coi'
 SLOAN_DATA = 'waffle:sloan|data'
 SLOAN_PREREG = 'waffle:sloan|prereg'
