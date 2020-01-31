@@ -1495,7 +1495,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMi
 
     def get_default_queryset(self):
         auth = get_user_auth(self.request)
-        return self.get_node().get_aggregate_logs_queryset(auth)
+        return self.get_node().get_logs_queryset(auth)
 
     def get_queryset(self):
         return self.get_queryset_from_request().include(
