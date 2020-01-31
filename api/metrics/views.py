@@ -104,8 +104,6 @@ class PreprintMetricMixin(JSONAPIBaseView):
         Caution - this could be slow if a very large query is executed, so use with care!
         """
         search = self.metric.search()
-        query = request.data.get('query')
-        search = search.update_from_dict(query)
         try:
             results = self.execute_search(search)
         except RequestError:
