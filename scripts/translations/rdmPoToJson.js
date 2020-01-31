@@ -14,6 +14,6 @@ var po;
             langCode = acceptLanguages[i];
             input = fs.readFileSync(poRelativePath + langCode + '/' + localeDir + '/' + getTextDomain + '.po');
             po = gettextParser.po.parse(input);
-            fs.writeFileSync(jsonRelativePath + '/' + langCode + '.json' , JSON.stringify(po));
+            fs.writeFileSync(jsonRelativePath + langCode + '.json' , JSON.stringify(po));
     }
     
