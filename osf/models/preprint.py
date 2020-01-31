@@ -963,6 +963,20 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
+    def update_data_links(self, auth, value: list, log=True, save=True):
+        self.data_links = value
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_DATA_LINKS,
+                params={
+                    'user': auth.user._id,
+                },
+                auth=auth
+            )
+        if save:
+            self.save()
+
 @receiver(post_save, sender=Preprint)
 def create_file_node(sender, instance, **kwargs):
     if instance.root_folder:

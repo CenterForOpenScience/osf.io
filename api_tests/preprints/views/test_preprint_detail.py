@@ -31,7 +31,6 @@ from osf_tests.factories import (
 )
 from website.settings import DOI_FORMAT
 
-
 def build_preprint_update_payload(
         node_id, attributes=None, relationships=None,
         jsonapi_type='preprints'):
@@ -820,6 +819,52 @@ class TestPreprintUpdate:
         log = preprint.logs.first()
         assert log.action == PreprintLog.UPDATE_WHY_NO_DATA
         assert log.params == {'user': user._id, 'preprint': preprint._id}
+
+    def test_update_data_links(self, app, user, preprint, url):
+
+        data_links = ['www.JasonKelce.com', 'www.ItsTheWholeTeam.com/']
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'data_links': data_links})
+
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'You do not have ability to add data links at this time.'
+
+        contrib = AuthUserFactory()
+        preprint.add_contributor(contrib, READ)
+        res = app.patch_json_api(url, update_payload, auth=contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+
+        preprint.has_data_links = False
+        preprint.save()
+        with override_flag(features.SLOAN_DATA, active=True):
+            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'You cannot edit this statement while your data links availability' \
+                                                  ' is set to false or is unanswered.'
+
+        preprint.has_data_links = True
+        preprint.save()
+        with override_flag(features.SLOAN_DATA, active=True):
+            res = app.patch_json_api(url, update_payload, auth=user.auth)
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['data_links'] == data_links
+
+        preprint.reload()
+        assert preprint.data_links == data_links
+        log = preprint.logs.first()
+        assert log.action == PreprintLog.UPDATE_DATA_LINKS
+        assert log.params == {'user': user._id, 'preprint': preprint._id}
+
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'data_links': 'maformed payload'})
+        with override_flag(features.SLOAN_DATA, active=True):
+            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "str".'
+
 
 @pytest.mark.django_db
 class TestPreprintUpdateSubjects(UpdateSubjectsMixin):

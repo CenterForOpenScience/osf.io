@@ -186,7 +186,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
     has_data_links = ser.NullBooleanField(required=False)
     why_no_data = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    data_links = ser.ListField(child=ser.URLField())
+    data_links = ser.ListField(required=False)
 
     class Meta:
         type_ = 'preprints'
@@ -317,7 +317,25 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             if preprint.has_data_links is False:
                 preprint.update_why_no_data(auth, why_no_data)
             else:
-                raise exceptions.ValidationError(detail='You cannot edit this statement while your data links availability is set to true or is unanswered.')
+                raise exceptions.ValidationError(
+                    detail='You cannot edit this statement while your data links '
+                    'availability is set to true or is unanswered.',
+                )
+
+        if 'data_links' in validated_data:
+            if not flag_is_active(self.context['request'], SLOAN_DATA):
+                raise exceptions.ValidationError(
+                    detail='You do not have ability to add data links at this time.',
+                )
+
+            data_links = validated_data['data_links']
+            if preprint.has_data_links:
+                preprint.update_data_links(auth, data_links)
+            else:
+                raise exceptions.ValidationError(
+                    detail='You cannot edit this statement while your data links'
+                    ' availability is set to false or is unanswered.',
+                )
 
         if published is not None:
             if not preprint.primary_file:
