@@ -47,10 +47,15 @@ class PreprintLog(ObjectIDMixin, BaseModel):
 
     PUBLISHED = 'published'
 
+    UPDATE_HAS_DATA_LINKS = 'has_data_links_updated'
+    UPDATE_WHY_NO_DATA = 'why_no_data_updated'
+    UPDATE_DATA_LINKS = 'data_links_updated'
+
     actions = ([DELETED, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED,
                 PERMISSIONS_UPDATED, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, CHANGED_LICENSE,
                 EDITED_DESCRIPTION, FILE_UPDATED, FILE_METADATA_UPDATED, MADE_CONTRIBUTOR_VISIBLE, SUPPLEMENTAL_NODE_ADDED,
-                MADE_CONTRIBUTOR_INVISIBLE, SUBJECTS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, PUBLISHED] + list(sum([
+                MADE_CONTRIBUTOR_INVISIBLE, SUBJECTS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, PUBLISHED, UPDATE_HAS_DATA_LINKS,
+                UPDATE_WHY_NO_DATA, UPDATE_DATA_LINKS] + list(sum([
                     config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')
                 ], tuple())))
     action_choices = [(action, action.upper()) for action in actions]
