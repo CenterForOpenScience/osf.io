@@ -1,3 +1,4 @@
+/*
 'use strict';
 var gettextParser = require('gettext-parser');
 var fs = require('fs');
@@ -15,3 +16,4 @@ var po;
             po = gettextParser.po.parse(input);
             fs.writeFileSync(jsRelativePath + '/' + langCode + '.json' , JSON.stringify(po));
     }
+*/
