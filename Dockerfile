@@ -218,7 +218,7 @@ ENV GIT_COMMIT ${GIT_COMMIT}
 
 RUN pybabel compile -d ./website/translations
 RUN yarn cache clean \
-    && yarn update \
+    && yarn upgrade \
     && yarn add gettext-parser 
 
 RUN for module in \
