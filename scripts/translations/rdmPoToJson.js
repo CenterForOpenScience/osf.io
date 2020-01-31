@@ -3,7 +3,7 @@ var gettextParser = require('gettext-parser');
 var fs = require('fs');
 var acceptLanguages = ['en','ja'];
 var translationsBaseDir = 'translations';
-var getTextDomain = 'messages';
+var getTextDomain = 'js_messages';
 var jsRelativePath = './website/static/js/' +  translationsBaseDir + '/';
 var localeDir = 'LC_MESSAGES';
 var langCode;
