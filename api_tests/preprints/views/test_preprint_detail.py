@@ -553,7 +553,7 @@ class TestPreprintUpdate:
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
-        with override_switch(features.SLOAN_STUDY, active=True):
+        with override_switch(features.SLOAN_STUDY_COI, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
