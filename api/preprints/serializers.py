@@ -36,7 +36,7 @@ from osf.models import (
     NodeLicense,
 )
 from osf.utils import permissions as osf_permissions
-from osf.features import SLOAN_STUDY
+from osf.features import SLOAN_STUDY_DATA
 from waffle import switch_is_active
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -299,7 +299,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             save_preprint = True
 
         if 'has_data_links' in validated_data:
-            if not switch_is_active(SLOAN_STUDY):
+            if not switch_is_active(SLOAN_STUDY_DATA):
                 raise exceptions.ValidationError(
                     detail='You do not have ability to edit your data link availability at this time.',
                 )
@@ -308,7 +308,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             preprint.update_has_data_links(auth, has_data_links)
 
         if 'why_no_data' in validated_data:
-            if not switch_is_active(SLOAN_STUDY):
+            if not switch_is_active(SLOAN_STUDY_DATA):
                 raise exceptions.ValidationError(
                     detail='You do not have ability to edit your data link availability at this time.',
                 )
@@ -323,7 +323,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                 )
 
         if 'data_links' in validated_data:
-            if not switch_is_active(SLOAN_STUDY):
+            if not switch_is_active(SLOAN_STUDY_DATA):
                 raise exceptions.ValidationError(
                     detail='You do not have ability to add data links at this time.',
                 )

@@ -10,8 +10,11 @@ OSF_GROUPS = 'osf_groups'
 ENABLE_CHRONOS = 'enable_chronos'
 
 
-# SLOAN_STUDY is a switch that allows user to input the sloan data, other sloan flag control that features visibility.
-SLOAN_STUDY = 'waffle:sloan|study'
+# The SLOAN_STUDY_... is switches that allow users to input their sloan info,
+# other sloan flag control that features visibility.
+SLOAN_STUDY_COI = 'sloan_coi'
+SLOAN_STUDY_DATA = 'sloan_data'
+SLOAN_STUDY_PREREG = 'sloan_prereg'
 SLOAN_COI = 'waffle:sloan|coi'
 SLOAN_DATA = 'waffle:sloan|data'
 SLOAN_PREREG = 'waffle:sloan|prereg'

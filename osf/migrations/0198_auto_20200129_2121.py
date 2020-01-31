@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import django.contrib.postgres.fields
 from django.db import migrations, models
 
-from osf.features import SLOAN_STUDY
+from osf.features import SLOAN_STUDY_DATA
 from osf.utils.migrations import AddWaffleSwitches
 
 
@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        AddWaffleSwitches([SLOAN_STUDY], active=False),
+        AddWaffleSwitches([SLOAN_STUDY_DATA], active=False),
         migrations.AddField(
             model_name='preprint',
             name='data_links',
