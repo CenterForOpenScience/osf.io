@@ -419,30 +419,13 @@ def root(request, format=None, **kwargs):
     The documentation for the Open Science Framework API can be found at [developer.osf.io](https://developer.osf.io).
     The contents of this endpoint are variable and subject to change without notification.
     """
-    user = request.user
-    flags = []
-    if user and not user.is_anonymous:
-        current_user = UserSerializer(user, context={'request': request}).data
+
+    if request.user and not request.user.is_anonymous:
+        current_user = UserSerializer(request.user, context={'request': request}).data
     else:
         current_user = None
 
-    sloan_data = {}
-    for flag in Flag.objects.all():
-        active = flag.is_active(request._request)
-        if flag.name in SLOAN_FLAGS and flag.everyone is None:
-            sloan_data[flag.name] = active
-
-        # User tags should override any cookie info
-        if user and not user.is_anonymous:
-            if user.all_tags.filter(name=flag.name):
-                sloan_data[flag.name] = True
-                active = True
-            if user.all_tags.filter(name=f'no_{flag.name}'):
-                sloan_data[flag.name] = False
-                active = False
-
-        if active:
-            flags.append(flag.name)
+    flags, cookies = sloan_study_disambiguation(request)
 
     samples = [name for name in Sample.objects.values_list('name', flat=True) if sample_is_active(name)]
     switches = list(Switch.objects.filter(active=True).values_list('name', flat=True))
@@ -472,6 +455,38 @@ def root(request, format=None, **kwargs):
 
     resp = Response(return_val)
 
+    for key, value in cookies.items():
+        resp.set_cookie(key, value)
+
+    return resp
+
+
+def sloan_study_disambiguation(request):
+    """
+    This is a hack to set flags and cookies for out Sloan study, it can be deleted when the study is complete.
+    """
+    user = request.user
+    cookies = {}
+
+    flags = []
+    sloan_data = {}
+    for flag in Flag.objects.all():
+        active = flag.is_active(request._request)
+        if flag.name in SLOAN_FLAGS and flag.everyone is None:
+            sloan_data[flag.name] = active
+
+        # User tags should override any cookie info
+        if user and not user.is_anonymous:
+            if user.all_tags.filter(name=flag.name):
+                sloan_data[flag.name] = True
+                active = True
+            if user.all_tags.filter(name=f'no_{flag.name}'):
+                sloan_data[flag.name] = False
+                active = False
+
+        if active:
+            flags.append(flag.name)
+
     # This is used exclusively for our partnership with Sloan and can be deleted after their study is complete.
     referer_url = request.environ.get('HTTP_REFERER', '')
     provider_domains = list(PreprintProvider.objects.exclude(domain='').values_list('domain', flat=True))
@@ -487,18 +502,21 @@ def root(request, format=None, **kwargs):
 
     if provider and provider.in_sloan_study:
         for key, value in sloan_data.items():
-            set_tags_and_cookies_for_sloan(user, resp, key, value)
+            cookies.update(set_tags_and_cookies_for_sloan(user, key, value))
 
-    return resp
+    return flags, cookies
 
 
-def set_tags_and_cookies_for_sloan(user, resp, flag_name, flag_value):
+def set_tags_and_cookies_for_sloan(user, flag_name, flag_value):
+    """
+    This is a hack to set flags and cookies for out Sloan study, it can be deleted when the study is complete.
+    """
     if user and not user.is_anonymous and not user.all_tags.filter(Q(name=flag_name) | Q(name=f'no_{flag_name}')):
         if flag_value:  # 50/50 chance flag is active
             user.add_system_tag(flag_name)
         else:
             user.add_system_tag(f'no_{flag_name}')
-    resp.set_cookie(flag_name, flag_value)
+    return {flag_name: flag_value}
 
 
 @api_view(('GET',))
