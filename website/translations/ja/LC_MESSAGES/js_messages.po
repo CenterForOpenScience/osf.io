@@ -2019,7 +2019,7 @@ msgstr "このコレクションに表示するコントリビュータはいま
 msgid ""
 "No tags to display in this collection. Project administrators and write "
 "contributors can add tags."
-msgstr "このコレクションに表示するタグはありません。 プロジェクト管理者と寄稿者はタグを追加できます。"
+msgstr "このコレクションに表示するタグはありません。 プロジェクト管理者とコントリビュータはタグを追加できます。"
 
 #: website/static/js/myProjects.js:1926
 msgid "Contributors "
