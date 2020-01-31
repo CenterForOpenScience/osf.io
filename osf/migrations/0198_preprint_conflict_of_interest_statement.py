@@ -3,6 +3,8 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
+from osf.utils.migrations import AddWaffleSwitches
+from osf.features import SLOAN_STUDY
 
 
 class Migration(migrations.Migration):
@@ -12,6 +14,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        AddWaffleSwitches([SLOAN_STUDY], active=False),
         migrations.AddField(
             model_name='preprint',
             name='conflict_of_interest_statement',

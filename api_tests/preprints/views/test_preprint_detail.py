@@ -6,7 +6,6 @@ from django.utils import timezone
 from rest_framework import exceptions
 from waffle.testutils import (
     override_switch,
-    override_flag
 )
 
 from osf import features
@@ -541,7 +540,7 @@ class TestPreprintUpdate:
     def test_update_conflict_of_interest_statement(self, app, user, preprint, url):
         update_payload = build_preprint_update_payload(
             preprint._id,
-            attributes={'conflict_of_interest_statement': 'Owns shares in Closed Science Inc.'}
+            attributes={'conflict_of_interest_statement': 'Owns shares in Closed Science Corporation.'}
         )
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
@@ -554,14 +553,15 @@ class TestPreprintUpdate:
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
-        with override_flag(features.SLOAN_COI, active=True):
+        with override_switch(features.SLOAN_STUDY, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
-        assert res.json['data']['attributes']['conflict_of_interest_statement'] == 'Owns shares in Closed Science Inc.'
+        assert res.json['data']['attributes']['conflict_of_interest_statement'] ==\
+               'Owns shares in Closed Science Corporation.'
 
         preprint.reload()
-        assert preprint.conflict_of_interest_statement == 'Owns shares in Closed Science Inc.'
+        assert preprint.conflict_of_interest_statement == 'Owns shares in Closed Science Corporation.'
         log = preprint.logs.first()
         assert log.action == PreprintLog.COI_STATEMENT_CHANGED
         assert log.params == {'preprint': preprint._id, 'user': user._id}

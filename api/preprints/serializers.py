@@ -31,8 +31,8 @@ from osf.exceptions import NodeStateError
 from osf.models import BaseFileNode, Preprint, PreprintProvider, Node, NodeLicense
 from osf.utils import permissions as osf_permissions
 
-from osf.features import SLOAN_COI
-from waffle import flag_is_active
+from osf.features import SLOAN_STUDY
+from waffle import switch_is_active
 
 class PrimaryFileRelationshipField(RelationshipField):
     def get_object(self, file_id):
@@ -292,9 +292,9 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             save_preprint = True
 
         if 'conflict_of_interest_statement' in validated_data:
-            if flag_is_active(self.context['request'], SLOAN_COI):
+            if switch_is_active(SLOAN_STUDY):
                 coi_statement = validated_data.get('conflict_of_interest_statement')
-                preprint.set_conflict_of_interest_statement(coi_statement, auth=auth)
+                preprint.update_conflict_of_interest_statement(coi_statement, auth=auth)
             else:
                 raise exceptions.ValidationError(
                     detail='You do not have ability to edit a conflict of interest '

@@ -823,7 +823,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             self.save()
         return True
 
-    def set_conflict_of_interest_statement(self, coi_statement, auth, log=True, save=True):
+    def update_conflict_of_interest_statement(self, coi_statement, auth, log=True, save=True):
         """Set the conflict of interest statement for this preprint.
 
         :param auth: All the auth information including user, API key.
