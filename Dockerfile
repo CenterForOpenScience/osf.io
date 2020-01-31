@@ -146,6 +146,7 @@ RUN yarn install --frozen-lockfile \
     && yarn add gettext-parser
 COPY ./scripts/translations/ ./scripts/translations/
 COPY ./website/translations/ ./website/translations/
+COPY ./website/static/js/translations/ ./website/static/js/translations/
 RUN node ./scripts/translations/rdmPoToJson.js
 RUN yarn remove gettext-parser
 
