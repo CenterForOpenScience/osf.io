@@ -2,8 +2,6 @@ var webpack = require('webpack');
 var path = require('path');
 var fs = require('fs');
 
-var UglifyJSPlugin = require("uglifyjs-webpack-plugin")
-
 var SaveAssetsJson = require('assets-webpack-plugin');
 
 var addons = require('./addons.json');
