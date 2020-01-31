@@ -141,8 +141,8 @@ RUN bower install --production --allow-root \
 
 COPY ./package.json ./.yarnrc ./yarn.lock ./
 RUN yarn install --frozen-lockfile \
-    && yarn cache clean
-    && yarn update
+    && yarn cache clean \
+    && yarn upgrade \
     && yarn add gettext-parser
 RUN node ./scripts/translations/rdmPoToJson.js
 RUN yarn remove gettext-parser
@@ -217,9 +217,6 @@ ARG GIT_COMMIT=
 ENV GIT_COMMIT ${GIT_COMMIT}
 
 RUN pybabel compile -d ./website/translations
-RUN yarn cache clean \
-    && yarn upgrade \
-    && yarn add gettext-parser 
 
 RUN for module in \
         api.base.settings \
