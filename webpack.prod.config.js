@@ -16,7 +16,7 @@ module.exports = assign(common, {
             DEBUG: false,
             '__DEV__': false
         }),
-        new webpack.optimize.UglifyJsPlugin()({
+        new UglifyJsPlugin()({
             exclude: /conference.*?\.js$/,
             sourceMap: true,
             warnings: true,

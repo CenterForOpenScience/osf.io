@@ -192,7 +192,6 @@ var plugins = [
         'define.amd': false,
         '__ENABLE_DEV_MODE_CONTROLS': fs.existsSync(staticPath(path.join('built', 'git_logs.json')))
     }),
-    new UglifyJsPlugin(),
 ];
 
 var output = {
