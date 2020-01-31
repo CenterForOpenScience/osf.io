@@ -177,10 +177,16 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     }
     group_format = 'preprint_{self.id}_{group}'
 
-    has_data_links = models.NullBooleanField(null=True, blank=True)
-    why_no_data = models.TextField(null=True, blank=True)
-    data_links = ArrayField(
+    has_prereg_links = models.NullBooleanField(null=True, blank=True)
+    why_no_prereg = models.TextField(null=True, blank=True)
+    prereg_links = ArrayField(
         models.URLField(null=True, blank=True),
+        blank=True,
+        null=True
+    )
+
+    prereg_link_explanations = ArrayField(
+        models.CharField(null=True, blank=True, max_length=5000),
         blank=True,
         null=True
     )
@@ -934,12 +940,12 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             params=params
         )
 
-    def update_has_data_links(self, auth, value: bool, log=True, save=True):
-        self.has_data_links = value
+    def update_has_prereg_links(self, auth, value: bool, log=True, save=True):
+        self.has_prereg_links = value
 
         if log:
             self.add_log(
-                action=PreprintLog.UPDATE_HAS_DATA_LINKS,
+                action=PreprintLog.UPDATE_HAS_PREREG_LINKS,
                 params={
                     'user': auth.user._id,
                     'value': value
@@ -949,12 +955,12 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    def update_why_no_data(self, auth, value: str, log=True, save=True):
-        self.why_no_data = value
+    def update_why_no_prereg(self, auth, value: str, log=True, save=True):
+        self.why_no_prereg = value
 
         if log:
             self.add_log(
-                action=PreprintLog.UPDATE_WHY_NO_DATA,
+                action=PreprintLog.UPDATE_WHY_NO_PREREG,
                 params={
                     'user': auth.user._id,
                 },
@@ -963,12 +969,26 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    def update_data_links(self, auth, value: list, log=True, save=True):
-        self.data_links = value
+    def update_prereg_links(self, auth, value: list, log=True, save=True):
+        self.prereg_links = value
 
         if log:
             self.add_log(
-                action=PreprintLog.UPDATE_DATA_LINKS,
+                action=PreprintLog.UPDATE_PREREG_LINKS,
+                params={
+                    'user': auth.user._id,
+                },
+                auth=auth
+            )
+        if save:
+            self.save()
+
+    def update_prereg_link_explanations(self, auth, value: list, log=True, save=True):
+        self.prereg_link_explanations = value
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_PREREG_LINKS,
                 params={
                     'user': auth.user._id,
                 },

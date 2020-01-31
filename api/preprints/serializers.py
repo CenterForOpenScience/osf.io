@@ -36,7 +36,7 @@ from osf.models import (
     NodeLicense,
 )
 from osf.utils import permissions as osf_permissions
-from osf.features import SLOAN_STUDY_DATA
+from osf.features import SLOAN_STUDY_PREREG
 from waffle import switch_is_active
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -184,9 +184,10 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         },
     )
 
-    has_data_links = ser.NullBooleanField(required=False)
-    why_no_data = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    data_links = ser.ListField(required=False)
+    has_prereg_links = ser.NullBooleanField(required=False)
+    why_no_prereg = ser.CharField(required=False, allow_blank=True, allow_null=True)
+    prereg_links = ser.ListField(required=False)
+    prereg_link_explanations = ser.ListField(required=False)
 
     class Meta:
         type_ = 'preprints'
@@ -298,43 +299,63 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             preprint.original_publication_date = validated_data['original_publication_date'] or None
             save_preprint = True
 
-        if 'has_data_links' in validated_data:
-            if not switch_is_active(SLOAN_STUDY_DATA):
+        if 'has_prereg_links' in validated_data:
+            if not switch_is_active(SLOAN_STUDY_PREREG):
                 raise exceptions.ValidationError(
-                    detail='You do not have ability to edit your data link availability at this time.',
+                    detail='You do not have ability to edit your prereg link availability at this time.',
                 )
 
-            has_data_links = validated_data['has_data_links']
-            preprint.update_has_data_links(auth, has_data_links)
+            has_prereg_links = validated_data['has_prereg_links']
+            preprint.update_has_prereg_links(auth, has_prereg_links)
 
-        if 'why_no_data' in validated_data:
-            if not switch_is_active(SLOAN_STUDY_DATA):
+        if 'why_no_prereg' in validated_data:
+            if not switch_is_active(SLOAN_STUDY_PREREG):
                 raise exceptions.ValidationError(
-                    detail='You do not have ability to edit your data link availability at this time.',
+                    detail='You do not have ability to edit your prereg link availability at this time.',
                 )
 
-            why_no_data = validated_data['why_no_data']
-            if preprint.has_data_links is False:
-                preprint.update_why_no_data(auth, why_no_data)
+            why_no_prereg = validated_data['why_no_prereg']
+            if preprint.has_prereg_links is False:
+                preprint.update_why_no_prereg(auth, why_no_prereg)
             else:
                 raise exceptions.ValidationError(
-                    detail='You cannot edit this statement while your data links '
+                    detail='You cannot edit this statement while your prereg links '
                     'availability is set to true or is unanswered.',
                 )
 
-        if 'data_links' in validated_data:
-            if not switch_is_active(SLOAN_STUDY_DATA):
+        if 'prereg_links' in validated_data:
+            if not switch_is_active(SLOAN_STUDY_PREREG):
                 raise exceptions.ValidationError(
-                    detail='You do not have ability to add data links at this time.',
+                    detail='You do not have ability to add prereg links at this time.',
                 )
 
-            data_links = validated_data['data_links']
-            if preprint.has_data_links:
-                preprint.update_data_links(auth, data_links)
+            prereg_links = validated_data['prereg_links']
+            if preprint.has_prereg_links:
+                preprint.update_prereg_links(auth, prereg_links)
             else:
                 raise exceptions.ValidationError(
-                    detail='You cannot edit this statement while your data links'
+                    detail='You cannot edit this field while your prereg links'
                     ' availability is set to false or is unanswered.',
+                )
+
+        if 'prereg_link_explanations' in validated_data:
+            if not switch_is_active(SLOAN_STUDY_PREREG):
+                raise exceptions.ValidationError(
+                    detail='You do not have ability to add prereg link explanations at this time.',
+                )
+
+            prereg_link_explanations = validated_data['prereg_link_explanations']
+            if not preprint.has_prereg_links:
+                raise exceptions.ValidationError(
+                    detail='You cannot edit this field while your prereg links'
+                    ' availability is set to false or is unanswered.',
+                )
+
+            if preprint.prereg_links and len(preprint.prereg_links) == len(prereg_link_explanations):
+                preprint.update_prereg_link_explanations(auth, prereg_link_explanations)
+            else:
+                raise exceptions.ValidationError(
+                    detail='The number of prereg link explanations must match the number of prereg links.',
                 )
 
         if published is not None:

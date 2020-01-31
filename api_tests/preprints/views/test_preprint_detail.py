@@ -758,12 +758,12 @@ class TestPreprintUpdate:
 
         assert mock_on_preprint_updated.called
 
-    def test_update_has_data_links(self, app, user, preprint, url):
-        update_payload = build_preprint_update_payload(preprint._id, attributes={'has_data_links': True})
+    def test_update_has_prereg_links(self, app, user, preprint, url):
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'has_prereg_links': True})
 
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You do not have ability to edit your data link availability ' \
+        assert res.json['errors'][0]['detail'] == 'You do not have ability to edit your prereg link availability ' \
                                                   'at this time.'
 
         contrib = AuthUserFactory()
@@ -772,24 +772,24 @@ class TestPreprintUpdate:
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
-        with override_switch(features.SLOAN_STUDY_DATA, active=True):
+        with override_switch(features.SLOAN_STUDY_PREREG, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
-        assert res.json['data']['attributes']['has_data_links'] is True
+        assert res.json['data']['attributes']['has_prereg_links'] is True
 
         preprint.reload()
-        assert preprint.has_data_links
+        assert preprint.has_prereg_links
         log = preprint.logs.first()
-        assert log.action == PreprintLog.UPDATE_HAS_DATA_LINKS
+        assert log.action == PreprintLog.UPDATE_HAS_PREREG_LINKS
         assert log.params == {'value': True, 'user': user._id, 'preprint': preprint._id}
 
-    def test_update_why_no_data(self, app, user, preprint, url):
-        update_payload = build_preprint_update_payload(preprint._id, attributes={'why_no_data': 'My dog ate it.'})
+    def test_update_why_no_prereg(self, app, user, preprint, url):
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'why_no_prereg': 'My dog ate it.'})
 
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You do not have ability to edit your data link availability ' \
+        assert res.json['errors'][0]['detail'] == 'You do not have ability to edit your prereg link availability ' \
                                                   'at this time.'
 
         contrib = AuthUserFactory()
@@ -798,35 +798,35 @@ class TestPreprintUpdate:
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
-        with override_switch(features.SLOAN_STUDY_DATA, active=True):
+        with override_switch(features.SLOAN_STUDY_PREREG, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You cannot edit this statement while your data links availability' \
+        assert res.json['errors'][0]['detail'] == 'You cannot edit this statement while your prereg links availability' \
                                                   ' is set to true or is unanswered.'
 
-        preprint.has_data_links = False
+        preprint.has_prereg_links = False
         preprint.save()
-        with override_switch(features.SLOAN_STUDY_DATA, active=True):
+        with override_switch(features.SLOAN_STUDY_PREREG, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
-        assert res.json['data']['attributes']['why_no_data'] == 'My dog ate it.'
+        assert res.json['data']['attributes']['why_no_prereg'] == 'My dog ate it.'
 
         preprint.reload()
-        assert preprint.why_no_data
+        assert preprint.why_no_prereg
         log = preprint.logs.first()
-        assert log.action == PreprintLog.UPDATE_WHY_NO_DATA
+        assert log.action == PreprintLog.UPDATE_WHY_NO_PREREG
         assert log.params == {'user': user._id, 'preprint': preprint._id}
 
-    def test_update_data_links(self, app, user, preprint, url):
+    def test_update_prereg_links(self, app, user, preprint, url):
 
-        data_links = ['www.JasonKelce.com', 'www.ItsTheWholeTeam.com/']
-        update_payload = build_preprint_update_payload(preprint._id, attributes={'data_links': data_links})
+        prereg_links = ['www.JasonKelce.com', 'www.ItsTheWholeTeam.com/']
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'prereg_links': prereg_links})
 
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You do not have ability to add data links at this time.'
+        assert res.json['errors'][0]['detail'] == 'You do not have ability to add prereg links at this time.'
 
         contrib = AuthUserFactory()
         preprint.add_contributor(contrib, READ)
@@ -834,30 +834,88 @@ class TestPreprintUpdate:
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
-        preprint.has_data_links = False
+        preprint.has_prereg_links = False
         preprint.save()
+        with override_switch(features.SLOAN_STUDY_PREREG, active=True):
+            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'You cannot edit this field while your prereg links availability' \
+                                                  ' is set to false or is unanswered.'
+
+        preprint.has_prereg_links = True
+        preprint.save()
+        with override_switch(features.SLOAN_STUDY_PREREG, active=True):
+            res = app.patch_json_api(url, update_payload, auth=user.auth)
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['prereg_links'] == prereg_links
+
+        preprint.reload()
+        assert preprint.prereg_links == prereg_links
+        log = preprint.logs.first()
+        assert log.action == PreprintLog.UPDATE_PREREG_LINKS
+        assert log.params == {'user': user._id, 'preprint': preprint._id}
+
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'prereg_links': 'maformed payload'})
         with override_switch(features.SLOAN_STUDY_DATA, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You cannot edit this statement while your data links availability' \
+        assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "str".'
+
+    def test_update_prereg_link_explanations(self, app, user, preprint, url):
+
+        prereg_link_explanations = ['I\'m dope and I do dope--', 'It\'s a plan, not a prison']
+
+        update_payload = build_preprint_update_payload(
+            preprint._id,
+            attributes={'prereg_link_explanations': prereg_link_explanations}
+        )
+
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'You do not have ability to add prereg link explanations at this time.'
+
+        contrib = AuthUserFactory()
+        preprint.add_contributor(contrib, READ)
+        res = app.patch_json_api(url, update_payload, auth=contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+
+        preprint.has_prereg_links = False
+        preprint.save()
+        with override_switch(features.SLOAN_STUDY_PREREG, active=True):
+            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'You cannot edit this field while your prereg links availability' \
                                                   ' is set to false or is unanswered.'
 
-        preprint.has_data_links = True
+        preprint.has_prereg_links = True
         preprint.save()
-        with override_switch(features.SLOAN_STUDY_DATA, active=True):
+        with override_switch(features.SLOAN_STUDY_PREREG, active=True):
+            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'The number of prereg link explanations must match the number of ' \
+                                                  'prereg links.'
+
+        preprint.prereg_links = ['www.JasonKelce.com', 'www.ItsTheWholeTeam.com/']
+        preprint.save()
+        with override_switch(features.SLOAN_STUDY_PREREG, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
-        assert res.json['data']['attributes']['data_links'] == data_links
+        assert res.json['data']['attributes']['prereg_link_explanations'] == prereg_link_explanations
 
         preprint.reload()
-        assert preprint.data_links == data_links
+        assert preprint.prereg_link_explanations == prereg_link_explanations
         log = preprint.logs.first()
-        assert log.action == PreprintLog.UPDATE_DATA_LINKS
+        assert log.action == PreprintLog.UPDATE_PREREG_LINKS
         assert log.params == {'user': user._id, 'preprint': preprint._id}
 
-        update_payload = build_preprint_update_payload(preprint._id, attributes={'data_links': 'maformed payload'})
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'prereg_links': 'maformed payload'})
         with override_switch(features.SLOAN_STUDY_DATA, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
