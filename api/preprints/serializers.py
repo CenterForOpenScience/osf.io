@@ -186,7 +186,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
     has_data_links = ser.NullBooleanField(required=False)
     why_no_data = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    data_links = ser.ListField(required=False)
+    data_links = ser.ListField(child=ser.URLField(), required=False)
 
     class Meta:
         type_ = 'preprints'

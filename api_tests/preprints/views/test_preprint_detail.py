@@ -821,7 +821,7 @@ class TestPreprintUpdate:
 
     def test_update_data_links(self, app, user, preprint, url):
 
-        data_links = ['www.JasonKelce.com', 'www.ItsTheWholeTeam.com/']
+        data_links = ['http://www.JasonKelce.com', 'http://www.ItsTheWholeTeam.com/']
         update_payload = build_preprint_update_payload(preprint._id, attributes={'data_links': data_links})
 
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
