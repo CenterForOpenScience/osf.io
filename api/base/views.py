@@ -1,4 +1,5 @@
 from builtins import str
+import re
 
 from collections import defaultdict
 from distutils.version import StrictVersion
@@ -46,7 +47,10 @@ from waffle.models import Flag, Switch, Sample
 from waffle import sample_is_active
 
 from website.settings import DOMAIN
-from osf.models import PreprintProvider
+from osf.models import (
+    Preprint,
+    PreprintProvider,
+)
 
 from osf.features import (
     SLOAN_COI,
@@ -497,8 +501,9 @@ def sloan_study_disambiguation(request):
     if provider_domains:
         provider = PreprintProvider.objects.get(domain=provider_domains[0])
 
-    if referer_url.startswith(DOMAIN + 'preprints/'):
-        provider = PreprintProvider.objects.get(_id=referer_url.split('/')[4])
+    match = re.match(DOMAIN.replace('/', r'\/') + r'preprints/([a-z0-9]{24})/(?P<guid>[a-z0-9]{5,})', referer_url)
+    if match:
+        provider = Preprint.objects.get(guids___id=match.groupdict()['guid']).provider
 
     if provider and provider.in_sloan_study:
         for key, value in sloan_data.items():

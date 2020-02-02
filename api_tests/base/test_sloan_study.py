@@ -20,6 +20,7 @@ SLOAN_FLAGS = (
     SLOAN_COI
 )
 
+from website.settings import DOMAIN
 
 @pytest.mark.django_db
 class TestSloanStudyWaffling:
@@ -115,6 +116,11 @@ class TestSloanStudyWaffling:
         assert f' {SLOAN_DATA}=False; Path=/' in cookies
         assert f' {SLOAN_PREREG}=False; Path=/' in cookies
         assert f' {SLOAN_COI}=False; Path=/' in cookies
+
+    def test_domain_preprint_path(self, app, user, preprint):
+        headers = {'Referer': f'{DOMAIN}preprints/'}
+        resp = app.get('/v2/', headers=headers)
+        resp.status_code == 200
 
     @pytest.mark.enable_quickfiles_creation
     @mock.patch('api.base.views.Flag.is_active')
