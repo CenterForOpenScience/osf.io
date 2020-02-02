@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import httplib
+from rest_framework import status as http_status
 import logging
 
 from django.db import transaction, connection
@@ -33,13 +33,13 @@ def meeting_hook():
         message.verify()
     except ConferenceError as error:
         logger.error(error)
-        raise HTTPError(httplib.NOT_ACCEPTABLE)
+        raise HTTPError(http_status.HTTP_406_NOT_ACCEPTABLE)
 
     try:
         conference = Conference.get_by_endpoint(message.conference_name, active=False)
     except ConferenceError as error:
         logger.error(error)
-        raise HTTPError(httplib.NOT_ACCEPTABLE)
+        raise HTTPError(http_status.HTTP_406_NOT_ACCEPTABLE)
 
     if not conference.active:
         send_mail(
@@ -50,7 +50,7 @@ def meeting_hook():
             can_change_preferences=False,
             logo=settings.OSF_MEETINGS_LOGO,
         )
-        raise HTTPError(httplib.NOT_ACCEPTABLE)
+        raise HTTPError(http_status.HTTP_406_NOT_ACCEPTABLE)
 
     add_poster_by_email(conference=conference, message=message)
 
@@ -149,16 +149,14 @@ def conference_data(meeting):
     try:
         conf = Conference.objects.get(endpoint__iexact=meeting)
     except Conference.DoesNotExist:
-        raise HTTPError(httplib.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     return conference_submissions_sql(conf)
 
 def conference_submissions_sql(conf):
     """
     Serializes all meeting submissions to a conference (returns array of dictionaries)
-
     :param obj conf: Conference object.
-
     """
     submission1_name = conf.field_names['submission1']
     submission2_name = conf.field_names['submission2']
@@ -200,7 +198,7 @@ def conference_submissions_sql(conf):
                         LIMIT 1
                         ) AUTHOR ON TRUE  -- Returns first visible contributor
               LEFT JOIN LATERAL (
-                SELECT osf_guid._id
+                SELECT osf_guid._id, osf_guid.id
                 FROM osf_guid
                 WHERE (osf_guid.object_id = osf_abstractnode.id AND osf_guid.content_type_id = %s) -- Content type for AbstractNode
                 ORDER BY osf_guid.created DESC
@@ -225,7 +223,9 @@ def conference_submissions_sql(conf):
               LEFT JOIN LATERAL (
                 SELECT P.total AS DOWNLOAD_COUNT
                 FROM osf_pagecounter AS P
-                WHERE P._id = 'download:' || GUID._id || ':' || FILE._id
+                WHERE P.action = 'download'
+                AND P.resource_id = GUID.id
+                AND P.file_id = FILE.id
                 LIMIT 1
               ) DOWNLOAD_COUNT ON TRUE
             -- Get all the nodes for a specific meeting
@@ -234,7 +234,6 @@ def conference_submissions_sql(conf):
                    AND osf_abstractnode.is_public = TRUE
                    AND AUTHOR_GUID IS NOT NULL)
             ORDER BY osf_abstractnode.created DESC;
-
             """, [
                 submission1_name,
                 submission1_name,
@@ -276,13 +275,12 @@ def serialize_conference(conf):
 @ember_flag_is_active(features.EMBER_MEETING_DETAIL)
 def conference_results(meeting):
     """Return the data for the grid view for a conference.
-
     :param str meeting: Endpoint name for a conference.
     """
     try:
         conf = Conference.objects.get(endpoint__iexact=meeting)
     except Conference.DoesNotExist:
-        raise HTTPError(httplib.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     data = conference_data(meeting)
 
@@ -309,7 +307,7 @@ def conference_submissions(**kwargs):
 def conference_view(**kwargs):
     meetings = []
     for conf in Conference.objects.all():
-        if conf.valid_submissions < settings.CONFERENCE_MIN_COUNT:
+        if len(conf.valid_submissions) < settings.CONFERENCE_MIN_COUNT:
             continue
         if (hasattr(conf, 'is_meeting') and (conf.is_meeting is False)):
             continue

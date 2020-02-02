@@ -99,8 +99,8 @@ class TestExceptionFormatting:
         assert isinstance(errors, list)
         assert len(errors) == 2
         errors = res.json['errors']
-        assert errors[0]['source'] == {'pointer': '/data/attributes/category'}
-        assert errors[1]['source'] == {'pointer': '/data/attributes/title'}
+        assert errors[0]['source'] == {'pointer': '/data/attributes/title'}
+        assert errors[1]['source'] == {'pointer': '/data/attributes/category'}
 
         assert errors[0]['detail'] == error_required_field
         assert errors[1]['detail'] == error_required_field

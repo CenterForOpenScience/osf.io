@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='abstractnode',
             name='comment_level',
-            field=models.CharField(default=b'public', max_length=10),
+            field=models.CharField(default='public', max_length=10),
         ),
     ]

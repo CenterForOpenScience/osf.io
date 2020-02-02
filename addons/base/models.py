@@ -5,6 +5,7 @@ import time
 import markupsafe
 import requests
 from django.db import models
+from django.utils import timezone
 from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError, PermissionsError
@@ -14,6 +15,7 @@ from osf.models.external import ExternalAccount
 from osf.models.node import AbstractNode
 from osf.models.user import OSFUser
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.fields import NonNaiveDateTimeField
 from website import settings
 from addons.base import logger, serializer
 from website.oauth.signals import oauth_complete
@@ -38,7 +40,8 @@ lookup = TemplateLookup(
 
 
 class BaseAddonSettings(ObjectIDMixin, BaseModel):
-    deleted = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
+    deleted = NonNaiveDateTimeField(null=True, blank=True)
 
     class Meta:
         abstract = True
@@ -52,13 +55,15 @@ class BaseAddonSettings(ObjectIDMixin, BaseModel):
         return self.config.short_name
 
     def delete(self, save=True):
-        self.deleted = True
+        self.is_deleted = True
+        self.deleted = timezone.now()
         self.on_delete()
         if save:
             self.save()
 
     def undelete(self, save=True):
-        self.deleted = False
+        self.is_deleted = False
+        self.deleted = None
         self.on_add()
         if save:
             self.save()
@@ -215,7 +220,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
         """
         for node in self.get_nodes_with_oauth_grants(external_account):
             try:
-                node.get_addon(external_account.provider, deleted=True).deauthorize(auth=auth)
+                node.get_addon(external_account.provider, is_deleted=True).deauthorize(auth=auth)
             except AttributeError:
                 # No associated addon settings despite oauth grant
                 pass
@@ -568,7 +573,7 @@ class BaseStorageAddon(object):
         if cookie:
             kwargs['cookie'] = cookie
         elif user:
-            kwargs['cookie'] = user.get_or_create_cookie()
+            kwargs['cookie'] = user.get_or_create_cookie().decode()
 
         metadata_url = waterbutler_api_url_for(
             self.owner._id,

@@ -38,7 +38,6 @@ class TestCiteprocpy(OsfTestCase):
                 citeprocpy = ''
             if citeprocpy == v:
                 matches.append(k)
-                print k
         assert(len(matches) == 0)
 
     def test_passing_citations(self):
@@ -57,14 +56,13 @@ class TestCiteprocpy(OsfTestCase):
             if citeprocpy != v:
                 not_matches.append(k)
                 citation.append(citeprocpy)
-                print k
         assert(len(not_matches) == 0)
 
 
 class TestCiteprocpyMLA(OsfTestCase):
     MLA_DATE_FORMAT = '%-d {month} %Y'
 
-    # MLA month abreviations here
+    # MLA month abbreviations here
     #  http://www.pomfret.ctschool.net/computer_classes/documents/mla-abbreviationsofmonths.pdf
     MLA_MONTH_MAP = {
         1: 'Jan.',

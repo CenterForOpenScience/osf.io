@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 import pytest
 from nose.tools import *  # noqa
@@ -12,6 +12,7 @@ from addons.osfstorage.tests import factories
 from addons.osfstorage import utils
 
 from addons.osfstorage.tests.utils import StorageTestCase
+from website.files.utils import attach_versions
 
 
 @pytest.mark.django_db
@@ -25,14 +26,14 @@ class TestSerializeRevision(StorageTestCase):
             factories.FileVersionFactory(creator=self.user)
             for __ in range(3)
         ]
-        self.record.versions = self.versions
+        attach_versions(self.record, self.versions)
         self.record.save()
 
     def test_serialize_revision(self):
         sessions.sessions[request._get_current_object()] = Session()
-        utils.update_analytics(self.project, self.record._id, 0)
-        utils.update_analytics(self.project, self.record._id, 0)
-        utils.update_analytics(self.project, self.record._id, 2)
+        utils.update_analytics(self.project, self.record, 0)
+        utils.update_analytics(self.project, self.record, 0)
+        utils.update_analytics(self.project, self.record, 2)
         expected = {
             'index': 1,
             'user': {
@@ -57,9 +58,9 @@ class TestSerializeRevision(StorageTestCase):
 
     def test_anon_revisions(self):
         sessions.sessions[request._get_current_object()] = Session()
-        utils.update_analytics(self.project, self.record._id, 0)
-        utils.update_analytics(self.project, self.record._id, 0)
-        utils.update_analytics(self.project, self.record._id, 2)
+        utils.update_analytics(self.project, self.record, 0)
+        utils.update_analytics(self.project, self.record, 0)
+        utils.update_analytics(self.project, self.record, 2)
         expected = {
             'index': 2,
             'user': None,

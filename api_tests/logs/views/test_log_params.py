@@ -6,7 +6,7 @@ from osf_tests.factories import (
     ProjectFactory,
     PrivateLinkFactory,
 )
-from test_log_detail import LogsTestCase
+from api_tests.logs.views.test_log_detail import LogsTestCase
 
 # TODO add tests for other log params
 
@@ -71,5 +71,5 @@ class TestLogContributors(LogsTestCase):
         data = res.json['data']
         assert 'attributes' in data
         assert 'params' not in data['attributes']
-        body = res.body
+        body = res.body.decode()
         assert user_one._id not in body

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import httplib as http
+from rest_framework import status as http_status
 
 from flask import redirect
 
@@ -16,10 +16,10 @@ def oauth_disconnect(external_account_id, auth):
     user = auth.user
 
     if account is None:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     if not user.external_accounts.filter(id=account.id).exists():
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     # iterate AddonUserSettings for addons
     for user_settings in user.get_oauth_addons():

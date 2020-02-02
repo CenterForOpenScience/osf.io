@@ -214,7 +214,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
 
     def _get_spam_content(self, node):
         content = []
-        content.append(self.raw_text(node).encode('utf-8'))
+        content.append(self.raw_text(node))
         if not content:
             return None
         return ' '.join(content)

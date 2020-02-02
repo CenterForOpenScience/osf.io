@@ -20,6 +20,6 @@ def fail_archive_on_error(func):
             registration.save()
             signals.archive_fail.send(
                 registration,
-                errors=[e.message]
+                errors=[str(e)]
             )
     return wrapped

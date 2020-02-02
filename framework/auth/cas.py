@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import furl
-import httplib as http
+from rest_framework import status as http_status
 import json
-import urllib
+from future.moves.urllib.parse import quote
 
 from lxml import etree
 import requests
@@ -40,7 +40,7 @@ class CasTokenError(CasError):
     """Raised if an invalid token is passed by the client."""
 
     def __init__(self, message):
-        super(CasTokenError, self).__init__(http.BAD_REQUEST, message)
+        super(CasTokenError, self).__init__(http_status.HTTP_400_BAD_REQUEST, message)
 
 
 class CasResponse(object):
@@ -152,13 +152,13 @@ class CasClient(object):
         resp = CasResponse()
         doc = etree.fromstring(xml)
         auth_doc = doc.xpath('/cas:serviceResponse/*[1]', namespaces=doc.nsmap)[0]
-        resp.status = unicode(auth_doc.xpath('local-name()'))
+        resp.status = str(auth_doc.xpath('local-name()'))
         if (resp.status == 'authenticationSuccess'):
             resp.authenticated = True
-            resp.user = unicode(auth_doc.xpath('string(./cas:user)', namespaces=doc.nsmap))
+            resp.user = str(auth_doc.xpath('string(./cas:user)', namespaces=doc.nsmap))
             attributes = auth_doc.xpath('./cas:attributes/*', namespaces=doc.nsmap)
             for attribute in attributes:
-                resp.attributes[unicode(attribute.xpath('local-name()'))] = unicode(attribute.text)
+                resp.attributes[str(attribute.xpath('local-name()'))] = str(attribute.text)
             scopes = resp.attributes.get('accessTokenScope')
             resp.attributes['accessTokenScope'] = set(scopes.split(' ') if scopes else [])
         else:
@@ -224,7 +224,7 @@ def get_login_url(*args, **kwargs):
 
 
 def get_institution_target(redirect_url):
-    return '/login?service={}&auto=true'.format(urllib.quote(redirect_url, safe='~()*!.\''))
+    return '/login?service={}&auto=true'.format(quote(redirect_url, safe='~()*!.\''))
 
 
 def get_logout_url(*args, **kwargs):

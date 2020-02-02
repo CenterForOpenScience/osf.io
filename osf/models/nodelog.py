@@ -115,6 +115,9 @@ class NodeLog(ObjectIDMixin, BaseModel):
     RETRACTION_CANCELLED = 'retraction_cancelled'
     RETRACTION_INITIATED = 'retraction_initiated'
 
+    EXTERNAL_REGISTRATION_CREATED = 'external_registration_created'
+    EXTERNAL_REGISTRATION_IMPORTED = 'external_registration_imported'
+
     REGISTRATION_APPROVAL_CANCELLED = 'registration_cancelled'
     REGISTRATION_APPROVAL_INITIATED = 'registration_initiated'
     REGISTRATION_APPROVAL_APPROVED = 'registration_approved'
@@ -145,8 +148,8 @@ class NodeLog(ObjectIDMixin, BaseModel):
                 MADE_CONTRIBUTOR_VISIBLE,
                 MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_TERMINATED,
                 EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED,
-                RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED,
-                REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED,
+                RETRACTION_CANCELLED, RETRACTION_INITIATED, EXTERNAL_REGISTRATION_CREATED, EXTERNAL_REGISTRATION_IMPORTED,
+                REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED,
                 PREREG_REGISTRATION_INITIATED,
                 GROUP_ADDED, GROUP_UPDATED, GROUP_REMOVED,
                 AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED,
@@ -167,7 +170,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
     original_node = models.ForeignKey('AbstractNode', db_index=True,
                                       null=True, blank=True, on_delete=models.CASCADE)
 
-    def __unicode__(self):
+    def __repr__(self):
         return ('({self.action!r}, user={self.user!r},, node={self.node!r}, params={self.params!r}) '
                 'with id {self.id!r}').format(self=self)
 

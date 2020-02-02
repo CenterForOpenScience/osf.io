@@ -63,7 +63,7 @@ def get_usage(node):
     node_content_type = ContentType.objects.get_for_model(Node)
 
     vids = [each for each in BaseFileNode.active.filter(provider='osfstorage', target_object_id=node.id, target_content_type=node_content_type).values_list('versions', flat=True) if each]
-    t_vids = [each for eac in TrashedFile.objects.filter(provider='osfstorage', target_object_id=node.id, target_content_type=node_content_type).values_list('versions', flat=True) if each]
+    t_vids = [each for each in TrashedFile.objects.filter(provider='osfstorage', target_object_id=node.id, target_content_type=node_content_type).values_list('versions', flat=True) if each]
 
     usage = sum([v.size or 0 for v in FileVersion.objects.filter(id__in=vids)])
     trashed_usage = sum([v.size or 0 for v in FileVersion.objects.filter(id__in=t_vids)])
@@ -71,8 +71,10 @@ def get_usage(node):
     return list(map(sum, zip(*([(usage, trashed_usage)] + [get_usage(child) for child in node.nodes_primary]))))  # Adds tuples together, map(sum, zip((a, b), (c, d))) -> (a+c, b+d)
 
 
-def limit_filter(limit, (item, usage)):
-    """Note: usage is a tuple(current_usage, deleted_usage)"""
+def limit_filter(limit, item_usage_tuple):
+    """Note: item_usage_tuple is a tuple(str(guid), tuple(current_usage, deleted_usage))"""
+    item = item_usage_tuple[0]
+    usage = item_usage_tuple[1]
     return item not in WHITE_LIST and sum(usage) >= limit
 
 

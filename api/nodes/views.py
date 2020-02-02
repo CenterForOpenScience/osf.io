@@ -197,6 +197,9 @@ class DraftMixin(object):
 
             if draft.requires_approval and draft.is_approved and (not registered_and_deleted):
                 raise PermissionDenied('This draft has already been approved and cannot be modified.')
+        else:
+            if draft.registered_node and not draft.registered_node.is_deleted:
+                raise Gone(detail='This draft has already been registered.')
 
         self.check_object_permissions(self.request, draft.branched_from)
         return draft
@@ -671,7 +674,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         """Create a registration from a draft.
         """
         # On creation, make sure that current user is the creator
-        draft_id = self.request.data.get('draft_registration', None)
+        draft_id = self.request.data.get('draft_registration', None) or self.request.data.get('draft_registration_id', None)
         draft = self.get_draft(draft_id)
         serializer.save(draft=draft)
 
@@ -1298,7 +1301,7 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
             obj = self.get_addon_settings(provider=addon, fail_if_absent=False, check_object_permissions=False)
             if obj:
                 qs.append(obj)
-        qs.sort()
+        sorted(qs, key=lambda addon: addon.id, reverse=True)
         return qs
 
     get_queryset = get_default_queryset
@@ -1401,15 +1404,16 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
 
 class NodeStorageProvider(object):
 
-    def __init__(self, provider, node):
+    def __init__(self, node, provider_name, storage_addon=None):
         self.path = '/'
         self.node = node
         self.kind = 'folder'
-        self.name = provider
-        self.provider = provider
+        self.name = provider_name
+        self.provider = provider_name
         self.node_id = node._id
         self.pk = node._id
         self.id = node.id
+        self.root_folder = storage_addon.root_node if storage_addon else None
 
     @property
     def target(self):
@@ -1434,12 +1438,12 @@ class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin)
 
     ordering = ('-id',)
 
-    def get_provider_item(self, provider):
-        return NodeStorageProvider(provider, self.get_node())
+    def get_provider_item(self, storage_addon):
+        return NodeStorageProvider(self.get_node(), storage_addon.config.short_name, storage_addon)
 
     def get_queryset(self):
         return [
-            self.get_provider_item(addon.config.short_name)
+            self.get_provider_item(addon)
             for addon
             in self.get_node().get_addons()
             if addon.config.has_hgrid_files
@@ -1464,7 +1468,7 @@ class NodeStorageProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeM
     view_name = 'node-storage-provider-detail'
 
     def get_object(self):
-        return NodeStorageProvider(self.kwargs['provider'], self.get_node())
+        return NodeStorageProvider(self.get_node(), self.kwargs['provider'])
 
 
 class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):
@@ -1491,7 +1495,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMi
 
     def get_default_queryset(self):
         auth = get_user_auth(self.request)
-        return self.get_node().get_aggregate_logs_queryset(auth)
+        return self.get_node().get_logs_queryset(auth)
 
     def get_queryset(self):
         return self.get_queryset_from_request().include(
@@ -2047,6 +2051,7 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
     def perform_destroy(self, link):
         assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
         link.is_deleted = True
+        link.deleted = timezone.now()
         link.save()
         # FIXME: Doesn't work because instance isn't JSON-serializable
         # enqueue_postcommit_task(ban_url, (self.get_node(),), {}, celery=False, once_per_request=True)

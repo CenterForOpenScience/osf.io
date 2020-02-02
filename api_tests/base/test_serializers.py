@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 import importlib
 import pkgutil
 
 import pytest
 from pytz import utc
 from datetime import datetime
-import urllib
+from future.moves.urllib.parse import quote
 
 from nose.tools import *  # noqa:
 import re
@@ -15,12 +15,16 @@ from tests.base import ApiTestCase, DbTestCase
 from osf_tests import factories
 from tests.utils import make_drf_request_with_version
 
+from osf.models import RegistrationSchema
+
 from api.base.settings.defaults import API_BASE
+from api.schemas.serializers import SchemaSerializer
 from api.base.serializers import JSONAPISerializer, BaseAPISerializer
 from api.base import serializers as base_serializers
 from api.nodes.serializers import NodeSerializer, RelationshipField
 from api.waffle.serializers import WaffleSerializer, BaseWaffleSerializer
 from api.registrations.serializers import RegistrationSerializer
+from api.base.versioning import KEBAB_CASE_VERSION
 
 SER_MODULES = []
 for loader, name, _ in pkgutil.iter_modules(['api']):
@@ -96,6 +100,53 @@ class TestSerializerMetaType(ApiTestCase):
             ) or hasattr(
                 ser.Meta, 'get_type'
             ), 'Serializer {} has no Meta.type_ or Meta.get_type()'.format(ser)
+
+    def test_serializers_types_are_kebab_case(self):
+        serializers = JSONAPISerializer.__subclasses__()
+        request = make_drf_request_with_version(version=KEBAB_CASE_VERSION)
+        for serializer in serializers:
+            if serializer == WaffleSerializer or serializer == BaseWaffleSerializer:
+                continue
+            if serializer == SchemaSerializer:
+                for schema_serializer in serializer.__subclasses__():
+                    if 'Deprecated' not in str(schema_serializer):
+                        if hasattr(serializer.Meta, 'get_type'):
+                            json_type = serializer.Meta.get_type(request)
+                        else:
+                            json_type = serializer.Meta.type_
+                        assert '_' not in json_type
+                        assert json_type == json_type.lower()
+            if not re.match('^(api_test|test).*', serializer.__module__):
+                if hasattr(serializer.Meta, 'get_type'):
+                    json_type = serializer.Meta.get_type(request)
+                else:
+                    json_type = serializer.Meta.type_
+                assert '_' not in json_type
+                assert json_type == json_type.lower()
+
+    def test_deprecation_warning_for_snake_case(self):
+        user_auth = factories.AuthUserFactory()
+        node = factories.NodeFactory(creator=user_auth)
+        url = '/{}nodes/{}/draft_registrations/?version={}'.format(API_BASE, node._id, KEBAB_CASE_VERSION)
+        schema = RegistrationSchema.objects.get(
+            name='OSF-Standard Pre-Data Collection Registration',
+            schema_version=2)
+        payload = {
+            'data': {
+                'type': 'draft_registrations',
+                'relationships': {
+                    'registration_schema': {
+                        'data': {
+                            'id': schema._id,
+                            'type': 'registration_schemas'
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(url, payload, auth=user_auth.auth)
+        assert res.json['data']['type'] == 'draft-registrations'
+        assert res.json['meta']['warning'] == 'As of API Version {0}, all types are now Kebab-case. {0} will accept snake_case, but this will be deprecated in future versions.'.format(KEBAB_CASE_VERSION)
 
 
 class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
@@ -230,11 +281,11 @@ class TestApiBaseSerializers(ApiTestCase):
                 continue
             if isinstance(relation, list):
                 for item in relation:
-                    link = item['links'].values()[0]
+                    link = list(item['links'].values())[0]
                     link_meta = link.get('meta', {})
                     assert_not_in('count', link_meta)
             else:
-                link = relation['links'].values()[0]
+                link = list(relation['links'].values())[0]
                 link_meta = link.get('meta', {})
                 assert_not_in('count', link_meta)
 
@@ -251,7 +302,7 @@ class TestApiBaseSerializers(ApiTestCase):
                 field = field.field
             related_meta = getattr(field, 'related_meta', {})
             if related_meta and related_meta.get('count', False):
-                link = relation['links'].values()[0]
+                link = list(relation['links'].values())[0]
                 assert_in('count', link['meta'], field)
 
     def test_related_counts_excluded_query_param_false(self):
@@ -267,7 +318,7 @@ class TestApiBaseSerializers(ApiTestCase):
                     link_meta = link.get('meta', {})
                     assert_not_in('count', link_meta)
             else:
-                link = relation['links'].values()[0]
+                link = list(relation['links'].values())[0]
                 link_meta = link.get('meta', {})
                 assert_not_in('count', link_meta)
 
@@ -278,7 +329,7 @@ class TestApiBaseSerializers(ApiTestCase):
             params={'related_counts': 'fish'},
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     def test_invalid_embed_value_raise_bad_request(self):
         res = self.app.get(
@@ -286,7 +337,7 @@ class TestApiBaseSerializers(ApiTestCase):
             params={'embed': 'foo'},
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
         assert_equal(
             res.json['errors'][0]['detail'],
             'The following fields are not embeddable: foo'
@@ -320,7 +371,7 @@ class TestApiBaseSerializers(ApiTestCase):
                     else:
                         assert_not_in('count', link.get('meta', {}))
             elif relation != {'data': None}:
-                link = relation['links'].values()[0]
+                link = list(relation['links'].values())[0]
                 related_meta = getattr(field, 'related_meta', {})
                 if related_meta and related_meta.get('count', False) and key == 'children':
                     assert_in('count', link['meta'])
@@ -350,7 +401,7 @@ class TestApiBaseSerializers(ApiTestCase):
                     else:
                         assert_not_in('count', link.get('meta', {}))
             elif relation != {'data': None}:
-                link = relation['links'].values()[0]
+                link = list(relation['links'].values())[0]
                 related_meta = getattr(field, 'related_meta', {})
                 if related_meta and related_meta.get('count', False) and key == 'children' or key == 'contributors':
                     assert_in('count', link['meta'])
@@ -364,7 +415,7 @@ class TestApiBaseSerializers(ApiTestCase):
             params={'related_counts': 'title'},
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
         assert_equal(
             res.json['errors'][0]['detail'],
             "Acceptable values for the related_counts query param are 'true', 'false', or any of the relationship fields; got 'title'"
@@ -497,11 +548,11 @@ class TestRelationshipField:
         ).data['data']
         field = data['relationships']['field_with_filters']['links']
         assert_in(
-            urllib.quote('filter[target]=hello', safe='?='),
+            quote('filter[target]=hello', safe='?='),
             field['related']['href']
         )
         assert_in(
-            urllib.quote('filter[woop]=yea', safe='?='),
+            quote('filter[woop]=yea', safe='?='),
             field['related']['href']
         )
 

@@ -726,7 +726,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         orderFolder.call(tb, from.parent());
     }).always(function(){
 
-        tb.pendingReadyFiles = tb.pendingReadyFiles.filter(function (file) { return file.data.id !== from.data.id; });
+        tb.pendingReadyFiles = (tb.pendingReadyFiles || []).filter(function (file) { return file.data.id !== from.data.id; });
         from.inProgress = false;
         if (notRenameOp && !tb.pendingReadyFiles.length){
             doSyncMove(tb, to.data.provider);
@@ -1699,7 +1699,7 @@ function _loadTopLevelChildren() {
  * @this Treebeard.controller
  * @private
  */
-var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4', 'w4wvg', 'sn64d', 'pfdyw'];
+var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4', 'w4wvg', 'sn64d', 'pfdyw', '4jbx4'];
 function expandStateLoad(item) {
     var tb = this,
         icon = $('.tb-row[data-id="' + item.id + '"]').find('.tb-toggle-icon'),

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import mock
 import pytest
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 
 
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
@@ -31,7 +31,7 @@ from osf_tests.factories import (
 )
 from rest_framework import exceptions
 from tests.base import fake
-from tests.utils import assert_items_equal, assert_latest_log, assert_latest_log_not
+from tests.utils import assert_equals, assert_latest_log, assert_latest_log_not
 from website.views import find_bookmark_collection
 
 
@@ -60,6 +60,13 @@ class TestNodeDetail:
             title='Project Two',
             is_public=False,
             creator=user)
+
+    @pytest.fixture()
+    def wiki_private(self, user, project_private):
+        with mock.patch('osf.models.AbstractNode.update_search'):
+            wiki_page = WikiFactory(page_name='foo', node=project_private, user=user)
+            WikiVersionFactory(wiki_page=wiki_page)
+        return wiki_page
 
     @pytest.fixture()
     def component_public(self, user, project_public):
@@ -163,7 +170,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is True
-        assert_items_equal(
+        assert_equals(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_write)
 
@@ -685,6 +692,10 @@ class NodeCRUDTestCase:
         return '/{}nodes/{}/'.format(API_BASE, project_public._id)
 
     @pytest.fixture()
+    def sparse_url_public(self, project_public):
+        return '/{}sparse/nodes/{}/'.format(API_BASE, project_public._id)
+
+    @pytest.fixture()
     def url_private(self, project_private):
         return '/{}nodes/{}/'.format(API_BASE, project_private._id)
 
@@ -700,6 +711,24 @@ class NodeCRUDTestCase:
                 'data': {
                     'id': node._id,
                     'type': 'nodes',
+                    'attributes': attributes,
+                }
+            }
+
+            if relationships:
+                payload_data['data']['relationships'] = relationships
+
+            return payload_data
+        return payload
+
+    @pytest.fixture()
+    def make_sparse_node_payload(self):
+        def payload(node, attributes, relationships=None):
+
+            payload_data = {
+                'data': {
+                    'id': node._id,
+                    'type': 'sparse-nodes',
                     'attributes': attributes,
                 }
             }
@@ -806,7 +835,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_update_errors(
             self, app, user, user_two, title_new, description_new,
             category_new, project_public, project_private,
-            url_public, url_private):
+            url_public, url_private, sparse_url_public, make_sparse_node_payload):
 
         #   test_update_project_properties_not_nested
         res = app.put_json_api(url_public, {
@@ -821,7 +850,16 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.json['errors'][0]['detail'] == 'Request must include /data.'
         assert res.json['errors'][0]['source']['pointer'] == '/data'
 
-    #   test_update_invalid_id
+        #   test_cannot_update_sparse
+        res = app.patch_json_api(
+            sparse_url_public,
+            make_sparse_node_payload(project_public, {'public': False}),
+            auth=user.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 405
+
+        #   test_update_invalid_id
         res = app.put_json_api(url_public, {
             'data': {
                 'id': '12345',
@@ -1331,6 +1369,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
             make_node_payload(project_public, {'public': False}),
             auth=user.auth  # self.user is creator/admin
         )
+
         assert res.status_code == 200
 
     @mock.patch('website.identifiers.tasks.update_doi_metadata_on_change.s')
@@ -1378,7 +1417,7 @@ class TestNodeDelete(NodeCRUDTestCase):
     def test_deletes_node_errors(
             self, app, user, user_two, project_public,
             project_private, url_public, url_private,
-            url_fake):
+            url_fake, sparse_url_public):
 
         #   test_deletes_public_node_logged_out
         res = app.delete(url_public, expect_errors=True)
@@ -1392,6 +1431,16 @@ class TestNodeDelete(NodeCRUDTestCase):
             expect_errors=True)
         project_public.reload()
         assert res.status_code == 403
+        assert project_public.is_deleted is False
+        assert 'detail' in res.json['errors'][0]
+
+    #   test_deletes_from_sparse_fails
+        res = app.delete_json_api(
+            sparse_url_public,
+            auth=user.auth,
+            expect_errors=True)
+        project_public.reload()
+        assert res.status_code == 405
         assert project_public.is_deleted is False
         assert 'detail' in res.json['errors'][0]
 

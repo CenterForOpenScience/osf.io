@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 
 import mock
 import datetime
@@ -8,7 +8,12 @@ import pytest
 
 from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase, get_default_metaschema
-from osf_tests.factories import ProjectFactory, UserFactory, AuthUserFactory
+from osf_tests.factories import (
+    ProjectFactory,
+    UserFactory,
+    AuthUserFactory,
+    DraftRegistrationFactory,
+)
 
 from framework.exceptions import HTTPError
 from framework.auth import Auth
@@ -68,7 +73,7 @@ class TestBitbucketConfigViews(BitbucketAddonTestCase, OAuthAddonConfigViewsTest
             'bitbucket_user': 'octocat',
             'bitbucket_repo': 'repo_name',
         }, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         self.project.reload()
         assert_equal(
             self.project.logs.latest().action,
@@ -290,7 +295,7 @@ class TestBitbucketSettings(OsfTestCase):
         registration = self.project.register_node(
             schema=get_default_metaschema(),
             auth=self.consolidated_auth,
-            data=''
+            draft_registration=DraftRegistrationFactory(branched_from=self.project)
         )
 
         url = registration.api_url + 'bitbucket/settings/'

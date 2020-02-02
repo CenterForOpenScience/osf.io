@@ -3,7 +3,7 @@
 import os
 import json
 import datetime as dt
-import urlparse
+from future.moves.urllib.parse import urlparse, urljoin, parse_qs
 
 from django.db import connection, transaction
 from django.contrib.auth.models import Group
@@ -614,7 +614,7 @@ class TestOSFUser:
     def test_absolute_url(self, user):
         assert(
             user.absolute_url ==
-            urlparse.urljoin(settings.DOMAIN, '/{0}/'.format(user._id))
+            urljoin(settings.DOMAIN, '/{0}/'.format(user._id))
         )
 
     def test_profile_image_url(self, user):
@@ -647,7 +647,7 @@ class TestOSFUser:
                                          user,
                                          use_ssl=True)
         assert user.profile_image_url() == expected
-        size = urlparse.parse_qs(urlparse.urlparse(user.profile_image_url()).query).get('size')
+        size = parse_qs(urlparse(user.profile_image_url()).query).get('size')
         assert size is None
 
     def test_activity_points(self, user):
@@ -809,7 +809,7 @@ class TestCookieMethods:
         })
         session.save()
 
-        assert signer.unsign(user.get_or_create_cookie(super_secret_key)) == session._id
+        assert signer.unsign(user.get_or_create_cookie(super_secret_key)).decode() == session._id
 
     def test_user_get_cookie_no_session(self):
         user = UserFactory()
@@ -823,7 +823,7 @@ class TestCookieMethods:
 
         session = Session.objects.filter(data__auth_user_id=user._id).first()
 
-        assert session._id == signer.unsign(cookie)
+        assert session._id == signer.unsign(cookie).decode()
         assert session.data['auth_user_id'] == user._id
         assert session.data['auth_user_username'] == user.username
         assert session.data['auth_user_fullname'] == user.fullname
@@ -2293,7 +2293,7 @@ class TestUserGdprDelete:
 
         assert user.fullname == 'Deleted user'
         assert user.suffix == ''
-        assert user.social == []
+        assert user.social == {}
         assert user.schools == []
         assert user.jobs == []
         assert user.external_identity == {}
@@ -2406,7 +2406,7 @@ class TestUserSpam:
                 'degree': degree,
                 'institution': institution
             })
-            expected_content += '{} {} '.format(institution, degree)
+            expected_content += '{} {} '.format(degree, institution)
         saved_fields = {'schools': schools_list}
 
         spam_content = user._get_spam_content(saved_fields)

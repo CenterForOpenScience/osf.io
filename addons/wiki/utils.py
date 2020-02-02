@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-import urllib
+from future.moves.urllib.parse import quote
 import uuid
 
 import ssl
@@ -131,7 +131,7 @@ def broadcast_to_sharejs(action, sharejs_uuid, node=None, wiki_name='home', data
     )
 
     if action == 'redirect' or action == 'delete':
-        redirect_url = urllib.quote(
+        redirect_url = quote(
             node.web_url_for('project_wiki_view', wname=wiki_name, _guid=True),
             safe='',
         )
@@ -251,7 +251,7 @@ def serialize_wiki_widget(node):
 
     wiki_widget_data = {
         'complete': True,
-        'wiki_content': unicode(wiki_html) if wiki_html else None,
+        'wiki_content': wiki_html if wiki_html else None,
         'wiki_content_url': node.api_url_for('wiki_page_content', wname='home'),
         'rendered_before_update': rendered_before_update,
         'more': more,

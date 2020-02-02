@@ -1,8 +1,7 @@
 import datetime as dt
 import logging
 import re
-import urllib
-import urlparse
+from future.moves.urllib.parse import urljoin, urlencode
 import uuid
 from copy import deepcopy
 from os.path import splitext
@@ -409,7 +408,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(website_settings.DOMAIN, self.url)
+        return urljoin(website_settings.DOMAIN, self.url)
 
     @property
     def absolute_api_v2_url(self):
@@ -961,7 +960,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # The user can log in if they have set a password OR
         # have a verified external ID, e.g an ORCID
         can_login = self.has_usable_password() or (
-            'VERIFIED' in sum([each.values() for each in self.external_identity.values()], [])
+            'VERIFIED' in sum([list(each.values()) for each in self.external_identity.values()], [])
         )
         self.is_active = (
             self.is_registered and
@@ -1284,7 +1283,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         base = website_settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email, force=force, renew=renew)
         external = 'external/' if external_id_provider else ''
-        destination = '?{}'.format(urllib.urlencode({'destination': destination})) if destination else ''
+        destination = '?{}'.format(urlencode({'destination': destination})) if destination else ''
         return '{0}confirm/{1}{2}/{3}/{4}'.format(base, external, self._primary_key, token, destination)
 
     def register(self, username, password=None, accepted_terms_of_service=None):
@@ -1708,7 +1707,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 for item in contents:
                     for key, value in item.items():
                         if key in self.SPAM_USER_PROFILE_FIELDS[field]:
-                            content.append(value.encode('utf-8'))
+                            content.append(value)
         return ' '.join(content).strip()
 
     def check_spam(self, saved_fields, request_headers):
@@ -1806,7 +1805,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.osf_mailing_lists = {}
         self.verification_key = None
         self.suffix = ''
-        self.social = []
+        self.jobs = []
+        self.schools = []
+        self.social = {}
         self.unclaimed_records = {}
         self.notifications_configured = {}
         # Scrub all external accounts

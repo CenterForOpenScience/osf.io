@@ -37,7 +37,7 @@ def analyze_failed_registration_nodes():
     failed_registration_info = []
     for broken_registration in failed_registration_nodes:
         unacceptable_node_logs_after_date = list(
-            broken_registration.registered_from.get_aggregate_logs_queryset(Auth(broken_registration.registered_from.creator))
+            broken_registration.registered_from.get_logs_queryset(Auth(broken_registration.registered_from.creator))
             .filter(date__gt=broken_registration.registered_date)
             .exclude(action__in=fa.LOG_WHITELIST)
             .exclude(action__in=fa.LOG_GREYLIST)
@@ -93,7 +93,7 @@ def main():
                     'registered_from_public']
         filename = 'stuck_registrations_{}.csv'.format(timezone.now().isoformat())
 
-        output = io.BytesIO()
+        output = io.StringIO()
         dict_writer = csv.DictWriter(output, fieldnames)
         dict_writer.writeheader()
         dict_writer.writerows(broken_registrations)

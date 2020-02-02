@@ -1,10 +1,11 @@
+from past.builtins import basestring
 import functools
 import itertools
 import logging
 import re
-import urlparse
+from future.moves.urllib.parse import urljoin
 import warnings
-import httplib
+from rest_framework import status as http_status
 
 import bson
 from django.db.models import Q
@@ -43,7 +44,7 @@ from osf.models.collection import CollectionSubmission
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
 from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable, ContributorMixin, GuardianMixin,
-                               NodeLinkMixin, Taggable, TaxonomizableMixin, SpamOverrideMixin)
+                               NodeLinkMixin, Taggable, TaxonomizableMixin, SpamOverrideMixin, RegistrationResponseMixin)
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.sanctions import RegistrationApproval
@@ -224,7 +225,7 @@ class AbstractNodeManager(TypedModelManager, IncludeManager):
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin, GuardianMixin,
                    NodeLinkMixin, CommentableMixin, SpamOverrideMixin, TaxonomizableMixin,
-                   ContributorMixin, Taggable, Loggable, GuidMixin, BaseModel):
+                   ContributorMixin, Taggable, Loggable, GuidMixin, RegistrationResponseMixin, BaseModel):
     """
     All things that inherit from AbstractNode will appear in
     the same table and will be differentiated by the `type` column.
@@ -320,7 +321,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
     category = models.CharField(max_length=255,
-                                choices=CATEGORY_MAP.items(),
+                                choices=list(CATEGORY_MAP.items()),
                                 blank=True,
                                 default='')
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
@@ -337,6 +338,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                 on_delete=models.SET_NULL,
                                 null=True, blank=True)
     deleted_date = NonNaiveDateTimeField(null=True, blank=True)
+    deleted = NonNaiveDateTimeField(null=True, blank=True)
     description = models.TextField(blank=True, default='')
     file_guid_to_share_uuids = DateTimeAwareJSONField(default=dict, blank=True)
     forked_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
@@ -471,7 +473,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         self._is_templated_clone = False
         super(AbstractNode, self).__init__(*args, **kwargs)
 
-    def __unicode__(self):
+    def __repr__(self):
         return ('(title={self.title!r}, category={self.category!r}) '
                 'with guid {self._id!r}').format(self=self)
 
@@ -531,7 +533,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def absolute_url(self):
         if not self.url:
             return None
-        return urlparse.urljoin(settings.DOMAIN, self.url)
+        return urljoin(settings.DOMAIN, self.url)
 
     @property
     def deep_url(self):
@@ -870,16 +872,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
         return OSFGroup.objects.filter(osfgroupgroupobjectpermission__group_id__in=member_groups)
 
-    def get_aggregate_logs_query(self, auth):
-        return (
-            (
-                Q(node_id__in=list(Node.objects.get_children(self).can_view(user=auth.user, private_link=auth.private_link).values_list('id', flat=True)) + [self.id])
-            ) & Q(should_hide=False)
-        )
-
-    def get_aggregate_logs_queryset(self, auth):
-        query = self.get_aggregate_logs_query(auth)
-        return NodeLog.objects.filter(query).order_by('-date').include(
+    def get_logs_queryset(self, auth):
+        return NodeLog.objects.filter(
+            node_id=self.id,
+            should_hide=False
+        ).order_by('-date').include(
             'node__guids', 'user__guids', 'original_node__guids', limit_includes=10
         )
 
@@ -1411,12 +1408,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.add_permission(contrib.user, permission, save=True)
         Contributor.objects.bulk_create(contribs)
 
-    def register_node(self, schema, auth, data, parent=None, child_ids=None, provider=None):
+    def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
         :param auth: All the auth information including user, API key.
-        :param data: Form data
+        :param draft registration: Draft registration
         :param parent Node: parent registration of registration to be created
         :param provider RegistrationProvider: provider to submit the registration to
         """
@@ -1450,9 +1447,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.registered_user = auth.user
         registered.registered_from = original
         registered.provider = provider
-        if not registered.registered_meta:
-            registered.registered_meta = {}
-        registered.registered_meta[schema._id] = data
 
         registered.forked_from = self.forked_from
         registered.creator = self.creator
@@ -1467,6 +1461,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.tags.add(*self.all_tags.values_list('pk', flat=True))
         registered.subjects.add(*self.subjects.values_list('pk', flat=True))
         registered.affiliated_institutions.add(*self.affiliated_institutions.values_list('pk', flat=True))
+
+        # Sets registration_metadata and registration_responses
+        registered.copy_registered_meta_and_registration_responses(draft_registration, save=False)
 
         # Clone each log from the original node for this registration.
         self.clone_logs(registered)
@@ -1507,7 +1504,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 node_contained.register_node(
                     schema=schema,
                     auth=auth,
-                    data=data,
+                    draft_registration=draft_registration,
                     provider=provider,
                     parent=registered,
                     child_ids=child_ids,
@@ -2277,11 +2274,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         for node in hierarchy:
             # Add log to parents
             node.is_deleted = True
-            node.deleted_date = date
+            node.deleted_date = log_date
+            node.deleted = log_date
             node.add_remove_node_log(auth=auth, date=log_date)
             project_signals.node_deleted.send(node)
 
-        bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date'])
+        bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date', 'deleted'])
 
         if len(hierarchy.filter(is_public=True)):
             AbstractNode.bulk_update_search(hierarchy.filter(is_public=True))
@@ -2372,10 +2370,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             metadata = payload['metadata']
             node_addon = self.get_addon(payload['provider'])
         except KeyError:
-            raise HTTPError(httplib.BAD_REQUEST)
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
         if node_addon is None:
-            raise HTTPError(httplib.BAD_REQUEST)
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
         metadata['path'] = metadata['path'].lstrip('/')
 
@@ -2472,6 +2470,7 @@ class Node(AbstractNode):
         """For v1 compat"""
         return False
 
+
 def remove_addons(auth, resource_object_list):
     for config in AbstractNode.ADDONS_AVAILABLE:
         try:
@@ -2480,7 +2479,7 @@ def remove_addons(auth, resource_object_list):
             settings_model = None
 
         if settings_model:
-            addon_list = settings_model.objects.filter(owner__in=resource_object_list, deleted=False)
+            addon_list = settings_model.objects.filter(owner__in=resource_object_list, is_deleted=False)
             for addon in addon_list:
                 addon.after_delete(auth.user)
 

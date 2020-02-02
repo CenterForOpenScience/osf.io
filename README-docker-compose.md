@@ -7,7 +7,7 @@
     - docker: https://docs.docker.com/engine/installation/linux/ubuntulinux
     - docker-compose: https://docs.docker.com/compose/install/
   - Windows: https://www.docker.com/products/docker#/windows
-2. Grant the docker client additional memory and cpu (minimum of 4GB and 2 CPU)
+2. Grant the docker client additional resources (recommended minimums of 1 CPU, 8GB memory, 2GB swap, and 32GB disk image size)
    - OSX: https://docs.docker.com/docker-for-mac/#/preferences
    - Ubuntu: N/A
    - Windows: https://docs.docker.com/docker-for-windows/#advanced
@@ -81,6 +81,9 @@
 
     `$ cp ./docker-compose-dist.override.yml ./docker-compose.override.yml`
 
+    For local tasks, (dev only)
+    `$ cp ./tasks/local-dist.py ./tasks/local.py`
+
 2. OPTIONAL (uncomment the below lines if you will use remote debugging) Environment variables (incl. remote debugging)
   - e.g. .docker-compose.env
 
@@ -144,28 +147,28 @@
     - _NOTE: CTRL-c will exit_
 - Run migrations:
   - After creating migrations, resetting your database, or starting on a fresh install you will need to run migrations to make the needed changes to database. This command looks at the migrations on disk and compares them to the list of migrations in the `django_migrations` database table and runs any migrations that have not been run.
-    - `docker-compose run --rm web python manage.py migrate`
+    - `docker-compose run --rm web python3 manage.py migrate`
 - Populate institutions:
   - After resetting your database or with a new install you will need to populate the table of institutions. **You must have run migrations first.**
-    - `docker-compose run --rm web python -m scripts.populate_institutions test`
+    - `docker-compose run --rm web python3 -m scripts.populate_institutions -e test -a`
 - Populate preprint, registration, and collection providers:
   - After resetting your database or with a new install, the required providers and subjects will be created automatically **when you run migrations.** To create more:
-    - `docker-compose run --rm web python manage.py populate_fake_providers`
+    - `docker-compose run --rm web python3 manage.py populate_fake_providers`
 - Populate citation styles
   - Needed for api v2 citation style rendering.
-    - `docker-compose run --rm web python -m scripts.parse_citation_styles`
+    - `docker-compose run --rm web python3 -m scripts.parse_citation_styles`
 - Start ember_osf_web
   - Needed for quickfiles feature:
     - `docker-compose up -d ember_osf_web`
 - OPTIONAL: Register OAuth Scopes
   - Needed for things such as the ember-osf dummy app
-    - `docker-compose run --rm web python -m scripts.register_oauth_scopes`
+    - `docker-compose run --rm web python3 -m scripts.register_oauth_scopes`
 - OPTIONAL: Create migrations:
   - After changing a model you will need to create migrations and apply them. Migrations are python code that changes either the structure or the data of a database. This will compare the django models on disk to the database, find the differences, and create migration code to change the database. If there are no changes this command is a noop.
-    - `docker-compose run --rm web python manage.py makemigrations`
+    - `docker-compose run --rm web python3 manage.py makemigrations`
 - OPTIONAL: Destroy and recreate an empty database:
   - **WARNING**: This will delete all data in your database.
-    - `docker-compose run --rm web python manage.py reset_db --noinput`
+    - `docker-compose run --rm web python3 manage.py reset_db --noinput`
 
 ## Application Debugging
 
@@ -208,8 +211,8 @@ $ docker-compose run --rm --service-ports web
   - Local host name: `192.168.168.167`
   - Port: `11000`
   - Path mappings: (It is recommended to use absolute path. `~/` may not work.)
-    - `/Users/<your username>/Projects/cos/osf : /code`
-    - (Optional) `/Users/<your username>/.virtualenvs/osf/lib/python2.7/site-packages : /usr/local/lib/python2.7/site-packages`
+    - `/Users/<your username>/Projects/cos/osf:/code`
+    - (Optional) `/Users/<your username>/.virtualenvs/<your virtualenv>/lib/python3.6/site-packages:/usr/local/lib/python3.6/site-packages`
   - `Single Instance only`
 - Configure `.docker-compose.env` `<APP>_REMOTE_DEBUG` environment variables to match these settings.
 
@@ -304,7 +307,7 @@ $ docker-compose pull
 
 $ docker-compose up requirements mfr_requirements wb_requirements
 # Run db migrations
-$ docker-compose run --rm web python manage.py migrate
+$ docker-compose run --rm web python3 manage.py migrate
 ```
 
 ## Miscellaneous
@@ -325,7 +328,7 @@ When using `docker-compose`, set `privileged: true` for individual containers in
 
 ```yml
 wb:
-  image: quay.io/centerforopenscience/waterbutler:develop
+  image: quay.io/centerforopenscience/wb:develop
   command: invoke server
   privileged: true
   restart: unless-stopped

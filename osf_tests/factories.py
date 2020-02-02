@@ -186,6 +186,13 @@ class BaseNodeFactory(DjangoModelFactory):
     class Meta:
         model = models.Node
 
+    #Fix for adding the deleted date.
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        if kwargs.get('is_deleted', None):
+            kwargs['deleted'] = timezone.now()
+        return super(BaseNodeFactory, cls)._create(*args, **kwargs)
+
 
 class ProjectFactory(BaseNodeFactory):
     category = 'project'
@@ -294,6 +301,14 @@ class PrivateLinkFactory(DjangoModelFactory):
     anonymous = False
     creator = factory.SubFactory(UserFactory)
 
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        instance = super(PrivateLinkFactory, cls)._create(target_class, *args, **kwargs)
+        if instance.is_deleted and not instance.deleted:
+            instance.deleted = timezone.now()
+            instance.save()
+        return instance
+
 
 class CollectionFactory(DjangoModelFactory):
     class Meta:
@@ -370,7 +385,7 @@ class RegistrationFactory(BaseNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, is_public=False,
-                schema=None, data=None,
+                schema=None, draft_registration=None,
                 archive=False, embargo=None, registration_approval=None, retraction=None,
                 provider=None,
                 *args, **kwargs):
@@ -393,12 +408,12 @@ class RegistrationFactory(BaseNodeFactory):
 
         # Default registration parameters
         schema = schema or get_default_metaschema()
-        data = data or {'some': 'data'}
+        draft_registration = draft_registration or DraftRegistrationFactory(branched_from=project, initator=user, registration_schema=schema)
         auth = Auth(user=user)
         register = lambda: project.register_node(
             schema=schema,
             auth=auth,
-            data=data,
+            draft_registration=draft_registration,
             provider=provider,
         )
 
@@ -442,7 +457,7 @@ class WithdrawnRegistrationFactory(BaseNodeFactory):
 
         registration.retract_registration(user)
         withdrawal = registration.retraction
-        token = withdrawal.approval_state.values()[0]['approval_token']
+        token = list(withdrawal.approval_state.values())[0]['approval_token']
         with patch('osf.models.AbstractNode.update_search'):
             withdrawal.approve_retraction(user, token)
         withdrawal.save()
@@ -498,7 +513,7 @@ class EmbargoTerminationApprovalFactory(DjangoModelFactory):
                 registration = embargo._get_registration()
             else:
                 registration = RegistrationFactory(creator=user, user=user, embargo=embargo)
-        with mock.patch('osf.models.sanctions.TokenApprovableSanction.ask', mock.Mock()):
+        with mock.patch('osf.models.sanctions.EmailApprovableSanction.ask', mock.Mock()):
             approval = registration.request_embargo_termination(Auth(user))
             return approval
 
@@ -519,17 +534,20 @@ class DraftRegistrationFactory(DjangoModelFactory):
             if initiator:
                 project_params['creator'] = initiator
             branched_from = ProjectFactory(**project_params)
-        initiator = branched_from.creator
+        initiator = branched_from.creator if branched_from else kwargs.get('initiator', None)
+        initiator = initiator or kwargs.get('user', None) or kwargs.get('creator', None) or UserFactory()
         registration_schema = registration_schema or models.RegistrationSchema.objects.first()
         registration_metadata = registration_metadata or {}
         provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
         draft = models.DraftRegistration.create_from_node(
-            branched_from,
+            node=branched_from,
             user=initiator,
             schema=registration_schema,
             data=registration_metadata,
             provider=provider,
         )
+        draft.registration_responses = draft.flatten_registration_metadata()
+        draft.save()
         return draft
 
 class CommentFactory(DjangoModelFactory):

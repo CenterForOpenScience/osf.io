@@ -3,7 +3,7 @@ import pytest
 import furl
 import pytz
 import datetime
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 from nose.tools import *  # noqa:
 
 from addons.wiki.models import WikiPage
@@ -24,11 +24,12 @@ from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
 )
-from tests.base import ApiWikiTestCase, fake
+from tests.base import ApiWikiTestCase
 
 
 def make_rename_payload(wiki_page):
-    new_page_name = fake.word()
+    new_page_name = 'barbaz'
+
     payload = {
         'data': {
             'id': wiki_page._id,
@@ -88,13 +89,13 @@ class WikiCRUDTestCase:
 
     @pytest.fixture()
     def wiki_public(self, project_public, user_creator):
-        wiki_page = WikiFactory(node=project_public, user=user_creator, page_name=fake.word())
+        wiki_page = WikiFactory(node=project_public, user=user_creator, page_name='foo')
         WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
         return wiki_page
 
     @pytest.fixture()
     def wiki_private(self, project_private, user_creator):
-        wiki_page = WikiFactory(node=project_private, user=user_creator, page_name=fake.word())
+        wiki_page = WikiFactory(node=project_private, user=user_creator, page_name='foo')
         WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
         return wiki_page
 
@@ -105,14 +106,14 @@ class WikiCRUDTestCase:
     @pytest.fixture()
     def wiki_registration_public(self, project_public, user_creator):
         registration = RegistrationFactory(project=project_public, is_public=True)
-        wiki_page = WikiFactory(node=registration, user=user_creator, page_name=fake.word())
+        wiki_page = WikiFactory(node=registration, user=user_creator, page_name='foo')
         WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
         return wiki_page
 
     @pytest.fixture()
     def wiki_registration_private(self, project_public, user_creator):
         registration = RegistrationFactory(project=project_public, is_public=False)
-        wiki_page = WikiFactory(node=registration, user=user_creator, page_name=fake.word())
+        wiki_page = WikiFactory(node=registration, user=user_creator, page_name='foo')
         WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
         return wiki_page
 
@@ -276,7 +277,7 @@ class TestWikiDetailView(ApiWikiTestCase):
         with mock.patch('osf.models.AbstractNode.update_search'):
             withdrawal = self.public_registration.retract_registration(
                 user=self.user, save=True)
-            token = withdrawal.approval_state.values()[0]['approval_token']
+            token = list(withdrawal.approval_state.values())[0]['approval_token']
             withdrawal.approve_retraction(self.user, token)
             withdrawal.save()
         res = self.app.get(

@@ -2,6 +2,57 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.1.0 (2020-01-15)
+===================
+- Switch to Python 3
+
+19.32.0 (2019-12-16)
+===================
+- Add SchemaBlocks, normalization for Registration.registered_meta
+- Update RegistrationSchemas
+- EGAP Ingestor improvements
+
+19.31.0 (2019-11-7)
+===================
+- EGAP: Parse project structure, add contributors, add files, ingest the draft registration, and add a Jupyter notebook
+- Modify a Chronos field for proper contributor classification
+
+19.30.0 (2019-10-16)
+===================
+- Fix weirdness around deleted nodes by not deleing OSF Storage
+- Make deleted fields on models and addons into date fields
+- API v2: Chronos users can have more name options
+- Python 3 backwards compatibility changes
+
+19.29.0 (2019-10-02)
+===================
+- Use new pagecounter fields for increased query efficiency
+- Allow meetings to be sorted on download count
+- Remove old permissions fields now that we have Guardian
+
+19.28.0 (2019-09-24)
+===================
+- API v2: Use consistent naming for JSON API type (kebab-case)
+- API v2: Fix sorting on fields with source attribute
+- API v2: Add SparseLists for Nodes and Registrations
+- Management command to remove duplicate files and folders
+
+19.27.0 (2019-09-18)
+===================
+- Automatically map subjects when a preprint is moved to a different
+  preprint provider in the admin app
+- Gitlab: return all repos to which the user has access
+- Upgrade Bower
+- Py3 backwards compatible changes
+
+19.26.0 (2019-09-11)
+===================
+- Create a custom through table for linking files and versions
+  for storing version names.  Supports different versions of the same
+  file having different names.
+- Update README for populating institutions.
+
+
 19.25.0 (2019-09-05)
 ===================
 - Automate account deactivation if users have no content

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from past.builtins import basestring
 from nose.tools import *
 
 from framework.encryption import encrypt, decrypt
@@ -14,7 +15,7 @@ def test_random_string():
 
 
 def test_encryption():
-    private_string = 'p4ssw0rd'
+    private_string = b'p4ssw0rd'
 
     # Encrypted string is obfuscated
     encrypted_string = encrypt(private_string)

@@ -1,11 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Populate development database with Institution fixtures."""
 
 import argparse
 import logging
 import sys
-import urllib
+from future.moves.urllib.parse import quote
 
 import django
 from django.db import transaction
@@ -34,7 +34,7 @@ group.add_argument('-a', '--all', action='store_true', help='add or update all i
 
 
 def encode_uri_component(val):
-    return urllib.quote(val, safe='~()*!.\'')
+    return quote(val, safe='~()*!.\'')
 
 
 def update_or_create(inst_data):
@@ -173,11 +173,11 @@ INSTITUTIONS = {
                 'description': '',
                 'banner_name': 'callutheran-banner.png',
                 'logo_name': 'callutheran-shield.png',
-                'login_url': None,
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('login.callutheran.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
-                'delegation_protocol': 'cas-pac4j',
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'capolicylab',
@@ -511,18 +511,6 @@ INSTITUTIONS = {
                 'delegation_protocol': 'saml-shib',
             },
             {
-                '_id': 'mli',
-                'name': 'Mind & Life Institute',
-                'description': 'Funding rigorous research in the field of contemplative science to understand the human mind for the purpose of reducing suffering. Learn more about <a href="https://www.mindandlife.org">Mind & Life research funding and other programs</a>.',
-                'banner_name': 'mli-banner.png',
-                'logo_name': 'mli-shield.png',
-                'login_url': None,
-                'logout_url': None,
-                'domains': ['research.mindandlife.org'],
-                'email_domains': ['mindandlife.org'],
-                'delegation_protocol': '',
-            },
-            {
                 '_id': 'mq',
                 'name': 'Macquarie University',
                 'description': 'In partnership with the Office of the Deputy Vice-Chancellor (Research) and the University Library. Learn more about <a href="https://staff.mq.edu.au/research/strategy-priorities-and-initiatives/data-science-and-eresearch">Data Science and eResearch</a> at Macquarie University.',
@@ -641,6 +629,18 @@ INSTITUTIONS = {
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:arizona.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.arizona.edu'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'ubc',
+                'name': 'University of British Columbia',
+                'description': 'Users are reminded to ensure their use of this service is in compliance with all <a href="https://universitycounsel.ubc.ca/policies/">UBC Policies and Standards</a>. Please refer specifically to <a href="https://universitycounsel.ubc.ca/files/2015/08/policy85.pdf">Policy 85</a>, <a href="https://universitycounsel.ubc.ca/files/2013/06/policy104.pdf">Policy 104</a>, and the <a href="https://cio.ubc.ca/node/1073">Information Security Standards</a>. Find out more about <a href="http://openscience.ubc.ca">OSF</a>. Get help with <a href="https://researchdata.library.ubc.ca/">Research Data Management</a>.',
+                'banner_name': 'ubc-banner.png',
+                'logo_name': 'ubc-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://authentication.ubc.ca')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.openscience.ubc.ca'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
@@ -1015,13 +1015,25 @@ INSTITUTIONS = {
             },
             {
                 '_id': 'callutheran',
-                'name': 'California Lutheran University [Test]',
+                'name': 'California Lutheran University SAML-SSO [Test]',
+                'description': '',
+                'banner_name': 'callutheran-banner.png',
+                'logo_name': 'callutheran-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('login.callutheran.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-callutheran.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'callutheran2',
+                'name': 'California Lutheran University CAS-SSO [Test]',
                 'description': '',
                 'banner_name': 'callutheran-banner.png',
                 'logo_name': 'callutheran-shield.png',
                 'login_url': None,
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
-                'domains': ['test-osf-callutheran.cos.io'],
+                'domains': ['test-osf-callutheran2.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'cas-pac4j',
             },
@@ -1355,18 +1367,6 @@ INSTITUTIONS = {
                 'domains': ['test-osf-mit.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
-            },
-            {
-                '_id': 'mli',
-                'name': 'Mind & Life Institute [Test]',
-                'description': 'Funding rigorous research in the field of contemplative science to understand the human mind for the purpose of reducing suffering. Learn more about <a href="https://www.mindandlife.org">Mind & Life research funding and other programs</a>.',
-                'banner_name': 'mli-banner.png',
-                'logo_name': 'mli-shield.png',
-                'login_url': None,
-                'logout_url': None,
-                'domains': ['research.mindandlife.org'],
-                'email_domains': ['mindandlife.org'],
-                'delegation_protocol': '',
             },
             {
                 '_id': 'mq',

@@ -114,7 +114,7 @@ class UserMixin(object):
         # of the query cache
         if hasattr(self.request, 'parents') and len(self.request.parents.get(Contributor, {})) == 1:
             # We expect one parent contributor view, so index into the first item
-            contrib_id, contrib = self.request.parents[Contributor].items()[0]
+            contrib_id, contrib = list(self.request.parents[Contributor].items())[0]
             user = contrib.user
             if user.is_disabled:
                 raise UserGone(user=user)
@@ -238,7 +238,7 @@ class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, User
 
     def get_queryset(self):
         qs = [addon for addon in self.get_user().get_addons() if 'accounts' in addon.config.configs]
-        qs.sort()
+        sorted(qs, key=lambda addon: addon.id, reverse=True)
         return qs
 
 
@@ -775,7 +775,7 @@ class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Use
         except KeyError:
             raise NotFound('Requested external identity could not be found.')
 
-        return {'_id': identity_id, 'external_id': identity.keys()[0], 'status': identity.values()[0]}
+        return {'_id': identity_id, 'external_id': list(identity.keys())[0], 'status': list(identity.values())[0]}
 
     def perform_destroy(self, instance):
         user = self.get_user()
@@ -1005,7 +1005,7 @@ class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIVi
             serialized_email = UserEmail(email_id=hashed_id, address=email.address, confirmed=True, verified=True, primary=primary)
             serialized_emails.append(serialized_email)
         email_verifications = user.email_verifications or {}
-        for token, detail in email_verifications.iteritems():
+        for token, detail in email_verifications.items():
             is_merge = Email.objects.filter(address=detail['email']).exists()
             serialized_unconfirmed_email = UserEmail(
                 email_id=token,

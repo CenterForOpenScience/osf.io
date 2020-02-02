@@ -1,4 +1,3 @@
-import urlparse
 import uuid
 
 from website.util import api_v2_url
@@ -10,7 +9,7 @@ from website.security import random_string
 from framework.auth import cas
 
 from website import settings
-from urlparse import urljoin
+from future.moves.urllib.parse import urljoin
 
 
 def generate_client_secret():
@@ -100,7 +99,7 @@ class ApiOAuth2Application(base.ObjectIDMixin, base.BaseModel):
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(settings.DOMAIN, self.url)
+        return urljoin(settings.DOMAIN, self.url)
 
     # Properties used by Django and DRF "Links: self" field
     @property
@@ -164,7 +163,7 @@ class ApiOAuth2PersonalToken(base.ObjectIDMixin, base.BaseModel):
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(settings.DOMAIN, self.url)
+        return urljoin(settings.DOMAIN, self.url)
 
     # Properties used by Django and DRF "Links: self" field
     @property

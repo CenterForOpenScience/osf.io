@@ -1,4 +1,8 @@
+import mock
+import pytz
 import pytest
+import datetime
+from django.utils import timezone
 from collections import OrderedDict
 
 from addons.box.models import BoxFile
@@ -181,37 +185,37 @@ class TestCommentModel:
         {
             'comment_content': '',
             'expected_signals': set(),
-            'expected_error_msg': "{'content': [u'This field cannot be blank.']}",
+            'expected_error_msg': "{'content': ['This field cannot be blank.']}",
         },
         # Make sure comments aren't whitespace
         {
             'comment_content': '       ',
             'expected_signals': set(),
-            'expected_error_msg': "{'content': [u'Value must not be empty.']}",
+            'expected_error_msg': "{'content': ['Value must not be empty.']}",
         },
         # Make sure unreg contributors don't send mentions
         {
             'comment_content': comment_mention_unreg_contributor,
             'expected_signals': set(),
-            'expected_error_msg': "[u'User does not exist or is not active.']",
+            'expected_error_msg': "['User does not exist or is not active.']",
         },
         # Make sure non-contributors don't send mentions
         {
             'comment_content': comment_mention_non_contributor,
             'expected_signals': set(),
-            'expected_error_msg': "[u'Mentioned user is not a contributor or group member.']",
+            'expected_error_msg': "['Mentioned user is not a contributor or group member.']",
         },
         # Make sure mentions with invalid guids don't send signals
         {
             'comment_content': comment_invalid_user_mentioned,
             'expected_signals': set(),
-            'expected_error_msg': "[u'User does not exist or is not active.']",
+            'expected_error_msg': "['User does not exist or is not active.']",
         },
         # Test to prevent user from entering a comment that's too long
         {
             'comment_content': comment_too_long,
             'expected_signals': set(),
-            'expected_error_msg': "{'content': [u'Ensure this field has no more than 1000 characters.']}",
+            'expected_error_msg': "{'content': ['Ensure this field has no more than 1000 characters.']}",
         },
 
     ]
@@ -232,7 +236,7 @@ class TestCommentModel:
         {
             'comment_content': None,
             'expected_signals': set(),
-            'expected_error_msg': "{'content': [u'This field cannot be null.']}",
+            'expected_error_msg': "{'content': ['This field cannot be null.']}",
         },
         # User makes valid comment
         {
@@ -250,7 +254,7 @@ class TestCommentModel:
         {
             'comment_content': comment_too_long_with_mention,
             'expected_signals': set(),
-            'expected_error_msg': "{'content': [u'Ensure this field has no more than 1000 characters.']}",
+            'expected_error_msg': "{'content': ['Ensure this field has no more than 1000 characters.']}",
         },
     ]
     edit_cases = [
@@ -367,9 +371,11 @@ class TestCommentModel:
     def test_delete(self, node):
         comment = CommentFactory(node=node)
         auth = Auth(comment.user)
-
-        comment.delete(auth=auth, save=True)
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        with mock.patch.object(timezone, 'now', return_value=mock_now):
+            comment.delete(auth=auth, save=True)
         assert comment.is_deleted, True
+        assert comment.deleted == mock_now
         assert comment.node.logs.count() == 2
         assert comment.node.logs.latest().action == NodeLog.COMMENT_REMOVED
 
@@ -379,6 +385,7 @@ class TestCommentModel:
         comment.delete(auth=auth, save=True)
         comment.undelete(auth=auth, save=True)
         assert not comment.is_deleted
+        assert not comment.deleted
         assert comment.node.logs.count() == 3
         assert comment.node.logs.latest().action == NodeLog.COMMENT_RESTORED
 

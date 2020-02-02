@@ -71,6 +71,13 @@ class JSONAPITestApp(TestApp, JSONAPIWrapper):
             # https://code.djangoproject.com/ticket/11111 ?
             req.environ['REMOTE_ADDR'] = str(req.environ['REMOTE_ADDR'])
             req.environ['PATH_INFO'] = str(req.environ['PATH_INFO'])
+            auth = req.environ.get('HTTP_AUTHORIZATION')
+            if auth is None:
+                req.environ['HTTP_AUTHORIZATION'] = 'None'
+            elif isinstance(auth, bytes):
+                req.environ['HTTP_AUTHORIZATION'] = auth.decode()
+            else:
+                req.environ['HTTP_AUTHORIZATION'] = str(auth)
 
             # Curry a data dictionary into an instance of the template renderer
             # callback function.

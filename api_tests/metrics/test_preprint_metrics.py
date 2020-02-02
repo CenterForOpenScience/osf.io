@@ -116,6 +116,45 @@ class TestPreprintMetrics:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Misformed elasticsearch query.'
 
+    @pytest.mark.skip('Return results will be entirely mocked so does not make a lot of sense to run on travis.')
+    def test_agg_query(self, app, user, base_url):
+        """
+        THis test was written to correct a bug where lists in aggregated queries, these would fail before this is just a
+        smoke test because we can't really travis test for accuracy.
+        TODO: Investigate https://pypi.org/project/pytest-elasticsearch/ once we upgrade to Py3
+        :param app:
+        :param user:
+        :param base_url:
+        :return:
+        """
+        post_url = '{}downloads/'.format(base_url)
+
+        payload = {
+            'data': {
+                'type': 'preprint_metrics',
+                'attributes': {
+                    'query': {
+                        'aggs': {
+                            'preprints_by_year': {
+                                'composite': {
+                                    'sources': [{
+                                        'date': {
+                                            'date_histogram': {
+                                                'field': 'timestamp',
+                                                'interval': 'year'
+                                            }
+                                        }
+                                    }]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        resp = app.post_json_api(post_url, payload, auth=user.auth)
+        assert resp.status_code == 200
+
     @mock.patch('api.metrics.views.PreprintDownloadMetrics.format_response')
     @mock.patch('api.metrics.views.PreprintDownloadMetrics.execute_search')
     def test_post_custom_metric(self, mock_execute, mock_format, app, user, base_url, preprint, other_user):
