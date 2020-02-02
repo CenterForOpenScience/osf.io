@@ -553,6 +553,17 @@ class TestPreprintUpdate:
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
+        preprint.has_coi = False
+        preprint.save()
+        with override_switch(features.SLOAN_STUDY_COI, active=True):
+            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'You do not have ability to edit a conflict of interest while the ' \
+                                                  'has_coi field is set to false or unanswered'
+
+        preprint.has_coi = True
+        preprint.save()
         with override_switch(features.SLOAN_STUDY_COI, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth)
 
@@ -565,6 +576,34 @@ class TestPreprintUpdate:
         log = preprint.logs.first()
         assert log.action == PreprintLog.COI_STATEMENT_CHANGED
         assert log.params == {'preprint': preprint._id, 'user': user._id}
+
+    def test_update_has_coi(self, app, user, preprint, url):
+        update_payload = build_preprint_update_payload(
+            preprint._id,
+            attributes={'has_coi': True}
+        )
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'You do not have ability to edit conflict of interest ' \
+                                                  'statement availability at this time.'
+
+        contrib = AuthUserFactory()
+        preprint.add_contributor(contrib, READ)
+        res = app.patch_json_api(url, update_payload, auth=contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+
+        with override_switch(features.SLOAN_STUDY_COI, active=True):
+            res = app.patch_json_api(url, update_payload, auth=user.auth)
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['has_coi']
+
+        preprint.reload()
+        assert preprint.has_coi
+        log = preprint.logs.first()
+        assert log.action == PreprintLog.HAS_COI_CHANGED
+        assert log.params == {'preprint': preprint._id, 'user': user._id, 'value': True}
 
     def test_title_has_a_512_char_limit(self, app, user, preprint, url):
         new_title = 'a' * 513
