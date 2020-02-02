@@ -202,7 +202,7 @@ class TestProvisionNode(ContextTestCase):
             'osfstorage',
             _internal=True,
             base_url=self.node.osfstorage_region.waterbutler_url,
-            cookie=self.user.get_or_create_cookie(),
+            cookie=self.user.get_or_create_cookie().decode(),
             name=file_name
         )
         mock_put.assert_called_with(
@@ -222,7 +222,7 @@ class TestProvisionNode(ContextTestCase):
             'osfstorage',
             _internal=True,
             base_url=self.node.osfstorage_region.waterbutler_url,
-            cookie=self.user.get_or_create_cookie(),
+            cookie=self.user.get_or_create_cookie().decode(),
             name=settings.MISSING_FILE_NAME,
         )
         mock_put.assert_called_with(

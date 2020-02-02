@@ -638,7 +638,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'An unapproved registration cannot be made public.'
 
-    def test_read_write_contributor_cannot_update_admin_writeable_fields(
+    def test_read_write_contributor_can_edit_writeable_fields(
             self, app, read_write_contributor, private_registration,
             private_url, make_payload, institution_one):
 
@@ -655,24 +655,31 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             id=private_registration._id,
             attributes={'description': 'Updated description'}
         )
-        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
-        assert res.status_code == 403
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth)
+        assert res.status_code == 200
+
+        payload = make_payload(
+            id=private_registration._id,
+            attributes={'title': 'Updated title'}
+        )
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth)
+        assert res.status_code == 200
 
         #  test_read_write_contributor_cannot_update_category
         payload = make_payload(
             id=private_registration._id,
             attributes={'category': 'instrumentation'}
         )
-        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
-        assert res.status_code == 403
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth)
+        assert res.status_code == 200
 
         #  test_read_write_contributor_cannot_update_article_doi
         payload = make_payload(
             id=private_registration._id,
             attributes={'article_doi': '10.123/456/789'}
         )
-        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
-        assert res.status_code == 403
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth)
+        assert res.status_code == 200
 
         #  test_read_write_contributor_cannot_update_affiliated_institution
         payload = make_payload(
@@ -685,8 +692,9 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
                 ]
             }
         }
-        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
-        assert res.status_code == 403
+        del payload['data']['attributes']  # just check permissions on institutions relationship
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth)
+        assert res.status_code == 200
 
 
 @pytest.mark.django_db
