@@ -110,7 +110,10 @@ from api.nodes.serializers import (
 from api.nodes.utils import NodeOptimizationMixin, enforce_no_children
 from api.osf_groups.views import OSFGroupMixin
 from api.preprints.serializers import PreprintSerializer
-from api.registrations.serializers import RegistrationSerializer, RegistrationCreateSerializer
+from api.registrations.serializers import (
+    RegistrationSerializer,
+    RegistrationCreateSerializerOldWorkflow,
+)
 from api.requests.permissions import NodeRequestPermission
 from api.requests.serializers import NodeRequestSerializer, NodeRequestCreateSerializer
 from api.requests.views import NodeRequestMixin
@@ -177,22 +180,13 @@ class DraftMixin(object):
 
     serializer_class = DraftRegistrationSerializerLegacy
 
-    def check_branched_from(self, draft):
-        node_id = self.kwargs['node_id']
-
-        if not draft.branched_from._id == node_id:
-            raise ValidationError('This draft registration is not created from the given node.')
-
     def check_resource_permissions(self, resource):
-        # Old workflow checks permissions on attached node, not draft
         return self.check_object_permissions(self.request, resource.branched_from)
 
     def get_draft(self, draft_id=None, check_object_permissions=True):
         if draft_id is None:
             draft_id = self.kwargs['draft_id']
         draft = get_object_or_error(DraftRegistration, draft_id, self.request)
-
-        self.check_branched_from(draft)
 
         if self.request.method not in drf_permissions.SAFE_METHODS:
             registered_and_deleted = draft.registered_node and draft.registered_node.is_deleted
@@ -674,7 +668,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
 
     def get_serializer_class(self):
         if self.request.method in ('PUT', 'POST'):
-            return RegistrationCreateSerializer
+            return RegistrationCreateSerializerOldWorkflow
         return RegistrationSerializer
 
     # overrides ListCreateAPIView

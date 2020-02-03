@@ -173,7 +173,7 @@ class DraftContributorsList(NodeContributorsList, DraftRegistrationMixin):
 
     # overrides NodeContributorsList
     def get_serializer_class(self):
-        if self.request.method == 'PUT' or self.request.method == 'PATCH' or self.request.method == 'DELETE':
+        if self.request.method in ('PUT', 'PATCH', 'DELETE'):
             return DraftRegistrationContributorDetailSerializer
         elif self.request.method == 'POST':
             return DraftRegistrationContributorsCreateSerializer
