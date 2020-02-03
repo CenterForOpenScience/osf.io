@@ -20,15 +20,15 @@ msgstr ""
 
 #: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:6
 msgid "Connect an Azure Blob Storage Account"
-msgstr ""
+msgstr "Azure Blob Storageアカウントを接続する"
 
 #: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:17
 msgid "Account Name"
-msgstr ""
+msgstr "アカウント名"
 
 #: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:21
 msgid "Account Key"
-msgstr ""
+msgstr "アカウントキー"
 
 #: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:36
 #: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:77
@@ -161,7 +161,7 @@ msgstr "ロード中..."
 #: addons/swift/templates/swift_node_settings.mako:35
 #: addons/weko/templates/weko_node_settings.mako:29
 msgid "Connect  Account"
-msgstr ""
+msgstr "アカウントに接続する"
 
 #: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:50
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:65
@@ -182,12 +182,12 @@ msgstr "無し"
 #: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:58
 #: addons/swift/templates/swift_node_settings.mako:58
 msgid "Create container"
-msgstr ""
+msgstr "コンテナを作成"
 
 #: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:63
 #: addons/swift/templates/swift_node_settings.mako:63
 msgid "Loading containers..."
-msgstr ""
+msgstr "コンテナをロード中..."
 
 #: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:72
 #: addons/owncloud/templates/owncloud_node_settings.mako:67
@@ -236,7 +236,7 @@ msgstr "非公開プロジェクト"
 #: addons/zotero/templates/zotero_node_settings.mako:31
 #: website/templates/project/addon/node_settings_default.mako:31
 msgid "Connect Account"
-msgstr ""
+msgstr "アカウントに接続する"
 
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:74
 #, python-format
@@ -257,23 +257,23 @@ msgstr ""
 
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:6
 msgid "Connect a Dataverse Account"
-msgstr ""
+msgstr "Dataverseアカウントに接続する"
 
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:18
 msgid "Dataverse Repository"
-msgstr ""
+msgstr "Dataverseレポジトリ"
 
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:22
 msgid "Select a Dataverse repository"
-msgstr ""
+msgstr "Dataverseレポジトリを選択する"
 
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:35
 msgid "Only Dataverse repositories v4.0 or higher are supported."
-msgstr ""
+msgstr "Dataverseリポジトリv4.0以降のみがサポートされています。"
 
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:46
 msgid "API Token"
-msgstr ""
+msgstr "APIトークン"
 
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:50
 #, python-format
@@ -282,51 +282,51 @@ msgstr ""
 
 #: addons/dataverse/templates/dataverse_node_settings.mako:43
 msgid "Dataverse Repository:"
-msgstr ""
+msgstr "Dataverseレポジトリ："
 
 #: addons/dataverse/templates/dataverse_node_settings.mako:49
 msgid "Current Dataset:"
-msgstr ""
+msgstr "現在のデータセット："
 
 #: addons/dataverse/templates/dataverse_node_settings.mako:65
 msgid "The current dataset was not found on Dataverse."
-msgstr ""
+msgstr "現在のデータセットがDataverseで見つかりませんでした。"
 
 #: addons/dataverse/templates/dataverse_node_settings.mako:74
 msgid "Dataverse:"
-msgstr ""
+msgstr "Dataverse:"
 
 #: addons/dataverse/templates/dataverse_node_settings.mako:86
 msgid "Dataset:"
-msgstr ""
+msgstr "データセット："
 
 #: addons/dataverse/templates/dataverse_node_settings.mako:97
 msgid "No datasets available."
-msgstr ""
+msgstr "利用可能なデータセットがありません。"
 
 #: addons/dataverse/templates/dataverse_node_settings.mako:103
 msgid "Retrieving datasets..."
-msgstr ""
+msgstr "データセットを取得しています..."
 
 #: addons/dataverse/templates/dataverse_node_settings.mako:110
 msgid ""
 "There are no dataverses, datasets, or files associated with the connected"
 " account."
-msgstr ""
+msgstr "接続されたアカウントに関連付けられたデータバース、データセット、またはファイルはありません。"
 
 #: addons/dataverse/templates/dataverse_user_settings.mako:23
 #: addons/gitlab/templates/gitlab_user_settings.mako:23
 #, python-format
 msgid "Authorized on <a %(data_bind1)s><em %(data_bind2)s></em></a>"
-msgstr ""
+msgstr "<a %(data_bind1)s><em %(data_bind2)s></em></a>で認証済み"
 
 #: addons/forward/templates/forward_node_settings.mako:14
 msgid "Send people who visit your GakuNin RDM project page to this link instead"
-msgstr ""
+msgstr "代わりに、GakuNin RDMプロジェクトページにアクセスするユーザーをこのリンクに送信します"
 
 #: addons/forward/templates/forward_node_settings.mako:19
 msgid "Label"
-msgstr ""
+msgstr "ラベル"
 
 #: addons/forward/templates/forward_node_settings.mako:24
 #: website/templates/profile/oauth_app_detail.mako:67
@@ -337,11 +337,11 @@ msgstr "任意"
 #: addons/github/templates/github_node_settings.mako:38
 #: addons/gitlab/templates/gitlab_node_settings.mako:42
 msgid "Current Repo: "
-msgstr ""
+msgstr "現在のレポジトリ："
 
 #: addons/github/templates/github_node_settings.mako:56
 msgid "Create Repo"
-msgstr ""
+msgstr "レポジトリを作成する"
 
 #: addons/github/templates/github_node_settings.mako:71
 #, python-format
@@ -558,17 +558,17 @@ msgstr ""
 
 #: addons/s3/templates/s3_credentials_modal.mako:6
 msgid "Connect an Amazon S3 Account"
-msgstr ""
+msgstr "Amazon S3に接続"
 
 #: addons/s3/templates/s3_credentials_modal.mako:17
 #: addons/s3compat/templates/s3compat_credentials_modal.mako:21
 msgid "Access Key"
-msgstr ""
+msgstr "アクセスキー"
 
 #: addons/s3/templates/s3_credentials_modal.mako:21
 #: addons/s3compat/templates/s3compat_credentials_modal.mako:25
 msgid "Secret Key"
-msgstr ""
+msgstr "シークレットキー"
 
 #: addons/s3/templates/s3_node_settings.mako:58
 #: addons/s3compat/templates/s3compat_node_settings.mako:58
@@ -724,11 +724,11 @@ msgstr ""
 
 #: addons/wiki/templates/add_wiki_page.mako:8
 msgid "Add new wiki page"
-msgstr ""
+msgstr "新しいWikiページを追加"
 
 #: addons/wiki/templates/add_wiki_page.mako:12
 msgid "New Wiki Name"
-msgstr ""
+msgstr "新しいWiki名"
 
 #: addons/wiki/templates/add_wiki_page.mako:18
 #: website/templates/project/contributors.mako:57
@@ -777,11 +777,11 @@ msgstr ""
 
 #: addons/wiki/templates/delete_wiki_page.mako:7
 msgid "Delete wiki page"
-msgstr ""
+msgstr "Wikiページを削除"
 
 #: addons/wiki/templates/delete_wiki_page.mako:10
 msgid "Are you sure you want to delete this wiki page?"
-msgstr ""
+msgstr "このWikiページを削除してもよろしいですか？"
 
 #: addons/wiki/templates/delete_wiki_page.mako:14
 #: addons/wiki/templates/edit.mako:38
@@ -793,23 +793,23 @@ msgstr "削除"
 #: website/templates/project/settings.mako:258
 #: website/templates/search.mako:370
 msgid "Wiki"
-msgstr "ウィキ"
+msgstr "Wiki"
 
 #: addons/wiki/templates/edit.mako:42
 msgid "Menu"
-msgstr ""
+msgstr ""メニュー
 
 #: addons/wiki/templates/edit.mako:53
 msgid "Loading wiki pages..."
-msgstr ""
+msgstr "Wikiページをロード中"
 
 #: addons/wiki/templates/edit.mako:82
 msgid "View"
-msgstr ""
+msgstr "表示"
 
 #: addons/wiki/templates/edit.mako:92
 msgid "Preview"
-msgstr ""
+msgstr "プレビュー"
 
 #: addons/wiki/templates/edit.mako:117
 #: website/templates/util/render_addon_widget.mako:24
@@ -818,47 +818,47 @@ msgstr "重要な情報、リンク、または画像をここに追加して、
 
 #: addons/wiki/templates/edit.mako:174
 msgid "Loading. . ."
-msgstr ""
+msgstr "ロード中..."
 
 #: addons/wiki/templates/edit.mako:186
 msgid "Revert"
-msgstr ""
+msgstr "元に戻す"
 
 #: addons/wiki/templates/edit.mako:212
 msgid "Compare"
-msgstr ""
+msgstr "比較"
 
 #: addons/wiki/templates/edit.mako:220
 msgid "Current"
-msgstr ""
+msgstr "現在"
 
 #: addons/wiki/templates/edit.mako:257
 msgid "Page permissions have changed"
-msgstr ""
+msgstr "ページの権限が変更されました"
 
 #: addons/wiki/templates/edit.mako:260
 msgid "Your browser should refresh shortly"
-msgstr ""
+msgstr "ブラウザは間もなく更新されます"
 
 #: addons/wiki/templates/edit.mako:273
 msgid "Renaming wiki..."
-msgstr ""
+msgstr "wikiの名前を変更しています..."
 
 #: addons/wiki/templates/edit.mako:283
 msgid "Wiki page deleted"
-msgstr ""
+msgstr "Wikiページを削除しました"
 
 #: addons/wiki/templates/edit.mako:286
 msgid "Press Confirm to return to the project wiki home page."
-msgstr ""
+msgstr "[確認]を押して、プロジェクトWikiのホームページに戻ります。"
 
 #: addons/wiki/templates/edit.mako:289
 msgid "Confirm"
-msgstr ""
+msgstr "確認"
 
 #: addons/wiki/templates/edit.mako:300
 msgid "Connected to the collaborative wiki"
-msgstr ""
+msgstr "共同ウィキに接続しました"
 
 #: addons/wiki/templates/edit.mako:304
 msgid ""
@@ -866,7 +866,7 @@ msgid ""
 "made will be visible to            contributors with write permission in "
 "real time. Changes will be stored            but not published until you "
 "click the \"Save\" button."
-msgstr ""
+msgstr "このページは現在、共同ウィキに接続されています。 行われたすべての編集は、書き込み許可を持つ投稿者にリアルタイムで表示されます。 変更は保存されますが、[保存]ボタンをクリックするまで公開されません。"
 
 #: addons/wiki/templates/edit.mako:310
 #: addons/wiki/templates/wiki-bar-modal-help.mako:14
@@ -881,13 +881,13 @@ msgstr "閉じる"
 
 #: addons/wiki/templates/edit.mako:321
 msgid "Connecting to the collaborative wiki"
-msgstr ""
+msgstr "共同ウィキへの接続"
 
 #: addons/wiki/templates/edit.mako:325
 msgid ""
 "This page is currently attempting to connect to the collaborative wiki. "
 "You may continue to make edits."
-msgstr ""
+msgstr "このページは現在、共同ウィキに接続しようとしています。 引き続き編集を行うことができます。"
 
 #: addons/wiki/templates/edit.mako:326 addons/wiki/templates/edit.mako:343
 #: addons/wiki/templates/edit.mako:360
@@ -899,13 +899,13 @@ msgstr "[保存]ボタンを押すまで、変更は保存されません。"
 
 #: addons/wiki/templates/edit.mako:338
 msgid "Collaborative wiki is unavailable"
-msgstr ""
+msgstr "共同ウィキは利用できません"
 
 #: addons/wiki/templates/edit.mako:342
 msgid ""
 "The collaborative wiki is currently unavailable. You may continue to make"
 " edits."
-msgstr ""
+msgstr "共同ウィキは現在利用できません。 引き続き編集を行うことができます。"
 
 #: addons/wiki/templates/edit.mako:355
 #: website/templates/project/view_file.mako:168
@@ -921,34 +921,34 @@ msgstr "お使いのブラウザは共有編集をサポートしていません
 
 #: addons/wiki/templates/status.mako:7
 msgid "Note: Home page cannot be renamed."
-msgstr ""
+msgstr "注：ホームページの名前は変更できません。"
 
 #: addons/wiki/templates/wiki-bar-modal-help.mako:6
 msgid "Wiki syntax help"
-msgstr ""
+msgstr "Wiki構文のヘルプ"
 
 #: addons/wiki/templates/wiki-bar-modal-help.mako:10
 #, python-format
 msgid ""
 "The wiki uses the <a %(href1)s>Markdown</a> syntax. For more information "
 "and examples, go to our <a %(href2)s>Guides.</a>"
-msgstr ""
+msgstr "wikiは<a %(href1)s>Markdown</a>構文を使用します。 詳細と例については、<a %(href2)s>ガイドをご覧ください。</a>"
 
 #: addons/zotero/templates/zotero_node_settings.mako:41
 msgid "Current Library:"
-msgstr ""
+msgstr "現在のライブラリ："
 
 #: addons/zotero/templates/zotero_node_settings.mako:59
 msgid "Loading libraries..."
-msgstr ""
+msgstr "ライブラリをロード中..."
 
 #: addons/zotero/templates/zotero_node_settings.mako:66
 msgid "Libraries"
-msgstr ""
+msgstr "ライブラリ"
 
 #: addons/zotero/templates/zotero_node_settings.mako:69
 msgid "Select"
-msgstr ""
+msgstr "選択"
 
 #: admin/base/utils.py:23
 msgid "Enter a valid 'slug' consisting only of lowercase letters."
