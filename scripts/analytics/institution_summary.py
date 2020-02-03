@@ -48,8 +48,8 @@ class InstitutionSummary(SummaryAnalytics):
 
             count = {
                 'institution': {
-                    'id': ensure_bytes(institution._id),
-                    'name': ensure_bytes(institution.name),
+                    'id': institution._id,
+                    'name': institution.name,
                 },
                 'users': {
                     'total': institution.osfuser_set.filter(is_active=True).count(),
@@ -102,7 +102,7 @@ class InstitutionSummary(SummaryAnalytics):
             }
 
             logger.info(
-                '{} Nodes counted. Nodes: {}, Projects: {}, Registered Nodes: {}, Registered Projects: {}'.format(
+                u'{} Nodes counted. Nodes: {}, Projects: {}, Registered Nodes: {}, Registered Projects: {}'.format(
                     count['institution']['name'],
                     count['nodes']['total'],
                     count['projects']['total'],
