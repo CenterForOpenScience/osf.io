@@ -41,11 +41,6 @@ class DraftRegistrationMixin(DraftMixin):
         # We do not have to check the branched_from relationship. node_id is not a kwarg
         return
 
-    # Overrides DraftMixin
-    def check_resource_permissions(self, resource):
-        # Old workflow checks permissions on attached node, not draft
-        return self.check_object_permissions(self.request, resource)
-
 
 class DraftRegistrationList(NodeDraftRegistrationsList):
     permission_classes = (
@@ -110,7 +105,7 @@ class DraftInstitutionsRelationship(NodeInstitutionsRelationship, DraftRegistrat
 
     # Overrides NodeInstitutionsRelationship
     def get_resource(self):
-        return self.get_draft()
+        return self.get_draft(check_object_permissions=False)
 
 
 class DraftSubjectsList(BaseResourceSubjectsList, DraftRegistrationMixin):
@@ -147,7 +142,7 @@ class DraftSubjectsRelationship(SubjectRelationshipBaseView, DraftRegistrationMi
 
     def get_resource(self, check_object_permissions=True):
         # Overrides SubjectRelationshipBaseView
-        return self.get_draft()
+        return self.get_draft(check_object_permissions=check_object_permissions)
 
 
 class DraftContributorsList(NodeContributorsList, DraftRegistrationMixin):

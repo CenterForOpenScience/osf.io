@@ -186,7 +186,11 @@ class DraftMixin(object):
         if not draft.branched_from._id == node_id:
             raise ValidationError('This draft registration is not created from the given node.')
 
-    def get_draft(self, draft_id=None):
+    def check_resource_permissions(self, resource):
+        # Old workflow checks permissions on attached node, not draft
+        return self.check_object_permissions(self.request, resource)
+
+    def get_draft(self, draft_id=None, check_object_permissions=True):
         if draft_id is None:
             draft_id = self.kwargs['draft_id']
         draft = get_object_or_error(DraftRegistration, draft_id, self.request)
@@ -207,6 +211,9 @@ class DraftMixin(object):
         else:
             if draft.registered_node and not draft.registered_node.is_deleted:
                 raise Gone(detail='This draft has already been registered.')
+
+        if check_object_permissions:
+            self.check_resource_permissions(draft)
 
         return draft
 
