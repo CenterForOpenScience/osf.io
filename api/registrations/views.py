@@ -183,6 +183,10 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
                 'You must be an admin contributor on both the project and the draft registration to create a registration.',
             )
 
+    def check_branched_from(self, draft):
+        # Overrides DraftMixin - no node_id in kwargs
+        return
+
 
 class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, RegistrationMixin, WaterButlerMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_read).
