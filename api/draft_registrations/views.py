@@ -179,7 +179,7 @@ class DraftContributorsList(NodeContributorsList, DraftRegistrationMixin):
 
     # Overrides NodeContributorsList
     def get_serializer_context(self):
-        context = JSONAPIBaseView.get_serializer_context(self)
+        context = super(JSONAPIBaseView, self).get_serializer_context()
         context['resource'] = self.get_resource()
         context['default_email'] = 'draft_registration'
         return context
@@ -214,7 +214,7 @@ class DraftContributorDetail(NodeContributorDetail, DraftRegistrationMixin):
             raise exceptions.NotFound('{} cannot be found in the list of contributors.'.format(user))
 
     def get_serializer_context(self):
-        context = JSONAPIBaseView.get_serializer_context(self)
+        context = super(JSONAPIBaseView, self).get_serializer_context()
         context['resource'] = self.get_draft()
         context['default_email'] = 'draft'
         return context
