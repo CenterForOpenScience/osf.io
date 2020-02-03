@@ -80,7 +80,7 @@ msgstr "バージョン"
 
 #: website/static/js/accessRequestManager.js:88
 msgid "There was a problem trying to %1$s the request from the user. %2$s"
-msgstr "ユーザーからのリクエストを%1$sしようとして問題が発生しました。 %2$s"
+msgstr "ユーザーからのリクエストを%1$sしようとして問題が発生しました。%2$s"
 
 #: website/static/js/accessRequestManager.js:89
 #: website/static/js/accessRequestManager.js:90
@@ -736,7 +736,7 @@ msgstr "アクション"
 
 #: website/static/js/citationGrid.js:296
 msgid "Only 200 citations may be displayed"
-msgstr "200件の引用のみが表示されます"
+msgstr "200件のサイテーションのみが表示されます"
 
 #: website/static/js/citationGrid.js:313 website/static/js/citationWidget.js:44
 msgid "Enter citation style (e.g. \"APA\")"
@@ -851,7 +851,7 @@ msgstr "文字数の制限を超えています。%1$s文字以下に減らし�
 
 #: website/static/js/comment.js:333
 msgid "nodes"
-msgstr "\"ノー"
+msgstr "ノード"
 
 #: website/static/js/comment.js:335
 msgid "files"
@@ -1159,7 +1159,7 @@ msgstr "運営情報"
 
 #: website/static/js/fangorn.js:669
 msgid "Successfully %1$s."
-msgstr "に成功しました。"
+msgstr "%1$sに成功しました。"
 
 #: website/static/js/fangorn.js:716
 msgid "Please refresh the page or contact %1$s if the problem persists."
@@ -1483,7 +1483,7 @@ msgstr "クォータ使用量アラート"
 #: website/static/js/fangorn.js:2942
 #, python-format
 msgid "You have used more than %1$s% of your quota."
-msgstr "割り当ての％1 $ s％以上を使用しました。"
+msgstr "割り当ての%1$s%％以上を使用しました。"
 
 #: website/static/js/fileViewTreebeard.js:122
 msgid "Uploading %1$s..."
@@ -1700,7 +1700,7 @@ msgstr "このノードの機関を変更できません。もう一度試して
 
 #: website/static/js/institutionProjectSettings.js:205
 msgid "Unable to modify this institution!"
-msgstr "\"この機関を変更できません"
+msgstr "この機関を変更できません！"
 
 #: website/static/js/keen.js:116
 msgid "Error sending Keen data to %1$s:<%2$s>"
@@ -2039,7 +2039,7 @@ msgstr "行を選択して、プロジェクトの詳細を表示します。"
 
 #: website/static/js/myProjects.js:1996
 msgid "Information"
-msgstr "\"情"
+msgstr "情報"
 
 #: website/static/js/myProjects.js:2000
 msgid "Activity"
@@ -2063,7 +2063,7 @@ msgstr "カテゴリ："
 
 #: website/static/js/myProjects.js:2013
 msgid "Permission: "
-msgstr "県gね："
+msgstr "権限："
 
 #: website/static/js/myProjects.js:2014
 msgid "Last Modified on: "
@@ -2570,12 +2570,12 @@ msgstr "問題が解決しない場合は、%1$sに"
 #: website/static/js/privateLinkManager.js:66
 #: website/static/js/privateLinkTable.js:75
 msgid " if the "
-msgstr "お問い合わ"
+msgstr "お問い合わせ"
 
 #: website/static/js/privateLinkManager.js:67
 #: website/static/js/privateLinkTable.js:76
 msgid "problem persists."
-msgstr "下さい。\""
+msgstr "下さい。"
 
 #: website/static/js/privateLinkTable.js:39
 msgid "Yes"
