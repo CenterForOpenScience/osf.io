@@ -45,15 +45,15 @@ logger = logging.getLogger(__name__)
 
 # These are the doc_types that exist in the search database
 ALIASES = {
-    'project': _('Projects'),
-    'component': _('Components'),
-    'registration': _('Registrations'),
-    'user': _('Users'),
-    'total': _('All OSF Results'),
-    'file': _('Files'),
-    'institution': _('Institutions'),
-    'preprint': _('Preprints'),
-    'group': _('Groups'),
+    'project': unicode(_('Projects')),
+    'component': unicode(_('Components')),
+    'registration': unicode(_('Registrations')),
+    'user': unicode(_('Users')),
+    'total': unicode(_('All OSF Results')),
+    'file': unicode(_('Files')),
+    'institution': unicode(_('Institutions')),
+    'preprint': unicode(_('Preprints')),
+    'group': unicode(_('Groups')),
 }
 
 DOC_TYPE_TO_MODEL = {
