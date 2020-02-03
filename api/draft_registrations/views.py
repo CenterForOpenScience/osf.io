@@ -110,7 +110,7 @@ class DraftInstitutionsRelationship(NodeInstitutionsRelationship, DraftRegistrat
 
     # Overrides NodeInstitutionsRelationship
     def get_resource(self):
-        return self.get_draft(check_object_permissions=False)
+        return self.get_draft()
 
 
 class DraftSubjectsList(BaseResourceSubjectsList, DraftRegistrationMixin):
@@ -147,7 +147,7 @@ class DraftSubjectsRelationship(SubjectRelationshipBaseView, DraftRegistrationMi
 
     def get_resource(self, check_object_permissions=True):
         # Overrides SubjectRelationshipBaseView
-        return self.get_draft(check_object_permissions=check_object_permissions)
+        return self.get_draft()
 
 
 class DraftContributorsList(NodeContributorsList, DraftRegistrationMixin):

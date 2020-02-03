@@ -180,13 +180,18 @@ class DraftMixin(object):
 
     serializer_class = DraftRegistrationSerializerLegacy
 
-    def check_resource_permissions(self, resource):
-        return self.check_object_permissions(self.request, resource.branched_from)
+    def check_branched_from(self, draft):
+        node_id = self.kwargs['node_id']
 
-    def get_draft(self, draft_id=None, check_object_permissions=True):
+        if not draft.branched_from._id == node_id:
+            raise ValidationError('This draft registration is not created from the given node.')
+
+    def get_draft(self, draft_id=None):
         if draft_id is None:
             draft_id = self.kwargs['draft_id']
         draft = get_object_or_error(DraftRegistration, draft_id, self.request)
+
+        self.check_branched_from(draft)
 
         if self.request.method not in drf_permissions.SAFE_METHODS:
             registered_and_deleted = draft.registered_node and draft.registered_node.is_deleted
@@ -202,9 +207,6 @@ class DraftMixin(object):
         else:
             if draft.registered_node and not draft.registered_node.is_deleted:
                 raise Gone(detail='This draft has already been registered.')
-
-        if check_object_permissions:
-            self.check_resource_permissions(draft)
 
         return draft
 
