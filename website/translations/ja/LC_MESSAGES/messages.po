@@ -1071,7 +1071,7 @@ msgstr "ファイル"
 
 #: website/search/elastic_search.py:54
 msgid "Institutions"
-msgstr ""機関
+msgstr "機関"
 
 #: website/search/elastic_search.py:55
 msgid "Preprints"
