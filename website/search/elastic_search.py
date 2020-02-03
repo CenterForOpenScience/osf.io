@@ -38,20 +38,22 @@ from website.search import exceptions
 from website.search.util import build_query, clean_splitters, es_escape, quote_query_string, normalize, quote
 from website.views import validate_page_num
 
+from django.utils.translation import ugettext_lazy as _
+
 logger = logging.getLogger(__name__)
 
 
 # These are the doc_types that exist in the search database
 ALIASES = {
-    'project': 'Projects',
-    'component': 'Components',
-    'registration': 'Registrations',
-    'user': 'Users',
-    'total': 'All OSF Results',
-    'file': 'Files',
-    'institution': 'Institutions',
-    'preprint': 'Preprints',
-    'group': 'Groups',
+    'project': _('Projects'),
+    'component': _('Components'),
+    'registration': _('Registrations'),
+    'user': _('Users'),
+    'total': _('All OSF Results'),
+    'file': _('Files'),
+    'institution': _('Institutions'),
+    'preprint': _('Preprints'),
+    'group': _('Groups'),
 }
 
 DOC_TYPE_TO_MODEL = {
