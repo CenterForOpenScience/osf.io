@@ -507,7 +507,7 @@ class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
         requesting_user = self.request.user
         if requesting_user.is_anonymous:
             # User making requests is unauthenticated so they can't see any Drafts
-            raise DraftRegistration.objects.none()
+            return DraftRegistration.objects.none()
         # Returns DraftRegistrations for which requested user is a contributor, and requesting user can view
         drafts = requested_user.draft_registrations_active
         return get_objects_for_user(requesting_user, 'read_draft_registration', drafts, with_superuser=False)

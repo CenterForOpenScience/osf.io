@@ -881,7 +881,10 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             provider=provider,
         )
         draft.save()
-        draft.copy_editable_fields(node, Auth(user), save=True)
+        if type(draft.branched_from) != DraftNode:
+            draft.copy_editable_fields(node, Auth(user), save=True)
+        draft.update(data)
+
         return draft
 
     def get_root(self):

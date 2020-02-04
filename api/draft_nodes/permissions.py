@@ -17,7 +17,7 @@ class ContributorOnDraftRegistration(IsContributorOrAdminContributor):
     acceptable_models = (DraftRegistration,)
 
     def has_object_permission(self, request, view, obj):
-        if isinstance(obj, (DraftNode)):
+        if isinstance(obj, DraftNode):
             obj = obj.registered_draft.first()
         assert_resource_type(obj, self.acceptable_models)
         return super(ContributorOnDraftRegistration, self).has_object_permission(request, view, obj)

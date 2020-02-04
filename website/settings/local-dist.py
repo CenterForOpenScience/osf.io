@@ -51,6 +51,10 @@ EXTERNAL_EMBER_APPS = {
         'server': 'http://{}:4203/'.format(EMBER_DOMAIN),
         'path': '/reviews/'
     },
+    'registries': {
+        'server': 'http://{}:4202/'.format(EMBER_DOMAIN),
+        'path': '/registries/'
+    },
 }
 
 SEARCH_ENGINE = 'elastic'

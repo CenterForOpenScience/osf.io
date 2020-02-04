@@ -129,7 +129,6 @@ def get_or_add_license_to_serializer_context(serializer, node):
     else:
         license = node.license
         if license_context:
-            license_context[node._id] = {}
             license_context[node._id] = license
         else:
             serializer.context['licenses'] = {}
@@ -1548,7 +1547,10 @@ class DraftRegistrationSerializerLegacy(JSONAPISerializer):
 
         self.enforce_metadata_or_registration_responses(metadata, registration_responses)
 
-        draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema, provider=provider)
+        draft = DraftRegistration.create_from_node(
+            node=node, user=initiator,
+            schema=schema, provider=provider, data=validated_data,
+        )
         reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
 
         if metadata:
