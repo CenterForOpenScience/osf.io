@@ -1499,9 +1499,6 @@ class DraftRegistrationSerializerLegacy(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return obj.absolute_url
 
-    def get_node(self, validated_data=None):
-        return self.context['view'].get_node()
-
     def update_metadata(self, draft, metadata, reviewer, required_fields=False):
         try:
             # Required fields are only required when creating the actual registration, not updating the draft.
