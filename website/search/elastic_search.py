@@ -39,24 +39,17 @@ from website.search.util import build_query, clean_splitters, es_escape, quote_q
 from website.views import validate_page_num
 
 from django.utils.translation import ugettext_lazy as _
-from django.utils.translation import (
-    LANGUAGE_SESSION_KEY, get_language,
-)
 
 logger = logging.getLogger(__name__)
 
-logging.getLogger('LANGUAGE_SESSION_KEY:' + request.session[LANGUAGE_SESSION_KEY])
-logging.getLogger('get_language():' + get_language())
 
 # These are the doc_types that exist in the search database
 ALIASES = {
-#    'project': unicode(_('Projects')),
-    'project': request.session[LANGUAGE_SESSION_KEY],
+    'project': unicode(_('Projects')),
     'component': unicode(_('Components')),
     'registration': unicode(_('Registrations')),
     'user': unicode(_('Users')),
-#    'total': unicode(_('All OSF Results')),
-    'total': get_language(),
+    'total': unicode(_('All OSF Results')),
     'file': unicode(_('Files')),
     'institution': unicode(_('Institutions')),
     'preprint': unicode(_('Preprints')),
@@ -146,7 +139,7 @@ def requires_search(func):
                 raise exceptions.SearchException(e.error)
 
         sentry.log_message('Elastic search action failed. Is elasticsearch running?')
-        raise exceptions.SearchUnavailableError('Failed to connect to elasticsearch')
+        raise exceptions.SearchUnavailableError(unicode(_('Failed to connect to elasticsearch')))
     return wrapped
 
 
