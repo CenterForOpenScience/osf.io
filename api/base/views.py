@@ -494,7 +494,7 @@ def sloan_study_disambiguation(request):
     referer_url = request.environ.get('HTTP_REFERER', '')
     provider = get_provider_from_url(referer_url)
 
-    if provider.in_sloan_study:
+    if provider and provider.in_sloan_study:
         for key, value in sloan_data.items():
             cookies.update(set_tags_and_cookies_for_sloan(user, key, value))
 

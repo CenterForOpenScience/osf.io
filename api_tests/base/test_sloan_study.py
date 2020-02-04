@@ -137,7 +137,6 @@ class TestSloanStudyWaffling:
         mock_flag_is_active.return_value = True
         headers = {'Referer': reffer_url}
         resp = app.get('/v2/', headers=headers)
-        resp.status_code == 200
         assert resp.status_code == 200
 
         cookies = resp.headers.getall('Set-Cookie')
@@ -145,6 +144,23 @@ class TestSloanStudyWaffling:
         assert f' {SLOAN_DATA}=True; Path=/' in cookies
         assert f' {SLOAN_PREREG}=True; Path=/' in cookies
         assert f' {SLOAN_COI}=True; Path=/' in cookies
+
+    @pytest.mark.parametrize('reffer_url', [
+        DOMAIN,
+        f'{DOMAIN}not-preprints/',
+    ])
+    @mock.patch('api.base.views.Flag.is_active')
+    def test_too_weird_domains(self, mock_flag_is_active, app, reffer_url):
+        mock_flag_is_active.return_value = True
+        headers = {'Referer': reffer_url}
+        resp = app.get('/v2/', headers=headers)
+        resp.status_code == 200
+
+        cookies = resp.headers.getall('Set-Cookie')
+
+        assert f' {SLOAN_DATA}=True; Path=/' not in cookies
+        assert f' {SLOAN_PREREG}=True; Path=/' not in cookies
+        assert f' {SLOAN_COI}=True; Path=/' not in cookies
 
     @pytest.mark.enable_quickfiles_creation
     @mock.patch('api.base.views.Flag.is_active')
