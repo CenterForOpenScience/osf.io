@@ -23,8 +23,8 @@ from api.base.serializers import (
 )
 from framework.auth.core import Auth
 from osf.exceptions import ValidationValueError, NodeStateError
-from osf.models import Node, RegistrationSchema
-from website.settings import ANONYMIZED_TITLES
+from osf.models import Node
+from osf.utils.registrations import strip_registered_meta_comments
 from framework.sentry import log_exception
 
 class RegistrationSerializer(NodeSerializer):

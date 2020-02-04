@@ -349,7 +349,7 @@ def _url_val(val, obj, serializer, request, **kwargs):
     url = None
     if isinstance(val, Link):  # If a Link is passed, get the url value
         url = val.resolve_url(obj, request)
-    elif isinstance(val, basestring):  # if a string is passed, it's a method of the serializer
+    elif isinstance(val, str):  # if a string is passed, it's a method of the serializer
         if getattr(serializer, 'field', None):
             serializer = serializer.parent
         url = getattr(serializer, val)(obj) if obj is not None else None

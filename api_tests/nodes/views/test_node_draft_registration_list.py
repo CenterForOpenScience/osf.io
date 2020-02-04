@@ -215,11 +215,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
     def metaschema_open_ended(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
-<<<<<<< HEAD
             schema_version=OPEN_ENDED_SCHEMA_VERSION)
-=======
-            schema_version=SCHEMA_VERSION)
->>>>>>> Merging branches together
 
     @pytest.fixture()
     def payload(self, metaschema_open_ended, provider):

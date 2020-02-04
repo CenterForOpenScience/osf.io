@@ -1502,9 +1502,6 @@ class DraftRegistrationSerializerLegacy(JSONAPISerializer):
     def get_node(self, validated_data=None):
         return self.context['view'].get_node()
 
-    def get_node(self, validated_data=None):
-        return self.context['view'].get_node()
-
     def create(self, validated_data):
         initiator = get_user_auth(self.context['request']).user
         node = self.get_node(validated_data)

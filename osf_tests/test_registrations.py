@@ -15,6 +15,12 @@ from . import factories
 from .utils import assert_datetime_equal, mock_archive
 from .factories import get_default_metaschema, DraftRegistrationFactory
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
+from osf_tests.management_commands.test_migration_registration_responses import (
+    prereg_registration_responses,
+    prereg_registration_metadata_built,
+    veer_registration_responses,
+    veer_condensed
+)
 
 pytestmark = pytest.mark.django_db
 
