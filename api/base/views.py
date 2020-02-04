@@ -47,10 +47,7 @@ from waffle.models import Flag, Switch, Sample
 from waffle import sample_is_active
 
 from website.settings import DOMAIN
-from osf.models import (
-    Preprint,
-    PreprintProvider,
-)
+from osf.models import PreprintProvider
 
 from osf.features import (
     SLOAN_COI,
@@ -458,6 +455,7 @@ def root(request, format=None, **kwargs):
 
     resp = Response(return_val)
 
+    # This is used current for our partnership with Sloan and can be deleted after their study is complete.
     for key, value in cookies.items():
         resp.set_cookie(key, value)
 
@@ -490,7 +488,6 @@ def sloan_study_disambiguation(request):
         if active:
             flags.append(flag.name)
 
-    # This is used exclusively for our partnership with Sloan and can be deleted after their study is complete.
     referer_url = request.environ.get('HTTP_REFERER', '')
     provider = get_provider_from_url(referer_url)
 
@@ -503,7 +500,7 @@ def sloan_study_disambiguation(request):
 
 def get_provider_from_url(referer_url: str) -> PreprintProvider:
     """
-    Takes the many preprint refer url and try to figure out the provider based on that.
+    Takes the many preprint refer urls and try to figure out the provider based on that.
     This will be eliminated post-sloan.
     :param referer_url:
     :return: PreprintProvider
