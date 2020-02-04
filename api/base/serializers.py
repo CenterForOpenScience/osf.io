@@ -14,7 +14,6 @@ from rest_framework.fields import get_attribute as get_nested_attributes
 from rest_framework.mixins import RetrieveModelMixin
 
 from api.base import utils
-from osf.models import DraftRegistration
 from osf.utils import permissions as osf_permissions
 from osf.utils import sanitize
 from osf.utils import functional
