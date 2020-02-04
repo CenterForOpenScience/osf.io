@@ -1979,3 +1979,13 @@ BABEL_LANGUAGES = {
     'ja': '日本語'
 }
 BABEL_DEFAULT_LOCALE = 'ja'
+
+MIDDLEWARE = (
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
+    'django.middleware.common.CommonMiddleware',
+)
+
+LOCALE_PATHS = (
+    os.path.join(BASE_PATH, 'translations'),
+)
