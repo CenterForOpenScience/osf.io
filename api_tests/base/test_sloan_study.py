@@ -5,7 +5,8 @@ from waffle.models import Flag
 
 from osf_tests.factories import (
     AuthUserFactory,
-    PreprintFactory
+    PreprintFactory,
+    PreprintProviderFactory
 )
 
 from osf.features import (
@@ -32,6 +33,11 @@ class TestSloanStudyWaffling:
     @pytest.fixture()
     def preprint(self, user):
         return PreprintFactory(creator=user)
+
+    @pytest.fixture(autouse=True)
+    def providers(self, user):
+        PreprintProviderFactory(_id='foorxiv').save()
+        PreprintProviderFactory(_id='osf').save()
 
     @pytest.fixture(autouse=True)
     def flags(self, user):
@@ -117,10 +123,28 @@ class TestSloanStudyWaffling:
         assert f' {SLOAN_PREREG}=False; Path=/' in cookies
         assert f' {SLOAN_COI}=False; Path=/' in cookies
 
-    def test_domain_preprint_path(self, app, user, preprint):
-        headers = {'Referer': f'{DOMAIN}preprints/'}
+    @pytest.mark.parametrize('reffer_url', [
+        f'{DOMAIN}preprints',
+        f'{DOMAIN}preprints/',
+        f'{DOMAIN}preprints/foorxiv',
+        f'{DOMAIN}preprints/foorxiv/',
+        f'{DOMAIN}preprints/foorxiv/aguid',
+        f'{DOMAIN}preprints/foorxiv/aguid/',
+        f'{DOMAIN}preprints/not/a/valid/path/'
+    ])
+    @mock.patch('api.base.views.Flag.is_active')
+    def test_weird_domains(self, mock_flag_is_active, app, reffer_url):
+        mock_flag_is_active.return_value = True
+        headers = {'Referer': reffer_url}
         resp = app.get('/v2/', headers=headers)
         resp.status_code == 200
+        assert resp.status_code == 200
+
+        cookies = resp.headers.getall('Set-Cookie')
+
+        assert f' {SLOAN_DATA}=True; Path=/' in cookies
+        assert f' {SLOAN_PREREG}=True; Path=/' in cookies
+        assert f' {SLOAN_COI}=True; Path=/' in cookies
 
     @pytest.mark.enable_quickfiles_creation
     @mock.patch('api.base.views.Flag.is_active')

@@ -423,7 +423,6 @@ def root(request, format=None, **kwargs):
     The documentation for the Open Science Framework API can be found at [developer.osf.io](https://developer.osf.io).
     The contents of this endpoint are variable and subject to change without notification.
     """
-
     if request.user and not request.user.is_anonymous:
         current_user = UserSerializer(request.user, context={'request': request}).data
     else:
@@ -493,26 +492,49 @@ def sloan_study_disambiguation(request):
 
     # This is used exclusively for our partnership with Sloan and can be deleted after their study is complete.
     referer_url = request.environ.get('HTTP_REFERER', '')
-    provider_domains = list(PreprintProvider.objects.exclude(domain='').values_list('domain', flat=True))
+    provider = get_provider_from_url(referer_url)
 
-    provider_domains = [domains for i, domains in enumerate(provider_domains) if referer_url.startswith(domains)]
-
-    provider = None
-    if provider_domains:
-        provider = PreprintProvider.objects.get(domain=provider_domains[0])
-
-    match = re.match(DOMAIN.replace('/', r'\/') + r'preprints/([a-z0-9]{24})/(?P<guid>[a-z0-9]{5,})', referer_url)
-    if match:
-        provider = Preprint.objects.get(guids___id=match.groupdict()['guid']).provider
-
-    if provider and provider.in_sloan_study:
+    if provider.in_sloan_study:
         for key, value in sloan_data.items():
             cookies.update(set_tags_and_cookies_for_sloan(user, key, value))
 
     return flags, cookies
 
 
-def set_tags_and_cookies_for_sloan(user, flag_name, flag_value):
+def get_provider_from_url(referer_url: str) -> PreprintProvider:
+    """
+    Takes the many preprint refer url and try to figure out the provider based on that.
+    This will be eliminated post-sloan.
+    :param referer_url:
+    :return: PreprintProvider
+    """
+
+    # matches custom domains:
+    provider_domains = list(PreprintProvider.objects.exclude(domain='').values_list('domain', flat=True))
+    provider_domains = [domains for domains in provider_domains if referer_url.startswith(domains)]
+    if provider_domains:
+        return PreprintProvider.objects.get(domain=provider_domains[0])
+
+    # matches:
+    # /preprints
+    # /preprints/
+    # /preprints/notfound
+    match = re.match(re.escape(DOMAIN) + r'preprints($|\/$)*', referer_url)
+    if match:
+        return PreprintProvider.objects.get(_id='osf')
+
+    # matches:
+    # /preprints/foorxiv
+    # /preprints/foorxiv/
+    # /preprints/foorxiv/guid0
+    provider_ids_regex = '|'.join(list(PreprintProvider.objects.all().values_list('_id', flat=True)))
+    provider_regex = f'(?P<provider_id>|{provider_ids_regex})'
+    match = re.match(re.escape(DOMAIN) + r'preprints\/' + provider_regex + r'($|\/$|\/[a-zA-Z]*)', referer_url)
+    if match:
+        return PreprintProvider.objects.get(_id=match.groupdict()['provider_id'])
+
+
+def set_tags_and_cookies_for_sloan(user, flag_name: str, flag_value: bool) -> dict:
     """
     This is a hack to set flags and cookies for out Sloan study, it can be deleted when the study is complete.
     """
