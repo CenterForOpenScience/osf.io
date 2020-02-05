@@ -37,7 +37,7 @@ from osf.models import (
 )
 from osf.utils import permissions as osf_permissions
 from osf.features import SLOAN_STUDY_PREREG
-from waffle import switch_is_active
+from osf.models.validators import SwitchValidator
 
 class PrimaryFileRelationshipField(RelationshipField):
     def get_object(self, file_id):
@@ -184,10 +184,26 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         },
     )
 
-    has_prereg_links = ser.NullBooleanField(required=False)
-    why_no_prereg = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    prereg_links = ser.ListField(child=ser.URLField(), required=False)
-    prereg_link_info = ser.ChoiceField(Preprint.PREREG_LINK_INFO_CHIOCES, required=False)
+    has_prereg_links = ser.NullBooleanField(
+        required=False,
+        validators=[SwitchValidator(SLOAN_STUDY_PREREG)],
+    )
+    why_no_prereg = ser.CharField(
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+        validators=[SwitchValidator(SLOAN_STUDY_PREREG)],
+    )
+    prereg_links = ser.ListField(
+        child=ser.URLField(),
+        required=False,
+        validators=[SwitchValidator(SLOAN_STUDY_PREREG)],
+    )
+    prereg_link_info = ser.ChoiceField(
+        Preprint.PREREG_LINK_INFO_CHIOCES,
+        required=False,
+        validators=[SwitchValidator(SLOAN_STUDY_PREREG)],
+    )
 
     class Meta:
         type_ = 'preprints'
@@ -300,23 +316,11 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             save_preprint = True
 
         if 'has_prereg_links' in validated_data:
-            if not switch_is_active(SLOAN_STUDY_PREREG):
-                raise exceptions.ValidationError(
-                    detail='You do not have ability to edit your prereg link availability at this time.',
-                )
-
-            has_prereg_links = validated_data['has_prereg_links']
-            preprint.update_has_prereg_links(auth, has_prereg_links)
+            preprint.update_has_prereg_links(auth, validated_data['has_prereg_links'])
 
         if 'why_no_prereg' in validated_data:
-            if not switch_is_active(SLOAN_STUDY_PREREG):
-                raise exceptions.ValidationError(
-                    detail='You do not have ability to edit your prereg link availability at this time.',
-                )
-
-            why_no_prereg = validated_data['why_no_prereg']
             if preprint.has_prereg_links is False:
-                preprint.update_why_no_prereg(auth, why_no_prereg)
+                preprint.update_why_no_prereg(auth, validated_data['why_no_prereg'])
             else:
                 raise exceptions.ValidationError(
                     detail='You cannot edit this statement while your prereg links '
@@ -324,14 +328,8 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                 )
 
         if 'prereg_links' in validated_data:
-            if not switch_is_active(SLOAN_STUDY_PREREG):
-                raise exceptions.ValidationError(
-                    detail='You do not have ability to add prereg links at this time.',
-                )
-
-            prereg_links = validated_data['prereg_links']
             if preprint.has_prereg_links:
-                preprint.update_prereg_links(auth, prereg_links)
+                preprint.update_prereg_links(auth, validated_data['prereg_links'])
             else:
                 raise exceptions.ValidationError(
                     detail='You cannot edit this field while your prereg links'
@@ -339,19 +337,12 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                 )
 
         if 'prereg_link_info' in validated_data:
-            if not switch_is_active(SLOAN_STUDY_PREREG):
-                raise exceptions.ValidationError(
-                    detail='You do not have ability to add prereg link info at this time.',
-                )
-
-            prereg_link_info = validated_data['prereg_link_info']
             if not preprint.has_prereg_links:
                 raise exceptions.ValidationError(
                     detail='You cannot edit this field while your prereg links'
                     ' availability is set to false or is unanswered.',
                 )
-
-            preprint.update_prereg_link_info(auth, prereg_link_info)
+            preprint.update_prereg_link_info(auth, validated_data['prereg_link_info'])
 
         if published is not None:
             if not preprint.primary_file:

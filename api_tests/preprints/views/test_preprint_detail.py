@@ -29,6 +29,7 @@ from osf_tests.factories import (
     PreprintProviderFactory,
 )
 from website.settings import DOI_FORMAT
+from website.language import SWITCH_VALIDATOR_ERROR
 
 def build_preprint_update_payload(
         node_id, attributes=None, relationships=None,
@@ -763,8 +764,7 @@ class TestPreprintUpdate:
 
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You do not have ability to edit your prereg link availability ' \
-                                                  'at this time.'
+        assert res.json['errors'][0]['detail'] == SWITCH_VALIDATOR_ERROR
 
         contrib = AuthUserFactory()
         preprint.add_contributor(contrib, READ)
@@ -789,8 +789,7 @@ class TestPreprintUpdate:
 
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You do not have ability to edit your prereg link availability ' \
-                                                  'at this time.'
+        assert res.json['errors'][0]['detail'] == SWITCH_VALIDATOR_ERROR
 
         contrib = AuthUserFactory()
         preprint.add_contributor(contrib, READ)
@@ -826,7 +825,7 @@ class TestPreprintUpdate:
 
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You do not have ability to add prereg links at this time.'
+        assert res.json['errors'][0]['detail'] == SWITCH_VALIDATOR_ERROR
 
         contrib = AuthUserFactory()
         preprint.add_contributor(contrib, READ)
@@ -872,7 +871,7 @@ class TestPreprintUpdate:
 
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You do not have ability to add prereg link info at this time.'
+        assert res.json['errors'][0]['detail'] == SWITCH_VALIDATOR_ERROR
 
         contrib = AuthUserFactory()
         preprint.add_contributor(contrib, READ)

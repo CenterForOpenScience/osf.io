@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import re
+import waffle
 import jsonschema
 
 from django.core.validators import URLValidator, validate_email as django_validate_email
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.deconstruct import deconstructible
 from past.builtins import basestring
+from rest_framework import exceptions
 
 from website.notifications.constants import NOTIFICATION_TYPES
 
@@ -13,6 +15,7 @@ from osf.utils.registrations import FILE_VIEW_URL_REGEX
 from osf.utils.sanitize import strip_html
 from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors, BlacklistedEmailError
 
+from website.language import SWITCH_VALIDATOR_ERROR
 
 def validate_history_item(items):
     for value in items or []:
@@ -404,3 +407,23 @@ class RegistrationResponsesValidator:
                 }
 
         raise ValueError('Unexpected `block_type`: {}'.format(question.block_type))
+
+
+class SwitchValidator(object):
+    def __init__(self, switch_name, message=SWITCH_VALIDATOR_ERROR, should_be=True):
+        """
+        Throws validation error if field is prematurely used.
+        :param name: the switch name
+        :param message: the error message displayed if validation fails.
+        :param should_be: will throw if switch value return value isn't what it should_be
+        """
+
+        self.switch_name = switch_name
+        self.should_be = should_be
+        self.message = message
+
+    def __call__(self, value):
+        if waffle.switch_is_active(self.switch_name) != self.should_be:
+            raise exceptions.ValidationError(detail=self.message)
+
+        return value
