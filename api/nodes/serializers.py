@@ -1464,7 +1464,9 @@ class DraftRegistrationSerializerLegacy(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
+    # Will be eventually deprecated in favor of registration_responses
     registration_metadata = ser.DictField(required=False)
+    registration_responses = ser.DictField(required=False)
     datetime_initiated = VersionedDateTimeField(read_only=True)
     datetime_updated = VersionedDateTimeField(read_only=True)
 
@@ -1549,13 +1551,16 @@ class DraftRegistrationSerializerLegacy(JSONAPISerializer):
         reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
 
         if metadata:
-            try:
-                # Required fields are only required when creating the actual registration, not updating the draft.
-                draft.validate_metadata(metadata=metadata, reviewer=reviewer, required_fields=False)
-            except ValidationError as e:
-                raise exceptions.ValidationError(e.message)
-            draft.update_metadata(metadata)
-            draft.save()
+                try:
+                    # Required fields are only required when creating the actual registration, not updating the draft.
+                    draft.validate_metadata(metadata=metadata, reviewer=reviewer, required_fields=False)
+                except ValidationError as e:
+                    raise exceptions.ValidationError(e.message)
+                draft.update_metadata(metadata)
+                draft.save()
+        if registration_responses:
+            self.update_registration_responses(draft, registration_responses)
+
         return draft
 
     class Meta:
@@ -1572,7 +1577,6 @@ class DraftRegistrationDetailLegacySerializer(DraftRegistrationSerializerLegacy)
     Also makes registration_supplement read-only.
     """
     id = IDField(source='_id', required=True)
-    registration_metadata = ser.DictField(required=False)
 
     registration_schema = RelationshipField(
         related_view='schemas:registration-schema-detail',
@@ -1590,7 +1594,11 @@ class DraftRegistrationDetailLegacySerializer(DraftRegistrationSerializerLegacy)
         Update draft instance with the validated metadata.
         """
         metadata = validated_data.pop('registration_metadata', None)
+        registration_responses = validated_data.pop('registration_responses', None)
         reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
+
+        self.enforce_metadata_or_registration_responses(metadata, registration_responses)
+
         if metadata:
             try:
                 # Required fields are only required when creating the actual registration, not updating the draft.
@@ -1599,6 +1607,8 @@ class DraftRegistrationDetailLegacySerializer(DraftRegistrationSerializerLegacy)
                 raise exceptions.ValidationError(e.message)
             draft.update_metadata(metadata)
             draft.save()
+        if registration_responses:
+            self.update_registration_responses(draft, registration_responses)
         return draft
 
 
