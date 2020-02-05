@@ -186,7 +186,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
     has_prereg_links = ser.NullBooleanField(required=False)
     why_no_prereg = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    prereg_links = ser.ListField(required=False)
+    prereg_links = ser.ListField(child=ser.URLField(), required=False)
     prereg_link_info = ser.ChoiceField(Preprint.PREREG_LINK_INFO_CHIOCES, required=False)
 
     class Meta:
