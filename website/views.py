@@ -330,7 +330,7 @@ def resolve_guid(guid, suffix=None):
                     resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
                     return Response(stream_with_context(resp.iter_content()), resp.status_code)
 
-                return send_from_directory(registries_dir, 'index.html')
+                return send_from_directory(ember_osf_web_dir, 'index.html')
 
         url = _build_guid_url(unquote(referent.deep_url), suffix)
         return proxy_url(url)

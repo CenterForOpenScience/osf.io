@@ -103,7 +103,7 @@ class UserMixin(object):
         # of the query cache
         if hasattr(self.request, 'parents') and len(self.request.parents.get(Contributor, {})) == 1:
             # We expect one parent contributor view, so index into the first item
-            contrib_id, contrib = self.request.parents[Contributor].items()[0]
+            contrib_id, contrib = list(self.request.parents[Contributor].items())[0]
             user = contrib.user
             if user.is_disabled:
                 raise UserGone(user=user)
@@ -576,7 +576,7 @@ class UserIdentitiesList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     def get_queryset(self):
         user = self.get_user()
         identities = []
-        for key, value in user.external_identity.items():
+        for key, value in list(user.external_identity.items()):
             identities.append({'_id': key, 'external_id': list(value.keys())[0], 'status': list(value.values())[0]})
 
         return identities
