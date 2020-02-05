@@ -1989,3 +1989,5 @@ MIDDLEWARE = (
 LOCALE_PATHS = (
     os.path.join(BASE_PATH, 'translations'),
 )
+
+LANGUAGE_CODE = 'ja'
