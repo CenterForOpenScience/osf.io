@@ -1499,6 +1499,32 @@ class DraftRegistrationSerializerLegacy(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return obj.absolute_url
 
+    def update_metadata(self, draft, metadata, reviewer, required_fields=False):
+        try:
+            # Required fields are only required when creating the actual registration, not updating the draft.
+            draft.validate_metadata(metadata=metadata, reviewer=reviewer, required_fields=required_fields)
+        except ValidationError as e:
+            raise exceptions.ValidationError(e.message)
+        draft.update_metadata(metadata)
+        draft.save()
+
+    def update_registration_responses(self, draft, registration_responses, required_fields=False):
+        # New workflow - at some point `registration_metadata` will be deprecated, but for now,
+        # we support data coming in on either field, registration_metadata (expanded) or registration_responses (flat)
+        try:
+            draft.validate_registration_responses(registration_responses=registration_responses, required_fields=required_fields)
+        except ValidationError as e:
+            raise exceptions.ValidationError(e.message)
+        draft.update_registration_responses(registration_responses)
+        draft.save()
+
+    def enforce_metadata_or_registration_responses(self, metadata=None, registration_responses=None):
+        if metadata and registration_responses:
+            raise exceptions.ValidationError(
+                'You cannot include both `registration_metadata` and `registration_responses` in your request. Please use' +
+                ' `registration_responses` as `registration_metadata` will be deprecated in the future.',
+            )
+
     def get_node(self, validated_data=None):
         return self.context['view'].get_node()
 
