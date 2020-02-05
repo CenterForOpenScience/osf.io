@@ -1423,15 +1423,16 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
 
 class NodeStorageProvider(object):
 
-    def __init__(self, provider, node):
+    def __init__(self, node, provider_name, storage_addon=None):
         self.path = '/'
         self.node = node
         self.kind = 'folder'
-        self.name = provider
-        self.provider = provider
+        self.name = provider_name
+        self.provider = provider_name
         self.node_id = node._id
         self.pk = node._id
         self.id = node.id
+        self.root_folder = storage_addon.root_node if storage_addon else None
 
     @property
     def target(self):
