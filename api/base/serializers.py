@@ -1845,8 +1845,8 @@ class HideIfSwitch(ConditionalField):
     """
     If switched is switched this field is hidden.
     """
-    def __init__(self, switch_name, hide_if=False, **kwargs):
-        super(HideIfSwitch, self).__init__(**kwargs)
+    def __init__(self, switch_name, field, hide_if=False, **kwargs):
+        super(HideIfSwitch, self).__init__(field, **kwargs)
         self.switch_name = switch_name
         self.hide_if = hide_if
 
@@ -1858,8 +1858,8 @@ class DisableIfSwitch(HideIfSwitch):
     """
     If switched is switched this field is hidden.
     """
-    def __init__(self, switch_name, hide_if=False, **kwargs):
-        super(HideIfSwitch, self).__init__(**kwargs)
+    def __init__(self, switch_name, field, hide_if=False, **kwargs):
+        super(DisableIfSwitch, self).__init__(switch_name, field, hide_if, **kwargs)
         self.switch_name = switch_name
         self.hide_if = hide_if
         self.validators.append(SwitchValidator(self.switch_name))

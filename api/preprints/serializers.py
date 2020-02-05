@@ -194,29 +194,27 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     )
 
     has_prereg_links = DisableIfSwitch(
-        switch_name=SLOAN_STUDY_PREREG,
-        field=ser.NullBooleanField(
-            required=False,
-        ),
+        SLOAN_STUDY_PREREG,
+        ser.NullBooleanField(required=False),
     )
     why_no_prereg = DisableIfSwitch(
-        switch_name=SLOAN_STUDY_PREREG,
-        field=ser.CharField(
+        SLOAN_STUDY_PREREG,
+        ser.CharField(
             required=False,
             allow_blank=True,
             allow_null=True,
         ),
     )
     prereg_links = DisableIfSwitch(
-        switch_name=SLOAN_STUDY_PREREG,
-        field=ser.ListField(
+        SLOAN_STUDY_PREREG,
+        ser.ListField(
             child=ser.URLField(),
             required=False,
         ),
     )
     prereg_link_info = DisableIfSwitch(
-        switch_name=SLOAN_STUDY_PREREG,
-        field=ser.ChoiceField(
+        SLOAN_STUDY_PREREG,
+        ser.ChoiceField(
             Preprint.PREREG_LINK_INFO_CHIOCES,
             required=False,
         ),

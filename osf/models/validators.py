@@ -412,7 +412,7 @@ class RegistrationResponsesValidator:
 class SwitchValidator(object):
     def __init__(self, switch_name, message=SWITCH_VALIDATOR_ERROR, should_be=True):
         """
-        Throws validation error if field is prematurely used.
+        Throws validation error if switched off field is prematurely used.
         :param name: the switch name
         :param message: the error message displayed if validation fails.
         :param should_be: will throw if switch value return value isn't what it should_be
