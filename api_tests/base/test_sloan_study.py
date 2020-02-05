@@ -22,6 +22,7 @@ SLOAN_FLAGS = (
 )
 
 from website.settings import DOMAIN
+from api.base.views import get_provider_from_url
 
 @pytest.mark.django_db
 class TestSloanStudyWaffling:
@@ -123,27 +124,19 @@ class TestSloanStudyWaffling:
         assert f' {SLOAN_PREREG}=False; Path=/' in cookies
         assert f' {SLOAN_COI}=False; Path=/' in cookies
 
-    @pytest.mark.parametrize('reffer_url', [
-        f'{DOMAIN}preprints',
-        f'{DOMAIN}preprints/',
-        f'{DOMAIN}preprints/foorxiv',
-        f'{DOMAIN}preprints/foorxiv/',
-        f'{DOMAIN}preprints/foorxiv/aguid',
-        f'{DOMAIN}preprints/foorxiv/aguid/',
-        f'{DOMAIN}preprints/not/a/valid/path/'
+    @pytest.mark.parametrize('reffer_url, expected_provider_id', [
+        (f'{DOMAIN}preprints', 'osf'),
+        (f'{DOMAIN}preprints/', 'osf'),
+        (f'{DOMAIN}preprints/not/a/valid/path/', 'osf'),
+        (f'{DOMAIN}preprints/foorxiv', 'foorxiv'),
+        (f'{DOMAIN}preprints/foorxiv/', 'foorxiv'),
+        (f'{DOMAIN}preprints/foorxiv/aguid', 'foorxiv'),
+        (f'{DOMAIN}preprints/foorxiv/aguid/', 'foorxiv'),
+        (f'{DOMAIN}preprints/foorxiv/foo/bar/baz/', 'foorxiv')
     ])
-    @mock.patch('api.base.views.Flag.is_active')
-    def test_weird_domains(self, mock_flag_is_active, app, reffer_url):
-        mock_flag_is_active.return_value = True
-        headers = {'Referer': reffer_url}
-        resp = app.get('/v2/', headers=headers)
-        assert resp.status_code == 200
-
-        cookies = resp.headers.getall('Set-Cookie')
-
-        assert f' {SLOAN_DATA}=True; Path=/' in cookies
-        assert f' {SLOAN_PREREG}=True; Path=/' in cookies
-        assert f' {SLOAN_COI}=True; Path=/' in cookies
+    def test_weird_domains(self, reffer_url, expected_provider_id):
+        provider = get_provider_from_url(reffer_url)
+        assert expected_provider_id == provider._id
 
     @pytest.mark.parametrize('reffer_url', [
         DOMAIN,
@@ -154,7 +147,7 @@ class TestSloanStudyWaffling:
         mock_flag_is_active.return_value = True
         headers = {'Referer': reffer_url}
         resp = app.get('/v2/', headers=headers)
-        resp.status_code == 200
+        assert resp.status_code == 200
 
         cookies = resp.headers.getall('Set-Cookie')
 

@@ -512,11 +512,12 @@ def get_provider_from_url(referer_url: str) -> PreprintProvider:
     if provider_domains:
         return PreprintProvider.objects.get(domain=provider_domains[0])
 
+    provider_ids_regex = '|'.join(list(PreprintProvider.objects.all().values_list('_id', flat=True)))
     # matches:
     # /preprints
     # /preprints/
     # /preprints/notfound
-    match = re.match(re.escape(DOMAIN) + r'preprints($|\/$)*', referer_url)
+    match = re.match(re.escape(DOMAIN) + r'preprints($|\/$)', referer_url)
     if match:
         return PreprintProvider.objects.get(_id='osf')
 
@@ -524,9 +525,8 @@ def get_provider_from_url(referer_url: str) -> PreprintProvider:
     # /preprints/foorxiv
     # /preprints/foorxiv/
     # /preprints/foorxiv/guid0
-    provider_ids_regex = '|'.join(list(PreprintProvider.objects.all().values_list('_id', flat=True)))
     provider_regex = f'(?P<provider_id>|{provider_ids_regex})'
-    match = re.match(re.escape(DOMAIN) + r'preprints\/' + provider_regex + r'($|\/$|\/[a-zA-Z]*)', referer_url)
+    match = re.match(re.escape(DOMAIN) + r'preprints\/' + provider_regex + r'($|/)', referer_url)
     if match:
         return PreprintProvider.objects.get(_id=match.groupdict()['provider_id'])
 
