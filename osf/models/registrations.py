@@ -882,6 +882,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         )
         draft.save()
         draft.copy_editable_fields(node, Auth(user), save=True)
+        draft.update(data)
         return draft
 
     def get_root(self):
