@@ -221,6 +221,7 @@ ENV GIT_COMMIT ${GIT_COMMIT}
 
 RUN pybabel compile -d ./website/translations
 RUN pybabel compile -D django -d ./website/translations
+RUN pybabel compile -D django -d ./api/translations
 
 RUN for module in \
         api.base.settings \
