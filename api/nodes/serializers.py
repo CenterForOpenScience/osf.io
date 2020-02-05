@@ -1229,7 +1229,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
             raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
         if user_id and email:
             raise exceptions.ValidationError(detail='Do not provide an email when providing this user_id.')
-        if index > len(node.contributors):
+        if index is not None and index > len(node.contributors):
             raise exceptions.ValidationError(detail='{} is not a valid contributor index for node with id {}'.format(index, node._id))
 
     def create(self, validated_data):

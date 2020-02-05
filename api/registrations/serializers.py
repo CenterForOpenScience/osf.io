@@ -606,7 +606,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         from website.archiver.utils import find_selected_files
         files = find_selected_files(draft.registration_schema, draft.registration_metadata)
         orphan_files = []
-        for _, value in files.items():
+        for _, value in list(files.items()):
             if 'extra' in value:
                 for file_metadata in value['extra']:
                     if file_metadata['nodeId'] not in registering:
