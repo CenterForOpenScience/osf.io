@@ -23,7 +23,7 @@ from api.base.serializers import (
 )
 from framework.auth.core import Auth
 from osf.exceptions import ValidationValueError, NodeStateError
-from osf.models import Node
+from osf.models import Node, AbstractNode
 from osf.utils.registrations import strip_registered_meta_comments
 from framework.sentry import log_exception
 
@@ -54,6 +54,7 @@ class RegistrationSerializer(NodeSerializer):
         'registered_by',
         'registered_from',
         'registered_meta',
+        'registration_responses',
         'registration_schema',
         'registration_supplement',
         'withdrawal_justification',
@@ -124,10 +125,13 @@ class RegistrationSerializer(NodeSerializer):
         'be cleared and the project will be made private.',
     ))
     registration_supplement = ser.SerializerMethodField()
+    # Will be deprecated in favor of registration_responses
     registered_meta = HideIfWithdrawal(ser.SerializerMethodField(
         help_text='A dictionary with supplemental registration questions and responses.',
     ))
-
+    registration_responses = HideIfWithdrawal(ser.SerializerMethodField(
+        help_text='A dictionary with supplemental registration questions and responses.',
+    ))
     registered_by = HideIfWithdrawal(RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<registered_user._id>'},
@@ -352,6 +356,11 @@ class RegistrationSerializer(NodeSerializer):
                 return meta_values
         return None
 
+    def get_registration_responses(self, obj):
+        if obj.registration_responses:
+            return self.anonymize_registration_responses(obj)
+        return None
+
     def get_embargo_end_date(self, obj):
         if obj.embargo_end_date:
             return obj.embargo_end_date
@@ -390,6 +399,7 @@ class RegistrationSerializer(NodeSerializer):
         """
         For any questions that have a `contributor-input` block type, delete
         that question's response from registration_responses.
+
         We want to make sure author's names that need to be anonymized
         aren't surfaced when viewed through an anonymous VOL
         """
@@ -511,7 +521,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             self.fields['registration_choice'] = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
 
     # For newer versions
-    embargo_end_date = VersionedDateTimeField(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
+    embargo_end_date = VersionedDateTimeField(write_only=True, allow_null=True, default=None)
     included_node_ids = ser.ListField(write_only=True, required=False)
     # For older versions
     lift_embargo = VersionedDateTimeField(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
@@ -575,6 +585,8 @@ class RegistrationCreateSerializer(RegistrationSerializer):
                                              ' registered: {}'.format(', '.join(orphan_files_names)))
 
         try:
+            # Still validating metadata, but whether `registration_responses` or `registration_metadata` were populated
+            # on the draft, the other field was built and populated as well.  Both should exist.
             draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
         except ValidationValueError:
             log_exception()  # Probably indicates a bug on our end, so log to sentry
@@ -606,12 +618,53 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         from website.archiver.utils import find_selected_files
         files = find_selected_files(draft.registration_schema, draft.registration_metadata)
         orphan_files = []
-        for _, value in list(files.items()):
+        for key, value in list(files.items()):
             if 'extra' in value:
                 for file_metadata in value['extra']:
-                    if file_metadata['nodeId'] not in registering:
+                    if not self._is_attached_file_valid(file_metadata, registering):
                         orphan_files.append(file_metadata)
+
         return orphan_files
+
+    def _is_attached_file_valid(self, file_metadata, registering):
+        """
+        Validation of file information on registration_metadata.  Theoretically, the file information
+        on registration_responses does not have to be valid, so we enforce their accuracy here,
+        to ensure file links load properly.
+        Verifying that nodeId in the file_metadata is one of the files we're registering. Verify
+        that selectedFileName is the name of a file on the node.  Verify that the sha256 matches
+        a version on that file.
+        :param file_metadata - under "registration_metadata"
+        :param registering - node ids you are registering
+        :return boolean
+        """
+
+        node_id = file_metadata.get('nodeId')
+        if node_id not in registering:
+            return False
+
+        node = AbstractNode.load(node_id)
+        if not node:
+            # node in registration_metadata doesn't exist
+            return False
+
+        specified_sha = file_metadata.get('sha256', '')
+
+        file = node.files.filter(name=file_metadata.get('selectedFileName')).first()
+        if not file:
+            # file with this name does not exist on the node
+            return False
+
+        match = False
+        for version in file.versions.all():
+            if specified_sha == version.metadata.get('sha256'):
+                match = True
+
+        if not match:
+            # Specified sha256 does not match a version on the specified file
+            return False
+
+        return True
 
 
 class RegistrationCreateSerializerOldWorkflow(RegistrationCreateSerializer):

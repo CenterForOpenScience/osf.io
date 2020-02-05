@@ -1457,12 +1457,12 @@ class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin)
 
     ordering = ('-id',)
 
-    def get_provider_item(self, provider):
-        return NodeStorageProvider(provider, self.get_node())
+    def get_provider_item(self, storage_addon):
+        return NodeStorageProvider(self.get_node(), storage_addon.config.short_name, storage_addon)
 
     def get_queryset(self):
         return [
-            self.get_provider_item(addon.config.short_name)
+            self.get_provider_item(addon)
             for addon
             in self.get_node().get_addons()
             if addon.config.has_hgrid_files
@@ -1487,7 +1487,7 @@ class NodeStorageProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeM
     view_name = 'node-storage-provider-detail'
 
     def get_object(self):
-        return NodeStorageProvider(self.kwargs['provider'], self.get_node())
+        return NodeStorageProvider(self.get_node(), self.kwargs['provider'])
 
 
 class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):
