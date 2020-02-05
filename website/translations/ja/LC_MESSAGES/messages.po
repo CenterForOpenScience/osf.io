@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-03 11:35+0900\n"
+"POT-Creation-Date: 2020-02-03 18:36+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -215,7 +215,7 @@ msgstr "アカウントの接続または再認証"
 
 #: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:24
 msgid "Authorized by <em><span data-bind=\"text: name\"></span></em>"
-msgstr ""
+msgstr "承認者：<em><span data-bind=\"text: name\"></span></em>"
 
 #: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:32
 #: addons/dataverse/templates/dataverse_user_settings.mako:31
@@ -246,6 +246,8 @@ msgid ""
 "reauthorizing Bitbucket on your                <a "
 "%(href)s%(addons_url)s%(quotation)s>account settings page</a>."
 msgstr ""
+"現在、Bitbucket設定を取得できませんでした。 Bitbucketアドオンの資格情報が無効になる場合があります。<a "
+"%(href)s%(addons_url)s%(quotation)s>アカウント設定ページ</a>でBitbucketの認証解除と再認証を試みてください。"
 
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:78
 #, python-format
@@ -254,6 +256,8 @@ msgid ""
 "credentials                may no longer be valid. Contact "
 "%(auth_osf_name)s to verify."
 msgstr ""
+"現在、Bitbucket設定を取得できませんでした。 Bitbucketアドオンの資格情報が無効になる場合があります。 "
+"確認するには%(auth_osf_name)sにお問い合わせください。"
 
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:6
 msgid "Connect a Dataverse Account"
@@ -278,7 +282,7 @@ msgstr "APIトークン"
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:50
 #, python-format
 msgid "(Get from Dataverse <i %(classTag)s></i>)"
-msgstr ""
+msgstr "(Dataverse <i %(classTag)s></i>から取得)"
 
 #: addons/dataverse/templates/dataverse_node_settings.mako:43
 msgid "Dataverse Repository:"
@@ -352,6 +356,8 @@ msgid ""
 "%(href)s%(addons_url)s%(quotation)s%(quotation)s>account settings "
 "page</a>."
 msgstr ""
+"現時点ではGitHub設定を取得できませんでした。 GitHubアドオンの資格情報が無効になる場合があります。<a "
+"%(href)s%(addons_url)s%(quotation)s%(quotation)s>アカウント設定ページ</a>でGitHubの認証解除と再認証を試みてください。"
 
 #: addons/github/templates/github_node_settings.mako:75
 #, python-format
@@ -360,39 +366,41 @@ msgid ""
 "credentials                may no longer be valid. Contact "
 "%(auth_osf_name)s to verify."
 msgstr ""
+"現時点ではGitHub設定を取得できませんでした。 GitHubアドオンの資格情報が無効になる場合があります。 "
+"確認するには%(auth_osf_name)sにお問い合わせください。"
 
 #: addons/gitlab/templates/gitlab_credentials_modal.mako:4
 msgid "Connect a GitLab Account"
-msgstr ""
+msgstr "GitLabアカウントに接続"
 
 #: addons/gitlab/templates/gitlab_credentials_modal.mako:11
 msgid "GitLab Repository"
-msgstr ""
+msgstr "GitLabレポジトリ"
 
 #: addons/gitlab/templates/gitlab_credentials_modal.mako:14
 msgid "Select a GitLab repository"
-msgstr ""
+msgstr "GitLabレポジトリを選択"
 
 #: addons/gitlab/templates/gitlab_credentials_modal.mako:27
 msgid "Only GitLab repositories v4.0 or higher are supported."
-msgstr ""
+msgstr "GitLabリポジトリv4.0以降のみがサポートされています。"
 
 #: addons/gitlab/templates/gitlab_credentials_modal.mako:37
 msgid "Personal Access Token"
-msgstr ""
+msgstr "パーソナルアクセストークン"
 
 #: addons/gitlab/templates/gitlab_credentials_modal.mako:41
 #, python-format
 msgid "(Get from GitLab <i %(classTag)s></i>)"
-msgstr ""
+msgstr "(GitLab <i %(classTag)s></i>から取得)"
 
 #: addons/gitlab/templates/gitlab_node_settings.mako:9
 msgid "GitLab"
-msgstr ""
+msgstr "GitLab"
 
 #: addons/gitlab/templates/gitlab_node_settings.mako:12
 msgid "authorized by"
-msgstr ""
+msgstr "承認者"
 
 #: addons/gitlab/templates/gitlab_node_settings.mako:80
 #, python-format
@@ -402,6 +410,8 @@ msgid ""
 "and reauthorizing GitLab on your                    <a "
 "href=\"%(addons_url)s\">account settings page</a>."
 msgstr ""
+"現時点ではGitLab設定を取得できませんでした。 GitLabアドオンの資格情報が無効になる場合があります。<a "
+"href=\"%(addons_url)s\">アカウント設定ページ</a>でGitLabの認証解除と再認証を試みてください。"
 
 #: addons/gitlab/templates/gitlab_node_settings.mako:84
 #, python-format
@@ -410,53 +420,55 @@ msgid ""
 "credentials                    may no longer be valid. Contact "
 "%(auth_osf_name)s to verify."
 msgstr ""
+"現時点ではGitLab設定を取得できませんでした。 GitLabアドオンの資格情報が無効になる場合があります。 "
+"確認するには%(auth_osf_name)sにお問い合わせください。"
 
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:13
 #: addons/wiki/templates/edit.mako:34
 msgid "New"
-msgstr ""
+msgstr "新規"
 
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:31
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:80
 msgid "Service Name"
-msgstr ""
+msgstr "サービス名"
 
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:32
 msgid "Base URL"
-msgstr ""
+msgstr "ベースURL"
 
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:56
 msgid "No JupyterHubs"
-msgstr ""
+msgstr "JupyterHubはありません"
 
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:69
 msgid "Link JupyterHub"
-msgstr ""
+msgstr "JupyterHubをリンク"
 
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:84
 msgid "Service Base URL"
-msgstr ""
+msgstr "サービスベースURL"
 
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:102
 msgid "OK"
-msgstr ""
+msgstr "OK"
 
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:6
 msgid "Connect an Nextcloud Account"
-msgstr ""
+msgstr "Nextcloudアカウントに接続"
 
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:17
 msgid "Nextcloud Instance"
-msgstr ""
+msgstr "Nextcloudインスタンス"
 
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:21
 msgid "Select an Nextcloud Instance"
-msgstr ""
+msgstr "Nextcloudインスタンスを選択"
 
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:30
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:30
 msgid "Host URL"
-msgstr ""
+msgstr "ホストURL"
 
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:36
 #, python-format
@@ -465,12 +477,14 @@ msgid ""
 " %(href_target2)s>                                        OCS v1.7</a> "
 "are supported."
 msgstr ""
+"<a %(href_target1)s>WebDAV</a>および<a %(href_target2)s>OCS "
+"v1.7</a>をサポートするNextcloudインスタンスのみがサポートされます。"
 
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:46
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:46
 #: addons/swift/templates/swift_credentials_modal.mako:33
 msgid "Username"
-msgstr ""
+msgstr "ユーザ名"
 
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:48
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:48
@@ -482,7 +496,7 @@ msgstr "ユーザ名"
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:50
 #: addons/swift/templates/swift_credentials_modal.mako:41
 msgid "Password"
-msgstr ""
+msgstr "パスワード"
 
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:55
 #, python-format
@@ -491,11 +505,13 @@ msgid ""
 "encourage</strong> using a <a %(href_target)s> Device (or App) "
 "Password</a>."
 msgstr ""
+"これらの資格情報は暗号化されます。 ただし、<a "
+"%(href_target)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
 
 #: addons/nextcloud/templates/nextcloud_node_settings.mako:53
 #: addons/owncloud/templates/owncloud_node_settings.mako:53
 msgid "Change"
-msgstr ""
+msgstr "変更"
 
 #: addons/nextcloud/templates/nextcloud_node_settings.mako:58
 #: addons/owncloud/templates/owncloud_node_settings.mako:58
@@ -507,7 +523,7 @@ msgstr "フォルダをロード中..."
 #: addons/nextcloud/templates/nextcloud_node_settings.mako:67
 #, python-format
 msgid "Connect <b>&ldquo;<span %(spanTag)s></span>&rdquo;</b>?"
-msgstr ""
+msgstr "<b>&ldquo;<span %(spanTag)s></span>&rdquo;</b>に接続しますか？"
 
 #: addons/nextcloud/templates/nextcloud_user_settings.mako:23
 #, python-format
@@ -515,18 +531,20 @@ msgid ""
 "Authorized by <em><span %(data_bind1)s></span></em> on <a "
 "%(data_bind2)s><em %(data_bind3)s></em></a>"
 msgstr ""
+"<a %(data_bind2)s><em %(data_bind3)s></em></a>での承認者：<em><span "
+"%(data_bind1)s></span></em>"
 
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:6
 msgid "Connect an ownCloud Account"
-msgstr ""
+msgstr "ownCloudアカウントに接続"
 
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:17
 msgid "ownCloud Instance"
-msgstr ""
+msgstr "ownCloudインスタンス"
 
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:21
 msgid "Select an ownCloud Instance"
-msgstr ""
+msgstr "ownCloudインスタンスを選択"
 
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:36
 #, python-format
@@ -535,6 +553,8 @@ msgid ""
 "%(href_target2)s>                                        OCS v1.7</a> are"
 " supported."
 msgstr ""
+"<a %(href_target1)s>WebDAV</a>および<a %(href_target2)s>OCS "
+"v1.7</a>をサポートするownCloudインスタンスのみがサポートされます。"
 
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:55
 #, python-format
@@ -543,6 +563,8 @@ msgid ""
 "encourage</strong> using a <a %(href_target)s> Device (or App) "
 "Password</a>."
 msgstr ""
+"これらの資格情報は暗号化されます。 ただし、<a "
+"%(href_target)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
 
 #: addons/owncloud/templates/owncloud_node_settings.mako:42
 #: website/templates/project/addon/node_settings_default.mako:41
@@ -555,6 +577,8 @@ msgid ""
 "Authorized by <em><span %(data_bind1)s\"></span></em> on <a "
 "%(data_bind2)s><em data-bind=\"text: profileUrl\"></em></a>"
 msgstr ""
+"<a %(data_bind2)s><em data-bind=\"text: "
+"profileUrl\"></em></a>での承認者：<em><span %(data_bind1)s\"></span></em>"
 
 #: addons/s3/templates/s3_credentials_modal.mako:6
 msgid "Connect an Amazon S3 Account"
@@ -573,11 +597,11 @@ msgstr "シークレットキー"
 #: addons/s3/templates/s3_node_settings.mako:58
 #: addons/s3compat/templates/s3compat_node_settings.mako:58
 msgid "Create bucket"
-msgstr ""
+msgstr "bucketを作成"
 
 #: addons/s3/templates/s3_node_settings.mako:63
 msgid "Loading buckets..."
-msgstr ""
+msgstr "bucketをロード中..."
 
 #: addons/s3/templates/s3_user_settings.mako:24
 #: addons/s3compat/templates/s3compat_user_settings.mako:24
@@ -589,71 +613,71 @@ msgstr "承認者:"
 
 #: addons/s3compat/templates/s3compat_credentials_modal.mako:6
 msgid "Connect an S3 Compatible Storage Account"
-msgstr ""
+msgstr "S3互換ストレージアカウントを接続する"
 
 #: addons/s3compat/templates/s3compat_credentials_modal.mako:17
 msgid "S3 Compatible Service"
-msgstr ""
+msgstr "S3互換サービス"
 
 #: addons/s3compat/templates/s3compat_node_settings.mako:45
 msgid "Current Bucket:"
-msgstr ""
+msgstr "現在のBucket："
 
 #: addons/swift/templates/swift_credentials_modal.mako:6
 msgid "Connect an OpenStack Swift Account"
-msgstr ""
+msgstr "OpenStack Swiftアカウントを接続する"
 
 #: addons/swift/templates/swift_credentials_modal.mako:17
 msgid "Authentication(Keystone) Version"
-msgstr ""
+msgstr "認証(キーストーン)バージョン"
 
 #: addons/swift/templates/swift_credentials_modal.mako:21
 msgid "Authentication URL"
-msgstr ""
+msgstr "認証URL"
 
 #: addons/swift/templates/swift_credentials_modal.mako:25
 msgid "Tenant name"
-msgstr ""
+msgstr "テナント名"
 
 #: addons/swift/templates/swift_credentials_modal.mako:29
 msgid "Project Domain name"
-msgstr ""
+msgstr "プロジェクトドメイン名"
 
 #: addons/swift/templates/swift_credentials_modal.mako:37
 msgid "User Domain name"
-msgstr ""
+msgstr "ユーザドメイン名"
 
 #: addons/swift/templates/swift_node_settings.mako:45
 msgid "Current Container:"
-msgstr ""
+msgstr "現在のコンテナ："
 
 #: addons/twofactor/templates/twofactor_user_settings.mako:3
 msgid "Two-factor Authentication"
-msgstr ""
+msgstr "２要素認証"
 
 #: addons/twofactor/templates/twofactor_user_settings.mako:7
 msgid "Disable Two-Factor Authentication"
-msgstr ""
+msgstr "２要素認証を無効にする"
 
 #: addons/twofactor/templates/twofactor_user_settings.mako:12
 msgid "Enable Two-Factor Authentication"
-msgstr ""
+msgstr "２要素認証を有効にする"
 
 #: addons/twofactor/templates/twofactor_user_settings.mako:19
 msgid ""
 "By using two-factor authentication, you'll protect your GakuNin RDM "
 "account with both your password and your mobile phone."
-msgstr ""
+msgstr "２要素認証を使用すると、パスワードと携帯電話の両方でGakuNin RDMアカウントを保護できます。"
 
 #: addons/twofactor/templates/twofactor_user_settings.mako:22
 msgid "Important: "
-msgstr ""
+msgstr "重要："
 
 #: addons/twofactor/templates/twofactor_user_settings.mako:22
 msgid ""
 " If you lose access to your mobile device, you will not be able to log in"
 " to your GakuNin RDM account."
-msgstr ""
+msgstr "モバイルデバイスにアクセスできなくなると、GakuNin RDMアカウントにログインできなくなります。"
 
 #: addons/twofactor/templates/twofactor_user_settings.mako:24
 #, python-format
@@ -662,6 +686,8 @@ msgid ""
 "device. Google Authenticator is a popular choice and is available for "
 "both        <a %(href1)s>Android</a> and <a %(href2)s>iOS</a>."
 msgstr ""
+"使用するには、モバイルデバイスに適切なアプリケーションをインストールする必要があります。 Google認証システムは一般的な選択肢であり、<a "
+"%(href1)s>Android</a>と<a %(href2)s>iOS</a>の両方で利用できます。"
 
 #: addons/twofactor/templates/twofactor_user_settings.mako:26
 msgid ""
@@ -670,57 +696,59 @@ msgid ""
 "which means that unauthorized users will not be able to log in to you "
 "account, <em>even if they know your password</em>."
 msgstr ""
+"確認が完了すると、ログインプロセス中に入力する必要がある6桁のコードがデバイスに表示されます。 "
+"このコードは数秒ごとに変更されます。つまり、権限のないユーザーは、<em>パスワードを知っていても</em>アカウントにログインできません。"
 
 #: addons/twofactor/templates/twofactor_user_settings.mako:28
 #, python-format
 msgid ""
 "Scan the image below, or enter the secret key        <code "
 "%(data_bind)s></code> into your authentication device."
-msgstr ""
+msgstr "以下の画像をスキャンするか、秘密鍵<code %(data_bind)s></code>を認証デバイスに入力します。"
 
 #: addons/twofactor/templates/twofactor_user_settings.mako:34
 msgid "Enter your verification code:"
-msgstr ""
+msgstr "確認コードを入力してください："
 
 #: addons/weko/templates/weko_credentials_modal.mako:6
 msgid "Connect a WEKO Account"
-msgstr ""
+msgstr "WEKOアカウントに接続"
 
 #: addons/weko/templates/weko_credentials_modal.mako:18
 msgid "WEKO Repository"
-msgstr ""
+msgstr "WEKOレポジトリ"
 
 #: addons/weko/templates/weko_credentials_modal.mako:22
 msgid "Select a WEKO repository"
-msgstr ""
+msgstr "WEKOレポジトリを選択"
 
 #: addons/weko/templates/weko_credentials_modal.mako:33
 msgid "WEKO SWORD URL"
-msgstr ""
+msgstr "WEKO SWORD URL"
 
 #: addons/weko/templates/weko_credentials_modal.mako:37
 msgid "WEKO Username"
-msgstr ""
+msgstr "WEKOユーザ名"
 
 #: addons/weko/templates/weko_credentials_modal.mako:41
 msgid "WEKO Password"
-msgstr ""
+msgstr "WEKOパスワード"
 
 #: addons/weko/templates/weko_credentials_modal.mako:60
 msgid "Connect"
-msgstr ""
+msgstr "接続"
 
 #: addons/weko/templates/weko_node_settings.mako:43
 msgid "Current Index:"
-msgstr ""
+msgstr "現在のインデックス："
 
 #: addons/weko/templates/weko_node_settings.mako:63
 msgid "Index:"
-msgstr ""
+msgstr "インデックス："
 
 #: addons/weko/templates/weko_node_settings.mako:75
 msgid "There are no indices associated with the connected account."
-msgstr ""
+msgstr "接続されたアカウントに関連付けられたインデックスはありません。"
 
 #: addons/wiki/templates/add_wiki_page.mako:8
 msgid "Add new wiki page"
@@ -745,35 +773,35 @@ msgstr "追加"
 
 #: addons/wiki/templates/add_wiki_page.mako:41
 msgid "The new wiki page name cannot be empty"
-msgstr ""
+msgstr "新しいWikiページ名は空にできません"
 
 #: addons/wiki/templates/add_wiki_page.mako:46
 msgid "The new wiki page name cannot be more than 100 characters."
-msgstr ""
+msgstr "新しいWikiページ名は100文字を超えることはできません。"
 
 #: addons/wiki/templates/add_wiki_page.mako:52
 msgid "The new wiki page name cannot contain forward slashes."
-msgstr ""
+msgstr "新しいWikiページ名にスラッシュを含めることはできません。"
 
 #: addons/wiki/templates/add_wiki_page.mako:70
 msgid "A wiki page with that name already exists."
-msgstr ""
+msgstr "その名前のWikiページは既に存在します。"
 
 #: addons/wiki/templates/add_wiki_page.mako:73
 msgid "You do not have permission to perform this action."
-msgstr ""
+msgstr "このアクションを実行する権限がありません。"
 
 #: addons/wiki/templates/add_wiki_page.mako:74
 msgid "Unauthorized user can view wiki add button"
-msgstr ""
+msgstr "許可されていないユーザーはwiki追加ボタンを表示できます"
 
 #: addons/wiki/templates/add_wiki_page.mako:83
 msgid "Could not validate wiki page. Please try again."
-msgstr ""
+msgstr "Wikiページを検証できませんでした。 もう一度やり直してください。"
 
 #: addons/wiki/templates/add_wiki_page.mako:84
 msgid "Error occurred while validating page"
-msgstr ""
+msgstr "ページの検証中にエラーが発生しました"
 
 #: addons/wiki/templates/delete_wiki_page.mako:7
 msgid "Delete wiki page"
@@ -797,7 +825,7 @@ msgstr "Wiki"
 
 #: addons/wiki/templates/edit.mako:42
 msgid "Menu"
-msgstr ""メニュー
+msgstr "メニュー"
 
 #: addons/wiki/templates/edit.mako:53
 msgid "Loading wiki pages..."
@@ -866,7 +894,9 @@ msgid ""
 "made will be visible to            contributors with write permission in "
 "real time. Changes will be stored            but not published until you "
 "click the \"Save\" button."
-msgstr "このページは現在、共同ウィキに接続されています。 行われたすべての編集は、書き込み許可を持つ投稿者にリアルタイムで表示されます。 変更は保存されますが、[保存]ボタンをクリックするまで公開されません。"
+msgstr ""
+"このページは現在、共同ウィキに接続されています。 行われたすべての編集は、書き込み許可を持つ投稿者にリアルタイムで表示されます。 "
+"変更は保存されますが、[保存]ボタンをクリックするまで公開されません。"
 
 #: addons/wiki/templates/edit.mako:310
 #: addons/wiki/templates/wiki-bar-modal-help.mako:14
@@ -932,7 +962,9 @@ msgstr "Wiki構文のヘルプ"
 msgid ""
 "The wiki uses the <a %(href1)s>Markdown</a> syntax. For more information "
 "and examples, go to our <a %(href2)s>Guides.</a>"
-msgstr "wikiは<a %(href1)s>Markdown</a>構文を使用します。 詳細と例については、<a %(href2)s>ガイドをご覧ください。</a>"
+msgstr ""
+"wikiは<a %(href1)s>Markdown</a>構文を使用します。 詳細と例については、<a "
+"%(href2)s>ガイドをご覧ください。</a>"
 
 #: addons/zotero/templates/zotero_node_settings.mako:41
 msgid "Current Library:"
@@ -949,137 +981,6 @@ msgstr "ライブラリ"
 #: addons/zotero/templates/zotero_node_settings.mako:69
 msgid "Select"
 msgstr "選択"
-
-#: admin/base/utils.py:23
-msgid "Enter a valid 'slug' consisting only of lowercase letters."
-msgstr ""
-
-#: api/base/exceptions.py:103
-msgid "This endpoint is not yet implemented."
-msgstr ""
-
-#: api/base/exceptions.py:108
-msgid "Service is unavailable at this time."
-msgstr ""
-
-#: api/base/exceptions.py:201
-msgid "Query string contains a malformed filter."
-msgstr ""
-
-#: api/base/exceptions.py:210
-msgid "Comparison operators are only supported for dates and numbers."
-msgstr ""
-
-#: api/base/exceptions.py:216
-msgid "Match operators are only supported for strings and lists."
-msgstr ""
-
-#: api/base/exceptions.py:222
-msgid "Query contained one or more filters for invalid fields."
-msgstr ""
-
-#: api/base/exceptions.py:233
-msgid "Please confirm your account before using the API."
-msgstr ""
-
-#: api/base/exceptions.py:238
-msgid "Please claim your account before using the API."
-msgstr ""
-
-#: api/base/exceptions.py:243
-msgid ""
-"Making API requests with credentials associated with a deactivated "
-"account is not allowed."
-msgstr ""
-
-#: api/base/exceptions.py:248
-msgid ""
-"Making API requests with credentials associated with a merged account is "
-"not allowed."
-msgstr ""
-
-#: api/base/exceptions.py:253
-msgid ""
-"Making API requests with credentials associated with an invalid account "
-"is not allowed."
-msgstr ""
-
-#: api/base/exceptions.py:257
-msgid "Must specify two-factor authentication OTP code."
-msgstr ""
-
-#: api/base/exceptions.py:263
-msgid "Invalid value in POST/PUT/PATCH request."
-msgstr ""
-
-#: api/base/exceptions.py:278
-msgid ""
-"The node {0} cannot be affiliated with this View Only Link because the "
-"node you're trying to affiliate is not descended from the node that the "
-"View Only Link is attached to."
-msgstr ""
-
-#: api/base/authentication/drf.py:165
-msgid "Invalid username/password."
-msgstr ""
-
-#: api/base/authentication/drf.py:192
-msgid "Invalid two-factor authentication OTP code."
-msgstr ""
-
-#: api/base/authentication/drf.py:223
-msgid "User provided an invalid OAuth2 access token"
-msgstr ""
-
-#: api/base/authentication/drf.py:226
-msgid "CAS server failed to authenticate this token"
-msgstr ""
-
-#: api/base/authentication/drf.py:230
-msgid "Could not find the user associated with this token"
-msgstr ""
-
-#: website/search/elastic_search.py:48
-msgid "Projects"
-msgstr "プロジェクト"
-
-#: website/search/elastic_search.py:49
-#: website/templates/project/project.mako:644
-msgid "Components"
-msgstr "コンポーネント"
-
-#: website/search/elastic_search.py:50
-#: website/templates/project/project_header.mako:67
-msgid "Registrations"
-msgstr "登録"
-
-#: website/search/elastic_search.py:51
-msgid "Users"
-msgstr "ユーザー"
-
-#: website/search/elastic_search.py:52
-msgid "All OSF Results"
-msgstr "すべてのGakuNIn RDM の結果"
-
-#: website/search/elastic_search.py:53 website/templates/project/files.mako:2
-#: website/templates/project/files.mako:5
-#: website/templates/project/project.mako:441
-#: website/templates/project/project_header.mako:40
-#: website/templates/search.mako:372
-msgid "Files"
-msgstr "ファイル"
-
-#: website/search/elastic_search.py:54
-msgid "Institutions"
-msgstr "機関"
-
-#: website/search/elastic_search.py:55
-msgid "Preprints"
-msgstr "プレプリント"
-
-#: website/search/elastic_search.py:56
-msgid "Groups"
-msgstr "グループ"
 
 #: website/templates/base.mako:110
 msgid "Title"
@@ -1618,6 +1519,14 @@ msgstr "メンバー:"
 #, python-format
 msgid "(<span %(class_data_bind)s>Withdrawn </span>Registration)"
 msgstr "(<span %(class_data_bind)s>取り下げられた</span>登録)"
+
+#: website/templates/project/files.mako:2
+#: website/templates/project/files.mako:5
+#: website/templates/project/project.mako:441
+#: website/templates/project/project_header.mako:40
+#: website/templates/search.mako:372
+msgid "Files"
+msgstr "ファイル"
 
 #: website/templates/search.mako:376
 msgid "Tags:"
@@ -2931,6 +2840,10 @@ msgstr "ファイルをダウンロード"
 msgid "Download"
 msgstr "ダウンロード"
 
+#: website/templates/project/project.mako:644
+msgid "Components"
+msgstr "コンポーネント"
+
 #: website/templates/project/project.mako:648
 msgid "Add Component"
 msgstr "コンポーネントを追加"
@@ -2958,6 +2871,10 @@ msgstr "ナビゲーション"
 #: website/templates/project/project_header.mako:61
 msgid "Analytics"
 msgstr "分析"
+
+#: website/templates/project/project_header.mako:67
+msgid "Registrations"
+msgstr "登録"
 
 #: website/templates/project/project_header.mako:76
 msgid "Add-ons"
@@ -3465,15 +3382,50 @@ msgstr "管理プロジェクト"
 
 #: website/templates/util/render_addon_widget.mako:184
 msgid "Flowable Task Service"
-msgstr "Flowable Task Service"
+msgstr "Flowable タスクサービス"
 
 #: website/templates/util/render_addon_widget.mako:192
 #: website/templates/util/render_addon_widget.mako:219
 msgid "Deposit Manuscript & Data"
-msgstr "Deposit Manuscript & Data"
+msgstr "論文登録申請"
 
 #: website/templates/util/render_addon_widget.mako:200
 #: website/templates/util/render_addon_widget.mako:225
 msgid "Image Scan Service"
-msgstr "Image Scan Service"
+msgstr "画像スキャン依頼"
 
+#: website/search/elastic_search.py:48
+msgid "Projects"
+msgstr "プロジェクト"
+
+#: website/search/elastic_search.py:49
+msgid "Components"
+msgstr "コンポーネント"
+
+#: website/search/elastic_search.py:50
+msgid "Registrations"
+msgstr "登録"
+
+#: website/search/elastic_search.py:51
+msgid "Users"
+msgstr "ユーザー"
+
+#: website/search/elastic_search.py:52
+msgid "All OSF Results"
+msgstr "すべてのGakuNin RDMの結果"
+
+#: website/search/elastic_search.py:53
+msgid "Files"
+msgstr "ファイル"
+
+#: website/search/elastic_search.py:54
+msgid "Institutions"
+msgstr "機関"
+
+#: website/search/elastic_search.py:55
+msgid "Preprints"
+msgstr "プレプリント"
+
+#: website/search/elastic_search.py:56
+msgid "Groups"
+msgstr "グループ"
