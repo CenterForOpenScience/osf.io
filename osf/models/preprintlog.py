@@ -50,13 +50,13 @@ class PreprintLog(ObjectIDMixin, BaseModel):
     UPDATE_HAS_PREREG_LINKS = 'has_prereg_links_updated'
     UPDATE_WHY_NO_PREREG = 'why_no_prereg_updated'
     UPDATE_PREREG_LINKS = 'prereg_links_updated'
-    UPDATE_PREREG_LINKS_EXPLANATIONS = 'prereg_links_explanations_updated'
+    UPDATE_PREREG_LINKS_INFO = 'prereg_links_info_updated'
 
     actions = ([DELETED, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED,
                 PERMISSIONS_UPDATED, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, CHANGED_LICENSE,
                 EDITED_DESCRIPTION, FILE_UPDATED, FILE_METADATA_UPDATED, MADE_CONTRIBUTOR_VISIBLE, SUPPLEMENTAL_NODE_ADDED,
                 MADE_CONTRIBUTOR_INVISIBLE, SUBJECTS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, PUBLISHED, UPDATE_HAS_PREREG_LINKS,
-                UPDATE_WHY_NO_PREREG, UPDATE_PREREG_LINKS, UPDATE_PREREG_LINKS_EXPLANATIONS] + list(sum([
+                UPDATE_WHY_NO_PREREG, UPDATE_PREREG_LINKS, UPDATE_PREREG_LINKS_INFO] + list(sum([
                     config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')
                 ], tuple())))
     action_choices = [(action, action.upper()) for action in actions]

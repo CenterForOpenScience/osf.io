@@ -7,6 +7,7 @@ from django.db import migrations, models
 from osf.utils.migrations import AddWaffleSwitches
 from osf.features import SLOAN_STUDY_PREREG
 
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -22,8 +23,8 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='preprint',
-            name='prereg_link_explanations',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.CharField(blank=True, max_length=5000, null=True), blank=True, null=True, size=None),
+            name='prereg_link_info',
+            field=models.CharField(blank=True, choices=[('prereg_designs', 'Pre-registration of study designs'), ('prereg_analysis', 'Pre-registration of study analysis'), ('prereg_both', 'Pre-registration of study designs and study analysis')], max_length=52, null=True),
         ),
         migrations.AddField(
             model_name='preprint',

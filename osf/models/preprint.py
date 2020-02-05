@@ -128,6 +128,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         'tags',
     }
 
+    PREREG_LINK_INFO_CHIOCES = [('prereg_designs', 'Pre-registration of study designs'),
+                                ('prereg_analysis', 'Pre-registration of study analysis'),
+                                ('prereg_both', 'Pre-registration of study designs and study analysis')
+                                ]
+
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
                                  related_name='preprints',
@@ -185,11 +190,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         null=True
     )
 
-    prereg_link_explanations = ArrayField(
-        models.CharField(null=True, blank=True, max_length=5000),
-        blank=True,
-        null=True
-    )
+    prereg_link_info = models.CharField(choices=PREREG_LINK_INFO_CHIOCES,
+                                        max_length=52,
+                                        null=True,
+                                        blank=True)
 
     class Meta:
         permissions = (
@@ -983,8 +987,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    def update_prereg_link_explanations(self, auth, value: list, log=True, save=True):
-        self.prereg_link_explanations = value
+    def update_prereg_link_info(self, auth, value: str, log=True, save=True):
+        self.prereg_link_info = value
 
         if log:
             self.add_log(

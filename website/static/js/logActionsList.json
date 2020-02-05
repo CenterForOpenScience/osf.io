@@ -91,7 +91,8 @@
     "subjects_updated": "${user} updated the subjects on ${node}",
     "view_only_link_added": "${user} created ${anonymous_link} view-only link to ${node}",
     "view_only_link_removed": "${user} removed ${anonymous_link} view-only link to ${node}",
-    "has_data_links_updated": "${user} has updated the has links to data field to ${value}",
-    "why_no_data_updated": "${user} has updated their data statement",
-    "data_links_updated": "${user} has updated their data links"
+    "has_prereg_links_updated": "${user} has updated their preregistration data link availability to ${value}",
+    "why_no_prereg_updated": "${user} has updated their preregistration data availability statement to ${value}",
+    "prereg_links_updated": "${user} has updated their preregistration data links",
+    "prereg_links_info_updated": "${user} has updated their preregistration links to ${value}"
 }

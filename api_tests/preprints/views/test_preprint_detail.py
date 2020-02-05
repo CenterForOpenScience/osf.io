@@ -864,18 +864,15 @@ class TestPreprintUpdate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "str".'
 
-    def test_update_prereg_link_explanations(self, app, user, preprint, url):
-
-        prereg_link_explanations = ['I\'m dope and I do dope--', 'It\'s a plan, not a prison']
-
+    def test_update_prereg_link_info(self, app, user, preprint, url):
         update_payload = build_preprint_update_payload(
             preprint._id,
-            attributes={'prereg_link_explanations': prereg_link_explanations}
+            attributes={'prereg_link_info': 'prereg_designs'}
         )
 
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You do not have ability to add prereg link explanations at this time.'
+        assert res.json['errors'][0]['detail'] == 'You do not have ability to add prereg link info at this time.'
 
         contrib = AuthUserFactory()
         preprint.add_contributor(contrib, READ)
@@ -895,32 +892,26 @@ class TestPreprintUpdate:
         preprint.has_prereg_links = True
         preprint.save()
         with override_switch(features.SLOAN_STUDY_PREREG, active=True):
-            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
-
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'The number of prereg link explanations must match the number of ' \
-                                                  'prereg links.'
-
-        preprint.prereg_links = ['www.JasonKelce.com', 'www.ItsTheWholeTeam.com/']
-        preprint.save()
-        with override_switch(features.SLOAN_STUDY_PREREG, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
-        assert res.json['data']['attributes']['prereg_link_explanations'] == prereg_link_explanations
+        assert res.json['data']['attributes']['prereg_link_info'] == 'prereg_designs'
 
         preprint.reload()
-        assert preprint.prereg_link_explanations == prereg_link_explanations
+        assert preprint.prereg_link_info == 'prereg_designs'
         log = preprint.logs.first()
         assert log.action == PreprintLog.UPDATE_PREREG_LINKS
         assert log.params == {'user': user._id, 'preprint': preprint._id}
 
-        update_payload = build_preprint_update_payload(preprint._id, attributes={'prereg_links': 'maformed payload'})
+        update_payload = build_preprint_update_payload(
+            preprint._id,
+            attributes={'prereg_link_info': 'maformed payload'}
+        )
         with override_switch(features.SLOAN_STUDY_DATA, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "str".'
+        assert res.json['errors'][0]['detail'] == '"maformed payload" is not a valid choice.'
 
 
 @pytest.mark.django_db

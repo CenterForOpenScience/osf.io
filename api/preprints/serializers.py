@@ -187,7 +187,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     has_prereg_links = ser.NullBooleanField(required=False)
     why_no_prereg = ser.CharField(required=False, allow_blank=True, allow_null=True)
     prereg_links = ser.ListField(required=False)
-    prereg_link_explanations = ser.ListField(required=False)
+    prereg_link_info = ser.ChoiceField(Preprint.PREREG_LINK_INFO_CHIOCES, required=False)
 
     class Meta:
         type_ = 'preprints'
@@ -338,25 +338,20 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                     ' availability is set to false or is unanswered.',
                 )
 
-        if 'prereg_link_explanations' in validated_data:
+        if 'prereg_link_info' in validated_data:
             if not switch_is_active(SLOAN_STUDY_PREREG):
                 raise exceptions.ValidationError(
-                    detail='You do not have ability to add prereg link explanations at this time.',
+                    detail='You do not have ability to add prereg link info at this time.',
                 )
 
-            prereg_link_explanations = validated_data['prereg_link_explanations']
+            prereg_link_info = validated_data['prereg_link_info']
             if not preprint.has_prereg_links:
                 raise exceptions.ValidationError(
                     detail='You cannot edit this field while your prereg links'
                     ' availability is set to false or is unanswered.',
                 )
 
-            if preprint.prereg_links and len(preprint.prereg_links) == len(prereg_link_explanations):
-                preprint.update_prereg_link_explanations(auth, prereg_link_explanations)
-            else:
-                raise exceptions.ValidationError(
-                    detail='The number of prereg link explanations must match the number of prereg links.',
-                )
+            preprint.update_prereg_link_info(auth, prereg_link_info)
 
         if published is not None:
             if not preprint.primary_file:
