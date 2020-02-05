@@ -22,10 +22,6 @@ from website.search import exceptions
 import website.search.search as search
 from website.search.util import build_query, build_private_search_query
 
-from django.utils.translation import (
-    LANGUAGE_SESSION_KEY, get_language,
-)
-
 logger = logging.getLogger(__name__)
 
 RESULTS_PER_PAGE = 250
@@ -120,10 +116,6 @@ def search_search(**kwargs):
         size = request.args.get('size', '10')
         es_dsl = build_private_search_query(user, q, start, size)
         results = search.search(es_dsl, doc_type=_type)
-        
-        
-        logging.getLogger('LANGUAGE_SESSION_KEY:' + request.session[LANGUAGE_SESSION_KEY])
-        logging.getLogger('get_language():' + get_language())
 
     results['time'] = round(time.time() - tick, 2)
     return results

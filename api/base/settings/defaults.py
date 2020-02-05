@@ -219,8 +219,6 @@ MIDDLEWARE = (
 
     # 'django.contrib.sessions.middleware.SessionMiddleware',
     'api.base.middleware.CorsMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     # 'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -466,13 +464,4 @@ BASE_FOR_METRIC_PREFIX = 1000
 SIZE_UNIT_GB = BASE_FOR_METRIC_PREFIX ** 3
 NII_STORAGE_REGION_ID = 1
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-PARENT_PATH = parent_dir(HERE)  # api/base/ directory
-BASE_PATH = parent_dir(PARENT_PATH) # api/ directory
-
-LOCALE_PATHS = (
-    os.path.join(BASE_PATH, 'translations'),
-)
-
-LANGUAGE_CODE = 'ja'
 
