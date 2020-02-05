@@ -6,9 +6,19 @@ from rest_framework.exceptions import ValidationError as DRFValidationError
 
 from api.base.exceptions import Conflict, JSONAPIException
 from api.base.serializers import (
-    JSONAPISerializer, IDField, TypeField, HideIfNotWithdrawal, NoneIfWithdrawal,
-    LinksField, RelationshipField, VersionedDateTimeField, JSONAPIListField,
-    NodeFileHyperLinkField, WaterbutlerLink, HideIfPreprint,
+    JSONAPISerializer,
+    IDField,
+    TypeField,
+    HideIfNotWithdrawal,
+    NoneIfWithdrawal,
+    LinksField,
+    RelationshipField,
+    VersionedDateTimeField,
+    JSONAPIListField,
+    NodeFileHyperLinkField,
+    WaterbutlerLink,
+    HideIfPreprint,
+    DisableIfSwitch,
     LinkedNodesRelationshipSerializer,
 )
 from api.base.utils import absolute_reverse, get_user_auth
@@ -37,7 +47,6 @@ from osf.models import (
 )
 from osf.utils import permissions as osf_permissions
 from osf.features import SLOAN_STUDY_PREREG
-from osf.models.validators import SwitchValidator
 
 class PrimaryFileRelationshipField(RelationshipField):
     def get_object(self, file_id):
@@ -184,25 +193,33 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         },
     )
 
-    has_prereg_links = ser.NullBooleanField(
-        required=False,
-        validators=[SwitchValidator(SLOAN_STUDY_PREREG)],
+    has_prereg_links = DisableIfSwitch(
+        switch_name=SLOAN_STUDY_PREREG,
+        field=ser.NullBooleanField(
+            required=False,
+        ),
     )
-    why_no_prereg = ser.CharField(
-        required=False,
-        allow_blank=True,
-        allow_null=True,
-        validators=[SwitchValidator(SLOAN_STUDY_PREREG)],
+    why_no_prereg = DisableIfSwitch(
+        switch_name=SLOAN_STUDY_PREREG,
+        field=ser.CharField(
+            required=False,
+            allow_blank=True,
+            allow_null=True,
+        ),
     )
-    prereg_links = ser.ListField(
-        child=ser.URLField(),
-        required=False,
-        validators=[SwitchValidator(SLOAN_STUDY_PREREG)],
+    prereg_links = DisableIfSwitch(
+        switch_name=SLOAN_STUDY_PREREG,
+        field=ser.ListField(
+            child=ser.URLField(),
+            required=False,
+        ),
     )
-    prereg_link_info = ser.ChoiceField(
-        Preprint.PREREG_LINK_INFO_CHIOCES,
-        required=False,
-        validators=[SwitchValidator(SLOAN_STUDY_PREREG)],
+    prereg_link_info = DisableIfSwitch(
+        switch_name=SLOAN_STUDY_PREREG,
+        field=ser.ChoiceField(
+            Preprint.PREREG_LINK_INFO_CHIOCES,
+            required=False,
+        ),
     )
 
     class Meta:

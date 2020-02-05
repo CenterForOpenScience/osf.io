@@ -3,6 +3,7 @@ import re
 from future.moves.urllib.parse import urlparse
 
 import furl
+import waffle
 from django.core.urlresolvers import resolve, reverse, NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
 from distutils.version import StrictVersion
@@ -25,6 +26,7 @@ from website import settings
 from website.project.model import has_anonymous_link
 from api.base.versioning import KEBAB_CASE_VERSION, get_kebab_snake_case_field
 
+from osf.models.validators import SwitchValidator
 
 def get_meta_type(serializer_class, request):
     meta = getattr(serializer_class, 'Meta', None)
@@ -1837,3 +1839,27 @@ class MaintenanceStateSerializer(ser.ModelSerializer):
     class Meta:
         model = MaintenanceState
         fields = ('level', 'message', 'start', 'end')
+
+
+class HideIfSwitch(ConditionalField):
+    """
+    If switched is switched this field is hidden.
+    """
+    def __init__(self, switch_name, hide_if=False, **kwargs):
+        super(HideIfSwitch, self).__init__(**kwargs)
+        self.switch_name = switch_name
+        self.hide_if = hide_if
+
+    def should_hide(self, instance):
+        return waffle.switch_is_active(self.switch_name) == self.hide_if
+
+
+class DisableIfSwitch(HideIfSwitch):
+    """
+    If switched is switched this field is hidden.
+    """
+    def __init__(self, switch_name, hide_if=False, **kwargs):
+        super(HideIfSwitch, self).__init__(**kwargs)
+        self.switch_name = switch_name
+        self.hide_if = hide_if
+        self.validators.append(SwitchValidator(self.switch_name))
