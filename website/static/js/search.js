@@ -448,6 +448,9 @@ var ViewModel = function(params) {
                     value = 0;
                 }
                 self.categories.push(new Category(key, value, _(data.typeAliases[key])));
+                alert(key);
+                alert(value);
+                alert(data.typeAliases[key]);
             });
 
             self.categories(self.categories().sort(self.sortCategories));
