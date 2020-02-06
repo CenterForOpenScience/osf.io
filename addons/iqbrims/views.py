@@ -301,17 +301,23 @@ def iqbrims_get_storage(**kwargs):
             file_node = BaseFileNode.resolve_class('googledrive', BaseFileNode.FILE).get_or_create(management_node, path)
             url = website_settings.DOMAIN.rstrip('/') + '/' + file_node.get_guid(create=True)._id + '/'
             mfr_url = website_settings.MFR_SERVER_URL.rstrip('/') + '/export?url=' + url
+            drive_url = f['alternateLink'] if 'alternateLink' in f else None
             management_urls.append({'title': f['title'],
                                     'path': path,
                                     'url': url,
-                                    'mfr_url': mfr_url})
+                                    'mfr_url': mfr_url,
+                                    'drive_url': drive_url})
     logger.info('Urls: node={}, management={}'.format(node_urls, management_urls))
     status = iqbrims.get_status()
     comment_key = folder + '_comment'
     comment = status[comment_key] if comment_key in status else ''
+    folder_drive_url = folders[0]['alternateLink'] \
+                       if len(folders) > 0 and 'alternateLink' in folders[0] \
+                       else None
 
     return {'status': 'complete' if len(files) > 0 else 'processing',
             'root_folder': root_folder_path,
+            'folder_drive_url': folder_drive_url,
             'urls': node_urls,
             'comment': comment,
             'management': {'id': management_node._id,
