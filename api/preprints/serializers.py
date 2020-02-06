@@ -309,9 +309,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                 raise exceptions.ValidationError(
                     detail='You do not have ability to edit your data link availability at this time.',
                 )
-
-            has_data_links = validated_data['has_data_links']
-            preprint.update_has_data_links(auth, has_data_links)
+            preprint.update_has_data_links(auth, validated_data['has_data_links'])
 
         if 'why_no_data' in validated_data:
             if not switch_is_active(SLOAN_STUDY_DATA):
@@ -319,14 +317,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                     detail='You do not have ability to edit your data link availability at this time.',
                 )
 
-            why_no_data = validated_data['why_no_data']
-            if preprint.has_data_links is False:
-                preprint.update_why_no_data(auth, why_no_data)
-            else:
-                raise exceptions.ValidationError(
-                    detail='You cannot edit this statement while your data links '
-                    'availability is set to true or is unanswered.',
-                )
+            preprint.update_why_no_data(auth, validated_data['why_no_data'])
 
         if 'data_links' in validated_data:
             if not switch_is_active(SLOAN_STUDY_DATA):
@@ -334,14 +325,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                     detail='You do not have ability to add data links at this time.',
                 )
 
-            data_links = validated_data['data_links']
-            if preprint.has_data_links:
-                preprint.update_data_links(auth, data_links)
-            else:
-                raise exceptions.ValidationError(
-                    detail='You cannot edit this statement while your data links'
-                    ' availability is set to false or is unanswered.',
-                )
+            preprint.update_data_links(auth, validated_data['data_links'])
 
         if 'has_coi' in validated_data:
             if not switch_is_active(SLOAN_STUDY_COI):
@@ -349,8 +333,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                     detail='You do not have ability to edit conflict of interest statement availability at this time.',
                 )
 
-            has_coi = validated_data.get('has_coi')
-            preprint.update_has_coi(has_coi, auth=auth)
+            preprint.update_has_coi(validated_data['has_coi'], auth=auth)
 
         if 'conflict_of_interest_statement' in validated_data:
             if not switch_is_active(SLOAN_STUDY_COI):
@@ -359,14 +342,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                     'statement at this time.',
                 )
 
-            if not preprint.has_coi:
-                raise exceptions.ValidationError(
-                    detail='You do not have ability to edit a conflict of interest while the has_coi field is set to '
-                           'false or unanswered',
-                )
-
-            coi_statement = validated_data.get('conflict_of_interest_statement')
-            preprint.update_conflict_of_interest_statement(coi_statement, auth=auth)
+            preprint.update_conflict_of_interest_statement(validated_data['conflict_of_interest_statement'], auth=auth)
 
         if published is not None:
             if not preprint.primary_file:

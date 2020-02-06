@@ -862,6 +862,15 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         :param auth: All the auth information including user, API key.
         :param bool log: Whether to add a PreprintLog for the privacy change.
         """
+        if self.conflict_of_interest_statement == coi_statement:
+            return
+
+        if not self.has_coi:
+            raise ValidationError(
+                detail='You do not have ability to edit a conflict of interest while the has_coi field is set to '
+                       'false or unanswered',
+            )
+
         self.conflict_of_interest_statement = coi_statement
 
         if log:
@@ -1001,7 +1010,13 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.why_no_data == why_no_data:
             return
 
-        self.why_no_data = why_no_data
+        if self.has_data_links is False:
+            self.why_no_data = why_no_data
+        else:
+            raise ValidationError(
+                detail='You cannot edit this statement while your data links '
+                'availability is set to true or is unanswered.',
+            )
 
         if log:
             self.add_log(
@@ -1017,6 +1032,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     def update_data_links(self, auth, data_links: list, log=True, save=True):
         if self.data_links == data_links:
             return
+
+        if not self.has_data_links:
+            raise ValidationError(
+                detail='You cannot edit this statement while your data links'
+                ' availability is set to false or is unanswered.', code=400)
 
         self.data_links = data_links
 
