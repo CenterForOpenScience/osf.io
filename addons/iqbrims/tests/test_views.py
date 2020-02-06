@@ -654,6 +654,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         mock_get_content.return_value = b'dummy.txt'
 
         node_settings = self.project.get_addon('iqbrims')
+        node_settings.status = json.dumps({'testkey': 'testvalue'})
         node_settings.secret = 'secret123'
         node_settings.process_definition_id = 'process456'
         node_settings.folder_path = 'testgdpath/iqb123/'
@@ -667,6 +668,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['status'], 'complete')
+        assert_equal(res.json['whole']['testkey'], 'testvalue')
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')

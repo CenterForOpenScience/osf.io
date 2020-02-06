@@ -319,6 +319,7 @@ def iqbrims_get_storage(**kwargs):
             'root_folder': root_folder_path,
             'folder_drive_url': folder_drive_url,
             'urls': node_urls,
+            'whole': status,
             'comment': comment,
             'management': {'id': management_node._id,
                            'urls': management_urls}}
