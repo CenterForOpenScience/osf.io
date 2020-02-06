@@ -1,0 +1,45 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-02-06 14:44+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: .\emails\password_reset_email.html:2
+msgid ""
+"You're receiving this email because you requested a password reset for your "
+"OSF Admin user account."
+msgstr ""
+
+#: .\emails\password_reset_email.html:4
+msgid "Please go to this link to reset your password:"
+msgstr ""
+
+#: .\emails\password_reset_email.html:9
+msgid "Your account email is:"
+msgstr ""
+
+#: .\emails\password_reset_email.html:11
+msgid "Thank you."
+msgstr ""
+
+#: .\emails\password_reset_email.html:13
+msgid "-OSF Admin"
+msgstr ""
+
+#: .\login.html:22
+msgid "Sign in to start your session"
+msgstr "サインインしてセッションを始めてください"
