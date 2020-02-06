@@ -114,8 +114,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     preprint_doi_created = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
     date_withdrawn = VersionedDateTimeField(read_only=True, allow_null=True)
     withdrawal_justification = HideIfNotWithdrawal(ser.CharField(required=False, read_only=True, allow_blank=True))
-    conflict_of_interest_statement = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    has_coi = ser.NullBooleanField(required=False)
 
     current_user_permissions = ser.SerializerMethodField(
         help_text='List of strings representing the permissions '
@@ -193,6 +191,8 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     has_data_links = ser.NullBooleanField(required=False)
     why_no_data = ser.CharField(required=False, allow_blank=True, allow_null=True)
     data_links = ser.ListField(child=ser.URLField(), required=False)
+    conflict_of_interest_statement = ser.CharField(required=False, allow_blank=True, allow_null=True)
+    has_coi = ser.NullBooleanField(required=False)
 
     class Meta:
         type_ = 'preprints'

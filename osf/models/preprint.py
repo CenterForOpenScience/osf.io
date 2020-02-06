@@ -979,23 +979,29 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             params=params
         )
 
-    def update_has_data_links(self, auth, value: bool, log=True, save=True):
-        self.has_data_links = value
+    def update_has_data_links(self, auth, has_data_links: bool, log=True, save=True):
+        if self.has_data_links == has_data_links:
+            return
+
+        self.has_data_links = has_data_links
 
         if log:
             self.add_log(
                 action=PreprintLog.UPDATE_HAS_DATA_LINKS,
                 params={
                     'user': auth.user._id,
-                    'value': value
+                    'value': has_data_links
                 },
                 auth=auth
             )
         if save:
             self.save()
 
-    def update_why_no_data(self, auth, value: str, log=True, save=True):
-        self.why_no_data = value
+    def update_why_no_data(self, auth, why_no_data: str, log=True, save=True):
+        if self.why_no_data == why_no_data:
+            return
+
+        self.why_no_data = why_no_data
 
         if log:
             self.add_log(
@@ -1008,8 +1014,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    def update_data_links(self, auth, value: list, log=True, save=True):
-        self.data_links = value
+    def update_data_links(self, auth, data_links: list, log=True, save=True):
+        if self.data_links == data_links:
+            return
+
+        self.data_links = data_links
 
         if log:
             self.add_log(
