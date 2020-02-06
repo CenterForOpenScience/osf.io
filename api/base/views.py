@@ -517,18 +517,16 @@ def get_provider_from_url(referer_url: str) -> PreprintProvider:
     # /preprints
     # /preprints/
     # /preprints/notfound
-    match = re.match(re.escape(DOMAIN) + r'preprints($|\/$)', referer_url)
-    if match:
-        return PreprintProvider.objects.get(_id='osf')
-
-    # matches:
     # /preprints/foorxiv
     # /preprints/foorxiv/
     # /preprints/foorxiv/guid0
-    provider_regex = f'(?P<provider_id>|{provider_ids_regex})'
-    match = re.match(re.escape(DOMAIN) + r'preprints\/' + provider_regex + r'($|/)', referer_url)
+    provider_regex = r'preprints($|\/$|\/(?P<provider_id>{})|)'.format(provider_ids_regex)
+    match = re.match(re.escape(DOMAIN) + provider_regex, referer_url)
     if match:
-        return PreprintProvider.objects.get(_id=match.groupdict()['provider_id'])
+        provider_id = match.groupdict().get('provider_id')
+        if provider_id:
+            return PreprintProvider.objects.get(_id=provider_id)
+        return PreprintProvider.objects.get(_id='osf')
 
 
 def set_tags_and_cookies_for_sloan(user, flag_name: str, flag_value: bool) -> dict:
