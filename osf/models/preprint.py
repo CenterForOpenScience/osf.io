@@ -46,6 +46,7 @@ from osf.models.identifiers import IdentifierMixin, Identifier
 from osf.models.mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin
 from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode, OsfStorageFile
 
+from api.decorators import rethrow_validation_error_for_serializer
 
 from framework.sentry import log_exception
 from osf.exceptions import (
@@ -945,6 +946,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         )
 
     def update_has_prereg_links(self, auth, value: bool, log=True, save=True):
+        print('bool', value)
         self.has_prereg_links = value
 
         if log:
@@ -959,8 +961,13 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    def update_why_no_prereg(self, auth, value: str, log=True, save=True):
-        self.why_no_prereg = value
+    @rethrow_validation_error_for_serializer
+    def update_why_no_prereg(self, auth, why_no_prereg: str, log=True, save=True):
+        if self.has_prereg_links or self.has_prereg_links is None:
+            raise ValidationError('You cannot edit this statement while your prereg links '
+                                  'availability is set to true or is unanswered.', code=400)
+
+        self.why_no_prereg = why_no_prereg
 
         if log:
             self.add_log(
@@ -973,8 +980,13 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    def update_prereg_links(self, auth, value: list, log=True, save=True):
-        self.prereg_links = value
+    @rethrow_validation_error_for_serializer
+    def update_prereg_links(self, auth, prereg_links: list, log=True, save=True):
+        if not self.has_prereg_links:
+            raise ValidationError('You cannot edit this field while your prereg links'
+                                  ' availability is set to false or is unanswered.', code=400)
+
+        self.prereg_links = prereg_links
 
         if log:
             self.add_log(
@@ -987,8 +999,13 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    def update_prereg_link_info(self, auth, value: str, log=True, save=True):
-        self.prereg_link_info = value
+    @rethrow_validation_error_for_serializer
+    def update_prereg_link_info(self, auth, prereg_link_info: str, log=True, save=True):
+        if not self.has_prereg_links:
+            raise ValidationError('You cannot edit this field while your prereg links'
+                                  ' availability is set to false or is unanswered.', code=400)
+
+        self.prereg_link_info = prereg_link_info
 
         if log:
             self.add_log(

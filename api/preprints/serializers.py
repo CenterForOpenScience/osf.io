@@ -334,29 +334,12 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             preprint.update_has_prereg_links(auth, validated_data['has_prereg_links'])
 
         if 'why_no_prereg' in validated_data:
-            if preprint.has_prereg_links is False:
-                preprint.update_why_no_prereg(auth, validated_data['why_no_prereg'])
-            else:
-                raise exceptions.ValidationError(
-                    detail='You cannot edit this statement while your prereg links '
-                    'availability is set to true or is unanswered.',
-                )
+            preprint.update_why_no_prereg(auth, validated_data['why_no_prereg'])
 
         if 'prereg_links' in validated_data:
-            if preprint.has_prereg_links:
-                preprint.update_prereg_links(auth, validated_data['prereg_links'])
-            else:
-                raise exceptions.ValidationError(
-                    detail='You cannot edit this field while your prereg links'
-                    ' availability is set to false or is unanswered.',
-                )
+            preprint.update_prereg_links(auth, validated_data['prereg_links'])
 
         if 'prereg_link_info' in validated_data:
-            if not preprint.has_prereg_links:
-                raise exceptions.ValidationError(
-                    detail='You cannot edit this field while your prereg links'
-                    ' availability is set to false or is unanswered.',
-                )
             preprint.update_prereg_link_info(auth, validated_data['prereg_link_info'])
 
         if published is not None:
