@@ -49,7 +49,7 @@ ALIASES = {
     'component': unicode(_('Components')),
     'registration': unicode(_('Registrations')),
     'user': unicode(_('Users')),
-    'total': unicode(_('All OSF Results')),
+    'total': unicode(_('All GakuNin RDM Results')),
     'file': unicode(_('Files')),
     'institution': unicode(_('Institutions')),
     'preprint': unicode(_('Preprints')),
@@ -139,7 +139,7 @@ def requires_search(func):
                 raise exceptions.SearchException(e.error)
 
         sentry.log_message('Elastic search action failed. Is elasticsearch running?')
-        raise exceptions.SearchUnavailableError(unicode(_('Failed to connect to elasticsearch')))
+        raise exceptions.SearchUnavailableError('Failed to connect to elasticsearch')
     return wrapped
 
 
