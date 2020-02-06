@@ -4,7 +4,9 @@ import datetime
 
 from django.utils import timezone
 from rest_framework import exceptions
-from waffle.testutils import override_switch
+from waffle.testutils import (
+    override_switch,
+)
 
 from osf import features
 from osf.utils.permissions import READ
@@ -12,7 +14,11 @@ from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
 from api_tests.subjects.mixins import UpdateSubjectsMixin
 from framework.auth.core import Auth
-from osf.models import NodeLicense, PreprintContributor
+from osf.models import (
+    NodeLicense,
+    PreprintContributor,
+    PreprintLog
+)
 from osf.utils.permissions import WRITE
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import (
@@ -751,6 +757,112 @@ class TestPreprintUpdate:
         app.patch_json_api(url, update_doi_payload, auth=user.auth)
 
         assert mock_on_preprint_updated.called
+
+    def test_update_has_data_links(self, app, user, preprint, url):
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'has_data_links': True})
+
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'You do not have ability to edit your data link availability ' \
+                                                  'at this time.'
+
+        contrib = AuthUserFactory()
+        preprint.add_contributor(contrib, READ)
+        res = app.patch_json_api(url, update_payload, auth=contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+
+        with override_switch(features.SLOAN_STUDY_DATA, active=True):
+            res = app.patch_json_api(url, update_payload, auth=user.auth)
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['has_data_links'] is True
+
+        preprint.reload()
+        assert preprint.has_data_links
+        log = preprint.logs.first()
+        assert log.action == PreprintLog.UPDATE_HAS_DATA_LINKS
+        assert log.params == {'value': True, 'user': user._id, 'preprint': preprint._id}
+
+    def test_update_why_no_data(self, app, user, preprint, url):
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'why_no_data': 'My dog ate it.'})
+
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'You do not have ability to edit your data link availability ' \
+                                                  'at this time.'
+
+        contrib = AuthUserFactory()
+        preprint.add_contributor(contrib, READ)
+        res = app.patch_json_api(url, update_payload, auth=contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+
+        with override_switch(features.SLOAN_STUDY_DATA, active=True):
+            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'You cannot edit this statement while your data links availability' \
+                                                  ' is set to true or is unanswered.'
+
+        preprint.has_data_links = False
+        preprint.save()
+        with override_switch(features.SLOAN_STUDY_DATA, active=True):
+            res = app.patch_json_api(url, update_payload, auth=user.auth)
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['why_no_data'] == 'My dog ate it.'
+
+        preprint.reload()
+        assert preprint.why_no_data
+        log = preprint.logs.first()
+        assert log.action == PreprintLog.UPDATE_WHY_NO_DATA
+        assert log.params == {'user': user._id, 'preprint': preprint._id}
+
+    def test_update_data_links(self, app, user, preprint, url):
+
+        data_links = ['http://www.JasonKelce.com', 'http://www.ItsTheWholeTeam.com/']
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'data_links': data_links})
+
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'You do not have ability to add data links at this time.'
+
+        contrib = AuthUserFactory()
+        preprint.add_contributor(contrib, READ)
+        res = app.patch_json_api(url, update_payload, auth=contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+
+        preprint.has_data_links = False
+        preprint.save()
+        with override_switch(features.SLOAN_STUDY_DATA, active=True):
+            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'You cannot edit this statement while your data links availability' \
+                                                  ' is set to false or is unanswered.'
+
+        preprint.has_data_links = True
+        preprint.save()
+        with override_switch(features.SLOAN_STUDY_DATA, active=True):
+            res = app.patch_json_api(url, update_payload, auth=user.auth)
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['data_links'] == data_links
+
+        preprint.reload()
+        assert preprint.data_links == data_links
+        log = preprint.logs.first()
+        assert log.action == PreprintLog.UPDATE_DATA_LINKS
+        assert log.params == {'user': user._id, 'preprint': preprint._id}
+
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'data_links': 'maformed payload'})
+        with override_switch(features.SLOAN_STUDY_DATA, active=True):
+            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "str".'
 
 
 @pytest.mark.django_db

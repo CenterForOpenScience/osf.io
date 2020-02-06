@@ -9,6 +9,16 @@ OSF_PREREGISTRATION = 'osf_preregistration'
 OSF_GROUPS = 'osf_groups'
 ENABLE_CHRONOS = 'enable_chronos'
 
+
+# The SLOAN_STUDY_... is switches that allow users to input their sloan info,
+# other sloan flag control that features visibility.
+SLOAN_STUDY_COI = 'sloan_coi'
+SLOAN_STUDY_DATA = 'sloan_data'
+SLOAN_STUDY_PREREG = 'sloan_prereg'
+SLOAN_COI = 'waffle:sloan|coi'
+SLOAN_DATA = 'waffle:sloan|data'
+SLOAN_PREREG = 'waffle:sloan|prereg'
+
 EMBER_AB_TESTING_HOME_PAGE_VERSION_B = 'ab_testing_home_page_version_b'
 EMBER_AB_TESTING_HOME_PAGE_HERO_TEXT_VERSION_B = 'ab_testing_home_page_hero_text_version_b'
 EMBER_AUTH_REGISTER = 'ember_auth_register'
