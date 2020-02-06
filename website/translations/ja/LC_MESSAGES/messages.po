@@ -1670,12 +1670,12 @@ msgid ""
 "automatically infer your first name, last            name, etc., or edit "
 "the fields directly below."
 msgstr ""
-"上記のフルネームは、プロフィールに表示される名前です。引用での名前の表示方法を制御するには、[自動入力]ボタンを使用して、名、姓などを自動的に推測できます。"
-" 、または下のフィールドを編集します。"
+"上記のフルネームは、プロフィールに表示される名前です。引用での名前の表示方法を制御するには、[自動入力]ボタンを使用して、名・姓などを自動的に推測できます。"
+" または下のフィールドを編集します。"
 
 #: website/templates/include/profile/names.mako:22
 msgid "Auto-fill"
-msgstr "オートフィル"
+msgstr "自動入力"
 
 #: website/templates/include/profile/names.mako:26
 msgid "Given name (e.g. Rosalind)"

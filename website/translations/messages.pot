@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-03 11:35+0900\n"
+"POT-Creation-Date: 2020-02-03 18:36+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -949,137 +949,6 @@ msgstr ""
 msgid "Select"
 msgstr ""
 
-#: admin/base/utils.py:23
-msgid "Enter a valid 'slug' consisting only of lowercase letters."
-msgstr ""
-
-#: api/base/exceptions.py:103
-msgid "This endpoint is not yet implemented."
-msgstr ""
-
-#: api/base/exceptions.py:108
-msgid "Service is unavailable at this time."
-msgstr ""
-
-#: api/base/exceptions.py:201
-msgid "Query string contains a malformed filter."
-msgstr ""
-
-#: api/base/exceptions.py:210
-msgid "Comparison operators are only supported for dates and numbers."
-msgstr ""
-
-#: api/base/exceptions.py:216
-msgid "Match operators are only supported for strings and lists."
-msgstr ""
-
-#: api/base/exceptions.py:222
-msgid "Query contained one or more filters for invalid fields."
-msgstr ""
-
-#: api/base/exceptions.py:233
-msgid "Please confirm your account before using the API."
-msgstr ""
-
-#: api/base/exceptions.py:238
-msgid "Please claim your account before using the API."
-msgstr ""
-
-#: api/base/exceptions.py:243
-msgid ""
-"Making API requests with credentials associated with a deactivated "
-"account is not allowed."
-msgstr ""
-
-#: api/base/exceptions.py:248
-msgid ""
-"Making API requests with credentials associated with a merged account is "
-"not allowed."
-msgstr ""
-
-#: api/base/exceptions.py:253
-msgid ""
-"Making API requests with credentials associated with an invalid account "
-"is not allowed."
-msgstr ""
-
-#: api/base/exceptions.py:257
-msgid "Must specify two-factor authentication OTP code."
-msgstr ""
-
-#: api/base/exceptions.py:263
-msgid "Invalid value in POST/PUT/PATCH request."
-msgstr ""
-
-#: api/base/exceptions.py:278
-msgid ""
-"The node {0} cannot be affiliated with this View Only Link because the "
-"node you're trying to affiliate is not descended from the node that the "
-"View Only Link is attached to."
-msgstr ""
-
-#: api/base/authentication/drf.py:165
-msgid "Invalid username/password."
-msgstr ""
-
-#: api/base/authentication/drf.py:192
-msgid "Invalid two-factor authentication OTP code."
-msgstr ""
-
-#: api/base/authentication/drf.py:223
-msgid "User provided an invalid OAuth2 access token"
-msgstr ""
-
-#: api/base/authentication/drf.py:226
-msgid "CAS server failed to authenticate this token"
-msgstr ""
-
-#: api/base/authentication/drf.py:230
-msgid "Could not find the user associated with this token"
-msgstr ""
-
-#: website/search/elastic_search.py:48
-msgid "Projects"
-msgstr ""
-
-#: website/search/elastic_search.py:49
-#: website/templates/project/project.mako:644
-msgid "Components"
-msgstr ""
-
-#: website/search/elastic_search.py:50
-#: website/templates/project/project_header.mako:67
-msgid "Registrations"
-msgstr ""
-
-#: website/search/elastic_search.py:51
-msgid "Users"
-msgstr ""
-
-#: website/search/elastic_search.py:52
-msgid "All OSF Results"
-msgstr ""
-
-#: website/search/elastic_search.py:53 website/templates/project/files.mako:2
-#: website/templates/project/files.mako:5
-#: website/templates/project/project.mako:441
-#: website/templates/project/project_header.mako:40
-#: website/templates/search.mako:372
-msgid "Files"
-msgstr ""
-
-#: website/search/elastic_search.py:54
-msgid "Institutions"
-msgstr ""
-
-#: website/search/elastic_search.py:55
-msgid "Preprints"
-msgstr ""
-
-#: website/search/elastic_search.py:56
-msgid "Groups"
-msgstr ""
-
 #: website/templates/base.mako:110
 msgid "Title"
 msgstr ""
@@ -1598,6 +1467,14 @@ msgstr ""
 #: website/templates/search.mako:341 website/templates/search.mako:344
 #, python-format
 msgid "(<span %(class_data_bind)s>Withdrawn </span>Registration)"
+msgstr ""
+
+#: website/templates/project/files.mako:2
+#: website/templates/project/files.mako:5
+#: website/templates/project/project.mako:441
+#: website/templates/project/project_header.mako:40
+#: website/templates/search.mako:372
+msgid "Files"
 msgstr ""
 
 #: website/templates/search.mako:376
@@ -2882,6 +2759,10 @@ msgstr ""
 msgid "Download"
 msgstr ""
 
+#: website/templates/project/project.mako:644
+msgid "Components"
+msgstr ""
+
 #: website/templates/project/project.mako:648
 msgid "Add Component"
 msgstr ""
@@ -2908,6 +2789,10 @@ msgstr ""
 
 #: website/templates/project/project_header.mako:61
 msgid "Analytics"
+msgstr ""
+
+#: website/templates/project/project_header.mako:67
+msgid "Registrations"
 msgstr ""
 
 #: website/templates/project/project_header.mako:76
