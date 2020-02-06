@@ -67,12 +67,13 @@ def upload_attachment(user, node, attachment):
     attachment.seek(0)
     name = (attachment.filename or settings.MISSING_FILE_NAME)
     content = attachment.read()
-    upload_url = waterbutler_api_url_for(node._id, 'osfstorage', name=name, base_url=node.osfstorage_region.waterbutler_url, cookie=user.get_or_create_cookie(), _internal=True)
+    upload_url = waterbutler_api_url_for(node._id, 'osfstorage', name=name, base_url=node.osfstorage_region.waterbutler_url, cookie=user.get_or_create_cookie().decode(), _internal=True)
 
-    requests.put(
+    resp = requests.put(
         upload_url,
         data=content,
     )
+    resp.raise_for_status()
 
 
 def upload_attachments(user, node, attachments):
