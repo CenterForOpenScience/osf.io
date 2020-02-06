@@ -36,7 +36,10 @@ from osf.models import (
     NodeLicense,
 )
 from osf.utils import permissions as osf_permissions
-from osf.features import SLOAN_STUDY_DATA
+from osf.features import (
+    SLOAN_STUDY_DATA,
+    SLOAN_STUDY_COI,
+)
 from waffle import switch_is_active
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -111,6 +114,9 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     preprint_doi_created = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
     date_withdrawn = VersionedDateTimeField(read_only=True, allow_null=True)
     withdrawal_justification = HideIfNotWithdrawal(ser.CharField(required=False, read_only=True, allow_blank=True))
+    conflict_of_interest_statement = ser.CharField(required=False, allow_blank=True, allow_null=True)
+    has_coi = ser.NullBooleanField(required=False)
+
     current_user_permissions = ser.SerializerMethodField(
         help_text='List of strings representing the permissions '
         'for the current user on this preprint.',
@@ -336,6 +342,31 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                     detail='You cannot edit this statement while your data links'
                     ' availability is set to false or is unanswered.',
                 )
+
+        if 'has_coi' in validated_data:
+            if not switch_is_active(SLOAN_STUDY_COI):
+                raise exceptions.ValidationError(
+                    detail='You do not have ability to edit conflict of interest statement availability at this time.',
+                )
+
+            has_coi = validated_data.get('has_coi')
+            preprint.update_has_coi(has_coi, auth=auth)
+
+        if 'conflict_of_interest_statement' in validated_data:
+            if not switch_is_active(SLOAN_STUDY_COI):
+                raise exceptions.ValidationError(
+                    detail='You do not have ability to edit a conflict of interest '
+                    'statement at this time.',
+                )
+
+            if not preprint.has_coi:
+                raise exceptions.ValidationError(
+                    detail='You do not have ability to edit a conflict of interest while the has_coi field is set to '
+                           'false or unanswered',
+                )
+
+            coi_statement = validated_data.get('conflict_of_interest_statement')
+            preprint.update_conflict_of_interest_statement(coi_statement, auth=auth)
 
         if published is not None:
             if not preprint.primary_file:

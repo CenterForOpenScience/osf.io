@@ -176,6 +176,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         'admin': ('read_preprint', 'write_preprint', 'admin_preprint',)
     }
     group_format = 'preprint_{self.id}_{group}'
+    conflict_of_interest_statement = models.CharField(blank=True, null=True, max_length=5000)
+    has_coi = models.NullBooleanField(blank=True, null=True)
 
     has_data_links = models.NullBooleanField(null=True, blank=True)
     why_no_data = models.TextField(null=True, blank=True)
@@ -830,6 +832,49 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
         return True
+
+    def update_has_coi(self, has_coi: bool, auth, log=True, save=True):
+        """Set the value if there's a interest statement for this preprint.
+
+        :param has_coi: bool represents if a preprint has a conflict of interest statement.
+        :param auth: All the auth information including user, API key.
+        :param bool log: Whether to add a NodeLog for the privacy change.
+        """
+        self.has_coi = has_coi
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_HAS_COI,
+                params={
+                    'user': auth.user._id,
+                    'preprint': self._id,
+                    'value': self.has_coi
+                },
+                auth=auth,
+            )
+        if save:
+            self.save()
+
+    def update_conflict_of_interest_statement(self, coi_statement, auth, log=True, save=True):
+        """Set the conflict of interest statement for this preprint.
+
+        :param coi_statement: a string for the represents a conflict of interest statement.
+        :param auth: All the auth information including user, API key.
+        :param bool log: Whether to add a PreprintLog for the privacy change.
+        """
+        self.conflict_of_interest_statement = coi_statement
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_COI_STATEMENT,
+                params={
+                    'user': auth.user._id,
+                    'preprint': self._id,
+                },
+                auth=auth,
+            )
+        if save:
+            self.save()
 
     def can_view(self, auth):
         if not auth.user:

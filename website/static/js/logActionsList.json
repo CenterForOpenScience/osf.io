@@ -93,5 +93,7 @@
     "view_only_link_removed": "${user} removed ${anonymous_link} view-only link to ${node}",
     "has_data_links_updated": "${user} has updated the has links to data field to ${value}",
     "why_no_data_updated": "${user} has updated their data statement",
-    "data_links_updated": "${user} has updated their data links"
+    "data_links_updated": "${user} has updated their data links",
+    "coi_statement_updated": "${user} changed the conflict of interest statement for ${preprint}.",
+    "has_coi_updated": "${user} changed the conflict of interest statement availability for ${preprint}."
 }
