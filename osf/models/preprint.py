@@ -945,16 +945,18 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             params=params
         )
 
-    def update_has_prereg_links(self, auth, value: bool, log=True, save=True):
-        print('bool', value)
-        self.has_prereg_links = value
+    def update_has_prereg_links(self, auth, has_prereg_links: bool, log=True, save=True):
+        if has_prereg_links == self.has_prereg_links:
+            return
+
+        self.has_prereg_links = has_prereg_links
 
         if log:
             self.add_log(
                 action=PreprintLog.UPDATE_HAS_PREREG_LINKS,
                 params={
                     'user': auth.user._id,
-                    'value': value
+                    'value': has_prereg_links
                 },
                 auth=auth
             )
@@ -963,6 +965,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     @rethrow_validation_error_for_serializer
     def update_why_no_prereg(self, auth, why_no_prereg: str, log=True, save=True):
+        if why_no_prereg == self.why_no_prereg:
+            return
+
         if self.has_prereg_links or self.has_prereg_links is None:
             raise ValidationError('You cannot edit this statement while your prereg links '
                                   'availability is set to true or is unanswered.', code=400)
@@ -982,6 +987,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     @rethrow_validation_error_for_serializer
     def update_prereg_links(self, auth, prereg_links: list, log=True, save=True):
+        if prereg_links == self.prereg_links:
+            return
+
         if not self.has_prereg_links:
             raise ValidationError('You cannot edit this field while your prereg links'
                                   ' availability is set to false or is unanswered.', code=400)
@@ -1001,6 +1009,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     @rethrow_validation_error_for_serializer
     def update_prereg_link_info(self, auth, prereg_link_info: str, log=True, save=True):
+        if self.has_prereg_links == prereg_link_info:
+            return
+
         if not self.has_prereg_links:
             raise ValidationError('You cannot edit this field while your prereg links'
                                   ' availability is set to false or is unanswered.', code=400)
