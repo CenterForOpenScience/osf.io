@@ -376,7 +376,7 @@ var AddProject = {
                             }}, [
                                 m('span[aria-hidden="true"]','×')
                             ]),
-                            m('h4.add-project-success.text-success', agh.sprintf(_('New %1$s created successfully!')),ctrl.nodeType)
+                            m('h4.add-project-success.text-success', agh.sprintf(_('New %1$s created successfully!'),ctrl.nodeType))
                         ]
                     ),
                     m('.modal-footer', [
