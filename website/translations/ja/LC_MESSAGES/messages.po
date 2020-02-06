@@ -3394,38 +3394,3 @@ msgstr "論文登録申請"
 msgid "Image Scan Service"
 msgstr "画像スキャン依頼"
 
-#: website/search/elastic_search.py:48
-msgid "Projects"
-msgstr "プロジェクト"
-
-#: website/search/elastic_search.py:49
-msgid "Components"
-msgstr "コンポーネント"
-
-#: website/search/elastic_search.py:50
-msgid "Registrations"
-msgstr "登録"
-
-#: website/search/elastic_search.py:51
-msgid "Users"
-msgstr "ユーザー"
-
-#: website/search/elastic_search.py:52
-msgid "All OSF Results"
-msgstr "すべてのGakuNin RDMの結果"
-
-#: website/search/elastic_search.py:53
-msgid "Files"
-msgstr "ファイル"
-
-#: website/search/elastic_search.py:54
-msgid "Institutions"
-msgstr "機関"
-
-#: website/search/elastic_search.py:55
-msgid "Preprints"
-msgstr "プレプリント"
-
-#: website/search/elastic_search.py:56
-msgid "Groups"
-msgstr "グループ"

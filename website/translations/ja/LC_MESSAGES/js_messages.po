@@ -470,7 +470,7 @@ msgstr "保存中："
 
 #: website/static/js/addProjectPlugin.js:379
 msgid "New %1$s created successfully!"
-msgstr "新しい%1$sが作成されました"
+msgstr "新しい%1$sが作成されました！"
 
 #: website/static/js/addProjectPlugin.js:389
 #: website/static/js/addProjectPlugin.js:437 website/static/js/project.js:61
@@ -3472,4 +3472,40 @@ msgstr "%1$sに報告してください"
 #: website/static/js/pages/wiki-edit-page.js:112
 msgid "Could not GET wiki menu pages"
 msgstr "Wikiメニューページを取得できませんでした"
+
+#: website/search/elastic_search.py:48
+msgid "Projects"
+msgstr "プロジェクト"
+
+#: website/search/elastic_search.py:49
+msgid "Components"
+msgstr "コンポーネント"
+
+#: website/search/elastic_search.py:50
+msgid "Registrations"
+msgstr "登録"
+
+#: website/search/elastic_search.py:51
+msgid "Users"
+msgstr "ユーザー"
+
+#: website/search/elastic_search.py:52
+msgid "All OSF Results"
+msgstr "すべてのGakuNin RDMの結果"
+
+#: website/search/elastic_search.py:53
+msgid "Files"
+msgstr "ファイル"
+
+#: website/search/elastic_search.py:54
+msgid "Institutions"
+msgstr "機関"
+
+#: website/search/elastic_search.py:55
+msgid "Preprints"
+msgstr "プレプリント"
+
+#: website/search/elastic_search.py:56
+msgid "Groups"
+msgstr "グループ"
 
