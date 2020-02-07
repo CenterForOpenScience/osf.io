@@ -899,7 +899,7 @@ class TestPreprintUpdate:
         preprint.reload()
         assert preprint.prereg_link_info == 'prereg_designs'
         log = preprint.logs.first()
-        assert log.action == PreprintLog.UPDATE_PREREG_LINKS
+        assert log.action == PreprintLog.UPDATE_PREREG_LINKS_INFO
         assert log.params == {'user': user._id, 'preprint': preprint._id}
 
         update_payload = build_preprint_update_payload(
