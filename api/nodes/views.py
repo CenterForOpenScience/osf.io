@@ -91,7 +91,7 @@ from api.nodes.serializers import (
     NodeForksSerializer,
     NodeDetailSerializer,
     NodeStorageProviderSerializer,
-    DraftRegistrationSerializerLegacy,
+    DraftRegistrationLegacySerializer,
     DraftRegistrationDetailLegacySerializer,
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
@@ -112,7 +112,7 @@ from api.osf_groups.views import OSFGroupMixin
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import (
     RegistrationSerializer,
-    RegistrationCreateSerializerOldWorkflow,
+    RegistrationCreateLegacySerializer,
 )
 from api.requests.permissions import NodeRequestPermission
 from api.requests.serializers import NodeRequestSerializer, NodeRequestCreateSerializer
@@ -178,7 +178,7 @@ class NodeMixin(object):
 
 class DraftMixin(object):
 
-    serializer_class = DraftRegistrationSerializerLegacy
+    serializer_class = DraftRegistrationLegacySerializer
 
     def check_branched_from(self, draft):
         node_id = self.kwargs['node_id']
@@ -615,7 +615,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
 
-    serializer_class = DraftRegistrationSerializerLegacy
+    serializer_class = DraftRegistrationLegacySerializer
     view_category = 'nodes'
     view_name = 'node-draft-registrations'
 
@@ -676,7 +676,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
 
     def get_serializer_class(self):
         if self.request.method in ('PUT', 'POST'):
-            return RegistrationCreateSerializerOldWorkflow
+            return RegistrationCreateLegacySerializer
         return RegistrationSerializer
 
     # overrides ListCreateAPIView
@@ -692,7 +692,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         """Create a registration from a draft.
         """
         # On creation, make sure that current user is the creator
-        draft_id = self.request.data.get('draft_registration', None)
+        draft_id = self.request.data.get('draft_registration', None) or self.request.data.get('draft_registration_id', None)
         draft = self.get_draft(draft_id)
         serializer.save(draft=draft)
 
@@ -2075,6 +2075,7 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
     def perform_destroy(self, link):
         assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
         link.is_deleted = True
+        link.deleted = timezone.now()
         link.save()
         # FIXME: Doesn't work because instance isn't JSON-serializable
         # enqueue_postcommit_task(ban_url, (self.get_node(),), {}, celery=False, once_per_request=True)
