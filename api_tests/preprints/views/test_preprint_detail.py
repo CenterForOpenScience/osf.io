@@ -912,6 +912,50 @@ class TestPreprintUpdate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == '"maformed payload" is not a valid choice.'
 
+    def test_sloan_updates(self, app, user, preprint, url):
+        """
+        - Tests to ensure updating a preprint with unchanged data does not create superfluous log statements.
+        - Tests to ensure various dependent fields can be updated in a single request.
+        """
+        preprint.has_prereg_links = True
+        preprint.prereg_links = ['http://no-sf.io']
+        preprint.prereg_link_info = 'prereg_designs'
+        preprint.save()
+
+        update_payload = build_preprint_update_payload(
+            preprint._id,
+            attributes={
+                'has_prereg_links': True,
+                'prereg_link_info': 'prereg_designs',
+                'prereg_links': ['http://osf.io'],  # changing here should be only non-factory created log.
+            }
+        )
+        with override_switch(features.SLOAN_STUDY_PREREG, active=True):
+            app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+
+        # Any superfluous log statements?
+        logs = preprint.logs.all().values_list('action', 'params')
+        assert logs.count() == 3  # actions should be: 'subjects_updated', 'published', 'prereg_links_updated'
+        assert logs.latest() == ('prereg_links_updated', {'user': user._id, 'preprint': preprint._id})
+
+        # Can we set `has_prereg_links` to false and update `why_no_prereg` in a single request?
+        update_payload = build_preprint_update_payload(
+            preprint._id,
+            attributes={
+                'has_prereg_links': False,
+                'why_no_prereg': 'My dog ate it.'
+            }
+        )
+        with override_switch(features.SLOAN_STUDY_PREREG, active=True):
+            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+
+        assert res.status_code == 200
+        assert not res.json['data']['attributes']['has_prereg_links']
+        assert res.json['data']['attributes']['why_no_prereg'] == 'My dog ate it.'
+
+        preprint.refresh_from_db()
+        assert not preprint.has_prereg_links
+        assert preprint.why_no_prereg == 'My dog ate it.'
 
 @pytest.mark.django_db
 class TestPreprintUpdateSubjects(UpdateSubjectsMixin):

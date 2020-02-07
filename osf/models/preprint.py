@@ -1058,7 +1058,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
         This function brought to you via a grant from the Alfred P Sloan Foundation.
         """
-        if self.has_prereg_links == prereg_link_info:
+        if self.prereg_link_info == prereg_link_info:
             return
 
         if not self.has_prereg_links:
@@ -1069,7 +1069,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
         if log:
             self.add_log(
-                action=PreprintLog.UPDATE_PREREG_LINKS,
+                action=PreprintLog.UPDATE_PREREG_LINKS_INFO,
                 params={
                     'user': auth.user._id,
                 },
