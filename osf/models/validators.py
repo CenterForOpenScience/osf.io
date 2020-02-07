@@ -410,14 +410,19 @@ class RegistrationResponsesValidator:
 
 
 class SwitchValidator(object):
-    def __init__(self, switch_name, message=SWITCH_VALIDATOR_ERROR, should_be=True):
+    def __init__(self, switch_name: str, message: str = SWITCH_VALIDATOR_ERROR, should_be: bool = True):
         """
-        Throws validation error if switched off field is prematurely used.
-        :param name: the switch name
-        :param message: the error message displayed if validation fails.
-        :param should_be: will throw if switch value return value isn't what it should_be
-        """
+        This throws a validation error if a switched off field is prematurely used. This the on/off state of the field
+        is determined by the validators `should_be` value, if the switch's active value is `not` what it `should_be` a
+        validation error is thrown.
 
+        Remember turning a switch off (to active to False) can mean turning a feature on and vice versa, so use the
+        `should_be` value appropriately.
+
+        :param switch_name: String The switch's name
+        :param message: String The error message to be displayed if validation fails
+        :param should_be: Boolean The value that must match the switch value to avoid a validation error
+        """
         self.switch_name = switch_name
         self.should_be = should_be
         self.message = message
