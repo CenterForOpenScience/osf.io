@@ -330,13 +330,13 @@ BaseComment.prototype.configureCommentsVisibility = function() {
 BaseComment.prototype.getTargetType = function() {
     var self = this;
     if (self.id() === window.contextVars.node.id) {
-        return _('nodes');
+        return 'nodes';
     } else if (self.id() === self.$root.rootId() && self.page() === FILES) {
-        return _('files');
+        return 'files';
     } else if (self.id() === self.$root.rootId() && self.page() === WIKI) {
-        return _('wiki');
+        return 'wiki';
     } else {
-        return _('comments');
+        return 'comments';
     }
 };
 
