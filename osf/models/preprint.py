@@ -945,7 +945,19 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             params=params
         )
 
-    def update_has_prereg_links(self, auth, has_prereg_links: bool, log=True, save=True):
+    def update_has_prereg_links(self, auth: tuple, has_prereg_links: bool, log: bool = True, save: bool = True):
+        """
+        This function updates the `has_prereg_links` field, that indicates availability of links to prereg data and logs
+        changes to it.
+
+        :param auth: Tuple ('username', 'password')
+        :param has_prereg_links: Boolean indicates whether the user has links to preregistration materials
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+        :return:
+
+        This function brought to you via a grant from the Alfred P Sloan Foundation.
+        """
         if has_prereg_links == self.has_prereg_links:
             return
 
@@ -964,7 +976,19 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             self.save()
 
     @rethrow_validation_error_for_serializer
-    def update_why_no_prereg(self, auth, why_no_prereg: str, log=True, save=True):
+    def update_why_no_prereg(self, auth: tuple, why_no_prereg: str, log: bool = True, save: bool = True):
+        """
+        This function updates the field `why_no_prereg` that contains a user provided explanation of prereg data
+        unavailability and logs changes to it.
+
+        :param auth: Tuple ('username', 'password')
+        :param why_no_prereg: String explanation of prereg data unavailability
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+        :return:
+
+        This function brought to you via a grant from the Alfred P Sloan Foundation.
+        """
         if why_no_prereg == self.why_no_prereg:
             return
 
@@ -986,7 +1010,19 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             self.save()
 
     @rethrow_validation_error_for_serializer
-    def update_prereg_links(self, auth, prereg_links: list, log=True, save=True):
+    def update_prereg_links(self, auth: tuple, prereg_links: list, log: bool = True, save: bool = True):
+        """
+        This function updates the field `prereg_links` that contains a list of validated URLS linking to prereg data
+        and logs changes to it.
+
+        :param auth: Tuple ('username', 'password')
+        :param prereg_links: List list of validated urls with schemes to links to prereg data
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+        :return:
+
+        This function brought to you via a grant from the Alfred P Sloan Foundation.
+        """
         if prereg_links == self.prereg_links:
             return
 
@@ -1008,7 +1044,20 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             self.save()
 
     @rethrow_validation_error_for_serializer
-    def update_prereg_link_info(self, auth, prereg_link_info: str, log=True, save=True):
+    def update_prereg_link_info(self, auth: tuple, prereg_link_info: str, log: bool = True, save: bool = True):
+        """
+        This function updates the field `prereg_link_info` that contains a one of a finite number of choice strings in
+        contained in the list in the static member `PREREG_LINK_INFO_CHIOCES` that describe the nature of the preprint's
+        prereg links.
+
+        :param auth: Tuple ('username', 'password')
+        :param prereg_link_info: String a string describing the nature of the preprint's prereg links.
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+        :return:
+
+        This function brought to you via a grant from the Alfred P Sloan Foundation.
+        """
         if self.has_prereg_links == prereg_link_info:
             return
 

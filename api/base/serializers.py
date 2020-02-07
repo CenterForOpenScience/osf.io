@@ -1843,9 +1843,16 @@ class MaintenanceStateSerializer(ser.ModelSerializer):
 
 class HideIfSwitch(ConditionalField):
     """
-    If switched is switched this field is hidden/unhidden.
+    If switched is switched this field is hidden/unhidden. This field is the switch state matches
+     the hide_if parameter.
     """
-    def __init__(self, switch_name, field, hide_if=False, **kwargs):
+    def __init__(self, switch_name: str, field: ser.Field, hide_if: bool = False, **kwargs):
+        """
+        :param switch_name: The name of the switch that is validated
+        :param field: The field that's being validated by the switch.
+        :param hide_if: The value of the switch that indicates it's hidden.
+        :param kwargs: You know, kwargs...
+        """
         super(HideIfSwitch, self).__init__(field, **kwargs)
         self.switch_name = switch_name
         self.hide_if = hide_if
@@ -1857,9 +1864,16 @@ class HideIfSwitch(ConditionalField):
 class DisableIfSwitch(HideIfSwitch):
     """
     If switched is switched this field will become hidden/unhidden and attempts to modify this field
-    will result in a validation error/pass normally.
+    will result in a validation error/pass normally. This field is the switch state matches
+     the hide_if parameter.
     """
-    def __init__(self, switch_name, field, hide_if=False, **kwargs):
+    def __init__(self, switch_name: str, field: ser.Field, hide_if: bool = False, **kwargs):
+        """
+        :param switch_name: The name of the switch that is validated
+        :param field: The field that's being validated by the switch.
+        :param hide_if: The value of the switch that indicates it's hidden/validated.
+        :param kwargs: My mama always told me life is like a bunch of kwargs...
+        """
         super(DisableIfSwitch, self).__init__(switch_name, field, hide_if, **kwargs)
         self.switch_name = switch_name
         self.hide_if = hide_if
