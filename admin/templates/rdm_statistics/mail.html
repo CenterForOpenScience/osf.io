@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block top_includes %}
 <link rel="stylesheet" type="text/css" href="{% static 'css/institutions.css' %}" />
@@ -7,17 +8,17 @@
 {% endblock top_includes %}
 
 {% block title %}
-<title>RDM Statistics</title>
+<title>{% trans "RDM Statistics" %}</title>
 {% endblock title %}
 {% block content %}
-<h2>RDM Statistics</h2>
+<h2>{% trans "RDM Statistics" %}</h2>
 
 <div class="row">
     <div class="col-sm-12">
         <div class="panel panel-default">
-            <div class="panel-heading clearfix"><h3 class="panel-title">Send statistic information mail</h3></div>
+            <div class="panel-heading clearfix"><h3 class="panel-title">{% trans "Send statistic information mail" %}</h3></div>
             <div class="panel-body">
-                <div>sending result </div>
+                <div>{% trans "sending result " %}</div>
                 <div class="text-center">
                     {% for key, val in data.ret.items %}
                     <div><pre>{{ key }} : {{ val }}</pre></div>

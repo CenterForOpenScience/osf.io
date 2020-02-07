@@ -1,10 +1,11 @@
+{% load i18n %}
 <form class="well" method="post" action="{% url 'maintenance:delete'%}">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">x</button>
-        <h3>Are you sure you want to take down this maintenance alert?</h3>
+        <h3>{% trans "Are you sure you want to take down this maintenance alert?" %}</h3>
     </div>
     <div class="modal-body">
-        It will be removed from all OSF pages.
+        {% trans "It will be removed from all GakuNin RDM pages." %}
         {% csrf_token %}
     </div>
     <div class="modal-footer">

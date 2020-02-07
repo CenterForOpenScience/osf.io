@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 {% load user_extras %}
 {% load spam_extras %}
 {% block title %}
-    <title>Collection Provider Delete</title>
+    <title>{% trans "Collection Provider Delete" %}</title>
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">

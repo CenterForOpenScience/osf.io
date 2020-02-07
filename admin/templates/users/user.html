@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 {% load node_extras %}
 
 {% block top_includes %}
@@ -7,7 +8,7 @@
 {% endblock %}
 
 {% block title %}
-    <title>User</title>
+    <title>{% trans "User" %}</title>
 {% endblock title %}
 {% block content %}
 <div class="container-fluid">
@@ -25,28 +26,28 @@
             <div class="btn-group" role="group">
                 <a href="{% url 'users:search' %}" class="btn btn-default"><i class="fa fa-search"></i></a>
                 {%  if perms.osf.view_spam %}
-                <a href="{% url 'spam:user_spam' user.id %}" class="btn btn-default">Related spam</a>
+                <a href="{% url 'spam:user_spam' user.id %}" class="btn btn-default">{% trans "Related spam" %}</a>
                 {% endif %}
                 {%  if perms.osf.change_osfuser %}
                     {% if  user.is_registered %}
-                <a href="{% url 'users:reset_password' user.id %}" data-toggle="modal" data-target="#resetModal" class="btn btn-default">Send reset password email</a>
+                <a href="{% url 'users:reset_password' user.id %}" data-toggle="modal" data-target="#resetModal" class="btn btn-default">{% trans "Send reset password email" %}</a>
                 {% endif %}
-                        <a href="{% url 'users:get_reset_password' user.id %}" data-toggle="modal" data-target="#getResetModal" class="btn btn-default">Get password reset link</a>
+                        <a href="{% url 'users:get_reset_password' user.id %}" data-toggle="modal" data-target="#getResetModal" class="btn btn-default">{% trans "Get password reset link" %}</a>
                 {% if user.confirmed %}
-                    <button class="btn btn-default disabled" data-toggle="tooltip" title="User already confirmed">Get confirmation link</button>
+                    <button class="btn btn-default disabled" data-toggle="tooltip" title="User already confirmed">{% trans "Get confirmation link" %}</button>
                 {% else %}
                     {% if user.unclaimed %}
-                        <a href="{% url 'users:get_claim_urls' user.id %}" data-toggle="modal" data-target="#getUserClaimModal" class="btn btn-default">Get claim links</a>
+                        <a href="{% url 'users:get_claim_urls' user.id %}" data-toggle="modal" data-target="#getUserClaimModal" class="btn btn-default">{% trans "Get claim links" %}</a>
                     {%  else %}
-                        <a href="{% url 'users:get_confirmation' user.id %}" data-toggle="modal" data-target="#getConfirmationModal" class="btn btn-default">Get confirmation link</a>
+                        <a href="{% url 'users:get_confirmation' user.id %}" data-toggle="modal" data-target="#getConfirmationModal" class="btn btn-default">{% trans "Get confirmation link" %}</a>
                     {% endif %}
                 {% endif %}
                 {% endif %}
                 {%  if perms.osf.view_desk %}
-                <a href="{% url 'desk:customer' user.id %}" data-toggle="modal" data-target="#deskModal" class="btn btn-default">Desk profile</a>
-                <a href="{% url 'desk:user_cases' user.id %}" data-toggle="modal" data-target="#caseModal" class="btn btn-default">Desk cases</a>
+                <a href="{% url 'desk:customer' user.id %}" data-toggle="modal" data-target="#deskModal" class="btn btn-default">{% trans "Desk profile" %}</a>
+                <a href="{% url 'desk:user_cases' user.id %}" data-toggle="modal" data-target="#caseModal" class="btn btn-default">{% trans "Desk cases" %}</a>
                 {% endif %}
-                <a href="{% url 'users:merge-accounts' user.id  %}" data-toggle="modal" data-target="#mergeAccountModal" class="btn btn-default">Merge Account</a>
+                <a href="{% url 'users:merge-accounts' user.id  %}" data-toggle="modal" data-target="#mergeAccountModal" class="btn btn-default">{% trans "Merge Account" %}</a>
             </div>
         </div>
     </div>
@@ -54,15 +55,15 @@
         <div class="col-md-12">
             <div class="btn-group padded" role="group">
                 {% if not user.deleted %}
-                    <a href="{% url 'users:GDPR_delete' user.id %}" data-toggle="modal" data-target="#deleteModal" class="btn btn-danger">GDPR Delete Account</a>
+                    <a href="{% url 'users:GDPR_delete' user.id %}" data-toggle="modal" data-target="#deleteModal" class="btn btn-danger">{% trans "GDPR Delete Account" %}</a>
                 {% endif %}
                 {% if not user.disabled %}
                     {% if user.requested_deactivation %}
-                        <a href="{% url 'users:disable' user.id %}" data-toggle="modal" data-target="#disableModal" class="btn btn-danger">Requested account deactivation</a>
+                        <a href="{% url 'users:disable' user.id %}" data-toggle="modal" data-target="#disableModal" class="btn btn-danger">{% trans "Requested account deactivation" %}</a>
                     {% else %}
-                        <a href="{% url 'users:disable' user.id %}" data-toggle="modal" data-target="#disableModal" class="btn btn-danger disabled">Requested account deactivation</a>
+                        <a href="{% url 'users:disable' user.id %}" data-toggle="modal" data-target="#disableModal" class="btn btn-danger disabled">{% trans "Requested account deactivation" %}</a>
                     {% endif %}
-                    <a href="{% url 'users:disable' user.id %}" data-toggle="modal" data-target="#disableModal" class="btn btn-danger">Force disable account</a>
+                    <a href="{% url 'users:disable' user.id %}" data-toggle="modal" data-target="#disableModal" class="btn btn-danger">{% trans "Force disable account" %}</a>
                 {% elif 'deac_confirmed' not in user.system_tags %}
                     <form method="post" action="{% url 'users:reactivate' user.id %}" style="display: inherit;">
                         {% csrf_token %}
@@ -70,14 +71,14 @@
                     </form>
                 {% endif %}
                 {% if not user.disabled or user.spam_status == SPAM_STATUS.FLAGGED %}
-                    <a href="{% url 'users:spam_disable' user.id %}" data-toggle="modal" data-target="#disableSpamModal" class="btn btn-danger">Disable Spam account</a>
+                    <a href="{% url 'users:spam_disable' user.id %}" data-toggle="modal" data-target="#disableSpamModal" class="btn btn-danger">{% trans "Disable Spam account" %}</a>
                 {% elif user.spam_status == SPAM_STATUS.SPAM %}
-                    <a href="{% url 'users:ham_enable' user.id %}" data-toggle="modal" data-target="#enableHamModal" class="btn btn-success">Re-enable Ham account</a>
+                    <a href="{% url 'users:ham_enable' user.id %}" data-toggle="modal" data-target="#enableHamModal" class="btn btn-success">{% trans "Re-enable Ham account" %}</a>
                 {% endif %}
                 <a href="{% url 'users:reset_password' user.id %}" data-toggle="modal" data-target="#resetModal" class="btn btn-primary">
-                    Send reset
+                    {% trans "Send reset" %}
                 </a>
-                <a href="{% url 'users:reindex-elastic-user' guid=user.id %}" data-toggle="modal" data-target="#confirmReindexElasticUser" class="btn btn-success">Elastic Reindex</a>
+                <a href="{% url 'users:reindex-elastic-user' guid=user.id %}" data-toggle="modal" data-target="#confirmReindexElasticUser" class="btn btn-success">{% trans "Elastic Reindex" %}</a>
             </div>
         </div>
     </div>
@@ -153,7 +154,7 @@
 
     <div class="row">
         <div class="col-md-12">
-            <h3>User details</h3>
+            <h3>{% trans "User details" %}</h3>
         </div>
     </div>
     <div class="row">
@@ -161,35 +162,35 @@
             <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>Field</th>
-                    <th>Value</th>
+                    <th>{% trans "Field" %}</th>
+                    <th>{% trans "Value" %}</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td>Name</td>
+                    <td>{% trans "Name" %}</td>
                     <td>{{ user.name }}</td>
                 </tr>
                 <tr>
-                    <td>OSF account</td>
+                    <td>{% trans "GakuNin RDM account" %}</td>
                     <td>
                         <a href="{{ user.osf_link }}">{{ user.id }}</a>
                     </td>
                 </tr>
                 <tr>
-                    <td>Username</td>
+                    <td>{% trans "Username" %}</td>
                     <td>{{ user.username }}</td>
                 </tr>
                 <tr>
-                    <td>Emails</td>
+                    <td>{% trans "Emails" %}</td>
                     <td>
                         {% for email in user.emails %}
                             <li>
                                 {% if email == user.username %}
-                                    <strong>Primary: </strong>
+                                    <strong>{% trans "Primary: " %}</strong>
                                     {{ email }}
                                     <a href=""
-                                       class="btn btn-default disabled">Email</a>
+                                       class="btn btn-default disabled">{% trans "Email" %}</a>
                                 {% else %}
                                     {{ email }}
                                 {% endif %}
@@ -198,23 +199,23 @@
                     </td>
                 </tr>
                 <tr>
-                    <td>Registered</td>
+                    <td>{% trans "Registered" %}</td>
                     <td>{{ user.registered }}</td>
                 </tr>
                 <tr>
-                    <td>Confirmed</td>
+                    <td>{% trans "Confirmed" %}</td>
                     <td>{{ user.confirmed }}</td>
                 </tr>
                 <tr>
-                    <td>Last login</td>
+                    <td>{% trans "Last login" %}</td>
                     <td>{{ user.last_login }}</td>
                 </tr>
                 <tr>
-                    <td>Disabled</td>
+                    <td>{% trans "Disabled" %}</td>
                     <td>{{ user.disabled }}</td>
                 </tr>
                 <tr>
-                    <td>Two factor</td>
+                    <td>{% trans "Two factor" %}</td>
                     <td>
                         {{ user.two_factor }}
                         {% if user.two_factor %}
@@ -222,7 +223,7 @@
                                class="btn btn-default"
                                data-toggle="modal"
                                data-target="#twoFactorModal">
-                                Deactivate
+                                {% trans "Deactivate" %}
                             </a>
                             <div class="modal" id="twoFactorModal">
                                 <div class="modal-dialog">
@@ -233,7 +234,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td>System tags</td>
+                    <td>{% trans "System tags" %}</td>
                     <td>
                         {% for system_tag in user.system_tags %}
                             {{ system_tag }}{% if not forloop.last %}, {% endif %}
@@ -242,7 +243,7 @@
                         class="btn btn-default"
                         data-toggle="modal"
                         data-target="#systemTagModal">
-                         add system tag
+                         {% trans "add system tag" %}
                      </a>
                      <div class="modal" id="systemTagModal">
                          <div class="modal-dialog">
@@ -254,7 +255,7 @@
                 {% if user.osf_groups %}
                     <tr>
                         <td>
-                            OSF Groups
+                            {% trans "GakuNin RDM Groups" %}
                         </td>
                         <td>
                             <select class="form-control" style="width:90%; display:inherit;" id="groups-select">
@@ -267,32 +268,32 @@
                     </tr>
                 {% endif %}
                 <tr>
-                    <td>User is spammy</td>
+                    <td>{% trans "User is spammy" %}</td>
                     <td>
                         {{ user.is_spammy }}
                     </td>
                 </tr>
                 <tr>
-                    <td>SPAM Status</td>
+                    <td>{% trans "SPAM Status" %}</td>
                     <td>{% include "nodes/spam_status.html" with resource=user %}</td>
                 </tr>
                 <tr>
-                    <td>Profile content checked for spam</td>
+                    <td>{% trans "Profile content checked for spam" %}</td>
                     <td>{{ user.potential_spam_profile_content }}</td>
                 </tr>
                 <tr>
-                    <td>Nodes</td>
+                    <td>{% trans "Nodes" %}</td>
                     <td>
                         <table class="table table-hover table-bordered">
                         <thead>
                             <tr>
-                                <th>GUID</th>
-                                <th>Name</th>
-                                <th>Public</th>
-                                <th>Registration</th>
+                                <th>{% trans "GUID" %}</th>
+                                <th>{% trans "Name" %}</th>
+                                <th>{% trans "Public" %}</th>
+                                <th>{% trans "Registration" %}</th>
                                 <th># of Contributors</th>
-                                <th>SPAM Status</th>
-                                <th>Actions</th>
+                                <th>{% trans "SPAM Status" %}</th>
+                                <th>{% trans "Actions" %}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -323,7 +324,7 @@
                                         <a href="{% url 'nodes:remove' guid=node.id %}"
                                            data-toggle="modal" data-target="#deleteModal{{ node.id }}"
                                            class="btn btn-danger">
-                                            Delete Node
+                                            {% trans "Delete Node" %}
                                         </a>
                                         <div class="modal" id="deleteModal{{ node.id }}">
                                             <div class="modal-dialog">
@@ -342,7 +343,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td>Quota for NII Storage (GB)</td>
+                    <td>{% trans "Quota for NII Storage (GB)" %}</td>
                     <td>
                         <form method="post" action="{% url 'users:quota' user.id %}" class="row">
                             {% csrf_token %}

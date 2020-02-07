@@ -1,3 +1,4 @@
+{% load i18n %}
 <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal">x</button>
     <h3>User's desk.com info</h3>
@@ -6,38 +7,38 @@
 <table class="table table-striped">
 <thead>
     <tr>
-        <th>Field</th>
-        <th>Value</th>
+        <th>{% trans "Field" %}</th>
+        <th>{% trans "Value" %}</th>
     </tr>
 </thead>
 <tbody>
     <tr>
-        <td>Name</td>
+        <td>{% trans "Name" %}</td>
         <td>{{ customer.name }}</td>
     </tr>
     <tr>
-        <td>Company</td>
+        <td>{% trans "Company" %}</td>
         <td>{{ customer.company }}</td>
     </tr>
     <tr>
-        <td>Background</td>
+        <td>{% trans "Background" %}</td>
         <td>{{ customer.background }}</td>
     </tr>
-        <td>Desk id</td>
+        <td>{% trans "Desk id" %}</td>
         <td>
             {{ customer.id }}
             <a href="{{ desk_link }}{{ customer.id }}" target="_blank" class="btn btn-primary">
-                Go to Desk
+                {% trans "Go to Desk" %}
             </a>
         </td>
     <tr>
-        <td>Email</td>
+        <td>{% trans "Email" %}</td>
         <td>
             <table class="table table-bordered">
             <thead>
                 <tr>
-                    <th>Type</th>
-                    <th>Email</th>
+                    <th>{% trans "Type" %}</th>
+                    <th>{% trans "Email" %}</th>
                 </tr>
             </thead>
             <tbody>
@@ -54,6 +55,6 @@
 </tbody>
 </table>
 <div class="modal-footer">
-    <button type="button" class="btn" data-dismiss="modal" >Close</button>
+    <button type="button" class="btn" data-dismiss="modal" >{% trans "Close" %}</button>
 </div>
 </div>

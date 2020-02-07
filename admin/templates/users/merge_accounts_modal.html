@@ -1,6 +1,7 @@
+{% load i18n %}
 <form class="well" method="post" action="{% url 'users:merge-accounts' guid %}">
     <div class="modal-header">
-        <h3>Merge Accounts</h3>
+        <h3>{% trans "Merge Accounts" %}</h3>
     </div>
     <div class="modal-body">
         <span>Merge this user: <b>{{ user }}</b> <b>({{ guid }})</b>  with:</span>
@@ -10,7 +11,7 @@
     <div class="modal-footer">
         <input type="submit"  class="btn btn-success" value="Merge" />
         <button type="button" class="btn btn-default" data-dismiss="modal">
-            Cancel
+            {% trans "Cancel" %}
         </button>
     </div>
 </form>

@@ -1,3 +1,4 @@
+{% load i18n %}
 <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal">x</button>
     <h3>{{ error }}</h3>
@@ -8,7 +9,7 @@
 </div>
 <div class="modal-footer">
     <a href="{% url 'auth:desk' %}" class="btn btn-primary">
-        Desk Settings
+        {% trans "Desk Settings" %}
     </a>
-    <button type="button" class="btn" data-dismiss="modal" >Close</button>
+    <button type="button" class="btn" data-dismiss="modal" >{% trans "Close" %}</button>
 </div>

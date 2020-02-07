@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 {% block top_includes %}
   <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
@@ -12,9 +13,9 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-12">
-                <a class="btn btn-primary" href={% url 'institutions:export' institution.id %}>Export institution metadata</a>
+                <a class="btn btn-primary" href={% url 'institutions:export' institution.id %}>{% trans "Export institution metadata" %}</a>
                 {%  if perms.osf.delete_institution %}
-                <a class="btn btn-danger" href={% url 'institutions:delete' institution.id %}>Delete institution</a>
+                <a class="btn btn-danger" href={% url 'institutions:delete' institution.id %}>{% trans "Delete institution" %}</a>
                 {%  endif %}
             </div>
         </div>
@@ -26,7 +27,7 @@
         </div>
         <div class="row">
             <div class="col-md-12">
-                <a class="btn btn-default" href="{% url 'institutions:nodes' institution.id %}">View {{ node_count }} affiliated nodes</a>
+                <a class="btn btn-default" href="{% url 'institutions:nodes' institution.id %}">{% blocktrans %}View {{ node_count }} affiliated nodes{% endblocktrans %}</a>
             </div>
         </div>
         <div class="row">
@@ -37,7 +38,7 @@
                 <img class="institution-logo" src="{{ logohost }}/static/img/institutions/shields/{{ institution.logo_name }}">
             </div>
             <div class="col-md-2">
-                <h4>Banner:</h4>
+                <h4>{% trans "Banner:" %}</h4>
             </div>
             <div class="col-md-6">
                 <img class="institution-banner" src="{{ logohost }}/static/img/institutions/banners/{{ institution.banner_name }}">
@@ -48,7 +49,7 @@
             <div class="col-md-12">
                 {% if perms.osf.change_institution %}
                     <button id="show-modify-form" class="btn btn-link" type="button">
-                        Modify Institution
+                        {% trans "Modify Institution" %}
                     </button>
                 {% endif %}
             </div>
@@ -100,7 +101,7 @@
                 $('#form-view').toggle();
 
                 var text = $('#show-modify-form').text();
-                var new_text = (text.trim() == "Modify Institution") ? "Hide Form" : "Modify Institution";
+                var new_text = (text.trim() == "Modify Institution") ? {% trans "Hide Form" %} : {% trans "Modify Institution" %};
                 $('#show-modify-form').text(new_text);
             });
 

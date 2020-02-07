@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block top_includes %}
 <script src="{% static 'js/datatables.min.js' %}"></script>
@@ -9,11 +10,11 @@
 
 
 {% block title %}
-<title>RDM Addons</title>
+<title>{% trans "RDM Addons" %}</title>
 {% endblock title %}
 
 {% block content %}
-<h2>RDM Addons</h2>
+<h2>{% trans "RDM Addons" %}</h2>
 
 <!--pre>
 User: {{ user|pprint }}
@@ -25,7 +26,7 @@ Institutions: {{ user.institutions|pprint }}
 
 <h3>Institution List</h3>
 <table id="datatables" class="table table-striped table-bordered" cellspacing="0" width="100%">
-    <thead><tr><th>Logo</th><th>Name</th></tr></thead>
+    <thead><tr><th>{% trans "Logo" %}</th><th>{% trans "Name" %}</th></tr></thead>
     <tbody>
         {% for institution in institutions %}
             <tr>

@@ -1,13 +1,14 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load render_bundle from webpack_loader %}
 {% block title %}
-    <title>OSF Admin | Schedule banner</title>
+    <title>{% trans "GakuNin RDM Admin | Schedule banner" %}</title>
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-12">
-                <h2>Schedule a banner</h2>
+                <h2>{% trans "Schedule a banner" %}</h2>
             </div>
         </div>
 

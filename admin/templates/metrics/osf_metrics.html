@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
 {% load render_bundle from webpack_loader %}
 {% load static %}
+{% load i18n %}
 
 {% block title %}
-    <title>OSF Metrics</title>
+    <title>{% trans "GakuNin RDM Metrics" %}</title>
 {% endblock title %}
 
 {% block top_includes %}
@@ -22,18 +23,18 @@
 
 {% block content %}
 
-    <h1>OSF Metrics</h1>
+    <h1>{% trans "GakuNin RDM Metrics" %}</h1>
     <div>
         <!-- Nav tabs -->
         <ul class="nav nav-tabs" role="tablist">
-            <li role="presentation" class="active" id="user-tab"><a href="#user-data" role="tab" data-toggle="tab">User Data</a></li>
-            <li role="presentation" id="institution-tab"><a href="#institution-metrics" role="tab" data-toggle="tab">Institution Metrics</a></li>
-            <li role="presentation" id="active-user-tab"><a href="#active-user-metrics" role="tab" data-toggle="tab">Active User Metrics</a></li>
-            <li role="presentation" id="healthy-user-tab"><a href="#healthy-user-metrics" role="tab" data-toggle="tab">Healthy User Metrics</a></li>
-            <li role="presentation" id="raw-numbers-tab"><a href="#raw-numbers" role="tab" data-toggle="tab">Raw Numbers</a></li>
-            <li role="presentation" id="addons-tab"><a href="#addons" role="tab" data-toggle="tab">Addons</a></li>
-            <li role="presentation" id="preprints-tab"><a href="#preprints" role="tab" data-toggle="tab">Preprints</a></li>
-            <li role="presentation" id="downloads-tab"><a href="#downloads" role="tab" data-toggle="tab">Downloads</a></li>
+            <li role="presentation" class="active" id="user-tab"><a href="#user-data" role="tab" data-toggle="tab">{% trans "User Data" %}</a></li>
+            <li role="presentation" id="institution-tab"><a href="#institution-metrics" role="tab" data-toggle="tab">{% trans "Institution Metrics" %}</a></li>
+            <li role="presentation" id="active-user-tab"><a href="#active-user-metrics" role="tab" data-toggle="tab">{% trans "Active User Metrics" %}</a></li>
+            <li role="presentation" id="healthy-user-tab"><a href="#healthy-user-metrics" role="tab" data-toggle="tab">{% trans "Healthy User Metrics" %}</a></li>
+            <li role="presentation" id="raw-numbers-tab"><a href="#raw-numbers" role="tab" data-toggle="tab">{% trans "Raw Numbers" %}</a></li>
+            <li role="presentation" id="addons-tab"><a href="#addons" role="tab" data-toggle="tab">{% trans "Addons" %}</a></li>
+            <li role="presentation" id="preprints-tab"><a href="#preprints" role="tab" data-toggle="tab">{% trans "Preprints" %}</a></li>
+            <li role="presentation" id="downloads-tab"><a href="#downloads" role="tab" data-toggle="tab">{% trans "Downloads" %}</a></li>
         </ul>
 
         <!-- Tab panes -->
@@ -41,7 +42,7 @@
             <div role="tabpanel" class="tab-pane active" id="user-data">
                 <div class="row">
                     <div class="col-sm-3">
-                        <h3>User Data</h3>
+                        <h3>{% trans "User Data" %}</h3>
                     </div>
                     <div class="col-sm-9">
                         <div class="dropdown">
@@ -50,10 +51,10 @@
                                 <span class="caret"></span>
                             </button>
                             <ul class="dropdown-menu pull-right">
-                                <li><a href="#user-growth-row">User Growth</a></li>
-                                <li><a href="#user-gain-per-day">User gain per day</a></li>
-                                <li><a href="#registration-by-email-domain">Registrations by Email Domain</a></li>
-                                <li><a href="#node-logs-by-user-row">Node Logs by User</a></li>
+                                <li><a href="#user-growth-row">{% trans "User Growth" %}</a></li>
+                                <li><a href="#user-gain-per-day">{% trans "User gain per day" %}</a></li>
+                                <li><a href="#registration-by-email-domain">{% trans "Registrations by Email Domain" %}</a></li>
+                                <li><a href="#node-logs-by-user-row">{% trans "Node Logs by User" %}</a></li>
                             </ul>
                         </div>
                     </div>
@@ -66,26 +67,26 @@
                         <div class="col-sm-8">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    User Growth - Previous 800 days
+                                    {% trans "User Growth - Previous 800 days" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="active-user-chart"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    The growth of OSF Confirmed Users over the past 800 days.
+                                    {% trans "The growth of GakuNin RDM Confirmed Users over the past 800 days." %}
                                 </div>
                             </div>
                         </div>
                         <div class="col-sm-4">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Total Users
+                                    {% trans "Total Users" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="active-user-count"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    This is the total number of OSF Users with confirmed accounts.
+                                    {% trans "This is the total number of GakuNin RDM Users with confirmed accounts." %}
                                 </div>
                             </div>
                         </div>
@@ -95,39 +96,39 @@
                         <div class="col-sm-4">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Monthly User Increase
+                                    {% trans "Monthly User Increase" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="monthly-user-increase"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    The number of users gained in the past month.
+                                    {% trans "The number of users gained in the past month." %}
                                 </div>
                             </div>
                         </div>
                         <div class="col-sm-4">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Daily User Increase
+                                    {% trans "Daily User Increase" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="daily-user-increase"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    The number of users gained from two days ago until yesterday.
+                                    {% trans "The number of users gained from two days ago until yesterday." %}
                                 </div>
                             </div>
                         </div>
                         <div class="col-sm-4">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Average Daily User Gain
+                                    {% trans "Average Daily User Gain" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="average-gain-metric"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    The average daily user gain over the past 7 days.
+                                    {% trans "The average daily user gain over the past 7 days." %}
                                 </div>
                             </div>
                         </div>
@@ -136,13 +137,13 @@
                         <div class="col-sm-12">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    User Gain per Day
+                                    {% trans "User Gain per Day" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="user-gain-chart"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    The number of users gained in the past month.
+                                    {% trans "The number of users gained in the past month." %}
                                 </div>
                             </div>
                         </div>
@@ -151,26 +152,26 @@
                         <div class="col-sm-4">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Unverified New Users
+                                    {% trans "Unverified New Users" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="unverified-new-users"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    Users created within the last 7 days that have not been confirmed.
+                                    {% trans "Users created within the last 7 days that have not been confirmed." %}
                                 </div>
                             </div>
                         </div>
                         <div class="col-sm-8">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    User Growth over the Last Seven Days
+                                    {% trans "User Growth over the Last Seven Days" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="previous-7-days-of-users-by-status"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    The last 7 days of users, organized by status. Click a category in the legend to resize the axes.
+                                    {% trans "The last 7 days of users, organized by status. Click a category in the legend to resize the axes." %}
                                 </div>
                             </div>
                         </div>
@@ -179,13 +180,13 @@
                         <div class="col-sm-12">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Previous 7 days of user registrations by email domain
+                                    {% trans "Previous 7 days of user registrations by email domain" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="user-registration-by-email-domain"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    The last 7 days of users, organized by status.
+                                     {% trans "The last 7 days of users, organized by status." %}
                                 </div>
                             </div>
                         </div>
@@ -194,14 +195,14 @@
                         <div class="col-sm-12">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Yesterday's Node logs by user
+                                     {% trans "Yesterday's Node logs by user" %}
                                     <a id="reload-node-logs" class="glyphicon glyphicon-refresh"></a>
                                 </div>
                                 <div class="chart-stage">
                                     <div id="yesterdays-node-logs-by-user"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    The last day of node logs by user, if a user had over 100 node logs.
+                                    {% trans "The last day of node logs by user, if a user had over 100 node logs." %}
                                 </div>
                             </div>
                         </div>
@@ -212,7 +213,7 @@
             <div role="tabpanel" class="tab-pane" id="institution-metrics">
                 <div class="row">
                     <div class="col-sm-3">
-                        <h3>Institution Metrics</h3>
+                        <h3>{% trans "Institution Metrics" %}</h3>
                     </div>
                     <div class="col-sm-9">
                         <div class="dropdown">
@@ -221,10 +222,10 @@
                                 <span class="caret"></span>
                             </button>
                             <ul class="dropdown-menu pull-right">
-                                <li><a href="#institutional-users-row">Total Institutional Users</a></li>
-                                <li><a href="#institutional-users-growth-row">Institutional Users Growth</a></li>
-                                <li><a href="#affiliated-nodes">Affiliated Nodes</a></li>
-                                <li><a href="#affiliated-projects">Affiliated Projects</a></li>
+                                <li><a href="#institutional-users-row">{% trans "Total Institutional Users" %}</a></li>
+                                <li><a href="#institutional-users-growth-row">{% trans "Institutional Users Growth" %}</a></li>
+                                <li><a href="#affiliated-nodes">{% trans "Affiliated Nodes" %}</a></li>
+                                <li><a href="#affiliated-projects">{% trans "Affiliated Projects" %}</a></li>
                             </ul>
                         </div>
                     </div>
@@ -234,13 +235,13 @@
                     <div class="col-sm-6">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Total institutional Users
+                                {% trans "Total institutional Users" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="total-institutional-users"></div>
                             </div>
                             <div class="chart-notes">
-                                Total number of users who have accounts associated with their institutions.
+                                {% trans "Total number of users who have accounts associated with their institutions." %}
                             </div>
                         </div>
                     </div>
@@ -248,13 +249,13 @@
                     <div class="col-sm-6">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Institutional Users / Total OSF Users
+                                {% trans "Institutional Users / Total GakuNin RDM Users" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="percentage-institutional-users"></div>
                             </div>
                             <div class="chart-notes">
-                                The percentage of users who created an account through their institution.
+                                {% trans "The percentage of users who created an account through their institution." %}
                             </div>
                         </div>
                     </div>
@@ -263,13 +264,13 @@
                     <div class="col-sm-12">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Institutional Users over the past 100 Days
+                                {% trans "Institutional Users over the past 100 Days" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="institution-growth"></div>
                             </div>
                             <div class="chart-notes">
-                                The growth of users who have accounts associated with their institutions. Click on an institution name in the key to remove its line and resize the chart axes.
+                                {% trans "The growth of users who have accounts associated with their institutions. Click on an institution name in the key to remove its line and resize the chart axes." %}
                             </div>
                         </div>
                     </div>
@@ -277,34 +278,34 @@
                 <div class="institution-tables">
                     <div class="row" id="affiliated-nodes">
                         <div class="col-sm-12">
-                            <h4>Affiliated Nodes</h4>
-                            <p>Nodes (at all levels, projects and components) created by each institution as of yesterday.</p>
+                            <h4>{% trans "Affiliated Nodes" %}</h4>
+                            <p>{% trans "Nodes (at all levels, projects and components) created by each institution as of yesterday." %}</p>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-6">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Affiliated Public Nodes
+                                    {% trans "Affiliated Public Nodes" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="affiliated-public-nodes"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    Total number of public nodes (at all levels, projects and components) created by each institution as of yesterday.
+                                    {% trans "Total number of public nodes (at all levels, projects and components) created by each institution as of yesterday." %}
                                 </div>
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Affiliated Private Nodes
+                                    {% trans "Affiliated Private Nodes" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="affiliated-private-nodes"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    Total number of private nodes (at all levels, projects and components) created by each institution as of yesterday.
+                                    {% trans "Total number of private nodes (at all levels, projects and components) created by each institution as of yesterday." %}
                                 </div>
                             </div>
                         </div>
@@ -313,60 +314,60 @@
                         <div class="col-sm-6">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Affiliated Public Registrations
+                                    {% trans "Affiliated Public Registrations" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="affiliated-public-registered-nodes"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    Total number of public registered nodes (at all levels, projects and components) created by each institution as of yesterday.
+                                    {% trans "Total number of public registered nodes (at all levels, projects and components) created by each institution as of yesterday." %}
                                 </div>
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Affiliated Embargoed Registrations
+                                    {% trans "Affiliated Embargoed Registrations" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="affiliated-embargoed-registered-nodes"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    Total number of private registered nodes (at all levels, projects and components) created by each institution as of yesterday.
+                                    {% trans "Total number of private registered nodes (at all levels, projects and components) created by each institution as of yesterday." %}
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="row" id="affiliated-projects">
                         <div class="col-sm-12">
-                            <h4>Affiliated Projects</h4>
-                            <p>Top level projects created by each institution as of yesterday.</p>
+                            <h4>{% trans "Affiliated Projects" %}</h4>
+                            <p>{% trans "Top level projects created by each institution as of yesterday." %}</p>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-6">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Affiliated Public Projects
+                                    {% trans "Affiliated Public Projects" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="affiliated-public-projects"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    Total number of public top level projects created by each institution as of yesterday.
+                                    {% trans "Total number of public top level projects created by each institution as of yesterday." %}
                                 </div>
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Affiliated Private Projects
+                                    {% trans "Affiliated Private Projects" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="affiliated-private-projects"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    Total number of private top level projects created by each institution as of yesterday.
+                                    {% trans "Total number of private top level projects created by each institution as of yesterday." %}
                                 </div>
                             </div>
                         </div>
@@ -375,26 +376,26 @@
                         <div class="col-sm-6">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Affiliated Public Project Registrations
+                                    {% trans "Affiliated Public Project Registrations" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="affiliated-public-registered-projects"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    Total number of public registeredtop level projects created by each institution as of yesterday.
+                                    {% trans "Total number of public registeredtop level projects created by each institution as of yesterday." %}
                                 </div>
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Affiliated Embargoed Project Registrations
+                                    {% trans "Affiliated Embargoed Project Registrations" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="affiliated-embargoed-registered-projects"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    Total number of private registered top level projects created by each institution as of yesterday.
+                                    {% trans "Total number of private registered top level projects created by each institution as of yesterday." %}
                                 </div>
                             </div>
                         </div>
@@ -404,7 +405,7 @@
             <div role="tabpanel" class="tab-pane" id="active-user-metrics">
                 <div class="row">
                     <div class="col-sm-3">
-                        <h3>Active User Metrics!</h3>
+                        <h3>{% trans "Active User Metrics!" %}</h3>
                     </div>
                     <div class="col-sm-9">
                         <div class="dropdown">
@@ -413,9 +414,9 @@
                                 <span class="caret"></span>
                             </button>
                             <ul class="dropdown-menu pull-right">
-                                <li><a href="#daily-active-users-row">Daily Active Users</a></li>
-                                <li><a href="#monthly-and-yearly-active-users">Monthly and Yearly Users</a></li>
-                                <li><a href="#project-to-user-ratio">Project to User Ratios</a></li>
+                                <li><a href="#daily-active-users-row">{% trans "Daily Active Users" %}</a></li>
+                                <li><a href="#monthly-and-yearly-active-users">{% trans "Monthly and Yearly Users" %}</a></li>
+                                <li><a href="#project-to-user-ratio">{% trans "Project to User Ratios" %}</a></li>
                             </ul>
                         </div>
                     </div>
@@ -426,13 +427,13 @@
                     <div class="col-sm-12">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Recent Daily Unique Sessions
+                                {% trans "Recent Daily Unique Sessions" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="recent-daily-unique-sessions"></div>
                             </div>
                             <div class="chart-notes">
-                                The previous 14 days of unique visitor sessions.
+                                {% trans "The previous 14 days of unique visitor sessions." %}
                             </div>
                         </div>
                     </div>
@@ -441,26 +442,26 @@
                     <div class="col-sm-6">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Daily Active Logged In Users
+                                {% trans "Daily Active Logged In Users" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="daily-active-users"></div>
                             </div>
                             <div class="chart-notes">
-                                This is the number of logged in users with user ids who had at least one pageview on the GakuNin RDM yesterday.
+                                {% trans "This is the number of logged in users with user ids who had at least one pageview on the GakuNin RDM yesterday." %}
                             </div>
                         </div>
                     </div>
                     <div class="col-sm-6">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Daily Active Users / Total Users
+                                {% trans "Daily Active Users / Total Users" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="daily-active-over-total-users"></div>
                             </div>
                             <div class="chart-notes">
-                                Notes about this chart
+                                {% trans "Notes about this chart" %}
                             </div>
                         </div>
                     </div>
@@ -469,39 +470,39 @@
                     <div class="col-sm-4">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Monthly Active Users (MAU)
+                                {% trans "Monthly Active Users (MAU)" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="monthly-active-users"></div>
                             </div>
                             <div class="chart-notes">
-                                Users who visited at least one page on the GakuNin RDM from last month.
+                                {% trans "Users who visited at least one page on the GakuNin RDM from last month." %}
                             </div>
                         </div>
                     </div>
                     <div class="col-sm-4">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Last Month's Active Users / Total Users
+                                {% trans "Last Month's Active Users / Total Users" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="monthly-active-over-total-users"></div>
                             </div>
                             <div class="chart-notes">
-                                Last month's active users / total confirmed users
+                                {% trans "Last month's active users / total confirmed users" %}
                             </div>
                         </div>
                     </div>
                     <div class="col-sm-4">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Monthly Growth of MAU%
+                                {% trans "Monthly Growth of MAU%" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="monthly-active-user-increase"></div>
                             </div>
                             <div class="chart-notes">
-                                The percent increase from two months ago to one month ago of what percentage of users with an account were active on the GakuNin RDM.
+                                {% trans "The percent increase from two months ago to one month ago of what percentage of users with an account were active on the GakuNin RDM." %}
                             </div>
                         </div>
                     </div>
@@ -510,118 +511,118 @@
                     <div class="col-sm-6">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Yearly Active Users
+                                {% trans "Yearly Active Users" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="yearly-active-users"></div>
                             </div>
                             <div class="chart-notes">
-                                Users who were active on the GakuNin RDM over the past year.
+                                {% trans "Users who were active on the GakuNin RDM over the past year." %}
                             </div>
                         </div>
                     </div>
                     <div class="col-sm-6">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Yearly Active Users / Total Users
+                                {% trans "Yearly Active Users / Total Users" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="yearly-active-over-total-users"></div>
                             </div>
                             <div class="chart-notes">
-                                The percentage of our yearly active users compared to our total users with confirmed accounts.
+                                {% trans "The percentage of our yearly active users compared to our total users with confirmed accounts." %}
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="row" id="project-to-user-ratio">
                     <div class="col-sm-12">
-                        <h4>Project to User Ratios</h4>
+                        <h4>{% trans "Project to User Ratios" %}</h4>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-sm-6">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Projects / Users
+                                {% trans "Projects / Users" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="projects-per-user"></div>
                             </div>
                             <div class="chart-notes">
-                                The number of projects divided by the number of users with active accounts.
+                                {% trans "The number of projects divided by the number of users with active accounts." %}
                             </div>
                         </div>
                     </div>
                     <div class="col-sm-6">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                 Projects / Monthly Active Users
+                                 {% trans "Projects / Monthly Active Users" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="projects-per-monthly-user"></div>
                             </div>
                             <div class="chart-notes">
-                                The number of projects divided by the number of people who had accounts and were active last month.
+                                {% trans "The number of projects divided by the number of people who had accounts and were active last month." %}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             <div role="tabpanel" class="tab-pane" id="healthy-user-metrics">
-                <div><h2>Healthy User Metrics</h2></div>
+                <div><h2>{% trans "Healthy User Metrics" %}</h2></div>
                 <hr class="hr-menu">
                 <div class="row">
                     <div class="col-sm-12">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Stickiness Ratio
+                                {% trans "Stickiness Ratio" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="stickiness-ratio-1-day-ago"></div>
                             </div>
                             <div class="chart-notes">
-                                Of those that are active in the last 30 days, how many are active daily?
-                                Formula: Daily Active Users (yesterday) / Daily Active Users previous 30 days
+                                {% trans "Of those that are active in the last 30 days, how many are active daily?
+                                Formula: Daily Active Users (yesterday) / Daily Active Users previous 30 days" %}
                             </div>
                         </div>
                     </div>
                     <div class="col-sm-4">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Stickiness Ratio 1 week ago
+                                {% trans "Stickiness Ratio 1 week ago" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="stickiness-ratio-1-week-ago"></div>
                             </div>
                             <div class="chart-notes">
-                                Stickiness Ratio for the same day of the week 1 week ago.
+                                {% trans "Stickiness Ratio for the same day of the week 1 week ago." %}
                             </div>
                         </div>
                     </div>
                     <div class="col-sm-4">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Stickiness Ratio 4 weeks ago
+                                {% trans "Stickiness Ratio 4 weeks ago" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="stickiness-ratio-4-weeks-ago"></div>
                             </div>
                             <div class="chart-notes">
-                                Stickiness Ratio for the same day of the week 4 weeks ago.
+                                {% trans "Stickiness Ratio for the same day of the week 4 weeks ago." %}
                             </div>
                         </div>
                     </div>
                     <div class="col-sm-4">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Stickiness Ratio 52 weeks ago
+                                {% trans "Stickiness Ratio 52 weeks ago" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="stickiness-ratio-52-weeks-ago"></div>
                             </div>
                             <div class="chart-notes">
-                                Stickiness Ratio for the same day of the week 52 weeks ago.
+                                {% trans "Stickiness Ratio for the same day of the week 52 weeks ago." %}
                             </div>
                         </div>
                     </div>
@@ -632,7 +633,7 @@
 
                     <div class="row">
                         <div class="col-sm-3">
-                            <h3>Raw Numbers</h3>
+                            <h3>{% trans "Raw Numbers" %}</h3>
                         </div>
                         <div class="col-sm-9">
                             <div class="dropdown">
@@ -641,11 +642,11 @@
                                     <span class="caret"></span>
                                 </button>
                                 <ul class="dropdown-menu pull-right">
-                                    <li><a href="#downloads">Downloads</a></li>
-                                    <li><a href="#projects">Projects - Top Level</a></li>
-                                    <li><a href="#nodes">Nodes - Projects & Components</a></li>
-                                    <li><a href="#registered-projects">Registered Projects</a></li>
-                                    <li><a href="#registered-nodes">Registered Nodes</a></li>
+                                    <li><a href="#downloads">{% trans "Downloads" %}</a></li>
+                                    <li><a href="#projects">{% trans "Projects - Top Level" %}</a></li>
+                                    <li><a href="#nodes">{% trans "Nodes - Projects & Components" %}</a></li>
+                                    <li><a href="#registered-projects">{% trans "Registered Projects" %}</a></li>
+                                    <li><a href="#registered-nodes">{% trans "Registered Nodes" %}</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -653,20 +654,20 @@
                     <hr class="hr-menu">
                     <div class="row" id="projects">
                         <div class="col-sm-12">
-                            <h3>Projects</h3>
+                            <h3>{% trans "Projects" %}</h3>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-12">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Total Projects
+                                    {% trans "Total Projects" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="total-projects"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    The total number of all top level projects on the GakuNin RDM
+                                    {% trans "The total number of all top level projects on the GakuNin RDM" %}
                                 </div>
                             </div>
                         </div>
@@ -677,13 +678,13 @@
                                 <div class="col-sm-12">
                                     <div class="chart-wrapper">
                                         <div class="chart-title">
-                                            Public Projects
+                                            {% trans "Public Projects" %}
                                         </div>
                                         <div class="chart-stage">
                                             <div id="public-projects"></div>
                                         </div>
                                         <div class="chart-notes">
-                                            The total number of public top level projects
+                                            {% trans "The total number of public top level projects" %}
                                         </div>
                                     </div>
                                 </div>
@@ -692,13 +693,13 @@
                                 <div class="col-sm-12">
                                     <div class="chart-wrapper">
                                         <div class="chart-title">
-                                            Private Projects
+                                            {% trans "Private Projects" %}
                                         </div>
                                         <div class="chart-stage">
                                             <div id="private-projects"></div>
                                         </div>
                                         <div class="chart-notes">
-                                            The total number of private top level projects
+                                            {% trans "The total number of private top level projects" %}
                                         </div>
                                     </div>
                                 </div>
@@ -707,33 +708,33 @@
                         <div class="col-sm-6">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Public vs Private Projects
+                                    {% trans "Public vs Private Projects" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="total-projects-pie"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    Notes about this chart
+                                    {% trans "Notes about this chart" %}
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="row" id="nodes">
                         <div class="col-sm-12">
-                            <h3>Nodes</h3>
+                            <h3>{% trans "Nodes" %}</h3>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-12">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Total Nodes - Projects and Components
+                                    {% trans "Total Nodes - Projects and Components" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="total-nodes"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    The total number of all projects and components on the GakuNin RDM.
+                                    {% trans "The total number of all projects and components on the GakuNin RDM." %}
                                 </div>
                             </div>
                         </div>
@@ -744,13 +745,13 @@
                                 <div class="col-sm-12">
                                     <div class="chart-wrapper">
                                         <div class="chart-title">
-                                            Public Nodes
+                                            {% trans "Public Nodes" %}
                                         </div>
                                         <div class="chart-stage">
                                             <div id="public-nodes"></div>
                                         </div>
                                         <div class="chart-notes">
-                                            The total number of public nodes - including projects and components
+                                            {% trans "The total number of public nodes - including projects and components" %}
                                         </div>
                                     </div>
                                 </div>
@@ -759,13 +760,13 @@
                                 <div class="col-sm-12">
                                     <div class="chart-wrapper">
                                         <div class="chart-title">
-                                            Private Nodes
+                                            {% trans "Private Nodes" %}
                                         </div>
                                         <div class="chart-stage">
                                             <div id="private-nodes"></div>
                                         </div>
                                         <div class="chart-notes">
-                                            The total number of private nodes - including projects and components
+                                            {% trans "The total number of private nodes - including projects and components" %}
                                         </div>
                                     </div>
                                 </div>
@@ -774,33 +775,33 @@
                         <div class="col-sm-6">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Public vs Private Nodes - Components & Projects
+                                    {% trans "Public vs Private Nodes - Components & Projects" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="total-nodes-pie"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    The percentages of public vs private combined projects and components on the GakuNin RDM.
+                                    {% trans "The percentages of public vs private combined projects and components on the GakuNin RDM." %}
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="row" id="registered-projects">
                         <div class="col-sm-12">
-                            <h3>Registered Projects</h3>
+                            <h3>{% trans "Registered Projects" %}</h3>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-12">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Total Registered Projects
+                                    {% trans "Total Registered Projects" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="total-registered-projects"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    The total number of all registered top level projects on the GakuNin RDM.
+                                    {% trans "The total number of all registered top level projects on the GakuNin RDM." %}
                                 </div>
                             </div>
                         </div>
@@ -811,13 +812,13 @@
                                 <div class="col-sm-12">
                                     <div class="chart-wrapper">
                                         <div class="chart-title">
-                                            Public Registered Projects
+                                            {% trans "Public Registered Projects" %}
                                         </div>
                                         <div class="chart-stage">
                                             <div id="public-registered-projects"></div>
                                         </div>
                                         <div class="chart-notes">
-                                            The total number of public registered top level projects
+                                            {% trans "The total number of public registered top level projects" %}
                                         </div>
                                     </div>
                                 </div>
@@ -826,13 +827,13 @@
                                 <div class="col-sm-12">
                                     <div class="chart-wrapper">
                                         <div class="chart-title">
-                                            Embargoed Registered Projects
+                                            {% trans "Embargoed Registered Projects" %}
                                         </div>
                                         <div class="chart-stage">
                                             <div id="embargoed-registered-projects"></div>
                                         </div>
                                         <div class="chart-notes">
-                                            The number of private registered top level projects
+                                            {% trans "The number of private registered top level projects" %}
                                         </div>
                                     </div>
                                 </div>
@@ -841,33 +842,33 @@
                         <div class="col-sm-6">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Public vs Embargoed Registered Top-Level Projects
+                                    {% trans "Public vs Embargoed Registered Top-Level Projects" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="total-registered-projects-pie"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    The percentages of public vs embargoed top-level project registrations on the GakuNin RDM.
+                                    {% trans "The percentages of public vs embargoed top-level project registrations on the GakuNin RDM." %}
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="row" id="registered-nodes">
                         <div class="col-sm-12">
-                            <h3>Registered Nodes</h3>
+                            <h3>{% trans "Registered Nodes" %}</h3>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-12">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Total Registered Nodes - Projects & Components
+                                    {% trans "Total Registered Nodes - Projects & Components" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="total-registered-nodes"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    The total number of all registered nodes - projects & components on the GakuNin RDM.
+                                    {% trans "The total number of all registered nodes - projects & components on the GakuNin RDM." %}
                                 </div>
                             </div>
                         </div>
@@ -878,13 +879,13 @@
                                 <div class="col-sm-12">
                                     <div class="chart-wrapper">
                                         <div class="chart-title">
-                                            Public Registered Nodes
+                                            {% trans "Public Registered Nodes" %}
                                         </div>
                                         <div class="chart-stage">
                                             <div id="public-registered-nodes"></div>
                                         </div>
                                         <div class="chart-notes">
-                                            The total number of public registered nodes - projects & components
+                                            {% trans "The total number of public registered nodes - projects & components" %}
                                         </div>
                                     </div>
                                 </div>
@@ -893,13 +894,13 @@
                                 <div class="col-sm-12">
                                     <div class="chart-wrapper">
                                         <div class="chart-title">
-                                            Embargoed Registered Nodes
+                                            {% trans "Embargoed Registered Nodes" %}
                                         </div>
                                         <div class="chart-stage">
                                             <div id="embargoed-registered-nodes"></div>
                                         </div>
                                         <div class="chart-notes">
-                                            The number of embargoed registered projects and components
+                                            {% trans "The number of embargoed registered projects and components" %}
                                         </div>
                                     </div>
                                 </div>
@@ -908,13 +909,13 @@
                         <div class="col-sm-6">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Public vs Embargoed Registered Nodes
+                                    {% trans "Public vs Embargoed Registered Nodes" %}
                                 </div>
                                 <div class="chart-stage">
                                     <div id="total-registered-nodes-pie"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    The percentages of public vs embargoed top-level project registrations on the GakuNin RDM.
+                                    {% trans "The percentages of public vs embargoed top-level project registrations on the GakuNin RDM." %}
                                 </div>
                             </div>
                         </div>
@@ -922,19 +923,19 @@
                 </div>
             </div>
             <div role="tabpanel" class="tab-pane" id="addons">
-                <div><h2>Addons</h2></div>
+                <div><h2>{% trans "Addons" %}</h2></div>
                 <hr class="hr-menu">
                 <div class="row">
                     <div class="col-sm-12">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Previous 7 days of addon by name
+                                {% trans "Previous 7 days of addon by name" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="previous-7-days-of-linked-addon-by-addon-name"></div>
                             </div>
                             <div class="chart-notes">
-                                The total number of all registered nodes - projects & components on the GakuNin RDM.
+                                {% trans "The total number of all registered nodes - projects & components on the GakuNin RDM." %}
                             </div>
                         </div>
                     </div>
@@ -947,25 +948,25 @@
                     <div class="col-sm-12">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Previous 30 days of preprints by provider
+                                {% trans "Previous 30 days of preprints by provider" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="preprints-added"></div>
                             </div>
                             <div class="chart-notes">
                                 <div>
-                                    The total number of preprints grouped by preprint provider.
+                                    {% trans "The total number of preprints grouped by preprint provider." %}
                                 </div>
                                 <span>
-                                    Start date range:
+                                    {% trans "Start date range:" %}
                                     <input id="start-date" placeholder="yyyy-mm-dd" type="date">
                                 </span>
                                 <span>
-                                    End date range:
+                                    {% trans "End date range:" %}
                                     <input id="end-date" placeholder="yyyy-mm-dd" type="date">
                                 </span>
                                 <span>
-                                    <a class="btn btn-success" id="preprints-range">Enter new date range</a>
+                                    <a class="btn btn-success" id="preprints-range">{% trans "Enter new date range" %}</a>
                                 </span>
                             </div>
                         </div>
@@ -973,31 +974,31 @@
                 </div>
             </div>
             <div role="tabpanel" class="tab-pane" id="downloads">
-                <div><h2>Downloads</h2></div>
+                <div><h2>{% trans "Downloads" %}</h2></div>
                 <hr class="hr-menu">
                 <div class="row">
                     <div class="col-sm-12">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Daily download counts
+                                {% trans "Daily download counts" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="download-counts"></div>
                             </div>
                             <div class="chart-notes">
                                 <div>
-                                    The total number of downloads by non-contribs
+                                    {% trans "The total number of downloads by non-contribs" %}
                                 </div>
                                 <span>
-                                    Start date range:
+                                    {% trans "Start date range:" %}
                                     <input id="start-date-downloads" placeholder="yyyy-mm-dd" type="date">
                                 </span>
                                 <span>
-                                    End date range:
+                                    {% trans "End date range:" %}
                                     <input id="end-date-downloads" placeholder="yyyy-mm-dd" type="date">
                                 </span>
                                 <span>
-                                    <a class="btn btn-success" id="downloads-range">Enter new date range</a>
+                                    <a class="btn btn-success" id="downloads-range">{% trans "Enter new date range" %}</a>
                                 </span>
                             </div>
                         </div>
@@ -1007,26 +1008,26 @@
                     <div class="col-sm-6">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Downloads
+                                {% trans "Downloads" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="number-of-downloads"></div>
                             </div>
                             <div class="chart-notes">
-                                The total number of files downloaded from the OSF
+                                {% trans "The total number of files downloaded from the GakuNIn RDM" %}
                             </div>
                         </div>
                     </div>
                     <div class="col-sm-6">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Unique Downloads
+                                {% trans "Unique Downloads" %}
                             </div>
                             <div class="chart-stage">
                                 <div id="number-of-unique-downloads"></div>
                             </div>
                             <div class="chart-notes">
-                                The number of unique downloads of files on the OSF.
+                                {% trans "The number of unique downloads of files on the GakuNin RDM." %}
                             </div>
                         </div>
                     </div>

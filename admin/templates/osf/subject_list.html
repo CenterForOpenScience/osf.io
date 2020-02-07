@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
     <form method="GET">
@@ -12,11 +13,11 @@
     <table style="width:100%">
       <tr>
         <td> ID </td>
-        <td> Text </td>
-        <td> Provider </td>
-        <td> Level </td>
-        <td> Highlighted </td>
-        <td> Edit </td>
+        <td> {% trans "Text " %}</td>
+        <td> {% trans "Provider" %} </td>
+        <td> {% trans "Level" %} </td>
+        <td> {% trans "Highlighted" %} </td>
+        <td> {% trans "Edit" %} </td>
       </tr>
     {% for obj in object_list %}
       <tr>
@@ -25,7 +26,7 @@
         <td> {{obj.provider.name}} </td>
         <td> {{obj.hierarchy|length}} </td>
         <td> {{obj.highlighted}} </td>
-        <td> <a href="{% url 'subjects:update' obj.id %}"><button> Edit </button></a> </td>
+        <td> <a href="{% url 'subjects:update' obj.id %}"><button> {% trans "Edit" %} </button></a> </td>
       </tr>
     {% endfor %}
     </table>

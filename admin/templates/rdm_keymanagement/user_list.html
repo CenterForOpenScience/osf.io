@@ -1,15 +1,16 @@
 {% include "util/pagination.html" with items=page status=status %}
+{% load i18n %}
 {% if form_action %}
 <form action={{form_action}} method="POST">
 {% endif %}
 <table class="table table-striped table-hover table-responsive">
     <thead>
         <tr>
-            <th>GUID</th>
-            <th>Username</th>
-            <th>Fullname</th>
-            <th>Date confirmed</th>
-            <th>Date disabled</th>
+            <th>{% trans "GUID" %}</th>
+            <th>{% trans "Username" %}</th>
+            <th>{% trans "Fullname" %}</th>
+            <th>{% trans "Date confirmed" %}</th>
+            <th>{% trans "Date disabled" %}</th>
             <th>&nbsp;</th>
         </tr>
     </thead>

@@ -1,7 +1,8 @@
+{% load i18n %}
 <form class="well" method="post" action="{% url 'users:add_system_tag' guid=guid %}">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">x</button>
-        <h3>Add a system tag to this user</h3>
+        <h3>{% trans "Add a system tag to this user" %}</h3>
     </div>
     <div class="modal-body">
         {% csrf_token %}
@@ -11,7 +12,7 @@
         <input class="btn btn-danger" type="submit" value="Confirm" />
         <button type="button" class="btn btn-default"
                 data-dismiss="modal">
-            Cancel
+            {% trans "Cancel" %}
         </button>
     </div>
 </form>

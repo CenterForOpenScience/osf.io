@@ -1,15 +1,16 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% block title %}
-    <title>OSF Admin | Delete Asset</title>
+    <title>{% trans "GakuNin RDM Admin | Delete Asset" %}</title>
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-12">
-                <h4>Confirm Delete Asset</h4>
+                <h4>{% trans "Confirm Delete Asset" %}</h4>
                 <form action="" method="post">{% csrf_token %}
                     <p>
-                        Are you sure you want to delete <b>{{ object.name }}</b>?
+                        {% trans "Are you sure you want to delete " %}<b>{{ object.name }}</b>{% trans "?" %}
                     </p>
                     <input class="btn btn-primary" type="submit" value="Confirm" />
                 </form>

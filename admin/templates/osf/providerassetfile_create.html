@@ -2,7 +2,8 @@
 {% load render_bundle from webpack_loader %}
 {% load static %}
 {% block title %}
-    <title>Provider Asset File</title>
+{% load i18n %}
+    <title>{% trans "Provider Asset File" %}</title>
 {% endblock title %}
 {% block content %}
 <form action="" method="post" enctype="multipart/form-data">

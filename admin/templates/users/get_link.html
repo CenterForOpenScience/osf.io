@@ -1,6 +1,7 @@
+{% load i18n %}
 <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal">x</button>
-    <h3>{{ title }} for user {{ username }}</h3>
+    <h3>{% blocktrans %}{{ title }} for user {{ username }}{% endblocktrans %}</h3>
 </div>
 <div class="modal-body">
     {% if user_link %}
@@ -17,6 +18,6 @@
 <div class="modal-footer">
     <button type="button" class="btn btn-default"
             data-dismiss="modal">
-        Cancel
+        {% trans "Cancel" %}
     </button>
 </div>

@@ -1,3 +1,4 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html>
   <head>
@@ -220,16 +221,16 @@ div.image_box{
 {% endblock top_includes %}
 
     {% block title %}
-      <title>RDM Statistics</title>
+      <title>{% trans "RDM Statistics" %}</title>
     {% endblock title %}
 
 {% block content %}
-<h2>RDM Statistics</h2>
+<h2>{% trans "RDM Statistics" %}</h2>
 
 <div class="row">
     <div class="col-sm-12">
         <div class="panel panel-default">
-            <div class="panel-heading clearfix"><div><h3 class="panel-title"> Institution </h3></div></div>
+            <div class="panel-heading clearfix"><div><h3 class="panel-title"> {% trans "Institution" %} </h3></div></div>
             <div class="panel-body">
                 <table cellspacing="0">
                     <tr><td>
@@ -257,7 +258,7 @@ div.image_box{
                     <div>
                         <table class="stat-table table table-striped table-bordered" style="width: auto; font-size: 9px; margin: 5xp; padding:3px;">
                             <tr>
-                                <th class='stat-name'>date</th>
+                                <th class='stat-name'>{% trans "date" %}</th>
                                 {% for label in statistic_data.label %}
                                     <th>{{ label }}</th>
                                 {% endfor %}

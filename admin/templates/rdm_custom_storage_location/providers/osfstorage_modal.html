@@ -1,24 +1,25 @@
+{% load i18n %}
 <div class="modal fade" id="osfstorage_modal" tabindex="-1" role="dialog" aria-labelledby="osfstorage_modal_label">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
                         aria-hidden="true">&times;</span></button>
-                <h3 id="osfstorage_modal_label">Connect NII Storage</h3>
+                <h3 id="osfstorage_modal_label">{% trans "Connect NII Storage" %}</h3>
             </div>
             <div class="modal-body">
                 <div>
                     <div class="form-group">
                         <span>
-                            NII Storage is selected as Institutional Storage.
+                            {% trans "NII Storage is selected as Institutional Storage." %}
                         </span>
                     </div>
                 </div>
 
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" id="osfstorage_cancel" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-success save-credentials" id="osfstorage_save">Save</button>
+                <button type="button" class="btn btn-default" id="osfstorage_cancel" data-dismiss="modal">{% trans "Cancel" %}</button>
+                <button type="button" class="btn btn-success save-credentials" id="osfstorage_save">{% trans "Save" %}</button>
             </div>
         </div>
     </div>

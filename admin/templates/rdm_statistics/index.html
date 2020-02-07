@@ -1,20 +1,21 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block title %}
-<title>RDM Statistics</title>
+<title>{% trans "RDM Statistics" %}</title>
 {% endblock title %}
 {% block content %}
-<h2>RDM Statistics</h2>
+<h2>{% trans "RDM Statistics" %}</h2>
 
 <div class="row">
     <div class="col-sm-12">
         <div class="panel panel-default">
-            <div class="panel-heading clearfix"><h3 class="panel-title">statistics</h3></div>
+            <div class="panel-heading clearfix"><h3 class="panel-title">{% trans "statistics" %}</h3></div>
             <div class="panel-body">
-                <div>institution </div>
+                <div>{% trans "institution " %}</div>
                 <div class="text-center">
-                    <div>statistics info</div>
+                    <div>{% trans "statistics info" %}</div>
                     {% for key, val in data.items %}
                     <div><pre>{{ key }} :</pre></div>
                     <div><pre>{{ val }} :</pre></div>

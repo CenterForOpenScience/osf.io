@@ -1,12 +1,13 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 {% block title %}
-<title>User Search Results</title>
+<title>{% trans "User Search Results" %}</title>
 {% endblock title %}
 {% block content %}
   {% include 'users/user_list.html' %}
 
     {% if not users|length %}
-     <h3>No results found</h3>
+     <h3>{% trans "No results found" %}</h3>
     {% endif %}
 {% endblock content %}

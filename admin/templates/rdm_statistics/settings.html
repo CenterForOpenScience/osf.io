@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block title %}
-<title>RDM Announcements - Options</title>
+<title>{% trans "RDM Announcements - Options" %}</title>
 {% endblock title %}
 {% block content %}
-<h2>RDM Announcements - Options</h2>
+<h2>{% trans "RDM Announcements - Options" %}</h2>
 
 <div class="row">
     <form class="form-horizontal" action="{% url 'statistics:preview' %}">

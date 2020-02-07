@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load render_bundle from webpack_loader %}
 {% load static %}
+{% load i18n %}
 
 {% block top_includes %}
 <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
@@ -12,18 +13,18 @@
 {% load spam_extras %}
 
 {% block title %}
-<title>Institutional Storage</title>
+<title>{% trans "Institutional Storage" %}</title>
 {% endblock title %}
 
 {% block content %}
-<h2>Institutional Storage <small>({{ institution.name }})</small></h2>
+<h2>{% trans "Institutional Storage " %}<small>({{ institution.name }})</small></h2>
 
 <div id="content-main">
     <form role="form" id="institutional_storage_form">
         <div id="addonSettings">
             <div class="row form-inline storage-name">
                 <div class="form-group">
-                    <label for="storage_name" class="label-large">Name:</label>
+                    <label for="storage_name" class="label-large">{% trans "Name:" %}</label>
                     <input type="text" required class="form-control" id="storage_name" name="storage_name" value="{{ region.name }}" oninvalid="this.setCustomValidity('This field is required.') " oninput="setCustomValidity('')" {% if selected_provider_short_name == 'osfstorage' %}disabled{% endif %}>
                 </div>
             </div>
@@ -31,7 +32,7 @@
                 <div class="col-md-12">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <h3 class="panel-title label-large">Configure Institutional Storage Accounts</h3>
+                            <h3 class="panel-title label-large">{% trans "Configure Institutional Storage Accounts" %}</h3>
                         </div>
                         <div class="panel-body">
 
@@ -58,8 +59,8 @@
                         </div>
                     </div>
                     <div class="pull-right">
-                        <button class="btn btn-default" type="reset">Cancel</button>
-                        <button class="btn btn-success next-btn" type="submit">Save</button>
+                        <button class="btn btn-default" type="reset">{% trans "Cancel" %}</button>
+                        <button class="btn btn-success next-btn" type="submit">{% trans "Save" %}</button>
                     </div>
                 </div>
             </div>

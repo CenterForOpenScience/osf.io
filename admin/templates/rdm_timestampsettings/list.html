@@ -1,24 +1,25 @@
 {% extends "base.html" %}
 {% load render_bundle from webpack_loader %}
 {% load spam_extras %}
+{% load i18n %}
 
 {% load static %}
 {% block top_includes %}
   <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
 {% endblock %}
 {% block title %}
-    <title>List of Institutions</title>
+    <title>{% trans "List of Institutions" %}</title>
 {% endblock title %}
 {% block content %}
-    <h2>List of Institutions</h2>
+    <h2>{% trans "List of Institutions" %}</h2>
 
     {% include "util/pagination.html" with items=page status=status %}
     <table class="table table-striped table-hover table-responsive">
     <thead>
         <tr>
-            <th>Logo</th>
-            <th>Name</th>
-            <th>Select Timestamp Function</th>
+            <th>{% trans "Logo" %}</th>
+            <th>{% trans "Name" %}</th>
+            <th>{% trans "Select Timestamp Function" %}</th>
         </tr>
     </thead>
     <tbody>
@@ -46,7 +47,8 @@
             <label>
                   <input type="checkbox"
                           data-institution-short-name="{{ data.institution.name }}"
-                          data-institution-id="{{ data.institution.id }}" {%if data.timestamppattern.is_forced %}checked{% endif %}> Force to use
+                          data-institution-id="{{ data.institution.id }}" {%if data.timestamppattern.is_forced %}checked{% endif %}> {% trans "Logo" %}</th>
+            <th>{% trans "Force to use" %}
             </lable>
         </td>
     </tr>

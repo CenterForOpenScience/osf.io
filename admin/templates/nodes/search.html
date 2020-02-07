@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 {% load node_extras %}
 {% block title %}
-    <title>Node Search</title>
+    <title>{% trans "Node Search" %}</title>
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
@@ -13,7 +14,7 @@
                     <div class="alert alert-danger">{{ form.errors }}</div>
                 {% endif %}
                 <div class="form-group">
-                    <label for="guid">Node GUID:</label>
+                    <label for="guid">{% trans "Node GUID:" %}</label>
                     {{ form.guid }}
                 </div>
                 <input type="submit" class="btn btn-primary" value="Submit" />

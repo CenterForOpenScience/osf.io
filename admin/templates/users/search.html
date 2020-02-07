@@ -1,16 +1,17 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 {% load node_extras %}
 {% block top_includes %}
   <link rel="stylesheet" type="text/css" href="/static/css/base.css" />
 {% endblock %}
 {% block title %}
-    <title>User Search</title>
+    <title>{% trans "User Search" %}</title>
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
         <div class="row">
-            <h3>User Search</h3>
+            <h3>{% trans "User Search" %}</h3>
         </div>
         <div class="row">
             <div class="col-md-6">
@@ -23,13 +24,13 @@
         </div>
         <div class="row">
             <div class="col-md-12">
-                <h3>User Workshop Follow-up</h3>
+                <h3>{% trans "User Workshop Follow-up" %}</h3>
             </div>
         </div>
         <div class="row">
             <div class="col-md-12">
                 <a href="{% url 'users:workshop' %}" class="btn btn-default">
-                    Go
+                    {% trans "Go" %}
                 </a>
 
             </div>

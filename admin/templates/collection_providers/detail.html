@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 {% block top_includes %}
     <script src="/static/js/collection_providers/collectionProviders.js"></script>
@@ -12,8 +13,8 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-12">
-                <a class="btn btn-primary" href={% url 'collection_providers:export' collection_provider.id %}>Export collection provider metadata</a>
-                <a class="btn btn-danger" href={% url 'collection_providers:delete' collection_provider.id %}>Delete collection provider</a>
+                <a class="btn btn-primary" href={% url 'collection_providers:export' collection_provider.id %}>{% trans "Export collection provider metadata" %}</a>
+                <a class="btn btn-danger" href={% url 'collection_providers:delete' collection_provider.id %}>{% trans "Delete collection provider" %}</a>
             </div>
         </div>
         <div class="row">
@@ -24,7 +25,7 @@
         <div class="row">
             <div class="col-md-12">
                 <button id="show-modify-form" class="btn btn-link" type="button">
-                    Modify Collection Provider
+                    {% trans "Modify Collection Provider" %}
                 </button>
             </div>
         </div>

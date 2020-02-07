@@ -3,6 +3,7 @@
 {% load static %}
 {% load user_extras %}
 {% load spam_extras %}
+{% load i18n %}
 
 {% block top_includes %}
   <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
@@ -12,11 +13,11 @@
 {% endblock %}
 
 {% block title %}
-    <title>TimeStampAddList</title>
+    <title>{% trans "TimeStampAddList" %}</title>
 {% endblock title %}
 
 {% block content %}
-<h3>TimeStamp Add ({{ project_title }})</h3>
+<h3>{% blocktrans %}TimeStamp Add ({{ project_title }}){% endblocktrans %}</h3>
 <div id="timestamp-form">
     <div class="row">
         <div class="col-xl-8 col-lg-10 col-sm-12">
@@ -24,26 +25,26 @@
                 <div class="form-group row">
                     <div class="col-sm-6">
                         <div class="input-group">
-                            <div class="input-group-addon">Start Date</div>
+                            <div class="input-group-addon">{% trans "Start Date" %}</div>
                             <input id="startDateFilter" type="text" placeholder="YYYY-MM-DD" class="form-control" />
                         </div>
                     </div>
                     <div class="col-sm-6">
                         <div class="input-group">
-                            <div class="input-group-addon">End Date</div>
+                            <div class="input-group-addon">{% trans "End Date" %}</div>
                             <input id="endDateFilter" type="text" placeholder="YYYY-MM-DD" class="form-control" />
                         </div>
                     </div>
                     <div class="col-sm-6">
                         <div class="input-group">
-                            <div class="input-group-addon">User</div>
+                            <div class="input-group-addon">{% trans "User" %}</div>
                             <select id="userFilterSelect" class="form-control">
                                 <option value=""></option>
                             </select>
                         </div>
                     </div>
                     <div class="col-sm-12">
-                        <button type="button" class="btn btn-primary" id="applyFiltersButton">Apply</button>
+                        <button type="button" class="btn btn-primary" id="applyFiltersButton">{% trans "Apply" %}</button>
                     </div>
                 </div>
             </form>
@@ -52,9 +53,9 @@
             <div class="row">
                 <div class="col-sm-7">
                     <span>
-                        <button type="button" class="btn btn-success" id="btn-verify" {% if not async_task.ready %}disabled="disabled"{% endif %}>Verify</button>
-                        <button type="button" class="btn btn-success" id="btn-addtimestamp" {% if not async_task.ready %}disabled="disabled"{% endif %}>Request Trusted Timestamp</button>
-                        <button type="button" class="btn btn-default" id="btn-cancel" {% if async_task.ready %}disabled="disabled"{% endif %}>Cancel</button>
+                        <button type="button" class="btn btn-success" id="btn-verify" {% if not async_task.ready %}disabled="disabled"{% endif %}>{% trans "Verify" %}</button>
+                        <button type="button" class="btn btn-success" id="btn-addtimestamp" {% if not async_task.ready %}disabled="disabled"{% endif %}>{% trans "Request Trusted Timestamp" %}</button>
+                        <button type="button" class="btn btn-default" id="btn-cancel" {% if async_task.ready %}disabled="disabled"{% endif %}>{% trans "Cancel" %}</button>
                     </span>
                 </div>
                 <div class="col-sm-5"></div>
@@ -64,7 +65,7 @@
     <div class="row" id="loading-row" style="{% if async_task.ready %}display: none;{% endif %}">
         <div class="col-xs-12">
             <div class="spinner-loading-wrapper">
-                <p class="m-t-sm fg-load-message" id="loading-message">Processing, please wait...</p>
+                <p class="m-t-sm fg-load-message" id="loading-message">{% trans "Processing, please wait..." %}</p>
                 <div class="logo-spin logo-lg"></div>
             </div>
         </div>
@@ -89,7 +90,7 @@
             </ul>
         </div>
         <div class="col-sm-2">
-            <label class="pull-right" style="margin: 20px 0;">per page:</label>
+            <label class="pull-right" style="margin: 20px 0;">{% trans "per page:" %}</label>
         </div>
         <div class="col-sm-2">
             <select id="pageLength" class="form-control" style="margin: 15px 0;">
@@ -105,7 +106,7 @@
                 <span>
                     <div class="btn btn-primary disabled" id="first-page">|</div>
                     <div class="btn btn-primary disabled" id="previous-page"><i class="fa fa-angle-left"></i></div>
-                    <span class="current">Page of </span>
+                    <span class="current">{% trans "Page of " %}</span>
                     <div class="btn btn-primary disabled" id="next-page"><i class="fa fa-angle-right"></i></div>
                     <div class="btn btn-primary disabled" id="last-page">|</div>
                 </span>
@@ -125,7 +126,7 @@
                         <input type="checkBox" id="addTimestampAllCheck" style="width: 15px; height: 15px;"/>
                     </th>
                     <th width="14%">
-                        <span class="header_text" title="Provider">Provider</span>
+                        <span class="header_text" title="Provider">{% trans "Provider" %}</span>
                         <span class="sorter">
                             <a id="sort_down_provider" class="caret tb-sort-inactive"></a>
                             <span class="dropup">
@@ -134,7 +135,7 @@
                         </span>
                     </th>
                     <th width="29%">
-                        <span class="header_text" title="File Path">File Path</span>
+                        <span class="header_text" title="File Path">{% trans "File Path" %}</span>
                         <span class="sorter">
                             <a id="sort_down_file_path" class="caret tb-sort-inactive"></a>
                             <span class="dropup">
@@ -143,7 +144,7 @@
                         </span>
                     </th>
                     <th width="15%">
-                        <span class="header_text" title="Timestamp by">Timestamp by</span>
+                        <span class="header_text" title="Timestamp by">{% trans "Timestamp by" %}</span>
                         <span class="sorter">
                             <a id="sort_down_verify_user_name_id" class="caret tb-sort-inactive"></a>
                             <span class="dropup">
@@ -152,7 +153,7 @@
                         </span>
                     </th>
                     <th width="19%">
-                        <span class="header_text" title="Updated at">Updated at</span>
+                        <span class="header_text" title="Updated at">{% trans "Updated at" %}</span>
                         <span class="sorter">
                             <a id="sort_down_verify_date" class="caret tb-sort-inactive"></a>
                             <span class="dropup">
@@ -161,7 +162,7 @@
                         </span>
                     </th>
                     <th width="20%">
-                        <span class="header_text" title="Timestamp Verification">Timestamp Verification</span>
+                        <span class="header_text" title="Timestamp Verification">{% trans "Timestamp Verification" %}</span>
                         <span class="sorter">
                             <a id="sort_down_verify_result_title" class="caret tb-sort-inactive"></a>
                             <span class="dropup">
@@ -203,7 +204,7 @@
                     {% if error_info.verify_user_id %}
                     <td class="verify_user_name_id">{{ error_info.verify_user_name }} ({{ error_info.verify_user_id }})</td>
                     {% else %}
-                    <td class="verify_user_name_id">Unknown</td>
+                    <td class="verify_user_name_id">{% trans "Unknown" %}</td>
                     {% endif %}
                     <td class="verify_date">{{ error_info.verify_date }}</td>
                     <td class="verify_result_title">{{ error_info.verify_result_title }}</td>
@@ -225,7 +226,7 @@
         </div>
         <div class="col-sm-2">
             <span>
-                <button type="button" class="btn btn-success" id="btn-download">Download</button>
+                <button type="button" class="btn btn-success" id="btn-download">{% trans "Download" %}</button>
             </span>
         </div>
         <div class="col-sm-7"></div>

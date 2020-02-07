@@ -1,4 +1,5 @@
 <!-- Authorization -->
+{% load i18n %}
 <div class="addon-oauth"
      data-addon-short-name="{{ addon.addon_short_name }}"
      data-addon-name="{{ addon.addon_full_name }}"
@@ -8,20 +9,20 @@
       <span data-bind="text:properName">{# addon.addon_full_name #}</span>
       {% if addon.is_supported_force_to_use %}
       <small>
-        <a data-bind="click: connectAccount" class="pull-right text-primary">Connect or Reauthorize Account</a>
+        <a data-bind="click: connectAccount" class="pull-right text-primary">{% trans "Connect or Reauthorize Account" %}</a>
       </small>
       {% endif %}
     </h4>
     {% if addon.is_supported_force_to_use %}
     <div class="addon-auth-table" id="{{ addon.addon_short_name }}-header">
         <!-- ko foreach: accounts -->
-        <a data-bind="click: $root.askDisconnect.bind($root)" class="text-danger pull-right default-authorized-by">Disconnect Account</a>
+        <a data-bind="click: $root.askDisconnect.bind($root)" class="text-danger pull-right default-authorized-by">{% trans "Disconnect Account" %}</a>
 
         <div class="m-h-lg">
             <table class="table table-hover">
                 <thead>
                     <tr class="user-settings-addon-auth">
-                        <th class="text-muted default-authorized-by">Authorized by <em><span data-bind="text: name">{{ account.display_name }}</span></em></th><th></th>
+                        <th class="text-muted default-authorized-by">{% trans "Authorized by " %}<em><span data-bind="text: name">{{ account.display_name }}</span></em></th><th></th>
                     </tr>
                 </thead>
                 {% comment %}
@@ -30,7 +31,7 @@
                     <tr>
                         <td class="authorized-nodes">
                             <!-- ko if: title --><a data-bind="attr: {href: urls.view}, text: title"></a><!-- /ko -->
-                            <!-- ko if: !title --><em>Private project</em><!-- /ko -->
+                            <!-- ko if: !title --><em>{% trans "Private project" %}</em><!-- /ko -->
                         </td>
                         <td>
                             <a data-bind="click: $parent.deauthorizeNode.bind($parent)">
