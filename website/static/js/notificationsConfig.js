@@ -7,6 +7,7 @@ var $osf = require('js/osfHelpers');
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 var ViewModel = function(list) {
     var self = this;

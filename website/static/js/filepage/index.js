@@ -186,7 +186,7 @@ var FileViewPage = {
             var title = _('Delete file?');
             var message = '<p class="overflow">' +
                     agh.sprintf(_('Are you sure you want to delete <strong>%1$s</strong>?'),self.file.safeName) +
-                    + '</p>';
+                    '</p>';
 
 
             bootbox.confirm({

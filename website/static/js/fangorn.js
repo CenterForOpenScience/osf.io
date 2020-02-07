@@ -495,7 +495,7 @@ function displayConflict(tb, item, folder, cb) {
     }
 
     var mithrilContent = m('', [
-        m('p', agh.sprintf(_('An item named "%1$s" already exists in this location.')),item.data.name),
+        m('p', agh.sprintf(_('An item named "%1$s" already exists in this location.'),item.data.name)),
         m('h5.replace-file',
             '"' + _('Keep Both') + '"' + _(' will retain both files (and their version histories) in this location.')),
         m('h5.replace-file',
@@ -528,7 +528,7 @@ function checkConflictsRename(tb, item, name, cb) {
         var child = parent.children[i];
         if (child.data.name === name && child.id !== item.id) {
             messageArray.push([
-                m('p', agh.sprintf(_('An item named "%1$s" already exists in this location.')),child.data.name),
+                m('p', agh.sprintf(_('An item named "%1$s" already exists in this location.'),child.data.name)),
                 m('h5.replace-file',
                     '"' + _('Keep Both') + '"' + _(' will retain both files (and their version histories) in this location.')),
                 m('h5.replace-file',
@@ -653,9 +653,9 @@ function doItemOp(operation, to, from, rename, conflict) {
         }
         if (xhr.status === 202) {
             var mithrilContent = m('div', [
-                m('h3.break-word', _agh.sprintf('%1$s "%2$s" to "%3$s" is taking a bit longer than expected.'),operation.action,(from.data.materialized || '/'),(to.data.materialized || '/')),
+                m('h3.break-word', agh.sprintf(_('%1$s "%2$s" to "%3$s" is taking a bit longer than expected.'),operation.action,(from.data.materialized || '/'),(to.data.materialized || '/'))),
                 m('p', _('We\'ll send you an email when it has finished.')),
-                m('p', agh.sprintf(_('In the mean time you can leave this page; your %1$s will still be completed.')),operation.status)
+                m('p', agh.sprintf(_('In the mean time you can leave this page; your %1$s will still be completed.'),operation.status))
             ]);
             var mithrilButtons = m('div', [
                 m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); }}, 'Close')

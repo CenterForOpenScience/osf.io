@@ -58,7 +58,7 @@ var ViewModel = function(data) {
         var modifyAllMessage;
         var htmlMessage;
         if (self.isAddInstitution()) {
-            message = aghl.sprintf(_('Add <b>%1$s</b> to <b>%2$s</b> or to <b>%3$s</b> and every component in it?<br><br>'),item.name,data.node.title,data.node.title);
+            message = agh.sprintf(_('Add <b>%1$s</b> to <b>%2$s</b> or to <b>%3$s</b> and every component in it?<br><br>'),item.name,data.node.title,data.node.title);
             modifyOneMessage = agh.sprintf(_('Add to <b>%1$s</b>.'),data.node.title),
             modifyAllMessage = agh.sprintf(_('Add to <b>%1$s</b> and every component for which you have permission.'),data.node.title);
         }
