@@ -13,7 +13,7 @@ from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 
 from api.files.serializers import OsfStorageFileSerializer
-from api.base.serializers import (
+from api.nodes.serializers import (
     NodeSerializer,
     NodeStorageProviderSerializer,
     NodeLicenseRelationshipField,
