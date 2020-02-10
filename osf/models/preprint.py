@@ -183,10 +183,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     }
     group_format = 'preprint_{self.id}_{group}'
 
-    conflict_of_interest_statement = models.CharField(
+    conflict_of_interest_statement = models.TextField(
         blank=True,
         null=True,
-        max_length=5000
     )
     has_coi = models.NullBooleanField(
         blank=True,
