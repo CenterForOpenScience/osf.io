@@ -248,7 +248,7 @@ def render_mako_string(tpldir, tplname, data, trust=True):
     # Don't cache in debug mode
     if not app.debug:
         mako_cache[tplname] = tpl
-      
+
     catalog = support.Translations.load(app.config['BABEL_TRANSLATION_DIRECTORIES'], get_locale(), app.config['BABEL_DOMAIN'])
     request.babel_translations = catalog
     app.babel_translations = catalog
