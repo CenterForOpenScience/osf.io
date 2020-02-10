@@ -6,8 +6,8 @@ from api.base import permissions as base_permissions
 from api.base.pagination import DraftRegistrationContributorPagination
 from api.base.views import JSONAPIBaseView
 from api.draft_registrations.permissions import (
-    IsContributorOrAdminContributor,
     DraftContributorDetailPermissions,
+    IsContributorOrAdminContributor,
 )
 from api.draft_registrations.serializers import (
     DraftRegistrationSerializer,
@@ -25,6 +25,7 @@ from api.nodes.views import (
     NodeContributorDetail,
     DraftMixin,
 )
+from api.nodes.permissions import ContributorOrPublic
 from api.subjects.views import SubjectRelationshipBaseView, BaseResourceSubjectsList
 from osf.models import DraftRegistrationContributor
 
@@ -43,7 +44,7 @@ class DraftRegistrationMixin(DraftMixin):
 
 class DraftRegistrationList(NodeDraftRegistrationsList):
     permission_classes = (
-        IsContributorOrAdminContributor,
+        ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -64,7 +65,7 @@ class DraftRegistrationList(NodeDraftRegistrationsList):
 
 class DraftRegistrationDetail(NodeDraftRegistrationDetail, DraftRegistrationMixin):
     permission_classes = (
-        IsContributorOrAdminContributor,
+        ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -77,7 +78,7 @@ class DraftRegistrationDetail(NodeDraftRegistrationDetail, DraftRegistrationMixi
 
 class DraftInstitutionsList(NodeInstitutionsList, DraftRegistrationMixin):
     permission_classes = (
-        IsContributorOrAdminContributor,
+        ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -94,7 +95,7 @@ class DraftInstitutionsList(NodeInstitutionsList, DraftRegistrationMixin):
 
 class DraftInstitutionsRelationship(NodeInstitutionsRelationship, DraftRegistrationMixin):
     permission_classes = (
-        IsContributorOrAdminContributor,
+        ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -109,7 +110,7 @@ class DraftInstitutionsRelationship(NodeInstitutionsRelationship, DraftRegistrat
 
 class DraftSubjectsList(BaseResourceSubjectsList, DraftRegistrationMixin):
     permission_classes = (
-        IsContributorOrAdminContributor,
+        ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -126,7 +127,7 @@ class DraftSubjectsList(BaseResourceSubjectsList, DraftRegistrationMixin):
 
 class DraftSubjectsRelationship(SubjectRelationshipBaseView, DraftRegistrationMixin):
     permission_classes = (
-        IsContributorOrAdminContributor,
+        ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )

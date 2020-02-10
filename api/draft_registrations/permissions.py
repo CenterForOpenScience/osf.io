@@ -7,7 +7,7 @@ from osf.models import (
     DraftRegistrationContributor,
     OSFUser,
 )
-from osf.utils import permissions as osf_permissions
+from api.nodes.permissions import ContributorDetailPermissions
 
 
 class IsContributorOrAdminContributor(permissions.BasePermission):
@@ -28,24 +28,9 @@ class IsContributorOrAdminContributor(permissions.BasePermission):
         else:
             return obj.is_admin_contributor(auth.user)
 
-
-class DraftContributorDetailPermissions(IsContributorOrAdminContributor):
+class DraftContributorDetailPermissions(ContributorDetailPermissions):
 
     acceptable_models = (DraftRegistration, OSFUser, DraftRegistrationContributor,)
 
     def load_resource(self, context, view):
         return DraftRegistration.load(context['draft_id'])
-
-    def has_object_permission(self, request, view, obj):
-        assert_resource_type(obj, self.acceptable_models)
-        context = request.parser_context['kwargs']
-        draft = self.load_resource(context, view)
-        auth = get_user_auth(request)
-        user = OSFUser.load(context['user_id'])
-
-        if request.method in permissions.SAFE_METHODS:
-            return super(DraftContributorDetailPermissions, self).has_object_permission(request, view, draft)
-        elif request.method == 'DELETE':
-            return draft.has_permission(auth.user, osf_permissions.ADMIN) or auth.user == user
-        else:
-            return draft.has_permission(auth.user, osf_permissions.ADMIN)

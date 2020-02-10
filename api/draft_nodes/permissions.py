@@ -3,12 +3,12 @@ from osf.models import (
     DraftRegistration,
     DraftNode,
 )
-from api.draft_registrations.permissions import IsContributorOrAdminContributor
+from api.nodes.permissions import ContributorOrPublic
 
 from api.base.utils import assert_resource_type
 
 
-class ContributorOnDraftRegistration(IsContributorOrAdminContributor):
+class ContributorOnDraftRegistration(ContributorOrPublic):
     """
     DraftNodes are hidden entities - only used to store files for DraftRegistrations.
     Therefore, permission checking for DraftNodes will be done on the DraftRegistration.

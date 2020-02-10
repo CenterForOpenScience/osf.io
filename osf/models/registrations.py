@@ -16,7 +16,7 @@ from dirtyfields import DirtyFieldsMixin
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.permissions import ADMIN, READ
+from osf.utils.permissions import ADMIN, READ, WRITE
 from osf.exceptions import NodeStateError, DraftRegistrationStateError
 from website.util import api_v2_url
 from website import settings
@@ -824,6 +824,21 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         if not auth:
             return False
         return auth.user and self.has_permission(auth.user, READ)
+
+    def can_edit(self, auth=None, user=None):
+        """Return if a user is authorized to edit this draft_registration.
+        Must specify one of (`auth`, `user`).
+
+        :param Auth auth: Auth object to check
+        :param User user: User object to check
+        :returns: Whether user has permission to edit this draft_registration.
+        """
+        if not auth and not user:
+            raise ValueError('Must pass either `auth` or `user`')
+        if auth and user:
+            raise ValueError('Cannot pass both `auth` and `user`')
+        user = user or auth.user
+        return (user and self.has_permission(user, WRITE))
 
     def get_addons(self):
         # Override for ContributorMixin, Draft Registrations don't have addons
