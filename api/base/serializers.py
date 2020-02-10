@@ -1844,7 +1844,7 @@ class MaintenanceStateSerializer(ser.ModelSerializer):
 class HideIfSwitch(ConditionalField):
     """
     If switched is switched this field is hidden/unhidden. This field is hidden if the switch state matches
-     the value of the hide_if parameter.
+    the value of the hide_if parameter.
     """
     def __init__(self, switch_name: str, field: ser.Field, hide_if: bool = False, **kwargs):
         """
@@ -1865,7 +1865,7 @@ class DisableIfSwitch(HideIfSwitch):
     """
     If switched is switched this field will become hidden/unhidden and attempts to modify this field
     will result in a validation error/pass normally. This field is disabled if the switch state matches
-     the value of the hide_if parameter.
+    the value of the hide_if parameter.
     """
     def __init__(self, switch_name: str, field: ser.Field, hide_if: bool = False, **kwargs):
         """
