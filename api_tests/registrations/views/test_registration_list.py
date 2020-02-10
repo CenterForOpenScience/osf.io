@@ -1410,7 +1410,7 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
             'data': {
                 'type': 'registrations',
                 'attributes': {
-                    'draft_registration': draft_registration._id,
+                    'draft_registration_id': draft_registration._id,
                 }
             }
         }
@@ -1421,7 +1421,7 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
             'data': {
                 'type': 'registrations',
                 'attributes': {
-                    'draft_registration': draft_registration._id,
+                    'draft_registration_id': draft_registration._id,
                     'included_node_ids': [project_public_child._id, project_public_grandchild._id],
 
                 }
@@ -1434,7 +1434,7 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
             'data': {
                 'type': 'registrations',
                 'attributes': {
-                    'draft_registration': draft_registration._id,
+                    'draft_registration_id': draft_registration._id,
                     'included_node_ids': [project_public_grandchild._id],
 
                 }
@@ -1447,7 +1447,7 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
             'data': {
                 'type': 'registrations',
                 'attributes': {
-                    'draft_registration': draft_registration._id,
+                    'draft_registration_id': draft_registration._id,
                     'included_node_ids': ['fake0', 'fake3'],
                 }
             }
@@ -1468,7 +1468,7 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
         draft_registration = DraftRegistrationFactory(creator=user_two)
         draft_registration.add_contributor(user, permissions.ADMIN)
         draft_registration.branched_from.add_contributor(user, permissions.WRITE)
-        payload['data']['attributes']['draft_registration'] = draft_registration._id
+        payload['data']['attributes']['draft_registration_id'] = draft_registration._id
         # User is admin on draft, but not on node
         assert draft_registration.branched_from.is_admin_contributor(user) is False
         assert draft_registration.has_permission(user, permissions.ADMIN) is True
@@ -1478,7 +1478,7 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
 
         # User is an admin group contributor on the node (not enough)
         draft_registration.branched_from.add_osf_group(group, permissions.ADMIN)
-        payload['data']['attributes']['draft_registration'] = draft_registration._id
+        payload['data']['attributes']['draft_registration_id'] = draft_registration._id
         assert draft_registration.branched_from.is_admin_contributor(user) is False
         assert draft_registration.branched_from.has_permission(user, permissions.ADMIN) is True
         assert draft_registration.has_permission(user, permissions.ADMIN) is True
@@ -1489,7 +1489,7 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
         draft_registration = DraftRegistrationFactory(creator=user_two)
         draft_registration.add_contributor(user, permissions.WRITE)
         draft_registration.branched_from.add_contributor(user, permissions.ADMIN)
-        payload['data']['attributes']['draft_registration'] = draft_registration._id
+        payload['data']['attributes']['draft_registration_id'] = draft_registration._id
         # User is admin on node but not on draft
         draft_registration.branched_from.is_admin_contributor(user) is True
         assert draft_registration.has_permission(user, permissions.ADMIN) is False
@@ -1501,7 +1501,7 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
         draft_registration = DraftRegistrationFactory(creator=user)
         assert draft_registration.branched_from.is_admin_contributor(user) is True
         assert draft_registration.has_permission(user, permissions.ADMIN) is True
-        payload['data']['attributes']['draft_registration'] = draft_registration._id
+        payload['data']['attributes']['draft_registration_id'] = draft_registration._id
         res = app.post_json_api(url_registrations, payload, auth=user.auth)
         assert res.status_code == 201
 
