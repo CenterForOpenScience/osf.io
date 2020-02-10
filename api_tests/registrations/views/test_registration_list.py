@@ -643,6 +643,10 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
             API_BASE, project_public._id)
 
     @pytest.fixture()
+    def url_registrations_ver(self, project_public, url_registrations):
+        return '{}?version={}'.format(url_registrations, CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
+
+    @pytest.fixture()
     def payload(self, draft_registration):
         return {
             'data': {
@@ -1139,8 +1143,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
         assert res.json['errors'][0]['detail'] == 'Datetime has wrong format. Use one of these formats instead: YYYY-MM-DDThh:mm:ss.'
 
     def test_new_API_version_requires_draft_registration_id_on_creation(
-            self, app, user, draft_registration, url_registrations):
-        url = '{}?version={}'.format(url_registrations, CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
+            self, app, user, draft_registration, url_registrations_ver):
         payload = {
             'data': {
                 'type': 'registrations',
@@ -1150,7 +1153,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
             }
         }
         res = app.post_json_api(
-            url,
+            url_registrations_ver,
             payload,
             auth=user.auth,
             expect_errors=True)
@@ -1159,8 +1162,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
         assert res.json['errors'][0]['detail'] == 'This field is required.'
 
     def test_new_API_version_no_embargo_is_immediate_by_default(
-            self, app, user, draft_registration, url_registrations):
-        url = '{}?version={}'.format(url_registrations, CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
+            self, app, user, draft_registration, url_registrations_ver):
         payload = {
             'data': {
                 'type': 'registrations',
@@ -1170,7 +1172,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
             }
         }
         res = app.post_json_api(
-            url,
+            url_registrations_ver,
             payload,
             auth=user.auth,
             expect_errors=True)
@@ -1178,8 +1180,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
         assert res.json['data']['attributes']['pending_registration_approval'] is True
 
     def test_new_API_version_uses_embargo_end_date(
-            self, app, user, draft_registration, url_registrations):
-        url = '{}?version={}'.format(url_registrations, CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
+            self, app, user, draft_registration, url_registrations_ver):
         today = timezone.now()
         three_years = (
             today +
@@ -1196,7 +1197,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
             }
         }
         res = app.post_json_api(
-            url,
+            url_registrations_ver,
             payload,
             auth=user.auth,
             expect_errors=True)
@@ -1204,9 +1205,8 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
         assert res.json['data']['attributes']['pending_embargo_approval'] is True
 
     def test_new_API_version_uses_included_node_ids_instead_of_children(
-            self, app, user, draft_registration, url_registrations, project_public,
+            self, app, user, draft_registration, url_registrations_ver, project_public,
             project_public_child, project_public_grandchild, project_public_excluded_sibling):
-        url = '{}?version={}'.format(url_registrations, CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
         payload_with_children = {
             'data': {
                 'type': 'registrations',
@@ -1218,10 +1218,9 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
             }
         }
         res = app.post_json_api(
-            url,
+            url_registrations_ver,
             payload_with_children,
-            auth=user.auth,
-            expect_errors=True)
+            auth=user.auth)
         data = res.json['data']['attributes']
         assert res.status_code == 201
         assert data['registration'] is True
@@ -1397,8 +1396,15 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
     Tests for creating registration through new workflow -
     POST RegistrationList
     """
+
     @pytest.fixture()
     def url_registrations(self, project_public):
+        return '/{}registrations/'.format(
+            API_BASE
+        )
+
+    @pytest.fixture()
+    def url_registrations_ver(self, project_public):
         return '/{}registrations/?version={}'.format(
             API_BASE,
             CREATE_REGISTRATION_FIELD_CHANGE_VERSION
@@ -1410,7 +1416,20 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
             'data': {
                 'type': 'registrations',
                 'attributes': {
+                    'draft_registration': draft_registration._id,
+                    'registration_choice': 'immediate'
+                }
+            }
+        }
+
+    @pytest.fixture()
+    def payload_ver(self, draft_registration):
+        return {
+            'data': {
+                'type': 'registrations',
+                'attributes': {
                     'draft_registration_id': draft_registration._id,
+                    'registration_choice': 'immediate'
                 }
             }
         }
@@ -1421,9 +1440,9 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
             'data': {
                 'type': 'registrations',
                 'attributes': {
-                    'draft_registration_id': draft_registration._id,
-                    'included_node_ids': [project_public_child._id, project_public_grandchild._id],
-
+                    'draft_registration': draft_registration._id,
+                    'children': [project_public_child._id, project_public_grandchild._id],
+                    'registration_choice': 'immediate'
                 }
             }
         }
@@ -1434,8 +1453,9 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
             'data': {
                 'type': 'registrations',
                 'attributes': {
-                    'draft_registration_id': draft_registration._id,
-                    'included_node_ids': [project_public_grandchild._id],
+                    'draft_registration': draft_registration._id,
+                    'children': [project_public_grandchild._id],
+                    'registration_choice': 'immediate'
 
                 }
             }
@@ -1447,53 +1467,54 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
             'data': {
                 'type': 'registrations',
                 'attributes': {
-                    'draft_registration_id': draft_registration._id,
-                    'included_node_ids': ['fake0', 'fake3'],
+                    'draft_registration': draft_registration._id,
+                    'children': ['fake0', 'fake3'],
+                    'registration_choice': 'immediate'
                 }
             }
         }
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_registration_draft_must_be_draft_of_current_node(
-            self, mock_enqueue, app, user, schema, url_registrations):
+            self, mock_enqueue, app, user, schema, url_registrations_ver):
         # Overrides TestNodeRegistrationCreate - node is not in URL in this workflow
         return
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_need_admin_perms_on_node_and_draft(
-            self, mock_enqueue, app, user, payload, url_registrations):
+            self, mock_enqueue, app, user, payload_ver, url_registrations_ver):
         user_two = AuthUserFactory()
         group = OSFGroupFactory(creator=user)
 
         draft_registration = DraftRegistrationFactory(creator=user_two)
         draft_registration.add_contributor(user, permissions.ADMIN)
         draft_registration.branched_from.add_contributor(user, permissions.WRITE)
-        payload['data']['attributes']['draft_registration_id'] = draft_registration._id
+        payload_ver['data']['attributes']['draft_registration_id'] = draft_registration._id
         # User is admin on draft, but not on node
         assert draft_registration.branched_from.is_admin_contributor(user) is False
         assert draft_registration.has_permission(user, permissions.ADMIN) is True
-        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        res = app.post_json_api(url_registrations_ver, payload_ver, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You must be an admin contributor on both the project and the draft registration to create a registration.'
 
         # User is an admin group contributor on the node (not enough)
         draft_registration.branched_from.add_osf_group(group, permissions.ADMIN)
-        payload['data']['attributes']['draft_registration_id'] = draft_registration._id
+        payload_ver['data']['attributes']['draft_registration_id'] = draft_registration._id
         assert draft_registration.branched_from.is_admin_contributor(user) is False
         assert draft_registration.branched_from.has_permission(user, permissions.ADMIN) is True
         assert draft_registration.has_permission(user, permissions.ADMIN) is True
-        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        res = app.post_json_api(url_registrations_ver, payload_ver, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You must be an admin contributor on both the project and the draft registration to create a registration.'
 
         draft_registration = DraftRegistrationFactory(creator=user_two)
         draft_registration.add_contributor(user, permissions.WRITE)
         draft_registration.branched_from.add_contributor(user, permissions.ADMIN)
-        payload['data']['attributes']['draft_registration_id'] = draft_registration._id
+        payload_ver['data']['attributes']['draft_registration_id'] = draft_registration._id
         # User is admin on node but not on draft
         draft_registration.branched_from.is_admin_contributor(user) is True
         assert draft_registration.has_permission(user, permissions.ADMIN) is False
-        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        res = app.post_json_api(url_registrations_ver, payload_ver, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You must be an admin contributor on both the project and the draft registration to create a registration.'
 
@@ -1501,8 +1522,8 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
         draft_registration = DraftRegistrationFactory(creator=user)
         assert draft_registration.branched_from.is_admin_contributor(user) is True
         assert draft_registration.has_permission(user, permissions.ADMIN) is True
-        payload['data']['attributes']['draft_registration_id'] = draft_registration._id
-        res = app.post_json_api(url_registrations, payload, auth=user.auth)
+        payload_ver['data']['attributes']['draft_registration_id'] = draft_registration._id
+        res = app.post_json_api(url_registrations_ver, payload_ver, auth=user.auth)
         assert res.status_code == 201
 
     def test_invalid_registration_choice(self):
@@ -1511,14 +1532,14 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_old_workflow_node_editable_metadata_copied(
-            self, mock_enqueue, app, user, url_registrations, payload, project_public, draft_registration):
+            self, mock_enqueue, app, user, url_registrations_ver, payload_ver, project_public, draft_registration):
         # Overrides TestNodeRegistrationCreate - new workflow (POST to /v2/registrations/) does
         # not copy fields
 
         # New workflow allows you to edit fields on draft registration, but old workflow does not.
         project_public.title = 'Recently updated title'
         project_public.save()
-        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        res = app.post_json_api(url_registrations_ver, payload_ver, auth=user.auth, expect_errors=True)
         assert res.status_code == 201
         # Draft Registration fields trump nodes fields in new workflow.  Project's title
         # is not transferred to the reg, the draft's is.
