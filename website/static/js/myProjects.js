@@ -1459,7 +1459,7 @@ var Collections = {
                     'data-index' : index,
                     onclick : collectionOnclick.bind(null, item)
                   },[
-                        m('span', item.label + childCount),
+                        m('span', _(item.label) + childCount),
                         submenuTemplate
                     ]
                 ));

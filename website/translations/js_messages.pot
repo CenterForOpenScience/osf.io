@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-06 14:17+0900\n"
+"POT-Creation-Date: 2020-02-10 14:04+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -79,6 +79,10 @@ msgstr ""
 
 #: admin/base/utils.py:23
 msgid "Enter a valid 'slug' consisting only of lowercase letters."
+msgstr ""
+
+#: admin/static/js/rdm_addons/rdm-addons-page.js:67
+msgid "Are you sure you want to disallow the "
 msgstr ""
 
 #: api/base/exceptions.py:103
@@ -164,6 +168,10 @@ msgstr ""
 
 #: api/base/authentication/drf.py:230
 msgid "Could not find the user associated with this token"
+msgstr ""
+
+#: website/project/__init__.py:64
+msgid "Bookmarks"
 msgstr ""
 
 #: website/search/elastic_search.py:48
@@ -618,7 +626,7 @@ msgstr ""
 
 #: website/static/js/addonHelper.js:40
 #: website/static/js/nodeSelectTreebeard.js:61
-#: website/static/js/notificationsTreebeard.js:60
+#: website/static/js/notificationsTreebeard.js:61
 #: website/static/js/profile.js:312
 #: website/static/js/wikiSettingsTreebeard.js:55
 msgid "Settings updated"
@@ -956,22 +964,6 @@ msgstr ""
 msgid "Exceeds character limit. Please reduce to %1$s characters or less."
 msgstr ""
 
-#: website/static/js/comment.js:333
-msgid "nodes"
-msgstr ""
-
-#: website/static/js/comment.js:335
-msgid "files"
-msgstr ""
-
-#: website/static/js/comment.js:337
-msgid "wiki"
-msgstr ""
-
-#: website/static/js/comment.js:339
-msgid "comments"
-msgstr ""
-
 #: website/static/js/comment.js:346 website/static/js/comment.js:554
 msgid "Please enter a comment"
 msgstr ""
@@ -1250,6 +1242,10 @@ msgid "%1$s conflicts left to resolve."
 msgid_plural "%1$s conflict left to resolve."
 msgstr[0] ""
 msgstr[1] ""
+
+#: website/static/js/fangorn.js:656
+msgid "%1$s \"%2$s\" to \"%3$s\" is taking a bit longer than expected."
+msgstr ""
 
 #: website/static/js/fangorn.js:657
 msgid "We'll send you an email when it has finished."
@@ -2247,7 +2243,7 @@ msgid "Could not create doi"
 msgstr ""
 
 #: website/static/js/nodeSelectTreebeard.js:64
-#: website/static/js/notificationsTreebeard.js:63
+#: website/static/js/notificationsTreebeard.js:64
 #: website/static/js/profile.js:321
 #: website/static/js/wikiSettingsTreebeard.js:58
 msgid "Could not update settings"
@@ -2493,46 +2489,46 @@ msgid ""
 "become public."
 msgstr ""
 
-#: website/static/js/notificationsConfig.js:32
+#: website/static/js/notificationsConfig.js:33
 msgid "Could not retrieve settings information."
 msgstr ""
 
-#: website/static/js/notificationsConfig.js:64
+#: website/static/js/notificationsConfig.js:65
 msgid "Could not update email preferences at this time. If this issue persists, "
 msgstr ""
 
-#: website/static/js/notificationsConfig.js:65
+#: website/static/js/notificationsConfig.js:66
 #: website/static/js/osfHelpers.js:318
 msgid "please report it to %1$s."
-msgstr ""
-
-#: website/static/js/notificationsTreebeard.js:69
-#: website/static/js/notificationsTreebeard.js:186
-#: website/static/js/notificationsTreebeard.js:229
-msgid "Instantly"
 msgstr ""
 
 #: website/static/js/notificationsTreebeard.js:70
 #: website/static/js/notificationsTreebeard.js:187
 #: website/static/js/notificationsTreebeard.js:230
-msgid "Daily"
+msgid "Instantly"
 msgstr ""
 
 #: website/static/js/notificationsTreebeard.js:71
-msgid "Adopt setting from parent project"
+#: website/static/js/notificationsTreebeard.js:188
+#: website/static/js/notificationsTreebeard.js:231
+msgid "Daily"
 msgstr ""
 
 #: website/static/js/notificationsTreebeard.js:72
-#: website/static/js/notificationsTreebeard.js:185
-#: website/static/js/notificationsTreebeard.js:228
+msgid "Adopt setting from parent project"
+msgstr ""
+
+#: website/static/js/notificationsTreebeard.js:73
+#: website/static/js/notificationsTreebeard.js:186
+#: website/static/js/notificationsTreebeard.js:229
 msgid "Never"
 msgstr ""
 
-#: website/static/js/notificationsTreebeard.js:118
+#: website/static/js/notificationsTreebeard.js:119
 msgid " No configured projects."
 msgstr ""
 
-#: website/static/js/notificationsTreebeard.js:227
+#: website/static/js/notificationsTreebeard.js:228
 msgid "Adopt setting from parent project %1$s"
 msgstr ""
 

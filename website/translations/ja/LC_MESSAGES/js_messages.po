@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-06 14:17+0900\n"
+"POT-Creation-Date: 2020-02-10 14:04+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -81,6 +81,10 @@ msgstr "バージョン"
 #: admin/base/utils.py:23
 msgid "Enter a valid 'slug' consisting only of lowercase letters."
 msgstr ""
+
+#: admin/static/js/rdm_addons/rdm-addons-page.js:67
+msgid "Are you sure you want to disallow the "
+msgstr "次を無効にしてよろしいですか？"
 
 #: api/base/exceptions.py:103
 msgid "This endpoint is not yet implemented."
@@ -166,6 +170,10 @@ msgstr ""
 #: api/base/authentication/drf.py:230
 msgid "Could not find the user associated with this token"
 msgstr ""
+
+#: website/project/__init__.py:64
+msgid "Bookmarks"
+msgstr "ブックマーク"
 
 #: website/search/elastic_search.py:48
 msgid "Projects"
@@ -621,7 +629,7 @@ msgstr "テンプレートとして使用するプロジェクトを選択しま
 
 #: website/static/js/addonHelper.js:40
 #: website/static/js/nodeSelectTreebeard.js:61
-#: website/static/js/notificationsTreebeard.js:60
+#: website/static/js/notificationsTreebeard.js:61
 #: website/static/js/profile.js:312
 #: website/static/js/wikiSettingsTreebeard.js:55
 msgid "Settings updated"
@@ -974,22 +982,6 @@ msgstr "コメント"
 msgid "Exceeds character limit. Please reduce to %1$s characters or less."
 msgstr "文字数の制限を超えています。%1$s文字以下に減らしてください。"
 
-#: website/static/js/comment.js:333
-msgid "nodes"
-msgstr "ノード"
-
-#: website/static/js/comment.js:335
-msgid "files"
-msgstr "ファイル"
-
-#: website/static/js/comment.js:337
-msgid "wiki"
-msgstr "wiki"
-
-#: website/static/js/comment.js:339
-msgid "comments"
-msgstr "コメント"
-
 #: website/static/js/comment.js:346 website/static/js/comment.js:554
 msgid "Please enter a comment"
 msgstr "コメントを入れて下さい"
@@ -1267,6 +1259,10 @@ msgstr "\"%1$s\"を置換しますか？"
 msgid "%1$s conflicts left to resolve."
 msgid_plural "%1$s conflict left to resolve."
 msgstr[0] "%1$sの競合が残っています。"
+
+#: website/static/js/fangorn.js:656
+msgid "%1$s \"%2$s\" to \"%3$s\" is taking a bit longer than expected."
+msgstr ""
 
 #: website/static/js/fangorn.js:657
 msgid "We'll send you an email when it has finished."
@@ -2274,7 +2270,7 @@ msgid "Could not create doi"
 msgstr "DOIを作成できませんでした。"
 
 #: website/static/js/nodeSelectTreebeard.js:64
-#: website/static/js/notificationsTreebeard.js:63
+#: website/static/js/notificationsTreebeard.js:64
 #: website/static/js/profile.js:321
 #: website/static/js/wikiSettingsTreebeard.js:58
 msgid "Could not update settings"
@@ -2524,46 +2520,46 @@ msgid ""
 "become public."
 msgstr "管理者は、48時間以内にアクションを承認またはキャンセルできます。 48時間経過してもアクションが実行されない場合、登録は公開されます。"
 
-#: website/static/js/notificationsConfig.js:32
+#: website/static/js/notificationsConfig.js:33
 msgid "Could not retrieve settings information."
 msgstr "設定情報を取得できませんでした。"
 
-#: website/static/js/notificationsConfig.js:64
+#: website/static/js/notificationsConfig.js:65
 msgid "Could not update email preferences at this time. If this issue persists, "
 msgstr "現在、メール設定を更新できませんでした。 この問題が続く場合、"
 
-#: website/static/js/notificationsConfig.js:65
+#: website/static/js/notificationsConfig.js:66
 #: website/static/js/osfHelpers.js:318
 msgid "please report it to %1$s."
 msgstr "%1$sに報告してください。"
 
-#: website/static/js/notificationsTreebeard.js:69
-#: website/static/js/notificationsTreebeard.js:186
-#: website/static/js/notificationsTreebeard.js:229
-msgid "Instantly"
-msgstr "すぐに"
-
 #: website/static/js/notificationsTreebeard.js:70
 #: website/static/js/notificationsTreebeard.js:187
 #: website/static/js/notificationsTreebeard.js:230
+msgid "Instantly"
+msgstr "すぐに"
+
+#: website/static/js/notificationsTreebeard.js:71
+#: website/static/js/notificationsTreebeard.js:188
+#: website/static/js/notificationsTreebeard.js:231
 msgid "Daily"
 msgstr "毎日"
 
-#: website/static/js/notificationsTreebeard.js:71
+#: website/static/js/notificationsTreebeard.js:72
 msgid "Adopt setting from parent project"
 msgstr "親プロジェクトから設定を採用する"
 
-#: website/static/js/notificationsTreebeard.js:72
-#: website/static/js/notificationsTreebeard.js:185
-#: website/static/js/notificationsTreebeard.js:228
+#: website/static/js/notificationsTreebeard.js:73
+#: website/static/js/notificationsTreebeard.js:186
+#: website/static/js/notificationsTreebeard.js:229
 msgid "Never"
 msgstr "無し"
 
-#: website/static/js/notificationsTreebeard.js:118
+#: website/static/js/notificationsTreebeard.js:119
 msgid " No configured projects."
 msgstr "設定済みのプロジェクトはありません。"
 
-#: website/static/js/notificationsTreebeard.js:227
+#: website/static/js/notificationsTreebeard.js:228
 msgid "Adopt setting from parent project %1$s"
 msgstr "親プロジェクト%1$sから設定を採用"
 
@@ -3597,5 +3593,4 @@ msgstr "%1$sに報告してください"
 #: website/static/js/pages/wiki-edit-page.js:112
 msgid "Could not GET wiki menu pages"
 msgstr "Wikiメニューページを取得できませんでした"
-
 

@@ -9,6 +9,11 @@ var $osf = require('js/osfHelpers');
 var AddonPermissionsTable = require('js/addonPermissions');
 var addonSettings = require('./rdmAddonSettings');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
+
 /***************
 * OAuth addons *
 ****************/
@@ -59,7 +64,7 @@ $('.is_allowed input').on('change', function() {
         var id = addonName + "DeleteKey";
         bootbox.confirm({
             title: "Disallow "+$osf.htmlEscape(addonFullName)+"?",
-            message: "Are you sure you want to disallow the "+$osf.htmlEscape(addonFullName)+"?<br>" +
+            message: _("Are you sure you want to disallow the ")+$osf.htmlEscape(addonFullName)+"?<br>" +
                      "This will revoke access to "+$osf.htmlEscape(addonFullName)+" for all projects using the accounts.<br><br>" +
                      "Type the following to continue: <strong>" + $osf.htmlEscape(deletionKey) + "</strong><br><br>" +
                      "<input id='" + $osf.htmlEscape(id) + "' type='text' class='bootbox-input bootbox-input-text form-control'>",

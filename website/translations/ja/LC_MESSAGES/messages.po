@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-03 18:36+0900\n"
+"POT-Creation-Date: 2020-02-10 13:51+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -1068,10 +1068,8 @@ msgstr "<a %(target_href1)s>利用規約</a>と<a %(target_href2)s>プライバ�
 msgid ""
 "If you are not %(fullname)s, or if you were erroneously added as a "
 "contributor to the project described in the email invitation, please "
-"email <a %(href)s>%(osf_contact_email)s</a>"
-msgstr ""
-"あなたが%(fullname)sでない場合、または招待メールに記載されているプロジェクトに誤って貢献者として追加された場合は、<a "
-"%(href)s>%(osf_contact_email)s</a>にメールしてください。"
+"email <a %(href)s%(osf_contact_email)s%(quot)s>%(osf_contact_email)s</a>"
+msgstr "あなたが%(fullname)sでない場合、または招待メールに記載されているプロジェクトへのコントリビュータとして誤って追加された場合は、<a %(href)s%(osf_contact_email)s%(quot)s>%(osf_contact_email)s</a>へメールしてください"
 
 #: website/templates/claim_account_eppn.mako:2
 #: website/templates/claim_account_eppn.mako:4
@@ -1113,8 +1111,9 @@ msgid "Please enter your credentials to continue."
 msgstr "続行するには資格情報を入力してください。"
 
 #: website/templates/claim_account_registered.mako:23
-msgid "I am <strong>not</strong> <em>%(user.fullname)s</em>.</a>"
-msgstr "私は<em>%(user.fullname)s</em>では<strong>ありません</strong>。"
+#, python-format
+msgid "I am <strong>not</strong> <em>%(user_fullname)s</em>.</a>"
+msgstr "私は<em>%(user_fullname)s</em>では<strong>ありません</strong>。"
 
 #: website/templates/copyright.mako:7 website/templates/copyright.mako:12
 #: website/templates/footer.mako:11
