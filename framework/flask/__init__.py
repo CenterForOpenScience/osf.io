@@ -5,7 +5,6 @@ from flask import (Flask, request, jsonify, render_template,  # noqa
 )
 import furl
 from flask_babel import Babel
-from babel import support
 
 from website import settings
 

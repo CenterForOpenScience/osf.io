@@ -46,7 +46,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             return (userHasAuth && selected) ? selected.type : '';
         });
         self.messages.submitSettingsSuccess =  ko.pureComputed(function() {
-            return agh.sprintf(_('Successfully linked "%1$s"') , $osf.htmlEscape(self.options.decodeFolder(self.folder().name))) + 
+            return agh.sprintf(_('Successfully linked "%1$s"') , $osf.htmlEscape(self.options.decodeFolder(self.folder().name))) +
             agh.sprintf(_(' Go to the <a href="%1$s">Files page</a> to view your content.'),self.urls().files);
         });
         var defaults = {
