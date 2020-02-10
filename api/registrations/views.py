@@ -169,7 +169,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
     def perform_create(self, serializer):
         """Create a registration from a draft.
         """
-        draft_id = self.request.data.get('draft_registration_id', None)
+        draft_id = self.request.data.get('draft_registration', None)
         draft = self.get_draft(draft_id)
         node = draft.branched_from
         user = get_user_auth(self.request).user
