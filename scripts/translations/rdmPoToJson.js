@@ -16,3 +16,4 @@ var po;
             po = gettextParser.po.parse(input);
             fs.writeFileSync(jsonRelativePath + langCode + '.json' , JSON.stringify(po));
     }
+
