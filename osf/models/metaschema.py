@@ -58,8 +58,8 @@ class AbstractSchemaManager(models.Manager):
 
     def get_latest_versions_and_allow_egap_admins(self, request, only_active=True):
         """
-        Allows egap admins to see EGAP registrations as visible, should be deleted when EGAP migration is totally
-        complete.
+        Allows egap admins to see EGAP registrations as visible, should be deleted when when the EGAP registry goes
+         live.
 
         :param request: the request object needed for waffling
         :param str only_active: Only return active schemas
