@@ -19,7 +19,7 @@ class TestSchemaList:
 
     @pytest.fixture
     def factory_request(self, rf, url, user):
-        return rf.get(url, auth=user.auth)
+        return rf.get(url)
 
     @pytest.fixture
     def url(self):
@@ -33,6 +33,8 @@ class TestSchemaList:
         group = Group.objects.create(name=features.EGAP_ADMINS)  # Just using the same name for convenience
         flag.groups.add(group)
         group.user_set.add(user)
+        group.save()
+        flag.save()
         return user
 
     def test_schemas_list_crud(self, app, url, user, egap_admin, factory_request):
