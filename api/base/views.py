@@ -48,6 +48,7 @@ from waffle import sample_is_active
 
 from website.settings import DOMAIN
 from osf.models import PreprintProvider
+from typing import Optional
 
 from osf.features import (
     SLOAN_COI,
@@ -498,7 +499,7 @@ def sloan_study_disambiguation(request):
     return flags, cookies
 
 
-def get_provider_from_url(referer_url: str) -> PreprintProvider:
+def get_provider_from_url(referer_url: str) -> Optional[PreprintProvider]:
     """
     Takes the many preprint refer urls and try to figure out the provider based on that.
     This will be eliminated post-sloan.
@@ -512,7 +513,7 @@ def get_provider_from_url(referer_url: str) -> PreprintProvider:
     if provider_domains:
         return PreprintProvider.objects.get(domain=provider_domains[0])
 
-    provider_ids_regex = '|'.join(list(PreprintProvider.objects.all().values_list('_id', flat=True)))
+    provider_ids_regex = '|'.join([re.escape(id) for id in PreprintProvider.objects.all().values_list('_id', flat=True)])
     # matches:
     # /preprints
     # /preprints/
