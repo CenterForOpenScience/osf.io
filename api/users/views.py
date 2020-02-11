@@ -27,7 +27,7 @@ from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.throttling import SendEmailThrottle, SendEmailDeactivationThrottle
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
-from api.nodes.serializers import DraftRegistrationSerializerLegacy
+from api.nodes.serializers import DraftRegistrationLegacySerializer
 from api.nodes.utils import NodeOptimizationMixin
 from api.osf_groups.serializers import GroupSerializer
 from api.preprints.serializers import PreprintSerializer
@@ -72,7 +72,6 @@ from rest_framework.response import Response
 from rest_framework.exceptions import NotAuthenticated, NotFound, ValidationError, Throttled
 from osf.models import (
     Contributor,
-    DraftRegistration,
     ExternalAccount,
     Guid,
     QuickFilesNode,
@@ -496,21 +495,17 @@ class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
 
-    serializer_class = DraftRegistrationSerializerLegacy
+    serializer_class = DraftRegistrationLegacySerializer
     view_category = 'users'
     view_name = 'user-draft-registrations'
 
     ordering = ('-modified',)
 
     def get_queryset(self):
-        requested_user = self.get_user()
-        requesting_user = self.request.user
-        if requesting_user.is_anonymous:
-            # User making requests is unauthenticated so they can't see any Drafts
-            return DraftRegistration.objects.none()
-        # Returns DraftRegistrations for which requested user is a contributor, and requesting user can view
-        drafts = requested_user.draft_registrations_active
-        return get_objects_for_user(requesting_user, 'read_draft_registration', drafts, with_superuser=False)
+        user = self.get_user()
+        # Returns DraftRegistrations for which the user is a contributor, and the user can view
+        drafts = user.draft_registrations_active
+        return get_objects_for_user(user, 'read_draft_registration', drafts, with_superuser=False)
 
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
@@ -576,7 +571,7 @@ class UserIdentitiesList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     def get_queryset(self):
         user = self.get_user()
         identities = []
-        for key, value in list(user.external_identity.items()):
+        for key, value in user.external_identity.items():
             identities.append({'_id': key, 'external_id': list(value.keys())[0], 'status': list(value.values())[0]})
 
         return identities

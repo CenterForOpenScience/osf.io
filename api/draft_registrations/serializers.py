@@ -3,10 +3,10 @@ from rest_framework import exceptions
 
 from framework.exceptions import PermissionsError
 from api.base.exceptions import InvalidModelValueError
-from api.base.serializers import ValuesListField, RelationshipField, LinksField, HideIfDraft, IDField
+from api.base.serializers import ValuesListField, RelationshipField, LinksField, HideIfDraftRegistration, IDField
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import (
-    DraftRegistrationSerializerLegacy,
+    DraftRegistrationLegacySerializer,
     DraftRegistrationDetailLegacySerializer,
     update_institutions,
     get_license_details,
@@ -28,7 +28,7 @@ class NodeRelationshipField(RelationshipField):
         return {'branched_from': node}
 
 
-class DraftRegistrationSerializer(DraftRegistrationSerializerLegacy, TaxonomizableSerializerMixin):
+class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, TaxonomizableSerializerMixin):
     """
     New DraftRegistrationSerializer - instead of the node_id being provided in the URL, an optional
     node is passed in under `branched_from`.
@@ -100,7 +100,7 @@ class DraftRegistrationSerializer(DraftRegistrationSerializerLegacy, Taxonomizab
             },
         )
 
-    # Overrides DraftRegistrationSerializerLegacy
+    # Overrides DraftRegistrationLegacySerializer
     def get_node(self, validated_data):
         # Node comes from branched_from relationship rather than from URL
         return validated_data.pop('branched_from', None)
@@ -118,7 +118,7 @@ class DraftRegistrationSerializer(DraftRegistrationSerializerLegacy, Taxonomizab
 
 class DraftRegistrationDetailSerializer(DraftRegistrationSerializer, DraftRegistrationDetailLegacySerializer):
     """
-    Overrides DraftRegistrationSerializerLegacy to make id required.
+    Overrides DraftRegistrationLegacySerializer to make id required.
     registration_supplement, node, cannot be changed after draft has been created.
     """
 
@@ -170,7 +170,7 @@ class DraftRegistrationContributorsSerializer(NodeContributorsSerializer):
         related_view_kwargs={'draft_id': '<draft_registration._id>'},
     )
 
-    node = HideIfDraft(RelationshipField(
+    node = HideIfDraftRegistration(RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<node._id>'},
     ))

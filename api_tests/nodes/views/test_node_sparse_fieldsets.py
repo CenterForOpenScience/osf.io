@@ -43,7 +43,7 @@ class TestNodeSparseFieldsList:
         node_json = res.json['data'][0]
 
         assert node_json['attributes'] == {}
-        assert set(list(node_json.keys())) == set(
+        assert set(node_json.keys()) == set(
             ['links', 'type', 'id', 'attributes'])
 
     #   test_sparse_fields_includes_relationships

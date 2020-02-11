@@ -1189,7 +1189,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         )
 
     def get_unregistered_contributor(self, obj):
-        # SerializerMethodField works for both Node/DraftRegistration/Preprint contributors
+        # SerializerMethodField works for Node/DraftRegistration/Preprint contributors
         if hasattr(obj, 'preprint'):
             unclaimed_records = obj.user.unclaimed_records.get(obj.preprint._id, None)
         elif hasattr(obj, 'draft_registration'):
@@ -1374,6 +1374,11 @@ class NodeStorageProviderSerializer(JSONAPISerializer):
         'new_folder': WaterbutlerLink(kind='folder'),
         'storage_addons': 'get_storage_addons_url',
     })
+    root_folder = RelationshipField(
+        related_view='files:file-detail',
+        related_view_kwargs={'file_id': '<root_folder._id>'},
+        help_text='The folder in which this file exists',
+    )
 
     class Meta:
         type_ = 'files'
@@ -1458,7 +1463,7 @@ class RegistrationSchemaRelationshipField(RelationshipField):
         return {'registration_schema': schema}
 
 
-class DraftRegistrationSerializerLegacy(JSONAPISerializer):
+class DraftRegistrationLegacySerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
@@ -1550,13 +1555,8 @@ class DraftRegistrationSerializerLegacy(JSONAPISerializer):
         reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
 
         if metadata:
-                try:
-                    # Required fields are only required when creating the actual registration, not updating the draft.
-                    draft.validate_metadata(metadata=metadata, reviewer=reviewer, required_fields=False)
-                except ValidationError as e:
-                    raise exceptions.ValidationError(e.message)
-                draft.update_metadata(metadata)
-                draft.save()
+            self.update_metadata(draft, metadata, reviewer)
+
         if registration_responses:
             self.update_registration_responses(draft, registration_responses)
 
@@ -1568,12 +1568,15 @@ class DraftRegistrationSerializerLegacy(JSONAPISerializer):
             return get_kebab_snake_case_field(request.version, 'draft-registrations')
 
 
-class DraftRegistrationDetailLegacySerializer(DraftRegistrationSerializerLegacy):
+class DraftRegistrationDetailLegacySerializer(DraftRegistrationLegacySerializer):
     """
-    Overrides DraftRegistrationSerializerLegacy to make id required.
+    Overrides DraftRegistrationLegacySerializer to make id required.
     registration_supplement cannot be changed after draft has been created.
 
     Also makes registration_supplement read-only.
+
+    Either pass in registration_metadata (old workflow) or registration_responses
+    (new workflow), not both.  registration_metadata will eventually be deprecated.
     """
     id = IDField(source='_id', required=True)
 
@@ -1599,13 +1602,7 @@ class DraftRegistrationDetailLegacySerializer(DraftRegistrationSerializerLegacy)
         self.enforce_metadata_or_registration_responses(metadata, registration_responses)
 
         if metadata:
-            try:
-                # Required fields are only required when creating the actual registration, not updating the draft.
-                draft.validate_metadata(metadata=metadata, reviewer=reviewer, required_fields=False)
-            except ValidationError as e:
-                raise exceptions.ValidationError(e.message)
-            draft.update_metadata(metadata)
-            draft.save()
+            self.update_metadata(draft, metadata, reviewer)
         if registration_responses:
             self.update_registration_responses(draft, registration_responses)
         return draft

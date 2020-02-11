@@ -13,9 +13,17 @@ from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 
 from api.files.serializers import OsfStorageFileSerializer
-from api.nodes.serializers import NodeSerializer, NodeStorageProviderSerializer, NodeLicenseRelationshipField
-from api.nodes.serializers import NodeLinksSerializer, update_institutions, NodeLicenseSerializer
-from api.nodes.serializers import NodeContributorsSerializer, RegistrationProviderRelationshipField, get_license_details
+from api.nodes.serializers import (
+    NodeSerializer,
+    NodeStorageProviderSerializer,
+    NodeLicenseRelationshipField,
+    NodeLinksSerializer,
+    update_institutions,
+    NodeLicenseSerializer,
+    NodeContributorsSerializer,
+    RegistrationProviderRelationshipField,
+    get_license_details,
+)
 from api.base.serializers import (
     IDField, RelationshipField, LinksField, HideIfWithdrawal,
     FileRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
@@ -618,7 +626,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         from website.archiver.utils import find_selected_files
         files = find_selected_files(draft.registration_schema, draft.registration_metadata)
         orphan_files = []
-        for key, value in list(files.items()):
+        for key, value in files.items():
             if 'extra' in value:
                 for file_metadata in value['extra']:
                     if not self._is_attached_file_valid(file_metadata, registering):
@@ -631,9 +639,11 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         Validation of file information on registration_metadata.  Theoretically, the file information
         on registration_responses does not have to be valid, so we enforce their accuracy here,
         to ensure file links load properly.
+
         Verifying that nodeId in the file_metadata is one of the files we're registering. Verify
         that selectedFileName is the name of a file on the node.  Verify that the sha256 matches
         a version on that file.
+
         :param file_metadata - under "registration_metadata"
         :param registering - node ids you are registering
         :return boolean
@@ -667,7 +677,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         return True
 
 
-class RegistrationCreateSerializerOldWorkflow(RegistrationCreateSerializer):
+class RegistrationCreateLegacySerializer(RegistrationCreateSerializer):
     """
     Overrides RegistrationCreateSerializer for the old registration workflow
     to copy editable fields.
@@ -677,7 +687,7 @@ class RegistrationCreateSerializerOldWorkflow(RegistrationCreateSerializer):
         auth = get_user_auth(self.context['request'])
         draft = validated_data.get('draft', None)
         draft.copy_editable_fields(draft.branched_from, auth=auth)
-        registration = super(RegistrationCreateSerializerOldWorkflow, self).create(validated_data)
+        registration = super(RegistrationCreateLegacySerializer, self).create(validated_data)
         return registration
 
 

@@ -692,6 +692,13 @@ class NodeCRUDTestCase:
         )
 
     @pytest.fixture()
+    def wiki_private(self, user, project_private):
+        with mock.patch('osf.models.AbstractNode.update_search'):
+            wiki_page = WikiFactory(page_name='foo', node=project_private, user=user)
+            WikiVersionFactory(wiki_page=wiki_page)
+        return wiki_page
+
+    @pytest.fixture()
     def url_public(self, project_public):
         return '/{}nodes/{}/'.format(API_BASE, project_public._id)
 

@@ -166,11 +166,11 @@ class TestDraftRegistrationContributorUpdate(TestNodeContributorUpdate):
             API_BASE, project._id, contrib._id)
 
     def test_change_contributor_non_admin_osf_group_member_auth(self, project, contrib):
-        # Overrides TestNodeContributorUpdate - drafts have no perms
+        # Overrides TestNodeContributorUpdate - drafts have no group perms
         return
 
     def test_change_contributor_admin_osf_group_permissions(self, project, contrib):
-        # Overrides TestNodeContributorUpdate - drafts have no perms
+        # Overrides TestNodeContributorUpdate - drafts have no group perms
         return
 
 

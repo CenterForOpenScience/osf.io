@@ -202,7 +202,7 @@ class HideIfPreprint(ConditionalField):
         return not isinstance(self.field, RelationshipField)
 
 
-class HideIfDraft(ConditionalField):
+class HideIfDraftRegistration(ConditionalField):
     """
     If object is a draft registration, or related to a draft registration, hide the field.
     """
@@ -620,7 +620,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         if callable(lookup_url_kwarg):
             lookup_url_kwarg = lookup_url_kwarg(getattr(resource, field_name))
 
-        kwargs = {attr_name: self.lookup_attribute(resource, attr) for (attr_name, attr) in list(lookup_url_kwarg.items())}
+        kwargs = {attr_name: self.lookup_attribute(resource, attr) for (attr_name, attr) in lookup_url_kwarg.items()}
         kwargs.update({'version': request.parser_context['kwargs']['version']})
 
         view = self.view_name
@@ -724,7 +724,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
         kwargs_retrieval = {}
 
-        for lookup_url_kwarg, lookup_field in list(kwargs_dict.items()):
+        for lookup_url_kwarg, lookup_field in kwargs_dict.items():
 
             if _tpl(lookup_field):
                 lookup_value = self.lookup_attribute(obj, lookup_field)
@@ -739,7 +739,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
     # Overrides HyperlinkedIdentityField
     def get_url(self, obj, view_name, request, format):
         urls = {}
-        for view_name, view in list(self.views.items()):
+        for view_name, view in self.views.items():
             if view is None:
                 urls[view_name] = {}
             else:
@@ -870,17 +870,20 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         self_url = url['self']
         self_meta = self.get_meta_information(self.self_meta, value)
         relationship = format_relationship_links(related_url, self_url, related_meta, self_meta)
-        if related_url and (len(related_path.split('/')) & 1) == 1:
+        if related_url:
             resolved_url = resolve(related_path)
             related_class = resolved_url.func.view_class
             if issubclass(related_class, RetrieveModelMixin):
-                related_type = resolved_url.namespace
                 try:
+                    related_type = resolved_url.namespace
                     # TODO: change kwargs to preprint_provider_id and registration_id
                     if related_type == 'preprint_providers':
                         related_id = resolved_url.kwargs['provider_id']
                     elif related_type == 'registrations':
                         related_id = resolved_url.kwargs['node_id']
+                    elif related_type == 'schemas' and related_class.view_name == 'registration-schema-detail':
+                        related_id = resolved_url.kwargs['schema_id']
+                        related_type = 'registration-schemas'
                     else:
                         related_id = resolved_url.kwargs[related_type[:-1] + '_id']
                 except KeyError:
@@ -997,7 +1000,18 @@ class TargetField(ser.Field):
         """
         meta = functional.rapply(self.meta, _url_val, obj=value, serializer=self.parent, request=self.context['request'])
         obj = getattr(value, 'referent', value)
-        return {'links': {self.link_type: {'href': obj.get_absolute_url(), 'meta': meta}}}
+        return {
+            'links': {
+                self.link_type: {
+                    'href': obj.get_absolute_url(),
+                    'meta': meta,
+                },
+            },
+            'data': {
+                'type': meta['type'],
+                'id': obj._id,
+            },
+        }
 
 
 class LinksField(ser.Field):
@@ -1041,7 +1055,7 @@ class LinksField(ser.Field):
 
     def to_representation(self, obj):
         ret = {}
-        for name, value in list(self.links.items()):
+        for name, value in self.links.items():
             try:
                 url = _url_val(value, obj=obj, serializer=self.parent, request=self.context['request'])
             except SkipField:
@@ -1107,10 +1121,10 @@ class Link(object):
         self.query_kwargs = query_kwargs or {}
 
     def resolve_url(self, obj, request):
-        kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in list(self.kwargs.items())}
+        kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.kwargs.items()}
         kwarg_values.update({'version': request.parser_context['kwargs']['version']})
         arg_values = [_get_attr_from_tpl(attr_tpl, obj) for attr_tpl in self.args]
-        query_kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in list(self.query_kwargs.items())}
+        query_kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.query_kwargs.items()}
         # Presumably, if you have are expecting a value but the value is empty, then the link is invalid.
         for item in kwarg_values:
             if kwarg_values[item] is None:
@@ -1219,7 +1233,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
         ret = {'data': []}
 
-        for resource_id, resource in list(instance_mapping.items()):
+        for resource_id, resource in instance_mapping.items():
             data = data_mapping.pop(resource_id, None)
             ret['data'].append(self.child.update(resource, data))
 
@@ -1283,7 +1297,7 @@ class BaseAPISerializer(ser.Serializer, SparseFieldsetMixin):
         super(BaseAPISerializer, self).__init__(*args, **kwargs)
         self.model_field_names = [
             name if field.source == '*' else field.source
-            for name, field in list(self.fields.items())
+            for name, field in self.fields.items()
         ]
 
 

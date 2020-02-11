@@ -36,7 +36,6 @@ from api.waffle.utils import flag_is_active, storage_i18n_flag_active
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
-registries_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['registries']['path']))
 ember_osf_web_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['ember_osf_web']['path']))
 
 
