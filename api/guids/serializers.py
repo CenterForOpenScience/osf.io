@@ -28,13 +28,16 @@ def get_related_view(record):
 
 def get_related_view_kwargs(record):
     kind = get_type(record)
+    related_id = '<_id>'
     # slight hack, works for existing types
     singular = kind.rstrip('s')
     # The registration view_kwarg is node_id
     if singular == 'registration':
         singular = 'node'
+    elif singular == 'file':
+        related_id = '<referent._id>'
     return {
-        '{}_id'.format(singular): '<_id>',
+        '{}_id'.format(singular): related_id,
     }
 
 class GuidSerializer(JSONAPISerializer):
