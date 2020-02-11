@@ -734,7 +734,7 @@ class ApiOAuth2ScopeFactory(DjangoModelFactory):
     class Meta:
         model = models.ApiOAuth2Scope
 
-    name = factory.Sequence(lambda n: 'Example OAuth2 Scope #{}'.format(n))
+    name = factory.Sequence(lambda n: 'scope{}'.format(n))
     is_public = True
     is_active = True
     description = factory.Faker('text')
