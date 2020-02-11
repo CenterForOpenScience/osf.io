@@ -19,6 +19,38 @@ from tests.base import OsfTestCase
 
 pytestmark = pytest.mark.django_db
 
+class TestIQBRIMSClient(OsfTestCase):
+
+    def test_create_content(self):
+        client = IQBRIMSClient('0001')
+        with mock.patch.object(client, '_make_request',
+                               return_value=MockResponse('{"test": true}',
+                                                         200)) as mkreq:
+            client.create_content('folderid456', 'files.txt', 'text/plain', 'TEST')
+            assert_equal(len(mkreq.mock_calls), 1)
+            name, args, kwargs = mkreq.mock_calls[0]
+            assert_equal(args, ('POST', 'https://www.googleapis.com/drive/v2/files?uploadType=multipart'))
+            assert_equal(kwargs['files']['data'],
+                         ('metadata',
+                          '{"parents": [{"id": "folderid456"}], "title": "files.txt"}',
+                          'application/json; charset=UTF-8'))
+            assert_equal(kwargs['files']['file'],
+                         ('files.txt',
+                          'TEST',
+                          'text/plain'))
+
+    def test_update_content(self):
+        client = IQBRIMSClient('0001')
+        with mock.patch.object(client, '_make_request',
+                               return_value=MockResponse('{"test": true}',
+                                                         200)) as mkreq:
+            client.update_content('fileid456', 'text/plain', 'TEST')
+            assert_equal(len(mkreq.mock_calls), 1)
+            name, args, kwargs = mkreq.mock_calls[0]
+            assert_equal(args, ('PUT', 'https://www.googleapis.com/drive/v2/files/fileid456?uploadType=media'))
+            assert_equal(kwargs['data'], 'TEST')
+
+
 class TestIQBRIMSSpreadsheetClient(OsfTestCase):
 
     def test_add_files(self):

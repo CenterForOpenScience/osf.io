@@ -115,6 +115,38 @@ class IQBRIMSClient(BaseClient):
         )
         return res.json()
 
+    def create_content(self, folder_id, title, mime_type, content):
+        params = {
+            'title': title,
+            'parents': [{
+                'id': folder_id
+            }]
+        }
+        metadata = ('metadata', json.dumps(params), 'application/json; charset=UTF-8')
+        files = {'data': metadata, 'file': (title, content, mime_type)}
+        res = self._make_request(
+            'POST',
+            self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files', ) + '?uploadType=multipart',
+            files=files,
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.json()
+
+    def update_content(self, file_id, mime_type, content):
+        res = self._make_request(
+            'PUT',
+            self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files',
+                            file_id) + '?uploadType=media',
+            headers={
+                'Content-Type': mime_type,
+            },
+            data=content,
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.json()
+
     def get_content(self, file_id):
         res = self._make_request(
             'GET',

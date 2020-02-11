@@ -481,6 +481,44 @@ def iqbrims_create_index(**kwargs):
 @must_be_valid_project
 @must_have_addon(SHORT_NAME, 'node')
 @must_have_valid_hash()
+def iqbrims_create_filelist(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    iqbrims = node.get_addon('iqbrims')
+    folder = kwargs['folder']
+    folder_name = REVIEW_FOLDERS[folder]
+    try:
+        access_token = iqbrims.fetch_access_token()
+    except exceptions.InvalidAuthError:
+        raise HTTPError(403)
+    management_node = _get_management_node(node)
+    management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
+    if management_node_addon is None:
+        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
+    user_settings = IQBRIMSWorkflowUserSettings(access_token, management_node_addon.folder_id)
+
+    client = IQBRIMSClient(access_token)
+    folders = client.folders(folder_id=iqbrims.folder_id)
+    folders = [f for f in folders if f['title'] == folder_name]
+    assert len(folders) > 0
+    files = client.files(folder_id=folders[0]['id'])
+    index_filename = '.files.txt'
+    content_files = [f for f in files if f['title'] != index_filename]
+    index_files = [f for f in files if f['title'] == index_filename]
+    content_str = u''.join([u'{}\n'.format(f['title']) for f in content_files])
+    mime_type = 'text/plain'
+    content = content_str.encode('utf8')
+
+    logger.debug(u'Result files: {}'.format([f['title'] for f in files]))
+
+    if len(index_files) == 0:
+        client.create_content(folders[0]['id'], index_filename, mime_type, content)
+    else:
+        client.update_content(index_files[0]['id'], mime_type, content)
+    return {'status': 'complete'}
+
+@must_be_valid_project
+@must_have_addon(SHORT_NAME, 'node')
+@must_have_valid_hash()
 def iqbrims_close_index(**kwargs):
     node = kwargs['node'] or kwargs['project']
     iqbrims = node.get_addon('iqbrims')

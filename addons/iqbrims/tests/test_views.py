@@ -1227,6 +1227,91 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                        ['f1.txt', 'f2.txt', u'test/ファイル3.txt', '']),))
         mock_copy_file.assert_called_once()
 
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    @mock.patch.object(IQBRIMSClient, 'create_content')
+    @mock.patch.object(IQBRIMSClient, 'update_content')
+    @mock.patch.object(IQBRIMSClient, 'folders')
+    @mock.patch.object(IQBRIMSClient, 'files')
+    def test_create_new_filelist(self, mock_files, mock_folders,
+                                 mock_update_content, mock_create_content,
+                                 mock_get_management_node,
+                                 mock_workflow_user_settings):
+        management_project = ProjectFactory()
+        management_project.add_addon('googledrive', auth=None)
+        gdsettings = management_project.get_addon('googledrive')
+        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.save()
+        management_project.add_addon('iqbrims', auth=None)
+        mock_get_management_node.return_value = management_project
+        mock_folders.return_value = [{'id': 'folderid123',
+                                      'title': u'生データ'}]
+        mock_files.return_value = [{'id': 'fileid123', 'title': 'files.zip'}]
+        user_settings = {}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.folder_path = 'testgdpath/iqb123/'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_create_filelist',
+                                       folder='raw')
+        res = self.app.put(url, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, {'status': 'complete'})
+
+        mock_create_content.assert_called_once()
+        assert_equal(mock_create_content.call_args,
+                     (('folderid123', '.files.txt', 'text/plain', 'files.zip\n'),))
+
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    @mock.patch.object(IQBRIMSClient, 'create_content')
+    @mock.patch.object(IQBRIMSClient, 'update_content')
+    @mock.patch.object(IQBRIMSClient, 'folders')
+    @mock.patch.object(IQBRIMSClient, 'files')
+    def test_create_exists_filelist(self, mock_files, mock_folders,
+                                    mock_update_content, mock_create_content,
+                                    mock_get_management_node,
+                                    mock_workflow_user_settings):
+        management_project = ProjectFactory()
+        management_project.add_addon('googledrive', auth=None)
+        gdsettings = management_project.get_addon('googledrive')
+        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.save()
+        management_project.add_addon('iqbrims', auth=None)
+        mock_get_management_node.return_value = management_project
+        mock_folders.return_value = [{'id': 'folderid123',
+                                      'title': u'生データ'}]
+        mock_files.return_value = [{'id': 'fileid123', 'title': 'files.zip'},
+                                   {'id': 'fileid456', 'title': '.files.txt'}]
+        user_settings = {}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.folder_path = 'testgdpath/iqb123/'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_create_filelist',
+                                       folder='raw')
+        res = self.app.put(url, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, {'status': 'complete'})
+
+        mock_update_content.assert_called_once()
+        assert_equal(mock_update_content.call_args,
+                     (('fileid456', 'text/plain', 'files.zip\n'),))
+
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
     @mock.patch.object(IQBRIMSClient, 'files')
