@@ -247,6 +247,7 @@ def iqbrims_get_storage(**kwargs):
     else:
         folder_name = REVIEW_FOLDERS[folder]
         file_name = REVIEW_FILE_LIST
+        urls_for_all_files = True
     try:
         access_token = iqbrims.fetch_access_token()
     except exceptions.InvalidAuthError:
