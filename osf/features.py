@@ -8,6 +8,7 @@ STORAGE_I18N = 'storage_i18n'
 OSF_PREREGISTRATION = 'osf_preregistration'
 OSF_GROUPS = 'osf_groups'
 ENABLE_CHRONOS = 'enable_chronos'
+EGAP_ADMINS = 'egap_admins'
 
 EMBER_AB_TESTING_HOME_PAGE_VERSION_B = 'ab_testing_home_page_version_b'
 EMBER_AB_TESTING_HOME_PAGE_HERO_TEXT_VERSION_B = 'ab_testing_home_page_hero_text_version_b'

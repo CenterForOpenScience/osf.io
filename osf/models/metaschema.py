@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.db import models
+import waffle
 import jsonschema
 
 from website.util import api_v2_url
@@ -10,6 +11,8 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.exceptions import ValidationValueError, ValidationError
 
 from website.project.metadata.utils import create_jsonschema_from_metaschema
+from osf.features import EGAP_ADMINS
+
 
 SCHEMABLOCK_TYPES = [
     ('page-heading', 'page-heading'),
@@ -40,7 +43,7 @@ class AbstractSchemaManager(models.Manager):
         if sorted_schemas:
             return sorted_schemas.last()
         else:
-            return None
+            return self.none()
 
     def get_latest_versions(self, only_active=True):
         """
@@ -52,6 +55,23 @@ class AbstractSchemaManager(models.Manager):
         if only_active:
             latest_schemas = latest_schemas.filter(active=True)
         return latest_schemas.order_by('name', '-schema_version').distinct('name')
+
+    def get_latest_versions_and_allow_epag_admins(self, request, only_active=True):
+        """
+        Allows egap admins to see EGAP registrations as visible, should be deleted when EGAP migration is totally
+        complete.
+
+        :param request: the request object needed for waffling
+        :param str only_active: Only return active schemas
+        :return: queryset
+        """
+
+        queryset = self.get_latest_version(only_active)
+
+        if waffle.flag_is_active(request, EGAP_ADMINS):
+            return queryset | RegistrationSchema.objects.filter(name='EGAP Registration').distinct('name')
+        else:
+            return queryset
 
 
 class AbstractSchema(ObjectIDMixin, BaseModel):
