@@ -56,7 +56,7 @@ class AbstractSchemaManager(models.Manager):
             latest_schemas = latest_schemas.filter(active=True)
         return latest_schemas.order_by('name', '-schema_version').distinct('name')
 
-    def get_latest_versions_and_allow_epag_admins(self, request, only_active=True):
+    def get_latest_versions_and_allow_egap_admins(self, request, only_active=True):
         """
         Allows egap admins to see EGAP registrations as visible, should be deleted when EGAP migration is totally
         complete.
@@ -66,9 +66,9 @@ class AbstractSchemaManager(models.Manager):
         :return: queryset
         """
 
-        queryset = self.get_latest_version(only_active)
+        queryset = self.get_latest_versions(only_active)
 
-        if waffle.flag_is_active(request, EGAP_ADMINS):
+        if hasattr(request, 'user') and waffle.flag_is_active(request, EGAP_ADMINS):
             return queryset | RegistrationSchema.objects.filter(name='EGAP Registration').distinct('name')
         else:
             return queryset
