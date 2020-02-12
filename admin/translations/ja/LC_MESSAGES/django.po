@@ -28,9 +28,17 @@ msgstr "GakuNin RDM 管理者 | バナーを削除"
 msgid "Confirm Delete Banner"
 msgstr "削除バナーを確認"
 
+#: .\templates\banners\confirm_delete.html:13
+#, python-format
+msgid ""
+"Are you sure you want to delete <b>%(object.name)s</b>? It is scheduled for "
+"%(object.start_date)s -\n"
+"                        %(object.end_date)s"
+msgstr "<b>%(object.name)s</ b>を削除してもよろしいですか？%(object.start_date)s-\n%(object.end_date)sにスケジュールされています"
+
 #: .\templates\banners\create.html:5
 msgid "GakuNin RDM Admin | Schedule banner"
-msgstr "GakuNin RDM 管理者 | バナをスケジュールー"
+msgstr "GakuNin RDM 管理者 | バナーをスケジュール"
 
 #: .\templates\banners\create.html:11
 msgid "Schedule a banner"
@@ -82,7 +90,19 @@ msgstr "バナーを削除"
 
 #: .\templates\collection_providers\cannot_delete.html:7
 msgid "Collection Provider Delete"
+msgstr "コレクションプロバイダーの削除"
+
+#: .\templates\collection_providers\cannot_delete.html:13
+msgid "Cannot Delete %(provider.name)s"
+msgstr "%(provider.name)sを削除できません"
+
+#: .\templates\collection_providers\cannot_delete.html:14
+msgid ""
+"%(provider.name)s has "
+"%(provider.primary_collection.collectionsubmission_set.count)s submissions "
+"associated with it, and therefore cannot be safely deleted."
 msgstr ""
+"%(provider.name)sには%(provider.primary_collection.collectionsubmission_set.count)sの送信が関連付けられているため、安全に削除できません。"
 
 #: .\templates\collection_providers\confirm_delete.html:5
 msgid "Delete Collection Provider"
@@ -149,13 +169,15 @@ msgstr "プログラムエリアの選択"
 
 #: .\templates\collection_providers\update_collection_provider_form.html:96
 #: .\templates\institutions\create.html:29
+#: .\templates\institutions\detail.html:80
 msgid "Import from JSON"
 msgstr "JSONからインポート"
 
 #: .\templates\desk\cases.html:6
 #, python-format
 msgid "GakuNin RDM user \"%(user_id)s\" up to 50 most recent desk.com cases:"
-msgstr "GakuNin RDMユーザー\"%(user_id)s\"は最新のdesk.comケースを最大50件まで："
+msgstr ""
+"GakuNin RDMユーザー\"%(user_id)s\"は最新のdesk.comケースを最大50件まで："
 
 #: .\templates\desk\cases.html:10 .\templates\desk\customer.html:40
 msgid "Type"
@@ -229,7 +251,8 @@ msgstr "デスクのユーザ設定"
 #: .\templates\desk\user_not_found.html:7
 msgid ""
 "To add a new desk customer, you can go to Desk in order to complete this."
-msgstr "新しいデスクの顧客を追加するには、これを完了するためにデスクに移動できます。"
+msgstr ""
+"新しいデスクの顧客を追加するには、これを完了するためにデスクに移動できます。"
 
 #: .\templates\emails\password_change_done.html:3
 msgid "Documentation"
@@ -263,7 +286,9 @@ msgstr "ホームへ戻る"
 msgid ""
 "You're receiving this email because you requested a password reset for your "
 "GakuNin RDM Admin user account."
-msgstr "GakuNin RDM Adminユーザーアカウントのパスワードのリセットをリクエストしたため、このメールを受信しています。"
+msgstr ""
+"GakuNin RDM Adminユーザーアカウントのパスワードのリセットをリクエストしたた"
+"め、このメールを受信しています。"
 
 #: .\templates\emails\password_reset_email.html:4
 msgid "Please go to this link to reset your password:"
@@ -304,7 +329,9 @@ msgstr "%(institution.name)sを削除できません"
 msgid ""
 "%(institution.name)s has %(institution.nodes.count)s nodes associated with "
 "it, and therefore cannot be safely deleted."
-msgstr "%(institution.name)sには%(institution.nodes.count)sノードが関連付けられているため、安全に削除できません。"
+msgstr ""
+"%(institution.name)sには%(institution.nodes.count)sノードが関連付けられている"
+"ため、安全に削除できません。"
 
 #: .\templates\institutions\cannot_delete.html:15
 msgid "View associated nodes here"
@@ -338,6 +365,12 @@ msgstr "機関を削除"
 #, python-format
 msgid "View %(node_count)s affiliated nodes"
 msgstr "%(node_count)sの関連ノードを表示"
+
+#: .\templates\institutions\detail.html:35
+#, fuzzy
+#| msgid "Logo"
+msgid "Logo:"
+msgstr "ログ"
 
 #: .\templates\institutions\detail.html:41
 msgid "Banner:"
@@ -470,10 +503,6 @@ msgstr "NIIストレージ > %(institution_name)s"
 msgid "GakuNin RDM Admin | Log in"
 msgstr "GakuNin RDM管理者 | ログイン"
 
-#: .\templates\login.html:23
-msgid "Sign in to start your session"
-msgstr "サインインしてセッションを始めてください"
-
 #: .\templates\login.html:20
 msgid "GakuNin RDM"
 msgstr "GakuNin RDM"
@@ -481,6 +510,10 @@ msgstr "GakuNin RDM"
 #: .\templates\login.html:20
 msgid "Admin"
 msgstr "管理者"
+
+#: .\templates\login.html:23
+msgid "Sign in to start your session"
+msgstr "サインインしてセッションを始めてください!!"
 
 #: .\templates\login.html:35
 msgid "Email:"
@@ -522,6 +555,12 @@ msgstr "レベル"
 #: .\templates\maintenance\display.html:24
 msgid "Current alert:"
 msgstr "現在のアラート："
+
+#: .\templates\maintenance\display.html:31
+msgid ""
+"The site will undergo maintenance between &lt;localized start time&gt;-&lt;"
+"localized end time&gt;. Thank you for your patience."
+msgstr "サイトは、&lt;ローカライズされた開始時間&gt;-&lt;ローカライズされた終了時間&gt;の間でメンテナンスされます。 お待ちいただいてありがとうございます。"
 
 #: .\templates\maintenance\display.html:37
 msgid "Remove alert"
@@ -694,7 +733,9 @@ msgstr "過去7日間のユーザーの増加"
 msgid ""
 "The last 7 days of users, organized by status. Click a category in the "
 "legend to resize the axes."
-msgstr "ステータス別に編成された過去7日間のユーザー。 凡例のカテゴリをクリックして、軸のサイズを変更します。"
+msgstr ""
+"ステータス別に編成された過去7日間のユーザー。 凡例のカテゴリをクリックして、"
+"軸のサイズを変更します。"
 
 #: .\templates\metrics\osf_metrics.html:183
 msgid "Previous 7 days of user registrations by email domain"
@@ -710,7 +751,9 @@ msgstr "ユーザーによる昨日のノードログ"
 
 #: .\templates\metrics\osf_metrics.html:205
 msgid "The last day of node logs by user, if a user had over 100 node logs."
-msgstr "ユーザーが100を超えるノードログを保持していた場合、ユーザーごとのノードログの最終日。"
+msgstr ""
+"ユーザーが100を超えるノードログを保持していた場合、ユーザーごとのノードログの"
+"最終日。"
 
 #: .\templates\metrics\osf_metrics.html:225
 msgid "Total Institutional Users"
@@ -752,13 +795,17 @@ msgid ""
 "The growth of users who have accounts associated with their institutions. "
 "Click on an institution name in the key to remove its line and resize the "
 "chart axes."
-msgstr "機関に関連付けられたアカウントを持つユーザーの成長。 キーの機関名をクリックしてその行を削除し、チャート軸のサイズを変更します。"
+msgstr ""
+"機関に関連付けられたアカウントを持つユーザーの成長。 キーの機関名をクリックし"
+"てその行を削除し、チャート軸のサイズを変更します。"
 
 #: .\templates\metrics\osf_metrics.html:282
 msgid ""
 "Nodes (at all levels, projects and components) created by each institution "
 "as of yesterday."
-msgstr "昨日の時点で各機関によって作成されたノード（すべてのレベル、プロジェクト、およびコンポーネント）。"
+msgstr ""
+"昨日の時点で各機関によって作成されたノード（すべてのレベル、プロジェクト、お"
+"よびコンポーネント）。"
 
 #: .\templates\metrics\osf_metrics.html:289
 msgid "Affiliated Public Nodes"
@@ -768,7 +815,9 @@ msgstr "関連するパブリックノード"
 msgid ""
 "Total number of public nodes (at all levels, projects and components) "
 "created by each institution as of yesterday."
-msgstr "昨日の時点で各機関によって作成されたパブリックノード（すべてのレベル、プロジェクト、およびコンポーネント）の総数。"
+msgstr ""
+"昨日の時点で各機関によって作成されたパブリックノード（すべてのレベル、プロ"
+"ジェクト、およびコンポーネント）の総数。"
 
 #: .\templates\metrics\osf_metrics.html:302
 msgid "Affiliated Private Nodes"
@@ -778,7 +827,9 @@ msgstr "提携プライベートノード"
 msgid ""
 "Total number of private nodes (at all levels, projects and components) "
 "created by each institution as of yesterday."
-msgstr "昨日の時点で各機関によって作成されたプライベートノード（すべてのレベル、プロジェクト、およびコンポーネント）の総数。"
+msgstr ""
+"昨日の時点で各機関によって作成されたプライベートノード（すべてのレベル、プロ"
+"ジェクト、およびコンポーネント）の総数。"
 
 #: .\templates\metrics\osf_metrics.html:317
 msgid "Affiliated Public Registrations"
@@ -788,7 +839,9 @@ msgstr "提携登録登録"
 msgid ""
 "Total number of public registered nodes (at all levels, projects and "
 "components) created by each institution as of yesterday."
-msgstr "昨日の時点で各機関によって作成された（すべてのレベル、プロジェクト、およびコンポーネントで）パブリックに登録されたノードの総数。"
+msgstr ""
+"昨日の時点で各機関によって作成された（すべてのレベル、プロジェクト、およびコ"
+"ンポーネントで）パブリックに登録されたノードの総数。"
 
 #: .\templates\metrics\osf_metrics.html:330
 msgid "Affiliated Embargoed Registrations"
@@ -798,7 +851,9 @@ msgstr "加盟禁止登録"
 msgid ""
 "Total number of private registered nodes (at all levels, projects and "
 "components) created by each institution as of yesterday."
-msgstr "昨日現在、各機関によって作成されたプライベート登録ノード（すべてのレベル、プロジェクト、およびコンポーネント）の総数。"
+msgstr ""
+"昨日現在、各機関によって作成されたプライベート登録ノード（すべてのレベル、プ"
+"ロジェクト、およびコンポーネント）の総数。"
 
 #: .\templates\metrics\osf_metrics.html:344
 msgid "Top level projects created by each institution as of yesterday."
@@ -812,7 +867,8 @@ msgstr "提携公共プロジェクト"
 msgid ""
 "Total number of public top level projects created by each institution as of "
 "yesterday."
-msgstr "昨日の時点で各機関によって作成されたトップレベルの公共プロジェクトの総数。"
+msgstr ""
+"昨日の時点で各機関によって作成されたトップレベルの公共プロジェクトの総数。"
 
 #: .\templates\metrics\osf_metrics.html:364
 msgid "Affiliated Private Projects"
@@ -822,7 +878,9 @@ msgstr "提携民間プロジェクト"
 msgid ""
 "Total number of private top level projects created by each institution as of "
 "yesterday."
-msgstr "昨日現在、各機関によって作成されたプライベートトップレベルプロジェクトの総数。"
+msgstr ""
+"昨日現在、各機関によって作成されたプライベートトップレベルプロジェクトの総"
+"数。"
 
 #: .\templates\metrics\osf_metrics.html:379
 msgid "Affiliated Public Project Registrations"
@@ -832,7 +890,8 @@ msgstr "提携公開プロジェクト登録"
 msgid ""
 "Total number of public registeredtop level projects created by each "
 "institution as of yesterday."
-msgstr "昨日現在、各機関によって作成された公開登録トップレベルプロジェクトの総数。"
+msgstr ""
+"昨日現在、各機関によって作成された公開登録トップレベルプロジェクトの総数。"
 
 #: .\templates\metrics\osf_metrics.html:392
 msgid "Affiliated Embargoed Project Registrations"
@@ -842,7 +901,9 @@ msgstr "関連する禁輸プロジェクトの登録"
 msgid ""
 "Total number of private registered top level projects created by each "
 "institution as of yesterday."
-msgstr "昨日の時点で各機関によって作成されたプライベート登録トップレベルプロジェクトの総数。"
+msgstr ""
+"昨日の時点で各機関によって作成されたプライベート登録トップレベルプロジェクト"
+"の総数。"
 
 #: .\templates\metrics\osf_metrics.html:408
 msgid "Active User Metrics!"
@@ -877,7 +938,9 @@ msgstr "毎日アクティブなログインユーザー"
 msgid ""
 "This is the number of logged in users with user ids who had at least one "
 "pageview on the GakuNin RDM yesterday."
-msgstr "これは、昨日GakuNin RDMで少なくとも1つのページビューを持っていたユーザーIDを持つログインユーザーの数です。"
+msgstr ""
+"これは、昨日GakuNin RDMで少なくとも1つのページビューを持っていたユーザーIDを"
+"持つログインユーザーの数です。"
 
 #: .\templates\metrics\osf_metrics.html:458
 msgid "Daily Active Users / Total Users"
@@ -905,7 +968,6 @@ msgid "Last month's active users / total confirmed users"
 msgstr "先月のアクティブユーザー数/確認済みユーザー総数"
 
 #: .\templates\metrics\osf_metrics.html:499
-#, python-format
 msgid "Monthly Growth of MAU%"
 msgstr "MAU%の毎月の成長"
 
@@ -913,7 +975,9 @@ msgstr "MAU%の毎月の成長"
 msgid ""
 "The percent increase from two months ago to one month ago of what percentage "
 "of users with an account were active on the GakuNin RDM."
-msgstr "GakuNin RDMでアクティブだったアカウントを持つユーザーの割合の2か月前から1か月前までの割合の増加。"
+msgstr ""
+"GakuNin RDMでアクティブだったアカウントを持つユーザーの割合の2か月前から1か月"
+"前までの割合の増加。"
 
 #: .\templates\metrics\osf_metrics.html:514
 msgid "Yearly Active Users"
@@ -931,7 +995,8 @@ msgstr "年間アクティブユーザー数/総ユーザー数"
 msgid ""
 "The percentage of our yearly active users compared to our total users with "
 "confirmed accounts."
-msgstr "アカウントが確認済みの合計ユーザーと比較した、年間アクティブユーザーの割合。"
+msgstr ""
+"アカウントが確認済みの合計ユーザーと比較した、年間アクティブユーザーの割合。"
 
 #: .\templates\metrics\osf_metrics.html:547
 msgid "Projects / Users"
@@ -950,7 +1015,8 @@ msgstr "プロジェクト/月間アクティブユーザー"
 msgid ""
 "The number of projects divided by the number of people who had accounts and "
 "were active last month."
-msgstr "プロジェクトの数を、アカウントを持ち先月アクティブだった人の数で割ったもの。"
+msgstr ""
+"プロジェクトの数を、アカウントを持ち先月アクティブだった人の数で割ったもの。"
 
 #: .\templates\metrics\osf_metrics.html:579
 msgid "Stickiness Ratio"
@@ -1030,7 +1096,7 @@ msgstr "パブリックプロジェクトとプライベートプロジェクト
 
 #: .\templates\metrics\osf_metrics.html:724 .\templates\users\user.html:285
 msgid "Nodes"
-msgstr ノード""
+msgstr "ノード"
 
 #: .\templates\metrics\osf_metrics.html:731
 msgid "Total Nodes - Projects and Components"
@@ -1064,7 +1130,9 @@ msgstr "パブリックノードとプライベートノード-コンポーネ�
 msgid ""
 "The percentages of public vs private combined projects and components on the "
 "GakuNin RDM."
-msgstr "GakuNin RDMのパブリックプロジェクトとプライベートプロジェクトを組み合わせた割合。"
+msgstr ""
+"GakuNin RDMのパブリックプロジェクトとプライベートプロジェクトを組み合わせた割"
+"合。"
 
 #: .\templates\metrics\osf_metrics.html:798
 msgid "Total Registered Projects"
@@ -1100,7 +1168,8 @@ msgstr "パブリックvs禁輸登録トップレベルプロジェクト"
 msgid ""
 "The percentages of public vs embargoed top-level project registrations on "
 "the GakuNin RDM."
-msgstr "GakuNin RDMでのトップレベルのプロジェクト登録に対する一般公開と禁輸の割合。"
+msgstr ""
+"GakuNin RDMでのトップレベルのプロジェクト登録に対する一般公開と禁輸の割合。"
 
 #: .\templates\metrics\osf_metrics.html:865
 msgid "Total Registered Nodes - Projects & Components"
@@ -1111,7 +1180,8 @@ msgstr "登録済みノードの総数-プロジェクトとコンポーネン�
 msgid ""
 "The total number of all registered nodes - projects & components on the "
 "GakuNin RDM."
-msgstr "登録済みのすべてのノードの総数-GakuNin RDMのプロジェクトとコンポーネント。"
+msgstr ""
+"登録済みのすべてのノードの総数-GakuNin RDMのプロジェクトとコンポーネント。"
 
 #: .\templates\metrics\osf_metrics.html:882
 msgid "Public Registered Nodes"
@@ -1217,8 +1287,10 @@ msgstr "ありませんか？：%(guid)s"
 #: .\templates\nodes\remove_contributor.html:18
 #: .\templates\nodes\remove_node.html:15
 #: .\templates\rdm_addons\addons\dataverse_credentials_modal.html:55
+#: .\templates\rdm_addons\addons\owncloud_credentials_modal.html:62
 #: .\templates\rdm_addons\addons\s3_credentials_modal.html:29
 #: .\templates\rdm_announcement\send.html:34
+#: .\templates\rdm_announcement\settings.html:94
 #: .\templates\rdm_custom_storage_location\institutional_storage.html:62
 #: .\templates\rdm_custom_storage_location\providers\box_modal.html:59
 #: .\templates\rdm_custom_storage_location\providers\googledrive_modal.html:55
@@ -1322,7 +1394,9 @@ msgid ""
 "User will be removed. Currently only\n"
 "        an admin on the %(resource_type)s will be able to\n"
 "        add them back."
-msgstr "ユーザーは削除されます。 現在、%(resource_type)sの管理者のみがそれらを追加して戻すことができます。"
+msgstr ""
+"ユーザーは削除されます。 現在、%(resource_type)sの管理者のみがそれらを追加し"
+"て戻すことができます。"
 
 #: .\templates\nodes\remove_node.html:5
 #, python-format
@@ -1388,6 +1462,12 @@ msgstr " "
 #: .\templates\osf\providerassetfile_form.html:6
 msgid "Provider Asset File"
 msgstr "プロバイダーアセットファイル"
+
+#: .\templates\osf\providerassetfile_form.html:12
+#, fuzzy
+#| msgid "Delete banner"
+msgid "Delete asset"
+msgstr "バナーを削除"
 
 #: .\templates\osf\providerassetfile_form.html:22
 msgid "Uploading a new file will overwrite this asset."
@@ -1474,16 +1554,13 @@ msgid "API Token"
 msgstr "APIトークン"
 
 #: .\templates\rdm_addons\addons\dataverse_credentials_modal.html:42
-msgid "(Get from Dataverse "
-msgstr ""
-
-#: .\templates\rdm_addons\addons\dataverse_credentials_modal.html:42
-msgid ")"
-msgstr ""
+msgid "(Get from Dataverse <i class=\"fa fa-external-link-square\"></i>)"
+msgstr "Dataverse <i class=\"fa fa-external-link-square\"></i>)から取得"
 
 #: .\templates\rdm_addons\addons\dataverse_credentials_modal.html:57
 #: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:24
 #: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:38
+#: .\templates\rdm_addons\addons\owncloud_credentials_modal.html:64
 #: .\templates\rdm_addons\addons\s3_credentials_modal.html:31
 #: .\templates\rdm_custom_storage_location\institutional_storage.html:63
 #: .\templates\rdm_custom_storage_location\providers\box_modal.html:61
@@ -1530,8 +1607,20 @@ msgstr "管理プロジェクト"
 msgid "Remove"
 msgstr "除外"
 
+#: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:18
+#, fuzzy
+#| msgid "Management project"
+msgid "Management project URL"
+msgstr "管理プロジェクト"
+
 #: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:26
 msgid "Organizational project"
+msgstr "組織プロジェクト"
+
+#: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:32
+#, fuzzy
+#| msgid "Organizational project"
+msgid "Organizational project URL"
 msgstr "組織プロジェクト"
 
 #: .\templates\rdm_addons\addons\owncloud_credentials_modal.html:6
@@ -1549,9 +1638,15 @@ msgstr "ownCloudインスタンス"
 msgid "Host URL"
 msgstr "ホストURL"
 
-#: .\templates\rdm_addons\addons\owncloud_credentials_modal.html:33
-msgid " are supported."
-msgstr ""
+#: .\templates\rdm_addons\addons\owncloud_credentials_modal.html:32
+msgid ""
+"Only ownCloud instances supporting <a href=\"https://doc.owncloud.org/"
+"server/9.1/user_manual/files/access_webdav.html\" target=\"_blank\">WebDAV</"
+"a> and <a href=\"https://www.freedesktop.org/wiki/Specifications/open-"
+"collaboration-services-1.7/\" target=\"_blank\">\n"
+"                                        OCS v1.7</a> are supported."
+msgstr "<a href=\"https://doc.owncloud.org/"
+"server/9.1/user_manual/files/access_webdav.html\" target=\"_blank\">WebDAV</a>および</a> and <a href=\"https://www.freedesktop.org/wiki/Specifications/open-collaboration-services-1.7/\" target=\"_blank\">\nOCS v1.7</a>をサポートするownCloudインスタンスのみがサポートされます。"
 
 #: .\templates\rdm_addons\addons\owncloud_credentials_modal.html:46
 #: .\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:42
@@ -1559,6 +1654,14 @@ msgstr ""
 #: .\templates\rdm_custom_storage_location\providers\swift_modal.html:42
 msgid "Password"
 msgstr "パスワード"
+
+#: .\templates\rdm_addons\addons\owncloud_credentials_modal.html:51
+msgid ""
+" These credentials will be encrypted. However, we <strong>strongly "
+"encourage</strong> using a <a href=\"https://doc.owncloud.org/server/9.1/"
+"user_manual/session_management.html#managing-devices\" target=\"_blank\"> "
+"Device (or App) Password</a>."
+msgstr "これらの資格情報は暗号化されます。 ただし、<a href=\"https://doc.owncloud.org/server/9.1/user_manual/session_management.html#managing-devices\" target=\"_blank\">デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
 
 #: .\templates\rdm_addons\addons\s3_credentials_modal.html:6
 #: .\templates\rdm_custom_storage_location\providers\s3_modal.html:9
@@ -1605,6 +1708,12 @@ msgstr "RDMアナウンス"
 #: .\templates\rdm_announcement\index.html:19
 msgid "Announcement"
 msgstr "アナウンス"
+
+#: .\templates\rdm_announcement\index.html:64
+#, fuzzy
+#| msgid "Actions"
+msgid "Options"
+msgstr "アクション"
 
 #: .\templates\rdm_announcement\send.html:18
 msgid " Preview"
@@ -1662,6 +1771,10 @@ msgstr "現在のトークン："
 msgid "Folder"
 msgstr "フォルダ"
 
+#: .\templates\rdm_custom_storage_location\providers\box_modal.html:50
+msgid "Folder ID (Ex: 0 for root)"
+msgstr "フォルダID(例：ルートの場合は0)"
+
 #: .\templates\rdm_custom_storage_location\providers\box_modal.html:60
 #: .\templates\rdm_custom_storage_location\providers\googledrive_modal.html:56
 #: .\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:62
@@ -1676,9 +1789,36 @@ msgstr "接続"
 msgid "Connect a Google Drive Account"
 msgstr "Google Driveアカウントに接続"
 
+#: .\templates\rdm_custom_storage_location\providers\googledrive_modal.html:46
+msgid "Folder ID (Ex: root)"
+msgstr "フォルダID(例：root)"
+
 #: .\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:8
 msgid "Connect a Nextcloud Account"
 msgstr "Nextcloudアカウントに接続"
+
+#: .\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:21
+msgid ""
+"Only Nextcloud instances supporting <a\n"
+"                                            href=\"https://doc.nextcloud.org/"
+"server/9.1/user_manual/files/access_webdav.html\"\n"
+"                                            target=\"_blank\">WebDAV</a> and "
+"<a\n"
+"                                            href=\"https://www.freedesktop."
+"org/wiki/Specifications/open-collaboration-services-1.7/\"\n"
+"                                            target=\"_blank\">\n"
+"                                            OCS v1.7</a> are supported."
+msgstr "<a href=\"https://doc.nextcloud.org/server/9.1/user_manual/files/access_webdav.html\" target=\"_blank\">WebDAV</a>および<a href=\"https://www.freedesktop.org/wiki/Specifications/open-collaboration-services-1.7/\" target=\"_blank\">OCS v1.7</a>をサポートするNextcloudインスタンスのみがサポートされます。"
+
+#: .\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:47
+msgid ""
+" These credentials will be encrypted. However, we <strong>strongly\n"
+"                                        encourage</strong> using a <a\n"
+"                                        href=\"https://doc.nextcloud.org/"
+"server/9.1/user_manual/session_management.html#managing-devices\"\n"
+"                                        target=\"_blank\"> Device (or App) "
+"Password</a>."
+msgstr "これらの資格情報は暗号化されます。 ただし、<a href=\"https://doc.nextcloud.org/server/9.1/user_manual/session_management.html#managing-devices\" target=\"_blank\">デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
 
 #: .\templates\rdm_custom_storage_location\providers\osfstorage_modal.html:8
 msgid "Connect NII Storage"
@@ -1899,6 +2039,18 @@ msgstr "一般リストに戻る"
 msgid "Back to user's list"
 msgstr "ユーザーのリストに戻る"
 
+#: .\templates\spam\detail.html:65
+#, fuzzy
+#| msgid "Author"
+msgid "Author:"
+msgstr "著者"
+
+#: .\templates\spam\detail.html:68
+#, fuzzy
+#| msgid "User's profile"
+msgid "User's <b>osf</b> profile"
+msgstr "ユーザーのプロフィール"
+
 #: .\templates\spam\detail.html:70
 msgid "User's profile"
 msgstr "ユーザーのプロフィール"
@@ -2014,6 +2166,12 @@ msgstr "スパムのユーザーのリスト"
 msgid "User details"
 msgstr "ユーザ詳細"
 
+#: .\templates\users\GDPR_delete_user.html:5
+#, fuzzy, python-format
+#| msgid "Are you sure you want to delete this user? %(guid)s"
+msgid "Are you sure you want to <b>GDPR</b> delete this user? %(guid)s"
+msgstr "このユーザーを削除してもよろしいですか？%(guid)s"
+
 #: .\templates\users\GDPR_delete_user.html:8
 msgid "This is not reversible!"
 msgstr "これは元に戻せません！"
@@ -2039,6 +2197,11 @@ msgstr "既知のスパムユーザー"
 msgid "Merge Accounts"
 msgstr "アカウントをマージする"
 
+#: .\templates\users\merge_accounts_modal.html:7
+#, python-format
+msgid "Merge this user: <b>%(user)s</b> <b>(%(guid)s)</b>  with:"
+msgstr "このユーザーをマージ：<b>%(user)s</b> <b>(%(guid)s)</b>："
+
 #: .\templates\users\notes.html:5
 msgid "Notes for GakuNin RDM User"
 msgstr "GakuNin RDMユーザー向けの注意事項"
@@ -2055,7 +2218,8 @@ msgstr "GakuNInユーザーの注意事項："
 #: .\templates\users\reindex_user_elastic.html:5
 #, python-format
 msgid "Are you sure you want to reindex this user (Elastic)? %(guid)s"
-msgstr "このユーザー（Elastic）のインデックスを再作成してもよろしいですか？%(guid)s"
+msgstr ""
+"このユーザー（Elastic）のインデックスを再作成してもよろしいですか？%(guid)s"
 
 #: .\templates\users\remove_2_factor.html:5
 msgid "This will remove two factor auth."
@@ -2066,14 +2230,18 @@ msgstr "これにより、2要素認証が削除されます。"
 msgid ""
 "Are you sure you want to delete this user and mark all their nodes as "
 "private? %(guid)s"
-msgstr "このユーザーを削除して、すべてのノードをプライベートとしてマークしてもよろしいですか？%(guid)s"
+msgstr ""
+"このユーザーを削除して、すべてのノードをプライベートとしてマークしてもよろし"
+"いですか？%(guid)s"
 
 #: .\templates\users\remove_spam_user.html:8
 #: .\templates\users\restore_ham_user.html:8
 msgid ""
 "You will be able to re-activate the user, but the admin console does not "
 "currently have the ability to mark nodes as public."
-msgstr "ユーザーを再度アクティブ化できますが、管理コンソールには現在、ノードをパブリックとしてマークする機能がありません。"
+msgstr ""
+"ユーザーを再度アクティブ化できますが、管理コンソールには現在、ノードをパブ"
+"リックとしてマークする機能がありません。"
 
 #: .\templates\users\remove_user.html:5
 #, python-format
