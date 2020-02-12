@@ -51,7 +51,7 @@ class DraftRegistrationList(NodeDraftRegistrationsList):
 
     serializer_class = DraftRegistrationSerializer
 
-    view_category = 'draft-registrations'
+    view_category = 'draft_registrations'
     view_name = 'draft-registration-list'
 
     # overrides NodeDraftRegistrationList
@@ -72,7 +72,7 @@ class DraftRegistrationDetail(NodeDraftRegistrationDetail, DraftRegistrationMixi
 
     serializer_class = DraftRegistrationDetailSerializer
 
-    view_category = 'draft-registrations'
+    view_category = 'draft_registrations'
     view_name = 'draft-registration-detail'
 
 
@@ -85,7 +85,7 @@ class DraftInstitutionsList(NodeInstitutionsList, DraftRegistrationMixin):
 
     required_read_scopes = [CoreScopes.INSTITUTION_READ, CoreScopes.DRAFT_REGISTRATIONS_READ]
 
-    view_category = 'draft-registrations'
+    view_category = 'draft_registrations'
     view_name = 'draft-registration-institutions'
 
     # Overrides NodeInstitutionsList
@@ -100,7 +100,7 @@ class DraftInstitutionsRelationship(NodeInstitutionsRelationship, DraftRegistrat
         base_permissions.TokenHasScope,
     )
 
-    view_category = 'draft-registrations'
+    view_category = 'draft_registrations'
     view_name = 'draft-registration-relationships-institutions'
 
     # Overrides NodeInstitutionsRelationship
@@ -117,7 +117,7 @@ class DraftSubjectsList(BaseResourceSubjectsList, DraftRegistrationMixin):
 
     required_read_scopes = [CoreScopes.DRAFT_REGISTRATIONS_READ]
 
-    view_category = 'draft-registrations'
+    view_category = 'draft_registrations'
     view_name = 'draft-registration-subjects'
 
     def get_resource(self):
@@ -135,7 +135,7 @@ class DraftSubjectsRelationship(SubjectRelationshipBaseView, DraftRegistrationMi
     required_read_scopes = [CoreScopes.DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.DRAFT_REGISTRATIONS_WRITE]
 
-    view_category = 'draft-registrations'
+    view_category = 'draft_registrations'
     view_name = 'draft-registration-relationships-subjects'
 
     ordering = ('-id',)
@@ -157,7 +157,7 @@ class DraftContributorsList(NodeContributorsList, DraftRegistrationMixin):
     required_read_scopes = [CoreScopes.DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.DRAFT_REGISTRATIONS_WRITE]
 
-    view_category = 'draft-registrations'
+    view_category = 'draft_registrations'
     view_name = 'draft-registration-contributors'
     serializer_class = DraftRegistrationContributorsSerializer
 
@@ -193,7 +193,7 @@ class DraftContributorDetail(NodeContributorDetail, DraftRegistrationMixin):
         base_permissions.TokenHasScope,
     )
 
-    view_category = 'draft-registrations'
+    view_category = 'draft_registrations'
     view_name = 'draft-registration-contributor-detail'
     serializer_class = DraftRegistrationContributorDetailSerializer
 

@@ -24,7 +24,7 @@ class DraftNodeSerializer(JSONAPISerializer):
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            'draft-nodes:draft-node-detail',
+            'draft_nodes:draft-node-detail',
             kwargs={
                 'node_id': self.context['request'].parser_context['kwargs']['node_id'],
                 'version': self.context['request'].parser_context['kwargs']['version'],
@@ -32,7 +32,7 @@ class DraftNodeSerializer(JSONAPISerializer):
         )
 
     files = RelationshipField(
-        related_view='draft-nodes:node-storage-providers',
+        related_view='draft_nodes:node-storage-providers',
         related_view_kwargs={'node_id': '<_id>'},
     )
 
@@ -42,7 +42,7 @@ class DraftNodeSerializer(JSONAPISerializer):
 
 class DraftNodeStorageProviderSerializer(NodeStorageProviderSerializer):
     files = NodeFileHyperLinkField(
-        related_view='draft-nodes:node-files',
+        related_view='draft_nodes:node-files',
         related_view_kwargs={'node_id': '<node._id>', 'path': '<path>', 'provider': '<provider>'},
         kind='folder',
         never_embed=True,

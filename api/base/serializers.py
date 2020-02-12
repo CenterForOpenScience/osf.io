@@ -942,7 +942,7 @@ class TargetField(ser.Field):
             'lookup_kwarg': 'preprint_id',
         },
         'draft-node': {
-            'view': 'draft-nodes:node-detail',
+            'view': 'draft_nodes:node-detail',
             'lookup_kwarg': 'node_id',
         },
         'comment': {
