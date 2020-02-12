@@ -210,7 +210,7 @@ var afterRequest = {
             $('.modal').modal('hide');
             $('#' + id + '_message').addClass('text-success');
             $('#' + id + '_message').removeClass('text-danger');
-            $osf.growl('Success', '_(Institutional Storage set successfully'), 'success');
+            $osf.growl('Success', _('Institutional Storage set successfully'), 'success');
             location.reload(true);
         },
         'fail': function (id, message) {
