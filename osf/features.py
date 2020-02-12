@@ -8,6 +8,9 @@ STORAGE_I18N = 'storage_i18n'
 OSF_PREREGISTRATION = 'osf_preregistration'
 OSF_GROUPS = 'osf_groups'
 ENABLE_CHRONOS = 'enable_chronos'
+SLOAN_COI = 'waffle:sloan|coi'
+SLOAN_DATA = 'waffle:sloan|data'
+SLOAN_PREREG = 'waffle:sloan|prereg'
 
 
 # The SLOAN_STUDY_... is switches that allow users to input their sloan info,

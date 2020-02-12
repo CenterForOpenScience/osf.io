@@ -328,3 +328,5 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     },
 }
+
+SLOAN_ID = 'sloan_id'
