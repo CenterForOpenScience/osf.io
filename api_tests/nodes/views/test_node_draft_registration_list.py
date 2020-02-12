@@ -501,6 +501,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                     'registration_metadata': registration_metadata
                 },
                 'relationships': {
+                    'branched_from': {
+                        'data': {
+                            'type': 'nodes',
+                            'id': project_public._id,
+                        }
+                    },
                     'registration_schema': {
                         'data': {
                             'type': 'registration_schema',
