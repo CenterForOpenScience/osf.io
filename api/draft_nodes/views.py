@@ -48,7 +48,7 @@ class DraftNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView, DraftNodeMixin)
     )
 
     serializer_class = DraftNodeSerializer
-    view_category = 'draft-nodes'
+    view_category = 'draft_nodes'
     view_name = 'draft-node-detail'
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
@@ -66,7 +66,7 @@ class DraftNodeStorageProvidersList(DraftNodeMixin, NodeStorageProvidersList):
         base_permissions.TokenHasScope,
     )
 
-    view_category = 'draft-nodes'
+    view_category = 'draft_nodes'
     serializer_class = DraftNodeStorageProviderSerializer
 
 
@@ -77,7 +77,7 @@ class DraftNodeStorageProviderDetail(DraftNodeMixin, NodeStorageProviderDetail):
         base_permissions.TokenHasScope,
     )
 
-    view_category = 'draft-nodes'
+    view_category = 'draft_nodes'
     serializer_class = DraftNodeStorageProviderSerializer
 
 
@@ -87,7 +87,7 @@ class DraftNodeFilesList(DraftNodeMixin, NodeFilesList):
         base_permissions.PermissionWithGetter(ContributorOnDraftRegistration, 'target'),
         base_permissions.TokenHasScope,
     )
-    view_category = 'draft-nodes'
+    view_category = 'draft_nodes'
 
 
 class DraftNodeFileDetail(DraftNodeMixin, NodeFileDetail):
@@ -97,4 +97,4 @@ class DraftNodeFileDetail(DraftNodeMixin, NodeFileDetail):
         base_permissions.TokenHasScope,
     )
 
-    view_category = 'draft-nodes'
+    view_category = 'draft_nodes'
