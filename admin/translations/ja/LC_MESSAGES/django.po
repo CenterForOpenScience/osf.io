@@ -512,7 +512,7 @@ msgid "Admin"
 msgstr "管理者"
 
 #: .\templates\login.html:23
-msgid "Sign in to start your session"
+msgid "Sign in to start your session!!"
 msgstr "サインインしてセッションを始めてください!!"
 
 #: .\templates\login.html:35
