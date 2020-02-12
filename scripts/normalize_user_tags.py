@@ -155,7 +155,7 @@ def add_prereg_campaign_tags():
         # Otherwise, we create the prereg source tag, and then migrate the users.
         prereg_source_tag, created = Tag.all_tags.get_or_create(name=CampaignSourceTags.Prereg.value, system=True)
         logger.info('Added tag ' + prereg_source_tag.name)
-        prereg_challenge_cutoff_date = pytz.utc.localize(datetime(2019, 01, 01, 05, 59))
+        prereg_challenge_cutoff_date = pytz.utc.localize(datetime(2019, 1, 1, 5, 59))
         prereg_users_registered_after_january_first = OSFUser.objects.filter(tags__id=prereg_challenge_source_tag.id,
                                                                              date_registered__gt=prereg_challenge_cutoff_date)
         logger.info(
