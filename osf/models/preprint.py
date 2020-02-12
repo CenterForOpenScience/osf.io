@@ -207,9 +207,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         blank=True,
         null=True
     )
-    prereg_link_info = models.CharField(
+    prereg_link_info = models.TextField(
         choices=PREREG_LINK_INFO_CHIOCES,
-        max_length=52,
         null=True,
         blank=True
     )
