@@ -51,16 +51,30 @@ from osf.models import PreprintProvider
 from typing import Optional
 
 from osf.features import (
+    SLOAN_COI_DISPLAY,
+    SLOAN_PREREG_DISPLAY,
+    SLOAN_DATA_DISPLAY,
+)
+
+from osf.system_tags import (
     SLOAN_COI,
     SLOAN_PREREG,
     SLOAN_DATA,
 )
 
 SLOAN_FLAGS = (
-    SLOAN_COI,
-    SLOAN_PREREG,
-    SLOAN_DATA,
+    SLOAN_COI_DISPLAY,
+    SLOAN_PREREG_DISPLAY,
+    SLOAN_DATA_DISPLAY,
 )
+
+# User tags must follow convention so we must translate flag names
+SLOAN_FEATURES = {
+    SLOAN_COI_DISPLAY: SLOAN_COI,
+    SLOAN_PREREG_DISPLAY: SLOAN_PREREG,
+    SLOAN_DATA_DISPLAY: SLOAN_DATA,
+
+}
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
@@ -479,10 +493,11 @@ def sloan_study_disambiguation(request):
 
         # User tags should override any cookie info
         if user and not user.is_anonymous:
-            if user.all_tags.filter(name=flag.name):
+            tag_name = SLOAN_FEATURES[flag.name]
+            if user.all_tags.filter(name=tag_name):
                 sloan_data[flag.name] = True
                 active = True
-            if user.all_tags.filter(name=f'no_{flag.name}'):
+            if user.all_tags.filter(name=f'no_{tag_name}'):
                 sloan_data[flag.name] = False
                 active = False
 
@@ -534,11 +549,12 @@ def set_tags_and_cookies_for_sloan(user, flag_name: str, flag_value: bool) -> di
     """
     This is a hack to set flags and cookies for out Sloan study, it can be deleted when the study is complete.
     """
-    if user and not user.is_anonymous and not user.all_tags.filter(Q(name=flag_name) | Q(name=f'no_{flag_name}')):
+    tag_name = SLOAN_FEATURES[flag_name]
+    if user and not user.is_anonymous and not user.all_tags.filter(Q(name=tag_name) | Q(name=f'no_{tag_name}')):
         if flag_value:  # 50/50 chance flag is active
-            user.add_system_tag(flag_name)
+            user.add_system_tag(tag_name)
         else:
-            user.add_system_tag(f'no_{flag_name}')
+            user.add_system_tag(f'no_{tag_name}')
     return {flag_name: flag_value}
 
 
