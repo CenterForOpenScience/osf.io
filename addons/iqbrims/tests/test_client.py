@@ -29,7 +29,7 @@ class TestIQBRIMSClient(OsfTestCase):
             client.create_content('folderid456', 'files.txt', 'text/plain', 'TEST')
             assert_equal(len(mkreq.mock_calls), 1)
             name, args, kwargs = mkreq.mock_calls[0]
-            assert_equal(args, ('POST', 'https://www.googleapis.com/drive/v2/files?uploadType=multipart'))
+            assert_equal(args, ('POST', 'https://www.googleapis.com/upload/drive/v2/files?uploadType=multipart'))
             assert_equal(kwargs['files']['data'],
                          ('metadata',
                           '{"parents": [{"id": "folderid456"}], "title": "files.txt"}',
@@ -47,7 +47,7 @@ class TestIQBRIMSClient(OsfTestCase):
             client.update_content('fileid456', 'text/plain', 'TEST')
             assert_equal(len(mkreq.mock_calls), 1)
             name, args, kwargs = mkreq.mock_calls[0]
-            assert_equal(args, ('PUT', 'https://www.googleapis.com/drive/v2/files/fileid456?uploadType=media'))
+            assert_equal(args, ('POST', 'https://www.googleapis.com/upload/drive/v2/files/fileid456?uploadType=media'))
             assert_equal(kwargs['data'], 'TEST')
 
 

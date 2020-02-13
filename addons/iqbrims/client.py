@@ -126,7 +126,8 @@ class IQBRIMSClient(BaseClient):
         files = {'data': metadata, 'file': (title, content, mime_type)}
         res = self._make_request(
             'POST',
-            self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files', ) + '?uploadType=multipart',
+            self._build_url(settings.API_BASE_URL, 'upload', 'drive', 'v2',
+                            'files') + '?uploadType=multipart',
             files=files,
             expects=(200, ),
             throws=HTTPError(401)
@@ -135,9 +136,9 @@ class IQBRIMSClient(BaseClient):
 
     def update_content(self, file_id, mime_type, content):
         res = self._make_request(
-            'PUT',
-            self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files',
-                            file_id) + '?uploadType=media',
+            'POST',
+            self._build_url(settings.API_BASE_URL, 'upload', 'drive', 'v2',
+                            'files', file_id) + '?uploadType=media',
             headers={
                 'Content-Type': mime_type,
             },
