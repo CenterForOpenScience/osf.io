@@ -1176,7 +1176,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             return
 
         if not self.has_prereg_links:
-            raise ValidationError('You cannot edit this field while your prereg links'
+            raise PreprintStateError('You cannot edit this field while your prereg links'
                                   ' availability is set to false or is unanswered.')
 
         self.prereg_links = prereg_links
