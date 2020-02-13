@@ -46,7 +46,7 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
     node_license = NodeLicenseSerializer(required=False, source='license')
 
     links = LinksField({
-        'self': 'get_self_url',
+        'self': 'get_absolute_url',
     })
 
     affiliated_institutions = RelationshipField(
@@ -99,6 +99,8 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
                 'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )
+    def get_absolute_url(self, obj):
+        return obj.get_absolute_url()
 
     # Overrides DraftRegistrationLegacySerializer
     def get_node(self, validated_data):

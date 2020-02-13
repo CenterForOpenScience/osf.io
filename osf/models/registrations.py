@@ -667,6 +667,14 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         self._metaschema_flags.update(flags)
 
     @property
+    def branched_from_type(self):
+        if type(self.branched_from) == DraftNode:
+            return 'DraftNode'
+        elif type(self.branched_from) == Node:
+            return 'Node'
+        return ''
+
+    @property
     def url(self):
         return self.URL_TEMPLATE.format(
             node_id=self.branched_from._id,
@@ -685,7 +693,11 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     def absolute_api_v2_url(self):
         # Old draft registration URL - user new endpoints, through draft registration
         node = self.branched_from
-        path = '/nodes/{}/draft_registrations/{}/'.format(node._id, self._id)
+        branched_type = self.branched_from_type
+        if branched_type == 'DraftNode':
+            path = '/draft_registrations/{}/'.format(self._id)
+        elif branched_type == 'Node':
+            path = '/nodes/{}/draft_registrations/{}/'.format(node._id, self._id)
         return api_v2_url(path)
 
     # used by django and DRF
