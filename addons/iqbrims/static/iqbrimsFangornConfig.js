@@ -31,20 +31,11 @@ var _iqbrimsItemButtons = {
                     rowButtons.push(
                         m.component(Fangorn.Components.button, {
                             onclick: function (event) {
-                                Fangorn.ButtonEvents.gotoFileEvent.call(tb, item, '/');
+                                Fangorn.ButtonEvents._gotoFileEvent.call(tb, item, '/');
                             },
                             icon: 'fa fa-file-o',
                             className: 'text-info'
                         }, 'View'));
-                }
-                if(storageAddons[item.data.provider].externalView) {
-                    var providerFullName = storageAddons[item.data.provider].fullName;
-                    rowButtons.push(
-                        m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
-                            m('i.fa.fa-external-link'),
-                            m('span', 'View on ' + providerFullName)
-                        ])
-                    );
                 }
             } else if (item.data.provider) {
                 rowButtons.push(
