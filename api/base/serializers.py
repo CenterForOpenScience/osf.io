@@ -1875,6 +1875,4 @@ class DisableIfSwitch(HideIfSwitch):
         :param kwargs: My mama always told me life is like a bunch of kwargs...
         """
         super(DisableIfSwitch, self).__init__(switch_name, field, hide_if, **kwargs)
-        self.switch_name = switch_name
-        self.hide_if = hide_if
         self.validators.append(SwitchValidator(self.switch_name))
