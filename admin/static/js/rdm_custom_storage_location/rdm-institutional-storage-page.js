@@ -4,11 +4,6 @@ var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Cookie = require('js-cookie');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
-
 $('[name=options]').change(function () {
     $('#storage_name').attr('disabled', this.value === 'osfstorage');
 });
@@ -30,12 +25,12 @@ $('#institutional_storage_form').submit(function (e) {
             showModal();
         } else {
             $osf.confirmDangerousAction({
-                title: _('Are you sure you want to change institutional storage?'),
-                message: _('<p>The previous storage will no longer be available to all contributors on the project.</p>'),
+                title: 'Are you sure you want to change institutional storage?',
+                message: '<p>The previous storage will no longer be available to all contributors on the project.</p>',
                 callback: showModal,
                 buttons: {
                     success: {
-                        label: _('Change')
+                        label: 'Change'
                     }
                 }
             });
@@ -175,7 +170,7 @@ function ajaxRequest(params, providerShortName, route) {
             if(jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)){
                 afterRequest[route].fail(this.custom, jqXHR.responseJSON.message);
             }else{
-                afterRequest[route].fail(this.custom, _('Some errors occurred'));
+                afterRequest[route].fail(this.custom, 'Some errors occurred');
             }
         }
     });
@@ -210,7 +205,7 @@ var afterRequest = {
             $('.modal').modal('hide');
             $('#' + id + '_message').addClass('text-success');
             $('#' + id + '_message').removeClass('text-danger');
-            $osf.growl('Success', '_(Institutional Storage set successfully'), 'success');
+            $osf.growl('Success', 'Institutional Storage set successfully', 'success');
             location.reload(true);
         },
         'fail': function (id, message) {

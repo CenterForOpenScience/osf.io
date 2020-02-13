@@ -2,11 +2,6 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 var language = require('js/osfLanguage').Addons.figshare;
 require('js/osfToggleHeight')
-var rdmGettext = require('js/rdmGettext');
-
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
 
  $(document).ready(function() {
         $('#figshare-header').osfToggleHeight({height: 150});
@@ -17,7 +12,7 @@ var agh = require('agh.sprintf');
 
         $('#figshareDelKey').on('click', function() {
             bootbox.confirm({
-                title: _('Disconnect figshare Account?'),
+                title: 'Disconnect figshare Account?',
                 message: language.confirmDeauth,
                 callback: function(result) {
                     if(result) {
@@ -34,7 +29,7 @@ var agh = require('agh.sprintf');
                 },
                 buttons:{
                     confirm:{
-                        label:_('Disconnect'),
+                        label:'Disconnect',
                         className:'btn-danger'
                     }
                 }

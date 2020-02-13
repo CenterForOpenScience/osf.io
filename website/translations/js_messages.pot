@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-12 11:57+0900\n"
+"POT-Creation-Date: 2020-02-10 14:04+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -81,345 +81,8 @@ msgstr ""
 msgid "Enter a valid 'slug' consisting only of lowercase letters."
 msgstr ""
 
-#: admin/static/js/banners/banners.js:19
-#: admin/static/js/collection_providers/collectionProviders.js:12
-msgid "Hide Form"
-msgstr ""
-
-#: admin/static/js/banners/banners.js:19
-msgid "Modify banner"
-msgstr ""
-
-#: admin/static/js/collection_providers/collectionProviders.js:12
-msgid "Modify Collection Provider"
-msgstr ""
-
 #: admin/static/js/rdm_addons/rdm-addons-page.js:67
-msgid "Are you sure you want to disallow the %1$s?<br>"
-msgstr ""
-
-#: admin/static/js/rdm_addons/rdm-addons-page.js:68
-msgid ""
-"This will revoke access to %1$s for all projects using the "
-"accounts.<br><br>"
-msgstr ""
-
-#: admin/static/js/rdm_addons/rdm-addons-page.js:69
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:123
-msgid "Type the following to continue: <strong>%1$s</strong><br><br>"
-msgstr ""
-
-#: admin/static/js/rdm_addons/rdm-addons-page.js:73
-#: website/static/js/addProjectPlugin.js:350 website/static/js/fangorn.js:538
-#: website/static/js/fangorn.js:1213 website/static/js/fangorn.js:1236
-#: website/static/js/fangorn.js:1289 website/static/js/fangorn.js:1308
-#: website/static/js/fangorn.js:2007 website/static/js/licensePicker.js:241
-#: website/static/js/myProjects.js:1562 website/static/js/myProjects.js:1610
-#: website/static/js/myProjects.js:1634 website/static/js/osfHelpers.js:798
-#: website/static/js/osfHelpers.js:899
-#: website/static/js/wikiSettingsTreebeard.js:32
-msgid "Cancel"
-msgstr ""
-
-#: admin/static/js/rdm_addons/rdm-addons-page.js:76
-msgid "Disallow"
-msgstr ""
-
-#: admin/static/js/rdm_addons/rdm-addons-page.js:87
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:132
-msgid "Strings did not match"
-msgstr ""
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:49
-#: website/static/js/addonSettings.js:49
-msgid "Error deauthorizing node: "
-msgstr ""
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:61
-#: website/static/js/addonPermissions.js:24
-#: website/static/js/addonSettings.js:61
-msgid "Remove addon?"
-msgstr ""
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:62
-#: website/static/js/addonSettings.js:62
-msgid "Are you sure you want to remove the %1$s authorization from this project?"
-msgstr ""
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:70
-#: website/static/js/accountSettings.js:284
-#: website/static/js/accountSettings.js:346
-#: website/static/js/addonPermissions.js:54
-#: website/static/js/addonSettings.js:70
-#: website/static/js/pages/profile-settings-addons-page.js:96
-#: website/static/js/privateLinkTable.js:117 website/static/js/profile.js:737
-#: website/static/js/profile.js:966 website/static/js/project.js:245
-msgid "Remove"
-msgstr ""
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:101
-#: website/static/js/addonSettings.js:100
-msgid ""
-"Add-on successfully authorized. If you wish to link a different account, "
-"log out of dropbox.com before attempting to connect to a second Dropbox "
-"account on the GakuNin RDM. This will clear the credentials stored in "
-"your browser."
-msgstr ""
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:103
-#: website/static/js/addonSettings.js:102
-msgid ""
-"Add-on successfully authorized. If you wish to link a different account, "
-"log out of bitbucket.org before attempting to connect to a second "
-"Bitbucket account on the GakuNin RDM. This will clear the credentials "
-"stored in your browser."
-msgstr ""
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:105
-msgid ""
-"Add-on successfully authorized. To link this add-on to an OSF project, go"
-" to the settings page of the project, enable %1$s, and choose content to "
-"connect."
-msgstr ""
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:108
-#: website/static/js/addonSettings.js:109
-msgid ""
-"Error while authorizing add-on. Please log in to your %1$s account and "
-"grant access to the GakuNin RDM to enable this add-on."
-msgstr ""
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:119
-#: website/static/js/addonSettings.js:118
-msgid "Disconnect Account?"
-msgstr ""
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:121
-msgid ""
-"Are you sure you want to disconnect the %1$s account "
-"<strong>%2$s</strong>?<br>"
-msgstr ""
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:122
-msgid ""
-"This will revoke access to %1$s for all projects using this "
-"account.<br><br>"
-msgstr ""
-
-#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:157
-#: admin/static/js/rdm_addons/figshare/rdm-cfg.js:37
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:138
-#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:126
-#: website/static/js/addonSettings.js:130
-#: website/static/js/folderPickerNodeConfig.js:561
-msgid "Disconnect"
-msgstr ""
-
-#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:175
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:155
-#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:144
-#: website/static/js/addonSettings.js:147
-msgid "Error while removing addon authorization for %1$s"
-msgstr ""
-
-#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:87
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:176
-#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:102
-#: website/static/js/addonSettings.js:168
-msgid "Error while updating addon account"
-msgstr ""
-
-#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:28
-#: admin/static/js/rdm_addons/owncloud/owncloudRdmConfig.js:22
-msgid "Other (Please Specify)"
-msgstr ""
-
-#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:102
-msgid "Please select a Dataverse repository."
-msgstr ""
-
-#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:107
-msgid "Please enter an API token."
-msgstr ""
-
-#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:112
-msgid "Please enter a Dataverse host and an API token."
-msgstr ""
-
-#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:133
-msgid "Could not authenticate with Dataverse"
-msgstr ""
-
-#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:146
-msgid "Disconnect Dataverse Account?"
-msgstr ""
-
-#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:148
-msgid ""
-"Are you sure you want to disconnect the Dataverse account on "
-"<strong>%1$s</strong>? This will revoke access to Dataverse for all "
-"projects associated with this account."
-msgstr ""
-
-#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:214
-msgid "Could not GET Dataverse settings"
-msgstr ""
-
-#: admin/static/js/rdm_addons/figshare/rdm-cfg.js:20
-msgid "Disconnect figshare Account?"
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:49
-msgid "Invalid management URL: "
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:64
-msgid "Saving management project was successful"
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:66
-msgid "Error while saving addon management project"
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:74
-msgid "Permission error while saving management project"
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:76
-msgid "Error while saving management project"
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:94
-msgid "Removing management project was successful"
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:96
-msgid "Error while removing addon management project"
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:104
-msgid "Permission error while removing management project"
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:106
-msgid "Error while removing management project"
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:121
-msgid "Error while fetching addon management project"
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:152
-msgid "Saving organizational project was successful"
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:154
-msgid "Error while saving addon organizational project"
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:162
-msgid "Permission error while saving organizational project"
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:164
-msgid "Error while saving organizational project"
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:182
-msgid "Removing organizational project was successful"
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:184
-msgid "Error while removing addon organizational project"
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:192
-msgid "Permission error while removing organizational project"
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:194
-msgid "Error while removing organizational project"
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:209
-msgid "Error while fetching addon organization project"
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:225
-msgid "Error while fetching management project"
-msgstr ""
-
-#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:229
-msgid "Error while fetching organizational project"
-msgstr ""
-
-#: admin/static/js/rdm_addons/owncloud/owncloudRdmConfig.js:61
-msgid "Could not GET OwnCloud settings"
-msgstr ""
-
-#: admin/static/js/rdm_addons/owncloud/owncloudRdmConfig.js:78
-msgid "Please enter an ownCloud server."
-msgstr ""
-
-#: admin/static/js/rdm_addons/owncloud/owncloudRdmConfig.js:80
-msgid "Please select an ownCloud server."
-msgstr ""
-
-#: admin/static/js/rdm_addons/owncloud/owncloudRdmConfig.js:85
-msgid "Please enter a username and password."
-msgstr ""
-
-#: admin/static/js/rdm_addons/owncloud/owncloudRdmConfig.js:89
-msgid "Please enter an ownCloud host and credentials."
-msgstr ""
-
-#: admin/static/js/rdm_addons/owncloud/owncloudRdmConfig.js:107
-msgid "Could not authenticate with ownCloud"
-msgstr ""
-
-#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:50
-msgid "Please enter both an API access key and secret key."
-msgstr ""
-
-#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:55
-msgid "Please enter an API access key."
-msgstr ""
-
-#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:60
-msgid "Please enter an API secret key."
-msgstr ""
-
-#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:77
-msgid "Could not authenticate with S3"
-msgstr ""
-
-#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:115
-msgid "Disconnect Amazon S3 Account?"
-msgstr ""
-
-#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:117
-msgid ""
-"Are you sure you want to disconnect the S3 account <strong>%1$s</strong>?"
-" This will revoke access to S3 for all projects associated with this "
-"account."
-msgstr ""
-
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:33
-msgid "Are you sure you want to change institutional storage?"
-msgstr ""
-
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:34
-msgid ""
-"<p>The previous storage will no longer be available to all contributors "
-"on the project.</p>"
-msgstr ""
-
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:38
-msgid "Change"
-msgstr ""
-
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:178
-msgid "Some errors occurred"
+msgid "Are you sure you want to disallow the "
 msgstr ""
 
 #: api/base/exceptions.py:103
@@ -693,6 +356,16 @@ msgstr ""
 msgid "Are you sure that you want to remove <em>%1$s</em> from your email list?"
 msgstr ""
 
+#: website/static/js/accountSettings.js:284
+#: website/static/js/accountSettings.js:346
+#: website/static/js/addonPermissions.js:54
+#: website/static/js/addonSettings.js:70
+#: website/static/js/pages/profile-settings-addons-page.js:96
+#: website/static/js/privateLinkTable.js:117 website/static/js/profile.js:737
+#: website/static/js/profile.js:966 website/static/js/project.js:245
+msgid "Remove"
+msgstr ""
+
 #: website/static/js/accountSettings.js:290
 #: website/static/js/accountSettings.js:303
 msgid "Please refresh the page and try again."
@@ -905,6 +578,17 @@ msgid ""
 "project."
 msgstr ""
 
+#: website/static/js/addProjectPlugin.js:350 website/static/js/fangorn.js:538
+#: website/static/js/fangorn.js:1213 website/static/js/fangorn.js:1236
+#: website/static/js/fangorn.js:1289 website/static/js/fangorn.js:1308
+#: website/static/js/fangorn.js:2007 website/static/js/licensePicker.js:241
+#: website/static/js/myProjects.js:1562 website/static/js/myProjects.js:1610
+#: website/static/js/myProjects.js:1634 website/static/js/osfHelpers.js:798
+#: website/static/js/osfHelpers.js:899
+#: website/static/js/wikiSettingsTreebeard.js:32
+msgid "Cancel"
+msgstr ""
+
 #: website/static/js/addProjectPlugin.js:354
 #: website/static/js/nodeControl.js:226 website/static/js/project.js:139
 msgid "Create"
@@ -962,6 +646,11 @@ msgstr ""
 msgid " Go to the <a href=\"%1$s\">Files page</a> to view your content."
 msgstr ""
 
+#: website/static/js/addonPermissions.js:24
+#: website/static/js/addonSettings.js:61
+msgid "Remove addon?"
+msgstr ""
+
 #: website/static/js/addonPermissions.js:25
 msgid "Are you sure you want to disconnnect the %1$s account from this project?"
 msgstr ""
@@ -972,6 +661,30 @@ msgstr ""
 
 #: website/static/js/addonPermissions.js:47
 msgid "If the issue persists, please report it to %1$s."
+msgstr ""
+
+#: website/static/js/addonSettings.js:49
+msgid "Error deauthorizing node: "
+msgstr ""
+
+#: website/static/js/addonSettings.js:62
+msgid "Are you sure you want to remove the %1$s authorization from this project?"
+msgstr ""
+
+#: website/static/js/addonSettings.js:100
+msgid ""
+"Add-on successfully authorized. If you wish to link a different account, "
+"log out of dropbox.com before attempting to connect to a second Dropbox "
+"account on the GakuNin RDM. This will clear the credentials stored in "
+"your browser."
+msgstr ""
+
+#: website/static/js/addonSettings.js:102
+msgid ""
+"Add-on successfully authorized. If you wish to link a different account, "
+"log out of bitbucket.org before attempting to connect to a second "
+"Bitbucket account on the GakuNin RDM. This will clear the credentials "
+"stored in your browser."
 msgstr ""
 
 #: website/static/js/addonSettings.js:104
@@ -989,11 +702,34 @@ msgid ""
 "content to connect."
 msgstr ""
 
+#: website/static/js/addonSettings.js:109
+msgid ""
+"Error while authorizing add-on. Please log in to your %1$s account and "
+"grant access to the GakuNin RDM to enable this add-on."
+msgstr ""
+
+#: website/static/js/addonSettings.js:118
+msgid "Disconnect Account?"
+msgstr ""
+
 #: website/static/js/addonSettings.js:120
 msgid ""
 "Are you sure you want to disconnect the %1$s account "
 "<strong>%2$s</strong>? This will revoke access to %1$s for all projects "
 "you have authorized."
+msgstr ""
+
+#: website/static/js/addonSettings.js:130
+#: website/static/js/folderPickerNodeConfig.js:561
+msgid "Disconnect"
+msgstr ""
+
+#: website/static/js/addonSettings.js:147
+msgid "Error while removing addon authorization for %1$s"
+msgstr ""
+
+#: website/static/js/addonSettings.js:168
+msgid "Error while updating addon account"
 msgstr ""
 
 #: website/static/js/alertsManager.js:45
