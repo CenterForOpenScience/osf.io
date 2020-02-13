@@ -47,9 +47,9 @@ from osf.models import (
 )
 from osf.utils import permissions as osf_permissions
 from osf.features import (
-    SLOAN_STUDY_DATA,
-    SLOAN_STUDY_COI,
-    SLOAN_STUDY_PREREG,
+    SLOAN_DATA_INPUT,
+    SLOAN_COI_INPUT,
+    SLOAN_PREREG_INPUT,
 )
 
 from osf.exceptions import PreprintStateError
@@ -202,11 +202,11 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     )
 
     has_coi = DisableIfSwitch(
-        SLOAN_STUDY_COI,
+        SLOAN_COI_INPUT,
         ser.NullBooleanField(required=False),
     )
     conflict_of_interest_statement = DisableIfSwitch(
-        SLOAN_STUDY_COI,
+        SLOAN_COI_INPUT,
         ser.CharField(
             required=False,
             allow_blank=True,
@@ -214,11 +214,11 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         ),
     )
     has_data_links = DisableIfSwitch(
-        SLOAN_STUDY_DATA,
+        SLOAN_DATA_INPUT,
         ser.NullBooleanField(required=False),
     )
     why_no_data = DisableIfSwitch(
-        SLOAN_STUDY_DATA,
+        SLOAN_DATA_INPUT,
         ser.CharField(
             required=False,
             allow_blank=True,
@@ -226,18 +226,18 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         ),
     )
     data_links = DisableIfSwitch(
-        SLOAN_STUDY_DATA,
+        SLOAN_DATA_INPUT,
         ser.ListField(
             child=ser.URLField(),
             required=False,
         ),
     )
     has_prereg_links = DisableIfSwitch(
-        SLOAN_STUDY_PREREG,
+        SLOAN_PREREG_INPUT,
         ser.NullBooleanField(required=False),
     )
     why_no_prereg = DisableIfSwitch(
-        SLOAN_STUDY_PREREG,
+        SLOAN_PREREG_INPUT,
         ser.CharField(
             required=False,
             allow_blank=True,
@@ -245,14 +245,14 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         ),
     )
     prereg_links = DisableIfSwitch(
-        SLOAN_STUDY_PREREG,
+        SLOAN_PREREG_INPUT,
         ser.ListField(
             child=ser.URLField(),
             required=False,
         ),
     )
     prereg_link_info = DisableIfSwitch(
-        SLOAN_STUDY_PREREG,
+        SLOAN_PREREG_INPUT,
         ser.ChoiceField(
             Preprint.PREREG_LINK_INFO_CHIOCES,
             required=False,

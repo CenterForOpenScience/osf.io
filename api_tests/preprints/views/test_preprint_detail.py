@@ -774,7 +774,7 @@ class TestPreprintUpdate:
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
-        with override_switch(features.SLOAN_STUDY_COI, active=True):
+        with override_switch(features.SLOAN_COI_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
@@ -803,7 +803,7 @@ class TestPreprintUpdate:
 
         preprint.has_coi = False
         preprint.save()
-        with override_switch(features.SLOAN_STUDY_COI, active=True):
+        with override_switch(features.SLOAN_COI_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
@@ -812,7 +812,7 @@ class TestPreprintUpdate:
 
         preprint.has_coi = True
         preprint.save()
-        with override_switch(features.SLOAN_STUDY_COI, active=True):
+        with override_switch(features.SLOAN_COI_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
@@ -838,7 +838,7 @@ class TestPreprintUpdate:
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
-        with override_switch(features.SLOAN_STUDY_DATA, active=True):
+        with override_switch(features.SLOAN_DATA_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
@@ -863,7 +863,7 @@ class TestPreprintUpdate:
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
-        with override_switch(features.SLOAN_STUDY_DATA, active=True):
+        with override_switch(features.SLOAN_DATA_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
@@ -872,7 +872,7 @@ class TestPreprintUpdate:
 
         preprint.has_data_links = False
         preprint.save()
-        with override_switch(features.SLOAN_STUDY_DATA, active=True):
+        with override_switch(features.SLOAN_DATA_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
@@ -900,7 +900,7 @@ class TestPreprintUpdate:
 
         preprint.has_data_links = False
         preprint.save()
-        with override_switch(features.SLOAN_STUDY_DATA, active=True):
+        with override_switch(features.SLOAN_DATA_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
@@ -909,7 +909,7 @@ class TestPreprintUpdate:
 
         preprint.has_data_links = True
         preprint.save()
-        with override_switch(features.SLOAN_STUDY_DATA, active=True):
+        with override_switch(features.SLOAN_DATA_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
@@ -922,7 +922,7 @@ class TestPreprintUpdate:
         assert log.params == {'user': user._id, 'preprint': preprint._id}
 
         update_payload = build_preprint_update_payload(preprint._id, attributes={'data_links': 'maformed payload'})
-        with override_switch(features.SLOAN_STUDY_DATA, active=True):
+        with override_switch(features.SLOAN_DATA_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
@@ -941,7 +941,7 @@ class TestPreprintUpdate:
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
-        with override_switch(features.SLOAN_STUDY_PREREG, active=True):
+        with override_switch(features.SLOAN_PREREG_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
@@ -966,7 +966,7 @@ class TestPreprintUpdate:
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
-        with override_switch(features.SLOAN_STUDY_PREREG, active=True):
+        with override_switch(features.SLOAN_PREREG_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
@@ -975,7 +975,7 @@ class TestPreprintUpdate:
 
         preprint.has_prereg_links = False
         preprint.save()
-        with override_switch(features.SLOAN_STUDY_PREREG, active=True):
+        with override_switch(features.SLOAN_PREREG_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
@@ -1004,7 +1004,7 @@ class TestPreprintUpdate:
 
         preprint.has_prereg_links = False
         preprint.save()
-        with override_switch(features.SLOAN_STUDY_PREREG, active=True):
+        with override_switch(features.SLOAN_PREREG_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
@@ -1013,7 +1013,7 @@ class TestPreprintUpdate:
 
         preprint.has_prereg_links = True
         preprint.save()
-        with override_switch(features.SLOAN_STUDY_PREREG, active=True):
+        with override_switch(features.SLOAN_PREREG_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
@@ -1026,7 +1026,7 @@ class TestPreprintUpdate:
         assert log.params == {'user': user._id, 'preprint': preprint._id}
 
         update_payload = build_preprint_update_payload(preprint._id, attributes={'prereg_links': 'maformed payload'})
-        with override_switch(features.SLOAN_STUDY_DATA, active=True):
+        with override_switch(features.SLOAN_DATA_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
@@ -1044,7 +1044,7 @@ class TestPreprintUpdate:
 
         preprint.has_prereg_links = False
         preprint.save()
-        with override_switch(features.SLOAN_STUDY_PREREG, active=True):
+        with override_switch(features.SLOAN_PREREG_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
@@ -1053,7 +1053,7 @@ class TestPreprintUpdate:
 
         preprint.has_prereg_links = True
         preprint.save()
-        with override_switch(features.SLOAN_STUDY_PREREG, active=True):
+        with override_switch(features.SLOAN_PREREG_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
@@ -1069,7 +1069,7 @@ class TestPreprintUpdate:
             preprint._id,
             attributes={'prereg_link_info': 'maformed payload'}
         )
-        with override_switch(features.SLOAN_STUDY_DATA, active=True):
+        with override_switch(features.SLOAN_DATA_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
@@ -1093,7 +1093,7 @@ class TestPreprintUpdate:
                 'prereg_links': ['http://osf.io'],  # changing here should be only non-factory created log.
             }
         )
-        with override_switch(features.SLOAN_STUDY_PREREG, active=True):
+        with override_switch(features.SLOAN_PREREG_INPUT, active=True):
             app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         # Any superfluous log statements?
@@ -1109,7 +1109,7 @@ class TestPreprintUpdate:
                 'why_no_prereg': 'My dog ate it.'
             }
         )
-        with override_switch(features.SLOAN_STUDY_PREREG, active=True):
+        with override_switch(features.SLOAN_PREREG_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 200

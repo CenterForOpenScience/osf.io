@@ -5,9 +5,9 @@ from __future__ import unicode_literals
 import django.contrib.postgres.fields
 from django.db import migrations, models
 from osf.features import (
-    SLOAN_STUDY_COI,
-    SLOAN_STUDY_DATA,
-    SLOAN_STUDY_PREREG
+    SLOAN_COI_INPUT,
+    SLOAN_DATA_INPUT,
+    SLOAN_PREREG_INPUT
 )
 from osf.utils.migrations import AddWaffleSwitches
 
@@ -15,11 +15,11 @@ from osf.utils.migrations import AddWaffleSwitches
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0197_add_ab_testing_home_page_hero_text_version_b_flag'),
+        ('osf', '0199_draft_node_permissions'),
     ]
 
     operations = [
-        AddWaffleSwitches([SLOAN_STUDY_COI, SLOAN_STUDY_DATA, SLOAN_STUDY_PREREG], active=False),
+        AddWaffleSwitches([SLOAN_COI_INPUT, SLOAN_DATA_INPUT, SLOAN_PREREG_INPUT], active=False),
         migrations.AddField(
             model_name='preprint',
             name='conflict_of_interest_statement',
