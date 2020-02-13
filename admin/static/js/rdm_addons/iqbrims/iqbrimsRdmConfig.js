@@ -6,11 +6,6 @@ var Raven = require('raven-js');
 var OAuthAddonSettingsViewModel = require('../rdmAddonSettings.js').OAuthAddonSettingsViewModel;
 var oop = require('js/oop');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
-
 var projectUrlRegex = /^https?:\/\/[^\/]+?\/([^\/]+?)\/?$/;
 
 var ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
@@ -46,7 +41,7 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
         var projectUrl = self.managementProjectURL().trim();
         var matched = projectUrl.match(projectUrlRegex);
         if (!matched) {
-            throw new Error(_('Invalid management URL: ') + projectUrl);
+            throw new Error('Invalid management URL: ' + projectUrl);
         }
         var guid = matched[1];
 
@@ -61,9 +56,9 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
             return self.fetchManagementProject();
         }).done(function() {
             self.managementProjectURL('');
-            self.setMessage(_('Saving management project was successful'), 'text-success');
+            self.setMessage('Saving management project was successful', 'text-success');
         }).fail(function(xhr, status, error) {
-            Raven.captureMessage(_('Error while saving addon management project'), {
+            Raven.captureMessage('Error while saving addon management project', {
                 extra: {
                     url: url,
                     status: status,
@@ -71,9 +66,9 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
                 }
             });
             if (error === 'Unauthorized' || error === 'Forbidden') {
-                self.setMessage(_('Permission error while saving management project'), 'text-danger');
+                self.setMessage('Permission error while saving management project', 'text-danger');
             } else {
-                self.setMessage(_('Error while saving management project'), 'text-danger');
+                self.setMessage('Error while saving management project', 'text-danger');
             }
         }).always(function() {
             self.isSavingManagementProject(false);
@@ -91,9 +86,9 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
             return self.fetchManagementProject();
         }).done(function() {
             self.managementProjectURL('');
-            self.setMessage(_('Removing management project was successful'), 'text-success');
+            self.setMessage('Removing management project was successful', 'text-success');
         }).fail(function(xhr, status, error) {
-            Raven.captureMessage(_('Error while removing addon management project'), {
+            Raven.captureMessage('Error while removing addon management project', {
                 extra: {
                     url: url,
                     status: status,
@@ -101,9 +96,9 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
                 }
             });
             if (error === 'Unauthorized' || error === 'Forbidden') {
-                self.setMessage(_('Permission error while removing management project'), 'text-danger');
+                self.setMessage('Permission error while removing management project', 'text-danger');
             } else {
-                self.setMessage(_('Error while removing management project'), 'text-danger');
+                self.setMessage('Error while removing management project', 'text-danger');
             }
         });
     },
@@ -118,7 +113,7 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
         }).done(function(data) {
             self.managementProjectGUID(data.guid);
         }).fail(function(xhr, status, error) {
-            Raven.captureMessage(_('Error while fetching addon management project'), {
+            Raven.captureMessage('Error while fetching addon management project', {
                 extra: {
                     url: url,
                     status: status,
@@ -149,9 +144,9 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
             return self.fetchOrganizationalProject();
         }).done(function() {
             self.organizationalProjectURL('');
-            self.setMessage(_('Saving organizational project was successful'), 'text-success');
+            self.setMessage('Saving organizational project was successful', 'text-success');
         }).fail(function(xhr, status, error) {
-            Raven.captureMessage(_('Error while saving addon organizational project'), {
+            Raven.captureMessage('Error while saving addon organizational project', {
                 extra: {
                     url: url,
                     status: status,
@@ -159,9 +154,9 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
                 }
             });
             if (error === 'Unauthorized' || error === 'Forbidden') {
-                self.setMessage(_('Permission error while saving organizational project'), 'text-danger');
+                self.setMessage('Permission error while saving organizational project', 'text-danger');
             } else {
-                self.setMessage(_('Error while saving organizational project'), 'text-danger');
+                self.setMessage('Error while saving organizational project', 'text-danger');
             }
         }).always(function() {
             self.isSavingOrganizationalProject(false);
@@ -179,9 +174,9 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
             return self.fetchOrganizationalProject();
         }).done(function() {
             self.organizationalProjectURL('');
-            self.setMessage(_('Removing organizational project was successful'), 'text-success');
+            self.setMessage('Removing organizational project was successful', 'text-success');
         }).fail(function(xhr, status, error) {
-            Raven.captureMessage(_('Error while removing addon organizational project'), {
+            Raven.captureMessage('Error while removing addon organizational project', {
                 extra: {
                     url: url,
                     status: status,
@@ -189,9 +184,9 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
                 }
             });
             if (error === 'Unauthorized' || error === 'Forbidden') {
-                self.setMessage(_('Permission error while removing organizational project'), 'text-danger');
+                self.setMessage('Permission error while removing organizational project', 'text-danger');
             } else {
-                self.setMessage(_('Error while removing organizational project'), 'text-danger');
+                self.setMessage('Error while removing organizational project', 'text-danger');
             }
         });
     },
@@ -206,7 +201,7 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
         }).done(function(data) {
             self.organizationalProjectGUID(data.guid);
         }).fail(function(xhr, status, error) {
-            Raven.captureMessage(_('Error while fetching addon organization project'), {
+            Raven.captureMessage('Error while fetching addon organization project', {
                 extra: {
                     url: url,
                     status: status,
@@ -222,11 +217,11 @@ function IQBRIMSUserConfig(selector, url, institutionId) {
     ko.applyBindings(viewModel, $(selector)[0]);
     viewModel.fetchManagementProject()
         .fail(function() {
-            viewModel.setMessage(_('Error while fetching management project'), 'text-danger');
+            viewModel.setMessage('Error while fetching management project', 'text-danger');
         });
     viewModel.fetchOrganizationalProject()
         .fail(function() {
-            viewModel.setMessage(_('Error while fetching organizational project'), 'text-danger');
+            viewModel.setMessage('Error while fetching organizational project', 'text-danger');
         });
 }
 

@@ -13,11 +13,6 @@ var language = require('js/osfLanguage').Addons.dataverse;
 var osfHelpers = require('js/osfHelpers');
 var addonSettings = require('../rdmAddonSettings');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
-
 var ExternalAccount = addonSettings.ExternalAccount;
 
 var $modal = $('#dataverseInputCredentials');
@@ -25,7 +20,7 @@ var $modal = $('#dataverseInputCredentials');
 
 function ViewModel(url, institutionId) {
     var self = this;
-    const otherString = _('Other (Please Specify)');
+    const otherString = 'Other (Please Specify)';
 
     self.properName = 'Dataverse';
     self.apiToken = ko.observable();
@@ -84,7 +79,7 @@ function ViewModel(url, institutionId) {
             $('#dataverse-header').osfToggleHeight({height: 160});
         });
         request.fail(function(xhr, status, error) {
-            Raven.captureMessage(_('Error while updating addon account'), {
+            Raven.captureMessage('Error while updating addon account', {
                 extra: {
                     url: url,
                     status: status,
@@ -99,17 +94,17 @@ function ViewModel(url, institutionId) {
     self.sendAuth = function() {
         // Selection should not be empty
         if( !self.selectedHost() ){
-            self.changeMessage(_("Please select a Dataverse repository."), 'text-danger');
+            self.changeMessage("Please select a Dataverse repository.", 'text-danger');
             return;
         }
 
         if ( !self.useCustomHost() && !self.apiToken() ){
-            self.changeMessage(_("Please enter an API token."), 'text-danger');
+            self.changeMessage("Please enter an API token.", 'text-danger');
             return;
         }
 
         if ( self.useCustomHost() && ( !self.customHost() || !self.apiToken() ) )  {
-            self.changeMessage(_("Please enter a Dataverse host and an API token."), 'text-danger');
+            self.changeMessage("Please enter a Dataverse host and an API token.", 'text-danger');
             return;
         }
 
@@ -130,7 +125,7 @@ function ViewModel(url, institutionId) {
         }).fail(function(xhr, textStatus, error) {
             var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
             self.changeMessage(errorMessage, 'text-danger');
-            Raven.captureMessage(_('Could not authenticate with Dataverse'), {
+            Raven.captureMessage('Could not authenticate with Dataverse', {
                 extra: {
                     url: url,
                     textStatus: textStatus,
@@ -143,9 +138,10 @@ function ViewModel(url, institutionId) {
     self.askDisconnect = function(account) {
         var self = this;
         bootbox.confirm({
-            title: _('Disconnect Dataverse Account?'),
+            title: 'Disconnect Dataverse Account?',
             message: '<p class="overflow">' +
-                agh.sprintf(_('Are you sure you want to disconnect the Dataverse account on <strong>%1$s</strong>? This will revoke access to Dataverse for all projects associated with this account.'),osfHelpers.htmlEscape(account.name)) +
+                'Are you sure you want to disconnect the Dataverse account on <strong>' +
+                osfHelpers.htmlEscape(account.name) + '</strong>? This will revoke access to Dataverse for all projects associated with this account.' +
                 '</p>',
             callback: function (confirm) {
                 if (confirm) {
@@ -154,7 +150,7 @@ function ViewModel(url, institutionId) {
             },
             buttons:{
                 confirm:{
-                    label:_('Disconnect'),
+                    label:'Disconnect',
                     className:'btn-danger'
                 }
             }
@@ -172,7 +168,7 @@ function ViewModel(url, institutionId) {
             self.updateAccounts();
         });
         request.fail(function(xhr, status, error) {
-            Raven.captureMessage(agh.sprintf(_('Error while removing addon authorization for %1$s') , account.id), {
+            Raven.captureMessage('Error while removing addon authorization for ' + account.id, {
                 extra: {
                     url: url,
                     status: status,
@@ -211,7 +207,7 @@ function ViewModel(url, institutionId) {
             self.updateAccounts();
         }).fail(function (xhr, textStatus, error) {
             self.changeMessage(language.userSettingsError, 'text-danger');
-            Raven.captureMessage(_('Could not GET Dataverse settings'), {
+            Raven.captureMessage('Could not GET Dataverse settings', {
                 extra: {
                     url: url,
                     textStatus: textStatus,
