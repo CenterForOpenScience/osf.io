@@ -64,16 +64,16 @@ $('.is_allowed input').on('change', function() {
         var id = addonName + "DeleteKey";
         bootbox.confirm({
             title: "Disallow "+$osf.htmlEscape(addonFullName)+"?",
-            message: _("Are you sure you want to disallow the ")+$osf.htmlEscape(addonFullName)+"?<br>" +
-                     "This will revoke access to "+$osf.htmlEscape(addonFullName)+" for all projects using the accounts.<br><br>" +
-                     "Type the following to continue: <strong>" + $osf.htmlEscape(deletionKey) + "</strong><br><br>" +
+            message: agh.sprintf(_("Are you sure you want to disallow the %1$s?<br>"),$osf.htmlEscape(addonFullName)) +
+                     agh.sprintf(_("This will revoke access to %1$s for all projects using the accounts.<br><br>"),$osf.htmlEscape(addonFullName)) +
+                     agh.sprintf(_("Type the following to continue: <strong>%1$s</strong><br><br>"),$osf.htmlEscape(deletionKey)) +
                      "<input id='" + $osf.htmlEscape(id) + "' type='text' class='bootbox-input bootbox-input-text form-control'>",
             buttons: {
                 cancel: {
-                    label: 'Cancel'
+                    label: _('Cancel')
                 },
                 confirm: {
-                    label: 'Disallow',
+                    label: _('Disallow'),
                     className: 'btn-danger'
                 }
             },
@@ -84,7 +84,7 @@ $('.is_allowed input').on('change', function() {
                     } else {
                         $input.prop('checked', !isAllowed);
                         $input.prop('disabled', false);
-                        $osf.growl('Verification failed', 'Strings did not match');
+                        $osf.growl('Verification failed', _('Strings did not match'));
                     }
                 } else {
                     $input.prop('checked', !isAllowed);
