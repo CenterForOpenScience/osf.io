@@ -52,6 +52,9 @@ from osf.features import (
     SLOAN_STUDY_PREREG,
 )
 
+from osf.exceptions import PreprintStateError
+
+
 class PrimaryFileRelationshipField(RelationshipField):
     def get_object(self, file_id):
         return BaseFileNode.load(file_id)
@@ -367,31 +370,58 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             save_preprint = True
 
         if 'has_coi' in validated_data:
-            preprint.update_has_coi(auth, validated_data['has_coi'])
+            try:
+                preprint.update_has_coi(auth, validated_data['has_coi'])
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=e.message)
 
         if 'conflict_of_interest_statement' in validated_data:
-            preprint.update_conflict_of_interest_statement(auth, validated_data['conflict_of_interest_statement'])
+            try:
+                preprint.update_conflict_of_interest_statement(auth, validated_data['conflict_of_interest_statement'])
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=e.message)
 
         if 'has_data_links' in validated_data:
-            preprint.update_has_data_links(auth, validated_data['has_data_links'])
+            try:
+                preprint.update_has_data_links(auth, validated_data['has_data_links'])
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=e.message)
 
         if 'why_no_data' in validated_data:
-            preprint.update_why_no_data(auth, validated_data['why_no_data'])
+            try:
+                preprint.update_why_no_data(auth, validated_data['why_no_data'])
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=e.message)
 
         if 'data_links' in validated_data:
-            preprint.update_data_links(auth, validated_data['data_links'])
+            try:
+                preprint.update_data_links(auth, validated_data['data_links'])
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=e.message)
 
         if 'has_prereg_links' in validated_data:
-            preprint.update_has_prereg_links(auth, validated_data['has_prereg_links'])
+            try:
+                preprint.update_has_prereg_links(auth, validated_data['has_prereg_links'])
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=e.message)
 
         if 'why_no_prereg' in validated_data:
-            preprint.update_why_no_prereg(auth, validated_data['why_no_prereg'])
+            try:
+                preprint.update_why_no_prereg(auth, validated_data['why_no_prereg'])
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=e.message)
 
         if 'prereg_links' in validated_data:
-            preprint.update_prereg_links(auth, validated_data['prereg_links'])
+            try:
+                preprint.update_prereg_links(auth, validated_data['prereg_links'])
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=e.message)
 
         if 'prereg_link_info' in validated_data:
-            preprint.update_prereg_link_info(auth, validated_data['prereg_link_info'])
+            try:
+                preprint.update_prereg_link_info(auth, validated_data['prereg_link_info'])
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=e.message)
 
         if published is not None:
             if not preprint.primary_file:

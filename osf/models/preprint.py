@@ -46,11 +46,11 @@ from osf.models.identifiers import IdentifierMixin, Identifier
 from osf.models.mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin
 from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode, OsfStorageFile
 
-from api.decorators import rethrow_validation_error_for_serializer
-
 from framework.sentry import log_exception
 from osf.exceptions import (
-    PreprintStateError, InvalidTagError, TagNotFoundError
+    PreprintStateError,
+    InvalidTagError,
+    TagNotFoundError
 )
 from django.contrib.postgres.fields import ArrayField
 
@@ -1007,7 +1007,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    @rethrow_validation_error_for_serializer
     def update_conflict_of_interest_statement(self, auth: tuple, coi_statement: str, log: bool = True, save: bool = True):
         """
         This method sets the `conflict_of_interest_statement` field for this preprint and logs that change.
@@ -1024,7 +1023,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             return
 
         if not self.has_coi:
-            raise ValidationError('You do not have ability to edit a conflict of interest while the has_coi field is '
+            raise PreprintStateError('You do not have ability to edit a conflict of interest while the has_coi field is '
                                   'set to false or unanswered')
 
         self.conflict_of_interest_statement = coi_statement
@@ -1070,7 +1069,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    @rethrow_validation_error_for_serializer
     def update_data_links(self, auth: tuple, data_links: list, log: bool = True, save: bool = True):
         """
         This method sets the field `data_links` which is a validated list of links to supplementary data for a
@@ -1088,8 +1086,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             return
 
         if not self.has_data_links:
-            raise ValidationError('You cannot edit this statement while your data links availability is set to false or'
-                                  ' is unanswered.')
+            raise PreprintStateError('You cannot edit this statement while your data links availability is set to false'
+                                     ' or is unanswered.')
 
         self.data_links = data_links
 
@@ -1104,7 +1102,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    @rethrow_validation_error_for_serializer
     def update_why_no_data(self, auth: tuple, why_no_data: str, log: bool = True, save: bool = True):
         """
         This method sets the field `why_no_data` a string that represents a user provided explanation for the
@@ -1124,7 +1121,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.has_data_links is False:
             self.why_no_data = why_no_data
         else:
-            raise ValidationError('You cannot edit this statement while your data links availability is set to true or'
+            raise PreprintStateError('You cannot edit this statement while your data links availability is set to true or'
                                   ' is unanswered.')
 
         if log:
@@ -1168,7 +1165,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    @rethrow_validation_error_for_serializer
     def update_why_no_prereg(self, auth: tuple, why_no_prereg: str, log: bool = True, save: bool = True):
         """
         This method updates the field `why_no_prereg` that contains a user provided explanation of prereg data
@@ -1186,7 +1182,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             return
 
         if self.has_prereg_links or self.has_prereg_links is None:
-            raise ValidationError('You cannot edit this statement while your prereg links '
+            raise PreprintStateError('You cannot edit this statement while your prereg links '
                                   'availability is set to true or is unanswered.')
 
         self.why_no_prereg = why_no_prereg
@@ -1202,7 +1198,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    @rethrow_validation_error_for_serializer
     def update_prereg_links(self, auth: tuple, prereg_links: list, log: bool = True, save: bool = True):
         """
         This method updates the field `prereg_links` that contains a list of validated URLS linking to prereg data
@@ -1236,7 +1231,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    @rethrow_validation_error_for_serializer
     def update_prereg_link_info(self, auth: tuple, prereg_link_info: str, log: bool = True, save: bool = True):
         """
         This method updates the field `prereg_link_info` that contains a one of a finite number of choice strings in
@@ -1255,7 +1249,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             return
 
         if not self.has_prereg_links:
-            raise ValidationError('You cannot edit this field while your prereg links'
+            raise PreprintStateError('You cannot edit this field while your prereg links'
                                   ' availability is set to false or is unanswered.')
 
         self.prereg_link_info = prereg_link_info
