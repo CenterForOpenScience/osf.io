@@ -32,7 +32,7 @@
         </div>
         <div class="row">
             <div class="col-md-2">
-                <h4>Logo:</h4>
+                <h4>{% trans "Logo:" %}</h4>
             </div>
             <div class="col-md-2">
                 <img class="institution-logo" src="{{ logohost }}/static/img/institutions/shields/{{ institution.logo_name }}">
@@ -77,9 +77,9 @@
             </div>
             <div class="col-md-5">
                 <div>
-                    <h4>Import from JSON</h4>
-                    <p>Choose a JSON file that has been previously exported from another Institution detail page. This will
-                    pre-populate the Institution change form with those details.</p>
+                    <h4>{% trans "Import from JSON" %}</h4>
+                    <p>{% trans "Choose a JSON file that has been previously exported from another Institution detail page. This will
+                    pre-populate the Institution change form with those details." %}</p>
                     <form id="import-form" action = {% url 'institutions:import' %} method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         {{ import_form.as_p }}

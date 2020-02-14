@@ -4,7 +4,7 @@
         <h3>{% trans "Merge Accounts" %}</h3>
     </div>
     <div class="modal-body">
-        <span>Merge this user: <b>{{ user }}</b> <b>({{ guid }})</b>  with:</span>
+        <span>{% blocktrans %}Merge this user: <b>{{ user }}</b> <b>({{ guid }})</b>  with:{% endblocktrans %}</span>
         {% csrf_token %}
         <input placeholder="Enter guid" name="user_guid_to_be_merged">
     </div>

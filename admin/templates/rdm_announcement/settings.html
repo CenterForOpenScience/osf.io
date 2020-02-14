@@ -91,7 +91,7 @@
             <div class="text-center">
                 {# if perms.rdm.change_rdmannouncementoption #}
                 <input type="submit" class="btn btn-primary" value="Save">
-                <a role="button" href="{% url 'announcement:index' %}" class="btn btn-default">Cancel</a>
+                <a role="button" href="{% url 'announcement:index' %}" class="btn btn-default">{% trans "Cancel" %}</a>
                 {# endif #}
             </div>
         </div>

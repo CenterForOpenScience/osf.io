@@ -28,7 +28,7 @@
                 {% if current_alert.message %}
                     {{ current_alert.message }}
                 {% else %}
-                    The site will undergo maintenance between &lt;localized start time&gt;-&lt;localized end time&gt;. Thank you for your patience.
+                    {% trans "The site will undergo maintenance between &lt;localized start time&gt;-&lt;localized end time&gt;. Thank you for your patience." %}
                 {% endif %}
             </td>
             <td>{{ current_alert.level }}</td>

@@ -18,12 +18,12 @@
                                     <input type="text" class="form-control nextcloud-params" id='nextcloud_host'  placeholder="nextcloud.example.org" required>
                                 </div>
                                 <div class="text-muted" style="text-align: center">
-                                    <em>Only Nextcloud instances supporting <a
+                                    <em>{% blocktrans %}Only Nextcloud instances supporting <a
                                             href="https://doc.nextcloud.org/server/9.1/user_manual/files/access_webdav.html"
                                             target="_blank">WebDAV</a> and <a
                                             href="https://www.freedesktop.org/wiki/Specifications/open-collaboration-services-1.7/"
                                             target="_blank">
-                                            OCS v1.7</a> are supported.
+                                            OCS v1.7</a> are supported.{% endblocktrans %}
                                     </em>
                                 </div>
                             </div>
@@ -44,10 +44,10 @@
                                     placeholder="********" required>
                             </div>
                             <div class="text-muted" style="text-align: center">
-                                <em> These credentials will be encrypted. However, we <strong>strongly
+                                <em>{% blocktrans %} These credentials will be encrypted. However, we <strong>strongly
                                         encourage</strong> using a <a
                                         href="https://doc.nextcloud.org/server/9.1/user_manual/session_management.html#managing-devices"
-                                        target="_blank"> Device (or App) Password</a>.
+                                        target="_blank"> Device (or App) Password</a>.{% endblocktrans %}
                                 </em>
                             </div>
                         </div>

@@ -10,8 +10,8 @@
                 <h4>{% trans "Confirm Delete Banner" %}</h4>
                 <form action="" method="post">{% csrf_token %}
                     <p>
-                        Are you sure you want to delete <b>{{ object.name }}</b>? It is scheduled for {{ object.start_date }} -
-                        {{ object.end_date }}
+                        {% blocktrans %}Are you sure you want to delete <b>{{ object.name }}</b>? It is scheduled for {{ object.start_date }} -
+                        {{ object.end_date }}{% endblocktrans %}
                     </p>
                     <input class="btn btn-primary" type="submit" value="Confirm" />
                 </form>
