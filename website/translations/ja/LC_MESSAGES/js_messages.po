@@ -140,7 +140,7 @@ msgstr "ノードの認証解除エラー："
 #: website/static/js/addonPermissions.js:24
 #: website/static/js/addonSettings.js:61
 msgid "Remove addon?"
-msgstr "アドオンを除外しますか？"
+msgstr "アドオンを削除しますか？"
 
 #: admin/static/js/rdm_addons/rdmAddonSettings.js:62
 #: website/static/js/addonSettings.js:62
@@ -156,7 +156,7 @@ msgstr "このプロジェクトから%1$s認証を削除してもよろしい�
 #: website/static/js/privateLinkTable.js:117 website/static/js/profile.js:737
 #: website/static/js/profile.js:966 website/static/js/project.js:245
 msgid "Remove"
-msgstr "除外"
+msgstr "削除"
 
 #: admin/static/js/rdm_addons/rdmAddonSettings.js:101
 #: website/static/js/addonSettings.js:100
@@ -222,7 +222,7 @@ msgstr "これにより、このアカウントを使用するすべてのプロ
 #: website/static/js/addonSettings.js:130
 #: website/static/js/folderPickerNodeConfig.js:561
 msgid "Disconnect"
-msgstr "切断する"
+msgstr "切断"
 
 #: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:175
 #: admin/static/js/rdm_addons/rdmAddonSettings.js:155
@@ -538,7 +538,7 @@ msgstr "ユーザー"
 
 #: website/search/elastic_search.py:52
 msgid "All GakuNin RDM Results"
-msgstr "全てのGakuNin RDMの結果"
+msgstr "全検索結果"
 
 #: website/search/elastic_search.py:53
 msgid "Files"
@@ -573,7 +573,7 @@ msgstr "読込み"
 #: website/static/js/accessRequestManager.js:119
 #: website/static/js/contribAdder.js:75 website/static/js/contribManager.js:214
 msgid "Read + Write"
-msgstr "読込み / 書込"
+msgstr "読込み / 書込み"
 
 #: website/static/js/accessRequestManager.js:120
 #: website/static/js/contribAdder.js:76 website/static/js/contribManager.js:215
@@ -696,7 +696,7 @@ msgstr "再送"
 
 #: website/static/js/accountSettings.js:272
 msgid "Remove Email?"
-msgstr "メールを除外しますか？"
+msgstr "メールを削除しますか？"
 
 #: website/static/js/accountSettings.js:273
 msgid "Are you sure that you want to remove <em>%1$s</em> from your email list?"
@@ -846,7 +846,7 @@ msgstr "所属"
 
 #: website/static/js/addProjectPlugin.js:213
 msgid "Remove all"
-msgstr "全て除外"
+msgstr "全て削除"
 
 #: website/static/js/addProjectPlugin.js:220
 msgid "Select all"
@@ -1204,7 +1204,7 @@ msgstr "インポートする%1$s アクセストークンを選択してくだ�
 #: website/static/js/oauthAddonNodeConfig.js:155
 #: website/static/js/oauthAddonNodeConfig.js:170
 msgid "Import"
-msgstr "インポート"
+msgstr "接続"
 
 #: website/static/js/citationsNodeConfig.js:174
 msgid "Import %1$s access token"
@@ -1212,7 +1212,7 @@ msgstr "%1$sアクセストークンをインポート"
 
 #: website/static/js/clipboard.js:28
 msgid "Copied!"
-msgstr "コピされされました！"
+msgstr "コピーされました！"
 
 #: website/static/js/clipboard.js:33
 msgid "Copy failed!"
@@ -1316,7 +1316,7 @@ msgstr "カテゴリ"
 
 #: website/static/js/conference.js:39
 msgid "Date Created"
-msgstr "作成日"
+msgstr "作成日時"
 
 #: website/static/js/conference.js:45 website/static/js/fangorn.js:1684
 msgid "Downloads"
@@ -1440,7 +1440,7 @@ msgstr "保存"
 #: website/static/js/contribRemover.js:60
 #: website/static/js/contribRemover.js:61
 msgid "Remove Contributor"
-msgstr "コントリビュータを除外"
+msgstr "コントリビュータを削除"
 
 #: website/static/js/contribRemover.js:211
 #: website/static/js/contribRemover.js:212
@@ -1473,7 +1473,7 @@ msgstr "移動中"
 
 #: website/static/js/fangorn.js:51
 msgid "Renaming "
-msgstr "リネーム中"
+msgstr "名前を変更中"
 
 #: website/static/js/fangorn.js:449
 msgid "Not allowed: Private folder"
@@ -1651,7 +1651,7 @@ msgstr "このファイルはWikiにリンクされている場合がありま�
 
 #: website/static/js/fangorn.js:1227
 msgid " image embedded in your wiki(s). "
-msgstr "Wikiに埋め込まれた画像が除外されます"
+msgstr "Wikiに埋め込まれた画像が削除されます"
 
 #: website/static/js/fangorn.js:1267
 msgid ""
@@ -1715,7 +1715,7 @@ msgstr "バージョン"
 #: website/static/js/pages/project-dashboard-page.js:378
 #: website/static/js/project-organizer.js:200
 msgid "Modified"
-msgstr "最終更新日"
+msgstr "最終更新日時"
 
 #: website/static/js/fangorn.js:1762
 msgid "Unable to retrieve components."
@@ -1762,7 +1762,7 @@ msgstr "ZIPでダウンロード"
 
 #: website/static/js/fangorn.js:2063 website/static/js/myProjects.js:1615
 msgid "Rename"
-msgstr "リネーム"
+msgstr "名前を変更"
 
 #: website/static/js/fangorn.js:2145
 msgid "New folder name"
@@ -1803,7 +1803,7 @@ msgstr "コマンド（WindowsではCtrl）を押し、ファイル名をクリ�
 msgid ""
 " Click on the row of an add-on or folder and click the Download as Zip "
 "button in the toolbar."
-msgstr "アドオンまたはフォルダーの行をクリックし、ツールバーの[zipでダウンロード]ボタンをクリックします。"
+msgstr "アドオンまたはフォルダーの行をクリックし、ツールバーの [zipでダウンロード] ボタンをクリックします。"
 
 #: website/static/js/fangorn.js:2253
 msgid " Not available for all storage add-ons."
@@ -1952,11 +1952,11 @@ msgstr "%1$sの設定を変更できませんでした。 後でもう一度や�
 
 #: website/static/js/folderPickerNodeConfig.js:144
 msgid "Are you sure you want to remove this %1$s account?"
-msgstr "この%1$sアカウントを削除してもよろしいですか？"
+msgstr "この%1$sアカウントを切断してもよろしいですか？"
 
 #: website/static/js/folderPickerNodeConfig.js:147
 msgid "Are you sure you want to link your %1$s account with this project?"
-msgstr "%1$sアカウントをこのプロジェクトにリンクしてもよろしいですか？"
+msgstr "%1$sアカウントをこのプロジェクトに接続してもよろしいですか？"
 
 #: website/static/js/folderPickerNodeConfig.js:150
 msgid "Successfully imported %1$s account from profile."
@@ -1994,7 +1994,7 @@ msgstr "%1$sグループライブラリのインポートに失敗しました�
 #: website/static/js/folderPickerNodeConfig.js:499
 #: website/static/js/oauthAddonNodeConfig.js:161
 msgid "Import %1$s Account?"
-msgstr "%1$sアカウントをインポートしますか？"
+msgstr "%1$sアカウントに接続しますか？"
 
 #: website/static/js/folderPickerNodeConfig.js:535
 msgid "Could not deauthorize %1$s account from node"
@@ -2029,7 +2029,7 @@ msgstr "機関を追加"
 #: website/static/js/institutionProjectSettings.js:49
 #: website/static/js/institutionProjectSettings.js:129
 msgid "Remove institution"
-msgstr "機関を除外"
+msgstr "機関を削除"
 
 #: website/static/js/institutionProjectSettings.js:61
 msgid ""
@@ -2296,7 +2296,7 @@ msgstr "ページをリロードしてください。"
 
 #: website/static/js/myProjects.js:1112
 msgid "Browse and organize all your projects"
-msgstr "すべてのプロジェクトを参照して整理する"
+msgstr "すべてのプロジェクトを管理する"
 
 #: website/static/js/myProjects.js:1117
 msgid "Create Project"
@@ -2321,7 +2321,7 @@ msgstr "\"は削除できませんでした。"
 
 #: website/static/js/myProjects.js:1337
 msgid "\" could not be renamed."
-msgstr "\"はリネームできませんでした。"
+msgstr "\"は名前を変更できませんでした。"
 
 #: website/static/js/myProjects.js:1385
 msgid "\" is already in \"%1$s\""
@@ -2372,7 +2372,7 @@ msgstr "追加"
 
 #: website/static/js/myProjects.js:1578
 msgid "Rename collection"
-msgstr "コレクションをリネーム"
+msgstr "コレクションの名前を変更"
 
 #: website/static/js/myProjects.js:1583
 msgid "Rename to: "
@@ -3535,7 +3535,7 @@ msgstr "チェックイン"
 
 #: website/static/js/filepage/index.js:513
 msgid "Request Trusted Timestamp"
-msgstr "信頼できるタイムスタンプをリクエスト"
+msgstr "打刻"
 
 #: website/static/js/filepage/index.js:524
 msgid "Download"
@@ -3556,7 +3556,7 @@ msgstr "匿名のコントリビュータ"
 
 #: website/static/js/filepage/revisions.js:176
 msgid "Revisions"
-msgstr "リビジョン"
+msgstr "バージョン管理"
 
 #: website/static/js/filepage/util.js:38
 msgid " Loading... "
@@ -3617,7 +3617,7 @@ msgstr "</b>。問題が解決しない場合は％1 $ sにお問い合わせく
 
 #: website/static/js/pages/base-page.js:150
 msgid "There was a problem removing <b>"
-msgstr "次のメールアドレスを除外中に問題が発生しました："
+msgstr "次のメールアドレスを削除中に問題が発生しました："
 
 #: website/static/js/pages/base-page.js:162
 msgid "Do not add email"
@@ -3648,7 +3648,7 @@ msgstr "これには通常より時間がかかります。<br> ページを再�
 #: website/static/js/pages/file-page.js:23
 #: website/static/js/pages/project-dashboard-page.js:453
 msgid "Add a tag to enhance discoverability"
-msgstr "タグを追加して発見しやすくする"
+msgstr "タグを追加してプロジェクトを発見しやすくする"
 
 #: website/static/js/pages/file-page.js:28
 msgid "Could not add tag."
@@ -3661,12 +3661,12 @@ msgstr "タグの追加に失敗しました"
 
 #: website/static/js/pages/file-page.js:43
 msgid "Could not remove tag."
-msgstr "タグを除外できませんでした。"
+msgstr "タグを削除できませんでした。"
 
 #: website/static/js/pages/file-page.js:44
 #: website/static/js/pages/project-dashboard-page.js:514
 msgid "Failed to remove tag"
-msgstr "タグの除外に失敗しました。"
+msgstr "タグの削除に失敗しました。"
 
 #: website/static/js/pages/file-page.js:89
 msgid "The file title cannot be empty."
