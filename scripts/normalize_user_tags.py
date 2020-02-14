@@ -97,8 +97,9 @@ def migrate_source_tags(tags):
             logger.info('Tag with name {} created'.format(tag_name[0]))
         tag.name = tag_name[1]
         try:
-            tag.save()
-            logger.info(tag_name[0] + ' migrated to ' + tag_name[1])
+            with transaction.atomic():
+                tag.save()
+                logger.info(tag_name[0] + ' migrated to ' + tag_name[1])
         except IntegrityError:
             # If there is an IntegrityError, a tag with the new name already exists
             # Delete the old tag if it was created in this method
