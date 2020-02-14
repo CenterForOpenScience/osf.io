@@ -1951,21 +1951,21 @@ var FGItemButtons = {
                         onclick: function(event) {_uploadEvent.call(tb, event, item); },
                         icon: 'fa fa-upload',
                         className : 'text-success'
-                    }, 'Upload'),
+                    }, _('Upload')),
                     m.component(FGButton, {
                         onclick: function () {
                             mode(toolbarModes.ADDFOLDER);
                         },
                         icon: 'fa fa-plus',
                         className: 'text-success'
-                    }, 'Create Folder'));
+                    }, _('Create Folder')));
                 if (item.data.path) {
                     rowButtons.push(
                         m.component(FGButton, {
                             onclick: function(event) {_removeEvent.call(tb, event, [item]); },
                             icon: 'fa fa-trash',
                             className : 'text-danger'
-                        }, 'Delete Folder'));
+                        }, _('Delete Folder')));
                 }
             }
             if (item.kind === 'file') {
@@ -1974,7 +1974,7 @@ var FGItemButtons = {
                         onclick: function (event) { _downloadEvent.call(tb, event, item); },
                         icon: 'fa fa-download',
                         className: 'text-primary'
-                    }, 'Download')
+                    }, _('Download'))
                 );
                 if (item.data.permissions && item.data.permissions.view) {
                     rowButtons.push(
@@ -1984,7 +1984,7 @@ var FGItemButtons = {
                             },
                             icon: 'fa fa-file-o',
                             className: 'text-info'
-                        }, 'View'));
+                        }, _('View')));
                 }
                 if (item.data.permissions && item.data.permissions.edit) {
                     if (item.data.provider === 'osfstorage') {
@@ -1994,7 +1994,7 @@ var FGItemButtons = {
                                     onclick: function(event) { _removeEvent.call(tb, event, [item]); },
                                     icon: 'fa fa-trash',
                                     className: 'text-danger'
-                                }, 'Delete'));
+                                }, _('Delete')));
 
                             rowButtons.push(
                                 m.component(FGButton, {
@@ -2242,16 +2242,16 @@ var FGToolbar = {
                 },
                 icon: 'fa fa-search',
                 className : 'text-primary'
-            }, 'Filter'));
+            }, _('Filter')));
             if (ctrl.tb.options.placement !== 'fileview') {
                 generalButtons.push(m.component(FGButton, {
                     onclick: function(event){
                         var mithrilContent = m('div', [
-                            m('p', [ m('b', 'Select rows:'), m('span', _(' Click on a row (outside the add-on, file, or folder name) to show further actions in the toolbar. Use Command or Shift keys to select multiple files.'))]),
-                            m('p', [ m('b', 'Open files:'), m('span', _(' Click a file name to go to view the file in the GakuNin RDM.'))]),
-                            m('p', [ m('b', 'Open files in new tab:'), m('span', _(' Press Command (Ctrl in Windows) and click a file name to open it in a new tab.'))]),
-                            m('p', [ m('b', 'Download as zip:'), m('span', _(' Click on the row of an add-on or folder and click the Download as Zip button in the toolbar.')), m('i', _(' Not available for all storage add-ons.'))]),
-                            m('p', [ m('b', 'Copy files:'), m('span', _(' Press Option (Alt in Windows) while dragging a file to a new folder or component.')), m('i', _(' Only for contributors with write access.'))])
+                            m('p', [ m('b', _('Select rows:')), m('span', _(' Click on a row (outside the add-on, file, or folder name) to show further actions in the toolbar. Use Command or Shift keys to select multiple files.'))]),
+                            m('p', [ m('b', _('Open files:')), m('span', _(' Click a file name to go to view the file in the GakuNin RDM.'))]),
+                            m('p', [ m('b', _('Open files in new tab:')), m('span', _(' Press Command (Ctrl in Windows) and click a file name to open it in a new tab.'))]),
+                            m('p', [ m('b', _('Download as zip:')), m('span', _(' Click on the row of an add-on or folder and click the Download as Zip button in the toolbar.')), m('i', _(' Not available for all storage add-ons.'))]),
+                            m('p', [ m('b', _('Copy files:')), m('span', _(' Press Option (Alt in Windows) while dragging a file to a new folder or component.')), m('i', _(' Only for contributors with write access.'))])
                         ]);
                         var mithrilButtons = m('button', {
                                 'type':'button',
@@ -2953,7 +2953,7 @@ tbOptions = {
         reapplyTooltips();
     },
     onmultiselect : _fangornMultiselect,
-    filterPlaceholder : 'Filter',
+    filterPlaceholder : _('Filter'),
     onmouseoverrow : _fangornMouseOverRow,
     sortDepth : 2,
     dropzone : {                                           // All dropzone options.

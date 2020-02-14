@@ -262,7 +262,7 @@
 
                 % if (node['description']) or (not node['description'] and permissions.WRITE in user['permissions'] and not node['is_registration']):
                     <p>
-                    <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">
+                    <span id="description">${_("Description:")}</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">
                         ${node['description']}</span>
                     </p>
                 % endif
@@ -279,8 +279,8 @@
                                                           license: window.contextVars.node.license,
                                                           saveLicenseKey: 'node_license',
                                                           readonly: ${ node['is_registration'] | sjson, n}">
-                                    <span id="license">License:</span>
-                                    <span class="text-muted"> ${node['license'].get('name', 'No license')} </span>
+                                    <span id="license">${_("License:")}</span>
+                                    <span class="text-muted"> ${node['license'].get('name', ${_("No license")})} </span>
                                   </license-picker>
                                 </p>
                              % endif
@@ -524,7 +524,7 @@
                                  <span data-bind="text: apa"></span>
                                  <div class="f-w-xl m-t-md">MLA</div>
                                  <span data-bind="text: mla"></span>
-                                 <div class="f-w-xl m-t-md">")}${_("Chicago")}</div>
+                                 <div class="f-w-xl m-t-md">${_("Chicago")}</div>
                                  <span data-bind="text: chicago"></span>
                              </div>
                          </div>
@@ -557,7 +557,7 @@
                          <div class="row">
                              <div class="col-md-12 form-group">
                                  <textarea class="form-control"
-                                           placeholder="Enter custom citation"
+                                           placeholder="${_('Enter custom citation')}"
                                            data-bind="value: customCitation, valueUpdate: 'afterkeydown'"
                                            type="text">
 

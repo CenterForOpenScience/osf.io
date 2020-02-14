@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-10 13:51+0900\n"
+"POT-Creation-Date: 2020-02-14 16:20+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1447,6 +1447,7 @@ msgstr ""
 msgid "(Preprint)"
 msgstr ""
 
+#: website/templates/project/project.mako:265
 #: website/templates/project/settings.mako:108
 #: website/templates/search.mako:292 website/templates/search.mako:348
 msgid "Description:"
@@ -2630,6 +2631,10 @@ msgstr ""
 msgid "Category:"
 msgstr ""
 
+#: website/templates/project/project.mako:282
+msgid "License:"
+msgstr ""
+
 #: website/templates/project/project.mako:291
 msgid "View Registration Form"
 msgstr ""
@@ -2720,6 +2725,10 @@ msgstr ""
 msgid ""
 "<div %(f_x_xl)s>Cite as:</div>                                         "
 "<span %(data_bind)s></span>"
+msgstr ""
+
+#: website/templates/project/project.mako:560
+msgid "Enter custom citation"
 msgstr ""
 
 #: website/templates/project/project.mako:587

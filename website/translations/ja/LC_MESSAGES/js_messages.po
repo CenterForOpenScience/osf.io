@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-12 11:57+0900\n"
+"POT-Creation-Date: 2020-02-14 16:16+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -82,14 +82,9 @@ msgstr "バージョン"
 msgid "Enter a valid 'slug' consisting only of lowercase letters."
 msgstr ""
 
-#: admin/static/js/banners/banners.js:19
 #: admin/static/js/collection_providers/collectionProviders.js:12
 msgid "Hide Form"
 msgstr "フォームを隠す"
-
-#: admin/static/js/banners/banners.js:19
-msgid "Modify banner"
-msgstr "バナーを変更"
 
 #: admin/static/js/collection_providers/collectionProviders.js:12
 msgid "Modify Collection Provider"
@@ -106,7 +101,6 @@ msgid ""
 msgstr "これにより、アカウントを使用するすべてのプロジェクトの%1$sへのアクセスが取り消されます。<br><br>"
 
 #: admin/static/js/rdm_addons/rdm-addons-page.js:69
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:123
 msgid "Type the following to continue: <strong>%1$s</strong><br><br>"
 msgstr "次を入力して続行します。<strong>%1$s</ strong><br><br>"
 
@@ -127,121 +121,19 @@ msgid "Disallow"
 msgstr "許可しない"
 
 #: admin/static/js/rdm_addons/rdm-addons-page.js:87
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:132
 msgid "Strings did not match"
 msgstr "文字列が一致しませんでした"
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:49
-#: website/static/js/addonSettings.js:49
-msgid "Error deauthorizing node: "
-msgstr "ノードの認証解除エラー："
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:61
-#: website/static/js/addonPermissions.js:24
-#: website/static/js/addonSettings.js:61
-msgid "Remove addon?"
-msgstr "アドオンを削除しますか？"
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:62
-#: website/static/js/addonSettings.js:62
-msgid "Are you sure you want to remove the %1$s authorization from this project?"
-msgstr "このプロジェクトから%1$s認証を削除してもよろしいですか？"
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:70
-#: website/static/js/accountSettings.js:284
-#: website/static/js/accountSettings.js:346
-#: website/static/js/addonPermissions.js:54
-#: website/static/js/addonSettings.js:70
-#: website/static/js/pages/profile-settings-addons-page.js:96
-#: website/static/js/privateLinkTable.js:117 website/static/js/profile.js:737
-#: website/static/js/profile.js:966 website/static/js/project.js:245
-msgid "Remove"
-msgstr "削除"
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:101
-#: website/static/js/addonSettings.js:100
-msgid ""
-"Add-on successfully authorized. If you wish to link a different account, "
-"log out of dropbox.com before attempting to connect to a second Dropbox "
-"account on the GakuNin RDM. This will clear the credentials stored in "
-"your browser."
-msgstr ""
-"アドオンが正常に認証されました。 別のアカウントをリンクする場合は、GakuNin "
-"RDMの2番目のDropboxアカウントに接続する前に、dropbox.comからログアウトしてください。 "
-"これにより、ブラウザに保存されている資格情報がクリアされます。"
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:103
-#: website/static/js/addonSettings.js:102
-msgid ""
-"Add-on successfully authorized. If you wish to link a different account, "
-"log out of bitbucket.org before attempting to connect to a second "
-"Bitbucket account on the GakuNin RDM. This will clear the credentials "
-"stored in your browser."
-msgstr ""
-"アドオンが正常に認証されました。 別のアカウントをリンクする場合は、GakuNin "
-"RDMの2つ目のBitbucketアカウントに接続する前に、bitbucket.orgからログアウトしてください。 "
-"これにより、ブラウザに保存されている資格情報がクリアされます"
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:105
-msgid ""
-"Add-on successfully authorized. To link this add-on to an GakuNin RDM project, go"
-" to the settings page of the project, enable %1$s, and choose content to "
-"connect."
-msgstr "アドオンが正常に承認されました。 このアドオンをGakuNin RDMプロジェクトにリンクするには、プロジェクトの設定ページに移動し、%1$sを有効にして、接続するコンテンツを選択します。"
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:108
-#: website/static/js/addonSettings.js:109
-msgid ""
-"Error while authorizing add-on. Please log in to your %1$s account and "
-"grant access to the GakuNin RDM to enable this add-on."
-msgstr ""
-"アドオンの承認中にエラーが発生しました。 このアドオンを有効にするには、%1$sアカウントにログインし、GakuNin "
-"RDMへのアクセスを許可してください。"
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:119
-#: website/static/js/addonSettings.js:118
-msgid "Disconnect Account?"
-msgstr "アカウントを切断しますか？"
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:121
-msgid ""
-"Are you sure you want to disconnect the %1$s account "
-"<strong>%2$s</strong>?<br>"
-msgstr "%1$sアカウント<strong>%2$s</ strong>を切断してもよろしいですか？<br>"
-
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:122
-msgid ""
-"This will revoke access to %1$s for all projects using this "
-"account.<br><br>"
-msgstr "これにより、このアカウントを使用するすべてのプロジェクトの%1$sへのアクセスが取り消されます。<br><br>"
-
-#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:157
-#: admin/static/js/rdm_addons/figshare/rdm-cfg.js:37
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:138
-#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:126
-#: website/static/js/addonSettings.js:130
-#: website/static/js/folderPickerNodeConfig.js:561
-msgid "Disconnect"
-msgstr "切断"
-
-#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:175
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:155
-#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:144
-#: website/static/js/addonSettings.js:147
-msgid "Error while removing addon authorization for %1$s"
-msgstr "%1$sのアドオン認証を削除中にエラーが発生しました"
-
-#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:87
-#: admin/static/js/rdm_addons/rdmAddonSettings.js:176
-#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:102
-#: website/static/js/addonSettings.js:168
-msgid "Error while updating addon account"
-msgstr "アドオンアカウントの更新中にエラーが発生しました"
 
 #: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:28
 #: admin/static/js/rdm_addons/owncloud/owncloudRdmConfig.js:22
 msgid "Other (Please Specify)"
 msgstr "その他(具体的にご記入ください)"
+
+#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:87
+#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:102
+#: website/static/js/addonSettings.js:168
+msgid "Error while updating addon account"
+msgstr "アドオンアカウントの更新中にエラーが発生しました"
 
 #: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:102
 msgid "Please select a Dataverse repository."
@@ -268,7 +160,23 @@ msgid ""
 "Are you sure you want to disconnect the Dataverse account on "
 "<strong>%1$s</strong>? This will revoke access to Dataverse for all "
 "projects associated with this account."
-msgstr "<strong>%1$s</ strong>のDataverseアカウントを切断してもよろしいですか？ これにより、このアカウントに関連付けられているすべてのプロジェクトのDataverseへのアクセスが取り消されます。"
+msgstr ""
+"<strong>%1$s</ strong>のDataverseアカウントを切断してもよろしいですか？ "
+"これにより、このアカウントに関連付けられているすべてのプロジェクトのDataverseへのアクセスが取り消されます。"
+
+#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:157
+#: admin/static/js/rdm_addons/figshare/rdm-cfg.js:37
+#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:126
+#: website/static/js/addonSettings.js:130
+#: website/static/js/folderPickerNodeConfig.js:561
+msgid "Disconnect"
+msgstr "切断"
+
+#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:175
+#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:144
+#: website/static/js/addonSettings.js:147
+msgid "Error while removing addon authorization for %1$s"
+msgstr "%1$sのアドオン認証を削除中にエラーが発生しました"
 
 #: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:214
 msgid "Could not GET Dataverse settings"
@@ -411,7 +319,9 @@ msgid ""
 "Are you sure you want to disconnect the S3 account <strong>%1$s</strong>?"
 " This will revoke access to S3 for all projects associated with this "
 "account."
-msgstr "S3アカウント<strong>%1$s</ strong>を切断してもよろしいですか？これにより、このアカウントに関連付けられているすべてのプロジェクトのS3へのアクセスが取り消されます。"
+msgstr ""
+"S3アカウント<strong>%1$s</ "
+"strong>を切断してもよろしいですか？これにより、このアカウントに関連付けられているすべてのプロジェクトのS3へのアクセスが取り消されます。"
 
 #: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:33
 msgid "Are you sure you want to change institutional storage?"
@@ -430,6 +340,10 @@ msgstr "変更"
 #: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:178
 msgid "Some errors occurred"
 msgstr "いくつかのエラーが発生しました"
+
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:213
+msgid "Institutional Storage set successfully"
+msgstr "機関ストレージが正常に設定されました"
 
 #: api/base/exceptions.py:103
 msgid "This endpoint is not yet implemented."
@@ -702,6 +616,16 @@ msgstr "メールを削除しますか？"
 msgid "Are you sure that you want to remove <em>%1$s</em> from your email list?"
 msgstr "メーリングリストから<em>%1$s</em>を削除してもよろしいですか？"
 
+#: website/static/js/accountSettings.js:284
+#: website/static/js/accountSettings.js:346
+#: website/static/js/addonPermissions.js:54
+#: website/static/js/addonSettings.js:70
+#: website/static/js/pages/profile-settings-addons-page.js:96
+#: website/static/js/privateLinkTable.js:117 website/static/js/profile.js:737
+#: website/static/js/profile.js:966 website/static/js/project.js:245
+msgid "Remove"
+msgstr "削除"
+
 #: website/static/js/accountSettings.js:290
 #: website/static/js/accountSettings.js:303
 msgid "Please refresh the page and try again."
@@ -973,6 +897,11 @@ msgstr "\"%1$s\"が正常にリンクされました"
 msgid " Go to the <a href=\"%1$s\">Files page</a> to view your content."
 msgstr "<a href=\"%1$s\">ファイルページ</a>に移動して、コンテンツを表示します。"
 
+#: website/static/js/addonPermissions.js:24
+#: website/static/js/addonSettings.js:61
+msgid "Remove addon?"
+msgstr "アドオンを削除しますか？"
+
 #: website/static/js/addonPermissions.js:25
 msgid "Are you sure you want to disconnnect the %1$s account from this project?"
 msgstr "このプロジェクトから%1$sアカウントを切断してもよろしいですか？"
@@ -984,6 +913,36 @@ msgstr "エラーが発生し、アカウントはまだプロジェクトに接
 #: website/static/js/addonPermissions.js:47
 msgid "If the issue persists, please report it to %1$s."
 msgstr "問題が解決しない場合は、%1$sに報告してください。"
+
+#: website/static/js/addonSettings.js:49
+msgid "Error deauthorizing node: "
+msgstr "ノードの認証解除エラー："
+
+#: website/static/js/addonSettings.js:62
+msgid "Are you sure you want to remove the %1$s authorization from this project?"
+msgstr "このプロジェクトから%1$s認証を削除してもよろしいですか？"
+
+#: website/static/js/addonSettings.js:100
+msgid ""
+"Add-on successfully authorized. If you wish to link a different account, "
+"log out of dropbox.com before attempting to connect to a second Dropbox "
+"account on the GakuNin RDM. This will clear the credentials stored in "
+"your browser."
+msgstr ""
+"アドオンが正常に認証されました。 別のアカウントをリンクする場合は、GakuNin "
+"RDMの2番目のDropboxアカウントに接続する前に、dropbox.comからログアウトしてください。 "
+"これにより、ブラウザに保存されている資格情報がクリアされます。"
+
+#: website/static/js/addonSettings.js:102
+msgid ""
+"Add-on successfully authorized. If you wish to link a different account, "
+"log out of bitbucket.org before attempting to connect to a second "
+"Bitbucket account on the GakuNin RDM. This will clear the credentials "
+"stored in your browser."
+msgstr ""
+"アドオンが正常に認証されました。 別のアカウントをリンクする場合は、GakuNin "
+"RDMの2つ目のBitbucketアカウントに接続する前に、bitbucket.orgからログアウトしてください。 "
+"これにより、ブラウザに保存されている資格情報がクリアされます"
 
 #: website/static/js/addonSettings.js:104
 msgid ""
@@ -1004,6 +963,18 @@ msgid ""
 msgstr ""
 "アドオンが正常に承認されました。 このアドオンをGakuNin "
 "RDMプロジェクトにリンクするには、プロジェクトの設定ページに移動し、%1$sを有効にして、接続するコンテンツを選択します。"
+
+#: website/static/js/addonSettings.js:109
+msgid ""
+"Error while authorizing add-on. Please log in to your %1$s account and "
+"grant access to the GakuNin RDM to enable this add-on."
+msgstr ""
+"アドオンの承認中にエラーが発生しました。 このアドオンを有効にするには、%1$sアカウントにログインし、GakuNin "
+"RDMへのアクセスを許可してください。"
+
+#: website/static/js/addonSettings.js:118
+msgid "Disconnect Account?"
+msgstr "アカウントを切断しますか？"
 
 #: website/static/js/addonSettings.js:120
 msgid ""
@@ -1526,7 +1497,7 @@ msgstr[0] "%1$sの競合が残っています。"
 
 #: website/static/js/fangorn.js:656
 msgid "%1$s \"%2$s\" to \"%3$s\" is taking a bit longer than expected."
-msgstr ""
+msgstr "%1$s \"%2$s\" 〜 \"%3$s\" は予想より少し時間がかかっています。"
 
 #: website/static/js/fangorn.js:657
 msgid "We'll send you an email when it has finished."
@@ -1632,7 +1603,8 @@ msgid ""
 msgstr "このフォルダーとその内容はすべて削除されます。 このアクションは元に戻せません。"
 
 #: website/static/js/fangorn.js:1214 website/static/js/fangorn.js:1237
-#: website/static/js/fangorn.js:2033 website/static/js/filepage/index.js:211
+#: website/static/js/fangorn.js:1997 website/static/js/fangorn.js:2033
+#: website/static/js/filepage/index.js:211
 #: website/static/js/filepage/index.js:521 website/static/js/myProjects.js:1639
 msgid "Delete"
 msgstr "削除"
@@ -1729,6 +1701,26 @@ msgstr "ノード%1$sのコンポーネントを取得できません"
 msgid "You cannot rename your Wiki images folder."
 msgstr "Wiki画像フォルダの名前を変更することはできません。"
 
+#: website/static/js/fangorn.js:1954
+msgid "Upload"
+msgstr "アップロード"
+
+#: website/static/js/fangorn.js:1961
+msgid "Create Folder"
+msgstr "フォルダ新規作成"
+
+#: website/static/js/fangorn.js:1968
+msgid "Delete Folder"
+msgstr "フォルダを削除"
+
+#: website/static/js/fangorn.js:1977 website/static/js/filepage/index.js:524
+msgid "Download"
+msgstr "ダウンロード"
+
+#: website/static/js/fangorn.js:1987
+msgid "View"
+msgstr "ビュー"
+
 #: website/static/js/fangorn.js:2003 website/static/js/filepage/index.js:220
 msgid "This would mean "
 msgstr "これは、"
@@ -1780,6 +1772,14 @@ msgstr "保留中のアップロードをキャンセル"
 msgid "Delete Multiple"
 msgstr "複数削除"
 
+#: website/static/js/fangorn.js:2245 website/static/js/fangorn.js:2956
+msgid "Filter"
+msgstr "フィルター"
+
+#: website/static/js/fangorn.js:2250
+msgid "Select rows:"
+msgstr "行を選択"
+
 #: website/static/js/fangorn.js:2250
 msgid ""
 " Click on a row (outside the add-on, file, or folder name) to show "
@@ -1790,14 +1790,26 @@ msgstr ""
 "複数のファイルを選択するには、コマンドまたはShiftキーを使用します。"
 
 #: website/static/js/fangorn.js:2251
+msgid "Open files:"
+msgstr "ファイルを開く"
+
+#: website/static/js/fangorn.js:2251
 msgid " Click a file name to go to view the file in the GakuNin RDM."
 msgstr "ファイル名をクリックして、GakuNin RDMでファイルを表示します。"
+
+#: website/static/js/fangorn.js:2252
+msgid "Open files in new tab:"
+msgstr "新しいタブでファイルを開く:"
 
 #: website/static/js/fangorn.js:2252
 msgid ""
 " Press Command (Ctrl in Windows) and click a file name to open it in a "
 "new tab."
 msgstr "コマンド（WindowsではCtrl）を押し、ファイル名をクリックして新しいタブで開きます。"
+
+#: website/static/js/fangorn.js:2253
+msgid "Download as zip:"
+msgstr "ZIPでダウンロード"
 
 #: website/static/js/fangorn.js:2253
 msgid ""
@@ -1808,6 +1820,10 @@ msgstr "アドオンまたはフォルダーの行をクリックし、ツール
 #: website/static/js/fangorn.js:2253
 msgid " Not available for all storage add-ons."
 msgstr "すべてのストレージアドオンで利用できるわけではありません。"
+
+#: website/static/js/fangorn.js:2254
+msgid "Copy files:"
+msgstr "ファイルをコピー"
 
 #: website/static/js/fangorn.js:2254
 msgid ""
@@ -2174,6 +2190,22 @@ msgstr ""
 #: website/static/js/licensePicker.js:245
 msgid "Add license"
 msgstr "ライセンスを追加"
+
+#: website/static/js/licenses.js:27
+msgid "Content:"
+msgstr "コンテンツ用"
+
+#: website/static/js/licenses.js:31
+msgid "Code - Permissive:"
+msgstr "コード用 - 自由度(高) or 非コピーレフト"
+
+#: website/static/js/licenses.js:35
+msgid "Code - Copyleft:"
+msgstr "コード用 - コピーレフト"
+
+#: website/static/js/licenses.js:39
+msgid "Code - Other:"
+msgstr "コード用 - その他"
 
 #: website/static/js/meetings.js:26
 msgid "Submissions"
@@ -3537,10 +3569,6 @@ msgstr "チェックイン"
 msgid "Request Trusted Timestamp"
 msgstr "打刻"
 
-#: website/static/js/filepage/index.js:524
-msgid "Download"
-msgstr "ダウンロード"
-
 #: website/static/js/filepage/index.js:530
 msgid "Toggle view: "
 msgstr "トグルビュー："
@@ -3858,4 +3886,18 @@ msgstr "%1$sに報告してください"
 msgid "Could not GET wiki menu pages"
 msgstr "Wikiメニューページを取得できませんでした"
 
+#~ msgid "Modify banner"
+#~ msgstr "バナーを変更"
+
+#~ msgid ""
+#~ "Are you sure you want to "
+#~ "disconnect the %1$s account "
+#~ "<strong>%2$s</strong>?<br>"
+#~ msgstr "%1$sアカウント<strong>%2$s</ strong>を切断してもよろしいですか？<br>"
+
+#~ msgid ""
+#~ "This will revoke access to %1$s "
+#~ "for all projects using this "
+#~ "account.<br><br>"
+#~ msgstr "これにより、このアカウントを使用するすべてのプロジェクトの%1$sへのアクセスが取り消されます。<br><br>"
 

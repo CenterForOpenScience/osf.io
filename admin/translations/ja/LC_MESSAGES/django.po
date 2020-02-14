@@ -370,7 +370,7 @@ msgstr "%(node_count)sの関連ノードを表示"
 #, fuzzy
 #| msgid "Logo"
 msgid "Logo:"
-msgstr "ログ"
+msgstr "ロゴ"
 
 #: .\templates\institutions\detail.html:41
 msgid "Banner:"
@@ -1988,7 +1988,7 @@ msgstr "確認"
 
 #: .\templates\rdm_timestampadd\timestampadd.html:57
 msgid "Request Trusted Timestamp"
-msgstr "信頼できるタイムスタンプをリクエスト"
+msgstr "打刻"
 
 #: .\templates\rdm_timestampadd\timestampadd.html:68
 msgid "Processing, please wait..."
@@ -2012,7 +2012,7 @@ msgstr "承認者"
 
 #: .\templates\rdm_timestampadd\timestampadd.html:156
 msgid "Updated at"
-msgstr "更新日"
+msgstr "更新日時"
 
 #: .\templates\rdm_timestampadd\timestampadd.html:165
 msgid "Timestamp Verification"

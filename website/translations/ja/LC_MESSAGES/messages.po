@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-10 13:51+0900\n"
+"POT-Creation-Date: 2020-02-14 16:20+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -1069,7 +1069,9 @@ msgid ""
 "If you are not %(fullname)s, or if you were erroneously added as a "
 "contributor to the project described in the email invitation, please "
 "email <a %(href)s%(osf_contact_email)s%(quot)s>%(osf_contact_email)s</a>"
-msgstr "あなたが%(fullname)sでない場合、または招待メールに記載されているプロジェクトへのコントリビュータとして誤って追加された場合は、<a %(href)s%(osf_contact_email)s%(quot)s>%(osf_contact_email)s</a>へメールしてください"
+msgstr ""
+"あなたが%(fullname)sでない場合、または招待メールに記載されているプロジェクトへのコントリビュータとして誤って追加された場合は、<a "
+"%(href)s%(osf_contact_email)s%(quot)s>%(osf_contact_email)s</a>へメールしてください"
 
 #: website/templates/claim_account_eppn.mako:2
 #: website/templates/claim_account_eppn.mako:4
@@ -1496,6 +1498,7 @@ msgstr "次へジャンプ"
 msgid "(Preprint)"
 msgstr "(プレプリント)"
 
+#: website/templates/project/project.mako:265
 #: website/templates/project/settings.mako:108
 #: website/templates/search.mako:292 website/templates/search.mako:348
 msgid "Description:"
@@ -2709,6 +2712,10 @@ msgstr "DOIを作成"
 msgid "Category:"
 msgstr "カテゴリー:"
 
+#: website/templates/project/project.mako:282
+msgid "License:"
+msgstr ""
+
 #: website/templates/project/project.mako:291
 msgid "View Registration Form"
 msgstr "登録フォームを表示"
@@ -2800,6 +2807,10 @@ msgid ""
 "<div %(f_x_xl)s>Cite as:</div>                                         "
 "<span %(data_bind)s></span>"
 msgstr "<span %(data_bind)s></span>として<div %(f_x_xl)s>引用</div> "
+
+#: website/templates/project/project.mako:560
+msgid "Enter custom citation"
+msgstr ""
 
 #: website/templates/project/project.mako:587
 #: website/templates/project/view_file.mako:76
