@@ -1,11 +1,6 @@
 require('bootstrap-colorpicker');
 require('bootstrap-colorpicker/dist/css/bootstrap-colorpicker.min.css');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
-
 //TODO: Consider using pikaday range picker instead
 
 $(document).ready(function() {
@@ -16,7 +11,7 @@ $(document).ready(function() {
         $('#form-view').toggle();
 
         var text = $('#show-modify-form').text();
-        var new_text = (text.trim() == "Modify banner") ? _("Hide Form") : _("Modify banner");
+        var new_text = (text.trim() == "Modify banner") ? "Hide Form" : "Modify banner";
         $('#show-modify-form').text(new_text);
     });
 
