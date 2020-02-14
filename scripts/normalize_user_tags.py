@@ -5,7 +5,7 @@ from django.apps import apps
 from website.app import init_app
 from scripts import utils as script_utils
 import sys
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from website.util.metrics import OsfSourceTags, OsfClaimedTags, CampaignSourceTags, CampaignClaimedTags, provider_source_tag, provider_claimed_tag
 
 logger = logging.getLogger(__name__)
@@ -96,8 +96,15 @@ def migrate_source_tags(tags):
         if created:
             logger.info('Tag with name {} created'.format(tag_name[0]))
         tag.name = tag_name[1]
-        tag.save()
-        logger.info(tag_name[0] + ' migrated to ' + tag_name[1])
+        try:
+            tag.save()
+            logger.info(tag_name[0] + ' migrated to ' + tag_name[1])
+        except IntegrityError:
+            # If there is an IntegrityError, a tag with the new name already exists
+            # Delete the old tag if it was created in this method
+            if created:
+                tag.delete()
+            pass
 
 
 def add_tags(tags):
