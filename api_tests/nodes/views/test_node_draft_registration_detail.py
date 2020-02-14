@@ -279,14 +279,6 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 403
 
-    #   test_read_write_contributor_cannot_update_draft
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload,
-            auth=user_write_contrib.auth,
-            expect_errors=True)
-        assert res.status_code == 403
-
     #   test_logged_in_non_contributor_cannot_update_draft
         res = app.put_json_api(
             url_draft_registrations,
@@ -754,14 +746,6 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
             url_draft_registrations,
             payload,
             auth=user_read_contrib.auth,
-            expect_errors=True)
-        assert res.status_code == 403
-
-    #   test_read_write_contributor_cannot_update_draft
-        res = app.patch_json_api(
-            url_draft_registrations,
-            payload,
-            auth=user_write_contrib.auth,
             expect_errors=True)
         assert res.status_code == 403
 

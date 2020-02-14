@@ -77,7 +77,7 @@ from api.nodes.permissions import (
     IsAdminContributorOrReviewer,
     NodeGroupDetailPermissions,
     IsContributorOrGroupMember,
-    NodeDeletePermissions,
+    AdminDeletePermissions,
     WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
@@ -346,7 +346,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
-        NodeDeletePermissions,
+        AdminDeletePermissions,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,

@@ -10,7 +10,7 @@ from api_tests.nodes.views.test_node_draft_registration_detail import (
     TestDraftPreregChallengeRegistrationMetadataValidation
 )
 from osf.models import DraftNode, Node, NodeLicense
-from osf.utils.permissions import ADMIN
+from osf.utils.permissions import ADMIN, READ, WRITE
 from osf_tests.factories import (
     DraftRegistrationFactory,
     AuthUserFactory,
@@ -237,6 +237,22 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
         return '/{}draft_registrations/{}/'.format(
             API_BASE, draft_registration._id)
 
+    @pytest.fixture()
+    def draft_registration(self, user, user_read_contrib, user_write_contrib, project_public, schema):
+        draft_registration = DraftRegistrationFactory(
+            initiator=user,
+            registration_schema=schema,
+            branched_from=None
+        )
+        draft_registration.add_contributor(
+            user_write_contrib,
+            permissions=WRITE)
+        draft_registration.add_contributor(
+            user_read_contrib,
+            permissions=READ)
+        draft_registration.save()
+        return draft_registration
+
     def test_update_editable_fields(self, app, url_draft_registrations, draft_registration, license, copyright_holders,
             year, institution_one, user, title, description, category, subject, editable_fields_payload):
         user.affiliated_institutions.add(institution_one)
@@ -348,6 +364,24 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
         assert draft_registration.branched_from == branched_from
         assert draft_registration.branched_from != node
 
+    def test_write_contributor_can_update_draft(
+            self, app, user_write_contrib, schema, project_public,
+            payload, url_draft_registrations):
+        res = app.put_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user_write_contrib.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert schema._id in data['relationships']['registration_schema']['links']['related']['href']
+        assert data['attributes']['registration_metadata'] == payload['data']['attributes']['registration_metadata']
+        # A write to registration_metadata, also updates registration_responses
+        assert data['attributes']['registration_responses'] == {
+            'datacompletion': 'No, data collection has not begun',
+            'looked': 'No',
+            'comments': 'This is my first registration.'
+        }
+
 
 @pytest.mark.django_db
 class TestDraftRegistrationUpdateWithDraftNode(TestDraftRegistrationUpdate):
@@ -357,12 +391,38 @@ class TestDraftRegistrationUpdateWithDraftNode(TestDraftRegistrationUpdate):
             API_BASE, draft_registration._id)
 
     @pytest.fixture()
-    def draft_registration(self, user, project_public, schema):
-        return DraftRegistrationFactory(
+    def draft_registration(self, user, user_read_contrib, user_write_contrib, project_public, schema):
+        draft_registration = DraftRegistrationFactory(
             initiator=user,
             registration_schema=schema,
             branched_from=None
         )
+        draft_registration.add_contributor(
+            user_write_contrib,
+            permissions=WRITE)
+        draft_registration.add_contributor(
+            user_read_contrib,
+            permissions=READ)
+        draft_registration.save()
+        return draft_registration
+
+    def test_write_contributor_can_update_draft(
+            self, app, user_write_contrib, schema, project_public,
+            payload, url_draft_registrations):
+        res = app.put_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user_write_contrib.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert schema._id in data['relationships']['registration_schema']['links']['related']['href']
+        assert data['attributes']['registration_metadata'] == payload['data']['attributes']['registration_metadata']
+        # A write to registration_metadata, also updates registration_responses
+        assert data['attributes']['registration_responses'] == {
+            'datacompletion': 'No, data collection has not begun',
+            'looked': 'No',
+            'comments': 'This is my first registration.'
+        }
 
 
 class TestDraftRegistrationPatchNew(TestDraftRegistrationPatch):
@@ -371,6 +431,34 @@ class TestDraftRegistrationPatchNew(TestDraftRegistrationPatch):
         # Overrides TestDraftRegistrationPatch
         return '/{}draft_registrations/{}/'.format(
             API_BASE, draft_registration._id)
+
+    @pytest.fixture()
+    def draft_registration(self, user, user_read_contrib, user_write_contrib, project_public, schema):
+        draft_registration = DraftRegistrationFactory(
+            initiator=user,
+            registration_schema=schema,
+            branched_from=None
+        )
+        draft_registration.add_contributor(
+            user_write_contrib,
+            permissions=WRITE)
+        draft_registration.add_contributor(
+            user_read_contrib,
+            permissions=READ)
+        draft_registration.save()
+        return draft_registration
+
+    def test_write_contributor_can_update_draft(
+            self, app, user_write_contrib, schema, payload,
+            url_draft_registrations):
+        res = app.patch_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user_write_contrib.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert schema._id in data['relationships']['registration_schema']['links']['related']['href']
+        assert data['attributes']['registration_metadata'] == payload['data']['attributes']['registration_metadata']
 
 
 class TestDraftRegistrationDelete(TestDraftRegistrationDelete):

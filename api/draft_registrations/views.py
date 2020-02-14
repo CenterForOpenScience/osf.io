@@ -25,7 +25,7 @@ from api.nodes.views import (
     NodeContributorDetail,
     DraftMixin,
 )
-from api.nodes.permissions import ContributorOrPublic
+from api.nodes.permissions import ContributorOrPublic, AdminDeletePermissions
 from api.subjects.views import SubjectRelationshipBaseView, BaseResourceSubjectsList
 from osf.models import DraftRegistrationContributor
 
@@ -44,7 +44,7 @@ class DraftRegistrationMixin(DraftMixin):
 
 class DraftRegistrationList(NodeDraftRegistrationsList):
     permission_classes = (
-        ContributorOrPublic,
+        IsContributorOrAdminContributor,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -66,6 +66,7 @@ class DraftRegistrationList(NodeDraftRegistrationsList):
 class DraftRegistrationDetail(NodeDraftRegistrationDetail, DraftRegistrationMixin):
     permission_classes = (
         ContributorOrPublic,
+        AdminDeletePermissions,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )

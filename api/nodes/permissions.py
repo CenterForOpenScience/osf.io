@@ -93,8 +93,8 @@ class IsAdmin(permissions.BasePermission):
         return obj.has_permission(auth.user, osf_permissions.ADMIN)
 
 
-class NodeDeletePermissions(permissions.BasePermission):
-    acceptable_models = (AbstractNode,)
+class AdminDeletePermissions(permissions.BasePermission):
+    acceptable_models = (AbstractNode, DraftRegistration)
 
     def has_object_permission(self, request, view, obj):
         """
