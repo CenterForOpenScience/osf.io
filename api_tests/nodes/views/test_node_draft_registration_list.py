@@ -816,19 +816,3 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 400
         assert errors['detail'] == 'For your registration, your response to the \'Data collection status\'' \
                                    ' field is invalid, your response must be one of the provided options.'
-
-    def test_reviewer_cannot_create_draft_registration(
-            self, app, user_read_contrib, project_public,
-            payload, url_draft_registrations):
-        user = AuthUserFactory()
-        administer_permission = Permission.objects.get(
-            codename='administer_prereg')
-        user.user_permissions.add(administer_permission)
-        user.save()
-
-        assert user_read_contrib in project_public.contributors.all()
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 403
