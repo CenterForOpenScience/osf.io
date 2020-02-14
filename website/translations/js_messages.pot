@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-14 16:16+0900\n"
+"POT-Creation-Date: 2020-02-14 17:03+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,6 +16,13 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.7.0\n"
+
+#: addons/base/models.py:461
+msgid ""
+"Because you have not configured the {addon} add-on, your authentication "
+"will not be transferred to the forked {category}. You may authorize and "
+"configure the {addon} add-on in the new fork on the settings page."
+msgstr ""
 
 #: addons/wiki/static/WikiEditor.js:88
 msgid "Live editing mode"
@@ -423,6 +430,14 @@ msgstr ""
 
 #: api/base/authentication/drf.py:230
 msgid "Could not find the user associated with this token"
+msgstr ""
+
+#: website/language.py:192
+msgid "Duplicate template"
+msgstr ""
+
+#: website/language.py:198
+msgid "Fork this Project"
 msgstr ""
 
 #: website/project/__init__.py:64

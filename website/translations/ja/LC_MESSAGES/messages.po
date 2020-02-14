@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-14 16:20+0900\n"
+"POT-Creation-Date: 2020-02-14 17:31+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -2646,7 +2646,7 @@ msgstr "このプロジェクトを複製するには、ログインするかア
 #: website/templates/project/project.mako:100
 #, python-format
 msgid "View Forks %(fork_count)s"
-msgstr "フォークを表示する %(fork_count)s"
+msgstr "フォークを表示 %(fork_count)s"
 
 #: website/templates/project/project.mako:115
 msgid "Bookmark"
@@ -2714,6 +2714,11 @@ msgstr "カテゴリー:"
 
 #: website/templates/project/project.mako:282
 msgid "License:"
+msgstr "ライセンス"
+
+#: website/templates/project/project.mako:283
+#, python-format
+msgid "%(license)s"
 msgstr ""
 
 #: website/templates/project/project.mako:291
@@ -2810,7 +2815,7 @@ msgstr "<span %(data_bind)s></span>として<div %(f_x_xl)s>引用</div> "
 
 #: website/templates/project/project.mako:560
 msgid "Enter custom citation"
-msgstr ""
+msgstr "カスタムサイテーションを入力"
 
 #: website/templates/project/project.mako:587
 #: website/templates/project/view_file.mako:76

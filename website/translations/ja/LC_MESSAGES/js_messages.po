@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-14 16:16+0900\n"
+"POT-Creation-Date: 2020-02-14 17:03+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -17,6 +17,13 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.7.0\n"
+
+#: addons/base/models.py:461
+msgid ""
+"Because you have not configured the {addon} add-on, your authentication "
+"will not be transferred to the forked {category}. You may authorize and "
+"configure the {addon} add-on in the new fork on the settings page."
+msgstr "{addon}アドオンを設定していないため、認証は分岐した{category}に転送されません。 設定ページの新しいフォークで{addon}アドオンを許可および設定できます。"
 
 #: addons/wiki/static/WikiEditor.js:88
 msgid "Live editing mode"
@@ -429,6 +436,14 @@ msgstr ""
 #: api/base/authentication/drf.py:230
 msgid "Could not find the user associated with this token"
 msgstr ""
+
+#: website/language.py:192
+msgid "Duplicate template"
+msgstr "テンプレートをコピー"
+
+#: website/language.py:198
+msgid "Fork this Project"
+msgstr "このプロジェクトをフォーク"
 
 #: website/project/__init__.py:64
 msgid "Bookmarks"
@@ -1707,7 +1722,7 @@ msgstr "アップロード"
 
 #: website/static/js/fangorn.js:1961
 msgid "Create Folder"
-msgstr "フォルダ新規作成"
+msgstr "新規フォルダ作成"
 
 #: website/static/js/fangorn.js:1968
 msgid "Delete Folder"
@@ -1719,7 +1734,7 @@ msgstr "ダウンロード"
 
 #: website/static/js/fangorn.js:1987
 msgid "View"
-msgstr "ビュー"
+msgstr "プレビュー"
 
 #: website/static/js/fangorn.js:2003 website/static/js/filepage/index.js:220
 msgid "This would mean "
@@ -1774,7 +1789,7 @@ msgstr "複数削除"
 
 #: website/static/js/fangorn.js:2245 website/static/js/fangorn.js:2956
 msgid "Filter"
-msgstr "フィルター"
+msgstr "フィルタ"
 
 #: website/static/js/fangorn.js:2250
 msgid "Select rows:"
@@ -2484,7 +2499,7 @@ msgstr "権限："
 
 #: website/static/js/myProjects.js:2014
 msgid "Last Modified on: "
-msgstr "最終更新日："
+msgstr "最終更新日時："
 
 #: website/static/js/myProjects.js:2042
 msgid "Remove selected from collection"

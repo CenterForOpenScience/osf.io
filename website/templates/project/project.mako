@@ -83,7 +83,7 @@
                                            data-dismiss="modal"
                                            onclick="NodeActions.forkNode();"
                                         >
-                                            ${ language.FORK_ACTION | n }
+                                            ${ _(language.FORK_ACTION) | n }
                                         </span>
                                     </li>
                                     %endif
@@ -91,7 +91,7 @@
                                         <span class="btn btn-primary btn-block m-t-sm form-control${'' if user_name and (user['is_contributor_or_group_member'] or node['is_public']) else ' disabled'}"
                                            onclick="NodeActions.useAsTemplate();"
                                         >
-                                            ${ language.TEMPLATE_ACTION | n }
+                                            ${ _(language.TEMPLATE_ACTION) | n }
                                         </span>
                                     </li>
                                     % if not disk_saving_mode:
@@ -280,7 +280,7 @@
                                                           saveLicenseKey: 'node_license',
                                                           readonly: ${ node['is_registration'] | sjson, n}">
                                     <span id="license">${_("License:")}</span>
-                                    <span class="text-muted"> ${node['license'].get('name', ${_("No license")})} </span>
+                                <span class="text-muted">${_("%(license)s") % dict(license=node['license'].get('name', 'No license'))} </span>
                                   </license-picker>
                                 </p>
                              % endif
