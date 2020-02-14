@@ -10,15 +10,21 @@ from osf_tests.factories import (
 )
 
 from osf.features import (
-    SLOAN_DATA,
-    SLOAN_PREREG,
-    SLOAN_COI
+    SLOAN_COI_DISPLAY,
+    SLOAN_DATA_DISPLAY,
+    SLOAN_PREREG_DISPLAY,
 )
 
 SLOAN_FLAGS = (
-    SLOAN_DATA,
+    SLOAN_COI_DISPLAY,
+    SLOAN_DATA_DISPLAY,
+    SLOAN_PREREG_DISPLAY
+)
+
+from osf.system_tags import (
+    SLOAN_COI,
     SLOAN_PREREG,
-    SLOAN_COI
+    SLOAN_DATA,
 )
 
 from website.settings import DOMAIN
@@ -53,19 +59,19 @@ class TestSloanStudyWaffling:
 
         tags = user.all_tags.all().values_list('name', flat=True)
 
+        assert SLOAN_COI in tags
         assert SLOAN_DATA in tags
         assert SLOAN_PREREG in tags
-        assert SLOAN_COI in tags
 
-        assert SLOAN_DATA in resp.json['meta']['active_flags']
-        assert SLOAN_PREREG in resp.json['meta']['active_flags']
-        assert SLOAN_COI in resp.json['meta']['active_flags']
+        assert SLOAN_COI_DISPLAY in resp.json['meta']['active_flags']
+        assert SLOAN_DATA_DISPLAY in resp.json['meta']['active_flags']
+        assert SLOAN_PREREG_DISPLAY in resp.json['meta']['active_flags']
 
         cookies = resp.headers.getall('Set-Cookie')
 
-        assert f' {SLOAN_DATA}=True; Path=/' in cookies
-        assert f' {SLOAN_PREREG}=True; Path=/' in cookies
-        assert f' {SLOAN_COI}=True; Path=/' in cookies
+        assert f' {SLOAN_COI_DISPLAY}=True; Path=/' in cookies
+        assert f' {SLOAN_DATA_DISPLAY}=True; Path=/' in cookies
+        assert f' {SLOAN_PREREG_DISPLAY}=True; Path=/' in cookies
 
     @pytest.mark.enable_quickfiles_creation
     @mock.patch('api.base.views.Flag.is_active')
@@ -74,15 +80,15 @@ class TestSloanStudyWaffling:
         headers = {'Referer': preprint.absolute_url}
         resp = app.get('/v2/', headers=headers)
 
-        assert SLOAN_DATA in resp.json['meta']['active_flags']
-        assert SLOAN_PREREG in resp.json['meta']['active_flags']
-        assert SLOAN_COI in resp.json['meta']['active_flags']
+        assert SLOAN_COI_DISPLAY in resp.json['meta']['active_flags']
+        assert SLOAN_DATA_DISPLAY in resp.json['meta']['active_flags']
+        assert SLOAN_PREREG_DISPLAY in resp.json['meta']['active_flags']
 
         cookies = resp.headers.getall('Set-Cookie')
 
-        assert f' {SLOAN_DATA}=True; Path=/' in cookies
-        assert f' {SLOAN_PREREG}=True; Path=/' in cookies
-        assert f' {SLOAN_COI}=True; Path=/' in cookies
+        assert f' {SLOAN_COI_DISPLAY}=True; Path=/' in cookies
+        assert f' {SLOAN_DATA_DISPLAY}=True; Path=/' in cookies
+        assert f' {SLOAN_PREREG_DISPLAY}=True; Path=/' in cookies
 
     @pytest.mark.enable_quickfiles_creation
     @mock.patch('api.base.views.Flag.is_active')
@@ -93,19 +99,19 @@ class TestSloanStudyWaffling:
 
         tags = user.all_tags.all().values_list('name', flat=True)
 
+        assert f'no_{SLOAN_COI}' in tags
         assert f'no_{SLOAN_DATA}' in tags
         assert f'no_{SLOAN_PREREG}' in tags
-        assert f'no_{SLOAN_COI}' in tags
 
-        assert SLOAN_DATA not in resp.json['meta']['active_flags']
-        assert SLOAN_PREREG not in resp.json['meta']['active_flags']
-        assert SLOAN_COI not in resp.json['meta']['active_flags']
+        assert SLOAN_COI_DISPLAY not in resp.json['meta']['active_flags']
+        assert SLOAN_DATA_DISPLAY not in resp.json['meta']['active_flags']
+        assert SLOAN_PREREG_DISPLAY not in resp.json['meta']['active_flags']
 
         cookies = resp.headers.getall('Set-Cookie')
 
-        assert f' {SLOAN_DATA}=False; Path=/' in cookies
-        assert f' {SLOAN_PREREG}=False; Path=/' in cookies
-        assert f' {SLOAN_COI}=False; Path=/' in cookies
+        assert f' {SLOAN_COI_DISPLAY}=False; Path=/' in cookies
+        assert f' {SLOAN_DATA_DISPLAY}=False; Path=/' in cookies
+        assert f' {SLOAN_PREREG_DISPLAY}=False; Path=/' in cookies
 
     @pytest.mark.enable_quickfiles_creation
     @mock.patch('api.base.views.Flag.is_active')
@@ -114,15 +120,15 @@ class TestSloanStudyWaffling:
         headers = {'Referer': preprint.absolute_url}
         resp = app.get('/v2/', headers=headers)
 
-        assert SLOAN_DATA not in resp.json['meta']['active_flags']
-        assert SLOAN_PREREG not in resp.json['meta']['active_flags']
-        assert SLOAN_COI not in resp.json['meta']['active_flags']
+        assert SLOAN_COI_DISPLAY not in resp.json['meta']['active_flags']
+        assert SLOAN_DATA_DISPLAY not in resp.json['meta']['active_flags']
+        assert SLOAN_PREREG_DISPLAY not in resp.json['meta']['active_flags']
 
         cookies = resp.headers.getall('Set-Cookie')
 
-        assert f' {SLOAN_DATA}=False; Path=/' in cookies
-        assert f' {SLOAN_PREREG}=False; Path=/' in cookies
-        assert f' {SLOAN_COI}=False; Path=/' in cookies
+        assert f' {SLOAN_COI_DISPLAY}=False; Path=/' in cookies
+        assert f' {SLOAN_DATA_DISPLAY}=False; Path=/' in cookies
+        assert f' {SLOAN_PREREG_DISPLAY}=False; Path=/' in cookies
 
     @pytest.mark.parametrize('reffer_url, expected_provider_id', [
         (f'{DOMAIN}preprints', 'osf'),
@@ -158,19 +164,19 @@ class TestSloanStudyWaffling:
 
         tags = user.all_tags.all().values_list('name', flat=True)
 
+        assert SLOAN_COI in tags
         assert SLOAN_DATA in tags
         assert SLOAN_PREREG in tags
-        assert SLOAN_COI in tags
 
-        assert SLOAN_DATA in resp.json['meta']['active_flags']
-        assert SLOAN_PREREG in resp.json['meta']['active_flags']
-        assert SLOAN_COI in resp.json['meta']['active_flags']
+        assert SLOAN_COI_DISPLAY in resp.json['meta']['active_flags']
+        assert SLOAN_DATA_DISPLAY in resp.json['meta']['active_flags']
+        assert SLOAN_PREREG_DISPLAY in resp.json['meta']['active_flags']
 
         cookies = resp.headers.getall('Set-Cookie')
 
-        assert f' {SLOAN_DATA}=True; Path=/' in cookies
-        assert f' {SLOAN_PREREG}=True; Path=/' in cookies
-        assert f' {SLOAN_COI}=True; Path=/' in cookies
+        assert f' {SLOAN_COI_DISPLAY}=True; Path=/' in cookies
+        assert f' {SLOAN_DATA_DISPLAY}=True; Path=/' in cookies
+        assert f' {SLOAN_PREREG_DISPLAY}=True; Path=/' in cookies
 
     @pytest.mark.enable_quickfiles_creation
     def test_unauth_user_logs_in(self, app, user, preprint):
@@ -178,17 +184,17 @@ class TestSloanStudyWaffling:
         user.add_system_tag(SLOAN_PREREG)
 
         cookies = {
-            SLOAN_COI: 'False',
-            SLOAN_DATA: 'True',
+            SLOAN_COI_DISPLAY: 'False',
+            SLOAN_DATA_DISPLAY: 'True',
         }
 
         headers = {'Referer': preprint.absolute_url}
         resp = app.get('/v2/', auth=user.auth, headers=headers, cookies=cookies)
 
-        assert SLOAN_COI in resp.json['meta']['active_flags']
-        assert SLOAN_PREREG in resp.json['meta']['active_flags']
+        assert SLOAN_COI_DISPLAY in resp.json['meta']['active_flags']
+        assert SLOAN_PREREG_DISPLAY in resp.json['meta']['active_flags']
 
         cookies = resp.headers.getall('Set-Cookie')
 
-        assert f' {SLOAN_COI}=True; Path=/' in cookies
-        assert f' {SLOAN_PREREG}=True; Path=/' in cookies
+        assert f' {SLOAN_COI_DISPLAY}=True; Path=/' in cookies
+        assert f' {SLOAN_PREREG_DISPLAY}=True; Path=/' in cookies

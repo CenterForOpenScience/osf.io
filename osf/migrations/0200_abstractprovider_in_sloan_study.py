@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0197_add_ab_testing_home_page_hero_text_version_b_flag'),
+        ('osf', '0199_draft_node_permissions'),
     ]
 
     operations = [
