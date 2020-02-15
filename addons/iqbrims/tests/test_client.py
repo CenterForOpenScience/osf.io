@@ -76,6 +76,7 @@ class TestIQBRIMSClient(OsfTestCase):
             assert_equal(len(mkreq.mock_calls), 2)
             name, args, kwargs = mkreq.mock_calls[1]
             assert_equal(args, ('PATCH', 'https://www.googleapis.com/drive/v3/files/fileid123/permissions/permid456'))
+            assert_equal(kwargs['headers'], {'Content-Type': 'application/json'})
             assert_equal(kwargs['data'], '{"role": "writer"}')
 
     def test_revoke_access_from_anyone_no_access(self):
@@ -107,6 +108,7 @@ class TestIQBRIMSClient(OsfTestCase):
             assert_equal(len(mkreq.mock_calls), 2)
             name, args, kwargs = mkreq.mock_calls[1]
             assert_equal(args, ('PATCH', 'https://www.googleapis.com/drive/v3/files/fileid123/permissions/permid456'))
+            assert_equal(kwargs['headers'], {'Content-Type': 'application/json'})
             assert_equal(kwargs['data'], '{"role": "reader"}')
 
 

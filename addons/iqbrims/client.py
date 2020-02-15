@@ -83,6 +83,9 @@ class IQBRIMSClient(BaseClient):
                     'PATCH',
                     self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
                     file_id, 'permissions', p['id']),
+                    headers={
+                        'Content-Type': 'application/json',
+                    },
                     data=json.dumps({
                         'role': 'writer',
                     }),
@@ -125,6 +128,9 @@ class IQBRIMSClient(BaseClient):
                     'PATCH',
                     self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
                     file_id, 'permissions', p['id']),
+                    headers={
+                        'Content-Type': 'application/json',
+                    },
                     data=json.dumps({
                         'role': 'reader',
                     }),
