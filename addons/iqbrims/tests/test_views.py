@@ -1379,6 +1379,85 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['comment'], 'C1234')
 
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    @mock.patch.object(IQBRIMSClient, 'folders')
+    @mock.patch.object(IQBRIMSClient, 'files')
+    @mock.patch.object(IQBRIMSClient, 'revoke_access_from_anyone')
+    def test_close_index_all(self, mock_revoke_access_from_anyone,
+                             mock_files, mock_folders,
+                             mock_get_management_node,
+                             mock_workflow_user_settings):
+        management_project = ProjectFactory()
+        management_project.add_addon('googledrive', auth=None)
+        gdsettings = management_project.get_addon('googledrive')
+        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.save()
+        management_project.add_addon('iqbrims', auth=None)
+        mock_get_management_node.return_value = management_project
+        mock_folders.return_value = [{'id': 'rmfolderid123',
+                                      'title': u'生データ'}]
+        mock_files.return_value = [{'id': 'fileid123', 'title': 'Raw Files'}]
+        user_settings = {}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.folder_path = 'testgdpath/iqb123/'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_close_index')
+        res = self.app.delete(url, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, {'status': 'complete'})
+        mock_revoke_access_from_anyone.assert_called_once()
+        name, args, kwargs = mock_revoke_access_from_anyone.mock_calls[0]
+        assert_equal(args, ('fileid123',))
+        assert_equal(kwargs, {'drop_all': 1})
+
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    @mock.patch.object(IQBRIMSClient, 'folders')
+    @mock.patch.object(IQBRIMSClient, 'files')
+    @mock.patch.object(IQBRIMSClient, 'revoke_access_from_anyone')
+    def test_close_index_read(self, mock_revoke_access_from_anyone,
+                              mock_files, mock_folders,
+                              mock_get_management_node,
+                              mock_workflow_user_settings):
+        management_project = ProjectFactory()
+        management_project.add_addon('googledrive', auth=None)
+        gdsettings = management_project.get_addon('googledrive')
+        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.save()
+        management_project.add_addon('iqbrims', auth=None)
+        mock_get_management_node.return_value = management_project
+        mock_folders.return_value = [{'id': 'rmfolderid123',
+                                      'title': u'生データ'}]
+        mock_files.return_value = [{'id': 'fileid123', 'title': 'Raw Files'}]
+        user_settings = {}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.folder_path = 'testgdpath/iqb123/'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_close_index')
+        res = self.app.delete(url + '?all=0', headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, {'status': 'complete'})
+        name, args, kwargs = mock_revoke_access_from_anyone.mock_calls[0]
+        assert_equal(args, ('fileid123',))
+        assert_equal(kwargs, {'drop_all': 0})
+
 
 class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
 

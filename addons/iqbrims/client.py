@@ -83,7 +83,7 @@ class IQBRIMSClient(BaseClient):
         )
         return res.json()
 
-    def revoke_access_from_anyone(self, file_id):
+    def revoke_access_from_anyone(self, file_id, drop_all=True):
         res = self._make_request(
             'GET',
             self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
@@ -95,14 +95,27 @@ class IQBRIMSClient(BaseClient):
         permissions = [p
                        for p in permissions
                        if 'type' in p and p['type'] == 'anyone']
-        for p in permissions:
-            res = self._make_request(
-                'DELETE',
-                self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
-                file_id, 'permissions', p['id']),
-                expects=(200, ),
-                throws=HTTPError(401)
-            )
+        if not drop_all:
+            for p in permissions:
+                res = self._make_request(
+                    'PATCH',
+                    self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
+                    file_id, 'permissions', p['id']),
+                    data=json.dumps({
+                        'role': 'reader',
+                    }),
+                    expects=(200, ),
+                    throws=HTTPError(401)
+                )
+        else:
+            for p in permissions:
+                res = self._make_request(
+                    'DELETE',
+                    self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
+                    file_id, 'permissions', p['id']),
+                    expects=(200, ),
+                    throws=HTTPError(401)
+                )
         return permissions
 
     def get_folder_info(self, folder_id):

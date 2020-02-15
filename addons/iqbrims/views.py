@@ -520,6 +520,7 @@ def iqbrims_create_filelist(**kwargs):
 @must_have_addon(SHORT_NAME, 'node')
 @must_have_valid_hash()
 def iqbrims_close_index(**kwargs):
+    drop_all = int(request.args.get('all', default='1'))
     node = kwargs['node'] or kwargs['project']
     iqbrims = node.get_addon('iqbrims')
     folder_name = REVIEW_FOLDERS['raw']
@@ -536,7 +537,7 @@ def iqbrims_close_index(**kwargs):
     logger.debug(u'Result files: {}'.format([f['title'] for f in files]))
     if len(files) == 0:
         raise HTTPError(404)
-    result = client.revoke_access_from_anyone(files[0]['id'])
+    result = client.revoke_access_from_anyone(files[0]['id'], drop_all=drop_all)
     logger.info('Revoke access: {}'.format(result))
     return {'status': 'complete'}
 
