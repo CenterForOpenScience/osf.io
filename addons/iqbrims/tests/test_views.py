@@ -963,11 +963,13 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
     @mock.patch.object(IQBRIMSClient, 'files')
+    @mock.patch.object(IQBRIMSClient, 'grant_access_from_anyone')
     @mock.patch.object(SpreadsheetClient, 'sheets')
     @mock.patch.object(SpreadsheetClient, 'get_column_values')
     @mock.patch.object(SpreadsheetClient, 'update_row')
     def test_reject_index_storage(self, mock_update_row,
                                   mock_get_column_values, mock_sheets,
+                                  mock_grant_access_from_anyone,
                                   mock_files, mock_folders,
                                   mock_get_management_node):
         management_project = ProjectFactory()
@@ -1004,6 +1006,9 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                 'root_folder': 'iqb123/'})
         mock_update_row.assert_called_once()
         assert_equal(mock_update_row.call_args, (('Management', ['FALSE'], 0),))
+        mock_grant_access_from_anyone.assert_called_once()
+        assert_equal(mock_grant_access_from_anyone.call_args,
+                     (('rmfileid123',),))
 
     @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
     @mock.patch.object(iqbrims_views, '_get_management_node')

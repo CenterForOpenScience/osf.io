@@ -728,6 +728,9 @@ def _iqbrims_filled_index(access_token, f):
     return len(procs) == 0
 
 def _iqbrims_reset_index(access_token, f):
+    client = IQBRIMSClient(access_token)
+    client.grant_access_from_anyone(f['id'])
+
     sclient = SpreadsheetClient(f['id'], access_token)
     sheets = [s
               for s in sclient.sheets()

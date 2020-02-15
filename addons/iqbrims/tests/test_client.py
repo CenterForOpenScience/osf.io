@@ -50,6 +50,34 @@ class TestIQBRIMSClient(OsfTestCase):
             assert_equal(args, ('POST', 'https://www.googleapis.com/upload/drive/v2/files/fileid456?uploadType=media'))
             assert_equal(kwargs['data'], 'TEST')
 
+    def test_grant_access_from_anyone_first(self):
+        client = IQBRIMSClient('0001')
+        dummyresp = {'permissions': []}
+        with mock.patch.object(client, '_make_request',
+                               return_value=MockResponse(json.dumps(dummyresp),
+                                                         200)) as mkreq:
+            client.grant_access_from_anyone('fileid123')
+            assert_equal(len(mkreq.mock_calls), 2)
+            name, args, kwargs = mkreq.mock_calls[1]
+            assert_equal(args, ('POST', 'https://www.googleapis.com/drive/v3/files/fileid123/permissions'))
+            assert_equal(kwargs['data'], '{"type": "anyone", "role": "writer", "allowFileDiscovery": false}')
+
+    def test_grant_access_from_anyone_second(self):
+        client = IQBRIMSClient('0001')
+        dummyresp = {'permissions': [{
+          'id': 'permid456',
+          'type': 'anyone',
+          'role': 'reader',
+        }]}
+        with mock.patch.object(client, '_make_request',
+                               return_value=MockResponse(json.dumps(dummyresp),
+                                                         200)) as mkreq:
+            client.grant_access_from_anyone('fileid123')
+            assert_equal(len(mkreq.mock_calls), 2)
+            name, args, kwargs = mkreq.mock_calls[1]
+            assert_equal(args, ('PATCH', 'https://www.googleapis.com/drive/v3/files/fileid123/permissions/permid456'))
+            assert_equal(kwargs['data'], '{"role": "writer"}')
+
     def test_revoke_access_from_anyone_no_access(self):
         client = IQBRIMSClient('0001')
         dummyresp = {'permissions': [{

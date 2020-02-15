@@ -67,21 +67,45 @@ class IQBRIMSClient(BaseClient):
 
     def grant_access_from_anyone(self, file_id):
         res = self._make_request(
-            'POST',
+            'GET',
             self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
             file_id, 'permissions'),
-            headers={
-                'Content-Type': 'application/json',
-            },
-            data=json.dumps({
-                'role': 'writer',
-                'type': 'anyone',
-                'allowFileDiscovery': False,
-            }),
             expects=(200, ),
             throws=HTTPError(401)
         )
-        return res.json()
+        permissions = res.json()['permissions']
+        permissions = [p
+                       for p in permissions
+                       if 'type' in p and p['type'] == 'anyone']
+        if len(permissions) > 0:
+            for p in permissions:
+                res = self._make_request(
+                    'PATCH',
+                    self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
+                    file_id, 'permissions', p['id']),
+                    data=json.dumps({
+                        'role': 'writer',
+                    }),
+                    expects=(200, ),
+                    throws=HTTPError(401)
+                )
+        else:
+            res = self._make_request(
+                'POST',
+                self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
+                file_id, 'permissions'),
+                headers={
+                    'Content-Type': 'application/json',
+                },
+                data=json.dumps({
+                    'role': 'writer',
+                    'type': 'anyone',
+                    'allowFileDiscovery': False,
+                }),
+                expects=(200, ),
+                throws=HTTPError(401)
+            )
+            return res.json()
 
     def revoke_access_from_anyone(self, file_id, drop_all=True):
         res = self._make_request(
