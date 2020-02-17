@@ -85,7 +85,7 @@
 
                             <div class="pull-right">
                                 <!-- Version Picker -->
-                                <span>Wiki Version:</span>
+                                <span>${_("Wiki Version:")}</span>
                                 <div style="display: inline-block">
                                 <select class="form-control" data-bind="value:viewVersion" id="viewVersionSelect">
                                     % if user['can_edit_wiki_body']:
@@ -94,7 +94,7 @@
                                     % if len(versions) > 0:
                                         <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>(Current) ${versions[0]['user_fullname']}: ${versions[0]['date']}</option>
                                     % else:
-                                        <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
+                                        <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>${_("Current")}</option>
                                     % endif
                                     % if len(versions) > 1:
                                         % for version in versions[1:]:

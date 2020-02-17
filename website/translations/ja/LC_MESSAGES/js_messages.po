@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-14 17:03+0900\n"
+"POT-Creation-Date: 2020-02-14 19:50+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -23,7 +23,9 @@ msgid ""
 "Because you have not configured the {addon} add-on, your authentication "
 "will not be transferred to the forked {category}. You may authorize and "
 "configure the {addon} add-on in the new fork on the settings page."
-msgstr "{addon}アドオンを設定していないため、認証は分岐した{category}に転送されません。 設定ページの新しいフォークで{addon}アドオンを許可および設定できます。"
+msgstr ""
+"{addon}アドオンを設定していないため、認証は分岐した{category}に転送されません。 "
+"設定ページの新しいフォークで{addon}アドオンを許可および設定できます。"
 
 #: addons/wiki/static/WikiEditor.js:88
 msgid "Live editing mode"
@@ -436,14 +438,6 @@ msgstr ""
 #: api/base/authentication/drf.py:230
 msgid "Could not find the user associated with this token"
 msgstr ""
-
-#: website/language.py:192
-msgid "Duplicate template"
-msgstr "テンプレートをコピー"
-
-#: website/language.py:198
-msgid "Fork this Project"
-msgstr "このプロジェクトをフォーク"
 
 #: website/project/__init__.py:64
 msgid "Bookmarks"
@@ -1729,10 +1723,11 @@ msgid "Delete Folder"
 msgstr "フォルダを削除"
 
 #: website/static/js/fangorn.js:1977 website/static/js/filepage/index.js:524
+#: website/static/js/filepage/revisions.js:114
 msgid "Download"
 msgstr "ダウンロード"
 
-#: website/static/js/fangorn.js:1987
+#: website/static/js/fangorn.js:1987 website/static/js/filepage/index.js:546
 msgid "View"
 msgstr "プレビュー"
 
@@ -2230,7 +2225,7 @@ msgstr "提出"
 msgid "Location"
 msgstr "ロケーション"
 
-#: website/static/js/meetings.js:38
+#: website/static/js/filepage/revisions.js:112 website/static/js/meetings.js:38
 msgid "Date"
 msgstr "日付"
 
@@ -2340,6 +2335,10 @@ msgstr "コレクションを読み込めませんでした。"
 #: website/static/js/myProjects.js:969
 msgid "Please reload the page."
 msgstr "ページをリロードしてください。"
+
+#: website/static/js/myProjects.js:1111
+msgid "My Projects "
+msgstr "マイプロジェクト"
 
 #: website/static/js/myProjects.js:1112
 msgid "Browse and organize all your projects"
@@ -3162,6 +3161,12 @@ msgstr "一人のコントリビュータ"
 msgid "Contributors"
 msgstr "コントリビュータ"
 
+#: website/static/js/project-organizer.js:415
+msgid ""
+"input.form-control[placeholder=\"Filter displayed "
+"projects\"][type=\"text\"]"
+msgstr "input.form-control[placeholder=\"表示されたプロジェクトをフィルターする\"][type=\"text\"]"
+
 #: website/static/js/project.js:30
 msgid "<h4>Are you sure you want to fork this project?</h4>"
 msgstr "<h4>このプロジェクトをフォークしてもよろしいですか？</h4>"
@@ -3588,18 +3593,40 @@ msgstr "打刻"
 msgid "Toggle view: "
 msgstr "トグルビュー："
 
+#: website/static/js/filepage/index.js:569
+#: website/static/js/filepage/revisions.js:176
+msgid "Revisions"
+msgstr "バージョン管理"
+
 #: website/static/js/filepage/revisions.js:75
 #: website/static/js/filepage/revisions.js:76
 msgid "Unable to fetch versions"
 msgstr "バージョンを取得できません"
 
+#: website/static/js/filepage/revisions.js:111
+msgid "Version ID"
+msgstr "バージョンID"
+
+#: website/static/js/filepage/revisions.js:113
+msgid "User"
+msgstr "ユーザ名"
+
+#: website/static/js/filepage/revisions.js:116
+msgid ""
+".fa.fa-question-circle[data-content=\"MD5 is an algorithm used to verify "
+"data integrity.][rel=\"popover\"]"
+msgstr ".fa.fa-question-circle[data-content=\"MD5は、データの整合性を検証するために使用されるアルゴリズムです。][rel=\"popover\"]"
+
+#: website/static/js/filepage/revisions.js:119
+msgid ""
+".fa.fa-question-circle[data-content=\"SHA-2 is a cryptographic hash "
+"function designed by the NSA used to verify data "
+"integrity.][rel=\"popover\"]"
+msgstr ".fa.fa-question-circle[data-content=\"SHA-2は、データの整合性を検証するために使用されるNSAによって設計された暗号化ハッシュ関数です。][rel=\"popover\"]"
+
 #: website/static/js/filepage/revisions.js:136
 msgid "Anonymous Contributor"
 msgstr "匿名のコントリビュータ"
-
-#: website/static/js/filepage/revisions.js:176
-msgid "Revisions"
-msgstr "バージョン管理"
 
 #: website/static/js/filepage/util.js:38
 msgid " Loading... "
@@ -3900,19 +3927,4 @@ msgstr "%1$sに報告してください"
 #: website/static/js/pages/wiki-edit-page.js:112
 msgid "Could not GET wiki menu pages"
 msgstr "Wikiメニューページを取得できませんでした"
-
-#~ msgid "Modify banner"
-#~ msgstr "バナーを変更"
-
-#~ msgid ""
-#~ "Are you sure you want to "
-#~ "disconnect the %1$s account "
-#~ "<strong>%2$s</strong>?<br>"
-#~ msgstr "%1$sアカウント<strong>%2$s</ strong>を切断してもよろしいですか？<br>"
-
-#~ msgid ""
-#~ "This will revoke access to %1$s "
-#~ "for all projects using this "
-#~ "account.<br><br>"
-#~ msgstr "これにより、このアカウントを使用するすべてのプロジェクトの%1$sへのアクセスが取り消されます。<br><br>"
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-14 17:31+0900\n"
+"POT-Creation-Date: 2020-02-17 11:50+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -89,9 +89,12 @@ msgstr ""
 #: addons/zotero/templates/zotero_node_settings.mako:85
 #: addons/zotero/templates/zotero_node_settings.mako:129
 #: website/templates/claim_account.mako:112
+#: website/templates/include/profile/jobs.mako:117
 #: website/templates/include/profile/jobs.mako:120
 #: website/templates/include/profile/names.mako:79
+#: website/templates/include/profile/schools.mako:117
 #: website/templates/include/profile/schools.mako:120
+#: website/templates/include/profile/social.mako:146
 #: website/templates/profile/oauth_app_detail.mako:88
 #: website/templates/profile/personal_tokens_detail.mako:55
 #: website/templates/project/addon/node_settings_default.mako:74
@@ -788,7 +791,9 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:2 website/templates/project/settings.mako:37
+#: addons/wiki/templates/edit.mako:2
+#: website/templates/include/comment_pane_template.mako:19
+#: website/templates/project/settings.mako:37
 #: website/templates/project/settings.mako:258
 #: website/templates/search.mako:370
 msgid "Wiki"
@@ -806,8 +811,16 @@ msgstr ""
 msgid "View"
 msgstr ""
 
+#: addons/wiki/templates/edit.mako:88
+msgid "Wiki Version:"
+msgstr ""
+
 #: addons/wiki/templates/edit.mako:92
 msgid "Preview"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:97 addons/wiki/templates/edit.mako:220
+msgid "Current"
 msgstr ""
 
 #: addons/wiki/templates/edit.mako:117
@@ -825,10 +838,6 @@ msgstr ""
 
 #: addons/wiki/templates/edit.mako:212
 msgid "Compare"
-msgstr ""
-
-#: addons/wiki/templates/edit.mako:220
-msgid "Current"
 msgstr ""
 
 #: addons/wiki/templates/edit.mako:257
@@ -1163,7 +1172,9 @@ msgstr ""
 msgid "My Quick Files"
 msgstr ""
 
-#: website/templates/nav.mako:54 website/templates/search.mako:2
+#: website/templates/nav.mako:54
+#: website/templates/project/modal_add_contributor.mako:22
+#: website/templates/search.mako:2
 msgid "Search"
 msgstr ""
 
@@ -1311,7 +1322,7 @@ msgstr ""
 #, python-format
 msgid ""
 "This account has been merged with <a "
-"%(class_href)s%(profile)s%(q_mark)s>%(profile2)"
+"%(class_href)s%(profile)s%(q_mark)s>%(profile2)</a>"
 msgstr ""
 
 #: website/templates/profile.mako:43
@@ -1435,6 +1446,10 @@ msgstr ""
 msgid "(Preprint File)"
 msgstr ""
 
+#: website/templates/search.mako:241
+msgid " Contributors:"
+msgstr ""
+
 #: website/templates/search.mako:263
 msgid "Affiliated institutions:"
 msgstr ""
@@ -1471,6 +1486,7 @@ msgstr ""
 msgid "(<span %(class_data_bind)s>Withdrawn </span>Registration)"
 msgstr ""
 
+#: website/templates/include/comment_pane_template.mako:18
 #: website/templates/project/files.mako:2
 #: website/templates/project/files.mako:5
 #: website/templates/project/project.mako:441
@@ -1501,6 +1517,16 @@ msgid ""
 "<p>Search uses the <a %(href)s>Lucene search syntax</a>.This gives you "
 "many options, but can be very simple as well. Examples of valid searches "
 "include:</p>"
+msgstr ""
+
+#: website/templates/include/comment_pane_template.mako:18
+#: website/templates/include/comment_pane_template.mako:19
+#: website/templates/include/comment_pane_template.mako:20
+msgid "Discussion"
+msgstr ""
+
+#: website/templates/include/comment_pane_template.mako:26
+msgid "Add a comment"
 msgstr ""
 
 #: website/templates/include/profile/jobs.mako:19
@@ -1583,7 +1609,13 @@ msgstr ""
 #: website/templates/include/profile/jobs.mako:114
 #: website/templates/include/profile/names.mako:73
 #: website/templates/include/profile/schools.mako:114
+#: website/templates/include/profile/social.mako:140
 msgid "Discard changes"
+msgstr ""
+
+#: website/templates/include/profile/jobs.mako:117
+#: website/templates/include/profile/schools.mako:117
+msgid "Saving"
 msgstr ""
 
 #: website/templates/include/profile/jobs.mako:136
@@ -2319,6 +2351,10 @@ msgstr ""
 #: website/templates/project/files.mako:8
 #: website/templates/project/project.mako:449
 msgid "Click on a storage provider or drag and drop to upload"
+msgstr ""
+
+#: website/templates/project/modal_add_contributor.mako:20
+msgid "Search by name or user profile information"
 msgstr ""
 
 #: website/templates/project/modal_add_contributor.mako:25
@@ -3160,6 +3196,10 @@ msgstr ""
 
 #: website/templates/project/timestamp.mako:150
 msgid "Timestamp Verification"
+msgstr ""
+
+#: website/templates/project/view_file.mako:19
+msgid "Version:"
 msgstr ""
 
 #: website/templates/project/view_file.mako:34

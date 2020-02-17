@@ -17,9 +17,9 @@
                                 <div class="input-group m-b-sm">
                                     <input class='form-control'
                                             data-bind="value:query"
-                                            placeholder='Search by name or user profile information' autofocus/>
+                                            placeholder='${_("Search by name or user profile information")}' autofocus/>
                                     <span class="input-group-btn">
-                                        <input type="submit" value="Search" class="btn btn-default">
+                                        <input type="submit" value='${_("Search")}' class="btn btn-default">
                                     </span>
                                 </div>
                                 <a href="#" data-bind="click: gotoInviteFromExplicitLink">${_("Invite new contributor by e-mail")}</a>

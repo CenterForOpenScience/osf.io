@@ -137,13 +137,13 @@
                         type="button"
                         class="btn btn-default"
                         data-bind="click: cancel"
-                    >Discard changes</button>
+                    >${_("Discard changes")}</button>
 
                 <button
                         data-bind="disable: saving(), text: saving() ? 'Saving' : 'Save'"
                         type="submit"
                         class="btn btn-success"
-                    >Save</button>
+                    >${_("Save")}</button>
             </div>
 
             <!-- Flashed Messages -->

@@ -15,15 +15,15 @@
                 <i class="fa fa-times"></i>
             </button>
             <h4>
-                <span data-bind="if: page() == 'files'">Files | <span data-bind="text: pageTitle"></span> Discussion</span>
-                <span data-bind="if: page() == 'wiki'">Wiki | <span data-bind="text: pageTitle"></span> Discussion</span>
-                <span data-bind="if: page() == 'node'"><span data-bind="text: pageTitle"></span> | Discussion</span>
+                <span data-bind="if: page() == 'files'">${_("Files")} | <span data-bind="text: pageTitle"></span> ${_("Discussion")}</span>
+                <span data-bind="if: page() == 'wiki'">${_("Wiki")} | <span data-bind="text: pageTitle"></span> ${_("Discussion")}</span>
+                <span data-bind="if: page() == 'node'"><span data-bind="text: pageTitle"></span> | ${_("Discussion")}</span>
             </h4>
 
             <div data-bind="if: canComment" style="margin-top: 20px">
                 <form class="form">
                     <div class="form-group">
-                        <div class="form-control atwho-input comment-box" placeholder="Add a comment" data-bind="editableHTML: {observable: replyContent, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
+                        <div class="form-control atwho-input comment-box" placeholder='${_("Add a comment")}' data-bind="editableHTML: {observable: replyContent, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
                         <div data-bind="visible: replyNotEmpty, text: counter, css: counterColor" class="pull-right label counter-comment"></div>
                     </div>
                     <div data-bind="if: replyNotEmpty" class="form-group">

@@ -543,7 +543,7 @@ var FileViewPage = {
                             History.pushState(state, 'GakuNin RDM | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'revision'));
                         }
                     }
-                }, 'View'), editButton())
+                }, _('View')), editButton())
             ),
             m('.btn-group.m-t-xs', [
                 m('button.btn.btn-sm' + (ctrl.revisions.selected ? '.btn-primary': '.btn-default'), {onclick: function(){
@@ -566,7 +566,7 @@ var FileViewPage = {
                         ctrl.revisions.selected = false;
                         History.pushState(state, 'GakuNin RDM | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'view'));
                     }
-                }}, 'Revisions')
+                }}, _('Revisions'))
             ])
         ]));
 

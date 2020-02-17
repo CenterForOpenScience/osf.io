@@ -238,7 +238,7 @@
 
         <!-- ko if: contributors.length > 0 -->
         <p>
-            <strong>Contributors:</strong> <span data-bind="foreach: contributors">
+            <strong>${_(" Contributors:")}</strong> <span data-bind="foreach: contributors">
                 <!-- ko if: url -->
                     <a data-bind="attr: {href: url}, text: fullname"></a>
                 <!-- /ko-->

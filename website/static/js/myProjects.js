@@ -1108,7 +1108,7 @@ var MyProjects = {
         return [
             !ctrl.institutionId ? m('.dashboard-header', m('.row', [
                 m('.col-xs-8', m('h3', [
-                    'My Projects ',
+                    _('My Projects '),
                     m('small.hidden-xs', _('Browse and organize all your projects'))
                 ])),
                 m('.col-xs-4.p-sm', m('.pull-right', m.component(AddProject, {

@@ -20,7 +20,7 @@
 
 <%def name="content()">
 % if profile['is_merged']:
-<div class="alert alert-info">${_("This account has been merged with <a %(class_href)s%(profile)s%(q_mark)s>%(profile2)") % dict(class_href='class="alert-link" href="',profile=h(profile['merged_by']['url']),q_mark='"',profile2=h(profile['merged_by']['absolute_url'])) | n}</a>
+<div class="alert alert-info">${_("This account has been merged with <a %(class_href)s%(profile)s%(q_mark)s>%(profile2)</a>") % dict(class_href='class="alert-link" href="',profile=h(profile['merged_by']['url']),q_mark='"',profile2=h(profile['merged_by']['absolute_url'])) | n}
 </div>
 % endif
 
@@ -67,7 +67,7 @@
         </table>
         <h2>
            ${profile['activity_points'] or _("No")} ${ngettext('activity point', 'activity points', profile['activity_points'])}<br />
-           ${profile["number_projects"]} project${ngettext(' ', 's', profile["number_projects"])}<!-- , ${profile["number_public_projects"]} public -->
+           ${profile["number_projects"]} _("project")${ngettext(' ', 's', profile["number_projects"])}<!-- , ${profile["number_public_projects"]} public -->
         </h2>
         <h2>
             ${_("Usage of ")}${ 'NII' if profile['quota']['is_nii_storage'] else _('Institutional') }${_(" storage")}<br />
