@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-17 11:50+0900\n"
+"POT-Creation-Date: 2020-02-17 14:00+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2338,6 +2338,14 @@ msgstr ""
 #: website/templates/project/contributors.mako:186
 #: website/templates/project/modal_add_contributor.mako:227
 msgid "Permissions"
+msgstr ""
+
+#: website/templates/project/contributors.mako:189
+msgid "Permission Information"
+msgstr ""
+
+#: website/templates/project/contributors.mako:199
+msgid "Bibliographic Contributor Information"
 msgstr ""
 
 #: website/templates/project/contributors.mako:396

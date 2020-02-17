@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-17 11:50+0900\n"
+"POT-Creation-Date: 2020-02-17 14:00+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -850,7 +850,7 @@ msgstr "プレビュー"
 
 #: addons/wiki/templates/edit.mako:97 addons/wiki/templates/edit.mako:220
 msgid "Current"
-msgstr "現在"
+msgstr "最新"
 
 #: addons/wiki/templates/edit.mako:117
 #: website/templates/util/render_addon_widget.mako:24
@@ -2411,6 +2411,14 @@ msgstr "このプロジェクトを共有するリンクを作成して、リン
 msgid "Permissions"
 msgstr "許可"
 
+#: website/templates/project/contributors.mako:189
+msgid "Permission Information"
+msgstr "権限管理の情報"
+
+#: website/templates/project/contributors.mako:199
+msgid "Bibliographic Contributor Information"
+msgstr "目録表示コントリビュータ"
+
 #: website/templates/project/contributors.mako:396
 msgid "Discard Changes"
 msgstr "変更を破棄"
@@ -2750,7 +2758,7 @@ msgstr "カテゴリー:"
 
 #: website/templates/project/project.mako:282
 msgid "License:"
-msgstr "ライセンス"
+msgstr "ライセンス："
 
 #: website/templates/project/project.mako:283
 #, python-format
@@ -3449,8 +3457,6 @@ msgstr "論文登録申請"
 msgid "Image Scan Service"
 msgstr "画像スキャン依頼"
 
-#~ msgid ""
-#~ "This account has been merged with "
-#~ "<a %(class_href)s%(profile)s%(q_mark)s>%(profile2)"
-#~ msgstr "\"このアカウントは<a %(class_href)s%(profile)s%(q_mark)s>%(profile2)と統合されまし"
-
+#: website/templates/addons.mako:225
+msgid "Citations"
+msgstr "文献管理"

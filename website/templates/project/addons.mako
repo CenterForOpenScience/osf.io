@@ -59,7 +59,7 @@
                                                 </li>
                                                 % for category in addon_categories:
                                                     <li data-toggle="tab" name="${category}" class="addon-categories">
-                                                        <a href="#${category}" name="${category}">${category.capitalize()}
+                                                        <a href="#${category}" name="${category}">${_(category.capitalize())}
                                                             <span class="fa fa-caret-right pull-right"></span>
                                                         </a>
                                                     </li>

@@ -54,7 +54,7 @@
         <table class="table table-plain">
             % if profile.get('date_registered'):
                 <tr>
-                    <td>${_("Member&nbsp;Since")}</td>
+                    <td>${_("Member&nbsp;Since") | n}</td>
                     <td>${profile['date_registered']}</td>
                 </tr>
             % endif

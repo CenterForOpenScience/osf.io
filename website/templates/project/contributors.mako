@@ -186,7 +186,7 @@
                 ${_("Permissions")}
                 <i class="fa fa-question-circle permission-info"
                     data-toggle="popover"
-                    data-title="Permission Information"
+                    data-title="${_('Permission Information')}"
                     data-container="body"
                     data-placement="right"
                     data-html="true"
@@ -196,7 +196,7 @@
                 ${_("Bibliographic Contributor")}
                 <i class="fa fa-question-circle visibility-info"
                     data-toggle="popover"
-                    data-title="Bibliographic Contributor Information"
+                    data-title="${_('Bibliographic Contributor Information')}"
                     data-container="body"
                     data-placement="right"
                     data-html="true"

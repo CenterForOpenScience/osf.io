@@ -1788,7 +1788,7 @@ msgstr "フィルタ"
 
 #: website/static/js/fangorn.js:2250
 msgid "Select rows:"
-msgstr "行を選択"
+msgstr "行を選択："
 
 #: website/static/js/fangorn.js:2250
 msgid ""
@@ -1801,7 +1801,7 @@ msgstr ""
 
 #: website/static/js/fangorn.js:2251
 msgid "Open files:"
-msgstr "ファイルを開く"
+msgstr "ファイルを開く："
 
 #: website/static/js/fangorn.js:2251
 msgid " Click a file name to go to view the file in the GakuNin RDM."
@@ -1809,7 +1809,7 @@ msgstr "ファイル名をクリックして、GakuNin RDMでファイルを表�
 
 #: website/static/js/fangorn.js:2252
 msgid "Open files in new tab:"
-msgstr "新しいタブでファイルを開く:"
+msgstr "新しいタブでファイルを開く："
 
 #: website/static/js/fangorn.js:2252
 msgid ""
@@ -1819,7 +1819,7 @@ msgstr "コマンド（WindowsではCtrl）を押し、ファイル名をクリ�
 
 #: website/static/js/fangorn.js:2253
 msgid "Download as zip:"
-msgstr "ZIPでダウンロード"
+msgstr "ZIPでダウンロード："
 
 #: website/static/js/fangorn.js:2253
 msgid ""
@@ -1833,7 +1833,7 @@ msgstr "すべてのストレージアドオンで利用できるわけではあ
 
 #: website/static/js/fangorn.js:2254
 msgid "Copy files:"
-msgstr "ファイルをコピー"
+msgstr "ファイルをコピー："
 
 #: website/static/js/fangorn.js:2254
 msgid ""
@@ -2207,7 +2207,7 @@ msgstr "コンテンツ用"
 
 #: website/static/js/licenses.js:31
 msgid "Code - Permissive:"
-msgstr "コード用 - 自由度(高) or 非コピーレフト"
+msgstr "コード用 - 非コピーレフト"
 
 #: website/static/js/licenses.js:35
 msgid "Code - Copyleft:"
@@ -3718,7 +3718,7 @@ msgstr "これには通常より時間がかかります。<br> ページを再�
 #: website/static/js/pages/file-page.js:23
 #: website/static/js/pages/project-dashboard-page.js:453
 msgid "Add a tag to enhance discoverability"
-msgstr "タグを追加してプロジェクトを発見しやすくする"
+msgstr "タグを追加してプロジェクトまたはファイルを発見しやすくする"
 
 #: website/static/js/pages/file-page.js:28
 msgid "Could not add tag."
