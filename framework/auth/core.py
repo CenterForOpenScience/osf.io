@@ -94,11 +94,16 @@ def _get_current_user():
         except cas.CasHTTPError:
             return None
 
-        return OSFUser.load(
+        user = OSFUser.load(
             cas_auth_response.user,
             select_for_update=check_select_for_update(request)
         ) if cas_auth_response.authenticated else None
 
+        if user and cas_auth_response.attributes.get('department') != user.department:
+            user.department = cas_auth_response.attributes['department']
+            user.save()
+
+        return user
     else:
         return None
 

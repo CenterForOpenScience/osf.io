@@ -8,7 +8,7 @@ import unittest
 from framework.auth import cas
 
 from tests.base import OsfTestCase, fake
-from osf_tests.factories import UserFactory
+from osf_tests.factories import UserFactory, AuthUserFactory, ApiOAuth2PersonalTokenFactory
 
 
 def make_successful_response(user):
@@ -206,9 +206,42 @@ class TestCASClient(OsfTestCase):
         with assert_raises(cas.CasHTTPError):
             res = self.client.revoke_application_tokens(client_id, client_secret)
 
-    @unittest.skip('finish me')
+    @responses.activate
     def test_profile_valid_access_token_returns_cas_response(self):
-        assert 0
+        url = furl.furl(self.base_url)
+        url.path.segments.extend(('oauth2', 'profile',))
+
+        user = AuthUserFactory()
+        token = ApiOAuth2PersonalTokenFactory(owner=user)
+        token.save()
+
+        responses.add(
+            responses.Response(
+                responses.GET,
+                url.url,
+                status=200,
+                json={
+                    'id': user._id,
+                    'attributes': {
+                        'lastName': 'Jenkins',
+                        'firstName': 'Malcolm',
+                        'department': 'Defense'
+                    },
+                    'scope':
+                        ['investment']
+                }
+            )
+        )
+        profile = self.client.profile(token.token_id)
+
+        assert profile.attributes == {
+            'lastName': 'Jenkins',
+            'firstName': 'Malcolm',
+            'department': 'Defense',
+            'accessToken': token.token_id,
+            'accessTokenScope':
+                {'investment'}
+        }
 
     @unittest.skip('finish me')
     def test_get_login_url(self):
