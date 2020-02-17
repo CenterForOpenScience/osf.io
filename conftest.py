@@ -116,16 +116,3 @@ def _test_speedups_disable(request, settings, _test_speedups):
 
     for patcher in patchers:
         patcher.start()
-
-
-@pytest.hookimpl(hookwrapper=True)
-def pytest_runtest_makereport(item):
-    """
-    This function catches CommandError that are caused by merge migration errors which frequently run too long and time
-    out travis's end hook so it can't clean up it's cahce. This immediately kills all tests when merge migration errors
-    happen so that travis can end normally and clean it's cache.
-    """
-    yield
-    for exc in getattr(item, '_prepare_exc', []):
-        if 'Conflicting migrations detected; multiple leaf nodes in the migration graph:' in str(exc):
-            pytest.exit(f'\n\rMigration problems canceling all tests.\n\r\n\r{str(exc)}')

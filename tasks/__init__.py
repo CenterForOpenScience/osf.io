@@ -321,6 +321,8 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     if params:
         params = [params] if isinstance(params, basestring) else params
         args.extend(params)
+
+    args.extend(['-x'])
     retcode = pytest.main(args)
 
     # exit code 5 is all tests skipped which is the same as passing with testmon
