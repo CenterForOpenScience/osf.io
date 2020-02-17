@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-14 19:50+0900\n"
+"POT-Creation-Date: 2020-02-17 15:28+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,6 +22,22 @@ msgid ""
 "Because you have not configured the {addon} add-on, your authentication "
 "will not be transferred to the forked {category}. You may authorize and "
 "configure the {addon} add-on in the new fork on the settings page."
+msgstr ""
+
+#: addons/twofactor/static/twoFactorUserConfig.js:178
+msgid "Enable Two-factor Authentication"
+msgstr ""
+
+#: addons/twofactor/static/twoFactorUserConfig.js:179
+msgid ""
+"Enabling two-factor authentication will not immediately activate this "
+"feature for your account. You will need to follow the steps that appear "
+"below to complete the activation of two-factor authentication for your "
+"account."
+msgstr ""
+
+#: addons/twofactor/static/twoFactorUserConfig.js:187
+msgid "Enable"
 msgstr ""
 
 #: addons/wiki/static/WikiEditor.js:88

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-17 14:00+0900\n"
+"POT-Creation-Date: 2020-02-17 15:22+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1347,6 +1347,10 @@ msgid_plural "activity points"
 msgstr[0] ""
 msgstr[1] ""
 
+#: website/templates/profile.mako:70 website/templates/project/settings.mako:7
+msgid "project"
+msgstr ""
+
 #: website/templates/profile.mako:70
 msgid " "
 msgid_plural "s"
@@ -1365,15 +1369,15 @@ msgstr ""
 msgid " storage"
 msgstr ""
 
-#: website/templates/profile.mako:82 website/templates/profile/settings.mako:39
+#: website/templates/profile.mako:82 website/templates/profile/settings.mako:41
 msgid "Social"
 msgstr ""
 
-#: website/templates/profile.mako:83 website/templates/profile/settings.mako:40
+#: website/templates/profile.mako:83 website/templates/profile/settings.mako:39
 msgid "Employment"
 msgstr ""
 
-#: website/templates/profile.mako:84 website/templates/profile/settings.mako:41
+#: website/templates/profile.mako:84 website/templates/profile/settings.mako:40
 msgid "Education"
 msgstr ""
 
@@ -1671,6 +1675,10 @@ msgstr ""
 msgid "Suffix"
 msgstr ""
 
+#: website/templates/include/profile/names.mako:47
+msgid "Citation preview"
+msgstr ""
+
 #: website/templates/include/profile/names.mako:51
 msgid "Style"
 msgstr ""
@@ -1963,6 +1971,14 @@ msgstr ""
 
 #: website/templates/profile/add_email.mako:92
 msgid "Add an email address below."
+msgstr ""
+
+#: website/templates/profile/add_email.mako:98
+msgid "Email address"
+msgstr ""
+
+#: website/templates/profile/add_email.mako:100
+msgid "Add email"
 msgstr ""
 
 #: website/templates/profile/add_email.mako:257
@@ -2952,6 +2968,11 @@ msgstr ""
 msgid ""
 "This %(nodetype)s is being viewed through a private, view-only link. "
 "Anyone with the link can view this project. Keep the link safe."
+msgstr ""
+
+#: website/templates/project/settings.mako:18
+#: website/templates/project/settings.mako:77
+msgid "node_type"
 msgstr ""
 
 #: website/templates/project/settings.mako:22

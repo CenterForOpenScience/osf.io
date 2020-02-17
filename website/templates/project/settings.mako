@@ -4,7 +4,7 @@
 <div class="page-header visible-xs">
   <h2 class="text-300">${_("Settings")}</h2>
 </div>
-
+<!-- ${_("project")} -->
 <div class="row project-page">
     <!-- Begin left column -->
     <div class="col-md-3 col-xs-12 affix-parent scrollspy">
@@ -15,7 +15,7 @@
                 <ul class="nav nav-stacked nav-pills">
 
                     % if not node['is_registration']:
-                        <li><a href="#configureNodeAnchor">${node['node_type'].capitalize()}</a></li>
+                        <li><a href="#configureNodeAnchor">${_(node['node_type'].capitalize())}</a></li>
                     % endif
 
                     % if storage_flag_is_active:
@@ -74,7 +74,7 @@
                 <div class="panel panel-default">
                     <span id="configureNodeAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
-                        <h3 id="configureNode" class="panel-title">${node['node_type'].capitalize()}</h3>
+                        <h3 id="configureNode" class="panel-title">${_(node['node_type'].capitalize())}</h3>
                     </div>
 
                     <div id="projectSettings" class="panel-body">

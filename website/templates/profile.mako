@@ -67,7 +67,7 @@
         </table>
         <h2>
            ${profile['activity_points'] or _("No")} ${ngettext('activity point', 'activity points', profile['activity_points'])}<br />
-           ${profile["number_projects"]} _("project")${ngettext(' ', 's', profile["number_projects"])}<!-- , ${profile["number_public_projects"]} public -->
+           ${profile["number_projects"]} ${_("project")}${ngettext(' ', 's', profile["number_projects"])}<!-- , ${profile["number_public_projects"]} public -->
         </h2>
         <h2>
             ${_("Usage of ")}${ 'NII' if profile['quota']['is_nii_storage'] else _('Institutional') }${_(" storage")}<br />

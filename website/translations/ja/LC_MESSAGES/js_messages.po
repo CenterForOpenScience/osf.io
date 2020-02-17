@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-14 19:50+0900\n"
+"POT-Creation-Date: 2020-02-17 15:28+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -26,6 +26,22 @@ msgid ""
 msgstr ""
 "{addon}アドオンを設定していないため、認証は分岐した{category}に転送されません。 "
 "設定ページの新しいフォークで{addon}アドオンを許可および設定できます。"
+
+#: addons/twofactor/static/twoFactorUserConfig.js:178
+msgid "Enable Two-factor Authentication"
+msgstr "２要素認証を有効にする"
+
+#: addons/twofactor/static/twoFactorUserConfig.js:179
+msgid ""
+"Enabling two-factor authentication will not immediately activate this "
+"feature for your account. You will need to follow the steps that appear "
+"below to complete the activation of two-factor authentication for your "
+"account."
+msgstr "２要素認証を有効にしても、アカウントのこの機能はすぐには有効になりません。 アカウントの２要素認証のアクティベーションを完了するには、以下に表示される手順に従う必要があります。"
+
+#: addons/twofactor/static/twoFactorUserConfig.js:187
+msgid "Enable"
+msgstr "有効にする"
 
 #: addons/wiki/static/WikiEditor.js:88
 msgid "Live editing mode"
@@ -3615,14 +3631,18 @@ msgstr "ユーザ名"
 msgid ""
 ".fa.fa-question-circle[data-content=\"MD5 is an algorithm used to verify "
 "data integrity.][rel=\"popover\"]"
-msgstr ".fa.fa-question-circle[data-content=\"MD5は、データの整合性を検証するために使用されるアルゴリズムです。][rel=\"popover\"]"
+msgstr ""
+".fa.fa-question-circle[data-"
+"content=\"MD5は、データの整合性を検証するために使用されるアルゴリズムです。][rel=\"popover\"]"
 
 #: website/static/js/filepage/revisions.js:119
 msgid ""
 ".fa.fa-question-circle[data-content=\"SHA-2 is a cryptographic hash "
 "function designed by the NSA used to verify data "
 "integrity.][rel=\"popover\"]"
-msgstr ".fa.fa-question-circle[data-content=\"SHA-2は、データの整合性を検証するために使用されるNSAによって設計された暗号化ハッシュ関数です。][rel=\"popover\"]"
+msgstr ""
+".fa.fa-question-circle[data-"
+"content=\"SHA-2は、データの整合性を検証するために使用されるNSAによって設計された暗号化ハッシュ関数です。][rel=\"popover\"]"
 
 #: website/static/js/filepage/revisions.js:136
 msgid "Anonymous Contributor"

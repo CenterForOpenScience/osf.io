@@ -44,7 +44,7 @@
 
         <hr />
 
-        <h4>Citation preview</h4>
+        <h4>${_("Citation preview")}</h4>
         <table class="table">
             <thead>
                 <tr>

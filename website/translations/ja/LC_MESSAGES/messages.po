@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-17 14:00+0900\n"
+"POT-Creation-Date: 2020-02-17 15:22+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -1388,7 +1388,7 @@ msgstr "利用開始日"
 
 #: website/templates/profile.mako:63
 msgid "Public&nbsp;Profile"
-msgstr "公開&nbsp;プロフィール"
+msgstr "公開プロフィール"
 
 #: website/templates/profile.mako:69
 msgid "No"
@@ -1398,6 +1398,10 @@ msgstr "0"
 msgid "activity point"
 msgid_plural "activity points"
 msgstr[0] "回の貢献"
+
+#: website/templates/profile.mako:70 website/templates/project/settings.mako:7
+msgid "project"
+msgstr "プロジェクト"
 
 #: website/templates/profile.mako:70
 msgid " "
@@ -1416,15 +1420,15 @@ msgstr "機関の"
 msgid " storage"
 msgstr "ストレージ)"
 
-#: website/templates/profile.mako:82 website/templates/profile/settings.mako:39
+#: website/templates/profile.mako:82 website/templates/profile/settings.mako:41
 msgid "Social"
 msgstr "SNS"
 
-#: website/templates/profile.mako:83 website/templates/profile/settings.mako:40
+#: website/templates/profile.mako:83 website/templates/profile/settings.mako:39
 msgid "Employment"
 msgstr "職歴"
 
-#: website/templates/profile.mako:84 website/templates/profile/settings.mako:41
+#: website/templates/profile.mako:84 website/templates/profile/settings.mako:40
 msgid "Education"
 msgstr "学歴"
 
@@ -1694,7 +1698,7 @@ msgstr "日付:"
 
 #: website/templates/include/profile/names.mako:6
 msgid "Full name (e.g. Rosalind Elsie Franklin)"
-msgstr "氏名(例: Rosalind Elsie Franklin)"
+msgstr "氏名 (例: Taro  Suzuki Sato)"
 
 #: website/templates/include/profile/names.mako:15
 msgid ""
@@ -1704,7 +1708,7 @@ msgid ""
 "automatically infer your first name, last            name, etc., or edit "
 "the fields directly below."
 msgstr ""
-"上記の氏名は、プロフィールに表示される名前です。引用での名前の表示方法を制御するには、[自動入力]ボタンを使用して、名・姓などを自動的に推測できます。"
+"上記の氏名は、プロフィールに表示される名前です。引用での名前の表示方法を制御するには、[自動入力]ボタンを使用して、名や姓などを自動的に補完できます。"
 " または下のフィールドを編集します。"
 
 #: website/templates/include/profile/names.mako:22
@@ -1713,19 +1717,23 @@ msgstr "自動入力"
 
 #: website/templates/include/profile/names.mako:26
 msgid "Given name (e.g. Rosalind)"
-msgstr "名(例: Rosalind)"
+msgstr "名 (例: Taro)"
 
 #: website/templates/include/profile/names.mako:31
 msgid "Middle name(s) (e.g. Elsie)"
-msgstr "ミドルネーム(例: Elsie)"
+msgstr "旧姓・ミドルネーム等 (例: Suzuki)"
 
 #: website/templates/include/profile/names.mako:36
 msgid "Family name (e.g. Franklin)"
-msgstr "姓(例: Franklin)"
+msgstr "姓 (例: Sato)"
 
 #: website/templates/include/profile/names.mako:41
 msgid "Suffix"
-msgstr "敬称(例:Dr,,Prof.)"
+msgstr "敬称 (例:Dr.,Prof.,Ph.,D.,M.D.等)"
+
+#: website/templates/include/profile/names.mako:47
+msgid "Citation preview"
+msgstr ""
 
 #: website/templates/include/profile/names.mako:51
 msgid "Style"
@@ -1763,7 +1771,7 @@ msgstr "編集"
 
 #: website/templates/include/profile/settings_navpanel.mako:6
 msgid "Profile information"
-msgstr "プロフィール情報"
+msgstr "プロフィール"
 
 #: website/templates/include/profile/settings_navpanel.mako:9
 msgid "Account settings"
@@ -1771,7 +1779,7 @@ msgstr "アカウント設定"
 
 #: website/templates/include/profile/settings_navpanel.mako:12
 msgid "Configure add-on accounts"
-msgstr "アドオンアカウントを構成する"
+msgstr "アドオンアカウント構成"
 
 #: website/templates/include/profile/settings_navpanel.mako:15
 #: website/templates/profile/notifications.mako:2
@@ -2026,6 +2034,14 @@ msgstr "eduPersonPrincipalName (ePPN)"
 #: website/templates/profile/add_email.mako:92
 msgid "Add an email address below."
 msgstr "以下にメールアドレスを追加してください。"
+
+#: website/templates/profile/add_email.mako:98
+msgid "Email address"
+msgstr "メールアドレス"
+
+#: website/templates/profile/add_email.mako:100
+msgid "Add email"
+msgstr "メールアドレスを追加"
 
 #: website/templates/profile/add_email.mako:257
 msgid "<strong>Warning:</strong> This action is irreversible."
@@ -3049,6 +3065,11 @@ msgstr ""
 "この%(nodetype)sは、プライベートな参照専用リンクを介して表示されています。 リンクを知っている全員がこのプロジェクトを閲覧できます。 "
 "リンクを安全に保ちます。"
 
+#: website/templates/project/settings.mako:18
+#: website/templates/project/settings.mako:77
+msgid "node_type"
+msgstr ""
+
 #: website/templates/project/settings.mako:22
 #: website/templates/project/settings.mako:179
 msgid "Storage Location"
@@ -3457,6 +3478,6 @@ msgstr "論文登録申請"
 msgid "Image Scan Service"
 msgstr "画像スキャン依頼"
 
-#: website/templates/addons.mako:225
-msgid "Citations"
-msgstr "文献管理"
+#~ msgid "Citations"
+#~ msgstr "文献管理"
+
