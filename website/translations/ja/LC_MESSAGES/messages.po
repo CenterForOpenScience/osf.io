@@ -1232,7 +1232,7 @@ msgstr "寄付"
 
 #: website/templates/nav.mako:78
 msgid "My Profile"
-msgstr "マイプロフィール"
+msgstr "プロフィール"
 
 #: website/templates/nav.mako:80
 msgid "RDM Support"
@@ -1468,7 +1468,7 @@ msgstr "アカウントを切り替える"
 
 #: website/templates/search.mako:36
 msgid "Improve your search:"
-msgstr "検索結果の改善"
+msgstr "検索結果をしぼる"
 
 #: website/templates/search.mako:69
 msgid "Filter by license:"
@@ -2287,7 +2287,7 @@ msgstr "GakuNin RDMに接続できるアクセストークンを作成してい�
 
 #: website/templates/profile/personal_tokens_list.mako:26
 msgid "You have generated the following personal access tokens:"
-msgstr "次の個人用アクセストークンを生成しました。"
+msgstr "次のパーソナルアクセストークンを生成しました。"
 
 #: website/templates/profile/settings.mako:11
 msgid "View your profile"

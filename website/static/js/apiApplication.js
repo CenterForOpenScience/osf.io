@@ -389,7 +389,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                     }.bind(this));
                     request.fail(function () {
                             $osf.growl('Error',
-                                       osfLanguage.t('deactivateError),
+                                       osfLanguage.t('deactivateError'),
                                        'danger');
                     }.bind(this));
                 }
