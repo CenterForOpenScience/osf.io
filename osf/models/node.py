@@ -149,7 +149,8 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
             if not isinstance(private_link, basestring):
                 raise TypeError('"private_link" must be either {} or {}. Got {!r}'.format(str, PrivateLink, private_link))
 
-            qs |= self.filter(private_links__is_deleted=False, private_links__key=private_link)
+            #id_list = [item.id for item in qs]
+            return self.filter(private_links__is_deleted=False, private_links__key=private_link).filter(is_deleted=False)
 
         if user is not None and not isinstance(user, AnonymousUser):
             read_user_query = get_objects_for_user(user, READ_NODE, self, with_superuser=False)
