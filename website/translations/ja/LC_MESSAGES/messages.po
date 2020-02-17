@@ -144,7 +144,7 @@ msgstr "アカウントを切断"
 #: addons/zotero/templates/zotero_node_settings.mako:17
 #: website/templates/project/addon/node_settings_default.mako:17
 msgid "Import Account from Profile"
-msgstr "プロファイルからアカウントをインポート"
+msgstr "プロフィールからアカウントをインポート"
 
 #: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:28
 #: addons/s3/templates/s3_node_settings.mako:28
@@ -1503,7 +1503,7 @@ msgstr "(プレプリントファイル)"
 
 #: website/templates/search.mako:241
 msgid " Contributors:"
-msgstr "\"コントリビュー"
+msgstr "コントリビュータ"
 
 #: website/templates/search.mako:263
 msgid "Affiliated institutions:"
@@ -2328,7 +2328,7 @@ msgstr "すべて"
 
 #: website/templates/project/addons.mako:82
 msgid "(This is a default addon)"
-msgstr "(これはデフォルトのアドオンです。)"
+msgstr "(これは標準ストレージです)"
 
 #: website/templates/project/addons.mako:84
 msgid "Disable"
@@ -2973,7 +2973,7 @@ msgstr "コメント"
 #: website/templates/project/project_header.mako:96
 #: website/templates/project/timestamp.mako:2
 msgid "Timestamp"
-msgstr "タイムスタンプ"
+msgstr "証跡管理"
 
 #: website/templates/project/project_header.mako:128
 msgid ""
@@ -3282,11 +3282,11 @@ msgstr "利用可能な機関:"
 
 #: website/templates/project/timestamp.mako:10
 msgid "Timestamp Control"
-msgstr "タイムスタンプ管理"
+msgstr "証跡管理"
 
 #: website/templates/project/timestamp.mako:27
 msgid "Timestamp Error"
-msgstr "タイムスタンプエラー"
+msgstr "タイムスタンプ管理"
 
 #: website/templates/project/timestamp.mako:41
 msgid "Start Date"

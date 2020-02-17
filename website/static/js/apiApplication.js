@@ -286,7 +286,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
             }.bind(this));
             request.fail(function(xhr, status, error) {
                 $osf.growl('Error',
-                             osfLanguage.t('dataFetchError),
+                             osfLanguage.t('dataFetchError'),
                             'danger');
 
                 Raven.captureMessage(_('Error fetching application data'), {

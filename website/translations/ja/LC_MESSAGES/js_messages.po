@@ -833,7 +833,7 @@ msgstr "もっと詳しく見る"
 
 #: website/static/js/addProjectPlugin.js:285
 msgid " More"
-msgstr "もっと"
+msgstr "詳細"
 
 #: website/static/js/addProjectPlugin.js:298
 msgid "Enter %1$s description"
@@ -2463,11 +2463,11 @@ msgstr "行を選択して、プロジェクトの詳細を表示します。"
 
 #: website/static/js/myProjects.js:1996
 msgid "Information"
-msgstr "情報"
+msgstr "プロジェクト情報"
 
 #: website/static/js/myProjects.js:2000
 msgid "Activity"
-msgstr "活動"
+msgstr "最近の活動"
 
 #: website/static/js/myProjects.js:2007
 msgid "Visibility: "
