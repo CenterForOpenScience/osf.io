@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-17 15:28+0900\n"
+"POT-Creation-Date: 2020-02-17 17:14+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -37,7 +37,9 @@ msgid ""
 "feature for your account. You will need to follow the steps that appear "
 "below to complete the activation of two-factor authentication for your "
 "account."
-msgstr "２要素認証を有効にしても、アカウントのこの機能はすぐには有効になりません。 アカウントの２要素認証のアクティベーションを完了するには、以下に表示される手順に従う必要があります。"
+msgstr ""
+"２要素認証を有効にしても、アカウントのこの機能はすぐには有効になりません。 "
+"アカウントの２要素認証のアクティベーションを完了するには、以下に表示される手順に従う必要があります。"
 
 #: addons/twofactor/static/twoFactorUserConfig.js:187
 msgid "Enable"
@@ -1022,86 +1024,61 @@ msgstr "ユーザーアラートの取得エラー"
 msgid "Could not fetch alerts for this page. Please refresh page and try again."
 msgstr "このページのアラートを取得できませんでした。 ページを更新してもう一度お試しください。"
 
-#: website/static/js/apiApplication.js:198
+#: website/static/js/apiApplication.js:201
 msgid "Error fetching list of registered applications"
 msgstr "登録済みアプリケーションのリストの取得エラー"
 
-#: website/static/js/apiApplication.js:209
-#: website/static/js/apiApplication.js:376
+#: website/static/js/apiApplication.js:212
 msgid "Deactivate application?"
 msgstr "アプリケーションを無効にしますか？"
 
-#: website/static/js/apiApplication.js:217
-#: website/static/js/apiPersonalToken.js:196
+#: website/static/js/apiApplication.js:220
+#: website/static/js/apiPersonalToken.js:199
 msgid " has been deactivated"
 msgstr "は無効化されました"
 
-#: website/static/js/apiApplication.js:228
-#: website/static/js/apiApplication.js:396
-#: website/static/js/apiPersonalToken.js:207
-#: website/static/js/apiPersonalToken.js:375
+#: website/static/js/apiApplication.js:231
+#: website/static/js/apiPersonalToken.js:210
+#: website/static/js/apiPersonalToken.js:378
 msgid "Deactivate"
 msgstr "非アクティブ"
 
-#: website/static/js/apiApplication.js:275
-#: website/static/js/apiPersonalToken.js:254
+#: website/static/js/apiApplication.js:278
+#: website/static/js/apiPersonalToken.js:257
 msgid "There are unsaved changes on this page."
 msgstr "このページには未保存の変更があります。"
 
-#: website/static/js/apiApplication.js:289
-msgid "Error fetching application data"
-msgstr "アプリケーションデータの取得エラー"
-
-#: website/static/js/apiApplication.js:324
-#: website/static/js/apiPersonalToken.js:303
-msgid "Error updating instance"
-msgstr "インスタンスの更新エラー"
-
-#: website/static/js/apiApplication.js:350
-msgid "Error registering new OAuth2 application"
-msgstr "新しいOAuth2アプリケーションの登録エラー"
-
-#: website/static/js/apiApplication.js:406
-msgid "Reset client secret?"
-msgstr "クライアントシークレットをリセットしますか？"
-
-#: website/static/js/apiApplication.js:424
-msgid "Error resetting instance secret"
-msgstr "インスタンスシークレットのリセットエラー"
-
-#: website/static/js/apiApplication.js:436
-msgid "Reset Secret"
-msgstr "シークレットをリセット"
-
-#: website/static/js/apiApplication.js:450
-#: website/static/js/apiPersonalToken.js:389 website/static/js/profile.js:358
-msgid "Discard changes?"
-msgstr "変更を破棄しますか？"
-
-#: website/static/js/apiApplication.js:460
-#: website/static/js/apiPersonalToken.js:399 website/static/js/profile.js:370
-msgid "Discard"
-msgstr "破棄"
-
-#: website/static/js/apiPersonalToken.js:177
+#: website/static/js/apiPersonalToken.js:180
 msgid "Error fetching list of registered personal access tokens"
 msgstr "登録済みの個人アクセストークンのリストの取得エラー"
 
-#: website/static/js/apiPersonalToken.js:188
+#: website/static/js/apiPersonalToken.js:191
 msgid "Deactivate personal access token?"
 msgstr "個人用アクセストークンを無効にしますか？"
 
-#: website/static/js/apiPersonalToken.js:268
+#: website/static/js/apiPersonalToken.js:271
 msgid "Error fetching token data"
 msgstr "トークンデータの取得エラー"
 
-#: website/static/js/apiPersonalToken.js:329
+#: website/static/js/apiPersonalToken.js:306
+msgid "Error updating instance"
+msgstr "インスタンスの更新エラー"
+
+#: website/static/js/apiPersonalToken.js:332
 msgid "Error registering new OAuth2 personal access token"
 msgstr "新しいOAuth2個人用アクセストークンの登録エラー"
 
-#: website/static/js/apiPersonalToken.js:355
+#: website/static/js/apiPersonalToken.js:358
 msgid "Deactivate token?"
 msgstr "トークンを無効にしますか？"
+
+#: website/static/js/apiPersonalToken.js:392 website/static/js/profile.js:358
+msgid "Discard changes?"
+msgstr "変更を破棄しますか？"
+
+#: website/static/js/apiPersonalToken.js:402 website/static/js/profile.js:370
+msgid "Discard"
+msgstr "破棄"
 
 #: website/static/js/citationGrid.js:182
 msgid "Copy citation"
@@ -2860,6 +2837,7 @@ msgid "please report it to %1$s."
 msgstr "%1$sに報告してください。"
 
 #: website/static/js/notificationsTreebeard.js:70
+#: website/static/js/notificationsTreebeard.js:182
 #: website/static/js/notificationsTreebeard.js:187
 #: website/static/js/notificationsTreebeard.js:230
 msgid "Instantly"
@@ -3947,4 +3925,19 @@ msgstr "%1$sに報告してください"
 #: website/static/js/pages/wiki-edit-page.js:112
 msgid "Could not GET wiki menu pages"
 msgstr "Wikiメニューページを取得できませんでした"
+
+#~ msgid "Error fetching application data"
+#~ msgstr "アプリケーションデータの取得エラー"
+
+#~ msgid "Error registering new OAuth2 application"
+#~ msgstr "新しいOAuth2アプリケーションの登録エラー"
+
+#~ msgid "Reset client secret?"
+#~ msgstr "クライアントシークレットをリセットしますか？"
+
+#~ msgid "Error resetting instance secret"
+#~ msgstr "インスタンスシークレットのリセットエラー"
+
+#~ msgid "Reset Secret"
+#~ msgstr "シークレットをリセット"
 

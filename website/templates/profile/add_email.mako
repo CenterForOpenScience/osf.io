@@ -95,7 +95,7 @@
 
                                             <div class="form-group">
                                                 ## email input verification is not supported on safari
-                                              <input placeholder="${_('Email address')}" type="email" data-bind="value: emailInput" class="form-control" required maxlength="254">
+                                              <input placeholder='${_("Email address")}' type="email" data-bind="value: emailInput" class="form-control" required maxlength="254">
                                             </div>
                                             <input type="submit" value="${_('Add email')}" class="btn btn-success">
                                         </form>

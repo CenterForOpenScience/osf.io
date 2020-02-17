@@ -83,7 +83,7 @@
                         <button type="reset" class="btn btn-default"
                                 data-bind="click: $root.cancelChange.bind($root)">${_("Cancel")}</button>
                         <button type="submit" class="btn btn-success"
-                                data-bind="visible: $root.isCreateView()">${_("Create")}</button>
+                                data-bind="visible: $root.isCreateView()">${_("Register")}</button>
                         <button type="submit" class="btn btn-success"
                                 data-bind="visible: !$root.isCreateView()">${_("Save")}</button>
                     </div>

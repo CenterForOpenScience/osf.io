@@ -23,6 +23,9 @@ var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
 
+var defaultDomain = 'apiOauth2Token';
+var osfLanguage = new rdmGettext.OsfLanguage(defaultDomain);
+
 /*
  *  Store the data related to a single API Personal Token
  */
@@ -171,7 +174,7 @@ var TokensListViewModel = oop.defclass({
 
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
-                language.apiOauth2Token.dataListFetchError,
+                osfLanguage.t('dataListFetchError'),
                 'danger');
 
             Raven.captureMessage(_('Error fetching list of registered personal access tokens'), {
@@ -186,7 +189,7 @@ var TokensListViewModel = oop.defclass({
     deleteToken: function (tokenData) {
         bootbox.confirm({
             title: _('Deactivate personal access token?'),
-            message: language.apiOauth2Token.deactivateConfirm,
+            message: osfLanguage.t('deactivateConfirm'),
             callback: function (confirmed) {
                 if (confirmed) {
                     var request = this.client.deleteOne(tokenData);
@@ -197,7 +200,7 @@ var TokensListViewModel = oop.defclass({
                     }.bind(this));
                     request.fail(function () {
                             $osf.growl('Error',
-                                       language.apiOauth2Token.deactivateError,
+                                       osfLanguage.t('deactivateError'),
                                        'danger');
                     }.bind(this));
                 }
@@ -262,7 +265,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
             }.bind(this));
             request.fail(function(xhr, status, error) {
                 $osf.growl('Error',
-                             language.apiOauth2Token.dataFetchError,
+                             osfLanguage.t('dataFetchError'),
                             'danger');
 
                 Raven.captureMessage(_('Error fetching token data'), {
@@ -290,14 +293,14 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
             this.tokenData(dataObj);
             this.originalValues(dataObj.serialize());
             this.changeMessage(
-                language.apiOauth2Token.dataUpdated,
+                osfLanguage.t('dataUpdated'),
                 'text-success',
                 5000);
         }.bind(this));
 
         request.fail(function (xhr, status, error) {
             $osf.growl('Error',
-                       language.apiOauth2Token.dataSendError,
+                       osfLanguage.t('dataSendError'),
                        'danger');
 
             Raven.captureMessage(_('Error updating instance'), {
@@ -316,14 +319,14 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
             this.tokenData(dataObj);
             this.originalValues(dataObj.serialize());
             this.showToken(true);
-            this.changeMessage(language.apiOauth2Token.creationSuccess, 'text-success');
+            this.changeMessage(osfLanguage.t('creationSuccess'), 'text-success');
             this.apiDetailUrl(dataObj.apiDetailUrl); // Toggle ViewModel --> act like a display view now.
             historyjs.replaceState({}, '', dataObj.webDetailUrl);  // Update address bar to show new detail page
         }.bind(this));
 
         request.fail(function (xhr, status, error) {
             $osf.growl('Error',
-                       language.apiOauth2Token.dataSendError,
+                       osfLanguage.t('dataSendError'),
                        'danger');
 
             Raven.captureMessage(_('Error registering new OAuth2 personal access token'), {
@@ -353,7 +356,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
         var tokenData = this.tokenData();
         bootbox.confirm({
             title: _('Deactivate token?'),
-            message: language.apiOauth2Token.deactivateConfirm,
+            message: osfLanguage.t('deactivateConfirm'),
             callback: function (confirmed) {
                 if (confirmed) {
                     var request = this.client.deleteOne(tokenData );
@@ -365,7 +368,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
                     }.bind(this));
                     request.fail(function () {
                             $osf.growl('Error',
-                                       language.apiOauth2Token.deactivateError,
+                                       osfLanguage.t('deactivateError'),
                                        'danger');
                     }.bind(this));
                 }
@@ -387,7 +390,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
         } else {
             bootbox.confirm({
                 title: _('Discard changes?'),
-                message: language.apiOauth2Token.discardUnchanged,
+                message: osfLanguage.t('discardUnchanged'),
                 callback: function(confirmed) {
                     if (confirmed) {
                         this.allowExit(true);

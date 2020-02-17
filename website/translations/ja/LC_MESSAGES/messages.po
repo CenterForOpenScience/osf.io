@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-17 15:22+0900\n"
+"POT-Creation-Date: 2020-02-17 17:15+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -1733,7 +1733,7 @@ msgstr "敬称 (例:Dr.,Prof.,Ph.,D.,M.D.等)"
 
 #: website/templates/include/profile/names.mako:47
 msgid "Citation preview"
-msgstr ""
+msgstr "引用のプレビュー"
 
 #: website/templates/include/profile/names.mako:51
 msgid "Style"
@@ -1784,7 +1784,7 @@ msgstr "アドオンアカウント構成"
 #: website/templates/include/profile/settings_navpanel.mako:15
 #: website/templates/profile/notifications.mako:2
 msgid "Notifications"
-msgstr "通知"
+msgstr "メール通知設定"
 
 #: website/templates/include/profile/settings_navpanel.mako:18
 msgid "Developer apps"
@@ -2099,7 +2099,7 @@ msgstr "GakuNin RDMを最大限に活用する方法に関する役立つヒン�
 
 #: website/templates/profile/notifications.mako:53
 msgid "Configure Notification Preferences"
-msgstr "通知設定を構成する"
+msgstr "メール通知を設定する"
 
 #: website/templates/profile/notifications.mako:56
 msgid ""
@@ -2173,9 +2173,8 @@ msgid "Authorization callback URL"
 msgstr "認証コールバックURL"
 
 #: website/templates/profile/oauth_app_detail.mako:86
-#: website/templates/profile/personal_tokens_detail.mako:51
-msgid "Create"
-msgstr "作成"
+msgid "Register"
+msgstr "登録"
 
 #: website/templates/profile/oauth_app_list.mako:2
 #: website/templates/profile/oauth_app_list.mako:15
@@ -2184,7 +2183,7 @@ msgstr "開発者向けアプリケーション"
 
 #: website/templates/profile/oauth_app_list.mako:17
 msgid "New application"
-msgstr "新しいアプリケーション"
+msgstr "新しいアプリケーション登録"
 
 #: website/templates/profile/oauth_app_list.mako:22
 msgid ""
@@ -2229,6 +2228,10 @@ msgid "Return to list of registered tokens"
 msgstr "登録済みトークンのリストに戻る"
 
 #: website/templates/profile/personal_tokens_detail.mako:25
+msgid "Token name:"
+msgstr "トークン名"
+
+#: website/templates/profile/personal_tokens_detail.mako:25
 msgid "What this token is for."
 msgstr "このトークンの目的"
 
@@ -2240,9 +2243,17 @@ msgstr "スコープ"
 msgid "Scopes limit access for personal access tokens."
 msgstr "スコープは、個人アクセストークンのアクセスを制限します。"
 
+#: website/templates/profile/personal_tokens_detail.mako:51
+msgid "Create"
+msgstr "作成"
+
 #: website/templates/profile/personal_tokens_detail.mako:65
 msgid "This is the only time your token will be displayed."
-msgstr "これは、トークンが表示される唯一の時間です。"
+msgstr "画面を離れると、トークンは二度と表示されません"
+
+#: website/templates/profile/personal_tokens_detail.mako:66
+msgid "Token ID"
+msgstr "トークンID"
 
 #: website/templates/profile/personal_tokens_detail.mako:67
 msgid "ID used to authenticate with this token. This will be shown only once."
@@ -2260,13 +2271,13 @@ msgstr "パーソナルアクセストークン"
 
 #: website/templates/profile/personal_tokens_list.mako:17
 msgid "New token"
-msgstr "新しいトークン"
+msgstr "新規トークン"
 
 #: website/templates/profile/personal_tokens_list.mako:22
 msgid ""
 "Personal access tokens function like ordinary OAuth access tokens. They "
 "can be used to authenticate to the API."
-msgstr "個人用アクセストークンは、通常のOAuthアクセストークンのように機能します。 APIの認証に使用できます。"
+msgstr "パーソナルアクセストークンは、通常のOAuthアクセストークンのように機能します。 APIの認証に使用できます。"
 
 #: website/templates/profile/personal_tokens_list.mako:24
 msgid ""

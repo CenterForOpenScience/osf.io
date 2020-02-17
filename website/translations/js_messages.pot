@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-17 15:28+0900\n"
+"POT-Creation-Date: 2020-02-17 17:14+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -998,85 +998,60 @@ msgstr ""
 msgid "Could not fetch alerts for this page. Please refresh page and try again."
 msgstr ""
 
-#: website/static/js/apiApplication.js:198
+#: website/static/js/apiApplication.js:201
 msgid "Error fetching list of registered applications"
 msgstr ""
 
-#: website/static/js/apiApplication.js:209
-#: website/static/js/apiApplication.js:376
+#: website/static/js/apiApplication.js:212
 msgid "Deactivate application?"
 msgstr ""
 
-#: website/static/js/apiApplication.js:217
-#: website/static/js/apiPersonalToken.js:196
+#: website/static/js/apiApplication.js:220
+#: website/static/js/apiPersonalToken.js:199
 msgid " has been deactivated"
 msgstr ""
 
-#: website/static/js/apiApplication.js:228
-#: website/static/js/apiApplication.js:396
-#: website/static/js/apiPersonalToken.js:207
-#: website/static/js/apiPersonalToken.js:375
+#: website/static/js/apiApplication.js:231
+#: website/static/js/apiPersonalToken.js:210
+#: website/static/js/apiPersonalToken.js:378
 msgid "Deactivate"
 msgstr ""
 
-#: website/static/js/apiApplication.js:275
-#: website/static/js/apiPersonalToken.js:254
+#: website/static/js/apiApplication.js:278
+#: website/static/js/apiPersonalToken.js:257
 msgid "There are unsaved changes on this page."
 msgstr ""
 
-#: website/static/js/apiApplication.js:289
-msgid "Error fetching application data"
-msgstr ""
-
-#: website/static/js/apiApplication.js:324
-#: website/static/js/apiPersonalToken.js:303
-msgid "Error updating instance"
-msgstr ""
-
-#: website/static/js/apiApplication.js:350
-msgid "Error registering new OAuth2 application"
-msgstr ""
-
-#: website/static/js/apiApplication.js:406
-msgid "Reset client secret?"
-msgstr ""
-
-#: website/static/js/apiApplication.js:424
-msgid "Error resetting instance secret"
-msgstr ""
-
-#: website/static/js/apiApplication.js:436
-msgid "Reset Secret"
-msgstr ""
-
-#: website/static/js/apiApplication.js:450
-#: website/static/js/apiPersonalToken.js:389 website/static/js/profile.js:358
-msgid "Discard changes?"
-msgstr ""
-
-#: website/static/js/apiApplication.js:460
-#: website/static/js/apiPersonalToken.js:399 website/static/js/profile.js:370
-msgid "Discard"
-msgstr ""
-
-#: website/static/js/apiPersonalToken.js:177
+#: website/static/js/apiPersonalToken.js:180
 msgid "Error fetching list of registered personal access tokens"
 msgstr ""
 
-#: website/static/js/apiPersonalToken.js:188
+#: website/static/js/apiPersonalToken.js:191
 msgid "Deactivate personal access token?"
 msgstr ""
 
-#: website/static/js/apiPersonalToken.js:268
+#: website/static/js/apiPersonalToken.js:271
 msgid "Error fetching token data"
 msgstr ""
 
-#: website/static/js/apiPersonalToken.js:329
+#: website/static/js/apiPersonalToken.js:306
+msgid "Error updating instance"
+msgstr ""
+
+#: website/static/js/apiPersonalToken.js:332
 msgid "Error registering new OAuth2 personal access token"
 msgstr ""
 
-#: website/static/js/apiPersonalToken.js:355
+#: website/static/js/apiPersonalToken.js:358
 msgid "Deactivate token?"
+msgstr ""
+
+#: website/static/js/apiPersonalToken.js:392 website/static/js/profile.js:358
+msgid "Discard changes?"
+msgstr ""
+
+#: website/static/js/apiPersonalToken.js:402 website/static/js/profile.js:370
+msgid "Discard"
 msgstr ""
 
 #: website/static/js/citationGrid.js:182
@@ -2823,6 +2798,7 @@ msgid "please report it to %1$s."
 msgstr ""
 
 #: website/static/js/notificationsTreebeard.js:70
+#: website/static/js/notificationsTreebeard.js:182
 #: website/static/js/notificationsTreebeard.js:187
 #: website/static/js/notificationsTreebeard.js:230
 msgid "Instantly"

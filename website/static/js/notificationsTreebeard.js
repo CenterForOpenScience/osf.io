@@ -179,7 +179,7 @@ function ProjectNotifications(data) {
                         var mentionsInTitle = ~item.data.event.title.indexOf('mentions');
                         var notificationOptions;
                         if (mentionsInTitle)
-                            notificationOptions = [m('option', {value: 'email_transactional', selected: 'email_transactional', disabled: true}, 'Instantly')];
+                            notificationOptions = [m('option', {value: 'email_transactional', selected: 'email_transactional', disabled: true}, _('Instantly'))];
                         else {
                             var type = item.data.event.notificationType;
                             notificationOptions = [
