@@ -227,6 +227,7 @@ MIDDLEWARE = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'waffle.middleware.WaffleMiddleware',
+    'api.base.middleware.SloanIdMiddleware',
 )
 
 TEMPLATES = [
@@ -328,3 +329,5 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     },
 }
+
+SLOAN_ID_COOKIE_NAME = 'sloan_id'
