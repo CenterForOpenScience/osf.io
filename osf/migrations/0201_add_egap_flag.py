@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from django.db import migrations
 
 from osf import features
-from osf.utils.migrations import AddWaffleFlags, DeleteWaffleSwitches
+from osf.utils.migrations import AddWaffleFlags
 
 class Migration(migrations.Migration):
 
@@ -14,5 +14,4 @@ class Migration(migrations.Migration):
 
     operations = [
         AddWaffleFlags([features.EGAP_ADMINS], on_for_everyone=None),
-        DeleteWaffleSwitches(['enable_inactive_schemas'])
     ]

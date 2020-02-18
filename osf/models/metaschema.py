@@ -32,41 +32,33 @@ SCHEMABLOCK_TYPES = [
 
 
 class AbstractSchemaManager(models.Manager):
-    def get_latest_version(self, name, only_active=True):
+
+    def get_latest_version(self, name):
         """
         Return the latest version of the given schema
         :param str only_active: Only returns the latest active schema
         :return schema
         """
-        schemas = self.filter(name=name, active=True) if only_active else self.filter(name=name)
-        sorted_schemas = schemas.order_by('schema_version')
-        if sorted_schemas:
-            return sorted_schemas.last()
-        else:
-            return self.none()
+        return self.filter(name=name).order_by('schema_version').last()
 
-    def get_latest_versions(self, only_active=True):
+    def get_latest_versions(self):
         """
         Returns a queryset of the latest version of each schema
-        :param str only_active: Only return active schemas
         :return queryset
         """
-        latest_schemas = self.filter(visible=True)
-        if only_active:
-            latest_schemas = latest_schemas.filter(active=True)
-        return latest_schemas.order_by('name', '-schema_version').distinct('name')
+        return self.filter(visible=True).order_by('name', '-schema_version').distinct('name')
 
-    def get_latest_versions_and_allow_egap_admins(self, request, only_active=True):
+    def get_latest_versions_and_allow_egap_admins(self, request):
         """
         Allows egap admins to see EGAP registrations as visible, should be deleted when when the EGAP registry goes
-         live.
+        live.
 
         :param request: the request object needed for waffling
         :param str only_active: Only return active schemas
         :return: queryset
         """
 
-        queryset = self.get_latest_versions(only_active)
+        queryset = self.get_latest_versions()
 
         if hasattr(request, 'user') and waffle.flag_is_active(request, EGAP_ADMINS):
             return queryset | RegistrationSchema.objects.filter(name='EGAP Registration').distinct('name')

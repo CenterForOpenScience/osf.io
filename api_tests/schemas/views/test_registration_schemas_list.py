@@ -43,7 +43,7 @@ class TestSchemaList:
 
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert res.json['meta']['total'] == RegistrationSchema.objects.get_latest_versions_and_allow_egap_admins(factory_request, only_active=False).count()
+        assert res.json['meta']['total'] == RegistrationSchema.objects.get_latest_versions_and_allow_egap_admins(factory_request).count()
 
         # test_cannot_update_metaschemas
         res = app.put_json_api(url, auth=user.auth, expect_errors=True)
@@ -62,7 +62,8 @@ class TestSchemaList:
         res = app.get(url)
 
         assert res.status_code == 200
-        assert res.json['meta']['total'] == RegistrationSchema.objects.get_latest_versions_and_allow_egap_admins(factory_request, only_active=True).count()
+        active_schemas = RegistrationSchema.objects.get_latest_versions_and_allow_egap_admins(factory_request).filter(active=True)
+        assert res.json['meta']['total'] == active_schemas.count()
 
         url = '/{}schemas/registrations/'.format(API_BASE)
         # test_make_sure_egap_admins_can_view_registrations
