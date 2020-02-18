@@ -36,23 +36,23 @@
 
             <ul class="nav nav-tabs">
                 <li class="active"><a href="#names" data-toggle="tab">${_("Name")}</a></li>
-				<li><a href="#social" data-toggle="tab">${_("Social")}</a></li>
                 <li><a href="#jobs" data-toggle="tab">${_("Employment")}</a></li>
                 <li><a href="#schools" data-toggle="tab">${_("Education")}</a></li>
+				<li><a href="#social" data-toggle="tab">${_("Social")}</a></li>
             </ul>
 
             <div class="tab-content" id="containDrag">
                 <div class="m-t-md tab-pane active" id="names">
                     <div data-bind="template: {name: 'profileName'}"></div>
                 </div>
-                <div class="m-t-md tab-pane" id="social">
-                    <div data-bind="template: {name: 'profileSocial'}"></div>
-                </div>
                 <div class="m-t-md tab-pane" id="jobs">
                     <div data-bind="template: {name: 'profileJobs'}"></div>
                 </div>
                 <div class="m-t-md tab-pane" id="schools">
                     <div data-bind="template: {name: 'profileSchools'}"></div>
+                </div>
+                <div class="m-t-md tab-pane" id="social">
+                    <div data-bind="template: {name: 'profileSocial'}"></div>
                 </div>
             </div>
 
@@ -62,9 +62,9 @@
 
 </div>
 <%include file="include/profile/names.mako" />
-<%include file="include/profile/social.mako" />
 <%include file="include/profile/jobs.mako" />
 <%include file="include/profile/schools.mako" />
+<%include file="include/profile/social.mako" />
 </%def>
 
 <%def name="javascript_bottom()">

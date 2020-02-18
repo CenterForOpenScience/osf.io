@@ -22,6 +22,10 @@ var language = require('js/osfLanguage');
 var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
+
+var defaultDomain = 'apiOauth2Application';
+var osfLanguage = new rdmGettext.OsfLanguage(defaultDomain);
 
 /*
  *  Store the data related to a single API application
@@ -191,7 +195,7 @@ var ApplicationsListViewModel = oop.defclass({
 
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
-                language.apiOauth2Application.dataListFetchError,
+                losfLanguage.t('dataListFetchError'),
                 'danger');
 
             Raven.captureMessage(_('Error fetching list of registered applications'), {
@@ -206,7 +210,7 @@ var ApplicationsListViewModel = oop.defclass({
     deleteApplication: function (appData) {
         bootbox.confirm({
             title: _('Deactivate application?'),
-            message: language.apiOauth2Application.deactivateConfirm,
+            message: osfLanguage.t('deactivateConfirm'),
             callback: function (confirmed) {
                 if (confirmed) {
                     var request = this.client.deleteOne(appData);
@@ -217,7 +221,7 @@ var ApplicationsListViewModel = oop.defclass({
                     }.bind(this));
                     request.fail(function () {
                             $osf.growl('Error',
-                                       language.apiOauth2Application.deactivateError,
+                                       osfLanguage.t('deactivateError'),
                                        'danger');
                     }.bind(this));
                 }
@@ -282,7 +286,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
             }.bind(this));
             request.fail(function(xhr, status, error) {
                 $osf.growl('Error',
-                             language.apiOauth2Application.dataFetchError,
+                             osfLanguage.t('dataFetchError'),
                             'danger');
 
                 Raven.captureMessage(_('Error fetching application data'), {
@@ -299,7 +303,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
         if (!this.dirty()){
             // No data needs to be sent to the server, but give the illusion that form was submitted
             this.changeMessage(
-                language.apiOauth2Application.dataUpdated,
+                osfLanguage.t('dataUpdated'),
                 'text-success',
                 5000);
             return;
@@ -310,14 +314,14 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
             this.appData(dataObj);
             this.originalValues(dataObj.serialize());
             this.changeMessage(
-                language.apiOauth2Application.dataUpdated,
+                osfLanguage.t('dataUpdated'),
                 'text-success',
                 5000);
         }.bind(this));
 
         request.fail(function (xhr, status, error) {
             $osf.growl('Error',
-                       language.apiOauth2Application.dataSendError,
+                       osfLanguage.t('dataSendError'),
                        'danger');
 
             Raven.captureMessage(_('Error updating instance'), {
@@ -336,14 +340,14 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
             this.appData(dataObj);
             this.originalValues(dataObj.serialize());
 
-            this.changeMessage(language.apiOauth2Application.creationSuccess, 'text-success', 5000);
+            this.changeMessage(osfLanguage.t('creationSuccess'), 'text-success', 5000);
             this.apiDetailUrl(dataObj.apiDetailUrl); // Toggle ViewModel --> act like a display view now.
             historyjs.replaceState({}, '', dataObj.webDetailUrl);  // Update address bar to show new detail page
         }.bind(this));
 
         request.fail(function (xhr, status, error) {
             $osf.growl('Error',
-                       language.apiOauth2Application.dataSendError,
+                       losfLanguage.t('dataSendError'),
                        'danger');
 
             Raven.captureMessage(_('Error registering new OAuth2 application'), {
@@ -373,7 +377,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
         var appData = this.appData();
         bootbox.confirm({
             title: _('Deactivate application?'),
-            message: language.apiOauth2Application.deactivateConfirm,
+            message: osfLanguage.t('deactivateConfirm'),
             callback: function (confirmed) {
                 if (confirmed) {
                     var request = this.client.deleteOne(appData );
@@ -385,7 +389,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                     }.bind(this));
                     request.fail(function () {
                             $osf.growl('Error',
-                                       language.apiOauth2Application.deactivateError,
+                                       osfLanguage.t('deactivateError'),
                                        'danger');
                     }.bind(this));
                 }
@@ -411,7 +415,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                         self.appData().clientSecret(dataObj.clientSecret());
                         self.originalValues(self.appData().serialize());
                         self.changeMessage(
-                            language.apiOauth2Application.dataUpdated,
+                            osfLanguage.t('dataUpdated'),
                             'text-success',
                             5000);
                     }.bind(self));
@@ -446,8 +450,8 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
             this.visitList();
         } else {
             bootbox.confirm({
-                title: 'Discard changes?',
-                message: language.apiOauth2Application.discardUnchanged,
+                title: _('Discard changes?'),
+                message: osfLanguage.t('discardUnchanged'),
                 callback: function(confirmed) {
                     if (confirmed) {
                         this.allowExit(true);
