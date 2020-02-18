@@ -164,7 +164,7 @@
               <i class="fa fa-plus"></i> ${_("Add")}
             </a>
         </h3>
-        <p>${_("Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project.")}</p>
+        <p>${_("Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project.") | n}</p>
         <%include file="project/private_links.mako"/>
       % if not use_viewonlylinks:
         </div>

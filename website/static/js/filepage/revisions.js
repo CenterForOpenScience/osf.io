@@ -113,10 +113,10 @@ var FileRevisionsTable = {
                     model.hasUser ? m('th', _('User')) : false,
                     m('th[colspan=2]', _('Download')),
                     model.hasHashes ? m('th', [
-                        'MD5 ', m(_('.fa.fa-question-circle[data-content="MD5 is an algorithm used to verify data integrity.][rel="popover"]') +
+                        'MD5 ', m(_('.fa.fa-question-circle[data-content="MD5 is an algorithm used to verify data integrity."][rel="popover"]') +
                             '[data-placement="top"][data-trigger="hover"]', {config: popOver}) ]) : false,
                     model.hasHashes ? m('th', [
-                        'SHA2 ', m(_('.fa.fa-question-circle[data-content="SHA-2 is a cryptographic hash function designed by the NSA used to verify data integrity.][rel="popover"]') +
+                        'SHA2 ', m(_('.fa.fa-question-circle[data-content="SHA-2 is a cryptographic hash function designed by the NSA used to verify data integrity."][rel="popover"]') +
                             '[data-placement="top"][data-trigger="hover"]', {config: popOver}) ]) : false,
                 ].filter(TRUTHY))
             ]);

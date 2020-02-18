@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-18 11:28+0900\n"
+"POT-Creation-Date: 2020-02-18 14:18+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -92,6 +92,7 @@ msgstr ""
 #: website/templates/claim_account.mako:112
 #: website/templates/include/profile/jobs.mako:117
 #: website/templates/include/profile/jobs.mako:120
+#: website/templates/include/profile/names.mako:76
 #: website/templates/include/profile/names.mako:79
 #: website/templates/include/profile/schools.mako:117
 #: website/templates/include/profile/schools.mako:120
@@ -1583,6 +1584,7 @@ msgid "Job title"
 msgstr ""
 
 #: website/templates/include/profile/jobs.mako:54
+#: website/templates/include/profile/schools.mako:54
 msgid "Start date"
 msgstr ""
 
@@ -1623,6 +1625,7 @@ msgid "Discard changes"
 msgstr ""
 
 #: website/templates/include/profile/jobs.mako:117
+#: website/templates/include/profile/names.mako:76
 #: website/templates/include/profile/schools.mako:117
 #: website/templates/include/profile/social.mako:143
 msgid "Saving"

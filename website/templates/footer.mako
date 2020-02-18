@@ -14,13 +14,13 @@
                         |
                     </span>
                     <a href="${footer_links['terms']}">
-                        ${_("Terms&nbsp;of&nbsp;Use")}
+                        ${_("Terms&nbsp;of&nbsp;Use") | n}
                     </a>
                     <span>
                         |
                     </span>
                     <a href="${footer_links['privacyPolicy']}">
-                        ${_("Privacy&nbsp;Policy")}
+                        ${_("Privacy&nbsp;Policy") | n}
                     </a>
                     <!--
                     <span>
@@ -49,7 +49,7 @@
                         |
                     </span>
                     <a href="${footer_links['rpp']}">
-                        ${_("Reproducibility&nbsp;Project: Psychology")}
+                        ${_("Reproducibility&nbsp;Project: Psychology") | n}
                     </a>
                     -->
                     <!--
@@ -57,7 +57,7 @@
                         |
                     </span>
                     <a href="${footer_links['rpcb']}">
-                        ${_("Reproducibility&nbsp;Project: Cancer Biology")}
+                        ${_("Reproducibility&nbsp;Project: Cancer Biology") | n}
                     </a>
                     -->
                 </p>

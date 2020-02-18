@@ -51,7 +51,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Start date</label>
+                        <label>${_("Start date")}</label>
                         <div class="row">
                             <div class ="col-md-3">
                                 <select class="form-control" data-bind="options: months,

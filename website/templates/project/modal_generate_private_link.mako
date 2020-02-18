@@ -38,7 +38,7 @@
                     <div style="margin-bottom:10px;">
                         ${_("<strong>Which components would you like to associate with this link?</strong>") | n}
                         ${_("Anyone with the private link can view&mdash;but not edit&mdash;the\
-                        components associated with the link.")}
+                        components associated with the link.") | n}
                     </div>
 
 

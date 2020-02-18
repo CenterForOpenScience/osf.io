@@ -60,7 +60,7 @@
                             <tbody data-bind="foreach: profile().alternateEmails()">
                                 <tr>
                                     <td style="word-break: break-all;"><span data-bind="text: $data.address"></span></td>
-                                    <td style="width:150px;"><a data-bind="click: $parent.makeEmailPrimary.bind($parent)">${_("make&nbsp;primary")}</a></td>
+                                    <td style="width:150px;"><a data-bind="click: $parent.makeEmailPrimary.bind($parent)">${_("make&nbsp;primary") | n}</a></td>
                                     <td style="width:50px;"><a data-bind="click: $parent.removeEmail.bind($parent)"><i class="fa fa-times text-danger"></i></a></td>
                                 </tr>
                             </tbody>
@@ -76,7 +76,7 @@
                                 <!-- ko foreach: profile().unconfirmedEmails() -->
                                 <tr>
                                     <td style="word-break: break-all;"><span data-bind="text: $data.address"></span></td>
-                                    <td style="width:150px;"><a data-bind="click: $parent.resendConfirmation.bind($parent)">${_("resend&nbsp;confirmation")}</a></td>
+                                    <td style="width:150px;"><a data-bind="click: $parent.resendConfirmation.bind($parent)">${_("resend&nbsp;confirmation") | n}</a></td>
                                     <td style="width:50px;" ><a data-bind="click: $parent.removeEmail.bind($parent)"><i class="fa fa-times text-danger"></i></a></td>
                                 </tr>
                                 <!-- /ko -->

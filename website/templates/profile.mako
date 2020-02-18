@@ -60,7 +60,7 @@
             % endif
             % if profile.get('url') and profile.get('display_absolute_url'):
                 <tr>
-                    <td>${_("Public&nbsp;Profile")}</td>
+                    <td>${_("Public&nbsp;Profile") | n}</td>
                     <td><a href="${profile['url']}">${profile['display_absolute_url']}</a></td>
                 </tr>
             % endif

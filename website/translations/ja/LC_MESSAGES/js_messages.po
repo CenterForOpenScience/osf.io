@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-17 18:52+0900\n"
+"POT-Creation-Date: 2020-02-18 13:47+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -135,10 +135,11 @@ msgstr "次を入力して続行します。<strong>%1$s</ strong><br><br>"
 #: website/static/js/addProjectPlugin.js:350 website/static/js/fangorn.js:538
 #: website/static/js/fangorn.js:1213 website/static/js/fangorn.js:1236
 #: website/static/js/fangorn.js:1289 website/static/js/fangorn.js:1308
-#: website/static/js/fangorn.js:2007 website/static/js/licensePicker.js:241
-#: website/static/js/myProjects.js:1562 website/static/js/myProjects.js:1610
-#: website/static/js/myProjects.js:1634 website/static/js/osfHelpers.js:798
-#: website/static/js/osfHelpers.js:899
+#: website/static/js/fangorn.js:2007
+#: website/static/js/institutionProjectSettings.js:104
+#: website/static/js/licensePicker.js:241 website/static/js/myProjects.js:1562
+#: website/static/js/myProjects.js:1610 website/static/js/myProjects.js:1634
+#: website/static/js/osfHelpers.js:798 website/static/js/osfHelpers.js:899
 #: website/static/js/wikiSettingsTreebeard.js:32
 msgid "Cancel"
 msgstr "キャンセル"
@@ -781,7 +782,7 @@ msgstr "アカウントのエクスポートをリクエストしてもよろし
 #: website/static/js/addProjectPlugin.js:27
 #: website/static/js/myProjects.js:1120
 msgid "Create new project"
-msgstr "新しいプロジェクトを作成する"
+msgstr "新規プロジェクト作成"
 
 #: website/static/js/addProjectPlugin.js:60
 msgid "There was an unknown error. Please try again later."
@@ -858,10 +859,6 @@ msgstr "カテゴリ"
 #: website/static/js/addProjectPlugin.js:303
 msgid " (for descriptive purposes)"
 msgstr "(説明のため)"
-
-#: website/static/js/addProjectPlugin.js:310
-msgid "Uncategorized"
-msgstr "未分類"
 
 #: website/static/js/addProjectPlugin.js:323
 msgid "(Empty category)"
@@ -1041,83 +1038,112 @@ msgid "Could not fetch alerts for this page. Please refresh page and try again."
 msgstr "このページのアラートを取得できませんでした。 ページを更新してもう一度お試しください。"
 
 #: website/static/js/apiApplication.js:201
+#: website/static/js/apiApplication_old.js:201
 msgid "Error fetching list of registered applications"
 msgstr "登録済みアプリケーションのリストの取得エラー"
 
 #: website/static/js/apiApplication.js:212
 #: website/static/js/apiApplication.js:379
+#: website/static/js/apiApplication_old.js:212
+#: website/static/js/apiApplication_old.js:379
 msgid "Deactivate application?"
 msgstr "アプリケーションを無効にしますか？"
 
 #: website/static/js/apiApplication.js:220
+#: website/static/js/apiApplication_old.js:220
 #: website/static/js/apiPersonalToken.js:199
+#: website/static/js/apiPersonalToken_old.js:199
 msgid " has been deactivated"
 msgstr "は無効化されました"
 
 #: website/static/js/apiApplication.js:231
 #: website/static/js/apiApplication.js:399
+#: website/static/js/apiApplication_old.js:231
+#: website/static/js/apiApplication_old.js:399
 #: website/static/js/apiPersonalToken.js:210
 #: website/static/js/apiPersonalToken.js:378
+#: website/static/js/apiPersonalToken_old.js:210
+#: website/static/js/apiPersonalToken_old.js:378
 msgid "Deactivate"
 msgstr "非アクティブ"
 
 #: website/static/js/apiApplication.js:278
+#: website/static/js/apiApplication_old.js:278
 #: website/static/js/apiPersonalToken.js:257
+#: website/static/js/apiPersonalToken_old.js:257
 msgid "There are unsaved changes on this page."
 msgstr "このページには未保存の変更があります。"
 
 #: website/static/js/apiApplication.js:292
+#: website/static/js/apiApplication_old.js:292
 msgid "Error fetching application data"
 msgstr "アプリケーションデータの取得エラー"
 
 #: website/static/js/apiApplication.js:327
+#: website/static/js/apiApplication_old.js:327
 #: website/static/js/apiPersonalToken.js:306
+#: website/static/js/apiPersonalToken_old.js:306
 msgid "Error updating instance"
 msgstr "インスタンスの更新エラー"
 
 #: website/static/js/apiApplication.js:353
+#: website/static/js/apiApplication_old.js:353
 msgid "Error registering new OAuth2 application"
 msgstr "新しいOAuth2アプリケーションの登録エラー"
 
 #: website/static/js/apiApplication.js:409
+#: website/static/js/apiApplication_old.js:409
 msgid "Reset client secret?"
 msgstr "クライアントシークレットをリセットしますか？"
 
 #: website/static/js/apiApplication.js:427
+#: website/static/js/apiApplication_old.js:427
 msgid "Error resetting instance secret"
 msgstr "インスタンスシークレットのリセットエラー"
 
 #: website/static/js/apiApplication.js:439
+#: website/static/js/apiApplication_old.js:439
 msgid "Reset Secret"
 msgstr "シークレットをリセット"
 
 #: website/static/js/apiApplication.js:453
-#: website/static/js/apiPersonalToken.js:392 website/static/js/profile.js:358
+#: website/static/js/apiApplication_old.js:453
+#: website/static/js/apiPersonalToken.js:392
+#: website/static/js/apiPersonalToken_old.js:392
+#: website/static/js/profile.js:358
 msgid "Discard changes?"
 msgstr "変更を破棄しますか？"
 
 #: website/static/js/apiApplication.js:463
-#: website/static/js/apiPersonalToken.js:402 website/static/js/profile.js:370
+#: website/static/js/apiApplication_old.js:463
+#: website/static/js/apiPersonalToken.js:402
+#: website/static/js/apiPersonalToken_old.js:402
+#: website/static/js/profile.js:370
 msgid "Discard"
 msgstr "破棄"
 
 #: website/static/js/apiPersonalToken.js:180
+#: website/static/js/apiPersonalToken_old.js:180
 msgid "Error fetching list of registered personal access tokens"
 msgstr "登録済みの個人アクセストークンのリストの取得エラー"
 
 #: website/static/js/apiPersonalToken.js:191
+#: website/static/js/apiPersonalToken_old.js:191
 msgid "Deactivate personal access token?"
 msgstr "個人用アクセストークンを無効にしますか？"
 
 #: website/static/js/apiPersonalToken.js:271
+#: website/static/js/apiPersonalToken_old.js:271
 msgid "Error fetching token data"
 msgstr "トークンデータの取得エラー"
 
 #: website/static/js/apiPersonalToken.js:332
+#: website/static/js/apiPersonalToken_old.js:332
 msgid "Error registering new OAuth2 personal access token"
 msgstr "新しいOAuth2個人用アクセストークンの登録エラー"
 
 #: website/static/js/apiPersonalToken.js:358
+#: website/static/js/apiPersonalToken_old.js:358
 msgid "Deactivate token?"
 msgstr "トークンを無効にしますか？"
 
@@ -2372,7 +2398,7 @@ msgstr "すべてのプロジェクトを管理する"
 
 #: website/static/js/myProjects.js:1117
 msgid "Create Project"
-msgstr "プロジェクトを作成"
+msgstr "新規プロジェクト作成"
 
 #: website/static/js/myProjects.js:1174
 msgid "Fetching more projects"
@@ -2973,11 +2999,11 @@ msgstr "reCAPTCHAを完了してください"
 
 #: website/static/js/pointers.js:30
 msgid "Search all projects"
-msgstr "すべてのプロジェクトを検索"
+msgstr "すべてのプロジェクトの検索"
 
 #: website/static/js/pointers.js:31
 msgid "Search my projects"
-msgstr "マイプロジェクトを検索"
+msgstr "マイプロジェクトの検索"
 
 #: website/static/js/pointers.js:32
 msgid "Searching..."
@@ -2997,7 +3023,7 @@ msgstr "登録日："
 
 #: website/static/js/pointers.js:332
 msgid "Created: "
-msgstr "作成日："
+msgstr "作成日時："
 
 #: website/static/js/pointers.js:332
 msgid ""
@@ -3005,7 +3031,7 @@ msgid ""
 "Modified: "
 msgstr ""
 "\n"
-"最終更新日："
+"最終更新日時："
 
 #: website/static/js/pointers.js:364
 msgid "Could not get links"
@@ -3641,19 +3667,15 @@ msgstr "ユーザ名"
 #: website/static/js/filepage/revisions.js:116
 msgid ""
 ".fa.fa-question-circle[data-content=\"MD5 is an algorithm used to verify "
-"data integrity.][rel=\"popover\"]"
-msgstr ""
-".fa.fa-question-circle[data-"
-"content=\"MD5は、データの整合性を検証するために使用されるアルゴリズムです。][rel=\"popover\"]"
+"data integrity.\"][rel=\"popover\"]"
+msgstr ".fa.fa-question-circle[data-content=\"MD5は、データの整合性を検証するために使用されるアルゴリズムです。\"][rel=\"popover\"]"
 
 #: website/static/js/filepage/revisions.js:119
 msgid ""
 ".fa.fa-question-circle[data-content=\"SHA-2 is a cryptographic hash "
 "function designed by the NSA used to verify data "
-"integrity.][rel=\"popover\"]"
-msgstr ""
-".fa.fa-question-circle[data-"
-"content=\"SHA-2は、データの整合性を検証するために使用されるNSAによって設計された暗号化ハッシュ関数です。][rel=\"popover\"]"
+"integrity.\"][rel=\"popover\"]"
+msgstr ".fa.fa-question-circle[data-content=\"SHA-2は、データの整合性を検証するために使用されるNSAによって設計された暗号ハッシュ関数です。\"][rel=\"popover\"]"
 
 #: website/static/js/filepage/revisions.js:136
 msgid "Anonymous Contributor"
@@ -3959,18 +3981,4 @@ msgstr "%1$sに報告してください"
 msgid "Could not GET wiki menu pages"
 msgstr "Wikiメニューページを取得できませんでした"
 
-#~ msgid "Error fetching application data"
-#~ msgstr "アプリケーションデータの取得エラー"
-
-#~ msgid "Error registering new OAuth2 application"
-#~ msgstr "新しいOAuth2アプリケーションの登録エラー"
-
-#~ msgid "Reset client secret?"
-#~ msgstr "クライアントシークレットをリセットしますか？"
-
-#~ msgid "Error resetting instance secret"
-#~ msgstr "インスタンスシークレットのリセットエラー"
-
-#~ msgid "Reset Secret"
-#~ msgstr "シークレットをリセット"
 
