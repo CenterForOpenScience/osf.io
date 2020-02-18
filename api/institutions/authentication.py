@@ -85,6 +85,7 @@ class InstitutionAuthentication(BaseAuthentication):
         middle_names = provider['user'].get('middleNames')
         suffix = provider['user'].get('suffix')
         department = provider['user'].get('department')
+        departments = provider['user'].get('departments')
 
         # Use given name and family name to build full name if it is not provided
         if given_name and family_name and not fullname:
@@ -103,9 +104,11 @@ class InstitutionAuthentication(BaseAuthentication):
         # unconfirmed, etc.).
         user, created = get_or_create_user(fullname, username, reset_password=False)
 
-        # The `department` field is updated each login/
-        if department:
+        # The `department` field is updated each login, with multiple departments first in wins.
+        department = department or departments[0]
+        if department and user.department != department:
             user.department = department
+            user.save()
 
         # Existing but inactive users need to be either "activated" or failed the auth
         activation_required = False

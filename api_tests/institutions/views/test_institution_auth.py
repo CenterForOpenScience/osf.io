@@ -21,7 +21,15 @@ def make_user(username, fullname):
     return UserFactory(username=username, fullname=fullname)
 
 
-def make_payload(institution, username, fullname='Fake User', given_name='', family_name='', department=''):
+def make_payload(
+        institution,
+        username,
+        fullname='Fake User',
+        given_name='',
+        family_name='',
+        department='',
+        departments=[]
+):
 
     data = {
         'provider': {
@@ -33,7 +41,8 @@ def make_payload(institution, username, fullname='Fake User', given_name='', fam
                 'fullname': fullname,
                 'suffix': '',
                 'username': username,
-                'department': department
+                'department': department,
+                'departments': departments
             }
         }
     }
@@ -184,6 +193,41 @@ class TestInstitutionAuth:
         assert user.family_name == 'Bar'
         assert user.given_name == 'Foo'
         assert user.department == 'Fake Department'
+        # Existing active user keeps their password
+        assert user.has_usable_password()
+        assert user.check_password(password)
+        # Confirm affiliation
+        assert institution in user.affiliated_institutions.all()
+
+    def test_user_active_multiple_departments(self, app, institution, url_auth_institution):
+
+        username, fullname, password = 'user_active@user.edu', 'Foo Bar', 'FuAsKeEr'
+        user = make_user(username, fullname)
+        user.set_password(password)
+        user.save()
+
+        with capture_signals() as mock_signals:
+            res = app.post(
+                url_auth_institution,
+                make_payload(
+                    institution,
+                    username,
+                    family_name='User',
+                    given_name='Fake',
+                    fullname='Fake User',
+                    departments=['Fake Department1', 'Fake Department2'],
+                )
+            )
+        assert res.status_code == 204
+        assert not mock_signals.signals_sent()
+
+        user = OSFUser.objects.filter(username=username).first()
+        assert user
+        # User names remains untouched
+        assert user.fullname == fullname
+        assert user.family_name == 'Bar'
+        assert user.given_name == 'Foo'
+        assert user.department == 'Fake Department1'
         # Existing active user keeps their password
         assert user.has_usable_password()
         assert user.check_password(password)
