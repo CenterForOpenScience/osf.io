@@ -314,6 +314,102 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                     }
                 })
 
+    def test_add_files_with_preset_cols(self):
+        client = SpreadsheetClient('0001')
+        with mock.patch.object(client, 'ensure_columns',
+                               side_effect=lambda sid, cols, row: cols + ['L9', 'L10']):
+            with mock.patch.object(client, '_make_request',
+                                   return_value=MockResponse('{"test": true}',
+                                                             200)) as mkreq:
+                client.add_files('sheet01', 1, 'sheet02', 2,
+                                 ['file1.txt', 'file2.txt'])
+                assert_equal(len(mkreq.mock_calls), 3)
+                name, args, kwargs = mkreq.mock_calls[0]
+                assert_equal(json.loads(kwargs['data']), {
+                  'range': 'sheet02!A2:E2',
+                  'values': [['FALSE', '', '']],
+                  'majorDimension': 'ROWS'
+                })
+                name, args, kwargs = mkreq.mock_calls[1]
+                assert_equal(json.loads(kwargs['data']), {
+                  'range': 'sheet01!A1:J1',
+                  'values': [[u'\u251c\u2212\u2212', 'file1.txt', '', '', '.txt', '', '', '', ''],
+                             [u'\u2514\u2212\u2212', 'file2.txt', '', '', '', '', '', '', '']],
+                  'majorDimension': 'ROWS'
+                })
+                name, args, kwargs = mkreq.mock_calls[2]
+                reqs = json.loads(kwargs['data'])['requests']
+                assert_equal(len(reqs), 5)
+                assert_equal(reqs[0], {
+                    'addProtectedRange': {
+                      'protectedRange': {
+                        'range': {
+                          'endRowIndex': 1,
+                          'endColumnIndex': 7,
+                          'sheetId': 1,
+                          'startColumnIndex': 0,
+                          'startRowIndex': 0
+                        },
+                        'warningOnly': True
+                      }
+                    }
+                })
+                assert_equal(reqs[1], {
+                    'addProtectedRange': {
+                      'protectedRange': {
+                        'range': {
+                          'endRowIndex': 3,
+                          'endColumnIndex': 2,
+                          'sheetId': 1,
+                          'startColumnIndex': 0,
+                          'startRowIndex': 1
+                        },
+                        'warningOnly': True
+                      }
+                    }
+                })
+                assert_equal(reqs[2], {
+                    'addProtectedRange': {
+                      'protectedRange': {
+                        'range': {
+                          'endRowIndex': 3,
+                          'endColumnIndex': 5,
+                          'sheetId': 1,
+                          'startColumnIndex': 4,
+                          'startRowIndex': 1
+                        },
+                        'warningOnly': True
+                      }
+                    }
+                })
+                assert_equal(reqs[3], {
+                    'updateDimensionProperties': {
+                      'range': {
+                        'sheetId': 1,
+                        'dimension': 'COLUMNS',
+                        'startIndex': 7,
+                        'endIndex': 8,
+                      },
+                      'properties': {
+                        'hiddenByUser': True,
+                      },
+                      'fields': 'hiddenByUser',
+                    }
+                })
+                assert_equal(reqs[4], {
+                    'updateDimensionProperties': {
+                      'range': {
+                        'sheetId': 1,
+                        'dimension': 'COLUMNS',
+                        'startIndex': 8,
+                        'endIndex': 9,
+                      },
+                      'properties': {
+                        'hiddenByUser': True,
+                      },
+                      'fields': 'hiddenByUser',
+                    }
+                })
 
 class TestIQBRIMSWorkflowUserSettings(OsfTestCase):
 

@@ -545,9 +545,9 @@ class SpreadsheetClient(BaseClient):
                         0)
         num_of_fcolumns = 2
         fcolumns = ['Remarks']
+        entry_cols = ['L{}'.format(i) for i in range(0, max_depth + 2)]
         c = self.ensure_columns(files_sheet_id,
-                                ['L{}'.format(i)
-                                 for i in range(0, max_depth + 2)] +
+                                entry_cols +
                                 ['Persons Involved(File)'] +
                                 ['{}(File)'.format(col) for col in fcolumns] +
                                 ['Extension'] +
@@ -581,6 +581,23 @@ class SpreadsheetClient(BaseClient):
         logger.info('Inserted: {}'.format(res.json()))
         ext_col_index = max_depth + 2 + num_of_fcolumns
         col_count = ext_col_index + 1 + num_of_fcolumns
+
+        hide_col_reqs = [{
+            'updateDimensionProperties': {
+                'range': {
+                    'sheetId': files_sheet_idx,
+                    'dimension': 'COLUMNS',
+                    'startIndex': i,
+                    'endIndex': i + 1,
+                },
+                'properties': {
+                    'hiddenByUser': True,
+                },
+                'fields': 'hiddenByUser',
+            }
+        } for i, col in enumerate(c)
+          if col.startswith('L') and col not in entry_cols]
+
         res = self._make_request(
             'POST',
             self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
@@ -622,7 +639,7 @@ class SpreadsheetClient(BaseClient):
                             'warningOnly': True
                         }
                     }
-                }]
+                }] + hide_col_reqs
             }),
             expects=(200, ),
             throws=HTTPError(401)
