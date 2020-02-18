@@ -73,7 +73,7 @@
                 >${_("Discard changes")}</button>
 
             <button
-                    data-bind="disable: saving(), text: saving() ? 'Saving' : 'Save'"
+                    data-bind="disable: saving(), text: saving() ? ${_('Saving')} : ${_('Save')}"
                     type="submit"
                     class="btn btn-success"
                 >${_("Save")}</button>
