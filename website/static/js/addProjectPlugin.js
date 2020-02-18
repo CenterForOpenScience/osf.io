@@ -184,7 +184,7 @@ var AddProject = {
                 m('.modal-body', [
                     m('.text-left', [
                         m('.form-group.m-v-sm', [
-                            m('label[for="projectName].f-w-lg.text-bigger', 'Title'),
+                            m('label[for="projectName].f-w-lg.text-bigger', _('Title')),
                             m('input[type="text"].form-control.project-name', {
                                 onkeyup: function(ev){
                                     var val = ev.target.value;
@@ -198,7 +198,7 @@ var AddProject = {
                                     //  This will not be reliably running!
                                     $osf.trackClick(options.trackingCategory, options.trackingAction, 'type-project-name');
                                 },
-                                placeholder : agh.sprintf(_('Enter %1$s title'),ctrl.nodeType),
+                                placeholder : agh.sprintf(_('Enter %1$s title'),_(ctrl.nodeType)),
                                 name : 'projectName'
                             })
                         ]),
@@ -268,7 +268,7 @@ var AddProject = {
                             )
                         ]) : '',
                         ctrl.options.parentID !== null ? m('.span', [
-                                m('label.f-w-lg.text-bigger', 'License'),
+                                m('label.f-w-lg.text-bigger', _('License')),
                                 m('p',
                                     m('i', _(' This component will inherit the same license as '),
                                         m('b', options.parentTitle),
@@ -286,7 +286,7 @@ var AddProject = {
                         ]),
                         ctrl.showMore() ? [
                             m('.form-group.m-v-sm', [
-                                m('label[for="projectDesc].f-w-lg.text-bigger', 'Description'),
+                                m('label[for="projectDesc].f-w-lg.text-bigger', _('Description')),
                                 m('input[type="text"].form-control.noresize.project-desc', {
                                     onkeyup: function (ev){
                                         ctrl.newProjectDesc($(this).val());
@@ -295,11 +295,11 @@ var AddProject = {
                                         $osf.trackClick(options.trackingCategory, options.trackingAction, 'type-project-description');
                                     },
                                     name : 'projectDesc',
-                                    placeholder : agh.sprintf(_('Enter %1$s description'),ctrl.nodeType)
+                                    placeholder : agh.sprintf(_('Enter %1$s description'),_(ctrl.nodeType))
                                 })
                             ]),
                             ctrl.options.parentID !== null ? [
-                                m('label.f-w-lg.text-bigger','Category'),
+                                m('label.f-w-lg.text-bigger',_('Category')),
                                 m('i', _(' (for descriptive purposes)')),
                                 m('div.dropdown.dropup.generic-dropdown.category-list', [
                                     m('button[data-toggle="dropdown"]', {
@@ -307,7 +307,7 @@ var AddProject = {
                                         type: 'button'
                                       }, [
                                         m('i', { className : mHelpers.getIcon(ctrl.newProjectCategory()) }),
-                                        m('span.text-capitalize', ctrl.newProjectCategory() || _('Uncategorized')),
+                                        m('span.text-capitalize', _(ctrl.newProjectCategory()) || _('Uncategorized')),
                                         m('i.fa.fa-sort')
                                       ]),
                                     m('ul.dropdown-menu', [
@@ -320,7 +320,7 @@ var AddProject = {
                                                             }
                                                   }, [
                                                     m('i', { className : mHelpers.getIcon(cat.value) }),
-                                                    m('span', cat.display_name || _('(Empty category)'))
+                                                    m('span', _(cat.display_name) || _('(Empty category)'))
                                                   ]
                                                 )
                                             );

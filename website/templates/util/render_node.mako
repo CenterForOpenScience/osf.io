@@ -19,7 +19,7 @@
             % endif
 
             % if not summary['is_public']:
-                <span class="fa fa-lock" data-toggle="tooltip" title="This project is private"></span>
+                <span class="fa fa-lock" data-toggle="tooltip" title='${_("This project is private")}'></span>
             % endif
                 <span class="project-statuses-lg">
                     % if summary['is_pending_registration']:
@@ -54,8 +54,8 @@
             % if not summary['archiving']:
             <div class="pull-right">
                 % if not summary['primary'] and permissions.WRITE in user['permissions'] and not node['is_registration']:
-                    <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
-                    <i class="fa fa-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title="Create a fork of ${summary['title']}"></i>
+                    <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title='${_("Remove link")}'></i>
+                    <i class="fa fa-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title='${_("Create a fork of %(summaryTitle)s") % dict (summaryTitle=summary['title'])}'></i>
                 % endif
                 % if summary['primary'] and summary['logged_in'] and summary['is_contributor_or_group_member'] and not summary['is_registration']:
                     <div class="generic-dropdown dropdown pull-right">
@@ -63,15 +63,15 @@
                             <span class="fa fa-ellipsis-h"></span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-right">
-                            <li><a tabindex="-1" href="${domain}${summary['id']}/contributors/">Manage Contributors</a></li>
-                            <li><a tabindex="-1" href="${domain}${summary['id']}/settings/">Settings</a></li>
+                            <li><a tabindex="-1" href="${domain}${summary['id']}/contributors/">${_("Manage Contributors")}</a></li>
+                            <li><a tabindex="-1" href="${domain}${summary['id']}/settings/">${_("Settings")}</a></li>
                             % if summary['is_admin']:
                             <li>
                                 <a tabindex="-1"
                                     data-toggle="modal" data-target="#nodesDelete"
                                     data-bind="click: $root.delete.bind($root, ${summary['childExists'] | sjson, n}, '${summary['node_type']}', ${summary['is_supplemental_project'] | sjson, n},  '${summary['api_url']}')"
                                     type="button">
-                                    Delete
+                                    ${_("Delete")}
                                 </a>
                             </li>
                             % endif

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-17 17:15+0900\n"
+"POT-Creation-Date: 2020-02-17 18:52+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -58,6 +58,7 @@ msgstr ""
 #: website/templates/project/modal_remove_contributor.mako:104
 #: website/templates/project/modal_remove_contributor.mako:113
 #: website/templates/project/modal_remove_contributor.mako:122
+#: website/templates/project/nodes_delete.mako:89
 #: website/templates/project/project.mako:568
 #: website/templates/project/settings.mako:132
 #: website/templates/project/timestamp.mako:71
@@ -788,6 +789,8 @@ msgstr ""
 #: addons/wiki/templates/delete_wiki_page.mako:14
 #: addons/wiki/templates/edit.mako:38
 #: website/templates/profile/personal_tokens_detail.mako:53
+#: website/templates/project/nodes_delete.mako:91
+#: website/templates/util/render_node.mako:74
 msgid "Delete"
 msgstr ""
 
@@ -1190,11 +1193,7 @@ msgstr ""
 msgid "My Profile"
 msgstr ""
 
-#: website/templates/nav.mako:80
-msgid "RDM Support"
-msgstr ""
-
-#: website/templates/nav.mako:82 website/templates/profile/account.mako:8
+#: website/templates/nav.mako:79 website/templates/profile/account.mako:8
 #: website/templates/profile/add_email.mako:14
 #: website/templates/profile/addons.mako:19
 #: website/templates/profile/notifications.mako:6
@@ -1206,7 +1205,12 @@ msgstr ""
 #: website/templates/project/project_header.mako:80
 #: website/templates/project/settings.mako:2
 #: website/templates/project/settings.mako:5
+#: website/templates/util/render_node.mako:67
 msgid "Settings"
+msgstr ""
+
+#: website/templates/nav.mako:81
+msgid "RDM Support"
 msgstr ""
 
 #: website/templates/nav.mako:83
@@ -2496,11 +2500,36 @@ msgstr ""
 #: website/templates/project/modal_add_contributor.mako:343
 #: website/templates/project/modal_add_contributor.mako:355
 #: website/templates/project/modal_remove_contributor.mako:112
+#: website/templates/project/nodes_delete.mako:87
 msgid "Back"
 msgstr ""
 
 #: website/templates/project/modal_add_contributor.mako:351
 msgid "Next"
+msgstr ""
+
+#: website/templates/project/modal_add_pointer.mako:8
+msgid "Link other GakuNin RDM projects"
+msgstr ""
+
+#: website/templates/project/modal_add_pointer.mako:15
+msgid "Search projects"
+msgstr ""
+
+#: website/templates/project/modal_add_pointer.mako:43
+msgid "Projects"
+msgstr ""
+
+#: website/templates/project/modal_add_pointer.mako:55
+msgid "Results: All Projects"
+msgstr ""
+
+#: website/templates/project/modal_add_pointer.mako:56
+msgid "Results: My Projects"
+msgstr ""
+
+#: website/templates/project/modal_add_pointer.mako:96
+msgid "Done"
 msgstr ""
 
 #: website/templates/project/modal_generate_private_link.mako:5
@@ -2609,6 +2638,11 @@ msgstr ""
 msgid ""
 "Please save or discard your existing changes before removing a "
 "contributor."
+msgstr ""
+
+#: website/templates/project/nodes_delete.mako:66
+#: website/templates/project/nodes_delete.mako:77
+msgid "Type the following to continue:"
 msgstr ""
 
 #: website/templates/project/project.mako:22
@@ -3383,5 +3417,22 @@ msgstr ""
 #: website/templates/util/render_addon_widget.mako:200
 #: website/templates/util/render_addon_widget.mako:225
 msgid "Image Scan Service"
+msgstr ""
+
+#: website/templates/util/render_node.mako:22
+msgid "This project is private"
+msgstr ""
+
+#: website/templates/util/render_node.mako:57
+msgid "Remove link"
+msgstr ""
+
+#: website/templates/util/render_node.mako:58
+#, python-format
+msgid "Create a fork of %(summaryTitle)s"
+msgstr ""
+
+#: website/templates/util/render_node.mako:66
+msgid "Manage Contributors"
 msgstr ""
 

@@ -63,7 +63,7 @@
                                 </div>
                                 <p data-bind="html:warning">
                                 <p data-bind="css: {'text-danger' : (!canDelete() && atMaxLength())}">
-                                    Type the following to continue: <strong data-bind="text: confirmationString"></strong>
+                                    ${_("Type the following to continue:")} <strong data-bind="text: confirmationString"></strong>
                                 </p>
                                 <div contenteditable="true" data-bind="editableHTML: {observable: confirmInput, onUpdate: handleEditableUpdate}" class="form-control"></div>
                             </div>
@@ -74,7 +74,7 @@
                         <div>
                             <p data-bind="html: message"></p>
                             <p data-bind="css: {'text-danger' : (!canDelete() && atMaxLength())}">
-                                Type the following to continue: <strong data-bind="text: confirmationString"></strong>
+                                ${_("Type the following to continue:")} <strong data-bind="text: confirmationString"></strong>
                             </p>
                         </div>
                         <div contenteditable="true" data-bind="editableHTML: {observable: confirmInput, onUpdate: handleEditableUpdate}" class="form-control"></div>
@@ -84,11 +84,11 @@
                 <div class="modal-footer">
                     <!--ordering puts back button before cancel -->
                     <span data-bind="if: page() == CONFIRM">
-                        <a href="#" class="btn btn-default" data-bind="click: back" data-dismiss="modal">Back</a>
+                        <a href="#" class="btn btn-default" data-bind="click: back" data-dismiss="modal">${_("Back")}</a>
                     </span>
-                    <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
+                    <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">${_("Cancel")}</a>
                     <span data-bind="if: (page() === QUICKDELETE || (page() == CONFIRM && (nodesChanged().length <= 100)))">
-                        <a href="#" class="btn btn-danger" data-bind="css: { disabled: !canDelete() }, click: confirmChanges, visible: nodesDeleted()" data-dismiss="modal">Delete</a>
+                        <a href="#" class="btn btn-danger" data-bind="css: { disabled: !canDelete() }, click: confirmChanges, visible: nodesDeleted()" data-dismiss="modal">${_("Delete")}</a>
                     </span>
                     <span data-bind="if: page() == SELECT">
                         <a class="btn btn-primary" data-bind="css: { disabled: !nodesDeleted() }, click:confirmWarning" >Continue</a>

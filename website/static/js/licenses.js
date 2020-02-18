@@ -22,7 +22,7 @@ var list = $.map(licenses, function(value, key) {
 });
 
 var licenseGroups = [
-    DEFAULT_LICENSE,
+    _(DEFAULT_LICENSE),
     {
         name: _('Content:'),
         licenses: [licenses.CC0, licenses.CCBY]
@@ -39,7 +39,7 @@ var licenseGroups = [
         name: _('Code - Other:'),
         licenses: [licenses.Artistic2, licenses.Eclipse1, licenses.LGPL3, licenses.LGPL2_1, licenses.Mozilla2]
     },
-    OTHER_LICENSE
+    _(OTHER_LICENSE)
 ];
 
 module.exports = {

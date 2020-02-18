@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-17 17:14+0900\n"
+"POT-Creation-Date: 2020-02-17 18:52+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -776,6 +776,10 @@ msgstr ""
 msgid "There was an unknown error. Please try again later."
 msgstr ""
 
+#: website/static/js/addProjectPlugin.js:187 website/static/js/conference.js:21
+msgid "Title"
+msgstr ""
+
 #: website/static/js/addProjectPlugin.js:201
 msgid "Enter %1$s title"
 msgstr ""
@@ -812,6 +816,10 @@ msgstr ""
 msgid " Add tags from "
 msgstr ""
 
+#: website/static/js/addProjectPlugin.js:271
+msgid "License"
+msgstr ""
+
 #: website/static/js/addProjectPlugin.js:273
 msgid " This component will inherit the same license as "
 msgstr ""
@@ -824,8 +832,16 @@ msgstr ""
 msgid " More"
 msgstr ""
 
+#: website/static/js/addProjectPlugin.js:289
+msgid "Description"
+msgstr ""
+
 #: website/static/js/addProjectPlugin.js:298
 msgid "Enter %1$s description"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:302 website/static/js/conference.js:33
+msgid "Category"
 msgstr ""
 
 #: website/static/js/addProjectPlugin.js:303
@@ -1003,6 +1019,7 @@ msgid "Error fetching list of registered applications"
 msgstr ""
 
 #: website/static/js/apiApplication.js:212
+#: website/static/js/apiApplication.js:379
 msgid "Deactivate application?"
 msgstr ""
 
@@ -1012,6 +1029,7 @@ msgid " has been deactivated"
 msgstr ""
 
 #: website/static/js/apiApplication.js:231
+#: website/static/js/apiApplication.js:399
 #: website/static/js/apiPersonalToken.js:210
 #: website/static/js/apiPersonalToken.js:378
 msgid "Deactivate"
@@ -1020,6 +1038,41 @@ msgstr ""
 #: website/static/js/apiApplication.js:278
 #: website/static/js/apiPersonalToken.js:257
 msgid "There are unsaved changes on this page."
+msgstr ""
+
+#: website/static/js/apiApplication.js:292
+msgid "Error fetching application data"
+msgstr ""
+
+#: website/static/js/apiApplication.js:327
+#: website/static/js/apiPersonalToken.js:306
+msgid "Error updating instance"
+msgstr ""
+
+#: website/static/js/apiApplication.js:353
+msgid "Error registering new OAuth2 application"
+msgstr ""
+
+#: website/static/js/apiApplication.js:409
+msgid "Reset client secret?"
+msgstr ""
+
+#: website/static/js/apiApplication.js:427
+msgid "Error resetting instance secret"
+msgstr ""
+
+#: website/static/js/apiApplication.js:439
+msgid "Reset Secret"
+msgstr ""
+
+#: website/static/js/apiApplication.js:453
+#: website/static/js/apiPersonalToken.js:392 website/static/js/profile.js:358
+msgid "Discard changes?"
+msgstr ""
+
+#: website/static/js/apiApplication.js:463
+#: website/static/js/apiPersonalToken.js:402 website/static/js/profile.js:370
+msgid "Discard"
 msgstr ""
 
 #: website/static/js/apiPersonalToken.js:180
@@ -1034,24 +1087,12 @@ msgstr ""
 msgid "Error fetching token data"
 msgstr ""
 
-#: website/static/js/apiPersonalToken.js:306
-msgid "Error updating instance"
-msgstr ""
-
 #: website/static/js/apiPersonalToken.js:332
 msgid "Error registering new OAuth2 personal access token"
 msgstr ""
 
 #: website/static/js/apiPersonalToken.js:358
 msgid "Deactivate token?"
-msgstr ""
-
-#: website/static/js/apiPersonalToken.js:392 website/static/js/profile.js:358
-msgid "Discard changes?"
-msgstr ""
-
-#: website/static/js/apiPersonalToken.js:402 website/static/js/profile.js:370
-msgid "Discard"
 msgstr ""
 
 #: website/static/js/citationGrid.js:182
@@ -1249,16 +1290,8 @@ msgstr ""
 msgid "option `maxWidthProp`."
 msgstr ""
 
-#: website/static/js/conference.js:21
-msgid "Title"
-msgstr ""
-
 #: website/static/js/conference.js:27
 msgid "Author"
-msgstr ""
-
-#: website/static/js/conference.js:33
-msgid "Category"
 msgstr ""
 
 #: website/static/js/conference.js:39

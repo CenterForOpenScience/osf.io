@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-17 17:14+0900\n"
+"POT-Creation-Date: 2020-02-17 18:52+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -787,6 +787,10 @@ msgstr "新しいプロジェクトを作成する"
 msgid "There was an unknown error. Please try again later."
 msgstr "不明なエラーがありました。 後でもう一度やり直してください。"
 
+#: website/static/js/addProjectPlugin.js:187 website/static/js/conference.js:21
+msgid "Title"
+msgstr "タイトル"
+
 #: website/static/js/addProjectPlugin.js:201
 msgid "Enter %1$s title"
 msgstr "%1$sのタイトルを入力してください"
@@ -823,6 +827,10 @@ msgstr "の管理者は、このコンポーネントへの読み取りアクセ
 msgid " Add tags from "
 msgstr "タグを追加する：from "
 
+#: website/static/js/addProjectPlugin.js:271
+msgid "License"
+msgstr "ライセンス"
+
 #: website/static/js/addProjectPlugin.js:273
 msgid " This component will inherit the same license as "
 msgstr "このコンポーネントは、次と同じライセンスを継承します："
@@ -835,9 +843,17 @@ msgstr "もっと詳しく見る"
 msgid " More"
 msgstr "詳細"
 
+#: website/static/js/addProjectPlugin.js:289
+msgid "Description"
+msgstr "説明"
+
 #: website/static/js/addProjectPlugin.js:298
 msgid "Enter %1$s description"
 msgstr "%1$sの説明を入力する"
+
+#: website/static/js/addProjectPlugin.js:302 website/static/js/conference.js:33
+msgid "Category"
+msgstr "カテゴリ"
 
 #: website/static/js/addProjectPlugin.js:303
 msgid " (for descriptive purposes)"
@@ -1029,6 +1045,7 @@ msgid "Error fetching list of registered applications"
 msgstr "登録済みアプリケーションのリストの取得エラー"
 
 #: website/static/js/apiApplication.js:212
+#: website/static/js/apiApplication.js:379
 msgid "Deactivate application?"
 msgstr "アプリケーションを無効にしますか？"
 
@@ -1038,6 +1055,7 @@ msgid " has been deactivated"
 msgstr "は無効化されました"
 
 #: website/static/js/apiApplication.js:231
+#: website/static/js/apiApplication.js:399
 #: website/static/js/apiPersonalToken.js:210
 #: website/static/js/apiPersonalToken.js:378
 msgid "Deactivate"
@@ -1047,6 +1065,41 @@ msgstr "非アクティブ"
 #: website/static/js/apiPersonalToken.js:257
 msgid "There are unsaved changes on this page."
 msgstr "このページには未保存の変更があります。"
+
+#: website/static/js/apiApplication.js:292
+msgid "Error fetching application data"
+msgstr "アプリケーションデータの取得エラー"
+
+#: website/static/js/apiApplication.js:327
+#: website/static/js/apiPersonalToken.js:306
+msgid "Error updating instance"
+msgstr "インスタンスの更新エラー"
+
+#: website/static/js/apiApplication.js:353
+msgid "Error registering new OAuth2 application"
+msgstr "新しいOAuth2アプリケーションの登録エラー"
+
+#: website/static/js/apiApplication.js:409
+msgid "Reset client secret?"
+msgstr "クライアントシークレットをリセットしますか？"
+
+#: website/static/js/apiApplication.js:427
+msgid "Error resetting instance secret"
+msgstr "インスタンスシークレットのリセットエラー"
+
+#: website/static/js/apiApplication.js:439
+msgid "Reset Secret"
+msgstr "シークレットをリセット"
+
+#: website/static/js/apiApplication.js:453
+#: website/static/js/apiPersonalToken.js:392 website/static/js/profile.js:358
+msgid "Discard changes?"
+msgstr "変更を破棄しますか？"
+
+#: website/static/js/apiApplication.js:463
+#: website/static/js/apiPersonalToken.js:402 website/static/js/profile.js:370
+msgid "Discard"
+msgstr "破棄"
 
 #: website/static/js/apiPersonalToken.js:180
 msgid "Error fetching list of registered personal access tokens"
@@ -1060,10 +1113,6 @@ msgstr "個人用アクセストークンを無効にしますか？"
 msgid "Error fetching token data"
 msgstr "トークンデータの取得エラー"
 
-#: website/static/js/apiPersonalToken.js:306
-msgid "Error updating instance"
-msgstr "インスタンスの更新エラー"
-
 #: website/static/js/apiPersonalToken.js:332
 msgid "Error registering new OAuth2 personal access token"
 msgstr "新しいOAuth2個人用アクセストークンの登録エラー"
@@ -1071,14 +1120,6 @@ msgstr "新しいOAuth2個人用アクセストークンの登録エラー"
 #: website/static/js/apiPersonalToken.js:358
 msgid "Deactivate token?"
 msgstr "トークンを無効にしますか？"
-
-#: website/static/js/apiPersonalToken.js:392 website/static/js/profile.js:358
-msgid "Discard changes?"
-msgstr "変更を破棄しますか？"
-
-#: website/static/js/apiPersonalToken.js:402 website/static/js/profile.js:370
-msgid "Discard"
-msgstr "破棄"
 
 #: website/static/js/citationGrid.js:182
 msgid "Copy citation"
@@ -1275,17 +1316,9 @@ msgstr "オプション「toggleWidth」は、オプション「maxWidthProp」�
 msgid "option `maxWidthProp`."
 msgstr " "
 
-#: website/static/js/conference.js:21
-msgid "Title"
-msgstr "タイトル"
-
 #: website/static/js/conference.js:27
 msgid "Author"
 msgstr "著者"
-
-#: website/static/js/conference.js:33
-msgid "Category"
-msgstr "カテゴリ"
 
 #: website/static/js/conference.js:39
 msgid "Date Created"
@@ -1818,7 +1851,7 @@ msgstr "ZIPでダウンロード："
 msgid ""
 " Click on the row of an add-on or folder and click the Download as Zip "
 "button in the toolbar."
-msgstr "アドオンまたはフォルダーの行をクリックし、ツールバーの [zipでダウンロード] ボタンをクリックします。"
+msgstr "アドオンまたはフォルダーの行をクリックし、ツールバーの [ZIPでダウンロード] ボタンをクリックします。"
 
 #: website/static/js/fangorn.js:2253
 msgid " Not available for all storage add-ons."
@@ -2331,7 +2364,7 @@ msgstr "ページをリロードしてください。"
 
 #: website/static/js/myProjects.js:1111
 msgid "My Projects "
-msgstr "マイプロジェクト"
+msgstr "マイプロジェクト "
 
 #: website/static/js/myProjects.js:1112
 msgid "Browse and organize all your projects"
@@ -2944,7 +2977,7 @@ msgstr "すべてのプロジェクトを検索"
 
 #: website/static/js/pointers.js:31
 msgid "Search my projects"
-msgstr "私のプロジェクトを検索"
+msgstr "マイプロジェクトを検索"
 
 #: website/static/js/pointers.js:32
 msgid "Searching..."
