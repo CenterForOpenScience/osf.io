@@ -195,7 +195,7 @@ var ApplicationsListViewModel = oop.defclass({
 
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
-                losfLanguage.t('dataListFetchError'),
+                osfLanguage.t('dataListFetchError'),
                 'danger');
 
             Raven.captureMessage(_('Error fetching list of registered applications'), {
@@ -347,7 +347,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
 
         request.fail(function (xhr, status, error) {
             $osf.growl('Error',
-                       losfLanguage.t('dataSendError'),
+                       osfLanguage.t('dataSendError'),
                        'danger');
 
             Raven.captureMessage(_('Error registering new OAuth2 application'), {
