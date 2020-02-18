@@ -48,7 +48,7 @@ var QuickDeleteViewModel = function (nodeType, isSupplementalProject, nodeApiUrl
     self.atMaxLength = ko.observable(false);
     self.nodesDeleted = ko.observable(true);
     self.pageTitle = ko.computed(function () {
-        return agh.sprintf(_('Are you sure you want to delete this %1$s?'),self.nodeType);
+        return agh.sprintf(_('Are you sure you want to delete this %1$s?'),_(self.nodeType));
     });
 };
 

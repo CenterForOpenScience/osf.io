@@ -1130,7 +1130,7 @@ msgstr "登録済みの個人アクセストークンのリストの取得エラ
 #: website/static/js/apiPersonalToken.js:191
 #: website/static/js/apiPersonalToken_old.js:191
 msgid "Deactivate personal access token?"
-msgstr "個人用アクセストークンを無効にしますか？"
+msgstr "パーソナルアクセストークンを無効にしますか？"
 
 #: website/static/js/apiPersonalToken.js:271
 #: website/static/js/apiPersonalToken_old.js:271

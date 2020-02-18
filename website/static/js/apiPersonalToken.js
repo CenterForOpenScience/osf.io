@@ -282,7 +282,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
         if (!this.dirty()){
             // No data needs to be sent to the server, but give the illusion that form was submitted
             this.changeMessage(
-                language.apiOauth2Token.dataUpdated,
+                osfLanguage.t('dataUpdated'),
                 'text-success',
                 5000);
             return;

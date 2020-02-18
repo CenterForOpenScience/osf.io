@@ -119,7 +119,7 @@ module.exports = {
     },
     apiOauth2Token: {
         discardUnchanged: '保存していない変更を破棄してもよろしいですか？',
-        deactivateConfirm: 'Are you sure you want to deactivate this token? This cannot be reversed.',
+        deactivateConfirm: 'このトークンを無効にしますか？ これを元に戻すことはできません。',
         deactivateError: 'トークンを無効にできませんでした。 数分待ってからもう一度試すか、問題が解決しない場合は' + $osf.osfSupportLink() + 'へお問い合わせください。' ,
         dataFetchError: 'データがロードされていません。' + $osf.refreshOrSupport(),
         dataListFetchError: 'Could not load list of personal access tokens at this time. ' + $osf.refreshOrSupport(),
