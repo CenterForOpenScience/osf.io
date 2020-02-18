@@ -85,7 +85,6 @@ class InstitutionAuthentication(BaseAuthentication):
         middle_names = provider['user'].get('middleNames')
         suffix = provider['user'].get('suffix')
         department = provider['user'].get('department')
-        departments = provider['user'].get('departments')
 
         # Use given name and family name to build full name if it is not provided
         if given_name and family_name and not fullname:
@@ -104,11 +103,7 @@ class InstitutionAuthentication(BaseAuthentication):
         # unconfirmed, etc.).
         user, created = get_or_create_user(fullname, username, reset_password=False)
 
-        # The `department` field is updated each login, with multiple departments we use alphabetical order.
-        if departments:
-            departments.sort()
-            department = department or departments[0]
-
+        # The `department` field is updated each login when it was changed.
         if department and user.department != department:
             user.department = department
             user.save()
