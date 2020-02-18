@@ -668,11 +668,10 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
 
     @property
     def branched_from_type(self):
-        if type(self.branched_from) == DraftNode:
-            return 'DraftNode'
-        elif type(self.branched_from) == Node:
-            return 'Node'
-        return ''
+        if isinstance(self.branched_from, (DraftNode, Node)):
+            return self.__name__
+        else:
+            return ''
 
     @property
     def url(self):

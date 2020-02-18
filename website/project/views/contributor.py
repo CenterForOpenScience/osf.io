@@ -588,7 +588,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             can_change_preferences=False,
             logo=logo if logo else settings.OSF_LOGO,
             osf_contact_email=settings.OSF_CONTACT_EMAIL,
-            published_preprints=[] if isinstance(node, Preprint) or isinstance(node, DraftRegistration) else serialize_preprints(node, user=None)
+            published_preprints=[] if isinstance(node, (Preprint, DraftRegistration)) else serialize_preprints(node, user=None)
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
@@ -599,7 +599,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
 
 @contributor_added.connect
 def add_recently_added_contributor(node, contributor, auth=None, *args, **kwargs):
-    if isinstance(node, Preprint) or isinstance(node, DraftRegistration):
+    if isinstance(node, (Preprint, DraftRegistration)):
         return
     MAX_RECENT_LENGTH = 15
     # Add contributor to recently added list for user
