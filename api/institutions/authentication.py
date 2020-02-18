@@ -104,9 +104,11 @@ class InstitutionAuthentication(BaseAuthentication):
         # unconfirmed, etc.).
         user, created = get_or_create_user(fullname, username, reset_password=False)
 
-        # The `department` field is updated each login, with multiple departments first in wins.
-        departments.sort()
-        department = department or departments[0]
+        # The `department` field is updated each login, with multiple departments we use alphabetical order.
+        if departments:
+            departments.sort()
+            department = department or departments[0]
+
         if department and user.department != department:
             user.department = department
             user.save()
