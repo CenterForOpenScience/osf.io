@@ -19,7 +19,7 @@ from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
 from osf.exceptions import NodeStateError
-from osf.models import AbstractNode, OSFGroup, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor
+from osf.models import AbstractNode, DraftRegistration, OSFGroup, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor
 from osf.utils import sanitize
 from osf.utils.permissions import ADMIN
 from website import mails, language, settings
@@ -615,6 +615,8 @@ def add_recently_added_contributor(node, contributor, auth=None, *args, **kwargs
             for each in user.recentlyaddedcontributor_set.order_by('date_added')[:difference]:
                 each.delete()
 
+    if isinstance(node, DraftRegistration):
+        return
     # If there are pending access requests for this user, mark them as accepted
     pending_access_requests_for_user = node.requests.filter(creator=contributor, machine_state='pending')
     if pending_access_requests_for_user.exists():

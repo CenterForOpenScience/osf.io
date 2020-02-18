@@ -9,7 +9,7 @@ from osf.utils.migrations import AddWaffleFlags, DeleteWaffleSwitches
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0197_add_ab_testing_home_page_hero_text_version_b_flag'),
+        ('osf', '0200_auto_20200214_1518'),
     ]
 
     operations = [

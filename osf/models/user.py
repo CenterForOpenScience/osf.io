@@ -854,6 +854,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # Transfer user's preprints
         self._merge_users_preprints(user)
 
+        # Transfer user's draft registrations
+        self._merge_user_draft_registrations(user)
+
         # transfer group membership
         for group in user.osf_groups:
             if not group.is_manager(self):
@@ -916,6 +919,57 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
             preprint.remove_permission(user, user_perms)
             preprint.save()
+
+    @property
+    def draft_registrations_active(self):
+        """
+        Active draft registrations attached to a user (user is a contributor)
+        """
+        return self.draft_registrations.filter(
+            models.Q(registered_node__isnull=True) |
+            models.Q(registered_node__is_deleted=True),
+            deleted__isnull=True,
+        )
+
+    def _merge_user_draft_registrations(self, user):
+        """
+        Draft Registrations have contributors, and this model uses guardian.
+        The DraftRegistrationContributor table stores order and bibliographic information.
+        Permissions are stored on guardian tables.  DraftRegistration information needs to be transferred
+        from user -> self, and draft registration permissions need to be transferred from user -> self.
+        """
+        from osf.models import DraftRegistrationContributor
+        # Loop through `user`'s draft registrations
+        for draft_reg in user.draft_registrations.all():
+            user_contributor = DraftRegistrationContributor.objects.get(draft_registration=draft_reg, user=user)
+            user_perms = user_contributor.permission
+
+            # Both `self` and `user` are contributors on the draft reg
+            if draft_reg.is_contributor(self) and draft_reg.is_contributor(user):
+                self_contributor = DraftRegistrationContributor.objects.get(draft_registration=draft_reg, user=self)
+                self_perms = self_contributor.permission
+
+                max_perms_index = max(API_CONTRIBUTOR_PERMISSIONS.index(self_perms), API_CONTRIBUTOR_PERMISSIONS.index(user_perms))
+                # Add the highest of `self` perms or `user` perms to `self`
+                draft_reg.set_permissions(user=self, permissions=API_CONTRIBUTOR_PERMISSIONS[max_perms_index])
+
+                if not self_contributor.visible and user_contributor.visible:
+                    # if `self` is not visible, but `user` is visible, make `self` visible.
+                    draft_reg.set_visible(user=self, visible=True, log=True, auth=Auth(user=self))
+                # Now that perms and bibliographic info have been transferred to `self` contributor,
+                # delete `user` contributor
+                user_contributor.delete()
+            else:
+                # `self` is not a contributor, but `user` is.  Transfer `user` permissions and
+                # contributor information to `self`.  Remove permissions from `user`.
+                draft_reg.contributor_set.filter(user=user).update(user=self)
+                draft_reg.add_permission(self, user_perms)
+
+            if draft_reg.initiator == user:
+                draft_reg.initiator = self
+
+            draft_reg.remove_permission(user, user_perms)
+            draft_reg.save()
 
     def disable_account(self):
         """
@@ -1737,7 +1791,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         )
         shared_nodes = user_nodes.exclude(id__in=personal_nodes.values_list('id'))
 
-        for node in shared_nodes.exclude(type='osf.quickfilesnode'):
+        for node in shared_nodes.exclude(type__in=['osf.quickfilesnode', 'osf.draftnode']):
             alternate_admins = OSFUser.objects.filter(groups__name=node.format_group(ADMIN)).filter(is_active=True).exclude(id=self.id)
             if not alternate_admins:
                 raise UserStateError(

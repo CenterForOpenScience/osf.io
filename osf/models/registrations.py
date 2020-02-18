@@ -4,28 +4,45 @@ from future.moves.urllib.parse import urljoin
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils import timezone
+from guardian.models import (
+    GroupObjectPermissionBase,
+    UserObjectPermissionBase,
+)
+from dirtyfields import DirtyFieldsMixin
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.exceptions import NodeStateError
+from osf.utils.permissions import ADMIN, READ
+from osf.exceptions import NodeStateError, DraftRegistrationStateError
 from website.util import api_v2_url
 from website import settings
 from website.archiver import ARCHIVER_INITIATED
 
 from osf.models import (
-    OSFUser, RegistrationSchema,
+    OSFUser, RegistrationSchema, Node,
     Retraction, Embargo, DraftRegistrationApproval,
     EmbargoTerminationApproval,
+    DraftRegistrationContributor,
 )
 
 from osf.models.archive import ArchiveJob
 from osf.models.base import BaseModel, ObjectIDMixin
+from osf.models.draft_node import DraftNode
 from osf.models.node import AbstractNode
+from osf.models.mixins import (
+    EditableFieldsMixin,
+    Loggable,
+    GuardianMixin,
+)
 from osf.models.nodelog import NodeLog
 from osf.models.provider import RegistrationProvider
 from osf.models.mixins import RegistrationResponseMixin
+from osf.models.tag import Tag
+from osf.models.validators import validate_title
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 logger = logging.getLogger(__name__)
@@ -423,15 +440,6 @@ class Registration(AbstractNode):
             self.save()
         return retraction
 
-    def copy_unclaimed_records(self):
-        """Copies unclaimed_records to unregistered contributors from the registered_from node"""
-        registered_from_id = self.registered_from._id
-        for contributor in self.contributors.filter(is_registered=False):
-            record = contributor.unclaimed_records.get(registered_from_id)
-            if record:
-                contributor.unclaimed_records[self._id] = record
-                contributor.save()
-
     def delete_registration_tree(self, save=False):
         logger.debug('Marking registration {} as deleted'.format(self._id))
         self.is_deleted = True
@@ -490,7 +498,7 @@ class Registration(AbstractNode):
 
 class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     """ Simple log to show status changes for DraftRegistrations
-
+    Also, editable fields on registrations are logged.
     field - _id - primary key
     field - date - date of the action took place
     field - action - simple action to track what happened
@@ -500,28 +508,72 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     action = models.CharField(max_length=255)
     draft = models.ForeignKey('DraftRegistration', related_name='logs',
                               null=True, blank=True, on_delete=models.CASCADE)
-    user = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
+    user = models.ForeignKey('OSFUser', db_index=True, null=True, blank=True, on_delete=models.CASCADE)
+    params = DateTimeAwareJSONField(default=dict)
 
     SUBMITTED = 'submitted'
     REGISTERED = 'registered'
     APPROVED = 'approved'
     REJECTED = 'rejected'
 
+    EDITED_TITLE = 'edit_title'
+    EDITED_DESCRIPTION = 'edit_description'
+    CATEGORY_UPDATED = 'category_updated'
+
+    CONTRIB_ADDED = 'contributor_added'
+    CONTRIB_REMOVED = 'contributor_removed'
+    CONTRIB_REORDERED = 'contributors_reordered'
+    PERMISSIONS_UPDATED = 'permissions_updated'
+
+    MADE_CONTRIBUTOR_VISIBLE = 'made_contributor_visible'
+    MADE_CONTRIBUTOR_INVISIBLE = 'made_contributor_invisible'
+
+    AFFILIATED_INSTITUTION_ADDED = 'affiliated_institution_added'
+    AFFILIATED_INSTITUTION_REMOVED = 'affiliated_institution_removed'
+
+    CHANGED_LICENSE = 'license_changed'
+
+    TAG_ADDED = 'tag_added'
+    TAG_REMOVED = 'tag_removed'
+
     def __repr__(self):
         return ('<DraftRegistrationLog({self.action!r}, date={self.date!r}), '
                 'user={self.user!r} '
                 'with id {self._id!r}>').format(self=self)
 
+    class Meta:
+        ordering = ['-created']
+        get_latest_by = 'created'
 
-class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, BaseModel):
+
+class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMixin,
+        BaseModel, Loggable, EditableFieldsMixin, GuardianMixin):
+    # Fields that are writable by DraftRegistration.update
+    WRITABLE_WHITELIST = [
+        'title',
+        'description',
+        'category',
+        'node_license',
+    ]
+
     URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/drafts/{draft_id}'
+
+    # Overrides EditableFieldsMixin to make title not required
+    title = models.TextField(validators=[validate_title], blank=True, default='')
+
+    _contributors = models.ManyToManyField(OSFUser,
+                                           through=DraftRegistrationContributor,
+                                           related_name='draft_registrations')
+    affiliated_institutions = models.ManyToManyField('Institution', related_name='draft_registrations')
+    node_license = models.ForeignKey('NodeLicenseRecord', related_name='draft_registrations',
+                                     on_delete=models.SET_NULL, null=True, blank=True)
 
     datetime_initiated = NonNaiveDateTimeField(auto_now_add=True)
     datetime_updated = NonNaiveDateTimeField(auto_now=True)
     deleted = NonNaiveDateTimeField(null=True, blank=True)
 
     # Original Node a draft registration is associated with
-    branched_from = models.ForeignKey('Node', related_name='registered_draft',
+    branched_from = models.ForeignKey('AbstractNode', related_name='registered_draft',
                                       null=True, on_delete=models.CASCADE)
 
     initiator = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
@@ -554,6 +606,30 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, BaseModel):
     # TODO: Use "FIELD_ALIASES"?
     _metaschema_flags = DateTimeAwareJSONField(default=dict, blank=True)
     notes = models.TextField(blank=True)
+
+    # For ContributorMixin
+    guardian_object_type = 'draft_registration'
+
+    READ_DRAFT_REGISTRATION = 'read_{}'.format(guardian_object_type)
+    WRITE_DRAFT_REGISTRATION = 'write_{}'.format(guardian_object_type)
+    ADMIN_DRAFT_REGISTRATION = 'admin_{}'.format(guardian_object_type)
+
+    # For ContributorMixin
+    base_perms = [READ_DRAFT_REGISTRATION, WRITE_DRAFT_REGISTRATION, ADMIN_DRAFT_REGISTRATION]
+
+    groups = {
+        'read': (READ_DRAFT_REGISTRATION,),
+        'write': (READ_DRAFT_REGISTRATION, WRITE_DRAFT_REGISTRATION,),
+        'admin': (READ_DRAFT_REGISTRATION, WRITE_DRAFT_REGISTRATION, ADMIN_DRAFT_REGISTRATION,)
+    }
+    group_format = 'draft_registration_{self.id}_{group}'
+
+    class Meta:
+        permissions = (
+            ('read_draft_registration', 'Can read the draft registration'),
+            ('write_draft_registration', 'Can edit the draft registration'),
+            ('admin_draft_registration', 'Can manage the draft registration'),
+        )
 
     def __repr__(self):
         return ('<DraftRegistration(branched_from={self.branched_from!r}) '
@@ -598,11 +674,16 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, BaseModel):
         )
 
     @property
+    def _primary_key(self):
+        return self._id
+
+    @property
     def absolute_url(self):
         return urljoin(settings.DOMAIN, self.url)
 
     @property
     def absolute_api_v2_url(self):
+        # Old draft registration URL - user new endpoints, through draft registration
         node = self.branched_from
         path = '/nodes/{}/draft_registrations/{}/'.format(node._id, self._id)
         return api_v2_url(path)
@@ -644,10 +725,154 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, BaseModel):
         """ List of logs associated with this node"""
         return self.logs.all().order_by('date')
 
+    @property
+    def log_class(self):
+        # Override for EditableFieldsMixin
+        return DraftRegistrationLog
+
+    @property
+    def state_error(self):
+        # Override for ContributorMixin
+        return DraftRegistrationStateError
+
+    @property
+    def contributor_class(self):
+        # Override for ContributorMixin
+        return DraftRegistrationContributor
+
+    def get_contributor_order(self):
+        # Method needed for ContributorMixin
+        return self.get_draftregistrationcontributor_order()
+
+    def set_contributor_order(self, contributor_ids):
+        # Method needed for ContributorMixin
+        return self.set_draftregistrationcontributor_order(contributor_ids)
+
+    @property
+    def contributor_kwargs(self):
+        # Override for ContributorMixin
+        return {'draft_registration': self}
+
+    @property
+    def contributor_set(self):
+        # Override for ContributorMixin
+        return self.draftregistrationcontributor_set
+
+    @property
+    def order_by_contributor_field(self):
+        # Property needed for ContributorMixin
+        return 'draftregistrationcontributor___order'
+
+    @property
+    def admin_contributor_or_group_member_ids(self):
+        # Overrides ContributorMixin
+        # Draft Registrations don't have parents or group members at the moment, so this is just admin group member ids
+        # Called when removing project subscriptions
+        return self.get_group(ADMIN).user_set.filter(is_active=True).values_list('guids___id', flat=True)
+
+    @property
+    def creator(self):
+        # Convenience property for testing contributor methods, which are
+        # shared with other items that have creators
+        return self.initiator
+
+    @property
+    def is_public(self):
+        # Convenience property for sharing code with nodes
+        return False
+
+    @property
+    def log_params(self):
+        # Override for EditableFieldsMixin
+        return {
+            'draft_registration': self._id,
+        }
+
+    @property
+    def visible_contributors(self):
+        # Override for ContributorMixin
+        return OSFUser.objects.filter(
+            draftregistrationcontributor__draft_registration=self,
+            draftregistrationcontributor__visible=True
+        ).order_by(self.order_by_contributor_field)
+
+    @property
+    def contributor_email_template(self):
+        # Override for ContributorMixin
+        return 'draft_registration'
+
+    @property
+    def institutions_url(self):
+        # For NodeInstitutionsRelationshipSerializer
+        path = '/draft_registrations/{}/institutions/'.format(self._id)
+        return api_v2_url(path)
+
+    @property
+    def institutions_relationship_url(self):
+        # For NodeInstitutionsRelationshipSerializer
+        path = '/draft_registrations/{}/relationships/institutions/'.format(self._id)
+        return api_v2_url(path)
+
+    def update_search(self):
+        # Override for AffiliatedInstitutionMixin, not sending DraftRegs to search
+        pass
+
+    def can_view(self, auth):
+        """Does the user have permission to view the draft registration?
+        Checking permissions directly on the draft, not the node.
+        """
+        if not auth:
+            return False
+        return auth.user and self.has_permission(auth.user, READ)
+
+    def get_addons(self):
+        # Override for ContributorMixin, Draft Registrations don't have addons
+        return []
+
+    # Override Taggable
+    def add_tag_log(self, tag, auth):
+        self.add_log(
+            action=DraftRegistrationLog.TAG_ADDED,
+            params={
+                'draft_registration': self._id,
+                'tag': tag.name
+            },
+            auth=auth,
+            save=False
+        )
+
+    @property
+    def license(self):
+        if self.node_license_id:
+            return self.node_license
+        return None
+
+    @property
+    def all_tags(self):
+        """Return a queryset containing all of this draft's tags (incl. system tags)."""
+        # Tag's default manager only returns non-system tags, so we can't use self.tags
+        return Tag.all_tags.filter(draftregistration_tagged=self)
+
+    @property
+    def system_tags(self):
+        """The system tags associated with this draft registration. This currently returns a list of string
+        names for the tags, for compatibility with v1. Eventually, we can just return the
+        QuerySet.
+        """
+        return self.all_tags.filter(system=True).values_list('name', flat=True)
+
     @classmethod
-    def create_from_node(cls, node, user, schema, data=None, provider=None):
+    def create_from_node(cls, user, schema, node=None, data=None, provider=None):
         if not provider:
             provider = RegistrationProvider.load('osf')
+
+        if not node:
+            # If no node provided, a DraftNode is created for you
+            node = DraftNode.objects.create(creator=user, title='Untitled')
+
+        if not (isinstance(node, Node) or isinstance(node, DraftNode)):
+            raise DraftRegistrationStateError()
+
         draft = cls(
             initiator=user,
             branched_from=node,
@@ -656,7 +881,35 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, BaseModel):
             provider=provider,
         )
         draft.save()
+        draft.copy_editable_fields(node, Auth(user), save=True)
+        draft.update(data)
         return draft
+
+    def get_root(self):
+        return self
+
+    def copy_contributors_from(self, resource):
+        """
+        Copies the contibutors from the resource (including permissions and visibility)
+        into this draft registration.
+        Visibility, order, draft, and user are stored in DraftRegistrationContributor table.
+        Permissions are stored in guardian tables (use add_permission)
+        """
+
+        contribs = []
+        current_contributors = self.contributor_set.values_list('user_id', flat=True)
+        for contrib in resource.contributor_set.all():
+            if contrib.user.id not in current_contributors:
+                permission = contrib.permission
+                new_contrib = DraftRegistrationContributor(
+                    draft_registration=self,
+                    _order=contrib._order,
+                    visible=contrib.visible,
+                    user=contrib.user
+                )
+                contribs.append(new_contrib)
+                self.add_permission(contrib.user, permission, save=True)
+        DraftRegistrationContributor.objects.bulk_create(contribs)
 
     def update_metadata(self, metadata):
         changes = []
@@ -739,7 +992,10 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, BaseModel):
         self.approval.save()
 
     def add_status_log(self, user, action):
-        log = DraftRegistrationLog(action=action, user=user, draft=self)
+        params = {
+            'draft_registration': self._id,
+        },
+        log = DraftRegistrationLog(action=action, user=user, draft=self, params=params)
         log.save()
 
     def validate_metadata(self, *args, **kwargs):
@@ -753,3 +1009,87 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, BaseModel):
         Validates draft's registration_responses
         """
         return self.registration_schema.validate_registration_responses(*args, **kwargs)
+
+    def add_log(self, action, params, auth, save=True):
+        """
+        Tentative - probably need to combine with add_status_log
+        """
+        user = auth.user if auth else None
+
+        params['draft_registration'] = params.get('draft_registration') or self._id
+
+        log = DraftRegistrationLog(
+            action=action, user=user,
+            params=params, draft=self
+        )
+        log.save()
+        return log
+
+    def save(self, *args, **kwargs):
+        if 'old_subjects' in kwargs.keys():
+            kwargs.pop('old_subjects')
+        return super(DraftRegistration, self).save(*args, **kwargs)
+
+    def update(self, fields, auth=None, save=True):
+        """Update the draft registration with the given fields.
+        :param dict fields: Dictionary of field_name:value pairs.
+        :param Auth auth: Auth object for the user making the update.
+        :param bool save: Whether to save after updating the object.
+        """
+        if not fields:  # Bail out early if there are no fields to update
+            return False
+        for key, value in fields.items():
+            if key not in self.WRITABLE_WHITELIST:
+                continue
+            if key == 'title':
+                self.set_title(title=value, auth=auth, save=False)
+            elif key == 'description':
+                self.set_description(description=value, auth=auth, save=False)
+            elif key == 'category':
+                self.set_category(category=value, auth=auth, save=False)
+            elif key == 'node_license':
+                self.set_node_license(
+                    {
+                        'id': value.get('id'),
+                        'year': value.get('year'),
+                        'copyrightHolders': value.get('copyrightHolders') or value.get('copyright_holders', [])
+                    },
+                    auth,
+                    save=save
+                )
+        if save:
+            updated = self.get_dirty_fields()
+            self.save()
+
+        return updated
+
+
+class DraftRegistrationUserObjectPermission(UserObjectPermissionBase):
+    """
+    Direct Foreign Key Table for guardian - User models - we typically add object
+    perms directly to Django groups instead of users, so this will be used infrequently
+    """
+    content_object = models.ForeignKey(DraftRegistration, on_delete=models.CASCADE)
+
+
+class DraftRegistrationGroupObjectPermission(GroupObjectPermissionBase):
+    """
+    Direct Foreign Key Table for guardian - Group models. Makes permission checks faster.
+    This table gives a Django group a particular permission to a DraftRegistration.
+    For example, every time a draft reg is created, an admin, write, and read Django group
+    are created for the draft reg. The "write" group has write/read perms to the draft reg.
+    Those links are stored here:  content_object_id (draft_registration_id), group_id, permission_id
+    """
+    content_object = models.ForeignKey(DraftRegistration, on_delete=models.CASCADE)
+
+
+@receiver(post_save, sender='osf.DraftRegistration')
+def create_django_groups_for_draft_registration(sender, instance, created, **kwargs):
+    if created:
+        instance.update_group_permissions()
+        DraftRegistrationContributor.objects.get_or_create(
+            user=instance.initiator,
+            draft_registration=instance,
+            visible=True,
+        )
+        instance.add_permission(instance.initiator, ADMIN)
