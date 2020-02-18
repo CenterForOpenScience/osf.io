@@ -4614,7 +4614,15 @@ class TestAdminImplicitRead(object):
         return ProjectFactory(is_public=False, creator=creator)
 
     @pytest.fixture()
+    def project_public(self, creator):
+        return ProjectFactory(is_public=True, creator=creator)
+
+    @pytest.fixture()
     def lvl1component(self, project):
+        return ProjectFactory(is_public=False, parent=project)
+
+    @pytest.fixture()
+    def lvl1component_two(self, project):
         return ProjectFactory(is_public=False, parent=project)
 
     @pytest.fixture()
@@ -4670,6 +4678,21 @@ class TestAdminImplicitRead(object):
 
         assert lvl1component in qs
         assert project not in qs
+
+    def test_private_link_public(self, project, lvl1component,
+            lvl1component_two, project_public):
+        pl = PrivateLinkFactory()
+
+        lvl1component.private_links.add(pl)
+        lvl1component_two.private_links.add(pl)
+
+        qs = Node.objects.can_view(user=None, private_link=pl)
+
+        assert project not in qs
+        assert project_public not in qs
+        assert lvl1component in qs
+        assert lvl1component_two in qs
+        assert len(qs) == 2
 
 
 class TestNodeProperties:
