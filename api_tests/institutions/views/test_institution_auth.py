@@ -21,7 +21,7 @@ def make_user(username, fullname):
     return UserFactory(username=username, fullname=fullname)
 
 
-def make_payload(institution, username, fullname='Fake User', given_name='', family_name=''):
+def make_payload(institution, username, fullname='Fake User', given_name='', family_name='', department=''):
 
     data = {
         'provider': {
@@ -32,7 +32,8 @@ def make_payload(institution, username, fullname='Fake User', given_name='', fam
                 'givenName': given_name,
                 'fullname': fullname,
                 'suffix': '',
-                'username': username
+                'username': username,
+                'department': department
             }
         }
     }
@@ -169,7 +170,8 @@ class TestInstitutionAuth:
                     username,
                     family_name='User',
                     given_name='Fake',
-                    fullname='Fake User'
+                    fullname='Fake User',
+                    department='Fake Department',
                 )
             )
         assert res.status_code == 204
@@ -181,6 +183,7 @@ class TestInstitutionAuth:
         assert user.fullname == fullname
         assert user.family_name == 'Bar'
         assert user.given_name == 'Foo'
+        assert user.department == 'Fake Department'
         # Existing active user keeps their password
         assert user.has_usable_password()
         assert user.check_password(password)
@@ -208,7 +211,8 @@ class TestInstitutionAuth:
                     username,
                     family_name='User',
                     given_name='Fake',
-                    fullname='Fake User'
+                    fullname='Fake User',
+                    department='Fake Department',
                 )
             )
         assert res.status_code == 204
@@ -221,6 +225,7 @@ class TestInstitutionAuth:
         assert user.fullname == 'Fake User'
         assert user.family_name == 'User'
         assert user.given_name == 'Fake'
+        assert user.department == 'Fake Department'
         # Unclaimed records must have been cleared
         assert not user.unclaimed_records
         # Previously unclaimed user must be assigned a usable password during institution auth
@@ -342,7 +347,8 @@ class TestInstitutionAuth:
                     username,
                     family_name='User',
                     given_name='Fake',
-                    fullname='Fake User'
+                    fullname='Fake User',
+                    department='Fake User',
                 ),
                 expect_errors=True
             )
