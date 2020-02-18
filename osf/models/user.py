@@ -389,7 +389,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     chronos_user_id = models.TextField(null=True, blank=True, db_index=True)
 
-    # This is taken via logging into CAS
+    # The primary department to which the institution user belongs,
+    # in case we support multiple departments in the future.
     department = models.TextField(null=True, blank=True)
 
     objects = OSFUserManager()
