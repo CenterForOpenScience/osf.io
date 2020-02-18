@@ -103,11 +103,6 @@ class InstitutionAuthentication(BaseAuthentication):
         # unconfirmed, etc.).
         user, created = get_or_create_user(fullname, username, reset_password=False)
 
-        # The `department` field is updated each login when it was changed.
-        if department and user.department != department:
-            user.department = department
-            user.save()
-
         # Existing but inactive users need to be either "activated" or failed the auth
         activation_required = False
         new_password_required = False
@@ -166,6 +161,11 @@ class InstitutionAuthentication(BaseAuthentication):
                 return None, None
         else:
             logger.info('Institution SSO: new user "{}"'.format(username))
+
+        # The `department` field is updated each login when it was changed.
+        if department and user.department != department:
+            user.department = department
+            user.save()
 
         # Both created and activated accounts need to be updated and registered
         if created or activation_required:
