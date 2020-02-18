@@ -669,7 +669,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     @property
     def branched_from_type(self):
         if isinstance(self.branched_from, (DraftNode, Node)):
-            return self.__class__.__name__
+            return self.branched_from.__class__.__name__
         else:
             return ''
 
