@@ -9,6 +9,10 @@ var Range = ace.require('ace/range').Range;
 var Cookie = require('js-cookie');
 var addDragNDrop = require('../dragNDrop');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 $(function(){
     var toggled_off = Cookie.get('spellcheckPersistKey' + window.location.toString()) === '0';
     if (toggled_off) {
@@ -41,7 +45,7 @@ $(function(){
         bold: "Strong <strong>",
         boldexample: "strong text",
 
-        italic: "Emphasis <em>",
+        italic: _("Emphasis <em>"),
         italicexample: "emphasized text",
 
         spellcheck: "Spellcheck: Toggle spellcheck on and off",

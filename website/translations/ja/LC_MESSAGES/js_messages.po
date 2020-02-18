@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-18 13:47+0900\n"
+"POT-Creation-Date: 2020-02-18 16:57+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -104,6 +104,10 @@ msgstr "前のバージョン"
 #: addons/wiki/static/wikiPage.js:228
 msgid "Version "
 msgstr "バージョン"
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:53
+msgid "Emphasis <em>"
+msgstr "強調構文 <em>"
 
 #: admin/base/utils.py:23
 msgid "Enter a valid 'slug' consisting only of lowercase letters."
@@ -2279,7 +2283,7 @@ msgstr "ロケーション"
 
 #: website/static/js/filepage/revisions.js:112 website/static/js/meetings.js:38
 msgid "Date"
-msgstr "日付"
+msgstr "更新日時"
 
 #: website/static/js/myProjects.js:310
 msgid "We're having some trouble contacting our servers. Try reloading the page."
@@ -3668,14 +3672,18 @@ msgstr "ユーザ名"
 msgid ""
 ".fa.fa-question-circle[data-content=\"MD5 is an algorithm used to verify "
 "data integrity.\"][rel=\"popover\"]"
-msgstr ".fa.fa-question-circle[data-content=\"MD5は、データの整合性を検証するために使用されるアルゴリズムです。\"][rel=\"popover\"]"
+msgstr ""
+".fa.fa-question-circle[data-"
+"content=\"MD5は、データの整合性を検証するために使用されるアルゴリズムです。\"][rel=\"popover\"]"
 
 #: website/static/js/filepage/revisions.js:119
 msgid ""
 ".fa.fa-question-circle[data-content=\"SHA-2 is a cryptographic hash "
 "function designed by the NSA used to verify data "
 "integrity.\"][rel=\"popover\"]"
-msgstr ".fa.fa-question-circle[data-content=\"SHA-2は、データの整合性を検証するために使用されるNSAによって設計された暗号ハッシュ関数です。\"][rel=\"popover\"]"
+msgstr ""
+".fa.fa-question-circle[data-"
+"content=\"SHA-2は、データの整合性を検証するために使用されるNSAによって設計された暗号ハッシュ関数です。\"][rel=\"popover\"]"
 
 #: website/static/js/filepage/revisions.js:136
 msgid "Anonymous Contributor"
@@ -3980,5 +3988,4 @@ msgstr "%1$sに報告してください"
 #: website/static/js/pages/wiki-edit-page.js:112
 msgid "Could not GET wiki menu pages"
 msgstr "Wikiメニューページを取得できませんでした"
-
 

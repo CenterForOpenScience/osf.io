@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-18 15:29+0900\n"
+"POT-Creation-Date: 2020-02-18 16:56+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -91,10 +91,13 @@ msgstr "キャンセル"
 #: addons/zotero/templates/zotero_node_settings.mako:85
 #: addons/zotero/templates/zotero_node_settings.mako:129
 #: website/templates/claim_account.mako:112
+#: website/templates/include/profile/jobs.mako:117
 #: website/templates/include/profile/jobs.mako:120
 #: website/templates/include/profile/names.mako:76
 #: website/templates/include/profile/names.mako:79
+#: website/templates/include/profile/schools.mako:117
 #: website/templates/include/profile/schools.mako:120
+#: website/templates/include/profile/social.mako:143
 #: website/templates/include/profile/social.mako:146
 #: website/templates/profile/oauth_app_detail.mako:88
 #: website/templates/profile/personal_tokens_detail.mako:55
@@ -840,7 +843,7 @@ msgstr "Wikiページをロード中"
 
 #: addons/wiki/templates/edit.mako:82
 msgid "View"
-msgstr "表示"
+msgstr "ビュー"
 
 #: addons/wiki/templates/edit.mako:88
 msgid "Wiki Version:"
@@ -858,6 +861,13 @@ msgstr "最新"
 #: website/templates/util/render_addon_widget.mako:24
 msgid "Add important information, links, or images here to describe your project."
 msgstr "重要な情報、リンク、または画像をここに追加して、プロジェクトを説明します。"
+
+#: addons/wiki/templates/edit.mako:134
+#: website/templates/include/profile/schools.mako:180
+#: website/templates/include/profile/social.mako:184
+#: website/templates/project/project.mako:539
+msgid "Edit"
+msgstr "編集"
 
 #: addons/wiki/templates/edit.mako:174
 msgid "Loading. . ."
@@ -1675,6 +1685,13 @@ msgstr "別を追加"
 msgid "Discard changes"
 msgstr "変更を破棄"
 
+#: website/templates/include/profile/jobs.mako:117
+#: website/templates/include/profile/names.mako:76
+#: website/templates/include/profile/schools.mako:117
+#: website/templates/include/profile/social.mako:143
+msgid "Saving"
+msgstr "保存中"
+
 #: website/templates/include/profile/jobs.mako:136
 #: website/templates/include/profile/schools.mako:136
 #: website/templates/include/profile/social.mako:180
@@ -1742,10 +1759,6 @@ msgstr "スタイル"
 msgid "Citation format"
 msgstr "引用形式"
 
-#: website/templates/include/profile/names.mako:76
-msgid "Saving"
-msgstr "保存中"
-
 #: website/templates/include/profile/schools.mako:35
 msgid "Institution"
 msgstr "機関"
@@ -1765,12 +1778,6 @@ msgstr "部門:"
 #: website/templates/include/profile/schools.mako:156
 msgid "Degree:"
 msgstr "学位:"
-
-#: website/templates/include/profile/schools.mako:180
-#: website/templates/include/profile/social.mako:184
-#: website/templates/project/project.mako:539
-msgid "Edit"
-msgstr "編集"
 
 #: website/templates/include/profile/settings_navpanel.mako:6
 msgid "Profile information"
@@ -2375,6 +2382,20 @@ msgstr "コントリビュータ"
 msgid "Filter by name"
 msgstr "氏名でフィルタ"
 
+#: website/templates/project/contributors.mako:14
+#: website/templates/project/contributors.mako:186
+#: website/templates/project/contributors.mako:232
+#: website/templates/project/modal_add_contributor.mako:227
+msgid "Permissions"
+msgstr "許可"
+
+#: website/templates/project/contributors.mako:17
+#: website/templates/project/contributors.mako:189
+#: website/templates/project/contributors.mako:235
+#: website/templates/project/modal_add_contributor.mako:230
+msgid "Permission Information"
+msgstr "権限管理の情報"
+
 #: website/templates/project/contributors.mako:24
 #: website/templates/project/contributors.mako:75
 msgid "Administrator"
@@ -2395,6 +2416,13 @@ msgstr "読込み"
 #: website/templates/project/contributors.mako:242
 #: website/templates/project/modal_add_contributor.mako:218
 msgid "Bibliographic Contributor"
+msgstr "目録表示コントリビュータ"
+
+#: website/templates/project/contributors.mako:36
+#: website/templates/project/contributors.mako:199
+#: website/templates/project/contributors.mako:245
+#: website/templates/project/modal_add_contributor.mako:221
+msgid "Bibliographic Contributor Information"
 msgstr "目録表示コントリビュータ"
 
 #: website/templates/project/contributors.mako:43
@@ -2437,19 +2465,6 @@ msgid ""
 "Create a link to share this project so those who have the link can "
 "view&mdash;but not edit&mdash;the project."
 msgstr "このプロジェクトを共有するリンクを作成して、リンクを知っているユーザーがプロジェクトを表示できるようにします。(編集はできません)"
-
-#: website/templates/project/contributors.mako:186
-#: website/templates/project/modal_add_contributor.mako:227
-msgid "Permissions"
-msgstr "許可"
-
-#: website/templates/project/contributors.mako:189
-msgid "Permission Information"
-msgstr "権限管理の情報"
-
-#: website/templates/project/contributors.mako:199
-msgid "Bibliographic Contributor Information"
-msgstr "目録表示コントリビュータ"
 
 #: website/templates/project/contributors.mako:396
 msgid "Discard Changes"
@@ -2563,7 +2578,12 @@ msgstr "プロジェクトとコンポーネントの読み込み..."
 msgid "Full Name"
 msgstr "氏名"
 
+#: website/templates/project/modal_add_contributor.mako:322
+msgid "Full name"
+msgstr ""
+
 #: website/templates/project/modal_add_contributor.mako:325
+#: website/templates/project/modal_add_contributor.mako:327
 msgid "Email"
 msgstr "メールアドレス"
 

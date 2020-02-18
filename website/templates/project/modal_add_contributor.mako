@@ -218,7 +218,7 @@
                                         ${_("Bibliographic Contributor")}
                                         <i class="fa fa-question-circle visibility-info"
                                            data-toggle="popover"
-                                           data-title="Bibliographic Contributor Information"
+                                           data-title="${_('Bibliographic Contributor Information')}"
                                            data-container="body"
                                            data-placement="right"
                                            data-html="true">
@@ -227,7 +227,7 @@
                                         ${_("Permissions")}
                                         <i class="fa fa-question-circle permission-info"
                                                 data-toggle="popover"
-                                                data-title="Permission Information"
+                                                data-title="${_('Permission Information')}"
                                                 data-container="#addContributors"
                                                 data-html="true"
                                             ></i>
@@ -319,12 +319,12 @@
                         <div class="form-group">
                             <label for="inviteUserName">${_("Full Name")}</label>
                             <input type="text" class='form-control' id="inviteName"
-                                placeholder="Full name" data-bind='value: inviteName, valueUpdate: "input"'/>
+                                placeholder="${_('Full name')}" data-bind='value: inviteName, valueUpdate: "input"'/>
                         </div>
                         <div class="form-group">
                             <label for="inviteUserEmail">${_("Email")}</label>
                             <input type="email" class='form-control' id="inviteUserEmail"
-                                    placeholder="Email" data-bind='value: inviteEmail' autofocus/>
+                                    placeholder="${_('Email')}" data-bind='value: inviteEmail' autofocus/>
                         </div>
                          <div class="help-block">
                             <p>${_("We will notify the user that they have been added to your project.")}</p>

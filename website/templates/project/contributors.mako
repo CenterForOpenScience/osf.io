@@ -11,10 +11,10 @@
 <div class="col-md-3 col-xs-12">
     <div class="filters">
         <input type="text" class="form-control searchable" id="nameSearch" placeholder="${_('Filter by name')}"/>
-        <h5 class="m-t-md">Permissions
+        <h5 class="m-t-md">${_("Permissions")}
                 <i class="fa fa-question-circle permission-info"
                     data-toggle="popover"
-                    data-title="Permission Information"
+                    data-title="${_('Permission Information')}"
                     data-container="body"
                     data-placement="right"
                     data-html="true"
@@ -33,7 +33,7 @@
         <h5 class="m-t-md">${_("Bibliographic Contributor")}
                 <i class="fa fa-question-circle visibility-info"
                     data-toggle="popover"
-                    data-title="Bibliographic Contributor Information"
+                    data-title=${_('Bibliographic Contributor Information')}"
                     data-container="body"
                     data-placement="right"
                     data-html="true"
@@ -229,10 +229,10 @@
             <th class="responsive-table-hide">Name</th>
             <th></th>
             <th class="access-permissions">
-                Permissions
+                ${_("Permissions")}
                 <i class="fa fa-question-circle permission-info"
                     data-toggle="popover"
-                    data-title="Permission Information"
+                    data-title="${_('Permission Information')}"
                     data-container="body"
                     data-placement="right"
                     data-html="true"
@@ -242,7 +242,7 @@
                 ${_("Bibliographic Contributor")}
                 <i class="fa fa-question-circle visibility-info"
                     data-toggle="popover"
-                    data-title="Bibliographic Contributor Information"
+                    data-title="${_('Bibliographic Contributor Information')}"
                     data-container="body"
                     data-placement="right"
                     data-html="true"

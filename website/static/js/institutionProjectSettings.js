@@ -101,7 +101,7 @@ var ViewModel = function(data) {
                 message: htmlMessage,
                 buttons: {
                     cancel: {
-                        label: 'Cancel',
+                        label: _('Cancel'),
                         className: 'btn-default',
                         callback: function () {
                         }

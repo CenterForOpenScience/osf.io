@@ -131,7 +131,7 @@
                   <div class="panel-heading wiki-panel-header clearfix" data-bind="css : { 'wiki-single-heading': $root.singleVis() === 'edit' }">
                     <div class="row">
                       <div class="col-md-6">
-                           <h3 class="panel-title" > <i class="fa fa-pencil-square-o"> </i>   Edit </h3>
+                           <h3 class="panel-title" > <i class="fa fa-pencil-square-o"> </i>   ${_("Edit")} </h3>
                       </div>
                         <div class="col-md-6">
                           <div class="pull-right">
