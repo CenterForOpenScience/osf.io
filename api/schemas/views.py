@@ -34,7 +34,7 @@ class RegistrationSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMi
     ordering = ('-id',)
 
     def get_default_queryset(self):
-        return RegistrationSchema.objects.get_latest_versions_and_allow_egap_admins(self.request)
+        return RegistrationSchema.objects.get_latest_versions(self.request)
 
     # overrides ListAPIView
     def get_queryset(self):

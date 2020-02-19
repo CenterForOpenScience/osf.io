@@ -31,6 +31,17 @@ SCHEMABLOCK_TYPES = [
 ]
 
 
+def allow_egap_admins(queryset, request):
+    """
+    Allows egap admins to see EGAP registrations as visible, should be deleted when when the EGAP registry goes
+    live.
+    """
+    if hasattr(request, 'user') and waffle.flag_is_active(request, EGAP_ADMINS):
+        return queryset | RegistrationSchema.objects.filter(name='EGAP Registration').distinct('name')
+    else:
+        return queryset
+
+
 class AbstractSchemaManager(models.Manager):
 
     def get_latest_version(self, name):
@@ -41,30 +52,19 @@ class AbstractSchemaManager(models.Manager):
         """
         return self.filter(name=name).order_by('schema_version').last()
 
-    def get_latest_versions(self):
+    def get_latest_versions(self, request=None):
         """
-        Returns a queryset of the latest version of each schema
-        :return queryset
-        """
-        return self.filter(visible=True).order_by('name', '-schema_version').distinct('name')
-
-    def get_latest_versions_and_allow_egap_admins(self, request):
-        """
-        Allows egap admins to see EGAP registrations as visible, should be deleted when when the EGAP registry goes
-        live.
+        Return the latest version of the given schema
 
         :param request: the request object needed for waffling
-        :param str only_active: Only return active schemas
         :return: queryset
         """
+        queryset = self.filter(visible=True).order_by('name', '-schema_version').distinct('name')
 
-        queryset = self.get_latest_versions()
+        if request:
+            return allow_egap_admins(queryset, request)
 
-        if hasattr(request, 'user') and waffle.flag_is_active(request, EGAP_ADMINS):
-            return queryset | RegistrationSchema.objects.filter(name='EGAP Registration').distinct('name')
-        else:
-            return queryset
-
+        return queryset
 
 class AbstractSchema(ObjectIDMixin, BaseModel):
     name = models.CharField(max_length=255)
