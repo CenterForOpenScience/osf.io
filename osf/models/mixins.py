@@ -1214,7 +1214,7 @@ class ContributorMixin(models.Model):
     def update_or_enqueue_on_resource_updated(self):
         raise NotImplementedError()
 
-    def _add_related_source_tags(self):
+    def _add_related_source_tags(self, contributor):
         raise NotImplementedError()
 
     @property

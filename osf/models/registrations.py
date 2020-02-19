@@ -1025,6 +1025,12 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         log.save()
         return log
 
+    # Overrides ContributorMixin
+    def _add_related_source_tags(self, contributor):
+        # The related source tag behavior for draft registration is currently undefined
+        # Therefore we don't add any source tags to it
+        pass
+
     def save(self, *args, **kwargs):
         if 'old_subjects' in kwargs.keys():
             kwargs.pop('old_subjects')
