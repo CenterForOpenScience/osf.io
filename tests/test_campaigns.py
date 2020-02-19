@@ -167,8 +167,8 @@ class TestCampaignsAuthViews(OsfTestCase):
         super(TestCampaignsAuthViews, self).setUp()
         self.campaigns = {
             'prereg': {
-                'title_register': 'Preregistration Challenge',
-                'title_landing': 'Welcome to the Prereg Challenge!'
+                'title_register': 'OSF Preregistration',
+                'title_landing': 'Welcome to the OSF Preregistration!'
             },
             'erpc': {
                 'title_register': 'Election Research Preacceptance Competition',

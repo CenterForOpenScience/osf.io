@@ -196,7 +196,6 @@
             guid: ${file_guid | sjson, n},
             id: ${file_id | sjson, n},
             checkoutUser: ${checkout_user if checkout_user else None | sjson, n},
-            isPreregCheckout: ${pre_reg_checkout if pre_reg_checkout else False | sjson, n},
             versionNames: ${version_names if version_names else [] | sjson, n},
           urls: {
         %if error is None:
