@@ -147,7 +147,7 @@
                                     <button
                                     data-toggle="modal" data-target="#nodesDelete"
                                     data-bind="click: $root.delete.bind($root, ${node['child_exists'] | sjson, n}, '${node['node_type']}', ${node['is_supplemental_project'] | sjson, n}, '${node['api_url']}')"
-                                    class="btn btn-danger btn-delete-node">${_("Delete %(node_type)s") % dict(node_type=node['node_type'])}</button>
+                                    class="btn btn-danger btn-delete-node">${_("Delete %(node_type)s") % dict(node_type=_(node['node_type']))}</button>
                                     <%include file="project/nodes_delete.mako"/>
                                 </span>
                             </span>
@@ -160,7 +160,7 @@
                                     <button disabled="disabled"
                                     data-toggle="modal" data-target="#nodesDelete"
                                     data-bind="click: $root.delete.bind($root, ${node['child_exists'] | sjson, n}, '${node['node_type']}', ${node['is_preprint'] | sjson, n}, '${node['api_url']}')"
-                                    class="btn btn-danger btn-delete-node">${_("Delete %(node_type)s") % dict(node_type=node['node_type'])}</button>
+                                    class="btn btn-danger btn-delete-node">${_("Delete %(node_type)s") % dict(node_type=_(node['node_type']))}</button>
                                     <%include file="project/nodes_delete.mako"/>
                                 </span>
                             </span>

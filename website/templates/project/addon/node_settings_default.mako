@@ -4,7 +4,7 @@
         ${addon_full_name}
         <small class="authorized-by">
             <span data-bind="if: nodeHasAuth">
-                authorized by <a data-bind="attr: {href: urls().owner}, text: ownerName"></a>
+                ${_("authorized by %(ownerName)s") % dict(ownerName='<a data-bind="attr: {href: urls().owner}, text: ownerName"></a>')}
                 % if not is_registration:
                     <a data-bind="click: deauthorize, visible: validCredentials"
                         class="text-danger pull-right addon-auth">${_("Disconnect Account")}</a>

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-20 14:42+0900\n"
+"POT-Creation-Date: 2020-02-20 17:07+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -2627,7 +2627,7 @@ msgstr "氏名"
 
 #: website/templates/project/modal_add_contributor.mako:322
 msgid "Full name"
-msgstr "フルネーム"
+msgstr "氏名"
 
 #: website/templates/project/modal_add_contributor.mako:325
 #: website/templates/project/modal_add_contributor.mako:327
@@ -2780,6 +2780,12 @@ msgid ""
 msgstr ""
 "<b %(data_bind)s></b>はコントリビュータとして削除できません。 "
 "少なくとも1人の管理者、目録表示コントリビュータ、および登録ユーザーが必要です。"
+
+#: website/templates/project/modal_remove_contributor.mako:82
+msgid ""
+"data-bind=\"text:removeSelf() ? 'You' : "
+"contributorToRemove()['fullname']\""
+msgstr "data-bind=\"text:removeSelf() ? 'あなた' : contributorToRemove()['fullname']\"
 
 #: website/templates/project/modal_remove_contributor.mako:85
 msgid ""
@@ -3175,6 +3181,8 @@ msgstr ""
 
 #: website/templates/project/settings.mako:17
 #: website/templates/project/settings.mako:76
+#: website/templates/project/settings.mako:150
+#: website/templates/project/settings.mako:163
 #: website/templates/util/render_node.mako:18
 msgid "node_type"
 msgstr ""
@@ -3488,6 +3496,11 @@ msgstr "共有ファイル編集は現在利用できません。 引き続き�
 #: website/templates/project/addon/node_settings.mako:15
 msgid "Submit"
 msgstr "提出"
+
+#: website/templates/project/addon/node_settings_default.mako:7
+#, python-format
+msgid "authorized by %(ownerName)s"
+msgstr "は%(ownerName)sによって認証済みです"
 
 #: website/templates/project/addon/page.mako:4
 msgid "Add-on"

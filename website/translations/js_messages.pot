@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-20 12:00+0900\n"
+"POT-Creation-Date: 2020-02-20 16:48+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -417,6 +417,9 @@ msgid ""
 msgstr ""
 
 #: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:38
+#: website/static/js/folderPickerNodeConfig.js:102
+#: website/static/js/folderPickerNodeConfig.js:104
+#: website/static/js/folderPickerNodeConfig.js:590
 msgid "Change"
 msgstr ""
 
@@ -656,6 +659,7 @@ msgid ""
 msgstr ""
 
 #: website/static/js/accountSettings.js:228 website/static/js/fangorn.js:2259
+#: website/static/js/folderPickerNodeConfig.js:587
 #: website/static/js/pages/profile-settings-addons-page.js:71
 #: website/static/js/pages/project-settings-page.js:120
 msgid "Close"

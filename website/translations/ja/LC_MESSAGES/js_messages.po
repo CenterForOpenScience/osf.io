@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-20 12:00+0900\n"
+"POT-Creation-Date: 2020-02-20 16:48+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -426,6 +426,9 @@ msgid ""
 msgstr "<p>以前のストレージは、プロジェクトのすべてのコントリビュータが利用できなくなります。</p>"
 
 #: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:38
+#: website/static/js/folderPickerNodeConfig.js:102
+#: website/static/js/folderPickerNodeConfig.js:104
+#: website/static/js/folderPickerNodeConfig.js:590
 msgid "Change"
 msgstr "変更"
 
@@ -665,6 +668,7 @@ msgid ""
 msgstr "このアクションを確認するには、メールのリンクをクリックしてください。 パスワードを入力する必要があります。"
 
 #: website/static/js/accountSettings.js:228 website/static/js/fangorn.js:2259
+#: website/static/js/folderPickerNodeConfig.js:587
 #: website/static/js/pages/profile-settings-addons-page.js:71
 #: website/static/js/pages/project-settings-page.js:120
 msgid "Close"

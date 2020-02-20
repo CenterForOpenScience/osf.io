@@ -99,9 +99,9 @@ var FolderPickerViewModel = oop.defclass({
         // Whether the group libraries have been loaded from the API
         self.loadedLibraries = ko.observable(false);
         // Button text for changing folders
-        self.toggleChangeText = ko.observable('Change');
+        self.toggleChangeText = ko.observable(_('Change'));
         // Button text for changing libraries
-        self.toggleChangeLibraryText = ko.observable('Change');
+        self.toggleChangeLibraryText = ko.observable(_('Change'));
 
         var addonSafeName = $osf.htmlEscape(self.addonName);
 
@@ -584,10 +584,10 @@ var FolderPickerViewModel = oop.defclass({
         var shown = this.currentDisplay() === this.PICKER;
         if (!shown) {
             this.currentDisplay(this.PICKER);
-            this.toggleChangeText('Close');
+            this.toggleChangeText(_('Close'));
             this.activatePicker();
         } else {
-            this.toggleChangeText('Change');
+            this.toggleChangeText(_('Change'));
             this.currentDisplay(null);
             // Clear selection
             this.cancelSelection();

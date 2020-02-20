@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-20 14:42+0900\n"
+"POT-Creation-Date: 2020-02-20 17:07+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2702,6 +2702,12 @@ msgid ""
 "contributor, and registered user."
 msgstr ""
 
+#: website/templates/project/modal_remove_contributor.mako:82
+msgid ""
+"data-bind=\"text:removeSelf() ? 'You' : "
+"contributorToRemove()['fullname']\""
+msgstr ""
+
 #: website/templates/project/modal_remove_contributor.mako:85
 msgid ""
 "Please save or discard your existing changes before removing a "
@@ -3080,6 +3086,8 @@ msgstr ""
 
 #: website/templates/project/settings.mako:17
 #: website/templates/project/settings.mako:76
+#: website/templates/project/settings.mako:150
+#: website/templates/project/settings.mako:163
 #: website/templates/util/render_node.mako:18
 msgid "node_type"
 msgstr ""
@@ -3383,6 +3391,11 @@ msgstr ""
 
 #: website/templates/project/addon/node_settings.mako:15
 msgid "Submit"
+msgstr ""
+
+#: website/templates/project/addon/node_settings_default.mako:7
+#, python-format
+msgid "authorized by %(ownerName)s"
 msgstr ""
 
 #: website/templates/project/addon/page.mako:4
