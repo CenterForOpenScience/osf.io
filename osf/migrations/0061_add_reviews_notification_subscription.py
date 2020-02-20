@@ -7,7 +7,7 @@ from django.core.management import call_command
 
 
 def add_reviews_notification_subscription(state, schema_editor):
-    call_command('add_notification_subscription', '--notification=global_reviews', state=state)
+    call_command('add_notification_subscription', '--notification=global_reviews')
 
 class Migration(migrations.Migration):
 
