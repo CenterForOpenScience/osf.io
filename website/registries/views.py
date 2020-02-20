@@ -24,7 +24,7 @@ def _view_registries_landing_page(campaign=None, **kwargs):
 
     if campaign == 'registered_report':
         campaign_url_param = 'osf-registered-reports'
-    elif campaign == 'prereg_challenge' or campaign == 'prereg':
+    elif campaign == 'prereg':
         campaign_url_param = 'prereg'
     else:
         campaign_url_param = ''
