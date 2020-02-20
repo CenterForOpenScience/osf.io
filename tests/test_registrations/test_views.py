@@ -100,72 +100,10 @@ class TestRegistrationViews(RegistrationsTestBase):
 @pytest.mark.enable_bookmark_creation
 class TestDraftRegistrationViews(RegistrationsTestBase):
 
-    def test_submit_draft_for_review(self):
-        url = self.draft_api_url('submit_draft_for_review')
-        res = self.app.post_json(
-            url,
-            self.embargo_payload,
-            auth=self.user.auth
-        )
-        assert_equal(res.status_code, http_status.HTTP_202_ACCEPTED)
-        data = res.json
-        assert_in('status', data)
-        assert_equal(data['status'], 'initiated')
-
-        self.draft.reload()
-        assert_is_not_none(self.draft.approval)
-        assert_equal(self.draft.approval.meta, {
-            u'registration_choice': 'embargo',
-            u'embargo_end_date': str(self.embargo_payload['data']['attributes']['lift_embargo'])
-        })
-
-    def test_submit_draft_for_review_invalid(self):
-        # invalid registrationChoice
-        url = self.draft_api_url('submit_draft_for_review')
-        res = self.app.post_json(
-            url,
-            self.invalid_payload,
-            auth=self.user.auth,
-            expect_errors=True
-        )
-        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
-
-        # submitted by a group admin fails
-        res = self.app.post_json(
-            url,
-            self.embargo_payload,
-            auth=self.group_mem.auth,
-            expect_errors=True
-        )
-        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
-
-    def test_submit_draft_for_review_already_registered(self):
-        self.draft.register(Auth(self.user), save=True)
-
-        res = self.app.post_json(
-            self.draft_api_url('submit_draft_for_review'),
-            self.immediate_payload,
-            auth=self.user.auth,
-            expect_errors=True
-        )
-        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
-        assert_equal(res.json['message_long'], 'This draft has already been registered, if you wish to register it '
-                                               'again or submit it for review please create a new draft.')
-
     def test_draft_before_register_page(self):
         url = self.draft_url('draft_before_register_page')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, http_status.HTTP_200_OK)
-
-    def test_submit_draft_for_review_non_admin(self):
-        url = self.draft_api_url('submit_draft_for_review')
-        res = self.app.post_json(
-            url,
-            self.embargo_payload,
-            auth=self.non_admin.auth,
-            expect_errors=True
-        )
-        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     def test_get_draft_registration(self):
         url = self.draft_api_url('get_draft_registration')
@@ -434,16 +372,6 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         except Exception:
             self.fail()
 
-    def test_check_draft_state_pending_review(self):
-        self.draft.submit_for_review(self.user, self.immediate_payload, save=True)
-        try:
-            with mock.patch.object(DraftRegistration, 'requires_approval', mock.PropertyMock(return_value=True)):
-                draft_views.check_draft_state(self.draft)
-        except HTTPError as e:
-            assert_equal(e.code, http_status.HTTP_403_FORBIDDEN)
-        else:
-            self.fail()
-
     def test_check_draft_state_approved(self):
         try:
             with mock.patch.object(DraftRegistration, 'requires_approval', mock.PropertyMock(return_value=True)), mock.patch.object(DraftRegistration, 'is_approved', mock.PropertyMock(return_value=True)):
@@ -471,16 +399,3 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
                 draft_views.check_draft_state(self.draft)
             except HTTPError:
                 self.fail()
-
-    def test_prereg_challenge_over(self):
-        url = self.draft_api_url('submit_draft_for_review')
-        with override_switch(features.OSF_PREREGISTRATION, active=True):
-            res = self.app.post_json(
-                url,
-                self.embargo_payload,
-                auth=self.user.auth,
-                expect_errors=True
-            )
-        assert_equal(res.status_code, http_status.HTTP_410_GONE)
-        data = res.json
-        assert_equal(data['message_short'], 'The Prereg Challenge has ended')
