@@ -307,7 +307,7 @@ class CollectionFactory(DjangoModelFactory):
         obj = cls._build(*args, **kwargs)
         obj.save()
         # M2M, requires initial save
-        obj.collected_types = collected_types
+        obj.collected_types.add(*collected_types)
         return obj
 
 class BookmarkCollectionFactory(CollectionFactory):

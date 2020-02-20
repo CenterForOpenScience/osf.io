@@ -181,7 +181,8 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
 
         if first_save:
             # Set defaults for M2M
-            self.collected_types = ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'collection', 'preprint'])
+            content_type = ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'collection', 'preprint'])
+            self.collected_types.add(*content_type)
             # Set up initial permissions
             self.update_group_permissions()
             self.get_group(ADMIN).user_set.add(self.creator)
