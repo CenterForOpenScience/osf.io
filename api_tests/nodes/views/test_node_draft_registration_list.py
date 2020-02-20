@@ -2,7 +2,6 @@ import pytest
 from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
-from django.contrib.auth.models import Permission
 from osf.models import RegistrationSchema
 from osf_tests.factories import (
     ProjectFactory,
@@ -59,7 +58,7 @@ class DraftRegistrationTestCase:
         return project_public
 
     @pytest.fixture()
-    def prereg_metadata(self):
+    def metadata(self):
         def metadata(draft):
             test_metadata = {}
             json_schema = create_jsonschema_from_metaschema(
@@ -458,7 +457,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 404
 
     def test_required_metaschema_questions_not_required_on_post(
-            self, app, user, provider, project_public, prereg_metadata):
+            self, app, user, provider, project_public, metadata):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
             schema_version=SCHEMA_VERSION)
@@ -472,7 +471,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         url = '/{}nodes/{}/draft_registrations/?embed=initiator&embed=branched_from'.format(
             API_BASE, project_public._id)
 
-        registration_metadata = prereg_metadata(prereg_draft_registration)
+        registration_metadata = metadata(prereg_draft_registration)
         del registration_metadata['q1']
         prereg_draft_registration.registration_metadata = registration_metadata
         prereg_draft_registration.save()
@@ -794,19 +793,3 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 400
         assert errors['detail'] == 'For your registration, your response to the \'Data collection status\'' \
                                    ' field is invalid, your response must be one of the provided options.'
-
-    def test_reviewer_cannot_create_draft_registration(
-            self, app, user_read_contrib, project_public,
-            payload, url_draft_registrations):
-        user = AuthUserFactory()
-        administer_permission = Permission.objects.get(
-            codename='administer_prereg')
-        user.user_permissions.add(administer_permission)
-        user.save()
-
-        assert user_read_contrib in project_public.contributors.all()
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 403

@@ -43,7 +43,6 @@ from osf.models.external import ExternalAccount
 from osf.models.licenses import NodeLicense
 from osf.models.preprint import Preprint
 from website.project import new_private_link
-from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
 
@@ -1507,7 +1506,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return obj.absolute_url
 
-    def update_metadata(self, draft, metadata, reviewer, required_fields=False):
+    def update_metadata(self, draft, metadata, reviewer=False, required_fields=False):
         try:
             # Required fields are only required when creating the actual registration, not updating the draft.
             draft.validate_metadata(metadata=metadata, reviewer=reviewer, required_fields=required_fields)
@@ -1550,10 +1549,9 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         self.enforce_metadata_or_registration_responses(metadata, registration_responses)
 
         draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema, provider=provider)
-        reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
 
         if metadata:
-            self.update_metadata(draft, metadata, reviewer)
+            self.update_metadata(draft, metadata)
 
         if registration_responses:
             self.update_registration_responses(draft, registration_responses)
@@ -1595,12 +1593,11 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
         """
         metadata = validated_data.pop('registration_metadata', None)
         registration_responses = validated_data.pop('registration_responses', None)
-        reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
 
         self.enforce_metadata_or_registration_responses(metadata, registration_responses)
 
         if metadata:
-            self.update_metadata(draft, metadata, reviewer)
+            self.update_metadata(draft, metadata)
         if registration_responses:
             self.update_registration_responses(draft, registration_responses)
         return draft

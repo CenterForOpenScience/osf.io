@@ -23,8 +23,12 @@ from website import settings
 from website.archiver import ARCHIVER_INITIATED
 
 from osf.models import (
-    OSFUser, RegistrationSchema, Node,
-    Retraction, Embargo, DraftRegistrationApproval,
+    Node,
+    OSFUser,
+    Embargo,
+    Retraction,
+    RegistrationSchema,
+    DraftRegistrationApproval,
     EmbargoTerminationApproval,
     DraftRegistrationContributor,
 )

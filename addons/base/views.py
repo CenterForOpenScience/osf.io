@@ -39,7 +39,7 @@ from addons.base.utils import format_last_known_metadata, get_mfr_url
 from osf import features
 from osf.models import (BaseFileNode, TrashedFileNode, BaseFileVersionsThrough,
                         OSFUser, AbstractNode, Preprint,
-                        NodeLog, DraftRegistration, RegistrationSchema,
+                        NodeLog, DraftRegistration,
                         Guid, FileVersionUserMetadata, FileVersion)
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
@@ -200,23 +200,6 @@ def check_access(node, auth, action, cas_resp):
                 if parent.can_edit(auth):
                     return True
                 parent = parent.parent_node
-
-        # Users with the prereg admin permission should be allowed to download files
-        # from prereg challenge draft registrations.
-        try:
-            prereg_schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
-            allowed_nodes = [node] + node.parents
-            prereg_draft_registration = DraftRegistration.objects.filter(
-                branched_from__in=allowed_nodes,
-                registration_schema=prereg_schema
-            )
-            if action == 'download' and \
-                        auth.user is not None and \
-                        prereg_draft_registration.count() > 0 and \
-                        auth.user.has_perm('osf.administer_prereg'):
-                return True
-        except RegistrationSchema.DoesNotExist:
-            pass
 
     raise HTTPError(http_status.HTTP_403_FORBIDDEN if auth.user else http_status.HTTP_401_UNAUTHORIZED)
 
@@ -911,22 +894,12 @@ def addon_view_file(auth, node, file_node, version):
         'file_id': file_node._id,
         'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
         'checkout_user': file_node.checkout._id if file_node.checkout else None,
-        'pre_reg_checkout': is_pre_reg_checkout(node, file_node),
         'version_names': list(version_names)
     })
 
     ret.update(rubeus.collect_addon_assets(node))
     return ret
 
-def is_pre_reg_checkout(node, file_node):
-    checkout_user = file_node.checkout
-    if not checkout_user:
-        return False
-    if checkout_user in node.contributors:
-        return False
-    if checkout_user.has_perm('osf.view_prereg'):
-        return node.draft_registrations_active.filter(registration_schema__name='Prereg Challenge').exists()
-    return False
 
 def get_archived_from_url(node, file_node):
     if file_node.copied_from:

@@ -175,7 +175,7 @@ class TestDraftRegistrationApprovals:
             assert mock_on_complete.called
             assert approval.is_approved
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('osf.models.DraftRegistrationApproval._send_rejection_email')
     def test_on_reject(self, mock_send_mail):
         user = factories.UserFactory()
         approval = DraftRegistrationApproval(

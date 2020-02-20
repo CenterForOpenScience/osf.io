@@ -34,6 +34,7 @@ from osf.models import Registration
 SCHEMA_VERSION = 2
 
 
+@pytest.mark.django_db
 @pytest.mark.enable_bookmark_creation
 class TestRegistrationViews(RegistrationsTestBase):
 

@@ -55,9 +55,8 @@ class TestRegistrationSchemaDetail:
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']['attributes']
-        assert data['name'] == 'Prereg Challenge'
+        assert data['name'] == 'OSF Preregistration'
         assert data['schema_version'] == 2
-        assert data['active']
         assert res.json['data']['id'] == schema._id
 
         # test_pass_unauthenticated_user_can_view_schemas

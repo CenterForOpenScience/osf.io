@@ -28,6 +28,7 @@ from rest_framework import exceptions
 from tests.base import ApiTestCase
 from website import settings
 from website.views import find_bookmark_collection
+from website.project.metadata.schemas import from_json
 from osf.utils import permissions
 
 SCHEMA_VERSION = 2
@@ -849,28 +850,32 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_top_level_questions_must_be_answered_on_draft(
             self, mock_enqueue, app, user, project_public,
-            prereg_metadata, url_registrations):
-        prereg_schema = RegistrationSchema.objects.get(
-            name='Prereg Challenge',
-            schema_version=SCHEMA_VERSION)
+            metadata, url_registrations):
 
-        prereg_draft_registration = DraftRegistrationFactory(
+        test_schema = from_json('prereg-prize.json')
+        schema = RegistrationSchema.objects.get(
+            name='Test Schema',
+            schema=test_schema,
+            schema_version=SCHEMA_VERSION
+        )
+
+        draft_registration = DraftRegistrationFactory(
             initiator=user,
-            registration_schema=prereg_schema,
+            registration_schema=schema,
             branched_from=project_public
         )
 
-        registration_metadata = prereg_metadata(prereg_draft_registration)
+        registration_metadata = metadata(draft_registration)
         del registration_metadata['q1']
-        prereg_draft_registration.registration_metadata = registration_metadata
-        prereg_draft_registration.save()
+        draft_registration.registration_metadata = registration_metadata
+        draft_registration.save()
 
         payload = {
             'data': {
                 'type': 'registrations',
                 'attributes': {
                     'registration_choice': 'immediate',
-                    'draft_registration': prereg_draft_registration._id,
+                    'draft_registration': draft_registration._id,
                 }
             }
         }
@@ -886,28 +891,32 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     @pytest.mark.skip('TEMPORARY: Unskip when JSON Schemas are updated')
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_second_level_questions_must_be_answered_on_draft(
-            self, mock_enqueue, app, user, project_public, prereg_metadata, url_registrations):
-        prereg_schema = RegistrationSchema.objects.get(
-            name='Prereg Challenge',
-            schema_version=SCHEMA_VERSION)
+            self, mock_enqueue, app, user, project_public, metadata, url_registrations):
 
-        prereg_draft_registration = DraftRegistrationFactory(
+        test_schema = from_json('prereg-prize.json')
+        schema = RegistrationSchema.objects.get(
+            name='Test Schema',
+            schema=test_schema,
+            schema_version=SCHEMA_VERSION
+        )
+
+        draft_registration = DraftRegistrationFactory(
             initiator=user,
-            registration_schema=prereg_schema,
+            registration_schema=schema,
             branched_from=project_public
         )
 
-        registration_metadata = prereg_metadata(prereg_draft_registration)
+        registration_metadata = metadata(draft_registration)
         registration_metadata['q11'] = {'value': {}}
-        prereg_draft_registration.registration_metadata = registration_metadata
-        prereg_draft_registration.save()
+        draft_registration.registration_metadata = registration_metadata
+        draft_registration.save()
 
         payload = {
             'data': {
                 'type': 'registrations',
                 'attributes': {
                     'registration_choice': 'immediate',
-                    'draft_registration': prereg_draft_registration._id,
+                    'draft_registration': draft_registration._id,
                 }
             }
         }
@@ -922,30 +931,33 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     @pytest.mark.skip('TEMPORARY: Unskip when JSON Schemas are updated')
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_third_level_questions_must_be_answered_on_draft(
-            self, mock_enqueue, app, user, project_public,
-            prereg_metadata, url_registrations):
-        prereg_schema = RegistrationSchema.objects.get(
-            name='Prereg Challenge',
-            schema_version=SCHEMA_VERSION)
+            self, mock_enqueue, app, user, project_public, metadata, url_registrations):
 
-        prereg_draft_registration = DraftRegistrationFactory(
+        test_schema = from_json('prereg-prize.json')
+        schema = RegistrationSchema.objects.get(
+            name='Test Schema',
+            schema=test_schema,
+            schema_version=SCHEMA_VERSION
+        )
+
+        draft_registration = DraftRegistrationFactory(
             initiator=user,
-            registration_schema=prereg_schema,
+            registration_schema=schema,
             branched_from=project_public
         )
 
-        registration_metadata = prereg_metadata(prereg_draft_registration)
+        registration_metadata = metadata(draft_registration)
         registration_metadata['q11'] = {'value': {'question': {}}}
 
-        prereg_draft_registration.registration_metadata = registration_metadata
-        prereg_draft_registration.save()
+        draft_registration.registration_metadata = registration_metadata
+        draft_registration.save()
 
         payload = {
             'data': {
                 'type': 'registrations',
                 'attributes': {
                     'registration_choice': 'immediate',
-                    'draft_registration': prereg_draft_registration._id,
+                    'draft_registration': draft_registration._id,
                 }
             }
         }

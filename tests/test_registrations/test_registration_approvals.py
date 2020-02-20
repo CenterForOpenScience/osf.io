@@ -258,7 +258,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
             notify_initiator_on_complete=True
         )
         self.registration.save()
-        with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify_initiator:
+        with mock.patch.object(SanctionCallbackMixin, '_notify_initiator') as mock_notify_initiator:
             self.registration.registration_approval._on_complete(self.user)
         assert_equal(mock_notify_initiator.call_count, 0)
 

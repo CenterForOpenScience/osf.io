@@ -9,7 +9,6 @@ from api.base.exceptions import Conflict, InvalidModelValueError
 from api.base.serializers import is_anonymized
 from api.base.utils import absolute_reverse, get_user_auth, is_truthy
 from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
-from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 
 from api.files.serializers import OsfStorageFileSerializer
@@ -567,7 +566,6 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         registration_choice = self.get_registration_choice_by_version(validated_data)
         embargo_lifted = self.get_embargo_end_date_by_version(validated_data)
 
-        reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
         children = self.get_children_by_version(validated_data)
         if children:
             # First check that all children are valid
@@ -587,7 +585,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         try:
             # Still validating metadata, but whether `registration_responses` or `registration_metadata` were populated
             # on the draft, the other field was built and populated as well.  Both should exist.
-            draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
+            draft.validate_metadata(metadata=draft.registration_metadata, required_fields=True)
         except ValidationValueError:
             log_exception()  # Probably indicates a bug on our end, so log to sentry
             # TODO: Raise an error once our JSON schemas are updated
