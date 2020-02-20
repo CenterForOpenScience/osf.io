@@ -2,6 +2,7 @@ from api.nodes.serializers import DraftRegistrationDetailSerializer
 from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
 from api.base.exceptions import Gone
+from api.nodes.permissions import IsAdminContributor
 from rest_framework import generics, permissions as drf_permissions
 from framework.auth.oauth_scopes import CoreScopes
 from api.base.utils import get_object_or_error
@@ -13,6 +14,7 @@ class DraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_draft_registrations_read).
     """
     permission_classes = (
+        IsAdminContributor,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
