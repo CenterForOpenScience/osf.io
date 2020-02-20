@@ -348,6 +348,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #     'academiaProfileID': <profile identifier for academia.edu>
     # }
 
+    # date the user object was created
+    created = NonNaiveDateTimeField(db_index=True, auto_now_add=True)
+
     # date the user last sent a request
     date_last_login = NonNaiveDateTimeField(null=True, blank=True)
 
