@@ -74,7 +74,6 @@ from api.nodes.permissions import (
     RegistrationAndPermissionCheckForPointers,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
-    IsAdminContributorOrReviewer,
     NodeGroupDetailPermissions,
     IsContributorOrGroupMember,
     NodeDeletePermissions,
@@ -616,9 +615,9 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_draft_registrations_read).
     """
     permission_classes = (
-        IsAdminContributorOrReviewer,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        IsAdminContributor,
     )
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 

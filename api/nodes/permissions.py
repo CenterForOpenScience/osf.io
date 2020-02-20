@@ -114,16 +114,6 @@ class IsContributorOrGroupMember(permissions.BasePermission):
         else:
             return obj.has_permission(auth.user, osf_permissions.WRITE)
 
-class IsAdminContributorOrReviewer(IsAdminContributor):
-    """
-    Prereg admins can update draft registrations.
-    """
-    acceptable_models = (AbstractNode, DraftRegistration,)
-    def has_object_permission(self, request, view, obj):
-        assert_resource_type(obj, self.acceptable_models)
-        if request.method != 'DELETE':
-            return True
-        return super(IsAdminContributorOrReviewer, self).has_object_permission(request, view, obj)
 
 class AdminOrPublic(permissions.BasePermission):
 
