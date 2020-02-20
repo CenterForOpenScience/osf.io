@@ -5,7 +5,7 @@ from nose import tools as nt
 from django.test import RequestFactory
 from django.db import transaction
 from django.http import Http404
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib.auth.models import Group, Permission
 from django.core.exceptions import PermissionDenied
 

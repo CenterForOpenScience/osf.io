@@ -1,7 +1,7 @@
 from datetime import datetime
 from collections import OrderedDict
 
-from django.core.urlresolvers import resolve, reverse
+from django.urls import resolve, reverse
 import furl
 import pytz
 import jsonschema

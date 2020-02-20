@@ -3,7 +3,7 @@ from copy import deepcopy
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.views.generic import ListView, FormView
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import Http404
 
 from framework.auth.core import get_user

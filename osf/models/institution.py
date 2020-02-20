@@ -5,7 +5,7 @@ from dirtyfields import DirtyFieldsMixin
 
 from django.conf import settings
 from django.contrib.postgres import fields
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import models
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.models import base

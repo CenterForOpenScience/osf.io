@@ -5,7 +5,7 @@ from osf.models import Subject, NodeLicense, DraftRegistration
 from website.prereg.utils import get_prereg_schema
 
 from django.core.exceptions import ValidationError, PermissionDenied
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.validators import RegexValidator, _lazy_re_compile
 from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _

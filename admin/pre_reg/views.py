@@ -5,7 +5,7 @@ import json
 from django.views.generic import ListView, DeleteView, DetailView, FormView, UpdateView
 from django.views.defaults import permission_denied, bad_request
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import JsonResponse, Http404
 from django.shortcuts import redirect
 

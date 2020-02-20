@@ -3,7 +3,8 @@ import re
 from future.moves.urllib.parse import urlparse
 
 import furl
-from django.core.urlresolvers import resolve, reverse, NoReverseMatch
+from django.urls import resolve, reverse
+from django.urls.exceptions import NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
 from distutils.version import StrictVersion
 

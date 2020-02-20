@@ -5,7 +5,7 @@ import json
 from django.core import serializers
 from django.shortcuts import redirect
 from django.forms.models import model_to_dict
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import ListView, DetailView, View, CreateView, UpdateView, DeleteView, TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin
