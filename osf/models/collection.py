@@ -32,7 +32,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     collection = models.ForeignKey('Collection', on_delete=models.CASCADE)
     guid = models.ForeignKey('Guid', on_delete=models.CASCADE)
-    creator = models.ForeignKey('OSFUser')
+    creator = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
     collected_type = models.CharField(blank=True, max_length=127)
     status = models.CharField(blank=True, max_length=127)
     volume = models.CharField(blank=True, max_length=127)
@@ -103,7 +103,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         )
 
     provider = models.ForeignKey('AbstractProvider', blank=True, null=True, on_delete=models.CASCADE)
-    creator = models.ForeignKey('OSFUser')
+    creator = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
     guid_links = models.ManyToManyField('Guid', through=CollectionSubmission, related_name='collections')
     collected_types = models.ManyToManyField(
         'contenttypes.ContentType',

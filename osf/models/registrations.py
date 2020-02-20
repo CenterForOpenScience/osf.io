@@ -57,7 +57,12 @@ class Registration(AbstractNode):
         'node_license',
         'category',
     ]
-    provider = models.ForeignKey('RegistrationProvider', related_name='registrations', null=True)
+    provider = models.ForeignKey(
+        'RegistrationProvider',
+        related_name='registrations',
+        null=True,
+        on_delete=models.SET_NULL
+    )
     registered_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
     # This is a NullBooleanField because of inheritance issues with using a BooleanField
@@ -577,7 +582,12 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
                                       null=True, on_delete=models.CASCADE)
 
     initiator = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
-    provider = models.ForeignKey('RegistrationProvider', related_name='draft_registrations', null=True)
+
+    provider = models.ForeignKey(
+        'RegistrationProvider',
+        related_name='draft_registrations',
+        on_delete=models.CASCADE,
+    )
 
     # Dictionary field mapping question id to a question's comments and answer
     # {

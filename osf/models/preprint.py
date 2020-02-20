@@ -156,7 +156,13 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                                             validators=[validate_doi],
                                             null=True, blank=True)
     files = GenericRelation('osf.OsfStorageFile', object_id_field='target_object_id', content_type_field='target_content_type')
-    primary_file = models.ForeignKey('osf.OsfStorageFile', null=True, blank=True, related_name='preprint')
+    primary_file = models.ForeignKey(
+        'osf.OsfStorageFile',
+        null=True,
+        blank=True,
+        related_name='preprint',
+        on_delete=models.CASCADE
+    )
     # (for legacy preprints), pull off of node
     is_public = models.BooleanField(default=True, db_index=True)
     # Datetime when old node was deleted (for legacy preprints)
