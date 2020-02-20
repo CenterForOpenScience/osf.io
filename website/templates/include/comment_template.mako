@@ -10,7 +10,7 @@
                 <div data-bind="if: isDeletedAbuse">
                     <div>
                         <span class="text-muted">
-                            <em>Comment confirmed as spam.</em>
+                            <em>${_("Comment confirmed as spam.")}</em>
                         </span>
                         <span data-bind="if: hasChildren()" class="comment-actions pull-right">
                             <i data-bind="css: toggleIcon, click: toggle"></i>
@@ -20,28 +20,28 @@
                 <div data-bind="if: isDeletedNotAbuse">
                     <div>
                         <span class="text-muted">
-                            <em>Comment deleted.</em>
+                            <em>${_("Comment deleted.")}</em>
                         </span>
                         <span data-bind="if: hasChildren()" class="comment-actions pull-right">
                             <i data-bind="css: toggleIcon, click: toggle"></i>
                         </span>
                     </div>
                     <div data-bind="if: canEdit">
-                        <a data-bind="click: submitUndelete">Restore</a>
+                        <a data-bind="click: submitUndelete">${_("Restore")}</a>
                     </div>
                 </div>
 
                 <div data-bind="if: isAbuseNotDeleted">
                     <div>
                         <span class="text-muted">
-                            <em>Comment reported.</em>
+                            <em>${_("Comment reported.")}</em>
                         </span>
                         <span data-bind="if: hasChildren()" class="comment-actions pull-right">
                             <i data-bind="css: toggleIcon, click: toggle"></i>
                         </span>
                     </div>
                     <div data-bind="if: hasReport">
-                        <a data-bind="click: submitUnreportAbuse">Not abuse</a>
+                        <a data-bind="click: submitUnreportAbuse">${_("Not abuse")}</a>
                     </div>
                 </div>
 
@@ -83,14 +83,14 @@
                         -->
                         <div data-bind="template: {if: editing, afterRender: autosizeText.bind($data)}">
                             <div class="form-group" style="padding-top: 10px">
-                                <div class="form-control atwho-input comment-box" placeholder="Edit comment" data-bind="editableHTML: {observable: content, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
+                                <div class="form-control atwho-input comment-box" placeholder="${_('Edit comment')}" data-bind="editableHTML: {observable: content, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
                                 <span data-bind="visible: editNotEmpty, text: counter, css: counterColor" class="pull-right label counter-comment"></span>
                             </div>
                             <div class="clearfix">
                                 <div class="form-inline pull-right">
-                                    <a class="btn btn-default btn-sm" data-bind="click: cancelEdit">Cancel</a>
+                                    <a class="btn btn-default btn-sm" data-bind="click: cancelEdit">${_("Cancel")}</a>
                                     <span data-bind="tooltip: {title: errorMessage(), placement: 'bottom', disabled: !validateEdit()}">
-                                        <a class="btn btn-success btn-sm" data-bind="click: submitEdit, css: {disabled: !validateEdit()}">Save</a>
+                                        <a class="btn btn-success btn-sm" data-bind="click: submitEdit, css: {disabled: !validateEdit()}">${_("Save")}</a>
                                     </span>
                                     <span data-bind="text: editErrorMessage" class="text-danger"></span>
                                 </div>
@@ -135,18 +135,18 @@
                     <div class="comment-report clearfix" data-bind="if: reporting">
                         <form class="form-inline" data-bind="submit: submitAbuse">
                             <select class="form-control" data-bind="options: abuseOptions, optionsText: abuseLabel, value: abuseCategory"></select>
-                            <input class="form-control" data-bind="value: abuseText" placeholder="Describe abuse" />
+                            <input class="form-control" data-bind="value: abuseText" placeholder="${_('Describe abuse')}" />
                         </form>
                         <div class="pull-right m-t-xs">
-                            <a class="btn btn-default btn-sm" data-bind="click: cancelAbuse"> Cancel</a>
-                            <a class="btn btn-danger btn-sm" data-bind="click: submitAbuse"> Report</a>
+                            <a class="btn btn-default btn-sm" data-bind="click: cancelAbuse"> ${_("Cancel")}</a>
+                            <a class="btn btn-danger btn-sm" data-bind="click: submitAbuse"> ${_("Report")}</a>
                         </div>
                     </div>
 
                     <div class="comment-delete clearfix m-t-xs" data-bind="if: deleting">
                         <div class="pull-right">
-                            <a class="btn btn-default btn-sm" data-bind="click: cancelDelete">Cancel</a>
-                            <a class="btn btn-danger btn-sm" data-bind="click: submitDelete">Delete</a>
+                            <a class="btn btn-default btn-sm" data-bind="click: cancelDelete">${_("Cancel")}</a>
+                            <a class="btn btn-danger btn-sm" data-bind="click: submitDelete">${_("Delete")}</a>
                         </div>
                     </div>
 
@@ -162,12 +162,12 @@
 
                 <div data-bind="template: {afterRender: autosizeText.bind($data)}">
                     <div class="form-group" style="padding-top: 10px">
-                        <div class="form-control atwho-input comment-box" placeholder="Add a comment" data-bind="editableHTML: {observable: replyContent, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
+                        <div class="form-control atwho-input comment-box" placeholder="${_('Add a comment')}" data-bind="editableHTML: {observable: replyContent, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
                         <span data-bind="visible: replyNotEmpty, text: counter, css: counterColor" class="pull-right label counter-comment"></span>
                     </div>
                     <div class="clearfix">
                         <div class="pull-right">
-                            <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}"> Cancel</a>
+                            <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}"> ${_("Cancel")}</a>
                             <span data-bind="tooltip: {title: errorMessage(), placement: 'bottom', disabled: !validateReply()}">
                                 <a class="btn btn-success btn-sm" data-bind="click: submitReply, css: {disabled: !validateReply() || submittingReply()}, text: commentButtonText"></a>
                             </span>
@@ -183,7 +183,7 @@
                 <!-- /ko -->
                 <!-- ko if: urlForNext() -->
                 <div class="row">
-                    <button class="btn btn-link pull-right more-replies" type="button" data-bind="click: getMoreComments">More replies</button>
+                    <button class="btn btn-link pull-right more-replies" type="button" data-bind="click: getMoreComments">${_("More replies")}</button>
                 </div>
                 <!-- /ko -->
             <!-- /ko -->

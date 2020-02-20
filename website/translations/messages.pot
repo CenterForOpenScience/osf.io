@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-20 11:13+0900\n"
+"POT-Creation-Date: 2020-02-20 14:42+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -49,6 +49,10 @@ msgstr ""
 #: addons/wiki/templates/delete_wiki_page.mako:13
 #: addons/zotero/templates/zotero_node_settings.mako:83
 #: addons/zotero/templates/zotero_node_settings.mako:127
+#: website/templates/include/comment_template.mako:91
+#: website/templates/include/comment_template.mako:141
+#: website/templates/include/comment_template.mako:148
+#: website/templates/include/comment_template.mako:170
 #: website/templates/profile/oauth_app_detail.mako:84
 #: website/templates/profile/personal_tokens_detail.mako:49
 #: website/templates/project/addon/node_settings_default.mako:72
@@ -60,7 +64,7 @@ msgstr ""
 #: website/templates/project/modal_remove_contributor.mako:122
 #: website/templates/project/nodes_delete.mako:89
 #: website/templates/project/project.mako:568
-#: website/templates/project/settings.mako:132
+#: website/templates/project/settings.mako:131
 #: website/templates/project/timestamp.mako:71
 #: website/templates/util/render_addon_widget.mako:98
 msgid "Cancel"
@@ -90,6 +94,7 @@ msgstr ""
 #: addons/zotero/templates/zotero_node_settings.mako:85
 #: addons/zotero/templates/zotero_node_settings.mako:129
 #: website/templates/claim_account.mako:112
+#: website/templates/include/comment_template.mako:93
 #: website/templates/include/profile/jobs.mako:117
 #: website/templates/include/profile/jobs.mako:120
 #: website/templates/include/profile/names.mako:76
@@ -335,7 +340,7 @@ msgstr ""
 
 #: addons/forward/templates/forward_node_settings.mako:24
 #: website/templates/profile/oauth_app_detail.mako:67
-#: website/templates/project/settings.mako:109
+#: website/templates/project/settings.mako:108
 msgid "Optional"
 msgstr ""
 
@@ -743,8 +748,8 @@ msgstr ""
 #: website/templates/project/modal_add_contributor.mako:346
 #: website/templates/project/modal_add_contributor.mako:350
 #: website/templates/project/modal_add_contributor.mako:356
-#: website/templates/project/settings.mako:210
-#: website/templates/project/settings.mako:523
+#: website/templates/project/settings.mako:209
+#: website/templates/project/settings.mako:522
 msgid "Add"
 msgstr ""
 
@@ -790,6 +795,7 @@ msgstr ""
 
 #: addons/wiki/templates/delete_wiki_page.mako:14
 #: addons/wiki/templates/edit.mako:38
+#: website/templates/include/comment_template.mako:149
 #: website/templates/profile/personal_tokens_detail.mako:53
 #: website/templates/project/nodes_delete.mako:91
 #: website/templates/util/render_node.mako:74
@@ -798,8 +804,8 @@ msgstr ""
 
 #: addons/wiki/templates/edit.mako:2
 #: website/templates/include/comment_pane_template.mako:19
-#: website/templates/project/settings.mako:37
-#: website/templates/project/settings.mako:258
+#: website/templates/project/settings.mako:36
+#: website/templates/project/settings.mako:257
 #: website/templates/search.mako:370
 msgid "Wiki"
 msgstr ""
@@ -941,10 +947,6 @@ msgstr ""
 
 #: addons/wiki/templates/status.mako:7
 msgid "Note: Home page cannot be renamed."
-msgstr ""
-
-#: addons/wiki/templates/status.mako:9
-msgid "home"
 msgstr ""
 
 #: addons/wiki/templates/status.mako:9
@@ -1368,7 +1370,7 @@ msgid_plural "activity points"
 msgstr[0] ""
 msgstr[1] ""
 
-#: website/templates/profile.mako:70 website/templates/project/settings.mako:7
+#: website/templates/profile.mako:70
 msgid "project"
 msgstr ""
 
@@ -1488,7 +1490,7 @@ msgid "(Preprint)"
 msgstr ""
 
 #: website/templates/project/project.mako:265
-#: website/templates/project/settings.mako:108
+#: website/templates/project/settings.mako:107
 #: website/templates/search.mako:292 website/templates/search.mako:348
 msgid "Description:"
 msgstr ""
@@ -1551,7 +1553,44 @@ msgid "Discussion"
 msgstr ""
 
 #: website/templates/include/comment_pane_template.mako:26
+#: website/templates/include/comment_template.mako:165
 msgid "Add a comment"
+msgstr ""
+
+#: website/templates/include/comment_template.mako:13
+msgid "Comment confirmed as spam."
+msgstr ""
+
+#: website/templates/include/comment_template.mako:23
+msgid "Comment deleted."
+msgstr ""
+
+#: website/templates/include/comment_template.mako:30
+msgid "Restore"
+msgstr ""
+
+#: website/templates/include/comment_template.mako:37
+msgid "Comment reported."
+msgstr ""
+
+#: website/templates/include/comment_template.mako:44
+msgid "Not abuse"
+msgstr ""
+
+#: website/templates/include/comment_template.mako:86
+msgid "Edit comment"
+msgstr ""
+
+#: website/templates/include/comment_template.mako:138
+msgid "Describe abuse"
+msgstr ""
+
+#: website/templates/include/comment_template.mako:142
+msgid "Report"
+msgstr ""
+
+#: website/templates/include/comment_template.mako:186
+msgid "More replies"
 msgstr ""
 
 #: website/templates/include/profile/jobs.mako:19
@@ -1567,8 +1606,8 @@ msgstr ""
 #: website/templates/project/modal_remove_contributor.mako:105
 #: website/templates/project/modal_remove_contributor.mako:114
 #: website/templates/project/project.mako:569
-#: website/templates/project/settings.mako:499
-#: website/templates/project/settings.mako:502
+#: website/templates/project/settings.mako:498
+#: website/templates/project/settings.mako:501
 msgid "Remove"
 msgstr ""
 
@@ -1657,7 +1696,7 @@ msgid "Department / Institute:"
 msgstr ""
 
 #: website/templates/include/profile/jobs.mako:157
-#: website/templates/project/settings.mako:102
+#: website/templates/project/settings.mako:101
 msgid "Title:"
 msgstr ""
 
@@ -2061,7 +2100,7 @@ msgid ""
 msgstr ""
 
 #: website/templates/profile/notifications.mako:64
-#: website/templates/project/settings.mako:372
+#: website/templates/project/settings.mako:371
 msgid "Loading notification settings..."
 msgstr ""
 
@@ -2391,13 +2430,13 @@ msgid "The following users have requested access to this project."
 msgstr ""
 
 #: website/templates/project/contributors.mako:162
-#: website/templates/project/settings.mako:30
-#: website/templates/project/settings.mako:203
+#: website/templates/project/settings.mako:29
+#: website/templates/project/settings.mako:202
 msgid "View-only Links"
 msgstr ""
 
 #: website/templates/project/contributors.mako:167
-#: website/templates/project/settings.mako:207
+#: website/templates/project/settings.mako:206
 msgid ""
 "Create a link to share this project so those who have the link can "
 "view&mdash;but not edit&mdash;the project."
@@ -2728,7 +2767,7 @@ msgid "Anonymous Contributors"
 msgstr ""
 
 #: website/templates/project/project.mako:192
-#: website/templates/project/settings.mako:489
+#: website/templates/project/settings.mako:488
 msgid "Affiliated Institutions:"
 msgstr ""
 
@@ -2761,7 +2800,7 @@ msgid "Create DOI"
 msgstr ""
 
 #: website/templates/project/project.mako:259
-#: website/templates/project/settings.mako:82
+#: website/templates/project/settings.mako:81
 msgid "Category:"
 msgstr ""
 
@@ -3039,67 +3078,68 @@ msgid ""
 "Anyone with the link can view this project. Keep the link safe."
 msgstr ""
 
-#: website/templates/project/settings.mako:18
-#: website/templates/project/settings.mako:77
+#: website/templates/project/settings.mako:17
+#: website/templates/project/settings.mako:76
+#: website/templates/util/render_node.mako:18
 msgid "node_type"
 msgstr ""
 
-#: website/templates/project/settings.mako:22
-#: website/templates/project/settings.mako:179
+#: website/templates/project/settings.mako:21
+#: website/templates/project/settings.mako:178
 msgid "Storage Location"
 msgstr ""
 
-#: website/templates/project/settings.mako:34
-#: website/templates/project/settings.mako:226
+#: website/templates/project/settings.mako:33
+#: website/templates/project/settings.mako:225
 msgid "Access Requests"
 msgstr ""
 
-#: website/templates/project/settings.mako:40
-#: website/templates/project/settings.mako:319
+#: website/templates/project/settings.mako:39
+#: website/templates/project/settings.mako:318
 msgid "Commenting"
 msgstr ""
 
-#: website/templates/project/settings.mako:43
-#: website/templates/project/settings.mako:360
+#: website/templates/project/settings.mako:42
+#: website/templates/project/settings.mako:359
 msgid "Email Notifications"
 msgstr ""
 
-#: website/templates/project/settings.mako:45
-#: website/templates/project/settings.mako:392
+#: website/templates/project/settings.mako:44
+#: website/templates/project/settings.mako:391
 msgid "Redirect Link"
 msgstr ""
 
-#: website/templates/project/settings.mako:52
+#: website/templates/project/settings.mako:51
 msgid "Withdraw Public Registration"
 msgstr ""
 
-#: website/templates/project/settings.mako:58
-#: website/templates/project/settings.mako:470
+#: website/templates/project/settings.mako:57
+#: website/templates/project/settings.mako:469
 msgid "Project Affiliation / Branding"
 msgstr ""
 
-#: website/templates/project/settings.mako:83
+#: website/templates/project/settings.mako:82
 msgid "(For descriptive purposes)"
 msgstr ""
 
-#: website/templates/project/settings.mako:88
+#: website/templates/project/settings.mako:87
 msgid "Uncategorized"
 msgstr ""
 
-#: website/templates/project/settings.mako:115
+#: website/templates/project/settings.mako:114
 msgid "Select Timestamp Function:"
 msgstr ""
 
-#: website/templates/project/settings.mako:118
-#: website/templates/project/settings.mako:123
+#: website/templates/project/settings.mako:117
+#: website/templates/project/settings.mako:122
 msgid "Timestamp only"
 msgstr ""
 
-#: website/templates/project/settings.mako:134
+#: website/templates/project/settings.mako:133
 msgid "Save changes"
 msgstr ""
 
-#: website/templates/project/settings.mako:142
+#: website/templates/project/settings.mako:141
 msgid ""
 "A project cannot be deleted if it has any components within it."
 "                                To delete a parent project, you must "
@@ -3107,77 +3147,77 @@ msgid ""
 "visiting their settings pages."
 msgstr ""
 
-#: website/templates/project/settings.mako:151
-#: website/templates/project/settings.mako:164
+#: website/templates/project/settings.mako:150
+#: website/templates/project/settings.mako:163
 #, python-format
 msgid "Delete %(node_type)s"
 msgstr ""
 
-#: website/templates/project/settings.mako:157
+#: website/templates/project/settings.mako:156
 #, python-format
 msgid ""
 "A project which is related to a external group (%(group)s) cannot be "
 "deleted."
 msgstr ""
 
-#: website/templates/project/settings.mako:186
+#: website/templates/project/settings.mako:185
 msgid "Storage location cannot be changed after project is created."
 msgstr ""
 
-#: website/templates/project/settings.mako:238
+#: website/templates/project/settings.mako:237
 msgid "Allow users to request access to this project."
 msgstr ""
 
-#: website/templates/project/settings.mako:271
+#: website/templates/project/settings.mako:270
 #, python-format
 msgid "Enable the wiki in <b>%(title)s</b>."
 msgstr ""
 
-#: website/templates/project/settings.mako:284
+#: website/templates/project/settings.mako:283
 msgid "Configure"
 msgstr ""
 
-#: website/templates/project/settings.mako:287
+#: website/templates/project/settings.mako:286
 #, python-format
 msgid "Control who can edit the wiki of <b>%(title)s</b>"
 msgstr ""
 
-#: website/templates/project/settings.mako:289
+#: website/templates/project/settings.mako:288
 #, python-format
 msgid ""
 "Control who can edit your wiki. To allow all GakuNin RDM users to edit "
 "the wiki, <b>%(title)s</b> must be public."
 msgstr ""
 
-#: website/templates/project/settings.mako:299
+#: website/templates/project/settings.mako:298
 msgid "Loading wiki settings..."
 msgstr ""
 
-#: website/templates/project/settings.mako:329
+#: website/templates/project/settings.mako:328
 msgid "Only contributors can post comments"
 msgstr ""
 
-#: website/templates/project/settings.mako:335
+#: website/templates/project/settings.mako:334
 #, python-format
 msgid "When the %(node_type)s is public, any GakuNin RDM user can post comments"
 msgstr ""
 
-#: website/templates/project/settings.mako:364
+#: website/templates/project/settings.mako:363
 msgid ""
 "These notification settings only apply to you. They do NOT affect any "
 "other contributor on this project."
 msgstr ""
 
-#: website/templates/project/settings.mako:403
+#: website/templates/project/settings.mako:402
 msgid "Redirect visitors from your project page to an external webpage"
 msgstr ""
 
-#: website/templates/project/settings.mako:428
-#: website/templates/project/settings.mako:450
+#: website/templates/project/settings.mako:427
+#: website/templates/project/settings.mako:449
 msgid "Withdraw Registration"
 msgstr ""
 
-#: website/templates/project/settings.mako:436
+#: website/templates/project/settings.mako:435
 #, python-format
 msgid ""
 "Withdrawing children components of a registration is not allowed. Should "
@@ -3185,7 +3225,7 @@ msgid ""
 "please withdraw its parent registration <a %(web_url_for)s>here</a>."
 msgstr ""
 
-#: website/templates/project/settings.mako:443
+#: website/templates/project/settings.mako:442
 msgid ""
 "Withdrawing a registration will remove its content from the GakuNin RDM, "
 "but leave basic metadata                                    behind. The "
@@ -3196,43 +3236,43 @@ msgid ""
 "<strong>withdrawn</strong> tag."
 msgstr ""
 
-#: website/templates/project/settings.mako:452
+#: website/templates/project/settings.mako:451
 msgid "This registration is already pending withdrawal."
 msgstr ""
 
-#: website/templates/project/settings.mako:475
+#: website/templates/project/settings.mako:474
 msgid ""
 "Contributors with read-only permissions to this project cannot add or "
 "remove institutional affiliations."
 msgstr ""
 
-#: website/templates/project/settings.mako:478
+#: website/templates/project/settings.mako:477
 msgid ""
 "Projects can be affiliated with institutions that have created GakuNin "
 "RDM for Institutions accounts."
 msgstr ""
 
-#: website/templates/project/settings.mako:479
+#: website/templates/project/settings.mako:478
 msgid "This allows:"
 msgstr ""
 
-#: website/templates/project/settings.mako:481
+#: website/templates/project/settings.mako:480
 msgid "institutional logos to be displayed on public projects"
 msgstr ""
 
-#: website/templates/project/settings.mako:482
+#: website/templates/project/settings.mako:481
 msgid "public projects to be discoverable on specific institutional landing pages"
 msgstr ""
 
-#: website/templates/project/settings.mako:483
+#: website/templates/project/settings.mako:482
 msgid "single sign-on to the GakuNin RDM with institutional credentials"
 msgstr ""
 
-#: website/templates/project/settings.mako:484
+#: website/templates/project/settings.mako:483
 msgid "FAQ"
 msgstr ""
 
-#: website/templates/project/settings.mako:512
+#: website/templates/project/settings.mako:511
 msgid "Available Institutions:"
 msgstr ""
 
@@ -3441,6 +3481,15 @@ msgstr ""
 #: website/templates/util/render_addon_widget.mako:200
 #: website/templates/util/render_addon_widget.mako:225
 msgid "Image Scan Service"
+msgstr ""
+
+#: website/templates/util/render_node.mako:5
+msgid "component"
+msgstr ""
+
+#: website/templates/util/render_node.mako:18
+#, python-format
+msgid "Linked %(nodetype)s"
 msgstr ""
 
 #: website/templates/util/render_node.mako:22

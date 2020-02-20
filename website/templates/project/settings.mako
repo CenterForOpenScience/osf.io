@@ -4,7 +4,6 @@
 <div class="page-header visible-xs">
   <h2 class="text-300">${_("Settings")}</h2>
 </div>
-<!-- ${_("project")} -->
 <div class="row project-page">
     <!-- Begin left column -->
     <div class="col-md-3 col-xs-12 affix-parent scrollspy">

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-20 11:03+0900\n"
+"POT-Creation-Date: 2020-02-20 12:00+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -146,8 +146,8 @@ msgid "List item"
 msgstr "リストアイテム"
 
 #: addons/wiki/static/pagedown-ace/Markdown.Editor.js:76
-msgid "見出し <h1>/<h2>"
-msgstr ""
+msgid "Heading <h1>/<h2>"
+msgstr "見出し <h1>/<h2>"
 
 #: addons/wiki/static/pagedown-ace/Markdown.Editor.js:79
 msgid "Horizontal Rule <hr>"
@@ -923,6 +923,10 @@ msgstr "カテゴリ"
 #: website/static/js/addProjectPlugin.js:303
 msgid " (for descriptive purposes)"
 msgstr "(説明のため)"
+
+#: website/static/js/addProjectPlugin.js:310
+msgid "Uncategorized"
+msgstr "未分類"
 
 #: website/static/js/addProjectPlugin.js:323
 msgid "(Empty category)"

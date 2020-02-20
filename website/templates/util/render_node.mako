@@ -2,7 +2,7 @@
 ## TODO: Rename summary to node
 <%def name="render_node(summary, show_path)">
 ## TODO: Don't rely on ID
-
+<!-- ${_("component")} -->
 <div id="render-node">
 % if summary['can_view']:
     <li
@@ -15,7 +15,7 @@
         <h4 class="list-group-item-heading">
             <span class="component-overflow f-w-lg" style="line-height: 1.5;">
             % if not summary['primary']:
-                <i class="fa fa-link" data-toggle="tooltip" title="Linked ${summary['node_type']}"></i>
+            <i class="fa fa-link" data-toggle="tooltip" title='${_("Linked %(nodetype)s") % dict(nodetype=_(summary['node_type']))}'></i>
             % endif
 
             % if not summary['is_public']:

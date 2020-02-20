@@ -33,7 +33,7 @@
         <h5 class="m-t-md">${_("Bibliographic Contributor")}
                 <i class="fa fa-question-circle visibility-info"
                     data-toggle="popover"
-                    data-title=${_('Bibliographic Contributor Information')}"
+                    data-title=${_('Bibliographic Contributor Information')}
                     data-container="body"
                     data-placement="right"
                     data-html="true"

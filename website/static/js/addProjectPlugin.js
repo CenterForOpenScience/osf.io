@@ -307,7 +307,7 @@ var AddProject = {
                                         type: 'button'
                                       }, [
                                         m('i', { className : mHelpers.getIcon(ctrl.newProjectCategory()) }),
-                                        m('span.text-capitalize', _(ctrl.newProjectCategory()) || 'Uncategorized'),
+                                        m('span.text-capitalize', ctrl.newProjectCategory() || _('Uncategorized')),
                                         m('i.fa.fa-sort')
                                       ]),
                                     m('ul.dropdown-menu', [
@@ -376,7 +376,7 @@ var AddProject = {
                             }}, [
                                 m('span[aria-hidden="true"]','×')
                             ]),
-                            m('h4.add-project-success.text-success', agh.sprintf(_('New %1$s created successfully!'),ctrl.nodeType))
+                            m('h4.add-project-success.text-success', agh.sprintf(_('New %1$s created successfully!'),_(ctrl.nodeType)))
                         ]
                     ),
                     m('.modal-footer', [
