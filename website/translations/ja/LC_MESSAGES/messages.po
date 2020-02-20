@@ -226,7 +226,7 @@ msgstr "アカウントの接続または再認証"
 
 #: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:24
 msgid "Authorized by <em><span data-bind=\"text: name\"></span></em>"
-msgstr "承認者：<em><span data-bind=\"text: name\"></span></em>"
+msgstr "認証者：<em><span data-bind=\"text: name\"></span></em>"
 
 #: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:32
 #: addons/dataverse/templates/dataverse_user_settings.mako:31
@@ -411,7 +411,7 @@ msgstr "GitLab"
 
 #: addons/gitlab/templates/gitlab_node_settings.mako:12
 msgid "authorized by"
-msgstr "承認者"
+msgstr "認証者"
 
 #: addons/gitlab/templates/gitlab_node_settings.mako:80
 #, python-format
@@ -542,7 +542,7 @@ msgid ""
 "Authorized by <em><span %(data_bind1)s></span></em> on <a "
 "%(data_bind2)s><em %(data_bind3)s></em></a>"
 msgstr ""
-"<a %(data_bind2)s><em %(data_bind3)s></em></a>での承認者：<em><span "
+"<a %(data_bind2)s><em %(data_bind3)s></em></a>での認証者：<em><span "
 "%(data_bind1)s></span></em>"
 
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:6
@@ -589,7 +589,7 @@ msgid ""
 "%(data_bind2)s><em data-bind=\"text: profileUrl\"></em></a>"
 msgstr ""
 "<a %(data_bind2)s><em data-bind=\"text: "
-"profileUrl\"></em></a>での承認者：<em><span %(data_bind1)s\"></span></em>"
+"profileUrl\"></em></a>での認証者：<em><span %(data_bind1)s\"></span></em>"
 
 #: addons/s3/templates/s3_credentials_modal.mako:6
 msgid "Connect an Amazon S3 Account"
@@ -620,7 +620,7 @@ msgstr "bucketをロード中..."
 #: addons/weko/templates/weko_user_settings.mako:23
 #: website/templates/profile/user_settings_default.mako:20
 msgid "Authorized by "
-msgstr "承認者:"
+msgstr "認証者:"
 
 #: addons/s3compat/templates/s3compat_credentials_modal.mako:6
 msgid "Connect an S3 Compatible Storage Account"
@@ -1973,7 +1973,7 @@ msgstr "接続されたアイデンティティにより、サードパーティ
 #: website/templates/profile/account.mako:112
 #: website/templates/profile/add_email.mako:120
 msgid "You can revoke these authorizations here."
-msgstr "ここでこれらの承認を取り消すことができます。"
+msgstr "ここでこれらの認証を取り消すことができます。"
 
 #: website/templates/profile/account.mako:115
 #: website/templates/profile/add_email.mako:123
@@ -2109,7 +2109,7 @@ msgstr "<strong>警告:</strong> この操作は元に戻せません。"
 #: website/templates/profile/addon_permissions.mako:4
 #, python-format
 msgid "Authorized by <em>%(name)s</em>"
-msgstr "承認者:<em>%(name)s</em>"
+msgstr "認証者:<em>%(name)s</em>"
 
 #: website/templates/profile/addons.mako:2
 #: website/templates/profile/addons.mako:29
@@ -2434,7 +2434,7 @@ msgstr "氏名でフィルタ"
 #: website/templates/project/contributors.mako:232
 #: website/templates/project/modal_add_contributor.mako:227
 msgid "Permissions"
-msgstr "許可"
+msgstr "権限"
 
 #: website/templates/project/contributors.mako:17
 #: website/templates/project/contributors.mako:189

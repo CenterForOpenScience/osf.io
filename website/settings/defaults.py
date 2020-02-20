@@ -237,7 +237,7 @@ NODE_CATEGORY_MAP = OrderedDict([
     ('analysis', 'Analysis'),
     ('communication', 'Communication'),
     ('data', 'Data'),
-    ('hypothesis', 'Hypothesis'),
+    ('hypothesis', 'Hypothesis - test'),
     ('instrumentation', 'Instrumentation'),
     ('methods and measures', 'Methods and Measures'),
     ('procedure', 'Procedure'),

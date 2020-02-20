@@ -741,7 +741,7 @@ msgstr "認証を削除しますか？"
 
 #: website/static/js/accountSettings.js:338
 msgid "Are you sure you want to remove this authorization?"
-msgstr "この承認を削除してもよろしいですか？"
+msgstr "この認証を削除してもよろしいですか？"
 
 #: website/static/js/accountSettings.js:379
 msgid ""
@@ -795,7 +795,7 @@ msgstr "アカウントの無効化をリクエストしますか？"
 msgid ""
 "Are you sure you want to request account deactivation? A GakuNinRDM "
 "administrator will review your request. If accepted, you "
-msgstr "アカウントの無効化をリクエストしてもよろしいですか？ GakuNinRDM管理者がリクエストを確認します。 承認された場合、"
+msgstr "アカウントの無効化をリクエストしてもよろしいですか？ GakuNinRDM管理者がリクエストを確認します。 認証された場合、"
 
 #: website/static/js/accountSettings.js:461
 msgid "will <strong>NOT</strong> be able to reactivate your account."
@@ -1069,7 +1069,7 @@ msgid ""
 "project, go to the settings page of the project, enable %1$s, and choose "
 "content to connect."
 msgstr ""
-"アドオンが正常に承認されました。 このアドオンをGakuNin "
+"アドオンが正常に認証されました。 このアドオンをGakuNin "
 "RDMプロジェクトにリンクするには、プロジェクトの設定ページに移動し、%1$sを有効にして、接続するコンテンツを選択します。"
 
 #: website/static/js/addonSettings.js:109
@@ -1077,7 +1077,7 @@ msgid ""
 "Error while authorizing add-on. Please log in to your %1$s account and "
 "grant access to the GakuNin RDM to enable this add-on."
 msgstr ""
-"アドオンの承認中にエラーが発生しました。 このアドオンを有効にするには、%1$sアカウントにログインし、GakuNin "
+"アドオンの認証中にエラーが発生しました。 このアドオンを有効にするには、%1$sアカウントにログインし、GakuNin "
 "RDMへのアクセスを許可してください。"
 
 #: website/static/js/addonSettings.js:118
@@ -1091,7 +1091,7 @@ msgid ""
 "you have authorized."
 msgstr ""
 "%1$sアカウント<strong>%2$s</strong>を切断してもよろしいですか？ "
-"これにより、承認したすべてのプロジェクトの%1$sへのアクセスが取り消されます。"
+"これにより、認証したすべてのプロジェクトの%1$sへのアクセスが取り消されます。"
 
 #: website/static/js/alertsManager.js:45
 msgid "Could not dismiss alert. Please refresh page and try again."
@@ -2089,7 +2089,7 @@ msgid ""
 "Error while authorizing addon. Please log in to your %1$s account and "
 "grant access to the GakuNin RDM to enable this addon."
 msgstr ""
-"アドオンの承認中にエラーが発生しました。 このアドオンを有効にするには、%1$sアカウントにログインし、GakuNin "
+"アドオンの認証中にエラーが発生しました。 このアドオンを有効にするには、%1$sアカウントにログインし、GakuNin "
 "RDMへのアクセスを許可してください。"
 
 #: website/static/js/folderPickerNodeConfig.js:141

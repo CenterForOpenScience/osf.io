@@ -392,7 +392,7 @@ var AddProject = {
                             onclick: function(){
                             $osf.trackClick(options.trackingCategory, options.trackingAction, 'go-to-new-project');
                             }
-                        },agh.sprintf(_('Go to new %1$s'),ctrl.nodeType))
+                        },agh.sprintf(_('Go to new %1$s'),_(ctrl.nodeType)))
                     ])
                 )
             ]),
@@ -437,7 +437,7 @@ var AddProject = {
                         },  _('Keep working here')),
                         m('a.btn.btn-success', {
                             href : ctrl.goToProjectLink()
-                        },agh.sprintf(_('Go to new %1$s') , ctrl.nodeType))
+                        },agh.sprintf(_('Go to new %1$s') , _(ctrl.nodeType)))
                     ])
                 )
             ])
