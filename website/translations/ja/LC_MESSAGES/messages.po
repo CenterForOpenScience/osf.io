@@ -2785,7 +2785,7 @@ msgstr ""
 msgid ""
 "data-bind=\"text:removeSelf() ? 'You' : "
 "contributorToRemove()['fullname']\""
-msgstr "data-bind=\"text:removeSelf() ? 'あなた' : contributorToRemove()['fullname']\"
+msgstr "data-bind=\"text:removeSelf() ? 'あなた' : contributorToRemove()['fullname']\""
 
 #: website/templates/project/modal_remove_contributor.mako:85
 msgid ""
