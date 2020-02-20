@@ -42,41 +42,41 @@ $(function(){
         };
 
     var defaultsStrings = {
-        bold: "Strong <strong>",
+        bold: _("Strong <strong>"),
         boldexample: "strong text",
 
         italic: _("Emphasis <em>"),
         italicexample: "emphasized text",
 
-        spellcheck: "Spellcheck: Toggle spellcheck on and off",
+        spellcheck: _("Spellcheck: Toggle spellcheck on and off"),
 
-        link: "Hyperlink <a>",
+        link: _("Hyperlink <a>"),
         linkdescription: "enter link description here",
         linkdialog: "<div class='modal-header'> <h4 class='modal-title f-w-lg'>Add hyperlink</h4></div><div class='modal-body'> <p><b>Example:</b><br>http://example.com/ \"optional title\"</p></div>",
 
-        quote: "Blockquote <blockquote>",
+        quote: _("Blockquote <blockquote>"),
         quoteexample: "Blockquote",
 
-        code: "Code Sample <pre><code>",
+        code: _("Code Sample <pre><code>"),
         codeexample: "enter code here",
 
-        image: "Image <img>",
+        image: _("Image <img>"),
         imagedescription: "enter image description here",
         imagedialog: "<div class='modal-header'> <h4 class='modal-title f-w-lg'>Add image</h4></div><div class='modal-body'><p><b>Example:</b><br>http://example.com/images/diagram.jpg \"optional title\"</p></div>",
 
-        olist: "Numbered List <ol>",
-        ulist: "Bulleted List <ul>",
-        litem: "List item",
+        olist: _("Numbered List <ol>"),
+        ulist: _("Bulleted List <ul>"),
+        litem: _("List item"),
 
-        heading: "Heading <h1>/<h2>",
+        heading: _("Heading <h1>/<h2>"),
         headingexample: "Heading",
 
-        hr: "Horizontal Rule <hr>",
+        hr: _("Horizontal Rule <hr>"),
 
-        undo: "Undo -",
-        redo: "Redo -",
+        undo: _("Undo -"),
+        redo: _("Redo -"),
 
-        help: "Wiki Syntax Help"
+        help: _("Wiki Syntax Help")
     };
 
     var keyStrokes = {
@@ -1742,7 +1742,7 @@ $(function(){
             buttons.redo.execute = function (manager) { inputBox.session.getUndoManager().redo(); };
 
             makeSpacer(4);
-            makeCheckBox("wmd-autocom-toggle", "autocom", "-240px", "Autocomplete");
+            makeCheckBox("wmd-autocom-toggle", "autocom", "-240px", _("Autocomplete"));
 
             makeSpacer(5);
             buttons.help = makeHelpButton("wmd-help-button",getString("help"),"-240px");

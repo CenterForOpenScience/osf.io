@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-18 16:56+0900\n"
+"POT-Creation-Date: 2020-02-20 11:13+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -973,6 +973,14 @@ msgstr "お使いのブラウザは共有編集をサポートしていません
 #: addons/wiki/templates/status.mako:7
 msgid "Note: Home page cannot be renamed."
 msgstr "注：ホームページの名前は変更できません。"
+
+#: addons/wiki/templates/status.mako:9
+msgid "home"
+msgstr "ホーム"
+
+#: addons/wiki/templates/status.mako:9
+msgid "Home"
+msgstr "ホーム"
 
 #: addons/wiki/templates/wiki-bar-modal-help.mako:6
 msgid "Wiki syntax help"

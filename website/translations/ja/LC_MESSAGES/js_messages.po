@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-18 16:57+0900\n"
+"POT-Creation-Date: 2020-02-20 11:03+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -105,9 +105,69 @@ msgstr "前のバージョン"
 msgid "Version "
 msgstr "バージョン"
 
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:50
+msgid "Strong <strong>"
+msgstr "強調構文 <strong>"
+
 #: addons/wiki/static/pagedown-ace/Markdown.Editor.js:53
 msgid "Emphasis <em>"
 msgstr "強調構文 <em>"
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:56
+msgid "Spellcheck: Toggle spellcheck on and off"
+msgstr "スペルチェック：スペルチェックのオンとオフを切り替えます"
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:58
+msgid "Hyperlink <a>"
+msgstr "ハイパーリンク <a>"
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:62
+msgid "Blockquote <blockquote>"
+msgstr "引用構文 <blockquote>"
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:65
+msgid "Code Sample <pre><code>"
+msgstr "コードサンプル <pre><code>"
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:68
+msgid "Image <img>"
+msgstr "画像 <img>"
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:72
+msgid "Numbered List <ol>"
+msgstr "段落番号 <ol>"
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:73
+msgid "Bulleted List <ul>"
+msgstr "箇条書き <ul>"
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:74
+msgid "List item"
+msgstr "リストアイテム"
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:76
+msgid "見出し <h1>/<h2>"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:79
+msgid "Horizontal Rule <hr>"
+msgstr "水平の罫線 <hr>"
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:81
+msgid "Undo -"
+msgstr "もとに戻す -"
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:82
+msgid "Redo -"
+msgstr "やり直す -"
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:84
+msgid "Wiki Syntax Help"
+msgstr "Wiki構文のヘルプ"
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:1941
+msgid "Autocomplete"
+msgstr "自動更新"
 
 #: admin/base/utils.py:23
 msgid "Enter a valid 'slug' consisting only of lowercase letters."
@@ -2466,7 +2526,7 @@ msgstr "コレクション名"
 
 #: website/static/js/myProjects.js:1550
 msgid "e.g.  My Replications"
-msgstr "例：私の置換"
+msgstr "例：マイコレクション"
 
 #: website/static/js/myProjects.js:1567
 msgid "Add"

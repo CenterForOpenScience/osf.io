@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-18 16:57+0900\n"
+"POT-Creation-Date: 2020-02-20 11:03+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -100,8 +100,68 @@ msgstr ""
 msgid "Version "
 msgstr ""
 
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:50
+msgid "Strong <strong>"
+msgstr ""
+
 #: addons/wiki/static/pagedown-ace/Markdown.Editor.js:53
 msgid "Emphasis <em>"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:56
+msgid "Spellcheck: Toggle spellcheck on and off"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:58
+msgid "Hyperlink <a>"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:62
+msgid "Blockquote <blockquote>"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:65
+msgid "Code Sample <pre><code>"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:68
+msgid "Image <img>"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:72
+msgid "Numbered List <ol>"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:73
+msgid "Bulleted List <ul>"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:74
+msgid "List item"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:76
+msgid "Heading <h1>/<h2>"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:79
+msgid "Horizontal Rule <hr>"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:81
+msgid "Undo -"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:82
+msgid "Redo -"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:84
+msgid "Wiki Syntax Help"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:1941
+msgid "Autocomplete"
 msgstr ""
 
 #: admin/base/utils.py:23
