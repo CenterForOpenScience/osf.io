@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-20 16:48+0900\n"
+"POT-Creation-Date: 2020-02-20 18:23+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -915,10 +915,6 @@ msgstr ""
 
 #: website/static/js/addProjectPlugin.js:303
 msgid " (for descriptive purposes)"
-msgstr ""
-
-#: website/static/js/addProjectPlugin.js:310
-msgid "Uncategorized"
 msgstr ""
 
 #: website/static/js/addProjectPlugin.js:323
@@ -3792,8 +3788,7 @@ msgid ""
 msgstr ""
 
 #: website/static/js/pages/file-page.js:23
-#: website/static/js/pages/project-dashboard-page.js:453
-msgid "Add a tag to enhance discoverability"
+msgid "Add a file tag to enhance discoverability"
 msgstr ""
 
 #: website/static/js/pages/file-page.js:28
@@ -3892,6 +3887,10 @@ msgstr ""
 
 #: website/static/js/pages/project-dashboard-page.js:436
 msgid "Error retrieving filebrowser"
+msgstr ""
+
+#: website/static/js/pages/project-dashboard-page.js:453
+msgid "Add a project tag to enhance discoverability"
 msgstr ""
 
 #: website/static/js/pages/project-dashboard-page.js:513

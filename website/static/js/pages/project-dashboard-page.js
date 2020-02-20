@@ -450,7 +450,7 @@ $(document).ready(function () {
         width: '100%',
         interactive: window.contextVars.currentUser.canEditTags,
         maxChars: 128,
-        defaultText: _('Add a tag to enhance discoverability'),
+        defaultText: _('Add a project tag to enhance discoverability'),
         onAddTag: function(tag) {
             $('#node-tags_tag').attr('data-default', 'Add a tag');
             window.contextVars.node.tags.push(tag);

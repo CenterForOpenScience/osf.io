@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-20 16:48+0900\n"
+"POT-Creation-Date: 2020-02-20 18:23+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -927,10 +927,6 @@ msgstr "カテゴリ"
 #: website/static/js/addProjectPlugin.js:303
 msgid " (for descriptive purposes)"
 msgstr "(説明のため)"
-
-#: website/static/js/addProjectPlugin.js:310
-msgid "Uncategorized"
-msgstr "未分類"
 
 #: website/static/js/addProjectPlugin.js:323
 msgid "(Empty category)"
@@ -3845,9 +3841,8 @@ msgid ""
 msgstr "これには通常より時間がかかります。<br> ページを再読み込みしてください。 問題が解決しない場合は、%1$sまでご連絡ください"
 
 #: website/static/js/pages/file-page.js:23
-#: website/static/js/pages/project-dashboard-page.js:453
-msgid "Add a tag to enhance discoverability"
-msgstr "タグを追加してプロジェクトまたはファイルを発見しやすくする"
+msgid "Add a file tag to enhance discoverability"
+msgstr "タグを追加してファイルを発見しやすくする"
 
 #: website/static/js/pages/file-page.js:28
 msgid "Could not add tag."
@@ -3946,6 +3941,10 @@ msgstr "一致するユーザーはいません"
 #: website/static/js/pages/project-dashboard-page.js:436
 msgid "Error retrieving filebrowser"
 msgstr "ファイルブラウザの取得エラー"
+
+#: website/static/js/pages/project-dashboard-page.js:453
+msgid "Add a project tag to enhance discoverability"
+msgstr "タグを追加してプロジェクトを発見しやすくする"
 
 #: website/static/js/pages/project-dashboard-page.js:513
 msgid "Could not remove tag"
@@ -4056,4 +4055,5 @@ msgstr "%1$sに報告してください"
 #: website/static/js/pages/wiki-edit-page.js:112
 msgid "Could not GET wiki menu pages"
 msgstr "Wikiメニューページを取得できませんでした"
+
 
