@@ -510,7 +510,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert data['embeds']['initiator']['data']['id'] == user._id
 
     def test_required_registration_responses_questions_not_required_on_post(
-            self, app, user, provider, project_public, prereg_metadata):
+            self, app, user, provider, project_public):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
             schema_version=SCHEMA_VERSION)
