@@ -113,7 +113,7 @@ class MeetingCreateFormView(PermissionRequiredMixin, FormView):
             **data
         )
         new_conf.save()
-        new_conf.admins = admin_users
+        new_conf.admins.add(*admin_users)
         new_conf.field_names.update(custom_fields)
         new_conf.save()
         return super(MeetingCreateFormView, self).form_valid(form)
