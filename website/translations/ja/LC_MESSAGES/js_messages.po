@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-20 18:23+0900\n"
+"POT-Creation-Date: 2020-02-21 09:59+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -564,6 +564,51 @@ msgstr "プレプリント"
 #: website/search/elastic_search.py:56
 msgid "Groups"
 msgstr "グループ"
+
+#: website/settings/defaults.py:239
+msgid "Analysis"
+msgstr "分析"
+
+#: website/settings/defaults.py:240
+msgid "Communication"
+msgstr "コミュニケーション"
+
+#: website/settings/defaults.py:241
+msgid "Data"
+msgstr "データ"
+
+#: website/settings/defaults.py:242
+msgid "Hypothesis"
+msgstr "仮説"
+
+#: website/settings/defaults.py:243
+msgid "Instrumentation"
+msgstr "器具"
+
+#: website/settings/defaults.py:244
+msgid "Methods and Measures"
+msgstr "方法と対策"
+
+#: website/settings/defaults.py:245
+msgid "Procedure"
+msgstr "手順"
+
+#: website/settings/defaults.py:246
+#: website/static/js/projectSettingsTreebeardBase.js:92
+msgid "Project"
+msgstr "プロジェクト"
+
+#: website/settings/defaults.py:247
+msgid "Software"
+msgstr "ソフトウェア"
+
+#: website/settings/defaults.py:248
+msgid "Other"
+msgstr "その他"
+
+#: website/settings/defaults.py:249 website/static/js/addProjectPlugin.js:310
+msgid "Uncategorized"
+msgstr "未分類"
 
 #: website/static/js/accessRequestManager.js:88
 msgid "There was a problem trying to %1$s the request from the user. %2$s"
@@ -3399,10 +3444,6 @@ msgid ""
 "project this link refers to."
 msgstr "このリンクを削除してもよろしいですか？このリンクが参照するプロジェクトは削除されません。"
 
-#: website/static/js/projectSettingsTreebeardBase.js:92
-msgid "Project"
-msgstr "プロジェクト"
-
 #: website/static/js/projectSettingsTreebeardBase.js:98
 msgid "Editing Toggle"
 msgstr "トグルを編集中"
@@ -4055,5 +4096,4 @@ msgstr "%1$sに報告してください"
 #: website/static/js/pages/wiki-edit-page.js:112
 msgid "Could not GET wiki menu pages"
 msgstr "Wikiメニューページを取得できませんでした"
-
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-20 18:23+0900\n"
+"POT-Creation-Date: 2020-02-21 09:59+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -554,6 +554,51 @@ msgstr ""
 
 #: website/search/elastic_search.py:56
 msgid "Groups"
+msgstr ""
+
+#: website/settings/defaults.py:239
+msgid "Analysis"
+msgstr ""
+
+#: website/settings/defaults.py:240
+msgid "Communication"
+msgstr ""
+
+#: website/settings/defaults.py:241
+msgid "Data"
+msgstr ""
+
+#: website/settings/defaults.py:242
+msgid "Hypothesis"
+msgstr ""
+
+#: website/settings/defaults.py:243
+msgid "Instrumentation"
+msgstr ""
+
+#: website/settings/defaults.py:244
+msgid "Methods and Measures"
+msgstr ""
+
+#: website/settings/defaults.py:245
+msgid "Procedure"
+msgstr ""
+
+#: website/settings/defaults.py:246
+#: website/static/js/projectSettingsTreebeardBase.js:92
+msgid "Project"
+msgstr ""
+
+#: website/settings/defaults.py:247
+msgid "Software"
+msgstr ""
+
+#: website/settings/defaults.py:248
+msgid "Other"
+msgstr ""
+
+#: website/settings/defaults.py:249 website/static/js/addProjectPlugin.js:310
+msgid "Uncategorized"
 msgstr ""
 
 #: website/static/js/accessRequestManager.js:88
@@ -3354,10 +3399,6 @@ msgstr ""
 msgid ""
 "Are you sure you want to remove this link? This will not remove the "
 "project this link refers to."
-msgstr ""
-
-#: website/static/js/projectSettingsTreebeardBase.js:92
-msgid "Project"
 msgstr ""
 
 #: website/static/js/projectSettingsTreebeardBase.js:98

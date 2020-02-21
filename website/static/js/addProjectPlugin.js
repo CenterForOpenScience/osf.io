@@ -307,7 +307,7 @@ var AddProject = {
                                         type: 'button'
                                       }, [
                                         m('i', { className : mHelpers.getIcon(ctrl.newProjectCategory()) }),
-                                        m('span.text-capitalize', _(ctrl.newProjectCategory()) || 'Uncategorized'),
+                                        m('span.text-capitalize', ctrl.newProjectCategory() || _('Uncategorized')),
                                         m('i.fa.fa-sort')
                                       ]),
                                     m('ul.dropdown-menu', [

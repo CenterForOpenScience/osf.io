@@ -2872,11 +2872,11 @@ msgstr "登録日"
 
 #: website/templates/project/project.mako:230
 msgid "Date created:"
-msgstr "作成日"
+msgstr "作成日時"
 
 #: website/templates/project/project.mako:233
 msgid "| Last Updated:"
-msgstr "| 最終更新日"
+msgstr "| 最終更新日時"
 
 #: website/templates/project/project.mako:248
 msgid "Creating DOI. Please wait..."
