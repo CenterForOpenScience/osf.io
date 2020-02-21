@@ -217,8 +217,9 @@ MIDDLEWARE = (
     # Uncomment and add "prof" to url params to recieve a profile for that url
     # 'api.base.middleware.ProfileMiddleware',
 
-    # 'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'api.base.middleware.CorsMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     # 'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -251,10 +252,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
-LANGUAGES = (
-    ('en', 'English'),
-)
 
 # https://django-storages.readthedocs.io/en/latest/backends/gcloud.html
 if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', False):
@@ -467,3 +464,10 @@ WARNING_THRESHOLD = 0.9
 BASE_FOR_METRIC_PREFIX = 1000
 SIZE_UNIT_GB = BASE_FOR_METRIC_PREFIX ** 3
 NII_STORAGE_REGION_ID = 1
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+BASE_PATH = parent_dir(parent_dir(parent_dir(HERE)))  # code/ directory
+
+LOCALE_PATHS = (
+    os.path.join(BASE_PATH, 'admin/translations'),
+)
