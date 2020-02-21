@@ -12,8 +12,6 @@ import logging
 from datetime import timedelta
 from collections import OrderedDict
 
-from django.utils.translation import ugettext_lazy as _
-
 os_env = os.environ
 
 
@@ -236,17 +234,17 @@ WIKI_WHITELIST = {
 # titles, menus, etc.
 # Use an OrderedDict so that menu items show in the correct order
 NODE_CATEGORY_MAP = OrderedDict([
-    ('analysis', _('Analysis')),
-    ('communication', _('Communication')),
-    ('data', _('Data')),
-    ('hypothesis', _('Hypothesis')),
-    ('instrumentation', _('Instrumentation')),
-    ('methods and measures', _('Methods and Measures')),
-    ('procedure', _('Procedure')),
-    ('project', _('Project')),
-    ('software', _('Software')),
-    ('other', _('Other')),
-    ('', _('Uncategorized'))
+    ('analysis', 'Analysis'),
+    ('communication', 'Communication'),
+    ('data', 'Data'),
+    ('hypothesis', 'Hypothesis'),
+    ('instrumentation', 'Instrumentation'),
+    ('methods and measures', 'Methods and Measures'),
+    ('procedure', 'Procedure'),
+    ('project', 'Project'),
+    ('software', 'Software'),
+    ('other', 'Other'),
+    ('', 'Uncategorized')
 ])
 
 # Add-ons
