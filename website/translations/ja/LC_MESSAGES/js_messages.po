@@ -527,71 +527,71 @@ msgstr ""
 
 #: framework/auth/oauth_scopes.py:302
 msgid "Read your profile data."
-msgstr ""
+msgstr "プロフィールデータを読込む"
 
 #: framework/auth/oauth_scopes.py:305
 msgid "Read your primary email address."
-msgstr ""
+msgstr "プライマリメールアドレスを読込む"
 
 #: framework/auth/oauth_scopes.py:346
 msgid ""
 "View all metadata, files, and access rights associated with all public "
 "and private projects accessible to this account."
-msgstr ""
+msgstr "このアカウントにアクセス可能なすべてのパブリックおよびプライベートプロジェクトに関連付けられているすべてのメタデータ、ファイル、およびアクセス権を表示します。"
 
 #: framework/auth/oauth_scopes.py:349
 msgid ""
 "View and edit all metadata, files, and access rights associated with all "
 "public and private projects accessible to this account."
-msgstr ""
+msgstr "このアカウントにアクセスできるすべてのパブリックプロジェクトとプライベートプロジェクトに関連付けられたすべてのメタデータ、ファイル、アクセス権を表示および編集します。"
 
 #: website/language.py:192
 msgid "Duplicate template"
-msgstr ""
+msgstr "テンプレートを複製"
 
 #: website/language.py:198
 msgid "Fork this Project"
-msgstr ""
+msgstr "このプロジェクトをフォーク"
 
 #: website/notifications/constants.py:4 website/notifications/constants.py:13
 msgid "Comments added"
-msgstr ""
+msgstr "コメントの追加"
 
 #: website/notifications/constants.py:5 website/notifications/constants.py:14
 msgid "Files updated"
-msgstr ""
+msgstr "ファイルのアップロード"
 
 #: website/notifications/constants.py:12
 msgid "Replies to your comments"
-msgstr ""
+msgstr "コメントへの返信"
 
 #: website/notifications/constants.py:15
 msgid "Mentions added"
-msgstr ""
+msgstr "メンションの追加"
 
 #: website/notifications/constants.py:16
 msgid "Preprint submissions updated"
-msgstr ""
+msgstr "プレプリント提出の更新"
 
 #: website/notifications/utils.py:502
 msgid "Default Notification Settings"
-msgstr ""
+msgstr "デフォルトの通知設定"
 
 #: website/notifications/utils.py:503
 msgid ""
 "These are default settings for new projects you create or are added to. "
 "Modifying these settings will not modify settings on existing projects."
-msgstr ""
+msgstr "これらは、作成または追加される新しいプロジェクトのデフォルト設定です。 これらの設定を変更しても、既存のプロジェクトの設定は変更されません。"
 
 #: website/notifications/utils.py:511
 msgid "Project Notifications"
-msgstr ""
+msgstr "プロジェクトの通知"
 
 #: website/notifications/utils.py:512
 msgid ""
 "These are settings for each of your projects. Modifying these settings "
 "will only modify the settings for the selected project."
-msgstr ""
+msgstr "これらは各プロジェクトの設定です。 これらの設定を変更すると、選択したプロジェクトの設定のみが変更されます。"
 
 #: website/project/__init__.py:64
 msgid "Bookmarks"

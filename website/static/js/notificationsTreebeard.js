@@ -47,7 +47,7 @@ function openAncestors (tb, item) {
 
 function subscribe(item, notification_type) {
     var id = item.parent().data.node.id;
-    var event = item.data.event.title;
+    var event = _(item.data.event.title);
     var payload = {
         'id': id,
         'event': event,
@@ -115,7 +115,7 @@ function ProjectNotifications(data) {
                         custom : function() {
                             return m('div[style="padding-left:5px"]',
                                         [m ('p', [
-                                                m('b', item.data.node.title + ': '),
+                                                m('b', _(item.data.node.title) + ': '),
                                                 m('span[class="text-muted"]', _(' No configured projects.'))]
                                         )]
                             );
@@ -130,10 +130,10 @@ function ProjectNotifications(data) {
                         custom : function() {
                             return m('div[style="padding-left:5px; padding-bottom:50px"]', [
                                 m('p', [
-                                    m('b', item.data.node.title + ':  '),
+                                    m('b', _(item.data.node.title) + ':  '),
                                         m('span[class="fa fa-info-circle"]', {
                                             'data-toggle': 'tooltip',
-                                            'title':item.data.node.help,
+                                            'title':_(item.data.node.help),
                                             'config': tooltipConfig,
                                             'data-placement': 'bottom'
                                         })
