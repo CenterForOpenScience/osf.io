@@ -252,6 +252,10 @@ USE_L10N = True
 
 USE_TZ = True
 
+LANGUAGES = (
+    ('en', 'English'),
+)
+
 # https://django-storages.readthedocs.io/en/latest/backends/gcloud.html
 if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', False):
     # Required to interact with Google Cloud Storage
