@@ -257,7 +257,7 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, '../website/static'),
 )
 
-LANGUAGE_CODE = 'en'
+LANGUAGE_CODE = 'en-us'
 
 WEBPACK_LOADER = {
     'DEFAULT': {
