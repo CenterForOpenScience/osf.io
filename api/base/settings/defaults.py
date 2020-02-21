@@ -242,7 +242,7 @@ ROOT_URLCONF = 'api.base.urls'
 WSGI_APPLICATION = 'api.base.wsgi.application'
 
 
-LANGUAGE_CODE = 'ja'
+LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
 
