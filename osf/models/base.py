@@ -284,12 +284,12 @@ class OptionalGuidMixin(BaseIDMixin):
 class GuidMixinQuerySet(IncludeQuerySet):
 
     def _filter_or_exclude(self, negate, *args, **kwargs):
-        return super(GuidMixinQuerySet, self)._filter_or_exclude(negate, *args, **kwargs).include('guids')
+        return super(GuidMixinQuerySet, self)._filter_or_exclude(negate, *args, **kwargs)
 
     def all(self):
         if self._fields:
             return super(GuidMixinQuerySet, self).all()
-        return super(GuidMixinQuerySet, self).all().include('guids')
+        return super(GuidMixinQuerySet, self).all()
 
     def count(self):
         return super(GuidMixinQuerySet, self.include(None)).count()
