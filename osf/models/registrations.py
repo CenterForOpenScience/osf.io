@@ -16,7 +16,7 @@ from dirtyfields import DirtyFieldsMixin
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.permissions import ADMIN, READ
+from osf.utils.permissions import ADMIN, READ, WRITE
 from osf.exceptions import NodeStateError, DraftRegistrationStateError
 from website.util import api_v2_url
 from website import settings
@@ -667,6 +667,13 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         self._metaschema_flags.update(flags)
 
     @property
+    def branched_from_type(self):
+        if isinstance(self.branched_from, (DraftNode, Node)):
+            return self.branched_from.__class__.__name__
+        else:
+            return ''
+
+    @property
     def url(self):
         return self.URL_TEMPLATE.format(
             node_id=self.branched_from._id,
@@ -685,7 +692,11 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     def absolute_api_v2_url(self):
         # Old draft registration URL - user new endpoints, through draft registration
         node = self.branched_from
-        path = '/nodes/{}/draft_registrations/{}/'.format(node._id, self._id)
+        branched_type = self.branched_from_type
+        if branched_type == 'DraftNode':
+            path = '/draft_registrations/{}/'.format(self._id)
+        elif branched_type == 'Node':
+            path = '/nodes/{}/draft_registrations/{}/'.format(node._id, self._id)
         return api_v2_url(path)
 
     # used by django and DRF
@@ -824,6 +835,21 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         if not auth:
             return False
         return auth.user and self.has_permission(auth.user, READ)
+
+    def can_edit(self, auth=None, user=None):
+        """Return if a user is authorized to edit this draft_registration.
+        Must specify one of (`auth`, `user`).
+
+        :param Auth auth: Auth object to check
+        :param User user: User object to check
+        :returns: Whether user has permission to edit this draft_registration.
+        """
+        if not auth and not user:
+            raise ValueError('Must pass either `auth` or `user`')
+        if auth and user:
+            raise ValueError('Cannot pass both `auth` and `user`')
+        user = user or auth.user
+        return (user and self.has_permission(user, WRITE))
 
     def get_addons(self):
         # Override for ContributorMixin, Draft Registrations don't have addons

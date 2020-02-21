@@ -13,9 +13,17 @@ from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 
 from api.files.serializers import OsfStorageFileSerializer
-from api.nodes.serializers import NodeSerializer, NodeStorageProviderSerializer
-from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer, update_institutions
-from api.nodes.serializers import NodeContributorsSerializer, NodeLicenseRelationshipField, RegistrationProviderRelationshipField, get_license_details
+from api.nodes.serializers import (
+    NodeSerializer,
+    NodeStorageProviderSerializer,
+    NodeLicenseRelationshipField,
+    NodeLinksSerializer,
+    update_institutions,
+    NodeLicenseSerializer,
+    NodeContributorsSerializer,
+    RegistrationProviderRelationshipField,
+    get_license_details,
+)
 from api.base.serializers import (
     IDField, RelationshipField, LinksField, HideIfWithdrawal,
     FileRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
@@ -667,6 +675,21 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             return False
 
         return True
+
+
+class RegistrationCreateLegacySerializer(RegistrationCreateSerializer):
+    """
+    Overrides RegistrationCreateSerializer for the old registration workflow
+    to copy editable fields.
+    """
+
+    def create(self, validated_data):
+        auth = get_user_auth(self.context['request'])
+        draft = validated_data.get('draft', None)
+        draft.copy_editable_fields(draft.branched_from, auth=auth)
+        registration = super(RegistrationCreateLegacySerializer, self).create(validated_data)
+        return registration
+
 
 class RegistrationDetailSerializer(RegistrationSerializer):
     """
