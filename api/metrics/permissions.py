@@ -1,7 +1,11 @@
 from rest_framework import permissions
+<<<<<<< HEAD
 from api.base.utils import assert_resource_type
 
 from osf.models import Institution
+=======
+from api.base.utils import get_user_auth
+>>>>>>> Adding permissions and tests for institutional metrics
 
 
 class IsPreprintMetricsUser(permissions.BasePermission):
