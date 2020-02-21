@@ -8,9 +8,9 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    """Add egap-registration schema to the db.
-    For now, doing this outside of a migration so it can be individually added to
-    a staging environment for preview.
+    """A new permissions group was created for Institutions, which will be created upon each new Institution,
+    but the old institutions will not have this group. This management command creates those groups for the
+    existing institutions.
     """
 
     def handle(self, *args, **options):
