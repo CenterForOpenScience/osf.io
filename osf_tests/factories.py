@@ -1017,7 +1017,7 @@ class ProviderAssetFileFactory(DjangoModelFactory):
     def _create(cls, target_class, *args, **kwargs):
         providers = kwargs.pop('providers', [])
         instance = super(ProviderAssetFileFactory, cls)._create(target_class, *args, **kwargs)
-        instance.providers = providers
+        instance.providers.add(*providers)
         instance.save()
         return instance
 
