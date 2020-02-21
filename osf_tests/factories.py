@@ -870,7 +870,7 @@ class ConferenceFactory(DjangoModelFactory):
 
     @factory.post_generation
     def admins(self, create, extracted, **kwargs):
-        self.admins.add(extracted or [UserFactory()])
+        self.admins.add(*(extracted or [UserFactory()]))
 
 
 class SessionFactory(DjangoModelFactory):
