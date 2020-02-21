@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-21 13:37+0900\n"
+"POT-Creation-Date: 2020-02-21 15:12+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1687,8 +1687,7 @@ msgid "Ongoing"
 msgstr ""
 
 #: website/templates/include/profile/jobs.mako:104
-#: website/templates/include/profile/schools.mako:104
-msgid "Add another"
+msgid "Add another Employment"
 msgstr ""
 
 #: website/templates/include/profile/jobs.mako:114
@@ -1780,6 +1779,10 @@ msgstr ""
 
 #: website/templates/include/profile/schools.mako:49
 msgid "Degree"
+msgstr ""
+
+#: website/templates/include/profile/schools.mako:104
+msgid "Add another Education"
 msgstr ""
 
 #: website/templates/include/profile/schools.mako:155

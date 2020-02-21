@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-21 13:37+0900\n"
+"POT-Creation-Date: 2020-02-21 15:12+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -1741,9 +1741,8 @@ msgid "Ongoing"
 msgstr "継続中"
 
 #: website/templates/include/profile/jobs.mako:104
-#: website/templates/include/profile/schools.mako:104
-msgid "Add another"
-msgstr "別を追加"
+msgid "Add another Employment"
+msgstr "別の職歴を追加"
 
 #: website/templates/include/profile/jobs.mako:114
 #: website/templates/include/profile/names.mako:73
@@ -1837,6 +1836,10 @@ msgstr "部門"
 #: website/templates/include/profile/schools.mako:49
 msgid "Degree"
 msgstr "学位"
+
+#: website/templates/include/profile/schools.mako:104
+msgid "Add another Education"
+msgstr "別の学歴を追加"
 
 #: website/templates/include/profile/schools.mako:155
 msgid "Department:"
@@ -3647,4 +3650,5 @@ msgstr "%(summaryTitle)sのフォークを作成"
 #: website/templates/util/render_node.mako:66
 msgid "Manage Contributors"
 msgstr "コントリビュータ管理"
+
 

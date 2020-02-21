@@ -555,23 +555,23 @@ msgstr "このプロジェクトをフォーク"
 
 #: website/notifications/constants.py:5 website/notifications/constants.py:14
 msgid "Comments added"
-msgstr "コメントの追加"
+msgstr "コメント追加時"
 
 #: website/notifications/constants.py:6 website/notifications/constants.py:15
 msgid "Files updated"
-msgstr "ファイルのアップロード"
+msgstr "ファイルアップロード時"
 
 #: website/notifications/constants.py:13
 msgid "Replies to your comments"
-msgstr "コメントへの返信"
+msgstr "コメントへの返信時"
 
 #: website/notifications/constants.py:16
 msgid "Mentions added"
-msgstr "メンションの追加"
+msgstr "メンション追加時"
 
 #: website/notifications/constants.py:17
 msgid "Preprint submissions updated"
-msgstr "プレプリント提出の更新"
+msgstr "プレプリント提出の更新時"
 
 #: website/notifications/utils.py:502
 msgid "Default Notification Settings"

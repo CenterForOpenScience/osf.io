@@ -101,7 +101,7 @@
 
             <div>
                 <a class="btn btn-default" data-bind="click: addContent">
-                    ${_("Add another")}
+                    ${_("Add another Education")}
                 </a>
             </div>
 
