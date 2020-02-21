@@ -801,7 +801,7 @@ class TestPreprintUpdateLicense:
     @pytest.fixture()
     def preprint_provider(self, cc0_license, no_license):
         preprint_provider = PreprintProviderFactory()
-        preprint_provider.licenses_acceptable = [cc0_license, no_license]
+        preprint_provider.licenses_acceptable.add(*[cc0_license, no_license])
         preprint_provider.save()
         return preprint_provider
 
