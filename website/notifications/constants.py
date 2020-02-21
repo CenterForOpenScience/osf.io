@@ -1,4 +1,3 @@
-from django.apps import apps
 from django.utils.translation import ugettext_lazy as _
 
 NODE_SUBSCRIPTIONS_AVAILABLE = {
