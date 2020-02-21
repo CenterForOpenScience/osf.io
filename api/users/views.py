@@ -27,7 +27,6 @@ from api.base.throttling import SendEmailThrottle, SendEmailDeactivationThrottle
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
 from api.nodes.serializers import DraftRegistrationSerializer
-from api.nodes.utils import NodeOptimizationMixin
 from api.osf_groups.serializers import GroupSerializer
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
@@ -298,7 +297,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
         return account
 
 
-class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilterMixin, NodeOptimizationMixin):
+class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilterMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_nodes_list).
     """
     permission_classes = (
@@ -326,7 +325,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
         if user != self.request.user:
             # Further restrict UserNodes to nodes the *requesting* user can view
             return Node.objects.get_nodes_for_user(self.request.user, base_queryset=default_queryset, include_public=True)
-        return self.optimize_node_queryset(default_queryset)
+        return default_queryset
 
     # overrides ListAPIView
     def get_queryset(self):

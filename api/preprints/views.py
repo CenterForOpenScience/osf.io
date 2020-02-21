@@ -355,7 +355,7 @@ class PreprintContributorsList(NodeContributorsList, PreprintMixin):
 
     def get_default_queryset(self):
         preprint = self.get_preprint()
-        return preprint.preprintcontributor_set.all().include('user__guids')
+        return preprint.preprintcontributor_set.all()
 
     # overrides NodeContributorsList
     def get_serializer_class(self):

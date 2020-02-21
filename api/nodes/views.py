@@ -107,7 +107,7 @@ from api.nodes.serializers import (
     NodeGroupsCreateSerializer,
     NodeGroupsDetailSerializer,
 )
-from api.nodes.utils import NodeOptimizationMixin, enforce_no_children
+from api.nodes.utils import enforce_no_children
 from api.osf_groups.views import OSFGroupMixin
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer, RegistrationCreateSerializer
@@ -205,7 +205,7 @@ class DraftMixin(object):
         return draft
 
 
-class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodesFilterMixin, WaterButlerMixin, NodeOptimizationMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodesFilterMixin, WaterButlerMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_list).
     """
     permission_classes = (

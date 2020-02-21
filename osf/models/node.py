@@ -813,9 +813,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return NodeLog.objects.filter(
             node_id=self.id,
             should_hide=False
-        ).order_by('-date').include(
-            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10
-        )
+        ).order_by('-date')
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
