@@ -107,7 +107,7 @@ function ProjectNotifications(data) {
             }
             if (item.data.kind === 'heading') {
                 if (item.data.children.length === 0) {
-                    console.log("item.data.node.title:1:" + item.data.node.title);
+
                     columns.push({
                         data : 'project',  // Data field name
                         folderIcons : false,
@@ -123,7 +123,7 @@ function ProjectNotifications(data) {
                         }
                     });
                 } else {
-                    console.log("item.data.node.title:2:" + item.data.node.title);
+
                     columns.push({
                         data : 'project',  // Data field name
                         folderIcons : false,
