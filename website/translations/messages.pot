@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-20 17:07+0900\n"
+"POT-Creation-Date: 2020-02-21 13:37+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -980,6 +980,26 @@ msgstr ""
 msgid "Select"
 msgstr ""
 
+#: framework/auth/oauth_scopes.py:295
+msgid ""
+"View all information associated with this account, including for private "
+"projects."
+msgstr ""
+
+#: framework/auth/oauth_scopes.py:302
+msgid "Read your profile data."
+msgstr ""
+
+#: framework/auth/oauth_scopes.py:305
+msgid "Read your primary email address."
+msgstr ""
+
+#: framework/auth/oauth_scopes.py:349
+msgid ""
+"View and edit all metadata, files, and access rights associated with all "
+"public and private projects accessible to this account."
+msgstr ""
+
 #: website/templates/base.mako:110
 msgid "Title"
 msgstr ""
@@ -1392,16 +1412,16 @@ msgstr ""
 msgid " storage"
 msgstr ""
 
-#: website/templates/profile.mako:82 website/templates/profile/settings.mako:41
-msgid "Social"
-msgstr ""
-
-#: website/templates/profile.mako:83 website/templates/profile/settings.mako:39
+#: website/templates/profile.mako:82 website/templates/profile/settings.mako:39
 msgid "Employment"
 msgstr ""
 
-#: website/templates/profile.mako:84 website/templates/profile/settings.mako:40
+#: website/templates/profile.mako:83 website/templates/profile/settings.mako:40
 msgid "Education"
+msgstr ""
+
+#: website/templates/profile.mako:84 website/templates/profile/settings.mako:41
+msgid "Social"
 msgstr ""
 
 #: website/templates/profile.mako:115

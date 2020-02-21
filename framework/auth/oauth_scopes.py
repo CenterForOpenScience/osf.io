@@ -8,6 +8,9 @@ from collections import namedtuple
 
 from website import settings
 
+from django.apps import apps
+from django.utils.translation import ugettext_lazy as _
+
 # Public scopes are described with 3 pieces of information: list of constituent scopes, a description, and whether or
 #   not this scope is available to be requested by the general public
 
@@ -289,18 +292,17 @@ class ComposedScopes(object):
 # These are the ***only*** scopes that will be recognized from CAS
 public_scopes = {
     'osf.full_read': scope(parts_=frozenset(ComposedScopes.FULL_READ),
-                           description='View all information associated with this account, including for '
-                                       'private projects.',
+                           description=unicode(_('View all information associated with this account, including for private projects.')),
                            is_public=True),
     'osf.full_write': scope(parts_=frozenset(ComposedScopes.FULL_WRITE),
                             description='View and edit all information associated with this account, including for '
                                         'private projects.',
                             is_public=True),
     'osf.users.profile_read': scope(parts_=frozenset(ComposedScopes.USERS_READ),
-                                description='Read your profile data.',
+                                description=unicode(_('Read your profile data.')),
                                 is_public=True),
     'osf.users.email_read': scope(parts_=frozenset(ComposedScopes.USER_EMAIL_READ),
-                                        description='Read your primary email address.',
+                                        description=unicode(_('Read your primary email address.')),
                                         is_public=True),
 }
 
@@ -341,12 +343,10 @@ if settings.DEV_MODE:
                                         is_public=True),  # TODO: Language: Does registrations endpoint allow creation of registrations? Is that planned?
 
         'osf.nodes.full_read': scope(parts_=frozenset(ComposedScopes.NODE_ALL_READ),
-                                    description='View all metadata, files, and access rights associated with all public '
-                                                'and private projects accessible to this account.',
+                                    description='View all metadata, files, and access rights associated with all public and private projects accessible to this account.',
                                     is_public=True),
         'osf.nodes.full_write': scope(parts_=frozenset(ComposedScopes.NODE_ALL_WRITE),
-                                     description='View and edit all metadata, files, and access rights associated with '
-                                                 'all public and private projects accessible to this account.',
+                                     description=unicode(_('View and edit all metadata, files, and access rights associated with all public and private projects accessible to this account.')),
                                      is_public=True),
 
         # Undocumented scopes that can not be requested by third parties (per CAS restriction)

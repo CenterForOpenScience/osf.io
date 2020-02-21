@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-21 11:29+0900\n"
+"POT-Creation-Date: 2020-02-21 13:37+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -525,51 +525,51 @@ msgstr ""
 msgid "Could not find the user associated with this token"
 msgstr ""
 
+#: framework/auth/oauth_scopes.py:295
+msgid ""
+"View all information associated with this account, including for private "
+"projects."
+msgstr ""
+
 #: framework/auth/oauth_scopes.py:302
 msgid "Read your profile data."
-msgstr "プロフィールデータを読込む"
+msgstr ""
 
 #: framework/auth/oauth_scopes.py:305
 msgid "Read your primary email address."
-msgstr "プライマリメールアドレスを読込む"
-
-#: framework/auth/oauth_scopes.py:346
-msgid ""
-"View all metadata, files, and access rights associated with all public "
-"and private projects accessible to this account."
-msgstr "このアカウントにアクセス可能なすべてのパブリックおよびプライベートプロジェクトに関連付けられているすべてのメタデータ、ファイル、およびアクセス権を表示します。"
+msgstr ""
 
 #: framework/auth/oauth_scopes.py:349
 msgid ""
 "View and edit all metadata, files, and access rights associated with all "
 "public and private projects accessible to this account."
-msgstr "このアカウントにアクセスできるすべてのパブリックプロジェクトとプライベートプロジェクトに関連付けられたすべてのメタデータ、ファイル、アクセス権を表示および編集します。"
+msgstr ""
 
-#: website/language.py:192
+#: website/language.py:193
 msgid "Duplicate template"
 msgstr "テンプレートを複製"
 
-#: website/language.py:198
+#: website/language.py:199
 msgid "Fork this Project"
 msgstr "このプロジェクトをフォーク"
 
-#: website/notifications/constants.py:4 website/notifications/constants.py:13
+#: website/notifications/constants.py:5 website/notifications/constants.py:14
 msgid "Comments added"
 msgstr "コメントの追加"
 
-#: website/notifications/constants.py:5 website/notifications/constants.py:14
+#: website/notifications/constants.py:6 website/notifications/constants.py:15
 msgid "Files updated"
 msgstr "ファイルのアップロード"
 
-#: website/notifications/constants.py:12
+#: website/notifications/constants.py:13
 msgid "Replies to your comments"
 msgstr "コメントへの返信"
 
-#: website/notifications/constants.py:15
+#: website/notifications/constants.py:16
 msgid "Mentions added"
 msgstr "メンションの追加"
 
-#: website/notifications/constants.py:16
+#: website/notifications/constants.py:17
 msgid "Preprint submissions updated"
 msgstr "プレプリント提出の更新"
 
