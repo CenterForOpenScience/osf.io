@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-21 09:59+0900\n"
+"POT-Creation-Date: 2020-02-21 11:29+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -191,7 +191,7 @@ msgid "Type the following to continue: <strong>%1$s</strong><br><br>"
 msgstr ""
 
 #: admin/static/js/rdm_addons/rdm-addons-page.js:73
-#: website/static/js/addProjectPlugin.js:350 website/static/js/fangorn.js:538
+#: website/static/js/addProjectPlugin.js:351 website/static/js/fangorn.js:538
 #: website/static/js/fangorn.js:1213 website/static/js/fangorn.js:1236
 #: website/static/js/fangorn.js:1289 website/static/js/fangorn.js:1308
 #: website/static/js/fangorn.js:2007
@@ -516,6 +516,74 @@ msgstr ""
 msgid "Could not find the user associated with this token"
 msgstr ""
 
+#: framework/auth/oauth_scopes.py:302
+msgid "Read your profile data."
+msgstr ""
+
+#: framework/auth/oauth_scopes.py:305
+msgid "Read your primary email address."
+msgstr ""
+
+#: framework/auth/oauth_scopes.py:346
+msgid ""
+"View all metadata, files, and access rights associated with all public "
+"and private projects accessible to this account."
+msgstr ""
+
+#: framework/auth/oauth_scopes.py:349
+msgid ""
+"View and edit all metadata, files, and access rights associated with all "
+"public and private projects accessible to this account."
+msgstr ""
+
+#: website/language.py:192
+msgid "Duplicate template"
+msgstr ""
+
+#: website/language.py:198
+msgid "Fork this Project"
+msgstr ""
+
+#: website/notifications/constants.py:4 website/notifications/constants.py:13
+msgid "Comments added"
+msgstr ""
+
+#: website/notifications/constants.py:5 website/notifications/constants.py:14
+msgid "Files updated"
+msgstr ""
+
+#: website/notifications/constants.py:12
+msgid "Replies to your comments"
+msgstr ""
+
+#: website/notifications/constants.py:15
+msgid "Mentions added"
+msgstr ""
+
+#: website/notifications/constants.py:16
+msgid "Preprint submissions updated"
+msgstr ""
+
+#: website/notifications/utils.py:502
+msgid "Default Notification Settings"
+msgstr ""
+
+#: website/notifications/utils.py:503
+msgid ""
+"These are default settings for new projects you create or are added to. "
+"Modifying these settings will not modify settings on existing projects."
+msgstr ""
+
+#: website/notifications/utils.py:511
+msgid "Project Notifications"
+msgstr ""
+
+#: website/notifications/utils.py:512
+msgid ""
+"These are settings for each of your projects. Modifying these settings "
+"will only modify the settings for the selected project."
+msgstr ""
+
 #: website/project/__init__.py:64
 msgid "Bookmarks"
 msgstr ""
@@ -554,51 +622,6 @@ msgstr ""
 
 #: website/search/elastic_search.py:56
 msgid "Groups"
-msgstr ""
-
-#: website/settings/defaults.py:239
-msgid "Analysis"
-msgstr ""
-
-#: website/settings/defaults.py:240
-msgid "Communication"
-msgstr ""
-
-#: website/settings/defaults.py:241
-msgid "Data"
-msgstr ""
-
-#: website/settings/defaults.py:242
-msgid "Hypothesis"
-msgstr ""
-
-#: website/settings/defaults.py:243
-msgid "Instrumentation"
-msgstr ""
-
-#: website/settings/defaults.py:244
-msgid "Methods and Measures"
-msgstr ""
-
-#: website/settings/defaults.py:245
-msgid "Procedure"
-msgstr ""
-
-#: website/settings/defaults.py:246
-#: website/static/js/projectSettingsTreebeardBase.js:92
-msgid "Project"
-msgstr ""
-
-#: website/settings/defaults.py:247
-msgid "Software"
-msgstr ""
-
-#: website/settings/defaults.py:248
-msgid "Other"
-msgstr ""
-
-#: website/settings/defaults.py:249 website/static/js/addProjectPlugin.js:310
-msgid "Uncategorized"
 msgstr ""
 
 #: website/static/js/accessRequestManager.js:88
@@ -880,140 +903,185 @@ msgstr ""
 msgid "Are you sure you want to request account export?"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:24
-#: website/static/js/addProjectPlugin.js:27
+#: website/static/js/addProjectPlugin.js:19
+msgid "Analysis"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:19
+msgid "Communication"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:19
+msgid "Data"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:19
+msgid "Hypothesis"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:19
+msgid "Instrumentation"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:19
+msgid "Methods and Measures"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:19
+msgid "Procedure"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:19
+#: website/static/js/projectSettingsTreebeardBase.js:92
+msgid "Project"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:19
+msgid "Software"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:19
+msgid "Other"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:25
+#: website/static/js/addProjectPlugin.js:28
 #: website/static/js/myProjects.js:1120
 msgid "Create new project"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:60
+#: website/static/js/addProjectPlugin.js:61
 msgid "There was an unknown error. Please try again later."
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:187 website/static/js/conference.js:21
+#: website/static/js/addProjectPlugin.js:188 website/static/js/conference.js:21
 msgid "Title"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:201
+#: website/static/js/addProjectPlugin.js:202
 msgid "Enter %1$s title"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:206
+#: website/static/js/addProjectPlugin.js:207
 msgid "Affiliation"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:213
+#: website/static/js/addProjectPlugin.js:214
 msgid "Remove all"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:220
+#: website/static/js/addProjectPlugin.js:221
 msgid "Select all"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:236
+#: website/static/js/addProjectPlugin.js:237
 msgid "Storage location"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:254
+#: website/static/js/addProjectPlugin.js:255
 msgid " Add contributors from "
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:256
+#: website/static/js/addProjectPlugin.js:257
 msgid " Admins of "
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:256
+#: website/static/js/addProjectPlugin.js:257
 msgid " will have read access to this component."
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:267
+#: website/static/js/addProjectPlugin.js:268
 msgid " Add tags from "
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:271
+#: website/static/js/addProjectPlugin.js:272
 msgid "License"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:273
+#: website/static/js/addProjectPlugin.js:274
 msgid " This component will inherit the same license as "
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:276
+#: website/static/js/addProjectPlugin.js:277
 msgid "Learn more."
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:285
+#: website/static/js/addProjectPlugin.js:286
 msgid " More"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:289
+#: website/static/js/addProjectPlugin.js:290
 msgid "Description"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:298
+#: website/static/js/addProjectPlugin.js:299
 msgid "Enter %1$s description"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:302 website/static/js/conference.js:33
+#: website/static/js/addProjectPlugin.js:303 website/static/js/conference.js:33
 msgid "Category"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:303
+#: website/static/js/addProjectPlugin.js:304
 msgid " (for descriptive purposes)"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:323
+#: website/static/js/addProjectPlugin.js:311
+msgid "Uncategorized"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:324
 msgid "(Empty category)"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:333
+#: website/static/js/addProjectPlugin.js:334
 msgid "Template (optional)"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:334
+#: website/static/js/addProjectPlugin.js:335
 msgid ""
 "Start typing to search your projects. Selecting project as template will "
 "duplicate its "
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:335
+#: website/static/js/addProjectPlugin.js:336
 msgid ""
 "structure in the new project without importing the content of that "
 "project."
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:354
+#: website/static/js/addProjectPlugin.js:355
 #: website/static/js/nodeControl.js:226 website/static/js/project.js:139
 msgid "Create"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:365
+#: website/static/js/addProjectPlugin.js:366
 msgid "Saving your "
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:379
+#: website/static/js/addProjectPlugin.js:380
 msgid "New %1$s created successfully!"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:389
-#: website/static/js/addProjectPlugin.js:437 website/static/js/project.js:61
+#: website/static/js/addProjectPlugin.js:390
+#: website/static/js/addProjectPlugin.js:438 website/static/js/project.js:61
 msgid "Keep working here"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:395
-#: website/static/js/addProjectPlugin.js:440
+#: website/static/js/addProjectPlugin.js:396
+#: website/static/js/addProjectPlugin.js:441
 msgid "Go to new %1$s"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:408
+#: website/static/js/addProjectPlugin.js:409
 msgid "Couldn't create your %1$s"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:427
+#: website/static/js/addProjectPlugin.js:428
 msgid "Could not add institution affiliation to your new %1$s"
 msgstr ""
 
-#: website/static/js/addProjectPlugin.js:474
+#: website/static/js/addProjectPlugin.js:475
 msgid "Select a project to use as a template"
 msgstr ""
 
