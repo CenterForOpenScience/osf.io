@@ -282,15 +282,7 @@ class OptionalGuidMixin(BaseIDMixin):
 
 
 class GuidMixinQuerySet(IncludeQuerySet):
-
-    def _filter_or_exclude(self, negate, *args, **kwargs):
-        return super(GuidMixinQuerySet, self)._filter_or_exclude(negate, *args, **kwargs).include('guids')
-
-    def all(self):
-        if self._fields:
-            return super(GuidMixinQuerySet, self).all()
-        return super(GuidMixinQuerySet, self).all().include('guids')
-
+    pass
 
 class GuidMixin(BaseIDMixin):
     __guid_min_length__ = 5
