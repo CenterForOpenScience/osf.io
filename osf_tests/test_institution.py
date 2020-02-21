@@ -1,7 +1,7 @@
 from past.builtins import basestring
 from osf.models import Institution
 
-from .factories import InstitutionFactory
+from .factories import InstitutionFactory, AuthUserFactory
 import pytest
 
 
@@ -55,3 +55,29 @@ def test_institution_banner_path():
     inst = InstitutionFactory(banner_name='osf-banner.png')
     expected_banner_path = '/static/img/institutions/banners/osf-banner.png'
     assert inst.banner_path == expected_banner_path
+
+
+class TestInstitutionPermissions:
+
+    @pytest.fixture()
+    def institution(self):
+        return InstitutionFactory()
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def institution_admin_user(self, institution, user):
+        group = institution.get_group('institutional_admins')
+        group.user_set.add(user)
+        group.save()
+        return user
+
+    @pytest.mark.django_db
+    def test_group_member_has_perms(self, institution, user, institution_admin_user):
+        assert institution_admin_user.has_perm('view_institutional_metrics', institution)
+
+    @pytest.mark.django_db
+    def test_non_group_member_doesnt_have_perms(self, institution, user):
+        assert user.has_perm('view_institutional_metrics', institution) is False
