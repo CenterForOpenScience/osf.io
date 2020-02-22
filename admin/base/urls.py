@@ -3,6 +3,8 @@ from django.contrib import admin
 from admin.base.settings import ADMIN_BASE, DEBUG
 from admin.base import views
 
+import password_reset
+
 base_pattern = '^{}'.format(ADMIN_BASE)
 
 urlpatterns = [
@@ -20,7 +22,7 @@ urlpatterns = [
             url(r'^collection_providers/', include('admin.collection_providers.urls', namespace='collection_providers')),
             url(r'^registration_providers/', include('admin.registration_providers.urls', namespace='registration_providers')),
             url(r'^account/', include('admin.common_auth.urls', namespace='auth')),
-            url(r'^password/', include('password_reset.urls')),
+            url(r'^password/', include(password_reset.url)),
             url(r'^nodes/', include('admin.nodes.urls', namespace='nodes')),
             url(r'^preprints/', include('admin.preprints.urls', namespace='preprints')),
             url(r'^subjects/', include('admin.subjects.urls', namespace='subjects')),
