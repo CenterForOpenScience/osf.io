@@ -1,2 +1,6 @@
 #!/bin/bash
-set -ev
+echo $-
+himBH
+set -e
+echo $-
+ehimBH
