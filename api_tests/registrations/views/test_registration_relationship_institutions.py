@@ -14,6 +14,7 @@ class TestRegistrationRelationshipInstitutions(TestNodeRelationshipInstitutions)
 
     @pytest.fixture()
     def node(self, user, write_contrib, read_contrib):
+        # Overrides TestNodeRelationshipInstitutions
         registration = RegistrationFactory(creator=user)
         registration.add_contributor(
             write_contrib,
@@ -23,12 +24,22 @@ class TestRegistrationRelationshipInstitutions(TestNodeRelationshipInstitutions)
         return registration
 
     @pytest.fixture()
+    def make_resource_url(self):
+        # Overrides TestNodeRelationshipInstitutions
+        def make_resource_url(resource):
+            return '/{}registrations/{}/relationships/institutions/'.format(
+                API_BASE, resource._id)
+        return make_resource_url
+
+    @pytest.fixture()
     def node_institutions_url(self, node):
+        # Overrides TestNodeRelationshipInstitutions
         return '/{0}registrations/{1}/relationships/institutions/'.format(
             API_BASE, node._id)
 
     @pytest.fixture()
     def resource_factory(self):
+        # Overrides TestNodeRelationshipInstitutions
         return RegistrationFactory
 
     # test override, write contribs can't update institution

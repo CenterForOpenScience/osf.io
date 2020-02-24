@@ -22,6 +22,12 @@ from website.util import api_v2_url
 logger = logging.getLogger(__name__)
 
 
+def ensure_str(value):
+    if isinstance(value, bytes):
+        return value.decode()
+    return value
+
+
 class BoxFileNode(BaseFileNode):
     _provider = 'box'
 
@@ -141,7 +147,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
         try:
             Provider(self.external_account).refresh_oauth_key()
-            oauth = OAuth2(client_id=settings.BOX_KEY, client_secret=settings.BOX_SECRET, access_token=self.external_account.oauth_key)
+            oauth = OAuth2(client_id=settings.BOX_KEY, client_secret=settings.BOX_SECRET, access_token=ensure_str(self.external_account.oauth_key))
             client = Client(oauth)
         except BoxAPIException:
             raise HTTPError(http_status.HTTP_403_FORBIDDEN)
@@ -190,7 +196,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         except InvalidGrantError:
             raise exceptions.InvalidAuthError()
         try:
-            oauth = OAuth2(client_id=settings.BOX_KEY, client_secret=settings.BOX_SECRET, access_token=self.external_account.oauth_key)
+            oauth = OAuth2(client_id=settings.BOX_KEY, client_secret=settings.BOX_SECRET, access_token=ensure_str(self.external_account.oauth_key))
             client = Client(oauth)
             folder_data = client.folder(self.folder_id).get()
         except BoxAPIException:

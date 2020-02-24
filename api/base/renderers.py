@@ -5,10 +5,11 @@ from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer, StaticH
 class JSONRendererWithESISupport(JSONRenderer):
     format = 'json'
     media_type = 'application/json'
+    charset = 'utf-8'
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
         initial_rendering = super(JSONRendererWithESISupport, self).render(data, accepted_media_type, renderer_context)
-        augmented_rendering = re.sub(r'"<esi:include src=\\"(.*?)\\"\/>"', b'<esi:include src="\1"/>', initial_rendering)
+        augmented_rendering = re.sub(r'"<esi:include src=\\"(.*?)\\"\/>"', '<esi:include src="\1"/>', initial_rendering.decode())
         return augmented_rendering
 
 class JSONAPIRenderer(JSONRendererWithESISupport):

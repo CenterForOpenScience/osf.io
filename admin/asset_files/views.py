@@ -31,7 +31,7 @@ class ProviderAssetFileList(PermissionRequiredMixin, ListView):
         rv = {
             'asset_files': query_set,
             'page': page,
-            'filterable_provider_ids': dict({'': '---'}, **{id: ' '.join([type_, name]) for id, name, type_ in AbstractProvider.objects.annotate(
+            'filterable_provider_ids': dict({'': '---'}, **{str(id): ' '.join([type_, name]) for id, name, type_ in AbstractProvider.objects.annotate(
                 type_=Case(
                     When(type='osf.preprintprovider', then=Value('[preprint]')),
                     When(type='osf.collectionprovider', then=Value('[collection]')),

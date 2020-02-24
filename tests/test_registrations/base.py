@@ -50,7 +50,7 @@ class RegistrationsTestBase(OsfTestCase):
                 'attributes': {
                     'children': [self.node._id],
                     'draft_registration': self.draft._id,
-                    'lift_embargo': unicode(valid_date.strftime('%a, %d, %B %Y %H:%M:%S')) + u' GMT',
+                    'lift_embargo': str(valid_date.strftime('%a, %d, %B %Y %H:%M:%S')) + u' GMT',
                     'registration_choice': 'embargo',
                 },
                 'type': 'registrations',

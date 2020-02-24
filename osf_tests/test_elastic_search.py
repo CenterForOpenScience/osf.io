@@ -286,6 +286,7 @@ class TestUserUpdate(OsfTestCase):
         docs = query_user(user.fullname)['results']
         assert_equal(len(docs), 1)
 
+    @retry_assertion
     def test_change_name(self):
         # Add a user, change her name, and verify that only the new name is
         # found in search.

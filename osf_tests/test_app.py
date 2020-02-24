@@ -43,6 +43,6 @@ def test_attach_handlers():
     }
 
     # Check that necessary handlers are attached and correctly ordered
-    assert_equal(sorted(set(before_funcs)), sorted(assert_before_funcs))
-    assert_equal(sorted(set(after_funcs)), sorted(assert_after_funcs))
-    assert_equal(sorted(set(teardown_funcs)), sorted(assert_teardown_funcs))
+    assert_equal(set(before_funcs), assert_before_funcs)
+    assert_equal(set(after_funcs), assert_after_funcs)
+    assert_equal(set(teardown_funcs), assert_teardown_funcs)

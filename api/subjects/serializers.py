@@ -33,7 +33,7 @@ class UpdateSubjectsMixin(object):
         except ValueError as e:
             raise exceptions.ValidationError(detail=str(e))
         except ValidationValueError as e:
-            raise exceptions.ValidationError(detail=e[0])
+            raise exceptions.ValidationError(detail=list(e)[0])
         except NodeStateError as e:
             raise exceptions.ValidationError(detail=str(e))
 

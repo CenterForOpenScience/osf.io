@@ -16,7 +16,7 @@ def noop(*args, **kwargs):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0194_merge_20191113_1611'),
+        ('osf', '0195_add_enable_chronos_waffle_flag'),
     ]
 
     operations = [

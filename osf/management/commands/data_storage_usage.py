@@ -426,7 +426,13 @@ def write_summary_data(filename, summary_data, remote_base_folder):
                     auth=bearer_token_auth(DS_METRICS_OSF_TOKEN),
                     stream=True,
             ) as old_file:
-                reader = csv.reader(old_file.iter_lines(), delimiter=',', lineterminator='\n')
+                lines = []
+                for line in old_file.iter_lines():
+                    if isinstance(line, bytes):
+                        line = line.decode()
+                    lines.append(line)
+
+                reader = csv.reader(lines, delimiter=',', lineterminator='\n')
                 for row in reader:
                     if header_skipped:
                         writer.writerow(row)
@@ -454,7 +460,7 @@ def write_raw_data(cursor, zip_file, filename):
     for row in cursor.fetchall():
         row_to_write = []
         for s in row:
-            item = s.encode('utf-8') if isinstance(s, (str, unicode)) else s
+            item = s.encode('utf-8') if isinstance(s, str) else s
             row_to_write.append(item)
         writer.writerow(row_to_write)
     zip_file.writestr(filename, data_buffer.getvalue())
@@ -462,7 +468,7 @@ def write_raw_data(cursor, zip_file, filename):
 
 def upload_to_storage(file_path, upload_url, params):
     logger.debug('Uploading {} to {}'.format(file_path, upload_url))
-    with open(file_path, 'r') as summary_file:
+    with open(file_path, 'rb') as summary_file:
         requests.put(
             url=upload_url,
             headers={'Accept': 'application/vnd.api+json;version={}'.format(DEFAULT_API_VERSION)},

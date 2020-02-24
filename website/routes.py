@@ -195,7 +195,6 @@ class OsfWebRenderer(WebRenderer):
         """
 
         resp = super(OsfWebRenderer, self).__call__(data, *args, **kwargs)
-        secure = get_setting('SECURE')
         max_age = get_setting('MAX_AGE')
 
         if hasattr(request, 'waffles'):
@@ -207,7 +206,7 @@ class OsfWebRenderer(WebRenderer):
                     age = None
                 else:
                     age = max_age
-                resp.headers.add('Set-Cookie', dump_cookie(name.encode(), bytes(active), age, bytes(secure)))
+                resp.headers.add('Set-Cookie', dump_cookie(name.encode(), str(active), max_age=age, expires='True'))
         return resp
 
 #: Use if a view only redirects or raises error

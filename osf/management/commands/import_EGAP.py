@@ -70,7 +70,9 @@ def create_node_from_project_json(egap_assets_path, egap_project_dir, creator):
             email = ''
             if contributor.get('email'):
                 email = contributor.get('email').strip()
-                email = email.split('\\u00a0')[0]
+                email = email.split('\\u00a0')[0].split(',')[0]
+                if '<' in email:
+                    email = email.split('<')[1].replace('>', '')
 
             node.add_contributor_registered_or_not(
                 Auth(creator),
@@ -143,7 +145,7 @@ def get_egap_assets(guid, creator_auth):
 
     egap_assets_path = os.path.join(temp_path, 'egap_assets.zip')
 
-    with open(egap_assets_path, 'w') as fp:
+    with open(egap_assets_path, 'wb') as fp:
         fp.write(zip_file)
 
     with ZipFile(egap_assets_path, 'r') as zipObj:
@@ -197,6 +199,7 @@ def main(guid, creator_username):
     # __MACOSX is a hidden file created by the os when zipping
     directory_list = [directory for directory in os.listdir(egap_assets_path) if directory not in ('egap_assets.zip', '__MACOSX') and not directory.startswith('.')]
 
+    directory_list.sort()
     for egap_project_dir in directory_list:
         logger.info(
             'Attempting to import the follow directory: {}'.format(egap_project_dir)
@@ -230,22 +233,34 @@ def main(guid, creator_username):
         with open(os.path.join(egap_assets_path, egap_project_dir, 'registration-schema.json'), 'r') as fp:
             registration_metadata = json.load(fp)
 
-        # add selectedFileName Just so filenames are listed in the UI
+        # add selectedFileName Just so filenames are listed in the UIj
+        non_anon_metadata_dict = []
         for data in non_anon_metadata:
+            if data['data']['attributes']['kind'] == 'folder':
+                continue
             data['selectedFileName'] = data['data']['attributes']['name']
+            data['sha256'] = data['data']['attributes']['extra']['hashes']['sha256']
+            data['nodeId'] = node._id
+            non_anon_metadata_dict.append(data)
 
+        anon_metadata_dict = []
         for data in anon_metadata:
+            if data['data']['attributes']['kind'] == 'folder':
+                continue
             data['selectedFileName'] = data['data']['attributes']['name']
+            data['sha256'] = data['data']['attributes']['extra']['hashes']['sha256']
+            data['nodeId'] = node._id
+            anon_metadata_dict.append(data)
 
-        non_anon_titles = ', '.join([data['data']['attributes']['name'] for data in non_anon_metadata])
-        registration_metadata['q37'] = {'comments': [], 'extra': non_anon_metadata, 'value': non_anon_titles}
+        non_anon_titles = ', '.join([data['data']['attributes']['name'] for data in non_anon_metadata_dict])
+        registration_metadata['q37'] = {'comments': [], 'extra': non_anon_metadata_dict, 'value': non_anon_titles}
 
-        anon_titles = ', '.join([data['data']['attributes']['name'] for data in anon_metadata])
-        registration_metadata['q38'] = {'comments': [], 'extra': anon_metadata, 'value': anon_titles}
+        anon_titles = ', '.join([data['data']['attributes']['name'] for data in anon_metadata_dict])
+        registration_metadata['q38'] = {'comments': [], 'extra': anon_metadata_dict, 'value': anon_titles}
 
         # DraftRegistration Creation
         draft_registration = DraftRegistration.create_from_node(
-            node,
+            node=node,
             user=creator,
             schema=egap_schema,
             data=registration_metadata,

@@ -2,9 +2,11 @@ import json
 
 from django.http import HttpResponse
 from django.core import serializers
+from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse_lazy
 from django.shortcuts import redirect
 from django.views.generic import View, CreateView, ListView, DetailView, UpdateView, DeleteView, TemplateView
+from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 
@@ -270,13 +272,20 @@ class ImportCollectionProvider(PermissionRequiredMixin, View):
             file_str = self.parse_file(request.FILES['file'])
             file_json = json.loads(file_str)
             cleaned_result = file_json['fields']
-            collection_provider = self.create_or_update_provider(cleaned_result)
+            try:
+                collection_provider = self.create_or_update_provider(cleaned_result)
+            except ValidationError:
+                messages.error(request, 'A Validation Error occured, this JSON is invalid or shares an id with an already existing provider.')
+                return redirect('collection_providers:create')
+
             return redirect('collection_providers:detail', collection_provider_id=collection_provider.id)
 
     def parse_file(self, f):
         parsed_file = ''
         for chunk in f.chunks():
-            parsed_file += chunk.decode('utf-8')
+            if isinstance(chunk, bytes):
+                chunk = chunk.decode()
+            parsed_file += chunk
         return parsed_file
 
     def get_page_provider(self):

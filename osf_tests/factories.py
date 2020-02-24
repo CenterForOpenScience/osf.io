@@ -198,6 +198,13 @@ class ProjectFactory(BaseNodeFactory):
     category = 'project'
 
 
+class DraftNodeFactory(BaseNodeFactory):
+    category = 'project'
+
+    class Meta:
+        model = models.DraftNode
+
+
 class ProjectWithAddonFactory(ProjectFactory):
     """Factory for a project that has an addon. The addon will be added to
     both the Node and the creator records. ::
@@ -272,7 +279,7 @@ class PrivateLinkFactory(DjangoModelFactory):
     class Meta:
         model = models.PrivateLink
 
-    name = factory.Faker('word')
+    name = factory.Sequence(lambda n: 'Example Private Link #{}'.format(n))
     key = factory.Faker('md5')
     anonymous = False
     creator = factory.SubFactory(UserFactory)
@@ -500,16 +507,13 @@ class DraftRegistrationFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
-        branched_from = kwargs.get('branched_from')
+        title = kwargs.pop('title', None)
         initiator = kwargs.get('initiator')
+        description = kwargs.pop('description', None)
+        branched_from = kwargs.get('branched_from', None)
         registration_schema = kwargs.get('registration_schema')
         registration_metadata = kwargs.get('registration_metadata')
         provider = kwargs.get('provider')
-        if not branched_from:
-            project_params = {}
-            if initiator:
-                project_params['creator'] = initiator
-            branched_from = ProjectFactory(**project_params)
         initiator = branched_from.creator if branched_from else kwargs.get('initiator', None)
         initiator = initiator or kwargs.get('user', None) or kwargs.get('creator', None) or UserFactory()
         registration_schema = registration_schema or models.RegistrationSchema.objects.first()
@@ -522,6 +526,10 @@ class DraftRegistrationFactory(DjangoModelFactory):
             data=registration_metadata,
             provider=provider,
         )
+        if title:
+            draft.title = title
+        if description:
+            draft.description = description
         draft.registration_responses = draft.flatten_registration_metadata()
         draft.save()
         return draft
@@ -707,7 +715,7 @@ class TagFactory(DjangoModelFactory):
     class Meta:
         model = models.Tag
 
-    name = factory.Faker('word')
+    name = factory.Sequence(lambda n: 'Example Tag #{}'.format(n))
     system = False
 
 class DismissedAlertFactory(DjangoModelFactory):
@@ -726,7 +734,7 @@ class ApiOAuth2ScopeFactory(DjangoModelFactory):
     class Meta:
         model = models.ApiOAuth2Scope
 
-    name = factory.Faker('word')
+    name = factory.Sequence(lambda n: 'scope{}'.format(n))
     is_public = True
     is_active = True
     description = factory.Faker('text')

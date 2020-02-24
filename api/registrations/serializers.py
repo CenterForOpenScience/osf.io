@@ -13,9 +13,17 @@ from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 
 from api.files.serializers import OsfStorageFileSerializer
-from api.nodes.serializers import NodeSerializer, NodeStorageProviderSerializer
-from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer, update_institutions
-from api.nodes.serializers import NodeContributorsSerializer, NodeLicenseRelationshipField, RegistrationProviderRelationshipField, get_license_details
+from api.nodes.serializers import (
+    NodeSerializer,
+    NodeStorageProviderSerializer,
+    NodeLicenseRelationshipField,
+    NodeLinksSerializer,
+    update_institutions,
+    NodeLicenseSerializer,
+    NodeContributorsSerializer,
+    RegistrationProviderRelationshipField,
+    get_license_details,
+)
 from api.base.serializers import (
     IDField, RelationshipField, LinksField, HideIfWithdrawal,
     FileRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
@@ -29,17 +37,12 @@ from framework.sentry import log_exception
 
 class RegistrationSerializer(NodeSerializer):
     admin_only_editable_fields = [
-        'affiliated_institutions',
-        'article_doi',
         'custom_citation',
-        'description',
         'is_pending_retraction',
         'is_public',
         'license',
         'license_type',
-        'subjects',
         'withdrawal_justification',
-        'category',
     ]
 
     # Remember to add new RegistrationSerializer fields to this list
@@ -397,7 +400,7 @@ class RegistrationSerializer(NodeSerializer):
         that have a contributor-input block type.  If present, deletes that question's response
         from meta_values.
         """
-        cleaned_registered_meta = strip_registered_meta_comments(obj.registered_meta.values()[0])
+        cleaned_registered_meta = strip_registered_meta_comments(list(obj.registered_meta.values())[0])
         return self.anonymize_fields(obj, cleaned_registered_meta)
 
     def anonymize_registration_responses(self, obj):
@@ -672,6 +675,21 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             return False
 
         return True
+
+
+class RegistrationCreateLegacySerializer(RegistrationCreateSerializer):
+    """
+    Overrides RegistrationCreateSerializer for the old registration workflow
+    to copy editable fields.
+    """
+
+    def create(self, validated_data):
+        auth = get_user_auth(self.context['request'])
+        draft = validated_data.get('draft', None)
+        draft.copy_editable_fields(draft.branched_from, auth=auth)
+        registration = super(RegistrationCreateLegacySerializer, self).create(validated_data)
+        return registration
+
 
 class RegistrationDetailSerializer(RegistrationSerializer):
     """

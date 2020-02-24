@@ -20,7 +20,7 @@ from osf.utils import functional
 from api.base import exceptions as api_exceptions
 from api.base.settings import BULK_SETTINGS
 from framework.auth import core as auth_core
-from osf.models import AbstractNode, MaintenanceState, Preprint
+from osf.models import AbstractNode, DraftRegistration, MaintenanceState, Preprint
 from website import settings
 from website.project.model import has_anonymous_link
 from api.base.versioning import KEBAB_CASE_VERSION, get_kebab_snake_case_field
@@ -197,6 +197,19 @@ class HideIfPreprint(ConditionalField):
         return isinstance(instance, Preprint) \
             or isinstance(getattr(instance, 'target', None), Preprint) \
             or isinstance(getattr(instance, 'preprint', False), Preprint)
+
+    def should_be_none(self, instance):
+        return not isinstance(self.field, RelationshipField)
+
+
+class HideIfDraftRegistration(ConditionalField):
+    """
+    If object is a draft registration, or related to a draft registration, hide the field.
+    """
+
+    def should_hide(self, instance):
+        return isinstance(instance, DraftRegistration) \
+            or isinstance(getattr(instance, 'draft_registration', False), DraftRegistration)
 
     def should_be_none(self, instance):
         return not isinstance(self.field, RelationshipField)
@@ -871,6 +884,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     elif related_type == 'schemas' and related_class.view_name == 'registration-schema-detail':
                         related_id = resolved_url.kwargs['schema_id']
                         related_type = 'registration-schemas'
+                    elif related_type == 'users' and related_class.view_name == 'user_settings':
+                        related_id = resolved_url.kwargs['user_id']
+                        related_type = 'user-settings'
                     else:
                         related_id = resolved_url.kwargs[related_type[:-1] + '_id']
                 except KeyError:
@@ -895,7 +911,7 @@ class TypedRelationshipField(RelationshipField):
             else:
                 view_parts.insert(1, get_meta_type(self.root, request).replace('_', '-'))
             self.view_name = view_name = ':'.join(view_parts)
-            for k, v in self.views.items():
+            for k, v in list(self.views.items()):
                 if v == untyped_view:
                     self.views[k] = view_name
         return super(TypedRelationshipField, self).get_url(obj, view_name, request, format)
@@ -927,6 +943,10 @@ class TargetField(ser.Field):
         'preprint': {
             'view': 'preprints:preprint-detail',
             'lookup_kwarg': 'preprint_id',
+        },
+        'draft-node': {
+            'view': 'draft_nodes:node-detail',
+            'lookup_kwarg': 'node_id',
         },
         'comment': {
             'view': 'comments:comment-detail',

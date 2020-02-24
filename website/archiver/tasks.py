@@ -189,7 +189,7 @@ def archive_addon(addon_short_name, job_pk):
     src, dst, user = job.info()
     logger.info('Archiving addon: {0} on node: {1}'.format(addon_short_name, src._id))
 
-    cookie = user.get_or_create_cookie()
+    cookie = user.get_or_create_cookie().decode()
     params = {'cookie': cookie}
     rename_suffix = ''
     # The dataverse API will not differentiate between published and draft files

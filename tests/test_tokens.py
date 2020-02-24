@@ -33,7 +33,7 @@ class TestTokenHandler(OsfTestCase):
         self.encoded_token = jwt.encode(
             self.payload,
             self.secret,
-            algorithm=settings.JWT_ALGORITHM)
+            algorithm=settings.JWT_ALGORITHM).decode()
 
     def test_encode(self):
         assert_equal(encode(self.payload), self.encoded_token)

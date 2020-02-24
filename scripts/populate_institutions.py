@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Populate development database with Institution fixtures."""
 
@@ -137,11 +137,11 @@ INSTITUTIONS = {
                 'description': 'A research data service provided by the BTNRH Research Technology Core. Please do not use this service to store or transfer personally identifiable information or personal health information. For assistance please contact <a href="mailto:Christine.Hammans@boystown.org">Christine.Hammans@boystown.org</a>.',
                 'banner_name': 'bt-banner.png',
                 'logo_name': 'bt-shield.png',
-                'login_url': None,
-                'logout_url': None,
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://sts.windows.net/e2ab7419-36ab-4a95-a19f-ee90b6a9b8ac/')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.boystownhospital.org'],
-                'email_domains': ['boystown.org'],
-                'delegation_protocol': '',
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'bu',
@@ -242,6 +242,18 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'cord',
+                'name': 'Concordia College',
+                'description': '<a href="https://www.concordiacollege.edu/">Concordia College</a> | <a href="https://www.concordiacollege.edu/academics/library/">Carl B. Ylvisaker Library</a> | <a href="https://cord.libguides.com/?b=s">Research Guides</a>',
+                'banner_name': 'cord-banner.png',
+                'logo_name': 'cord-shield.png',
+                'login_url': None,
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.cord.edu'],
+                'email_domains': [],
+                'delegation_protocol': 'cas-pac4j',
             },
             {
                 '_id': 'cornell',
@@ -509,18 +521,6 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
-            },
-            {
-                '_id': 'mli',
-                'name': 'Mind & Life Institute',
-                'description': 'Funding rigorous research in the field of contemplative science to understand the human mind for the purpose of reducing suffering. Learn more about <a href="https://www.mindandlife.org">Mind & Life research funding and other programs</a>.',
-                'banner_name': 'mli-banner.png',
-                'logo_name': 'mli-shield.png',
-                'login_url': None,
-                'logout_url': None,
-                'domains': ['research.mindandlife.org'],
-                'email_domains': ['mindandlife.org'],
-                'delegation_protocol': '',
             },
             {
                 '_id': 'mq',
@@ -995,11 +995,11 @@ INSTITUTIONS = {
                 'description': 'A research data service provided by the BTNRH Research Technology Core. Please do not use this service to store or transfer personally identifiable information or personal health information. For assistance please contact <a href="mailto:Christine.Hammans@boystown.org">Christine.Hammans@boystown.org</a>.',
                 'banner_name': 'bt-banner.png',
                 'logo_name': 'bt-shield.png',
-                'login_url': None,
-                'logout_url': None,
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://sts.windows.net/e2ab7419-36ab-4a95-a19f-ee90b6a9b8ac/')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-bt.cos.io'],
-                'email_domains': ['boystown.org'],
-                'delegation_protocol': '',
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'bu',
@@ -1124,6 +1124,18 @@ INSTITUTIONS = {
                 'domains': ['test-osf-cornell.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'cord',
+                'name': 'Concordia College [Test]',
+                'description': '<a href="https://www.concordiacollege.edu/">Concordia College</a> | <a href="https://www.concordiacollege.edu/academics/library/">Carl B. Ylvisaker Library</a> | <a href="https://cord.libguides.com/?b=s">Research Guides</a>',
+                'banner_name': 'cord-banner.png',
+                'logo_name': 'cord-shield.png',
+                'login_url': None,
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-cord.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'cas-pac4j',
             },
             {
                 '_id': 'cos',
@@ -1379,18 +1391,6 @@ INSTITUTIONS = {
                 'domains': ['test-osf-mit.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
-            },
-            {
-                '_id': 'mli',
-                'name': 'Mind & Life Institute [Test]',
-                'description': 'Funding rigorous research in the field of contemplative science to understand the human mind for the purpose of reducing suffering. Learn more about <a href="https://www.mindandlife.org">Mind & Life research funding and other programs</a>.',
-                'banner_name': 'mli-banner.png',
-                'logo_name': 'mli-shield.png',
-                'login_url': None,
-                'logout_url': None,
-                'domains': ['research.mindandlife.org'],
-                'email_domains': ['mindandlife.org'],
-                'delegation_protocol': '',
             },
             {
                 '_id': 'mq',

@@ -154,7 +154,7 @@ class TestRegistrationSchemaValidation:
         # Passing in required_fields is True enforces that required fields are present
         with pytest.raises(ValidationValueError) as excinfo:
             registered_report_schema.validate_registration_responses({}, required_fields=True)
-        assert excinfo.value.message == "u'q1' is a required property"
+        assert excinfo.value.message == "'q1' is a required property"
 
         validated = registered_report_schema.validate_registration_responses({})
         assert validated is True

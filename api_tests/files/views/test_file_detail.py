@@ -153,7 +153,7 @@ class TestFileView:
         cookie = itsdangerous.Signer(
             website_settings.SECRET_KEY
         ).sign(session._id)
-        app.set_cookie(website_settings.COOKIE_NAME, str(cookie))
+        app.set_cookie(website_settings.COOKIE_NAME, cookie.decode())
 
         res = app.get('{}?create_guid=1'.format(file_url), auth=user.auth)
 
@@ -171,7 +171,7 @@ class TestFileView:
         res = app.get(file_url, auth=user.auth)
         file.versions.first().reload()
         assert res.status_code == 200
-        assert list(res.json.keys()) == ['meta', 'data']
+        assert set(res.json.keys()) == {'meta', 'data'}
         attributes = res.json['data']['attributes']
         assert attributes['path'] == file.path
         assert attributes['kind'] == file.kind
@@ -575,7 +575,7 @@ class TestFileView:
         url = '/{}files/{}/'.format(API_BASE, guid._id)
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert list(res.json.keys()) == ['meta', 'data']
+        assert set(res.json.keys()) == {'meta', 'data'}
         assert res.json['data']['attributes']['path'] == file.path
 
         # test_get_file_invalid_guid_gives_404

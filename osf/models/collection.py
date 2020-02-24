@@ -1,3 +1,4 @@
+from past.builtins import basestring
 import logging
 
 from dirtyfields import DirtyFieldsMixin

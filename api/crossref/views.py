@@ -30,7 +30,7 @@ class ParseCrossRefConfirmation(APIView):
         return None
 
     def post(self, request):
-        crossref_email_content = lxml.etree.fromstring(str(request.POST['body-plain']))
+        crossref_email_content = lxml.etree.fromstring(request.POST['body-plain'].encode())
         status = crossref_email_content.get('status').lower()  # from element doi_batch_diagnostic
         record_count = int(crossref_email_content.find('batch_data/record_count').text)
         records = crossref_email_content.xpath('//record_diagnostic')

@@ -48,8 +48,8 @@ class InstitutionSummary(SummaryAnalytics):
 
             count = {
                 'institution': {
-                    'id': ensure_bytes(institution._id),
-                    'name': ensure_bytes(institution.name),
+                    'id': institution._id,
+                    'name': institution.name,
                 },
                 'users': {
                     'total': institution.osfuser_set.filter(is_active=True).count(),

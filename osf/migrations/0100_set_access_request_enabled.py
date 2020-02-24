@@ -43,7 +43,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='noderequestaction',
             name='permissions',
-            field=models.CharField(choices=[(b'read', b'Read'), (b'write', b'Write'), (b'admin', b'Admin')], default=b'read', max_length=5),
+            field=models.CharField(choices=[('read', 'Read'), ('write', 'Write'), ('admin', 'Admin')], default='read', max_length=5),
         ),
         migrations.RunPython(add_default_access_requests_enabled, remove_default_access_requests_enabled),
     ]

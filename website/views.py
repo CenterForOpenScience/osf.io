@@ -23,7 +23,7 @@ from website import settings
 from website.institutions.views import serialize_institution
 
 from osf import features
-from osf.models import BaseFileNode, Guid, Institution, Preprint, AbstractNode, Node, Registration
+from osf.models import BaseFileNode, Guid, Institution, Preprint, AbstractNode, Node, DraftNode, Registration
 from addons.osfstorage.models import Region
 
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
@@ -223,7 +223,7 @@ def _build_guid_url(base, suffix=None):
         each.strip('/') for each in [base, suffix]
         if each
     ])
-    if not isinstance(url, unicode):
+    if not isinstance(url, str):
         url = url.decode('utf-8')
     return u'/{0}/'.format(url)
 
@@ -306,6 +306,10 @@ def resolve_guid(guid, suffix=None):
                 return Response(stream_with_context(resp.iter_content()), resp.status_code)
 
             return send_from_directory(preprints_dir, 'index.html')
+
+        # Handle DraftNodes - these should never be accessed directly
+        if isinstance(referent, DraftNode):
+            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
         if isinstance(referent, BaseFileNode) and referent.is_file and (getattr(referent.target, 'is_quickfiles', False)):
             if referent.is_deleted:

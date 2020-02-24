@@ -328,6 +328,7 @@ class TestPreprintCreation:
 
 # Copied from osf_tests/test_node.py
 class TestContributorMethods:
+
     def test_add_contributor(self, preprint, user, auth):
         # A user is added as a contributor
         user = UserFactory()
@@ -2032,8 +2033,8 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         related_doi = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'workidentifier' and 'doi' in v['uri'])
         assert related_doi['creative_work'] == related_work
 
-        workidentifiers = [nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier']
-        assert workidentifiers == [urljoin(settings.DOMAIN, self.preprint._id + '/')]
+        workidentifiers = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'workidentifier')
+        assert workidentifiers['uri'] == urljoin(settings.DOMAIN, self.preprint._id + '/')
 
         relation = nodes.pop(list(nodes.keys())[0])
         assert relation == {'@id': relation['@id'], '@type': 'workrelation', 'related': {'@id': related_work['@id'], '@type': related_work['@type']}, 'subject': {'@id': preprint['@id'], '@type': preprint['@type']}}
@@ -2076,7 +2077,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert preprint['date_updated'] == self.preprint.modified.isoformat()
         assert preprint.get('date_published') is None
 
-        people = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'person'], key=lambda x: x['given_name'])
+        people = sorted([nodes.pop(k) for k, v in list(nodes.items()) if v['@type'] == 'person'], key=lambda x: x['given_name'])
         expected_people = sorted([{
             '@type': 'person',
             'given_name': u'BoJack',
@@ -2095,7 +2096,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
         assert people == expected_people
 
-        creators = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creator'], key=lambda x: x['order_cited'])
+        creators = sorted([nodes.pop(k) for k, v in list(nodes.items()) if v['@type'] == 'creator'], key=lambda x: x['order_cited'])
         assert creators == [{
             '@id': creators[0]['@id'],
             '@type': 'creator',
@@ -2112,7 +2113,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
         }]
 
-        contributors = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'contributor']
+        contributors = [nodes.pop(k) for k, v in list(nodes.items()) if v['@type'] == 'contributor']
         assert contributors == [{
             '@id': contributors[0]['@id'],
             '@type': 'contributor',
@@ -2121,7 +2122,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
         }]
 
-        agentidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'agentidentifier'}
+        agentidentifiers = {nodes.pop(k)['uri'] for k, v in list(nodes.items()) if v['@type'] == 'agentidentifier'}
         assert agentidentifiers == set([
             'mailto:' + self.user.username,
             'mailto:' + self.preprint.creator.username,
@@ -2129,7 +2130,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             self.preprint.creator.profile_image_url(),
         ]) | set(user.absolute_url for user in self.preprint.contributors)
 
-        workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
+        workidentifiers = {nodes.pop(k)['uri'] for k, v in list(nodes.items()) if v['@type'] == 'workidentifier'}
         # URLs should *always* be osf.io/guid/
         assert workidentifiers == set([urljoin(settings.DOMAIN, self.preprint._id) + '/', 'https://doi.org/{}'.format(self.preprint.get_identifier('doi').value)])
 
@@ -2347,7 +2348,7 @@ class TestPreprintOsfStorage(OsfTestCase):
         self.user = UserFactory()
         self.session = Session(data={'auth_user_id': self.user._id})
         self.session.save()
-        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
+        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id).decode()
         self.preprint = PreprintFactory(creator=self.user)
         self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 

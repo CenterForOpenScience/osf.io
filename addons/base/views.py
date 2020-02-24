@@ -360,6 +360,9 @@ def get_auth(auth, **kwargs):
         credentials = node.serialize_waterbutler_credentials(provider_name)
         waterbutler_settings = node.serialize_waterbutler_settings(provider_name)
 
+    if isinstance(credentials.get('token'), bytes):
+        credentials['token'] = credentials.get('token').decode()
+
     return {'payload': jwe.encrypt(jwt.encode({
         'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
         'data': {
@@ -372,7 +375,7 @@ def get_auth(auth, **kwargs):
                 _internal=True
             )
         }
-    }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), WATERBUTLER_JWE_KEY)}
+    }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), WATERBUTLER_JWE_KEY).decode()}
 
 
 LOG_ACTION_MAP = {
@@ -862,7 +865,7 @@ def addon_view_file(auth, node, file_node, version):
         sharejs_uuid = None
 
     internal_furl = furl.furl(settings.INTERNAL_DOMAIN)
-    download_url = furl.furl(request.url.encode('utf-8')).set(
+    download_url = furl.furl(request.url).set(
         netloc=internal_furl.netloc,
         args=dict(request.args, **{
             'direct': None,

@@ -3,7 +3,7 @@ import re
 import datetime
 import functools
 import random
-from contextlib import nested
+from contextlib import ExitStack, contextmanager
 
 import responses
 import mock  # noqa
@@ -50,6 +50,16 @@ for each in SILENT_LOGGERS:
 
 sha256_factory = _unique(fake.sha256)
 name_factory = _unique(fake.ean13)
+
+@contextmanager
+def nested(*contexts):
+    """
+    Reimplementation of nested in python 3.
+    """
+    with ExitStack() as stack:
+        for ctx in contexts:
+            stack.enter_context(ctx)
+        yield contexts
 
 def file_factory(name=None, sha256=None):
     fname = name or name_factory()
@@ -270,12 +280,12 @@ def generate_schema_from_data(data):
             }
 
     def from_question(qid, question):
-        if q.get('extra'):
+        if question.get('extra'):
             return {
                 'qid': qid,
                 'type': 'osf-upload'
             }
-        elif isinstance(q.get('value'), dict):
+        elif isinstance(question.get('value'), dict):
             return {
                 'qid': qid,
                 'type': 'object',

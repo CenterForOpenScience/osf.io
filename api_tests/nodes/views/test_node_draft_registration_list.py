@@ -3,6 +3,7 @@ from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
 from django.contrib.auth.models import Permission
+from framework.auth.core import Auth
 from osf.models import RegistrationSchema
 from osf_tests.factories import (
     ProjectFactory,
@@ -16,6 +17,7 @@ from osf_tests.factories import (
 from osf.utils import permissions
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 
+OPEN_ENDED_SCHEMA_VERSION = 3
 SCHEMA_VERSION = 2
 
 @pytest.mark.django_db
@@ -56,6 +58,7 @@ class DraftRegistrationTestCase:
             permissions=permissions.READ)
         project_public.save()
         project_public.add_osf_group(group, permissions.ADMIN)
+        project_public.add_tag('hello', Auth(user), save=True)
         return project_public
 
     @pytest.fixture()
@@ -88,7 +91,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
     def schema(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
-            schema_version=3)
+            schema_version=OPEN_ENDED_SCHEMA_VERSION)
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -115,7 +118,9 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         assert data[0]['id'] == draft_registration._id
         assert data[0]['attributes']['registration_metadata'] == {}
 
-    #   test_osf_group_with_admin_permissions
+    def test_osf_group_with_admin_permissions_can_view(
+            self, app, user, draft_registration, project_public,
+            schema, url_draft_registrations):
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
         project_public.add_osf_group(group, permissions.ADMIN)
@@ -130,7 +135,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
             user_read_contrib, user_non_contrib,
             url_draft_registrations, group, group_mem):
 
-        #   test_read_only_contributor_cannot_view_draft_list
+        # test_read_only_contributor_cannot_view_draft_list
         res = app.get(
             url_draft_registrations,
             auth=user_read_contrib.auth,
@@ -210,7 +215,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
     def metaschema_open_ended(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
-            schema_version=3)
+            schema_version=OPEN_ENDED_SCHEMA_VERSION)
 
     @pytest.fixture()
     def payload(self, metaschema_open_ended, provider):
@@ -265,10 +270,9 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 409
 
     def test_admin_can_create_draft(
-            self, app, user, project_public,
+            self, app, user, project_public, url_draft_registrations,
             payload, metaschema_open_ended):
-        url = '/{}nodes/{}/draft_registrations/?embed=branched_from&embed=initiator'.format(
-            API_BASE, project_public._id)
+        url = '{}?embed=branched_from&embed=initiator'.format(url_draft_registrations)
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
         data = res.json['data']
@@ -330,6 +334,20 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             url_draft_registrations,
             payload,
             auth=group_mem.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_reviewer_cannot_create_draft_registration
+        user = AuthUserFactory()
+        administer_permission = Permission.objects.get(
+            codename='administer_prereg')
+        user.user_permissions.add(administer_permission)
+        user.save()
+
+        assert user_read_contrib in project_public.contributors.all()
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 403
 
@@ -458,7 +476,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 404
 
     def test_required_metaschema_questions_not_required_on_post(
-            self, app, user, provider, project_public, prereg_metadata):
+            self, app, user, provider, project_public, prereg_metadata, url_draft_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
             schema_version=SCHEMA_VERSION)
@@ -469,8 +487,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             branched_from=project_public
         )
 
-        url = '/{}nodes/{}/draft_registrations/?embed=initiator&embed=branched_from'.format(
-            API_BASE, project_public._id)
+        url = '{}?embed=initiator&embed=branched_from'.format(url_draft_registrations)
 
         registration_metadata = prereg_metadata(prereg_draft_registration)
         del registration_metadata['q1']
@@ -484,6 +501,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                     'registration_metadata': registration_metadata
                 },
                 'relationships': {
+                    'branched_from': {
+                        'data': {
+                            'type': 'nodes',
+                            'id': project_public._id,
+                        }
+                    },
                     'registration_schema': {
                         'data': {
                             'type': 'registration_schema',
@@ -594,8 +617,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert 'Please use `registration_responses` as `registration_metadata` will be deprecated in the future.' in errors['detail']
 
     def test_supply_registration_responses_on_creation(
-            self, app, user, payload, url_draft_registrations
-    ):
+            self, app, user, payload, url_draft_registrations):
         schema = RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
             schema_version=SCHEMA_VERSION)
@@ -646,7 +668,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         errors = res.json['errors'][0]
         assert res.status_code == 400
         assert errors['source']['pointer'] == '/data/attributes/registration_metadata'
-        assert errors['detail'] == 'Expected a dictionary of items but got type "unicode".'
+        assert errors['detail'] == 'Expected a dictionary of items but got type "str".'
 
     def test_registration_metadata_question_values_must_be_dictionaries(
             self, app, user, payload, url_draft_registrations):
@@ -738,7 +760,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         errors = res.json['errors'][0]
         assert res.status_code == 400
         assert errors['source']['pointer'] == '/data/attributes/registration_responses'
-        assert errors['detail'] == 'Expected a dictionary of items but got type "unicode".'
+        assert errors['detail'] == 'Expected a dictionary of items but got type "str".'
 
     def test_registration_responses_question_values_must_not_be_dictionaries(
             self, app, user, payload, url_draft_registrations):
@@ -774,7 +796,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'Additional properties are not allowed (u\'q11\' was unexpected)'
+        assert errors['detail'] == 'Additional properties are not allowed (\'q11\' was unexpected)'
 
     def test_registration_responses_multiple_choice_question_value_must_match_value_in_schema(
             self, app, user, payload, url_draft_registrations):
@@ -794,19 +816,3 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 400
         assert errors['detail'] == 'For your registration, your response to the \'Data collection status\'' \
                                    ' field is invalid, your response must be one of the provided options.'
-
-    def test_reviewer_cannot_create_draft_registration(
-            self, app, user_read_contrib, project_public,
-            payload, url_draft_registrations):
-        user = AuthUserFactory()
-        administer_permission = Permission.objects.get(
-            codename='administer_prereg')
-        user.user_permissions.add(administer_permission)
-        user.save()
-
-        assert user_read_contrib in project_public.contributors.all()
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 403

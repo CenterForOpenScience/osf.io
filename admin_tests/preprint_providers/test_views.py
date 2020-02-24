@@ -201,7 +201,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
 
         content_dict['fields']['_id'] = 'new_id'
         content_dict['fields']['name'] = 'Awesome New Name'
-        data = StringIO(unicode(json.dumps(content_dict), 'utf-8'))
+        data = StringIO(json.dumps(content_dict))
         self.import_request.FILES['file'] = InMemoryUploadedFile(data, None, 'data', 'application/json', 500, None, {})
 
         res = self.import_view.post(self.import_request)
@@ -228,7 +228,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
         content_dict['fields']['new_field'] = 'this is a new field, not in the model'
         del content_dict['fields']['description']  # this is a old field, removed from the model JSON
 
-        data = StringIO(unicode(json.dumps(content_dict), 'utf-8'))
+        data = StringIO(json.dumps(content_dict))
         self.import_request.FILES['file'] = InMemoryUploadedFile(data, None, 'data', 'application/json', 500, None, {})
 
         res = self.import_view.post(self.import_request)
@@ -257,7 +257,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
 
         content_dict['fields']['subjects'] = json.dumps(new_subject_data)
         content_dict['fields']['licenses_acceptable'] = ['CCBY']
-        data = StringIO(unicode(json.dumps(content_dict), 'utf-8'))
+        data = StringIO(json.dumps(content_dict))
         self.import_request.FILES['file'] = InMemoryUploadedFile(data, None, 'data', 'application/json', 500, None, {})
 
         res = self.import_view.post(self.import_request)

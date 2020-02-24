@@ -2,6 +2,24 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.3.0 (2020-02-04)
+===================
+- Fix typo in waffle flag pages
+- Update language for withdrawal declined email
+- Optimize update_storage_usage_cache
+- Update docker-compose readme for python 3
+- Allow write contributors to edit metadata on registrations
+- Fix composite queries for Impact
+- Update log fetching to only get current level of node
+
+20.2.0 (2020-01-29)
+===================
+- Fix bugs in EGAP migration script
+
+20.1.0 (2020-01-15)
+===================
+- Switch to Python 3
+
 19.32.0 (2019-12-16)
 ===================
 - Add SchemaBlocks, normalization for Registration.registered_meta

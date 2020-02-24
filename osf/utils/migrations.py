@@ -1,5 +1,7 @@
+from past.builtins import basestring
 import os
 import itertools
+import builtins
 import json
 import logging
 import warnings
@@ -110,7 +112,7 @@ def ensure_licenses(*args, **kwargs):
     except Exception:
         # Working outside a migration
         from osf.models import NodeLicense
-    with open(
+    with builtins.open(
             os.path.join(
                 settings.APP_PATH,
                 'node_modules', '@centerforopenscience', 'list-of-licenses', 'dist', 'list-of-licenses.json'

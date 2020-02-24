@@ -107,7 +107,7 @@ class TestMove():
         file.save()
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
-        assert 'Cannot move file as it is checked out.' in res._app_iter[0]
+        assert b'Cannot move file as it is checked out.' in res._app_iter[0]
 
     def test_move_checked_out_file_in_folder(self, app, root_node, user, folder, folder_two, move_url):
         file = folder.append_file('No I don\'t wanna go')
@@ -416,7 +416,7 @@ class TestMovePreprint():
         file.save()
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
-        assert 'Cannot move file as it is checked out.' in res._app_iter[0]
+        assert b'Cannot move file as it is checked out.' in res._app_iter[0]
 
     def test_move_checked_out_file_in_folder(self, app, root_node, user, folder, folder_two, move_url):
         file = folder.append_file('No I don\'t wanna go')
@@ -880,7 +880,7 @@ class TestCopy():
         assert node.storage_usage is None
 
         # But there's really 1337 bytes in the node
-        update_storage_usage_cache(node._id)
+        update_storage_usage_cache(node.id, node._id)
         assert node.storage_usage == 1337
 
         # And we have exactly 1337 bytes copied in node_two
