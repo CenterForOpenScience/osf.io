@@ -121,7 +121,7 @@ def write_raw_data(cursor, filename):
         writer = csv.writer(new_file, delimiter=',', lineterminator='\n', quoting=csv.QUOTE_ALL)
         writer.writerow(list(VALUES))
         for row in cursor.fetchall():
-            writer.writerow(encode_row(row))
+            writer.writerow(row)
     upload_to_storage(file_path=file_path, upload_url=REG_METRICS_BASE_FOLDER, params=params)
 
 

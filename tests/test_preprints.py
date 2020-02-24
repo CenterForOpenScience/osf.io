@@ -328,6 +328,7 @@ class TestPreprintCreation:
 
 # Copied from osf_tests/test_node.py
 class TestContributorMethods:
+
     def test_add_contributor(self, preprint, user, auth):
         # A user is added as a contributor
         user = UserFactory()
