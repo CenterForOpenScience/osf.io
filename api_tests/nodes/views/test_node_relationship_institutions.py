@@ -33,6 +33,13 @@ class TestNodeRelationshipInstitutions:
         return NodeFactory
 
     @pytest.fixture()
+    def make_resource_url(self):
+        def make_resource_url(node):
+            return '/{0}nodes/{1}/relationships/institutions/'.format(
+                API_BASE, node._id)
+        return make_resource_url
+
+    @pytest.fixture()
     def user(self, institution_one, institution_two):
         user = AuthUserFactory()
         user.affiliated_institutions.add(institution_one)
@@ -96,9 +103,7 @@ class TestNodeRelationshipInstitutions:
 
     #   test_user_with_no_institution
         unauthorized_user = AuthUserFactory()
-        node = resource_factory(creator=unauthorized_user)
-        res = app.put_json_api(
-            '/{0}{1}s/{2}/relationships/institutions/'.format(API_BASE, node.__class__.__name__.lower(), node._id),
+        res = app.put_json_api(node_institutions_url,
             create_payload(institution_one._id),
             expect_errors=True,
             auth=unauthorized_user.auth
@@ -351,12 +356,14 @@ class TestNodeRelationshipInstitutions:
 
     def test_delete_user_is_admin(
             self, app, user, institution_one, node,
-            node_institutions_url, create_payload):
+            make_resource_url, create_payload):
         node.affiliated_institutions.add(institution_one)
         node.save()
 
+        url = make_resource_url(node)
+
         res = app.delete_json_api(
-            node_institutions_url,
+            url,
             create_payload(institution_one._id),
             auth=user.auth
         )
@@ -401,15 +408,16 @@ class TestNodeRelationshipInstitutions:
         assert res.status_code == 403
 
     def test_delete_user_is_admin_but_not_affiliated_with_inst(
-            self, app, institution_one, resource_factory, create_payload):
+            self, app, institution_one, resource_factory, create_payload, make_resource_url):
         user = AuthUserFactory()
         node = resource_factory(creator=user)
         node.affiliated_institutions.add(institution_one)
         node.save()
         assert institution_one in node.affiliated_institutions.all()
 
+        url = make_resource_url(node)
         res = app.delete_json_api(
-            '/{0}{1}s/{2}/relationships/institutions/'.format(API_BASE, node.__class__.__name__.lower(), node._id),
+            url,
             create_payload(institution_one._id),
             auth=user.auth,
         )

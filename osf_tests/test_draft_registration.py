@@ -385,25 +385,7 @@ class TestSetDraftRegistrationEditableFields(TestNodeEditableFieldsMixin):
         return DraftRegistration
 
 
-class TestDraftRegistrationContributorMethods:
-    @pytest.fixture()
-    def draft_registration(self, project):
-        return factories.DraftRegistrationFactory(branched_from=project, title='That Was Then', description='A description')
-
-    @pytest.fixture()
-    def contrib(self):
-        return factories.UserFactory()
-
-    @pytest.fixture()
-    def contributor_model(self):
-        return DraftRegistrationContributor
-
-    @pytest.fixture()
-    def make_resource_contributor(self, user, resource, visible=True):
-        def make_contributor(user, resource, visible=True):
-            contrib = DraftRegistrationContributor.objects.create(user=user, draft_registration=resource, visible=visible)
-            return contrib
-        return make_contributor
+class TestDraftRegistrationContributorMethods():
 
     def test_add_contributor(self, draft_registration, user, auth):
         # A user is added as a contributor

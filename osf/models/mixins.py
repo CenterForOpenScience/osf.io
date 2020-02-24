@@ -1044,8 +1044,8 @@ class TaxonomizableMixin(models.Model):
             if not self.has_permission(auth.user, WRITE):
                 raise PermissionsError('Must have admin or write permissions to change a preprint\'s subjects.')
         elif isinstance(self, DraftRegistration):
-            if not self.has_permission(auth.user, ADMIN):
-                raise PermissionsError('Must have admin permissions to change a draft registration\'s subjects.')
+            if not self.has_permission(auth.user, WRITE):
+                raise PermissionsError('Must have write permissions to change a draft registration\'s subjects.')
         elif isinstance(self, CollectionSubmission):
             if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(self.collection.groups[ADMIN], self.collection):
                 raise PermissionsError('Only admins can change subjects.')

@@ -1,49 +1,222 @@
-from api.nodes.serializers import DraftRegistrationDetailSerializer
-from api.nodes.permissions import IsAdminContributorOrReviewer
-from api.base.views import JSONAPIBaseView
-from api.base import permissions as base_permissions
-from api.base.exceptions import Gone
-from rest_framework import generics, permissions as drf_permissions
+from rest_framework import permissions as drf_permissions, exceptions
+
 from framework.auth.oauth_scopes import CoreScopes
-from api.base.utils import get_object_or_error
-from osf.models import DraftRegistration
-from rest_framework.exceptions import PermissionDenied
 
+from api.base import permissions as base_permissions
+from api.base.pagination import DraftRegistrationContributorPagination
+from api.base.views import JSONAPIBaseView
+from api.draft_registrations.permissions import (
+    DraftContributorDetailPermissions,
+    IsContributorOrAdminContributor,
+)
+from api.draft_registrations.serializers import (
+    DraftRegistrationSerializer,
+    DraftRegistrationDetailSerializer,
+    DraftRegistrationContributorsSerializer,
+    DraftRegistrationContributorDetailSerializer,
+    DraftRegistrationContributorsCreateSerializer,
+)
+from api.nodes.views import (
+    NodeDraftRegistrationsList,
+    NodeDraftRegistrationDetail,
+    NodeInstitutionsList,
+    NodeInstitutionsRelationship,
+    NodeContributorsList,
+    NodeContributorDetail,
+    DraftMixin,
+)
+from api.nodes.permissions import ContributorOrPublic, AdminDeletePermissions
+from api.subjects.views import SubjectRelationshipBaseView, BaseResourceSubjectsList
+from osf.models import DraftRegistrationContributor
 
-class DraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_draft_registrations_read).
+class DraftRegistrationMixin(DraftMixin):
     """
+    Old DraftMixin was built under the assumption that a node was provided from the start.
+    All permission checking went through the node, not the draft.
+    New draft registration endpoints do permission checking on the draft registration.
+    """
+
+    # Overrides DraftMixin
+    def check_branched_from(self, draft):
+        # We do not have to check the branched_from relationship. node_id is not a kwarg
+        return
+
+
+class DraftRegistrationList(NodeDraftRegistrationsList):
     permission_classes = (
-        IsAdminContributorOrReviewer,
+        IsContributorOrAdminContributor,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
-    required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
+    serializer_class = DraftRegistrationSerializer
+
+    view_category = 'draft_registrations'
+    view_name = 'draft-registration-list'
+
+    # overrides NodeDraftRegistrationList
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_anonymous:
+            raise exceptions.NotAuthenticated()
+        # Returns DraftRegistrations for which a user is a contributor
+        return user.draft_registrations_active
+
+
+class DraftRegistrationDetail(NodeDraftRegistrationDetail, DraftRegistrationMixin):
+    permission_classes = (
+        ContributorOrPublic,
+        AdminDeletePermissions,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
 
     serializer_class = DraftRegistrationDetailSerializer
+
     view_category = 'draft_registrations'
     view_name = 'draft-registration-detail'
 
-    def get_object(self):
-        draft_id = self.kwargs['draft_id']
-        draft = get_object_or_error(DraftRegistration, draft_id, self.request)
 
-        if self.request.method not in drf_permissions.SAFE_METHODS:
-            registered_and_deleted = draft.registered_node and draft.registered_node.is_deleted
+class DraftInstitutionsList(NodeInstitutionsList, DraftRegistrationMixin):
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
 
-            if draft.registered_node and not draft.registered_node.is_deleted:
-                raise PermissionDenied('This draft has already been registered and cannot be modified.')
+    required_read_scopes = [CoreScopes.INSTITUTION_READ, CoreScopes.DRAFT_REGISTRATIONS_READ]
 
-            if draft.is_pending_review:
-                raise PermissionDenied('This draft is pending review and cannot be modified.')
+    view_category = 'draft_registrations'
+    view_name = 'draft-registration-institutions'
 
-            if draft.requires_approval and draft.is_approved and (not registered_and_deleted):
-                raise PermissionDenied('This draft has already been approved and cannot be modified.')
+    # Overrides NodeInstitutionsList
+    def get_resource(self):
+        return self.get_draft()
+
+
+class DraftInstitutionsRelationship(NodeInstitutionsRelationship, DraftRegistrationMixin):
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    view_category = 'draft_registrations'
+    view_name = 'draft-registration-relationships-institutions'
+
+    # Overrides NodeInstitutionsRelationship
+    def get_resource(self):
+        return self.get_draft(check_object_permissions=False)
+
+
+class DraftSubjectsList(BaseResourceSubjectsList, DraftRegistrationMixin):
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.DRAFT_REGISTRATIONS_READ]
+
+    view_category = 'draft_registrations'
+    view_name = 'draft-registration-subjects'
+
+    def get_resource(self):
+        # Overrides BaseResourceSubjectsList
+        return self.get_draft()
+
+
+class DraftSubjectsRelationship(SubjectRelationshipBaseView, DraftRegistrationMixin):
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.DRAFT_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.DRAFT_REGISTRATIONS_WRITE]
+
+    view_category = 'draft_registrations'
+    view_name = 'draft-registration-relationships-subjects'
+
+    ordering = ('-id',)
+
+    def get_resource(self, check_object_permissions=True):
+        # Overrides SubjectRelationshipBaseView
+        return self.get_draft(check_object_permissions=check_object_permissions)
+
+
+class DraftContributorsList(NodeContributorsList, DraftRegistrationMixin):
+    permission_classes = (
+        IsContributorOrAdminContributor,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    pagination_class = DraftRegistrationContributorPagination
+
+    required_read_scopes = [CoreScopes.DRAFT_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.DRAFT_REGISTRATIONS_WRITE]
+
+    view_category = 'draft_registrations'
+    view_name = 'draft-registration-contributors'
+    serializer_class = DraftRegistrationContributorsSerializer
+
+    def get_default_queryset(self):
+        # Overrides NodeContributorsList
+        draft = self.get_draft()
+        return draft.draftregistrationcontributor_set.all().include('user__guids')
+
+    # overrides NodeContributorsList
+    def get_serializer_class(self):
+        if self.request.method in ('PUT', 'PATCH', 'DELETE'):
+            return DraftRegistrationContributorDetailSerializer
+        elif self.request.method == 'POST':
+            return DraftRegistrationContributorsCreateSerializer
         else:
-            if draft.registered_node and not draft.registered_node.is_deleted:
-                raise Gone(detail='This draft has already been registered.')
+            return DraftRegistrationContributorsSerializer
 
-        self.check_object_permissions(self.request, draft.branched_from)
-        return draft
+    def get_resource(self):
+        return self.get_draft()
+
+    # Overrides NodeContributorsList
+    def get_serializer_context(self):
+        context = super(JSONAPIBaseView, self).get_serializer_context()
+        context['resource'] = self.get_resource()
+        context['default_email'] = 'draft_registration'
+        return context
+
+
+class DraftContributorDetail(NodeContributorDetail, DraftRegistrationMixin):
+    permission_classes = (
+        DraftContributorDetailPermissions,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    view_category = 'draft_registrations'
+    view_name = 'draft-registration-contributor-detail'
+    serializer_class = DraftRegistrationContributorDetailSerializer
+
+    required_read_scopes = [CoreScopes.DRAFT_CONTRIBUTORS_READ]
+    required_write_scopes = [CoreScopes.DRAFT_CONTRIBUTORS_WRITE]
+
+    def get_resource(self):
+        return self.get_draft()
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        draft_registration = self.get_draft()
+        user = self.get_user()
+        # May raise a permission denied
+        self.check_object_permissions(self.request, user)
+        try:
+            return draft_registration.draftregistrationcontributor_set.get(user=user)
+        except DraftRegistrationContributor.DoesNotExist:
+            raise exceptions.NotFound('{} cannot be found in the list of contributors.'.format(user))
+
+    def get_serializer_context(self):
+        context = super(JSONAPIBaseView, self).get_serializer_context()
+        context['resource'] = self.get_draft()
+        context['default_email'] = 'draft'
+        return context
