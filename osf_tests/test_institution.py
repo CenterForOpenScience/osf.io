@@ -68,14 +68,15 @@ class TestInstitutionPermissions:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def institution_admin_user(self, institution, user):
+    def institution_admin_user(self, institution):
+        user = AuthUserFactory()
         group = institution.get_group('institutional_admins')
         group.user_set.add(user)
         group.save()
         return user
 
     @pytest.mark.django_db
-    def test_group_member_has_perms(self, institution, user, institution_admin_user):
+    def test_group_member_has_perms(self, institution, institution_admin_user):
         assert institution_admin_user.has_perm('view_institutional_metrics', institution)
 
     @pytest.mark.django_db
