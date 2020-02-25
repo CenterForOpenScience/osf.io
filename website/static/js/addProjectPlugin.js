@@ -16,7 +16,6 @@ var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
 var agh = require('agh.sprintf');
-var projectCategory = [_('Analysis'),_('Communication'),_('Data'),_('Hypothesis'),_('Instrumentation'),_('Methods and Measures'),_('Procedure'),_('Project'),_('Software'),_('Other')];
 
 var AddProject = {
     controller : function (options) {

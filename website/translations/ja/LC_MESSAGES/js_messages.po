@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-21 13:37+0900\n"
+"POT-Creation-Date: 2020-02-25 17:40+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -196,10 +196,10 @@ msgid "Type the following to continue: <strong>%1$s</strong><br><br>"
 msgstr "次を入力して続行します。<strong>%1$s</ strong><br><br>"
 
 #: admin/static/js/rdm_addons/rdm-addons-page.js:73
-#: website/static/js/addProjectPlugin.js:351 website/static/js/fangorn.js:538
-#: website/static/js/fangorn.js:1213 website/static/js/fangorn.js:1236
-#: website/static/js/fangorn.js:1289 website/static/js/fangorn.js:1308
-#: website/static/js/fangorn.js:2007
+#: website/static/js/addProjectPlugin.js:350 website/static/js/fangorn.js:538
+#: website/static/js/fangorn.js:543 website/static/js/fangorn.js:1213
+#: website/static/js/fangorn.js:1236 website/static/js/fangorn.js:1289
+#: website/static/js/fangorn.js:1308 website/static/js/fangorn.js:2007
 #: website/static/js/institutionProjectSettings.js:104
 #: website/static/js/licensePicker.js:241 website/static/js/myProjects.js:1562
 #: website/static/js/myProjects.js:1610 website/static/js/myProjects.js:1634
@@ -525,21 +525,21 @@ msgstr ""
 msgid "Could not find the user associated with this token"
 msgstr ""
 
-#: framework/auth/oauth_scopes.py:295
+#: framework/auth/oauth_scopes.py:294
 msgid ""
 "View all information associated with this account, including for private "
 "projects."
 msgstr ""
 
-#: framework/auth/oauth_scopes.py:302
+#: framework/auth/oauth_scopes.py:301
 msgid "Read your profile data."
 msgstr ""
 
-#: framework/auth/oauth_scopes.py:305
+#: framework/auth/oauth_scopes.py:304
 msgid "Read your primary email address."
 msgstr ""
 
-#: framework/auth/oauth_scopes.py:349
+#: framework/auth/oauth_scopes.py:348
 msgid ""
 "View and edit all metadata, files, and access rights associated with all "
 "public and private projects accessible to this account."
@@ -553,26 +553,6 @@ msgstr "テンプレートを複製"
 msgid "Fork this Project"
 msgstr "このプロジェクトをフォーク"
 
-#: website/notifications/constants.py:5 website/notifications/constants.py:14
-msgid "Comments added"
-msgstr "コメント追加時"
-
-#: website/notifications/constants.py:6 website/notifications/constants.py:15
-msgid "Files updated"
-msgstr "ファイルアップロード時"
-
-#: website/notifications/constants.py:13
-msgid "Replies to your comments"
-msgstr "コメントへの返信時"
-
-#: website/notifications/constants.py:16
-msgid "Mentions added"
-msgstr "メンション追加時"
-
-#: website/notifications/constants.py:17
-msgid "Preprint submissions updated"
-msgstr "プレプリント提出の更新時"
-
 #: website/notifications/utils.py:502
 msgid "Default Notification Settings"
 msgstr "デフォルトの通知設定"
@@ -582,10 +562,6 @@ msgid ""
 "These are default settings for new projects you create or are added to. "
 "Modifying these settings will not modify settings on existing projects."
 msgstr "これらは、作成または追加される新しいプロジェクトのデフォルト設定です。 これらの設定を変更しても、既存のプロジェクトの設定は変更されません。"
-
-#: website/notifications/utils.py:511
-msgid "Project Notifications"
-msgstr "プロジェクトの通知"
 
 #: website/notifications/utils.py:512
 msgid ""
@@ -914,185 +890,144 @@ msgstr "アカウントのエクスポートをリクエストしますか？"
 msgid "Are you sure you want to request account export?"
 msgstr "アカウントのエクスポートをリクエストしてもよろしいですか？"
 
-#: website/static/js/addProjectPlugin.js:19
-msgid "Analysis"
-msgstr "分析"
-
-#: website/static/js/addProjectPlugin.js:19
-msgid "Communication"
-msgstr "コミュニケーション"
-
-#: website/static/js/addProjectPlugin.js:19
-msgid "Data"
-msgstr "データ"
-
-#: website/static/js/addProjectPlugin.js:19
-msgid "Hypothesis"
-msgstr "仮説"
-
-#: website/static/js/addProjectPlugin.js:19
-msgid "Instrumentation"
-msgstr "器具"
-
-#: website/static/js/addProjectPlugin.js:19
-msgid "Methods and Measures"
-msgstr "方法と対策"
-
-#: website/static/js/addProjectPlugin.js:19
-msgid "Procedure"
-msgstr "手順"
-
-#: website/static/js/addProjectPlugin.js:19
-#: website/static/js/projectSettingsTreebeardBase.js:92
-msgid "Project"
-msgstr "プロジェクト"
-
-#: website/static/js/addProjectPlugin.js:19
-msgid "Software"
-msgstr "ソフトウェア"
-
-#: website/static/js/addProjectPlugin.js:19
-msgid "Other"
-msgstr "その他"
-
-#: website/static/js/addProjectPlugin.js:25
-#: website/static/js/addProjectPlugin.js:28
+#: website/static/js/addProjectPlugin.js:24
+#: website/static/js/addProjectPlugin.js:27
 #: website/static/js/myProjects.js:1120
 msgid "Create new project"
 msgstr "新規プロジェクト作成"
 
-#: website/static/js/addProjectPlugin.js:61
+#: website/static/js/addProjectPlugin.js:60
 msgid "There was an unknown error. Please try again later."
 msgstr "不明なエラーがありました。 後でもう一度やり直してください。"
 
-#: website/static/js/addProjectPlugin.js:188 website/static/js/conference.js:21
+#: website/static/js/addProjectPlugin.js:187 website/static/js/conference.js:21
 msgid "Title"
 msgstr "タイトル"
 
-#: website/static/js/addProjectPlugin.js:202
+#: website/static/js/addProjectPlugin.js:201
 msgid "Enter %1$s title"
 msgstr "%1$sのタイトルを入力してください"
 
-#: website/static/js/addProjectPlugin.js:207
+#: website/static/js/addProjectPlugin.js:206
 msgid "Affiliation"
 msgstr "所属"
 
-#: website/static/js/addProjectPlugin.js:214
+#: website/static/js/addProjectPlugin.js:213
 msgid "Remove all"
 msgstr "全て削除"
 
-#: website/static/js/addProjectPlugin.js:221
+#: website/static/js/addProjectPlugin.js:220
 msgid "Select all"
 msgstr "全て選択"
 
-#: website/static/js/addProjectPlugin.js:237
+#: website/static/js/addProjectPlugin.js:236
 msgid "Storage location"
 msgstr "ストレージロケーション"
 
-#: website/static/js/addProjectPlugin.js:255
+#: website/static/js/addProjectPlugin.js:254
 msgid " Add contributors from "
 msgstr "コントリビュータを追加する ：from "
 
-#: website/static/js/addProjectPlugin.js:257
+#: website/static/js/addProjectPlugin.js:256
 msgid " Admins of "
 msgstr " "
 
-#: website/static/js/addProjectPlugin.js:257
+#: website/static/js/addProjectPlugin.js:256
 msgid " will have read access to this component."
 msgstr "の管理者は、このコンポーネントへの読み取りアクセス権を持ちます。"
 
-#: website/static/js/addProjectPlugin.js:268
+#: website/static/js/addProjectPlugin.js:267
 msgid " Add tags from "
 msgstr "タグを追加する：from "
 
-#: website/static/js/addProjectPlugin.js:272
+#: website/static/js/addProjectPlugin.js:271
 msgid "License"
 msgstr "ライセンス"
 
-#: website/static/js/addProjectPlugin.js:274
+#: website/static/js/addProjectPlugin.js:273
 msgid " This component will inherit the same license as "
 msgstr "このコンポーネントは、次と同じライセンスを継承します："
 
-#: website/static/js/addProjectPlugin.js:277
+#: website/static/js/addProjectPlugin.js:276
 msgid "Learn more."
 msgstr "もっと詳しく見る"
 
-#: website/static/js/addProjectPlugin.js:286
+#: website/static/js/addProjectPlugin.js:285
 msgid " More"
 msgstr "詳細"
 
-#: website/static/js/addProjectPlugin.js:290
+#: website/static/js/addProjectPlugin.js:289
 msgid "Description"
 msgstr "説明"
 
-#: website/static/js/addProjectPlugin.js:299
+#: website/static/js/addProjectPlugin.js:298
 msgid "Enter %1$s description"
 msgstr "%1$sの説明を入力する"
 
-#: website/static/js/addProjectPlugin.js:303 website/static/js/conference.js:33
+#: website/static/js/addProjectPlugin.js:302 website/static/js/conference.js:33
 msgid "Category"
 msgstr "カテゴリ"
 
-#: website/static/js/addProjectPlugin.js:304
+#: website/static/js/addProjectPlugin.js:303
 msgid " (for descriptive purposes)"
 msgstr "(説明のため)"
 
-#: website/static/js/addProjectPlugin.js:311
+#: website/static/js/addProjectPlugin.js:310
 msgid "Uncategorized"
 msgstr "未分類"
 
-#: website/static/js/addProjectPlugin.js:324
+#: website/static/js/addProjectPlugin.js:323
 msgid "(Empty category)"
 msgstr "（空のカテゴリ）"
 
-#: website/static/js/addProjectPlugin.js:334
+#: website/static/js/addProjectPlugin.js:333
 msgid "Template (optional)"
 msgstr "テンプレート（オプション）"
 
-#: website/static/js/addProjectPlugin.js:335
+#: website/static/js/addProjectPlugin.js:334
 msgid ""
 "Start typing to search your projects. Selecting project as template will "
 "duplicate its "
 msgstr "入力を開始してプロジェクトを検索します。 プロジェクトをテンプレートとして選択すると、"
 
-#: website/static/js/addProjectPlugin.js:336
+#: website/static/js/addProjectPlugin.js:335
 msgid ""
 "structure in the new project without importing the content of that "
 "project."
 msgstr "そのプロジェクトのコンテンツをインポートすることなく、新しいプロジェクトでその構造が複製されます。"
 
-#: website/static/js/addProjectPlugin.js:355
+#: website/static/js/addProjectPlugin.js:354
 #: website/static/js/nodeControl.js:226 website/static/js/project.js:139
 msgid "Create"
 msgstr "作成"
 
-#: website/static/js/addProjectPlugin.js:366
+#: website/static/js/addProjectPlugin.js:365
 msgid "Saving your "
 msgstr "保存中："
 
-#: website/static/js/addProjectPlugin.js:380
+#: website/static/js/addProjectPlugin.js:379
 msgid "New %1$s created successfully!"
 msgstr "新しい%1$sが作成されました！"
 
-#: website/static/js/addProjectPlugin.js:390
-#: website/static/js/addProjectPlugin.js:438 website/static/js/project.js:61
+#: website/static/js/addProjectPlugin.js:389
+#: website/static/js/addProjectPlugin.js:437 website/static/js/project.js:61
 msgid "Keep working here"
 msgstr "このページに留まる"
 
-#: website/static/js/addProjectPlugin.js:396
-#: website/static/js/addProjectPlugin.js:441
+#: website/static/js/addProjectPlugin.js:395
+#: website/static/js/addProjectPlugin.js:440
 msgid "Go to new %1$s"
 msgstr "新しい%1$sへ移動する"
 
-#: website/static/js/addProjectPlugin.js:409
+#: website/static/js/addProjectPlugin.js:408
 msgid "Couldn't create your %1$s"
 msgstr "%1$sが作成できませんでした。"
 
-#: website/static/js/addProjectPlugin.js:428
+#: website/static/js/addProjectPlugin.js:427
 msgid "Could not add institution affiliation to your new %1$s"
 msgstr "新しい%1$sに所属機関を追加できませんでした"
 
-#: website/static/js/addProjectPlugin.js:475
+#: website/static/js/addProjectPlugin.js:474
 msgid "Select a project to use as a template"
 msgstr "テンプレートとして使用するプロジェクトを選択します"
 
@@ -1219,112 +1154,83 @@ msgid "Could not fetch alerts for this page. Please refresh page and try again."
 msgstr "このページのアラートを取得できませんでした。 ページを更新してもう一度お試しください。"
 
 #: website/static/js/apiApplication.js:201
-#: website/static/js/apiApplication_old.js:201
 msgid "Error fetching list of registered applications"
 msgstr "登録済みアプリケーションのリストの取得エラー"
 
 #: website/static/js/apiApplication.js:212
 #: website/static/js/apiApplication.js:379
-#: website/static/js/apiApplication_old.js:212
-#: website/static/js/apiApplication_old.js:379
 msgid "Deactivate application?"
 msgstr "アプリケーションを無効にしますか？"
 
 #: website/static/js/apiApplication.js:220
-#: website/static/js/apiApplication_old.js:220
 #: website/static/js/apiPersonalToken.js:199
-#: website/static/js/apiPersonalToken_old.js:199
 msgid " has been deactivated"
 msgstr "は無効化されました"
 
 #: website/static/js/apiApplication.js:231
 #: website/static/js/apiApplication.js:399
-#: website/static/js/apiApplication_old.js:231
-#: website/static/js/apiApplication_old.js:399
 #: website/static/js/apiPersonalToken.js:210
 #: website/static/js/apiPersonalToken.js:378
-#: website/static/js/apiPersonalToken_old.js:210
-#: website/static/js/apiPersonalToken_old.js:378
 msgid "Deactivate"
 msgstr "非アクティブ"
 
 #: website/static/js/apiApplication.js:278
-#: website/static/js/apiApplication_old.js:278
 #: website/static/js/apiPersonalToken.js:257
-#: website/static/js/apiPersonalToken_old.js:257
 msgid "There are unsaved changes on this page."
 msgstr "このページには未保存の変更があります。"
 
 #: website/static/js/apiApplication.js:292
-#: website/static/js/apiApplication_old.js:292
 msgid "Error fetching application data"
 msgstr "アプリケーションデータの取得エラー"
 
 #: website/static/js/apiApplication.js:327
-#: website/static/js/apiApplication_old.js:327
 #: website/static/js/apiPersonalToken.js:306
-#: website/static/js/apiPersonalToken_old.js:306
 msgid "Error updating instance"
 msgstr "インスタンスの更新エラー"
 
 #: website/static/js/apiApplication.js:353
-#: website/static/js/apiApplication_old.js:353
 msgid "Error registering new OAuth2 application"
 msgstr "新しいOAuth2アプリケーションの登録エラー"
 
 #: website/static/js/apiApplication.js:409
-#: website/static/js/apiApplication_old.js:409
 msgid "Reset client secret?"
 msgstr "クライアントシークレットをリセットしますか？"
 
 #: website/static/js/apiApplication.js:427
-#: website/static/js/apiApplication_old.js:427
 msgid "Error resetting instance secret"
 msgstr "インスタンスシークレットのリセットエラー"
 
 #: website/static/js/apiApplication.js:439
-#: website/static/js/apiApplication_old.js:439
 msgid "Reset Secret"
 msgstr "シークレットをリセット"
 
 #: website/static/js/apiApplication.js:453
-#: website/static/js/apiApplication_old.js:453
-#: website/static/js/apiPersonalToken.js:392
-#: website/static/js/apiPersonalToken_old.js:392
-#: website/static/js/profile.js:358
+#: website/static/js/apiPersonalToken.js:392 website/static/js/profile.js:358
 msgid "Discard changes?"
 msgstr "変更を破棄しますか？"
 
 #: website/static/js/apiApplication.js:463
-#: website/static/js/apiApplication_old.js:463
-#: website/static/js/apiPersonalToken.js:402
-#: website/static/js/apiPersonalToken_old.js:402
-#: website/static/js/profile.js:370
+#: website/static/js/apiPersonalToken.js:402 website/static/js/profile.js:370
 msgid "Discard"
 msgstr "破棄"
 
 #: website/static/js/apiPersonalToken.js:180
-#: website/static/js/apiPersonalToken_old.js:180
 msgid "Error fetching list of registered personal access tokens"
 msgstr "登録済みの個人アクセストークンのリストの取得エラー"
 
 #: website/static/js/apiPersonalToken.js:191
-#: website/static/js/apiPersonalToken_old.js:191
 msgid "Deactivate personal access token?"
 msgstr "パーソナルアクセストークンを無効にしますか？"
 
 #: website/static/js/apiPersonalToken.js:271
-#: website/static/js/apiPersonalToken_old.js:271
 msgid "Error fetching token data"
 msgstr "トークンデータの取得エラー"
 
 #: website/static/js/apiPersonalToken.js:332
-#: website/static/js/apiPersonalToken_old.js:332
 msgid "Error registering new OAuth2 personal access token"
 msgstr "新しいOAuth2個人用アクセストークンの登録エラー"
 
 #: website/static/js/apiPersonalToken.js:358
-#: website/static/js/apiPersonalToken_old.js:358
 msgid "Deactivate token?"
 msgstr "トークンを無効にしますか？"
 
@@ -2346,6 +2252,69 @@ msgstr "このノードの機関を変更できません。もう一度試して
 msgid "Unable to modify this institution!"
 msgstr "この機関を変更できません！"
 
+#: website/static/js/js_messages_nonPybabel.js:5
+msgid "Analysis"
+msgstr "分析"
+
+#: website/static/js/js_messages_nonPybabel.js:5
+msgid "Communication"
+msgstr "コミュニケーション"
+
+#: website/static/js/js_messages_nonPybabel.js:5
+msgid "Data"
+msgstr "データ"
+
+#: website/static/js/js_messages_nonPybabel.js:5
+msgid "Hypothesis"
+msgstr "仮説"
+
+#: website/static/js/js_messages_nonPybabel.js:5
+msgid "Instrumentation"
+msgstr "器具"
+
+#: website/static/js/js_messages_nonPybabel.js:5
+msgid "Methods and Measures"
+msgstr "方法と方策"
+
+#: website/static/js/js_messages_nonPybabel.js:5
+msgid "Procedure"
+msgstr "手順"
+
+#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/projectSettingsTreebeardBase.js:92
+msgid "Project"
+msgstr "プロジェクト"
+
+#: website/static/js/js_messages_nonPybabel.js:5
+msgid "Software"
+msgstr "ソフトウェア"
+
+#: website/static/js/js_messages_nonPybabel.js:5
+msgid "Other"
+msgstr "その他"
+
+#: website/static/js/js_messages_nonPybabel.js:7
+#: website/static/js/js_messages_nonPybabel.js:9
+msgid "Comments added"
+msgstr "コメント追加時"
+
+#: website/static/js/js_messages_nonPybabel.js:7
+#: website/static/js/js_messages_nonPybabel.js:9
+msgid "Files updated"
+msgstr "ファイルアップロード時"
+
+#: website/static/js/js_messages_nonPybabel.js:9
+msgid "Replies to your comments"
+msgstr "コメントへの返信時"
+
+#: website/static/js/js_messages_nonPybabel.js:9
+msgid "Mentions added"
+msgstr "メンション追加時"
+
+#: website/static/js/js_messages_nonPybabel.js:9
+msgid "Preprint submissions updated"
+msgstr "プレプリント提出の更新時"
+
 #: website/static/js/keen.js:116
 msgid "Error sending Keen data to %1$s:<%2$s>"
 msgstr "Keenデータの%1$sへの送信エラー：<%2$s>"
@@ -2395,10 +2364,6 @@ msgid "Copyright Holders"
 msgstr "著作権者"
 
 #: website/static/js/licensePicker.js:66
-msgid "No license"
-msgstr "ライセンスなし"
-
-#: website/static/js/licensePicker.js:66
 msgid "Add a license"
 msgstr "ライセンスを追加"
 
@@ -2434,19 +2399,19 @@ msgstr ""
 msgid "Add license"
 msgstr "ライセンスを追加"
 
-#: website/static/js/licenses.js:27
+#: website/static/js/licenses.js:29
 msgid "Content:"
 msgstr "コンテンツ用"
 
-#: website/static/js/licenses.js:31
+#: website/static/js/licenses.js:33
 msgid "Code - Permissive:"
 msgstr "コード用 - 非コピーレフト"
 
-#: website/static/js/licenses.js:35
+#: website/static/js/licenses.js:37
 msgid "Code - Copyleft:"
 msgstr "コード用 - コピーレフト"
 
-#: website/static/js/licenses.js:39
+#: website/static/js/licenses.js:41
 msgid "Code - Other:"
 msgstr "コード用 - その他"
 
@@ -3077,15 +3042,15 @@ msgid "please report it to %1$s."
 msgstr "%1$sに報告してください。"
 
 #: website/static/js/notificationsTreebeard.js:70
-#: website/static/js/notificationsTreebeard.js:182
-#: website/static/js/notificationsTreebeard.js:187
-#: website/static/js/notificationsTreebeard.js:230
+#: website/static/js/notificationsTreebeard.js:184
+#: website/static/js/notificationsTreebeard.js:189
+#: website/static/js/notificationsTreebeard.js:232
 msgid "Instantly"
 msgstr "すぐに"
 
 #: website/static/js/notificationsTreebeard.js:71
-#: website/static/js/notificationsTreebeard.js:188
-#: website/static/js/notificationsTreebeard.js:231
+#: website/static/js/notificationsTreebeard.js:190
+#: website/static/js/notificationsTreebeard.js:233
 msgid "Daily"
 msgstr "毎日"
 
@@ -3094,16 +3059,16 @@ msgid "Adopt setting from parent project"
 msgstr "親プロジェクトから設定を採用する"
 
 #: website/static/js/notificationsTreebeard.js:73
-#: website/static/js/notificationsTreebeard.js:186
-#: website/static/js/notificationsTreebeard.js:229
+#: website/static/js/notificationsTreebeard.js:188
+#: website/static/js/notificationsTreebeard.js:231
 msgid "Never"
 msgstr "無し"
 
-#: website/static/js/notificationsTreebeard.js:119
+#: website/static/js/notificationsTreebeard.js:120
 msgid " No configured projects."
 msgstr "設定済みのプロジェクトはありません。"
 
-#: website/static/js/notificationsTreebeard.js:228
+#: website/static/js/notificationsTreebeard.js:230
 msgid "Adopt setting from parent project %1$s"
 msgstr "親プロジェクト%1$sから設定を採用"
 
@@ -4164,4 +4129,52 @@ msgstr "%1$sに報告してください"
 #: website/static/js/pages/wiki-edit-page.js:112
 msgid "Could not GET wiki menu pages"
 msgstr "Wikiメニューページを取得できませんでした"
+
+#~ msgid "Comments added"
+#~ msgstr "コメント追加時"
+
+#~ msgid "Files updated"
+#~ msgstr "ファイルアップロード時"
+
+#~ msgid "Replies to your comments"
+#~ msgstr "コメントへの返信時"
+
+#~ msgid "Mentions added"
+#~ msgstr "メンション追加時"
+
+#~ msgid "Preprint submissions updated"
+#~ msgstr "プレプリント提出の更新時"
+
+#~ msgid "Project Notifications"
+#~ msgstr "プロジェクトの通知"
+
+#~ msgid "Analysis"
+#~ msgstr "分析"
+
+#~ msgid "Communication"
+#~ msgstr "コミュニケーション"
+
+#~ msgid "Data"
+#~ msgstr "データ"
+
+#~ msgid "Hypothesis"
+#~ msgstr "仮説"
+
+#~ msgid "Instrumentation"
+#~ msgstr "器具"
+
+#~ msgid "Methods and Measures"
+#~ msgstr "方法と対策"
+
+#~ msgid "Procedure"
+#~ msgstr "手順"
+
+#~ msgid "Software"
+#~ msgstr "ソフトウェア"
+
+#~ msgid "Other"
+#~ msgstr "その他"
+
+#~ msgid "No license"
+#~ msgstr "ライセンスなし"
 
