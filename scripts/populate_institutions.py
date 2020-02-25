@@ -996,7 +996,7 @@ INSTITUTIONS = {
                 'banner_name': 'bt-banner.png',
                 'logo_name': 'bt-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://sts.windows.net/e2ab7419-36ab-4a95-a19f-ee90b6a9b8ac/')),
-                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://myapps.microsoft.com')),
                 'domains': ['test-osf-bt.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
