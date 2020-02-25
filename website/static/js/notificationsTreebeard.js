@@ -116,7 +116,7 @@ function ProjectNotifications(data) {
                         custom : function() {
                             return m('div[style="padding-left:5px"]',
                                         [m ('p', [
-                                                m('b', _(item.data.node.title) + ': '),
+                                                m('b', _(item.data.node.title) + ':test' + ': '),
                                                 m('span[class="text-muted"]', _(' No configured projects.'))]
                                         )]
                             );
