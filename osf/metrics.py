@@ -205,10 +205,9 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
         )
 
     @classmethod
-    def get_user_institution_project_counts(cls, user, institution):
-        search = cls.search().filter('match', user_id=user._id).filter('match', institution_id=institution._id)
-        search.aggs.metric('public_project_count', 'sum', field='public_project_count')
-        search.aggs.metric('private_project_count', 'sum', field='private_project_count')
+    def get_latest_user_institution_project_counts(cls, user, institution):
+        search = cls.search().filter('match', user_id=user._id).filter('match', institution_id=institution._id).sort('-timestamp')[:1]
+
         try:
             response = search.execute()
         except NotFoundError:
@@ -216,15 +215,16 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
             # that doesn't exist. Fall back to unoptimized query
             search = search.index().index(cls._default_index())
             response = search.execute()
+        latest_document = response[0]
         # No indexed data
-        if not hasattr(response.aggregations, 'public_project_count'):
+        if not hasattr(latest_document, 'public_project_count'):
             public_project_count = 0
         else:
-            public_project_count = response.aggregations.public_project_count.value
-        if not hasattr(response.aggregations, 'private_project_count'):
+            public_project_count = latest_document.public_project_count
+        if not hasattr(latest_document, 'private_project_count'):
             private_project_count = 0
         else:
-            private_project_count = response.aggregations.private_project_count.value
+            private_project_count = latest_document.private_project_count
         return (public_project_count, private_project_count)
 
 
@@ -250,10 +250,9 @@ class InstitutionProjectCounts(MetricMixin, metrics.Metric):
         )
 
     @classmethod
-    def get_institution_project_counts(cls, institution):
-        search = cls.search().filter('match', institution_id=institution._id)
-        search.aggs.metric('public_project_count', 'sum', field='public_project_count')
-        search.aggs.metric('private_project_count', 'sum', field='private_project_count')
+    def get_latest_institution_project_counts(cls, institution):
+        search = cls.search().filter('match', institution_id=institution._id).sort('-timestamp')[:1]
+
         try:
             response = search.execute()
         except NotFoundError:
@@ -261,13 +260,14 @@ class InstitutionProjectCounts(MetricMixin, metrics.Metric):
             # that doesn't exist. Fall back to unoptimized query
             search = search.index().index(cls._default_index())
             response = search.execute()
+        latest_document = response[0]
         # No indexed data
-        if not hasattr(response.aggregations, 'public_project_count'):
+        if not hasattr(latest_document, 'public_project_count'):
             public_project_count = 0
         else:
-            public_project_count = response.aggregations.public_project_count.value
-        if not hasattr(response.aggregations, 'private_project_count'):
+            public_project_count = latest_document.public_project_count
+        if not hasattr(latest_document, 'private_project_count'):
             private_project_count = 0
         else:
-            private_project_count = response.aggregations.private_project_count.value
+            private_project_count = latest_document.private_project_count
         return (public_project_count, private_project_count)
