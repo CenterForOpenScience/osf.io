@@ -540,7 +540,7 @@ function checkConflictsRename(tb, item, name, cb) {
 
             tb.modal.update(
                 m('', messageArray), [
-                    m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                    m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, _('Cancel')), //jshint ignore:line
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')}, 'Replace')
                 ],

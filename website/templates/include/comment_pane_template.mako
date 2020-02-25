@@ -29,7 +29,7 @@
                     <div data-bind="if: replyNotEmpty" class="form-group">
                         <div class="clearfix">
                             <div class="pull-right">
-                                <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}">Cancel</a>
+                                <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}">${_("Cancel")}</a>
                                 <span data-bind="tooltip: {title: errorMessage(), placement: 'bottom', disabled: !validateReply()}">
                                     <a class="btn btn-success btn-sm" data-bind="click: submitReply, css: {disabled: !validateReply() || submittingReply()}, text: commentButtonText"></a>
                                 </span>
