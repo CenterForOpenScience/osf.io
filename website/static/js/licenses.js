@@ -13,16 +13,18 @@ var list = $.map(licenses, function(value, key) {
 
     if (value.id === 'NONE'){
         DEFAULT_LICENSE = value;
+        value.name = '_(' + value.name + ')'
     }
     if (value.id === 'OTHER'){
         OTHER_LICENSE = value;
+        value.name = '_(' + value.name + ')'
     }
 
     return value;
 });
 
 var licenseGroups = [
-    _(DEFAULT_LICENSE),
+    DEFAULT_LICENSE,
     {
         name: _('Content:'),
         licenses: [licenses.CC0, licenses.CCBY]
@@ -39,7 +41,7 @@ var licenseGroups = [
         name: _('Code - Other:'),
         licenses: [licenses.Artistic2, licenses.Eclipse1, licenses.LGPL3, licenses.LGPL2_1, licenses.Mozilla2]
     },
-    _(OTHER_LICENSE)
+    OTHER_LICENSE
 ];
 
 module.exports = {
