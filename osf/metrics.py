@@ -175,3 +175,99 @@ class PreprintView(BasePreprintMetric):
 
 class PreprintDownload(BasePreprintMetric):
     pass
+
+
+class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
+    user_id = metrics.Keyword(index=True, doc_values=True, required=True)
+    institution_id = metrics.Keyword(index=True, doc_values=True, required=True)
+    # TODO: Uncomment following line and include department in metrics when available as a OSFUser attribute
+    # department = metrics.Keyword(index=True, doc_values=True, required=False)
+    public_project_count = metrics.Integer(index=True, doc_values=True, required=True)
+    private_project_count = metrics.Integer(index=True, doc_values=True, required=True)
+
+    class Index:
+        settings = {
+            'number_of_shards': 1,
+            'number_of_replicas': 1,
+            'refresh_interval': '1s',
+        }
+
+    @classmethod
+    def record_user_institution_project_counts(cls, user, institution, public_project_count, private_project_count, **kwargs):
+        return cls.record(
+            user_id=user._id,
+            institution_id=institution._id,
+            # TODO: Uncomment following line and include department in metrics when available as a OSFUser attribute
+            # department=user.department,
+            public_project_count=public_project_count,
+            private_project_count=private_project_count,
+            **kwargs
+        )
+
+    @classmethod
+    def get_user_institution_project_counts(cls, user, institution):
+        search = cls.search().filter('match', user_id=user._id).filter('match', institution_id=institution._id)
+        search.aggs.metric('public_project_count', 'sum', field='public_project_count')
+        search.aggs.metric('private_project_count', 'sum', field='private_project_count')
+        try:
+            response = search.execute()
+        except NotFoundError:
+            # _get_relevant_indices returned 1 or more indices
+            # that doesn't exist. Fall back to unoptimized query
+            search = search.index().index(cls._default_index())
+            response = search.execute()
+        # No indexed data
+        if not hasattr(response.aggregations, 'public_project_count'):
+            public_project_count = 0
+        else:
+            public_project_count = response.aggregations.public_project_count.value
+        if not hasattr(response.aggregations, 'private_project_count'):
+            private_project_count = 0
+        else:
+            private_project_count = response.aggregations.private_project_count.value
+        return (public_project_count, private_project_count)
+
+
+class InstitutionProjectCounts(MetricMixin, metrics.Metric):
+    institution_id = metrics.Keyword(index=True, doc_values=True, required=True)
+    public_project_count = metrics.Integer(index=True, doc_values=True, required=True)
+    private_project_count = metrics.Integer(index=True, doc_values=True, required=True)
+
+    class Index:
+        settings = {
+            'number_of_shards': 1,
+            'number_of_replicas': 1,
+            'refresh_interval': '1s',
+        }
+
+    @classmethod
+    def record_institution_project_counts(cls, institution, public_project_count, private_project_count, **kwargs):
+        return cls.record(
+            institution_id=institution._id,
+            public_project_count=public_project_count,
+            private_project_count=private_project_count,
+            **kwargs
+        )
+
+    @classmethod
+    def get_institution_project_counts(cls, institution):
+        search = cls.search().filter('match', institution_id=institution._id)
+        search.aggs.metric('public_project_count', 'sum', field='public_project_count')
+        search.aggs.metric('private_project_count', 'sum', field='private_project_count')
+        try:
+            response = search.execute()
+        except NotFoundError:
+            # _get_relevant_indices returned 1 or more indices
+            # that doesn't exist. Fall back to unoptimized query
+            search = search.index().index(cls._default_index())
+            response = search.execute()
+        # No indexed data
+        if not hasattr(response.aggregations, 'public_project_count'):
+            public_project_count = 0
+        else:
+            public_project_count = response.aggregations.public_project_count.value
+        if not hasattr(response.aggregations, 'private_project_count'):
+            private_project_count = 0
+        else:
+            private_project_count = response.aggregations.private_project_count.value
+        return (public_project_count, private_project_count)
