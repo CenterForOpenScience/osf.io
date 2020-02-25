@@ -477,5 +477,5 @@ LOCALE_PATHS = (
 )
 
 LANGUAGES = (
-  ('en', 'English'),
+    ('en', 'English'),
 )
