@@ -475,3 +475,7 @@ BASE_PATH = parent_dir(parent_dir(parent_dir(HERE)))  # code/ directory
 LOCALE_PATHS = (
     os.path.join(BASE_PATH, 'admin/translations'),
 )
+
+LANGUAGES = (
+  ('en', _('English')),
+)
