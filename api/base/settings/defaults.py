@@ -465,6 +465,10 @@ BASE_FOR_METRIC_PREFIX = 1000
 SIZE_UNIT_GB = BASE_FOR_METRIC_PREFIX ** 3
 NII_STORAGE_REGION_ID = 1
 
+def parent_dir(path):
+    '''Return the parent of a directory.'''
+    return os.path.abspath(os.path.join(path, os.pardir))
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 BASE_PATH = parent_dir(parent_dir(parent_dir(HERE)))  # code/ directory
 
