@@ -1,19 +1,19 @@
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy
 
 NODE_SUBSCRIPTIONS_AVAILABLE = {
-    'comments': unicode(_('Comments added')),
-    'file_updated': unicode(_('Files updated'))
+    'comments': unicode(ugettext_lazy('Comments added')),
+    'file_updated': unicode(ugettext_lazy('Files updated'))
 }
 
 # Note: if the subscription starts with 'global_', it will be treated like a default
 # subscription. If no notification type has been assigned, the user subscription
 # will default to 'email_transactional'.
 USER_SUBSCRIPTIONS_AVAILABLE = {
-    'global_comment_replies': unicode(_('Replies to your comments')),
-    'global_comments': unicode(_('Comments added')),
-    'global_file_updated': unicode(_('Files updated')),
-    'global_mentions': unicode(_('Mentions added')),
-    'global_reviews': unicode(_('Preprint submissions updated'))
+    'global_comment_replies': unicode(ugettext_lazy('Replies to your comments')),
+    'global_comments': unicode(ugettext_lazy('Comments added')),
+    'global_file_updated': unicode(ugettext_lazy('Files updated')),
+    'global_mentions': unicode(ugettext_lazy('Mentions added')),
+    'global_reviews': unicode(ugettext_lazy('Preprint submissions updated'))
 }
 
 PROVIDER_SUBSCRIPTIONS_AVAILABLE = {
