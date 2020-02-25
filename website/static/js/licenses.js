@@ -13,11 +13,11 @@ var list = $.map(licenses, function(value, key) {
 
     if (value.id === 'NONE'){
         DEFAULT_LICENSE = value;
-        value.name = '_(' + value.name + ')'
+        value.name = '_(' + value.name + ')';
     }
     if (value.id === 'OTHER'){
         OTHER_LICENSE = value;
-        value.name = '_(' + value.name + ')'
+        value.name = '_(' + value.name + ')';
     }
 
     return value;

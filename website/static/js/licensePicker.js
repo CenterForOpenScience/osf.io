@@ -63,7 +63,7 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
 
         self.savedLicense = ko.observable(license);
         self.savedLicenseName = ko.pureComputed(function() {
-            return self.savedLicense().name === _('No license') ? _('Add a license') : self.savedLicense().name;
+            return self.savedLicense().name === 'No license' ? _('Add a license') : _(self.savedLicense().name);
         });
         self.savedLicenseId = ko.computed(function() {
             return self.savedLicense().id;
