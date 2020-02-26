@@ -63,6 +63,7 @@ $('.addon-container').each(function(ind, elm) {
                     },
                     cancel:{
                         label:_('Cancel')
+                    }
                 }
             });
         });
