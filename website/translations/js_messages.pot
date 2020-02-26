@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-26 11:35+0900\n"
+"POT-Creation-Date: 2020-02-26 13:06+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -537,11 +537,11 @@ msgstr ""
 msgid "Read your primary email address."
 msgstr ""
 
-#: website/language.py:193
+#: website/language.py:192
 msgid "Duplicate template"
 msgstr ""
 
-#: website/language.py:199
+#: website/language.py:198
 msgid "Fork this Project"
 msgstr ""
 
@@ -2285,6 +2285,10 @@ msgstr ""
 
 #: website/static/js/js_messages.js:9
 msgid "Preprint submissions updated"
+msgstr ""
+
+#: website/static/js/js_messages.js:11
+msgid "No license"
 msgstr ""
 
 #: website/static/js/keen.js:116

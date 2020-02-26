@@ -3,6 +3,8 @@
 """
 from website import settings
 
+from django.utils.translation import ugettext_lazy as _
+
 # Status Messages
 #################
 
@@ -187,13 +189,13 @@ LINK_DESCRIPTION = """
 creating a copy. The link will always point to the most up-to-date version.</p>
 """
 
-TEMPLATE_ACTION = 'Duplicate template'
+TEMPLATE_ACTION = unicode(_('Duplicate template'))
 TEMPLATE_DESCRIPTION = """
 <p>This option will create a new project, using this project as a template.
 The new project will be structured in the same way, but contain no data.</p>
 """
 
-FORK_ACTION = 'Fork this Project'
+FORK_ACTION = unicode(_('Fork this Project'))
 FORK_DESCRIPTION = """
 <p>Fork this project if you plan to build upon it in your own work.
 The new project will be an exact duplicate of this project's current state,

@@ -97,7 +97,7 @@
                                     % if not disk_saving_mode:
                                     <li class="p-h-md">
                                         <span class="btn btn-primary btn-block m-v-sm" onclick="NodeActions.redirectForkPage();">
-                                            ${_("View Forks %(fork_count)s") % dict(fork_count=node['fork_count'])}
+                                            ${_("View Forks (%(fork_count)s")) % dict(fork_count=node['fork_count'])}
                                         </span>
                                     </li>
                                     %endif
