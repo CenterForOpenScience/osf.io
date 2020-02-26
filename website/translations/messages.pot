@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-26 11:45+0900\n"
+"POT-Creation-Date: 2020-02-26 14:09+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1175,6 +1175,14 @@ msgid ""
 "<strong>NOTICE: </strong>Forks, registrations, and uploads will be "
 "temporarily disabled while the GakuNin RDM undergoes a hardware upgrade. "
 "These features will return shortly. Thank you for your patience."
+msgstr ""
+
+#: website/templates/messages.mako:1
+msgid "Duplicate template"
+msgstr ""
+
+#: website/templates/messages.mako:2
+msgid "Fork this Project"
 msgstr ""
 
 #: website/templates/my_projects.mako:2 website/templates/nav.mako:51
@@ -2770,7 +2778,7 @@ msgstr ""
 
 #: website/templates/project/project.mako:100
 #, python-format
-msgid "View Forks %(fork_count)s"
+msgid "View Forks (%(fork_count)s)"
 msgstr ""
 
 #: website/templates/project/project.mako:115

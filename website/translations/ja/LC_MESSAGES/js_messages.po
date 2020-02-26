@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-26 13:06+0900\n"
+"POT-Creation-Date: 2020-02-26 14:10+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -196,15 +196,33 @@ msgid "Type the following to continue: <strong>%1$s</strong><br><br>"
 msgstr "次を入力して続行します。<strong>%1$s</ strong><br><br>"
 
 #: admin/static/js/rdm_addons/rdm-addons-page.js:73
-#: website/static/js/addProjectPlugin.js:350 website/static/js/fangorn.js:538
-#: website/static/js/fangorn.js:543 website/static/js/fangorn.js:1213
-#: website/static/js/fangorn.js:1236 website/static/js/fangorn.js:1289
-#: website/static/js/fangorn.js:1308 website/static/js/fangorn.js:2007
+#: website/static/js/accountSettings.js:473
+#: website/static/js/accountSettings.js:545
+#: website/static/js/addProjectPlugin.js:350
+#: website/static/js/addonSettings.js:134
+#: website/static/js/apiApplication.js:235
+#: website/static/js/apiApplication.js:406
+#: website/static/js/apiApplication.js:473
+#: website/static/js/apiPersonalToken.js:214
+#: website/static/js/apiPersonalToken.js:385
+#: website/static/js/apiPersonalToken.js:412
+#: website/static/js/citationsNodeConfig.js:171
+#: website/static/js/citationsNodeConfig.js:189
+#: website/static/js/fangorn.js:538 website/static/js/fangorn.js:543
+#: website/static/js/fangorn.js:1213 website/static/js/fangorn.js:1236
+#: website/static/js/fangorn.js:1289 website/static/js/fangorn.js:1308
+#: website/static/js/fangorn.js:2007 website/static/js/filepage/index.js:215
+#: website/static/js/folderPickerNodeConfig.js:512
+#: website/static/js/folderPickerNodeConfig.js:568
 #: website/static/js/institutionProjectSettings.js:104
 #: website/static/js/licensePicker.js:241 website/static/js/myProjects.js:1562
 #: website/static/js/myProjects.js:1610 website/static/js/myProjects.js:1634
+#: website/static/js/oauthAddonNodeConfig.js:158
+#: website/static/js/oauthAddonNodeConfig.js:176
 #: website/static/js/osfHelpers.js:798 website/static/js/osfHelpers.js:899
-#: website/static/js/project.js:41
+#: website/static/js/pages/profile-settings-addons-page.js:37
+#: website/static/js/pages/project-addons-page.js:65
+#: website/static/js/profile.js:374 website/static/js/project.js:41
 #: website/static/js/wikiSettingsTreebeard.js:32
 msgid "Cancel"
 msgstr "キャンセル"
@@ -224,7 +242,7 @@ msgstr "その他(具体的にご記入ください)"
 
 #: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:87
 #: admin/static/js/rdm_addons/s3/s3RdmConfig.js:102
-#: website/static/js/addonSettings.js:168
+#: website/static/js/addonSettings.js:171
 msgid "Error while updating addon account"
 msgstr "アドオンアカウントの更新中にエラーが発生しました"
 
@@ -261,13 +279,13 @@ msgstr ""
 #: admin/static/js/rdm_addons/figshare/rdm-cfg.js:37
 #: admin/static/js/rdm_addons/s3/s3RdmConfig.js:126
 #: website/static/js/addonSettings.js:130
-#: website/static/js/folderPickerNodeConfig.js:561
+#: website/static/js/folderPickerNodeConfig.js:564
 msgid "Disconnect"
 msgstr "切断"
 
 #: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:175
 #: admin/static/js/rdm_addons/s3/s3RdmConfig.js:144
-#: website/static/js/addonSettings.js:147
+#: website/static/js/addonSettings.js:150
 msgid "Error while removing addon authorization for %1$s"
 msgstr "%1$sのアドオン認証を削除中にエラーが発生しました"
 
@@ -429,7 +447,7 @@ msgstr "<p>以前のストレージは、プロジェクトのすべてのコン
 #: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:38
 #: website/static/js/folderPickerNodeConfig.js:102
 #: website/static/js/folderPickerNodeConfig.js:104
-#: website/static/js/folderPickerNodeConfig.js:590
+#: website/static/js/folderPickerNodeConfig.js:596
 msgid "Change"
 msgstr "変更"
 
@@ -545,14 +563,6 @@ msgstr ""
 #: framework/auth/oauth_scopes.py:303
 msgid "Read your primary email address."
 msgstr ""
-
-#: website/language.py:192
-msgid "Duplicate template"
-msgstr "テンプレートを複製"
-
-#: website/language.py:198
-msgid "Fork this Project"
-msgstr "このプロジェクトをフォーク"
 
 #: website/notifications/utils.py:502
 msgid "Default Notification Settings"
@@ -711,8 +721,8 @@ msgid ""
 msgstr "このアクションを確認するには、メールのリンクをクリックしてください。 パスワードを入力する必要があります。"
 
 #: website/static/js/accountSettings.js:228 website/static/js/fangorn.js:2259
-#: website/static/js/folderPickerNodeConfig.js:587
-#: website/static/js/pages/profile-settings-addons-page.js:71
+#: website/static/js/folderPickerNodeConfig.js:593
+#: website/static/js/pages/profile-settings-addons-page.js:74
 #: website/static/js/pages/project-settings-page.js:120
 msgid "Close"
 msgstr "閉じる"
@@ -759,9 +769,9 @@ msgstr "メーリングリストから<em>%1$s</em>を削除してもよろし�
 #: website/static/js/accountSettings.js:346
 #: website/static/js/addonPermissions.js:54
 #: website/static/js/addonSettings.js:70
-#: website/static/js/pages/profile-settings-addons-page.js:96
-#: website/static/js/privateLinkTable.js:117 website/static/js/profile.js:737
-#: website/static/js/profile.js:966 website/static/js/project.js:248
+#: website/static/js/pages/profile-settings-addons-page.js:99
+#: website/static/js/privateLinkTable.js:117 website/static/js/profile.js:740
+#: website/static/js/profile.js:969 website/static/js/project.js:248
 msgid "Remove"
 msgstr "削除"
 
@@ -849,43 +859,43 @@ msgid "will <strong>NOT</strong> be able to reactivate your account."
 msgstr "アカウントを再開することは<strong>できません。</strong>"
 
 #: website/static/js/accountSettings.js:469
-#: website/static/js/accountSettings.js:539
+#: website/static/js/accountSettings.js:542
 msgid "Request"
 msgstr "リクエスト"
 
-#: website/static/js/accountSettings.js:478
+#: website/static/js/accountSettings.js:481
 msgid "Cancel deactivation request?"
 msgstr "無効化リクエストをキャンセルしますか？"
 
-#: website/static/js/accountSettings.js:479
+#: website/static/js/accountSettings.js:482
 msgid ""
 "Are you sure you want to rescind your account deactivation request? This "
 "will preserve your account status."
 msgstr "アカウントの無効化リクエストを取り消してもよろしいですか？ これにより、アカウントの状態が保持されます。"
 
-#: website/static/js/accountSettings.js:487
+#: website/static/js/accountSettings.js:490
 msgid "Cancel Deactivation Request"
 msgstr "無効化リクエストをキャンセルする"
 
-#: website/static/js/accountSettings.js:505
+#: website/static/js/accountSettings.js:508
 msgid ""
 "An GakuNin RDM administrator will contact you shortly to confirm your "
 "export request."
 msgstr "GakuNin RDM管理者がすぐに連絡して、非アクティブ化リクエストを確認します。"
 
-#: website/static/js/accountSettings.js:513
+#: website/static/js/accountSettings.js:516
 msgid "Export request failed. Please contact %1$s if the problem persists."
 msgstr "エクスポート要求が失敗しました。 問題が解決しない場合は%1$sにお問い合わせください。"
 
-#: website/static/js/accountSettings.js:517
+#: website/static/js/accountSettings.js:520
 msgid "Error requesting account export"
 msgstr "アカウントのエクスポートをリクエスト中にエラーが発生しました"
 
-#: website/static/js/accountSettings.js:530
+#: website/static/js/accountSettings.js:533
 msgid "Request account export?"
 msgstr "アカウントのエクスポートをリクエストしますか？"
 
-#: website/static/js/accountSettings.js:531
+#: website/static/js/accountSettings.js:534
 msgid "Are you sure you want to request account export?"
 msgstr "アカウントのエクスポートをリクエストしてもよろしいですか？"
 
@@ -1157,7 +1167,7 @@ msgid "Error fetching list of registered applications"
 msgstr "登録済みアプリケーションのリストの取得エラー"
 
 #: website/static/js/apiApplication.js:212
-#: website/static/js/apiApplication.js:379
+#: website/static/js/apiApplication.js:382
 msgid "Deactivate application?"
 msgstr "アプリケーションを無効にしますか？"
 
@@ -1167,49 +1177,49 @@ msgid " has been deactivated"
 msgstr "は無効化されました"
 
 #: website/static/js/apiApplication.js:231
-#: website/static/js/apiApplication.js:399
+#: website/static/js/apiApplication.js:402
 #: website/static/js/apiPersonalToken.js:210
-#: website/static/js/apiPersonalToken.js:378
+#: website/static/js/apiPersonalToken.js:381
 msgid "Deactivate"
 msgstr "非アクティブ"
 
-#: website/static/js/apiApplication.js:278
-#: website/static/js/apiPersonalToken.js:257
+#: website/static/js/apiApplication.js:281
+#: website/static/js/apiPersonalToken.js:260
 msgid "There are unsaved changes on this page."
 msgstr "このページには未保存の変更があります。"
 
-#: website/static/js/apiApplication.js:292
+#: website/static/js/apiApplication.js:295
 msgid "Error fetching application data"
 msgstr "アプリケーションデータの取得エラー"
 
-#: website/static/js/apiApplication.js:327
-#: website/static/js/apiPersonalToken.js:306
+#: website/static/js/apiApplication.js:330
+#: website/static/js/apiPersonalToken.js:309
 msgid "Error updating instance"
 msgstr "インスタンスの更新エラー"
 
-#: website/static/js/apiApplication.js:353
+#: website/static/js/apiApplication.js:356
 msgid "Error registering new OAuth2 application"
 msgstr "新しいOAuth2アプリケーションの登録エラー"
 
-#: website/static/js/apiApplication.js:409
+#: website/static/js/apiApplication.js:415
 msgid "Reset client secret?"
 msgstr "クライアントシークレットをリセットしますか？"
 
-#: website/static/js/apiApplication.js:427
+#: website/static/js/apiApplication.js:433
 msgid "Error resetting instance secret"
 msgstr "インスタンスシークレットのリセットエラー"
 
-#: website/static/js/apiApplication.js:439
+#: website/static/js/apiApplication.js:445
 msgid "Reset Secret"
 msgstr "シークレットをリセット"
 
-#: website/static/js/apiApplication.js:453
-#: website/static/js/apiPersonalToken.js:392 website/static/js/profile.js:358
+#: website/static/js/apiApplication.js:459
+#: website/static/js/apiPersonalToken.js:398 website/static/js/profile.js:358
 msgid "Discard changes?"
 msgstr "変更を破棄しますか？"
 
-#: website/static/js/apiApplication.js:463
-#: website/static/js/apiPersonalToken.js:402 website/static/js/profile.js:370
+#: website/static/js/apiApplication.js:469
+#: website/static/js/apiPersonalToken.js:408 website/static/js/profile.js:370
 msgid "Discard"
 msgstr "破棄"
 
@@ -1221,15 +1231,15 @@ msgstr "登録済みの個人アクセストークンのリストの取得エラ
 msgid "Deactivate personal access token?"
 msgstr "パーソナルアクセストークンを無効にしますか？"
 
-#: website/static/js/apiPersonalToken.js:271
+#: website/static/js/apiPersonalToken.js:274
 msgid "Error fetching token data"
 msgstr "トークンデータの取得エラー"
 
-#: website/static/js/apiPersonalToken.js:332
+#: website/static/js/apiPersonalToken.js:335
 msgid "Error registering new OAuth2 personal access token"
 msgstr "新しいOAuth2個人用アクセストークンの登録エラー"
 
-#: website/static/js/apiPersonalToken.js:358
+#: website/static/js/apiPersonalToken.js:361
 msgid "Deactivate token?"
 msgstr "トークンを無効にしますか？"
 
@@ -1265,11 +1275,15 @@ msgstr "200件のサイテーションのみが表示されます"
 msgid "Enter citation style (e.g. \"APA\")"
 msgstr "引用スタイルを入力します（例：\"APA\")"
 
-#: website/static/js/citationGrid.js:335
+#: website/static/js/citationGrid.js:317 website/static/js/citationWidget.js:48
+msgid "Please enter 1 or more character"
+msgstr "1文字以上入力してください"
+
+#: website/static/js/citationGrid.js:340
 msgid "Error while selecting citation style: "
 msgstr "引用スタイルの選択中にエラーが発生しました："
 
-#: website/static/js/citationGrid.js:414
+#: website/static/js/citationGrid.js:419
 msgid ""
 "<em>Could not render entry. Please check the contents of your citations "
 "for correctness.</em>"
@@ -1289,10 +1303,6 @@ msgstr "問題が解決しない場合は%1$sにお問い合わせください�
 #: website/static/js/osfHelpers.js:313
 msgid " if the problem persists."
 msgstr " "
-
-#: website/static/js/citationWidget.js:48
-msgid "Please enter 1 or more character"
-msgstr "1文字以上入力してください"
 
 #: website/static/js/citationWidget.js:79
 msgid "Citation render failed"
@@ -1320,7 +1330,7 @@ msgid " Next, choose which folder to link above."
 msgstr "次に、上記のリンクするフォルダーを選択します。"
 
 #: website/static/js/citationsNodeConfig.js:83
-#: website/static/js/oauthAddonNodeConfig.js:205
+#: website/static/js/oauthAddonNodeConfig.js:211
 msgid "Could not GET %1$s accounts for user"
 msgstr "ユーザーの%1$sアカウントを取得できませんでした"
 
@@ -1329,14 +1339,14 @@ msgid "Choose %1$s Access Token to Import"
 msgstr "インポートする%1$s アクセストークンを選択してください"
 
 #: website/static/js/citationsNodeConfig.js:168
-#: website/static/js/citationsNodeConfig.js:183
+#: website/static/js/citationsNodeConfig.js:186
 #: website/static/js/folderPickerNodeConfig.js:509
 #: website/static/js/oauthAddonNodeConfig.js:155
-#: website/static/js/oauthAddonNodeConfig.js:170
+#: website/static/js/oauthAddonNodeConfig.js:173
 msgid "Import"
 msgstr "接続"
 
-#: website/static/js/citationsNodeConfig.js:174
+#: website/static/js/citationsNodeConfig.js:177
 msgid "Import %1$s access token"
 msgstr "%1$sアクセストークンをインポート"
 
@@ -1756,7 +1766,7 @@ msgstr "このフォルダーとその内容はすべて削除されます。 �
 #: website/static/js/fangorn.js:1214 website/static/js/fangorn.js:1237
 #: website/static/js/fangorn.js:1997 website/static/js/fangorn.js:2033
 #: website/static/js/filepage/index.js:211
-#: website/static/js/filepage/index.js:521 website/static/js/myProjects.js:1639
+#: website/static/js/filepage/index.js:524 website/static/js/myProjects.js:1639
 msgid "Delete"
 msgstr "削除"
 
@@ -1864,20 +1874,20 @@ msgstr "新規フォルダ作成"
 msgid "Delete Folder"
 msgstr "フォルダを削除"
 
-#: website/static/js/fangorn.js:1977 website/static/js/filepage/index.js:524
+#: website/static/js/fangorn.js:1977 website/static/js/filepage/index.js:527
 #: website/static/js/filepage/revisions.js:114
 msgid "Download"
 msgstr "ダウンロード"
 
-#: website/static/js/fangorn.js:1987 website/static/js/filepage/index.js:546
+#: website/static/js/fangorn.js:1987 website/static/js/filepage/index.js:549
 msgid "View"
 msgstr "プレビュー"
 
-#: website/static/js/fangorn.js:2003 website/static/js/filepage/index.js:220
+#: website/static/js/fangorn.js:2003 website/static/js/filepage/index.js:223
 msgid "This would mean "
 msgstr "これは、"
 
-#: website/static/js/fangorn.js:2004 website/static/js/filepage/index.js:221
+#: website/static/js/fangorn.js:2004 website/static/js/filepage/index.js:224
 msgid ""
 "other contributors cannot edit, delete or upload new versions of this "
 "file "
@@ -1888,7 +1898,7 @@ msgid "as long as it is checked-out. You can check it back in at anytime."
 msgstr "いつでもチェックインできます。"
 
 #: website/static/js/fangorn.js:2010 website/static/js/fangorn.js:2015
-#: website/static/js/filepage/index.js:247
+#: website/static/js/filepage/index.js:250
 msgid "Check out file"
 msgstr "ファイルをチェックアウト"
 
@@ -2160,20 +2170,20 @@ msgid "Failed to import %1$s group libraries."
 msgstr "%1$sグループライブラリのインポートに失敗しました。"
 
 #: website/static/js/folderPickerNodeConfig.js:499
-#: website/static/js/oauthAddonNodeConfig.js:161
+#: website/static/js/oauthAddonNodeConfig.js:164
 msgid "Import %1$s Account?"
 msgstr "%1$sアカウントに接続しますか？"
 
-#: website/static/js/folderPickerNodeConfig.js:535
+#: website/static/js/folderPickerNodeConfig.js:538
 msgid "Could not deauthorize %1$s account from node"
 msgstr "ノードから%1$sアカウントを認証解除できませんでした"
 
-#: website/static/js/folderPickerNodeConfig.js:551
+#: website/static/js/folderPickerNodeConfig.js:554
 msgid "Disconnect %1$s Account?"
 msgstr "%1$sアカウントを切断しますか？"
 
-#: website/static/js/folderPickerNodeConfig.js:641
-#: website/static/js/folderPickerNodeConfig.js:652
+#: website/static/js/folderPickerNodeConfig.js:647
+#: website/static/js/folderPickerNodeConfig.js:658
 msgid "Could not GET get %1$s contents."
 msgstr "%1$sアカウントを切断しますか？"
 
@@ -3320,39 +3330,39 @@ msgstr "データを取得できませんでした"
 msgid "Are you sure you want to discard your unsaved changes?"
 msgstr "保存していない変更を破棄してもよろしいですか？"
 
-#: website/static/js/profile.js:718
+#: website/static/js/profile.js:721
 msgid "Remove website?"
 msgstr "ウェブサイトを削除しますか？"
 
-#: website/static/js/profile.js:719
+#: website/static/js/profile.js:722
 msgid "Are you sure you want to remove this website from your profile?"
 msgstr "このウェブサイトをプロフィールから削除してもよろしいですか？"
 
-#: website/static/js/profile.js:726
+#: website/static/js/profile.js:729
 msgid "Website removed"
 msgstr "ウェブサイトを削除しました"
 
-#: website/static/js/profile.js:810
+#: website/static/js/profile.js:813
 msgid "Please update your website"
 msgstr "ウェブサイトを更新してください"
 
-#: website/static/js/profile.js:948
+#: website/static/js/profile.js:951
 msgid "Remove Institution?"
 msgstr "機関を削除しますか？"
 
-#: website/static/js/profile.js:949
+#: website/static/js/profile.js:952
 msgid "Are you sure you want to remove this institution?"
 msgstr "この機関を削除してもよろしいですか？"
 
-#: website/static/js/profile.js:958
+#: website/static/js/profile.js:961
 msgid "Institution Removed"
 msgstr "機関が削除されました"
 
-#: website/static/js/profile.js:1070
+#: website/static/js/profile.js:1073
 msgid "Institution/Employer required"
 msgstr "機関/雇用者が必要です"
 
-#: website/static/js/profile.js:1124
+#: website/static/js/profile.js:1127
 msgid "Institution required"
 msgstr "機関が必要です"
 
@@ -3718,82 +3728,82 @@ msgstr "<strong>%1$s</strong>を削除してもよろしいですか？"
 msgid "Could not delete file."
 msgstr "ファイルを削除できませんでした。"
 
-#: website/static/js/filepage/index.js:219
+#: website/static/js/filepage/index.js:222
 msgid "Confirm file check out?"
 msgstr "ファイルのチェックアウトを確認しますか？"
 
-#: website/static/js/filepage/index.js:222
+#: website/static/js/filepage/index.js:225
 msgid "as long as it is checked out. You can check it back in at anytime."
 msgstr "いつでもチェックインできます。"
 
-#: website/static/js/filepage/index.js:242
+#: website/static/js/filepage/index.js:245
 msgid "Unable to check out file"
 msgstr "ファイルをチェックアウトできません"
 
-#: website/static/js/filepage/index.js:269
+#: website/static/js/filepage/index.js:272
 msgid "Unable to check in file"
 msgstr "ファイルをチェックインできません"
 
-#: website/static/js/filepage/index.js:274
+#: website/static/js/filepage/index.js:277
 msgid "Force check in file?"
 msgstr "ファイルを強制的にチェックインしますか？"
 
-#: website/static/js/filepage/index.js:275
+#: website/static/js/filepage/index.js:278
 msgid ""
 "This will check in the file for all users, allowing it to be edited. Are "
 "you sure?"
 msgstr "これにより、すべてのユーザーのファイルがチェックインされ、編集できるようになります。 よろしいですか？"
 
-#: website/static/js/filepage/index.js:278
-#: website/static/js/filepage/index.js:501
+#: website/static/js/filepage/index.js:281
+#: website/static/js/filepage/index.js:504
 msgid "Force check in"
 msgstr "強制チェックイン"
 
-#: website/static/js/filepage/index.js:301
+#: website/static/js/filepage/index.js:304
 msgid "Unable to force check in file. Make sure you have admin privileges."
 msgstr "ファイルを強制的にチェックインできません。 管理者権限を持っていることを確認してください。"
 
-#: website/static/js/filepage/index.js:342
+#: website/static/js/filepage/index.js:345
 msgid "Live editing mode "
 msgstr "ライブ編集モード"
 
-#: website/static/js/filepage/index.js:343
+#: website/static/js/filepage/index.js:346
 msgid "Attempting to connect "
 msgstr "接続試行中"
 
-#: website/static/js/filepage/index.js:344
+#: website/static/js/filepage/index.js:347
 msgid "Unsupported browser "
 msgstr "サポートされていないブラウザ"
 
-#: website/static/js/filepage/index.js:345
+#: website/static/js/filepage/index.js:348
 msgid "Saving... "
 msgstr "保存中..."
 
-#: website/static/js/filepage/index.js:346
+#: website/static/js/filepage/index.js:349
 msgid "Unavailable: Live editing "
 msgstr "利用不可：ライブ編集"
 
-#: website/static/js/filepage/index.js:469
+#: website/static/js/filepage/index.js:472
 msgid "View this file on "
 msgstr "このファイルを次のアドオンで表示："
 
-#: website/static/js/filepage/index.js:504
+#: website/static/js/filepage/index.js:507
 msgid "Check out"
 msgstr "チェックアウト"
 
-#: website/static/js/filepage/index.js:507
+#: website/static/js/filepage/index.js:510
 msgid "Check in"
 msgstr "チェックイン"
 
-#: website/static/js/filepage/index.js:513
+#: website/static/js/filepage/index.js:516
 msgid "Request Trusted Timestamp"
 msgstr "打刻"
 
-#: website/static/js/filepage/index.js:530
+#: website/static/js/filepage/index.js:533
 msgid "Toggle view: "
 msgstr "トグルビュー："
 
-#: website/static/js/filepage/index.js:569
+#: website/static/js/filepage/index.js:572
 #: website/static/js/filepage/revisions.js:176
 msgid "Revisions"
 msgstr "バージョン管理"
@@ -3970,22 +3980,22 @@ msgstr "これには通常より時間がかかります。<br> ページを再�
 msgid "Could not retrieve notification settings."
 msgstr "通知設定を取得できませんでした。"
 
-#: website/static/js/pages/profile-settings-addons-page.js:65
+#: website/static/js/pages/profile-settings-addons-page.js:68
 #: website/static/js/pages/project-addons-page.js:17
 msgid ""
 "Sorry, we had trouble saving your settings. If this persists please "
 "contact "
 msgstr "申し訳ありませんが、設定を保存できませんでした。 それでも解決しない場合は、こちらにお問い合わせ下さい："
 
-#: website/static/js/pages/profile-settings-addons-page.js:67
+#: website/static/js/pages/profile-settings-addons-page.js:70
 msgid "Request failed"
 msgstr "要求が失敗しました"
 
-#: website/static/js/pages/profile-settings-addons-page.js:85
+#: website/static/js/pages/profile-settings-addons-page.js:88
 msgid "Are you sure you want to remove the add-ons you have deselected? "
 msgstr "選択解除したアドオンを削除してもよろしいですか？"
 
-#: website/static/js/pages/profile-settings-addons-page.js:125
+#: website/static/js/pages/profile-settings-addons-page.js:128
 msgid "The changes on addon setting are not submitted!"
 msgstr "アドオン設定の変更は送信されません！"
 
