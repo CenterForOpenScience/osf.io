@@ -190,7 +190,9 @@ class DraftMixin(object):
             raise ValidationError('This draft registration is not created from the given node.')
 
     def check_resource_permissions(self, resource):
-        # Old workflow checks permissions on attached node, not draft
+        # If branched from a node, use the node's contributor permissions. See [ENG-1563]
+        if resource.branched_from_type == 'Node':
+            resource = resource.branched_from
         return self.check_object_permissions(self.request, resource)
 
     def get_draft(self, draft_id=None, check_object_permissions=True):

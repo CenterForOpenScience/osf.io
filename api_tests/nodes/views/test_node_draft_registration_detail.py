@@ -12,7 +12,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     RegistrationFactory,
 )
-from osf.utils.permissions import WRITE, READ
+from osf.utils.permissions import WRITE, READ, ADMIN
 from rest_framework import exceptions
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
 
@@ -145,6 +145,15 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         assert data['attributes']['title']
         assert data['attributes']['description']
         assert data['relationships']['affiliated_institutions']
+
+    def test_can_view_after_added(
+            self, app, schema, draft_registration, url_draft_registrations):
+        user = AuthUserFactory()
+        project = draft_registration.branched_from
+        project.add_contributor(user, ADMIN)
+        res = app.get(url_draft_registrations, auth=user.auth)
+        assert res.status_code == 200
+
 
 @pytest.mark.django_db
 class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
