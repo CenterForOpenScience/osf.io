@@ -468,6 +468,9 @@ var DeactivateAccountViewModel = oop.defclass({
                 confirm:{
                     label:_('Request'),
                     className:'btn-danger'
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });
@@ -537,6 +540,9 @@ var ExportAccountViewModel = oop.defclass({
             buttons:{
                 confirm:{
                     label:_('Request')
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });

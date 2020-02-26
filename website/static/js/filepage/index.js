@@ -210,6 +210,9 @@ var FileViewPage = {
                     confirm:{
                         label:_('Delete'),
                         className:'btn-danger'
+                    },
+                    cancel:{
+                        label:_('Cancel')
                     }
                 }
             });

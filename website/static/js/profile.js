@@ -369,6 +369,9 @@ BaseViewModel.prototype.cancel = function(data, event) {
                 confirm:{
                     label:_('Discard'),
                     className:'btn-danger'
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });

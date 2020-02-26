@@ -153,6 +153,9 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     buttons: {
                         confirm:{
                             label:_('Import'),
+                        },
+                        cancel:{
+                            label:_('Cancel')
                         }
                     }
                 });
@@ -168,6 +171,9 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     buttons: {
                         confirm: {
                             label:_('Import'),
+                        },
+                        cancel:{
+                            label:_('Cancel')
                         }
                     }
                 });

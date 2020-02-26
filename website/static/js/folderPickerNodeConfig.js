@@ -507,6 +507,9 @@ var FolderPickerViewModel = oop.defclass({
             buttons:{
                 confirm:{
                     label:_('Import')
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });
@@ -560,6 +563,9 @@ var FolderPickerViewModel = oop.defclass({
                 confirm:{
                     label:_('Disconnect'),
                     className:'btn-danger'
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });

@@ -32,7 +32,10 @@ $('.addon-select').on('change', function() {
                 buttons:{
                     confirm:{
                         label:_('Confirm')
-                    }
+                    },
+                    cancel:{
+                        label:_('Cancel')
+                        }
                 }
         });
         }

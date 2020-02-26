@@ -166,7 +166,10 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                         buttons:{
                             confirm:{
                                 label: _('Import')
-                            }
+                            },
+                            cancel:{
+                                label:_('Cancel')
+                                }
                         }
                     });
                 } else {
@@ -181,6 +184,9 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                         buttons:{
                             confirm:{
                                 label:_('Import')
+                            },
+                            cancel:{
+                                label:_('Cancel')
                             }
                         }
                     });

@@ -60,7 +60,9 @@ $('.addon-container').each(function(ind, elm) {
                 buttons:{
                     confirm:{
                         label:_('Confirm')
-                    }
+                    },
+                    cancel:{
+                        label:_('Cancel')
                 }
             });
         });

@@ -230,6 +230,9 @@ var ApplicationsListViewModel = oop.defclass({
                 confirm:{
                     label:_('Deactivate'),
                     className:'btn-danger'
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });
@@ -398,6 +401,9 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                 confirm:{
                     label:_('Deactivate'),
                     className:'btn-danger'
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });
@@ -462,6 +468,9 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                     confirm: {
                         label:_('Discard'),
                         className:'btn-danger'
+                    },
+                    cancel:{
+                        label:_('Cancel')
                     }
                 }
             });
