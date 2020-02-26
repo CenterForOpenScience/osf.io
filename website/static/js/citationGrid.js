@@ -312,6 +312,11 @@ CitationGrid.prototype.initStyleSelect = function() {
         formatSelection: formatSelection,
         placeholder: _('Enter citation style (e.g. "APA")'),
         minimumInputLength: 1,
+        language: {
+            inputTooShort: function() {
+                return _('Please enter 1 or more character');
+                }
+        },
         ajax: {
             url: '/api/v1/citations/styles/',
             quietMillis: 200,
