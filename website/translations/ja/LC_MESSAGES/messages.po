@@ -1538,7 +1538,7 @@ msgstr "次のページ"
 msgid ""
 "(<span %(class_data_bind)s>Withdrawn </span><span "
 "%(data_bind)s>Registration </span>File)"
-msgstr "（<span %(class_data_bind)s>取り下げられた</span><span %(data_bind)s>登録</span>ファイル"
+msgstr "（<span %(class_data_bind)s>取り下げられた</span><span %(data_bind)s>登録</span>ファイル名）"
 
 #: website/templates/search.mako:126
 msgid "(Preprint File)"

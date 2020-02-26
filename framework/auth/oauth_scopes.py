@@ -294,8 +294,7 @@ public_scopes = {
                            description=unicode(_('View all information associated with this account, including for private projects.')),
                            is_public=True),
     'osf.full_write': scope(parts_=frozenset(ComposedScopes.FULL_WRITE),
-                            description='View and edit all information associated with this account, including for '
-                                        'private projects.',
+                            description=unicode(_('View and edit all information associated with this account, including for private projects.')),
                             is_public=True),
     'osf.users.profile_read': scope(parts_=frozenset(ComposedScopes.USERS_READ),
                                 description=unicode(_('Read your profile data.')),
@@ -345,7 +344,7 @@ if settings.DEV_MODE:
                                     description='View all metadata, files, and access rights associated with all public and private projects accessible to this account.',
                                     is_public=True),
         'osf.nodes.full_write': scope(parts_=frozenset(ComposedScopes.NODE_ALL_WRITE),
-                                     description=unicode(_('View and edit all metadata, files, and access rights associated with all public and private projects accessible to this account.')),
+                                     description='View and edit all metadata, files, and access rights associated with all public and private projects accessible to this account.'),
                                      is_public=True),
 
         # Undocumented scopes that can not be requested by third parties (per CAS restriction)

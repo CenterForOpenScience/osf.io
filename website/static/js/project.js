@@ -36,6 +36,9 @@ NodeActions.beforeForkNode = function(url, done) {
             buttons:{
                 confirm:{
                     label:_('Fork')
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });
