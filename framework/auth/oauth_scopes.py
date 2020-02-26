@@ -344,7 +344,8 @@ if settings.DEV_MODE:
                                     description='View all metadata, files, and access rights associated with all public and private projects accessible to this account.',
                                     is_public=True),
         'osf.nodes.full_write': scope(parts_=frozenset(ComposedScopes.NODE_ALL_WRITE),
-                                     description='View and edit all metadata, files, and access rights associated with all public and private projects accessible to this account.'),
+                                     description='View and edit all metadata, files, and access rights associated with '
+                                                 'all public and private projects accessible to this account.',
                                      is_public=True),
 
         # Undocumented scopes that can not be requested by third parties (per CAS restriction)
