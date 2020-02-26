@@ -1,5 +1,6 @@
 import re
 
+from distutils.version import StrictVersion
 from django.apps import apps
 from django.db.models import Q, OuterRef, Exists, Subquery, F
 from django.utils import timezone
@@ -39,6 +40,7 @@ from api.base.throttling import (
 )
 from api.base.utils import default_node_list_permission_queryset
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
+from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
 from api.base.views import JSONAPIBaseView
 from api.base.views import (
     BaseChildrenList,
@@ -58,6 +60,7 @@ from api.comments.serializers import (
     CommentCreateSerializer,
     NodeCommentSerializer,
 )
+from api.draft_registrations.serializers import DraftRegistrationSerializer, DraftRegistrationDetailSerializer
 from api.files.serializers import FileSerializer, OsfStorageFileSerializer
 from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
@@ -615,11 +618,16 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
 
-    serializer_class = DraftRegistrationLegacySerializer
+    # serializer_class = DraftRegistrationLegacySerializer
     view_category = 'nodes'
     view_name = 'node-draft-registrations'
 
     ordering = ('-modified',)
+
+    def get_serializer_class(self):
+        if StrictVersion(getattr(self.request, 'version', '2.0')) >= StrictVersion(CREATE_REGISTRATION_FIELD_CHANGE_VERSION):
+            return DraftRegistrationSerializer
+        return DraftRegistrationLegacySerializer
 
     # overrides ListCreateAPIView
     def get_queryset(self):
@@ -643,9 +651,14 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
     required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
 
-    serializer_class = DraftRegistrationDetailLegacySerializer
+    # serializer_class = DraftRegistrationDetailLegacySerializer
     view_category = 'nodes'
     view_name = 'node-draft-registration-detail'
+
+    def get_serializer_class(self):
+        if StrictVersion(getattr(self.request, 'version', '2.0')) >= StrictVersion(CREATE_REGISTRATION_FIELD_CHANGE_VERSION):
+            return DraftRegistrationDetailSerializer
+        return DraftRegistrationDetailLegacySerializer
 
     def get_object(self):
         return self.get_draft()
