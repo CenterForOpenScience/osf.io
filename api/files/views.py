@@ -1,5 +1,6 @@
+import io
+
 from django.http import FileResponse
-from django.core.files.base import ContentFile
 
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
@@ -248,7 +249,8 @@ class FileMetadataRecordDownload(JSONAPIBaseView, generics.RetrieveAPIView, File
         file_type = self.request.query_params.get('export', 'json')
         record = self.get_object()
         try:
-            response = FileResponse(ContentFile(record.serialize(format=file_type)))
+            content = io.BytesIO(record.serialize(format=file_type).encode())
+            response = FileResponse(content)
         except ValueError as e:
             detail = str(e).replace('.', '')
             raise ValidationError(detail='{} for metadata file export.'.format(detail))

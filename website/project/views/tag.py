@@ -1,4 +1,4 @@
-import httplib as http
+from rest_framework import status as http_status
 
 from flask import request
 from django.core.exceptions import ValidationError
@@ -39,9 +39,9 @@ def project_add_tag(auth, node, **kwargs):
     if tag:
         try:
             node.add_tag(tag=tag, auth=auth)
-            return {'status': 'success'}, http.CREATED
+            return {'status': 'success'}, http_status.HTTP_201_CREATED
         except ValidationError:
-            return {'status': 'error'}, http.BAD_REQUEST
+            return {'status': 'error'}, http_status.HTTP_400_BAD_REQUEST
 
 
 @must_be_valid_project  # injects project
@@ -52,8 +52,8 @@ def project_remove_tag(auth, node, **kwargs):
     try:
         node.remove_tag(tag=data['tag'], auth=auth)
     except TagNotFoundError:
-        return {'status': 'failure'}, http.CONFLICT
+        return {'status': 'failure'}, http_status.HTTP_409_CONFLICT
     except (InvalidTagError, NodeStateError):
-        return {'status': 'failure'}, http.BAD_REQUEST
+        return {'status': 'failure'}, http_status.HTTP_400_BAD_REQUEST
     else:
-        return {'status': 'success'}, http.OK
+        return {'status': 'success'}, http_status.HTTP_200_OK

@@ -1,6 +1,6 @@
 import collections
 import re
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 
 import furl
 from django.core.urlresolvers import resolve, reverse, NoReverseMatch
@@ -20,9 +20,10 @@ from osf.utils import functional
 from api.base import exceptions as api_exceptions
 from api.base.settings import BULK_SETTINGS
 from framework.auth import core as auth_core
-from osf.models import AbstractNode, MaintenanceState, Preprint
+from osf.models import AbstractNode, DraftRegistration, MaintenanceState, Preprint
 from website import settings
 from website.project.model import has_anonymous_link
+from api.base.versioning import KEBAB_CASE_VERSION, get_kebab_snake_case_field
 
 
 def get_meta_type(serializer_class, request):
@@ -201,6 +202,19 @@ class HideIfPreprint(ConditionalField):
         return not isinstance(self.field, RelationshipField)
 
 
+class HideIfDraftRegistration(ConditionalField):
+    """
+    If object is a draft registration, or related to a draft registration, hide the field.
+    """
+
+    def should_hide(self, instance):
+        return isinstance(instance, DraftRegistration) \
+            or isinstance(getattr(instance, 'draft_registration', False), DraftRegistration)
+
+    def should_be_none(self, instance):
+        return not isinstance(self.field, RelationshipField)
+
+
 class NoneIfWithdrawal(ConditionalField):
     """
     If preprint is withdrawn, this field (attribute or relationship) should return None instead of hidden.
@@ -334,7 +348,7 @@ def _url_val(val, obj, serializer, request, **kwargs):
     url = None
     if isinstance(val, Link):  # If a Link is passed, get the url value
         url = val.resolve_url(obj, request)
-    elif isinstance(val, basestring):  # if a string is passed, it's a method of the serializer
+    elif isinstance(val, str):  # if a string is passed, it's a method of the serializer
         if getattr(serializer, 'field', None):
             serializer = serializer.parent
         url = getattr(serializer, val)(obj) if obj is not None else None
@@ -404,8 +418,11 @@ class TypeField(ser.CharField):
             type_ = get_meta_type(self.root.child, request)
         else:
             type_ = get_meta_type(self.root, request)
-
-        if type_ != data:
+        kebab_case = str(type_).replace('-', '_')
+        if type_ != data and kebab_case == data:
+            type_ = kebab_case
+            self.context['request'].META.setdefault('warning', 'As of API Version {0}, all types are now Kebab-case. {0} will accept snake_case, but this will be deprecated in future versions.'.format(KEBAB_CASE_VERSION))
+        elif type_ != data:
             raise api_exceptions.Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(type_, data)))
         return super(TypeField, self).to_internal_value(data)
 
@@ -853,17 +870,23 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         self_url = url['self']
         self_meta = self.get_meta_information(self.self_meta, value)
         relationship = format_relationship_links(related_url, self_url, related_meta, self_meta)
-        if related_url and (len(related_path.split('/')) & 1) == 1:
+        if related_url:
             resolved_url = resolve(related_path)
             related_class = resolved_url.func.view_class
             if issubclass(related_class, RetrieveModelMixin):
-                related_type = resolved_url.namespace
                 try:
+                    related_type = resolved_url.namespace
                     # TODO: change kwargs to preprint_provider_id and registration_id
                     if related_type == 'preprint_providers':
                         related_id = resolved_url.kwargs['provider_id']
                     elif related_type == 'registrations':
                         related_id = resolved_url.kwargs['node_id']
+                    elif related_type == 'schemas' and related_class.view_name == 'registration-schema-detail':
+                        related_id = resolved_url.kwargs['schema_id']
+                        related_type = 'registration-schemas'
+                    elif related_type == 'users' and related_class.view_name == 'user_settings':
+                        related_id = resolved_url.kwargs['user_id']
+                        related_type = 'user-settings'
                     else:
                         related_id = resolved_url.kwargs[related_type[:-1] + '_id']
                 except KeyError:
@@ -888,7 +911,7 @@ class TypedRelationshipField(RelationshipField):
             else:
                 view_parts.insert(1, get_meta_type(self.root, request).replace('_', '-'))
             self.view_name = view_name = ':'.join(view_parts)
-            for k, v in self.views.items():
+            for k, v in list(self.views.items()):
                 if v == untyped_view:
                     self.views[k] = view_name
         return super(TypedRelationshipField, self).get_url(obj, view_name, request, format)
@@ -920,6 +943,10 @@ class TargetField(ser.Field):
         'preprint': {
             'view': 'preprints:preprint-detail',
             'lookup_kwarg': 'preprint_id',
+        },
+        'draft-node': {
+            'view': 'draft_nodes:node-detail',
+            'lookup_kwarg': 'node_id',
         },
         'comment': {
             'view': 'comments:comment-detail',
@@ -976,7 +1003,18 @@ class TargetField(ser.Field):
         """
         meta = functional.rapply(self.meta, _url_val, obj=value, serializer=self.parent, request=self.context['request'])
         obj = getattr(value, 'referent', value)
-        return {'links': {self.link_type: {'href': obj.get_absolute_url(), 'meta': meta}}}
+        return {
+            'links': {
+                self.link_type: {
+                    'href': obj.get_absolute_url(),
+                    'meta': meta,
+                },
+            },
+            'data': {
+                'type': meta['type'],
+                'id': obj._id,
+            },
+        }
 
 
 class LinksField(ser.Field):
@@ -1578,7 +1616,9 @@ class AddonAccountSerializer(JSONAPISerializer):
     })
 
     class Meta:
-        type_ = 'external_accounts'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'external-accounts')
 
     def get_absolute_url(self, obj):
         kwargs = self.context['request'].parser_context['kwargs']
@@ -1674,7 +1714,12 @@ class LinkedNodesRelationshipSerializer(BaseAPISerializer):
         for pointer in remove:
             collection.rm_pointer(pointer, auth)
         for node in add:
-            collection.add_pointer(node, auth)
+            try:
+                collection.add_pointer(node, auth)
+            except ValueError as e:
+                raise api_exceptions.InvalidModelValueError(
+                    detail=str(e),
+                )
 
         return self.make_instance_obj(collection)
 
@@ -1689,8 +1734,12 @@ class LinkedNodesRelationshipSerializer(BaseAPISerializer):
             raise api_exceptions.RelationshipPostMakesNoChanges
 
         for node in add:
-            collection.add_pointer(node, auth)
-
+            try:
+                collection.add_pointer(node, auth)
+            except ValueError as e:
+                raise api_exceptions.InvalidModelValueError(
+                    detail=str(e),
+                )
         return self.make_instance_obj(collection)
 
 
@@ -1747,7 +1796,12 @@ class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
         for pointer in remove:
             collection.rm_pointer(pointer, auth)
         for node in add:
-            collection.add_pointer(node, auth)
+            try:
+                collection.add_pointer(node, auth)
+            except ValueError as e:
+                raise api_exceptions.InvalidModelValueError(
+                    detail=str(e),
+                )
 
         return self.make_instance_obj(collection)
 
@@ -1762,7 +1816,12 @@ class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
             raise api_exceptions.RelationshipPostMakesNoChanges
 
         for node in add:
-            collection.add_pointer(node, auth)
+            try:
+                collection.add_pointer(node, auth)
+            except ValueError as e:
+                raise api_exceptions.InvalidModelValueError(
+                    detail=str(e),
+                )
 
         return self.make_instance_obj(collection)
 

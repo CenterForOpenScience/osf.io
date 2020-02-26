@@ -20,15 +20,18 @@ def get_total_activity_count(user_id):
     return UserActivityCounter.get_total_activity_count(user_id)
 
 
-def update_counter(page, node_info=None):
-    """Update counters for page.
+def update_counter(resource, file, version, action, node_info=None):
+    """Update counters for resource.
 
-    :param str page: Colon-delimited page key in analytics collection
+    :param obj resource
+    :param obj file
+    :param int version
+    :param str action, ex. 'download'
     """
     from osf.models import PageCounter
-    return PageCounter.update_counter(page, node_info)
+    return PageCounter.update_counter(resource, file, version=version, action=action, node_info=node_info)
 
 
-def get_basic_counters(page):
+def get_basic_counters(resource, file, version, action):
     from osf.models import PageCounter
-    return PageCounter.get_basic_counters(page)
+    return PageCounter.get_basic_counters(resource, file, version=version, action=action)

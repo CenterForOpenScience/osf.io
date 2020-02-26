@@ -96,6 +96,12 @@
 
 </%def>
 
+<%def name="javascript()">
+    <script type="text/javascript">
+        history.replaceState({}, document.title, "/resetpassword/")
+    </script>
+</%def>
+
 <%def name="javascript_bottom()">
     <script type="text/javascript">
         window.contextVars = $.extend(true, {}, window.contextVars, {

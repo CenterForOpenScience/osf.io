@@ -5,8 +5,9 @@
 # To install dev requirements: inv requirements --dev
 # To install release requirements: inv requirements --release
 
+future==0.18.2
 invoke==0.15.0
-Werkzeug==0.10.4  # pyup: ignore # newer versions break local development
+Werkzeug==0.16.0
 Flask==0.12.4
 gevent==1.2.2
 Mako==1.0.7
@@ -21,8 +22,7 @@ git+https://github.com/cos-forks/celery@v4.1.1+cos0
 kombu==4.2.0
 amqp==2.2.2
 vine==1.1.4
-httplib2==0.10.3
-itsdangerous==0.24
+itsdangerous==1.1.0
 lxml==3.4.1
 mailchimp==2.0.9
 nameparser==0.5.3

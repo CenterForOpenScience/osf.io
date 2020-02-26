@@ -7,7 +7,7 @@ from django.db.models.expressions import RawSQL
 from django.utils import timezone
 
 from framework.sessions import session
-from osf.models.base import BaseModel
+from osf.models.base import BaseModel, Guid
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 logger = logging.getLogger(__name__)
@@ -60,12 +60,16 @@ class PageCounter(BaseModel):
 
     _id = models.CharField(max_length=300, null=False, blank=False, db_index=True,
                            unique=True)  # 272 in prod
+
     date = DateTimeAwareJSONField(default=dict)
 
     total = models.PositiveIntegerField(default=0)
     unique = models.PositiveIntegerField(default=0)
 
-    DOWNLOAD_ALL_VERSIONS_ID_PATTERN = r'^download:[^:]*:{1}[^:]*$'
+    action = models.CharField(max_length=128, null=False, blank=False)
+    resource = models.ForeignKey(Guid, related_name='pagecounters', null=False, blank=False)
+    file = models.ForeignKey('osf.BaseFileNode', null=False, blank=False, related_name='pagecounters')
+    version = models.IntegerField(null=True, blank=True)
 
     @classmethod
     def get_all_downloads_on_date(cls, date):
@@ -75,9 +79,8 @@ class PageCounter(BaseModel):
         :return: long sum:
         """
         formatted_date = date.strftime('%Y/%m/%d')
-        # Get all PageCounters with data for the date made for all versions downloads,
-        # regex insures one colon so all versions are queried.
-        page_counters = cls.objects.filter(date__has_key=formatted_date, _id__regex=cls.DOWNLOAD_ALL_VERSIONS_ID_PATTERN)
+        # Get all PageCounters with data for the date made for all versions downloads - don't include specific versions
+        page_counters = cls.objects.filter(date__has_key=formatted_date, version__isnull=True, action='download')
 
         # Get the total download numbers from the nested dict on the PageCounter by annotating it as daily_total then
         # aggregating the sum.
@@ -94,14 +97,27 @@ class PageCounter(BaseModel):
         )
 
     @classmethod
-    def update_counter(cls, page, node_info):
+    def update_counter(cls, resource, file, version, action, node_info):
+        if version is not None:
+            page = '{0}:{1}:{2}:{3}'.format(action, resource._id, file._id, version)
+        else:
+            page = '{0}:{1}:{2}'.format(action, resource._id, file._id)
+
         cleaned_page = cls.clean_page(page)
         date = timezone.now()
         date_string = date.strftime('%Y/%m/%d')
         visited_by_date = session.data.get('visited_by_date', {'date': date_string, 'pages': []})
-
         with transaction.atomic():
-            model_instance, created = cls.objects.select_for_update().get_or_create(_id=cleaned_page)
+            # Temporary backwards compat - when creating new PageCounters, temporarily keep writing to _id field.
+            # After we're sure this is stable, we can stop writing to the _id field, and query on
+            # resource/file/action/version
+            model_instance, created = cls.objects.select_for_update().get_or_create(
+                _id=cleaned_page,
+                resource=resource,
+                file=file,
+                action=action,
+                version=version
+            )
 
             # if they visited something today
             if date_string == visited_by_date['date']:
@@ -158,9 +174,9 @@ class PageCounter(BaseModel):
             model_instance.save()
 
     @classmethod
-    def get_basic_counters(cls, page):
+    def get_basic_counters(cls, resource, file, version, action):
         try:
-            counter = cls.objects.get(_id=cls.clean_page(page))
+            counter = cls.objects.get(resource=resource, file=file, version=version, action=action)
             return (counter.unique, counter.total)
         except cls.DoesNotExist:
             return (None, None)

@@ -3,7 +3,7 @@
 
 # PEP8 asserts
 from copy import deepcopy
-import httplib as http
+from rest_framework import status as http_status
 import time
 import mock
 import pytest
@@ -399,7 +399,7 @@ class TestWikiViews(OsfTestCase):
         self.sec_wiki.update(self.user, long_content)
         res = serialize_wiki_widget(self.second_project)
         assert_less(len(res['wiki_content']), 520)  # wiggle room for closing tags
-        assert_in('...', res['wiki_content'])
+        assert_in('...', res['wiki_content'].decode())
         assert_true(res['more'])
 
     def test_wiki_widget_with_multiple_short_pages_has_more(self):
@@ -601,7 +601,7 @@ class TestWikiRename(OsfTestCase):
             auth=self.auth,
             expect_errors=True,
         )
-        assert_equal(http.BAD_REQUEST, res.status_code)
+        assert_equal(http_status.HTTP_400_BAD_REQUEST, res.status_code)
         assert_equal(res.json['message_short'], 'Invalid name')
         assert_equal(res.json['message_long'], 'Page name cannot contain forward slashes.')
         self.project.reload()
@@ -759,8 +759,8 @@ class TestWikiUuid(OsfTestCase):
         self.project.reload()
         private_uuid = self.project.wiki_private_uuids.get(self.wkey)
         assert_true(private_uuid)
-        assert_not_in(private_uuid, res.body)
-        assert_in(get_sharejs_uuid(self.project, self.wname), res.body)
+        assert_not_in(private_uuid, res.body.decode())
+        assert_in(get_sharejs_uuid(self.project, self.wname), res.body.decode())
 
         # Revisit page; uuid has not changed
         res = self.app.get(url, auth=self.user.auth)
@@ -779,13 +779,13 @@ class TestWikiUuid(OsfTestCase):
         self.project.reload()
         private_uuid = self.project.wiki_private_uuids.get(self.wkey)
         assert_true(private_uuid)
-        assert_not_in(private_uuid, res.body)
-        assert_in(get_sharejs_uuid(self.project, self.wname), res.body)
+        assert_not_in(private_uuid, res.body.decode())
+        assert_in(get_sharejs_uuid(self.project, self.wname), res.body.decode())
 
         # Users without write permission should not be able to access
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
-        assert_not_in(get_sharejs_uuid(self.project, self.wname), res.body)
+        assert_not_in(get_sharejs_uuid(self.project, self.wname), res.body.decode())
 
     def test_uuid_not_generated_without_write_permission(self):
         WikiPage.objects.create_for_node(self.project, self.wname, 'some content', Auth(self.user))
@@ -888,7 +888,7 @@ class TestWikiUuid(OsfTestCase):
         assert_equal(res.status_code, 200)
         self.project.reload()
         assert_equal(original_private_uuid, self.project.wiki_private_uuids.get(self.wkey))
-        assert_in(original_sharejs_uuid, res.body)
+        assert_in(original_sharejs_uuid, res.body.decode())
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_uuid_persists_after_rename(self, mock_sharejs):
@@ -925,7 +925,7 @@ class TestWikiUuid(OsfTestCase):
         assert_equal(res.status_code, 200)
         self.project.reload()
         assert_not_equal(original_private_uuid, self.project.wiki_private_uuids.get(self.wkey))
-        assert_not_in(original_sharejs_uuid, res.body)
+        assert_not_in(original_sharejs_uuid, res.body.decode())
 
 
 @pytest.mark.skip('#TODO: Fix or mock mongodb for sharejs')
@@ -1238,7 +1238,6 @@ class TestPublicWiki(OsfTestCase):
         node = NodeFactory(parent=self.project, creator=self.user, is_public=True)
         node.get_addon('wiki').set_editing(
             permissions=True, auth=self.consolidate_auth, log=True)
-        node.add_pointer(self.project, Auth(self.user))
         node.save()
         data = serialize_wiki_settings(self.user, [node])
         expected = [{

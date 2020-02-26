@@ -57,6 +57,13 @@ class TestContributorDetail:
         )
 
     @pytest.fixture()
+    def make_resource_url(self):
+        def make_resource_url(resource_id, user_id):
+            return '/{}nodes/{}/contributors/{}/'.format(
+                API_BASE, resource_id, user_id)
+        return make_resource_url
+
+    @pytest.fixture()
     def url_public(self, user, project_public):
         return '/{}nodes/{}/contributors/{}/'.format(
             API_BASE, project_public._id, user._id)
@@ -130,27 +137,26 @@ class TestContributorDetail:
     def test_unregistered_contributor_detail_show_up_as_name_associated_with_project(
             self,
             app,
-            user):
-        project = ProjectFactory(creator=user, is_public=True)
-        project.add_unregistered_contributor(
+            user,
+            project_public,
+            project_private,
+            make_resource_url):
+        project_public.add_unregistered_contributor(
             'Rheisen Dennis',
             'reason@gmail.com',
             auth=Auth(user),
             save=True)
-        unregistered_contributor = project.contributors[1]
-        url = '/{}nodes/{}/contributors/{}/'.format(
-            API_BASE, project._id, unregistered_contributor._id)
+        unregistered_contributor = project_public.contributors[1]
+        url = make_resource_url(project_public._id, unregistered_contributor._id)
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert res.json['data']['embeds']['users']['data']['attributes']['full_name'] == 'Rheisen Dennis'
         assert res.json['data']['attributes'].get(
             'unregistered_contributor') == 'Rheisen Dennis'
 
-        project_two = ProjectFactory(creator=user, is_public=True)
-        project_two.add_unregistered_contributor(
+        project_private.add_unregistered_contributor(
             'Nesiehr Sinned', 'reason@gmail.com', auth=Auth(user), save=True)
-        url = '/{}nodes/{}/contributors/{}/'.format(
-            API_BASE, project_two._id, unregistered_contributor._id)
+        url = make_resource_url(project_private._id, unregistered_contributor._id)
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
 
@@ -158,31 +164,30 @@ class TestContributorDetail:
         assert res.json['data']['attributes'].get(
             'unregistered_contributor') == 'Nesiehr Sinned'
 
-    def test_node_contributor_detail_serializes_contributor_perms(self, app, user):
-        project = ProjectFactory(creator=user, is_public=True)
+    def test_node_contributor_detail_serializes_contributor_perms(self, app, user, make_resource_url, project_public):
         user_two = AuthUserFactory()
-        project.add_contributor(user_two, permissions.WRITE)
-        project.save()
+        project_public.add_contributor(user_two, permissions.WRITE)
+        project_public.save()
 
         osf_group = OSFGroupFactory(creator=user)
         osf_group.make_member(user_two)
-        project.add_osf_group(osf_group, permissions.ADMIN)
+        project_public.add_osf_group(osf_group, permissions.ADMIN)
 
-        url = '/{}nodes/{}/contributors/{}/'.format(
-            API_BASE, project._id, user_two._id)
+        url = make_resource_url(project_public._id, user_two._id)
         res = app.get(url, auth=user.auth)
         # Even though user_two has admin perms through group membership,
         # contributor endpoints return contributor permissions
         assert res.json['data']['attributes']['permission'] == permissions.WRITE
-        assert project.has_permission(user_two, permissions.ADMIN) is True
+        assert project_public.has_permission(user_two, permissions.ADMIN) is True
 
     def test_detail_includes_index(
             self,
             app,
             user,
             project_public,
+            make_resource_url,
             url_public):
-        res = app.get(url_public)
+        res = app.get(url_public, auth=user.auth)
         data = res.json['data']
         assert 'index' in data['attributes'].keys()
         assert data['attributes']['index'] == 0
@@ -191,9 +196,9 @@ class TestContributorDetail:
         project_public.add_contributor(
             other_contributor, auth=Auth(user), save=True)
 
-        other_contributor_detail = '/{}nodes/{}/contributors/{}/'.format(
-            API_BASE, project_public._id, other_contributor._id)
-        res = app.get(other_contributor_detail)
+        other_contributor_detail = make_resource_url(project_public._id, other_contributor._id)
+
+        res = app.get(other_contributor_detail, auth=user.auth)
         assert res.json['data']['attributes']['index'] == 1
 
 
@@ -246,9 +251,8 @@ class TestNodeContributorOrdering:
         return get_contrib_user_id
 
     def test_initial_order(
-            self, app, user, contribs, project, contrib_user_id):
-        res = app.get('/{}nodes/{}/contributors/'.format(
-            API_BASE, project._id), auth=user.auth)
+            self, app, user, contribs, project, contrib_user_id, url_contrib_base):
+        res = app.get(url_contrib_base, auth=user.auth)
         assert res.status_code == 200
         contributor_list = res.json['data']
         found_contributors = False
@@ -277,8 +281,7 @@ class TestNodeContributorOrdering:
             res_patch = app.patch_json_api(url, data, auth=user.auth)
             assert res_patch.status_code == 200
             project.reload()
-            res = app.get(
-                '/{}nodes/{}/contributors/'.format(API_BASE, project._id), auth=user.auth)
+            res = app.get(url_contrib_base, auth=user.auth)
             assert res.status_code == 200
             contributor_list = res.json['data']
             assert contrib_user_id(contributor_list[1]) == contributor_to_move
@@ -304,8 +307,7 @@ class TestNodeContributorOrdering:
         res_patch = app.patch_json_api(url, data, auth=user.auth)
         assert res_patch.status_code == 200
         project.reload()
-        res = app.get('/{}nodes/{}/contributors/'.format(
-            API_BASE, project._id), auth=user.auth)
+        res = app.get(url_contrib_base, auth=user.auth)
         assert res.status_code == 200
         contributor_list = res.json['data']
         assert contrib_user_id(contributor_list[0]) == contributor_to_move
@@ -332,8 +334,7 @@ class TestNodeContributorOrdering:
         res_patch = app.patch_json_api(url, data, auth=user.auth)
         assert res_patch.status_code == 200
         project.reload()
-        res = app.get('/{}nodes/{}/contributors/'.format(API_BASE,
-                                                         project._id), auth=user.auth)
+        res = app.get(url_contrib_base, auth=user.auth)
         assert res.status_code == 200
         contributor_list = res.json['data']
         assert contrib_user_id(
@@ -362,8 +363,7 @@ class TestNodeContributorOrdering:
         res_patch = app.patch_json_api(url, data, auth=user.auth)
         assert res_patch.status_code == 200
         project.reload()
-        res = app.get('/{}nodes/{}/contributors/'.format(API_BASE,
-                                                         project._id), auth=user.auth)
+        res = app.get(url_contrib_base, auth=user.auth)
         assert res.status_code == 200
         contributor_list = res.json['data']
         assert contrib_user_id(contributor_list[0]) == contributor_to_move
@@ -392,8 +392,7 @@ class TestNodeContributorOrdering:
         res_patch = app.patch_json_api(url, data, auth=user.auth)
         assert res_patch.status_code == 200
         project.reload()
-        res = app.get('/{}nodes/{}/contributors/'.format(API_BASE,
-                                                         project._id), auth=user.auth)
+        res = app.get(url_contrib_base, auth=user.auth)
         assert res.status_code == 200
         contributor_list = res.json['data']
         assert contrib_user_id(
@@ -420,8 +419,7 @@ class TestNodeContributorOrdering:
         res_patch = app.patch_json_api(url, data, auth=user.auth)
         assert res_patch.status_code == 200
         project.reload()
-        res = app.get('/{}nodes/{}/contributors/'.format(API_BASE,
-                                                         project._id), auth=user.auth)
+        res = app.get(url_contrib_base, auth=user.auth)
         assert res.status_code == 200
         contributor_list = res.json['data']
         assert contrib_user_id(
@@ -450,8 +448,7 @@ class TestNodeContributorOrdering:
             expect_errors=True)
         assert res_patch.status_code == 403
         project.reload()
-        res = app.get('/{}nodes/{}/contributors/'.format(API_BASE,
-                                                         project._id), auth=user.auth)
+        res = app.get(url_contrib_base, auth=user.auth)
         assert res.status_code == 200
         contributor_list = res.json['data']
         assert contrib_user_id(contributor_list[0]) == contributor_to_move
@@ -476,8 +473,7 @@ class TestNodeContributorOrdering:
         res_patch = app.patch_json_api(url, data, expect_errors=True)
         assert res_patch.status_code == 401
         project.reload()
-        res = app.get('/{}nodes/{}/contributors/'.format(
-            API_BASE, project._id), auth=user.auth)
+        res = app.get(url_contrib_base, auth=user.auth)
         assert res.status_code == 200
         contributor_list = res.json['data']
         assert contrib_user_id(contributor_list[0]) == contributor_to_move
@@ -646,7 +642,9 @@ class TestNodeContributorUpdate:
             permissions.READ, permissions.WRITE]
         assert project.get_visible(contrib)
 
-    #   test_change_contributor_non_admin_osf_group_member_auth
+    def test_change_contributor_non_admin_osf_group_member_auth(
+            self, app, user, contrib, project, url_contrib):
+
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
         project.add_osf_group(group, permissions.WRITE)
@@ -1069,16 +1067,6 @@ class TestNodeContributorDelete:
             expect_errors=True)
         assert res.status_code == 403
 
-    #   test_remove_contributor_osf_group_member_read
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        project.add_osf_group(group, permissions.READ)
-        res = app.delete(
-            url_user_write_contrib,
-            auth=group_mem.auth,
-            expect_errors=True)
-        assert res.status_code == 403
-
     #   test_remove_contributor_not_logged_in
         res = app.delete(url_user_write_contrib, expect_errors=True)
         assert res.status_code == 401
@@ -1115,6 +1103,19 @@ class TestNodeContributorDelete:
 
         project.reload()
         assert user in project.contributors
+
+    def test_remove_contributor_osf_group_member_read(
+            self, app, user, user_write_contrib,
+            user_non_contrib, project, url_user,
+            url_user_write_contrib, url_user_non_contrib):
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        project.add_osf_group(group, permissions.READ)
+        res = app.delete(
+            url_user_write_contrib,
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert res.status_code == 403
 
     def test_can_not_remove_only_bibliographic_contributor(
             self, app, user, project, user_write_contrib, url_user):

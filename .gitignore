@@ -10,6 +10,7 @@ ehthumbs.db
 Thumbs.db
 *.swp
 *~
+.ipynb_checkpoints
 
 # R
 #######################
@@ -202,3 +203,4 @@ ssl/
 
 # pyenv
 .python-version
+

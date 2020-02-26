@@ -95,7 +95,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='preprint',
             name='description',
-            field=models.TextField(blank=True, default=b''),
+            field=models.TextField(blank=True, default=''),
         ),
         migrations.AddField(
             model_name='preprint',

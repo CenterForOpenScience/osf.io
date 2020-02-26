@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import functools
-import urlparse
+from future.moves.urllib.parse import urljoin
 import logging
 import re
 
@@ -13,9 +13,8 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.dispatch import receiver
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
-from guardian.shortcuts import get_objects_for_user, get_group_perms
+from guardian.shortcuts import get_objects_for_user
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.auth.models import AnonymousUser
 from django.db.models.signals import post_save
 
 from framework.auth import Auth
@@ -25,7 +24,7 @@ from framework.auth import oauth_scopes
 from osf.models import Subject, Tag, OSFUser, PreprintProvider
 from osf.models.preprintlog import PreprintLog
 from osf.models.contributor import PreprintContributor
-from osf.models.mixins import ReviewableMixin, Taggable, GuardianMixin, FileTargetMixin
+from osf.models.mixins import ReviewableMixin, Taggable, GuardianMixin, FileTargetMixin, Loggable
 from osf.models.validators import validate_subject_hierarchy, validate_title, validate_doi
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates, ReviewStates
@@ -43,7 +42,7 @@ from website.preprints.tasks import update_or_enqueue_on_preprint_updated
 
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.identifiers import IdentifierMixin, Identifier
-from osf.models.mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin
+from osf.models.mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin, TitleMixin, DescriptionMixin
 from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode, OsfStorageFile
 
 
@@ -103,8 +102,8 @@ class PreprintManager(IncludeManager):
         return ret.distinct('id', 'created') if include_non_public else ret
 
 
-class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel, Taggable, GuardianMixin,
-        SpamOverrideMixin, TaxonomizableMixin, ContributorMixin, FileTargetMixin):
+class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel, TitleMixin, DescriptionMixin,
+        Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin, FileTargetMixin):
 
     objects = PreprintManager()
     # Preprint fields that trigger a check to the spam filter on save
@@ -145,10 +144,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     date_withdrawn = NonNaiveDateTimeField(default=None, null=True, blank=True)
     withdrawal_justification = models.TextField(default='', blank=True)
     ever_public = models.BooleanField(default=False, blank=True)
-    title = models.TextField(
-        validators=[validate_title]
-    )  # this should be a charfield but data from mongo didn't fit in 255
-    description = models.TextField(blank=True, default='')
     creator = models.ForeignKey(OSFUser,
                                 db_index=True,
                                 related_name='preprints_created',
@@ -169,11 +164,24 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     # For legacy preprints
     migrated = NonNaiveDateTimeField(null=True, blank=True)
     region = models.ForeignKey(Region, null=True, blank=True, on_delete=models.CASCADE)
+
+    # For ContributorMixin
+    guardian_object_type = 'preprint'
+
+    READ_PREPRINT = 'read_{}'.format(guardian_object_type)
+    WRITE_PREPRINT = 'write_{}'.format(guardian_object_type)
+    ADMIN_PREPRINT = 'admin_{}'.format(guardian_object_type)
+
+    # For ContributorMixin
+    base_perms = [READ_PREPRINT, WRITE_PREPRINT, ADMIN_PREPRINT]
+
+    # For GuardianMixin
     groups = {
-        'read': ('read_preprint',),
-        'write': ('read_preprint', 'write_preprint',),
-        'admin': ('read_preprint', 'write_preprint', 'admin_preprint',)
+        'read': (READ_PREPRINT,),
+        'write': (READ_PREPRINT, WRITE_PREPRINT,),
+        'admin': (READ_PREPRINT, WRITE_PREPRINT, ADMIN_PREPRINT,)
     }
+    # For GuardianMixin
     group_format = 'preprint_{self.id}_{group}'
 
     class Meta:
@@ -323,7 +331,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(
+        return urljoin(
             self.provider.domain if self.provider.domain_redirect_enabled else settings.DOMAIN,
             self.url
         )
@@ -346,7 +354,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     @property
     def admin_contributor_or_group_member_ids(self):
         # Overrides ContributorMixin
-        # Preprints don't have parents or group members at the moment, so we override here.
+        # Preprints don't have parents or group members at the moment, so this is just admin group member ids
         # Called when removing project subscriptions
         return self.get_group(ADMIN).user_set.filter(is_active=True).values_list('guids___id', flat=True)
 
@@ -427,45 +435,19 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         # Override for ContributorMixin, Preprints don't have addons
         return []
 
-    def get_subjects(self):
-        ret = []
-        for subj_list in self.subject_hierarchy:
-            subj_hierarchy = []
-            for subj in subj_list:
-                if subj:
-                    subj_hierarchy += ({'id': subj._id, 'text': subj.text}, )
-            if subj_hierarchy:
-                ret.append(subj_hierarchy)
-        return ret
-
-    def set_subjects(self, preprint_subjects, auth, log=True):
-        if not self.has_permission(auth.user, WRITE):
-            raise PermissionsError('Must have admin or write permissions to change a preprint\'s subjects.')
-
-        old_subjects = list(self.subjects.values_list('id', flat=True))
-        self.subjects.clear()
-        for subj_list in preprint_subjects:
-            subj_hierarchy = []
-            for s in subj_list:
-                subj_hierarchy.append(s)
-            if subj_hierarchy:
-                validate_subject_hierarchy(subj_hierarchy)
-                for s_id in subj_hierarchy:
-                    self.subjects.add(Subject.load(s_id))
-
-        if log:
-            self.add_log(
-                action=PreprintLog.SUBJECTS_UPDATED,
-                params={
-                    'subjects': list(self.subjects.values('_id', 'text')),
-                    'old_subjects': list(Subject.objects.filter(id__in=old_subjects).values('_id', 'text')),
-                    'preprint': self._id
-                },
-                auth=auth,
-                save=False,
-            )
-
-        self.save(old_subjects=old_subjects)
+    def add_subjects_log(self, old_subjects, auth):
+        # Overrides TaxonomizableMixin
+        self.add_log(
+            action=PreprintLog.SUBJECTS_UPDATED,
+            params={
+                'subjects': list(self.subjects.values('_id', 'text')),
+                'old_subjects': list(Subject.objects.filter(id__in=old_subjects).values('_id', 'text')),
+                'preprint': self._id
+            },
+            auth=auth,
+            save=False,
+        )
+        return
 
     def set_primary_file(self, preprint_file, auth, save=False):
         if not self.root_folder:
@@ -743,7 +725,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             self.save()
 
     def set_title(self, title, auth, save=False):
-        """Set the title of this Node and log it.
+        """Set the title of this Preprint and log it.
 
         :param str title: The new title.
         :param auth: All the auth information including user, API key.
@@ -751,28 +733,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if not self.has_permission(auth.user, WRITE):
             raise PermissionsError('Must have admin or write permissions to edit a preprint\'s title.')
 
-        # Called so validation does not have to wait until save.
-        validate_title(title)
-
-        original_title = self.title
-        new_title = sanitize.strip_html(title)
-        # Title hasn't changed after sanitzation, bail out
-        if original_title == new_title:
-            return False
-        self.title = new_title
-        self.add_log(
-            action=PreprintLog.EDITED_TITLE,
-            params={
-                'preprint': self._id,
-                'title_new': self.title,
-                'title_original': original_title,
-            },
-            auth=auth,
-            save=False,
-        )
-        if save:
-            self.save()
-        return None
+        return super(Preprint, self).set_title(title, auth, save)
 
     def set_description(self, description, auth, save=False):
         """Set the description and log the event.
@@ -784,37 +745,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if not self.has_permission(auth.user, WRITE):
             raise PermissionsError('Must have admin or write permissions to edit a preprint\'s title.')
 
-        original = self.description
-        new_description = sanitize.strip_html(description)
-        if original == new_description:
-            return False
-        self.description = new_description
-        self.add_log(
-            action=PreprintLog.EDITED_DESCRIPTION,
-            params={
-                'preprint': self._id,
-                'description_new': self.description,
-                'description_original': original
-            },
-            auth=auth,
-            save=False,
-        )
-        if save:
-            self.save()
-        return None
+        return super(Preprint, self).set_description(description, auth, save)
 
     def get_spam_fields(self, saved_fields):
         return self.SPAM_CHECK_FIELDS if self.is_published and 'is_published' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
             saved_fields)
-
-    def get_permissions(self, user):
-        # Overrides guardian mixin - doesn't return view_preprint perms, and
-        # returns readable perms instead of literal perms
-        if isinstance(user, AnonymousUser):
-            return []
-        perms = ['read_preprint', 'write_preprint', 'admin_preprint']
-        user_perms = sorted(set(get_group_perms(user, self)).intersection(perms), key=perms.index)
-        return [perm.split('_')[0] for perm in user_perms]
 
     def set_privacy(self, permissions, auth=None, log=True, save=True, check_addons=False):
         """Set the permissions for this preprint - mainly for spam purposes.

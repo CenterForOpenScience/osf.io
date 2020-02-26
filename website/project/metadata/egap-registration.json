@@ -1,6 +1,9 @@
 {
 	"name": "EGAP Registration",
 	"version": 2,
+	"config": {
+        "hasFiles": true
+    },
 	"description": "The EGAP registry focuses on designs for experiments and observational studies in governance and politics.",
 	"pages": [{
 			"id": "page1",

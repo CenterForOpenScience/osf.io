@@ -331,7 +331,7 @@ class TestWebsiteUtils(unittest.TestCase):
         outputs = rapply(input, convert)
 
         assert_equal('BOB', outputs)
-        assert_true(isinstance(outputs, basestring))
+        assert_true(isinstance(outputs, str))
 
     def test_rapply_preserves_args_and_kwargs(self):
         def zero_if_not_check(item, check, checkFn=lambda n: n):

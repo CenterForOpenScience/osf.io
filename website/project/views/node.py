@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
 import logging
-import httplib as http
+from rest_framework import status as http_status
 import math
 from collections import defaultdict
-from itertools import islice
 
 from flask import request
 from django.apps import apps
+from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.db.models import Q, OuterRef, Subquery
 
@@ -20,6 +20,7 @@ from api.waffle.utils import flag_is_active, storage_i18n_flag_active, storage_u
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
 from osf.utils.functional import rapply
+from osf.utils.registrations import strip_registered_meta_comments
 from osf.utils import sanitize
 from osf import features
 
@@ -64,7 +65,6 @@ logger = logging.getLogger(__name__)
 
 @must_be_valid_project
 @must_have_permission(WRITE)
-@must_not_be_registration
 def edit_node(auth, node, **kwargs):
     post_data = request.json
     edited_field = post_data.get('name')
@@ -76,8 +76,8 @@ def edit_node(auth, node, **kwargs):
             node.set_title(value, auth=auth)
         except ValidationError as e:
             raise HTTPError(
-                http.BAD_REQUEST,
-                data=dict(message_long=e.message)
+                http_status.HTTP_400_BAD_REQUEST,
+                data=dict(message_long=str(e))
             )
         new_val = node.title
     elif edited_field == 'description':
@@ -90,8 +90,8 @@ def edit_node(auth, node, **kwargs):
         node.save()
     except ValidationError as e:
         raise HTTPError(
-            http.BAD_REQUEST,
-            data=dict(message_long=e.message)
+            http_status.HTTP_400_BAD_REQUEST,
+            data=dict(message_long=str(e))
         )
     return {
         'status': 'success',
@@ -143,14 +143,14 @@ def project_new_post(auth, **kwargs):
             project = new_node(category, title, user, description)
         except ValidationError as e:
             raise HTTPError(
-                http.BAD_REQUEST,
-                data=dict(message_long=e.message)
+                http_status.HTTP_400_BAD_REQUEST,
+                data=dict(message_long=str(e))
             )
         new_project = _view_project(project, auth)
     return {
         'projectUrl': project.url,
         'newNode': new_project['node'] if new_project else None
-    }, http.CREATED
+    }, http_status.HTTP_201_CREATED
 
 
 @must_be_logged_in
@@ -160,7 +160,7 @@ def project_new_from_template(auth, node, **kwargs):
         auth=auth,
         changes=dict(),
     )
-    return {'url': new_node.url}, http.CREATED, None
+    return {'url': new_node.url}, http_status.HTTP_201_CREATED, None
 
 
 ##############################################################################
@@ -187,8 +187,8 @@ def project_new_node(auth, node, **kwargs):
             )
         except ValidationError as e:
             raise HTTPError(
-                http.BAD_REQUEST,
-                data=dict(message_long=e.message)
+                http_status.HTTP_400_BAD_REQUEST,
+                data=dict(message_long=str(e))
             )
         redirect_url = node.url
         message = (
@@ -226,7 +226,7 @@ def project_new_node(auth, node, **kwargs):
     else:
         # TODO: This function doesn't seem to exist anymore?
         status.push_errors_to_status(form.errors)
-    raise HTTPError(http.BAD_REQUEST, redirect_url=node.url)
+    raise HTTPError(http_status.HTTP_400_BAD_REQUEST, redirect_url=node.url)
 
 
 @must_be_logged_in
@@ -420,7 +420,7 @@ def configure_comments(node, **kwargs):
     elif comment_level in ['public', 'private']:
         node.comment_level = comment_level
     else:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     node.save()
 
 @must_have_permission(ADMIN)
@@ -520,7 +520,7 @@ def project_reorder_components(node, **kwargs):
     )
 
     if len(ordered_guids) > len(node_relations):
-        raise HTTPError(http.BAD_REQUEST, data=dict(message_long='Too many node IDs'))
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(message_long='Too many node IDs'))
 
     # Ordered NodeRelation pks, sorted according the order of guids passed in the request payload
     new_node_relation_ids = [
@@ -534,7 +534,7 @@ def project_reorder_components(node, **kwargs):
         return {'nodes': ordered_guids}
 
     logger.error('Got invalid node list in reorder components')
-    raise HTTPError(http.BAD_REQUEST)
+    raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
 @must_be_valid_project
 @must_be_contributor_or_public
@@ -555,12 +555,12 @@ def project_set_privacy(auth, node, **kwargs):
 
     permissions = kwargs.get('permissions')
     if permissions is None:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     try:
         node.set_privacy(permissions, auth)
     except NodeStateError as e:
-        raise HTTPError(http.BAD_REQUEST, data=dict(
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
             message_short="Can't change privacy",
             message_long=str(e)
         ))
@@ -572,7 +572,6 @@ def project_set_privacy(auth, node, **kwargs):
 
 
 @must_be_valid_project
-@must_not_be_registration
 @must_have_permission(WRITE)
 def update_node(auth, node, **kwargs):
     # in node.update() method there is a key list node.WRITABLE_WHITELIST only allow user to modify
@@ -605,7 +604,7 @@ def component_remove(auth, node, **kwargs):
         node.remove_node(auth)
     except NodeStateError as e:
         raise HTTPError(
-            http.BAD_REQUEST,
+            http_status.HTTP_400_BAD_REQUEST,
             data={
                 'message_short': 'Error',
                 'message_long': 'Could not delete component: ' + str(e)
@@ -636,9 +635,10 @@ def remove_private_link(*args, **kwargs):
     try:
         link = PrivateLink.objects.get(_id=link_id)
     except PrivateLink.DoesNotExist:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     link.is_deleted = True
+    link.deleted = timezone.now()
     link.save()
 
     for node in link.nodes.all():
@@ -762,7 +762,7 @@ def _view_project(node, auth, primary=False,
             'registered_from_url': node.registered_from.url if is_registration else '',
             'registered_date': iso8601format(node.registered_date) if is_registration else '',
             'root_id': node.root._id if node.root else None,
-            'registered_meta': node.registered_meta,
+            'registered_meta': strip_registered_meta_comments(node.registered_meta),
             'registered_schemas': serialize_meta_schemas(list(node.registered_schema.all())) if is_registration else False,
             'is_fork': node.is_fork,
             'is_collected': node.is_collected,
@@ -811,7 +811,7 @@ def _view_project(node, auth, primary=False,
             'is_admin': node.has_permission(user, ADMIN),
             'is_admin_parent_contributor': parent.is_admin_parent(user, include_group_admin=False) if parent else False,
             'is_admin_parent_contributor_or_group_member': parent.is_admin_parent(user) if parent else False,
-            'can_edit': node.has_permission(user, WRITE) and not node.is_registration,
+            'can_edit': node.has_permission(user, WRITE),
             'can_edit_tags': node.has_permission(user, WRITE),
             'has_read_permissions': node.has_permission(user, READ),
             'permissions': node.get_permissions(user) if user else [],
@@ -831,7 +831,7 @@ def _view_project(node, auth, primary=False,
         'addon_widget_css': css,
         'node_categories': [
             {'value': key, 'display_name': value}
-            for key, value in settings.NODE_CATEGORY_MAP.items()
+            for key, value in list(settings.NODE_CATEGORY_MAP.items())
         ]
     }
 
@@ -1129,8 +1129,8 @@ def project_generate_private_link_post(auth, node, **kwargs):
         )
     except ValidationError as e:
         raise HTTPError(
-            http.BAD_REQUEST,
-            data=dict(message_long=e.message)
+            http_status.HTTP_400_BAD_REQUEST,
+            data=dict(message_long=str(e))
         )
 
     return new_link
@@ -1145,7 +1145,7 @@ def project_private_link_edit(auth, **kwargs):
     except ValidationError as e:
         message = 'Invalid link name.' if e.message == 'Invalid title.' else e.message
         raise HTTPError(
-            http.BAD_REQUEST,
+            http_status.HTTP_400_BAD_REQUEST,
             data=dict(message_long=message)
         )
 
@@ -1159,7 +1159,7 @@ def project_private_link_edit(auth, **kwargs):
         return new_name
     else:
         raise HTTPError(
-            http.BAD_REQUEST,
+            http_status.HTTP_400_BAD_REQUEST,
             data=dict(message_long='View-only link not found.')
         )
 
@@ -1228,7 +1228,7 @@ def search_node(auth, **kwargs):
     return {
         'nodes': [
             _serialize_node_search(each)
-            for each in islice(nodes, start, start + size)
+            for each in nodes[start: start + size]
             if each.contributors
         ],
         'total': count,
@@ -1265,14 +1265,14 @@ def add_pointer(auth):
     pointer_to_move = request.json.get('pointerID')
 
     if not (to_node_id and pointer_to_move):
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     pointer = AbstractNode.load(pointer_to_move)
     to_node = Guid.load(to_node_id).referent
     try:
         _add_pointers(to_node, [pointer], auth)
     except ValueError:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
 
 @must_have_permission(WRITE)
@@ -1284,7 +1284,7 @@ def add_pointers(auth, node, **kwargs):
     node_ids = request.json.get('nodeIds')
 
     if not node_ids:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     nodes = [
         AbstractNode.load(node_id)
@@ -1294,7 +1294,7 @@ def add_pointers(auth, node, **kwargs):
     try:
         _add_pointers(node, nodes, auth)
     except ValueError:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     return {}
 
@@ -1310,16 +1310,16 @@ def remove_pointer(auth, node, **kwargs):
     # id in the URL instead
     pointer_id = request.json.get('pointerId')
     if pointer_id is None:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     pointer = AbstractNode.load(pointer_id)
     if pointer is None:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     try:
         node.rm_pointer(pointer, auth=auth)
     except ValueError:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     node.save()
 
@@ -1342,18 +1342,18 @@ def fork_pointer(auth, node, **kwargs):
 
     if pointer is None:
         # TODO: Change this to 404?
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     try:
         fork = node.fork_pointer(pointer, auth=auth, save=True)
     except ValueError:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     return {
         'data': {
             'node': serialize_node_summary(node=fork, auth=auth, show_path=False)
         }
-    }, http.CREATED
+    }, http_status.HTTP_201_CREATED
 
 def abbrev_authors(node):
     lead_author = node.visible_contributors[0]

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Custom exceptions for the framework."""
 import copy
-import httplib as http
+from rest_framework import status as http_status
 from flask import request
 from website import language
 
@@ -13,30 +13,30 @@ class FrameworkError(Exception):
 class HTTPError(FrameworkError):
 
     error_msgs = {
-        http.BAD_REQUEST: {
+        http_status.HTTP_400_BAD_REQUEST: {
             'message_short': 'Bad request',
             'message_long': ('If this should not have occurred and the issue persists, '
                              + language.SUPPORT_LINK),
         },
-        http.FORBIDDEN: {
+        http_status.HTTP_403_FORBIDDEN: {
             'message_short': 'Forbidden',
             'message_long': ('You do not have permission to perform this action. '
                              'If this should not have occurred and the issue persists, '
                              + language.SUPPORT_LINK),
         },
-        http.NOT_FOUND: {
+        http_status.HTTP_404_NOT_FOUND: {
             'message_short': 'Page not found',
             'message_long': ('The requested resource could not be found. If this '
                              'should not have occurred and the issue persists, '
                              + language.SUPPORT_LINK),
         },
-        http.GONE: {
+        http_status.HTTP_410_GONE: {
             'message_short': 'Resource deleted',
             'message_long': ('User has deleted this content. If this should '
                              'not have occurred and the issue persists, '
                              + language.SUPPORT_LINK),
         },
-        http.SERVICE_UNAVAILABLE: {
+        http_status.HTTP_503_SERVICE_UNAVAILABLE: {
             'message_short': 'Service is currently unavailable',
             'message_long': ('The requested service is unavailable. If this '
                              'should not have occurred and the issue persists, '
@@ -80,7 +80,7 @@ class HTTPError(FrameworkError):
                 'message_short': self.error_msgs[self.code]['message_short'],
                 'message_long': self.error_msgs[self.code]['message_long']
             }
-        elif self.code == http.UNAUTHORIZED:
+        elif self.code == http_status.HTTP_401_UNAUTHORIZED:
             data = {
                 'message_short': 'Unauthorized',
                 'message_long': 'You must <a href="/login/?next={}">log in</a> to access this resource.'.format(request.url),

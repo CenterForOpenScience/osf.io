@@ -148,7 +148,7 @@ class TestNodeForksList:
 
         auth = Auth(user)
         expected_logs = list(
-            private_project.get_aggregate_logs_queryset(
+            private_project.get_logs_queryset(
                 auth
             ).values_list('action', flat=True)
         )

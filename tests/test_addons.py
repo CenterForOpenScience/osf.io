@@ -2,7 +2,7 @@
 
 import os
 import datetime
-import httplib as http
+from rest_framework import status as http_status
 import time
 import functools
 
@@ -22,7 +22,7 @@ from osf_tests import factories
 from tests.base import OsfTestCase, get_default_metaschema
 from api_tests.utils import create_test_file
 from osf_tests.factories import (AuthUserFactory, ProjectFactory,
-                             RegistrationFactory)
+                             RegistrationFactory, DraftRegistrationFactory,)
 from website import settings
 from addons.base import views
 from addons.github.exceptions import ApiError
@@ -61,7 +61,7 @@ class TestAddonAuth(OsfTestCase):
         self.node = ProjectFactory(creator=self.user)
         self.session = Session(data={'auth_user_id': self.user._id})
         self.session.save()
-        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
+        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id).decode()
         self.configure_addon()
         self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
@@ -171,7 +171,7 @@ class TestAddonAuth(OsfTestCase):
 
         # Add a new version, make sure that does not have a record
         version = FileVersionFactory()
-        test_file.versions.add(version)
+        test_file.add_version(version)
         test_file.save()
 
         versions = test_file.versions.order_by('created')
@@ -554,19 +554,19 @@ class TestCheckPreregAuth(OsfTestCase):
         with assert_raises(HTTPError) as exc_info:
             views.check_access(self.draft_registration.branched_from,
                  Auth(user=new_user), 'download', None)
-            assert_equal(exc_info.exception.code, http.FORBIDDEN)
+            assert_equal(exc_info.exception.code, http_status.HTTP_403_FORBIDDEN)
 
     def test_has_permission_download_prereg_challenge_admin_not_draft(self):
         with assert_raises(HTTPError) as exc_info:
             views.check_access(self.node,
                  Auth(user=self.prereg_challenge_admin_user), 'download', None)
-            assert_equal(exc_info.exception.code, http.FORBIDDEN)
+            assert_equal(exc_info.exception.code, http_status.HTTP_403_FORBIDDEN)
 
     def test_has_permission_write_prereg_challenge_admin(self):
         with assert_raises(HTTPError) as exc_info:
             views.check_access(self.draft_registration.branched_from,
-                Auth(user=self.prereg_challenge_admin_user), WRITE, None)
-            assert_equal(exc_info.exception.code, http.FORBIDDEN)
+            Auth(user=self.prereg_challenge_admin_user), WRITE, None)
+            assert_equal(exc_info.exception.code, http_status.HTTP_403_FORBIDDEN)
 
 class TestCheckOAuth(OsfTestCase):
 
@@ -729,7 +729,7 @@ class TestAddonFileViews(OsfTestCase):
             materialized_path='/test/Test',
         )
         ret.save()
-        ret.versions.add(version)
+        ret.add_version(version)
         return ret
 
     def get_second_test_file(self):
@@ -742,7 +742,7 @@ class TestAddonFileViews(OsfTestCase):
             materialized_path='/test/Test2',
         )
         ret.save()
-        ret.versions.add(version)
+        ret.add_version(version)
         return ret
 
     def get_uppercased_ext_test_file(self):
@@ -755,7 +755,7 @@ class TestAddonFileViews(OsfTestCase):
             materialized_path='/test/Test2',
         )
         ret.save()
-        ret.versions.add(version)
+        ret.add_version(version)
         return ret
 
     def get_ext_test_file(self):
@@ -768,7 +768,7 @@ class TestAddonFileViews(OsfTestCase):
             materialized_path='/test/Test2',
         )
         ret.save()
-        ret.versions.add(version)
+        ret.add_version(version)
         return ret
 
     def get_mako_return(self):
@@ -811,7 +811,7 @@ class TestAddonFileViews(OsfTestCase):
         )
 
         assert_equals(resp.status_code, 302)
-        assert_equals(resp.location, 'http://localhost:80/{}/'.format(guid._id))
+        assert_equals(resp.location, 'http://localhost/{}/'.format(guid._id))
 
     def test_action_download_redirects_to_download_with_param(self):
         file_node = self.get_test_file()
@@ -831,7 +831,7 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 302)
         location = furl.furl(resp.location)
-        assert_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, version='', format='pdf'))
+        assert_equal(location.url, file_node.generate_waterbutler_url(format='pdf', action='download', direct=None, version=''))
 
 
     def test_action_download_redirects_to_download_with_path_uppercase(self):
@@ -842,7 +842,7 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 302)
         location = furl.furl(resp.location)
-        assert_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, version='', format='pdf'))
+        assert_equal(location.url, file_node.generate_waterbutler_url( format='pdf', action='download', direct=None, version=''))
 
 
     def test_action_download_redirects_to_download_with_version(self):
@@ -1082,7 +1082,7 @@ class TestAddonFileViews(OsfTestCase):
         registered_node = self.project.register_node(
             schema=get_default_metaschema(),
             auth=Auth(self.user),
-            data=None,
+            draft_registration=DraftRegistrationFactory(branched_from=self.project),
         )
 
         archived_from_url = views.get_archived_from_url(registered_node, file_node)
@@ -1097,7 +1097,7 @@ class TestAddonFileViews(OsfTestCase):
         registered_node = self.project.register_node(
             schema=get_default_metaschema(),
             auth=Auth(self.user),
-            data=None,
+            draft_registration=DraftRegistrationFactory(branched_from=self.project),
         )
         archived_from_url = views.get_archived_from_url(registered_node, file_node)
         assert_false(archived_from_url)
@@ -1110,7 +1110,7 @@ class TestAddonFileViews(OsfTestCase):
         self.project.register_node(
             schema=get_default_metaschema(),
             auth=Auth(self.user),
-            data=None,
+            draft_registration=DraftRegistrationFactory(branched_from=self.project),
         )
         trashed_node = second_file_node.delete()
         assert_false(trashed_node.copied_from)
@@ -1155,7 +1155,7 @@ class TestAddonFileViews(OsfTestCase):
             'modified': '2016-08-22T13:54:32.100900'
         }
         file_node.update(revision=None, user=None, data=data)
-        mock_capture.assert_called_with(unicode('update() receives metatdata older than the newest entry in file history.'), extra={'session': {}})
+        mock_capture.assert_called_with(str('update() receives metatdata older than the newest entry in file history.'), extra={'session': {}})
 
 class TestLegacyViews(OsfTestCase):
 

@@ -57,6 +57,7 @@ from api.nodes.permissions import (
 from api.requests.permissions import PreprintRequestPermission
 from api.requests.serializers import PreprintRequestSerializer, PreprintRequestCreateSerializer
 from api.requests.views import PreprintRequestMixin
+from api.subjects.views import BaseResourceSubjectsList
 from api.base.metrics import MetricsViewMixin
 from osf.metrics import PreprintDownload, PreprintView
 
@@ -415,6 +416,25 @@ class PreprintContributorDetail(NodeContributorDetail, PreprintMixin):
         return context
 
 
+class PreprintSubjectsList(BaseResourceSubjectsList, PreprintMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_subjects_list).
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ModeratorIfNeverPublicWithdrawn,
+        ContributorOrPublic,
+        PreprintPublishedOrWrite,
+    )
+
+    required_read_scopes = [CoreScopes.PREPRINTS_READ]
+
+    view_category = 'preprints'
+    view_name = 'preprint-subjects'
+
+    def get_resource(self):
+        return self.get_preprint()
+
 class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintMixin):
     """Action List *Read-only*
 
@@ -512,8 +532,8 @@ class PreprintStorageProvidersList(NodeStorageProvidersList, PreprintMixin):
     view_category = 'preprints'
     view_name = 'preprint-storage-providers'
 
-    def get_provider_item(self, provider):
-        return NodeStorageProvider(provider, self.get_preprint())
+    def get_provider_item(self, provider_name):
+        return NodeStorageProvider(self.get_preprint(), provider_name)
 
     def get_queryset(self):
         # Preprints Providers restricted so only osfstorage is allowed

@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 import mock
 import pytest
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
+from nose.tools import *  # noqa:
 
 
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.base.settings.defaults import API_BASE
+from api.taxonomies.serializers import subjects_as_relationships_version
+from api_tests.subjects.mixins import UpdateSubjectsMixin
 from framework.auth.core import Auth
 from osf.models import NodeLog
 from osf.models.licenses import NodeLicense
@@ -23,14 +26,14 @@ from osf_tests.factories import (
     PreprintFactory,
     IdentifierFactory,
     InstitutionFactory,
-    SubjectFactory,
     ForkFactory,
     OSFGroupFactory,
     WithdrawnRegistrationFactory,
+    DraftNodeFactory,
 )
 from rest_framework import exceptions
 from tests.base import fake
-from tests.utils import assert_items_equal, assert_latest_log, assert_latest_log_not
+from tests.utils import assert_latest_log, assert_latest_log_not
 from website.views import find_bookmark_collection
 
 
@@ -52,6 +55,10 @@ class TestNodeDetail:
             title='Project One',
             is_public=True,
             creator=user)
+
+    @pytest.fixture()
+    def draft_node(self, user):
+        return DraftNodeFactory(creator=user)
 
     @pytest.fixture()
     def project_private(self, user):
@@ -91,7 +98,7 @@ class TestNodeDetail:
     def test_return_project_details(
             self, app, user, user_two, project_public,
             project_private, url_public, url_private,
-            permissions_read, permissions_admin):
+            permissions_read, permissions_admin, draft_node):
 
         #   test_return_public_project_details_logged_out
         res = app.get(url_public)
@@ -151,6 +158,11 @@ class TestNodeDetail:
         assert res.status_code == 200
         assert project_private.has_permission(user_two, permissions.WRITE) is True
 
+    #   test_draft_node_not_returned_under_node_detail_endpoint
+        draft_node_url = '/{}nodes/{}/'.format(API_BASE, draft_node._id)
+        res = app.get(draft_node_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
+
     def test_return_private_project_details_logged_in_write_contributor(
             self, app, user, user_two, project_private, url_private, permissions_write):
         project_private.add_contributor(
@@ -162,7 +174,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is True
-        assert_items_equal(
+        assert_equals(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_write)
 
@@ -219,6 +231,15 @@ class TestNodeDetail:
         assert urlparse(related_url).path == expected_url
         self_url = res.json['data']['relationships']['affiliated_institutions']['links']['self']['href']
         expected_url = '{}relationships/institutions/'.format(url_public)
+        assert urlparse(self_url).path == expected_url
+
+    #   test_node_has_subjects_links_for_later_versions
+        res = app.get(url_public + '?version={}'.format(subjects_as_relationships_version))
+        related_url = res.json['data']['relationships']['subjects']['links']['related']['href']
+        expected_url = '{}subjects/'.format(url_public)
+        assert urlparse(related_url).path == expected_url
+        self_url = res.json['data']['relationships']['subjects']['links']['self']['href']
+        expected_url = '{}relationships/subjects/'.format(url_public)
         assert urlparse(self_url).path == expected_url
 
     def test_node_has_comments_link(
@@ -671,8 +692,19 @@ class NodeCRUDTestCase:
         )
 
     @pytest.fixture()
+    def wiki_private(self, user, project_private):
+        with mock.patch('osf.models.AbstractNode.update_search'):
+            wiki_page = WikiFactory(page_name='foo', node=project_private, user=user)
+            WikiVersionFactory(wiki_page=wiki_page)
+        return wiki_page
+
+    @pytest.fixture()
     def url_public(self, project_public):
         return '/{}nodes/{}/'.format(API_BASE, project_public._id)
+
+    @pytest.fixture()
+    def sparse_url_public(self, project_public):
+        return '/{}sparse/nodes/{}/'.format(API_BASE, project_public._id)
 
     @pytest.fixture()
     def url_private(self, project_private):
@@ -700,13 +732,27 @@ class NodeCRUDTestCase:
             return payload_data
         return payload
 
+    @pytest.fixture()
+    def make_sparse_node_payload(self):
+        def payload(node, attributes, relationships=None):
+
+            payload_data = {
+                'data': {
+                    'id': node._id,
+                    'type': 'sparse-nodes',
+                    'attributes': attributes,
+                }
+            }
+
+            if relationships:
+                payload_data['data']['relationships'] = relationships
+
+            return payload_data
+        return payload
+
 
 @pytest.mark.django_db
 class TestNodeUpdate(NodeCRUDTestCase):
-
-    @pytest.fixture()
-    def subject(self):
-        return SubjectFactory()
 
     def test_node_institution_update(self, app, user_two, project_private, url_private, make_node_payload,
                                      institution_one, institution_two):
@@ -800,7 +846,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_update_errors(
             self, app, user, user_two, title_new, description_new,
             category_new, project_public, project_private,
-            url_public, url_private):
+            url_public, url_private, sparse_url_public, make_sparse_node_payload):
 
         #   test_update_project_properties_not_nested
         res = app.put_json_api(url_public, {
@@ -815,7 +861,16 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.json['errors'][0]['detail'] == 'Request must include /data.'
         assert res.json['errors'][0]['source']['pointer'] == '/data'
 
-    #   test_update_invalid_id
+        #   test_cannot_update_sparse
+        res = app.patch_json_api(
+            sparse_url_public,
+            make_sparse_node_payload(project_public, {'public': False}),
+            auth=user.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 405
+
+        #   test_update_invalid_id
         res = app.put_json_api(url_public, {
             'data': {
                 'id': '12345',
@@ -980,47 +1035,53 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_update_public_project_logged_in(
             self, app, user, title_new, description_new,
             category_new, project_public, url_public):
-        with assert_latest_log(NodeLog.UPDATED_FIELDS, project_public):
-            res = app.put_json_api(url_public, {
-                'data': {
-                    'id': project_public._id,
-                    'type': 'nodes',
-                    'attributes': {
-                        'title': title_new,
-                        'description': description_new,
-                        'category': category_new,
-                        'public': True
-                    }
+        res = app.put_json_api(url_public, {
+            'data': {
+                'id': project_public._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': title_new,
+                    'description': description_new,
+                    'category': category_new,
+                    'public': True
                 }
-            }, auth=user.auth)
-            assert res.status_code == 200
-            assert res.content_type == 'application/vnd.api+json'
-            assert res.json['data']['attributes']['title'] == title_new
-            assert res.json['data']['attributes']['description'] == description_new
-            assert res.json['data']['attributes']['category'] == category_new
+            }
+        }, auth=user.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == title_new
+        assert res.json['data']['attributes']['description'] == description_new
+        assert res.json['data']['attributes']['category'] == category_new
+        log_actions = project_public.logs.values_list('action', flat=True)
+        assert NodeLog.EDITED_TITLE in log_actions
+        assert NodeLog.EDITED_DESCRIPTION in log_actions
+        assert NodeLog.CATEGORY_UPDATED in log_actions
 
     def test_update_public_project_osf_group_member(
         self, app, user_two, title_new, description_new,
             category_new, project_public, url_public):
         osf_group = OSFGroupFactory(creator=user_two)
         project_public.add_osf_group(osf_group, permissions.WRITE)
-        with assert_latest_log(NodeLog.UPDATED_FIELDS, project_public):
-            res = app.put_json_api(url_public, {
-                'data': {
-                    'id': project_public._id,
-                    'type': 'nodes',
-                    'attributes': {
-                        'title': title_new,
-                        'description': description_new,
-                        'category': category_new,
-                    }
+        res = app.put_json_api(url_public, {
+            'data': {
+                'id': project_public._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': title_new,
+                    'description': description_new,
+                    'category': category_new,
                 }
-            }, auth=user_two.auth)
-            assert res.status_code == 200
-            assert res.content_type == 'application/vnd.api+json'
-            assert res.json['data']['attributes']['title'] == title_new
-            assert res.json['data']['attributes']['description'] == description_new
-            assert res.json['data']['attributes']['category'] == category_new
+            }
+        }, auth=user_two.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == title_new
+        assert res.json['data']['attributes']['description'] == description_new
+        assert res.json['data']['attributes']['category'] == category_new
+        log_actions = project_public.logs.values_list('action', flat=True)
+        assert NodeLog.CATEGORY_UPDATED in log_actions
+        assert NodeLog.EDITED_TITLE in log_actions
+        assert NodeLog.EDITED_DESCRIPTION in log_actions
 
     def test_cannot_update_a_registration(self, app, user, project_public):
         registration = RegistrationFactory(
@@ -1048,49 +1109,55 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_update_private_project_logged_in_contributor(
             self, app, user, title_new, description_new,
             category_new, project_private, url_private):
-        with assert_latest_log(NodeLog.UPDATED_FIELDS, project_private):
-            res = app.put_json_api(url_private, {
-                'data': {
-                    'id': project_private._id,
-                    'type': 'nodes',
-                    'attributes': {
-                        'title': title_new,
-                        'description': description_new,
-                        'category': category_new,
-                        'public': False
-                    }
+        res = app.put_json_api(url_private, {
+            'data': {
+                'id': project_private._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': title_new,
+                    'description': description_new,
+                    'category': category_new,
+                    'public': False
                 }
-            }, auth=user.auth)
-            assert res.status_code == 200
-            assert res.content_type == 'application/vnd.api+json'
-            assert res.json['data']['attributes']['title'] == title_new
-            assert res.json['data']['attributes']['description'] == description_new
-            assert res.json['data']['attributes']['category'] == category_new
+            }
+        }, auth=user.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == title_new
+        assert res.json['data']['attributes']['description'] == description_new
+        assert res.json['data']['attributes']['category'] == category_new
+        log_actions = [log.action for log in project_private.logs.all()]
+        assert NodeLog.EDITED_TITLE in log_actions
+        assert NodeLog.EDITED_DESCRIPTION in log_actions
+        assert NodeLog.CATEGORY_UPDATED in log_actions
 
     def test_update_project_sanitizes_html_properly(
             self, app, user, category_new, project_public, url_public):
-        with assert_latest_log(NodeLog.UPDATED_FIELDS, project_public):
-            """Post request should update resource, and any HTML in fields should be stripped"""
-            new_title = '<strong>Super</strong> Cool Project'
-            new_description = 'An <script>alert("even cooler")</script> project'
-            res = app.put_json_api(url_public, {
-                'data': {
-                    'id': project_public._id,
-                    'type': 'nodes',
-                    'attributes': {
-                        'title': new_title,
-                        'description': new_description,
-                        'category': category_new,
-                        'public': True,
-                    }
+        """Post request should update resource, and any HTML in fields should be stripped"""
+        new_title = '<strong>Super</strong> Cool Project'
+        new_description = 'An <script>alert("even cooler")</script> project'
+        res = app.put_json_api(url_public, {
+            'data': {
+                'id': project_public._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': new_title,
+                    'description': new_description,
+                    'category': category_new,
+                    'public': True,
                 }
-            }, auth=user.auth)
-            assert res.status_code == 200
-            assert res.content_type == 'application/vnd.api+json'
-            assert res.json['data']['attributes']['title'] == strip_html(
-                new_title)
-            assert res.json['data']['attributes']['description'] == strip_html(
-                new_description)
+            }
+        }, auth=user.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == strip_html(
+            new_title)
+        assert res.json['data']['attributes']['description'] == strip_html(
+            new_description)
+        log_actions = [log.action for log in project_public.logs.all()]
+        assert NodeLog.EDITED_TITLE in log_actions
+        assert NodeLog.EDITED_DESCRIPTION in log_actions
+        assert NodeLog.CATEGORY_UPDATED in log_actions
 
     def test_partial_update_project_updates_project_correctly_and_sanitizes_html(
             self, app, user, description, category, project_public, url_public):
@@ -1330,8 +1397,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 200
         project_public.reload()
         assert not project_public.is_public
-        mock_update_doi_metadata.assert_called_with(
-            project_public._id, status='unavailable')
+        mock_update_doi_metadata.assert_called_with(project_public._id)
 
     @pytest.mark.enable_enqueue_task
     @mock.patch('website.preprints.tasks.update_or_enqueue_on_preprint_updated')
@@ -1353,43 +1419,6 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert target_object.is_public
         assert not mock_update_doi_metadata.called
 
-    def test_permissions_to_set_subjects(self, app, user, project_public, subject, url_public, make_node_payload):
-        # test_write_contrib_cannot_set_subjects
-        write_contrib = AuthUserFactory()
-        project_public.add_contributor(write_contrib, permissions=permissions.WRITE, auth=Auth(user), save=True)
-
-        assert not project_public.subjects.filter(_id=subject._id).exists()
-        update_subjects_payload = make_node_payload(project_public, attributes={'subjects': [[subject._id]]})
-
-        res = app.patch_json_api(url_public, update_subjects_payload, auth=write_contrib.auth, expect_errors=True)
-        assert res.status_code == 403
-
-        assert not project_public.subjects.filter(_id=subject._id).exists()
-
-        # test_non_contrib_cannot_set_subjects
-        non_contrib = AuthUserFactory()
-
-        assert not project_public.subjects.filter(_id=subject._id).exists()
-
-        update_subjects_payload = make_node_payload(project_public, attributes={'subjects': [[subject._id]]})
-
-        res = app.patch_json_api(url_public, update_subjects_payload, auth=non_contrib.auth, expect_errors=True)
-        assert res.status_code == 403
-
-        assert not project_public.subjects.filter(_id=subject._id).exists()
-
-        # test_admin_can_set_subjects
-        admin_contrib = AuthUserFactory()
-        project_public.add_contributor(admin_contrib, permissions=permissions.ADMIN, auth=Auth(user), save=True)
-
-        assert not project_public.subjects.filter(_id=subject._id).exists()
-        update_subjects_payload = make_node_payload(project_public, attributes={'subjects': [[subject._id]]})
-
-        res = app.patch_json_api(url_public, update_subjects_payload, auth=admin_contrib.auth, expect_errors=True)
-        assert res.status_code == 200
-
-        assert project_public.subjects.filter(_id=subject._id).exists()
-
 
 @pytest.mark.django_db
 @pytest.mark.enable_bookmark_creation
@@ -1398,7 +1427,7 @@ class TestNodeDelete(NodeCRUDTestCase):
     def test_deletes_node_errors(
             self, app, user, user_two, project_public,
             project_private, url_public, url_private,
-            url_fake):
+            url_fake, sparse_url_public):
 
         #   test_deletes_public_node_logged_out
         res = app.delete(url_public, expect_errors=True)
@@ -1412,6 +1441,16 @@ class TestNodeDelete(NodeCRUDTestCase):
             expect_errors=True)
         project_public.reload()
         assert res.status_code == 403
+        assert project_public.is_deleted is False
+        assert 'detail' in res.json['errors'][0]
+
+    #   test_deletes_from_sparse_fails
+        res = app.delete_json_api(
+            sparse_url_public,
+            auth=user.auth,
+            expect_errors=True)
+        project_public.reload()
+        assert res.status_code == 405
         assert project_public.is_deleted is False
         assert 'detail' in res.json['errors'][0]
 
@@ -1657,6 +1696,18 @@ class TestReturnDeletedNode:
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 410
+
+
+@pytest.mark.django_db
+class TestUpdateNodeSubjects(UpdateSubjectsMixin):
+
+    @pytest.fixture()
+    def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib):
+        project = ProjectFactory(is_public=True, creator=user_admin_contrib)
+        project.add_contributor(user_write_contrib, permissions=permissions.WRITE)
+        project.add_contributor(user_read_contrib, permissions=permissions.READ)
+        project.save()
+        return project
 
 
 @pytest.mark.django_db
@@ -2394,6 +2445,21 @@ class TestNodeUpdateLicense:
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'year must be specified for this license'
+
+    def test_update_node_license_without_license_id(
+            self, node, make_payload, make_request, url_node, user_admin_contrib):
+        data = make_payload(
+            node_id=node._id,
+            license_year='2015',
+            copyright_holders=['Ben, Jerry']
+        )
+
+        res = make_request(
+            url_node, data,
+            auth=user_admin_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'License ID must be provided for a Node License.'
 
     def test_update_node_license_without_required_copyright_holders_in_payload_(
             self, user_admin_contrib, node, make_payload, make_request, license_no, url_node):

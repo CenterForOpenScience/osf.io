@@ -20,7 +20,7 @@ from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
 from osf.models import Subject, Preprint
 from osf.models.base import GuidMixin
-
+from functools import cmp_to_key
 
 def lowercase(lower):
     if hasattr(lower, '__call__'):
@@ -61,10 +61,55 @@ class OSFOrderingFilter(OrderingFilter):
             return super(OSFOrderingFilter, self).filter_queryset(request, queryset, view)
         if ordering:
             if isinstance(ordering, (list, tuple)):
-                sorted_list = sorted(queryset, cmp=sort_multiple(ordering))
+                sorted_list = sorted(queryset, key=cmp_to_key(sort_multiple(ordering)))
                 return sorted_list
             return queryset.sort(*ordering)
         return queryset
+
+    def get_serializer_source_field(self, view, request):
+        """
+        Returns a dictionary of serializer fields and source names. i.e. {'date_created': 'created'}
+
+        Logic borrowed from OrderingFilter.get_default_valid_fields with modifications to retrieve
+        source fields for serializer field names.
+
+        :param view api view
+        :
+        """
+        field_to_source_mapping = {}
+
+        if hasattr(view, 'get_serializer_class'):
+            serializer_class = view.get_serializer_class()
+        else:
+            serializer_class = getattr(view, 'serializer_class', None)
+
+        # This will not allow any serializer fields with nested related fields to be sorted on
+        for field_name, field in serializer_class(context={'request': request}).fields.items():
+            if not getattr(field, 'write_only', False) and not field.source == '*' and field_name != field.source:
+                field_to_source_mapping[field_name] = field.source.replace('.', '_')
+
+        return field_to_source_mapping
+
+    # Overrides OrderingFilter
+    def remove_invalid_fields(self, queryset, fields, view, request):
+        """
+        Returns an array of valid fields to be used for ordering.
+        Any valid source fields which are input remain in the valid fields list using the super method.
+        Serializer fields are mapped to their source fields and returned.
+        :param fields, array, input sort fields
+        :returns array of source fields for sorting.
+        """
+        valid_fields = super(OSFOrderingFilter, self).remove_invalid_fields(queryset, fields, view, request)
+        if not valid_fields:
+            for invalid_field in fields:
+                ordering_sign = '-' if invalid_field[0] == '-' else ''
+                invalid_field = invalid_field.lstrip('-')
+
+                field_source_mapping = self.get_serializer_source_field(view, request)
+                source_field = field_source_mapping.get(invalid_field, None)
+                if source_field:
+                    valid_fields.append(ordering_sign + source_field)
+        return valid_fields
 
 
 class FilterMixin(object):
@@ -115,16 +160,21 @@ class FilterMixin(object):
 
         :raises InvalidFilterError: If the filter field is not valid
         """
-        serializer_class = self.serializer_class
-        if field_name not in serializer_class._declared_fields:
+        predeclared_fields = self.serializer_class._declared_fields
+        initialized_fields = self.get_serializer().fields if hasattr(self, 'get_serializer') else {}
+        serializer_fields = predeclared_fields.copy()
+        # Merges fields that were declared on serializer with fields that may have been dynamically added
+        serializer_fields.update(initialized_fields)
+
+        if field_name not in serializer_fields:
             raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint.".format(field_name))
-        if field_name not in getattr(serializer_class, 'filterable_fields', set()):
+        if field_name not in getattr(self.serializer_class, 'filterable_fields', set()):
             raise InvalidFilterFieldError(parameter='filter', value=field_name)
-        field = serializer_class._declared_fields[field_name]
+        field = serializer_fields[field_name]
         # You cannot filter on deprecated fields.
         if isinstance(field, ShowIfVersion) and utils.is_deprecated(self.request.version, field.min_version, field.max_version):
             raise InvalidFilterFieldError(parameter='filter', value=field_name)
-        return serializer_class._declared_fields[field_name]
+        return serializer_fields[field_name]
 
     def _validate_operator(self, field, field_name, op):
         """
@@ -311,7 +361,7 @@ class FilterMixin(object):
                     value=value,
                     field_type='date',
                 )
-        elif isinstance(field, (self.RELATIONSHIP_FIELDS, ser.SerializerMethodField)):
+        elif isinstance(field, (self.RELATIONSHIP_FIELDS, ser.SerializerMethodField, ser.ManyRelatedField)):
             if value == 'null':
                 value = None
             return value
@@ -439,11 +489,14 @@ class ListFilterMixin(FilterMixin):
             )
             operation['op'] = 'in'
         if field_name == 'subjects':
-            if Subject.objects.filter(_id=operation['value']).exists():
-                operation['source_field_name'] = 'subjects___id'
-            else:
-                operation['source_field_name'] = 'subjects__text'
-                operation['op'] = 'iexact'
+            self.postprocess_subject_query_param(operation)
+
+    def postprocess_subject_query_param(self, operation):
+        if Subject.objects.filter(_id=operation['value']).exists():
+            operation['source_field_name'] = 'subjects___id'
+        else:
+            operation['source_field_name'] = 'subjects__text'
+            operation['op'] = 'iexact'
 
     def get_filtered_queryset(self, field_name, params, default_queryset):
         """filters default queryset based on the serializer field type"""
@@ -511,12 +564,7 @@ class PreprintFilterMixin(ListFilterMixin):
             operation['source_field_name'] = 'guids___id'
 
         if field_name == 'subjects':
-            try:
-                Subject.objects.get(_id=operation['value'])
-                operation['source_field_name'] = 'subjects___id'
-            except Subject.DoesNotExist:
-                operation['source_field_name'] = 'subjects__text'
-                operation['op'] = 'iexact'
+            self.postprocess_subject_query_param(operation)
 
     def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True, public_only=False):
         return Preprint.objects.can_view(

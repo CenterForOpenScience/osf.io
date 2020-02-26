@@ -1,9 +1,11 @@
 import pytest
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 
 from django.utils.timezone import now
 
 from api.base.settings.defaults import API_BASE
+from api.taxonomies.serializers import subjects_as_relationships_version
+from api_tests.subjects.mixins import UpdateSubjectsMixin, SubjectsFilterMixin, SubjectsListMixin, SubjectsRelationshipMixin
 from framework.auth.core import Auth
 from osf_tests.factories import (
     CollectionFactory,
@@ -16,8 +18,7 @@ from osf_tests.factories import (
 )
 from osf.models import Collection
 from osf.utils.sanitize import strip_html
-from osf.utils.permissions import ADMIN
-from tests.utils import assert_items_equal
+from osf.utils.permissions import ADMIN, WRITE, READ
 from website.project.signals import contributor_removed
 from api_tests.utils import disconnected_from_listeners
 from website.views import find_bookmark_collection
@@ -906,9 +907,9 @@ class TestCollectionNodeLinksList:
         # node_links end point does not handle registrations correctly
         third_embedded = res_json[2]['embeds']['target_node']['errors'][0]['detail']
         fourth_embedded = res_json[3]['embeds']['target_node']['errors'][0]['detail']
-        assert_items_equal(
-            [first_embedded, second_embedded, third_embedded, fourth_embedded],
-            [project_private._id, project_public._id, 'Not found.', 'Not found.'])
+
+        expected = [project_private._id, project_public._id, 'Not found.', 'Not found.']
+        assert expected == [first_embedded, second_embedded, third_embedded, fourth_embedded]
 
         # test_return_private_node_pointers_logged_in_non_contributor
         res = app.get(
@@ -1691,12 +1692,10 @@ class TestCollectionBulkCreate:
         assert res.status_code == 400
         assert len(res.json['errors']) == 2
         errors = res.json['errors']
-        assert_items_equal(
-            [errors[0]['source'], errors[1]['source']],
-            [{'pointer': '/data/0/attributes/title'}, {'pointer': '/data/1/attributes/title'}])
-        assert_items_equal(
-            [errors[0]['detail'], errors[1]['detail']],
-            ['This field may not be blank.', 'This field may not be blank.'])
+        assert [errors[0]['source'], errors[1]['source']] == \
+               [{'pointer': '/data/0/attributes/title'}, {'pointer': '/data/1/attributes/title'}]
+        assert [errors[0]['detail'], errors[1]['detail']] ==\
+               ['This field may not be blank.', 'This field may not be blank.']
 
     def test_non_mutational_collection_bulk_create_tests(
             self, app, bookmark_user_one, url_collections, collection_one,
@@ -1964,10 +1963,12 @@ class TestCollectionBulkUpdate:
         assert res.status_code == 400
         assert len(res.json['errors']) == 2
         errors = res.json['errors']
-        assert_items_equal([errors[0]['source'], errors[1]['source']], [
-                           {'pointer': '/data/0/attributes/title'}, {'pointer': '/data/1/attributes/title'}])
-        assert_items_equal([errors[0]['detail'], errors[1]['detail']],
-                           ['This field may not be blank.'] * 2)
+        assert [errors[0]['source'],
+                errors[1]['source']] == [
+            {'pointer': '/data/0/attributes/title'},
+            {'pointer': '/data/1/attributes/title'}
+        ]
+        assert [errors[0]['detail'], errors[1]['detail']] == ['This field may not be blank.'] * 2
 
         # test_bulk_update_id_not_supplied
         res = app.put_json_api(
@@ -4372,6 +4373,195 @@ class TestCollectedMetaList:
         assert len(res.json['data']) == 1
 
 
+class TestCollectedMetaSubjectFiltering(SubjectsFilterMixin):
+    @pytest.fixture()
+    def project_one(self, user):
+        project = ProjectFactory(creator=user)
+        return project
+
+    @pytest.fixture()
+    def project_two(self, user):
+        project = ProjectFactory(creator=user)
+        return project
+
+    @pytest.fixture()
+    def collection(self, user):
+        return CollectionFactory(creator=user, collected_type_choices=['asdf'], status_choices=['one', 'asdf', 'fdsa'])
+
+    @pytest.fixture()
+    def resource(self, user, collection, project_one, subject_one):
+        cgm = collection.collect_object(project_one, user, status='one', collected_type='asdf')
+        cgm.subjects.add(subject_one)
+        return cgm
+
+    @pytest.fixture()
+    def resource_two(self, user, collection, project_two, subject_two):
+        cgm = collection.collect_object(project_two, user, status='one', collected_type='asdf')
+        cgm.subjects.add(subject_two)
+        return cgm
+
+    @pytest.fixture()
+    def url(self, collection):
+        return '/{}collections/{}/collected_metadata/'.format(API_BASE, collection._id)
+
+    def test_subject_filter_using_id_v_2_2(
+            self, app, user, subject_one, subject_two, resource, resource_two,
+            has_subject, project_one, project_two):
+
+        expected = set([project_one._id])
+        res = app.get(
+            '{}{}&version=2.2'.format(has_subject, subject_one._id),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+        expected = set([project_two._id])
+        res = app.get(
+            '{}{}&version=2.2'.format(has_subject, subject_two._id),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+    def test_subject_filter_using_text_v_2_2(
+            self, app, user, subject_two, resource, resource_two,
+            has_subject, project_one, project_two):
+
+        expected = set([project_two._id])
+        res = app.get(
+            '{}{}&version=2.2'.format(has_subject, subject_two.text),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+    def test_subject_filter_using_id_v_2_16(
+            self, app, user, subject_one, subject_two, resource, resource_two,
+            has_subject, project_one, project_two):
+
+        expected = set([project_one._id])
+        res = app.get(
+            '{}{}&version={}'.format(has_subject, subject_one._id, subjects_as_relationships_version),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+        expected = set([project_two._id])
+        res = app.get(
+            '{}{}&version={}'.format(has_subject, subject_two._id, subjects_as_relationships_version),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+    def test_subject_filter_using_text_v_2_16(
+            self, app, user, subject_two, resource, resource_two,
+            has_subject, project_one, project_two):
+        resource_two.subjects.add(subject_two)
+        expected = set([project_two._id])
+        res = app.get(
+            '{}{}&version={}'.format(has_subject, subject_two.text, subjects_as_relationships_version),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+
+class TestCollectedMetaSubjectsList(SubjectsListMixin):
+
+    @pytest.fixture()
+    def project_one(self, user_admin_contrib, user_write_contrib, user_read_contrib):
+        project = ProjectFactory(creator=user_admin_contrib)
+        project.add_contributor(user_write_contrib, permissions=WRITE)
+        project.add_contributor(user_read_contrib, permissions=READ)
+        return project
+
+    @pytest.fixture()
+    def url(self, collection, resource):
+        return '/{}collections/{}/collected_metadata/{}/subjects/'.format(API_BASE, collection._id, resource.guid._id)
+
+    @pytest.fixture()
+    def collection(self, user_admin_contrib):
+        return CollectionFactory(creator=user_admin_contrib, collected_type_choices=['asdf'], status_choices=['one', 'asdf', 'fdsa'])
+
+    @pytest.fixture()
+    def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib, collection, project_one):
+        cgm = collection.collect_object(project_one, user_admin_contrib, status='one', collected_type='asdf')
+        return cgm
+
+    def test_get_resource_subjects_permissions(self, app, user_write_contrib,
+            user_read_contrib, user_non_contrib, resource, url):
+        # test_unauthorized
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
+
+        # test_noncontrib
+        res = app. get(url, auth=user_non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_read_contrib
+        res = app. get(url, auth=user_write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_write_contrib
+        res = app. get(url, auth=user_read_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+
+@pytest.mark.django_db
+class TestUpdateCollectedMetaSubjects(UpdateSubjectsMixin):
+
+    @pytest.fixture()
+    def project_one(self, user_admin_contrib, user_write_contrib, user_read_contrib):
+        project = ProjectFactory(creator=user_admin_contrib)
+        project.add_contributor(user_write_contrib, permissions=WRITE)
+        project.add_contributor(user_read_contrib, permissions=READ)
+        return project
+
+    @pytest.fixture()
+    def collection(self, user_admin_contrib):
+        return CollectionFactory(creator=user_admin_contrib, collected_type_choices=['asdf'], status_choices=['one', 'asdf', 'fdsa'])
+
+    @pytest.fixture()
+    def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib, collection, project_one):
+        cgm = collection.collect_object(project_one, user_admin_contrib, status='one', collected_type='asdf')
+        return cgm
+
+    @pytest.fixture()
+    def resource_type_plural(self, resource):
+        return 'collected-metadata'
+
+    @pytest.fixture()
+    def url(self, collection, resource):
+        return '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, resource.guid._id)
+
+
+@pytest.mark.django_db
+class TestCollectedMetaSubjectsRelationship(SubjectsRelationshipMixin):
+
+    @pytest.fixture()
+    def project_one(self, user_admin_contrib, user_write_contrib, user_read_contrib):
+        project = ProjectFactory(creator=user_admin_contrib)
+        project.add_contributor(user_write_contrib, permissions=WRITE)
+        project.add_contributor(user_read_contrib, permissions=READ)
+        return project
+
+    @pytest.fixture()
+    def collection(self, user_admin_contrib):
+        return CollectionFactory(creator=user_admin_contrib, collected_type_choices=['asdf'], status_choices=['one', 'asdf', 'fdsa'])
+
+    @pytest.fixture()
+    def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib, collection, project_one):
+        cgm = collection.collect_object(project_one, user_admin_contrib, status='one', collected_type='asdf')
+        return cgm
+
+    @pytest.fixture()
+    def url(self, collection, resource):
+        return '/{}collections/{}/collected_metadata/{}/relationships/subjects/'.format(API_BASE, collection._id, resource.guid._id)
+
+
 @pytest.mark.django_db
 class TestCollectedMetaDetail:
     @pytest.fixture()
@@ -4452,6 +4642,15 @@ class TestCollectedMetaDetail:
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
         assert res.json['data']['id'] == cgm.guid._id
+
+    #   test_cgm_has_subjects_links_for_later_versions
+        res = app.get(url + '?version={}'.format(subjects_as_relationships_version))
+        related_url = res.json['data']['relationships']['subjects']['links']['related']['href']
+        expected_url = '{}subjects/'.format(url)
+        assert urlparse(related_url).path == expected_url
+        self_url = res.json['data']['relationships']['subjects']['links']['self']['href']
+        expected_url = '{}relationships/subjects/'.format(url)
+        assert urlparse(self_url).path == expected_url
 
         res = app.patch_json_api(
             url,

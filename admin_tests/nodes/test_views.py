@@ -1,6 +1,8 @@
 import datetime as dt
 import pytest
 import mock
+import pytz
+import datetime
 
 from osf.models import AdminLogEntry, OSFUser, Node, NodeLog
 from admin.nodes.views import (
@@ -135,19 +137,24 @@ class TestNodeDeleteView(AdminTestCase):
 
     def test_remove_node(self):
         count = AdminLogEntry.objects.count()
-        self.view.delete(self.request)
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        with mock.patch.object(timezone, 'now', return_value=mock_now):
+            self.view.delete(self.request)
         self.node.refresh_from_db()
         nt.assert_true(self.node.is_deleted)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        nt.assert_equal(self.node.deleted, mock_now)
 
     def test_restore_node(self):
         self.view.delete(self.request)
         self.node.refresh_from_db()
         nt.assert_true(self.node.is_deleted)
+        nt.assert_true(self.node.deleted is not None)
         count = AdminLogEntry.objects.count()
         self.view.delete(self.request)
         self.node.reload()
         nt.assert_false(self.node.is_deleted)
+        nt.assert_true(self.node.deleted is None)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_no_user_permissions_raises_error(self):
@@ -486,6 +493,7 @@ class TestRemoveStuckRegistrationsView(AdminTestCase):
 
         self.registration.refresh_from_db()
         nt.assert_true(self.registration.is_deleted)
+        nt.assert_true(self.registration.deleted is not None)
 
     def test_remove_stuck_registration_with_an_addon(self):
         # Prevents circular import that prevents admin app from starting up
@@ -499,3 +507,4 @@ class TestRemoveStuckRegistrationsView(AdminTestCase):
         view.post(self.request)
         self.registration.refresh_from_db()
         nt.assert_true(self.registration.is_deleted)
+        nt.assert_true(self.registration.deleted is not None)

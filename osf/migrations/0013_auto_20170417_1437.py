@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='institution',
             name='delegation_protocol',
-            field=models.CharField(blank=True, choices=[(b'cas-pac4j', b'CAS by pac4j'), (b'oauth-pac4j', b'OAuth by pac4j'), (b'saml-shib', b'SAML by Shibboleth'), (b'', b'No Delegation Protocol')], default=b'', max_length=15),
+            field=models.CharField(blank=True, choices=[('cas-pac4j', 'CAS by pac4j'), ('oauth-pac4j', 'OAuth by pac4j'), ('saml-shib', 'SAML by Shibboleth'), ('', 'No Delegation Protocol')], default='', max_length=15),
         ),
         migrations.AlterField(
             model_name='institution',

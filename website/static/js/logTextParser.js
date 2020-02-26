@@ -662,7 +662,7 @@ var LogPieces = {
 
     googledrive_folder: {
         view: function(ctrl, logObject){
-            var folder = logObject.attributes.params.folder;
+            var folder = logObject.attributes.params.folder_name;
             if(paramIsReturned(folder, logObject)){
                 return m('span', folder === '/' ? '(Full Google Drive)' : folder);
             }

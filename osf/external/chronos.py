@@ -83,13 +83,30 @@ class ChronosSerializer(object):
 
     @classmethod
     def serialize_user(cls, user):
+
+        username = user.given_name if user.given_name and user.family_name else user.fullname
+        if not bool(user.given_name) and not bool(user.family_name):
+            raise ValueError(
+                'Cannot submit because user {} requires a given and family name be set in your OSF profile.'.format(username)
+            )
+        if not bool(user.given_name):
+            raise ValueError(
+                'Cannot submit because user {} requires a given name be set in your OSF profile.'.format(username)
+            )
+        if not bool(user.family_name):
+            raise ValueError(
+                'Cannot submit because user {} requires a family name be set in your OSF profile.'.format(username)
+            )
+
         return {
             'CHRONOS_USER_ID': user.chronos_user_id,
             'EMAIL': user.username,
-            'GIVEN_NAME': user.given_name if str(user.given_name) and str(user.family_name) else user.fullname,
+            'GIVEN_NAME': user.given_name,
+            'FULLNAME': user.fullname,
+            'MIDDLE_NAME': user.middle_names,
             'ORCID_ID': user.social.get('orcid', None),
             'PARTNER_USER_ID': user._id,
-            'SURNAME': user.family_name if str(user.given_name) and str(user.family_name) else None,
+            'SURNAME': user.family_name,
         }
 
     @classmethod
@@ -98,7 +115,7 @@ class ChronosSerializer(object):
         if contributor._order == 0:
             contribution = 'firstAuthor'
         else:
-            contribution = 'submittingAuthor'
+            contribution = 'Author'
         ret.update({
             'CONTRIBUTION': contribution,
             'ORGANIZATION': '',

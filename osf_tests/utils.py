@@ -13,7 +13,11 @@ from website.archiver import listeners as archiver_listeners
 
 from osf.models import Sanction, RegistrationProvider
 
-from .factories import get_default_metaschema, RegistrationProviderFactory
+from .factories import (
+    get_default_metaschema,
+    RegistrationProviderFactory,
+    DraftRegistrationFactory,
+)
 
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
@@ -115,10 +119,11 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
     provider = provider or RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
 
     with mock.patch('framework.celery_tasks.handlers.enqueue_task'):
+        draft_reg = DraftRegistrationFactory(branched_from=project)
         registration = project.register_node(
             schema=schema,
             auth=auth,
-            data=data,
+            draft_registration=draft_reg,
             parent=parent,
             provider=provider,
         )
@@ -139,11 +144,10 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         root_job.done = True
         root_job.save()
         sanction = registration.sanction
-        with contextlib.nested(
-            mock.patch.object(root_job, 'archive_tree_finished', mock.Mock(return_value=True)),
-            mock.patch('website.archiver.tasks.archive_success.delay', mock.Mock())
-        ):
-            archiver_listeners.archive_callback(registration)
+        mock.patch.object(root_job, 'archive_tree_finished', mock.Mock(return_value=True)),
+        mock.patch('website.archiver.tasks.archive_success.delay', mock.Mock())
+        archiver_listeners.archive_callback(registration)
+
     if autoapprove:
         sanction = registration.sanction
         sanction.state = Sanction.APPROVED

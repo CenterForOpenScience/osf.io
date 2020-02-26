@@ -3,13 +3,15 @@
 language: python
 
 python:
-    - "2.7"
+    - "3.6"
+
 dist: trusty
-sudo: false
 
 # TODO: uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
 # addons:
 #   chrome: stable
+
+os: linux
 
 cache:
   yarn: true
@@ -31,7 +33,7 @@ env:
     - OSF_DB_PORT="54321"
     # Workaround for travis bug: see https://github.com/travis-ci/travis-ci/issues/7940#issuecomment-311411559
     - BOTO_CONFIG=/dev/null
-  matrix:
+  jobs:
     - TEST_BUILD="addons"
     - TEST_BUILD="website"
     - TEST_BUILD="api1_and_js"

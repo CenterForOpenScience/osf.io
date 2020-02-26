@@ -35,11 +35,11 @@ class TestCrossRefEmailResponse:
         data = {
             'X-Mailgun-Sscore': 0,
             'signature': hmac.new(
-                key=settings.MAILGUN_API_KEY,
+                key=settings.MAILGUN_API_KEY.encode(),
                 msg='{}{}'.format(
                     mailgun_payload['timestamp'],
                     mailgun_payload['token']
-                ),
+                ).encode(),
                 digestmod=hashlib.sha256,
             ).hexdigest(),
         }
@@ -130,7 +130,7 @@ class TestCrossRefEmailResponse:
             </batch_data>
         </doi_batch_diagnostic>
         """.format(preprint_count, preprint_count)
-        base_xml = lxml.etree.fromstring(base_xml_string.strip())
+        base_xml = lxml.etree.fromstring(base_xml_string.strip().encode())
         provider_prefix = preprint_list[0].provider.doi_prefix
         for preprint in preprint_list:
             record_diagnostic = lxml.etree.Element('record_diagnostic')

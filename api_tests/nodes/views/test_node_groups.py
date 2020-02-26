@@ -296,7 +296,7 @@ class TestNodeGroupDetail:
 
             # test relationships
             relationships = res.json['data']['relationships']
-            assert relationships.keys() == ['groups']
+            assert list(relationships.keys()) == ['groups']
             assert osf_group._id in relationships['groups']['links']['related']['href']
 
             # get group that does not exist

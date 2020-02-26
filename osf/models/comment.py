@@ -9,6 +9,7 @@ from osf.models.base import GuidMixin, Guid, BaseModel
 from osf.models.mixins import CommentableMixin
 from osf.models.spam import SpamMixin
 from osf.models import validators
+from osf.utils.fields import NonNaiveDateTimeField
 
 from framework.exceptions import PermissionsError
 from website import settings
@@ -39,6 +40,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
 
     edited = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
+    deleted = NonNaiveDateTimeField(blank=True, null=True)
     # The type of root_target: node/files
     page = models.CharField(max_length=255, blank=True)
     content = models.TextField(
@@ -215,8 +217,10 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
             'comment': self._id,
         }
         self.is_deleted = True
+        current_time = timezone.now()
+        self.deleted = current_time
         log_dict.update(self.root_target.referent.get_extra_log_params(self))
-        self.modified = timezone.now()
+        self.modified = current_time
         if save:
             self.save()
             self.node.add_log(
@@ -231,6 +235,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
         if not self.node.can_comment(auth) or self.user._id != auth.user._id:
             raise PermissionsError('{0!r} does not have permission to comment on this node'.format(auth.user))
         self.is_deleted = False
+        self.deleted = None
         log_dict = {
             'project': self.node.parent_id,
             'node': self.node._id,

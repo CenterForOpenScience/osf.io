@@ -5,9 +5,8 @@ from nose.tools import *  # noqa (PEP8 asserts)
 
 import hmac
 import hashlib
-from StringIO import StringIO
+from io import BytesIO
 
-from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 import furl
 
@@ -96,7 +95,7 @@ class TestConferenceUtils(OsfTestCase):
         username = 'kanye@mailinator.com'
         with assert_raises(BlacklistedEmailError) as e:
             get_or_create_user(fullname, username, is_spam=True)
-        assert_equal(e.exception.message, 'Invalid Email')
+        assert_equal(str(e.exception), 'Invalid Email')
 
 
 class ContextTestCase(OsfTestCase):
@@ -119,8 +118,8 @@ class ContextTestCase(OsfTestCase):
             'timestamp': '123',
             'token': 'secret',
             'signature': hmac.new(
-                key=settings.MAILGUN_API_KEY,
-                msg='{}{}'.format('123', 'secret'),
+                key=settings.MAILGUN_API_KEY.encode(),
+                msg='{}{}'.format('123', 'secret').encode(),
                 digestmod=hashlib.sha256,
             ).hexdigest(),
         }
@@ -141,8 +140,8 @@ class TestProvisionNode(ContextTestCase):
         self.user = self.node.creator
         self.conference = ConferenceFactory()
         self.body = 'dragon on my back'
-        self.content = 'dragon attack'
-        self.attachment = StringIO(self.content)
+        self.content = b'dragon attack'
+        self.attachment = BytesIO(self.content)
         self.recipient = '{0}{1}-poster@osf.io'.format(
             'test-' if settings.DEV_MODE else '',
             self.conference.endpoint,
@@ -203,7 +202,7 @@ class TestProvisionNode(ContextTestCase):
             'osfstorage',
             _internal=True,
             base_url=self.node.osfstorage_region.waterbutler_url,
-            cookie=self.user.get_or_create_cookie(),
+            cookie=self.user.get_or_create_cookie().decode(),
             name=file_name
         )
         mock_put.assert_called_with(
@@ -223,7 +222,7 @@ class TestProvisionNode(ContextTestCase):
             'osfstorage',
             _internal=True,
             base_url=self.node.osfstorage_region.waterbutler_url,
-            cookie=self.user.get_or_create_cookie(),
+            cookie=self.user.get_or_create_cookie().decode(),
             name=settings.MISSING_FILE_NAME,
         )
         mock_put.assert_called_with(
@@ -411,8 +410,8 @@ class TestMessage(ContextTestCase):
             assert_equal(msg.attachments, [])
 
     def test_attachments_count_one(self):
-        content = 'slightly mad'
-        sio = StringIO(content)
+        content = b'slightly mad'
+        sio = BytesIO(content)
         ctx = self.make_context(
             method='POST',
             data={
@@ -604,8 +603,8 @@ class TestConferenceIntegration(ContextTestCase):
                 'timestamp': '123',
                 'token': 'secret',
                 'signature': hmac.new(
-                    key=settings.MAILGUN_API_KEY,
-                    msg='{}{}'.format('123', 'secret'),
+                    key=settings.MAILGUN_API_KEY.encode(),
+                    msg='{}{}'.format('123', 'secret').encode(),
                     digestmod=hashlib.sha256,
                 ).hexdigest(),
                 'attachment-count': '1',
@@ -616,7 +615,7 @@ class TestConferenceIntegration(ContextTestCase):
                 'stripped-text': body,
             },
             upload_files=[
-                ('attachment-1', 'attachment-1', content),
+                ('attachment-1', 'attachment-1', content.encode()),
             ],
         )
         assert_true(mock_upload.called)
@@ -652,8 +651,8 @@ class TestConferenceIntegration(ContextTestCase):
                 'timestamp': '123',
                 'token': 'secret',
                 'signature': hmac.new(
-                    key=settings.MAILGUN_API_KEY,
-                    msg='{}{}'.format('123', 'secret'),
+                    key=settings.MAILGUN_API_KEY.encode(),
+                    msg='{}{}'.format('123', 'secret').encode(),
                     digestmod=hashlib.sha256,
                 ).hexdigest(),
                 'attachment-count': '1',
@@ -693,8 +692,8 @@ class TestConferenceIntegration(ContextTestCase):
                 'timestamp': '123',
                 'token': 'secret',
                 'signature': hmac.new(
-                    key=settings.MAILGUN_API_KEY,
-                    msg='{}{}'.format('123', 'secret'),
+                    key=settings.MAILGUN_API_KEY.encode(),
+                    msg='{}{}'.format('123', 'secret').encode(),
                     digestmod=hashlib.sha256,
                 ).hexdigest(),
                 'attachment-count': '1',
@@ -705,7 +704,7 @@ class TestConferenceIntegration(ContextTestCase):
                 'stripped-text': body,
             },
             upload_files=[
-                ('attachment-1', 'attachment-1', content),
+                ('attachment-1', 'attachment-1', content.encode()),
             ],
         )
         assert_true(mock_upload.called)
@@ -744,8 +743,8 @@ class TestConferenceIntegration(ContextTestCase):
                 'timestamp': '123',
                 'token': 'secret',
                 'signature': hmac.new(
-                    key=settings.MAILGUN_API_KEY,
-                    msg='{}{}'.format('123', 'secret'),
+                    key=settings.MAILGUN_API_KEY.encode(),
+                    msg='{}{}'.format('123', 'secret').encode(),
                     digestmod=hashlib.sha256,
                 ).hexdigest(),
                 'attachment-count': '1',
@@ -756,7 +755,7 @@ class TestConferenceIntegration(ContextTestCase):
                 'stripped-text': body,
             },
             upload_files=[
-                ('attachment-1', 'attachment-1', content),
+                ('attachment-1', 'attachment-1', content.encode()),
             ],
         )
 

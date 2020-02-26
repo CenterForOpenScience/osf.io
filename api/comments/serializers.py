@@ -17,6 +17,7 @@ from api.base.serializers import (
     AnonymizedRegexField,
     VersionedDateTimeField,
 )
+from api.base.versioning import get_kebab_snake_case_field
 
 
 class CommentReport(object):
@@ -223,7 +224,9 @@ class CommentReportSerializer(JSONAPISerializer):
     links = LinksField({'self': 'get_absolute_url'})
 
     class Meta:
-        type_ = 'comment_reports'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'comment-reports')
 
     def get_absolute_url(self, obj):
         return absolute_reverse(

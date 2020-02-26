@@ -12,7 +12,7 @@ To use:
 3. Run the script, passing in your username (email).
 ::
 
-    python -m scripts.create_fakes --user fred@cos.io
+    python3 -m scripts.create_fakes --user fred@cos.io
 
 This will create 3 fake public projects, each with 3 fake contributors (with
     you as the creator).
@@ -20,15 +20,15 @@ This will create 3 fake public projects, each with 3 fake contributors (with
 To create a project with a complex component structure, pass in a list representing the depth you would
 like each component to contain.
 Examples:
-    python -m scripts.create_fakes -u fred@cos --components '[1, 1, 1, 1]' --nprojects 1
+    python3 -m scripts.create_fakes -u fred@cos --components '[1, 1, 1, 1]' --nprojects 1
 ...will create a project with 4 components.
-    python -m scripts.create_fakes -u fred@cos --components '4' --nprojects 1
+    python3 -m scripts.create_fakes -u fred@cos --components '4' --nprojects 1
 ...will create a project with a series of components, 4 levels deep.
-    python -m scripts.create_fakes -u fred@cos --components '[1, [1, 1]]' --nprojects 1
+    python3 -m scripts.create_fakes -u fred@cos --components '[1, [1, 1]]' --nprojects 1
 ...will create a project with two top level components, and one with a depth of 2 components.
-    python -m scripts.create_fakes -u fred@cos --nprojects 3 --preprint True
+    python3 -m scripts.create_fakes -u fred@cos --nprojects 3 --preprint True
 ...will create 3 preprints with the default provider osf
-    python -m scripts.create_fakes -u fred@cos --nprojects 3 --preprint True --preprintprovider osf,test_provider
+    python3 -m scripts.create_fakes -u fred@cos --nprojects 3 --preprint True --preprintprovider osf,test_provider
 ...will create 3 preprints with the providers osf and test_provider
 
 """
@@ -311,8 +311,6 @@ def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, p
         if not provider:
             provider = PreprintProviderFactory(name=fake.science_word())
         privacy = 'public'
-        mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.update_identifier')
-        mock_change_identifier.start()
         mock_change_identifier_preprints = mock.patch('website.identifiers.client.CrossRefClient.update_identifier')
         mock_change_identifier_preprints.start()
         project = PreprintFactory(title=project_title, description=fake.science_paragraph(), creator=creator, provider=provider)

@@ -752,12 +752,12 @@ class TestNotificationUtils(OsfTestCase):
         node_subscription_ids = [x._id for x in utils.get_all_node_subscriptions(self.user, self.node,
                                                                           user_subscriptions=user_subscriptions)]
         expected_node_subscription_ids = [x._id for x in self.node_subscription]
-        assert_items_equal(node_subscription_ids, expected_node_subscription_ids)
+        assert_list_equal(node_subscription_ids, expected_node_subscription_ids)
 
     def test_get_all_node_subscriptions_given_user_and_node(self):
         node_subscription_ids = [x._id for x in utils.get_all_node_subscriptions(self.user, self.node)]
         expected_node_subscription_ids = [x._id for x in self.node_subscription]
-        assert_items_equal(node_subscription_ids, expected_node_subscription_ids)
+        assert_list_equal(node_subscription_ids, expected_node_subscription_ids)
 
     def test_get_configured_project_ids_does_not_return_user_or_node_ids(self):
         configured_nodes = utils.get_configured_projects(self.user)
@@ -945,7 +945,6 @@ class TestNotificationUtils(OsfTestCase):
     def test_format_data_user_subscriptions_if_children_points_to_parent(self):
         private_project = factories.ProjectFactory(creator=self.user)
         node = factories.NodeFactory(parent=private_project, creator=self.user)
-        node.add_pointer(private_project, Auth(self.user))
         node.save()
         node_comments_subscription = factories.NotificationSubscriptionFactory(
             _id=node._id + '_' + 'comments',
@@ -997,8 +996,8 @@ class TestNotificationUtils(OsfTestCase):
                 'children': []
             }, {
                 'event': {
-                    'title': 'global_mentions',
-                    'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_mentions'],
+                    'title': 'global_comments',
+                    'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_comments'],
                     'notificationType': 'email_transactional',
                     'parent_notification_type': None
                 },
@@ -1006,8 +1005,8 @@ class TestNotificationUtils(OsfTestCase):
                 'children': []
             }, {
                 'event': {
-                    'title': 'global_comments',
-                    'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_comments'],
+                    'title': 'global_mentions',
+                    'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_mentions'],
                     'notificationType': 'email_transactional',
                     'parent_notification_type': None
                 },
@@ -1024,7 +1023,8 @@ class TestNotificationUtils(OsfTestCase):
                 'children': []
             }
         ]
-        assert_items_equal(data, expected)
+
+        assert_equal(data, expected)
 
     def test_get_global_notification_type(self):
         notification_type = utils.get_global_notification_type(self.user_subscription[1] ,self.user)
@@ -1737,7 +1737,7 @@ class TestSendDigest(OsfTestCase):
                 u'user_id': self.user_1._id,
                 u'info': [{
                     u'message': u'Hello',
-                    u'node_lineage': [unicode(self.project._id)],
+                    u'node_lineage': [str(self.project._id)],
                     u'_id': d._id
                 }]
             },
@@ -1745,7 +1745,7 @@ class TestSendDigest(OsfTestCase):
                 u'user_id': self.user_2._id,
                 u'info': [{
                     u'message': u'Hello',
-                    u'node_lineage': [unicode(self.project._id)],
+                    u'node_lineage': [str(self.project._id)],
                     u'_id': d2._id
                 }]
             }
@@ -1786,19 +1786,19 @@ class TestSendDigest(OsfTestCase):
         user_groups = list(get_users_emails(send_type))
         expected = [
             {
-                u'user_id': unicode(self.user_1._id),
+                u'user_id': str(self.user_1._id),
                 u'info': [{
                     u'message': u'Hello',
-                    u'node_lineage': [unicode(self.project._id)],
-                    u'_id': unicode(d._id)
+                    u'node_lineage': [str(self.project._id)],
+                    u'_id': str(d._id)
                 }]
             },
             {
-                u'user_id': unicode(self.user_2._id),
+                u'user_id': str(self.user_2._id),
                 u'info': [{
                     u'message': u'Hello',
-                    u'node_lineage': [unicode(self.project._id)],
-                    u'_id': unicode(d2._id)
+                    u'node_lineage': [str(self.project._id)],
+                    u'_id': str(d2._id)
                 }]
             }
         ]

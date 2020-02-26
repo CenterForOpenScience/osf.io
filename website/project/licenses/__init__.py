@@ -1,5 +1,5 @@
 from django.apps import apps
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
 
 from framework import exceptions as framework_exceptions
 from osf import exceptions as osf_exceptions

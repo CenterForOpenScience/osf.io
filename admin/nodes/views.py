@@ -157,12 +157,14 @@ class NodeDeleteView(PermissionRequiredMixin, NodeDeleteBase):
             if node.is_deleted:
                 node.is_deleted = False
                 node.deleted_date = None
+                node.deleted = None
                 flag = NODE_RESTORED
                 message = 'Node {} restored.'.format(node.pk)
                 osf_flag = NodeLog.NODE_CREATED
             elif not node.is_registration:
                 node.is_deleted = True
-                node.deleted_date = timezone.now()
+                node.deleted = timezone.now()
+                node.deleted_date = node.deleted
                 flag = NODE_REMOVED
                 message = 'Node {} removed.'.format(node.pk)
                 osf_flag = NodeLog.NODE_REMOVED

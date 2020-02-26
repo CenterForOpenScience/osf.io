@@ -5,14 +5,12 @@ from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer, StaticH
 class JSONRendererWithESISupport(JSONRenderer):
     format = 'json'
     media_type = 'application/json'
+    charset = 'utf-8'
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
-        #  TODO: There should be a way to do this that is conditional on esi being requested and
-        #  TODO: In such a way that it doesn't use regex unless there's absolutely no other way.
         initial_rendering = super(JSONRendererWithESISupport, self).render(data, accepted_media_type, renderer_context)
-        augmented_rendering = re.sub(r'"<esi:include src=\\"(.*?)\\"\/>"', r'<esi:include src="\1"/>', initial_rendering)
+        augmented_rendering = re.sub(r'"<esi:include src=\\"(.*?)\\"\/>"', '<esi:include src="\1"/>', initial_rendering.decode())
         return augmented_rendering
-
 
 class JSONAPIRenderer(JSONRendererWithESISupport):
     format = 'jsonapi'
@@ -23,15 +21,14 @@ class JSONAPIRenderer(JSONRendererWithESISupport):
         # See JSON-API documentation on meta information: http://jsonapi.org/format/#document-meta
         data_type = type(data)
         if renderer_context is not None and data_type != str and data is not None:
-            meta_dict = renderer_context.get('meta')
+            meta_dict = renderer_context.get('meta', {})
             version = getattr(renderer_context['request'], 'version', None)
-            if meta_dict is not None:
-                if version:
-                    meta_dict['version'] = renderer_context['request'].version
-                    data.setdefault('meta', {}).update(meta_dict)
-            elif version:
-                meta_dict = {'version': renderer_context['request'].version}
-                data.setdefault('meta', {}).update(meta_dict)
+            warning = renderer_context['request'].META.get('warning', None)
+            if version:
+                meta_dict['version'] = version
+            if warning:
+                meta_dict['warning'] = warning
+            data.setdefault('meta', {}).update(meta_dict)
         return super(JSONAPIRenderer, self).render(data, accepted_media_type, renderer_context)
 
 

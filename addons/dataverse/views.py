@@ -1,6 +1,6 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -69,7 +69,7 @@ def dataverse_user_config_get(auth, **kwargs):
             },
             'hosts': DEFAULT_HOSTS,
         },
-    }, http.OK
+    }, http_status.HTTP_200_OK
 
 
 ## Config ##
@@ -129,13 +129,13 @@ def dataverse_set_config(node_addon, auth, **kwargs):
     user = auth.user
 
     if user_settings and user_settings.owner != user:
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     alias = request.json.get('dataverse', {}).get('alias')
     doi = request.json.get('dataset', {}).get('doi')
 
     if doi is None or alias is None:
-        return HTTPError(http.BAD_REQUEST)
+        return HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     connection = client.connect_from_settings(node_addon)
     dataverse = client.get_dataverse(connection, alias)
@@ -143,7 +143,7 @@ def dataverse_set_config(node_addon, auth, **kwargs):
 
     node_addon.set_folder(dataverse, dataset, auth)
 
-    return {'dataverse': dataverse.title, 'dataset': dataset.title}, http.OK
+    return {'dataverse': dataverse.title, 'dataset': dataset.title}, http_status.HTTP_200_OK
 
 
 @must_have_permission(WRITE)
@@ -160,7 +160,7 @@ def dataverse_get_datasets(node_addon, **kwargs):
         'alias': alias,  # include alias to verify dataset container
         'datasets': [{'title': dataset.title, 'doi': dataset.doi} for dataset in datasets],
     }
-    return ret, http.OK
+    return ret, http_status.HTTP_200_OK
 
 ## Crud ##
 
@@ -196,7 +196,7 @@ def dataverse_publish_dataset(node_addon, auth, **kwargs):
         log_date=now,
     )
 
-    return {'dataset': dataset.title}, http.OK
+    return {'dataset': dataset.title}, http_status.HTTP_200_OK
 
 ## HGRID ##
 
@@ -299,7 +299,7 @@ def dataverse_get_widget_contents(node_addon, **kwargs):
     }
 
     if not node_addon.complete:
-        return {'data': data}, http.OK
+        return {'data': data}, http_status.HTTP_200_OK
 
     doi = node_addon.dataset_doi
     alias = node_addon.dataverse_alias
@@ -309,7 +309,7 @@ def dataverse_get_widget_contents(node_addon, **kwargs):
     dataset = client.get_dataset(dataverse, doi)
 
     if dataset is None:
-        return {'data': data}, http.BAD_REQUEST
+        return {'data': data}, http_status.HTTP_400_BAD_REQUEST
 
     dataverse_host = node_addon.external_account.oauth_key
     dataverse_url = 'http://{0}/dataverse/{1}'.format(dataverse_host, alias)
@@ -324,4 +324,4 @@ def dataverse_get_widget_contents(node_addon, **kwargs):
         'datasetUrl': dataset_url,
         'citation': dataset.citation,
     })
-    return {'data': data}, http.OK
+    return {'data': data}, http_status.HTTP_200_OK

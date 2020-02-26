@@ -21,7 +21,6 @@ from waffle.models import Flag, Sample, Switch
 from website.notifications.constants import NOTIFICATION_TYPES
 from osf.utils import permissions
 from website.archiver import ARCHIVER_SUCCESS
-from website.identifiers.utils import parse_identifiers
 from website.settings import FAKE_EMAIL_NAME, FAKE_EMAIL_DOMAIN
 from framework.auth.core import Auth
 
@@ -187,9 +186,23 @@ class BaseNodeFactory(DjangoModelFactory):
     class Meta:
         model = models.Node
 
+    #Fix for adding the deleted date.
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        if kwargs.get('is_deleted', None):
+            kwargs['deleted'] = timezone.now()
+        return super(BaseNodeFactory, cls)._create(*args, **kwargs)
+
 
 class ProjectFactory(BaseNodeFactory):
     category = 'project'
+
+
+class DraftNodeFactory(BaseNodeFactory):
+    category = 'project'
+
+    class Meta:
+        model = models.DraftNode
 
 
 class ProjectWithAddonFactory(ProjectFactory):
@@ -266,10 +279,18 @@ class PrivateLinkFactory(DjangoModelFactory):
     class Meta:
         model = models.PrivateLink
 
-    name = factory.Faker('word')
+    name = factory.Sequence(lambda n: 'Example Private Link #{}'.format(n))
     key = factory.Faker('md5')
     anonymous = False
     creator = factory.SubFactory(UserFactory)
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        instance = super(PrivateLinkFactory, cls)._create(target_class, *args, **kwargs)
+        if instance.is_deleted and not instance.deleted:
+            instance.deleted = timezone.now()
+            instance.save()
+        return instance
 
 
 class CollectionFactory(DjangoModelFactory):
@@ -347,7 +368,7 @@ class RegistrationFactory(BaseNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, is_public=False,
-                schema=None, data=None,
+                schema=None, draft_registration=None,
                 archive=False, embargo=None, registration_approval=None, retraction=None,
                 provider=None,
                 *args, **kwargs):
@@ -370,12 +391,12 @@ class RegistrationFactory(BaseNodeFactory):
 
         # Default registration parameters
         schema = schema or get_default_metaschema()
-        data = data or {'some': 'data'}
+        draft_registration = draft_registration or DraftRegistrationFactory(branched_from=project, initator=user, registration_schema=schema)
         auth = Auth(user=user)
         register = lambda: project.register_node(
             schema=schema,
             auth=auth,
-            data=data,
+            draft_registration=draft_registration,
             provider=provider,
         )
 
@@ -419,7 +440,7 @@ class WithdrawnRegistrationFactory(BaseNodeFactory):
 
         registration.retract_registration(user)
         withdrawal = registration.retraction
-        token = withdrawal.approval_state.values()[0]['approval_token']
+        token = list(withdrawal.approval_state.values())[0]['approval_token']
         with patch('osf.models.AbstractNode.update_search'):
             withdrawal.approve_retraction(user, token)
         withdrawal.save()
@@ -475,7 +496,7 @@ class EmbargoTerminationApprovalFactory(DjangoModelFactory):
                 registration = embargo._get_registration()
             else:
                 registration = RegistrationFactory(creator=user, user=user, embargo=embargo)
-        with mock.patch('osf.models.sanctions.TokenApprovableSanction.ask', mock.Mock()):
+        with mock.patch('osf.models.sanctions.EmailApprovableSanction.ask', mock.Mock()):
             approval = registration.request_embargo_termination(Auth(user))
             return approval
 
@@ -486,27 +507,31 @@ class DraftRegistrationFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
-        branched_from = kwargs.get('branched_from')
+        title = kwargs.pop('title', None)
         initiator = kwargs.get('initiator')
+        description = kwargs.pop('description', None)
+        branched_from = kwargs.get('branched_from', None)
         registration_schema = kwargs.get('registration_schema')
         registration_metadata = kwargs.get('registration_metadata')
         provider = kwargs.get('provider')
-        if not branched_from:
-            project_params = {}
-            if initiator:
-                project_params['creator'] = initiator
-            branched_from = ProjectFactory(**project_params)
-        initiator = branched_from.creator
+        initiator = branched_from.creator if branched_from else kwargs.get('initiator', None)
+        initiator = initiator or kwargs.get('user', None) or kwargs.get('creator', None) or UserFactory()
         registration_schema = registration_schema or models.RegistrationSchema.objects.first()
         registration_metadata = registration_metadata or {}
         provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
         draft = models.DraftRegistration.create_from_node(
-            branched_from,
+            node=branched_from,
             user=initiator,
             schema=registration_schema,
             data=registration_metadata,
             provider=provider,
         )
+        if title:
+            draft.title = title
+        if description:
+            draft.description = description
+        draft.registration_responses = draft.flatten_registration_metadata()
+        draft.save()
         return draft
 
 class CommentFactory(DjangoModelFactory):
@@ -601,23 +626,9 @@ class PreprintProviderFactory(DjangoModelFactory):
 
 
 def sync_set_identifiers(preprint):
-    from website.identifiers.clients import EzidClient
     from website import settings
-    client = preprint.get_doi_client()
-
-    if isinstance(client, EzidClient):
-        doi_value = settings.DOI_FORMAT.format(prefix=settings.EZID_DOI_NAMESPACE, guid=preprint._id)
-        ark_value = '{ark}osf.io/{guid}'.format(ark=settings.EZID_ARK_NAMESPACE, guid=preprint._id)
-        return_value = {'success': '{} | {}'.format(doi_value, ark_value)}
-    else:
-        return_value = {'doi': settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)}
-
-    doi_client_return_value = {
-        'response': return_value,
-        'already_exists': False
-    }
-    id_dict = parse_identifiers(doi_client_return_value)
-    preprint.set_identifier_values(doi=id_dict['doi'])
+    doi = settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
+    preprint.set_identifier_values(doi=doi)
 
 
 class PreprintFactory(DjangoModelFactory):
@@ -704,7 +715,7 @@ class TagFactory(DjangoModelFactory):
     class Meta:
         model = models.Tag
 
-    name = factory.Faker('word')
+    name = factory.Sequence(lambda n: 'Example Tag #{}'.format(n))
     system = False
 
 class DismissedAlertFactory(DjangoModelFactory):
@@ -719,16 +730,27 @@ class DismissedAlertFactory(DjangoModelFactory):
 
         return super(DismissedAlertFactory, cls)._create(*args, **kwargs)
 
+class ApiOAuth2ScopeFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ApiOAuth2Scope
+
+    name = factory.Sequence(lambda n: 'scope{}'.format(n))
+    is_public = True
+    is_active = True
+    description = factory.Faker('text')
+
 class ApiOAuth2PersonalTokenFactory(DjangoModelFactory):
     class Meta:
         model = models.ApiOAuth2PersonalToken
 
     owner = factory.SubFactory(UserFactory)
-
-    scopes = 'osf.full_write osf.full_read'
-
     name = factory.Sequence(lambda n: 'Example OAuth2 Personal Token #{}'.format(n))
 
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        token = super(ApiOAuth2PersonalTokenFactory, cls)._create(*args, **kwargs)
+        token.scopes.add(ApiOAuth2ScopeFactory())
+        return token
 
 class ApiOAuth2ApplicationFactory(DjangoModelFactory):
     class Meta:

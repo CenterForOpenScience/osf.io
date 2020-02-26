@@ -52,7 +52,7 @@ class TestPrivateLink:
         schema = RegistrationSchema.objects.first()
         data = {'some': 'data'}
         draft = DraftRegistration.create_from_node(
-            proj,
+            node=proj,
             user=user,
             schema=schema,
             data=data,

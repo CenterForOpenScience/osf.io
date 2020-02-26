@@ -15,6 +15,7 @@ from addons.dataverse.tests.factories import (
     DataverseUserSettingsFactory
 )
 from addons.dataverse.tests import utils
+from osf_tests.factories import DraftRegistrationFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -42,7 +43,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, utils.DataverseAddo
         registration = self.node.register_node(
             schema=get_default_metaschema(),
             auth=Auth(user=self.node.creator),
-            data='hodor',
+            draft_registration=DraftRegistrationFactory(branched_from=self.node),
         )
         assert_false(registration.has_addon('dataverse'))
 

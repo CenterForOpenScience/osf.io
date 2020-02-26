@@ -8,7 +8,7 @@ import requests
 from django.db.models import QuerySet
 
 from framework.auth.utils import impute_names
-from website.identifiers.metadata import remove_control_characters
+from website.identifiers.utils import remove_control_characters
 from website.identifiers.clients.base import AbstractIdentifierClient
 from website import settings
 
@@ -191,8 +191,8 @@ class CrossRefClient(AbstractIdentifierClient):
             if name_parts.get('suffix'):
                 person.append(element.suffix(remove_control_characters(name_parts['suffix'])))
             if contributor.external_identity.get('ORCID'):
-                orcid = contributor.external_identity['ORCID'].keys()[0]
-                verified = contributor.external_identity['ORCID'].values()[0] == 'VERIFIED'
+                orcid = list(contributor.external_identity['ORCID'].keys())[0]
+                verified = list(contributor.external_identity['ORCID'].values())[0] == 'VERIFIED'
                 if orcid and verified:
                     person.append(
                         element.ORCID('https://orcid.org/{}'.format(orcid), authenticated='true')
@@ -214,9 +214,9 @@ class CrossRefClient(AbstractIdentifierClient):
         url.args.update(query)
         return url.url
 
-    def create_identifier(self, preprint, category, status=None, include_relation=True):
-        if status is None:
-            status = self.get_status(preprint)
+    def create_identifier(self, preprint, category, include_relation=True):
+        status = self.get_status(preprint)
+
         if category == 'doi':
             metadata = self.build_metadata(preprint, status, include_relation)
             doi = self.build_doi(preprint)
@@ -241,8 +241,8 @@ class CrossRefClient(AbstractIdentifierClient):
         else:
             raise NotImplementedError()
 
-    def update_identifier(self, preprint, category, status=None):
-        return self.create_identifier(preprint, category, status)
+    def update_identifier(self, preprint, category):
+        return self.create_identifier(preprint, category)
 
     def get_status(self, preprint):
         return 'public' if preprint.verified_publishable and not preprint.is_retracted else 'unavailable'

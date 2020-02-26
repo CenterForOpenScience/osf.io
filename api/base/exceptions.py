@@ -1,8 +1,9 @@
-import httplib as http
+from past.builtins import basestring
+from rest_framework import status as http_status
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import status
-from rest_framework.exceptions import APIException, AuthenticationFailed
+from rest_framework.exceptions import APIException, AuthenticationFailed, ErrorDetail
 
 
 def get_resource_object_member(error_key, context):
@@ -11,7 +12,7 @@ def get_resource_object_member(error_key, context):
     if field:
         return 'relationships' if isinstance(field, RelationshipField) else 'attributes'
     # If field cannot be found (where read/write operations have different serializers,
-    # assume error was in 'attributes' by default
+    # or fields serialized on __init__, assume error was in 'attributes' by default
     return 'attributes'
 
 def dict_error_formatting(errors, context, index=None):
@@ -33,7 +34,7 @@ def dict_error_formatting(errors, context, index=None):
         index = str(index) + '/'
 
     for error_key, error_description in errors.items():
-        if isinstance(error_description, basestring):
+        if isinstance(error_description, ErrorDetail):
             error_description = [error_description]
 
         if error_key in top_level_error_keys:
@@ -164,12 +165,12 @@ class JSONAPIAttributeException(JSONAPIException):
 class InvalidQueryStringError(JSONAPIParameterException):
     """Raised when client passes an invalid value to a query string parameter."""
     default_detail = 'Query string contains an invalid value.'
-    status_code = http.BAD_REQUEST
+    status_code = http_status.HTTP_400_BAD_REQUEST
 
 
 class InvalidFilterOperator(JSONAPIParameterException):
     """Raised when client passes an invalid operator to a query param filter."""
-    status_code = http.BAD_REQUEST
+    status_code = http_status.HTTP_400_BAD_REQUEST
 
     def __init__(self, detail=None, value=None, valid_operators=('eq', 'lt', 'lte', 'gt', 'gte', 'contains', 'icontains')):
         if value and not detail:
@@ -183,7 +184,7 @@ class InvalidFilterOperator(JSONAPIParameterException):
 
 class InvalidFilterValue(JSONAPIParameterException):
     """Raised when client passes an invalid value to a query param filter."""
-    status_code = http.BAD_REQUEST
+    status_code = http_status.HTTP_400_BAD_REQUEST
 
     def __init__(self, detail=None, value=None, field_type=None):
         if not detail:
@@ -199,7 +200,7 @@ class InvalidFilterValue(JSONAPIParameterException):
 class InvalidFilterError(JSONAPIParameterException):
     """Raised when client passes an malformed filter in the query string."""
     default_detail = _('Query string contains a malformed filter.')
-    status_code = http.BAD_REQUEST
+    status_code = http_status.HTTP_400_BAD_REQUEST
 
     def __init__(self, detail=None):
         super(InvalidFilterError, self).__init__(detail=detail, parameter='filter')
@@ -208,19 +209,19 @@ class InvalidFilterError(JSONAPIParameterException):
 class InvalidFilterComparisonType(JSONAPIParameterException):
     """Raised when client tries to filter on a field that is not a date or number type"""
     default_detail = _('Comparison operators are only supported for dates and numbers.')
-    status_code = http.BAD_REQUEST
+    status_code = http_status.HTTP_400_BAD_REQUEST
 
 
 class InvalidFilterMatchType(JSONAPIParameterException):
     """Raised when client tries to do a match filter on a field that is not a string or a list"""
     default_detail = _('Match operators are only supported for strings and lists.')
-    status_code = http.BAD_REQUEST
+    status_code = http_status.HTTP_400_BAD_REQUEST
 
 
 class InvalidFilterFieldError(JSONAPIParameterException):
     """Raised when client tries to filter on a field that is not supported"""
     default_detail = _('Query contained one or more filters for invalid fields.')
-    status_code = http.BAD_REQUEST
+    status_code = http_status.HTTP_400_BAD_REQUEST
 
     def __init__(self, detail=None, parameter=None, value=None):
         if value and not detail:

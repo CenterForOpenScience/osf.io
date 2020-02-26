@@ -2,6 +2,110 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.3.0 (2020-02-04)
+===================
+- Fix typo in waffle flag pages
+- Update language for withdrawal declined email
+- Optimize update_storage_usage_cache
+- Update docker-compose readme for python 3
+- Allow write contributors to edit metadata on registrations
+- Fix composite queries for Impact
+- Update log fetching to only get current level of node
+
+20.2.0 (2020-01-29)
+===================
+- Fix bugs in EGAP migration script
+
+20.1.0 (2020-01-15)
+===================
+- Switch to Python 3
+
+19.32.0 (2019-12-16)
+===================
+- Add SchemaBlocks, normalization for Registration.registered_meta
+- Update RegistrationSchemas
+- EGAP Ingestor improvements
+
+19.31.0 (2019-11-7)
+===================
+- EGAP: Parse project structure, add contributors, add files, ingest the draft registration, and add a Jupyter notebook
+- Modify a Chronos field for proper contributor classification
+
+19.30.0 (2019-10-16)
+===================
+- Fix weirdness around deleted nodes by not deleing OSF Storage
+- Make deleted fields on models and addons into date fields
+- API v2: Chronos users can have more name options
+- Python 3 backwards compatibility changes
+
+19.29.0 (2019-10-02)
+===================
+- Use new pagecounter fields for increased query efficiency
+- Allow meetings to be sorted on download count
+- Remove old permissions fields now that we have Guardian
+
+19.28.0 (2019-09-24)
+===================
+- API v2: Use consistent naming for JSON API type (kebab-case)
+- API v2: Fix sorting on fields with source attribute
+- API v2: Add SparseLists for Nodes and Registrations
+- Management command to remove duplicate files and folders
+
+19.27.0 (2019-09-18)
+===================
+- Automatically map subjects when a preprint is moved to a different
+  preprint provider in the admin app
+- Gitlab: return all repos to which the user has access
+- Upgrade Bower
+- Py3 backwards compatible changes
+
+19.26.0 (2019-09-11)
+===================
+- Create a custom through table for linking files and versions
+  for storing version names.  Supports different versions of the same
+  file having different names.
+- Update README for populating institutions.
+
+
+19.25.0 (2019-09-05)
+===================
+- Automate account deactivation if users have no content
+- Clean up EZID workflow
+- Check redirect URL's for spam
+
+19.24.0 (2019-08-27)
+===================
+- APIv2: Allow creating a node with a license attached on creation
+- APIv2: Prevent creating a node link to the node itself, a parent, or a child
+- APIv2: Have the move/copy WB hooks update storage usage
+- Exclude collection groups from user page in Django's admin app
+- Have osfstorage move/copy hooks recursively update the latest file version's region
+- Fix password reset tokens
+- Do not reveal entire google drive file path in node logs
+- Allow logging in from password reset and forgot password pages
+- Fix broken social links on add contributors modal
+- Fix email typos in embargoed registration emails
+- Improve registration and retraction node log display text
+- Fix logs if cron job automatically approves a withdrawal
+
+19.23.0 (2019-08-19)
+===================
+- Represents scopes as an m2m field on personal access tokens instead of a CharField
+- APIv2.17 treats scopes as relationships on tokens instead of attributes.  Earlier
+API versions still serialize scopes as attributes.
+
+19.22.0 (2019-08-14)
+===================
+- APIv2: Editable registrations
+- APIv2.16 treats subjects as relationships instead of attributes
+
+19.21.0 (2019-08-12)
+===================
+- PageCounter optimization part I: split _id field into four columns, `action`,
+`file_id`, `resource_id`, and `version`.
+- Adds a management command (migrate_pagecounter_data) to populate these new
+columns in the PageCounter table over time.
+
 19.20.0 (2019-07-29)
 ===================
 - Waffle cookies - Override to allow cookies to be set for waffle flags

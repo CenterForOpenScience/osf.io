@@ -42,43 +42,65 @@ def get_session_from_cookie(cookie_val):
 
 def check_user(user):
     """
-    Verify users' status.
+    Check and verify user status.
 
-                        registered      confirmed       disabled        merged      usable password
-    ACTIVE:             x               x               o               o           x
-    NOT_CONFIRMED:      o               o               o               o           x
-    NOT_CLAIMED:        o               o               o               o           o
-    DISABLED:           x               x               x               o           x
-    USER_MERGED:        x               x               o               x           o
+                                    registered  confirmed   disabled    merged  usable-password
+    ACTIVE:                             x           x           o           o           x
+    NOT_CONFIRMED (default)     :       o           o           o           o           x
+    NOT_CONFIRMED (external)    :       o           o           o           o           o
+    NOT_CLAIMED                 :       o           o           o           o           o
+    DISABLED                    :       x           x           x           o           x
+    USER_MERGED                 :       x           x           o           x           o
 
-    :param user: the user
-    :raises UnconfirmedAccountError
-    :raises UnclaimedAccountError
-    :raises DeactivatedAccountError
-    :raises MergedAccountError
-    :raises InvalidAccountError
+    Unlike users created via username-password signup, unconfirmed accounts created by an external
+    IdP (e.g. ORCiD Login) have unusable passwords. To detect them, check the ``external_identity``
+    property of the user object. See ``created_by_external_idp_and_unconfirmed()`` for details.
+
+    :param user: the user object to check
+    :raises `UnconfirmedAccountError` if the user was created via default useraname / password
+        sign-up, or if via ORCiD login with pending status "LINK" or "CREATE" to confirm
+    :raises `UnclaimedAccountError` if the user was created as an unregistered contributor of a
+        project or group waiting to be claimed
+    :raises `DeactivatedAccountError` if the user has been disabled / deactivated
+    :raises `MergedAccountError` if the user has been merged into another account
+    :raises `InvalidAccountError` if the user is not active and not of the expected inactive status
+    :returns nothing if user is active and no exception is raised
     """
 
-    # active user must be registered, claimed, confirmed, not merged or disabled, and has a usable password
+    # An active user must be registered, claimed, confirmed, not merged, not disabled, and either
+    # has a usable password or has a verified external identity.
     if user.is_active:
         return
 
-    # user disabled
+    # The user has been disabled / deactivated
     if user.is_disabled:
         raise DeactivatedAccountError
 
-    # user merged
+    # The user has been merged into another one
     if user.is_merged:
         raise MergedAccountError
 
-    # user not confirmed or contributor not claimed
+    # The user has not been confirmed or claimed
     if not user.is_confirmed and not user.is_registered:
-        if user.has_usable_password():
+        if user.has_usable_password() or created_by_external_idp_and_unconfirmed(user):
             raise UnconfirmedAccountError
         raise UnclaimedAccountError
 
-    # OSF does not recognize other user status
+    # For all other cases, the user status is invalid. Although such status can't be reached with
+    # normal user-facing web application flow, it is still possible as a result of direct database
+    # access, coding bugs, database corruption, etc.
     raise InvalidAccountError
+
+
+def created_by_external_idp_and_unconfirmed(user):
+    """Check if the user is created by external IdP and unconfirmed.
+
+    There are only three possible values that indicates the status of a user's external identity:
+    'LINK', 'CREATE' and 'VERIFIED'. Only 'CREATE' indicates that the user is newly created by an
+    external IdP and is unconfirmed.
+    """
+
+    return 'CREATE' in set(sum([list(each.values()) for each in list(user.external_identity.values())], []))
 
 
 # Three customized DRF authentication classes: basic, session/cookie and access token.

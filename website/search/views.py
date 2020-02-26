@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import functools
-import httplib as http
+from rest_framework import status as http_status
 import logging
 import time
 
@@ -33,12 +33,12 @@ def handle_search_errors(func):
         try:
             return func(*args, **kwargs)
         except exceptions.MalformedQueryError:
-            raise HTTPError(http.BAD_REQUEST, data={
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': 'Bad search query',
                 'message_long': language.SEARCH_QUERY_HELP,
             })
         except exceptions.SearchUnavailableError:
-            raise HTTPError(http.SERVICE_UNAVAILABLE, data={
+            raise HTTPError(http_status.HTTP_503_SERVICE_UNAVAILABLE, data={
                 'message_short': 'Search unavailable',
                 'message_long': ('Our search service is currently unavailable, if the issue persists, '
                                  + language.SUPPORT_LINK),
@@ -48,7 +48,7 @@ def handle_search_errors(func):
             sentry.log_exception()
             sentry.log_message('Elasticsearch returned an unexpected error response')
             # TODO: Add a test; may need to mock out the error response due to inability to reproduce error code locally
-            raise HTTPError(http.BAD_REQUEST, data={
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': 'Could not perform search query',
                 'message_long': language.SEARCH_QUERY_HELP,
             })
@@ -96,7 +96,7 @@ def conditionally_add_query_item(query, item, condition, value):
     elif condition == 'either':
         return query
 
-    raise HTTPError(http.BAD_REQUEST)
+    raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
 
 @must_be_logged_in

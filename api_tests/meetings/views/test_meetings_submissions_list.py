@@ -92,7 +92,15 @@ class TestMeetingSubmissionsList:
         return file
 
     def mock_download(self, project, file, download_count):
-        return PageCounter.objects.create(_id='download:{}:{}'.format(project._id, file._id), total=download_count)
+        pc, _ = PageCounter.objects.get_or_create(
+            _id='download:{}:{}'.format(project._id, file._id),
+            resource=project.guids.first(),
+            action='download',
+            file=file
+        )
+        pc.total = download_count
+        pc.save()
+        return pc
 
     def test_meeting_submissions_list(self, app, user, meeting, url, meeting_one_submission, meeting_one_private_submission):
         api_utils.create_test_file(meeting_one_submission, user, create_guid=False)
@@ -234,3 +242,19 @@ class TestMeetingSubmissionsList:
         data = res.json['data']
         assert len(data) == 3
         assert [third, second, first] == [meeting['id'] for meeting in data]
+
+        # test sort download count
+        res = app.get(url_meeting_two + '?sort=download_count')
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 3
+        assert [third, second, first] == [meeting['id'] for meeting in data]
+        assert [0, 1, 2] == [meeting['attributes']['download_count'] for meeting in data]
+
+        # test reverse sort download count
+        res = app.get(url_meeting_two + '?sort=-download_count')
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 3
+        assert [first, second, third] == [meeting['id'] for meeting in data]
+        assert [2, 1, 0] == [meeting['attributes']['download_count'] for meeting in data]

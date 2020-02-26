@@ -38,16 +38,16 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='preprintprovider',
             name='footer_links',
-            field=models.TextField(blank=True, default=b''),
+            field=models.TextField(blank=True, default=''),
         ),
         migrations.AlterField(
             model_name='preprintprovider',
             name='advisory_board',
-            field=models.TextField(blank=True, default=b''),
+            field=models.TextField(blank=True, default=''),
         ),
         migrations.AlterField(
             model_name='preprintprovider',
             name='description',
-            field=models.TextField(blank=True, default=b''),
+            field=models.TextField(blank=True, default=''),
         ),
     ]

@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
 from django.core.exceptions import PermissionDenied
+from django.contrib import messages
 
 from osf.models import SpamStatus, PreprintRequest
 from osf.models.preprint import Preprint, PreprintLog, OSFUser
@@ -68,9 +69,14 @@ class PreprintView(PreprintMixin, UpdateView, GuidView):
         return reverse_lazy('preprints:preprint', kwargs={'guid': self.kwargs.get('guid')})
 
     def post(self, request, *args, **kwargs):
+        old_provider = self.get_object().provider
         if not request.user.has_perm('osf.change_preprint'):
             raise PermissionsError("This user does not have permission to update this preprint's provider.")
-        return super(PreprintView, self).post(request, *args, **kwargs)
+        response = super(PreprintView, self).post(request, *args, **kwargs)
+        new_provider = self.get_object().provider
+        if new_provider and old_provider.id != new_provider.id:
+            self.update_subjects_for_provider(request, old_provider, new_provider)
+        return response
 
     def get_context_data(self, **kwargs):
         preprint = Preprint.load(self.kwargs.get('guid'))
@@ -80,6 +86,13 @@ class PreprintView(PreprintMixin, UpdateView, GuidView):
         kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
         kwargs.update({'message': kwargs.get('message')})
         return super(PreprintView, self).get_context_data(**kwargs)
+
+    def update_subjects_for_provider(self, request, old_provider, new_provider):
+        subject_problems = self.object.map_subjects_between_providers(old_provider, new_provider, auth=None)
+        if subject_problems:
+            messages.warning(request, 'Unable to find subjects in new provider for the following subject(s):')
+            for problem in subject_problems:
+                messages.warning(request, problem)
 
 
 class PreprintSpamList(PermissionRequiredMixin, ListView):

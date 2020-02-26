@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import functools
-import httplib as http
+from rest_framework import status as http_status
 
 import markupsafe
 from django.core.paginator import Paginator
@@ -17,11 +17,11 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
     :param type Model: StoredObject subclass to query
     :param pk_or_query:
     :type pk_or_query: either
-      - a <basestring> representation of the record's primary key, e.g. 'abcdef'
+      - a <str> representation of the record's primary key, e.g. 'abcdef'
       - a <QueryBase> subclass query to uniquely select a record, e.g.
         Q('title', 'eq', 'Entitled') & Q('version', 'eq', 1)
     :param bool allow_deleted: allow deleleted records?
-    :param basestring display_name:
+    :param str display_name:
     :raises: HTTPError(404) if the record does not exist
     :raises: HTTPError(400) if no unique record is found
     :raises: HTTPError(410) if the resource is deleted and allow_deleted = False
@@ -37,17 +37,17 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
         try:
             instance = Model.objects.filter(pk_or_query).select_for_update().get() if select_for_update else Model.objects.get(pk_or_query)
         except Model.DoesNotExist:
-            raise HTTPError(http.NOT_FOUND, data=dict(
+            raise HTTPError(http_status.HTTP_404_NOT_FOUND, data=dict(
                 message_long='No {name} record matching that query could be found'.format(name=safe_name)
             ))
         except Model.MultipleObjectsReturned:
-            raise HTTPError(http.BAD_REQUEST, data=dict(
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
                 message_long='The query must match exactly one {name} record'.format(name=safe_name)
             ))
     else:
         instance = Model.load(pk_or_query, select_for_update=select_for_update)
         if not instance:
-            raise HTTPError(http.NOT_FOUND, data=dict(
+            raise HTTPError(http_status.HTTP_404_NOT_FOUND, data=dict(
                 message_long='No {name} record with that primary key could be found'.format(name=safe_name)
             ))
     if getattr(instance, 'is_deleted', False) and getattr(instance, 'suspended', False):
@@ -56,7 +56,7 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
             message_long='This content has been removed'
         ))
     if not allow_deleted and getattr(instance, 'is_deleted', False) or getattr(instance, 'is_disabled', False):
-        raise HTTPError(http.GONE)
+        raise HTTPError(http_status.HTTP_410_GONE)
     return instance
 
 
@@ -65,9 +65,9 @@ def autoload(Model, extract_key, inject_key, func):
     an appropriate HTTPError (see #get_or_http_error)
 
     :param type Model: database collection model to query (should be a subclass of StoredObject)
-    :param basestring extract_key: named URL field containing the desired primary key to be fetched
+    :param str extract_key: named URL field containing the desired primary key to be fetched
         from the database
-    :param basestring inject_key: name the instance will be accessible as when it's injected as an
+    :param str inject_key: name the instance will be accessible as when it's injected as an
         argument to the function
 
     Example usage: ::

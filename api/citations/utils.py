@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
+
 import os
 import re
-import httplib as http
+from rest_framework import status as http_status
 
 from citeproc import CitationStylesStyle, CitationStylesBibliography
 from citeproc import Citation, CitationItem
@@ -71,7 +73,7 @@ def render_citation(node, style='apa'):
     bibliography.register(citation)
 
     bib = bibliography.bibliography()
-    cit = unicode(bib[0] if len(bib) else '')
+    cit = str(bib[0] if len(bib) else '')
 
     title = csl['title'] if csl else node.csl['title']
     title = title.rstrip('.')
@@ -100,9 +102,9 @@ def render_citation(node, style='apa'):
     return cit
 
 def add_period_to_title(cit):
-    title_split = cit.encode('utf-8').split('\xe2\x80\x9d')
+    title_split = cit.split('”')  # quote is ” (\xe2\x80\x9d) not normal "
     if len(title_split) == 2 and title_split[0][-1] != '.':
-        cit = (title_split[0] + '.' + '\xe2\x80\x9d' + title_split[1]).decode('utf-8')
+        cit = (title_split[0] + '.' + '”' + title_split[1])  # quote is ” (\xe2\x80\x9d) not normal "
     return cit
 
 def apa_reformat(node, cit):
@@ -112,7 +114,7 @@ def apa_reformat(node, cit):
 
     # throw error if there is no visible contributor
     if contributors_list_length == 0:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     # handle only one contributor
     elif contributors_list_length == 1:
         name = process_name(node, contributors_list[0])
@@ -126,7 +128,7 @@ def apa_reformat(node, cit):
     # handle 8 or more contributors
     else:
         name_list = [apa_name(process_name(node, x)) for x in contributors_list[:6]]
-        new_apa = ' '.join(name_list) + ' \xe2\x80\xa6 '.decode('utf-8') + apa_name(process_name(node, contributors_list[-1]))
+        new_apa = ' '.join(name_list) + ' … ' + apa_name(process_name(node, contributors_list[-1]))
 
     cit = new_apa.rstrip(', ')
     if cit[-1] != '.':
@@ -154,11 +156,11 @@ def mla_reformat(node, cit):
     contributors_list = list(node.visible_contributors)
     contributors_list_length = len(contributors_list)
     cit = remove_extra_period_after_right_quotation(cit)
-    cit_minus_authors = ('\xe2\x80\x9c' + cit.encode('utf-8').split('\xe2\x80\x9c')[1]).decode('utf-8')
+    cit_minus_authors = ('“' + cit.split('“')[1])   # watch out these double quotes are “ \xe2\x80\x9c not normal "s
 
     # throw error if there is no visible contributor
     if contributors_list_length == 0:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     # handle only one contributor
     elif contributors_list_length == 1:
         name = process_name(node, contributors_list[0])
@@ -177,7 +179,7 @@ def mla_reformat(node, cit):
     return new_mla + ' ' + cit_minus_authors
 
 def remove_extra_period_after_right_quotation(cit):
-    return cit.encode('utf-8').replace('\xe2\x80\x9d.', '\xe2\x80\x9d').decode('utf-8')
+    return cit.replace('”.', '”')  # watch out these double quotes are “ \xe2\x80\x9c not normal "s
 
 def chicago_reformat(node, cit):
     cit = remove_extra_period_after_right_quotation(cit)
@@ -187,7 +189,7 @@ def chicago_reformat(node, cit):
     contributors_list_length = len(contributors_list)
     # throw error if there is no visible contributor
     if contributors_list_length == 0:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     # handle only one contributor
     elif contributors_list_length == 1:
         name = process_name(node, contributors_list[0])

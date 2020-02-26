@@ -180,7 +180,7 @@ class TestClient(DataverseAddonTestCase, unittest.TestCase):
         with assert_raises(Exception) as e:
             get_dataset(dataverse, 'My hdl')
         assert_is(mock_requests.get.assert_called_once_with('123', auth='me', timeout=settings.REQUEST_TIMEOUT), None)
-        assert_equal(e.exception.message, 'Done Testing')
+        assert_equal(str(e.exception), 'Done Testing')
 
     def test_get_deaccessioned_dataset(self):
         self.mock_dataset.get_state.return_value = 'DEACCESSIONED'

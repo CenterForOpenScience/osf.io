@@ -1,11 +1,14 @@
 import pytest
+from nose.tools import *  # noqa:
 
 from django.utils import timezone
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
 from api.base.utils import default_node_permission_queryset
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
+from api_tests.subjects.mixins import SubjectsFilterMixin
 from framework.auth.core import Auth
 from osf.models import AbstractNode, Node, NodeLog
+from osf.models.licenses import NodeLicense
 from osf.utils.sanitize import strip_html
 from osf.utils import permissions
 from osf_tests.factories import (
@@ -19,10 +22,11 @@ from osf_tests.factories import (
     InstitutionFactory,
     RegionFactory,
     OSFGroupFactory,
+    DraftNodeFactory,
 )
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 from rest_framework import exceptions
-from tests.utils import assert_items_equal
+from tests.utils import assert_equals
 from website.views import find_bookmark_collection
 from osf.utils.workflows import DefaultStates
 
@@ -53,6 +57,10 @@ class TestNodeList:
         return ProjectFactory(is_public=True, creator=user)
 
     @pytest.fixture()
+    def sparse_url(self, user):
+        return '/{}sparse/nodes/'.format(API_BASE)
+
+    @pytest.fixture()
     def url(self, user):
         return '/{}nodes/'.format(API_BASE)
 
@@ -63,11 +71,17 @@ class TestNodeList:
         preprint.save()
         return preprint
 
+    @pytest.fixture()
+    def draft_node(self, user):
+        return DraftNodeFactory(creator=user)
+
+    @pytest.mark.parametrize('is_sparse', [True, False])
     def test_return(
-            self, app, user, non_contrib, deleted_project,
-            private_project, public_project, url):
+            self, app, user, non_contrib, deleted_project, draft_node,
+            private_project, public_project, url, sparse_url, is_sparse):
 
         #   test_only_returns_non_deleted_public_projects
+        url = sparse_url if is_sparse else url
         res = app.get(url)
         node_json = res.json['data']
 
@@ -75,14 +89,16 @@ class TestNodeList:
         assert public_project._id in ids
         assert deleted_project._id not in ids
         assert private_project._id not in ids
+        assert draft_node._id not in ids
 
     #   test_return_public_node_list_logged_out_user
-        res = app.get(url, expect_errors=True)
+        res = app.get(url)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
         ids = [each['id'] for each in res.json['data']]
         assert public_project._id in ids
         assert private_project._id not in ids
+        assert draft_node._id not in ids
 
     #   test_return_public_node_list_logged_in_user
         res = app.get(url, auth=non_contrib)
@@ -91,12 +107,14 @@ class TestNodeList:
         ids = [each['id'] for each in res.json['data']]
         assert public_project._id in ids
         assert private_project._id not in ids
+        assert draft_node._id not in ids
 
     #   test_return_private_node_list_logged_out_user
         res = app.get(url)
         ids = [each['id'] for each in res.json['data']]
         assert public_project._id in ids
         assert private_project._id not in ids
+        assert draft_node._id not in ids
 
     #   test_return_private_node_list_logged_in_contributor
         res = app.get(url, auth=user.auth)
@@ -105,12 +123,14 @@ class TestNodeList:
         ids = [each['id'] for each in res.json['data']]
         assert public_project._id in ids
         assert private_project._id in ids
+        assert draft_node._id not in ids
 
     #   test_return_private_node_list_logged_in_non_contributor
         res = app.get(url, auth=non_contrib.auth)
         ids = [each['id'] for each in res.json['data']]
         assert public_project._id in ids
         assert private_project._id not in ids
+        assert draft_node._id not in ids
 
     #   test_returns_nodes_through_which_you_have_perms_through_osf_groups
         group = OSFGroupFactory(creator=user)
@@ -143,7 +163,9 @@ class TestNodeList:
             ) is not None for each in res.json['data']]
         )
 
-    def test_node_list_has_proper_root(self, app, user, url):
+    @pytest.mark.parametrize('is_sparse', [True, False])
+    def test_node_list_has_proper_root(self, app, user, url, sparse_url, is_sparse):
+        url = sparse_url if is_sparse else url
         project_one = ProjectFactory(title='Project One', is_public=True)
         ProjectFactory(parent=project_one, is_public=True)
 
@@ -153,7 +175,9 @@ class TestNodeList:
             project = AbstractNode.load(project_json['id'])
             assert project_json['embeds']['root']['data']['id'] == project.root._id
 
-    def test_node_list_sorting(self, app, url):
+    @pytest.mark.parametrize('is_sparse', [True, False])
+    def test_node_list_sorting(self, app, url, sparse_url, is_sparse):
+        url = sparse_url if is_sparse else url
         res = app.get('{}?sort=-created'.format(url))
         assert res.status_code == 200
 
@@ -187,7 +211,9 @@ class TestNodeList:
         # Preprint author can see that the node is a supplemental node for a private preprint
         assert res.json['data'][0]['attributes']['preprint'] is True
 
-    def test_default_node_permission_queryset(self, app, url, private_project, user):
+    @pytest.mark.parametrize('is_sparse', [True, False])
+    def test_default_node_permission_queryset(self, app, url, private_project, user, sparse_url, is_sparse):
+        url = sparse_url if is_sparse else url
         # Node admin contributor
         qs = default_node_permission_queryset(user, Node)
         assert qs.count() == 1
@@ -386,19 +412,25 @@ class TestNodeFiltering:
         return find_bookmark_collection(user_one)
 
     @pytest.fixture()
-    def url(self):
+    def sparse_url(self, user):
+        return '/{}sparse/nodes/'.format(API_BASE)
+
+    @pytest.fixture()
+    def url(self, user):
         return '/{}nodes/'.format(API_BASE)
 
+    @pytest.mark.parametrize('is_sparse', [True, False])
     def test_filtering(
             self, app, user_one, public_project_one,
             public_project_two, public_project_three,
             user_one_private_project, user_two_private_project,
-            preprint):
+            preprint, url, sparse_url, is_sparse):
+        url = sparse_url if is_sparse else url
 
         #   test_filtering_by_id
-        url = '/{}nodes/?filter[id]={}'.format(
-            API_BASE, public_project_one._id)
-        res = app.get(url, auth=user_one.auth)
+        filter_url = '{}?filter[id]={}'.format(
+            url, public_project_one._id)
+        res = app.get(filter_url, auth=user_one.auth)
         assert res.status_code == 200
         ids = [each['id'] for each in res.json['data']]
 
@@ -406,9 +438,9 @@ class TestNodeFiltering:
         assert len(ids) == 1
 
     #   test_filtering_by_multiple_ids
-        url = '/{}nodes/?filter[id]={},{}'.format(
-            API_BASE, public_project_one._id, public_project_two._id)
-        res = app.get(url, auth=user_one.auth)
+        filter_url = '{}?filter[id]={},{}'.format(
+            url, public_project_one._id, public_project_two._id)
+        res = app.get(filter_url, auth=user_one.auth)
         assert res.status_code == 200
         ids = [each['id'] for each in res.json['data']]
 
@@ -417,9 +449,9 @@ class TestNodeFiltering:
         assert len(ids) == 2
 
     #   test_filtering_by_multiple_ids_one_private
-        url = '/{}nodes/?filter[id]={},{}'.format(
-            API_BASE, public_project_one._id, user_two_private_project._id)
-        res = app.get(url, auth=user_one.auth)
+        filter_url = '{}?filter[id]={},{}'.format(
+            url, public_project_one._id, user_two_private_project._id)
+        res = app.get(filter_url, auth=user_one.auth)
         assert res.status_code == 200
         ids = [each['id'] for each in res.json['data']]
 
@@ -428,9 +460,9 @@ class TestNodeFiltering:
         assert len(ids) == 1
 
     #   test_filtering_by_multiple_ids_brackets_in_query_params
-        url = '/{}nodes/?filter[id]=[{},   {}]'.format(
-            API_BASE, public_project_one._id, public_project_two._id)
-        res = app.get(url, auth=user_one.auth)
+        filter_url = '{}?filter[id]=[{},   {}]'.format(
+            url, public_project_one._id, public_project_two._id)
+        res = app.get(filter_url, auth=user_one.auth)
         assert res.status_code == 200
         ids = [each['id'] for each in res.json['data']]
 
@@ -439,9 +471,9 @@ class TestNodeFiltering:
         assert len(ids) == 2
 
     #   test_filtering_on_title_not_equal
-        url = '/{}nodes/?filter[title][ne]=Public%20Project%20One'.format(
-            API_BASE)
-        res = app.get(url, auth=user_one.auth)
+        filter_url = '{}?filter[title][ne]=Public%20Project%20One'.format(
+            url)
+        res = app.get(filter_url, auth=user_one.auth)
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 4
@@ -454,9 +486,9 @@ class TestNodeFiltering:
         assert user_one_private_project.title in titles
 
     #   test_filtering_on_description_not_equal
-        url = '/{}nodes/?filter[description][ne]=reason%20is%20shook'.format(
-            API_BASE)
-        res = app.get(url, auth=user_one.auth)
+        filter_url = '{}?filter[description][ne]=reason%20is%20shook'.format(
+            url)
+        res = app.get(filter_url, auth=user_one.auth)
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 5
@@ -467,31 +499,32 @@ class TestNodeFiltering:
         assert public_project_three.description in descriptions
         assert user_one_private_project.description in descriptions
 
-    #   test_filtering_on_preprint
-        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
-        res = app.get(url, auth=user_one.auth)
-        assert res.status_code == 200
-        data = res.json['data']
-        ids = [each['id'] for each in data]
+        if not is_sparse:
+            #   test_filtering_on_preprint
+            filter_url = '{}?filter[preprint]=true'.format(url)
+            res = app.get(filter_url, auth=user_one.auth)
+            assert res.status_code == 200
+            data = res.json['data']
+            ids = [each['id'] for each in data]
 
-        assert len(data) == 1
-        assert preprint.node._id in ids
-        assert public_project_one._id not in ids
-        assert public_project_two._id not in ids
-        assert public_project_three._id not in ids
+            assert len(data) == 1
+            assert preprint.node._id in ids
+            assert public_project_one._id not in ids
+            assert public_project_two._id not in ids
+            assert public_project_three._id not in ids
 
-    #   test_filtering_out_preprint
-        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
-        res = app.get(url, auth=user_one.auth)
-        assert res.status_code == 200
-        data = res.json['data']
+            #   test_filtering_out_preprint
+            filter_url = '{}?filter[preprint]=false'.format(url)
+            res = app.get(filter_url, auth=user_one.auth)
+            assert res.status_code == 200
+            data = res.json['data']
 
-        ids = [each['id'] for each in data]
+            ids = [each['id'] for each in data]
 
-        assert preprint.node._id not in ids
-        assert public_project_one._id in ids
-        assert public_project_two._id in ids
-        assert public_project_three._id in ids
+            assert preprint.node._id not in ids
+            assert public_project_one._id in ids
+            assert public_project_two._id in ids
+            assert public_project_three._id in ids
 
     def test_filtering_by_category(self, app, user_one):
         project_one = ProjectFactory(creator=user_one, category='hypothesis')
@@ -1397,6 +1430,20 @@ class TestNodeFiltering:
         assert set(expected) == set(actual)
 
 
+class TestNodeSubjectFiltering(SubjectsFilterMixin):
+    @pytest.fixture()
+    def resource(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def resource_two(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}nodes/'.format(API_BASE)
+
+
 @pytest.mark.django_db
 @pytest.mark.enable_implicit_clean
 class TestNodeCreate:
@@ -1418,6 +1465,10 @@ class TestNodeCreate:
     @pytest.fixture()
     def url(self):
         return '/{}nodes/'.format(API_BASE)
+
+    @pytest.fixture()
+    def sparse_url(self):
+        return '/{}sparse/nodes/'.format(API_BASE)
 
     @pytest.fixture()
     def title(self):
@@ -1479,7 +1530,7 @@ class TestNodeCreate:
 
     def test_create_node_errors(
             self, app, user_one, public_project,
-            private_project, url):
+            private_project, url, sparse_url):
 
         #   test_node_create_invalid_data
         res = app.post_json_api(
@@ -1506,19 +1557,26 @@ class TestNodeCreate:
         assert res.status_code == 401
         assert 'detail' in res.json['errors'][0]
 
+    #   test_does_not_create_project_on_sparse_endpoint
+        public_project['data']['type'] = 'sparse-nodes'
+        res = app.post_json_api(
+            sparse_url, public_project,
+            expect_errors=True,
+            auth=user_one.auth)
+        assert res.status_code == 405
+
     def test_creates_public_project_logged_in(
             self, app, user_one, public_project, url, institution_one):
         res = app.post_json_api(
             url, public_project,
-            expect_errors=True,
             auth=user_one.auth)
         assert res.status_code == 201
         self_link = res.json['data']['links']['self']
         assert res.json['data']['attributes']['title'] == public_project['data']['attributes']['title']
         assert res.json['data']['attributes']['description'] == public_project['data']['attributes']['description']
         assert res.json['data']['attributes']['category'] == public_project['data']['attributes']['category']
-        assert res.json['data']['relationships']['affiliated_institutions']['links']['self']['href'] ==  \
-               '{}relationships/institutions/'.format(self_link)
+        assert res.json['data']['relationships']['affiliated_institutions']['links']['self']['href'] == \
+            '{}relationships/institutions/'.format(self_link)
         assert res.content_type == 'application/vnd.api+json'
         pid = res.json['data']['id']
         project = AbstractNode.load(pid)
@@ -1920,7 +1978,8 @@ class TestNodeCreate:
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'This field is required.'
-        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/category'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/title'
+        assert res.json['errors'][1]['source']['pointer'] == '/data/attributes/category'
 
     #   test_create_project_invalid_title
         project = {
@@ -1940,6 +1999,140 @@ class TestNodeCreate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Title cannot exceed 512 characters.'
 
+@pytest.mark.django_db
+class TestNodeLicenseOnCreate:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}nodes/'.format(API_BASE)
+
+    @pytest.fixture()
+    def license_name(self):
+        return 'MIT License'
+
+    @pytest.fixture()
+    def node_license(self, license_name):
+        return NodeLicense.objects.filter(name=license_name).first()
+
+    @pytest.fixture()
+    def make_payload(self):
+        def payload(
+                license_id=None, license_year=None, copyright_holders=None):
+            attributes = {}
+
+            if license_year and copyright_holders:
+                attributes = {
+                    'title': 'new title',
+                    'category': 'project',
+                    'tags': ['foo', 'bar'],
+                    'node_license': {
+                        'copyright_holders': copyright_holders,
+                        'year': license_year,
+                    }
+                }
+            elif license_year:
+                attributes = {
+                    'title': 'new title',
+                    'category': 'project',
+                    'tags': ['foo', 'bar'],
+                    'node_license': {
+                        'year': license_year,
+                    }
+                }
+            elif copyright_holders:
+                attributes = {
+                    'title': 'new title',
+                    'category': 'project',
+                    'tags': ['foo', 'bar'],
+                    'node_license': {
+                        'copyright_holders': copyright_holders
+                    }
+                }
+
+            return {
+                'data': {
+                    'type': 'nodes',
+                    'attributes': attributes,
+                    'relationships': {
+                        'license': {
+                            'data': {
+                                'type': 'licenses',
+                                'id': license_id
+                            }
+                        }
+                    }
+                }
+            } if license_id else {
+                'data': {
+                    'type': 'nodes',
+                    'attributes': attributes
+                }
+            }
+        return payload
+
+    def test_node_license_on_create(
+            self, app, user, url, node_license, make_payload):
+        data = make_payload(
+            copyright_holders=['Haagen', 'Dazs'],
+            license_year='2200',
+            license_id=node_license._id
+        )
+        res = app.post_json_api(
+            url, data, auth=user.auth)
+        assert res.json['data']['attributes']['node_license']['year'] == '2200'
+        assert res.json['data']['attributes']['node_license']['copyright_holders'] == ['Haagen', 'Dazs']
+        assert res.json['data']['relationships']['license']['data']['id'] == node_license._id
+
+    def test_create_node_license_errors(
+            self, app, url, user, node_license, make_payload):
+
+        # test_creating_a_node_license_without_a_license_id
+        data = make_payload(
+            license_year='2200',
+            copyright_holders=['Ben', 'Jerry']
+        )
+        res = app.post_json_api(
+            url, data, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'License ID must be provided for a Node License.'
+
+    # test_creating_a_node_license_without_a_copyright_holder
+        data = make_payload(
+            license_year='2200',
+            license_id=node_license._id
+        )
+        res = app.post_json_api(
+            url, data,
+            auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'copyrightHolders must be specified for this license'
+
+    # test_creating_a_node_license_without_a_year
+        data = make_payload(
+            copyright_holders=['Baskin', 'Robbins'],
+            license_id=node_license._id
+        )
+        res = app.post_json_api(
+            url, data,
+            auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'year must be specified for this license'
+
+    # test_creating_a_node_license_with_an_invalid_ID
+        data = make_payload(
+            license_year='2200',
+            license_id='invalid id',
+            copyright_holders=['Ben', 'Jerry']
+        )
+        res = app.post_json_api(
+            url, data,
+            auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
+        assert res.json['errors'][0]['detail'] == 'Unable to find specified license.'
 
 @pytest.mark.django_db
 class TestNodeBulkCreate:
@@ -2105,7 +2298,10 @@ class TestNodeBulkCreate:
             expect_errors=True, bulk=True)
 
         assert res.status_code == 400
-        assert res.json['errors'][0]['source']['pointer'] == '/data/1/attributes/category'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/1/attributes/title'
+        assert res.json['errors'][0]['detail'] == 'This field is required.'
+        assert res.json['errors'][1]['source']['pointer'] == '/data/1/attributes/category'
+        assert res.json['errors'][1]['detail'] == 'This field is required.'
 
         res = app.get(url, auth=user_one.auth)
         assert len(res.json['data']) == 0
@@ -3205,12 +3401,12 @@ class TestNodeBulkUpdateSkipUneditable:
         assert res.status_code == 200
         edited = res.json['data']
         skipped = res.json['errors']
-        assert_items_equal(
+        assert_equals(
             [edited[0]['id'], edited[1]['id']],
             [user_one_public_project_one._id,
              user_one_public_project_two._id]
         )
-        assert_items_equal(
+        assert_equals(
             [skipped[0]['_id'], skipped[1]['_id']],
             [user_two_public_project_one._id,
              user_two_public_project_two._id]
@@ -3239,12 +3435,12 @@ class TestNodeBulkUpdateSkipUneditable:
         assert res.status_code == 200
         edited = res.json['data']
         skipped = res.json['errors']
-        assert_items_equal(
+        assert_equals(
             [edited[0]['id'], edited[1]['id']],
             [user_one_public_project_one._id,
              user_one_public_project_two._id]
         )
-        assert_items_equal(
+        assert_equals(
             [skipped[0]['_id'], skipped[1]['_id']],
             [user_two_public_project_one._id,
              user_two_public_project_two._id]
@@ -3818,13 +4014,13 @@ class TestNodeBulkDeleteSkipUneditable:
         res = app.delete_json_api(url, payload, auth=user_one.auth, bulk=True)
         assert res.status_code == 200
         skipped = res.json['errors']
-        assert_items_equal(
+        assert_equals(
             [skipped[0]['id'], skipped[1]['id']],
             [public_project_three._id, public_project_four._id]
         )
 
         res = app.get('/{}nodes/'.format(API_BASE), auth=user_one.auth)
-        assert_items_equal(
+        assert_equals(
             [res.json['data'][0]['id'], res.json['data'][1]['id']],
             [public_project_three._id, public_project_four._id]
         )

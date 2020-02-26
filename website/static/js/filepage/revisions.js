@@ -218,7 +218,12 @@ var FileRevisionsTable = {
         }
 
         if (file.provider === 'osfstorage' && file.name && index !== 0) {
-            var parts = file.name.split('.');
+            var parts;
+            if (file.versionNames && file.versionNames.length) {
+                parts = file.versionNames[index].split('.');
+            } else {
+                parts = file.name.split('.');
+            }
             if (parts.length === 1) {
                 options.displayName = parts[0] + '-' + revision.modified;
             } else {

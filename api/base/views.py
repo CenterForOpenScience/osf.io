@@ -1,3 +1,5 @@
+from builtins import str
+
 from collections import defaultdict
 from distutils.version import StrictVersion
 
@@ -129,9 +131,6 @@ class JSONAPIBaseView(generics.GenericAPIView):
                 with transaction.atomic():
                     ret = view.handle_exception(e).data
 
-            # Allow request to be gc'd
-            ser._context = None
-
             # Cache our final result
             cache[_cache_key] = ret
 
@@ -155,7 +154,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
         if 'fields[{}]'.format(serializer_class_type) in self.request.query_params:
             # Check only requested and mandatory fields
             sparse_fields = self.request.query_params['fields[{}]'.format(serializer_class_type)]
-            for field in fields_check.copy().keys():
+            for field in list(fields_check.copy().keys()):
                 if field not in ('type', 'id', 'links') and field not in sparse_fields:
                     fields_check.pop(field)
 
@@ -165,7 +164,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
 
         for field in fields_check:
             if getattr(fields_check[field], 'always_embed', False) and field not in embeds:
-                embeds.append(unicode(field))
+                embeds.append(str(field))
             if getattr(fields_check[field], 'never_embed', False) and field in embeds:
                 embeds.remove(field)
         embeds_partials = {}

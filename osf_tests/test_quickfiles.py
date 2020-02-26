@@ -2,8 +2,10 @@ import mock
 import pytest
 
 from addons.osfstorage.models import OsfStorageFile
-from osf.exceptions import MaxRetriesError
+from osf.exceptions import DraftRegistrationStateError, MaxRetriesError, NodeStateError, MaxRetriesError
 from api_tests.utils import create_test_quickfile, create_test_file, create_test_folder
+from tests.utils import assert_equals
+from tests.base import get_default_metaschema
 
 from django.contrib.contenttypes.models import ContentType
 
@@ -52,6 +54,10 @@ class TestQuickFolder:
     @pytest.fixture()
     def folder_node(self, user, project):
         return create_test_folder(project, 'test folder')
+
+    def test_quickfiles_cannot_be_registered(self, quickfiles, auth):
+        with pytest.raises(DraftRegistrationStateError):
+            quickfiles.register_node(get_default_metaschema(), auth, factories.DraftRegistrationFactory(branched_from=quickfiles), None)
 
     def test_new_user_has_quickfolder(self, user):
         assert getattr(user, 'quickfolder', False)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 import pkgutil
 
 import mock
@@ -131,7 +131,7 @@ class TestApiBaseViews(ApiTestCase):
             auth=user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     @mock.patch(
         'osf.models.OSFUser.is_disabled',
@@ -146,7 +146,7 @@ class TestApiBaseViews(ApiTestCase):
             auth=user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
 
 class TestStatusView(ApiTestCase):

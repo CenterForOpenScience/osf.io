@@ -1,6 +1,6 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 import logging
 
 from flask import request, make_response
@@ -78,14 +78,14 @@ def bitbucket_set_config(auth, **kwargs):
         if not user_settings:
             user_settings = node_settings.user_settings
     except AttributeError:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     # Parse request
     bitbucket_user_name = request.json.get('bitbucket_user', '')
     bitbucket_repo_name = request.json.get('bitbucket_repo', '')
 
     if not bitbucket_user_name or not bitbucket_repo_name:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     # Verify that repo exists and that user can access
     connection = BitbucketClient(access_token=node_settings.external_account.oauth_key)
@@ -100,7 +100,7 @@ def bitbucket_set_config(auth, **kwargs):
             message = (
                 'Cannot access repo.'
             )
-        return {'message': message}, http.BAD_REQUEST
+        return {'message': message}, http_status.HTTP_400_BAD_REQUEST
 
     changed = (
         bitbucket_user_name != node_settings.user or

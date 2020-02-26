@@ -1,6 +1,6 @@
 from django.apps import apps
 import logging
-import urlparse
+from future.moves.urllib.parse import urljoin
 import random
 import requests
 
@@ -137,7 +137,7 @@ def format_registration(node):
 
     to_visit = [
         registration_graph,
-        GraphNode('workidentifier', creative_work=registration_graph, uri=urlparse.urljoin(settings.DOMAIN, node.url))
+        GraphNode('workidentifier', creative_work=registration_graph, uri=urljoin(settings.DOMAIN, node.url))
     ]
 
     registration_graph.attrs['tags'] = [
@@ -152,7 +152,7 @@ def format_registration(node):
         parent = GraphNode('registration')
         to_visit.extend([
             parent,
-            GraphNode('workidentifier', creative_work=parent, uri=urlparse.urljoin(settings.DOMAIN, node.parent_node.url)),
+            GraphNode('workidentifier', creative_work=parent, uri=urljoin(settings.DOMAIN, node.parent_node.url)),
             GraphNode('ispartof', subject=registration_graph, related=parent),
         ])
 

@@ -39,16 +39,13 @@ EXTERNAL_EMBER_APPS = {
         'path': '/ember_osf_web/',
         'routes': [
             'collections',
+            'registries',
             'handbook',
         ],
     },
     'preprints': {
         'server': 'http://{}:4201/'.format(EMBER_DOMAIN),
         'path': '/preprints/'
-    },
-    'registries': {
-        'server': 'http://{}:4202/'.format(EMBER_DOMAIN),
-        'path': '/registries/'
     },
     'reviews': {
         'server': 'http://{}:4203/'.format(EMBER_DOMAIN),

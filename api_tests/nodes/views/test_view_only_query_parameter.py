@@ -280,7 +280,7 @@ class TestNodeDetailViewOnlyLinks:
             'view_only': str(private_node_one_anonymous_link.key),
         })
         assert res.status_code == 200
-        body = res.body
+        body = res.body.decode()
         for id in valid_contributors:
             assert id not in body
 

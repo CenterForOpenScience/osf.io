@@ -1,6 +1,6 @@
 """Generic add-on view factories"""
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 
 from flask import request
 
@@ -28,12 +28,12 @@ def import_auth(addon_short_name, Serializer):
         )
 
         if not user_addon.external_accounts.filter(id=external_account.id).exists():
-            raise HTTPError(http.FORBIDDEN)
+            raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
         try:
             node_addon.set_auth(external_account, user_addon.owner)
         except PermissionsError:
-            raise HTTPError(http.FORBIDDEN)
+            raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
         node_addon.save()
 
@@ -60,7 +60,7 @@ def folder_list(addon_short_name, addon_full_name, get_folders):
     def _folder_list(node_addon, **kwargs):
         """Returns a list of folders"""
         if not node_addon.has_auth:
-            raise HTTPError(http.FORBIDDEN)
+            raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
         folder_id = request.args.get('folderId')
         return get_folders(node_addon, folder_id)

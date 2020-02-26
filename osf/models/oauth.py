@@ -1,4 +1,3 @@
-import urlparse
 import uuid
 
 from website.util import api_v2_url
@@ -10,6 +9,7 @@ from website.security import random_string
 from framework.auth import cas
 
 from website import settings
+from future.moves.urllib.parse import urljoin
 
 
 def generate_client_secret():
@@ -24,6 +24,10 @@ class ApiOAuth2Scope(base.ObjectIDMixin, base.BaseModel):
     name = models.CharField(max_length=50, unique=True, db_index=True, null=False, blank=False)
     description = models.CharField(max_length=255, null=False, blank=False)
     is_active = models.BooleanField(default=True, db_index=True)  # TODO: Add mechanism to deactivate a scope?
+    is_public = models.BooleanField(default=True, db_index=True)
+
+    def absolute_url(self):
+        return urljoin(settings.API_DOMAIN, '/v2/scopes/{}/'.format(self.name))
 
 
 def generate_client_id():
@@ -95,7 +99,7 @@ class ApiOAuth2Application(base.ObjectIDMixin, base.BaseModel):
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(settings.DOMAIN, self.url)
+        return urljoin(settings.DOMAIN, self.url)
 
     # Properties used by Django and DRF "Links: self" field
     @property
@@ -126,8 +130,7 @@ class ApiOAuth2PersonalToken(base.ObjectIDMixin, base.BaseModel):
     owner = models.ForeignKey('OSFUser', db_index=True, blank=True, null=True, on_delete=models.SET_NULL)
     name = models.CharField(max_length=100, blank=False, null=False, db_index=True)
 
-    # This field is a space delimited list of scopes, e.g. "osf.full_read osf.full_write"
-    scopes = models.CharField(blank=False, null=False, max_length=300)
+    scopes = models.ManyToManyField('ApiOAuth2Scope', related_name='tokens', blank=False)
 
     is_active = models.BooleanField(default=True, db_index=True)
 
@@ -160,7 +163,7 @@ class ApiOAuth2PersonalToken(base.ObjectIDMixin, base.BaseModel):
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(settings.DOMAIN, self.url)
+        return urljoin(settings.DOMAIN, self.url)
 
     # Properties used by Django and DRF "Links: self" field
     @property

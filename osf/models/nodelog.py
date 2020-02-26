@@ -20,6 +20,8 @@ class NodeLog(BaseLog):
     CREATED_FROM = 'created_from'
 
     PROJECT_CREATED = 'project_created'
+    # Nodes created as part of the registration process
+    PROJECT_CREATED_FROM_DRAFT_REG = 'project_created_from_draft_reg'
     PROJECT_REGISTERED = 'project_registered'
     PROJECT_DELETED = 'project_deleted'
 
@@ -77,6 +79,9 @@ class NodeLog(BaseLog):
     FILE_REMOVED = 'file_removed'
     FILE_RESTORED = 'file_restored'
 
+    CATEGORY_UPDATED = 'category_updated'
+    ARTICLE_DOI_UPDATED = 'article_doi_updated'
+
     ADDON_ADDED = 'addon_added'
     ADDON_REMOVED = 'addon_removed'
     COMMENT_ADDED = 'comment_added'
@@ -106,6 +111,9 @@ class NodeLog(BaseLog):
     RETRACTION_APPROVED = 'retraction_approved'
     RETRACTION_CANCELLED = 'retraction_cancelled'
     RETRACTION_INITIATED = 'retraction_initiated'
+
+    EXTERNAL_REGISTRATION_CREATED = 'external_registration_created'
+    EXTERNAL_REGISTRATION_IMPORTED = 'external_registration_imported'
 
     REGISTRATION_APPROVAL_CANCELLED = 'registration_cancelled'
     REGISTRATION_APPROVAL_INITIATED = 'registration_initiated'
@@ -137,9 +145,9 @@ class NodeLog(BaseLog):
                 MADE_CONTRIBUTOR_VISIBLE,
                 MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_TERMINATED,
                 EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED,
-                RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED,
-                REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED,
-                PREREG_REGISTRATION_INITIATED,
+                RETRACTION_CANCELLED, RETRACTION_INITIATED, EXTERNAL_REGISTRATION_CREATED, EXTERNAL_REGISTRATION_IMPORTED,
+                REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED,
+                PREREG_REGISTRATION_INITIATED, PROJECT_CREATED_FROM_DRAFT_REG,
                 GROUP_ADDED, GROUP_UPDATED, GROUP_REMOVED,
                 AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED,
                 PREPRINT_FILE_UPDATED, PREPRINT_LICENSE_UPDATED, VIEW_ONLY_LINK_ADDED, VIEW_ONLY_LINK_REMOVED] + list(sum([
@@ -159,7 +167,7 @@ class NodeLog(BaseLog):
     original_node = models.ForeignKey('AbstractNode', db_index=True,
                                       null=True, blank=True, on_delete=models.CASCADE)
 
-    def __unicode__(self):
+    def __repr__(self):
         return ('({self.action!r}, user={self.user!r},, node={self.node!r}, params={self.params!r}) '
                 'with id {self.id!r}').format(self=self)
 

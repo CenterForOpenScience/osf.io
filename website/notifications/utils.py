@@ -64,8 +64,11 @@ def remove_contributor_from_subscriptions(node, user):
         admin on any of node's parent projects.
     """
     Preprint = apps.get_model('osf.Preprint')
+    DraftRegistration = apps.get_model('osf.DraftRegistration')
     # Preprints don't have subscriptions at this time
     if isinstance(node, Preprint):
+        return
+    if isinstance(node, DraftRegistration):
         return
 
     # If user still has permissions through being a contributor or group member, or has
@@ -453,8 +456,12 @@ def subscribe_user_to_notifications(node, user):
     """
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
     Preprint = apps.get_model('osf.Preprint')
+    DraftRegistration = apps.get_model('osf.DraftRegistration')
     if isinstance(node, Preprint):
         raise InvalidSubscriptionError('Preprints are invalid targets for subscriptions at this time.')
+
+    if isinstance(node, DraftRegistration):
+        raise InvalidSubscriptionError('DraftRegistrations are invalid targets for subscriptions at this time.')
 
     if node.is_collection:
         raise InvalidSubscriptionError('Collections are invalid targets for subscriptions')

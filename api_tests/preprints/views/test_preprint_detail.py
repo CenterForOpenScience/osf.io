@@ -10,6 +10,7 @@ from osf import features
 from osf.utils.permissions import READ
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
+from api_tests.subjects.mixins import UpdateSubjectsMixin
 from framework.auth.core import Auth
 from osf.models import NodeLicense, PreprintContributor
 from osf.utils.permissions import WRITE
@@ -423,30 +424,6 @@ class TestPreprintUpdate:
         preprint.reload()
         assert preprint.node is None
 
-    def test_update_subjects(self, app, user, preprint, subject, url):
-        assert not preprint.subjects.filter(_id=subject._id).exists()
-        update_subjects_payload = build_preprint_update_payload(
-            preprint._id, attributes={'subjects': [[subject._id]]})
-
-        res = app.patch_json_api(url, update_subjects_payload, auth=user.auth)
-        assert res.status_code == 200
-
-        preprint.reload()
-        assert preprint.subjects.filter(_id=subject._id).exists()
-
-    def test_update_invalid_subjects(self, app, user, preprint, url):
-        subjects = preprint.subjects
-        update_subjects_payload = build_preprint_update_payload(
-            preprint._id, attributes={'subjects': [['wwe']]})
-
-        res = app.patch_json_api(
-            url, update_subjects_payload,
-            auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-
-        preprint.reload()
-        assert preprint.subjects == subjects
-
     def test_update_primary_file(self, app, user, preprint, url):
         new_file = test_utils.create_test_preprint_file(
             preprint, user, filename='shook_that_mans_hand.pdf')
@@ -739,68 +716,6 @@ class TestPreprintUpdate:
             expect_errors=True)
         assert res.status_code == 403
 
-    def test_write_contribs_can_set_subjects(
-            self, app, user, preprint, subject, url):
-
-        # def test_write_contrib_can_set_subjects(self, app, user, preprint,
-        # subject, url):
-        write_contrib = AuthUserFactory()
-        preprint.add_contributor(
-            write_contrib,
-            permissions=WRITE,
-            auth=Auth(user), save=True)
-
-        assert not preprint.subjects.filter(_id=subject._id).exists()
-        update_subjects_payload = build_preprint_update_payload(
-            preprint._id, attributes={'subjects': [[subject._id]]})
-
-        res = app.patch_json_api(
-            url, update_subjects_payload,
-            auth=write_contrib.auth,
-            expect_errors=True)
-        assert res.status_code == 200
-
-        assert preprint.subjects.filter(_id=subject._id).exists()
-
-    def test_contribs_cannot_set_subjects(
-            self, app, user, preprint, subject, url):
-        # def test_read_contrib_can_set_subjects(self, app, user, preprint,
-        # subject, url):
-        read_contrib = AuthUserFactory()
-        preprint.add_contributor(
-            read_contrib,
-            permissions=READ,
-            auth=Auth(user), save=True)
-
-        assert not preprint.subjects.filter(_id=subject._id).exists()
-        update_subjects_payload = build_preprint_update_payload(
-            preprint._id, attributes={'subjects': [[subject._id]]})
-
-        res = app.patch_json_api(
-            url, update_subjects_payload,
-            auth=read_contrib.auth,
-            expect_errors=True)
-        assert res.status_code == 403
-
-        assert not preprint.subjects.filter(_id=subject._id).exists()
-
-    # def test_non_contrib_cannot_set_subjects(self, app, user, preprint,
-    # subject, url):
-        non_contrib = AuthUserFactory()
-
-        assert not preprint.subjects.filter(_id=subject._id).exists()
-
-        update_subjects_payload = build_preprint_update_payload(
-            preprint._id, attributes={'subjects': [[subject._id]]})
-
-        res = app.patch_json_api(
-            url, update_subjects_payload,
-            auth=non_contrib.auth,
-            expect_errors=True)
-        assert res.status_code == 403
-
-        assert not preprint.subjects.filter(_id=subject._id).exists()
-
     def test_update_published(self, app, user):
         unpublished = PreprintFactory(creator=user, is_published=False)
         url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
@@ -834,6 +749,20 @@ class TestPreprintUpdate:
         app.patch_json_api(url, update_doi_payload, auth=user.auth)
 
         assert mock_on_preprint_updated.called
+
+
+@pytest.mark.django_db
+class TestPreprintUpdateSubjects(UpdateSubjectsMixin):
+    @pytest.fixture()
+    def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib):
+        preprint = PreprintFactory(creator=user_admin_contrib, is_published=True)
+        preprint.add_contributor(user_write_contrib, auth=Auth(user_admin_contrib))
+        preprint.add_contributor(
+            user_read_contrib,
+            auth=Auth(user_admin_contrib),
+            permissions=READ)
+        preprint.save()
+        return preprint
 
 
 @pytest.mark.django_db

@@ -513,6 +513,7 @@ class ProviderSpecificSubjectsMixin(ProviderMixinBase):
         res = app.get(url_1)
         assert res.json['data'][-1]['id'] == rootOther._id
 
+
 @pytest.mark.django_db
 class ProviderCustomTaxonomyMixin(ProviderMixinBase):
 
@@ -549,6 +550,44 @@ class ProviderCustomTaxonomyMixin(ProviderMixinBase):
         assert len(bepress_res.json['data']) == len(asdf_res.json['data']) == 1
         assert bepress_res.json['data'][0]['attributes']['share_title'] == osf_provider.share_title
         assert asdf_res.json['data'][0]['attributes']['share_title'] == asdf_provider.share_title
+
+
+@pytest.mark.django_db
+class ProviderCustomSubjectMixin(ProviderMixinBase):
+
+    @pytest.fixture()
+    def osf_provider(self):
+        return self.provider_class(_id='osf')
+
+    @pytest.fixture()
+    def asdf_provider(self):
+        return self.provider_class(_id='asdf')
+
+    @pytest.fixture()
+    def bepress_subj(self, osf_provider):
+        return SubjectFactory(text='BePress Text', provider=osf_provider)
+
+    @pytest.fixture()
+    def other_subj(self, bepress_subj, asdf_provider):
+        return SubjectFactory(text='Other Text', bepress_subject=bepress_subj, provider=asdf_provider)
+
+    @pytest.fixture()
+    def url(self):
+        raise NotImplementedError
+
+    def test_taxonomy_share_title(self, app, url, osf_provider, asdf_provider, bepress_subj, other_subj):
+        bepress_res = app.get(
+            url.format(
+                API_BASE,
+                osf_provider._id))
+        asdf_res = app.get(
+            url.format(
+                API_BASE,
+                asdf_provider._id))
+
+        assert len(bepress_res.json['data']) == len(asdf_res.json['data']) == 1
+        assert bepress_res.json['data'][0]['attributes']['taxonomy_name'] == osf_provider.share_title
+        assert asdf_res.json['data'][0]['attributes']['taxonomy_name'] == asdf_provider.share_title
 
 
 @pytest.mark.django_db
@@ -935,7 +974,7 @@ class ProviderLicensesViewTestBaseMixin(ProviderMixinBase):
     def license_three(self, licenses):
         return licenses[2]
 
-    def test_provider_has_no_acceptable_licenses_and_no_default(self, app, provider, licenses, url):
+    def test_provider_has_no_acceptable_licenses_and_no_default(self, app, provider, licenses, url, license_one):
         provider.licenses_acceptable = []
         provider.default_license = None
         provider.save()
@@ -944,15 +983,24 @@ class ProviderLicensesViewTestBaseMixin(ProviderMixinBase):
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == len(licenses)
 
+        # test filter on name
+        res = app.get('{}?filter[name]={}'.format(url, license_one.name))
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == license_one._id
+
     def test_provider_has_a_default_license_but_no_acceptable_licenses(self, app, provider, licenses, license_two, url):
         provider.licenses_acceptable = []
         provider.default_license = license_two
         provider.save()
         res = app.get(url)
-
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == len(licenses)
-        assert license_two._id == res.json['data'][0]['id']
+        assert license_two._id in [item['id'] for item in res.json['data']]
+
+        # test filter on default_license name
+        res = app.get('{}?filter[name]={}'.format(url, license_two.name))
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == license_two._id
 
     def test_provider_has_acceptable_licenses_but_no_default(self, app, provider, licenses, license_one, license_two, license_three, url):
         provider.licenses_acceptable.add(license_one, license_two)
@@ -981,5 +1029,3 @@ class ProviderLicensesViewTestBaseMixin(ProviderMixinBase):
         assert license_one._id in license_ids
         assert license_three._id in license_ids
         assert license_two._id not in license_ids
-
-        assert license_three._id == license_ids[0]

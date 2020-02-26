@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 import re
+import jsonschema
 
 from django.core.validators import URLValidator, validate_email as django_validate_email
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.deconstruct import deconstructible
-from django.utils.six import string_types
+from past.builtins import basestring
 
 from website.notifications.constants import NOTIFICATION_TYPES
 
+from osf.utils.registrations import FILE_VIEW_URL_REGEX
 from osf.utils.sanitize import strip_html
 from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors, BlacklistedEmailError
 
@@ -38,7 +40,7 @@ def validate_year(item):
         except ValueError:
             raise ValidationValueError('Please enter a valid year.')
         else:
-            if isinstance(item, string_types) and len(item) != 4:
+            if isinstance(item, basestring) and len(item) != 4:
                 raise ValidationValueError('Please enter a valid year.')
 
 
@@ -110,6 +112,36 @@ def validate_subject_hierarchy_length(parent):
 def validate_subject_provider_mapping(provider, mapping):
     if not mapping and provider._id != 'osf':
         raise DjangoValidationError('Invalid PreprintProvider / Subject alias mapping.')
+
+def validate_subjects(subject_list):
+    """
+    Asserts all subjects in subject_list are valid subjects
+    :param subject_list list[Subject._id] List of flattened subject ids
+    :return Subject queryset
+    """
+    from osf.models import Subject
+    subjects = Subject.objects.filter(_id__in=subject_list)
+    if subjects.count() != len(subject_list):
+        raise ValidationValueError('Subject not found.')
+    return subjects
+
+def expand_subject_hierarchy(subject_list):
+    """
+    Takes flattened subject list which may or may not include all parts
+    of the subject hierarchy and supplements with all the parents
+
+    :param subject_list list[Subject._id] List of flattened subjects
+    :return list of flattened subjects, supplemented with parents
+    """
+    subjects = validate_subjects(subject_list)
+    expanded_subjects = []
+    for subj in subjects:
+        expanded_subjects.append(subj)
+        while subj.parent:
+            if subj.parent not in expanded_subjects:
+                expanded_subjects.append(subj.parent)
+            subj = subj.parent
+    return expanded_subjects
 
 def validate_subject_hierarchy(subject_hierarchy):
     from osf.models import Subject
@@ -185,3 +217,190 @@ def validate_location(value):
         if key not in value:
             raise ValidationValueError('Location {} missing key "{}"'.format(value, key))
     return True
+
+
+class RegistrationResponsesValidator:
+    NON_EMPTY_STRING = {
+        'type': 'string',
+        'minLength': 1,
+    }
+
+    FILE_REFERENCE = {
+        'type': 'object',
+        'additionalProperties': False,
+        'required': ['file_id', 'file_name', 'file_urls', 'file_hashes'],
+        'properties': {
+            'file_name': NON_EMPTY_STRING,
+            'file_id': NON_EMPTY_STRING,
+            'file_urls': {
+                'type': 'object',
+                'minProperties': 1,  # at least one identifying URL
+                'additionalProperties': False,
+                'required': ['html'],  # html/view URL is required by archiver and for converting to legacy "nested" format
+                'properties': {
+                    'html': {
+                        'type': 'string',
+                        'regex': FILE_VIEW_URL_REGEX,  # loosen this constraint to `format: iri` when we can drop the legacy format
+                    },
+                    'download': {
+                        'type': 'string',
+                        'format': 'iri',
+                    },
+                },
+            },
+            'file_hashes': {
+                'type': 'object',
+                'minProperties': 1,  # at least one hash
+                'additionalProperties': False,
+                'properties': {
+                    'sha256': NON_EMPTY_STRING,
+                },
+            },
+        },
+    }
+
+    def __init__(self, schema_blocks, required_fields):
+        """For validating `registration_responses` on Registrations and DraftRegistrations
+
+        :params schema_blocks iterable of SchemaBlock instances
+        :params required_fields boolean - do we want to enforce that required fields are present
+        """
+        self.schema_blocks = schema_blocks
+        self.required_fields = required_fields
+        self.json_schema = self._build_json_schema()
+
+    def validate(self, registration_responses):
+        """Validate the given registration_responses
+
+        :returns True (if valid)
+        :raises ValidationError (if invalid)
+        """
+        try:
+            jsonschema.validate(registration_responses, self.json_schema)
+        except jsonschema.ValidationError as e:
+            properties = self.json_schema.get('properties', {})
+            relative_path = getattr(e, 'relative_path', None)
+            question_id = relative_path[0] if relative_path else ''
+            if properties.get(question_id, None):
+                question_title = properties.get(question_id).get('description') or question_id
+                if e.relative_schema_path[0] == 'required':
+                    raise ValidationError(
+                        'For your registration the \'{}\' field is required'.format(question_title)
+                    )
+                elif 'enum' in properties.get(question_id):
+                    raise ValidationError(
+                        'For your registration, your response to the \'{}\' field is invalid, your response must be one of the provided options.'.format(
+                            question_title,
+                        ),
+                    )
+                else:
+                    raise ValidationError(
+                        'For your registration, your response to the \'{}\' field is invalid. {}'.format(question_title, e.message),
+                    )
+            raise ValidationError(e.message)
+        except jsonschema.SchemaError as e:
+            raise ValidationError(e.message)
+        return True
+
+    def _build_json_schema(self):
+        """Builds jsonschema for validating flattened registration_responses field
+        """
+        # schema blocks corresponding to registration_responses
+        questions = [
+            block for block in self.schema_blocks
+            if block.registration_response_key is not None
+        ]
+
+        properties = {
+            question.registration_response_key: self._build_question_schema(question)
+            for question in questions
+        }
+
+        json_schema = {
+            'type': 'object',
+            'additionalProperties': False,
+            'properties': properties
+        }
+
+        if self.required_fields:
+            json_schema['required'] = [
+                question.registration_response_key
+                for question in questions
+                if question.required
+            ]
+
+        return json_schema
+
+    def _get_multiple_choice_options(self, question):
+        """
+        Returns a dictionary with an 'enum' key, and a value as
+        an array with the possible multiple choice answers for a given question.
+        Schema blocks are linked by schema_block_group_keys, so fetches multiple choice options
+        with the same schema_block_group_key as the given question
+        :question SchemaBlock with an registration_response_key
+        """
+        options = [
+            block.display_text
+            for block in self.schema_blocks
+            if block.block_type == 'select-input-option'
+            and block.schema_block_group_key == question.schema_block_group_key
+        ]
+
+        # required is True if we want to both enforce required_fields
+        # and the question in particular is required.
+        required = self.required_fields and question.required
+        if not required and '' not in options:
+            options.append('')
+
+        return options
+
+    def _build_question_schema(self, question):
+        """
+        Returns json for validating an individual question
+        :params question SchemaBlock
+        """
+        question_text = next(
+            (
+                block.display_text
+                for block in self.schema_blocks
+                if block.block_type == 'question-label'
+                and block.schema_block_group_key == question.schema_block_group_key
+            ),
+            question.registration_response_key,  # default
+        )
+
+        if question.block_type == 'single-select-input':
+            return {
+                'type': 'string',
+                'enum': self._get_multiple_choice_options(question),
+                'description': question_text,
+            }
+        elif question.block_type == 'multi-select-input':
+            return {
+                'type': 'array',
+                'items': {
+                    'type': 'string',
+                    'enum': self._get_multiple_choice_options(question),
+                },
+                'description': question_text,
+            }
+        elif question.block_type == 'file-input':
+            return {
+                'type': 'array',
+                'items': self.FILE_REFERENCE,
+                'description': question_text,
+            }
+        elif question.block_type in ('short-text-input', 'long-text-input', 'contributors-input'):
+            if self.required_fields and question.required:
+                return {
+                    'type': 'string',
+                    'minLength': 1,
+                    'description': question_text,
+                }
+            else:
+                return {
+                    'type': 'string',
+                    'description': question_text,
+                }
+
+        raise ValueError('Unexpected `block_type`: {}'.format(question.block_type))

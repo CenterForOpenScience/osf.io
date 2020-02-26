@@ -1,3 +1,4 @@
+from past.builtins import basestring
 import logging
 
 from dirtyfields import DirtyFieldsMixin
@@ -57,6 +58,11 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 except cls.DoesNotExist:
                     return None
             return None
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/collections/{}/collected_metadata/{}/'.format(self.collection._id, self.guid._id)
+        return api_v2_url(path)
 
     def update_index(self):
         if self.collection.is_public:

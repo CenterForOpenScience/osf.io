@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Views tests for the OSF."""
 
@@ -6,10 +6,11 @@ from __future__ import absolute_import
 
 import unittest
 import datetime as dt
-import httplib as http
+from rest_framework import status as http_status
 import json
 import time
-import urllib
+import unittest
+from future.moves.urllib.parse import quote
 
 from flask import request
 import mock
@@ -39,7 +40,7 @@ from website import mailchimp_utils, mails, settings, language
 from addons.osfstorage import settings as osfstorage_settings
 from osf.models import AbstractNode, NodeLog
 from website.profile.utils import add_contributor_json, serialize_unregistered
-from website.profile.views import fmt_date_or_none, update_osf_help_mails_subscription
+from website.profile.views import update_osf_help_mails_subscription
 from website.project.decorators import check_can_access
 from website.project.model import has_anonymous_link
 from website.project.signals import contributor_added
@@ -90,7 +91,8 @@ from osf_tests.factories import (
     UserFactory,
     UnconfirmedUserFactory,
     UnregUserFactory,
-    RegionFactory
+    RegionFactory,
+    DraftRegistrationFactory,
 )
 
 @mock_app.route('/errorexc')
@@ -147,7 +149,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         url = node.api_url_for('project_private_link_edit')
         res = self.app.put_json(url, {'pk': link._id, 'value': ''}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_in('Title cannot be blank', res.body)
+        assert_in('Title cannot be blank', res.body.decode())
 
     def test_edit_private_link_invalid(self):
         node = ProjectFactory(creator=self.user)
@@ -157,7 +159,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         url = node.api_url_for('project_private_link_edit')
         res = self.app.put_json(url, {'pk': link._id, 'value': '<a></a>'}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_in('Invalid link name.', res.body)
+        assert_in('Invalid link name.', res.body.decode())
 
     @mock.patch('framework.auth.core.Auth.private_link')
     def test_can_be_anonymous_for_public_project(self, mock_property):
@@ -180,7 +182,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         res = self.app.get(self.project_url, {'view_only': None})
         assert_is_redirect(res)
         res = res.follow(expect_errors=True)
-        assert_equal(res.status_code, 301)
+        assert_equal(res.status_code, 308)
         assert_equal(
             res.request.path,
             '/login'
@@ -189,7 +191,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
     def test_logged_in_no_private_key(self):
         res = self.app.get(self.project_url, {'view_only': None}, auth=self.user.auth,
                            expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     def test_logged_in_has_key(self):
         res = self.app.get(
@@ -340,14 +342,14 @@ class TestProjectViews(OsfTestCase):
         url = node.api_url_for('edit_node')
         res = self.app.post_json(url, {'name': 'title', 'value': ''}, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_in('Title cannot be blank', res.body)
+        assert_in('Title cannot be blank', res.body.decode())
 
     def test_edit_title_invalid(self):
         node = ProjectFactory(creator=self.user1)
         url = node.api_url_for('edit_node')
         res = self.app.post_json(url, {'name': 'title', 'value': '<a></a>'}, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_in('Invalid title.', res.body)
+        assert_in('Invalid title.', res.body.decode())
 
     def test_view_project_doesnt_select_for_update(self):
         node = ProjectFactory(creator=self.user1)
@@ -369,7 +371,7 @@ class TestProjectViews(OsfTestCase):
             url, {'contributorID': self.user2._id,
                   'nodeIDs': [self.project._id]}, auth=self.auth, expect_errors=True
         )
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
         assert_equal(res.json['message_long'], 'Must have at least one bibliographic contributor')
         assert_true(self.project.is_contributor(self.user2))
 
@@ -399,8 +401,8 @@ class TestProjectViews(OsfTestCase):
         self.child_project.save()
         url = self.child_project.web_url_for('view_project')
         res = self.app.get(url, auth=self.auth)
-        assert_not_in('Private Project', res.body)
-        assert_in('parent project', res.body)
+        assert_not_in('Private Project', res.body.decode())
+        assert_in('parent project', res.body.decode())
 
     def test_edit_description(self):
         url = '/api/v1/project/{0}/edit/'.format(self.project._id)
@@ -752,14 +754,14 @@ class TestProjectViews(OsfTestCase):
     def test_removal_empty_tag_throws_error(self):
         url = self.project.api_url_for('project_remove_tag')
         res = self.app.delete_json(url, {'tag': ''}, auth=self.auth, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     # Regression test for #OSF-5257
     def test_removal_unknown_tag_throws_error(self):
         self.project.add_tag('narf', auth=self.consolidate_auth1, save=True)
         url = self.project.api_url_for('project_remove_tag')
         res = self.app.delete_json(url, {'tag': 'troz'}, auth=self.auth, expect_errors=True)
-        assert_equal(res.status_code, http.CONFLICT)
+        assert_equal(res.status_code, http_status.HTTP_409_CONFLICT)
 
     def test_suspended_project(self):
         node = NodeFactory(parent=self.project, creator=self.user1)
@@ -768,7 +770,7 @@ class TestProjectViews(OsfTestCase):
         node.suspended = True
         node.save()
         url = node.api_url
-        res = self.app.get(url, auth=Auth(self.user1), expect_errors=True)
+        res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 451)
 
     def test_private_link_edit_name(self):
@@ -854,7 +856,7 @@ class TestProjectViews(OsfTestCase):
             expect_errors=True,
         ).maybe_follow()
 
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
         assert_false(node.is_deleted)
 
     def test_view_project_returns_whether_to_show_wiki_widget(self):
@@ -865,7 +867,7 @@ class TestProjectViews(OsfTestCase):
 
         url = project.api_url_for('view_project')
         res = self.app.get(url, auth=user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         assert_in('show_wiki_widget', res.json['user'])
 
     def test_fork_grandcomponents_has_correct_root(self):
@@ -944,8 +946,8 @@ class TestProjectViews(OsfTestCase):
         url = registration.web_url_for('view_project')
         res = self.app.get(url, auth=self.auth)
 
-        assert_not_in('Mako Runtime Error', res.body)
-        assert_in(registration.title, res.body)
+        assert_not_in('Mako Runtime Error', res.body.decode())
+        assert_in(registration.title, res.body.decode())
         assert_equal(res.status_code, 200)
 
         for route in ['files', 'wiki/home', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
@@ -953,11 +955,11 @@ class TestProjectViews(OsfTestCase):
             assert_equal(res.status_code, 302, route)
             res = res.follow()
             assert_equal(res.status_code, 200, route)
-            assert_in('This project is a withdrawn registration of', res.body, route)
+            assert_in('This project is a withdrawn registration of', res.body.decode(), route)
 
         res = self.app.get('/{}/'.format(reg_file.guids.first()._id))
         assert_equal(res.status_code, 200)
-        assert_in('This project is a withdrawn registration of', res.body)
+        assert_in('This project is a withdrawn registration of', res.body.decode())
 
 
 class TestEditableChildrenViews(OsfTestCase):
@@ -1046,7 +1048,6 @@ class TestGetNodeTree(OsfTestCase):
     def test_get_node_with_child_linked_to_parent(self):
         project = ProjectFactory(creator=self.user)
         child1 = NodeFactory(parent=project, creator=self.user)
-        child1.add_pointer(project, Auth(self.user))
         child1.save()
         url = project.api_url_for('get_node_tree')
         res = self.app.get(url, auth=self.user.auth)
@@ -1090,13 +1091,6 @@ class TestUserProfile(OsfTestCase):
     def setUp(self):
         super(TestUserProfile, self).setUp()
         self.user = AuthUserFactory()
-
-    def test_fmt_date_or_none(self):
-        with assert_raises(HTTPError) as cm:
-            #enter a date before 1900
-            fmt_date_or_none(dt.datetime(1890, 10, 31, 18, 23, 29, 227))
-        # error should be raised because date is before 1900
-        assert_equal(cm.exception.code, http.BAD_REQUEST)
 
     def test_unserialize_social(self):
         url = api_url_for('unserialize_social')
@@ -1532,18 +1526,18 @@ class TestUserProfileApplicationsPage(OsfTestCase):
 
     def test_non_owner_cant_access_detail_page(self):
         res = self.app.get(self.detail_url, auth=self.user2.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     def test_owner_cant_access_deleted_application(self):
         self.platform_app.is_active = False
         self.platform_app.save()
         res = self.app.get(self.detail_url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.GONE)
+        assert_equal(res.status_code, http_status.HTTP_410_GONE)
 
     def test_owner_cant_access_nonexistent_application(self):
         url = web_url_for('oauth_application_detail', client_id='nonexistent')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.NOT_FOUND)
+        assert_equal(res.status_code, http_status.HTTP_404_NOT_FOUND)
 
     def test_url_has_not_broken(self):
         assert_equal(self.platform_app.url, self.detail_url)
@@ -1777,15 +1771,6 @@ class TestUserAccount(OsfTestCase):
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_user_cannot_request_account_export_before_throttle_expires(self, send_mail):
         url = api_url_for('request_export')
-        self.app.post(url, auth=self.user.auth)
-        assert_true(send_mail.called)
-        res = self.app.post(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(send_mail.call_count, 1)
-
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_user_cannot_request_account_deactivation_before_throttle_expires(self, send_mail):
-        url = api_url_for('request_deactivation')
         self.app.post(url, auth=self.user.auth)
         assert_true(send_mail.called)
         res = self.app.post(url, auth=self.user.auth, expect_errors=True)
@@ -2099,7 +2084,13 @@ class TestAddingContributorViews(OsfTestCase):
     def test_registering_project_does_not_send_contributor_added_email(self, send_mail, mock_archive):
         project = ProjectFactory()
         provider = RegistrationProviderFactory()
-        project.register_node(get_default_metaschema(), Auth(user=project.creator), '', None, provider=provider)
+        project.register_node(
+            get_default_metaschema(),
+            Auth(user=project.creator),
+            DraftRegistrationFactory(branched_from=project),
+            None,
+            provider=provider
+        )
         assert_false(send_mail.called)
 
     @mock.patch('website.mails.send_mail')
@@ -2270,13 +2261,13 @@ class TestUserInviteViews(OsfTestCase):
         res = self.app.post_json(self.invite_url,
                                  {'fullname': fake.name(), 'email': unreg_user.username},
                                  auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     def test_invite_contributor_with_no_email(self):
         name = fake.name()
         res = self.app.post_json(self.invite_url,
                                  {'fullname': name, 'email': None}, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         data = res.json
         assert_equal(data['status'], 'success')
         assert_equal(data['contributor']['fullname'], name)
@@ -2287,7 +2278,7 @@ class TestUserInviteViews(OsfTestCase):
         res = self.app.post_json(self.invite_url,
                                  {'email': 'brian@queen.com', 'fullname': ''}, auth=self.user.auth,
                                  expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_send_claim_email_to_given_email(self, send_mail):
@@ -2611,7 +2602,7 @@ class TestClaimViews(OsfTestCase):
         res = self.app.get(url)
         assert res.status_code == 302
         res = res.follow()
-        service_url = 'http://localhost:80{}'.format(url)
+        service_url = 'http://localhost{}'.format(url)
         expected = cas.get_logout_url(service_url=cas.get_login_url(service_url=service_url))
         assert res.request.url == expected
 
@@ -3123,7 +3114,6 @@ class TestPointerViews(OsfTestCase):
     def test_can_template_project_linked_to_each_other(self):
         project2 = ProjectFactory(creator=self.user)
         self.project.add_pointer(project2, auth=Auth(user=self.user))
-        project2.add_pointer(self.project, auth=Auth(user=self.user))
         template = self.project.use_as_template(auth=Auth(user=self.user))
 
         assert_true(template)
@@ -3232,7 +3222,7 @@ class TestAuthViews(OsfTestCase):
         expected_scrub_username = "Eunice O' \"Cornwallis\"cornify_add()"
         user = OSFUser.objects.get(username=email)
 
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         assert_equal(user.fullname, expected_scrub_username)
 
     def test_register_email_mismatch(self):
@@ -3248,7 +3238,7 @@ class TestAuthViews(OsfTestCase):
             },
             expect_errors=True,
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
         users = OSFUser.objects.filter(username=email)
         assert_equal(users.count(), 0)
 
@@ -3267,7 +3257,7 @@ class TestAuthViews(OsfTestCase):
             },
             expect_errors=True
         )
-        assert_equal(res.status_code, http.CONFLICT)
+        assert_equal(res.status_code, http_status.HTTP_409_CONFLICT)
         users = OSFUser.objects.filter(username=email)
         assert_equal(users.count(), 1)
 
@@ -3284,7 +3274,7 @@ class TestAuthViews(OsfTestCase):
             },
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
         users = OSFUser.objects.filter(username=email)
         assert_equal(users.count(), 0)
 
@@ -3306,7 +3296,7 @@ class TestAuthViews(OsfTestCase):
                 }
             )
             validate_recaptcha.assert_called_with(captcha, remote_ip=None)
-            assert_equal(resp.status_code, http.OK)
+            assert_equal(resp.status_code, http_status.HTTP_200_OK)
             user = OSFUser.objects.get(username=email)
             assert_equal(user.fullname, name)
 
@@ -3328,7 +3318,7 @@ class TestAuthViews(OsfTestCase):
                 expect_errors=True
             )
             validate_recaptcha.assert_called_with(None, remote_ip=None)
-            assert_equal(resp.status_code, http.BAD_REQUEST)
+            assert_equal(resp.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     @mock.patch('framework.auth.views.validate_recaptcha', return_value=False)
     @mock.patch('framework.auth.views.mails.send_mail')
@@ -3347,7 +3337,7 @@ class TestAuthViews(OsfTestCase):
                 },
                 expect_errors=True
             )
-            assert_equal(resp.status_code, http.BAD_REQUEST)
+            assert_equal(resp.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     @mock.patch('osf.models.OSFUser.update_search_nodes')
     def test_register_after_being_invited_as_unreg_contributor(self, mock_update_search_nodes):
@@ -3444,7 +3434,7 @@ class TestAuthViews(OsfTestCase):
         assert_equal(self.user.email_verifications[token]['confirmed'], True)
         assert_equal(res.status_code, 302)
         login_url = 'login?service'
-        assert_in(login_url, res.body)
+        assert_in(login_url, res.body.decode())
 
     def test_get_email_to_add_no_email(self):
         email_verifications = self.user.unconfirmed_email_info
@@ -3655,50 +3645,50 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
     def test_osf_login_with_auth(self):
         # login: user with auth
         data = login_and_register_handler(self.auth)
-        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
         assert_equal(data.get('next_url'), web_url_for('dashboard', _absolute=True))
 
     def test_osf_login_without_auth(self):
         # login: user without auth
         data = login_and_register_handler(self.no_auth)
-        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
         assert_equal(data.get('next_url'), web_url_for('dashboard', _absolute=True))
 
     def test_osf_register_with_auth(self):
         # register: user with auth
         data = login_and_register_handler(self.auth, login=False)
-        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
         assert_equal(data.get('next_url'), web_url_for('dashboard', _absolute=True))
 
     def test_osf_register_without_auth(self):
         # register: user without auth
         data = login_and_register_handler(self.no_auth, login=False)
-        assert_equal(data.get('status_code'), http.OK)
+        assert_equal(data.get('status_code'), http_status.HTTP_200_OK)
         assert_equal(data.get('next_url'), web_url_for('dashboard', _absolute=True))
 
     def test_next_url_login_with_auth(self):
         # next_url login: user with auth
         data = login_and_register_handler(self.auth, next_url=self.next_url)
-        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
         assert_equal(data.get('next_url'), self.next_url)
 
     def test_next_url_login_without_auth(self):
         # login: user without auth
         request.url = web_url_for('auth_login', next=self.next_url, _absolute=True)
         data = login_and_register_handler(self.no_auth, next_url=self.next_url)
-        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
         assert_equal(data.get('next_url'), get_login_url(request.url))
 
     def test_next_url_register_with_auth(self):
         # register: user with auth
         data = login_and_register_handler(self.auth, login=False, next_url=self.next_url)
-        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
         assert_equal(data.get('next_url'), self.next_url)
 
     def test_next_url_register_without_auth(self):
         # register: user without auth
         data = login_and_register_handler(self.no_auth, login=False, next_url=self.next_url)
-        assert_equal(data.get('status_code'), http.OK)
+        assert_equal(data.get('status_code'), http_status.HTTP_200_OK)
         assert_equal(data.get('next_url'), request.url)
 
     def test_institution_login_and_register(self):
@@ -3707,13 +3697,13 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
     def test_institution_login_with_auth(self):
         # institution login: user with auth
         data = login_and_register_handler(self.auth, campaign='institution')
-        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
         assert_equal(data.get('next_url'), web_url_for('dashboard', _absolute=True))
 
     def test_institution_login_without_auth(self):
         # institution login: user without auth
         data = login_and_register_handler(self.no_auth, campaign='institution')
-        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
         assert_equal(
             data.get('next_url'),
             get_login_url(web_url_for('dashboard', _absolute=True), campaign='institution'))
@@ -3721,13 +3711,13 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
     def test_institution_login_next_url_with_auth(self):
         # institution login: user with auth and next url
         data = login_and_register_handler(self.auth, next_url=self.next_url, campaign='institution')
-        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
         assert_equal(data.get('next_url'), self.next_url)
 
     def test_institution_login_next_url_without_auth(self):
         # institution login: user without auth and next url
         data = login_and_register_handler(self.no_auth, next_url=self.next_url ,campaign='institution')
-        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
         assert_equal(
             data.get('next_url'),
             get_login_url(self.next_url, campaign='institution'))
@@ -3735,13 +3725,13 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
     def test_institution_regsiter_with_auth(self):
         # institution register: user with auth
         data = login_and_register_handler(self.auth, login=False, campaign='institution')
-        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
         assert_equal(data.get('next_url'), web_url_for('dashboard', _absolute=True))
 
     def test_institution_register_without_auth(self):
         # institution register: user without auth
         data = login_and_register_handler(self.no_auth, login=False, campaign='institution')
-        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
         assert_equal(
             data.get('next_url'),
             get_login_url(web_url_for('dashboard', _absolute=True), campaign='institution')
@@ -3753,7 +3743,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
                 continue
             # campaign login: user with auth
             data = login_and_register_handler(self.auth, campaign=campaign)
-            assert_equal(data.get('status_code'), http.FOUND)
+            assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
             assert_equal(data.get('next_url'), campaign_url_for(campaign))
 
     def test_campaign_login_without_auth(self):
@@ -3762,7 +3752,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
                 continue
             # campaign login: user without auth
             data = login_and_register_handler(self.no_auth, campaign=campaign)
-            assert_equal(data.get('status_code'), http.FOUND)
+            assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
             assert_equal(
                 data.get('next_url'),
                 web_url_for('auth_register', campaign=campaign, next=campaign_url_for(campaign))
@@ -3774,7 +3764,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
                 continue
             # campaign register: user with auth
             data = login_and_register_handler(self.auth, login=False, campaign=campaign)
-            assert_equal(data.get('status_code'), http.FOUND)
+            assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
             assert_equal(data.get('next_url'), campaign_url_for(campaign))
 
     def test_campaign_register_without_auth(self):
@@ -3783,7 +3773,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
                 continue
             # campaign register: user without auth
             data = login_and_register_handler(self.no_auth, login=False, campaign=campaign)
-            assert_equal(data.get('status_code'), http.OK)
+            assert_equal(data.get('status_code'), http_status.HTTP_200_OK)
             if is_native_login(campaign):
                 # native campaign: prereg and erpc
                 assert_equal(data.get('next_url'), campaign_url_for(campaign))
@@ -3801,7 +3791,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
             # campaign login: user with auth
             next_url = campaign_url_for(campaign)
             data = login_and_register_handler(self.auth, campaign=campaign, next_url=next_url)
-            assert_equal(data.get('status_code'), http.FOUND)
+            assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
             assert_equal(data.get('next_url'), next_url)
 
     def test_campaign_next_url_login_without_auth(self):
@@ -3811,7 +3801,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
             # campaign login: user without auth
             next_url = campaign_url_for(campaign)
             data = login_and_register_handler(self.no_auth, campaign=campaign, next_url=next_url)
-            assert_equal(data.get('status_code'), http.FOUND)
+            assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
             assert_equal(
                 data.get('next_url'),
                 web_url_for('auth_register', campaign=campaign, next=next_url)
@@ -3824,7 +3814,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
             # campaign register: user with auth
             next_url = campaign_url_for(campaign)
             data = login_and_register_handler(self.auth, login=False, campaign=campaign, next_url=next_url)
-            assert_equal(data.get('status_code'), http.FOUND)
+            assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
             assert_equal(data.get('next_url'), next_url)
 
     def test_campaign_next_url_register_without_auth(self):
@@ -3834,7 +3824,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
             # campaign register: user without auth
             next_url = campaign_url_for(campaign)
             data = login_and_register_handler(self.no_auth, login=False, campaign=campaign, next_url=next_url)
-            assert_equal(data.get('status_code'), http.OK)
+            assert_equal(data.get('status_code'), http_status.HTTP_200_OK)
             if is_native_login(campaign):
                 # native campaign: prereg and erpc
                 assert_equal(data.get('next_url'), next_url)
@@ -3853,7 +3843,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
             next_url=self.next_url
         )
         redirect_url = web_url_for('auth_login', campaigns=None, next=self.next_url)
-        assert_equal(data['status_code'], http.FOUND)
+        assert_equal(data['status_code'], http_status.HTTP_302_FOUND)
         assert_equal(data['next_url'], redirect_url)
         assert_equal(data['campaign'], None)
 
@@ -3865,7 +3855,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
             next_url=self.next_url
         )
         redirect_url = web_url_for('auth_register', campaigns=None, next=self.next_url)
-        assert_equal(data['status_code'], http.FOUND)
+        assert_equal(data['status_code'], http_status.HTTP_302_FOUND)
         assert_equal(data['next_url'], redirect_url)
         assert_equal(data['campaign'], None)
 
@@ -3885,7 +3875,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
     def test_register_logout_flage_without(self):
         # the second step is to land user on register page with "MUST LOGIN" warning
         data = login_and_register_handler(self.no_auth, login=False, campaign=None, next_url=self.next_url, logout=True)
-        assert_equal(data.get('status_code'), http.OK)
+        assert_equal(data.get('status_code'), http_status.HTTP_200_OK)
         assert_equal(data.get('next_url'), self.next_url)
         assert_true(data.get('must_login_warning'))
 
@@ -3908,37 +3898,37 @@ class TestAuthLogout(OsfTestCase):
     def test_logout_with_valid_next_url_logged_in(self):
         logout_url = web_url_for('auth_logout', _absolute=True, next=self.valid_next_url)
         resp = self.app.get(logout_url, auth=self.auth_user.auth)
-        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(resp.status_code, http_status.HTTP_302_FOUND)
         assert_equal(cas.get_logout_url(logout_url), resp.headers['Location'])
 
     def test_logout_with_valid_next_url_logged_out(self):
         logout_url = web_url_for('auth_logout', _absolute=True, next=self.valid_next_url)
         resp = self.app.get(logout_url, auth=None)
-        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(resp.status_code, http_status.HTTP_302_FOUND)
         assert_equal(self.valid_next_url, resp.headers['Location'])
 
     def test_logout_with_invalid_next_url_logged_in(self):
         logout_url = web_url_for('auth_logout', _absolute=True, next=self.invalid_next_url)
         resp = self.app.get(logout_url, auth=self.auth_user.auth)
-        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(resp.status_code, http_status.HTTP_302_FOUND)
         assert_equal(cas.get_logout_url(self.goodbye_url), resp.headers['Location'])
 
     def test_logout_with_invalid_next_url_logged_out(self):
         logout_url = web_url_for('auth_logout', _absolute=True, next=self.invalid_next_url)
         resp = self.app.get(logout_url, auth=None)
-        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(resp.status_code, http_status.HTTP_302_FOUND)
         assert_equal(cas.get_logout_url(self.goodbye_url), resp.headers['Location'])
 
     def test_logout_with_redirect_url(self):
         logout_url = web_url_for('auth_logout', _absolute=True, redirect_url=self.redirect_url)
         resp = self.app.get(logout_url, auth=self.auth_user.auth)
-        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(resp.status_code, http_status.HTTP_302_FOUND)
         assert_equal(cas.get_logout_url(self.redirect_url), resp.headers['Location'])
 
     def test_logout_with_no_parameter(self):
         logout_url = web_url_for('auth_logout', _absolute=True)
         resp = self.app.get(logout_url, auth=None)
-        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(resp.status_code, http_status.HTTP_302_FOUND)
         assert_equal(cas.get_logout_url(self.goodbye_url), resp.headers['Location'])
 
 
@@ -4148,7 +4138,7 @@ class TestConfigureMailingListViews(OsfTestCase):
 
     def test_get_notifications(self):
         user = AuthUserFactory()
-        mailing_lists = dict(user.osf_mailing_lists.items() + user.mailchimp_mailing_lists.items())
+        mailing_lists = dict(list(user.osf_mailing_lists.items()) + list(user.mailchimp_mailing_lists.items()))
         url = api_url_for('user_notifications')
         res = self.app.get(url, auth=user.auth)
         assert_equal(mailing_lists, res.json['mailing_lists'])
@@ -4307,7 +4297,7 @@ class TestConfigureMailingListViews(OsfTestCase):
                                        'email': 'freddie@cos.io'}}}
         url = api_url_for('sync_data_from_mailchimp')
         res = self.app.post_json(url, payload, auth=user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.UNAUTHORIZED)
+        assert_equal(res.status_code, http_status.HTTP_401_UNAUTHORIZED)
 
     @classmethod
     def tearDownClass(cls):
@@ -4327,7 +4317,7 @@ class TestFileViews(OsfTestCase):
     def test_grid_data(self):
         url = self.project.api_url_for('grid_data')
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         expected = rubeus.to_hgrid(self.project, auth=Auth(self.user))
         data = res.json['data']
         assert_equal(len(data), len(expected))
@@ -4644,7 +4634,7 @@ class TestProjectCreation(OsfTestCase):
         res = self.app.post(url, auth=None)
         assert_equal(res.status_code, 302)
         res2 = res.follow(expect_errors=True)
-        assert_equal(res2.status_code, 301)
+        assert_equal(res2.status_code, 308)
         assert_equal(res2.request.path, '/login')
 
     def test_project_new_from_template_public_non_contributor(self):
@@ -4671,7 +4661,7 @@ class TestUnconfirmedUserViews(OsfTestCase):
         user = UnconfirmedUserFactory()
         url = web_url_for('profile_view_id', uid=user._id)
         res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
 class TestStaticFileViews(OsfTestCase):
 
@@ -4884,7 +4874,7 @@ class TestResetPassword(OsfTestCase):
         assert_equal(res.status_code, 302)
         location = res.headers.get('Location')
         assert_true('login?service=' in location)
-        assert_true('username={}'.format(urllib.quote(self.user.username, safe='@')) in location)
+        assert_true('username={}'.format(quote(self.user.username, safe='@')) in location)
         assert_true('verification_key={}'.format(self.user.verification_key) in location)
 
         # check if password was updated

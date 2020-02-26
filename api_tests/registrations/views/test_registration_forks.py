@@ -168,9 +168,6 @@ class TestRegistrationForksList:
         expected_logs = list(
             private_registration.logs.values_list(
                 'action', flat=True))
-        expected_logs.append(
-            private_registration.nodes[0].logs.latest().action)
-        expected_logs.append('node_forked')
         expected_logs.append('node_forked')
 
         forked_logs = data['embeds']['logs']['data']

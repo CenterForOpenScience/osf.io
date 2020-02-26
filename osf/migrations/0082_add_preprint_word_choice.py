@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='abstractprovider',
             name='preprint_word',
-            field=models.CharField(choices=[(b'preprint', b'Preprint'), (b'paper', b'Paper'), (b'thesis', b'Thesis'), (b'work', b'Work'), (b'none', b'None')], default=b'preprint', max_length=10, null=True),
+            field=models.CharField(choices=[('preprint', 'Preprint'), ('paper', 'Paper'), ('thesis', 'Thesis'), ('work', 'Work'), ('none', 'None')], default='preprint', max_length=10, null=True),
         ),
     ]

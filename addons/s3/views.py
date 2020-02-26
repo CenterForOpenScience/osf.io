@@ -1,4 +1,4 @@
-import httplib
+from rest_framework import status as http_status
 
 from boto import exception
 from django.core.exceptions import ValidationError
@@ -65,12 +65,12 @@ def s3_add_user_account(auth, **kwargs):
         access_key = request.json['access_key']
         secret_key = request.json['secret_key']
     except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     if not (access_key and secret_key):
         return {
             'message': 'All the fields above are required.'
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     user_info = utils.get_user_info(access_key, secret_key)
     if not user_info:
@@ -78,13 +78,13 @@ def s3_add_user_account(auth, **kwargs):
             'message': ('Unable to access account.\n'
                 'Check to make sure that the above credentials are valid, '
                 'and that they have permission to list buckets.')
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     if not utils.can_list(access_key, secret_key):
         return {
             'message': ('Unable to list buckets.\n'
                 'Listing buckets is required permission that can be changed via IAM')
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     account = None
     try:
@@ -130,14 +130,14 @@ def create_bucket(auth, node_addon, **kwargs):
         return {
             'message': 'That bucket name is not valid.',
             'title': 'Invalid bucket name',
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     # Get location and verify it is valid
     if not utils.validate_bucket_location(bucket_location):
         return {
             'message': 'That bucket location is not valid.',
             'title': 'Invalid bucket location',
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     try:
         utils.create_bucket(node_addon, bucket_name, bucket_location)
@@ -145,16 +145,16 @@ def create_bucket(auth, node_addon, **kwargs):
         return {
             'message': e.message,
             'title': 'Problem connecting to S3',
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
     except exception.S3CreateError as e:
         return {
             'message': e.message,
             'title': "Problem creating bucket '{0}'".format(bucket_name),
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
     except exception.BotoClientError as e:  # Base class catchall
         return {
             'message': e.message,
             'title': 'Error connecting to S3',
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     return {}

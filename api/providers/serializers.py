@@ -4,7 +4,7 @@ from rest_framework.exceptions import ValidationError
 
 from api.actions.serializers import ReviewableCountsRelationshipField
 from api.base.utils import absolute_reverse, get_user_auth
-from api.base.serializers import JSONAPISerializer, IDField, LinksField, RelationshipField, TypeField, TypedRelationshipField
+from api.base.serializers import JSONAPISerializer, IDField, LinksField, RelationshipField, ShowIfVersion, TypeField, TypedRelationshipField
 from api.providers.workflows import Workflows
 from api.base.metrics import MetricsSerializerMixin
 from osf.models.user import Email, OSFUser
@@ -38,15 +38,31 @@ class ProviderSerializer(JSONAPISerializer):
         'external_url': 'get_external_url',
     })
 
-    taxonomies = TypedRelationshipField(
-        related_view='providers:taxonomy-list',
+    subjects = TypedRelationshipField(
+        related_view='providers:subject-list',
         related_view_kwargs={'provider_id': '<_id>'},
     )
 
-    highlighted_taxonomies = TypedRelationshipField(
-        related_view='providers:highlighted-taxonomy-list',
+    highlighted_subjects = TypedRelationshipField(
+        related_view='providers:highlighted-subject-list',
         related_view_kwargs={'provider_id': '<_id>'},
         related_meta={'has_highlighted_subjects': 'get_has_highlighted_subjects'},
+    )
+    access_requests_enabled = ShowIfVersion(ser.BooleanField(read_only=False, required=False), min_version='2.0', max_version='2.8')
+
+    taxonomies = ShowIfVersion(
+        TypedRelationshipField(
+            related_view='providers:taxonomy-list',
+            related_view_kwargs={'provider_id': '<_id>'},
+        ), min_version='2.0', max_version='2.14',
+    )
+
+    highlighted_taxonomies = ShowIfVersion(
+        TypedRelationshipField(
+            related_view='providers:highlighted-taxonomy-list',
+            related_view_kwargs={'provider_id': '<_id>'},
+            related_meta={'has_highlighted_subjects': 'get_has_highlighted_subjects'},
+        ), min_version='2.0', max_version='2.14',
     )
 
     licenses_acceptable = TypedRelationshipField(

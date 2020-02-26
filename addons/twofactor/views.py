@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 
 from flask import request
 
@@ -16,13 +16,13 @@ def twofactor_settings_put(user_addon, *args, **kwargs):
 
     code = request.json.get('code')
     if code is None:
-        raise HTTPError(code=http.BAD_REQUEST)
+        raise HTTPError(code=http_status.HTTP_400_BAD_REQUEST)
 
     if user_addon.verify_code(code):
         user_addon.is_confirmed = True
         user_addon.save()
-        return {'message': 'Successfully verified two-factor authentication.'}, http.OK
-    raise HTTPError(http.FORBIDDEN, data=dict(
+        return {'message': 'Successfully verified two-factor authentication.'}, http_status.HTTP_200_OK
+    raise HTTPError(http_status.HTTP_403_FORBIDDEN, data=dict(
         message_short='Forbidden',
         message_long='The two-factor verification code you provided is invalid.'
     ))
@@ -39,7 +39,7 @@ def twofactor_enable(auth, *args, **kwargs):
     user = auth.user
 
     if user.has_addon('twofactor'):
-        return HTTPError(http.BAD_REQUEST, data=dict(message_long='This user already has two-factor enabled'))
+        return HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(message_long='This user already has two-factor enabled'))
 
     user.add_addon('twofactor', auth=auth)
     user_addon = user.get_addon('twofactor')
@@ -57,6 +57,6 @@ def twofactor_disable(auth, *args, **kwargs):
         auth.user.save()
         return {}
     else:
-        raise HTTPError(http.INTERNAL_SERVER_ERROR, data=dict(
+        raise HTTPError(http_status.HTTP_500_INTERNAL_SERVER_ERROR, data=dict(
             message_long='Could not disable two-factor at this time'
         ))

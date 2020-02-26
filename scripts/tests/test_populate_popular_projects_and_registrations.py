@@ -93,5 +93,5 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         assert_equal(len(self.popular_links_node.nodes), 2)
         assert_equal(len(self.popular_links_registrations.nodes), 2)
 
-        assert_items_equal(popular_nodes, self.popular_links_node.nodes)
-        assert_items_equal(popular_registrations, self.popular_links_registrations.nodes)
+        assert_equals(popular_nodes, self.popular_links_node.nodes)
+        assert_equals(popular_registrations, self.popular_links_registrations.nodes)

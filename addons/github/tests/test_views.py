@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 import unittest
 
 from django.utils import timezone
@@ -21,7 +21,7 @@ from addons.github.api import GitHubClient
 from addons.github.serializer import GitHubSerializer
 from addons.github.utils import check_permissions
 from tests.base import OsfTestCase, get_default_metaschema
-from osf_tests.factories import ProjectFactory, UserFactory, AuthUserFactory
+from osf_tests.factories import ProjectFactory, UserFactory, AuthUserFactory, DraftRegistrationFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -69,7 +69,7 @@ class TestGitHubConfigViews(GitHubAddonTestCase, OAuthAddonConfigViewsTestCaseMi
             'github_user': 'octocat',
             'github_repo': 'repo_name',
         }, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         self.project.reload()
         assert_equal(
             self.project.logs.latest().action,
@@ -512,7 +512,7 @@ class TestGithubSettings(OsfTestCase):
         registration = self.project.register_node(
             schema=get_default_metaschema(),
             auth=self.consolidated_auth,
-            data=''
+            draft_registration=DraftRegistrationFactory(branched_from=self.project)
         )
 
         url = registration.api_url + 'github/settings/'

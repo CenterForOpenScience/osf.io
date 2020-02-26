@@ -20,7 +20,7 @@ class OSFUserAdmin(admin.ModelAdmin):
         Restricts preprint/node/osfgroup django groups from showing up in the user's groups list in the admin app
         """
         if db_field.name == 'groups':
-            kwargs['queryset'] = Group.objects.exclude(Q(name__startswith='preprint_') | Q(name__startswith='node_') | Q(name__startswith='osfgroup_'))
+            kwargs['queryset'] = Group.objects.exclude(Q(name__startswith='preprint_') | Q(name__startswith='node_') | Q(name__startswith='osfgroup_') | Q(name__startswith='collections_'))
         return super(OSFUserAdmin, self).formfield_for_manytomany(db_field, request, **kwargs)
 
     def save_related(self, request, form, formsets, change):
@@ -28,7 +28,7 @@ class OSFUserAdmin(admin.ModelAdmin):
         Since m2m fields overridden with new form data in admin app, preprint groups/node/osfgroup groups (which are now excluded from being selections)
         are removed.  Manually re-adds preprint/node groups after adding new groups in form.
         """
-        groups_to_preserve = list(form.instance.groups.filter(Q(name__startswith='preprint_') | Q(name__startswith='node_') | Q(name__startswith='osfgroup_')))
+        groups_to_preserve = list(form.instance.groups.filter(Q(name__startswith='preprint_') | Q(name__startswith='node_') | Q(name__startswith='osfgroup_') | Q(name__startswith='collections_')))
         super(OSFUserAdmin, self).save_related(request, form, formsets, change)
         if 'groups' in form.cleaned_data:
             for group in groups_to_preserve:

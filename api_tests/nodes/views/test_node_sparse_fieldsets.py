@@ -50,7 +50,7 @@ class TestNodeSparseFieldsList:
         node_json = res.json['data'][0]
 
         assert node_json['attributes'] == {}
-        assert set(node_json.keys()) == set(
+        assert set(list(node_json.keys())) == set(
             ['links', 'type', 'id', 'attributes', 'relationships'])
         assert node_json['relationships']['children']['links']['related']['href'].endswith(
             '/{}nodes/{}/children/'.format(API_BASE, public_project._id))
@@ -68,7 +68,7 @@ class TestNodeSparseFieldsList:
         node_json = data[0]
         assert node_json['attributes']['title'] == public_project.title
         assert len(node_json['attributes']) == 1
-        assert set(node_json.keys()) == set(
+        assert set(list(node_json.keys())) == set(
             ['links', 'type', 'id', 'attributes'])
 
     #   test_filtering_by_id
@@ -80,7 +80,7 @@ class TestNodeSparseFieldsList:
             public_project._id]
 
         node_json = res.json['data'][0]
-        assert set(node_json.keys()) == set(
+        assert set(list(node_json.keys())) == set(
             ['links', 'type', 'id', 'attributes'])
         assert node_json['attributes'] == {}
 
@@ -93,7 +93,7 @@ class TestNodeSparseFieldsList:
             public_project._id]
 
         node_json = res.json['data'][0]
-        assert set(node_json.keys()) == set(
+        assert set(list(node_json.keys())) == set(
             ['links', 'type', 'id', 'attributes'])
         assert node_json['attributes'] == {}
 
@@ -112,7 +112,7 @@ class TestNodeSparseFieldsList:
         }
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
-        assert set(res.json['data'].keys()) == set(
+        assert set(list(res.json['data'].keys())) == set(
             ['links', 'type', 'id', 'attributes'])
         assert res.json['data']['attributes'] == {}
 
@@ -136,7 +136,7 @@ class TestNodeSparseFieldsDetail:
         node_json = res.json['data']
 
         assert node_json['attributes'] == {}
-        assert set(node_json.keys()) == set(
+        assert set(list(node_json.keys())) == set(
             ['links', 'type', 'id', 'attributes'])
 
     #   test_embed_sparse_same_type
@@ -145,12 +145,12 @@ class TestNodeSparseFieldsDetail:
         res = app.get(res_url)
         node_json = res.json['data']
 
-        assert set(node_json.keys()) == set(
+        assert set(list(node_json.keys())) == set(
             ['links', 'type', 'id', 'attributes', 'relationships', 'embeds'])
-        assert node_json['attributes'].keys() == ['title']
-        assert set(node_json['embeds']['children']['data'][0].keys()) == set(
+        assert list(node_json['attributes'].keys()) == ['title']
+        assert set(list(node_json['embeds']['children']['data'][0].keys())) == set(
             ['links', 'type', 'id', 'attributes', 'relationships'])
-        assert node_json['embeds']['children']['data'][0]['attributes'].keys() == [
+        assert list(node_json['embeds']['children']['data'][0]['attributes'].keys()) == [
             'title']
         assert node_json['embeds']['children']['data'][0]['attributes']['title'] == child.title
 
@@ -160,10 +160,10 @@ class TestNodeSparseFieldsDetail:
         res = app.get(res_url)
         node_json = res.json['data']
 
-        assert set(node_json.keys()) == set(
+        assert set(list(node_json.keys())) == set(
             ['links', 'type', 'id', 'attributes', 'embeds', 'relationships'])
-        assert node_json['attributes'].keys() == ['title']
-        assert len(node_json['embeds']['contributors']['data']) == 1
+        assert list(node_json['attributes'].keys()) == ['title']
+        assert len(list(node_json['embeds']['contributors']['data'])) == 1
         assert node_json['embeds']['contributors']['data'][0]['id'] == '{}-{}'.format(
             node._id, user._id)
         assert len(node_json['embeds']['contributors']
@@ -174,9 +174,9 @@ class TestNodeSparseFieldsDetail:
         res = app.get(res_url)
         node_json = res.json['data']
 
-        assert set(node_json.keys()) == set(
+        assert set(list(node_json.keys())) == set(
             ['links', 'type', 'id', 'attributes', 'embeds', 'relationships'])
-        assert len(node_json['attributes'].keys()) > 1
+        assert len(list(node_json['attributes'].keys())) > 1
         assert len(node_json['embeds']['contributors']['data']) == 1
         assert node_json['embeds']['contributors']['data'][0]['id'] == '{}-{}'.format(
             node._id, user._id)
@@ -189,13 +189,13 @@ class TestNodeSparseFieldsDetail:
         res = app.get(res_url)
         node_json = res.json['data']
 
-        assert set(node_json.keys()) == set(
+        assert set(list(node_json.keys())) == set(
             ['links', 'type', 'id', 'attributes', 'embeds', 'relationships'])
-        assert node_json['attributes'].keys() == ['title']
+        assert list(node_json['attributes'].keys()) == ['title']
         assert len(node_json['embeds']['contributors']['data']) == 1
         assert node_json['embeds']['contributors']['data'][0]['id'] == '{}-{}'.format(
             node._id, user._id)
-        assert node_json['embeds']['contributors']['data'][0]['attributes'].keys() == [
+        assert list(node_json['embeds']['contributors']['data'][0]['attributes'].keys()) == [
             'bibliographic']
 
     def test_update_with_sparse_fields(self, app, user, node, url):
@@ -273,7 +273,7 @@ class TestSparseViewOnlyLinks:
             'embed': 'contributors'
         })  # current_user_can_comment and contributors are anonymized fields, should be removed
         assert res.status_code == 200
-        assert res.json['data']['attributes'].keys() == ['title']
+        assert list(res.json['data']['attributes'].keys()) == ['title']
 
         embeds = res.json['data'].get('embeds', None)
         assert embeds is None or 'contributors' not in embeds

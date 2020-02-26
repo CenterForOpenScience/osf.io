@@ -1,7 +1,12 @@
 from rest_framework import serializers as ser
 
-from api.base.serializers import JSONAPISerializer, LinksField, ShowIfVersion
+from distutils.version import StrictVersion
+
+from api.base.serializers import JSONAPISerializer, LinksField, ShowIfVersion, RelationshipField
+from api.subjects.serializers import UpdateSubjectsMixin
 from osf.models import Subject
+
+subjects_as_relationships_version = '2.16'
 
 class TaxonomyField(ser.Field):
     def to_representation(self, subject):
@@ -18,7 +23,7 @@ class TaxonomyField(ser.Field):
         return subject_id
 
 
-class TaxonomizableSerializerMixin(ser.Serializer):
+class TaxonomizableSerializerMixin(ser.Serializer, UpdateSubjectsMixin):
     """ Mixin for Taxonomizable objects
 
     Note: subclasses will need to update `filterable_fields` and `update`
@@ -28,9 +33,64 @@ class TaxonomizableSerializerMixin(ser.Serializer):
         'subjects',
     ])
 
-    subjects = ser.SerializerMethodField()
+    def __init__(self, *args, **kwargs):
+        super(TaxonomizableSerializerMixin, self).__init__(*args, **kwargs)
+        request = kwargs['context']['request']
+
+        if self.expect_subjects_as_relationships(request):
+            subject_kwargs = {
+                'related_view': self.subjects_related_view,
+                'related_view_kwargs': self.subjects_view_kwargs,
+                'read_only': False,
+                'many': True,
+                'required': False,
+            }
+
+            if self.subjects_self_view:
+                subject_kwargs['self_view'] = self.subjects_self_view
+                subject_kwargs['self_view_kwargs'] = self.subjects_view_kwargs
+
+            self.fields['subjects'] = RelationshipField(**subject_kwargs)
+        else:
+            self.fields['subjects'] = ser.SerializerMethodField()
+
+    @property
+    def subjects_related_view(self):
+        """
+        For dynamically building the subjects RelationshipField on __init__
+
+        Return format '<view_category>:<view_name>, for the desired related view,
+        for example, 'nodes:node-subjects'
+        """
+        raise NotImplementedError()
+
+    @property
+    def subjects_view_kwargs(self):
+        """
+        For dynamically building the subjects RelationshipField on __init__
+
+        Return kwargs needed to build the related/self view links,
+        for example: {'node_id': '<_id>'}
+        """
+        raise NotImplementedError
+
+    @property
+    def subjects_self_view(self):
+        """
+        Optional: For dynamically building the subjects RelationshipField on __init__
+
+        If you're going to provide a subjects `self` link, return the desired self view
+        in format '<view_category>:<view_name>.
+
+        For example, 'nodes:node-relationships-subjects'
+        """
+        pass
 
     def get_subjects(self, obj):
+        """
+        `subjects` is a SerializerMethodField for older versions of the API,
+        serialized under attributes
+        """
         from api.taxonomies.serializers import TaxonomyField
         return [
             [
@@ -38,8 +98,35 @@ class TaxonomizableSerializerMixin(ser.Serializer):
             ] for hier in obj.subject_hierarchy
         ]
 
+    # Overrides UpdateSubjectsMixin
+    def update_subjects_method(self, resource, subjects, auth):
+        """Depending on the request's version, runs a different method
+        to update the resource's subjects. Will expect request to be formatted
+        differently, depending on the version.
+
+        :param object resource: Object for which you want to update subjects
+        :param list subjects: Subjects array (or array of arrays)
+        :param object Auth object
+        """
+        if self.expect_subjects_as_relationships(self.context['request']):
+            return resource.set_subjects_from_relationships(subjects, auth)
+        return resource.set_subjects(subjects, auth)
+
+    def expect_subjects_as_relationships(self, request):
+        """Determines whether subjects should be serialized as a relationship.
+        Earlier versions serialize subjects as an attribute(before 2.16).
+        Version 2.16 and later serializer subjects as relationships.
+
+        :param object request: Request object
+        :return bool: Subjects should be serialized as relationships
+        """
+        return StrictVersion(getattr(request, 'version', '2.0')) >= StrictVersion(subjects_as_relationships_version)
+
 
 class TaxonomySerializer(JSONAPISerializer):
+    """
+    Will be deprecated in the future and replaced by SubjectSerializer
+    """
     filterable_fields = frozenset([
         'text',
         'parents',

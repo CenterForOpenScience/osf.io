@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-import httplib
+from rest_framework import status as http_status
 import logging
 
 from django.core.exceptions import ValidationError
@@ -83,7 +83,7 @@ def osfstorage_update_metadata(payload, **kwargs):
         version_id = payload['version']
         metadata = payload['metadata']
     except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     if check_select_for_update():
         version = FileVersion.objects.filter(_id=version_id).select_for_update().first()
@@ -91,7 +91,7 @@ def osfstorage_update_metadata(payload, **kwargs):
         version = FileVersion.objects.filter(_id=version_id).first()
 
     if version is None:
-        raise HTTPError(httplib.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     version.update_metadata(metadata)
 
@@ -106,8 +106,7 @@ def osfstorage_get_revisions(file_node, payload, target, **kwargs):
     counter_prefix = 'download:{}:{}:'.format(file_node.target._id, file_node._id)
 
     version_count = file_node.versions.count()
-    # Don't worry. The only % at the end of the LIKE clause, the index is still used
-    counts = dict(PageCounter.objects.filter(_id__startswith=counter_prefix).values_list('_id', 'total'))
+    counts = dict(PageCounter.objects.filter(resource=file_node.target.guids.first().id, file=file_node, action='download').values_list('_id', 'total'))
     qs = FileVersion.includable_objects.filter(basefilenode__id=file_node.id).include('creator__guids').order_by('-created')
 
     for i, version in enumerate(qs):
@@ -124,7 +123,7 @@ def osfstorage_get_revisions(file_node, payload, target, **kwargs):
 
 @decorators.waterbutler_opt_hook
 def osfstorage_copy_hook(source, destination, name=None, **kwargs):
-    ret = source.copy_under(destination, name=name).serialize(), httplib.CREATED
+    ret = source.copy_under(destination, name=name).serialize(), http_status.HTTP_201_CREATED
     update_storage_usage(destination.target)
     return ret
 
@@ -133,13 +132,13 @@ def osfstorage_move_hook(source, destination, name=None, **kwargs):
     source_target = source.target
 
     try:
-        ret = source.move_under(destination, name=name).serialize(), httplib.OK
+        ret = source.move_under(destination, name=name).serialize(), http_status.HTTP_200_OK
     except exceptions.FileNodeCheckedOutError:
-        raise HTTPError(httplib.METHOD_NOT_ALLOWED, data={
+        raise HTTPError(http_status.HTTP_405_METHOD_NOT_ALLOWED, data={
             'message_long': 'Cannot move file as it is checked out.'
         })
     except exceptions.FileNodeIsPrimaryFile:
-        raise HTTPError(httplib.FORBIDDEN, data={
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
             'message_long': 'Cannot move file as it is the primary file of preprint.'
         })
 
@@ -192,7 +191,7 @@ def osfstorage_get_children(file_node, **kwargs):
                         , 'kind', 'file'
                         , 'size', LATEST_VERSION.size
                         , 'downloads',  COALESCE(DOWNLOAD_COUNT, 0)
-                        , 'version', (SELECT COUNT(*) FROM osf_basefilenode_versions WHERE osf_basefilenode_versions.basefilenode_id = F.id)
+                        , 'version', (SELECT COUNT(*) FROM osf_basefileversionsthrough WHERE osf_basefileversionsthrough.basefilenode_id = F.id)
                         , 'contentType', LATEST_VERSION.content_type
                         , 'modified', LATEST_VERSION.created
                         , 'created', EARLIEST_VERSION.created
@@ -213,15 +212,15 @@ def osfstorage_get_children(file_node, **kwargs):
             FROM osf_basefilenode AS F
             LEFT JOIN LATERAL (
                 SELECT * FROM osf_fileversion
-                JOIN osf_basefilenode_versions ON osf_fileversion.id = osf_basefilenode_versions.fileversion_id
-                WHERE osf_basefilenode_versions.basefilenode_id = F.id
+                JOIN osf_basefileversionsthrough ON osf_fileversion.id = osf_basefileversionsthrough.fileversion_id
+                WHERE osf_basefileversionsthrough.basefilenode_id = F.id
                 ORDER BY created DESC
                 LIMIT 1
             ) LATEST_VERSION ON TRUE
             LEFT JOIN LATERAL (
                 SELECT * FROM osf_fileversion
-                JOIN osf_basefilenode_versions ON osf_fileversion.id = osf_basefilenode_versions.fileversion_id
-                WHERE osf_basefilenode_versions.basefilenode_id = F.id
+                JOIN osf_basefileversionsthrough ON osf_fileversion.id = osf_basefileversionsthrough.fileversion_id
+                WHERE osf_basefileversionsthrough.basefilenode_id = F.id
                 ORDER BY created ASC
                 LIMIT 1
             ) EARLIEST_VERSION ON TRUE
@@ -233,16 +232,19 @@ def osfstorage_get_children(file_node, **kwargs):
             ) CHECKOUT_GUID ON TRUE
             LEFT JOIN LATERAL (
                 SELECT P.total AS DOWNLOAD_COUNT FROM osf_pagecounter AS P
-                WHERE P._id = 'download:' || %s || ':' || F._id
+                WHERE P.resource_id = %s
+                AND P.file_id = F.id
+                AND P.action = 'download'
+                AND P.version ISNULL
                 LIMIT 1
             ) DOWNLOAD_COUNT ON TRUE
             LEFT JOIN LATERAL (
               SELECT EXISTS(
                 SELECT (1) FROM osf_fileversionusermetadata
                   INNER JOIN osf_fileversion ON osf_fileversionusermetadata.file_version_id = osf_fileversion.id
-                  INNER JOIN osf_basefilenode_versions ON osf_fileversion.id = osf_basefilenode_versions.fileversion_id
+                  INNER JOIN osf_basefileversionsthrough ON osf_fileversion.id = osf_basefileversionsthrough.fileversion_id
                   WHERE osf_fileversionusermetadata.user_id = %s
-                  AND osf_basefilenode_versions.basefilenode_id = F.id
+                  AND osf_basefileversionsthrough.basefilenode_id = F.id
                 LIMIT 1
               )
             ) SEEN_FILE ON TRUE
@@ -268,7 +270,7 @@ def osfstorage_get_children(file_node, **kwargs):
             AND (NOT F.type IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder'))
         """, [
             user_content_type_id,
-            file_node.target._id,
+            file_node.target.guids.first().id,
             user_pk,
             user_pk,
             user_id,
@@ -288,7 +290,7 @@ def osfstorage_create_child(file_node, payload, **kwargs):
 
     if getattr(file_node.target, 'is_registration', False) and not getattr(file_node.target, 'archiving', False):
         raise HTTPError(
-            httplib.BAD_REQUEST,
+            http_status.HTTP_400_BAD_REQUEST,
             data={
                 'message_short': 'Registered Nodes are immutable',
                 'message_long': "The operation you're trying to do cannot be applied to registered Nodes, which are immutable",
@@ -296,7 +298,7 @@ def osfstorage_create_child(file_node, payload, **kwargs):
         )
 
     if not (name or user) or '/' in name:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     if file_node.is_quickfile and is_folder:
         raise HTTPError(httplib.BAD_REQUEST, data={'message_long': 'You may not create a folder for QuickFolders'})
@@ -313,7 +315,7 @@ def osfstorage_create_child(file_node, payload, **kwargs):
         created, file_node = False, parent.find_child_by_name(name, kind=int(not is_folder))
 
     if not created and is_folder:
-        raise HTTPError(httplib.CONFLICT, data={
+        raise HTTPError(http_status.HTTP_409_CONFLICT, data={
             'message_long': 'Cannot create folder "{name}" because a file or folder already exists at path "{path}"'.format(
                 name=file_node.name,
                 path=file_node.materialized_path,
@@ -321,7 +323,7 @@ def osfstorage_create_child(file_node, payload, **kwargs):
         })
 
     if file_node.checkout and file_node.checkout._id != user._id:
-        raise HTTPError(httplib.FORBIDDEN, data={
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
             'message_long': 'File cannot be updated due to checkout status.'
         })
 
@@ -335,7 +337,8 @@ def osfstorage_create_child(file_node, payload, **kwargs):
                 }
             ))
         except KeyError:
-            raise HTTPError(httplib.BAD_REQUEST)
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+
         current_version = file_node.get_version()
         new_version = file_node.create_version(user, location, metadata)
 
@@ -353,7 +356,7 @@ def osfstorage_create_child(file_node, payload, **kwargs):
         'archive': not archive_exists,  # Should waterbutler also archive this file
         'data': file_node.serialize(),
         'version': version_id,
-    }, httplib.CREATED if created else httplib.OK
+    }, http_status.HTTP_201_CREATED if created else http_status.HTTP_200_OK
 
 
 @must_be_signed
@@ -372,11 +375,10 @@ def osfstorage_delete(file_node, payload, target, **kwargs):
 
     try:
         file_node.delete(user=user)
-
     except exceptions.FileNodeCheckedOutError:
-        raise HTTPError(httplib.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
     except exceptions.FileNodeIsPrimaryFile:
-        raise HTTPError(httplib.FORBIDDEN, data={
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
             'message_long': 'Cannot delete file as it is the primary file of preprint.'
         })
 
@@ -401,12 +403,15 @@ def osfstorage_download(file_node, payload, **kwargs):
         try:
             version_id = int(request.args['version'])
         except ValueError:
-            raise make_error(httplib.BAD_REQUEST, message_short='Version must be an integer if not specified')
+            raise make_error(http_status.HTTP_400_BAD_REQUEST, message_short='Version must be an integer if not specified')
 
     version = file_node.get_version(version_id, required=True)
+    file_version_thru = version.get_basefilenode_version(file_node)
+    name = file_version_thru.version_name if file_version_thru else file_node.name
+
     return {
         'data': {
-            'name': file_node.name,
+            'name': name,
             'path': version.location_hash,
         },
         'settings': {
@@ -420,8 +425,8 @@ def osfstorage_download(file_node, payload, **kwargs):
 def osfstorage_add_tag(file_node, **kwargs):
     data = request.get_json()
     if file_node.add_tag(data['tag'], kwargs['auth']):
-        return {'status': 'success'}, httplib.OK
-    return {'status': 'failure'}, httplib.BAD_REQUEST
+        return {'status': 'success'}, http_status.HTTP_200_OK
+    return {'status': 'failure'}, http_status.HTTP_400_BAD_REQUEST
 
 @must_have_permission(WRITE)
 @decorators.autoload_filenode(must_be='file')
@@ -430,11 +435,11 @@ def osfstorage_remove_tag(file_node, **kwargs):
     try:
         file_node.remove_tag(data['tag'], kwargs['auth'])
     except TagNotFoundError:
-        return {'status': 'failure'}, httplib.CONFLICT
+        return {'status': 'failure'}, http_status.HTTP_409_CONFLICT
     except InvalidTagError:
-        return {'status': 'failure'}, httplib.BAD_REQUEST
+        return {'status': 'failure'}, http_status.HTTP_400_BAD_REQUEST
     else:
-        return {'status': 'success'}, httplib.OK
+        return {'status': 'success'}, http_status.HTTP_200_OK
 
 
 @must_be_logged_in
@@ -446,7 +451,7 @@ def update_region(auth, **kwargs):
     try:
         region_id = data['region_id']
     except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     try:
         user_settings.set_region(region_id)

@@ -1,7 +1,7 @@
 """Tests related to retraction of public registrations"""
 
 import datetime
-import httplib as http
+from rest_framework import status as http_status
 
 import mock
 import pytest
@@ -636,7 +636,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
             auth=unauthorized_user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.UNAUTHORIZED)
+        assert_equal(res.status_code, http_status.HTTP_401_UNAUTHORIZED)
 
     def test_GET_approve_registration_without_retraction_returns_HTTPError_BAD_REQUEST(self):
         assert_true(self.registration.is_pending_retraction)
@@ -649,7 +649,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
             auth=self.user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     def test_GET_approve_with_invalid_token_returns_HTTPError_BAD_REQUEST(self):
         res = self.app.get(
@@ -657,7 +657,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
             auth=self.user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     def test_GET_approve_with_non_existant_sanction_returns_HTTPError_BAD_REQUEST(self):
         res = self.app.get(
@@ -665,9 +665,9 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
             auth=self.user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
-    def test_GET_approve_with_valid_token_returns_200(self):
+    def test_GET_approve_with_valid_token_returns_302(self):
         res = self.app.get(
             self.registration.web_url_for('token_action', token=self.approval_token),
             auth=self.user.auth
@@ -675,7 +675,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.registration.retraction.reload()
         assert_true(self.registration.is_retracted)
         assert_false(self.registration.is_pending_retraction)
-        assert_equal(res.status_code, 302)
+        assert_equal(res.status_code,  http_status.HTTP_302_FOUND)
 
     # node_registration_retraction_disapprove_tests
     def test_GET_disapprove_from_unauthorized_user_returns_HTTPError_UNAUTHORIZED(self):
@@ -686,7 +686,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
             auth=unauthorized_user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.UNAUTHORIZED)
+        assert_equal(res.status_code, http_status.HTTP_401_UNAUTHORIZED)
 
     def test_GET_disapprove_registration_without_retraction_returns_HTTPError_BAD_REQUEST(self):
         assert_true(self.registration.is_pending_retraction)
@@ -699,7 +699,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
             auth=self.user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     def test_GET_disapprove_with_invalid_token_HTTPError_BAD_REQUEST(self):
         res = self.app.get(
@@ -707,7 +707,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
             auth=self.user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     def test_GET_disapprove_with_valid_token_returns_redirect(self):
         res = self.app.get(
@@ -718,7 +718,8 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert_false(self.registration.is_retracted)
         assert_false(self.registration.is_pending_retraction)
         assert_true(self.registration.retraction.is_rejected)
-        assert_equal(res.status_code, 302)
+        assert_equal(res.status_code, http_status.HTTP_302_FOUND)
+
 
 @pytest.mark.enable_bookmark_creation
 class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
@@ -756,7 +757,7 @@ class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
             auth=self.auth,
             expect_errors=True,
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     def test_POST_retraction_to_subproject_returns_HTTPError_BAD_REQUEST(self):
         res = self.app.post_json(
@@ -764,7 +765,7 @@ class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
             auth=self.auth,
             expect_errors=True,
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     def test_POST_retraction_to_subproject_component_returns_HTTPError_BAD_REQUEST(self):
         res = self.app.post_json(
@@ -772,7 +773,7 @@ class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
             auth=self.auth,
             expect_errors=True,
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
 @pytest.mark.enable_bookmark_creation
 class RegistrationRetractionViewsTestCase(OsfTestCase):
@@ -800,7 +801,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             auth=self.user.auth,
             expect_errors=True,
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     def test_POST_retraction_to_private_registration_returns_HTTPError_FORBIDDEN(self):
         self.registration.is_public = False
@@ -812,7 +813,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             auth=self.user.auth,
             expect_errors=True,
         )
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
         self.registration.reload()
         assert_is_none(self.registration.retraction)
 
@@ -850,7 +851,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             auth=self.user.auth,
             expect_errors=True,
         )
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         self.registration.reload()
         assert_true(self.registration.is_pending_retraction)
 
@@ -873,19 +874,19 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             auth=self.user.auth,
             expect_errors=True,
         )
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         self.registration.reload()
         assert_true(self.registration.is_pending_retraction)
 
     def test_POST_retraction_by_non_admin_retract_HTTPError_UNAUTHORIZED(self):
         res = self.app.post_json(self.retraction_post_url, expect_errors=True)
-        assert_equals(res.status_code, http.UNAUTHORIZED)
+        assert_equals(res.status_code, http_status.HTTP_401_UNAUTHORIZED)
         self.registration.reload()
         assert_is_none(self.registration.retraction)
 
         # group admin POST fails
         res = self.app.post_json(self.retraction_post_url, auth=self.group_mem.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     @mock.patch('website.mails.send_mail')
     def test_POST_retraction_without_justification_returns_HTTPOK(self, mock_send):
@@ -894,7 +895,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             {'justification': ''},
             auth=self.user.auth,
         )
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         self.registration.reload()
         assert_false(self.registration.is_retracted)
         assert_true(self.registration.is_pending_retraction)
@@ -945,13 +946,13 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
 
         approval_url = self.registration.web_url_for('token_action', token=approval_token)
         res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, http.UNAUTHORIZED)
+        assert_equal(res.status_code, http_status.HTTP_401_UNAUTHORIZED)
         assert_true(self.registration.is_pending_retraction)
         assert_false(self.registration.is_retracted)
 
         # group admin on node fails disapproval GET
         res = self.app.get(approval_url, auth=self.group_mem.auth, expect_errors=True)
-        assert_equal(res.status_code, http.UNAUTHORIZED)
+        assert_equal(res.status_code, http_status.HTTP_401_UNAUTHORIZED)
 
     def test_non_contributor_GET_disapproval_returns_HTTPError_UNAUTHORIZED(self):
         non_contributor = AuthUserFactory()
@@ -960,10 +961,10 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
 
         disapproval_url = self.registration.web_url_for('token_action', token=rejection_token)
         res = self.app.get(disapproval_url, auth=non_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, http.UNAUTHORIZED)
+        assert_equal(res.status_code, http_status.HTTP_401_UNAUTHORIZED)
         assert_true(self.registration.is_pending_retraction)
         assert_false(self.registration.is_retracted)
 
         # group admin on node fails disapproval GET
         res = self.app.get(disapproval_url, auth=self.group_mem.auth, expect_errors=True)
-        assert_equal(res.status_code, http.UNAUTHORIZED)
+        assert_equal(res.status_code, http_status.HTTP_401_UNAUTHORIZED)

@@ -1,8 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Functional tests using WebTest."""
 import datetime as dt
-import httplib as http
+from rest_framework import status as http_status
 import logging
 import unittest
 
@@ -76,7 +76,7 @@ class TestAnUnregisteredUser(OsfTestCase):
         url = web_url_for('profile_view')
         res = self.app.get(url)
         res = res.follow()
-        assert_equal(res.status_code, 301)
+        assert_equal(res.status_code, 308)
         assert_in('/login/', res.headers['Location'])
 
 
@@ -227,7 +227,7 @@ class TestAUser(OsfTestCase):
         non_ascii = to_mongo_key('WöRlÐé')
         WikiPage.objects.create_for_node(project, 'WöRlÐé', 'new content', Auth(self.user))
         wv = WikiVersion.objects.get_for_node(project, non_ascii)
-        assert wv.wiki_page.page_name.upper() == non_ascii.decode('utf-8').upper()
+        assert wv.wiki_page.page_name.upper() == non_ascii.upper()
 
     def test_noncontributor_cannot_see_wiki_if_no_content(self):
         user2 = UserFactory()
@@ -356,7 +356,7 @@ class TestPrivateLinkView(OsfTestCase):
 
     def test_anonymous_link_hide_contributor(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
-        assert_in('Anonymous Contributors', res.body)
+        assert_in('Anonymous Contributors', res.body.decode())
         assert_not_in(self.user.fullname, res)
 
     def test_anonymous_link_hides_citations(self):
@@ -378,7 +378,7 @@ class TestPrivateLinkView(OsfTestCase):
             'is being viewed through a private, view-only link. '
             'Anyone with the link can view this project. Keep '
             'the link safe.',
-            res.body
+            res.body.decode()
         )
 
     def test_no_warning_for_read_only_user_with_invalid_link(self):
@@ -393,7 +393,7 @@ class TestPrivateLinkView(OsfTestCase):
             'is being viewed through a private, view-only link. '
             'Anyone with the link can view this project. Keep '
             'the link safe.',
-            res.body
+            res.body.decode()
         )
 
 
@@ -665,7 +665,7 @@ class TestConfirmingEmail(OsfTestCase):
         res = self.app.get(self.confirmation_url, expect_errors=True)
 
         assert_in(auth_exc.InvalidTokenError.message_short, res)
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
 
 @pytest.mark.enable_implicit_clean
@@ -691,7 +691,7 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
 
         # verify that the "Claim Account" form is returned
-        assert_in('Claim Contributor', res.body)
+        assert_in('Claim Contributor', res.body.decode())
 
         form = res.forms['claimContributorForm']
         form['password'] = 'queenfan86'
@@ -723,7 +723,7 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
 
         # verify that the "Claim Account" form is returned
-        assert_in('Claim Contributor', res.body)
+        assert_in('Claim Contributor', res.body.decode())
 
         form = res.forms['claimContributorForm']
         form['password'] = 'queenfan86'
@@ -754,7 +754,7 @@ class TestResendConfirmation(OsfTestCase):
     def test_resend_confirmation_get(self):
         res = self.app.get(self.get_url)
         assert_equal(res.status_code, 200)
-        assert_in('Resend Confirmation', res.body)
+        assert_in('Resend Confirmation', res.body.decode())
         assert_in('resendForm', res.forms)
 
     # test that unconfirmed user can receive resend confirmation email
@@ -843,7 +843,7 @@ class TestForgotPassword(OsfTestCase):
     def test_get_forgot_password(self):
         res = self.app.get(self.get_url)
         assert_equal(res.status_code, 200)
-        assert_in('Forgot Password', res.body)
+        assert_in('Forgot Password', res.body.decode())
         assert_in('forgotPasswordForm', res.forms)
 
     # test that existing user can receive reset password email
@@ -1036,23 +1036,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('Has supplemental materials for', res.body)
+        assert_in('Has supplemental materials for', res.body.decode())
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('Has supplemental materials for', res.body)
+        assert_in('Has supplemental materials for', res.body.decode())
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('Has supplemental materials for', res.body)
+        assert_in('Has supplemental materials for', res.body.decode())
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_in('Has supplemental materials for', res.body)
+        assert_in('Has supplemental materials for', res.body.decode())
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_in('Has supplemental materials for', res.body)
+        assert_in('Has supplemental materials for', res.body.decode())
 
     def test_public_project_abandoned_preprint(self):
         self.preprint.machine_state = 'initial'
@@ -1062,23 +1062,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('Has supplemental materials for', res.body)
+        assert_not_in('Has supplemental materials for', res.body.decode())
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_not_in('Has supplemental materials for', res.body)
+        assert_not_in('Has supplemental materials for', res.body.decode())
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_not_in('Has supplemental materials for', res.body)
+        assert_not_in('Has supplemental materials for', res.body.decode())
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_not_in('Has supplemental materials for', res.body)
+        assert_not_in('Has supplemental materials for', res.body.decode())
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_not_in('Has supplemental materials for', res.body)
+        assert_not_in('Has supplemental materials for', res.body.decode())
 
     def test_public_project_deleted_preprint(self):
         self.preprint.deleted = timezone.now()
@@ -1088,23 +1088,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('Has supplemental materials for', res.body)
+        assert_not_in('Has supplemental materials for', res.body.decode())
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_not_in('Has supplemental materials for', res.body)
+        assert_not_in('Has supplemental materials for', res.body.decode())
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_not_in('Has supplemental materials for', res.body)
+        assert_not_in('Has supplemental materials for', res.body.decode())
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_not_in('Has supplemental materials for', res.body)
+        assert_not_in('Has supplemental materials for', res.body.decode())
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_not_in('Has supplemental materials for', res.body)
+        assert_not_in('Has supplemental materials for', res.body.decode())
 
     def test_public_project_private_preprint(self):
         self.preprint.is_public = False
@@ -1114,23 +1114,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('Has supplemental materials for', res.body)
+        assert_in('Has supplemental materials for', res.body.decode())
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('Has supplemental materials for', res.body)
+        assert_in('Has supplemental materials for', res.body.decode())
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('Has supplemental materials for', res.body)
+        assert_in('Has supplemental materials for', res.body.decode())
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_not_in('Has supplemental materials for', res.body)
+        assert_not_in('Has supplemental materials for', res.body.decode())
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_not_in('Has supplemental materials for', res.body)
+        assert_not_in('Has supplemental materials for', res.body.decode())
 
     def test_public_project_orphaned_preprint(self):
         self.preprint.primary_file = None
@@ -1140,23 +1140,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('Has supplemental materials for', res.body)
+        assert_in('Has supplemental materials for', res.body.decode())
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('Has supplemental materials for', res.body)
+        assert_in('Has supplemental materials for', res.body.decode())
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('Has supplemental materials for', res.body)
+        assert_in('Has supplemental materials for', res.body.decode())
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_not_in('Has supplemental materials for', res.body)
+        assert_not_in('Has supplemental materials for', res.body.decode())
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_not_in('Has supplemental materials for', res.body)
+        assert_not_in('Has supplemental materials for', res.body.decode())
 
     def test_public_project_unpublished_preprint(self):
         self.preprint.is_published = False
@@ -1166,23 +1166,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('Has supplemental materials for', res.body)
+        assert_in('Has supplemental materials for', res.body.decode())
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('Has supplemental materials for', res.body)
+        assert_in('Has supplemental materials for', res.body.decode())
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('Has supplemental materials for', res.body)
+        assert_in('Has supplemental materials for', res.body.decode())
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_not_in('Has supplemental materials for', res.body)
+        assert_not_in('Has supplemental materials for', res.body.decode())
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_not_in('Has supplemental materials for', res.body)
+        assert_not_in('Has supplemental materials for', res.body.decode())
 
     def test_public_project_pending_preprint_post_moderation(self):
         self.preprint.machine_state = 'pending'
@@ -1194,33 +1194,33 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body)
-        assert_in('Pending\n', res.body)
-        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
+        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
+        assert_in('Pending\n', res.body.decode())
+        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body.decode())
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body)
-        assert_in('Pending\n', res.body)
-        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
+        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
+        assert_in('Pending\n', res.body.decode())
+        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body.decode())
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body)
-        assert_in('Pending\n', res.body)
-        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
+        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
+        assert_in('Pending\n', res.body.decode())
+        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body.decode())
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_in('on {}'.format(self.preprint.provider.name), res.body)
-        assert_not_in('Pending\n', res.body)
-        assert_not_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
+        assert_in('on {}'.format(self.preprint.provider.name), res.body.decode())
+        assert_not_in('Pending\n', res.body.decode())
+        assert_not_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body.decode())
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_in('on {}'.format(self.preprint.provider.name), res.body)
-        assert_not_in('Pending\n', res.body)
-        assert_not_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
+        assert_in('on {}'.format(self.preprint.provider.name), res.body.decode())
+        assert_not_in('Pending\n', res.body.decode())
+        assert_not_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body.decode())
 
     def test_implicit_admins_can_see_project_status(self):
         project = ProjectFactory(creator=self.admin)
@@ -1236,9 +1236,9 @@ class TestPreprintBannerView(OsfTestCase):
         url = component.web_url_for('view_project')
 
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('{}'.format(preprint.provider.name), res.body)
-        assert_in('Pending\n', res.body)
-        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
+        assert_in('{}'.format(preprint.provider.name), res.body.decode())
+        assert_in('Pending\n', res.body.decode())
+        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body.decode())
 
     def test_public_project_pending_preprint_pre_moderation(self):
         self.preprint.machine_state = 'pending'
@@ -1250,33 +1250,33 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body)
-        assert_in('Pending\n', res.body)
-        assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
+        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
+        assert_in('Pending\n', res.body.decode())
+        assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body.decode())
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body)
-        assert_in('Pending\n', res.body)
-        assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
+        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
+        assert_in('Pending\n', res.body.decode())
+        assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body.decode())
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body)
-        assert_in('Pending\n', res.body)
-        assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
+        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
+        assert_in('Pending\n', res.body.decode())
+        assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body.decode())
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body)
-        assert_not_in('Pending\n', res.body)
-        assert_not_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
+        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
+        assert_not_in('Pending\n', res.body.decode())
+        assert_not_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body.decode())
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_in('{}'.format(self.preprint.provider.name), res.body)
-        assert_not_in('Pending\n', res.body)
-        assert_not_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
+        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
+        assert_not_in('Pending\n', res.body.decode())
+        assert_not_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body.decode())
 
 if __name__ == '__main__':
     unittest.main()

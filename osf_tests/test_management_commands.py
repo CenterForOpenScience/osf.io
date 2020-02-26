@@ -15,6 +15,7 @@ from osf_tests.factories import (
     ProjectFactory,
     RegionFactory,
     UserFactory,
+    DraftRegistrationFactory,
 )
 from tests.base import DbTestCase
 from osf.management.commands.data_storage_usage import (
@@ -63,14 +64,15 @@ class TestDataStorageUsage(DbTestCase):
     @pytest.fixture()
     def registration(self, project, creator, withdrawn=False):
         schema = RegistrationSchema.objects.first()
-        registration = project.register_node(schema, Auth(user=creator), 'Registration')
+        draft_reg = DraftRegistrationFactory(branched_from=project)
+        registration = project.register_node(schema, Auth(user=creator), draft_reg)
         registration.is_public = True
         registration.save()
 
         if withdrawn:
             registration.retract_registration(creator)
             withdrawal = registration.retraction
-            token = withdrawal.approval_state.values()[0]['approval_token']
+            token = list(withdrawal.approval_state.values())[0]['approval_token']
             with mock.patch('osf.models.AbstractNode.update_search'):
                 withdrawal.approve_retraction(creator, token)
             withdrawal.save()

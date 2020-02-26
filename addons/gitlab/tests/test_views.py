@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 
 import mock
 import datetime
@@ -9,7 +9,7 @@ from json import dumps
 
 from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase, get_default_metaschema
-from osf_tests.factories import ProjectFactory, UserFactory, AuthUserFactory
+from osf_tests.factories import ProjectFactory, UserFactory, AuthUserFactory, DraftRegistrationFactory
 
 from github3.repos.branch import Branch
 
@@ -76,7 +76,7 @@ class TestGitLabConfigViews(GitLabAddonTestCase, OAuthAddonConfigViewsTestCaseMi
             'gitlab_repo': 'repo_name',
             'gitlab_repo_id': '123',
         }, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         self.project.reload()
         assert_equal(
             self.project.logs.latest().action,
@@ -195,14 +195,25 @@ class TestGitLabViews(OsfTestCase):
 
     # Tests for _check_permissions
     # make a user with no authorization; make sure check_permissions returns false
-    def test_permissions_no_auth(self):
+    @mock.patch('addons.gitlab.api.GitLabClient.repo')
+    def test_permissions_no_auth(self, mock_repo):
         gitlab_mock = self.gitlab
         # project is set to private right now
+        mock_repository = mock.Mock(**{
+            'user': 'fred',
+            'repo': 'mock-repo',
+            'permissions': {
+                'project_access': {'access_level': 20, 'notification_level': 3}
+            },
+        })
+        mock_repo.attributes.return_value = mock_repository
+
+
         connection = gitlab_mock
         non_authenticated_user = UserFactory()
         non_authenticated_auth = Auth(user=non_authenticated_user)
         branch = 'master'
-        assert_false(check_permissions(self.node_settings, non_authenticated_auth, connection, branch))
+        assert_false(check_permissions(self.node_settings, non_authenticated_auth, connection, branch, repo=mock_repository))
 
     # make a repository that doesn't allow push access for this user;
     # make sure check_permissions returns false
@@ -233,19 +244,36 @@ class TestGitLabViews(OsfTestCase):
         mock_branch = mock.Mock(**{
             'commit': {'id': '67890'}
         })
+        mock_repository = mock.Mock(**{
+            'user': 'fred',
+            'repo': 'mock-repo',
+            'permissions': {
+                'project_access': {'access_level': 20, 'notification_level': 3}
+            },
+        })
+        mock_repo.attributes.return_value = mock_repository
         connection.branches.return_value = mock_branch
         sha = '12345'
-        assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, mock_branch, sha=sha))
+        assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, mock_branch, sha=sha, repo=mock_repository))
 
     # make sure permissions are not granted for editing a registration
     @mock.patch('addons.gitlab.models.UserSettings.has_auth')
-    def test_permissions(self, mock_has_auth):
+    @mock.patch('addons.gitlab.api.GitLabClient.repo')
+    def test_permissions(self, mock_repo, mock_has_auth):
         gitlab_mock = self.gitlab
         mock_has_auth.return_value = True
         connection = gitlab_mock
+        mock_repository = mock.Mock(**{
+            'user': 'fred',
+            'repo': 'mock-repo',
+            'permissions': {
+                'project_access': {'access_level': 20, 'notification_level': 3}
+            },
+        })
+        mock_repo.attributes.return_value = mock_repository
         with mock.patch('osf.models.node.AbstractNode.is_registration', new_callable=mock.PropertyMock) as mock_is_reg:
             mock_is_reg.return_value = True
-            assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, 'master'))
+            assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, 'master', repo=mock_repository))
 
     def check_hook_urls(self, urls, node, path, sha):
         url = node.web_url_for('addon_view_or_download_file', path=path, provider='gitlab')
@@ -526,7 +554,7 @@ class TestGitLabSettings(OsfTestCase):
         registration = self.project.register_node(
             schema=get_default_metaschema(),
             auth=self.consolidated_auth,
-            data=''
+             draft_registration=DraftRegistrationFactory(branched_from=self.project)
         )
 
         url = registration.api_url + 'gitlab/settings/'

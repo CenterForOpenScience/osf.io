@@ -1,40 +1,70 @@
 # -*- coding: utf-8 -*-
 from django.db import models
+import waffle
 import jsonschema
 
 from website.util import api_v2_url
 
 from osf.models.base import BaseModel, ObjectIDMixin
+from osf.models.validators import RegistrationResponsesValidator
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.exceptions import ValidationValueError, ValidationError
 
 from website.project.metadata.utils import create_jsonschema_from_metaschema
+from osf.features import EGAP_ADMINS
+
+
+SCHEMABLOCK_TYPES = [
+    ('page-heading', 'page-heading'),
+    ('section-heading', 'section-heading'),
+    ('subsection-heading', 'subsection-heading'),
+    ('paragraph', 'paragraph'),
+    ('question-label', 'question-label'),
+    ('short-text-input', 'short-text-input'),
+    ('long-text-input', 'long-text-input'),
+    ('file-input', 'file-input'),
+    ('contributors-input', 'contributors-input'),
+    ('single-select-input', 'single-select-input'),
+    ('multi-select-input', 'multi-select-input'),
+    ('select-input-option', 'select-input-option'),
+    ('select-other-option', 'select-other-option'),
+]
+
+
+def allow_egap_admins(queryset, request):
+    """
+    Allows egap admins to see EGAP registrations as visible, should be deleted when when the EGAP registry goes
+    live.
+    """
+    if hasattr(request, 'user') and waffle.flag_is_active(request, EGAP_ADMINS):
+        return queryset | RegistrationSchema.objects.filter(name='EGAP Registration').distinct('name')
+    else:
+        return queryset
 
 
 class AbstractSchemaManager(models.Manager):
-    def get_latest_version(self, name, only_active=True):
+
+    def get_latest_version(self, name):
         """
         Return the latest version of the given schema
         :param str only_active: Only returns the latest active schema
         :return schema
         """
-        schemas = self.filter(name=name, active=True) if only_active else self.filter(name=name)
-        sorted_schemas = schemas.order_by('schema_version')
-        if sorted_schemas:
-            return sorted_schemas.last()
-        else:
-            return None
+        return self.filter(name=name).order_by('schema_version').last()
 
-    def get_latest_versions(self, only_active=True):
+    def get_latest_versions(self, request=None):
         """
-        Returns a queryset of the latest version of each schema
-        :param str only_active: Only return active schemas
-        :return queryset
+        Return the latest version of the given schema
+
+        :param request: the request object needed for waffling
+        :return: queryset
         """
-        latest_schemas = self.filter(visible=True)
-        if only_active:
-            latest_schemas = latest_schemas.filter(active=True)
-        return latest_schemas.order_by('name', '-schema_version').distinct('name')
+        queryset = self.filter(visible=True).order_by('name', '-schema_version').distinct('name')
+
+        if request:
+            return allow_egap_admins(queryset, request)
+
+        return queryset
 
 class AbstractSchema(ObjectIDMixin, BaseModel):
     name = models.CharField(max_length=255)
@@ -57,6 +87,9 @@ class AbstractSchema(ObjectIDMixin, BaseModel):
 
 
 class RegistrationSchema(AbstractSchema):
+    config = DateTimeAwareJSONField(blank=True, default=dict)
+    description = models.TextField(null=True, blank=True)
+
     @property
     def _config(self):
         return self.schema.get('config', {})
@@ -120,13 +153,24 @@ class RegistrationSchema(AbstractSchema):
                                     question['title'],
                                 ),
                             )
+                        if 'title' in question:
+                            raise ValidationError(
+                                'For your registration your response to the \'{}\' field is invalid.'.format(question['title']),
+                            )
                         raise ValidationError(
-                            'For your registration your response to the \'{}\' field is invalid.'.format(question['title']),
+                            'For your registration your response to the field with qid: \'{}\' is invalid.'.format(question['qid']),
                         )
-            raise ValidationError(e.message)
+            raise ValidationError(e)
         except jsonschema.SchemaError as e:
-            raise ValidationValueError(e.message)
+            raise ValidationValueError(e)
         return
+
+    def validate_registration_responses(self, registration_responses, required_fields=False):
+        """Validates `registration_responses` against this schema (using `schema_blocks`).
+        Raises `ValidationError` if invalid. Otherwise, returns True.
+        """
+        validator = RegistrationResponsesValidator(self.schema_blocks.all(), required_fields)
+        return validator.validate(registration_responses)
 
 
 class FileMetadataSchema(AbstractSchema):
@@ -135,3 +179,34 @@ class FileMetadataSchema(AbstractSchema):
     def absolute_api_v2_url(self):
         path = '/schemas/files/{}/'.format(self._id)
         return api_v2_url(path)
+
+
+class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
+    class Meta:
+        order_with_respect_to = 'schema'
+        unique_together = ('schema', 'registration_response_key')
+
+    schema = models.ForeignKey('RegistrationSchema', related_name='schema_blocks', on_delete=models.CASCADE)
+    help_text = models.TextField()
+    example_text = models.TextField(null=True)
+    # Corresponds to a key in DraftRegistration.registration_responses dictionary
+    registration_response_key = models.CharField(max_length=255, db_index=True, null=True, blank=True)
+    # A question can be split into multiple schema blocks, but are linked with a schema_block_group_key
+    schema_block_group_key = models.CharField(max_length=24, db_index=True, null=True)
+    block_type = models.CharField(max_length=31, db_index=True, choices=SCHEMABLOCK_TYPES)
+    display_text = models.TextField()
+    required = models.BooleanField(default=False)
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '{}schema_blocks/{}/'.format(self.schema.absolute_api_v2_url, self._id)
+        return api_v2_url(path)
+
+    def save(self, *args, **kwargs):
+        """
+        Allows us to use a unique_together constraint, so each "registration_response_key"
+        only appears once for every registration schema.  To do this, we need to save
+        empty "registration_response_key"s as null, instead of an empty string.
+        """
+        self.registration_response_key = self.registration_response_key or None
+        return super(RegistrationSchemaBlock, self).save(*args, **kwargs)
