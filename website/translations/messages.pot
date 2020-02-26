@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-26 14:09+0900\n"
+"POT-Creation-Date: 2020-02-26 14:56+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1183,6 +1183,18 @@ msgstr ""
 
 #: website/templates/messages.mako:2
 msgid "Fork this Project"
+msgstr ""
+
+#: website/templates/messages.mako:3
+msgid "Citations"
+msgstr ""
+
+#: website/templates/messages.mako:4
+msgid "Storage"
+msgstr ""
+
+#: website/templates/messages.mako:5
+msgid "Other"
 msgstr ""
 
 #: website/templates/my_projects.mako:2 website/templates/nav.mako:51

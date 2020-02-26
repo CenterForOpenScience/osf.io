@@ -1181,7 +1181,7 @@ msgstr "は無効化されました"
 #: website/static/js/apiPersonalToken.js:210
 #: website/static/js/apiPersonalToken.js:381
 msgid "Deactivate"
-msgstr "非アクティブ"
+msgstr "無効にする"
 
 #: website/static/js/apiApplication.js:281
 #: website/static/js/apiPersonalToken.js:260

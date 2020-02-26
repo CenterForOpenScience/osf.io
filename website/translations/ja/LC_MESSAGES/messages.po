@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-26 14:09+0900\n"
+"POT-Creation-Date: 2020-02-26 14:56+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -1225,6 +1225,18 @@ msgstr "テンプレートを複製"
 #: website/templates/messages.mako:2
 msgid "Fork this Project"
 msgstr "このプロジェクトをフォーク"
+
+#: website/templates/messages.mako:3
+msgid "Citations"
+msgstr "文献管理"
+
+#: website/templates/messages.mako:4
+msgid "Storage"
+msgstr "ストレージ"
+
+#: website/templates/messages.mako:5
+msgid "Other"
+msgstr "その他"
 
 #: website/templates/my_projects.mako:2 website/templates/nav.mako:51
 msgid "My Projects"
@@ -3662,5 +3674,4 @@ msgstr "%(summaryTitle)sのフォークを作成"
 #: website/templates/util/render_node.mako:66
 msgid "Manage Contributors"
 msgstr "コントリビュータ管理"
-
 
