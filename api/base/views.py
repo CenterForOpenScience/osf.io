@@ -1,4 +1,5 @@
 from builtins import str
+import re
 
 from collections import defaultdict
 from distutils.version import StrictVersion
@@ -43,7 +44,37 @@ from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Contributor, MaintenanceState, BaseFileNode
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, READ, WRITE, ADMIN
 from waffle.models import Flag, Switch, Sample
-from waffle import flag_is_active, sample_is_active
+from waffle import sample_is_active
+
+from website.settings import DOMAIN
+from osf.models import PreprintProvider
+from typing import Optional
+
+from osf.features import (
+    SLOAN_COI_DISPLAY,
+    SLOAN_PREREG_DISPLAY,
+    SLOAN_DATA_DISPLAY,
+)
+
+from osf.system_tags import (
+    SLOAN_COI,
+    SLOAN_PREREG,
+    SLOAN_DATA,
+)
+
+SLOAN_FLAGS = (
+    SLOAN_COI_DISPLAY,
+    SLOAN_PREREG_DISPLAY,
+    SLOAN_DATA_DISPLAY,
+)
+
+# User tags must follow convention so we must translate flag names
+SLOAN_FEATURES = {
+    SLOAN_COI_DISPLAY: SLOAN_COI,
+    SLOAN_PREREG_DISPLAY: SLOAN_PREREG,
+    SLOAN_DATA_DISPLAY: SLOAN_DATA,
+
+}
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
@@ -405,12 +436,12 @@ def root(request, format=None, **kwargs):
     The contents of this endpoint are variable and subject to change without notification.
     """
     if request.user and not request.user.is_anonymous:
-        user = request.user
-        current_user = UserSerializer(user, context={'request': request}).data
+        current_user = UserSerializer(request.user, context={'request': request}).data
     else:
         current_user = None
 
-    flags = [name for name in Flag.objects.values_list('name', flat=True) if flag_is_active(request._request, name)]
+    flags, cookies = sloan_study_disambiguation(request)
+
     samples = [name for name in Sample.objects.values_list('name', flat=True) if sample_is_active(name)]
     switches = list(Switch.objects.filter(active=True).values_list('name', flat=True))
 
@@ -437,7 +468,94 @@ def root(request, format=None, **kwargs):
     if utils.has_admin_scope(request):
         return_val['meta']['admin'] = True
 
-    return Response(return_val)
+    resp = Response(return_val)
+
+    # This is used current for our partnership with Sloan and can be deleted after their study is complete.
+    for key, value in cookies.items():
+        resp.set_cookie(key, value)
+
+    return resp
+
+
+def sloan_study_disambiguation(request):
+    """
+    This is a hack to set flags and cookies for out Sloan study, it can be deleted when the study is complete.
+    """
+    user = request.user
+    cookies = {}
+
+    flags = []
+    sloan_data = {}
+    for flag in Flag.objects.all():
+        active = flag.is_active(request._request)
+        if flag.name in SLOAN_FLAGS and flag.everyone is None:
+            sloan_data[flag.name] = active
+            # User tags should override any cookie info
+            if user and not user.is_anonymous:
+                tag_name = SLOAN_FEATURES[flag.name]
+                if user.all_tags.filter(name=tag_name):
+                    sloan_data[flag.name] = True
+                    active = True
+                if user.all_tags.filter(name=f'no_{tag_name}'):
+                    sloan_data[flag.name] = False
+                    active = False
+
+        if active:
+            flags.append(flag.name)
+
+    referer_url = request.environ.get('HTTP_REFERER', '')
+    provider = get_provider_from_url(referer_url)
+
+    if provider and provider.in_sloan_study:
+        for key, value in sloan_data.items():
+            cookies.update(set_tags_and_cookies_for_sloan(user, key, value))
+
+    return flags, cookies
+
+
+def get_provider_from_url(referer_url: str) -> Optional[PreprintProvider]:
+    """
+    Takes the many preprint refer urls and try to figure out the provider based on that.
+    This will be eliminated post-sloan.
+    :param referer_url:
+    :return: PreprintProvider
+    """
+
+    # matches custom domains:
+    provider_domains = list(PreprintProvider.objects.exclude(domain='').values_list('domain', flat=True))
+    provider_domains = [domains for domains in provider_domains if referer_url.startswith(domains)]
+    if provider_domains:
+        return PreprintProvider.objects.get(domain=provider_domains[0])
+
+    provider_ids_regex = '|'.join([re.escape(id) for id in PreprintProvider.objects.all().values_list('_id', flat=True)])
+    # matches:
+    # /preprints
+    # /preprints/
+    # /preprints/notfound
+    # /preprints/foorxiv
+    # /preprints/foorxiv/
+    # /preprints/foorxiv/guid0
+    provider_regex = r'preprints($|\/$|\/(?P<provider_id>{})|)'.format(provider_ids_regex)
+    match = re.match(re.escape(DOMAIN) + provider_regex, referer_url)
+    if match:
+        provider_id = match.groupdict().get('provider_id')
+        if provider_id:
+            return PreprintProvider.objects.get(_id=provider_id)
+        return PreprintProvider.objects.get(_id='osf')
+
+
+def set_tags_and_cookies_for_sloan(user, flag_name: str, flag_value: bool) -> dict:
+    """
+    This is a hack to set flags and cookies for out Sloan study, it can be deleted when the study is complete.
+    """
+    tag_name = SLOAN_FEATURES[flag_name]
+    if user and not user.is_anonymous and not user.all_tags.filter(Q(name=tag_name) | Q(name=f'no_{tag_name}')):
+        if flag_value:  # 50/50 chance flag is active
+            user.add_system_tag(tag_name)
+        else:
+            user.add_system_tag(f'no_{tag_name}')
+    return {flag_name: flag_value}
+
 
 @api_view(('GET',))
 @throttle_classes([RootAnonThrottle, UserRateThrottle])
