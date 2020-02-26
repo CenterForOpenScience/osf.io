@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-25 17:40+0900\n"
+"POT-Creation-Date: 2020-02-26 11:35+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -199,6 +199,7 @@ msgstr ""
 #: website/static/js/licensePicker.js:241 website/static/js/myProjects.js:1562
 #: website/static/js/myProjects.js:1610 website/static/js/myProjects.js:1634
 #: website/static/js/osfHelpers.js:798 website/static/js/osfHelpers.js:899
+#: website/static/js/project.js:41
 #: website/static/js/wikiSettingsTreebeard.js:32
 msgid "Cancel"
 msgstr ""
@@ -522,18 +523,18 @@ msgid ""
 "projects."
 msgstr ""
 
-#: framework/auth/oauth_scopes.py:301
+#: framework/auth/oauth_scopes.py:297
+msgid ""
+"View and edit all information associated with this account, including for"
+" private projects."
+msgstr ""
+
+#: framework/auth/oauth_scopes.py:300
 msgid "Read your profile data."
 msgstr ""
 
-#: framework/auth/oauth_scopes.py:304
+#: framework/auth/oauth_scopes.py:303
 msgid "Read your primary email address."
-msgstr ""
-
-#: framework/auth/oauth_scopes.py:348
-msgid ""
-"View and edit all metadata, files, and access rights associated with all "
-"public and private projects accessible to this account."
 msgstr ""
 
 #: website/language.py:193
@@ -554,10 +555,8 @@ msgid ""
 "Modifying these settings will not modify settings on existing projects."
 msgstr ""
 
-#: website/notifications/utils.py:512
-msgid ""
-"These are settings for each of your projects. Modifying these settings "
-"will only modify the settings for the selected project."
+#: website/notifications/utils.py:511
+msgid "Project Notifications"
 msgstr ""
 
 #: website/project/__init__.py:64
@@ -753,7 +752,7 @@ msgstr ""
 #: website/static/js/addonSettings.js:70
 #: website/static/js/pages/profile-settings-addons-page.js:96
 #: website/static/js/privateLinkTable.js:117 website/static/js/profile.js:737
-#: website/static/js/profile.js:966 website/static/js/project.js:245
+#: website/static/js/profile.js:966 website/static/js/project.js:248
 msgid "Remove"
 msgstr ""
 
@@ -986,7 +985,7 @@ msgid ""
 msgstr ""
 
 #: website/static/js/addProjectPlugin.js:354
-#: website/static/js/nodeControl.js:226 website/static/js/project.js:139
+#: website/static/js/nodeControl.js:226 website/static/js/project.js:142
 msgid "Create"
 msgstr ""
 
@@ -999,7 +998,7 @@ msgid "New %1$s created successfully!"
 msgstr ""
 
 #: website/static/js/addProjectPlugin.js:389
-#: website/static/js/addProjectPlugin.js:437 website/static/js/project.js:61
+#: website/static/js/addProjectPlugin.js:437 website/static/js/project.js:64
 msgid "Keep working here"
 msgstr ""
 
@@ -1265,15 +1264,19 @@ msgstr ""
 msgid " if the problem persists."
 msgstr ""
 
-#: website/static/js/citationWidget.js:74
+#: website/static/js/citationWidget.js:48
+msgid "Please enter 1 or more character"
+msgstr ""
+
+#: website/static/js/citationWidget.js:79
 msgid "Citation render failed"
 msgstr ""
 
-#: website/static/js/citationWidget.js:75
+#: website/static/js/citationWidget.js:80
 msgid "The requested citation format generated an error."
 msgstr ""
 
-#: website/static/js/citationWidget.js:78
+#: website/static/js/citationWidget.js:83
 msgid "Unexpected error when fetching citation"
 msgstr ""
 
@@ -2223,66 +2226,64 @@ msgstr ""
 msgid "Unable to modify this institution!"
 msgstr ""
 
-#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/js_messages.js:5
 msgid "Analysis"
 msgstr ""
 
-#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/js_messages.js:5
 msgid "Communication"
 msgstr ""
 
-#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/js_messages.js:5
 msgid "Data"
 msgstr ""
 
-#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/js_messages.js:5
 msgid "Hypothesis"
 msgstr ""
 
-#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/js_messages.js:5
 msgid "Instrumentation"
 msgstr ""
 
-#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/js_messages.js:5
 msgid "Methods and Measures"
 msgstr ""
 
-#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/js_messages.js:5
 msgid "Procedure"
 msgstr ""
 
-#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/js_messages.js:5
 #: website/static/js/projectSettingsTreebeardBase.js:92
 msgid "Project"
 msgstr ""
 
-#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/js_messages.js:5
 msgid "Software"
 msgstr ""
 
-#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/js_messages.js:5
 msgid "Other"
 msgstr ""
 
-#: website/static/js/js_messages_nonPybabel.js:7
-#: website/static/js/js_messages_nonPybabel.js:9
+#: website/static/js/js_messages.js:7 website/static/js/js_messages.js:9
 msgid "Comments added"
 msgstr ""
 
-#: website/static/js/js_messages_nonPybabel.js:7
-#: website/static/js/js_messages_nonPybabel.js:9
+#: website/static/js/js_messages.js:7 website/static/js/js_messages.js:9
 msgid "Files updated"
 msgstr ""
 
-#: website/static/js/js_messages_nonPybabel.js:9
+#: website/static/js/js_messages.js:9
 msgid "Replies to your comments"
 msgstr ""
 
-#: website/static/js/js_messages_nonPybabel.js:9
+#: website/static/js/js_messages.js:9
 msgid "Mentions added"
 msgstr ""
 
-#: website/static/js/js_messages_nonPybabel.js:9
+#: website/static/js/js_messages.js:9
 msgid "Preprint submissions updated"
 msgstr ""
 
@@ -3329,106 +3330,106 @@ msgstr ""
 msgid "<h4>Are you sure you want to fork this project?</h4>"
 msgstr ""
 
-#: website/static/js/project.js:38 website/static/js/project.js:114
+#: website/static/js/project.js:38 website/static/js/project.js:117
 msgid "Fork"
 msgstr ""
 
-#: website/static/js/project.js:49
+#: website/static/js/project.js:52
 msgid "Fork created successfully!"
 msgstr ""
 
-#: website/static/js/project.js:57
+#: website/static/js/project.js:60
 msgid "Go to new fork"
 msgstr ""
 
-#: website/static/js/project.js:86
+#: website/static/js/project.js:89
 msgid "Your fork is being created. You'll receive an email when it is complete."
 msgstr ""
 
-#: website/static/js/project.js:92
+#: website/static/js/project.js:95
 msgid "Fork this project?"
 msgstr ""
 
-#: website/static/js/project.js:93
+#: website/static/js/project.js:96
 msgid "Are you sure you want to fork this project?"
 msgstr ""
 
-#: website/static/js/project.js:108
+#: website/static/js/project.js:111
 msgid "Could not fork link."
 msgstr ""
 
-#: website/static/js/project.js:125
+#: website/static/js/project.js:128
 msgid ""
 "<h4>Are you sure you want to create a new project using this project as a"
 " template?</h4>"
 msgstr ""
 
-#: website/static/js/project.js:126
+#: website/static/js/project.js:129
 msgid ""
 "<p>Any add-ons configured for this project will not be authenticated in "
 "the new project.</p>"
 msgstr ""
 
-#: website/static/js/project.js:128
+#: website/static/js/project.js:131
 msgid ""
 "<h4>Are you sure you want to create a new project using this registration"
 " as a template?</h4>"
 msgstr ""
 
-#: website/static/js/project.js:201
+#: website/static/js/project.js:204
 msgid "<dt>Read</dt>"
 msgstr ""
 
-#: website/static/js/project.js:202
+#: website/static/js/project.js:205
 msgid "<dd><ul><li>View project content and comment</li></ul></dd>"
 msgstr ""
 
-#: website/static/js/project.js:203
+#: website/static/js/project.js:206
 msgid "<dt>Read + Write</dt>"
 msgstr ""
 
-#: website/static/js/project.js:204
+#: website/static/js/project.js:207
 msgid "<dd><ul><li>Read privileges</li> "
 msgstr ""
 
-#: website/static/js/project.js:205
+#: website/static/js/project.js:208
 msgid "<li>Add and configure components</li> "
 msgstr ""
 
-#: website/static/js/project.js:206
+#: website/static/js/project.js:209
 msgid "<li>Add and edit content</li></ul></dd>"
 msgstr ""
 
-#: website/static/js/project.js:207
+#: website/static/js/project.js:210
 msgid "<dt>Administrator</dt><dd><ul>"
 msgstr ""
 
-#: website/static/js/project.js:208
+#: website/static/js/project.js:211
 msgid "<li>Read and write privileges</li>"
 msgstr ""
 
-#: website/static/js/project.js:209
+#: website/static/js/project.js:212
 msgid "<li>Manage contributor</li>"
 msgstr ""
 
-#: website/static/js/project.js:210
+#: website/static/js/project.js:213
 msgid ""
 "<li>Delete and register project</li><li>Public-private "
 "settings</li></ul></dd>"
 msgstr ""
 
-#: website/static/js/project.js:219
+#: website/static/js/project.js:222
 msgid ""
 "Only bibliographic contributors will be displayed in the Contributors "
 "list and in project citations. Non-bibliographic contributors can read "
 "and modify the project as normal."
 msgstr ""
 
-#: website/static/js/project.js:234
+#: website/static/js/project.js:237
 msgid "Remove this link?"
 msgstr ""
 
-#: website/static/js/project.js:235
+#: website/static/js/project.js:238
 msgid ""
 "Are you sure you want to remove this link? This will not remove the "
 "project this link refers to."

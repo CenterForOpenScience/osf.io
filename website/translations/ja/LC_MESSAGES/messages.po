@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-21 15:12+0900\n"
+"POT-Creation-Date: 2020-02-26 11:45+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -50,6 +50,7 @@ msgstr "アカウントキー"
 #: addons/wiki/templates/delete_wiki_page.mako:13
 #: addons/zotero/templates/zotero_node_settings.mako:83
 #: addons/zotero/templates/zotero_node_settings.mako:127
+#: website/templates/include/comment_pane_template.mako:32
 #: website/templates/include/comment_template.mako:91
 #: website/templates/include/comment_template.mako:141
 #: website/templates/include/comment_template.mako:148
@@ -64,6 +65,7 @@ msgstr "アカウントキー"
 #: website/templates/project/modal_remove_contributor.mako:113
 #: website/templates/project/modal_remove_contributor.mako:122
 #: website/templates/project/nodes_delete.mako:89
+#: website/templates/project/nodes_privacy.mako:104
 #: website/templates/project/project.mako:568
 #: website/templates/project/settings.mako:131
 #: website/templates/project/timestamp.mako:71
@@ -1013,25 +1015,25 @@ msgstr "ライブラリ"
 msgid "Select"
 msgstr "選択"
 
-#: framework/auth/oauth_scopes.py:295
+#: framework/auth/oauth_scopes.py:294
 msgid ""
 "View all information associated with this account, including for private "
 "projects."
 msgstr "プライベートプロジェクトを含む、このアカウントに関連付けられているすべての情報を表示します。"
 
-#: framework/auth/oauth_scopes.py:302
+#: framework/auth/oauth_scopes.py:297
+msgid ""
+"View and edit all information associated with this account, including for"
+" private projects."
+msgstr "プライベートプロジェクトを含む、このアカウントに関連付けられているすべての情報を表示および編集します。"
+
+#: framework/auth/oauth_scopes.py:300
 msgid "Read your profile data."
 msgstr "プロフィールデータを読込む"
 
-#: framework/auth/oauth_scopes.py:305
+#: framework/auth/oauth_scopes.py:303
 msgid "Read your primary email address."
 msgstr "プライマリメールアドレスを読込む"
-
-#: framework/auth/oauth_scopes.py:349
-msgid ""
-"View and edit all metadata, files, and access rights associated with all "
-"public and private projects accessible to this account."
-msgstr "このアカウントにアクセスできるすべてのパブリックプロジェクトとプライベートプロジェクトに関連付けられたすべてのメタデータ、ファイル、アクセス権を表示および編集します。"
 
 #: website/templates/base.mako:110
 msgid "Title"
@@ -1538,7 +1540,9 @@ msgstr "次のページ"
 msgid ""
 "(<span %(class_data_bind)s>Withdrawn </span><span "
 "%(data_bind)s>Registration </span>File)"
-msgstr "（<span %(class_data_bind)s>取り下げられた</span><span %(data_bind)s>登録</span>ファイル名）"
+msgstr ""
+"（<span %(class_data_bind)s>取り下げられた</span><span "
+"%(data_bind)s>登録</span>ファイル名）"
 
 #: website/templates/search.mako:126
 msgid "(Preprint File)"

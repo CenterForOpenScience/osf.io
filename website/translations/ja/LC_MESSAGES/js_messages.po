@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-25 17:40+0900\n"
+"POT-Creation-Date: 2020-02-26 11:35+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -204,6 +204,7 @@ msgstr "次を入力して続行します。<strong>%1$s</ strong><br><br>"
 #: website/static/js/licensePicker.js:241 website/static/js/myProjects.js:1562
 #: website/static/js/myProjects.js:1610 website/static/js/myProjects.js:1634
 #: website/static/js/osfHelpers.js:798 website/static/js/osfHelpers.js:899
+#: website/static/js/project.js:41
 #: website/static/js/wikiSettingsTreebeard.js:32
 msgid "Cancel"
 msgstr "キャンセル"
@@ -531,18 +532,18 @@ msgid ""
 "projects."
 msgstr ""
 
-#: framework/auth/oauth_scopes.py:301
+#: framework/auth/oauth_scopes.py:297
+msgid ""
+"View and edit all information associated with this account, including for"
+" private projects."
+msgstr ""
+
+#: framework/auth/oauth_scopes.py:300
 msgid "Read your profile data."
 msgstr ""
 
-#: framework/auth/oauth_scopes.py:304
+#: framework/auth/oauth_scopes.py:303
 msgid "Read your primary email address."
-msgstr ""
-
-#: framework/auth/oauth_scopes.py:348
-msgid ""
-"View and edit all metadata, files, and access rights associated with all "
-"public and private projects accessible to this account."
 msgstr ""
 
 #: website/language.py:193
@@ -563,11 +564,9 @@ msgid ""
 "Modifying these settings will not modify settings on existing projects."
 msgstr "これらは、作成または追加される新しいプロジェクトのデフォルト設定です。 これらの設定を変更しても、既存のプロジェクトの設定は変更されません。"
 
-#: website/notifications/utils.py:512
-msgid ""
-"These are settings for each of your projects. Modifying these settings "
-"will only modify the settings for the selected project."
-msgstr "これらは各プロジェクトの設定です。 これらの設定を変更すると、選択したプロジェクトの設定のみが変更されます。"
+#: website/notifications/utils.py:511
+msgid "Project Notifications"
+msgstr "プロジェクト通知"
 
 #: website/project/__init__.py:64
 msgid "Bookmarks"
@@ -762,7 +761,7 @@ msgstr "メーリングリストから<em>%1$s</em>を削除してもよろし�
 #: website/static/js/addonSettings.js:70
 #: website/static/js/pages/profile-settings-addons-page.js:96
 #: website/static/js/privateLinkTable.js:117 website/static/js/profile.js:737
-#: website/static/js/profile.js:966 website/static/js/project.js:245
+#: website/static/js/profile.js:966 website/static/js/project.js:248
 msgid "Remove"
 msgstr "削除"
 
@@ -997,7 +996,7 @@ msgid ""
 msgstr "そのプロジェクトのコンテンツをインポートすることなく、新しいプロジェクトでその構造が複製されます。"
 
 #: website/static/js/addProjectPlugin.js:354
-#: website/static/js/nodeControl.js:226 website/static/js/project.js:139
+#: website/static/js/nodeControl.js:226 website/static/js/project.js:142
 msgid "Create"
 msgstr "作成"
 
@@ -1010,7 +1009,7 @@ msgid "New %1$s created successfully!"
 msgstr "新しい%1$sが作成されました！"
 
 #: website/static/js/addProjectPlugin.js:389
-#: website/static/js/addProjectPlugin.js:437 website/static/js/project.js:61
+#: website/static/js/addProjectPlugin.js:437 website/static/js/project.js:64
 msgid "Keep working here"
 msgstr "このページに留まる"
 
@@ -1291,15 +1290,19 @@ msgstr "問題が解決しない場合は%1$sにお問い合わせください�
 msgid " if the problem persists."
 msgstr " "
 
-#: website/static/js/citationWidget.js:74
+#: website/static/js/citationWidget.js:48
+msgid "Please enter 1 or more character"
+msgstr "1文字以上入力してください"
+
+#: website/static/js/citationWidget.js:79
 msgid "Citation render failed"
 msgstr "引用のレンダリングに失敗しました"
 
-#: website/static/js/citationWidget.js:75
+#: website/static/js/citationWidget.js:80
 msgid "The requested citation format generated an error."
 msgstr "要求された引用形式はエラーを生成しました。"
 
-#: website/static/js/citationWidget.js:78
+#: website/static/js/citationWidget.js:83
 msgid "Unexpected error when fetching citation"
 msgstr "引用を取得する際の予期しないエラー"
 
@@ -2252,66 +2255,64 @@ msgstr "このノードの機関を変更できません。もう一度試して
 msgid "Unable to modify this institution!"
 msgstr "この機関を変更できません！"
 
-#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/js_messages.js:5
 msgid "Analysis"
 msgstr "分析"
 
-#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/js_messages.js:5
 msgid "Communication"
 msgstr "コミュニケーション"
 
-#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/js_messages.js:5
 msgid "Data"
 msgstr "データ"
 
-#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/js_messages.js:5
 msgid "Hypothesis"
 msgstr "仮説"
 
-#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/js_messages.js:5
 msgid "Instrumentation"
 msgstr "器具"
 
-#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/js_messages.js:5
 msgid "Methods and Measures"
 msgstr "方法と方策"
 
-#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/js_messages.js:5
 msgid "Procedure"
 msgstr "手順"
 
-#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/js_messages.js:5
 #: website/static/js/projectSettingsTreebeardBase.js:92
 msgid "Project"
 msgstr "プロジェクト"
 
-#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/js_messages.js:5
 msgid "Software"
 msgstr "ソフトウェア"
 
-#: website/static/js/js_messages_nonPybabel.js:5
+#: website/static/js/js_messages.js:5
 msgid "Other"
 msgstr "その他"
 
-#: website/static/js/js_messages_nonPybabel.js:7
-#: website/static/js/js_messages_nonPybabel.js:9
+#: website/static/js/js_messages.js:7 website/static/js/js_messages.js:9
 msgid "Comments added"
 msgstr "コメント追加時"
 
-#: website/static/js/js_messages_nonPybabel.js:7
-#: website/static/js/js_messages_nonPybabel.js:9
+#: website/static/js/js_messages.js:7 website/static/js/js_messages.js:9
 msgid "Files updated"
 msgstr "ファイルアップロード時"
 
-#: website/static/js/js_messages_nonPybabel.js:9
+#: website/static/js/js_messages.js:9
 msgid "Replies to your comments"
 msgstr "コメントへの返信時"
 
-#: website/static/js/js_messages_nonPybabel.js:9
+#: website/static/js/js_messages.js:9
 msgid "Mentions added"
 msgstr "メンション追加時"
 
-#: website/static/js/js_messages_nonPybabel.js:9
+#: website/static/js/js_messages.js:9
 msgid "Preprint submissions updated"
 msgstr "プレプリント提出の更新時"
 
@@ -3370,95 +3371,95 @@ msgstr "input.form-control[placeholder=\"表示されたプロジェクトをフ
 msgid "<h4>Are you sure you want to fork this project?</h4>"
 msgstr "<h4>このプロジェクトをフォークしてもよろしいですか？</h4>"
 
-#: website/static/js/project.js:38 website/static/js/project.js:114
+#: website/static/js/project.js:38 website/static/js/project.js:117
 msgid "Fork"
 msgstr "フォーク"
 
-#: website/static/js/project.js:49
+#: website/static/js/project.js:52
 msgid "Fork created successfully!"
 msgstr "フォークが正常に作成されました！"
 
-#: website/static/js/project.js:57
+#: website/static/js/project.js:60
 msgid "Go to new fork"
 msgstr "新しいフォークに行く"
 
-#: website/static/js/project.js:86
+#: website/static/js/project.js:89
 msgid "Your fork is being created. You'll receive an email when it is complete."
 msgstr "フォークを作成しています。 完了するとメールが届きます。"
 
-#: website/static/js/project.js:92
+#: website/static/js/project.js:95
 msgid "Fork this project?"
 msgstr "このプロジェクトをフォークしますか？"
 
-#: website/static/js/project.js:93
+#: website/static/js/project.js:96
 msgid "Are you sure you want to fork this project?"
 msgstr "このプロジェクトを分岐してもよろしいですか？"
 
-#: website/static/js/project.js:108
+#: website/static/js/project.js:111
 msgid "Could not fork link."
 msgstr "リンクを分岐できませんでした。"
 
-#: website/static/js/project.js:125
+#: website/static/js/project.js:128
 msgid ""
 "<h4>Are you sure you want to create a new project using this project as a"
 " template?</h4>"
 msgstr "<h4>このプロジェクトをテンプレートとして使用して新しいプロジェクトを作成してもよろしいですか？</h4>"
 
-#: website/static/js/project.js:126
+#: website/static/js/project.js:129
 msgid ""
 "<p>Any add-ons configured for this project will not be authenticated in "
 "the new project.</p>"
 msgstr "<p>このプロジェクト用に設定されたアドオンは、新しいプロジェクトでは認証されません。</p>"
 
-#: website/static/js/project.js:128
+#: website/static/js/project.js:131
 msgid ""
 "<h4>Are you sure you want to create a new project using this registration"
 " as a template?</h4>"
 msgstr "<h4>この登録をテンプレートとして使用して新しいプロジェクトを作成してもよろしいですか？</h4>"
 
-#: website/static/js/project.js:201
+#: website/static/js/project.js:204
 msgid "<dt>Read</dt>"
 msgstr "<dt>読込み</dt>"
 
-#: website/static/js/project.js:202
+#: website/static/js/project.js:205
 msgid "<dd><ul><li>View project content and comment</li></ul></dd>"
 msgstr "<dd><ul><li>プロジェクトのコンテンツとコメントを表示</li></ul></dd>"
 
-#: website/static/js/project.js:203
+#: website/static/js/project.js:206
 msgid "<dt>Read + Write</dt>"
 msgstr "<dt>読込み/書込み</dt>"
 
-#: website/static/js/project.js:204
+#: website/static/js/project.js:207
 msgid "<dd><ul><li>Read privileges</li> "
 msgstr "<dd><ul><li>読込み権限</li>"
 
-#: website/static/js/project.js:205
+#: website/static/js/project.js:208
 msgid "<li>Add and configure components</li> "
 msgstr "<li>コンポーネントを追加および構成する</li>"
 
-#: website/static/js/project.js:206
+#: website/static/js/project.js:209
 msgid "<li>Add and edit content</li></ul></dd>"
 msgstr "<li>コンテンツの追加と編集</li></ul></dd>"
 
-#: website/static/js/project.js:207
+#: website/static/js/project.js:210
 msgid "<dt>Administrator</dt><dd><ul>"
 msgstr "<dt>管理者</dt><dd><ul>"
 
-#: website/static/js/project.js:208
+#: website/static/js/project.js:211
 msgid "<li>Read and write privileges</li>"
 msgstr "<li>読込み/書込み権限</li>"
 
-#: website/static/js/project.js:209
+#: website/static/js/project.js:212
 msgid "<li>Manage contributor</li>"
 msgstr "<li>コントリビュータの管理</li>"
 
-#: website/static/js/project.js:210
+#: website/static/js/project.js:213
 msgid ""
 "<li>Delete and register project</li><li>Public-private "
 "settings</li></ul></dd>"
 msgstr "<li>プロジェクトの削除と登録</li><li>公開/非公開設定</li></ul></dd>"
 
-#: website/static/js/project.js:219
+#: website/static/js/project.js:222
 msgid ""
 "Only bibliographic contributors will be displayed in the Contributors "
 "list and in project citations. Non-bibliographic contributors can read "
@@ -3467,11 +3468,11 @@ msgstr ""
 "コントリビュータリストおよびプロジェクトの引用には、書誌のコントリビュータのみが表示されます。 "
 "書誌以外のコントリビュータは、通常どおりプロジェクトを読んで修正できます。"
 
-#: website/static/js/project.js:234
+#: website/static/js/project.js:237
 msgid "Remove this link?"
 msgstr "このリンクを削除しますか？"
 
-#: website/static/js/project.js:235
+#: website/static/js/project.js:238
 msgid ""
 "Are you sure you want to remove this link? This will not remove the "
 "project this link refers to."
@@ -4130,51 +4131,4 @@ msgstr "%1$sに報告してください"
 msgid "Could not GET wiki menu pages"
 msgstr "Wikiメニューページを取得できませんでした"
 
-#~ msgid "Comments added"
-#~ msgstr "コメント追加時"
-
-#~ msgid "Files updated"
-#~ msgstr "ファイルアップロード時"
-
-#~ msgid "Replies to your comments"
-#~ msgstr "コメントへの返信時"
-
-#~ msgid "Mentions added"
-#~ msgstr "メンション追加時"
-
-#~ msgid "Preprint submissions updated"
-#~ msgstr "プレプリント提出の更新時"
-
-#~ msgid "Project Notifications"
-#~ msgstr "プロジェクトの通知"
-
-#~ msgid "Analysis"
-#~ msgstr "分析"
-
-#~ msgid "Communication"
-#~ msgstr "コミュニケーション"
-
-#~ msgid "Data"
-#~ msgstr "データ"
-
-#~ msgid "Hypothesis"
-#~ msgstr "仮説"
-
-#~ msgid "Instrumentation"
-#~ msgstr "器具"
-
-#~ msgid "Methods and Measures"
-#~ msgstr "方法と対策"
-
-#~ msgid "Procedure"
-#~ msgstr "手順"
-
-#~ msgid "Software"
-#~ msgstr "ソフトウェア"
-
-#~ msgid "Other"
-#~ msgstr "その他"
-
-#~ msgid "No license"
-#~ msgstr "ライセンスなし"
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-21 15:12+0900\n"
+"POT-Creation-Date: 2020-02-26 11:45+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -49,6 +49,7 @@ msgstr ""
 #: addons/wiki/templates/delete_wiki_page.mako:13
 #: addons/zotero/templates/zotero_node_settings.mako:83
 #: addons/zotero/templates/zotero_node_settings.mako:127
+#: website/templates/include/comment_pane_template.mako:32
 #: website/templates/include/comment_template.mako:91
 #: website/templates/include/comment_template.mako:141
 #: website/templates/include/comment_template.mako:148
@@ -63,6 +64,7 @@ msgstr ""
 #: website/templates/project/modal_remove_contributor.mako:113
 #: website/templates/project/modal_remove_contributor.mako:122
 #: website/templates/project/nodes_delete.mako:89
+#: website/templates/project/nodes_privacy.mako:104
 #: website/templates/project/project.mako:568
 #: website/templates/project/settings.mako:131
 #: website/templates/project/timestamp.mako:71
@@ -980,24 +982,24 @@ msgstr ""
 msgid "Select"
 msgstr ""
 
-#: framework/auth/oauth_scopes.py:295
+#: framework/auth/oauth_scopes.py:294
 msgid ""
 "View all information associated with this account, including for private "
 "projects."
 msgstr ""
 
-#: framework/auth/oauth_scopes.py:302
+#: framework/auth/oauth_scopes.py:297
+msgid ""
+"View and edit all information associated with this account, including for"
+" private projects."
+msgstr ""
+
+#: framework/auth/oauth_scopes.py:300
 msgid "Read your profile data."
 msgstr ""
 
-#: framework/auth/oauth_scopes.py:305
+#: framework/auth/oauth_scopes.py:303
 msgid "Read your primary email address."
-msgstr ""
-
-#: framework/auth/oauth_scopes.py:349
-msgid ""
-"View and edit all metadata, files, and access rights associated with all "
-"public and private projects accessible to this account."
 msgstr ""
 
 #: website/templates/base.mako:110
