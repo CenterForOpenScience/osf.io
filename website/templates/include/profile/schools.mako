@@ -28,7 +28,7 @@
                                 style="margin-right: 15px"
                                 class="btn-link pull-right"
                                 data-bind="click: $parent.setContentFromIdP.bind($parent)"
-                                >${_("Read IdP Profile -test-")}</a>
+                                >${_("Read IdP Profile")}</a>
                     </div>
 
                     <div class="form-group">
