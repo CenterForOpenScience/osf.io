@@ -69,6 +69,9 @@ var ExternalAccount = oop.defclass({
                 confirm:{
                     label:_('Remove'),
                     className:'btn-danger'
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });

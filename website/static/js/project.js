@@ -140,6 +140,9 @@ NodeActions.beforeTemplate = function(url, done) {
             buttons:{
                 confirm:{
                     label:_('Create')
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });
@@ -247,6 +250,9 @@ $(document).ready(function() {
                     confirm:{
                         label:_('Remove'),
                         className:'btn-danger'
+                    },
+                    cancel:{
+                        label:_('Cancel')
                     }
             }
         });

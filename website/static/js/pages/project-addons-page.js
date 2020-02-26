@@ -38,6 +38,9 @@ $('.addon-container').each(function(ind, elm) {
                     confirm: {
                         label: _('Disable'),
                         className: 'btn-danger'
+                    },
+                    cancel:{
+                        label:_('Cancel')
                     }
                 }
             });

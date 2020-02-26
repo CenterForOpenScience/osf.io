@@ -98,6 +98,9 @@ $('#selectAddonsForm').on('submit', function() {
                 confirm:{
                     label:_('Remove'),
                     className:'btn-danger'
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });

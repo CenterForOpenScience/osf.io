@@ -739,6 +739,9 @@ var SocialViewModel = function(urls, modes, preventUnsaved) {
                     confirm:{
                         label:_('Remove'),
                         className:'btn-danger'
+                    },
+                    cancel:{
+                        label:_('Cancel')
                     }
                 }
             });
@@ -968,6 +971,9 @@ ListViewModel.prototype.removeContent = function(content) {
             confirm: {
                 label: _('Remove'),
                 className: 'btn-danger'
+            },
+            cancel:{
+                label:_('Cancel')
             }
         }
     });

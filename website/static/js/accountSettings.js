@@ -283,6 +283,9 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                     confirm:{
                         label:_('Remove'),
                         className:'btn-danger'
+                    },
+                    cancel:{
+                        label:_('Cancel')
                     }
                 }
             });
@@ -345,6 +348,9 @@ var ExternalIdentityViewModel = oop.defclass({
                 confirm:{
                     label:_('Remove'),
                     className:'btn-danger'
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });

@@ -53,6 +53,9 @@ var AddonPermissionsTable = {
                     confirm:{
                         label:_('Remove'),
                         className:'btn-danger'
+                    },
+                    cancel:{
+                        label:_('Cancel')
                     }
                 }
             });

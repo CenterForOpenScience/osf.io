@@ -224,6 +224,9 @@ var ProjectViewModel = function(data, options) {
             buttons:{
                 confirm:{
                     label:_('Create')
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });

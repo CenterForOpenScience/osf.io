@@ -116,6 +116,9 @@ function ViewModel(url, nodeIsPublic, table) {
                 confirm:{
                     label:_('Remove'),
                     className:'btn-danger'
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });
