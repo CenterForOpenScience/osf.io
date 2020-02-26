@@ -79,6 +79,7 @@ services:
       - 5432:5432
     environment:
       POSTGRES_DB: osf
+      POSTGRES_HOST_AUTH_METHOD: trust
       POSTGRES_INITDB: |
         sed -i -e 's/max_connections.*/max_connections = 5000/' /var/lib/postgresql/data/postgresql.conf
         sed -i -e 's/#log_min_duration_statement = .*/log_min_duration_statement = 0/' /var/lib/postgresql/data/postgresql.conf
