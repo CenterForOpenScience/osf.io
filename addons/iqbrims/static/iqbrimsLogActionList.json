@@ -12,9 +12,12 @@
   "iqbrims_remind_raw": "Remind ${user} to upload raw for ${node}",
   "iqbrims_remind_checklist": "Remind ${user} to upload checklist for ${node}",
   "iqbrims_expire_paper": "Expired paper of ${user} for ${node}",
+  "iqbrims_reject_paper": "Reject paper of ${user} for ${node}",
   "iqbrims_expire_raw": "Expired raw of ${user} for ${node}",
   "iqbrims_expire_checklist": "Expired checklist of ${user} for ${node}",
   "iqbrims_confirm_checklist": "Please confirm checklist of ${user} for ${node}",
+  "iqbrims_confirm_rawdata": "Please confirm index of ${user} for ${node}",
+  "iqbrims_fill_rawdata": "Please fill index of ${user} for ${node}",
   "iqbrims_reject_checklist": "Reject checklist of ${user} for ${node}",
   "iqbrims_complete_paper": "Uploaded paper of ${user} for ${node}",
   "iqbrims_complete_raw": "Uploaded raw of ${user} for ${node}",
@@ -22,5 +25,6 @@
   "iqbrims_complete_scan": "Paper of ${user} for ${node} is scanned",
   "iqbrims_ok_human_check": "Confirmed scanned result of ${user} for ${node}",
   "iqbrims_final_confirm": "Finished review of ${user} for ${node}",
+  "iqbrims_workflow_abort": "Aborted Workflow of ${user} for ${node}",
   "iqbrims_workflow_finish": "Finished workflow of ${user} for ${node}"
 }

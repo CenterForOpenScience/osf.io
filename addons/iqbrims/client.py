@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
+import datetime
 import json
-import requests
 import logging
 import os
 import string
@@ -11,6 +11,7 @@ from website.util.client import BaseClient
 from addons.iqbrims import settings
 
 logger = logging.getLogger(__name__)
+_user_settings_cache = {}
 
 
 class IQBRIMSAuthClient(BaseClient):
@@ -123,7 +124,7 @@ class IQBRIMSClient(BaseClient):
             expects=(200, ),
             throws=HTTPError(401)
         )
-        return res.text
+        return res.content
 
     def folders(self, folder_id='root'):
         query = ' and '.join([
@@ -184,6 +185,16 @@ class IQBRIMSClient(BaseClient):
             data=json.dumps({
                 'title': title,
             }),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.json()
+
+    def delete_file(self, file_id):
+        res = self._make_request(
+            'DELETE',
+            self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files',
+                            file_id),
             expects=(200, ),
             throws=HTTPError(401)
         )
@@ -457,6 +468,8 @@ class SpreadsheetClient(BaseClient):
             throws=HTTPError(401)
         )
         logger.info('Inserted: {}'.format(res.json()))
+        ext_col_index = max_depth + 2 + len(fcolumns)
+        col_count = ext_col_index + 1 + len(fcolumns)
         res = self._make_request(
             'POST',
             self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
@@ -476,6 +489,50 @@ class SpreadsheetClient(BaseClient):
                             'condition': {
                                 'type': 'BOOLEAN'
                             }
+                        }
+                    }
+                }, {
+                    'addProtectedRange': {
+                        'protectedRange': {
+                            'range': {'sheetId': sheet_idx,
+                                      'startColumnIndex': 0,
+                                      'endColumnIndex': 1,
+                                      'startRowIndex': 0,
+                                      'endRowIndex': 1},
+                            'warningOnly': True
+                        }
+                    }
+                }, {
+                    'addProtectedRange': {
+                        'protectedRange': {
+                            'range': {'sheetId': sheet_idx,
+                                      'startColumnIndex': 0,
+                                      'endColumnIndex': col_count,
+                                      'startRowIndex': 2,
+                                      'endRowIndex': 3},
+                            'warningOnly': True
+                        }
+                    }
+                }, {
+                    'addProtectedRange': {
+                        'protectedRange': {
+                            'range': {'sheetId': sheet_idx,
+                                      'startColumnIndex': 0,
+                                      'endColumnIndex': max_depth + 2,
+                                      'startRowIndex': 3,
+                                      'endRowIndex': 3 + len(values)},
+                            'warningOnly': True
+                        }
+                    }
+                }, {
+                    'addProtectedRange': {
+                        'protectedRange': {
+                            'range': {'sheetId': sheet_idx,
+                                      'startColumnIndex': ext_col_index,
+                                      'endColumnIndex': ext_col_index + 1,
+                                      'startRowIndex': 3,
+                                      'endRowIndex': 3 + len(values)},
+                            'warningOnly': True
                         }
                     }
                 }]
@@ -553,18 +610,144 @@ class SpreadsheetClient(BaseClient):
         return ret
 
 
-class IQBRIMSFlowableClient(object):
+class IQBRIMSWorkflowUserSettings(object):
 
-    def __init__(self, app_id):
+    def __init__(self, access_token, folder_id):
+        self.access_token = access_token
+        self.folder_id = folder_id
+        self._cache = None
+
+    def load(self):
+        if self._cache is not None:
+            return self._cache
+        global _user_settings_cache
+        exp = datetime.timedelta(seconds=settings.USER_SETTINGS_CACHE_EXPIRATION_SEC)
+        if 'loadedTime' in _user_settings_cache and \
+           datetime.datetime.now() - _user_settings_cache['loadedTime'] < exp:
+            self._cache = _user_settings_cache.copy()
+            return self._cache
+        client = IQBRIMSClient(self.access_token)
+        files = client.files(self.folder_id)
+        files = [f for f in files if f['title'] == settings.USER_SETTINGS_SHEET_FILENAME]
+        if len(files) == 0:
+            sheet = client.create_spreadsheet(self.folder_id, settings.USER_SETTINGS_SHEET_FILENAME)
+        elif 'modifiedDate' in _user_settings_cache and files[0]['modifiedDate'] == _user_settings_cache['modifiedDate']:
+            self._cache = _user_settings_cache.copy()
+            return self._cache
+        else:
+            sheet = files[0]
+        sclient = SpreadsheetClient(sheet['id'], self.access_token)
+        sheets = [s
+                  for s in sclient.sheets()
+                  if s['properties']['title'] == settings.USER_SETTINGS_SHEET_SHEET_NAME]
+        logger.debug(u'Spreadsheet: id={}, sheet={}'.format(sheet['id'], sheets))
+        if len(sheets) == 0:
+            sclient.add_sheet(settings.USER_SETTINGS_SHEET_SHEET_NAME)
+            sheets = [s
+                      for s in sclient.sheets()
+                      if s['properties']['title'] == settings.USER_SETTINGS_SHEET_SHEET_NAME]
+        assert len(sheets) == 1
+        sheet_id = sheets[0]['properties']['title']
+        columns = sclient.ensure_columns(sheet_id, ['Key', 'Value'])
+        row_max = sheets[0]['properties']['gridProperties']['rowCount']
+        keys = sclient.get_row_values(sheet_id, columns.index('Key'), row_max)
+        values = sclient.get_row_values(sheet_id, columns.index('Value'), row_max)
+        _user_settings_cache['loadedTime'] = datetime.datetime.now()
+        _user_settings_cache['modifiedDate'] = files[0]['modifiedDate'] \
+                                               if len(files) > 0 else None
+        _user_settings_cache['settings'] = dict(zip(keys, values))
+        self._cache = _user_settings_cache.copy()
+        return self._cache
+
+    @property
+    def LABO_LIST(self):
+        current = self.load()
+        if 'LABO_LIST' in current['settings']:
+            try:
+                labos = json.loads(current['settings']['LABO_LIST'])
+                if type(labos) != list:
+                    return [{'id': 'error', 'text': u'Not list{}'.format(labos)}]
+                for labo in labos:
+                    if 'id' not in labo:
+                        return [{'id': 'error', 'text': u'No id: {}'.format(labo)}]
+                    if 'text' not in labo:
+                        return [{'id': 'error', 'text': u'No text: {}'.format(labo)}]
+                return labos
+            except ValueError as e:
+                return [{'id': 'error', 'text': u'JSON Error: {}'.format(e)}]
+        return settings.LABO_LIST
+
+    @property
+    def FLOWABLE_HOST(self):
+        current = self.load()
+        if 'FLOWABLE_HOST' in current['settings']:
+            return current['settings']['FLOWABLE_HOST']
+        return settings.FLOWABLE_HOST
+
+    @property
+    def FLOWABLE_TASK_URL(self):
+        current = self.load()
+        if 'FLOWABLE_TASK_URL' in current['settings']:
+            return current['settings']['FLOWABLE_TASK_URL']
+        return settings.FLOWABLE_TASK_URL
+
+    @property
+    def FLOWABLE_USER(self):
+        current = self.load()
+        if 'FLOWABLE_USER' in current['settings']:
+            return current['settings']['FLOWABLE_USER']
+        return settings.FLOWABLE_USER
+
+    @property
+    def FLOWABLE_PASSWORD(self):
+        current = self.load()
+        if 'FLOWABLE_PASSWORD' in current['settings']:
+            return current['settings']['FLOWABLE_PASSWORD']
+        return settings.FLOWABLE_PASSWORD
+
+    @property
+    def FLOWABLE_RESEARCH_APP_ID(self):
+        current = self.load()
+        if 'FLOWABLE_RESEARCH_APP_ID' in current['settings']:
+            return current['settings']['FLOWABLE_RESEARCH_APP_ID']
+        return settings.FLOWABLE_RESEARCH_APP_ID
+
+    @property
+    def FLOWABLE_SCAN_APP_ID(self):
+        current = self.load()
+        if 'FLOWABLE_SCAN_APP_ID' in current['settings']:
+            return current['settings']['FLOWABLE_SCAN_APP_ID']
+        return settings.FLOWABLE_SCAN_APP_ID
+
+
+class IQBRIMSFlowableClient(BaseClient):
+
+    def __init__(self, app_id, user_settings=None):
         self.app_id = app_id
+        self.user_settings = user_settings if user_settings is not None else settings
 
     def start_workflow(self, project_id, project_title, status, secret):
-        url = '{}service/runtime/process-instances'.format(settings.FLOWABLE_HOST)
+        url = '{}service/runtime/process-instances'.format(self.user_settings.FLOWABLE_HOST)
         is_directly_submit_data = status['is_directly_submit_data'] \
                                   if 'is_directly_submit_data' in status \
                                   else False
         register_type = status['state']
         labo_name = status['labo_id']
+        labos = [l for l in self.user_settings.LABO_LIST
+                 if l['id'] == labo_name]
+        labo_display_name = labos[0]['text'] if len(labos) > 0 \
+                            else u'LaboID:{}'.format(labo_name)
+        labo_display_name_en = (labos[0]['en'] if 'en' in labos[0] else labos[0]['text']) \
+                               if len(labos) > 0 else u'LaboID:{}'.format(labo_name)
+        accepted_date = status['accepted_date'].split('T')[0] \
+                        if 'accepted_date' in status else ''
+        accepted_datetime = status['accepted_date'] \
+                            if 'accepted_date' in status else ''
+        has_paper = status['has_paper'] if 'has_paper' in status else True
+        has_raw = status['has_raw'] if 'has_raw' in status else True
+        has_checklist = status['has_checklist'] if 'has_checklist' in status else True
+        input_overview = status['input_overview'] if 'input_overview' in status else ''
+
         payload = {'processDefinitionId': self.app_id,
                    'variables': [{'name': 'projectId',
                                   'type': 'string',
@@ -574,23 +757,54 @@ class IQBRIMSFlowableClient(object):
                                   'value': project_title},
                                  {'name': 'paperFolderPattern',
                                   'type': 'string',
-                                  'value': '{}/{}/%-{}/'.format(register_type,
-                                                                labo_name,
-                                                                project_id)},
+                                  'value': u'{}/{}/%-{}/'.format(register_type,
+                                                                 labo_name,
+                                                                 project_id)},
+                                 {'name': 'laboName',
+                                  'type': 'string',
+                                  'value': labo_display_name},
+                                 {'name': 'laboNameEN',
+                                  'type': 'string',
+                                  'value': labo_display_name_en},
                                  {'name': 'isDirectlySubmitData',
                                   'type': 'boolean',
                                   'value': is_directly_submit_data},
+                                 {'name': 'acceptedDate',
+                                  'type': 'string',
+                                  'value': accepted_date},
+                                 {'name': 'acceptedDateTime',
+                                  'type': 'string',
+                                  'value': accepted_datetime},
+                                 {'name': 'hasPaper',
+                                  'type': 'boolean',
+                                  'value': has_paper},
+                                 {'name': 'hasRaw',
+                                  'type': 'boolean',
+                                  'value': has_raw},
+                                 {'name': 'hasChecklist',
+                                  'type': 'boolean',
+                                  'value': has_checklist},
+                                 {'name': 'inputOverview',
+                                  'type': 'string',
+                                  'value': input_overview},
                                  {'name': 'flowableWorkflowUrl',
                                   'type': 'string',
-                                  'value': settings.FLOWABLE_TASK_URL},
+                                  'value': self.user_settings.FLOWABLE_TASK_URL},
                                  {'name': 'secret',
                                   'type': 'string',
                                   'value': secret}]}
         headers = {'Content-Type': 'application/json',
                    'Accept': 'application/json'}
-        response = requests.post(url, data=json.dumps(payload),
-                                 headers=headers,
-                                 auth=(settings.FLOWABLE_USER,
-                                       settings.FLOWABLE_PASSWORD))
-        logger.info('flowable-rest: response={}'.format(response.content))
-        response.raise_for_status()
+        response = self._make_request(
+            'POST',
+            url,
+            headers=headers,
+            data=json.dumps(payload),
+            expects=(200, 201),
+            throws=HTTPError(500)
+        )
+        logger.info('flowable-rest: response={}'.format(response.json()))
+
+    @property
+    def _auth(self):
+        return (self.user_settings.FLOWABLE_USER, self.user_settings.FLOWABLE_PASSWORD)

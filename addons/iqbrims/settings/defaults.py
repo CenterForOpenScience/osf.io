@@ -26,7 +26,7 @@ APPSHEET_DEPOSIT_COLUMNS = [('Updated', '_updated'),
                             ('Laboratory', '_labo_name'),
                             ('Title', '_node_title'),
                             ('Authors', None),
-                            ('Comment', None),
+                            ('Comment', 'files_comment'),
                             ('Journal Name', 'journal_name'),
                             ('Publish Date', 'publish_date'),
                             ('Volume', 'volume'),
@@ -50,6 +50,9 @@ APPSHEET_CHECK_COLUMNS = [('Updated', '_updated'),
 INDEXSHEET_FILENAME = 'Raw Files'
 INDEXSHEET_SHEET_NAME = 'Files'
 
+IMAGELIST_FOLDERNAME = u'スキャン画像'
+IMAGELIST_FILENAME = 'files.txt'
+
 FLOWABLE_HOST = 'http://localhost:9977/flowable-rest/'
 FLOWABLE_RESEARCH_APP_ID = 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX'
 FLOWABLE_SCAN_APP_ID = 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX'
@@ -57,6 +60,10 @@ FLOWABLE_USER = 'testuser'
 FLOWABLE_PASSWORD = 'testpass'
 FLOWABLE_TASK_URL = 'http://localhost:9999/flowable-task/'
 
-LABO_LIST = [{'id': 'rna', 'text': 'RNA分野'},
-             {'id': 'xxx', 'text': 'XXX分野'},
-             {'id': 'yyy', 'text': 'YYY分野'}]
+LABO_LIST = [{'id': 'rna', 'text': u'RNA分野', 'en': 'Laboratory of RNA'},
+             {'id': 'xxx', 'text': u'XXX分野', 'en': 'Laboratory of XXX'},
+             {'id': 'yyy', 'text': u'YYY分野', 'en': 'Laboratory of YYY'}]
+
+USER_SETTINGS_SHEET_FILENAME = 'Settings'
+USER_SETTINGS_SHEET_SHEET_NAME = 'Settings'
+USER_SETTINGS_CACHE_EXPIRATION_SEC = 60

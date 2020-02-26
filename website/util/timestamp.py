@@ -251,6 +251,7 @@ def get_full_list(uid, pid, node):
         child_file_list = []
         for file_data in waterbutler_json_res['data']:
             if file_data['attributes']['kind'] == 'folder':
+                logger.info(u'Detected: folder={}'.format(file_data['attributes']['materialized']))
                 child_file_list.extend(
                     waterbutler_folder_file_info(
                         pid,
@@ -260,6 +261,7 @@ def get_full_list(uid, pid, node):
                     )
                 )
             else:
+                logger.info(u'Detected: file={}'.format(file_data['attributes']['materialized']))
                 file_info = None
                 basefile_node = BaseFileNode.resolve_class(
                     provider_data['attributes']['provider'],
@@ -348,6 +350,7 @@ def celery_verify_timestamp_token(self, uid, node_id):
     celery_app.current_task.update_state(state='PROGRESS', meta={'progress': 0})
     node = AbstractNode.objects.get(id=node_id)
     celery_app.current_task.update_state(state='PROGRESS', meta={'progress': 50})
+    logger.info('Running timestamp verification...')
     for provider_dict in get_full_list(uid, node._id, node):
         for p_item in provider_dict['provider_file_list']:
             if self.is_aborted():

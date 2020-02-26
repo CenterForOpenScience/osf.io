@@ -4,6 +4,7 @@ from nose.tools import *  # noqa (PEP8 asserts)
 import pytest
 import unittest
 
+from addons.iqbrims.utils import get_folder_title
 from framework.auth import Auth
 from addons.base.tests.models import (OAuthAddonNodeSettingsTestSuiteMixin,
                                       OAuthAddonUserSettingTestSuiteMixin)
@@ -15,6 +16,8 @@ from addons.iqbrims.tests.factories import (
     IQBRIMSNodeSettingsFactory,
     IQBRIMSUserSettingsFactory
 )
+from osf.models import RdmAddonOption
+from osf_tests.factories import ProjectFactory, InstitutionFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -153,10 +156,74 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
             },
             'permissions':
             {
-                u'チェックリスト': ['VISIBLE', 'WRITABLE'],
+                u'チェックリスト': [],
                 u'スキャン結果': [],
-                u'生データ': ['VISIBLE', 'WRITABLE'],
-                u'最終原稿・組図': ['VISIBLE', 'WRITABLE']
+                u'生データ': [],
+                u'最終原稿・組図': []
             }
         }
         assert_equal(settings, expected)
+
+
+class TestIQBRIMSNodeReceiver(unittest.TestCase):
+
+    short_name = 'iqbrims'
+    full_name = 'IQB-RIMS'
+    folder_id = '1234567890'
+
+    def setUp(self):
+        super(TestIQBRIMSNodeReceiver, self).setUp()
+        self.node = ProjectFactory()
+        self.user = self.node.creator
+        self.external_account = IQBRIMSAccountFactory()
+
+        self.user.external_accounts.add(self.external_account)
+        self.user.save()
+
+        self.user_settings = self.user.add_addon(self.short_name)
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+            metadata={'folder': self.folder_id}
+        )
+        self.user_settings.save()
+
+        self.node_settings = IQBRIMSNodeSettingsFactory(
+            external_account=self.external_account,
+            user_settings=self.user_settings,
+            folder_id=self.folder_id,
+            owner=self.node
+        )
+
+        self.institution = InstitutionFactory()
+
+    @mock.patch.object(NodeSettings, 'fetch_access_token')
+    @mock.patch.object(IQBRIMSClient, 'rename_folder')
+    @mock.patch.object(IQBRIMSClient, 'get_folder_info')
+    def test_update_folder_name(self, mock_get_folder_info, mock_rename_folder, mock_fetch_access_token):
+        mock_get_folder_info.return_value = {'title': 'dummy_folder_title'}
+        mock_fetch_access_token.return_value = 'dummy_token'
+        mock_rename_folder.return_value = None
+        new_folder_title = get_folder_title(self.node)
+
+        self.node.save(force_update=True)
+
+        assert_equal(mock_get_folder_info.call_count, 1)
+        assert_items_equal(mock_get_folder_info.call_args, ((), {'folder_id': self.folder_id}))
+
+        assert_equal(mock_rename_folder.call_count, 1)
+        assert_items_equal(mock_rename_folder.call_args[0], (self.folder_id, new_folder_title))
+
+    @mock.patch.object(IQBRIMSClient, 'rename_folder')
+    def test_update_management_node_folder(self, mock_rename_folder):
+        mock_rename_folder.return_value = None
+
+        RdmAddonOption(
+            provider=self.short_name,
+            institution=self.institution,
+            management_node=self.node
+        ).save()
+
+        self.node.save(force_update=True)
+
+        assert_equal(mock_rename_folder.call_count, 0)
