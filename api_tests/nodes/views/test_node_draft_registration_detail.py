@@ -42,8 +42,8 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def url_draft_registrations(self, project_public, draft_registration):
-        return '/{}nodes/{}/draft_registrations/{}/'.format(
-            API_BASE, project_public._id, draft_registration._id)
+        return '/{}nodes/{}/draft_registrations/{}/?{}'.format(
+            API_BASE, project_public._id, draft_registration._id, 'version=2.19')
 
     def test_admin_can_view_draft(
             self, app, user, draft_registration, project_public,
@@ -176,8 +176,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def url_draft_registrations(self, project_public, draft_registration):
-        return '/{}nodes/{}/draft_registrations/{}/'.format(
-            API_BASE, project_public._id, draft_registration._id)
+        return '/{}nodes/{}/draft_registrations/{}/?{}'.format(
+            API_BASE, project_public._id, draft_registration._id, 'version=2.19')
 
     @pytest.fixture()
     def payload(self, draft_registration):
@@ -700,8 +700,8 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def url_draft_registrations(self, project_public, draft_registration):
-        return '/{}nodes/{}/draft_registrations/{}/'.format(
-            API_BASE, project_public._id, draft_registration._id)
+        return '/{}nodes/{}/draft_registrations/{}/?{}'.format(
+            API_BASE, project_public._id, draft_registration._id, 'version=2.19')
 
     @pytest.fixture()
     def payload(self, draft_registration):
@@ -794,8 +794,8 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def url_draft_registrations(self, project_public, draft_registration):
-        return '/{}nodes/{}/draft_registrations/{}/'.format(
-            API_BASE, project_public._id, draft_registration._id)
+        return '/{}nodes/{}/draft_registrations/{}/?{}'.format(
+            API_BASE, project_public._id, draft_registration._id, 'version=2.19')
 
     def test_admin_can_delete_draft(self, app, user, url_draft_registrations, project_public):
         res = app.delete_json_api(url_draft_registrations, auth=user.auth)
@@ -894,8 +894,8 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
     def url_draft_registrations(
             self, project_public,
             draft_registration_prereg):
-        return '/{}nodes/{}/draft_registrations/{}/'.format(
-            API_BASE, project_public._id, draft_registration_prereg._id)
+        return '/{}nodes/{}/draft_registrations/{}/?{}'.format(
+            API_BASE, project_public._id, draft_registration_prereg._id, 'version=2.19')
 
     @pytest.fixture()
     def payload(self, draft_registration_prereg):
