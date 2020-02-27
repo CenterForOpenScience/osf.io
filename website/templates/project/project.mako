@@ -257,7 +257,7 @@
                 </span>
                 <p>
                     ${_("Category:")} <span data-bind="css: icon"></span>
-                    <span id="nodeCategoryEditable">${node['category']}</span>
+                    <span id="nodeCategoryEditable">${_(node['category'])}</span>
                 </p>
 
                 % if (node['description']) or (not node['description'] and permissions.WRITE in user['permissions'] and not node['is_registration']):
