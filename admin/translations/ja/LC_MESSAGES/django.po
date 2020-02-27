@@ -2427,3 +2427,15 @@ msgstr "ページ%(items.number)s / %(items.paginator.num_pages)s"
 #: .\views.py:14
 msgid "Internationalization"
 msgstr "国際化"
+
+#: /website/static/templates\license-picker.html:3
+msgid "License:"
+msgstr "ライセンス:"
+
+#: /website/static/templates\license-picker.html:23
+msgid "Choose a license:"
+msgstr "ライセンスを選択"
+
+#: /website/static/templates\license-picker.html:54
+msgid "Save"
+msgstr "保存"
