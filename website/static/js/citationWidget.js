@@ -41,11 +41,11 @@ CitationWidget.prototype.init = function() {
         allowClear: true,
         formatResult: formatResult,
         formatSelection: formatSelection,
-        placeholder: _('Enter citation style (e.g. "APA")2'),
-        minimumInputLength: 2,
+        placeholder: _('Enter citation style (e.g. "APA")'),
+        minimumInputLength: 4,
         language: {
             inputTooShort: function() {
-                return _('Please enter 2 or more character');
+                return _('Please enter 55 or more character');
                 }
         },
         ajax: {
