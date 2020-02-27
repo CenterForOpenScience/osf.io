@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-26 14:56+0900\n"
+"POT-Creation-Date: 2020-02-27 11:59+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -2943,6 +2943,10 @@ msgstr "カテゴリー:"
 #: website/templates/project/project.mako:282
 msgid "License:"
 msgstr "ライセンス："
+
+#: website/templates/project/project.mako:283
+msgid "license"
+msgstr ""
 
 #: website/templates/project/project.mako:291
 msgid "View Registration Form"
