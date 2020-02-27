@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-27 13:46+0900\n"
+"POT-Creation-Date: 2020-02-27 17:24+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -1242,6 +1242,38 @@ msgstr "その他"
 msgid "No license"
 msgstr "ライセンスなし"
 
+#: website/templates/messages.mako:7
+msgid "Analysis"
+msgstr "分析"
+
+#: website/templates/messages.mako:8
+msgid "Communication"
+msgstr "コミュニケーション"
+
+#: website/templates/messages.mako:9
+msgid "Data"
+msgstr "データ"
+
+#: website/templates/messages.mako:10
+msgid "Hypothesis"
+msgstr "仮説"
+
+#: website/templates/messages.mako:11
+msgid "Instrumentation"
+msgstr "器具"
+
+#: website/templates/messages.mako:12
+msgid "Methods and Measures"
+msgstr "方法と対策"
+
+#: website/templates/messages.mako:13
+msgid "Procedure"
+msgstr "手順"
+
+#: website/templates/messages.mako:14
+msgid "Software"
+msgstr "ソフトウェア"
+
 #: website/templates/my_projects.mako:2 website/templates/nav.mako:51
 msgid "My Projects"
 msgstr "マイプロジェクト"
@@ -1647,6 +1679,11 @@ msgstr ""
 "<p>検索では<a "
 "%(href)s>Lucene検索構文</a>を使用します。これにより多くのオプションが提供されますが、非常に単純な場合もあります。 "
 "有効な検索の例は次のとおりです。</p>"
+
+#: website/templates/include/comment_pane_template.mako:3
+#: website/templates/project/project_header.mako:86
+msgid "Comments"
+msgstr "コメント"
 
 #: website/templates/include/comment_pane_template.mako:18
 #: website/templates/include/comment_pane_template.mako:19
@@ -2593,6 +2630,10 @@ msgstr "結果"
 msgid "Add all"
 msgstr "全て追加する"
 
+#: website/templates/project/modal_add_contributor.mako:63
+msgid "Add contributor"
+msgstr "コントリビュータを追加"
+
 #: website/templates/project/modal_add_contributor.mako:66
 msgid "Already added"
 msgstr "追加済"
@@ -2944,6 +2985,10 @@ msgstr "DOIを作成"
 msgid "Category:"
 msgstr "カテゴリー:"
 
+#: website/templates/project/project.mako:260
+msgid "category"
+msgstr ""
+
 #: website/templates/project/project.mako:282
 msgid "License:"
 msgstr "ライセンス："
@@ -3125,10 +3170,6 @@ msgstr "登録"
 #: website/templates/project/project_header.mako:76
 msgid "Add-ons"
 msgstr "アドオン"
-
-#: website/templates/project/project_header.mako:86
-msgid "Comments"
-msgstr "コメント"
 
 #: website/templates/project/project_header.mako:96
 #: website/templates/project/timestamp.mako:2

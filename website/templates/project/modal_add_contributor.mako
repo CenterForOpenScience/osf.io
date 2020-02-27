@@ -60,7 +60,7 @@
                                                     class="btn btn-success contrib-button btn-mini"
                                                     data-bind="visible: !contributor.added,
                                                                click:$root.add.bind($root),
-                                                               tooltip: {title: 'Add contributor'}"
+                                                               tooltip: {title: '${_("Add contributor")}'}"
                                                 ><i class="fa fa-plus"></i></a>
                                             <div data-bind="visible: contributor.added,
                                                             tooltip: {title: '${_("Already added")}'}"

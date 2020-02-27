@@ -9,3 +9,5 @@ var NODE_SUBSCRIPTIONS_AVAILABLE = [_('Comments added'),_('Files updated')];
 var USER_SUBSCRIPTIONS_AVAILABLE = [_('Replies to your comments'),_('Comments added'),_('Files updated'),_('Mentions added'),_('Preprint submissions updated')];
 
 var noLicense = _('No license');
+
+var beforeFork = _('Because you have not configured the {addon} add-on, your authentication will not be transferred to the forked {category}. You may authorize and configure the {addon} add-on in the new fork on the settings page.');

@@ -310,11 +310,11 @@ CitationGrid.prototype.initStyleSelect = function() {
         allowClear: false,
         formatResult: formatResult,
         formatSelection: formatSelection,
-        placeholder: _('Enter citation style (e.g. "APA")'),
-        minimumInputLength: 1,
+        placeholder: _('Enter citation style (e.g. "APA")3'),
+        minimumInputLength: 3,
         language: {
             inputTooShort: function() {
-                return _('Please enter 1 or more character');
+                return _('Please enter 3 or more character');
                 }
         },
         ajax: {

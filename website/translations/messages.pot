@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-27 13:46+0900\n"
+"POT-Creation-Date: 2020-02-27 17:24+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1201,6 +1201,38 @@ msgstr ""
 msgid "No license"
 msgstr ""
 
+#: website/templates/messages.mako:7
+msgid "Analysis"
+msgstr ""
+
+#: website/templates/messages.mako:8
+msgid "Communication"
+msgstr ""
+
+#: website/templates/messages.mako:9
+msgid "Data"
+msgstr ""
+
+#: website/templates/messages.mako:10
+msgid "Hypothesis"
+msgstr ""
+
+#: website/templates/messages.mako:11
+msgid "Instrumentation"
+msgstr ""
+
+#: website/templates/messages.mako:12
+msgid "Methods and Measures"
+msgstr ""
+
+#: website/templates/messages.mako:13
+msgid "Procedure"
+msgstr ""
+
+#: website/templates/messages.mako:14
+msgid "Software"
+msgstr ""
+
 #: website/templates/my_projects.mako:2 website/templates/nav.mako:51
 msgid "My Projects"
 msgstr ""
@@ -1590,6 +1622,11 @@ msgid ""
 "<p>Search uses the <a %(href)s>Lucene search syntax</a>.This gives you "
 "many options, but can be very simple as well. Examples of valid searches "
 "include:</p>"
+msgstr ""
+
+#: website/templates/include/comment_pane_template.mako:3
+#: website/templates/project/project_header.mako:86
+msgid "Comments"
 msgstr ""
 
 #: website/templates/include/comment_pane_template.mako:18
@@ -2520,6 +2557,10 @@ msgstr ""
 msgid "Add all"
 msgstr ""
 
+#: website/templates/project/modal_add_contributor.mako:63
+msgid "Add contributor"
+msgstr ""
+
 #: website/templates/project/modal_add_contributor.mako:66
 msgid "Already added"
 msgstr ""
@@ -2859,6 +2900,10 @@ msgstr ""
 msgid "Category:"
 msgstr ""
 
+#: website/templates/project/project.mako:260
+msgid "category"
+msgstr ""
+
 #: website/templates/project/project.mako:282
 msgid "License:"
 msgstr ""
@@ -3039,10 +3084,6 @@ msgstr ""
 
 #: website/templates/project/project_header.mako:76
 msgid "Add-ons"
-msgstr ""
-
-#: website/templates/project/project_header.mako:86
-msgid "Comments"
 msgstr ""
 
 #: website/templates/project/project_header.mako:96

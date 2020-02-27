@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-26 14:10+0900\n"
+"POT-Creation-Date: 2020-02-27 17:32+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,13 +16,6 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.7.0\n"
-
-#: addons/base/models.py:461
-msgid ""
-"Because you have not configured the {addon} add-on, your authentication "
-"will not be transferred to the forked {category}. You may authorize and "
-"configure the {addon} add-on in the new fork on the settings page."
-msgstr ""
 
 #: addons/twofactor/static/twoFactorUserConfig.js:178
 msgid "Enable Two-factor Authentication"
@@ -191,10 +184,13 @@ msgid "Type the following to continue: <strong>%1$s</strong><br><br>"
 msgstr ""
 
 #: admin/static/js/rdm_addons/rdm-addons-page.js:73
-#: website/static/js/accountSettings.js:473
-#: website/static/js/accountSettings.js:545
+#: website/static/js/accountSettings.js:288
+#: website/static/js/accountSettings.js:353
+#: website/static/js/accountSettings.js:479
+#: website/static/js/accountSettings.js:551
 #: website/static/js/addProjectPlugin.js:350
-#: website/static/js/addonSettings.js:134
+#: website/static/js/addonPermissions.js:58
+#: website/static/js/addonSettings.js:74 website/static/js/addonSettings.js:137
 #: website/static/js/apiApplication.js:235
 #: website/static/js/apiApplication.js:406
 #: website/static/js/apiApplication.js:473
@@ -212,12 +208,18 @@ msgstr ""
 #: website/static/js/institutionProjectSettings.js:104
 #: website/static/js/licensePicker.js:241 website/static/js/myProjects.js:1562
 #: website/static/js/myProjects.js:1610 website/static/js/myProjects.js:1634
+#: website/static/js/nodeControl.js:229
 #: website/static/js/oauthAddonNodeConfig.js:158
 #: website/static/js/oauthAddonNodeConfig.js:176
 #: website/static/js/osfHelpers.js:798 website/static/js/osfHelpers.js:899
 #: website/static/js/pages/profile-settings-addons-page.js:37
-#: website/static/js/pages/project-addons-page.js:65
-#: website/static/js/profile.js:374 website/static/js/project.js:41
+#: website/static/js/pages/profile-settings-addons-page.js:103
+#: website/static/js/pages/project-addons-page.js:43
+#: website/static/js/pages/project-addons-page.js:68
+#: website/static/js/privateLinkTable.js:121 website/static/js/profile.js:374
+#: website/static/js/profile.js:744 website/static/js/profile.js:976
+#: website/static/js/project.js:41 website/static/js/project.js:145
+#: website/static/js/project.js:255
 #: website/static/js/wikiSettingsTreebeard.js:32
 msgid "Cancel"
 msgstr ""
@@ -237,7 +239,7 @@ msgstr ""
 
 #: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:87
 #: admin/static/js/rdm_addons/s3/s3RdmConfig.js:102
-#: website/static/js/addonSettings.js:171
+#: website/static/js/addonSettings.js:174
 msgid "Error while updating addon account"
 msgstr ""
 
@@ -271,14 +273,14 @@ msgstr ""
 #: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:157
 #: admin/static/js/rdm_addons/figshare/rdm-cfg.js:37
 #: admin/static/js/rdm_addons/s3/s3RdmConfig.js:126
-#: website/static/js/addonSettings.js:130
+#: website/static/js/addonSettings.js:133
 #: website/static/js/folderPickerNodeConfig.js:564
 msgid "Disconnect"
 msgstr ""
 
 #: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:175
 #: admin/static/js/rdm_addons/s3/s3RdmConfig.js:144
-#: website/static/js/addonSettings.js:150
+#: website/static/js/addonSettings.js:153
 msgid "Error while removing addon authorization for %1$s"
 msgstr ""
 
@@ -757,134 +759,134 @@ msgid "Are you sure that you want to remove <em>%1$s</em> from your email list?"
 msgstr ""
 
 #: website/static/js/accountSettings.js:284
-#: website/static/js/accountSettings.js:346
+#: website/static/js/accountSettings.js:349
 #: website/static/js/addonPermissions.js:54
 #: website/static/js/addonSettings.js:70
 #: website/static/js/pages/profile-settings-addons-page.js:99
 #: website/static/js/privateLinkTable.js:117 website/static/js/profile.js:740
-#: website/static/js/profile.js:969 website/static/js/project.js:248
+#: website/static/js/profile.js:972 website/static/js/project.js:251
 msgid "Remove"
 msgstr ""
 
-#: website/static/js/accountSettings.js:290
-#: website/static/js/accountSettings.js:303
+#: website/static/js/accountSettings.js:293
+#: website/static/js/accountSettings.js:306
 msgid "Please refresh the page and try again."
 msgstr ""
 
-#: website/static/js/accountSettings.js:316
+#: website/static/js/accountSettings.js:319
 msgid "You have revoked this connected identity."
 msgstr ""
 
-#: website/static/js/accountSettings.js:321
+#: website/static/js/accountSettings.js:324
 msgid "Revocation request failed. Please contact %1$s if the problem persists."
 msgstr ""
 
-#: website/static/js/accountSettings.js:324
+#: website/static/js/accountSettings.js:327
 msgid "Error revoking connected identity"
 msgstr ""
 
-#: website/static/js/accountSettings.js:337
+#: website/static/js/accountSettings.js:340
 msgid "Remove authorization?"
 msgstr ""
 
-#: website/static/js/accountSettings.js:338
+#: website/static/js/accountSettings.js:341
 msgid "Are you sure you want to remove this authorization?"
 msgstr ""
 
-#: website/static/js/accountSettings.js:379
+#: website/static/js/accountSettings.js:385
 msgid ""
 "You have successfully changed your default storage location to "
 "<b>%1$s</b>."
 msgstr ""
 
-#: website/static/js/accountSettings.js:383
+#: website/static/js/accountSettings.js:389
 msgid ""
 "Your attempt to change your default storage location has failed. Please "
 "contact %1$s if the problem persists."
 msgstr ""
 
-#: website/static/js/accountSettings.js:386
+#: website/static/js/accountSettings.js:392
 msgid "Error updating default storage location "
 msgstr ""
 
-#: website/static/js/accountSettings.js:409
+#: website/static/js/accountSettings.js:415
 msgid ""
 "An GakuNin RDM administrator will contact you shortly to confirm your "
 "deactivation request."
 msgstr ""
 
-#: website/static/js/accountSettings.js:417
+#: website/static/js/accountSettings.js:423
 msgid "Deactivation request failed. Please contact %1$s if the problem persists."
 msgstr ""
 
-#: website/static/js/accountSettings.js:421
-#: website/static/js/accountSettings.js:446
+#: website/static/js/accountSettings.js:427
+#: website/static/js/accountSettings.js:452
 msgid "Error requesting account deactivation"
 msgstr ""
 
-#: website/static/js/accountSettings.js:434
+#: website/static/js/accountSettings.js:440
 msgid "An GakuNin RDM account is no longer up for review."
 msgstr ""
 
-#: website/static/js/accountSettings.js:442
+#: website/static/js/accountSettings.js:448
 msgid ""
 "Deactivation request failed. Please contact <a href=\"mailto: "
 "rdm_support@nii.ac.jp\">rdm_support@nii.ac.jp</a> if the problem "
 "persists."
 msgstr ""
 
-#: website/static/js/accountSettings.js:459
+#: website/static/js/accountSettings.js:465
 msgid "Request account deactivation?"
 msgstr ""
 
-#: website/static/js/accountSettings.js:460
+#: website/static/js/accountSettings.js:466
 msgid ""
 "Are you sure you want to request account deactivation? A GakuNinRDM "
 "administrator will review your request. If accepted, you "
 msgstr ""
 
-#: website/static/js/accountSettings.js:461
+#: website/static/js/accountSettings.js:467
 msgid "will <strong>NOT</strong> be able to reactivate your account."
 msgstr ""
 
-#: website/static/js/accountSettings.js:469
-#: website/static/js/accountSettings.js:542
+#: website/static/js/accountSettings.js:475
+#: website/static/js/accountSettings.js:548
 msgid "Request"
 msgstr ""
 
-#: website/static/js/accountSettings.js:481
+#: website/static/js/accountSettings.js:487
 msgid "Cancel deactivation request?"
 msgstr ""
 
-#: website/static/js/accountSettings.js:482
+#: website/static/js/accountSettings.js:488
 msgid ""
 "Are you sure you want to rescind your account deactivation request? This "
 "will preserve your account status."
 msgstr ""
 
-#: website/static/js/accountSettings.js:490
+#: website/static/js/accountSettings.js:496
 msgid "Cancel Deactivation Request"
 msgstr ""
 
-#: website/static/js/accountSettings.js:508
+#: website/static/js/accountSettings.js:514
 msgid ""
 "An GakuNin RDM administrator will contact you shortly to confirm your "
 "export request."
 msgstr ""
 
-#: website/static/js/accountSettings.js:516
+#: website/static/js/accountSettings.js:522
 msgid "Export request failed. Please contact %1$s if the problem persists."
 msgstr ""
 
-#: website/static/js/accountSettings.js:520
+#: website/static/js/accountSettings.js:526
 msgid "Error requesting account export"
 msgstr ""
 
-#: website/static/js/accountSettings.js:533
+#: website/static/js/accountSettings.js:539
 msgid "Request account export?"
 msgstr ""
 
-#: website/static/js/accountSettings.js:534
+#: website/static/js/accountSettings.js:540
 msgid "Are you sure you want to request account export?"
 msgstr ""
 
@@ -1076,7 +1078,7 @@ msgstr ""
 msgid "Are you sure you want to remove the %1$s authorization from this project?"
 msgstr ""
 
-#: website/static/js/addonSettings.js:100
+#: website/static/js/addonSettings.js:103
 msgid ""
 "Add-on successfully authorized. If you wish to link a different account, "
 "log out of dropbox.com before attempting to connect to a second Dropbox "
@@ -1084,7 +1086,7 @@ msgid ""
 "your browser."
 msgstr ""
 
-#: website/static/js/addonSettings.js:102
+#: website/static/js/addonSettings.js:105
 msgid ""
 "Add-on successfully authorized. If you wish to link a different account, "
 "log out of bitbucket.org before attempting to connect to a second "
@@ -1092,7 +1094,7 @@ msgid ""
 "stored in your browser."
 msgstr ""
 
-#: website/static/js/addonSettings.js:104
+#: website/static/js/addonSettings.js:107
 msgid ""
 "Add-on successfully authorized. If you wish to link a different account, "
 "log out of onedrive.live.com before attempting to connect to a second "
@@ -1100,24 +1102,24 @@ msgid ""
 "stored in your browser."
 msgstr ""
 
-#: website/static/js/addonSettings.js:106
+#: website/static/js/addonSettings.js:109
 msgid ""
 "Add-on successfully authorized. To link this add-on to an GakuNin RDM "
 "project, go to the settings page of the project, enable %1$s, and choose "
 "content to connect."
 msgstr ""
 
-#: website/static/js/addonSettings.js:109
+#: website/static/js/addonSettings.js:112
 msgid ""
 "Error while authorizing add-on. Please log in to your %1$s account and "
 "grant access to the GakuNin RDM to enable this add-on."
 msgstr ""
 
-#: website/static/js/addonSettings.js:118
+#: website/static/js/addonSettings.js:121
 msgid "Disconnect Account?"
 msgstr ""
 
-#: website/static/js/addonSettings.js:120
+#: website/static/js/addonSettings.js:123
 msgid ""
 "Are you sure you want to disconnect the %1$s account "
 "<strong>%2$s</strong>? This will revoke access to %1$s for all projects "
@@ -1245,12 +1247,12 @@ msgstr ""
 msgid "Only 200 citations may be displayed"
 msgstr ""
 
-#: website/static/js/citationGrid.js:313 website/static/js/citationWidget.js:44
-msgid "Enter citation style (e.g. \"APA\")"
+#: website/static/js/citationGrid.js:313
+msgid "Enter citation style (e.g. \"APA\")3"
 msgstr ""
 
-#: website/static/js/citationGrid.js:317 website/static/js/citationWidget.js:48
-msgid "Please enter 1 or more character"
+#: website/static/js/citationGrid.js:317
+msgid "Please enter 3 or more character"
 msgstr ""
 
 #: website/static/js/citationGrid.js:340
@@ -1276,6 +1278,14 @@ msgstr ""
 #: website/static/js/components/quickFiles.js:125
 #: website/static/js/osfHelpers.js:313
 msgid " if the problem persists."
+msgstr ""
+
+#: website/static/js/citationWidget.js:44
+msgid "Enter citation style (e.g. \"APA\")2"
+msgstr ""
+
+#: website/static/js/citationWidget.js:48
+msgid "Please enter 2 or more character"
 msgstr ""
 
 #: website/static/js/citationWidget.js:79
@@ -2301,6 +2311,13 @@ msgstr ""
 msgid "No license"
 msgstr ""
 
+#: website/static/js/js_messages.js:13
+msgid ""
+"Because you have not configured the {addon} add-on, your authentication "
+"will not be transferred to the forked {category}. You may authorize and "
+"configure the {addon} add-on in the new fork on the settings page."
+msgstr ""
+
 #: website/static/js/keen.js:116
 msgid "Error sending Keen data to %1$s:<%2$s>"
 msgstr ""
@@ -2741,19 +2758,19 @@ msgstr ""
 msgid " is persistent and will always resolve to this page."
 msgstr ""
 
-#: website/static/js/nodeControl.js:244
+#: website/static/js/nodeControl.js:247
 msgid "We could not create the identifier at this time. "
 msgstr ""
 
-#: website/static/js/nodeControl.js:245
+#: website/static/js/nodeControl.js:248
 msgid "The DOI acquisition service may be down right now. "
 msgstr ""
 
-#: website/static/js/nodeControl.js:246
+#: website/static/js/nodeControl.js:249
 msgid "Please try again soon and/or contact %1$s"
 msgstr ""
 
-#: website/static/js/nodeControl.js:248
+#: website/static/js/nodeControl.js:251
 msgid "Could not create doi"
 msgstr ""
 
@@ -3075,7 +3092,7 @@ msgstr ""
 
 #: website/static/js/osfHelpers.js:802
 #: website/static/js/pages/profile-settings-addons-page.js:34
-#: website/static/js/pages/project-addons-page.js:62
+#: website/static/js/pages/project-addons-page.js:65
 msgid "Confirm"
 msgstr ""
 
@@ -3205,7 +3222,7 @@ msgstr ""
 msgid "Failed to delete the private link."
 msgstr ""
 
-#: website/static/js/privateLinkTable.js:137
+#: website/static/js/privateLinkTable.js:140
 msgid "Edit Link Name"
 msgstr ""
 
@@ -3301,27 +3318,27 @@ msgstr ""
 msgid "Website removed"
 msgstr ""
 
-#: website/static/js/profile.js:813
+#: website/static/js/profile.js:816
 msgid "Please update your website"
 msgstr ""
 
-#: website/static/js/profile.js:951
+#: website/static/js/profile.js:954
 msgid "Remove Institution?"
 msgstr ""
 
-#: website/static/js/profile.js:952
+#: website/static/js/profile.js:955
 msgid "Are you sure you want to remove this institution?"
 msgstr ""
 
-#: website/static/js/profile.js:961
+#: website/static/js/profile.js:964
 msgid "Institution Removed"
 msgstr ""
 
-#: website/static/js/profile.js:1073
+#: website/static/js/profile.js:1079
 msgid "Institution/Employer required"
 msgstr ""
 
-#: website/static/js/profile.js:1127
+#: website/static/js/profile.js:1133
 msgid "Institution required"
 msgstr ""
 
@@ -3390,60 +3407,60 @@ msgid ""
 " as a template?</h4>"
 msgstr ""
 
-#: website/static/js/project.js:204
+#: website/static/js/project.js:207
 msgid "<dt>Read</dt>"
 msgstr ""
 
-#: website/static/js/project.js:205
+#: website/static/js/project.js:208
 msgid "<dd><ul><li>View project content and comment</li></ul></dd>"
 msgstr ""
 
-#: website/static/js/project.js:206
+#: website/static/js/project.js:209
 msgid "<dt>Read + Write</dt>"
 msgstr ""
 
-#: website/static/js/project.js:207
+#: website/static/js/project.js:210
 msgid "<dd><ul><li>Read privileges</li> "
 msgstr ""
 
-#: website/static/js/project.js:208
+#: website/static/js/project.js:211
 msgid "<li>Add and configure components</li> "
 msgstr ""
 
-#: website/static/js/project.js:209
+#: website/static/js/project.js:212
 msgid "<li>Add and edit content</li></ul></dd>"
 msgstr ""
 
-#: website/static/js/project.js:210
+#: website/static/js/project.js:213
 msgid "<dt>Administrator</dt><dd><ul>"
 msgstr ""
 
-#: website/static/js/project.js:211
+#: website/static/js/project.js:214
 msgid "<li>Read and write privileges</li>"
 msgstr ""
 
-#: website/static/js/project.js:212
+#: website/static/js/project.js:215
 msgid "<li>Manage contributor</li>"
 msgstr ""
 
-#: website/static/js/project.js:213
+#: website/static/js/project.js:216
 msgid ""
 "<li>Delete and register project</li><li>Public-private "
 "settings</li></ul></dd>"
 msgstr ""
 
-#: website/static/js/project.js:222
+#: website/static/js/project.js:225
 msgid ""
 "Only bibliographic contributors will be displayed in the Contributors "
 "list and in project citations. Non-bibliographic contributors can read "
 "and modify the project as normal."
 msgstr ""
 
-#: website/static/js/project.js:237
+#: website/static/js/project.js:240
 msgid "Remove this link?"
 msgstr ""
 
-#: website/static/js/project.js:238
+#: website/static/js/project.js:241
 msgid ""
 "Are you sure you want to remove this link? This will not remove the "
 "project this link refers to."
@@ -3942,7 +3959,7 @@ msgstr ""
 msgid "Are you sure you want to remove the add-ons you have deselected? "
 msgstr ""
 
-#: website/static/js/pages/profile-settings-addons-page.js:128
+#: website/static/js/pages/profile-settings-addons-page.js:131
 msgid "The changes on addon setting are not submitted!"
 msgstr ""
 
