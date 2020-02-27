@@ -132,6 +132,19 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         assert data['id'] == draft_registration._id
         assert data['attributes']['registration_metadata'] == {}
 
+    def test_draft_registration_serializer_usage(self, app, user, project_public, draft_registration):
+        # Tests the usage of DraftRegistrationDetailSerializer for version 2.20
+        url_draft_registrations = '/{}nodes/{}/draft_registrations/{}/?{}'.format(
+            API_BASE, project_public._id, draft_registration._id, 'version=2.20')
+
+        res = app.get(url_draft_registrations, auth=user.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+
+        # Set of fields that DraftRegistrationDetailLegacySerializer does not provide
+        assert data['attributes']['title']
+        assert data['attributes']['description']
+        assert data['relationships']['affiliated_institutions']
 
 @pytest.mark.django_db
 class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
