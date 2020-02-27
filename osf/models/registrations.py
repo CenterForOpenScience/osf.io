@@ -1068,7 +1068,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             if key not in self.WRITABLE_WHITELIST:
                 continue
             if key == 'title':
-                self.set_title(title=value, auth=auth, save=False)
+                self.set_title(title=value, auth=auth, save=False, allow_blank=True)
             elif key == 'description':
                 self.set_description(description=value, auth=auth, save=False)
             elif key == 'category':

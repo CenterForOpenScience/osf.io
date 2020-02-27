@@ -382,6 +382,28 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
             'comments': 'This is my first registration.'
         }
 
+    def test_write_contributor_can_update_draft_no_title(
+            self, app, user_write_contrib, schema, project_public,
+            payload, url_draft_registrations):
+
+        payload['data']['attributes']['title'] = ''
+        res = app.put_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user_write_contrib.auth
+        )
+
+        assert res.status_code == 200
+        data = res.json['data']
+        assert schema._id in data['relationships']['registration_schema']['links']['related']['href']
+        assert data['attributes']['registration_metadata'] == payload['data']['attributes']['registration_metadata']
+        # A write to registration_metadata, also updates registration_responses
+        assert data['attributes']['registration_responses'] == {
+            'datacompletion': 'No, data collection has not begun',
+            'looked': 'No',
+            'comments': 'This is my first registration.'
+        }
+
 
 @pytest.mark.django_db
 class TestDraftRegistrationUpdateWithDraftNode(TestDraftRegistrationUpdate):
