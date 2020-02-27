@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-27 11:59+0900\n"
+"POT-Creation-Date: 2020-02-27 13:46+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1195,6 +1195,10 @@ msgstr ""
 
 #: website/templates/messages.mako:5
 msgid "Other"
+msgstr ""
+
+#: website/templates/messages.mako:6
+msgid "No license"
 msgstr ""
 
 #: website/templates/my_projects.mako:2 website/templates/nav.mako:51
