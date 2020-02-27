@@ -87,7 +87,7 @@ sendgrid-django==2.0.0
 python-redmine==2.0.2
 pyfcm==1.4.3
 #facebook-sdk==3.0.0a0
-git+https://github.com/mobolic/facebook-sdk.git#egg=facebook-sdk
+git+https://github.com/mobolic/facebook-sdk.git@09b281b97ff3192d8d78edca393c753d11b0eb99#egg=facebook-sdk
 tweepy==3.5.0
 pandas==0.22.0
 matplotlib==2.1.1
