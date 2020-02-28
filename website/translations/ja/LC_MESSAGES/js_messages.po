@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-27 19:39+0900\n"
+"POT-Creation-Date: 2020-02-28 16:59+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -209,7 +209,7 @@ msgstr "次を入力して続行します。<strong>%1$s</ strong><br><br>"
 #: website/static/js/folderPickerNodeConfig.js:512
 #: website/static/js/folderPickerNodeConfig.js:568
 #: website/static/js/institutionProjectSettings.js:104
-#: website/static/js/licensePicker.js:241 website/static/js/myProjects.js:1562
+#: website/static/js/licensePicker.js:249 website/static/js/myProjects.js:1562
 #: website/static/js/myProjects.js:1610 website/static/js/myProjects.js:1634
 #: website/static/js/nodeControl.js:229
 #: website/static/js/oauthAddonNodeConfig.js:158
@@ -688,7 +688,7 @@ msgstr "ユーザープロフィールを取得できませんでした。"
 
 #: website/static/js/accountSettings.js:86
 #: website/static/js/accountSettings.js:117
-#: website/static/js/licensePicker.js:195
+#: website/static/js/licensePicker.js:203
 msgid "Error fetching user profile"
 msgstr "ユーザープロフィールの取得エラー"
 
@@ -2349,7 +2349,10 @@ msgid ""
 "into your fork, but the projects that they link to will not be forked. If"
 " you wish to fork the linked projects, they need to be forked from the "
 "original project."
-msgstr "この{category}には、他のプロジェクトへのリンクが含まれています。 リンクはフォークにコピーされますが、リンク先のプロジェクトはフォークされません。 リンクされたプロジェクトを分岐する場合は、元のプロジェクトから分岐する必要があります。"
+msgstr ""
+"この{category}には、他のプロジェクトへのリンクが含まれています。 "
+"リンクはフォークにコピーされますが、リンク先のプロジェクトはフォークされません。 "
+"リンクされたプロジェクトを分岐する場合は、元のプロジェクトから分岐する必要があります。"
 
 #: website/static/js/keen.js:116
 msgid "Error sending Keen data to %1$s:<%2$s>"
@@ -2399,31 +2402,43 @@ msgstr "年"
 msgid "Copyright Holders"
 msgstr "著作権者"
 
-#: website/static/js/licensePicker.js:66
+#: website/static/js/licensePicker.js:26
+msgid "License:"
+msgstr "ライセンス："
+
+#: website/static/js/licensePicker.js:27
+msgid "Choose a license:"
+msgstr "ライセンスを選択："
+
+#: website/static/js/licensePicker.js:28
+msgid ">Save<"
+msgstr ">保存<"
+
+#: website/static/js/licensePicker.js:74
 msgid "Add a license"
 msgstr "ライセンスを追加"
 
-#: website/static/js/licensePicker.js:102
+#: website/static/js/licensePicker.js:110
 msgid "Please specify a valid year."
 msgstr "有効な年を指定してください。"
 
-#: website/static/js/licensePicker.js:106
+#: website/static/js/licensePicker.js:114
 msgid "Future years are not allowed."
 msgstr "将来の年は許可されていません。"
 
-#: website/static/js/licensePicker.js:188
+#: website/static/js/licensePicker.js:196
 msgid "License updated successfully."
 msgstr "ライセンスが正常に更新されました。"
 
-#: website/static/js/licensePicker.js:193
+#: website/static/js/licensePicker.js:201
 msgid "There was a problem updating your license. Please try again."
 msgstr "ライセンスの更新中に問題が発生しました。 もう一度やり直してください。"
 
-#: website/static/js/licensePicker.js:237
+#: website/static/js/licensePicker.js:245
 msgid "Your Own License"
 msgstr "自分のライセンス"
 
-#: website/static/js/licensePicker.js:238
+#: website/static/js/licensePicker.js:246
 msgid ""
 "You have opted to use your own license. Please upload a license file "
 "named \"license.txt\" into the GakuNin RDM Storage of this project."
@@ -2431,7 +2446,7 @@ msgstr ""
 "独自のライセンスを使用することを選択しました。「license.txt」という名前のライセンスファイルをこのプロジェクトのGakuNin "
 "RDMストレージにアップロードしてください。"
 
-#: website/static/js/licensePicker.js:245
+#: website/static/js/licensePicker.js:253
 msgid "Add license"
 msgstr "ライセンスを追加"
 
@@ -4165,10 +4180,6 @@ msgstr "%1$sに報告してください"
 #: website/static/js/pages/wiki-edit-page.js:112
 msgid "Could not GET wiki menu pages"
 msgstr "Wikiメニューページを取得できませんでした"
-
-#: website/static/templates/license-picker.html:22
-msgid "Choose a license:"
-msgstr "ライセンスを選択："
 
 #~ msgid "Enter citation style (e.g. \"APA\")"
 #~ msgstr "引用スタイルを入力します（例：\"APA\")"

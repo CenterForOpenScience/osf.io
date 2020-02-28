@@ -23,7 +23,15 @@ var LICENSE_PROPERTIES = {
     'copyrightHolders': _('Copyright Holders')
 };
 
+var license_i18n = _('License:');
+var chooseALicense_i18n = _('Choose a license:');
+var saveBotton_i18n = _('>Save<');
+
 var template = require('raw-loader!templates/license-picker.html');
+
+      template = template.replace( 'License:', license_i18n );
+      template = template.replace( 'Choose a license:', chooseALicense_i18n );
+      template = template.replace( '>Save<', saveBotton_i18n );
 
 /**
  * @class LicensePicker: Knockout.js view model for project license selection

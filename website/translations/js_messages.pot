@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-27 17:32+0900\n"
+"POT-Creation-Date: 2020-02-28 16:59+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -206,7 +206,7 @@ msgstr ""
 #: website/static/js/folderPickerNodeConfig.js:512
 #: website/static/js/folderPickerNodeConfig.js:568
 #: website/static/js/institutionProjectSettings.js:104
-#: website/static/js/licensePicker.js:241 website/static/js/myProjects.js:1562
+#: website/static/js/licensePicker.js:249 website/static/js/myProjects.js:1562
 #: website/static/js/myProjects.js:1610 website/static/js/myProjects.js:1634
 #: website/static/js/nodeControl.js:229
 #: website/static/js/oauthAddonNodeConfig.js:158
@@ -681,7 +681,7 @@ msgstr ""
 
 #: website/static/js/accountSettings.js:86
 #: website/static/js/accountSettings.js:117
-#: website/static/js/licensePicker.js:195
+#: website/static/js/licensePicker.js:203
 msgid "Error fetching user profile"
 msgstr ""
 
@@ -1251,15 +1251,11 @@ msgstr ""
 msgid "Enter citation style (e.g. \"APA\")3"
 msgstr ""
 
-#: website/static/js/citationGrid.js:317
-msgid "Please enter 3 or more character"
-msgstr ""
-
-#: website/static/js/citationGrid.js:340
+#: website/static/js/citationGrid.js:335
 msgid "Error while selecting citation style: "
 msgstr ""
 
-#: website/static/js/citationGrid.js:419
+#: website/static/js/citationGrid.js:414
 msgid ""
 "<em>Could not render entry. Please check the contents of your citations "
 "for correctness.</em>"
@@ -1281,11 +1277,11 @@ msgid " if the problem persists."
 msgstr ""
 
 #: website/static/js/citationWidget.js:44
-msgid "Enter citation style (e.g. \"APA\")2"
+msgid "Enter citation style (e.g. \"APA\")"
 msgstr ""
 
 #: website/static/js/citationWidget.js:48
-msgid "Please enter 2 or more character"
+msgid "Please enter 55 or more character"
 msgstr ""
 
 #: website/static/js/citationWidget.js:79
@@ -2318,6 +2314,14 @@ msgid ""
 "configure the {addon} add-on in the new fork on the settings page."
 msgstr ""
 
+#: website/static/js/js_messages.js:15
+msgid ""
+"This {category} contains links to other projects. Links will be copied "
+"into your fork, but the projects that they link to will not be forked. If"
+" you wish to fork the linked projects, they need to be forked from the "
+"original project."
+msgstr ""
+
 #: website/static/js/keen.js:116
 msgid "Error sending Keen data to %1$s:<%2$s>"
 msgstr ""
@@ -2366,37 +2370,49 @@ msgstr ""
 msgid "Copyright Holders"
 msgstr ""
 
-#: website/static/js/licensePicker.js:66
+#: website/static/js/licensePicker.js:26
+msgid "License:"
+msgstr ""
+
+#: website/static/js/licensePicker.js:27
+msgid "Choose a license:"
+msgstr ""
+
+#: website/static/js/licensePicker.js:28
+msgid ">Save<"
+msgstr ""
+
+#: website/static/js/licensePicker.js:74
 msgid "Add a license"
 msgstr ""
 
-#: website/static/js/licensePicker.js:102
+#: website/static/js/licensePicker.js:110
 msgid "Please specify a valid year."
 msgstr ""
 
-#: website/static/js/licensePicker.js:106
+#: website/static/js/licensePicker.js:114
 msgid "Future years are not allowed."
 msgstr ""
 
-#: website/static/js/licensePicker.js:188
+#: website/static/js/licensePicker.js:196
 msgid "License updated successfully."
 msgstr ""
 
-#: website/static/js/licensePicker.js:193
+#: website/static/js/licensePicker.js:201
 msgid "There was a problem updating your license. Please try again."
 msgstr ""
 
-#: website/static/js/licensePicker.js:237
+#: website/static/js/licensePicker.js:245
 msgid "Your Own License"
 msgstr ""
 
-#: website/static/js/licensePicker.js:238
+#: website/static/js/licensePicker.js:246
 msgid ""
 "You have opted to use your own license. Please upload a license file "
 "named \"license.txt\" into the GakuNin RDM Storage of this project."
 msgstr ""
 
-#: website/static/js/licensePicker.js:245
+#: website/static/js/licensePicker.js:253
 msgid "Add license"
 msgstr ""
 
