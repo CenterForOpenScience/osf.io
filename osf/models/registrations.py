@@ -992,6 +992,9 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     def register(self, auth, save=False, child_ids=None):
         node = self.branched_from
 
+        if not self.title:
+            raise NodeStateError('Draft Registration must have title to be registered')
+
         # Create the registration
         register = node.register_node(
             schema=self.registration_schema,
