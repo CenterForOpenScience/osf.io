@@ -338,4 +338,3 @@ BASE_PATH = parent_dir(parent_dir(HERE))  # admin/ directory
 LOCALE_PATHS = (
     os.path.join(BASE_PATH, 'translations'),
 )
-
