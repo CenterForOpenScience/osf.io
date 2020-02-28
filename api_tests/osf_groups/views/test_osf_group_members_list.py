@@ -11,7 +11,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     OSFGroupFactory,
 )
-from osf.features.flags import OSF_GROUPS
+from osf.features import OSF_GROUPS
 
 
 @pytest.fixture()

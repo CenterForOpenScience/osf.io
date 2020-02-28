@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 from django.db import migrations
 from osf.utils.migrations import DeleteWaffleFlags
-from osf.features.switches import EMBER_PROJECT_REGISTRATIONS
+from osf.features import EMBER_PROJECT_REGISTRATIONS
 
 class Migration(migrations.Migration):
 

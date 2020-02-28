@@ -21,7 +21,7 @@ from api.osf_groups.serializers import (
 )
 from api.users.views import UserMixin
 from framework.auth.oauth_scopes import CoreScopes
-from osf.features.flags import OSF_GROUPS
+from osf.features import OSF_GROUPS
 from osf.models import OSFGroup, OSFUser
 from osf.utils.permissions import MANAGER, GROUP_ROLES
 

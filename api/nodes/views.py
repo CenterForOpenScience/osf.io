@@ -126,7 +126,7 @@ from api.users.serializers import UserSerializer
 from api.wikis.serializers import NodeWikiSerializer
 from framework.exceptions import HTTPError, PermissionsError
 from framework.auth.oauth_scopes import CoreScopes
-from osf.features.flags import OSF_GROUPS
+from osf.features import OSF_GROUPS
 from osf.models import AbstractNode
 from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration, Registration, )
 from osf.models import OSFUser

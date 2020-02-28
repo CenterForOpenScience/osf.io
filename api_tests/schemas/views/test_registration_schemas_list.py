@@ -4,6 +4,7 @@ from api.base.settings.defaults import API_BASE
 from osf.models.metaschema import RegistrationSchema
 from osf_tests.factories import (
     AuthUserFactory,
+
 )
 from osf import features
 from django.contrib.auth.models import Group

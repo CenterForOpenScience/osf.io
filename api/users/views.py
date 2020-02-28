@@ -64,7 +64,7 @@ from framework.auth.exceptions import ChangePasswordError
 from framework.utils import throttle_period_expired
 from framework.sessions.utils import remove_sessions_for_user
 from framework.exceptions import PermissionsError, HTTPError
-from osf.features.flags import OSF_GROUPS
+from osf.features import OSF_GROUPS
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework import status
