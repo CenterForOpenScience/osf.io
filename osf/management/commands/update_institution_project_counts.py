@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 from osf.metrics import InstitutionProjectCounts, UserInstitutionProjectCounts
 from osf.models import Institution, Node
 
+
 def update_institution_project_counts():
     now = dt.datetime.now()
 
