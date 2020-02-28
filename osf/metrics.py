@@ -203,15 +203,11 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
         )
 
     @classmethod
-    def get_latest_user_institution_project_counts(cls, user, institution):
+    def get_latest_user_institution_project_document(cls, user, institution):
         search = cls.search().filter('match', user_id=user._id).filter('match', institution_id=institution._id).sort('-timestamp')[:1]
         response = search.execute()
 
-        latest_document = response[0]
-        public_project_count = getattr(latest_document, 'public_project_count', 0)
-        private_project_count = getattr(latest_document, 'private_project_count', 0)
-
-        return (public_project_count, private_project_count)
+        return response[0]
 
 
 class InstitutionProjectCounts(MetricMixin, metrics.Metric):
@@ -236,12 +232,8 @@ class InstitutionProjectCounts(MetricMixin, metrics.Metric):
         )
 
     @classmethod
-    def get_latest_institution_project_counts(cls, institution):
+    def get_latest_institution_project_document(cls, institution):
         search = cls.search().filter('match', institution_id=institution._id).sort('-timestamp')[:1]
         response = search.execute()
 
-        latest_document = response[0]
-        public_project_count = getattr(latest_document, 'public_project_count', 0)
-        private_project_count = getattr(latest_document, 'private_project_count', 0)
-
-        return (public_project_count, private_project_count)
+        return response[0]
