@@ -671,7 +671,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         if isinstance(self.branched_from, (DraftNode, Node)):
             return self.branched_from.__class__.__name__
         else:
-            return ''
+            return DraftRegistrationStateError
 
     @property
     def url(self):
