@@ -42,8 +42,8 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def url_draft_registrations(self, project_public, draft_registration):
-        return '/{}nodes/{}/draft_registrations/{}/'.format(
-            API_BASE, project_public._id, draft_registration._id)
+        return '/{}nodes/{}/draft_registrations/{}/?{}'.format(
+            API_BASE, project_public._id, draft_registration._id, 'version=2.19')
 
     def test_admin_can_view_draft(
             self, app, user, draft_registration, project_public,
@@ -132,6 +132,19 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         assert data['id'] == draft_registration._id
         assert data['attributes']['registration_metadata'] == {}
 
+    def test_draft_registration_serializer_usage(self, app, user, project_public, draft_registration):
+        # Tests the usage of DraftRegistrationDetailSerializer for version 2.20
+        url_draft_registrations = '/{}nodes/{}/draft_registrations/{}/?{}'.format(
+            API_BASE, project_public._id, draft_registration._id, 'version=2.20')
+
+        res = app.get(url_draft_registrations, auth=user.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+
+        # Set of fields that DraftRegistrationDetailLegacySerializer does not provide
+        assert data['attributes']['title']
+        assert data['attributes']['description']
+        assert data['relationships']['affiliated_institutions']
 
 @pytest.mark.django_db
 class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
@@ -176,8 +189,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def url_draft_registrations(self, project_public, draft_registration):
-        return '/{}nodes/{}/draft_registrations/{}/'.format(
-            API_BASE, project_public._id, draft_registration._id)
+        return '/{}nodes/{}/draft_registrations/{}/?{}'.format(
+            API_BASE, project_public._id, draft_registration._id, 'version=2.19')
 
     @pytest.fixture()
     def payload(self, draft_registration):
@@ -700,8 +713,8 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def url_draft_registrations(self, project_public, draft_registration):
-        return '/{}nodes/{}/draft_registrations/{}/'.format(
-            API_BASE, project_public._id, draft_registration._id)
+        return '/{}nodes/{}/draft_registrations/{}/?{}'.format(
+            API_BASE, project_public._id, draft_registration._id, 'version=2.19')
 
     @pytest.fixture()
     def payload(self, draft_registration):
@@ -794,8 +807,8 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def url_draft_registrations(self, project_public, draft_registration):
-        return '/{}nodes/{}/draft_registrations/{}/'.format(
-            API_BASE, project_public._id, draft_registration._id)
+        return '/{}nodes/{}/draft_registrations/{}/?{}'.format(
+            API_BASE, project_public._id, draft_registration._id, 'version=2.19')
 
     def test_admin_can_delete_draft(self, app, user, url_draft_registrations, project_public):
         res = app.delete_json_api(url_draft_registrations, auth=user.auth)
@@ -894,8 +907,8 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
     def url_draft_registrations(
             self, project_public,
             draft_registration_prereg):
-        return '/{}nodes/{}/draft_registrations/{}/'.format(
-            API_BASE, project_public._id, draft_registration_prereg._id)
+        return '/{}nodes/{}/draft_registrations/{}/?{}'.format(
+            API_BASE, project_public._id, draft_registration_prereg._id, 'version=2.19')
 
     @pytest.fixture()
     def payload(self, draft_registration_prereg):
