@@ -49,7 +49,6 @@ class DraftRegistrationList(NodeDraftRegistrationsList):
         base_permissions.TokenHasScope,
     )
 
-    # serializer_class = DraftRegistrationSerializer
     view_category = 'draft_registrations'
     view_name = 'draft-registration-list'
 
@@ -74,7 +73,6 @@ class DraftRegistrationDetail(NodeDraftRegistrationDetail, DraftRegistrationMixi
         base_permissions.TokenHasScope,
     )
 
-    # serializer_class = DraftRegistrationDetailSerializer
     view_category = 'draft_registrations'
     view_name = 'draft-registration-detail'
 
