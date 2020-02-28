@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-27 17:24+0900\n"
+"POT-Creation-Date: 2020-02-28 17:56+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -2441,6 +2441,8 @@ msgid "View your profile"
 msgstr "プロフィールを表示"
 
 #: website/templates/profile/settings.mako:38
+#: website/templates/project/contributors.mako:182
+#: website/templates/project/contributors.mako:229
 #: website/templates/project/modal_add_contributor.mako:216
 msgid "Name"
 msgstr "名前"

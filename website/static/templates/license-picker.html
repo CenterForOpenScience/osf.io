@@ -1,5 +1,5 @@
 <span data-bind="ifnot: hideLicensePicker">
-<span id="license">_("License:")</span>
+<span id="license">License:</span>
 <span class="text-muted editable" data-bind="text: savedLicenseName,
                                     style: {
                                       cursor: allowEdit()? 'pointer' : 'auto',
@@ -19,7 +19,7 @@
         <span style="cursor: pointer; float: right;" class="fa fa-times text-muted" data-bind="click: togglePreview" aria-hidden="true"></span>
             <div class="form-inline">
                 <div class="form-group">
-                    <label> _("Choose a license:") </label>
+                    <label> Choose a license: </label>
                     <select class="form-control" data-bind="groupOptions: licenseGroups,
                                                             value: selectedLicenseId,
                                                             optionsText: 'name',
@@ -50,7 +50,7 @@
                                                                  'disabled': disableSave
                                                                }, style: {
                                                                  display: allowEdit()? 'block' : 'none'
-                                                               }">_("Save")</button>
+                                                               }">Save</button>
     </div>
   </div>
 </span>

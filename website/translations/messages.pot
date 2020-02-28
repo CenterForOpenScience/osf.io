@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-27 17:24+0900\n"
+"POT-Creation-Date: 2020-02-28 17:56+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2368,6 +2368,8 @@ msgid "View your profile"
 msgstr ""
 
 #: website/templates/profile/settings.mako:38
+#: website/templates/project/contributors.mako:182
+#: website/templates/project/contributors.mako:229
 #: website/templates/project/modal_add_contributor.mako:216
 msgid "Name"
 msgstr ""

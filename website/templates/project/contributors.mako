@@ -179,7 +179,7 @@
     <thead>
         <tr>
             <th class="responsive-table-hide"
-                data-bind="css: {sortable: ($data === 'contrib' && $root.isSortable())}">Name
+                data-bind="css: {sortable: ($data === 'contrib' && $root.isSortable())}">${_("Name")}
             </th>
             <th></th>
             <th>
@@ -226,7 +226,7 @@
 <script id="accessRequestsTable" type="text/html">
     <thead>
         <tr>
-            <th class="responsive-table-hide">Name</th>
+            <th class="responsive-table-hide">${_("Name")}</th>
             <th></th>
             <th class="access-permissions">
                 ${_("Permissions")}

@@ -2291,7 +2291,7 @@ msgstr "器具"
 
 #: website/static/js/js_messages.js:5
 msgid "Methods and Measures"
-msgstr "方法と方策"
+msgstr "方法と対策"
 
 #: website/static/js/js_messages.js:5
 msgid "Procedure"
