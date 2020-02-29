@@ -1542,8 +1542,8 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 3)
-        assert_equal(management_project.logs.count(), 2)
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
         user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 1)
         admin_comments = Comment.objects.filter(node=management_project)
@@ -1573,8 +1573,8 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 3)
-        assert_equal(management_project.logs.count(), 2)
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
         user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 1)
         admin_comments = Comment.objects.filter(node=management_project)
@@ -1605,7 +1605,7 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 3)
+        assert_equal(self.project.logs.count(), 2)
         assert_equal(management_project.logs.count(), 1)
         user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 1)
@@ -1638,11 +1638,75 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
         assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
+        user_comments = Comment.objects.filter(node=self.project)
+        assert_equal(user_comments.count(), 0)
+        admin_comments = Comment.objects.filter(node=management_project)
+        assert_equal(admin_comments.count(), 1)
+        assert mock_send_mail.call_args is None
+
+    @mock.patch.object(iqbrims_views, 'send_mail')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    def test_post_notify_adm_with_log(self, mock_get_management_node,
+                                      mock_send_mail):
+        management_project = ProjectFactory()
+        mock_get_management_node.return_value = management_project
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
+        url = self.project.api_url_for('iqbrims_post_notify')
+        res = self.app.post_json(url, {
+          'notify_type': 'imagescan_workflow_start',
+          'to': ['admin']
+        }, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_items_equal(res.json, {'status': 'complete'})
+        assert_equal(self.project.logs.count(), 3)
         assert_equal(management_project.logs.count(), 2)
         user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 0)
         admin_comments = Comment.objects.filter(node=management_project)
         assert_equal(admin_comments.count(), 1)
+        assert mock_send_mail.call_args is None
+
+    @mock.patch.object(iqbrims_views, 'send_mail')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    def test_post_notify_user_with_log(self, mock_get_management_node,
+                                      mock_send_mail):
+        management_project = ProjectFactory()
+        mock_get_management_node.return_value = management_project
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
+        url = self.project.api_url_for('iqbrims_post_notify')
+        res = self.app.post_json(url, {
+          'notify_type': 'imagescan_workflow_start',
+          'to': ['user']
+        }, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_items_equal(res.json, {'status': 'complete'})
+        assert_equal(self.project.logs.count(), 3)
+        assert_equal(management_project.logs.count(), 2)
+        user_comments = Comment.objects.filter(node=self.project)
+        assert_equal(user_comments.count(), 1)
+        admin_comments = Comment.objects.filter(node=management_project)
+        assert_equal(admin_comments.count(), 0)
         assert mock_send_mail.call_args is None
 
     @mock.patch.object(iqbrims_views, 'send_mail')
@@ -1670,8 +1734,8 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 3)
-        assert_equal(management_project.logs.count(), 2)
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
         user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 1)
         admin_comments = Comment.objects.filter(node=management_project)
@@ -1711,8 +1775,8 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 3)
-        assert_equal(management_project.logs.count(), 2)
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
         user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 1)
         admin_comments = Comment.objects.filter(node=management_project)
@@ -1752,8 +1816,8 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 3)
-        assert_equal(management_project.logs.count(), 2)
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
         user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 1)
         admin_comments = Comment.objects.filter(node=management_project)
@@ -1803,8 +1867,8 @@ URL: http://test.test<br>
 
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 3)
-        assert_equal(management_project.logs.count(), 2)
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
         user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 1)
         assert user_comments.get().content == comment_html
@@ -1846,8 +1910,8 @@ URL: http://test.test<br>
 
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 3)
-        assert_equal(management_project.logs.count(), 2)
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
         user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 1)
         assert user_comments.get().content == comment_html
@@ -1889,7 +1953,7 @@ URL: http://test.test<br>
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
         assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
         user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 0)
         admin_comments = Comment.objects.filter(node=management_project)

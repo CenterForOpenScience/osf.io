@@ -1,4 +1,13 @@
 # -*- coding: utf-8 -*-
+
+import json
+import os
+
+from website.settings import parent_dir
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+STATIC_PATH = os.path.join(parent_dir(HERE), 'static')
+
 # Drive credentials
 CLIENT_ID = 'chaneme'
 CLIENT_SECRET = 'changeme'
@@ -7,6 +16,8 @@ CLIENT_SECRET = 'changeme'
 EXPIRY_TIME = 60 * 60 * 24 * 175  # 175 days
 REFRESH_TIME = 5 * 60  # 5 minutes
 
+with open(os.path.join(STATIC_PATH, 'iqbrimsLogActionList.json')) as fp:
+    LOG_MESSAGES = json.load(fp)
 
 # Check https://developers.google.com/drive/scopes for all available scopes
 OAUTH_SCOPE = [

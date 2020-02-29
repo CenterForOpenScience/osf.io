@@ -4,7 +4,6 @@
 import functools
 import hashlib
 import httplib as http
-import json
 import logging
 import os
 import re
@@ -17,20 +16,9 @@ from osf.models import Guid, Comment, ExternalAccount
 from website.util import api_v2_url
 
 logger = logging.getLogger(__name__)
-_log_actions = None
 
 MAX_COMMENT_LENGTH = 800
 
-
-def get_log_actions():
-    global _log_actions
-    if _log_actions is not None:
-        return _log_actions
-    HERE = os.path.dirname(os.path.abspath(__file__))
-    STATIC_PATH = os.path.join(HERE, 'static')
-    with open(os.path.join(STATIC_PATH, 'iqbrimsLogActionList.json')) as fp:
-        _log_actions = json.load(fp)
-    return _log_actions
 
 def build_iqbrims_urls(item, node, path):
     return {

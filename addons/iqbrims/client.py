@@ -596,8 +596,7 @@ class SpreadsheetClient(BaseClient):
                 },
                 'fields': 'hiddenByUser',
             }
-        } for i, col in enumerate(c)
-          if col.startswith('L') and col not in entry_cols]
+        } for i, col in enumerate(c) if col.startswith('L') and col not in entry_cols]
 
         res = self._make_request(
             'POST',

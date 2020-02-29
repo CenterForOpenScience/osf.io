@@ -36,7 +36,6 @@ from addons.iqbrims.serializer import IQBRIMSSerializer
 from addons.iqbrims.models import NodeSettings as IQBRIMSNodeSettings
 from addons.iqbrims.models import REVIEW_FOLDERS, REVIEW_FILE_LIST
 from addons.iqbrims.utils import (
-    get_log_actions,
     must_have_valid_hash,
     get_folder_title,
     add_comment,
@@ -185,9 +184,8 @@ def iqbrims_post_notify(**kwargs):
                 node_emails.append((mgmtnode, None, 'iqbrims_management'))
     action = 'iqbrims_{}'.format(notify_type)
     if notify_body is None:
-        log_actions = get_log_actions()
-        if action in log_actions:
-            notify_body = log_actions[action]
+        if action in settings.LOG_MESSAGES:
+            notify_body = settings.LOG_MESSAGES[action]
             href_prefix = website_settings.DOMAIN.rstrip('/') + '/'
             href = href_prefix + node.creator._id + '/'
             uname = 'User <a href="{1}">{0}</a>'.format(node.creator.username,
@@ -200,19 +198,18 @@ def iqbrims_post_notify(**kwargs):
         notify_body_md = to_comment_string(notify_body) if notify_body is not None else ''
     if notify_title is None:
         notify_title = action
+    if action in settings.LOG_MESSAGES:
+        for n in [node, mgmtnode]:
+            n.add_log(
+                action=action,
+                params={
+                    'project': n.parent_id,
+                    'node': node._id,
+                },
+                auth=Auth(user=node.creator),
+            )
     for n in node_comments:
-        comment = add_comment(node=n, user=n.creator,
-                              title=notify_title,
-                              body=notify_body_md)
-        n.add_log(
-            action=action,
-            params={
-                'project': n.parent_id,
-                'node': node._id,
-                'comment': comment._id,
-            },
-            auth=Auth(user=node.creator),
-        )
+        add_comment(node=n, user=n.creator, title=notify_title, body=notify_body_md)
     for n, cc_addrs, email_template in node_emails:
         if not use_mail or len(n.contributors) == 0:
             continue
@@ -509,11 +506,6 @@ def iqbrims_create_filelist(**kwargs):
         access_token = iqbrims.fetch_access_token()
     except exceptions.InvalidAuthError:
         raise HTTPError(403)
-    management_node = _get_management_node(node)
-    management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
-    if management_node_addon is None:
-        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
-    user_settings = IQBRIMSWorkflowUserSettings(access_token, management_node_addon.folder_id)
 
     client = IQBRIMSClient(access_token)
     folders = client.folders(folder_id=iqbrims.folder_id)
