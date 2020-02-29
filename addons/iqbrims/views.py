@@ -565,7 +565,7 @@ def iqbrims_close_index(**kwargs):
 @must_have_valid_hash()
 def iqbrims_get_message(**kwargs):
     node = kwargs['node'] or kwargs['project']
-    logger.info('Notified: {}'.format(request.data))
+    logger.info('Get Message: {}'.format(request.data))
     data = json.loads(request.data)
     messageid = data['notify_type']
     variables = data['variables']
