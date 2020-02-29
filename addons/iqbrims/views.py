@@ -150,21 +150,38 @@ def iqbrims_post_notify(**kwargs):
     logger.info('Notified: {}'.format(request.data))
     data = json.loads(request.data)
     notify_type = data['notify_type']
-    to = data['to']
     notify_title = data['notify_title'] if 'notify_title' in data else None
     notify_body = data['notify_body'] if 'notify_body' in data else None
     notify_body_md = data['notify_body_md'] \
                      if 'notify_body_md' in data else None
     use_mail = data['use_mail'] if 'use_mail' in data else False
-    nodes = []
+    node_comments = []
+    node_emails = []
     mgmtnode = _get_management_node(node)
-    if 'user' in to:
-        admin_emails = reduce(lambda x, y: x + y,
-                              [[e.address for e in u.emails.all()]
-                               for u in mgmtnode.contributors])
-        nodes.append((node, admin_emails, 'iqbrims_user'))
-    if 'admin' in to:
-        nodes.append((mgmtnode, None, 'iqbrims_management'))
+    admin_emails = reduce(lambda x, y: x + y,
+                          [[e.address for e in u.emails.all()]
+                           for u in mgmtnode.contributors])
+    if 'to' in data:
+        to = data['to']
+        if 'user' in to:
+            node_comments.append(node)
+            node_emails.append((node, admin_emails, 'iqbrims_user'))
+        if 'admin' in to:
+            node_comments.append(mgmtnode)
+            node_emails.append((mgmtnode, None, 'iqbrims_management'))
+    else:
+        if 'comment_to' in data:
+            to = data['comment_to']
+            if 'user' in to:
+                node_comments.append(node)
+            if 'admin' in to:
+                node_comments.append(mgmtnode)
+        if 'email_to' in data:
+            to = data['email_to']
+            if 'user' in to:
+                node_emails.append((node, admin_emails, 'iqbrims_user'))
+            if 'admin' in to:
+                node_emails.append((mgmtnode, None, 'iqbrims_management'))
     action = 'iqbrims_{}'.format(notify_type)
     if notify_body is None:
         log_actions = get_log_actions()
@@ -182,7 +199,7 @@ def iqbrims_post_notify(**kwargs):
         notify_body_md = to_comment_string(notify_body) if notify_body is not None else ''
     if notify_title is None:
         notify_title = action
-    for n, cc_addrs, email_template in nodes:
+    for n in node_comments:
         comment = add_comment(node=n, user=n.creator,
                               title=notify_title,
                               body=notify_body_md)
@@ -195,6 +212,7 @@ def iqbrims_post_notify(**kwargs):
             },
             auth=Auth(user=node.creator),
         )
+    for n, cc_addrs, email_template in node_emails:
         if not use_mail or len(n.contributors) == 0:
             continue
         emails = reduce(lambda x, y: x + y,
