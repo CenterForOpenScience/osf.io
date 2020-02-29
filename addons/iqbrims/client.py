@@ -546,6 +546,7 @@ class SpreadsheetClient(BaseClient):
         num_of_fcolumns = 2
         fcolumns = ['Remarks']
         entry_cols = ['L{}'.format(i) for i in range(0, max_depth + 2)]
+        COMMENT_MARGIN = 3
         c = self.ensure_columns(files_sheet_id,
                                 entry_cols +
                                 ['Persons Involved(File)'] +
@@ -553,7 +554,7 @@ class SpreadsheetClient(BaseClient):
                                 ['Extension'] +
                                 ['Software Used(Extension)'] +
                                 ['{}(Extension)'.format(col) for col in fcolumns],
-                                row=1)
+                                row=1 + COMMENT_MARGIN)
         values = self._to_file_list(top, [])
         exts = sorted(set([os.path.splitext(v[-1])[-1]
                            for v, t in values if t == 'file']))
@@ -561,7 +562,7 @@ class SpreadsheetClient(BaseClient):
         exts += ['' for i in range(0, len(values) - len(exts))]
         values = [self._to_file_row(c, t, v, ex)
                   for (v, t), ex in zip(values, exts)]
-        r = u'{0}!A1:{1}1'.format(files_sheet_id, self._row_name(len(c)))
+        r = u'{0}!A{2}:{1}{2}'.format(files_sheet_id, self._row_name(len(c)), 1 + COMMENT_MARGIN)
         res = self._make_request(
             'POST',
             self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
@@ -622,9 +623,20 @@ class SpreadsheetClient(BaseClient):
                         'protectedRange': {
                             'range': {'sheetId': files_sheet_idx,
                                       'startColumnIndex': 0,
+                                      'endColumnIndex': col_count,
+                                      'startRowIndex': 0 + COMMENT_MARGIN,
+                                      'endRowIndex': 1 + COMMENT_MARGIN},
+                            'warningOnly': True
+                        }
+                    }
+                }, {
+                    'addProtectedRange': {
+                        'protectedRange': {
+                            'range': {'sheetId': files_sheet_idx,
+                                      'startColumnIndex': 0,
                                       'endColumnIndex': max_depth + 2,
-                                      'startRowIndex': 1,
-                                      'endRowIndex': 1 + len(values)},
+                                      'startRowIndex': 1 + COMMENT_MARGIN,
+                                      'endRowIndex': 1 + COMMENT_MARGIN + len(values)},
                             'warningOnly': True
                         }
                     }
@@ -634,8 +646,8 @@ class SpreadsheetClient(BaseClient):
                             'range': {'sheetId': files_sheet_idx,
                                       'startColumnIndex': ext_col_index,
                                       'endColumnIndex': ext_col_index + 1,
-                                      'startRowIndex': 1,
-                                      'endRowIndex': 1 + len(values)},
+                                      'startRowIndex': 1 + COMMENT_MARGIN,
+                                      'endRowIndex': 1 + COMMENT_MARGIN + len(values)},
                             'warningOnly': True
                         }
                     }
