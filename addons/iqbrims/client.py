@@ -846,7 +846,7 @@ class IQBRIMSWorkflowUserSettings(object):
     def MESSAGES(self):
         current = self.load()
         if 'MESSAGES' in current['settings']:
-            return current['settings']['MESSAGES']
+            return json.loads(current['settings']['MESSAGES'])
         return settings.MESSAGES
 
 

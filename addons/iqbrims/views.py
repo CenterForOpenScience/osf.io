@@ -583,7 +583,7 @@ def iqbrims_get_message(**kwargs):
         return {'notify_type': messageid}
     msg = messages[messageid].copy()
     for k, v in msg.items():
-        if type(v) != str:
+        if type(v) != str and type(v) != unicode:
             continue
         msg[k] = embed_variables(v, variables)
     msg['notify_type'] = messageid

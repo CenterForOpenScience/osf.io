@@ -1930,12 +1930,12 @@ URL: http://test.test<br>
         management_project = ProjectFactory()
         management_project.add_addon('iqbrims', auth=None)
         mock_get_management_node.return_value = management_project
-        user_settings = {'MESSAGES': {
+        user_settings = {'MESSAGES': json.dumps({
           'test_notify': {
             'notify_body': 'Variable is ${var1}',
             'user_email': True,
           }
-        }}
+        })}
         mock_workflow_user_settings.return_value = {'settings': user_settings}
 
         node_settings = self.project.get_addon('iqbrims')
