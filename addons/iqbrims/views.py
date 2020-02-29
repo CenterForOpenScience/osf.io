@@ -41,7 +41,8 @@ from addons.iqbrims.utils import (
     get_folder_title,
     add_comment,
     to_comment_string,
-    validate_file_list
+    validate_file_list,
+    embed_variables,
 )
 
 logger = logging.getLogger(__name__)
@@ -558,6 +559,35 @@ def iqbrims_close_index(**kwargs):
     result = client.revoke_access_from_anyone(files[0]['id'], drop_all=drop_all)
     logger.info('Revoke access: {}'.format(result))
     return {'status': 'complete'}
+
+@must_be_valid_project
+@must_have_addon(SHORT_NAME, 'node')
+@must_have_valid_hash()
+def iqbrims_get_message(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    logger.info('Notified: {}'.format(request.data))
+    data = json.loads(request.data)
+    messageid = data['notify_type']
+    variables = data['variables']
+    management_node = _get_management_node(node)
+    management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
+    if management_node_addon is None:
+        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
+    try:
+        access_token = management_node_addon.fetch_access_token()
+    except exceptions.InvalidAuthError:
+        raise HTTPError(403)
+    user_settings = IQBRIMSWorkflowUserSettings(access_token, management_node_addon.folder_id)
+    messages = user_settings.MESSAGES
+    if messageid not in messages:
+        return {'notify_type': messageid}
+    msg = messages[messageid].copy()
+    for k, v in msg.items():
+        if type(v) != str:
+            continue
+        msg[k] = embed_variables(v, variables)
+    msg['notify_type'] = messageid
+    return msg
 
 def _iqbrims_import_auth_from_management_node(node, node_addon, management_node):
     """Grant oauth access on user_settings of management_node and

@@ -189,3 +189,8 @@ def to_comment_string(notify_body):
     if len(notify_body) < MAX_COMMENT_LENGTH:
         return notify_body
     return notify_body[:MAX_COMMENT_LENGTH - 3] + '...'
+
+def embed_variables(message, variables):
+    for k, v in variables.items():
+        message = message.replace('${' + k + '}', v)
+    return message

@@ -1898,3 +1898,60 @@ URL: http://test.test<br>
         assert_equal(mock_send_mail.call_args_list[0][0][0], self.project.contributors[0].emails.all()[0].address)
         assert_equal(mock_send_mail.call_args_list[0][1]['cc_addr'], management_project.contributors[0].emails.all()[0].address)
         assert_equal(mock_send_mail.call_args_list[0][1]['replyto'], management_project.contributors[0].emails.all()[0].address)
+
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    def test_undefined_message(self, mock_get_management_node, mock_workflow_user_settings):
+        management_project = ProjectFactory()
+        management_project.add_addon('iqbrims', auth=None)
+        mock_get_management_node.return_value = management_project
+        user_settings = {}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_get_message')
+        res = self.app.post_json(url, {
+          'notify_type': 'test_notify',
+          'variables': {},
+        }, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_items_equal(res.json, {'notify_type': 'test_notify'})
+
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    def test_defined_message(self, mock_get_management_node, mock_workflow_user_settings):
+        management_project = ProjectFactory()
+        management_project.add_addon('iqbrims', auth=None)
+        mock_get_management_node.return_value = management_project
+        user_settings = {'MESSAGES': {
+          'test_notify': {
+            'notify_body': 'Variable is ${var1}',
+            'user_email': True,
+          }
+        }}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_get_message')
+        res = self.app.post_json(url, {
+          'notify_type': 'test_notify',
+          'variables': {'var1': 'Variable #1'},
+        }, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['notify_type'], 'test_notify')
+        assert_equal(res.json['notify_body'], 'Variable is Variable #1')
+        assert_equal(res.json['user_email'], True)

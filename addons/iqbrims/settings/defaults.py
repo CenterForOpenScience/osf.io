@@ -67,6 +67,8 @@ LABO_LIST = [{'id': 'rna', 'text': u'RNA分野', 'en': 'Laboratory of RNA'},
              {'id': 'xxx', 'text': u'XXX分野', 'en': 'Laboratory of XXX'},
              {'id': 'yyy', 'text': u'YYY分野', 'en': 'Laboratory of YYY'}]
 
+MESSAGES = {}
+
 USER_SETTINGS_SHEET_FILENAME = 'Settings'
 USER_SETTINGS_SHEET_SHEET_NAME = 'Settings'
 USER_SETTINGS_CACHE_EXPIRATION_SEC = 60

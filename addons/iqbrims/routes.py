@@ -131,6 +131,11 @@ api_routes = {
             '/project/<pid>/node/<nid>/iqbrims/filelist/<folder>',
         ], 'put', views.iqbrims_create_filelist, json_renderer),
 
+        Rule([
+            '/project/<pid>/iqbrims/message',
+            '/project/<pid>/node/<nid>/iqbrims/message',
+        ], 'post', views.iqbrims_get_message, json_renderer),
+
     ],
     'prefix': '/api/v1'
 }

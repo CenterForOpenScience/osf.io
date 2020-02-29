@@ -842,6 +842,13 @@ class IQBRIMSWorkflowUserSettings(object):
             return current['settings']['FLOWABLE_DATALIST_TEMPLATE_ID']
         return settings.FLOWABLE_DATALIST_TEMPLATE_ID
 
+    @property
+    def MESSAGES(self):
+        current = self.load()
+        if 'MESSAGES' in current['settings']:
+            return current['settings']['MESSAGES']
+        return settings.MESSAGES
+
 
 class IQBRIMSFlowableClient(BaseClient):
 
