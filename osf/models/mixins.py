@@ -147,13 +147,13 @@ class TitleMixin(models.Model):
     def log_params(self):
         raise NotImplementedError()
 
-    def set_title(self, title, auth, save=False):
+    def set_title(self, title, auth, save=False, allow_blank=False):
         """Set the title of this resource and log it.
         :param str title: The new title.
         :param auth: All the auth information including user, API key.
         """
         # Called so validation does not have to wait until save.
-        validate_title(title)
+        validate_title(title, allow_blank=allow_blank)
 
         original_title = self.title
         new_title = sanitize.strip_html(title)
