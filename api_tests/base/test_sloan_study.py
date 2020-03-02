@@ -198,3 +198,13 @@ class TestSloanStudyWaffling:
 
         assert f' {SLOAN_COI_DISPLAY}=True; Path=/' in cookies
         assert f' {SLOAN_PREREG_DISPLAY}=True; Path=/' in cookies
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_user_get_cookie_when_flag_is_everyone(self, app, user, preprint):
+        Flag.objects.filter(name=SLOAN_COI_DISPLAY).update(everyone=True)
+        headers = {'Referer': preprint.absolute_url}
+        resp = app.get('/v2/', auth=user.auth, headers=headers)
+
+        cookies = resp.headers.getall('Set-Cookie')
+
+        assert f' {SLOAN_COI_DISPLAY}=True; Path=/' in cookies

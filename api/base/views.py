@@ -488,14 +488,16 @@ def sloan_study_disambiguation(request):
     sloan_data = {}
     for flag in Flag.objects.all():
         active = flag.is_active(request._request)
-        if flag.name in SLOAN_FLAGS and flag.everyone is None:
-            sloan_data[flag.name] = active
+        if flag.name in SLOAN_FLAGS:
+            active = flag.everyone or active
+            sloan_data[flag.name] = flag.everyone or active
             # User tags should override any cookie info
             if user and not user.is_anonymous:
                 tag_name = SLOAN_FEATURES[flag.name]
                 if user.all_tags.filter(name=tag_name):
                     sloan_data[flag.name] = True
                     active = True
+
                 if user.all_tags.filter(name=f'no_{tag_name}'):
                     sloan_data[flag.name] = False
                     active = False
