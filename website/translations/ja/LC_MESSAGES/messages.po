@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-03-02 18:07+0900\n"
+"POT-Creation-Date: 2020-03-02 19:54+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -1603,60 +1603,57 @@ msgstr ""
 msgid "(Preprint File)"
 msgstr "(プレプリントファイル)"
 
-#: website/templates/search.mako:130
-#, python-format
-msgid "From: <a %(data_bind)s></a>"
-msgstr "<a %(data_bind)s></a>プロジェクトより"
-
 #: website/templates/search.mako:131
 #, python-format
-msgid "From: <span %(data_bind1)s><span %(data_bind2)s></span> /</span>"
-msgstr "<span %(data_bind1)s><span %(data_bind2)s></span> /</span>より"
+msgid ""
+"From: <span %(data_bind1)s><span %(data_bind2)s></span> /</span><a "
+"%(dagta_bind3)s></a>"
+msgstr "<a %(dagta_bind3)s></a><span %(data_bind1)s><span %(data_bind2)s></span> /</span>より"
 
-#: website/templates/search.mako:241
+#: website/templates/search.mako:240
 msgid " Contributors:"
 msgstr "コントリビュータ:"
 
-#: website/templates/search.mako:263
+#: website/templates/search.mako:262
 msgid "Affiliated institutions:"
 msgstr "所属機関"
 
-#: website/templates/search.mako:279 website/templates/search.mako:368
+#: website/templates/search.mako:276 website/templates/search.mako:363
 #, python-format
 msgid ""
-"<strong>Jump to:</strong><a %(data_bind1)s>Wiki</a> -<a "
-"%(data_bind2)s>Files</a>"
-msgstr "<a %(data_bind1)s>Wiki</a> -<a %(data_bind2)s>ファイル</a><strong>へ移動</strong>"
+"<strong>Jump to:</strong><!-- ko if: n_wikis > 0 --><a "
+"%(data_bind1)s>Wiki</a> -<!-- /ko --><a %(data_bind2)s>Files</a>"
+msgstr "<!-- ko if: n_wikis > 0 --><a %(data_bind1)s>Wiki</a> -<!-- /ko --><a %(data_bind2)s>ファイル</a><strong>へ移動</strong>"
 
-#: website/templates/search.mako:289
+#: website/templates/search.mako:286
 msgid "(Preprint)"
 msgstr "(プレプリント)"
 
 #: website/templates/project/project.mako:265
 #: website/templates/project/settings.mako:107
-#: website/templates/search.mako:290 website/templates/search.mako:346
+#: website/templates/search.mako:287 website/templates/search.mako:343
 msgid "Description:"
 msgstr "説明:"
 
-#: website/templates/project/project.mako:165 website/templates/search.mako:293
-#: website/templates/search.mako:350
+#: website/templates/project/project.mako:165 website/templates/search.mako:290
+#: website/templates/search.mako:347
 msgid "Contributors:"
 msgstr "コントリビュータ:"
 
-#: website/templates/search.mako:312
+#: website/templates/search.mako:309
 msgid "Managers:"
 msgstr "マネージャ:"
 
-#: website/templates/search.mako:325
+#: website/templates/search.mako:322
 msgid "Members:"
 msgstr "メンバー:"
 
-#: website/templates/search.mako:339 website/templates/search.mako:342
+#: website/templates/search.mako:336 website/templates/search.mako:339
 #, python-format
 msgid "(<span %(class_data_bind)s>Withdrawn </span>Registration)"
 msgstr "(<span %(class_data_bind)s>取り下げられた</span>登録)"
 
-#: website/templates/search.mako:372
+#: website/templates/search.mako:367
 msgid "Tags:"
 msgstr "タグ"
 
