@@ -69,7 +69,7 @@
     },
     "iqbrims": {
         "fullName": "IQB-RIMS",
-        "externalView": true
+        "externalView": false
     },
     "dropboxbusiness": {
         "fullName": "Dropbox Business",
