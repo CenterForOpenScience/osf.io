@@ -1626,7 +1626,7 @@ msgstr "所属機関"
 msgid ""
 "<strong>Jump to:</strong><a %(data_bind1)s>Wiki</a> -<a "
 "%(data_bind2)s>Files</a>"
-msgstr "<a %(data_bind1)s>Wiki</a> -<a %(data_bind2)s>ファイル</a>へ移動"
+msgstr "<a %(data_bind1)s>Wiki</a> -<a %(data_bind2)s>ファイル</a><strong>へ移動</strong>"
 
 #: website/templates/search.mako:289
 msgid "(Preprint)"

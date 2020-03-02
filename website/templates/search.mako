@@ -127,7 +127,7 @@
         <!-- /ko-->
 
         <h5>
-            <!-- ko if: parent_url --> ${_('From: <a %(data_bind)s></a>') % dict(data_bind=h('data-bind="attr: {href: parent_url}, text: parent_title || '' + ' /'"')) | n} <!-- /ko -->
+            <!-- ko if: parent_url --> From: <a data-bind="attr: {href: parent_url}, text: parent_title || '' + ' /'"></a> <!-- /ko -->
             <!-- ko if: !parent_url --> ${_('From: <span %(data_bind1)s><span %(data_bind2)s></span> /</span>') % dict(data_bind1='data-bind="if: parent_title"',data_bind2='data-bind="text: parent_title"') | n} <!-- /ko -->
             <a data-bind="attr: {href: node_url}, text: node_title"></a>
         </h5>
