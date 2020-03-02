@@ -103,8 +103,9 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def url_draft_registrations(self, project_public):
-        return '/{}nodes/{}/draft_registrations/'.format(
-            API_BASE, project_public._id)
+        # Specifies version to test functionality when using DraftRegistrationLegacySerializer
+        return '/{}nodes/{}/draft_registrations/?{}'.format(
+            API_BASE, project_public._id, 'version=2.19')
 
     def test_admin_can_view_draft_list(
             self, app, user, draft_registration, project_public,
@@ -202,6 +203,21 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         assert data[0]['id'] == draft_registration._id
         assert data[0]['attributes']['registration_metadata'] == {}
 
+    def test_draft_registration_serializer_usage(self, app, user, project_public, draft_registration):
+        # Tests the usage of DraftRegistrationDetailSerializer for version 2.20
+        url_draft_registrations = '/{}nodes/{}/draft_registrations/?{}'.format(
+            API_BASE, project_public._id, 'version=2.20')
+
+        res = app.get(url_draft_registrations, auth=user.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 1
+
+        # Set of fields that DraftRegistrationLegacySerializer does not provide
+        assert data[0]['attributes']['title']
+        assert data[0]['attributes']['description']
+        assert data[0]['relationships']['affiliated_institutions']
+
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
@@ -242,8 +258,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def url_draft_registrations(self, project_public):
-        return '/{}nodes/{}/draft_registrations/'.format(
-            API_BASE, project_public._id)
+        return '/{}nodes/{}/draft_registrations/?{}'.format(
+            API_BASE, project_public._id, 'version=2.19')
 
     def test_type_is_draft_registrations(
             self, app, user, metaschema_open_ended,
@@ -272,7 +288,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
     def test_admin_can_create_draft(
             self, app, user, project_public, url_draft_registrations,
             payload, metaschema_open_ended):
-        url = '{}?embed=branched_from&embed=initiator'.format(url_draft_registrations)
+        url = '{}&embed=branched_from&embed=initiator'.format(url_draft_registrations)
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
         data = res.json['data']
@@ -487,7 +503,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             branched_from=project_public
         )
 
-        url = '{}?embed=initiator&embed=branched_from'.format(url_draft_registrations)
+        url = '{}&embed=initiator&embed=branched_from'.format(url_draft_registrations)
 
         registration_metadata = prereg_metadata(prereg_draft_registration)
         del registration_metadata['q1']

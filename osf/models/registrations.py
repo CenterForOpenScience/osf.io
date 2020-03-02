@@ -671,7 +671,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         if isinstance(self.branched_from, (DraftNode, Node)):
             return self.branched_from.__class__.__name__
         else:
-            return ''
+            raise DraftRegistrationStateError
 
     @property
     def url(self):
@@ -992,6 +992,9 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     def register(self, auth, save=False, child_ids=None):
         node = self.branched_from
 
+        if not self.title:
+            raise NodeStateError('Draft Registration must have title to be registered')
+
         # Create the registration
         register = node.register_node(
             schema=self.registration_schema,
@@ -1068,7 +1071,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             if key not in self.WRITABLE_WHITELIST:
                 continue
             if key == 'title':
-                self.set_title(title=value, auth=auth, save=False)
+                self.set_title(title=value, auth=auth, save=False, allow_blank=True)
             elif key == 'description':
                 self.set_description(description=value, auth=auth, save=False)
             elif key == 'category':

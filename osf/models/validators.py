@@ -58,17 +58,20 @@ def validate_subscription_type(value):
         raise ValidationValueError
 
 
-def validate_title(value):
+def validate_title(value, allow_blank=False):
     """Validator for Node#title. Makes sure that the value exists and is not
     above 512 characters.
     """
-    if value is None or not value.strip():
-        raise ValidationValueError('Title cannot be blank.')
+
+    if not allow_blank:
+        if value is None or not value.strip():
+            raise ValidationValueError('Title cannot be blank.')
 
     value = strip_html(value)
 
-    if value is None or not value.strip():
-        raise ValidationValueError('Invalid title.')
+    if not allow_blank:
+        if value is None or not value.strip():
+            raise ValidationValueError('Invalid title.')
 
     if len(value) > 512:
         raise ValidationValueError('Title cannot exceed 512 characters.')

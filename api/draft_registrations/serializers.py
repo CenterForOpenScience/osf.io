@@ -38,7 +38,7 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
     category_choices = list(settings.NODE_CATEGORY_MAP.items())
     category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
 
-    title = ser.CharField(required=False, allow_blank=False)
+    title = ser.CharField(required=False, allow_blank=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
 
     category = ser.ChoiceField(required=False, choices=category_choices, help_text='Choices: ' + category_choices_string)

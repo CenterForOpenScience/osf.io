@@ -49,10 +49,12 @@ class DraftRegistrationList(NodeDraftRegistrationsList):
         base_permissions.TokenHasScope,
     )
 
-    serializer_class = DraftRegistrationSerializer
-
     view_category = 'draft_registrations'
     view_name = 'draft-registration-list'
+
+    # overrides NodeDraftRegistrationList
+    def get_serializer_class(self):
+        return DraftRegistrationSerializer
 
     # overrides NodeDraftRegistrationList
     def get_queryset(self):
@@ -71,10 +73,12 @@ class DraftRegistrationDetail(NodeDraftRegistrationDetail, DraftRegistrationMixi
         base_permissions.TokenHasScope,
     )
 
-    serializer_class = DraftRegistrationDetailSerializer
-
     view_category = 'draft_registrations'
     view_name = 'draft-registration-detail'
+
+    # overrides NodeDraftRegistrationDetail
+    def get_serializer_class(self):
+        return DraftRegistrationDetailSerializer
 
 
 class DraftInstitutionsList(NodeInstitutionsList, DraftRegistrationMixin):

@@ -21,7 +21,7 @@ from osf.utils.permissions import READ, WRITE, ADMIN
 class TestDraftRegistrationListNewWorkflow(TestDraftRegistrationList):
     @pytest.fixture()
     def url_draft_registrations(self, project_public):
-        return '/{}draft_registrations/'.format(API_BASE)
+        return '/{}draft_registrations/?'.format(API_BASE)
 
     # Overrides TestDraftRegistrationList
     def test_osf_group_with_admin_permissions_can_view(self):
@@ -70,7 +70,7 @@ class TestDraftRegistrationListNewWorkflow(TestDraftRegistrationList):
 class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
     @pytest.fixture()
     def url_draft_registrations(self, project_public):
-        return '/{}draft_registrations/'.format(API_BASE)
+        return '/{}draft_registrations/?'.format(API_BASE)
 
     @pytest.fixture()
     def payload(self, metaschema_open_ended, provider, project_public):
@@ -177,13 +177,13 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
 class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
     @pytest.fixture()
     def url_draft_registrations(self, project_public):
-        return '/{}draft_registrations/'.format(API_BASE)
+        return '/{}draft_registrations/?'.format(API_BASE)
 
     # Overrides TestDraftRegistrationList
     def test_admin_can_create_draft(
             self, app, user, project_public, url_draft_registrations,
             payload, metaschema_open_ended):
-        url = '{}?embed=branched_from&embed=initiator'.format(url_draft_registrations)
+        url = '{}embed=branched_from&embed=initiator'.format(url_draft_registrations)
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
         data = res.json['data']
