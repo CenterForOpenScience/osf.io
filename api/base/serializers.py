@@ -871,6 +871,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     elif related_type == 'schemas' and related_class.view_name == 'registration-schema-detail':
                         related_id = resolved_url.kwargs['schema_id']
                         related_type = 'registration-schemas'
+                    elif related_type == 'users' and related_class.view_name == 'user_settings':
+                        related_id = resolved_url.kwargs['user_id']
+                        related_type = 'user-settings'
                     else:
                         related_id = resolved_url.kwargs[related_type[:-1] + '_id']
                 except KeyError:
