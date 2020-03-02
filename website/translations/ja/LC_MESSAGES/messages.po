@@ -2985,7 +2985,7 @@ msgstr "DOIを作成"
 #: website/templates/project/project.mako:259
 #: website/templates/project/settings.mako:81
 msgid "Category:"
-msgstr "カテゴリー:"
+msgstr "カテゴリー："
 
 #: website/templates/project/project.mako:260
 msgid "category"

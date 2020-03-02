@@ -129,7 +129,7 @@ var ProjectViewModel = function(data, options) {
 
         var categories = (options && options.categories) || {};
         var categoryOptions = $.map(categories, function(item) {
-            return {value: item.value, text: item.display_name};
+            return {value: item.value, text: _(item.display_name)};
         });
         $('#nodeCategoryEditable').editable($.extend({}, editableOptions, {
             type: 'select',
