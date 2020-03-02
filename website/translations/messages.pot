@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-03-02 16:17+0900\n"
+"POT-Creation-Date: 2020-03-02 18:07+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -808,7 +808,6 @@ msgstr ""
 #: website/templates/include/comment_pane_template.mako:19
 #: website/templates/project/settings.mako:36
 #: website/templates/project/settings.mako:257
-#: website/templates/search.mako:368
 msgid "Wiki"
 msgstr ""
 
@@ -1569,7 +1568,7 @@ msgstr ""
 msgid "Affiliated institutions:"
 msgstr ""
 
-#: website/templates/search.mako:279
+#: website/templates/search.mako:279 website/templates/search.mako:368
 #, python-format
 msgid ""
 "<strong>Jump to:</strong><a %(data_bind1)s>Wiki</a> -<a "
@@ -1604,20 +1603,7 @@ msgstr ""
 msgid "(<span %(class_data_bind)s>Withdrawn </span>Registration)"
 msgstr ""
 
-#: website/templates/search.mako:366
-msgid "Jump to:"
-msgstr ""
-
-#: website/templates/include/comment_pane_template.mako:18
-#: website/templates/project/files.mako:2
-#: website/templates/project/files.mako:5
-#: website/templates/project/project.mako:441
-#: website/templates/project/project_header.mako:40
-#: website/templates/search.mako:370
-msgid "Files"
-msgstr ""
-
-#: website/templates/search.mako:374
+#: website/templates/search.mako:372
 msgid "Tags:"
 msgstr ""
 
@@ -1644,6 +1630,14 @@ msgstr ""
 #: website/templates/include/comment_pane_template.mako:3
 #: website/templates/project/project_header.mako:86
 msgid "Comments"
+msgstr ""
+
+#: website/templates/include/comment_pane_template.mako:18
+#: website/templates/project/files.mako:2
+#: website/templates/project/files.mako:5
+#: website/templates/project/project.mako:441
+#: website/templates/project/project_header.mako:40
+msgid "Files"
 msgstr ""
 
 #: website/templates/include/comment_pane_template.mako:18

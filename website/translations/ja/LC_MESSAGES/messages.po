@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-03-02 16:17+0900\n"
+"POT-Creation-Date: 2020-03-02 18:07+0900\n"
 "PO-Revision-Date: 2019-11-27 12:59+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -837,7 +837,6 @@ msgstr "削除"
 #: website/templates/include/comment_pane_template.mako:19
 #: website/templates/project/settings.mako:36
 #: website/templates/project/settings.mako:257
-#: website/templates/search.mako:368
 msgid "Wiki"
 msgstr "Wiki"
 
@@ -1622,7 +1621,7 @@ msgstr "コントリビュータ:"
 msgid "Affiliated institutions:"
 msgstr "所属機関"
 
-#: website/templates/search.mako:279
+#: website/templates/search.mako:279 website/templates/search.mako:368
 #, python-format
 msgid ""
 "<strong>Jump to:</strong><a %(data_bind1)s>Wiki</a> -<a "
@@ -1657,20 +1656,7 @@ msgstr "メンバー:"
 msgid "(<span %(class_data_bind)s>Withdrawn </span>Registration)"
 msgstr "(<span %(class_data_bind)s>取り下げられた</span>登録)"
 
-#: website/templates/search.mako:366
-msgid "Jump to:"
-msgstr "次へジャンプ"
-
-#: website/templates/include/comment_pane_template.mako:18
-#: website/templates/project/files.mako:2
-#: website/templates/project/files.mako:5
-#: website/templates/project/project.mako:441
-#: website/templates/project/project_header.mako:40
-#: website/templates/search.mako:370
-msgid "Files"
-msgstr "ファイル"
-
-#: website/templates/search.mako:374
+#: website/templates/search.mako:372
 msgid "Tags:"
 msgstr "タグ"
 
@@ -1701,6 +1687,14 @@ msgstr ""
 #: website/templates/project/project_header.mako:86
 msgid "Comments"
 msgstr "コメント"
+
+#: website/templates/include/comment_pane_template.mako:18
+#: website/templates/project/files.mako:2
+#: website/templates/project/files.mako:5
+#: website/templates/project/project.mako:441
+#: website/templates/project/project_header.mako:40
+msgid "Files"
+msgstr "ファイル"
 
 #: website/templates/include/comment_pane_template.mako:18
 #: website/templates/include/comment_pane_template.mako:19
@@ -3746,4 +3740,5 @@ msgstr "%(summaryTitle)sのフォークを作成"
 #: website/templates/util/render_node.mako:66
 msgid "Manage Contributors"
 msgstr "コントリビュータ管理"
+
 
