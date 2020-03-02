@@ -127,8 +127,8 @@
         <!-- /ko-->
 
         <h5>
-            <!-- ko if: parent_url --> From: <a data-bind="attr: {href: parent_url}, text: parent_title || '' + ' /'"></a> <!-- /ko -->
-            <!-- ko if: !parent_url --> From: <span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <!-- /ko -->
+            <!-- ko if: parent_url --> ${_('From: <a %(data_bind)s></a>') % dict(data_bind='data-bind="attr: {href: parent_url}, text: parent_title || '' + ' /'"') | n} <!-- /ko -->
+            <!-- ko if: !parent_url --> ${_('From: <span %(data_bind1)s><span %(data_bind2)s></span> /</span>') % dict(data_bind1='data-bind="if: parent_title"',data_bind2='data-bind="text: parent_title"') | n} <!-- /ko -->
             <a data-bind="attr: {href: node_url}, text: node_title"></a>
         </h5>
         <!-- ko if: tags.length > 0 --> <div data-bind="template: 'tag-cloud'"></div> <!-- /ko -->
@@ -274,11 +274,9 @@
         <!-- ko if: tags.length > 0 -->
         <div data-bind="template: 'tag-cloud'"></div>
         <!-- /ko -->
-        <p><strong>${_("Jump to:")}</strong>
             <!-- ko if: n_wikis > 0 -->
-            <a data-bind="attr: {href: wikiUrl}">Wiki</a> -
             <!-- /ko -->
-            <a data-bind="attr: {href: filesUrl}">Files</a>
+        <p>${_('<strong>Jump to:</strong><a %(data_bind1)s>Wiki</a> -<a %(data_bind2)s>Files</a>') % dict(data_bind1='data-bind="attr: {href: wikiUrl}"',data_bind2='data-bind="attr: {href: filesUrl}"') | n }
         </p>
     </script>
     <script type="text/html" id="project">

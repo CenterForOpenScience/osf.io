@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-28 17:56+0900\n"
+"POT-Creation-Date: 2020-03-02 16:17+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -808,7 +808,7 @@ msgstr ""
 #: website/templates/include/comment_pane_template.mako:19
 #: website/templates/project/settings.mako:36
 #: website/templates/project/settings.mako:257
-#: website/templates/search.mako:370
+#: website/templates/search.mako:368
 msgid "Wiki"
 msgstr ""
 
@@ -1551,6 +1551,16 @@ msgstr ""
 msgid "(Preprint File)"
 msgstr ""
 
+#: website/templates/search.mako:130
+#, python-format
+msgid "From: <a %(data_bind)s></a>"
+msgstr ""
+
+#: website/templates/search.mako:131
+#, python-format
+msgid "From: <span %(data_bind1)s><span %(data_bind2)s></span> /</span>"
+msgstr ""
+
 #: website/templates/search.mako:241
 msgid " Contributors:"
 msgstr ""
@@ -1559,36 +1569,43 @@ msgstr ""
 msgid "Affiliated institutions:"
 msgstr ""
 
-#: website/templates/search.mako:277 website/templates/search.mako:368
-msgid "Jump to:"
+#: website/templates/search.mako:279
+#, python-format
+msgid ""
+"<strong>Jump to:</strong><a %(data_bind1)s>Wiki</a> -<a "
+"%(data_bind2)s>Files</a>"
 msgstr ""
 
-#: website/templates/search.mako:291
+#: website/templates/search.mako:289
 msgid "(Preprint)"
 msgstr ""
 
 #: website/templates/project/project.mako:265
 #: website/templates/project/settings.mako:107
-#: website/templates/search.mako:292 website/templates/search.mako:348
+#: website/templates/search.mako:290 website/templates/search.mako:346
 msgid "Description:"
 msgstr ""
 
-#: website/templates/project/project.mako:165 website/templates/search.mako:295
-#: website/templates/search.mako:352
+#: website/templates/project/project.mako:165 website/templates/search.mako:293
+#: website/templates/search.mako:350
 msgid "Contributors:"
 msgstr ""
 
-#: website/templates/search.mako:314
+#: website/templates/search.mako:312
 msgid "Managers:"
 msgstr ""
 
-#: website/templates/search.mako:327
+#: website/templates/search.mako:325
 msgid "Members:"
 msgstr ""
 
-#: website/templates/search.mako:341 website/templates/search.mako:344
+#: website/templates/search.mako:339 website/templates/search.mako:342
 #, python-format
 msgid "(<span %(class_data_bind)s>Withdrawn </span>Registration)"
+msgstr ""
+
+#: website/templates/search.mako:366
+msgid "Jump to:"
 msgstr ""
 
 #: website/templates/include/comment_pane_template.mako:18
@@ -1596,11 +1613,11 @@ msgstr ""
 #: website/templates/project/files.mako:5
 #: website/templates/project/project.mako:441
 #: website/templates/project/project_header.mako:40
-#: website/templates/search.mako:372
+#: website/templates/search.mako:370
 msgid "Files"
 msgstr ""
 
-#: website/templates/search.mako:376
+#: website/templates/search.mako:374
 msgid "Tags:"
 msgstr ""
 
@@ -3228,6 +3245,10 @@ msgstr ""
 
 #: website/templates/project/settings.mako:87
 msgid "Uncategorized"
+msgstr ""
+
+#: website/templates/project/settings.mako:94
+msgid "category.label"
 msgstr ""
 
 #: website/templates/project/settings.mako:114
