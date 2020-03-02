@@ -28,3 +28,15 @@ class TestEmbedVariables(OsfTestCase):
                      'Hello,\nThis is Variable #1 and Variable #2')
         assert_equal(embed_variables('Hello,\nThis is ${var1} and ${var1}', variables),
                      'Hello,\nThis is Variable #1 and Variable #1')
+
+    def test_with_null_variables(self):
+        variables = {'var1': 'Variable #1', 'var2': None}
+        assert_equal(embed_variables('', variables), '')
+        assert_equal(embed_variables('Hello,\nThis is test', variables),
+                     'Hello,\nThis is test')
+        assert_equal(embed_variables('Hello,\nThis is ${var1}', variables),
+                     'Hello,\nThis is Variable #1')
+        assert_equal(embed_variables('Hello,\nThis is ${var1} and ${var2}', variables),
+                     'Hello,\nThis is Variable #1 and null')
+        assert_equal(embed_variables('Hello,\nThis is ${var2} and ${var2}', variables),
+                     'Hello,\nThis is null and null')

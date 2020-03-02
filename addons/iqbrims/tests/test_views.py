@@ -1996,7 +1996,7 @@ URL: http://test.test<br>
         mock_get_management_node.return_value = management_project
         user_settings = {'MESSAGES': json.dumps({
           'test_notify': {
-            'notify_body': 'Variable is ${var1}',
+            'notify_body': 'Variable #1 is ${var1}, Variable #2 is ${var2}',
             'user_email': True,
           }
         })}
@@ -2012,10 +2012,10 @@ URL: http://test.test<br>
         url = self.project.api_url_for('iqbrims_get_message')
         res = self.app.post_json(url, {
           'notify_type': 'test_notify',
-          'variables': {'var1': 'Variable #1'},
+          'variables': {'var1': 'Variable #1', 'var2': None},
         }, headers={'X-RDM-Token': token})
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['notify_type'], 'test_notify')
-        assert_equal(res.json['notify_body'], 'Variable is Variable #1')
+        assert_equal(res.json['notify_body'], 'Variable #1 is Variable #1, Variable #2 is null')
         assert_equal(res.json['user_email'], True)

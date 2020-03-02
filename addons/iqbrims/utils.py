@@ -180,5 +180,5 @@ def to_comment_string(notify_body):
 
 def embed_variables(message, variables):
     for k, v in variables.items():
-        message = message.replace('${' + k + '}', v)
+        message = message.replace('${' + k + '}', v if v is not None else 'null')
     return message
