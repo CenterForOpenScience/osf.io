@@ -217,9 +217,8 @@ MIDDLEWARE = (
     # Uncomment and add "prof" to url params to recieve a profile for that url
     # 'api.base.middleware.ProfileMiddleware',
 
-    'django.contrib.sessions.middleware.SessionMiddleware',
+    # 'django.contrib.sessions.middleware.SessionMiddleware',
     'api.base.middleware.CorsMiddleware',
-    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     # 'django.contrib.auth.middleware.AuthenticationMiddleware',
