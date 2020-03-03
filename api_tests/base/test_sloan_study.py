@@ -201,6 +201,7 @@ class TestSloanStudyWaffling:
 
     @pytest.mark.enable_quickfiles_creation
     def test_user_get_cookie_when_flag_is_everyone(self, app, user, preprint):
+        user.add_system_tag(f'no_{SLOAN_PREREG}')
         Flag.objects.filter(name=SLOAN_COI_DISPLAY).update(everyone=True)
         headers = {'Referer': preprint.absolute_url}
         resp = app.get('/v2/', auth=user.auth, headers=headers)
