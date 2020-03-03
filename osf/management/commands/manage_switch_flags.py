@@ -10,12 +10,12 @@ logger = logging.getLogger(__name__)
 
 def manage_waffle():
     file_switches = [getattr(switches, switch) for switch in dir(switches) if '__' not in switch]
-    current_switches = [switch.name for switch in Switch.objects.all()]
+    current_switches = [switch.name for switch in Switch.objects.values_list('name', flat=True)]
 
     add_switches = set(file_switches) - set(current_switches)
     for switch in add_switches:
-            Switch.objects.get_or_create(name=switch, defaults={'active': False})
-            logger.info('Adding switch: {}'.format(switch))
+        Switch.objects.get_or_create(name=switch, defaults={'active': False})
+        logger.info('Adding switch: {}'.format(switch))
 
     delete_switches = set(current_switches) - set(file_switches)
     Switch.objects.filter(name__in=delete_switches).delete()
@@ -26,8 +26,8 @@ def manage_waffle():
 
     add_flags = set(file_flags) - set(current_flags)
     for flag_name in add_flags:
-            Flag.objects.get_or_create(name=flag_name, defaults={'everyone': False})
-            logger.info('Adding flag: {}'.format(flag_name))
+        Flag.objects.get_or_create(name=flag_name, defaults={'everyone': False})
+        logger.info('Adding flag: {}'.format(flag_name))
 
     delete_flags = set(current_flags) - set(file_flags)
     Flag.objects.filter(name__in=delete_flags).delete()
