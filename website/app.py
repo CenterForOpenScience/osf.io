@@ -27,7 +27,7 @@ from website.mails import listeners  # noqa
 from website.notifications import listeners  # noqa
 from website.identifiers import listeners  # noqa
 from website.reviews import listeners  # noqa
-from werkzeug.contrib.fixers import ProxyFix
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 logger = logging.getLogger(__name__)
 
