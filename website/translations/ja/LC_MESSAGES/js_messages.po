@@ -3443,7 +3443,7 @@ msgstr "このプロジェクトをフォークしますか？"
 
 #: website/static/js/project.js:96
 msgid "Are you sure you want to fork this project?"
-msgstr "このプロジェクトを分岐してもよろしいですか？"
+msgstr "このプロジェクトをフォークしてもよろしいですか？"
 
 #: website/static/js/project.js:111
 msgid "Could not fork link."

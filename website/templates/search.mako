@@ -338,7 +338,7 @@
         <h4><a data-bind="attr: {href: parent_url}, text: parent_title"></a> / <a data-bind="attr: {href: url}, text: title"></a>  ${_('(<span %(is_retracted)s>Withdrawn </span>Registration)') % dict (is_retracted='class="text-danger" data-bind="if: is_retracted"') | n}</h4>
         <!-- /ko -->
         <!-- ko if: !parent_url -->
-        <h4><span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <a data-bind="attr: {href: url}, text: title"></a>  ${_('(<span %(class_data_bind)s>Withdrawn </span>Registration)') % dict(class_data_bind='class="text-danger" data-bind="if: is_retracted"') | n}</h4>
+        <h4><span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <a data-bind="attr: {href: url}, text: title"></a>  ${_('(<span %(is_retracted)s>Withdrawn </span>Registration)') % dict(is_retracted='class="text-danger" data-bind="if: is_retracted"') | n}</h4>
         <!-- /ko -->
         <strong><span data-bind="text: 'Date Registered: ' + dateRegistered['local'], tooltip: {title: dateRegistered['utc']}"></span></strong>
 

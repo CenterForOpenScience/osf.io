@@ -5,9 +5,9 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: 0.5.2\n"
+"Project-Id-Version:  0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-02 19:54+0900\n"
+"POT-Creation-Date: 2020-03-04 19:08+0900\n"
 "PO-Revision-Date: 2020-03-04 17:13+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
@@ -1579,7 +1579,7 @@ msgstr "コントリビュータ:"
 
 #: website/templates/search.mako:264
 msgid "Affiliated institutions:"
-msgstr "所属機関"
+msgstr "所属機関："
 
 #: website/templates/search.mako:278 website/templates/search.mako:365
 #, python-format
@@ -1613,15 +1613,10 @@ msgstr "マネージャ:"
 msgid "Members:"
 msgstr "メンバー:"
 
-#: website/templates/search.mako:338
+#: website/templates/search.mako:338 website/templates/search.mako:341
 #, python-format
 msgid "(<span %(is_retracted)s>Withdrawn </span>Registration)"
 msgstr "(<span %(is_retracted)s>取り下げられた</span>登録)"
-
-#: website/templates/search.mako:341
-#, python-format
-msgid "(<span %(class_data_bind)s>Withdrawn </span>Registration)"
-msgstr "(<span %(class_data_bind)s>取り下げられた</span>登録)"
 
 #: website/templates/search.mako:369
 msgid "Tags:"
@@ -2655,7 +2650,7 @@ msgstr "または"
 msgid ""
 "<a %(gotoInvite)s>add <strong><em %(text_query)s></em></strong> as an "
 "unregistered contributor</a>."
-msgstr "未登録のコントリビュータとして<strong><em %(text_query)s></em></strong>を追加します。"
+msgstr "<a %(gotoInvite)s>未登録のコントリビュータとして<strong><em %(text_query)s></em></strong>を追加します。</a>"
 
 #: website/templates/project/modal_add_contributor.mako:200
 msgid ""
@@ -3719,9 +3714,12 @@ msgstr "リンクを削除"
 #: website/templates/util/render_node.mako:58
 #, python-format
 msgid "Create a fork of %(summary_Title)s"
-msgstr "%(summary_Title)sのフォークを作成します"
+msgstr "%(summary_Title)sのフォークを作成"
 
 #: website/templates/util/render_node.mako:66
 msgid "Manage Contributors"
 msgstr "コントリビュータ管理"
+
+#~ msgid "(<span %(class_data_bind)s>Withdrawn </span>Registration)"
+#~ msgstr "(<span %(class_data_bind)s>取り下げられた</span>登録)"
 
