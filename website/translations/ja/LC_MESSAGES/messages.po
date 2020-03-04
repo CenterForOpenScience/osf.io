@@ -1,17 +1,17 @@
-# Japanese translations for PROJECT.
+# Japanese translations for .
 # Copyright (C) 2020 ORGANIZATION
-# This file is distributed under the same license as the PROJECT project.
+# This file is distributed under the same license as the  project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: PROJECT VERSION\n"
-"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"Project-Id-Version: 0.5.2\n"
+"Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
 "POT-Creation-Date: 2020-03-02 19:54+0900\n"
-"PO-Revision-Date: 2019-11-27 12:59+0900\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2020-03-04 17:13+0900\n"
+"Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
-"Language-Team: ja <LL@li.org>\n"
+"Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "Plural-Forms: nplurals=1; plural=0\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -203,6 +203,7 @@ msgid "Loading containers..."
 msgstr "コンテナをロード中..."
 
 #: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:72
+#: addons/nextcloud/templates/nextcloud_node_settings.mako:67
 #: addons/owncloud/templates/owncloud_node_settings.mako:67
 #: addons/s3/templates/s3_node_settings.mako:72
 #: addons/s3compat/templates/s3compat_node_settings.mako:72
@@ -210,8 +211,8 @@ msgstr "コンテナをロード中..."
 #: addons/zotero/templates/zotero_node_settings.mako:122
 #: website/templates/project/addon/node_settings_default.mako:67
 #, python-format
-msgid "Connect <b>&ldquo;<span %(data_bind)s></span>&rdquo;</b>?"
-msgstr "<b>&ldquo;<span %(data_bind)s></span>&rdquo;</b>へ接続しますか？"
+msgid "Connect %(folderName)s?"
+msgstr "%(folderName)sに接続しますか？"
 
 #: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:12
 #: addons/dataverse/templates/dataverse_user_settings.mako:12
@@ -227,8 +228,9 @@ msgid "Connect or Reauthorize Account"
 msgstr "アカウントの接続または再認証"
 
 #: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:24
-msgid "Authorized by <em><span data-bind=\"text: name\"></span></em>"
-msgstr "認証者：<em><span data-bind=\"text: name\"></span></em>"
+#, python-format
+msgid "Authorized by %(userName)s"
+msgstr "承認者：%(userName)s"
 
 #: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:32
 #: addons/dataverse/templates/dataverse_user_settings.mako:31
@@ -252,24 +254,26 @@ msgid "Connect Account"
 msgstr "アカウントに接続する"
 
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:74
+#: addons/github/templates/github_node_settings.mako:71
 #, python-format
 msgid ""
-"Could not retrieve Bitbucket settings at this time. The Bitbucket addon "
-"credentials                may no longer be valid. Try deauthorizing and "
-"reauthorizing Bitbucket on your                <a "
-"%(href)s%(addons_url)s%(quotation)s>account settings page</a>."
+"Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
+" addon credentials                may no longer be valid. Try "
+"deauthorizing and reauthorizing %(addonName)s on your                <a "
+"href=\"%(addons_url)s\">account settings page</a>."
 msgstr ""
-"現在、Bitbucket設定を取得できませんでした。 Bitbucketアドオンの資格情報が無効になる場合があります。<a "
-"%(href)s%(addons_url)s%(quotation)s>アカウント設定ページ</a>でBitbucketの認証解除と再認証を試みてください。"
+"現在、%(addonName)sの設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。 <a "
+"href=\"%(addons_url)s\">アカウント設定ページ</a>で%(addonName)sの認証解除と再認証を試みてください。"
 
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:78
+#: addons/github/templates/github_node_settings.mako:75
 #, python-format
 msgid ""
-"Could not retrieve Bitbucket settings at this time. The Bitbucket addon "
-"credentials                may no longer be valid. Contact "
+"Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
+" addon credentials                may no longer be valid. Contact "
 "%(auth_osf_name)s to verify."
 msgstr ""
-"現在、Bitbucket設定を取得できませんでした。 Bitbucketアドオンの資格情報が無効になる場合があります。 "
+"現在、%(addonName)sの設定を取得できませんでした。 %(addonName)sアドオンの資格情報が無効になる場合があります。 "
 "確認するには%(auth_osf_name)sにお問い合わせください。"
 
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:6
@@ -294,8 +298,8 @@ msgstr "APIトークン"
 
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:50
 #, python-format
-msgid "(Get from Dataverse <i %(classTag)s></i>)"
-msgstr "(Dataverse <i %(classTag)s></i>から取得)"
+msgid "(Get from Dataverse %(dataverse_link)s)"
+msgstr "(Dataverse %(dataverse_link)sから取得)"
 
 #: addons/dataverse/templates/dataverse_node_settings.mako:43
 msgid "Dataverse Repository:"
@@ -334,8 +338,8 @@ msgstr "接続されたアカウントに関連付けられたデータバース
 #: addons/dataverse/templates/dataverse_user_settings.mako:23
 #: addons/gitlab/templates/gitlab_user_settings.mako:23
 #, python-format
-msgid "Authorized on <a %(data_bind1)s><em %(data_bind2)s></em></a>"
-msgstr "<a %(data_bind1)s><em %(data_bind2)s></em></a>で認証済み"
+msgid "Authorized on %(addonHost)s"
+msgstr "%(addonHost)sで認証済み"
 
 #: addons/forward/templates/forward_node_settings.mako:14
 msgid "Send people who visit your GakuNin RDM project page to this link instead"
@@ -359,28 +363,6 @@ msgstr "現在のレポジトリ："
 #: addons/github/templates/github_node_settings.mako:56
 msgid "Create Repo"
 msgstr "レポジトリを作成する"
-
-#: addons/github/templates/github_node_settings.mako:71
-#, python-format
-msgid ""
-"Could not retrieve GitHub settings at this time. The GitHub addon "
-"credentials                may no longer be valid. Try deauthorizing and "
-"reauthorizing GitHub on your                <a "
-"%(href)s%(addons_url)s%(quotation)s%(quotation)s>account settings "
-"page</a>."
-msgstr ""
-"現時点ではGitHub設定を取得できませんでした。 GitHubアドオンの資格情報が無効になる場合があります。<a "
-"%(href)s%(addons_url)s%(quotation)s%(quotation)s>アカウント設定ページ</a>でGitHubの認証解除と再認証を試みてください。"
-
-#: addons/github/templates/github_node_settings.mako:75
-#, python-format
-msgid ""
-"Could not retrieve GitHub settings at this time. The GitHub addon "
-"credentials                may no longer be valid. Contact "
-"%(auth_osf_name)s to verify."
-msgstr ""
-"現時点ではGitHub設定を取得できませんでした。 GitHubアドオンの資格情報が無効になる場合があります。 "
-"確認するには%(auth_osf_name)sにお問い合わせください。"
 
 #: addons/gitlab/templates/gitlab_credentials_modal.mako:4
 msgid "Connect a GitLab Account"
@@ -418,22 +400,22 @@ msgstr "認証者"
 #: addons/gitlab/templates/gitlab_node_settings.mako:80
 #, python-format
 msgid ""
-"Could not retrieve GitLab settings at this time. The GitLab addon "
-"credentials                    may no longer be valid. Try deauthorizing "
-"and reauthorizing GitLab on your                    <a "
-"href=\"%(addons_url)s\">account settings page</a>."
+"Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
+" addon credentials                    may no longer be valid. Try "
+"deauthorizing and reauthorizing %(addonName)s on your                    "
+"<a href=\"%(addons_url)s\">account settings page</a>."
 msgstr ""
-"現時点ではGitLab設定を取得できませんでした。 GitLabアドオンの資格情報が無効になる場合があります。<a "
-"href=\"%(addons_url)s\">アカウント設定ページ</a>でGitLabの認証解除と再認証を試みてください。"
+"現在、%(addonName)sの設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。 <a "
+"href=\"%(addons_url)s\">アカウント設定ページ</a>で%(addonName)sの認証解除と再認証をお試しください"
 
 #: addons/gitlab/templates/gitlab_node_settings.mako:84
 #, python-format
 msgid ""
-"Could not retrieve GitLab settings at this time. The GitLab addon "
-"credentials                    may no longer be valid. Contact "
+"Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
+" addon credentials                    may no longer be valid. Contact "
 "%(auth_osf_name)s to verify."
 msgstr ""
-"現時点ではGitLab設定を取得できませんでした。 GitLabアドオンの資格情報が無効になる場合があります。 "
+"現在、%(addonName)s設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。 "
 "確認するには%(auth_osf_name)sにお問い合わせください。"
 
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:13
@@ -486,12 +468,12 @@ msgstr "ホストURL"
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:36
 #, python-format
 msgid ""
-"Only Nextcloud instances supporting <a %(href_target1)s>WebDAV</a> and <a"
-" %(href_target2)s>                                        OCS v1.7</a> "
-"are supported."
+"Only Nextcloud instances supporting <a %(webdav_url)s>WebDAV</a> and <a "
+"%(ocs_url)s>                                        OCS v1.7</a> are "
+"supported."
 msgstr ""
-"<a %(href_target1)s>WebDAV</a>および<a %(href_target2)s>OCS "
-"v1.7</a>をサポートするNextcloudインスタンスのみがサポートされます。"
+"<a %(webdav_url)s>WebDAV</a>および<a %(ocs_url)s>OCS v1.7</a> "
+"をサポートするNextcloudインスタンスのみがサポートされます。"
 
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:46
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:46
@@ -515,11 +497,11 @@ msgstr "パスワード"
 #, python-format
 msgid ""
 "These credentials will be encrypted. However, we <strong>strongly "
-"encourage</strong> using a <a %(href_target)s> Device (or App) "
+"encourage</strong> using a <a %(open_with_new_window)s> Device (or App) "
 "Password</a>."
 msgstr ""
 "これらの資格情報は暗号化されます。 ただし、<a "
-"%(href_target)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
+"%(open_with_new_window)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
 
 #: addons/nextcloud/templates/nextcloud_node_settings.mako:53
 #: addons/owncloud/templates/owncloud_node_settings.mako:53
@@ -533,19 +515,11 @@ msgstr "変更"
 msgid "Loading folders..."
 msgstr "フォルダをロード中..."
 
-#: addons/nextcloud/templates/nextcloud_node_settings.mako:67
-#, python-format
-msgid "Connect <b>&ldquo;<span %(spanTag)s></span>&rdquo;</b>?"
-msgstr "<b>&ldquo;<span %(spanTag)s></span>&rdquo;</b>に接続しますか？"
-
 #: addons/nextcloud/templates/nextcloud_user_settings.mako:23
+#: addons/owncloud/templates/owncloud_user_settings.mako:23
 #, python-format
-msgid ""
-"Authorized by <em><span %(data_bind1)s></span></em> on <a "
-"%(data_bind2)s><em %(data_bind3)s></em></a>"
-msgstr ""
-"<a %(data_bind2)s><em %(data_bind3)s></em></a>での認証者：<em><span "
-"%(data_bind1)s></span></em>"
+msgid "Authorized by %(user_name)s on %(profile_page)s"
+msgstr "%(profile_page)sでの認証者:%(user_name)s"
 
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:6
 msgid "Connect an ownCloud Account"
@@ -562,36 +536,27 @@ msgstr "ownCloudインスタンスを選択"
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:36
 #, python-format
 msgid ""
-"Only ownCloud instances supporting <a %(href_target1)s>WebDAV</a> and <a "
-"%(href_target2)s>                                        OCS v1.7</a> are"
-" supported."
+"Only ownCloud instances supporting <a %(webdav_url)s>WebDAV</a> and <a "
+"%(ocs_url)s>                                        OCS v1.7</a> are "
+"supported."
 msgstr ""
-"<a %(href_target1)s>WebDAV</a>および<a %(href_target2)s>OCS "
+"<a %(webdav_url)s>WebDAV</a>および<a %(ocs_url)s>OCS "
 "v1.7</a>をサポートするownCloudインスタンスのみがサポートされます。"
 
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:55
 #, python-format
 msgid ""
 " These credentials will be encrypted. However, we <strong>strongly "
-"encourage</strong> using a <a %(href_target)s> Device (or App) "
+"encourage</strong> using a <a %(open_with_new_window)s> Device (or App) "
 "Password</a>."
 msgstr ""
 "これらの資格情報は暗号化されます。 ただし、<a "
-"%(href_target)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
+"%(open_with_new_window)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
 
 #: addons/owncloud/templates/owncloud_node_settings.mako:42
 #: website/templates/project/addon/node_settings_default.mako:41
 msgid "Current Folder:"
 msgstr "現在のフォルダ:"
-
-#: addons/owncloud/templates/owncloud_user_settings.mako:23
-#, python-format
-msgid ""
-"Authorized by <em><span %(data_bind1)s\"></span></em> on <a "
-"%(data_bind2)s><em data-bind=\"text: profileUrl\"></em></a>"
-msgstr ""
-"<a %(data_bind2)s><em data-bind=\"text: "
-"profileUrl\"></em></a>での認証者：<em><span %(data_bind1)s\"></span></em>"
 
 #: addons/s3/templates/s3_credentials_modal.mako:6
 msgid "Connect an Amazon S3 Account"
@@ -697,10 +662,10 @@ msgstr "モバイルデバイスにアクセスできなくなると、GakuNin R
 msgid ""
 "To use, you must install an appropriate application on your mobile "
 "device. Google Authenticator is a popular choice and is available for "
-"both        <a %(href1)s>Android</a> and <a %(href2)s>iOS</a>."
+"both        <a %(google_url)s>Android</a> and <a %(itunes_url)s>iOS</a>."
 msgstr ""
-"使用するには、モバイルデバイスに適切なアプリケーションをインストールする必要があります。 Google認証システムは一般的な選択肢であり、<a "
-"%(href1)s>Android</a>と<a %(href2)s>iOS</a>の両方で利用できます。"
+"使用するには、モバイルデバイスに適切なアプリケーションをインストールする必要があります。 Google認証システムは人気のある選択肢であり、<a "
+"%(google_url)s>Android</a>と<a %(itunes_url)s>iOS</a>の両方で利用できます。"
 
 #: addons/twofactor/templates/twofactor_user_settings.mako:26
 msgid ""
@@ -715,9 +680,9 @@ msgstr ""
 #: addons/twofactor/templates/twofactor_user_settings.mako:28
 #, python-format
 msgid ""
-"Scan the image below, or enter the secret key        <code "
-"%(data_bind)s></code> into your authentication device."
-msgstr "以下の画像をスキャンするか、秘密鍵<code %(data_bind)s></code>を認証デバイスに入力します。"
+"Scan the image below, or enter the secret key        %(secret_key)s into "
+"your authentication device."
+msgstr "以下の画像をスキャンするか、認証デバイスにシークレットキー%(secret_key)sを入力します。"
 
 #: addons/twofactor/templates/twofactor_user_settings.mako:34
 msgid "Enter your verification code:"
@@ -916,6 +881,7 @@ msgstr "確認"
 msgid "Connected to the collaborative wiki"
 msgstr "共同ウィキに接続しました"
 
+# Notice: ”Save" は別のmsgid "Save"への参照なので文言を揃える
 #: addons/wiki/templates/edit.mako:304
 msgid ""
 "This page is currently connected to the collaborative wiki. All edits "
@@ -947,6 +913,7 @@ msgid ""
 "You may continue to make edits."
 msgstr "このページは現在、共同ウィキに接続しようとしています。 引き続き編集を行うことができます。"
 
+# Notice: ”Save" は別のmsgid "Save"への参照なので文言を揃える
 #: addons/wiki/templates/edit.mako:326 addons/wiki/templates/edit.mako:343
 #: addons/wiki/templates/edit.mako:360
 #: website/templates/project/view_file.mako:133
@@ -992,11 +959,11 @@ msgstr "Wiki構文のヘルプ"
 #: addons/wiki/templates/wiki-bar-modal-help.mako:10
 #, python-format
 msgid ""
-"The wiki uses the <a %(href1)s>Markdown</a> syntax. For more information "
-"and examples, go to our <a %(href2)s>Guides.</a>"
+"The wiki uses the <a %(mark_url)s>Markdown</a> syntax. For more "
+"information and examples, go to our <a %(zendesk_url)s>Guides.</a>"
 msgstr ""
-"wikiは<a %(href1)s>Markdown</a>構文を使用します。 詳細と例については、<a "
-"%(href2)s>ガイドをご覧ください。</a>"
+"wikiは<a %(mark_url)s>Markdown</a>構文を使用します。 詳細と例については、<a "
+"%(zendesk_url)s>ガイド</a>をご覧ください。"
 
 #: addons/zotero/templates/zotero_node_settings.mako:41
 msgid "Current Library:"
@@ -1061,12 +1028,13 @@ msgstr "同意"
 msgid ""
 "This website relies on cookies to help provide a better user experience. "
 "By clicking Accept or continuing to use the site, you agree. For more "
-"information,            see our <a %(href1)s>Privacy Policy</a>"
-"            and information on <a %(href2)s>cookie use</a>."
+"information,            see our <a %(meatwiki_url)s>Privacy Policy</a>"
+"            and information on <a %(meatwiki_url)s>cookie use</a>."
 msgstr ""
-"このWebサイトは、ユーザーエクスペリエンスを向上させるためにCookieに依存しています。[同意する]をクリックするか、サイトの使用を継続することにより、同意します。"
-" 詳細については、<a %(href1)s>プライバシーポリシー</a>および<a "
-"%(href2)s>Cookieの使用</a>に関する情報をご覧ください。"
+"このWebサイトは、Cookieを使用して、ユーザーエクスペリエンスを向上させています。 "
+"[同意する]をクリックするか、サイトの使用を継続すると、同意したことになります。 詳細については、<a "
+"%(meatwiki_url)s>プライバシーポリシー</a>および<a "
+"%(meatwiki_url)s>Cookieの使用</a>に関する情報をご覧ください。"
 
 #: website/templates/base.mako:170
 msgid "Start managing your projects on the GakuNin RDM today."
@@ -1111,19 +1079,21 @@ msgstr "メールアドレス: <strong>%(email)s</strong>"
 #: website/templates/claim_account.mako:93
 #, python-format
 msgid ""
-"I have read and agree to the <a %(target_href1)s>Terms of Use</a> and <a "
-"%(target_href2)s>Privacy Policy</a>."
-msgstr "<a %(target_href1)s>利用規約</a>と<a %(target_href2)s>プライバシーポリシー</a>を読み、同意します。"
+"I have read and agree to the <a %(meatwiki_termsOfUse)s>Terms of Use</a> "
+"and <a %(meatwiki_privacyPolicy)s>Privacy Policy</a>."
+msgstr ""
+"<a %(meatwiki_termsOfUse)s>利用規約</a>と<a "
+"%(meatwiki_privacyPolicy)s>プライバシーポリシー</a>を読み、同意します。"
 
 #: website/templates/claim_account.mako:105
 #, python-format
 msgid ""
 "If you are not %(fullname)s, or if you were erroneously added as a "
 "contributor to the project described in the email invitation, please "
-"email <a %(href)s%(osf_contact_email)s%(quot)s>%(osf_contact_email)s</a>"
+"email <a href=%(mailto_osf_contact_email)s>%(osf_contact_email)s</a>"
 msgstr ""
 "あなたが%(fullname)sでない場合、または招待メールに記載されているプロジェクトへのコントリビュータとして誤って追加された場合は、<a "
-"%(href)s%(osf_contact_email)s%(quot)s>%(osf_contact_email)s</a>へメールしてください"
+"href=%(mailto_osf_contact_email)s>%(osf_contact_email)s</a>にメールしてください"
 
 #: website/templates/claim_account_eppn.mako:2
 #: website/templates/claim_account_eppn.mako:4
@@ -1413,48 +1383,48 @@ msgstr "既存のプロジェクトを事前登録する"
 #: website/templates/prereg_landing_page.mako:55
 #, python-format
 msgid ""
-"<p>Improve your research with <a %(target)s>preregistration</a>. By "
-"writing out specific details such as data collection methods, analysis "
-"plans, and rules for data exclusion, you can make important decisions "
+"<p>Improve your research with <a %(cos_prereg_url)s>preregistration</a>. "
+"By writing out specific details such as data collection methods, analysis"
+" plans, and rules for data exclusion, you can make important decisions "
 "early on and have a clear record of these choices. This can help reduce "
 "biases that occur once the data are in front of you.</p>"
 msgstr ""
-"<p><a %(target)s>事前登録</a>で研究を改善します。 "
-"データ収集方法、分析計画、データ削除ルールなどの特定の詳細を書き出すことで、重要な決定を早期に行い、これらの選択を明確に記録できます。 "
-"これは、データが目の前にあるときに発生するバイアスを減らすのに役立ちます。</p>"
+"<p><a %(cos_prereg_url)s>事前登録</a>により研究を改善します。 "
+"データ収集方法、分析計画、データ除外ルールなどの特定の詳細を記述することにより、重要な決定を早期に行い、これらの選択を明確に記録できます。 "
+"これにより、データが目の前にあるときに発生するバイアスを減らすことができます。</p>"
 
 #: website/templates/prereg_landing_page.mako:56
 #, python-format
 msgid ""
-"<p>Use <a %(target)s>OSF Registries</a> to discover previously registered"
-" work.</p>"
-msgstr "<p><a %(target)s>OSFレジストリ</a>を使用して、以前に登録した作品を発見します。</p>"
+"<p>Use <a %(osf_registries_url)s>OSF Registries</a> to discover "
+"previously registered work.</p>"
+msgstr "<p><a %(osf_registries_url)s>OSFレジストリ</a>を使用して、以前に登録した作品を発見します。</p>"
 
 #: website/templates/prereg_landing_page.mako:58
 #, python-format
 msgid ""
-"<p><strong> Articles must be published by an <a %(target)s>approved</a> "
-"journal by December 31, 2018, to be eligible for a prize. Please use this"
-" this helpful workflow to preregister, even if you are not seeking a "
-"prize. </strong></p>"
+"<p><strong> Articles must be published by an <a "
+"%(prereg_more_info_url)s>approved</a> journal by December 31, 2018, to be"
+" eligible for a prize. Please use this this helpful workflow to "
+"preregister, even if you are not seeking a prize. </strong></p>"
 msgstr ""
-"<p><strong>賞品の対象となるためには、2018年12月31日までに<a "
-"%(target)s>承認された</a>雑誌によって記事を公開する必要があります。 "
+"<p><strong>賞品を獲得するには、2018年12月31日までに<a "
+"%(prereg_more_info_url)s>承認済み</a>ジャーナルで記事を公開する必要があります。 "
 "賞品を探していない場合でも、この便利なワークフローを使用して事前登録してください。</strong></p>"
 
 #: website/templates/prereg_landing_page.mako:59
 #, python-format
 msgid ""
 "<p> Improve your research with preregistration. The process of creating a"
-" <a %(href)s> preregistration</a> is beneficial to both the scientific "
-"field and to you, the scientist. By writing out detailed data collection "
-"methods, analysis plans, and rules for excluding or missing data, you can"
-" make important decisions that affect your workflow earlier, without the "
-"biases that occur once the data are in front of you.</p>"
+" <a %(cos_prereg_url)s> preregistration</a> is beneficial to both the "
+"scientific field and to you, the scientist. By writing out detailed data "
+"collection methods, analysis plans, and rules for excluding or missing "
+"data, you can make important decisions that affect your workflow earlier,"
+" without the biases that occur once the data are in front of you.</p>"
 msgstr ""
-"<p> <a %(href)s>事前登録</a>で研究を改善します。 "
-"事前登録を作成するプロセスは、科学分野にとっても、科学者であるあなたにとっても有益です。 "
-"詳細なデータ収集方法、分析計画、およびデータの削除または欠落に関するルールを記述することにより、データが目の前に発生するバイアスをかけることなく、ワークフローに影響を与える重要な決定を早期に行うことができます。</p>"
+"<p>事前登録により研究を改善します。 <a "
+"%(cos_prereg_url)s>事前登録</a>を作成するプロセスは、科学分野と科学者の両方にとって有益です。 "
+"詳細なデータ収集方法、分析計画、およびデータの除外または欠落に関するルールを記述することにより、データが目の前に発生するような偏りを生じることなく、ワークフローに影響を与える重要な決定を早期に行うことができます。</p>"
 
 #: website/templates/prereg_landing_page.mako:64
 #: website/templates/prereg_landing_page.mako:110
@@ -1475,8 +1445,8 @@ msgstr "GakuNin RDMに既にあるプロジェクトを事前登録する"
 #, python-format
 msgid ""
 "This account has been merged with <a "
-"%(class_href)s%(profile)s%(q_mark)s>%(profile2)</a>"
-msgstr "このアカウントは<a %(class_href)s%(profile)s%(q_mark)s>%(profile2)</a>と統合されました"
+"%(profile_url)s>%(profile_absolute_url)s</a>"
+msgstr "このアカウントは<a %(profile_url)s>%(profile_absolute_url)s</a>と統合されました"
 
 #: website/templates/profile.mako:43
 msgid "Edit your profile"
@@ -1593,67 +1563,67 @@ msgstr "次のページ"
 #: website/templates/search.mako:123
 #, python-format
 msgid ""
-"(<span %(class_data_bind)s>Withdrawn </span><span "
-"%(data_bind)s>Registration </span>File)"
+"(<span %(is_retracted)s>Withdrawn </span><span "
+"%(is_registration)s>Registration </span>File)"
 msgstr ""
-"（<span %(class_data_bind)s>取り下げられた</span><span "
-"%(data_bind)s>登録</span>ファイル名）"
+"(<span %(is_retracted)s>取り下げられた</span><span "
+"%(is_registration)s>登録</span>ファイル)"
 
 #: website/templates/search.mako:126
 msgid "(Preprint File)"
 msgstr "(プレプリントファイル)"
 
-#: website/templates/search.mako:131
-#, python-format
-msgid ""
-"From: <span %(data_bind1)s><span %(data_bind2)s></span> /</span><a "
-"%(dagta_bind3)s></a>"
-msgstr "<a %(dagta_bind3)s></a><span %(data_bind1)s><span %(data_bind2)s></span> /</span>より"
-
-#: website/templates/search.mako:240
+#: website/templates/search.mako:242
 msgid " Contributors:"
 msgstr "コントリビュータ:"
 
-#: website/templates/search.mako:262
+#: website/templates/search.mako:264
 msgid "Affiliated institutions:"
 msgstr "所属機関"
 
-#: website/templates/search.mako:276 website/templates/search.mako:363
+#: website/templates/search.mako:278 website/templates/search.mako:365
 #, python-format
 msgid ""
 "<strong>Jump to:</strong><!-- ko if: n_wikis > 0 --><a "
 "%(data_bind1)s>Wiki</a> -<!-- /ko --><a %(data_bind2)s>Files</a>"
-msgstr "<!-- ko if: n_wikis > 0 --><a %(data_bind1)s>Wiki</a> -<!-- /ko --><a %(data_bind2)s>ファイル</a><strong>へ移動</strong>"
+msgstr ""
+"<!-- ko if: n_wikis > 0 --><a %(data_bind1)s>Wiki</a> -<!-- /ko --><a "
+"%(data_bind2)s>ファイル</a><strong>へ移動</strong>"
 
-#: website/templates/search.mako:286
+#: website/templates/search.mako:288
 msgid "(Preprint)"
 msgstr "(プレプリント)"
 
 #: website/templates/project/project.mako:265
 #: website/templates/project/settings.mako:107
-#: website/templates/search.mako:287 website/templates/search.mako:343
+#: website/templates/search.mako:289 website/templates/search.mako:345
 msgid "Description:"
 msgstr "説明:"
 
-#: website/templates/project/project.mako:165 website/templates/search.mako:290
-#: website/templates/search.mako:347
+#: website/templates/project/project.mako:165 website/templates/search.mako:292
+#: website/templates/search.mako:349
 msgid "Contributors:"
 msgstr "コントリビュータ:"
 
-#: website/templates/search.mako:309
+#: website/templates/search.mako:311
 msgid "Managers:"
 msgstr "マネージャ:"
 
-#: website/templates/search.mako:322
+#: website/templates/search.mako:324
 msgid "Members:"
 msgstr "メンバー:"
 
-#: website/templates/search.mako:336 website/templates/search.mako:339
+#: website/templates/search.mako:338
+#, python-format
+msgid "(<span %(is_retracted)s>Withdrawn </span>Registration)"
+msgstr "(<span %(is_retracted)s>取り下げられた</span>登録)"
+
+#: website/templates/search.mako:341
 #, python-format
 msgid "(<span %(class_data_bind)s>Withdrawn </span>Registration)"
 msgstr "(<span %(class_data_bind)s>取り下げられた</span>登録)"
 
-#: website/templates/search.mako:367
+#: website/templates/search.mako:369
 msgid "Tags:"
 msgstr "タグ"
 
@@ -1672,12 +1642,12 @@ msgstr "クエリ"
 #: website/templates/search_bar_help_modal.mako:10
 #, python-format
 msgid ""
-"<p>Search uses the <a %(href)s>Lucene search syntax</a>.This gives you "
+"<p>Search uses the <a %(xwiki)s>Lucene search syntax</a>.This gives you "
 "many options, but can be very simple as well. Examples of valid searches "
 "include:</p>"
 msgstr ""
 "<p>検索では<a "
-"%(href)s>Lucene検索構文</a>を使用します。これにより多くのオプションが提供されますが、非常に単純な場合もあります。 "
+"%(xwiki)s>Lucene検索構文</a>を使用します。これにより多くのオプションが提供されますが、非常にシンプルにすることもできます。 "
 "有効な検索の例は次のとおりです。</p>"
 
 #: website/templates/include/comment_pane_template.mako:3
@@ -2505,15 +2475,17 @@ msgstr "GitHubアクセストークンの再認証が必要になる場合があ
 
 #: website/templates/project/addons.mako:131
 #, python-format
-msgid "Follow the steps in the <a %(tags)s>help guide</a> to resolve the issue."
-msgstr "<a %(tags)s>ヘルプガイド</a>の手順に従って問題を解決してください。"
+msgid ""
+"Follow the steps in the <a %(osf_help)s>help guide</a> to resolve the "
+"issue."
+msgstr "<a %(osf_help)s>ヘルプガイド</a>の手順に従って問題を解決してください。"
 
 #: website/templates/project/addons.mako:135
 #, python-format
 msgid ""
-"Please contact <a %(tags)s>rdm_support@nii.ac.jp</a> if you have "
-"questions."
-msgstr "ご質問がある場合は、rdm_support@nii.ac.jpまでご連絡ください。"
+"Please contact <a %(mailto_rdmSupport)s>rdm_support@nii.ac.jp</a> if you "
+"have questions."
+msgstr "ご質問がある場合は、<a %(mailto_rdmSupport)s>rdm_support@nii.ac.jp</a>までご連絡ください。"
 
 #: website/templates/project/contributors.mako:2
 #: website/templates/project/contributors.mako:8
@@ -2656,9 +2628,11 @@ msgstr "(未登録)"
 #: website/templates/project/modal_add_contributor.mako:181
 #, python-format
 msgid ""
-"<a %(taga)s>Add <strong><em %(data_bind)s></em></strong> as an "
+"<a %(gotoInvite)s>Add <strong><em %(text_query)s></em></strong> as an "
 "unregistered contributor</a>."
-msgstr "<a %(taga)s>未登録のコントリビュータとして<strong><em %(data_bind)s></em></strong>を追加します。"
+msgstr ""
+"<a %(gotoInvite)s>未登録のコントリビュータとして<strong><em "
+"%(text_query)s></em></strong>を追加します。</a>"
 
 #: website/templates/project/modal_add_contributor.mako:186
 msgid "Searching contributors..."
@@ -2679,9 +2653,9 @@ msgstr "または"
 #: website/templates/project/modal_add_contributor.mako:196
 #, python-format
 msgid ""
-"<a %(taga)s>add <strong><em %(data_bind)s></em></strong> as an "
+"<a %(gotoInvite)s>add <strong><em %(text_query)s></em></strong> as an "
 "unregistered contributor</a>."
-msgstr "<a %(taga)s>未登録のコントリビュータとして<strong><em %(data_bind)s></em></strong>を追加します。"
+msgstr "未登録のコントリビュータとして<strong><em %(text_query)s></em></strong>を追加します。"
 
 #: website/templates/project/modal_add_contributor.mako:200
 msgid ""
@@ -2813,8 +2787,8 @@ msgstr "プライベートリンクを持つユーザーは誰でも、リンク
 
 #: website/templates/project/modal_generate_private_link.mako:51
 #, python-format
-msgid "(current component<span %(data_bind)s>, public</span>)"
-msgstr "（現在のコンポーネント<span %(data_bind)s>, 公開</span>）"
+msgid "(current component<span %(isPublic)s>, public</span>)"
+msgstr "(現在のコンポーネント、<span %(isPublic)s>公開</span>)"
 
 #: website/templates/project/modal_generate_private_link.mako:59
 msgid "Parent needs to be checked"
@@ -2831,56 +2805,57 @@ msgstr "全選択解除"
 #: website/templates/project/modal_remove_contributor.mako:15
 #, python-format
 msgid ""
-"<span>Do you want to remove <b %(data_bind1)s></b> from"
-"                                <b %(data_bind2)s></b>, or from <b "
-"%(data_bind3)s></b> and every component in it?</span>"
+"<span>Do you want to remove <b %(removed_contributor)s></b> from"
+"                                <b %(text_title)s></b>, or from <b "
+"%(text_title)s></b> and every component in it?</span>"
 msgstr ""
-"<b %(data_bind1)s></b>を<b %(data_bind2)s></b>から、または<b %(data_bind3)s></b>"
-" とその中のすべてのコンポーネントから削除しますか？"
+"<b %(removed_contributor)s></b>を<b %(text_title)s></b>から、または<b "
+"%(text_title)s></b> とその中のすべてのコンポーネントから削除しますか？</span>"
 
 #: website/templates/project/modal_remove_contributor.mako:21
 #, python-format
 msgid ""
-"Remove <b %(data_bind)s></b> from                                    "
-"<span %(class_data_bind)s></span>."
-msgstr " <b %(data_bind)s></b>を<span %(class_data_bind)s></span>から削除します。"
+"Remove <b %(removed_contributor)s></b> from"
+"                                    <span %(text_title)s></span>."
+msgstr "<span %(text_title)s></span>から<b %(removed_contributor)s></b>を削除します。"
 
 #: website/templates/project/modal_remove_contributor.mako:28
 #, python-format
 msgid ""
-"Remove <b %(data_bind)s></b> from                                    "
-"<span %(class_data_bind)s></span> and every component in it."
+"Remove <b %(removed_contributor)s></b> from"
+"                                    <span %(text_title)s></span> and "
+"every component in it."
 msgstr ""
-"<b %(data_bind)s></b>およびその中のすべてのコンポーネントから<span "
-"%(class_data_bind)s></span>を削除します。"
+"<b %(removed_contributor)s></b>を<span "
+"%(text_title)s></span>およびその中のすべてのコンポーネントから削除します。"
 
 #: website/templates/project/modal_remove_contributor.mako:37
 #, python-format
-msgid "Remove <b %(data_bind1)s></b> from <span %(data_bind2)s></span>?"
-msgstr "<span %(data_bind2)s></span>から<b %(data_bind1)s></b>を削除しますか？"
+msgid "Remove <b %(removed_contributor)s></b> from <span %(text_title)s></span>?"
+msgstr "<span %(text_title)s></span>から<b %(removed_contributor)s></b>を削除しますか？"
 
 #: website/templates/project/modal_remove_contributor.mako:48
 #, python-format
 msgid ""
-"<b %(data_bind)s>                                        </b> will be "
-"removed from the following projects and/or components."
-msgstr "<b %(data_bind)s></b>は、以下のプロジェクトおよび/またはコンポーネントから削除されます。"
+"<b %(removed_contributor)s>                                        </b> "
+"will be removed from the following projects and/or components."
+msgstr "<b %(removed_contributor)s></b>は、以下のプロジェクトおよび/またはコンポーネントから削除されます。"
 
 #: website/templates/project/modal_remove_contributor.mako:65
 #, python-format
 msgid ""
-"<b %(data_bind)s>                                        </b> cannot be "
-"removed from the following projects and/or components."
-msgstr "以下のプロジェクトやコンポーネントから<b %(data_bind)s></b>を削除できません。"
+"<b %(removed_contributor)s>                                        </b> "
+"cannot be removed from the following projects and/or components."
+msgstr "<b %(removed_contributor)s></b>は、以下のプロジェクトやコンポーネントから削除できません。"
 
 #: website/templates/project/modal_remove_contributor.mako:81
 #, python-format
 msgid ""
-"<b %(data_bind)s></b> cannot be                        removed as a "
-"contributor.  You need at least one administrator, bibliographic "
+"<b %(removed_contributor)s></b> cannot be                        removed "
+"as a contributor.  You need at least one administrator, bibliographic "
 "contributor, and registered user."
 msgstr ""
-"<b %(data_bind)s></b>はコントリビュータとして削除できません。 "
+"<b %(removed_contributor)s></b>はコントリビュータとして削除できません。 "
 "少なくとも1人の管理者、目録表示コントリビュータ、および登録ユーザーが必要です。"
 
 #: website/templates/project/modal_remove_contributor.mako:82
@@ -2965,10 +2940,11 @@ msgstr "所属機関:"
 msgid ""
 "Forked from <a "
 "%(forked_form_id)s>%(forked_from_display_absolute_url)s</a> on"
-"                    <span %(data_bind)s></span>"
+"                    <span %(text_dateForked)s></span>"
 msgstr ""
-"<span %(data_bind)s></span>に<a "
-"%(forked_form_id)s>%(forked_from_display_absolute_url)s</a>からフォークした"
+"Forked from <a "
+"%(forked_form_id)s>%(forked_from_display_absolute_url)s</a>からフォーク(<span "
+"%(text_dateForked)s></span>)"
 
 #: website/templates/project/project.mako:225
 msgid "Date registered:"
@@ -2995,6 +2971,7 @@ msgstr "DOIを作成"
 msgid "Category:"
 msgstr "カテゴリー："
 
+# 変数のためmsgstrを""にしておく
 #: website/templates/project/project.mako:260
 msgid "category"
 msgstr ""
@@ -3003,6 +2980,7 @@ msgstr ""
 msgid "License:"
 msgstr "ライセンス："
 
+# 変数のためmsgstrを""にしておく
 #: website/templates/project/project.mako:283
 msgid "license"
 msgstr ""
@@ -3096,8 +3074,8 @@ msgstr "より多くの引用スタイルを取得"
 #, python-format
 msgid ""
 "<div %(f_x_xl)s>Cite as:</div>                                         "
-"<span %(data_bind)s></span>"
-msgstr "<span %(data_bind)s></span>として<div %(f_x_xl)s>引用</div> "
+"<span %(text_customCitation)s></span>"
+msgstr "<span %(text_customCitation)s></span>として<div %(f_x_xl)s>引用：</div>"
 
 #: website/templates/project/project.mako:560
 msgid "Enter custom citation"
@@ -3196,17 +3174,17 @@ msgstr "このファイルは登録の一部であり、アーカイブバージ
 #, python-format
 msgid ""
 "The <a %(archived_from_url)s>active file</a> is viewable from within the "
-"<a %(registered_from_url)s>live%(node_type)s</a>."
+"<a %(registered_from_url)s>live %(node_type)s</a>."
 msgstr ""
-"<a %(archived_from_url)s>アクティブファイル</a>は<a "
-"%(registered_from_url)s>%(node_type)sのライブ</a>内から表示できます。"
+"<a %(archived_from_url)s>アクティブなファイル</a>は、<a "
+"%(registered_from_url)s>ライブ%(node_type)s</a>内から表示できます。"
 
 #: website/templates/project/project_header.mako:131
 #, python-format
 msgid ""
-"This registration is a frozen, non-editable version of <a class=\"link-"
-"solid\" href=\"%(registeredfromurl)s\">this %(nodetype)s</a>"
-msgstr "この登録は、この%(nodetype)sの凍結された編集不可バージョンです"
+"This registration is a frozen, non-editable version of <a "
+"%(registered_from_url)s>this %(nodetype)s</a>"
+msgstr "この登録は、<a %(registered_from_url)s>この%(nodetype)s</a>の凍結された編集不可バージョンです"
 
 #: website/templates/project/project_header.mako:135
 #, python-format
@@ -3227,66 +3205,69 @@ msgstr "登録をキャンセル"
 
 #: website/templates/project/project_header.mako:159
 #, python-format
-msgid "This %(nodetype)s is currently pending withdrawal."
-msgstr "この%(nodetype)sは現在、保留中です。"
+msgid "This %(node_type)s is currently pending withdrawal."
+msgstr "この%(node_type)sは現在、保留中です。"
 
 #: website/templates/project/project_header.mako:163
 #, python-format
 msgid ""
-"This %(nodetype)s is a withdrawn registration of <a class=\"link-solid\" "
-"href=\"%(registeredfromurl)s\">this %(nodetype)s</a>; the content of the "
-"%(nodetype)s has been taken down for the reason(s) stated below."
-msgstr "この%(nodetype)sは、この%(nodetype)sの登録の取り消しです。%(nodetype)sのコンテンツは、下記の理由により削除されました。"
+"This %(node_type)s is a withdrawn registration of <a "
+"%(registered_from_url)s>this %(node_type)s</a>; the content of the "
+"%(node_type)s has been taken down for the reason(s) stated below."
+msgstr ""
+"この%(node_type)sは、<a "
+"%(registered_from_url)s>この%(node_type)s</a>の登録の撤回です。%(node_type)sのコンテンツは、下記の理由により削除されました。"
 
 #: website/templates/project/project_header.mako:168
 #, python-format
 msgid ""
-"This %(nodetype)s is currently pending registration, awaiting approval "
+"This %(node_type)s is currently pending registration, awaiting approval "
 "from project administrators. This registration will be final and enter "
 "the embargo period when all project administrators approve the "
 "registration or 48 hours pass, whichever comes first. The embargo will "
 "keep the registration private until the embargo period ends."
 msgstr ""
-"この%(nodetype)sは現在登録を保留しており、プロジェクト管理者からの承認を待っています。 "
-"この登録は最終的なものであり、すべてのプロジェクト管理者が登録を承認するか、48時間のパスのいずれか早い方を承認した時点で禁止期間に入ります。 "
-"禁止措置は、禁止期間が終了するまで登録を非公開にします。"
+"この%(node_type)sは現在登録を保留しており、プロジェクト管理者からの承認を待っています。 "
+"この登録は最終的なものであり、すべてのプロジェクト管理者が登録を承認するか、48時間のパスのいずれか早いほうを承認した時点で禁輸期間に入ります。 "
+"禁輸措置は、禁輸期間が終了するまで登録を非公開にします。"
 
 #: website/templates/project/project_header.mako:182
 #, python-format
 msgid ""
 "This registration is currently embargoed. It will remain private until "
-"its embargo end date, %(embargoenddate)s."
-msgstr "この登録は現在禁止されています。 禁止終了日（%(embargoenddate)s）まで非公開のままです。"
+"its embargo end date, %(embargo_end_date)s."
+msgstr "現在、この登録は禁止されています。 禁止終了日(%(embargo_end_date)s)まで非公開のままです。"
 
 #: website/templates/project/project_header.mako:188
 #, python-format
 msgid ""
-"This %(nodetype)s contains supplemental materials for a preprint, but has"
-" been made Private. Make your supplemental materials discoverable by "
+"This %(node_type)s contains supplemental materials for a preprint, but "
+"has been made Private. Make your supplemental materials discoverable by "
 "making this %(nodetype)s Public."
 msgstr ""
-"この%(nodetype)sには、プレプリントの補足資料が含まれていますが、非公開になっています。 "
+"この%(node_type)sにはプレプリントの補足資料が含まれていますが、非公開になっています。 "
 "この%(nodetype)sを公開することで、補足資料を見つけやすくします。"
 
 #: website/templates/project/project_header.mako:192
 #, python-format
 msgid ""
-"This %(nodetype)s is being viewed through an anonymized, view-only link. "
-"If you want to view it as a contributor, click <a class=\"link-solid\" "
-"href=\"%(redirecturl)s\">here</a>."
+"This %(node_type)s is being viewed through an anonymized, view-only link."
+" If you want to view it as a contributor, click <a "
+"%(redirect_url)s>here</a>."
 msgstr ""
-"「この%(nodetype)s は匿名化された参照専用リンクで表示されています。コントリビュータとして表示する場合は、<a class"
-"=\"link-solid\" href=\"%(redirecturl)s\">ここ</a>をクリックしてください。"
+"この%(node_type)sは、匿名化された参照専用リンクを介して表示されています。コントリビュータとして表示する場合は、<a "
+"%(redirect_url)s>こちら</a>をクリックしてください。"
 
 #: website/templates/project/project_header.mako:196
 #, python-format
 msgid ""
-"This %(nodetype)s is being viewed through a private, view-only link. "
+"This %(node_type)s is being viewed through a private, view-only link. "
 "Anyone with the link can view this project. Keep the link safe."
 msgstr ""
-"この%(nodetype)sは、プライベートな参照専用リンクを介して表示されています。 リンクを知っている全員がこのプロジェクトを閲覧できます。 "
-"リンクを安全に保ちます。"
+"この%(node_type)sは、プライベートな参照専用リンクを介して表示されています。 リンクを知っている全員がこのプロジェクトを閲覧できます。"
+" リンクを安全に保ちます。"
 
+# 変数のためmsgstrを""にしておく
 #: website/templates/project/settings.mako:17
 #: website/templates/project/settings.mako:76
 #: website/templates/project/settings.mako:150
@@ -3337,6 +3318,7 @@ msgstr "説明のため"
 msgid "Uncategorized"
 msgstr "未分類"
 
+# 変数のためmsgstrを""にしておく
 #: website/templates/project/settings.mako:94
 msgid "category.label"
 msgstr ""
@@ -3575,6 +3557,7 @@ msgstr "ファイルなし"
 msgid "Connected to collaborative file editing"
 msgstr "共有ファイル編集に接続しました"
 
+# Notice: ”Save" は別のmsgid "Save"への参照なので文言を揃える
 #: website/templates/project/view_file.mako:111
 msgid ""
 "This page is currently connected to collaborative file editing. All edits"
@@ -3628,10 +3611,8 @@ msgstr "%(full_name)sアドオンが正しく構成されていません。"
 #: website/templates/project/addon/widget.mako:19
 #: website/templates/util/render_addon_widget.mako:240
 #, python-format
-msgid ""
-"Configure this add-on on the <a %(href)s%(node)s%(addons)s>add-ons</a> "
-"page."
-msgstr "<a %(href)s%(node)s%(addons)s>アドオン</a>ページでこのアドオンを構成します。"
+msgid "Configure this add-on on the <a href=%(node_url)s>add-ons</a> page."
+msgstr "<a href=%(node_url)s>アドオン</a>ページでこのアドオンを構成します。"
 
 #: website/templates/util/contributor_list.mako:18
 #, python-format
@@ -3660,17 +3641,23 @@ msgid "Dataverse"
 msgstr "Dataverse"
 
 #: website/templates/util/render_addon_widget.mako:93
-#: website/templates/util/render_addon_widget.mako:107
 #, python-format
 msgid ""
 "This project contains a forward to                                <a "
-"%(data_bind)s></a>."
-msgstr "このプロジェクトには、<a %(data_bind)s></a>転送が含まれています。"
+"%(text_url)s></a>."
+msgstr "このプロジェクトには、<a %(text_url)s></a>への転送が含まれています。"
 
 #: website/templates/util/render_addon_widget.mako:99
 #: website/templates/util/render_addon_widget.mako:112
 msgid "Redirect"
 msgstr "リダイレクト"
+
+#: website/templates/util/render_addon_widget.mako:107
+#, python-format
+msgid ""
+"This project contains a forward to                                <a "
+"%(text_linkDisplay)s></a>."
+msgstr "このプロジェクトには、<a %(text_linkDisplay)s></a>への転送が含まれています。"
 
 #: website/templates/util/render_addon_widget.mako:144
 #: website/templates/util/render_addon_widget.mako:175
@@ -3718,8 +3705,8 @@ msgstr "コンポーネント"
 
 #: website/templates/util/render_node.mako:18
 #, python-format
-msgid "Linked %(nodetype)s"
-msgstr "リンクされた%(nodetype)s"
+msgid "Linked %(node_type)s"
+msgstr "リンクされた%(node_type)s"
 
 #: website/templates/util/render_node.mako:22
 msgid "This project is private"
@@ -3731,11 +3718,10 @@ msgstr "リンクを削除"
 
 #: website/templates/util/render_node.mako:58
 #, python-format
-msgid "Create a fork of %(summaryTitle)s"
-msgstr "%(summaryTitle)sのフォークを作成"
+msgid "Create a fork of %(summary_Title)s"
+msgstr "%(summary_Title)sのフォークを作成します"
 
 #: website/templates/util/render_node.mako:66
 msgid "Manage Contributors"
 msgstr "コントリビュータ管理"
-
 

@@ -6,12 +6,12 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PROJECT VERSION\n"
-"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"Project-Id-Version: 0.5.2\n"
+"Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
 "POT-Creation-Date: 2020-03-02 19:54+0900\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"PO-Revision-Date: 2020-03-04 17:13+0900\n"
+"Last-Translator: Shunta Nishikawa\n"
+"Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -202,6 +202,7 @@ msgid "Loading containers..."
 msgstr ""
 
 #: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:72
+#: addons/nextcloud/templates/nextcloud_node_settings.mako:67
 #: addons/owncloud/templates/owncloud_node_settings.mako:67
 #: addons/s3/templates/s3_node_settings.mako:72
 #: addons/s3compat/templates/s3compat_node_settings.mako:72
@@ -209,7 +210,7 @@ msgstr ""
 #: addons/zotero/templates/zotero_node_settings.mako:122
 #: website/templates/project/addon/node_settings_default.mako:67
 #, python-format
-msgid "Connect <b>&ldquo;<span %(data_bind)s></span>&rdquo;</b>?"
+msgid "Connect %(folderName)s?"
 msgstr ""
 
 #: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:12
@@ -226,7 +227,8 @@ msgid "Connect or Reauthorize Account"
 msgstr ""
 
 #: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:24
-msgid "Authorized by <em><span data-bind=\"text: name\"></span></em>"
+#, python-format
+msgid "Authorized by %(userName)s"
 msgstr ""
 
 #: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:32
@@ -251,19 +253,21 @@ msgid "Connect Account"
 msgstr ""
 
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:74
+#: addons/github/templates/github_node_settings.mako:71
 #, python-format
 msgid ""
-"Could not retrieve Bitbucket settings at this time. The Bitbucket addon "
-"credentials                may no longer be valid. Try deauthorizing and "
-"reauthorizing Bitbucket on your                <a "
-"%(href)s%(addons_url)s%(quotation)s>account settings page</a>."
+"Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
+" addon credentials                may no longer be valid. Try "
+"deauthorizing and reauthorizing %(addonName)s on your                <a "
+"href=\"%(addons_url)s\">account settings page</a>."
 msgstr ""
 
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:78
+#: addons/github/templates/github_node_settings.mako:75
 #, python-format
 msgid ""
-"Could not retrieve Bitbucket settings at this time. The Bitbucket addon "
-"credentials                may no longer be valid. Contact "
+"Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
+" addon credentials                may no longer be valid. Contact "
 "%(auth_osf_name)s to verify."
 msgstr ""
 
@@ -289,7 +293,7 @@ msgstr ""
 
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:50
 #, python-format
-msgid "(Get from Dataverse <i %(classTag)s></i>)"
+msgid "(Get from Dataverse %(dataverse_link)s)"
 msgstr ""
 
 #: addons/dataverse/templates/dataverse_node_settings.mako:43
@@ -329,7 +333,7 @@ msgstr ""
 #: addons/dataverse/templates/dataverse_user_settings.mako:23
 #: addons/gitlab/templates/gitlab_user_settings.mako:23
 #, python-format
-msgid "Authorized on <a %(data_bind1)s><em %(data_bind2)s></em></a>"
+msgid "Authorized on %(addonHost)s"
 msgstr ""
 
 #: addons/forward/templates/forward_node_settings.mako:14
@@ -353,24 +357,6 @@ msgstr ""
 
 #: addons/github/templates/github_node_settings.mako:56
 msgid "Create Repo"
-msgstr ""
-
-#: addons/github/templates/github_node_settings.mako:71
-#, python-format
-msgid ""
-"Could not retrieve GitHub settings at this time. The GitHub addon "
-"credentials                may no longer be valid. Try deauthorizing and "
-"reauthorizing GitHub on your                <a "
-"%(href)s%(addons_url)s%(quotation)s%(quotation)s>account settings "
-"page</a>."
-msgstr ""
-
-#: addons/github/templates/github_node_settings.mako:75
-#, python-format
-msgid ""
-"Could not retrieve GitHub settings at this time. The GitHub addon "
-"credentials                may no longer be valid. Contact "
-"%(auth_osf_name)s to verify."
 msgstr ""
 
 #: addons/gitlab/templates/gitlab_credentials_modal.mako:4
@@ -409,17 +395,17 @@ msgstr ""
 #: addons/gitlab/templates/gitlab_node_settings.mako:80
 #, python-format
 msgid ""
-"Could not retrieve GitLab settings at this time. The GitLab addon "
-"credentials                    may no longer be valid. Try deauthorizing "
-"and reauthorizing GitLab on your                    <a "
-"href=\"%(addons_url)s\">account settings page</a>."
+"Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
+" addon credentials                    may no longer be valid. Try "
+"deauthorizing and reauthorizing %(addonName)s on your                    "
+"<a href=\"%(addons_url)s\">account settings page</a>."
 msgstr ""
 
 #: addons/gitlab/templates/gitlab_node_settings.mako:84
 #, python-format
 msgid ""
-"Could not retrieve GitLab settings at this time. The GitLab addon "
-"credentials                    may no longer be valid. Contact "
+"Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
+" addon credentials                    may no longer be valid. Contact "
 "%(auth_osf_name)s to verify."
 msgstr ""
 
@@ -473,9 +459,9 @@ msgstr ""
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:36
 #, python-format
 msgid ""
-"Only Nextcloud instances supporting <a %(href_target1)s>WebDAV</a> and <a"
-" %(href_target2)s>                                        OCS v1.7</a> "
-"are supported."
+"Only Nextcloud instances supporting <a %(webdav_url)s>WebDAV</a> and <a "
+"%(ocs_url)s>                                        OCS v1.7</a> are "
+"supported."
 msgstr ""
 
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:46
@@ -500,7 +486,7 @@ msgstr ""
 #, python-format
 msgid ""
 "These credentials will be encrypted. However, we <strong>strongly "
-"encourage</strong> using a <a %(href_target)s> Device (or App) "
+"encourage</strong> using a <a %(open_with_new_window)s> Device (or App) "
 "Password</a>."
 msgstr ""
 
@@ -516,16 +502,10 @@ msgstr ""
 msgid "Loading folders..."
 msgstr ""
 
-#: addons/nextcloud/templates/nextcloud_node_settings.mako:67
-#, python-format
-msgid "Connect <b>&ldquo;<span %(spanTag)s></span>&rdquo;</b>?"
-msgstr ""
-
 #: addons/nextcloud/templates/nextcloud_user_settings.mako:23
+#: addons/owncloud/templates/owncloud_user_settings.mako:23
 #, python-format
-msgid ""
-"Authorized by <em><span %(data_bind1)s></span></em> on <a "
-"%(data_bind2)s><em %(data_bind3)s></em></a>"
+msgid "Authorized by %(user_name)s on %(profile_page)s"
 msgstr ""
 
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:6
@@ -543,29 +523,22 @@ msgstr ""
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:36
 #, python-format
 msgid ""
-"Only ownCloud instances supporting <a %(href_target1)s>WebDAV</a> and <a "
-"%(href_target2)s>                                        OCS v1.7</a> are"
-" supported."
+"Only ownCloud instances supporting <a %(webdav_url)s>WebDAV</a> and <a "
+"%(ocs_url)s>                                        OCS v1.7</a> are "
+"supported."
 msgstr ""
 
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:55
 #, python-format
 msgid ""
 " These credentials will be encrypted. However, we <strong>strongly "
-"encourage</strong> using a <a %(href_target)s> Device (or App) "
+"encourage</strong> using a <a %(open_with_new_window)s> Device (or App) "
 "Password</a>."
 msgstr ""
 
 #: addons/owncloud/templates/owncloud_node_settings.mako:42
 #: website/templates/project/addon/node_settings_default.mako:41
 msgid "Current Folder:"
-msgstr ""
-
-#: addons/owncloud/templates/owncloud_user_settings.mako:23
-#, python-format
-msgid ""
-"Authorized by <em><span %(data_bind1)s\"></span></em> on <a "
-"%(data_bind2)s><em data-bind=\"text: profileUrl\"></em></a>"
 msgstr ""
 
 #: addons/s3/templates/s3_credentials_modal.mako:6
@@ -672,7 +645,7 @@ msgstr ""
 msgid ""
 "To use, you must install an appropriate application on your mobile "
 "device. Google Authenticator is a popular choice and is available for "
-"both        <a %(href1)s>Android</a> and <a %(href2)s>iOS</a>."
+"both        <a %(google_url)s>Android</a> and <a %(itunes_url)s>iOS</a>."
 msgstr ""
 
 #: addons/twofactor/templates/twofactor_user_settings.mako:26
@@ -686,8 +659,8 @@ msgstr ""
 #: addons/twofactor/templates/twofactor_user_settings.mako:28
 #, python-format
 msgid ""
-"Scan the image below, or enter the secret key        <code "
-"%(data_bind)s></code> into your authentication device."
+"Scan the image below, or enter the secret key        %(secret_key)s into "
+"your authentication device."
 msgstr ""
 
 #: addons/twofactor/templates/twofactor_user_settings.mako:34
@@ -961,8 +934,8 @@ msgstr ""
 #: addons/wiki/templates/wiki-bar-modal-help.mako:10
 #, python-format
 msgid ""
-"The wiki uses the <a %(href1)s>Markdown</a> syntax. For more information "
-"and examples, go to our <a %(href2)s>Guides.</a>"
+"The wiki uses the <a %(mark_url)s>Markdown</a> syntax. For more "
+"information and examples, go to our <a %(zendesk_url)s>Guides.</a>"
 msgstr ""
 
 #: addons/zotero/templates/zotero_node_settings.mako:41
@@ -1028,8 +1001,8 @@ msgstr ""
 msgid ""
 "This website relies on cookies to help provide a better user experience. "
 "By clicking Accept or continuing to use the site, you agree. For more "
-"information,            see our <a %(href1)s>Privacy Policy</a>"
-"            and information on <a %(href2)s>cookie use</a>."
+"information,            see our <a %(meatwiki_url)s>Privacy Policy</a>"
+"            and information on <a %(meatwiki_url)s>cookie use</a>."
 msgstr ""
 
 #: website/templates/base.mako:170
@@ -1075,8 +1048,8 @@ msgstr ""
 #: website/templates/claim_account.mako:93
 #, python-format
 msgid ""
-"I have read and agree to the <a %(target_href1)s>Terms of Use</a> and <a "
-"%(target_href2)s>Privacy Policy</a>."
+"I have read and agree to the <a %(meatwiki_termsOfUse)s>Terms of Use</a> "
+"and <a %(meatwiki_privacyPolicy)s>Privacy Policy</a>."
 msgstr ""
 
 #: website/templates/claim_account.mako:105
@@ -1084,7 +1057,7 @@ msgstr ""
 msgid ""
 "If you are not %(fullname)s, or if you were erroneously added as a "
 "contributor to the project described in the email invitation, please "
-"email <a %(href)s%(osf_contact_email)s%(quot)s>%(osf_contact_email)s</a>"
+"email <a href=%(mailto_osf_contact_email)s>%(osf_contact_email)s</a>"
 msgstr ""
 
 #: website/templates/claim_account_eppn.mako:2
@@ -1369,9 +1342,9 @@ msgstr ""
 #: website/templates/prereg_landing_page.mako:55
 #, python-format
 msgid ""
-"<p>Improve your research with <a %(target)s>preregistration</a>. By "
-"writing out specific details such as data collection methods, analysis "
-"plans, and rules for data exclusion, you can make important decisions "
+"<p>Improve your research with <a %(cos_prereg_url)s>preregistration</a>. "
+"By writing out specific details such as data collection methods, analysis"
+" plans, and rules for data exclusion, you can make important decisions "
 "early on and have a clear record of these choices. This can help reduce "
 "biases that occur once the data are in front of you.</p>"
 msgstr ""
@@ -1379,28 +1352,28 @@ msgstr ""
 #: website/templates/prereg_landing_page.mako:56
 #, python-format
 msgid ""
-"<p>Use <a %(target)s>OSF Registries</a> to discover previously registered"
-" work.</p>"
+"<p>Use <a %(osf_registries_url)s>OSF Registries</a> to discover "
+"previously registered work.</p>"
 msgstr ""
 
 #: website/templates/prereg_landing_page.mako:58
 #, python-format
 msgid ""
-"<p><strong> Articles must be published by an <a %(target)s>approved</a> "
-"journal by December 31, 2018, to be eligible for a prize. Please use this"
-" this helpful workflow to preregister, even if you are not seeking a "
-"prize. </strong></p>"
+"<p><strong> Articles must be published by an <a "
+"%(prereg_more_info_url)s>approved</a> journal by December 31, 2018, to be"
+" eligible for a prize. Please use this this helpful workflow to "
+"preregister, even if you are not seeking a prize. </strong></p>"
 msgstr ""
 
 #: website/templates/prereg_landing_page.mako:59
 #, python-format
 msgid ""
 "<p> Improve your research with preregistration. The process of creating a"
-" <a %(href)s> preregistration</a> is beneficial to both the scientific "
-"field and to you, the scientist. By writing out detailed data collection "
-"methods, analysis plans, and rules for excluding or missing data, you can"
-" make important decisions that affect your workflow earlier, without the "
-"biases that occur once the data are in front of you.</p>"
+" <a %(cos_prereg_url)s> preregistration</a> is beneficial to both the "
+"scientific field and to you, the scientist. By writing out detailed data "
+"collection methods, analysis plans, and rules for excluding or missing "
+"data, you can make important decisions that affect your workflow earlier,"
+" without the biases that occur once the data are in front of you.</p>"
 msgstr ""
 
 #: website/templates/prereg_landing_page.mako:64
@@ -1422,7 +1395,7 @@ msgstr ""
 #, python-format
 msgid ""
 "This account has been merged with <a "
-"%(class_href)s%(profile)s%(q_mark)s>%(profile2)</a>"
+"%(profile_url)s>%(profile_absolute_url)s</a>"
 msgstr ""
 
 #: website/templates/profile.mako:43
@@ -1542,65 +1515,63 @@ msgstr ""
 #: website/templates/search.mako:123
 #, python-format
 msgid ""
-"(<span %(class_data_bind)s>Withdrawn </span><span "
-"%(data_bind)s>Registration </span>File)"
+"(<span %(is_retracted)s>Withdrawn </span><span "
+"%(is_registration)s>Registration </span>File)"
 msgstr ""
 
 #: website/templates/search.mako:126
 msgid "(Preprint File)"
 msgstr ""
 
-#: website/templates/search.mako:131
-#, python-format
-msgid ""
-"From: <span %(data_bind1)s><span %(data_bind2)s></span> /</span><a "
-"%(dagta_bind3)s></a>"
-msgstr ""
-
-#: website/templates/search.mako:240
+#: website/templates/search.mako:242
 msgid " Contributors:"
 msgstr ""
 
-#: website/templates/search.mako:262
+#: website/templates/search.mako:264
 msgid "Affiliated institutions:"
 msgstr ""
 
-#: website/templates/search.mako:276 website/templates/search.mako:363
+#: website/templates/search.mako:278 website/templates/search.mako:365
 #, python-format
 msgid ""
 "<strong>Jump to:</strong><!-- ko if: n_wikis > 0 --><a "
 "%(data_bind1)s>Wiki</a> -<!-- /ko --><a %(data_bind2)s>Files</a>"
 msgstr ""
 
-#: website/templates/search.mako:286
+#: website/templates/search.mako:288
 msgid "(Preprint)"
 msgstr ""
 
 #: website/templates/project/project.mako:265
 #: website/templates/project/settings.mako:107
-#: website/templates/search.mako:287 website/templates/search.mako:343
+#: website/templates/search.mako:289 website/templates/search.mako:345
 msgid "Description:"
 msgstr ""
 
-#: website/templates/project/project.mako:165 website/templates/search.mako:290
-#: website/templates/search.mako:347
+#: website/templates/project/project.mako:165 website/templates/search.mako:292
+#: website/templates/search.mako:349
 msgid "Contributors:"
 msgstr ""
 
-#: website/templates/search.mako:309
+#: website/templates/search.mako:311
 msgid "Managers:"
 msgstr ""
 
-#: website/templates/search.mako:322
+#: website/templates/search.mako:324
 msgid "Members:"
 msgstr ""
 
-#: website/templates/search.mako:336 website/templates/search.mako:339
+#: website/templates/search.mako:338
+#, python-format
+msgid "(<span %(is_retracted)s>Withdrawn </span>Registration)"
+msgstr ""
+
+#: website/templates/search.mako:341
 #, python-format
 msgid "(<span %(class_data_bind)s>Withdrawn </span>Registration)"
 msgstr ""
 
-#: website/templates/search.mako:367
+#: website/templates/search.mako:369
 msgid "Tags:"
 msgstr ""
 
@@ -1619,7 +1590,7 @@ msgstr ""
 #: website/templates/search_bar_help_modal.mako:10
 #, python-format
 msgid ""
-"<p>Search uses the <a %(href)s>Lucene search syntax</a>.This gives you "
+"<p>Search uses the <a %(xwiki)s>Lucene search syntax</a>.This gives you "
 "many options, but can be very simple as well. Examples of valid searches "
 "include:</p>"
 msgstr ""
@@ -2432,14 +2403,16 @@ msgstr ""
 
 #: website/templates/project/addons.mako:131
 #, python-format
-msgid "Follow the steps in the <a %(tags)s>help guide</a> to resolve the issue."
+msgid ""
+"Follow the steps in the <a %(osf_help)s>help guide</a> to resolve the "
+"issue."
 msgstr ""
 
 #: website/templates/project/addons.mako:135
 #, python-format
 msgid ""
-"Please contact <a %(tags)s>rdm_support@nii.ac.jp</a> if you have "
-"questions."
+"Please contact <a %(mailto_rdmSupport)s>rdm_support@nii.ac.jp</a> if you "
+"have questions."
 msgstr ""
 
 #: website/templates/project/contributors.mako:2
@@ -2583,7 +2556,7 @@ msgstr ""
 #: website/templates/project/modal_add_contributor.mako:181
 #, python-format
 msgid ""
-"<a %(taga)s>Add <strong><em %(data_bind)s></em></strong> as an "
+"<a %(gotoInvite)s>Add <strong><em %(text_query)s></em></strong> as an "
 "unregistered contributor</a>."
 msgstr ""
 
@@ -2606,7 +2579,7 @@ msgstr ""
 #: website/templates/project/modal_add_contributor.mako:196
 #, python-format
 msgid ""
-"<a %(taga)s>add <strong><em %(data_bind)s></em></strong> as an "
+"<a %(gotoInvite)s>add <strong><em %(text_query)s></em></strong> as an "
 "unregistered contributor</a>."
 msgstr ""
 
@@ -2738,7 +2711,7 @@ msgstr ""
 
 #: website/templates/project/modal_generate_private_link.mako:51
 #, python-format
-msgid "(current component<span %(data_bind)s>, public</span>)"
+msgid "(current component<span %(isPublic)s>, public</span>)"
 msgstr ""
 
 #: website/templates/project/modal_generate_private_link.mako:59
@@ -2756,49 +2729,50 @@ msgstr ""
 #: website/templates/project/modal_remove_contributor.mako:15
 #, python-format
 msgid ""
-"<span>Do you want to remove <b %(data_bind1)s></b> from"
-"                                <b %(data_bind2)s></b>, or from <b "
-"%(data_bind3)s></b> and every component in it?</span>"
+"<span>Do you want to remove <b %(removed_contributor)s></b> from"
+"                                <b %(text_title)s></b>, or from <b "
+"%(text_title)s></b> and every component in it?</span>"
 msgstr ""
 
 #: website/templates/project/modal_remove_contributor.mako:21
 #, python-format
 msgid ""
-"Remove <b %(data_bind)s></b> from                                    "
-"<span %(class_data_bind)s></span>."
+"Remove <b %(removed_contributor)s></b> from"
+"                                    <span %(text_title)s></span>."
 msgstr ""
 
 #: website/templates/project/modal_remove_contributor.mako:28
 #, python-format
 msgid ""
-"Remove <b %(data_bind)s></b> from                                    "
-"<span %(class_data_bind)s></span> and every component in it."
+"Remove <b %(removed_contributor)s></b> from"
+"                                    <span %(text_title)s></span> and "
+"every component in it."
 msgstr ""
 
 #: website/templates/project/modal_remove_contributor.mako:37
 #, python-format
-msgid "Remove <b %(data_bind1)s></b> from <span %(data_bind2)s></span>?"
+msgid "Remove <b %(removed_contributor)s></b> from <span %(text_title)s></span>?"
 msgstr ""
 
 #: website/templates/project/modal_remove_contributor.mako:48
 #, python-format
 msgid ""
-"<b %(data_bind)s>                                        </b> will be "
-"removed from the following projects and/or components."
+"<b %(removed_contributor)s>                                        </b> "
+"will be removed from the following projects and/or components."
 msgstr ""
 
 #: website/templates/project/modal_remove_contributor.mako:65
 #, python-format
 msgid ""
-"<b %(data_bind)s>                                        </b> cannot be "
-"removed from the following projects and/or components."
+"<b %(removed_contributor)s>                                        </b> "
+"cannot be removed from the following projects and/or components."
 msgstr ""
 
 #: website/templates/project/modal_remove_contributor.mako:81
 #, python-format
 msgid ""
-"<b %(data_bind)s></b> cannot be                        removed as a "
-"contributor.  You need at least one administrator, bibliographic "
+"<b %(removed_contributor)s></b> cannot be                        removed "
+"as a contributor.  You need at least one administrator, bibliographic "
 "contributor, and registered user."
 msgstr ""
 
@@ -2882,7 +2856,7 @@ msgstr ""
 msgid ""
 "Forked from <a "
 "%(forked_form_id)s>%(forked_from_display_absolute_url)s</a> on"
-"                    <span %(data_bind)s></span>"
+"                    <span %(text_dateForked)s></span>"
 msgstr ""
 
 #: website/templates/project/project.mako:225
@@ -3011,7 +2985,7 @@ msgstr ""
 #, python-format
 msgid ""
 "<div %(f_x_xl)s>Cite as:</div>                                         "
-"<span %(data_bind)s></span>"
+"<span %(text_customCitation)s></span>"
 msgstr ""
 
 #: website/templates/project/project.mako:560
@@ -3111,14 +3085,14 @@ msgstr ""
 #, python-format
 msgid ""
 "The <a %(archived_from_url)s>active file</a> is viewable from within the "
-"<a %(registered_from_url)s>live%(node_type)s</a>."
+"<a %(registered_from_url)s>live %(node_type)s</a>."
 msgstr ""
 
 #: website/templates/project/project_header.mako:131
 #, python-format
 msgid ""
-"This registration is a frozen, non-editable version of <a class=\"link-"
-"solid\" href=\"%(registeredfromurl)s\">this %(nodetype)s</a>"
+"This registration is a frozen, non-editable version of <a "
+"%(registered_from_url)s>this %(nodetype)s</a>"
 msgstr ""
 
 #: website/templates/project/project_header.mako:135
@@ -3137,21 +3111,21 @@ msgstr ""
 
 #: website/templates/project/project_header.mako:159
 #, python-format
-msgid "This %(nodetype)s is currently pending withdrawal."
+msgid "This %(node_type)s is currently pending withdrawal."
 msgstr ""
 
 #: website/templates/project/project_header.mako:163
 #, python-format
 msgid ""
-"This %(nodetype)s is a withdrawn registration of <a class=\"link-solid\" "
-"href=\"%(registeredfromurl)s\">this %(nodetype)s</a>; the content of the "
-"%(nodetype)s has been taken down for the reason(s) stated below."
+"This %(node_type)s is a withdrawn registration of <a "
+"%(registered_from_url)s>this %(node_type)s</a>; the content of the "
+"%(node_type)s has been taken down for the reason(s) stated below."
 msgstr ""
 
 #: website/templates/project/project_header.mako:168
 #, python-format
 msgid ""
-"This %(nodetype)s is currently pending registration, awaiting approval "
+"This %(node_type)s is currently pending registration, awaiting approval "
 "from project administrators. This registration will be final and enter "
 "the embargo period when all project administrators approve the "
 "registration or 48 hours pass, whichever comes first. The embargo will "
@@ -3162,29 +3136,29 @@ msgstr ""
 #, python-format
 msgid ""
 "This registration is currently embargoed. It will remain private until "
-"its embargo end date, %(embargoenddate)s."
+"its embargo end date, %(embargo_end_date)s."
 msgstr ""
 
 #: website/templates/project/project_header.mako:188
 #, python-format
 msgid ""
-"This %(nodetype)s contains supplemental materials for a preprint, but has"
-" been made Private. Make your supplemental materials discoverable by "
+"This %(node_type)s contains supplemental materials for a preprint, but "
+"has been made Private. Make your supplemental materials discoverable by "
 "making this %(nodetype)s Public."
 msgstr ""
 
 #: website/templates/project/project_header.mako:192
 #, python-format
 msgid ""
-"This %(nodetype)s is being viewed through an anonymized, view-only link. "
-"If you want to view it as a contributor, click <a class=\"link-solid\" "
-"href=\"%(redirecturl)s\">here</a>."
+"This %(node_type)s is being viewed through an anonymized, view-only link."
+" If you want to view it as a contributor, click <a "
+"%(redirect_url)s>here</a>."
 msgstr ""
 
 #: website/templates/project/project_header.mako:196
 #, python-format
 msgid ""
-"This %(nodetype)s is being viewed through a private, view-only link. "
+"This %(node_type)s is being viewed through a private, view-only link. "
 "Anyone with the link can view this project. Keep the link safe."
 msgstr ""
 
@@ -3520,9 +3494,7 @@ msgstr ""
 #: website/templates/project/addon/widget.mako:19
 #: website/templates/util/render_addon_widget.mako:240
 #, python-format
-msgid ""
-"Configure this add-on on the <a %(href)s%(node)s%(addons)s>add-ons</a> "
-"page."
+msgid "Configure this add-on on the <a href=%(node_url)s>add-ons</a> page."
 msgstr ""
 
 #: website/templates/util/contributor_list.mako:18
@@ -3552,16 +3524,22 @@ msgid "Dataverse"
 msgstr ""
 
 #: website/templates/util/render_addon_widget.mako:93
-#: website/templates/util/render_addon_widget.mako:107
 #, python-format
 msgid ""
 "This project contains a forward to                                <a "
-"%(data_bind)s></a>."
+"%(text_url)s></a>."
 msgstr ""
 
 #: website/templates/util/render_addon_widget.mako:99
 #: website/templates/util/render_addon_widget.mako:112
 msgid "Redirect"
+msgstr ""
+
+#: website/templates/util/render_addon_widget.mako:107
+#, python-format
+msgid ""
+"This project contains a forward to                                <a "
+"%(text_linkDisplay)s></a>."
 msgstr ""
 
 #: website/templates/util/render_addon_widget.mako:144
@@ -3610,7 +3588,7 @@ msgstr ""
 
 #: website/templates/util/render_node.mako:18
 #, python-format
-msgid "Linked %(nodetype)s"
+msgid "Linked %(node_type)s"
 msgstr ""
 
 #: website/templates/util/render_node.mako:22
@@ -3623,7 +3601,7 @@ msgstr ""
 
 #: website/templates/util/render_node.mako:58
 #, python-format
-msgid "Create a fork of %(summaryTitle)s"
+msgid "Create a fork of %(summary_Title)s"
 msgstr ""
 
 #: website/templates/util/render_node.mako:66
