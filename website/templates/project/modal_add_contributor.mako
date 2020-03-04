@@ -27,7 +27,7 @@
                                     <div class="col-md-12">
                                         <div style='margin-left: 5px'>
                                             <!-- ko if:parentId -->
-                                            <a class="f-w-lg" data-bind="click: startSearchParent, text: '${_('Import contributors from %(parentTitle)s') % dict(parentTitle=h(parentTitle))}'"></a>
+                                            <a class="f-w-lg" data-bind="click: startSearchParent, text:'Import contributors from ' + parentTitle"></a>
                                             <!-- /ko -->
                                         </div>
                                     </div>
