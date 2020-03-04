@@ -27,7 +27,7 @@
                                     <div class="col-md-12">
                                         <div style='margin-left: 5px'>
                                             <!-- ko if:parentId -->
-                                                <a class="f-w-lg" data-bind="click: startSearchParent, text:'Import contributors from ' + parentTitle"></a>
+                                            <a class="f-w-lg" data-bind="click: startSearchParent, text: '${_('Import contributors from %(parentTitle)s') % dict(parentTitle=h(parentTitle))}'"></a>
                                             <!-- /ko -->
                                         </div>
                                     </div>
@@ -238,7 +238,7 @@
                                         <td class="p-r-sm" class="osf-icon-td">
                                             <a
                                                     class="btn btn-default contrib-button btn-mini"
-                                                    data-bind="click:$root.remove.bind($root), tooltip: {title: 'Remove contributor'}"
+                                                    data-bind="click:$root.remove.bind($root), tooltip: {title: '${_("Remove contributor")}'}"
                                                 ><i class="fa fa-minus"></i></a>
                                         </td>
                                         <td>

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-04 19:08+0900\n"
+"POT-Creation-Date: 2020-03-04 19:54+0900\n"
 "PO-Revision-Date: 2020-03-04 17:13+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
@@ -2599,6 +2599,11 @@ msgstr "名前またはユーザープロフィール情報で検索する"
 msgid "Invite new contributor by e-mail"
 msgstr "メールで新規コントリビュータを招待する"
 
+#: website/templates/project/modal_add_contributor.mako:30
+#, python-format
+msgid "Import contributors from %(parentTitle)s"
+msgstr "%(parentTitle)sからコントリビュータをインポート"
+
 #: website/templates/project/modal_add_contributor.mako:46
 msgid "Results"
 msgstr "結果"
@@ -2650,7 +2655,9 @@ msgstr "または"
 msgid ""
 "<a %(gotoInvite)s>add <strong><em %(text_query)s></em></strong> as an "
 "unregistered contributor</a>."
-msgstr "<a %(gotoInvite)s>未登録のコントリビュータとして<strong><em %(text_query)s></em></strong>を追加します。</a>"
+msgstr ""
+"<a %(gotoInvite)s>未登録のコントリビュータとして<strong><em "
+"%(text_query)s></em></strong>を追加します。</a>"
 
 #: website/templates/project/modal_add_contributor.mako:200
 msgid ""
@@ -2668,6 +2675,10 @@ msgstr "追加中"
 #: website/templates/project/modal_add_contributor.mako:208
 msgid "Remove all"
 msgstr "全て削除"
+
+#: website/templates/project/modal_add_contributor.mako:241
+msgid "Remove contributor"
+msgstr "コントリビュータを削除"
 
 #: website/templates/project/modal_add_contributor.mako:281
 msgid "Adding contributor(s)"
@@ -2796,6 +2807,11 @@ msgstr "（公開）"
 #: website/templates/project/modal_generate_private_link.mako:74
 msgid "De-select all"
 msgstr "全選択解除"
+
+#: website/templates/project/modal_generate_private_link.mako:87
+# 変数のためmsgstrを""にしておく
+msgid "submitText"
+msgstr ""
 
 #: website/templates/project/modal_remove_contributor.mako:15
 #, python-format

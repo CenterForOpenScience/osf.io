@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-03-04 19:08+0900\n"
+"POT-Creation-Date: 2020-03-04 19:54+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2527,6 +2527,11 @@ msgstr ""
 msgid "Invite new contributor by e-mail"
 msgstr ""
 
+#: website/templates/project/modal_add_contributor.mako:30
+#, python-format
+msgid "Import contributors from %(parentTitle)s"
+msgstr ""
+
 #: website/templates/project/modal_add_contributor.mako:46
 msgid "Results"
 msgstr ""
@@ -2591,6 +2596,10 @@ msgstr ""
 
 #: website/templates/project/modal_add_contributor.mako:208
 msgid "Remove all"
+msgstr ""
+
+#: website/templates/project/modal_add_contributor.mako:241
+msgid "Remove contributor"
 msgstr ""
 
 #: website/templates/project/modal_add_contributor.mako:281
@@ -2719,6 +2728,10 @@ msgstr ""
 
 #: website/templates/project/modal_generate_private_link.mako:74
 msgid "De-select all"
+msgstr ""
+
+#: website/templates/project/modal_generate_private_link.mako:87
+msgid "submitText"
 msgstr ""
 
 #: website/templates/project/modal_remove_contributor.mako:15

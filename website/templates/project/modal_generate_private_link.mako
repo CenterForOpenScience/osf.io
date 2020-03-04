@@ -84,7 +84,7 @@
             <div class="modal-footer">
 
                 <a href="#" class="btn btn-default" data-dismiss="modal">${_("Cancel")}</a>
-                <a class="btn btn-primary" data-bind="click:submit, css:{disabled: disableSubmit}, text: submitText"></a>
+                <a class="btn btn-primary" data-bind="click:submit, css:{disabled: disableSubmit}, text: ${_('submitText')}"></a>
 
             </div><!-- end modal-footer -->
         </div><!-- end modal-content -->
