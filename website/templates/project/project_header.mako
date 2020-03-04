@@ -126,9 +126,9 @@
             % if not node['is_pending_registration']:
                 % if file_name and urls.get('archived_from'):
                         <div class="alert alert-info">${ _("This file is part of a registration and is being shown in its archived version (and cannot be altered).")}
-                            ${_("The <a %(archived_from_url)s>active file</a> is viewable from within the <a %(registered_from_url)s>live%(node_type)s</a>.") % dict(archived_from_url='class="link-solid" href="' + urls['archived_from'] +'"',registered_from_url='class="link-solid" href="' + node['registered_from_url'] + '"',node_type=node['node_type'] ) | n}</div>
+                            ${_("The <a %(archived_from_url)s>active file</a> is viewable from within the <a %(registered_from_url)s>live %(node_type)s</a>.") % dict(archived_from_url='class="link-solid" href="' + urls['archived_from'] +'"',registered_from_url='class="link-solid" href="' + node['registered_from_url'] + '"',node_type=node['node_type'] ) | n}</div>
                 % else:
-                    <div class="alert alert-info">${ _('This registration is a frozen, non-editable version of <a class="link-solid" href="%(registeredfromurl)s">this %(nodetype)s</a>',registeredfromurl=node['registered_from_url'],nodetype=node['node_type']) }</div>
+                    <div class="alert alert-info">${ _('This registration is a frozen, non-editable version of <a %(registered_from_url)s>this %(nodetype)s</a>') % dict(registered_from_url='class="link-solid" href="' + h(node['registered_from_url']) + '"',nodetype=node['node_type']) }</div>
                 % endif
             % else:
                 <div class="alert alert-info">
@@ -156,16 +156,16 @@
         % endif
 
         % if node['is_pending_retraction']:
-            <div class="alert alert-info">${ _("This %(nodetype)s is currently pending withdrawal.") % dict(nodetype=node['node_type']) }</div>
+            <div class="alert alert-info">${ _("This %(node_type)s is currently pending withdrawal.") % dict(node_type=node['node_type']) }</div>
         % endif
 
         % if node['is_retracted']:
-            <div class="alert alert-danger">${ _('This %(nodetype)s is a withdrawn registration of <a class="link-solid" href="%(registeredfromurl)s">this %(nodetype)s</a>; the content of the %(nodetype)s has been taken down for the reason(s) stated below.') % dict(nodetype=node['node_type'],registeredfromurl=node['registered_from_url']) | n }</div>
+            <div class="alert alert-danger">${ _('This %(node_type)s is a withdrawn registration of <a %(registered_from_url)s>this %(node_type)s</a>; the content of the %(node_type)s has been taken down for the reason(s) stated below.') % dict(node_type=node['node_type'],registered_from_url='class="link-solid" href="' + h(node['registered_from_url']) + '"') | n }</div>
         % endif
 
         % if node['is_pending_embargo']:
             <div
-                class="alert alert-info">${ _('This %(nodetype)s is currently pending registration, awaiting approval from project administrators. This registration will be final and enter the embargo period when all project administrators approve the registration or 48 hours pass, whichever comes first. The embargo will keep the registration private until the embargo period ends.',nodetype=node['node_type']) }
+                class="alert alert-info">${ _('This %(node_type)s is currently pending registration, awaiting approval from project administrators. This registration will be final and enter the embargo period when all project administrators approve the registration or 48 hours pass, whichever comes first. The embargo will keep the registration private until the embargo period ends.') % dict(node_type=node['node_type']) }
                 % if permissions.ADMIN in user['permissions']:
                         <div>
                             <br>
@@ -179,21 +179,21 @@
         % endif
 
         % if node['is_embargoed']:
-            <div class="alert alert-danger">${ _('This registration is currently embargoed. It will remain private until its embargo end date, %(embargoenddate)s.') % dict(embargoenddate=node['embargo_end_date']) }</div>
+            <div class="alert alert-danger">${ _('This registration is currently embargoed. It will remain private until its embargo end date, %(embargo_end_date)s.') % dict(embargo_end_date=node['embargo_end_date']) }</div>
         % endif
 
     % endif  ## End registration undismissable labels
 
     % if node['is_supplemental_project'] and user['is_contributor_or_group_member'] and not node['is_public']:
-        <div class="alert alert-info">${ _('This %(nodetype)s contains supplemental materials for a preprint, but has been made Private. Make your supplemental materials discoverable by making this %(nodetype)s Public.') % dict(nodetype=node['node_type']) }</div>
+        <div class="alert alert-info">${ _('This %(node_type)s contains supplemental materials for a preprint, but has been made Private. Make your supplemental materials discoverable by making this %(nodetype)s Public.') % dict(node_type=node['node_type']) }</div>
     % endif
 
     % if node['anonymous'] and user['is_contributor_or_group_member']:
-        <div class="alert alert-info">${ _('This %(nodetype)s is being viewed through an anonymized, view-only link. If you want to view it as a contributor, click <a class="link-solid" href="%(redirecturl)s">here</a>.') % dict(nodetype=node['node_type'],redirecturl=node['redirect_url']) }</div>
+        <div class="alert alert-info">${ _('This %(node_type)s is being viewed through an anonymized, view-only link. If you want to view it as a contributor, click <a %(redirect_url)s>here</a>.') % dict(node_type=node['node_type'],redirect_url='class="link-solid" href="' + h(node['redirect_url']) + '"') }</div>
     % endif
 
     % if node['link'] and not node['is_public'] and not user['is_contributor_or_group_member']:
-        <div class="alert alert-info">${ _('This %(nodetype)s is being viewed through a private, view-only link. Anyone with the link can view this project. Keep the link safe.') % dict(nodetype=node['node_type']) }</div>
+        <div class="alert alert-info">${ _('This %(node_type)s is being viewed through a private, view-only link. Anyone with the link can view this project. Keep the link safe.') % dict(node_type=node['node_type']) }</div>
     % endif
 
     % if disk_saving_mode:

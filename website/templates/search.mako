@@ -120,7 +120,7 @@
 
     <script type="text/html" id="file">
         <!-- ko if: guid_url || deep_url -->
-            <h4><a data-bind="attr: {href: guid_url || deep_url}, text: name"></a> ${_('(<span %(class_data_bind)s>Withdrawn </span><span %(data_bind)s>Registration </span>File)') % dict(class_data_bind='class="text-danger" data-bind="if: is_retracted"',data_bind='data-bind="if: is_registration"') | n}</h4>
+            <h4><a data-bind="attr: {href: guid_url || deep_url}, text: name"></a> ${_('(<span %(is_retracted)s>Withdrawn </span><span %(is_registration)s>Registration </span>File)') % dict(is_retracted='class="text-danger" data-bind="if: is_retracted"',is_registration='data-bind="if: is_registration"') | n}</h4>
         <!-- /ko-->
         <!-- ko ifnot: guid_url || deep_url -->
             <h4> <span data-bind="text:name"></span> ${_("(Preprint File)")}</h4>
@@ -335,7 +335,7 @@
     </script>
     <script type="text/html" id="registration">
         <!-- ko if: parent_url -->
-        <h4><a data-bind="attr: {href: parent_url}, text: parent_title"></a> / <a data-bind="attr: {href: url}, text: title"></a>  ${_('(<span %(class_data_bind)s>Withdrawn </span>Registration)') % dict (class_data_bind='class="text-danger" data-bind="if: is_retracted"') | n}</h4>
+        <h4><a data-bind="attr: {href: parent_url}, text: parent_title"></a> / <a data-bind="attr: {href: url}, text: title"></a>  ${_('(<span %(is_retracted)s>Withdrawn </span>Registration)') % dict (is_retracted='class="text-danger" data-bind="if: is_retracted"') | n}</h4>
         <!-- /ko -->
         <!-- ko if: !parent_url -->
         <h4><span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <a data-bind="attr: {href: url}, text: title"></a>  ${_('(<span %(class_data_bind)s>Withdrawn </span>Registration)') % dict(class_data_bind='class="text-danger" data-bind="if: is_retracted"') | n}</h4>

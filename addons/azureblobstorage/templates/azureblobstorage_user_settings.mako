@@ -21,7 +21,7 @@
             <table class="table table-hover">
                 <thead>
                     <tr class="user-settings-addon-auth">
-                        <th class="text-muted default-authorized-by">${_('Authorized by <em><span data-bind="text: name"></span></em>') | n}</th>
+                        <th class="text-muted default-authorized-by">${_("Authorized by %(userName)s") % dict(userName='<em><span data-bind="text: name"></span></em>') | n}</th>
                     </tr>
                 </thead>
                 <!-- ko if: connectedNodes().length > 0 -->

@@ -90,7 +90,7 @@
             <!-- Terms of Service and Privacy Policy agreement -->
             <div class="form-group">
                     <input type="checkbox" data-bind="checked: acceptedTermsOfService" name="accepted_terms_of_service">
-                    <label style="margin-right: 15px">${_('I have read and agree to the <a %(target_href1)s>Terms of Use</a> and <a %(target_href2)s>Privacy Policy</a>.') % dict(target_href1='target="_blank" href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419"',target_href2='target="_blank" href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422"') | n}</label>
+                    <label style="margin-right: 15px">${_('I have read and agree to the <a %(meatwiki_termsOfUse)s>Terms of Use</a> and <a %(meatwiki_privacyPolicy)s>Privacy Policy</a>.') % dict(meatwiki_termsOfUse='target="_blank" href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419"',meatwiki_privacyPolicy='target="_blank" href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422"') | n}</label>
                     <p class="help-block" data-bind="validationMessage: acceptedTermsOfService" style="display: none;"></p>
             </div>
 
@@ -102,7 +102,7 @@
                 </div>
             %endif
             <div class='help-block'>
-                <p>${_('If you are not %(fullname)s, or if you were erroneously added as a contributor to the project described in the email invitation, please email <a %(href)s%(osf_contact_email)s%(quot)s>%(osf_contact_email)s</a>') % dict(fullname=h(fullname),href='href="mailto:',quot='"',osf_contact_email=h(osf_contact_email)) | n}
+                <p>${_('If you are not %(fullname)s, or if you were erroneously added as a contributor to the project described in the email invitation, please email <a href=%(mailto_osf_contact_email)s>%(osf_contact_email)s</a>') % dict(fullname=h(fullname),mailto_osf_contact_email='"mailto:' + h(osf_contact_email) + '"',osf_contact_email=h(osf_contact_email)) | n}
                 </p>
             </div>
             ${form.token | unicode, n }

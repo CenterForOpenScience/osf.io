@@ -7,7 +7,7 @@
                 </div>
                 <div class="modal-body">
                   <p>
-                    ${_('The wiki uses the <a %(href1)s>Markdown</a> syntax. For more information and examples, go to our <a %(href2)s>Guides.</a>') % dict(href1='href="https://daringfireball.net/projects/markdown/"', href2='href="https://openscience.zendesk.com/hc/en-us/sections/360003569274"') | n}
+                    ${_('The wiki uses the <a %(mark_url)s>Markdown</a> syntax. For more information and examples, go to our <a %(zendesk_url)s>Guides.</a>') % dict(mark_url='href="https://daringfireball.net/projects/markdown/"', zendesk_url='href="https://openscience.zendesk.com/hc/en-us/sections/360003569274"') | n}
                   </p>
                 </div>
                 <div class="modal-footer">

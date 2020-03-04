@@ -20,7 +20,7 @@
             <table class="table table-hover">
                 <thead>
                     <tr class="user-settings-addon-auth">
-                        <th class="text-muted default-authorized-by">${_('Authorized on <a %(data_bind1)s><em %(data_bind2)s></em></a>') % dict (data_bind1='data-bind="attr: {href: gitlabUrl}"',data_bind2='data-bind="text: gitlabHost"') | n}</th>
+                        <th class="text-muted default-authorized-by">${_('Authorized on %(addonHost)s') % dict (addonHost='<a data-bind="attr: {href: gitlabUrl}"><em data-bind="text: gitlabHost"></em></a>') | n}</th>
                     </tr>
                 </thead>
                 <!-- ko if: connectedNodes().length > 0 -->

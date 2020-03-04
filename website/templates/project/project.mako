@@ -216,8 +216,8 @@
                 % if node['is_fork']:
                     <p>
                     ${_('Forked from <a %(forked_form_id)s>%(forked_from_display_absolute_url)s</a> on\
-                    <span %(data_bind)s></span>') % dict(forked_form_id='class="node-forked-from"' + ' href="/' + h(node['forked_from_id']) + '/"',\
-                    forked_from_display_absolute_url=h(node['forked_from_display_absolute_url']),data_bind='data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"') | n}
+                    <span %(text_dateForked)s></span>') % dict(forked_form_id='class="node-forked-from"' + ' href="/' + h(node['forked_from_id']) + '/"',\
+                    forked_from_display_absolute_url=h(node['forked_from_display_absolute_url']),text_dateForked='data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"') | n}
                     </p>
                 % endif
                 % if node['is_registration']:
@@ -547,7 +547,7 @@
                                      </div>
                                      <div class="col-xs-9 m-l-sm">
                                          ${_('<div %(f_x_xl)s>Cite as:</div>\
-                                         <span %(data_bind)s></span>') % dict(f_x_xl='class="f-w-xl"',data_bind='data-bind="text: customCitation"') | n}
+                                         <span %(text_customCitation)s></span>') % dict(f_x_xl='class="f-w-xl"',text_customCitation='data-bind="text: customCitation"') | n}
                                      </div>
                                  </div>
                              </div>

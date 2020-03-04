@@ -178,7 +178,7 @@
                                     </ul>
                                     <p>
                                         <div data-bind='ifnot: emailSearch'>
-                                            ${_('<a %(taga)s>Add <strong><em %(data_bind)s></em></strong> as an unregistered contributor</a>.') % dict(taga='href="#" data-bind="click:gotoInvite"',data_bind='data-bind="text: query"') | n}
+                                            ${_('<a %(gotoInvite)s>Add <strong><em %(text_query)s></em></strong> as an unregistered contributor</a>.') % dict(gotoInvite='href="#" data-bind="click:gotoInvite"',text_query='data-bind="text: query"') | n}
                                         </div>
                                     </p>
                                 </div>
@@ -193,7 +193,7 @@
                                       ${_("No results found. Try a more specific search")}
                                     </div>
                                     <div data-bind="ifnot: emailSearch"> ${_("or")}
-                                        ${_('<a %(taga)s>add <strong><em %(data_bind)s></em></strong> as an unregistered contributor</a>.') % dict(taga='href="#" data-bind="click:gotoInvite"',data_bind='data-bind="text: query"') | n}
+                                        ${_('<a %(gotoInvite)s>add <strong><em %(text_query)s></em></strong> as an unregistered contributor</a>.') % dict(gotoInvite='href="#" data-bind="click:gotoInvite"',text_query='data-bind="text: query"') | n}
                                     </div>
                                 </div>
                                 <div data-bind="if: emailSearch">

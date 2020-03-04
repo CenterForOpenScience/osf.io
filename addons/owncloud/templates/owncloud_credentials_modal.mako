@@ -33,8 +33,8 @@
                                     <input type="text" class="form-control" name="customHost" data-bind="value: customHost" placeholder="owncloud.example.org">
                                 </div>
                                 <div class="text-muted" style="text-align: center">
-                                    <em>${_('Only ownCloud instances supporting <a %(href_target1)s>WebDAV</a> and <a %(href_target2)s>\
-                                        OCS v1.7</a> are supported.') % dict(href_target1='href="https://doc.owncloud.org/server/9.1/user_manual/files/access_webdav.html" target="_blank"',href_target2='href="https://www.freedesktop.org/wiki/Specifications/open-collaboration-services-1.7/" target="_blank"') | n}
+                                    <em>${_('Only ownCloud instances supporting <a %(webdav_url)s>WebDAV</a> and <a %(ocs_url)s>\
+                                        OCS v1.7</a> are supported.') % dict(webdav_url='href="https://doc.owncloud.org/server/9.1/user_manual/files/access_webdav.html" target="_blank"',ocs_url='href="https://www.freedesktop.org/wiki/Specifications/open-collaboration-services-1.7/" target="_blank"') | n}
                                         </em>
                                 </div>
                             </div>
@@ -52,7 +52,7 @@
                                 <input class="form-control" name="password" data-bind="value: password" type="password" placeholder="********" />
                             </div>
                             <div class="text-muted" style="text-align: center">
-                                <em>${_(' These credentials will be encrypted. However, we <strong>strongly encourage</strong> using a <a %(href_target)s> Device (or App) Password</a>.') % dict(href_target='href="https://doc.owncloud.org/server/9.1/user_manual/session_management.html#managing-devices" target="_blank"')}
+                                <em>${_(' These credentials will be encrypted. However, we <strong>strongly encourage</strong> using a <a %(open_with_new_window)s> Device (or App) Password</a>.') % dict(open_with_new_window='href="https://doc.owncloud.org/server/9.1/user_manual/session_management.html#managing-devices" target="_blank"')}
                                 </em>
                             </div>
                         </div>

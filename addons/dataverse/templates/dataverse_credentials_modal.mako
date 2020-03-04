@@ -47,7 +47,7 @@
                                     <!-- Link to API token generation page -->
                                     <a data-bind="attr: {href: tokenUrl}"
                                        target="_blank" class="text-muted addon-external-link">
-                                        ${_('(Get from Dataverse <i %(classTag)s></i>)') % dict(classTag='class="fa fa-external-link-square"') | n}
+                                        ${_('(Get from Dataverse %(dataverse_link)s)') % dict(dataverse_link='<i class="fa fa-external-link-square"></i>') | n}
                                     </a>
                                 </label>
                                 <input class="form-control" name="apiToken" data-bind="value: apiToken"/>

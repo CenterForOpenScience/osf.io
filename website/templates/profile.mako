@@ -20,7 +20,7 @@
 
 <%def name="content()">
 % if profile['is_merged']:
-<div class="alert alert-info">${_("This account has been merged with <a %(class_href)s%(profile)s%(q_mark)s>%(profile2)</a>") % dict(class_href='class="alert-link" href="',profile=h(profile['merged_by']['url']),q_mark='"',profile2=h(profile['merged_by']['absolute_url'])) | n}
+<div class="alert alert-info">${_('This account has been merged with <a %(profile_url)s>%(profile_absolute_url)s</a>') % dict(profile_url='class="alert-link" href="' + h(profile['merged_by']['url']) + '"',profile_absolute_url=h(profile['merged_by']['absolute_url'])) | n}
 </div>
 % endif
 

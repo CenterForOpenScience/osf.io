@@ -152,8 +152,8 @@
     <div id="cookieBanner" class="alert warningBanner">
         <div id="cookieText" class="warningBannerText">
             ${_("This website relies on cookies to help provide a better user experience. By clicking Accept or continuing to use the site, you agree. For more information,\
-            see our <a %(href1)s>Privacy Policy</a>\
-            and information on <a %(href2)s>cookie use</a>.") % dict(href1="href='https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422'",href2="href='https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422'") | n}
+            see our <a %(meatwiki_url)s>Privacy Policy</a>\
+            and information on <a %(meatwiki_url)s>cookie use</a>.") % dict(meatwiki_url="href='https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422'") | n}
         </div>
         <div class="warningBannerAcceptBtn">
             <div class="btn btn-default" data-dismiss="alert" data-bind="click: accept" aria-label="Accept">${_("Accept")}</div>

@@ -77,12 +77,12 @@
         % if node_has_auth and not valid_credentials:
             <div class="addon-settings-message text-danger p-t-sm">
                 % if is_owner:
-                    ${_('Could not retrieve GitLab settings at this time. The GitLab addon credentials\
-                    may no longer be valid. Try deauthorizing and reauthorizing GitLab on your\
-                    <a href="%(addons_url)s">account settings page</a>.') % dict(addons_url=h(addons_url)) | n}
+                    ${_('Could not retrieve %(addonName)s settings at this time. The %(addonName)s addon credentials\
+                    may no longer be valid. Try deauthorizing and reauthorizing %(addonName)s on your\
+                    <a href="%(addons_url)s">account settings page</a>.') % dict(addons_url=h(addons_url),addonName='GitLab') | n}
                 % else:
-                    ${_('Could not retrieve GitLab settings at this time. The GitLab addon credentials\
-                    may no longer be valid. Contact %(auth_osf_name)s to verify.') % dict(auth_osf_name=auth_osf_name)}
+                    ${_('Could not retrieve %(addonName)s settings at this time. The %(addonName)s addon credentials\
+                    may no longer be valid. Contact %(auth_osf_name)s to verify.') % dict(auth_osf_name=auth_osf_name,addonName='GitLab')}
                 % endif
             </div>
         % else:

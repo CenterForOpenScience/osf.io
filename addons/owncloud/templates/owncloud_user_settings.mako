@@ -20,7 +20,7 @@
             <table class="table table-hover">
                 <thead>
                     <tr class="user-settings-addon-auth">
-                        <th class="text-muted default-authorized-by">${_('Authorized by <em><span %(data_bind1)s"></span></em> on <a %(data_bind2)s><em data-bind="text: profileUrl"></em></a>') % dict(data_bind1='data-bind="text: name"',data_bind2='data-bind="attr: {href: profileUrl}"') | n}</th><th></th>
+                        <th class="text-muted default-authorized-by">${_('Authorized by %(user_name)s on %(profile_page)s') % dict(user_name='<em><span data-bind="text: name"></span></em>', profile_page='<a data-bind="attr: {href: profileUrl}"><em data-bind="text: profileUrl"></em></a>') | n}</th><th></th>
                     </tr>
                 </thead>
                 <!-- ko if: connectedNodes().length > 0 -->

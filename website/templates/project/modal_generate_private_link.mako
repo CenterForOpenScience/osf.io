@@ -48,7 +48,7 @@
                             <div class="list-overflow">
                             <input type="checkbox" checked disabled />
 
-                            <span data-bind="text:title"></span> ${_('(current component<span %(data_bind)s>, public</span>)') % dict(data_bind='data-bind="if: isPublic"') | n}
+                            <span data-bind="text:title"></span> ${_('(current component<span %(isPublic)s>, public</span>)') % dict(isPublic='data-bind="if: isPublic"') | n}
 
                             <div data-bind="foreach:nodes">
                                 <div data-bind="style:{'marginLeft': margin}">

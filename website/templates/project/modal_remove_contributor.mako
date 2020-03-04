@@ -12,21 +12,21 @@
                     <!-- remove page -->
                     <div data-bind='if:page() === REMOVE'>
                         <div class="form-group">
-                            ${_('<span>Do you want to remove <b %(data_bind1)s></b> from\
-                                <b %(data_bind2)s></b>, or from <b %(data_bind3)s></b> and every component in it?</span>') % dict(data_bind1='data-bind="text:removeSelf() ? \'yourself\' : contributorToRemove()[\'fullname\']"',data_bind2='data-bind="text: title"',data_bind3='data-bind="text: title"') | n}
+                            ${_('<span>Do you want to remove <b %(removed_contributor)s></b> from\
+                                <b %(text_title)s></b>, or from <b %(text_title)s></b> and every component in it?</span>') % dict(removed_contributor='data-bind="text:removeSelf() ? \'yourself\' : contributorToRemove()[\'fullname\']"',text_title='data-bind="text: title"') | n}
                         </div>
                         <div id="remove-page-radio-buttons" class="col-md-8" align="left">
                             <div class="radio">
                                 <label><input type="radio" name="radioBoxGroup" data-bind="checked:deleteAll, checkedValue: false" checked>
-                                    ${_('Remove <b %(data_bind)s></b> from\
-                                    <span %(class_data_bind)s></span>.') % dict(data_bind='data-bind="text:removeSelf() ? \'yourself\' : contributorToRemove()[\'fullname\']"',class_data_bind='class="f-w-lg" data-bind="text: title"') | n}
+                                    ${_('Remove <b %(removed_contributor)s></b> from\
+                                    <span %(text_title)s></span>.') % dict(removed_contributor='data-bind="text:removeSelf() ? \'yourself\' : contributorToRemove()[\'fullname\']"',text_title='class="f-w-lg" data-bind="text: title"') | n}
                                 </label>
                             </div>
 
                             <div class="radio">
                                 <label><input  type="radio" name="radioBoxGroup" data-bind="checked: deleteAll, checkedValue: true" >
-                                    ${_('Remove <b %(data_bind)s></b> from\
-                                    <span %(class_data_bind)s></span> and every component in it.') % dict(data_bind='data-bind="text:removeSelf() ? \'yourself\' : contributorToRemove()[\'fullname\']"',class_data_bind='"f-w-lg" data-bind="text: title"') | n}</label>
+                                    ${_('Remove <b %(removed_contributor)s></b> from\
+                                    <span %(text_title)s></span> and every component in it.') % dict(removed_contributor='data-bind="text:removeSelf() ? \'yourself\' : contributorToRemove()[\'fullname\']"',text_title='"f-w-lg" data-bind="text: title"') | n}</label>
                             </div>
                         </div>
 
@@ -34,7 +34,7 @@
                     <!-- removeNoChildren page -->
                     <div data-bind='if:page() === REMOVE_NO_CHILDREN'>
                         <div class="form-group" data-bind="if:contributorToRemove">
-                            <span>${_('Remove <b %(data_bind1)s></b> from <span %(data_bind2)s></span>?') % dict(data_bind1='data-bind="text:removeSelf() ? \'yourself\' : contributorToRemove()[\'fullname\']"',data_bind2='data-bind="text: title"') | n}</span>
+                            <span>${_('Remove <b %(removed_contributor)s></b> from <span %(text_title)s></span>?') % dict(removed_contributor='data-bind="text:removeSelf() ? \'yourself\' : contributorToRemove()[\'fullname\']"',text_title='data-bind="text: title"') | n}</span>
                         </div>
 
                     </div><!-- end removeNoChildren page -->
@@ -45,8 +45,8 @@
                             <div class="panel panel-default">
                                 <div class="panel-body">
                                     <div class="form-group" data-bind="if:contributorToRemove">
-                                        <span>${_('<b %(data_bind)s>\
-                                        </b> will be removed from the following projects and/or components.') % dict(data_bind='data-bind="text:removeSelf() ? \'You\' : contributorToRemove()[\'fullname\']"') | n}</span>
+                                        <span>${_('<b %(removed_contributor)s>\
+                                        </b> will be removed from the following projects and/or components.') % dict(removed_contributor='data-bind="text:removeSelf() ? \'You\' : contributorToRemove()[\'fullname\']"') | n}</span>
                                     </div>
                                     <div class="col-md-8" align="left">
                                         <ul data-bind="foreach: { data: titlesToRemove(), as: 'item' }">
@@ -62,8 +62,8 @@
                             <div class="panel panel-default">
                                 <div class="panel-body">
                                     <div class="form-group" data-bind="if:contributorToRemove">
-                                        <span>${_('<b %(data_bind)s>\
-                                        </b> cannot be removed from the following projects and/or components.') % dict(data_bind='data-bind="text:removeSelf() ? \'You\' : contributorToRemove()[\'fullname\']"') | n}</span>
+                                        <span>${_('<b %(removed_contributor)s>\
+                                        </b> cannot be removed from the following projects and/or components.') % dict(removed_contributor='data-bind="text:removeSelf() ? \'You\' : contributorToRemove()[\'fullname\']"') | n}</span>
                                     </div>
                                     <div class="col-md-8" align="left">
                                         <ul data-bind="foreach: { data: titlesToKeep(), as: 'item' }">
@@ -78,8 +78,8 @@
                     </div><!-- end removeAll page -->
                 </div>
                 <div data-bind="if: !canRemoveNode() && !pageChanged()">
-                    <span>${_('<b %(data_bind)s></b> cannot be\
-                        removed as a contributor.  You need at least one administrator, bibliographic contributor, and registered user.') % dict(data_bind=_('data-bind="text:removeSelf() ? \'You\' : contributorToRemove()[\'fullname\']"')) | n}</span>
+                    <span>${_('<b %(removed_contributor)s></b> cannot be\
+                        removed as a contributor.  You need at least one administrator, bibliographic contributor, and registered user.') % dict(removed_contributor=_('data-bind="text:removeSelf() ? \'You\' : contributorToRemove()[\'fullname\']"')) | n}</span>
                 </div>
                 <div data-bind="if: pageChanged()">
                     <span>${_("Please save or discard your existing changes before removing a contributor.")}</span>

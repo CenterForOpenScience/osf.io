@@ -64,7 +64,7 @@
                         <form data-bind="submit: submitSettings">
                             <div class="break-word">
                                 <div data-bind="if: selected" class="alert alert-info ${addon_short_name}-confirm-dlg">
-                                    ${_('Connect <b>&ldquo;<span %(data_bind)s></span>&rdquo;</b>?') % dict(data_bind='data-bind="text: selectedFolderName"') | n}
+                                    ${_("Connect %(folderName)s?") % dict(folderName='<b>&ldquo;<span data-bind="text: selectedFolderName"></span>&rdquo;</b>') | n}
                                 </div>
                             </div>
                             <div class="pull-right">
