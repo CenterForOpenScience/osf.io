@@ -50,6 +50,9 @@
                     <button id="show-modify-form" class="btn btn-link" type="button">
                         Modify Institution
                     </button>
+                    <div class="col-md-12">
+                        <a class="btn btn-link" href={% url 'institutions:register_metrics_admin' institution.id %}>Register Moderator/Admin</a>
+                    </div>
                 {% endif %}
             </div>
         </div>
