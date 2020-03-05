@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-04 19:54+0900\n"
+"POT-Creation-Date: 2020-03-05 11:40+0900\n"
 "PO-Revision-Date: 2020-03-04 17:13+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
@@ -1573,15 +1573,22 @@ msgstr ""
 msgid "(Preprint File)"
 msgstr "(プレプリントファイル)"
 
-#: website/templates/search.mako:242
+#: website/templates/search.mako:132
+#, python-format
+msgid ""
+"From: <span %(parent_title)s><span %(text_parent_title)s></span> /</span>"
+" <a %(node_url_and_title)s></a>"
+msgstr "<a %(node_url_and_title)s></a> <span %(parent_title)s><span %(text_parent_title)s></span> /</span>より"
+
+#: website/templates/search.mako:241
 msgid " Contributors:"
 msgstr "コントリビュータ:"
 
-#: website/templates/search.mako:264
+#: website/templates/search.mako:263
 msgid "Affiliated institutions:"
 msgstr "所属機関："
 
-#: website/templates/search.mako:278 website/templates/search.mako:365
+#: website/templates/search.mako:277 website/templates/search.mako:364
 #, python-format
 msgid ""
 "<strong>Jump to:</strong><!-- ko if: n_wikis > 0 --><a "
@@ -1590,35 +1597,35 @@ msgstr ""
 "<!-- ko if: n_wikis > 0 --><a %(data_bind1)s>Wiki</a> -<!-- /ko --><a "
 "%(data_bind2)s>ファイル</a><strong>へ移動</strong>"
 
-#: website/templates/search.mako:288
+#: website/templates/search.mako:287
 msgid "(Preprint)"
 msgstr "(プレプリント)"
 
 #: website/templates/project/project.mako:265
 #: website/templates/project/settings.mako:107
-#: website/templates/search.mako:289 website/templates/search.mako:345
+#: website/templates/search.mako:288 website/templates/search.mako:344
 msgid "Description:"
 msgstr "説明:"
 
-#: website/templates/project/project.mako:165 website/templates/search.mako:292
-#: website/templates/search.mako:349
+#: website/templates/project/project.mako:165 website/templates/search.mako:291
+#: website/templates/search.mako:348
 msgid "Contributors:"
 msgstr "コントリビュータ:"
 
-#: website/templates/search.mako:311
+#: website/templates/search.mako:310
 msgid "Managers:"
 msgstr "マネージャ:"
 
-#: website/templates/search.mako:324
+#: website/templates/search.mako:323
 msgid "Members:"
 msgstr "メンバー:"
 
-#: website/templates/search.mako:338 website/templates/search.mako:341
+#: website/templates/search.mako:337 website/templates/search.mako:340
 #, python-format
 msgid "(<span %(is_retracted)s>Withdrawn </span>Registration)"
 msgstr "(<span %(is_retracted)s>取り下げられた</span>登録)"
 
-#: website/templates/search.mako:369
+#: website/templates/search.mako:368
 msgid "Tags:"
 msgstr "タグ"
 
@@ -2599,11 +2606,6 @@ msgstr "名前またはユーザープロフィール情報で検索する"
 msgid "Invite new contributor by e-mail"
 msgstr "メールで新規コントリビュータを招待する"
 
-#: website/templates/project/modal_add_contributor.mako:30
-#, python-format
-msgid "Import contributors from %(parentTitle)s"
-msgstr "%(parentTitle)sからコントリビュータをインポート"
-
 #: website/templates/project/modal_add_contributor.mako:46
 msgid "Results"
 msgstr "結果"
@@ -2808,8 +2810,8 @@ msgstr "（公開）"
 msgid "De-select all"
 msgstr "全選択解除"
 
-#: website/templates/project/modal_generate_private_link.mako:87
 # 変数のためmsgstrを""にしておく
+#: website/templates/project/modal_generate_private_link.mako:87
 msgid "submitText"
 msgstr ""
 
@@ -3738,4 +3740,7 @@ msgstr "コントリビュータ管理"
 
 #~ msgid "(<span %(class_data_bind)s>Withdrawn </span>Registration)"
 #~ msgstr "(<span %(class_data_bind)s>取り下げられた</span>登録)"
+
+#~ msgid "Import contributors from %(parentTitle)s"
+#~ msgstr "%(parentTitle)sからコントリビュータをインポート"
 

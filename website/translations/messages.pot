@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-03-04 19:54+0900\n"
+"POT-Creation-Date: 2020-03-05 11:40+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1523,50 +1523,57 @@ msgstr ""
 msgid "(Preprint File)"
 msgstr ""
 
-#: website/templates/search.mako:242
+#: website/templates/search.mako:132
+#, python-format
+msgid ""
+"From: <span %(parent_title)s><span %(text_parent_title)s></span> /</span>"
+" <a %(node_url_and_title)s></a>"
+msgstr ""
+
+#: website/templates/search.mako:241
 msgid " Contributors:"
 msgstr ""
 
-#: website/templates/search.mako:264
+#: website/templates/search.mako:263
 msgid "Affiliated institutions:"
 msgstr ""
 
-#: website/templates/search.mako:278 website/templates/search.mako:365
+#: website/templates/search.mako:277 website/templates/search.mako:364
 #, python-format
 msgid ""
 "<strong>Jump to:</strong><!-- ko if: n_wikis > 0 --><a "
 "%(data_bind1)s>Wiki</a> -<!-- /ko --><a %(data_bind2)s>Files</a>"
 msgstr ""
 
-#: website/templates/search.mako:288
+#: website/templates/search.mako:287
 msgid "(Preprint)"
 msgstr ""
 
 #: website/templates/project/project.mako:265
 #: website/templates/project/settings.mako:107
-#: website/templates/search.mako:289 website/templates/search.mako:345
+#: website/templates/search.mako:288 website/templates/search.mako:344
 msgid "Description:"
 msgstr ""
 
-#: website/templates/project/project.mako:165 website/templates/search.mako:292
-#: website/templates/search.mako:349
+#: website/templates/project/project.mako:165 website/templates/search.mako:291
+#: website/templates/search.mako:348
 msgid "Contributors:"
 msgstr ""
 
-#: website/templates/search.mako:311
+#: website/templates/search.mako:310
 msgid "Managers:"
 msgstr ""
 
-#: website/templates/search.mako:324
+#: website/templates/search.mako:323
 msgid "Members:"
 msgstr ""
 
-#: website/templates/search.mako:338 website/templates/search.mako:341
+#: website/templates/search.mako:337 website/templates/search.mako:340
 #, python-format
 msgid "(<span %(is_retracted)s>Withdrawn </span>Registration)"
 msgstr ""
 
-#: website/templates/search.mako:369
+#: website/templates/search.mako:368
 msgid "Tags:"
 msgstr ""
 
@@ -2525,11 +2532,6 @@ msgstr ""
 
 #: website/templates/project/modal_add_contributor.mako:25
 msgid "Invite new contributor by e-mail"
-msgstr ""
-
-#: website/templates/project/modal_add_contributor.mako:30
-#, python-format
-msgid "Import contributors from %(parentTitle)s"
 msgstr ""
 
 #: website/templates/project/modal_add_contributor.mako:46
