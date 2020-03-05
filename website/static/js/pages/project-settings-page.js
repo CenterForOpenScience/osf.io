@@ -69,7 +69,7 @@ $(document).ready(function() {
     var keys = Object.keys(window.contextVars.nodeCategories);
     for (var i = 0; i < keys.length; i++) {
         categoryOptions.push({
-            label: window.contextVars.nodeCategories[keys[i]],
+            label: _(window.contextVars.nodeCategories[keys[i]]),
             value: keys[i]
         });
     }

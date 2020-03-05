@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-05 13:20+0900\n"
+"POT-Creation-Date: 2020-03-05 15:34+0900\n"
 "PO-Revision-Date: 2020-03-04 17:13+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
@@ -3745,9 +3745,4 @@ msgstr "%(summary_Title)sのフォークを作成"
 msgid "Manage Contributors"
 msgstr "コントリビュータ管理"
 
-#~ msgid "(<span %(class_data_bind)s>Withdrawn </span>Registration)"
-#~ msgstr "(<span %(class_data_bind)s>取り下げられた</span>登録)"
-
-#~ msgid "Import contributors from %(parentTitle)s"
-#~ msgstr "%(parentTitle)sからコントリビュータをインポート"
 
