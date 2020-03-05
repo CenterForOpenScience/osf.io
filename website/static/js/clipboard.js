@@ -10,6 +10,7 @@ var _ = function(msgid) { return gt.gettext(msgid); };
 var setTooltip = function (elm, message) {
     $(elm).tooltip('hide')
     .attr('title', message)
+    .attr('data-container', 'body')
     .tooltip('show');
 };
 
