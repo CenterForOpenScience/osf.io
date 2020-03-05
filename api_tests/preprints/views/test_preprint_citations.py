@@ -474,21 +474,21 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         self.published_preprint_url = '/{}preprints/{}/citation/apa/'.format(
             API_BASE, self.published_preprint._id)
 
-        def test_not_published(self):
-            self.published_preprint.date_published = None
-            self.published_preprint.save()
-            self.published_preprint.add_contributor(self.second_contrib)
-            self.published_preprint.save()
-            res = self.app.get(self.published_preprint_url)
-            assert_equal(res.status_code, 200)
-            citation = res.json['data']['attributes']['citation']
-            assert_equal(citation,
-                u'McGee, G. C. B., & Jenkins, D. T. T., Junior. ({}). {}. {}'.format(
-                    'n.d.',
-                    self.published_preprint.title,
-                    'https://doi.org/' + self.published_preprint.article_doi
-                )
+    def test_not_published(self):
+        self.published_preprint.date_published = None
+        self.published_preprint.save()
+        self.published_preprint.add_contributor(self.second_contrib)
+        self.published_preprint.save()
+        res = self.app.get(self.published_preprint_url)
+        assert_equal(res.status_code, 200)
+        citation = res.json['data']['attributes']['citation']
+        assert_equal(citation,
+            u'McGee, G. C. B., & Jenkins, D. T. T., Junior. ({}). {}. {}'.format(
+                'n.d.',
+                self.published_preprint.title,
+                'https://doi.org/' + self.published_preprint.article_doi
             )
+        )
 
     def test_one_author(self):
         res = self.app.get(self.published_preprint_url)

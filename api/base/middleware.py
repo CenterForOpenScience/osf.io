@@ -1,4 +1,5 @@
 import gc
+import uuid
 from io import StringIO
 import cProfile
 import pstats
@@ -138,4 +139,20 @@ class ProfileMiddleware(MiddlewareMixin):
             ps.print_stats()
             response.content = s.getvalue()
 
+        return response
+
+
+class SloanIdMiddleware(MiddlewareMixin):
+    """Sloan middleware give all users a unique id, logged in or not."""
+
+    def process_response(self, request, response):
+        """give user a Sloan ID if they don't have one already"""
+        if not request.COOKIES.get(settings.SLOAN_ID_COOKIE_NAME):
+            response.set_cookie(
+                settings.SLOAN_ID_COOKIE_NAME,
+                str(uuid.uuid4()),
+                domain=settings.CSRF_COOKIE_DOMAIN,
+                path=settings.CSRF_COOKIE_PATH,
+                httponly=settings.CSRF_COOKIE_HTTPONLY,
+            )
         return response

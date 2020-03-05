@@ -3,6 +3,7 @@ import re
 from future.moves.urllib.parse import urlparse
 
 import furl
+import waffle
 from django.core.urlresolvers import resolve, reverse, NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
 from distutils.version import StrictVersion
@@ -25,6 +26,7 @@ from website import settings
 from website.project.model import has_anonymous_link
 from api.base.versioning import KEBAB_CASE_VERSION, get_kebab_snake_case_field
 
+from osf.models.validators import SwitchValidator
 
 def get_meta_type(serializer_class, request):
     meta = getattr(serializer_class, 'Meta', None)
@@ -1857,3 +1859,40 @@ class MaintenanceStateSerializer(ser.ModelSerializer):
     class Meta:
         model = MaintenanceState
         fields = ('level', 'message', 'start', 'end')
+
+
+class HideIfSwitch(ConditionalField):
+    """
+    If switch is switched this field is hidden/unhidden. This field is hidden if the switch state matches
+    the value of the hide_if parameter.
+    """
+    def __init__(self, switch_name: str, field: ser.Field, hide_if: bool = False, **kwargs):
+        """
+        :param switch_name: The name of the switch that is validated
+        :param field: The field that's being validated by the switch.
+        :param hide_if: The value of the switch that indicates it's hidden.
+        :param kwargs: You know, kwargs...
+        """
+        super(HideIfSwitch, self).__init__(field, **kwargs)
+        self.switch_name = switch_name
+        self.hide_if = hide_if
+
+    def should_hide(self, instance):
+        return waffle.switch_is_active(self.switch_name) == self.hide_if
+
+
+class DisableIfSwitch(HideIfSwitch):
+    """
+    If switch is switched this field will become hidden/unhidden and attempts to modify this field
+    will result in a validation error/pass normally. This field is disabled if the switch state matches
+    the value of the hide_if parameter.
+    """
+    def __init__(self, switch_name: str, field: ser.Field, hide_if: bool = False, **kwargs):
+        """
+        :param switch_name: The name of the switch that is validated
+        :param field: The field that's being validated by the switch.
+        :param hide_if: The value of the switch that indicates it's hidden/validated.
+        :param kwargs: My mama always told me life is like a bunch of kwargs...
+        """
+        super(DisableIfSwitch, self).__init__(switch_name, field, hide_if, **kwargs)
+        self.validators.append(SwitchValidator(self.switch_name))

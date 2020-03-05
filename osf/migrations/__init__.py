@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+from django.db.utils import ProgrammingError
 
 logger = logging.getLogger(__file__)
 
@@ -119,11 +120,19 @@ def update_admin_permissions(verbosity=0):
 def update_provider_auth_groups(verbosity=0):
     # TODO: determine efficient way to only do this if perms change
     from osf.models.provider import AbstractProvider
+    from django.db import transaction
     for subclass in AbstractProvider.__subclasses__():
-        for obj in subclass.objects.all():
-            obj.update_group_permissions()
-            if verbosity > 0:
-                logger.info('Updated perms for {} {}'.format(obj.type, obj._id))
+        # The exception handling here allows us to make model changes to providers while also checking their permissions
+        savepoint_id = transaction.savepoint()
+        try:
+            for obj in subclass.objects.all():
+                obj.update_group_permissions()
+                if verbosity > 0:
+                    logger.info('Updated perms for {} {}'.format(obj.type, obj._id))
+        except ProgrammingError:
+            logger.info('Schema change for AbstractProvider detected, passing.')
+            transaction.savepoint_rollback(savepoint_id)
+
 
 def update_permission_groups(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
