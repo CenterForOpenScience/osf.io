@@ -1567,7 +1567,7 @@ msgid ""
 "%(is_registration)s>Registration </span>File)"
 msgstr ""
 "(<span %(is_retracted)s>取り下げられた</span><span "
-"%(is_registration)s>登録</span>ファイル)"
+"%(is_registration)s>登録</span>ファイル名)"
 
 #: website/templates/search.mako:126
 msgid "(Preprint File)"
