@@ -11,10 +11,8 @@ from osf.metrics import (
 
 from osf.models import Institution, OSFUser, Preprint
 
-USERS = None
-PREPRINTS = None
 
-# Uncomment and Edit the following guids based off your local environment
+# Edit the following guids based off your local environment
 USERS = [OSFUser.load('bd53u'), OSFUser.load('hy84n'), OSFUser.load('7zyg2')]
 PREPRINTS = [Preprint.load('far32'), Preprint.load('67bzg')]
 INSTITUTION = Institution.load('cos')
@@ -87,9 +85,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         today = dt.datetime.today()
         last_seven_days = [(today - dt.timedelta(days=num_days)) for num_days in range(0, 7)]
-
-        if not USERS and not PREPRINTS:
-            raise Exception('The USERS or PREPRINTS global variables need to be uncommented and edited for your local environment.')
 
         if not options['preprints']:
             populate_institution_metrics(last_seven_days)
