@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-05 11:40+0900\n"
+"POT-Creation-Date: 2020-03-05 13:20+0900\n"
 "PO-Revision-Date: 2020-03-04 17:13+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
@@ -1573,12 +1573,19 @@ msgstr ""
 msgid "(Preprint File)"
 msgstr "(プレプリントファイル)"
 
+#: website/templates/search.mako:131
+#, python-format
+msgid "From: <a %(parent_url_title)s></a> <a %(node_url_and_title)s></a>"
+msgstr "<a %(node_url_and_title)s></a> <a %(parent_url_title)s></a>より"
+
 #: website/templates/search.mako:132
 #, python-format
 msgid ""
 "From: <span %(parent_title)s><span %(text_parent_title)s></span> /</span>"
 " <a %(node_url_and_title)s></a>"
-msgstr "<a %(node_url_and_title)s></a> <span %(parent_title)s><span %(text_parent_title)s></span> /</span>より"
+msgstr ""
+"<a %(node_url_and_title)s></a> <span %(parent_title)s><span "
+"%(text_parent_title)s></span> /</span>より"
 
 #: website/templates/search.mako:241
 msgid " Contributors:"
