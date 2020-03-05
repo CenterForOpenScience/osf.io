@@ -13,7 +13,7 @@ from osf.models import Institution, OSFUser, Preprint
 
 
 # Edit the following guids based off your local environment
-USERS = [OSFUser.load('bd53u'), OSFUser.load('hy84n'), OSFUser.load('7zyg2')]
+USERS = [OSFUser.load('abd53u'), OSFUser.load('hy84n'), OSFUser.load('7zyg2')]
 PREPRINTS = [Preprint.load('far32'), Preprint.load('67bzg')]
 INSTITUTION = Institution.load('cos')
 
