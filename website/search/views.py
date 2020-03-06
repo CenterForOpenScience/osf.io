@@ -70,22 +70,40 @@ def search_search(**kwargs):
     _type = kwargs.get('type', None)
     auth = kwargs.get('auth', None)
 
-    if settings.ENABLE_PRIVATE_SEARCH and not auth.logged_in:
+    tick = time.time()
+
+    if settings.ENABLE_PRIVATE_SEARCH:
+        results = _private_search(_type, auth)
+    else:
+        results = _default_search(_type)
+
+    results['time'] = round(time.time() - tick, 2)
+    return results
+
+
+@handle_search_errors
+@collect_auth
+def search_search_raw(**kwargs):
+    if not settings.ENABLE_PRIVATE_SEARCH:
+        raise HTTPError(http.BAD_REQUEST)
+
+    auth = kwargs.get('auth', None)
+    _type = kwargs.get('type', None)
+
+    tick = time.time()
+    results = _private_search(_type, auth, raw=True)
+    results['time'] = round(time.time() - tick, 2)
+    return results
+
+
+def _private_search(doc_type, auth, raw=False):
+    results = {}
+
+    if not auth.logged_in:
         raise HTTPError(http.UNAUTHORIZED)
     user = auth.user
 
-    tick = time.time()
-    results = {}
-
-    if request.method == 'POST' and not settings.ENABLE_PRIVATE_SEARCH:
-        results = search.search(request.get_json(), doc_type=_type)
-    elif request.method == 'GET' and not settings.ENABLE_PRIVATE_SEARCH:
-        q = request.args.get('q', '*')
-        # TODO Match javascript params?
-        start = request.args.get('from', '0')
-        size = request.args.get('size', '10')
-        results = search.search(build_query(q, start, size), doc_type=_type)
-    elif request.method == 'POST' and settings.ENABLE_PRIVATE_SEARCH:
+    if request.method == 'POST':
         # Since the scope of the renovation of a new API is widened,
         # for the time being, only the query string is extracted from
         # the JSON that came from the client, and the search query is
@@ -102,8 +120,8 @@ def search_search(**kwargs):
         es_dsl = json['elasticsearch_dsl']
         qs = es_dsl['query']['filtered']['query']['query_string']['query']
         es_dsl = build_private_search_query(user, qs, es_dsl['from'], es_dsl['size'])
-        results = search.search(es_dsl, doc_type=_type, private=True)
-    elif request.method == 'GET' and settings.ENABLE_PRIVATE_SEARCH:
+        results = search.search(es_dsl, doc_type=doc_type, private=True, raw=raw)
+    elif request.method == 'GET':
         version = request.args.get('version', None)
         if version is None or toint(version) != SEARCH_API_VERSION or \
            request.args.get('vendor', None) != SEARCH_API_VENDOR:
@@ -116,9 +134,19 @@ def search_search(**kwargs):
         start = request.args.get('from', '0')
         size = request.args.get('size', '10')
         es_dsl = build_private_search_query(user, q, start, size)
-        results = search.search(es_dsl, doc_type=_type, private=True)
+        results = search.search(es_dsl, doc_type=doc_type, private=True, raw=raw)
+    return results
 
-    results['time'] = round(time.time() - tick, 2)
+def _default_search(doc_type):
+    results = {}
+    if request.method == 'POST':
+        results = search.search(request.get_json(), doc_type=doc_type)
+    elif request.method == 'GET':
+        q = request.args.get('q', '*')
+        # TODO Match javascript params?
+        start = request.args.get('from', '0')
+        size = request.args.get('size', '10')
+        results = search.search(build_query(q, start, size), doc_type=doc_type)
     return results
 
 

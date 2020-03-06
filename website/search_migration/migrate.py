@@ -27,6 +27,7 @@ from website.search.elastic_search import PROJECT_LIKE_TYPES
 from website.search.elastic_search import es_index
 from website.search.search import update_institution, bulk_update_collected_metadata
 from website.search.util import unicode_normalize
+from addons.wiki.models import WikiPage
 
 
 logger = logging.getLogger(__name__)
@@ -184,6 +185,16 @@ def migrate_groups(index, delete):
         logger.info('Updating page {} / {}'.format(page_number, paginator.num_pages))
         OSFGroup.bulk_update_search(paginator.page(page_number).object_list, index=index)
 
+def migrate_wikis(index, delete):
+    logger.info('Migrating wiki pages to index: {}'.format(index))
+    wikis = WikiPage.objects.order_by('-id')
+    increment = 100
+    paginator = Paginator(wikis, increment)
+    for page_number in paginator.page_range:
+        logger.info('Updating page {} / {}'.format(page_number, paginator.num_pages))
+        search.bulk_update_wikis(paginator.page(page_number).object_list, index=index)
+    logger.info('{} wikis migrated'.format(wikis.count()))
+
 def migrate_files(index, delete, increment=10000):
     logger.info('Migrating files to index: {}'.format(index))
     max_fid = BaseFileNode.objects.last().id
@@ -279,6 +290,7 @@ def migrate(delete, remove=False, remove_all=False, index=None, app=None):
         migrate_institutions(new_index)
     migrate_nodes(new_index, delete=delete)
     migrate_files(new_index, delete=delete)
+    migrate_wikis(new_index, delete=delete)
     migrate_users(new_index, delete=delete)
     migrate_preprints(new_index, delete=delete)
     migrate_preprint_files(new_index, delete=delete)

@@ -1183,6 +1183,8 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule(['/search/', '/search/<type>/'], ['get', 'post'], search_views.search_search, json_renderer),
+        Rule(['/search_raw/', '/search_raw/<type>/'], ['get', 'post'], search_views.search_search_raw, json_renderer),
+
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
         Rule('/share/search/', 'get', website_views.legacy_share_v1_search, json_renderer),
 

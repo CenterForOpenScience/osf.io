@@ -50,6 +50,7 @@ ALIASES = {
     'institution': 'Institutions',
     'preprint': 'Preprints',
     'group': 'Groups',
+    # TODO 'wiki': 'Wiki',
 }
 
 DOC_TYPE_TO_MODEL = {
@@ -257,16 +258,15 @@ def search(query, index=None, doc_type='_all', raw=False, normalize=True, privat
             query['query']['bool']['should'][0]['query_string']['query'] = q
 
     tag_query = copy.deepcopy(query)
-    aggs_query = copy.deepcopy(query)
-    count_query = copy.deepcopy(query)
 
-    for key in ['from', 'size', 'sort']:
+    for key in ['from', 'size', 'sort', 'highlight']:
         try:
             del tag_query[key]
-            del aggs_query[key]
-            del count_query[key]
         except KeyError:
             pass
+
+    aggs_query = copy.deepcopy(tag_query)
+    count_query = copy.deepcopy(tag_query)
 
     tags = get_tags(tag_query, index)
     try:
@@ -295,6 +295,8 @@ def format_results(results):
     for result in results:
         if result.get('category') == 'user':
             result['url'] = '/profile/' + result['id']
+        elif result.get('category') == 'wiki':
+            result['user_url'] = '/profile/' + result['user_id']
         elif result.get('category') == 'file':
             parent_info = load_parent(result.get('parent_id'))
             result['parent_url'] = parent_info.get('url') if parent_info else None
@@ -401,11 +403,16 @@ def get_doctype_from_node(node):
         return node.category
 
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
-def update_node_async(self, node_id, index=None, bulk=False):
+def update_node_async(self, node_id, index=None, bulk=False, wiki_page_id=None):
     AbstractNode = apps.get_model('osf.AbstractNode')
     node = AbstractNode.load(node_id)
+    if wiki_page_id:
+        WikiPage = apps.get_model('addons_wiki.WikiPage')
+        wiki_page = WikiPage.load(wiki_page_id)
+    else:
+        wiki_page = None
     try:
-        update_node(node=node, index=index, bulk=bulk, async_update=True)
+        update_node(node=node, index=index, bulk=bulk, async_update=True, wiki_page=wiki_page)
     except Exception as exc:
         self.retry(exc=exc)
 
@@ -534,6 +541,37 @@ def serialize_preprint(preprint, category):
 
     return elastic_document
 
+def serialize_wiki(wiki_page, category):
+    w = wiki_page
+    latest = w.get_version()
+    node = w.node
+    elastic_document = {}
+    title = w.page_name
+    normalized_title = unicode_normalize(title)
+    elastic_document = {
+        'id': w._id,
+        'node_public': node.is_public,
+        'created': w.created,
+        'modified': w.modified,
+        'user': latest.user.username,
+        'user_id': latest.user._id,
+        'node_title': node.title,
+        'node_url': node.url,
+        'node_contributors': [
+            {
+                'id': x['guids___id']
+            }
+            for x in node._contributors.filter(contributor__visible=True).order_by('contributor___order')
+            .values('guids___id')
+        ],
+        'title': title,
+        'normalized_title': normalized_title,
+        'category': category,
+        'url': w.deep_url,
+        'text': unicode_normalize(w.get_version().raw_text(node)),
+    }
+    return elastic_document
+
 def serialize_group(group, category):
     elastic_document = {}
 
@@ -566,7 +604,30 @@ def serialize_group(group, category):
     return elastic_document
 
 @requires_search
-def update_node(node, index=None, bulk=False, async_update=False):
+def update_wiki(wiki_page, index=None, bulk=False):
+    index = es_index(index)
+    category = 'wiki'
+
+    if wiki_page.deleted:
+        delete_wiki_doc(wiki_page._id, index=index)
+        return None
+
+    # WikiVersion does not exist just after WikiPage.objects.create()
+    if wiki_page.get_version() is None:
+        return None
+
+    elastic_document = serialize_wiki(wiki_page, category)
+    if bulk:
+        return elastic_document
+    else:
+        client().index(index=index, doc_type=category, id=wiki_page._id, body=elastic_document, refresh=True)
+
+@requires_search
+def update_node(node, index=None, bulk=False, async_update=False, wiki_page=None):
+    if wiki_page:
+        update_wiki(wiki_page, index=index)
+        # NOTE: update_node() may be called twice after WikiPage.save()
+
     from addons.osfstorage.models import OsfStorageFile
     index = es_index(index)
     for file_ in paginated(OsfStorageFile, Q(target_content_type=ContentType.objects.get_for_model(type(node)), target_object_id=node.id)):
@@ -575,6 +636,8 @@ def update_node(node, index=None, bulk=False, async_update=False):
     is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
     if node.is_deleted or (not settings.ENABLE_PRIVATE_SEARCH and not node.is_public) or node.archiving or node.is_spam or (node.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles or is_qa_node:
         delete_doc(node._id, node, index=index)
+        for wiki_page in node.wikis.iterator():
+            delete_wiki_doc(wiki_page._id, index=index)
     else:
         category = get_doctype_from_node(node)
         elastic_document = serialize_node(node, category)
@@ -633,6 +696,24 @@ def bulk_update_nodes(serialize, nodes, index=None, category=None):
                 '_index': index,
                 '_id': node._id,
                 '_type': category or get_doctype_from_node(node),
+                'doc': serialized,
+                'doc_as_upsert': True,
+            })
+    if actions:
+        return helpers.bulk(client(), actions)
+
+def bulk_update_wikis(wiki_pages, index=None):
+    index = es_index(index)
+    category = 'wiki'
+    actions = []
+    for wiki in wiki_pages:
+        serialized = update_wiki(wiki, index=index, bulk=True)
+        if serialized:
+            actions.append({
+                '_op_type': 'update',
+                '_index': index,
+                '_id': wiki._id,
+                '_type': category,
                 'doc': serialized,
                 'doc_as_upsert': True,
             })
@@ -937,7 +1018,7 @@ def create_index(index=None):
     all of which are applied to all projects, components, preprints, and registrations.
     """
     index = es_index(index)
-    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint', 'collectionSubmission']
+    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint', 'collectionSubmission', 'wiki']
     project_like_types = PROJECT_LIKE_TYPES
     analyzed_fields = ['title', 'description']
 
@@ -998,6 +1079,17 @@ def create_index(index=None):
                     },
                 }
                 mapping['properties'].update(fields)
+            elif type_ == 'wiki':
+                prop = dict(ENGLISH_ANALYZER_PROPERTY)
+                prop.update({
+                    # to adjust highlighted fields to the middle position.
+                    'term_vector': 'with_positions_offsets',
+                })
+                fields = {
+                    'text': prop,
+                }
+                mapping['properties'].update(fields)
+
         client().indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
 
 @requires_search
@@ -1016,6 +1108,11 @@ def delete_doc(elastic_document_id, node, index=None, category=None):
 def delete_group_doc(deleted_id, index=None):
     index = es_index(index)
     client().delete(index=index, doc_type='group', id=deleted_id, refresh=True, ignore=[404])
+
+@requires_search
+def delete_wiki_doc(deleted_id, index=None):
+    index = es_index(index)
+    client().delete(index=index, doc_type='wiki', id=deleted_id, refresh=True, ignore=[404])
 
 @requires_search
 def search_contributor(query, page=0, size=10, exclude=None, current_user=None):

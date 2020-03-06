@@ -50,7 +50,7 @@ def build_query(query_string):
             }
         },
         'from': 0,
-        'size': 10
+        'size': 100
     }
 
 
@@ -127,6 +127,16 @@ def get_filenames(results):
 def get_node_titles(results):
     return [r['title'] for r in results if r['category'] in
             ['project', 'component', 'registration', 'preprint']]
+
+def get_category_count_map(results):
+    rv = {}
+    for result in results:
+        category = result['category']
+        if category in rv:
+            rv[category] += 1
+        else:
+            rv[category] = 1
+    return rv
 
 def enable_private_search(func):
     @mock.patch('website.search_migration.migrate.settings.ENABLE_PRIVATE_SEARCH', True)
@@ -221,9 +231,13 @@ def tear_down(cls, self):
     import website.search.search as search
     search.delete_all()
 
-def query_private_search(self, qs, user):
+def query_private_search(self, qs, user, category=None):
+    url = api_url_for('search_search')
+    if category:
+        url = url + category + '/'
+    DEBUG('query_private_search: url=', url)
     res = self.app.post_json(
-        api_url_for('search_search'),
+        url,
         build_private_search_query(qs),
         auth=user.auth,
         expect_errors=True
@@ -242,7 +256,7 @@ def query_public_search(self, qs, user):
 def query_search_contributor(self, qs, user):
     res = self.app.get(
         api_url_for('search_contributor'),
-        {'query': qs, 'page': 0, 'size': 10},
+        {'query': qs, 'page': 0, 'size': 100},
         expect_errors=True
     )
     DEBUG('query_search_contributor', res)
@@ -293,6 +307,7 @@ class TestPrivateSearch(OsfTestCase):
         contributors = get_contributors(results, self.project_private_user1_1.title)
         tags = get_tags(results, self.project_private_user1_1.title)
         filenames = get_filenames(results)
+        category_count_map = get_category_count_map(results)
 
         DEBUG('results', results)
         DEBUG('user_fullnames', user_fullnames)
@@ -300,8 +315,13 @@ class TestPrivateSearch(OsfTestCase):
         DEBUG('contributors', contributors)
         DEBUG('tags', tags)
         DEBUG('filenames', filenames)
+        DEBUG('category count', category_count_map)
 
-        assert_equal(len(results), 9)  # user=2, project=4, file=3
+        assert_equal(len(results), 11)
+        assert_equal(category_count_map['user'], 2)
+        assert_equal(category_count_map['project'], 4)
+        assert_equal(category_count_map['file'], 3)
+        assert_equal(category_count_map['wiki'], 2)
         assert_equal(len(user_fullnames), 2)
         assert_equal(len(node_titles), 4)  # private=2, public=2
         assert_equal(len(contributors), 1)
@@ -469,10 +489,10 @@ class TestPrivateSearch(OsfTestCase):
         assert_equal(len(filenames), 1)
 
     @enable_private_search
-    def _common_normalize(self, qs):
+    def _common_normalize(self, qs, category=None):
         # app.get() requires str
         qs = u2s(qs)
-        res, results = query_private_search(self, qs, self.user1)
+        res, results = query_private_search(self, qs, self.user1, category=category)
         return (res, results)
 
     def test_normalize_user1(self):
@@ -541,7 +561,7 @@ class TestPrivateSearch(OsfTestCase):
         ることを確認する。
         """
         qs = u'\u3056'  # ざ
-        res, results = self._common_normalize(qs)
+        res, results = self._common_normalize(qs, 'project')
         node_titles = get_node_titles(results)
         tags = get_tags(results, self.project_private_user1_1.title)
         DEBUG('results', results)
@@ -558,7 +578,7 @@ class TestPrivateSearch(OsfTestCase):
         結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
         """
         qs = u'\u3057\u3099'  # し+濁点
-        res, results = self._common_normalize(qs)
+        res, results = self._common_normalize(qs, 'project')
         node_titles = get_node_titles(results)
         tags = get_tags(results, self.project_private_user1_1.title)
         DEBUG('results', results)
@@ -576,7 +596,7 @@ class TestPrivateSearch(OsfTestCase):
         ることを確認する。
         """
         qs = u'\u305a'  # ず
-        res, results = self._common_normalize(qs)
+        res, results = self._common_normalize(qs, 'project')
         node_titles = get_node_titles(results)
         tags = get_tags(results, self.project_private_user1_1.title)
         DEBUG('results', results)
@@ -593,7 +613,7 @@ class TestPrivateSearch(OsfTestCase):
         結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
         """
         qs = u'\u305b\u3099'  # せ+濁点
-        res, results = self._common_normalize(qs)
+        res, results = self._common_normalize(qs, 'project')
         node_titles = get_node_titles(results)
         tags = get_tags(results, self.project_private_user1_1.title)
         DEBUG('results', results)

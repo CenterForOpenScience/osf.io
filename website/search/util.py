@@ -324,6 +324,36 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
         }
     }
 
+    match_wiki = {
+        'bool': {
+            'must': [
+                {
+                    'term': {
+                        'category': 'wiki'
+                    }
+                },
+                {
+                    'bool': {
+                        'should': [
+                            {
+                                'term': {
+                                    'node_contributors.id': user._id
+                                }
+                            },
+                            {
+                                'term': {
+                                    'node_public': True
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+
+    inner_query = build_query_string(qs)
+
     query_body = {
         'bool': {
             # This is a filter to search only accessible data.
@@ -333,12 +363,13 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
             # So "must" is used instead of "filter" here.
             # See: https://www.elastic.co/guide/en/elasticsearch/reference/2.3/query-dsl-bool-query.html
             'must': [
-                build_query_string(qs),
+                inner_query,
                 {
                     'bool': {
                         'should': [
                             match_node,
                             match_file,
+                            match_wiki,
                             {
                                 'terms': {
                                     'category': [
@@ -357,6 +388,18 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
 
     return {
         'query': query_body,
+        'highlight': {
+            'fragment_size': 20,
+            'number_of_fragments': 1,
+            'pre_tags': ['<b><i>'],
+            'post_tags': ['</i></b>'],
+            'fields': {
+                #'text': {},
+                '*': {},
+            },
+            'require_field_match': False,
+            'highlight_query': inner_query,
+        },
         'from': start,
         'size': size,
     }

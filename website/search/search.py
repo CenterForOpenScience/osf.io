@@ -25,13 +25,14 @@ def search(query, index=None, doc_type=None, raw=None, private=False):
                                 private=private)
 
 @requires_search
-def update_node(node, index=None, bulk=False, async_update=True, saved_fields=None):
+def update_node(node, index=None, bulk=False, async_update=True, saved_fields=None, wiki_page=None):
     kwargs = {
         'index': index,
         'bulk': bulk
     }
     if async_update:
         node_id = node._id
+        kwargs['wiki_page_id'] = wiki_page._id if wiki_page else None
         # We need the transaction to be committed before trying to run celery tasks.
         # For example, when updating a Node's privacy, is_public must be True in the
         # database in order for method that updates the Node's elastic search document
@@ -41,6 +42,7 @@ def update_node(node, index=None, bulk=False, async_update=True, saved_fields=No
         else:
             search_engine.update_node_async(node_id=node_id, **kwargs)
     else:
+        kwargs['wiki_page'] = wiki_page
         return search_engine.update_node(node, **kwargs)
 
 @requires_search
@@ -74,6 +76,10 @@ def update_group(group, index=None, bulk=False, async_update=True, saved_fields=
             search_engine.update_group_async(group_id=group._id, **kwargs)
     else:
         return search_engine.update_group(group, **kwargs)
+
+@requires_search
+def bulk_update_wikis(wiki_pages, index=None):
+    search_engine.bulk_update_wikis(wiki_pages, index=index)
 
 @requires_search
 def bulk_update_nodes(serialize, nodes, index=None, category=None):
