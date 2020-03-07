@@ -127,7 +127,6 @@
         <!-- /ko-->
 
         <h5>
-        <h5>
             <!-- ko if: parent_url --> ${_('From: <a %(parent_url_title)s></a> <a %(node_url_and_title)s></a>') %dict(parent_url_title='data-bind="attr: {href: parent_url}, text: parent_title || \'\' + \' /\'"',node_url_and_title='data-bind="attr: {href: node_url}, text: node_title"') | n}<!-- /ko -->
             <!-- ko if: !parent_url --> ${_('From: <span %(parent_title)s><span %(text_parent_title)s></span> /</span> <a %(node_url_and_title)s></a>') % dict(parent_title='data-bind="if: parent_title"',text_parent_title='data-bind="text: parent_title"',node_url_and_title='data-bind="attr: {href: node_url}, text: node_title"') | n}<!-- /ko -->
         </h5>
@@ -274,7 +273,7 @@
         <!-- ko if: tags.length > 0 -->
         <div data-bind="template: 'tag-cloud'"></div>
         <!-- /ko -->
-        <p>${_('<strong>Jump to:</strong><!-- ko if: n_wikis > 0 --><a %(data_bind1)s>Wiki</a> -<!-- /ko --><a %(data_bind2)s>Files</a>') % dict(data_bind1='data-bind="attr: {href: wikiUrl}"',data_bind2='data-bind="attr: {href: filesUrl}"') | n }
+        <p>${_('<strong>Jump to:</strong><!-- %(ifStart_n_wikis)s --><a %(wikiUrl)s>Wiki</a> -<!-- %(ifEnd)s --><a %(filesUrl)s>Files</a>') % dict(ifStart_n_wikis='ko if: n_wikis > 0',ifEnd='/ko',wikiUrl='data-bind="attr: {href: wikiUrl}"',filesUrl='data-bind="attr: {href: filesUrl}"') | n }
         </p>
     </script>
     <script type="text/html" id="project">
@@ -361,7 +360,7 @@
         <!-- ko if: tags.length > 0 -->
         <div data-bind="template: 'tag-cloud'"></div>
         <!-- /ko -->
-        <p>${_('<strong>Jump to:</strong><!-- ko if: n_wikis > 0 --><a %(data_bind1)s>Wiki</a> -<!-- /ko --><a %(data_bind2)s>Files</a>') % dict(data_bind1='data-bind="attr: {href: wikiUrl}"',data_bind2='data-bind="attr: {href: filesUrl}"') | n }
+        <p>${_('<strong>Jump to:</strong><!-- %(ifStart_n_wikis)s --><a %(wikiUrl)s>Wiki</a> -<!-- %(ifEnd)s --><a %(filesUrl)s>Files</a>') % dict(ifStart_n_wikis='ko if: n_wikis > 0',ifEnd='/ko',wikiUrl='data-bind="attr: {href: wikiUrl}"',filesUrl='data-bind="attr: {href: filesUrl}"') | n }
         </p>
     </script>
     <script id="tag-cloud" type="text/html">

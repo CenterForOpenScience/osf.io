@@ -42,12 +42,7 @@ CitationWidget.prototype.init = function() {
         formatResult: formatResult,
         formatSelection: formatSelection,
         placeholder: _('Enter citation style (e.g. "APA")'),
-        minimumInputLength: 4,
-        language: {
-            inputTooShort: function() {
-                return _('Please enter 55 or more character');
-                }
-        },
+        minimumInputLength: 1,
         ajax: {
             url: '/api/v1/citations/styles/',
             quietMillis: 200,

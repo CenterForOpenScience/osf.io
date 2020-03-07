@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-05 15:34+0900\n"
+"POT-Creation-Date: 2020-03-08 00:21+0900\n"
 "PO-Revision-Date: 2020-03-05 15:34+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
@@ -1573,12 +1573,12 @@ msgstr ""
 msgid "(Preprint File)"
 msgstr "(プレプリントファイル)"
 
-#: website/templates/search.mako:131
+#: website/templates/search.mako:130
 #, python-format
 msgid "From: <a %(parent_url_title)s></a> <a %(node_url_and_title)s></a>"
 msgstr "<a %(node_url_and_title)s></a> <a %(parent_url_title)s></a>より"
 
-#: website/templates/search.mako:132
+#: website/templates/search.mako:131
 #, python-format
 msgid ""
 "From: <span %(parent_title)s><span %(text_parent_title)s></span> /</span>"
@@ -1587,52 +1587,52 @@ msgstr ""
 "<a %(node_url_and_title)s></a> <span %(parent_title)s><span "
 "%(text_parent_title)s></span> /</span>より"
 
-#: website/templates/search.mako:241
+#: website/templates/search.mako:240
 msgid " Contributors:"
 msgstr "コントリビュータ:"
 
-#: website/templates/search.mako:263
+#: website/templates/search.mako:262
 msgid "Affiliated institutions:"
 msgstr "所属機関："
 
-#: website/templates/search.mako:277 website/templates/search.mako:364
+#: website/templates/search.mako:276 website/templates/search.mako:363
 #, python-format
 msgid ""
-"<strong>Jump to:</strong><!-- ko if: n_wikis > 0 --><a "
-"%(data_bind1)s>Wiki</a> -<!-- /ko --><a %(data_bind2)s>Files</a>"
+"<strong>Jump to:</strong><!-- %(ifStart_n_wikis)s --><a "
+"%(wikiUrl)s>Wiki</a> -<!-- %(ifEnd)s --><a %(filesUrl)s>Files</a>"
 msgstr ""
-"<!-- ko if: n_wikis > 0 --><a %(data_bind1)s>Wiki</a> -<!-- /ko --><a "
-"%(data_bind2)s>ファイル</a><strong>へ移動</strong>"
+"<!-- %(ifStart_n_wikis)s --><a %(wikiUrl)s>Wiki</a> -<!-- %(ifEnd)s --><a"
+" %(filesUrl)s>ファイル</a><strong>へ移動</strong>"
 
-#: website/templates/search.mako:287
+#: website/templates/search.mako:286
 msgid "(Preprint)"
 msgstr "(プレプリント)"
 
 #: website/templates/project/project.mako:265
 #: website/templates/project/settings.mako:107
-#: website/templates/search.mako:288 website/templates/search.mako:344
+#: website/templates/search.mako:287 website/templates/search.mako:343
 msgid "Description:"
 msgstr "説明:"
 
-#: website/templates/project/project.mako:165 website/templates/search.mako:291
-#: website/templates/search.mako:348
+#: website/templates/project/project.mako:165 website/templates/search.mako:290
+#: website/templates/search.mako:347
 msgid "Contributors:"
 msgstr "コントリビュータ:"
 
-#: website/templates/search.mako:310
+#: website/templates/search.mako:309
 msgid "Managers:"
 msgstr "マネージャ:"
 
-#: website/templates/search.mako:323
+#: website/templates/search.mako:322
 msgid "Members:"
 msgstr "メンバー:"
 
-#: website/templates/search.mako:337 website/templates/search.mako:340
+#: website/templates/search.mako:336 website/templates/search.mako:339
 #, python-format
 msgid "(<span %(is_retracted)s>Withdrawn </span>Registration)"
 msgstr "(<span %(is_retracted)s>取り下げられた</span>登録)"
 
-#: website/templates/search.mako:368
+#: website/templates/search.mako:367
 msgid "Tags:"
 msgstr "タグ"
 
@@ -2817,11 +2817,6 @@ msgstr "（公開）"
 msgid "De-select all"
 msgstr "全選択解除"
 
-# 変数のためmsgstrを""にしておく
-#: website/templates/project/modal_generate_private_link.mako:87
-msgid "submitText"
-msgstr ""
-
 #: website/templates/project/modal_remove_contributor.mako:15
 #, python-format
 msgid ""
@@ -3338,11 +3333,6 @@ msgstr "説明のため"
 msgid "Uncategorized"
 msgstr "未分類"
 
-# 変数のためmsgstrを""にしておく
-#: website/templates/project/settings.mako:94
-msgid "category.label"
-msgstr ""
-
 #: website/templates/project/settings.mako:114
 msgid "Select Timestamp Function:"
 msgstr "タイムスタンプ機能を選択:"
@@ -3744,5 +3734,3 @@ msgstr "%(summary_Title)sのフォークを作成"
 #: website/templates/util/render_node.mako:66
 msgid "Manage Contributors"
 msgstr "コントリビュータ管理"
-
-

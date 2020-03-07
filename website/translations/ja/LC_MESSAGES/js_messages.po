@@ -5,9 +5,9 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: 0.5.2\n"
+"Project-Id-Version:  0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-02 19:54+0900\n"
+"POT-Creation-Date: 2020-03-08 00:23+0900\n"
 "PO-Revision-Date: 2020-03-04 17:27+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
@@ -209,7 +209,7 @@ msgstr "次を入力して続行します。<strong>%1$s</ strong><br><br>"
 #: website/static/js/folderPickerNodeConfig.js:512
 #: website/static/js/folderPickerNodeConfig.js:568
 #: website/static/js/institutionProjectSettings.js:104
-#: website/static/js/licensePicker.js:249 website/static/js/myProjects.js:1562
+#: website/static/js/licensePicker.js:245 website/static/js/myProjects.js:1562
 #: website/static/js/myProjects.js:1610 website/static/js/myProjects.js:1634
 #: website/static/js/nodeControl.js:229
 #: website/static/js/oauthAddonNodeConfig.js:158
@@ -688,7 +688,7 @@ msgstr "ユーザープロフィールを取得できませんでした。"
 
 #: website/static/js/accountSettings.js:86
 #: website/static/js/accountSettings.js:117
-#: website/static/js/licensePicker.js:203
+#: website/static/js/licensePicker.js:199
 msgid "Error fetching user profile"
 msgstr "ユーザープロフィールの取得エラー"
 
@@ -1271,9 +1271,9 @@ msgstr "アクション"
 msgid "Only 200 citations may be displayed"
 msgstr "200件のサイテーションのみが表示されます"
 
-#: website/static/js/citationGrid.js:313
-msgid "Enter citation style (e.g. \"APA\")3"
-msgstr ""
+#: website/static/js/citationGrid.js:313 website/static/js/citationWidget.js:44
+msgid "Enter citation style (e.g. \"APA\")"
+msgstr "引用スタイルを入力します（例：\"APA\"）"
 
 #: website/static/js/citationGrid.js:335
 msgid "Error while selecting citation style: "
@@ -1300,23 +1300,15 @@ msgstr "問題が解決しない場合は%1$sにお問い合わせください�
 msgid " if the problem persists."
 msgstr " "
 
-#: website/static/js/citationWidget.js:44
-msgid "Enter citation style (e.g. \"APA\")"
-msgstr ""
-
-#: website/static/js/citationWidget.js:48
-msgid "Please enter 55 or more character"
-msgstr ""
-
-#: website/static/js/citationWidget.js:79
+#: website/static/js/citationWidget.js:74
 msgid "Citation render failed"
 msgstr "引用のレンダリングに失敗しました"
 
-#: website/static/js/citationWidget.js:80
+#: website/static/js/citationWidget.js:75
 msgid "The requested citation format generated an error."
 msgstr "要求された引用形式はエラーを生成しました。"
 
-#: website/static/js/citationWidget.js:83
+#: website/static/js/citationWidget.js:78
 msgid "Unexpected error when fetching citation"
 msgstr "引用を取得する際の予期しないエラー"
 
@@ -1354,11 +1346,11 @@ msgstr "接続"
 msgid "Import %1$s access token"
 msgstr "%1$sアクセストークンをインポート"
 
-#: website/static/js/clipboard.js:28
+#: website/static/js/clipboard.js:29
 msgid "Copied!"
 msgstr "コピーされました！"
 
-#: website/static/js/clipboard.js:33
+#: website/static/js/clipboard.js:34
 msgid "Copy failed!"
 msgstr "コピーが失敗しました！"
 
@@ -2402,43 +2394,43 @@ msgstr "年"
 msgid "Copyright Holders"
 msgstr "著作権者"
 
-#: website/static/js/licensePicker.js:26
+#: website/static/js/licensePicker.js:28
 msgid "License:"
 msgstr "ライセンス："
 
-#: website/static/js/licensePicker.js:27
+#: website/static/js/licensePicker.js:29
 msgid "Choose a license:"
 msgstr "ライセンスを選択："
 
-#: website/static/js/licensePicker.js:28
+#: website/static/js/licensePicker.js:30
 msgid ">Save<"
 msgstr ">保存<"
 
-#: website/static/js/licensePicker.js:74
+#: website/static/js/licensePicker.js:70
 msgid "Add a license"
 msgstr "ライセンスを追加"
 
-#: website/static/js/licensePicker.js:110
+#: website/static/js/licensePicker.js:106
 msgid "Please specify a valid year."
 msgstr "有効な年を指定してください。"
 
-#: website/static/js/licensePicker.js:114
+#: website/static/js/licensePicker.js:110
 msgid "Future years are not allowed."
 msgstr "将来の年は許可されていません。"
 
-#: website/static/js/licensePicker.js:196
+#: website/static/js/licensePicker.js:192
 msgid "License updated successfully."
 msgstr "ライセンスが正常に更新されました。"
 
-#: website/static/js/licensePicker.js:201
+#: website/static/js/licensePicker.js:197
 msgid "There was a problem updating your license. Please try again."
 msgstr "ライセンスの更新中に問題が発生しました。 もう一度やり直してください。"
 
-#: website/static/js/licensePicker.js:245
+#: website/static/js/licensePicker.js:241
 msgid "Your Own License"
 msgstr "自分のライセンス"
 
-#: website/static/js/licensePicker.js:246
+#: website/static/js/licensePicker.js:242
 msgid ""
 "You have opted to use your own license. Please upload a license file "
 "named \"license.txt\" into the GakuNin RDM Storage of this project."
@@ -2446,7 +2438,7 @@ msgstr ""
 "独自のライセンスを使用することを選択しました。「license.txt」という名前のライセンスファイルをこのプロジェクトのGakuNin "
 "RDMストレージにアップロードしてください。"
 
-#: website/static/js/licensePicker.js:253
+#: website/static/js/licensePicker.js:249
 msgid "Add license"
 msgstr "ライセンスを追加"
 
@@ -4180,10 +4172,4 @@ msgstr "%1$sに報告してください"
 #: website/static/js/pages/wiki-edit-page.js:112
 msgid "Could not GET wiki menu pages"
 msgstr "Wikiメニューページを取得できませんでした"
-
-#~ msgid "Enter citation style (e.g. \"APA\")"
-#~ msgstr "引用スタイルを入力します（例：\"APA\")"
-
-#~ msgid "Please enter 1 or more character"
-#~ msgstr "1文字以上入力してください"
 

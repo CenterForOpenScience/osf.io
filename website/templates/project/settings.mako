@@ -91,7 +91,7 @@
                                     <li>
                                           <a href="#" data-bind="click: $root.setCategory.bind($root, category.value)">
                                               <span data-bind="getIcon: category.value"></span>
-                                              <span data-bind="text: ${_('category.label')}"></span>
+                                              <span data-bind="text: category.label"></span>
                                           </a>
                                     </li>
                                 </ul>
