@@ -389,7 +389,7 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
     return {
         'query': query_body,
         'highlight': {
-            'fragment_size': 20,
+            'fragment_size': 100,
             'number_of_fragments': 1,
             'pre_tags': ['<b><i>'],
             'post_tags': ['</i></b>'],
