@@ -1,4 +1,3 @@
-import time
 import pytest
 from datetime import datetime
 from osf_tests.factories import (
@@ -32,13 +31,25 @@ def base_url():
 @pytest.mark.django_db
 class TestElasticSearch():
 
+    @pytest.fixture(autouse=True)
+    def mock_elastic(self):
+        ind = Index('test_2020')
+        ind._mapping = PreprintDownload._index._mapping
+        PreprintDownload._index = ind
+        PreprintDownload._template_name = 'test'
+        PreprintDownload._template = 'test_2020'
+        ind.save()
+        yield
+        ind.delete()
+
     @pytest.fixture()
     def preprint_download(self, preprint):
         return PreprintDownload(
             count=1,
             preprint_id=preprint._id,
             provider_id=preprint.provider._id,
-            timestamp=datetime(year=2020, month=1, day=1)
+            timestamp=datetime(year=2020, month=1, day=1),
+            path='/malcolmjenkinsknockedoutbrandincookcoldinthesuperbowl'
         )
 
     @pytest.fixture()
@@ -47,17 +58,11 @@ class TestElasticSearch():
             count=1,
             preprint_id=preprint._id,
             provider_id=preprint.provider._id,
-            timestamp=datetime(year=2020, month=2, day=1)
+            timestamp=datetime(year=2020, month=2, day=1),
         )
 
     def test_elasticsearch_agg_query(self, app, user, base_url, preprint, preprint_download, preprint_download2):
         post_url = '{}downloads/'.format(base_url)
-        ind = Index('test_2020')
-        ind._mapping = PreprintDownload._index._mapping
-        PreprintDownload._index = ind
-        PreprintDownload._template_name = 'test'
-        PreprintDownload._template = 'test_2020'
-        ind.save()
 
         payload = {
             'data': {
@@ -86,29 +91,24 @@ class TestElasticSearch():
         resp = app.post_json_api(post_url, payload, auth=user.auth)
 
         assert resp.status_code == 200
-        print(PreprintDownload.get_index_name())
-
         assert resp.json['hits']['hits'] == []
 
         es = preprint_download._get_connection()
-        print(preprint_download.to_dict())
-        print(preprint_download2.to_dict())
 
         es.index(
             index=preprint_download.get_index_name(),
-            doc_type=preprint_download._doc_type.name,
-            body=preprint_download.to_dict()
+            doc_type='doc',
+            body=preprint_download.to_dict(),
         )
         es.index(
             index=preprint_download2.get_index_name(),
-            doc_type=preprint_download2._doc_type.name,
-            body=preprint_download2.to_dict()
+            doc_type='doc',
+            body=preprint_download2.to_dict(),
+            refresh=True
         )
 
-        time.sleep(1)  # This requires some time for es to update
         resp = app.post_json_api(post_url, payload, auth=user.auth)
         assert resp.status_code == 200
-        print(resp.json)
         assert len(resp.json['aggregations']['preprints_by_year']['buckets']) == 1
 
         payload['data']['attributes']['query']['aggs']['preprints_by_year']['composite']['sources'][0]['date']['date_histogram']['interval'] = 'month'
