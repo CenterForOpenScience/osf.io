@@ -72,22 +72,25 @@ class PreprintMetricMixin(JSONAPIBaseView):
 
     def execute_search(self, search, query=None):
         try:
+            # There's a bug in the ES python library the prewvents us fro updating the search object, so lets just make
+            # the raw query. if we have it.
             if query:
                 es = get_connection(search._using)
-                data = JsonResponse(
+                response = search._response_class(
+                    search,
                     es.search(
                         index=search._index,
                         body=query,
                     ),
                 )
             else:
-                data = search.execute()
+                response = search.execute()
         except NotFoundError:
             # _get_relevant_indices returned 1 or more indices
             # that doesn't exist. Fall back to unoptimized query
             search = search.index().index(self.metric._default_index())
-            data = search.execute()
-        return data
+            response = search.execute()
+        return response
 
     def get(self, *args, **kwargs):
         query_params = getattr(self.request, 'query_params', self.request.GET)
@@ -116,9 +119,10 @@ class PreprintMetricMixin(JSONAPIBaseView):
         query = request.data.get('query')
 
         try:
-            return self.execute_search(search, query)
+            results = self.execute_search(search, query)
         except RequestError:
             raise ValidationError('Misformed elasticsearch query.')
+        return JsonResponse(results.to_dict())
 
 
 class PreprintViewMetrics(PreprintMetricMixin):
