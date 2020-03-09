@@ -8,31 +8,12 @@ from osf_tests.factories import (
 
 from osf.metrics import PreprintDownload
 from api.base.settings import API_PRIVATE_BASE as API_BASE
-from elasticsearch_dsl import Search
+from elasticsearch_dsl import Index
 
 
 @pytest.fixture()
 def preprint():
     return PreprintFactory()
-
-
-@pytest.fixture()
-def preprint_download(preprint):
-    return PreprintDownload(
-        count=1,
-        preprint_id=preprint._id,
-        provider_id=preprint.provider._id,
-        timestamp=datetime(year=2020, month=1, day=1)
-    )
-
-@pytest.fixture()
-def preprint_download2(preprint):
-    return PreprintDownload(
-        count=1,
-        preprint_id=preprint._id,
-        provider_id=preprint.provider._id,
-        timestamp=datetime(year=2020, month=2, day=1)
-    )
 
 
 @pytest.fixture()
@@ -51,20 +32,32 @@ def base_url():
 @pytest.mark.django_db
 class TestElasticSearch():
 
+    @pytest.fixture()
+    def preprint_download(self, preprint):
+        return PreprintDownload(
+            count=1,
+            preprint_id=preprint._id,
+            provider_id=preprint.provider._id,
+            timestamp=datetime(year=2020, month=1, day=1)
+        )
+
+    @pytest.fixture()
+    def preprint_download2(self, preprint):
+        return PreprintDownload(
+            count=1,
+            preprint_id=preprint._id,
+            provider_id=preprint.provider._id,
+            timestamp=datetime(year=2020, month=2, day=1)
+        )
+
     def test_elasticsearch_agg_query(self, app, user, base_url, preprint, preprint_download, preprint_download2):
-        """
-
-        :param app:
-        :param user:
-        :param base_url:
-        :param preprint:
-        :param preprint_download:
-        :param preprint_download2:
-        :return:
-        """
-        Search(index=PreprintDownload.get_index_name()).query().delete()
-
         post_url = '{}downloads/'.format(base_url)
+        ind = Index('test_2020')
+        ind._mapping = PreprintDownload._index._mapping
+        PreprintDownload._index = ind
+        PreprintDownload._template_name = 'test'
+        PreprintDownload._template = 'test_2020'
+        ind.save()
 
         payload = {
             'data': {
@@ -93,9 +86,14 @@ class TestElasticSearch():
         resp = app.post_json_api(post_url, payload, auth=user.auth)
 
         assert resp.status_code == 200
+        print(PreprintDownload.get_index_name())
+
         assert resp.json['hits']['hits'] == []
 
         es = preprint_download._get_connection()
+        print(preprint_download.to_dict())
+        print(preprint_download2.to_dict())
+
         es.index(
             index=preprint_download.get_index_name(),
             doc_type=preprint_download._doc_type.name,
@@ -109,8 +107,8 @@ class TestElasticSearch():
 
         time.sleep(1)  # This requires some time for es to update
         resp = app.post_json_api(post_url, payload, auth=user.auth)
-
         assert resp.status_code == 200
+        print(resp.json)
         assert len(resp.json['aggregations']['preprints_by_year']['buckets']) == 1
 
         payload['data']['attributes']['query']['aggs']['preprints_by_year']['composite']['sources'][0]['date']['date_histogram']['interval'] = 'month'

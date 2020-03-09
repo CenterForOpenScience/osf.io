@@ -101,11 +101,11 @@ before_install:
     - |
 
       if [ ! -f "$ELASTICSEARCH_ARCHIVE6" ]; then
-        curl -SLO https://download.elasticsearch.org/elasticsearch/elasticsearch/$ELASTICSEARCH_ARCHIVE6
+        curl -SLO https://artifacts.elastic.co/downloads/elasticsearch/$ELASTICSEARCH_ARCHIVE6
       fi
 
       if [ ! -f "$ELASTICSEARCH_ARCHIVE6.sha1.txt" ]; then
-        curl -SLO https://download.elasticsearch.org/elasticsearch/elasticsearch/$ELASTICSEARCH_ARCHIVE6.sha1.txt
+        curl -SLO https://artifacts.elastic.co/downloads/elasticsearch/ELASTICSEARCH_ARCHIVE6.sha1.txt
       fi
 
       sha1sum --check $ELASTICSEARCH_ARCHIVE6.sha1.txt
