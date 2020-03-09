@@ -1,6 +1,7 @@
 import pytest
 import mock
 from datetime import datetime
+from django.http import JsonResponse
 
 from website.app import setup_django
 setup_django()
@@ -159,7 +160,7 @@ class TestPreprintMetrics:
     @mock.patch('api.metrics.views.PreprintDownloadMetrics.execute_search')
     def test_post_custom_metric(self, mock_execute, mock_format, app, user, base_url, preprint, other_user):
         mock_return = {'good': 'job'}
-        mock_execute.return_value.to_dict.return_value = mock_return
+        mock_execute.return_value = JsonResponse(mock_return)
         mock_format.return_value = mock_return
         post_url = '{}downloads/'.format(base_url)
         post_data = {

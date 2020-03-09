@@ -10,6 +10,7 @@ from api.metrics.permissions import IsPreprintMetricsUser
 from api.metrics.serializers import PreprintMetricSerializer
 from api.metrics.utils import parse_datetimes
 from api.base.views import JSONAPIBaseView
+from elasticsearch_dsl.connections import get_connection
 
 
 class PreprintMetricMixin(JSONAPIBaseView):
@@ -69,16 +70,24 @@ class PreprintMetricMixin(JSONAPIBaseView):
             'data': data,
         }
 
-    def execute_search(self, search):
-        # TODO - this is copied from get_count_for_preprint in metrics.py - abstract this out in the future
+    def execute_search(self, search, query=None):
         try:
-            response = search.execute()
+            if query:
+                es = get_connection(search._using)
+                data = JsonResponse(
+                    es.search(
+                        index=search._index,
+                        body=query,
+                    ),
+                )
+            else:
+                data = search.execute()
         except NotFoundError:
             # _get_relevant_indices returned 1 or more indices
             # that doesn't exist. Fall back to unoptimized query
             search = search.index().index(self.metric._default_index())
-            response = search.execute()
-        return response
+            data = search.execute()
+        return data
 
     def get(self, *args, **kwargs):
         query_params = getattr(self.request, 'query_params', self.request.GET)
@@ -104,11 +113,12 @@ class PreprintMetricMixin(JSONAPIBaseView):
         Caution - this could be slow if a very large query is executed, so use with care!
         """
         search = self.metric.search()
+        query = request.data.get('query')
+
         try:
-            results = self.execute_search(search)
+            return self.execute_search(search, query)
         except RequestError:
             raise ValidationError('Misformed elasticsearch query.')
-        return JsonResponse(results.to_dict())
 
 
 class PreprintViewMetrics(PreprintMetricMixin):

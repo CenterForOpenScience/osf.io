@@ -1,0 +1,119 @@
+import time
+import pytest
+from datetime import datetime
+from osf_tests.factories import (
+    PreprintFactory,
+    AuthUserFactory
+)
+
+from osf.metrics import PreprintDownload
+from api.base.settings import API_PRIVATE_BASE as API_BASE
+from elasticsearch_dsl import Search
+
+
+@pytest.fixture()
+def preprint():
+    return PreprintFactory()
+
+
+@pytest.fixture()
+def preprint_download(preprint):
+    return PreprintDownload(
+        count=1,
+        preprint_id=preprint._id,
+        provider_id=preprint.provider._id,
+        timestamp=datetime(year=2020, month=1, day=1)
+    )
+
+@pytest.fixture()
+def preprint_download2(preprint):
+    return PreprintDownload(
+        count=1,
+        preprint_id=preprint._id,
+        provider_id=preprint.provider._id,
+        timestamp=datetime(year=2020, month=2, day=1)
+    )
+
+
+@pytest.fixture()
+def user():
+    user = AuthUserFactory()
+    user.is_staff = True
+    user.add_system_tag('preprint_metrics')
+    user.save()
+    return user
+
+
+@pytest.fixture
+def base_url():
+    return '/{}metrics/preprints/'.format(API_BASE)
+
+@pytest.mark.django_db
+class TestElasticSearch():
+
+    def test_elasticsearch_agg_query(self, app, user, base_url, preprint, preprint_download, preprint_download2):
+        """
+
+        :param app:
+        :param user:
+        :param base_url:
+        :param preprint:
+        :param preprint_download:
+        :param preprint_download2:
+        :return:
+        """
+        Search(index=PreprintDownload.get_index_name()).query().delete()
+
+        post_url = '{}downloads/'.format(base_url)
+
+        payload = {
+            'data': {
+                'type': 'preprint_metrics',
+                'attributes': {
+                    'query': {
+                        'aggs': {
+                            'preprints_by_year': {
+                                'composite': {
+                                    'sources': [{
+                                        'date': {
+                                            'date_histogram': {
+                                                'field': 'timestamp',
+                                                'interval': 'year'
+                                            }
+                                        }
+                                    }]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        resp = app.post_json_api(post_url, payload, auth=user.auth)
+
+        assert resp.status_code == 200
+        assert resp.json['hits']['hits'] == []
+
+        es = preprint_download._get_connection()
+        es.index(
+            index=preprint_download.get_index_name(),
+            doc_type=preprint_download._doc_type.name,
+            body=preprint_download.to_dict()
+        )
+        es.index(
+            index=preprint_download2.get_index_name(),
+            doc_type=preprint_download2._doc_type.name,
+            body=preprint_download2.to_dict()
+        )
+
+        time.sleep(1)  # This requires some time for es to update
+        resp = app.post_json_api(post_url, payload, auth=user.auth)
+
+        assert resp.status_code == 200
+        assert len(resp.json['aggregations']['preprints_by_year']['buckets']) == 1
+
+        payload['data']['attributes']['query']['aggs']['preprints_by_year']['composite']['sources'][0]['date']['date_histogram']['interval'] = 'month'
+
+        resp = app.post_json_api(post_url, payload, auth=user.auth)
+        assert len(resp.json['aggregations']['preprints_by_year']['buckets']) == 2
