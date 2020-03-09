@@ -279,10 +279,21 @@ def search(query, index=None, doc_type='_all', raw=False, normalize=True, privat
 
     # Run the real query and get the results
     raw_results = client().search(index=index, doc_type=doc_type, body=query)
-    results = [hit['_source'] for hit in raw_results['hits']['hits']]
+
+    if raw:
+        results = raw_results['hits']['hits']
+    else:
+        results = [hit['_source'] for hit in raw_results['hits']['hits']]
+        results = format_results(results)
+        if not settings.ENABLE_PRIVATE_SEARCH:
+            filter_results = []
+            for r in results:
+                if r.get('category') != 'wiki':
+                    filter_results.append(r)
+            results = filter_results
 
     return_value = {
-        'results': raw_results['hits']['hits'] if raw else format_results(results),
+        'results': results,
         'counts': counts,
         'aggs': aggregations,
         'tags': tags,
