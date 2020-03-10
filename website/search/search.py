@@ -78,8 +78,28 @@ def update_group(group, index=None, bulk=False, async_update=True, saved_fields=
         return search_engine.update_group(group, **kwargs)
 
 @requires_search
+def update_comment(comment, index=None, bulk=False, async_update=True, saved_fields=None):
+    kwargs = {
+        'index': index,
+        'bulk': bulk
+    }
+    if async_update:
+        comment_id = comment._id
+        # We need the transaction to be committed before trying to run celery tasks.
+        if settings.USE_CELERY:
+            enqueue_task(search_engine.update_comment_async.s(comment_id=comment_id, **kwargs))
+        else:
+            search_engine.update_comment_async(comment_id=comment_id, **kwargs)
+    else:
+        return search_engine.update_comment(comment, **kwargs)
+
+@requires_search
 def bulk_update_wikis(wiki_pages, index=None):
     search_engine.bulk_update_wikis(wiki_pages, index=index)
+
+@requires_search
+def bulk_update_comments(comments, index=None):
+    search_engine.bulk_update_comments(comments, index=index)
 
 @requires_search
 def bulk_update_nodes(serialize, nodes, index=None, category=None):

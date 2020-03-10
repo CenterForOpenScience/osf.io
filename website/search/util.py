@@ -352,6 +352,34 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
         }
     }
 
+    match_comment = {
+        'bool': {
+            'must': [
+                {
+                    'term': {
+                        'category': 'comment'
+                    }
+                },
+                {
+                    'bool': {
+                        'should': [
+                            {
+                                'term': {
+                                    'node_contributors.id': user._id
+                                }
+                            },
+                            {
+                                'term': {
+                                    'node_public': True
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+
     inner_query = build_query_string(qs)
 
     query_body = {
@@ -370,6 +398,7 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
                             match_node,
                             match_file,
                             match_wiki,
+                            match_comment,
                             {
                                 'terms': {
                                     'category': [

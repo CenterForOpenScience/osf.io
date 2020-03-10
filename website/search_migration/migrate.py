@@ -18,7 +18,7 @@ from website.search_migration import (
     JSON_UPDATE_FILES_SQL, JSON_DELETE_FILES_SQL,
     JSON_UPDATE_USERS_SQL, JSON_DELETE_USERS_SQL)
 from scripts import utils as script_utils
-from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode, Preprint, OSFGroup, CollectionSubmission
+from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode, Preprint, OSFGroup, CollectionSubmission, Comment
 from website import settings
 from website.app import init_app
 from website.search.elastic_search import client as es_client
@@ -195,6 +195,16 @@ def migrate_wikis(index, delete):
         search.bulk_update_wikis(paginator.page(page_number).object_list, index=index)
     logger.info('{} wikis migrated'.format(wikis.count()))
 
+def migrate_comments(index, delete):
+    logger.info('Migrating comments to index: {}'.format(index))
+    comments = Comment.objects.order_by('-id')
+    increment = 100
+    paginator = Paginator(comments, increment)
+    for page_number in paginator.page_range:
+        logger.info('Updating page {} / {}'.format(page_number, paginator.num_pages))
+        search.bulk_update_comments(paginator.page(page_number).object_list, index=index)
+    logger.info('{} comments migrated'.format(comments.count()))
+
 def migrate_files(index, delete, increment=10000):
     logger.info('Migrating files to index: {}'.format(index))
     max_fid = BaseFileNode.objects.last().id
@@ -291,6 +301,7 @@ def migrate(delete, remove=False, remove_all=False, index=None, app=None):
     migrate_nodes(new_index, delete=delete)
     migrate_files(new_index, delete=delete)
     migrate_wikis(new_index, delete=delete)
+    migrate_comments(new_index, delete=delete)
     migrate_users(new_index, delete=delete)
     migrate_preprints(new_index, delete=delete)
     migrate_preprint_files(new_index, delete=delete)

@@ -1,4 +1,6 @@
 
+import logging
+
 import pytz
 from django.db import models
 from django.db.models import Q
@@ -16,6 +18,7 @@ from website.util import api_v2_url
 from website.project import signals as project_signals
 from website.project.model import get_valid_mentioned_users_guids
 
+logger = logging.getLogger(__name__)
 
 class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
     __guid_min_length__ = 12
@@ -204,6 +207,20 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
                 save=False,
             )
             self.node.save()
+
+    def save(self, *args, **kwargs):
+        rv = super(Comment, self).save(*args, **kwargs)
+        if self.node and (self.node.is_public or settings.ENABLE_PRIVATE_SEARCH):
+            self.update_search()
+        return rv
+
+    def update_search(self):
+        from website import search
+
+        try:
+            search.search.update_comment(self, bulk=False, async_update=True)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
 
     def delete(self, auth, save=False):
         if not self.node.can_comment(auth) or self.user._id != auth.user._id:

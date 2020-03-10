@@ -28,6 +28,7 @@ from osf.models import Preprint
 from osf.models import SpamStatus
 from addons.wiki.models import WikiPage
 from osf.models import CollectionSubmission
+from osf.models import Comment
 from osf.utils.sanitize import unescape_entities
 from website import settings
 from website.filters import profile_image_url
@@ -50,8 +51,16 @@ ALIASES = {
     'institution': 'Institutions',
     'preprint': 'Preprints',
     'group': 'Groups',
-    # TODO 'wiki': 'Wiki',
 }
+
+ALIASES_GRDM = {
+    'wiki': 'Wiki',
+    'comment': 'Comment',
+}
+
+# TODO These need to be supported in search.js and search.mako
+# if settings.ENABLE_PRIVATE_SEARCH:
+#    ALIASES.update(ALIASES_GRDM)
 
 DOC_TYPE_TO_MODEL = {
     'component': AbstractNode,
@@ -285,10 +294,19 @@ def search(query, index=None, doc_type='_all', raw=False, normalize=True, privat
     else:
         results = [hit['_source'] for hit in raw_results['hits']['hits']]
         results = format_results(results)
-        if not settings.ENABLE_PRIVATE_SEARCH:
+        if settings.ENABLE_PRIVATE_SEARCH:
             filter_results = []
             for r in results:
-                if r.get('category') != 'wiki':
+                category = r.get('category')
+                # TODO need to supported in search.js and search.mako
+                if category and ALIASES_GRDM.get(category) is None:
+                    filter_results.append(r)
+            results = filter_results
+        else:
+            filter_results = []
+            for r in results:
+                category = r.get('category')
+                if category and ALIASES_GRDM.get(category) is None:
                     filter_results.append(r)
             results = filter_results
 
@@ -446,6 +464,15 @@ def update_group_async(self, group_id, index=None, bulk=False, deleted_id=None):
         self.retry(exc=exc)
 
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
+def update_comment_async(self, comment_id, index=None, bulk=False):
+    Comment = apps.get_model('osf.Comment')
+    comment = Comment.load(comment_id)
+    try:
+        update_comment(comment=comment, index=index, bulk=bulk)
+    except Exception as exc:
+        self.retry(exc=exc)
+
+@celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
 def update_user_async(self, user_id, index=None):
     OSFUser = apps.get_model('osf.OSFUser')
     user = OSFUser.objects.get(id=user_id)
@@ -557,16 +584,21 @@ def serialize_wiki(wiki_page, category):
     latest = w.get_version()
     node = w.node
     elastic_document = {}
-    title = w.page_name
-    normalized_title = unicode_normalize(title)
+    name = w.page_name
+    normalized_name = unicode_normalize(name)
     elastic_document = {
         'id': w._id,
+        'name': name,
+        'normalized_name': normalized_name,
+        'category': category,
         'node_public': node.is_public,
         'created': w.created,
         'modified': w.modified,
-        'user': latest.user.username,
         'user_id': latest.user._id,
+        'user': latest.user.username,
+        'normalized_user': unicode_normalize(latest.user.username),
         'node_title': node.title,
+        'normalized_node_title': unicode_normalize(node.title),
         'node_url': node.url,
         'node_contributors': [
             {
@@ -575,9 +607,6 @@ def serialize_wiki(wiki_page, category):
             for x in node._contributors.filter(contributor__visible=True).order_by('contributor___order')
             .values('guids___id')
         ],
-        'title': title,
-        'normalized_title': normalized_title,
-        'category': category,
         'url': w.deep_url,
         'text': unicode_normalize(w.get_version().raw_text(node)),
     }
@@ -613,6 +642,71 @@ def serialize_group(group, category):
     }
 
     return elastic_document
+
+def serialize_comment(comment, category):
+    c = comment
+    elastic_document = {}
+    guid = ''
+    name = ''
+    if c.page == Comment.OVERVIEW:
+        guid = c.node._id
+        name = c.node.title
+    elif c.page == Comment.FILES:
+        guid = c.root_target.referent._id
+        name = c.root_target.referent.name
+    elif c.page == Comment.WIKI:
+        guid = c.root_target.referent._id
+        name = c.root_target.referent.page_name
+    else:
+        return None
+
+    reply_user_id = ''
+    reply_username = ''
+    if isinstance(c.target.referent, Comment):
+        reply_user_id = c.target.referent.user._id
+        reply_username = c.target.referent.user.username
+
+    elastic_document = {
+        'page_type': c.page,
+        'id': guid,
+        'name': name,
+        'normalized_name': unicode_normalize(name),
+        'category': category,
+        'node_public': c.node.is_public,
+        'created': c.created,
+        'modified': c.modified,
+        'user_id': c.user._id,
+        'user': c.user.username,
+        'normalized_user': unicode_normalize(c.user.username),
+        'node_contributors': [
+            {
+                'id': x['guids___id']
+            }
+            for x in c.node._contributors.filter(contributor__visible=True).order_by('contributor___order')
+            .values('guids___id')
+        ],
+        'text': unicode_normalize(c.content),
+        'reply_user_id': reply_user_id,
+        'reply_user': reply_username,
+        'normalized_reply_user': unicode_normalize(reply_username),
+    }
+    return elastic_document
+
+@requires_search
+def update_comment(comment, index=None, bulk=False):
+    index = es_index(index)
+    category = 'comment'
+
+    if comment.is_deleted or \
+       comment.root_target is None:  # root Node or File is deleted
+        delete_comment_doc(comment._id, index=index)
+        return None
+
+    elastic_document = serialize_comment(comment, category)
+    if bulk:
+        return elastic_document
+    else:
+        client().index(index=index, doc_type=category, id=comment._id, body=elastic_document, refresh=True)
 
 @requires_search
 def update_wiki(wiki_page, index=None, bulk=False):
@@ -724,6 +818,24 @@ def bulk_update_wikis(wiki_pages, index=None):
                 '_op_type': 'update',
                 '_index': index,
                 '_id': wiki._id,
+                '_type': category,
+                'doc': serialized,
+                'doc_as_upsert': True,
+            })
+    if actions:
+        return helpers.bulk(client(), actions)
+
+def bulk_update_comments(comments, index=None):
+    index = es_index(index)
+    category = 'comment'
+    actions = []
+    for comment in comments:
+        serialized = update_comment(comment, index=index, bulk=True)
+        if serialized:
+            actions.append({
+                '_op_type': 'update',
+                '_index': index,
+                '_id': comment._id,
                 '_type': category,
                 'doc': serialized,
                 'doc_as_upsert': True,
@@ -1029,7 +1141,7 @@ def create_index(index=None):
     all of which are applied to all projects, components, preprints, and registrations.
     """
     index = es_index(index)
-    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint', 'collectionSubmission', 'wiki']
+    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint', 'collectionSubmission', 'wiki', 'comment']
     project_like_types = PROJECT_LIKE_TYPES
     analyzed_fields = ['title', 'description']
 
@@ -1090,7 +1202,7 @@ def create_index(index=None):
                     },
                 }
                 mapping['properties'].update(fields)
-            elif type_ == 'wiki':
+            elif type_ == 'wiki' or type_ == 'comment':
                 prop = dict(ENGLISH_ANALYZER_PROPERTY)
                 prop.update({
                     # to adjust highlighted fields to the middle position.
@@ -1124,6 +1236,11 @@ def delete_group_doc(deleted_id, index=None):
 def delete_wiki_doc(deleted_id, index=None):
     index = es_index(index)
     client().delete(index=index, doc_type='wiki', id=deleted_id, refresh=True, ignore=[404])
+
+@requires_search
+def delete_comment_doc(deleted_id, index=None):
+    index = es_index(index)
+    client().delete(index=index, doc_type='comment', id=deleted_id, refresh=True, ignore=[404])
 
 @requires_search
 def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
