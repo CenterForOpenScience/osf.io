@@ -41,6 +41,7 @@ REVIEW_FOLDERS = {'paper': u'最終原稿・組図',
                   'raw': u'生データ',
                   'checklist': u'チェックリスト',
                   'scan': u'スキャン結果'}
+REVIEW_FILE_LIST = '.files.txt'
 
 
 # TODO make iqbrims "pathfollowing"

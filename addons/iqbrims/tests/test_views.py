@@ -636,7 +636,8 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
     @mock.patch.object(IQBRIMSClient, 'files')
-    def test_get_checklist_storage(self, mock_files, mock_folders,
+    @mock.patch.object(IQBRIMSClient, 'get_content')
+    def test_get_checklist_storage(self, mock_get_content, mock_files, mock_folders,
                                    mock_get_management_node):
         management_project = ProjectFactory()
         management_project.add_addon('googledrive', auth=None)
@@ -647,9 +648,13 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         mock_folders.return_value = [{'id': 'folderid123',
                                       'title': u'チェックリスト'}]
         mock_files.return_value = [{'id': 'fileid123',
-                                    'title': 'dummy.txt'}]
+                                    'title': 'dummy.txt'},
+                                   {'id': 'fileidlist',
+                                    'title': '.files.txt'}]
+        mock_get_content.return_value = b'dummy.txt'
 
         node_settings = self.project.get_addon('iqbrims')
+        node_settings.status = json.dumps({'testkey': 'testvalue'})
         node_settings.secret = 'secret123'
         node_settings.process_definition_id = 'process456'
         node_settings.folder_path = 'testgdpath/iqb123/'
@@ -663,11 +668,13 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['status'], 'complete')
+        assert_equal(res.json['whole']['testkey'], 'testvalue')
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
     @mock.patch.object(IQBRIMSClient, 'files')
-    def test_get_checklist_ja_storage(self, mock_files, mock_folders,
+    @mock.patch.object(IQBRIMSClient, 'get_content')
+    def test_get_checklist_ja_storage(self, mock_get_content, mock_files, mock_folders,
                                       mock_get_management_node):
         management_project = ProjectFactory()
         management_project.add_addon('googledrive', auth=None)
@@ -678,7 +685,10 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         mock_folders.return_value = [{'id': 'folderid123',
                                       'title': u'チェックリスト'}]
         mock_files.return_value = [{'id': 'fileid123',
-                                    'title': u'ダミー.txt'}]
+                                    'title': u'ダミー.txt'},
+                                   {'id': 'fileidlist',
+                                    'title': '.files.txt'}]
+        mock_get_content.return_value = u'ダミー.txt\n\n'.encode('utf8')
 
         node_settings = self.project.get_addon('iqbrims')
         node_settings.secret = 'secret123'
@@ -698,6 +708,41 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
     @mock.patch.object(IQBRIMSClient, 'files')
+    @mock.patch.object(IQBRIMSClient, 'get_content')
+    def test_get_checklist_ja_storage_partial(self, mock_get_content, mock_files,
+                                              mock_folders, mock_get_management_node):
+        management_project = ProjectFactory()
+        management_project.add_addon('googledrive', auth=None)
+        gdsettings = management_project.get_addon('googledrive')
+        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.save()
+        mock_get_management_node.return_value = management_project
+        mock_folders.return_value = [{'id': 'folderid123',
+                                      'title': u'チェックリスト'}]
+        mock_files.return_value = [{'id': 'fileid123',
+                                    'title': u'ダミー.txt'},
+                                   {'id': 'fileidlist',
+                                    'title': '.files.txt'}]
+        mock_get_content.return_value = u'ダミー.txt\nダミー2.txt\n\n'.encode('utf8')
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.folder_path = u'testgdpath/日本語123/'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_get_storage',
+                                       folder='checklist')
+        res = self.app.get(url, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'processing')
+
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    @mock.patch.object(IQBRIMSClient, 'folders')
+    @mock.patch.object(IQBRIMSClient, 'files')
     def test_get_imagelist_storage(self, mock_files, mock_folders,
                                    mock_get_management_node):
         management_project = ProjectFactory()
@@ -708,17 +753,21 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         mock_get_management_node.return_value = management_project
         def mock_folders_effect(folder_id):
             if folder_id == '1234567890':
-                return [{'id': 'folderid123', 'title': u'最終原稿・組図'}]
+                return [{'id': 'folderid123', 'title': u'最終原稿・組図',
+                         'alternateLink': 'https://google/folderid123/'}]
             if folder_id == 'folderid123':
-                return [{'id': 'folderid456', 'title': u'スキャン画像'}]
+                return [{'id': 'folderid456', 'title': u'スキャン画像',
+                         'alternateLink': 'https://google/folderid456/'}]
             assert False, folder_id
 
         def mock_files_effect(folder_id):
             if folder_id == 'folderid123':
                 return []
             if folder_id == 'folderid456':
-                return [{'id': 'fileid456a', 'title': 'test.png'},
-                        {'id': 'fileid456b', 'title': 'files.txt'}]
+                return [{'id': 'fileid456a', 'title': 'test.png',
+                         'alternateLink': 'https://google/fileid456a/'},
+                        {'id': 'fileid456b', 'title': 'files.txt',
+                         'alternateLink': 'https://google/fileid456b/'}]
             assert False, folder_id
 
         mock_folders.side_effect = mock_folders_effect
@@ -738,11 +787,14 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['status'], 'complete')
+        assert_equal(res.json['folder_drive_url'], 'https://google/folderid456/')
         assert_equal(len(res.json['management']['urls']), 2)
         assert_equal(res.json['management']['urls'][0]['path'], u'iqb123/%E6%9C%80%E7%B5%82%E5%8E%9F%E7%A8%BF%E3%83%BB%E7%B5%84%E5%9B%B3/%E3%82%B9%E3%82%AD%E3%83%A3%E3%83%B3%E7%94%BB%E5%83%8F/test.png')
         assert_true(res.json['management']['urls'][0]['mfr_url'].startswith('http://localhost:7778/export?url=http://localhost:5000/'))
+        assert_equal(res.json['management']['urls'][0]['drive_url'], 'https://google/fileid456a/')
         assert_equal(res.json['management']['urls'][1]['path'], u'iqb123/%E6%9C%80%E7%B5%82%E5%8E%9F%E7%A8%BF%E3%83%BB%E7%B5%84%E5%9B%B3/%E3%82%B9%E3%82%AD%E3%83%A3%E3%83%B3%E7%94%BB%E5%83%8F/files.txt')
         assert_true(res.json['management']['urls'][1]['mfr_url'].startswith('http://localhost:7778/export?url=http://localhost:5000/'))
+        assert_equal(res.json['management']['urls'][1]['drive_url'], 'https://google/fileid456b/')
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
@@ -911,11 +963,13 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
     @mock.patch.object(IQBRIMSClient, 'files')
+    @mock.patch.object(IQBRIMSClient, 'grant_access_from_anyone')
     @mock.patch.object(SpreadsheetClient, 'sheets')
     @mock.patch.object(SpreadsheetClient, 'get_column_values')
     @mock.patch.object(SpreadsheetClient, 'update_row')
     def test_reject_index_storage(self, mock_update_row,
                                   mock_get_column_values, mock_sheets,
+                                  mock_grant_access_from_anyone,
                                   mock_files, mock_folders,
                                   mock_get_management_node):
         management_project = ProjectFactory()
@@ -929,7 +983,9 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         mock_files.return_value = [{'id': 'rmfileid123', 'title': 'Raw Files'}]
         sgp = {'columnCount': 2}
         mock_sheets.return_value = [{'properties': {'title': 'Files',
-                                                    'sheetId': 'ss123',
+                                                    'sheetId': 'ss123'}},
+                                    {'properties': {'title': 'Management',
+                                                    'sheetId': 'ss456',
                                                     'gridProperties': sgp}}]
         mock_get_column_values.return_value = ['Filled']
 
@@ -949,22 +1005,30 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_equal(res.json, {'status': 'rejected',
                                 'root_folder': 'iqb123/'})
         mock_update_row.assert_called_once()
-        assert_equal(mock_update_row.call_args, (('Files', ['FALSE'], 0),))
+        assert_equal(mock_update_row.call_args, (('Management', ['FALSE'], 0),))
+        mock_grant_access_from_anyone.assert_called_once()
+        assert_equal(mock_grant_access_from_anyone.call_args,
+                     (('rmfileid123',),))
 
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
     @mock.patch.object(IQBRIMSClient, 'files')
     def test_create_index_in_progress(self, mock_files, mock_folders,
-                                      mock_get_management_node):
+                                      mock_get_management_node,
+                                      mock_workflow_user_settings):
         management_project = ProjectFactory()
         management_project.add_addon('googledrive', auth=None)
         gdsettings = management_project.get_addon('googledrive')
         gdsettings.folder_path = 'testgdpath/'
         gdsettings.save()
+        management_project.add_addon('iqbrims', auth=None)
         mock_get_management_node.return_value = management_project
         mock_folders.return_value = [{'id': 'rmfolderid123',
                                       'title': u'生データ'}]
         mock_files.return_value = []
+        user_settings = {}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
 
         node_settings = self.project.get_addon('iqbrims')
         node_settings.secret = 'secret123'
@@ -981,6 +1045,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json, {'status': 'processing'})
 
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'get_content')
     @mock.patch.object(IQBRIMSClient, 'folders')
@@ -994,12 +1059,14 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                           mock_grant_access_from_anyone, mock_add_files,
                           mock_sheets, mock_create_spreadsheet,
                           mock_files, mock_folders, mock_get_content,
-                          mock_get_management_node):
+                          mock_get_management_node,
+                          mock_workflow_user_settings):
         management_project = ProjectFactory()
         management_project.add_addon('googledrive', auth=None)
         gdsettings = management_project.get_addon('googledrive')
         gdsettings.folder_path = 'testgdpath/'
         gdsettings.save()
+        management_project.add_addon('iqbrims', auth=None)
         mock_get_management_node.return_value = management_project
         mock_get_content.return_value = b'f1.txt\nf2.txt\ntest/file3.txt\n'
         mock_folders.return_value = [{'id': 'rmfolderid123',
@@ -1007,9 +1074,13 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         mock_files.return_value = [{'id': 'fileid123', 'title': 'files.txt'}]
         mock_create_spreadsheet.return_value = {'id': 'sheet123'}
         mock_sheets.return_value = [{'properties': {'title': 'Files',
-                                                    'sheetId': 'ss123'}}]
+                                                    'sheetId': 'ss123'}},
+                                    {'properties': {'title': 'Management',
+                                                    'sheetId': 'ss456'}}]
         mock_grant_access_from_anyone.return_value = {}
         mock_get_file_link.return_value = 'https://a.b/sheet123'
+        user_settings = {}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
 
         node_settings = self.project.get_addon('iqbrims')
         node_settings.secret = 'secret123'
@@ -1033,9 +1104,10 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                      (('sheet123',),))
         mock_add_files.assert_called_once()
         assert_equal(mock_add_files.call_args,
-                     (('Files', 'ss123',
+                     (('Files', 'ss123', 'Management', 'ss456',
                        ['f1.txt', 'f2.txt', 'test/file3.txt', '']),))
 
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'get_content')
     @mock.patch.object(IQBRIMSClient, 'folders')
@@ -1049,12 +1121,14 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                              mock_grant_access_from_anyone, mock_add_files,
                              mock_sheets, mock_create_spreadsheet,
                              mock_files, mock_folders, mock_get_content,
-                             mock_get_management_node):
+                             mock_get_management_node,
+                             mock_workflow_user_settings):
         management_project = ProjectFactory()
         management_project.add_addon('googledrive', auth=None)
         gdsettings = management_project.get_addon('googledrive')
         gdsettings.folder_path = 'testgdpath/'
         gdsettings.save()
+        management_project.add_addon('iqbrims', auth=None)
         mock_get_management_node.return_value = management_project
         mock_get_content.return_value = u'f1.txt\nf2.txt\ntest/ファイル3.txt\n'.encode('utf8')
         mock_folders.return_value = [{'id': 'rmfolderid123',
@@ -1062,9 +1136,13 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         mock_files.return_value = [{'id': 'fileid123', 'title': 'files.txt'}]
         mock_create_spreadsheet.return_value = {'id': 'sheet123'}
         mock_sheets.return_value = [{'properties': {'title': 'Files',
-                                                    'sheetId': 'ss123'}}]
+                                                    'sheetId': 'ss123'}},
+                                    {'properties': {'title': 'Management',
+                                                    'sheetId': 'ss456'}}]
         mock_grant_access_from_anyone.return_value = {}
         mock_get_file_link.return_value = 'https://a.b/sheet123'
+        user_settings = {}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
 
         node_settings = self.project.get_addon('iqbrims')
         node_settings.secret = 'secret123'
@@ -1088,8 +1166,156 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                      (('sheet123',),))
         mock_add_files.assert_called_once()
         assert_equal(mock_add_files.call_args,
-                     (('Files', 'ss123',
+                     (('Files', 'ss123', 'Management', 'ss456',
                        ['f1.txt', 'f2.txt', u'test/ファイル3.txt', '']),))
+
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    @mock.patch.object(IQBRIMSClient, 'get_content')
+    @mock.patch.object(IQBRIMSClient, 'folders')
+    @mock.patch.object(IQBRIMSClient, 'files')
+    @mock.patch.object(IQBRIMSClient, 'copy_file')
+    @mock.patch.object(SpreadsheetClient, 'sheets')
+    @mock.patch.object(SpreadsheetClient, 'add_files')
+    @mock.patch.object(IQBRIMSClient, 'grant_access_from_anyone')
+    @mock.patch.object(IQBRIMSClient, 'get_file_link')
+    def test_create_index_template(self, mock_get_file_link,
+                                   mock_grant_access_from_anyone, mock_add_files,
+                                   mock_sheets, mock_copy_file,
+                                   mock_files, mock_folders, mock_get_content,
+                                   mock_get_management_node,
+                                   mock_workflow_user_settings):
+        management_project = ProjectFactory()
+        management_project.add_addon('googledrive', auth=None)
+        gdsettings = management_project.get_addon('googledrive')
+        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.save()
+        management_project.add_addon('iqbrims', auth=None)
+        mock_get_management_node.return_value = management_project
+        mock_get_content.return_value = u'f1.txt\nf2.txt\ntest/ファイル3.txt\n'.encode('utf8')
+        mock_folders.return_value = [{'id': 'rmfolderid123',
+                                      'title': u'生データ'}]
+        mock_files.return_value = [{'id': 'fileid123', 'title': 'files.txt'}]
+        mock_copy_file.return_value = {'id': 'sheet123'}
+        mock_sheets.return_value = [{'properties': {'title': 'Files',
+                                                    'sheetId': 'ss123'}},
+                                    {'properties': {'title': 'Management',
+                                                    'sheetId': 'ss456'}}]
+        mock_grant_access_from_anyone.return_value = {}
+        mock_get_file_link.return_value = 'https://a.b/sheet123'
+        user_settings = {'FLOWABLE_DATALIST_TEMPLATE_ID': '1234567890'}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.folder_path = 'testgdpath/iqb123/'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_create_index',
+                                       folder='scan')
+        res = self.app.put(url, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, {'status': 'complete',
+                                'url': 'https://a.b/sheet123'})
+        mock_get_content.assert_called_once()
+        assert_equal(mock_get_content.call_args, (('fileid123',),))
+        mock_grant_access_from_anyone.assert_called_once()
+        assert_equal(mock_grant_access_from_anyone.call_args,
+                     (('sheet123',),))
+        mock_add_files.assert_called_once()
+        assert_equal(mock_add_files.call_args,
+                     (('Files', 'ss123', 'Management', 'ss456',
+                       ['f1.txt', 'f2.txt', u'test/ファイル3.txt', '']),))
+        mock_copy_file.assert_called_once()
+
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    @mock.patch.object(IQBRIMSClient, 'create_content')
+    @mock.patch.object(IQBRIMSClient, 'update_content')
+    @mock.patch.object(IQBRIMSClient, 'folders')
+    @mock.patch.object(IQBRIMSClient, 'files')
+    def test_create_new_filelist(self, mock_files, mock_folders,
+                                 mock_update_content, mock_create_content,
+                                 mock_get_management_node,
+                                 mock_workflow_user_settings):
+        management_project = ProjectFactory()
+        management_project.add_addon('googledrive', auth=None)
+        gdsettings = management_project.get_addon('googledrive')
+        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.save()
+        management_project.add_addon('iqbrims', auth=None)
+        mock_get_management_node.return_value = management_project
+        mock_folders.return_value = [{'id': 'folderid123',
+                                      'title': u'生データ'}]
+        mock_files.return_value = [{'id': 'fileid123', 'title': 'files.zip'}]
+        user_settings = {}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.folder_path = 'testgdpath/iqb123/'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_create_filelist',
+                                       folder='raw')
+        res = self.app.put(url, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, {'status': 'complete'})
+
+        mock_create_content.assert_called_once()
+        assert_equal(mock_create_content.call_args,
+                     (('folderid123', '.files.txt', 'text/plain', 'files.zip\n'),))
+
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    @mock.patch.object(IQBRIMSClient, 'create_content')
+    @mock.patch.object(IQBRIMSClient, 'update_content')
+    @mock.patch.object(IQBRIMSClient, 'folders')
+    @mock.patch.object(IQBRIMSClient, 'files')
+    def test_create_exists_filelist(self, mock_files, mock_folders,
+                                    mock_update_content, mock_create_content,
+                                    mock_get_management_node,
+                                    mock_workflow_user_settings):
+        management_project = ProjectFactory()
+        management_project.add_addon('googledrive', auth=None)
+        gdsettings = management_project.get_addon('googledrive')
+        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.save()
+        management_project.add_addon('iqbrims', auth=None)
+        mock_get_management_node.return_value = management_project
+        mock_folders.return_value = [{'id': 'folderid123',
+                                      'title': u'生データ'}]
+        mock_files.return_value = [{'id': 'fileid123', 'title': 'files.zip'},
+                                   {'id': 'fileid456', 'title': '.files.txt'}]
+        user_settings = {}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.folder_path = 'testgdpath/iqb123/'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_create_filelist',
+                                       folder='raw')
+        res = self.app.put(url, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, {'status': 'complete'})
+
+        mock_update_content.assert_called_once()
+        assert_equal(mock_update_content.call_args,
+                     (('fileid456', 'text/plain', 'files.zip\n'),))
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
@@ -1157,6 +1383,85 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['comment'], 'C1234')
+
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    @mock.patch.object(IQBRIMSClient, 'folders')
+    @mock.patch.object(IQBRIMSClient, 'files')
+    @mock.patch.object(IQBRIMSClient, 'revoke_access_from_anyone')
+    def test_close_index_all(self, mock_revoke_access_from_anyone,
+                             mock_files, mock_folders,
+                             mock_get_management_node,
+                             mock_workflow_user_settings):
+        management_project = ProjectFactory()
+        management_project.add_addon('googledrive', auth=None)
+        gdsettings = management_project.get_addon('googledrive')
+        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.save()
+        management_project.add_addon('iqbrims', auth=None)
+        mock_get_management_node.return_value = management_project
+        mock_folders.return_value = [{'id': 'rmfolderid123',
+                                      'title': u'生データ'}]
+        mock_files.return_value = [{'id': 'fileid123', 'title': 'Raw Files'}]
+        user_settings = {}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.folder_path = 'testgdpath/iqb123/'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_close_index')
+        res = self.app.delete(url, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, {'status': 'complete'})
+        mock_revoke_access_from_anyone.assert_called_once()
+        name, args, kwargs = mock_revoke_access_from_anyone.mock_calls[0]
+        assert_equal(args, ('fileid123',))
+        assert_equal(kwargs, {'drop_all': 1})
+
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    @mock.patch.object(IQBRIMSClient, 'folders')
+    @mock.patch.object(IQBRIMSClient, 'files')
+    @mock.patch.object(IQBRIMSClient, 'revoke_access_from_anyone')
+    def test_close_index_read(self, mock_revoke_access_from_anyone,
+                              mock_files, mock_folders,
+                              mock_get_management_node,
+                              mock_workflow_user_settings):
+        management_project = ProjectFactory()
+        management_project.add_addon('googledrive', auth=None)
+        gdsettings = management_project.get_addon('googledrive')
+        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.save()
+        management_project.add_addon('iqbrims', auth=None)
+        mock_get_management_node.return_value = management_project
+        mock_folders.return_value = [{'id': 'rmfolderid123',
+                                      'title': u'生データ'}]
+        mock_files.return_value = [{'id': 'fileid123', 'title': 'Raw Files'}]
+        user_settings = {}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.folder_path = 'testgdpath/iqb123/'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_close_index')
+        res = self.app.delete(url + '?all=0', headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, {'status': 'complete'})
+        name, args, kwargs = mock_revoke_access_from_anyone.mock_calls[0]
+        assert_equal(args, ('fileid123',))
+        assert_equal(kwargs, {'drop_all': 0})
 
 
 class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
@@ -1237,8 +1542,8 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 3)
-        assert_equal(management_project.logs.count(), 2)
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
         user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 1)
         admin_comments = Comment.objects.filter(node=management_project)
@@ -1268,8 +1573,8 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 3)
-        assert_equal(management_project.logs.count(), 2)
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
         user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 1)
         admin_comments = Comment.objects.filter(node=management_project)
@@ -1300,7 +1605,7 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 3)
+        assert_equal(self.project.logs.count(), 2)
         assert_equal(management_project.logs.count(), 1)
         user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 1)
@@ -1333,11 +1638,75 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
         assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
+        user_comments = Comment.objects.filter(node=self.project)
+        assert_equal(user_comments.count(), 0)
+        admin_comments = Comment.objects.filter(node=management_project)
+        assert_equal(admin_comments.count(), 1)
+        assert mock_send_mail.call_args is None
+
+    @mock.patch.object(iqbrims_views, 'send_mail')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    def test_post_notify_adm_with_log(self, mock_get_management_node,
+                                      mock_send_mail):
+        management_project = ProjectFactory()
+        mock_get_management_node.return_value = management_project
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
+        url = self.project.api_url_for('iqbrims_post_notify')
+        res = self.app.post_json(url, {
+          'notify_type': 'imagescan_workflow_start',
+          'to': ['admin']
+        }, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_items_equal(res.json, {'status': 'complete'})
+        assert_equal(self.project.logs.count(), 3)
         assert_equal(management_project.logs.count(), 2)
         user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 0)
         admin_comments = Comment.objects.filter(node=management_project)
         assert_equal(admin_comments.count(), 1)
+        assert mock_send_mail.call_args is None
+
+    @mock.patch.object(iqbrims_views, 'send_mail')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    def test_post_notify_user_with_log(self, mock_get_management_node,
+                                      mock_send_mail):
+        management_project = ProjectFactory()
+        mock_get_management_node.return_value = management_project
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
+        url = self.project.api_url_for('iqbrims_post_notify')
+        res = self.app.post_json(url, {
+          'notify_type': 'imagescan_workflow_start',
+          'to': ['user']
+        }, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_items_equal(res.json, {'status': 'complete'})
+        assert_equal(self.project.logs.count(), 3)
+        assert_equal(management_project.logs.count(), 2)
+        user_comments = Comment.objects.filter(node=self.project)
+        assert_equal(user_comments.count(), 1)
+        admin_comments = Comment.objects.filter(node=management_project)
+        assert_equal(admin_comments.count(), 0)
         assert mock_send_mail.call_args is None
 
     @mock.patch.object(iqbrims_views, 'send_mail')
@@ -1365,8 +1734,8 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 3)
-        assert_equal(management_project.logs.count(), 2)
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
         user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 1)
         admin_comments = Comment.objects.filter(node=management_project)
@@ -1406,8 +1775,8 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 3)
-        assert_equal(management_project.logs.count(), 2)
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
         user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 1)
         admin_comments = Comment.objects.filter(node=management_project)
@@ -1447,15 +1816,15 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 3)
-        assert_equal(management_project.logs.count(), 2)
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
         user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 1)
         admin_comments = Comment.objects.filter(node=management_project)
         assert_equal(admin_comments.count(), 1)
         assert_equal(len(mock_send_mail.call_args_list), 2)
         assert_equal(mock_send_mail.call_args_list[0][0][0], self.project.contributors[0].emails.all()[0].address)
-        assert_equal(mock_send_mail.call_args_list[0][1]['cc_addr'], ','.join([m.address for m in management_project.contributors[0].emails.all()]))
+        assert_equal(set(mock_send_mail.call_args_list[0][1]['cc_addr'].split(',')), set([m.address for m in management_project.contributors[0].emails.all()]))
         assert_equal(mock_send_mail.call_args_list[0][1]['replyto'], management_project.contributors[0].emails.all()[0].address)
         assert_equal(mock_send_mail.call_args_list[1][0][0], ','.join([m.address for m in management_project.contributors[0].emails.all()]))
         assert_true(mock_send_mail.call_args_list[1][1]['cc_addr'] is None)
@@ -1498,8 +1867,8 @@ URL: http://test.test<br>
 
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 3)
-        assert_equal(management_project.logs.count(), 2)
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
         user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 1)
         assert user_comments.get().content == comment_html
@@ -1541,8 +1910,8 @@ URL: http://test.test<br>
 
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 3)
-        assert_equal(management_project.logs.count(), 2)
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
         user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 1)
         assert user_comments.get().content == comment_html
@@ -1556,3 +1925,97 @@ URL: http://test.test<br>
         assert_equal(mock_send_mail.call_args_list[1][0][0], management_project.contributors[0].emails.all()[0].address)
         assert_true(mock_send_mail.call_args_list[1][1]['cc_addr'] is None)
         assert_true(mock_send_mail.call_args_list[1][1]['replyto'] is None)
+
+    @mock.patch.object(iqbrims_views, 'send_mail')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    def test_post_notify_with_comments(self, mock_get_management_node,
+                                   mock_send_mail):
+        management_project = ProjectFactory()
+        mock_get_management_node.return_value = management_project
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
+        url = self.project.api_url_for('iqbrims_post_notify')
+        res = self.app.post_json(url, {
+          'notify_type': 'test_notify',
+          'comment_to': ['admin'],
+          'email_to': ['user'],
+          'use_mail': True,
+        }, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_items_equal(res.json, {'status': 'complete'})
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
+        user_comments = Comment.objects.filter(node=self.project)
+        assert_equal(user_comments.count(), 0)
+        admin_comments = Comment.objects.filter(node=management_project)
+        assert_equal(admin_comments.count(), 1)
+        assert_equal(len(mock_send_mail.call_args_list), 1)
+        assert_equal(mock_send_mail.call_args_list[0][0][0], self.project.contributors[0].emails.all()[0].address)
+        assert_equal(mock_send_mail.call_args_list[0][1]['cc_addr'], management_project.contributors[0].emails.all()[0].address)
+        assert_equal(mock_send_mail.call_args_list[0][1]['replyto'], management_project.contributors[0].emails.all()[0].address)
+
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    def test_undefined_message(self, mock_get_management_node, mock_workflow_user_settings):
+        management_project = ProjectFactory()
+        management_project.add_addon('iqbrims', auth=None)
+        mock_get_management_node.return_value = management_project
+        user_settings = {}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_get_message')
+        res = self.app.post_json(url, {
+          'notify_type': 'test_notify',
+          'variables': {},
+        }, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_items_equal(res.json, {'notify_type': 'test_notify'})
+
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    def test_defined_message(self, mock_get_management_node, mock_workflow_user_settings):
+        management_project = ProjectFactory()
+        management_project.add_addon('iqbrims', auth=None)
+        mock_get_management_node.return_value = management_project
+        user_settings = {'MESSAGES': json.dumps({
+          'test_notify': {
+            'notify_body': 'Variable #1 is ${var1}, Variable #2 is ${var2}',
+            'user_email': True,
+          }
+        })}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_get_message')
+        res = self.app.post_json(url, {
+          'notify_type': 'test_notify',
+          'variables': {'var1': 'Variable #1', 'var2': None},
+        }, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['notify_type'], 'test_notify')
+        assert_equal(res.json['notify_body'], 'Variable #1 is Variable #1, Variable #2 is null')
+        assert_equal(res.json['user_email'], True)
