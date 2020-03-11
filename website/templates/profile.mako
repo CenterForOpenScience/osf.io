@@ -70,7 +70,7 @@
            ${profile["number_projects"]} ${_("project")}${ngettext(' ', 's', profile["number_projects"])}<!-- , ${profile["number_public_projects"]} public -->
         </h2>
         <h2>
-            <!-- Usage of ${ 'NII' if profile['quota']['is_nii_storage'] else 'Institutional' } storage<br /> -->${_("Usage of storage")}
+            <!-- Usage of ${ 'NII' if profile['quota']['is_nii_storage'] else 'Institutional' } storage<br /> -->${_("Usage of storage")}<br />
             <img width="35" height="40" src="${profile['quota']['icon_url']}" style="margin: 5px 10px;">${profile['quota']['rate']}%, ${profile['quota']['used']} / ${profile['quota']['max']}[GB]
         </h2>
     </div>
