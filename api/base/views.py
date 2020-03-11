@@ -429,7 +429,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
 
 
 @api_view(('GET',))
-@throttle_classes([RootAnonThrottle, UserRateThrottle, BurstRateThrottle])
+@throttle_classes([RootAnonThrottle, UserRateThrottle, BurstRateThrottle, ])
 def root(request, format=None, **kwargs):
     """
     The documentation for the Open Science Framework API can be found at [developer.osf.io](https://developer.osf.io).
@@ -556,7 +556,7 @@ def set_tags_and_cookies_for_sloan(user, flag_name: str, flag_value: bool) -> di
 
 
 @api_view(('GET',))
-@throttle_classes([RootAnonThrottle, UserRateThrottle, BurstRateThrottle])
+@throttle_classes([RootAnonThrottle, UserRateThrottle, BurstRateThrottle, ])
 def status_check(request, format=None, **kwargs):
     maintenance = MaintenanceState.objects.all().first()
     return Response({
