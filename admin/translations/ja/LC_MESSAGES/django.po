@@ -512,8 +512,8 @@ msgid "Admin"
 msgstr "管理者"
 
 #: .\templates\login.html:23
-msgid "Sign in to start your session!!"
-msgstr "サインインしてセッションを始めてください!!"
+msgid "Sign in to start your session"
+msgstr "サインインしてセッションを始めてください。"
 
 #: .\templates\login.html:35
 msgid "Email:"
@@ -1749,6 +1749,14 @@ msgstr "組織のストレージアカウントを構成する"
 msgid "Connect a Box Account"
 msgstr "Boxアカウントに接続"
 
+#: .\templates\rdm_custom_storage_location\providers\box_modal.html:14
+msgid "Please click \"Get OAuth Permission\" button to connect Box."
+msgstr "[OAuthのアクセス許可を取得]ボタンをクリックして、Boxに接続してください。"
+
+#: .\templates\rdm_custom_storage_location\providers\box_modal.html:16
+msgid "Then you will be redirected to Box authentication page."
+msgstr "その後、Box認証ページにリダイレクトされます。"
+
 #: .\templates\rdm_custom_storage_location\providers\box_modal.html:30
 #: .\templates\rdm_custom_storage_location\providers\googledrive_modal.html:29
 msgid "Get OAuth permission"
@@ -1789,6 +1797,14 @@ msgstr "接続"
 msgid "Connect a Google Drive Account"
 msgstr "Google Driveアカウントに接続"
 
+#: .\templates\rdm_custom_storage_location\providers\googledrive_modal.html:14
+msgid "Please click \"Get OAuth Permission\" button to connectGoogle Drive."
+msgstr "[OAuthのアクセス許可を取得]ボタンをクリックして、Googleドライブに接続してください。"
+
+#: .\templates\rdm_custom_storage_location\providers\googledrive_modal.html:16
+msgid "Then you will be redirected to Google authentication page."
+msgstr "その後、Google認証ページにリダイレクトされます。"
+
 #: .\templates\rdm_custom_storage_location\providers\googledrive_modal.html:46
 msgid "Folder ID (Ex: root)"
 msgstr "フォルダID(例：root)"
@@ -1822,11 +1838,11 @@ msgstr "これらの資格情報は暗号化されます。 ただし、<a href=
 
 #: .\templates\rdm_custom_storage_location\providers\osfstorage_modal.html:8
 msgid "Connect NII Storage"
-msgstr "NIストレージに接続"
+msgstr "NIIストレージに接続"
 
 #: .\templates\rdm_custom_storage_location\providers\osfstorage_modal.html:14
 msgid "NII Storage is selected as Institutional Storage."
-msgstr "NII StorageがInstitutional Storageとして選択されています。"
+msgstr "NII ストレージが機関ストレージとして選択されています。"
 
 #: .\templates\rdm_custom_storage_location\providers\s3_modal.html:25
 #: .\templates\rdm_custom_storage_location\providers\s3compat_modal.html:29

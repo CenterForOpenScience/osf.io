@@ -20,7 +20,7 @@
             <b>{% trans "GakuNin RDM" %}</b>{% trans "Admin" %}</a>
         </div><!-- /.login-logo -->
         <div class="login-box-body">
-            <p class="login-box-msg">_("Sign in to start your session!!")</p>
+            <p class="login-box-msg">{% trans "Sign in to start your session" %}</p>
 {% if enable_form %}
             <form action="" method="post">
                 {% csrf_token %}
