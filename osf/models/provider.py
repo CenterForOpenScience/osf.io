@@ -58,6 +58,12 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
     advertises_on_discovery = models.BooleanField(default=True)
     has_landing_page = models.BooleanField(default=False)
 
+    brand_assets = models.ForeignKey('BrandAssets', related_name='providers', null=True, blank=True, on_delete=models.SET_NULL)
+
+    branded_discovery_page = models.BooleanField(default=True)
+    advertises_on_discovery = models.BooleanField(default=True)
+    has_landing_page = models.BooleanField(default=False)
+
     def __repr__(self):
         return ('(name={self.name!r}, default_license={self.default_license!r}, '
                 'allow_submissions={self.allow_submissions!r}) with id {self.id!r}').format(self=self)

@@ -1069,14 +1069,10 @@ class ChronosSubmissionFactory(DjangoModelFactory):
         return instance
 
 
-class BrandFactory(DjangoModelFactory):
+class BrandAssetsFactory(DjangoModelFactory):
     class Meta:
-        model = models.Brand
+        model = models.BrandAssets
 
-    name = factory.Faker('company')
-    hero_logo_image = factory.Faker('url')
-    topnav_logo_image = factory.Faker('url')
-    hero_background_image = factory.Faker('url')
-
-    primary_color = factory.Faker('hex_color')
-    secondary_color = factory.Faker('hex_color')
+    hero_logo = factory.Faker('url')
+    topnav_logo = factory.Faker('url')
+    hero_background = factory.Faker('color')
