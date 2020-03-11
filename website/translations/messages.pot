@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-08 00:21+0900\n"
-"PO-Revision-Date: 2020-03-08 00:21+0900\n"
+"POT-Creation-Date: 2020-03-11 16:19+0900\n"
+"PO-Revision-Date: 2020-03-11 16:19+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -1431,15 +1431,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: website/templates/profile.mako:73
-msgid "Usage of "
-msgstr ""
-
-#: website/templates/profile.mako:73
-msgid "Institutional"
-msgstr ""
-
-#: website/templates/profile.mako:73
-msgid " storage"
+msgid "Usage of storage"
 msgstr ""
 
 #: website/templates/profile.mako:82 website/templates/profile/settings.mako:39

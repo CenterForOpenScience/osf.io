@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-08 00:21+0900\n"
+"POT-Creation-Date: 2020-03-11 16:19+0900\n"
 "PO-Revision-Date: 2020-03-05 15:34+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
@@ -1479,16 +1479,8 @@ msgid_plural "s"
 msgstr[0] " "
 
 #: website/templates/profile.mako:73
-msgid "Usage of "
-msgstr "利用率("
-
-#: website/templates/profile.mako:73
-msgid "Institutional"
-msgstr "機関の"
-
-#: website/templates/profile.mako:73
-msgid " storage"
-msgstr "ストレージ)"
+msgid "Usage of storage"
+msgstr "ストレージ使用率"
 
 #: website/templates/profile.mako:82 website/templates/profile/settings.mako:39
 msgid "Employment"
@@ -3734,3 +3726,5 @@ msgstr "%(summary_Title)sのフォークを作成"
 #: website/templates/util/render_node.mako:66
 msgid "Manage Contributors"
 msgstr "コントリビュータ管理"
+
+

@@ -935,7 +935,7 @@ msgstr "ストレージロケーション"
 
 #: website/static/js/addProjectPlugin.js:254
 msgid " Add contributors from "
-msgstr "コントリビュータを追加する ：from "
+msgstr "次からコントリビュータを追加する："
 
 #: website/static/js/addProjectPlugin.js:256
 msgid " Admins of "
@@ -947,7 +947,7 @@ msgstr "の管理者は、このコンポーネントへの読み取りアクセ
 
 #: website/static/js/addProjectPlugin.js:267
 msgid " Add tags from "
-msgstr "タグを追加する：from "
+msgstr "次からタグを追加する："
 
 #: website/static/js/addProjectPlugin.js:271
 msgid "License"
