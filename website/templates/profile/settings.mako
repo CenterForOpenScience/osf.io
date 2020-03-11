@@ -76,14 +76,14 @@
         crud: ${ api_url_for('serialize_names') | sjson, n },
         impute: ${ api_url_for('impute_names') | sjson, n }
     };
-    window.contextVars.socialUrls = {
-        crud: ${ api_url_for('serialize_social') | sjson, n }
-    };
     window.contextVars.jobsUrls = {
         crud: ${ api_url_for('serialize_jobs') | sjson, n }
     };
     window.contextVars.schoolsUrls = {
         crud: ${ api_url_for('serialize_schools') | sjson, n }
+    };
+    window.contextVars.socialUrls = {
+        crud: ${ api_url_for('serialize_social') | sjson, n }
     };
 </script>
 <script src=${"/static/public/js/profile-settings-page.js" | webpack_asset}></script>
