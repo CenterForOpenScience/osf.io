@@ -37,6 +37,7 @@ from api.base.throttling import (
     UserRateThrottle,
     NonCookieAuthThrottle,
     AddContributorThrottle,
+    BurstRateThrottle,
 )
 from api.base.utils import default_node_list_permission_queryset
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
@@ -408,7 +409,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
     model_class = OSFUser
 
-    throttle_classes = (AddContributorThrottle, UserRateThrottle, NonCookieAuthThrottle, )
+    throttle_classes = (AddContributorThrottle, UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle, )
 
     pagination_class = NodeContributorPagination
     serializer_class = NodeContributorsSerializer
@@ -534,7 +535,7 @@ class NodeImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFi
 
     model_class = OSFUser
 
-    throttle_classes = (UserRateThrottle, NonCookieAuthThrottle,)
+    throttle_classes = (UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle, )
 
     serializer_class = UserSerializer
     view_category = 'nodes'
@@ -587,7 +588,7 @@ class NodeBibliographicContributorsList(BaseContributorList, NodeMixin):
 
     model_class = OSFUser
 
-    throttle_classes = (UserRateThrottle, NonCookieAuthThrottle,)
+    throttle_classes = (UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle, )
 
     pagination_class = NodeContributorPagination
     serializer_class = NodeContributorsSerializer
