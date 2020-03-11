@@ -1067,3 +1067,12 @@ class ChronosSubmissionFactory(DjangoModelFactory):
         instance = super(ChronosSubmissionFactory, cls)._create(target_class, *args, **kwargs)
         instance.save()
         return instance
+
+
+class BrandAssetsFactory(DjangoModelFactory):
+    class Meta:
+        model = models.BrandAssets
+
+    hero_logo = factory.Faker('url')
+    topnav_logo = factory.Faker('url')
+    hero_background = factory.Faker('color')

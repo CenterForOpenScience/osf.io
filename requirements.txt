@@ -96,6 +96,7 @@ google-cloud-storage==0.22.0  # dependency of django-storages, hard-pin to versi
 django-dirtyfields==1.3.1
 django-extensions==2.1.3
 django-include==0.2.4
+django-colorfield==0.2.1
 psycopg2==2.7.3 --no-binary psycopg2
 ujson==1.35
 sqlparse==0.2.4
