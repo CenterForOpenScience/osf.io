@@ -3,17 +3,17 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 # 1.{% trans "XXX" %} is extracted by the command 'django-admin makemessages -l ja'
-# 2.edit the form of po to babel extracting form.
+# 2.edit the header to babel extracting form.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: PROJECT VERSION\n"
-"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-03 18:36+0900\n"
-"PO-Revision-Date: 2019-11-27 12:59+0900\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Project-Id-Version:  0.5.2\n"
+"Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
+"POT-Creation-Date: 2020-03-11 11:49+0900\n"
+"PO-Revision-Date: 2020-03-11 11:49+0900\n"
+"Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
-"Language-Team: ja <LL@li.org>\n"
+"Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "Plural-Forms: nplurals=1; plural=0\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
