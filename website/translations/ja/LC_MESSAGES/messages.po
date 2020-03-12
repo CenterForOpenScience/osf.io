@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-12 10:37+0900\n"
+"POT-Creation-Date: 2020-03-12 14:26+0900\n"
 "PO-Revision-Date: 2020-03-12 09:30+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
@@ -466,11 +466,11 @@ msgstr "ホストURL"
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:36
 #, python-format
 msgid ""
-"Only Nextcloud instances supporting <a %(webdav_url)s>WebDAV</a> and <a "
-"%(ocs_url)s>                                        OCS v1.7</a> are "
+"Only Nextcloud instances supporting <a %(webdavUrl)s>WebDAV</a> and <a "
+"%(ocsUrl)s>                                        OCS v1.7</a> are "
 "supported."
 msgstr ""
-"<a %(webdav_url)s>WebDAV</a>および<a %(ocs_url)s>OCS v1.7</a> "
+"<a %(webdavUrl)s>WebDAV</a>および<a %(ocsUrl)s>OCS v1.7</a> "
 "をサポートするNextcloudインスタンスのみがサポートされます。"
 
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:46
@@ -495,11 +495,11 @@ msgstr "パスワード"
 #, python-format
 msgid ""
 "These credentials will be encrypted. However, we <strong>strongly "
-"encourage</strong> using a <a %(open_with_new_window)s> Device (or App) "
+"encourage</strong> using a <a %(openWithNewWindow)s> Device (or App) "
 "Password</a>."
 msgstr ""
 "これらの資格情報は暗号化されます。 ただし、<a "
-"%(open_with_new_window)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
+"%(openWithNewWindow)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
 
 #: addons/nextcloud/templates/nextcloud_node_settings.mako:53
 #: addons/owncloud/templates/owncloud_node_settings.mako:53
@@ -516,8 +516,8 @@ msgstr "フォルダをロード中..."
 #: addons/nextcloud/templates/nextcloud_user_settings.mako:23
 #: addons/owncloud/templates/owncloud_user_settings.mako:23
 #, python-format
-msgid "Authorized by %(user_name)s on %(profile_page)s"
-msgstr "%(profile_page)sでの認証者:%(user_name)s"
+msgid "Authorized by %(userName)s on %(profilePage)s"
+msgstr "%(profilePage)sでの認証者:%(userName)s"
 
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:6
 msgid "Connect an ownCloud Account"
@@ -534,22 +534,22 @@ msgstr "ownCloudインスタンスを選択"
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:36
 #, python-format
 msgid ""
-"Only ownCloud instances supporting <a %(webdav_url)s>WebDAV</a> and <a "
-"%(ocs_url)s>                                        OCS v1.7</a> are "
+"Only ownCloud instances supporting <a %(webdavUrl)s>WebDAV</a> and <a "
+"%(ocsUrl)s>                                        OCS v1.7</a> are "
 "supported."
 msgstr ""
-"<a %(webdav_url)s>WebDAV</a>および<a %(ocs_url)s>OCS "
+"<a %(webdavUrl)s>WebDAV</a>および<a %(ocsUrl)s>OCS "
 "v1.7</a>をサポートするownCloudインスタンスのみがサポートされます。"
 
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:55
 #, python-format
 msgid ""
 " These credentials will be encrypted. However, we <strong>strongly "
-"encourage</strong> using a <a %(open_with_new_window)s> Device (or App) "
+"encourage</strong> using a <a %(openWithNewWindow)s> Device (or App) "
 "Password</a>."
 msgstr ""
 "これらの資格情報は暗号化されます。 ただし、<a "
-"%(open_with_new_window)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
+"%(openWithNewWindow)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
 
 #: addons/owncloud/templates/owncloud_node_settings.mako:42
 #: website/templates/project/addon/node_settings_default.mako:41
@@ -660,10 +660,10 @@ msgstr "モバイルデバイスにアクセスできなくなると、GakuNin R
 msgid ""
 "To use, you must install an appropriate application on your mobile "
 "device. Google Authenticator is a popular choice and is available for "
-"both        <a %(google_url)s>Android</a> and <a %(itunes_url)s>iOS</a>."
+"both        <a %(googleUrl)s>Android</a> and <a %(itunesUrl)s>iOS</a>."
 msgstr ""
-"使用するには、モバイルデバイスに適切なアプリケーションをインストールする必要があります。 Google認証システムは人気のある選択肢であり、<a "
-"%(google_url)s>Android</a>と<a %(itunes_url)s>iOS</a>の両方で利用できます。"
+"使用するには、モバイルデバイスに適切なアプリケーションをインストールする必要があります。Google認証システムは人気のある選択肢であり、<a "
+"%(googleUrl)s>Android</a>と<a %(itunesUrl)s>iOS</a>の両方で利用できます。"
 
 #: addons/twofactor/templates/twofactor_user_settings.mako:26
 msgid ""
@@ -678,9 +678,9 @@ msgstr ""
 #: addons/twofactor/templates/twofactor_user_settings.mako:28
 #, python-format
 msgid ""
-"Scan the image below, or enter the secret key        %(secret_key)s into "
+"Scan the image below, or enter the secret key        %(secretKey)s into "
 "your authentication device."
-msgstr "以下の画像をスキャンするか、認証デバイスにシークレットキー%(secret_key)sを入力します。"
+msgstr "以下の画像をスキャンするか、認証デバイスにシークレットキー%(secretKey)sを入力します。"
 
 #: addons/twofactor/templates/twofactor_user_settings.mako:34
 msgid "Enter your verification code:"
@@ -958,11 +958,11 @@ msgstr "Wiki構文のヘルプ"
 #: addons/wiki/templates/wiki-bar-modal-help.mako:10
 #, python-format
 msgid ""
-"The wiki uses the <a %(mark_url)s>Markdown</a> syntax. For more "
-"information and examples, go to our <a %(zendesk_url)s>Guides.</a>"
+"The wiki uses the <a %(markUrl)s>Markdown</a> syntax. For more "
+"information and examples, go to our <a %(zendeskUrl)s>Guides.</a>"
 msgstr ""
-"wikiは<a %(mark_url)s>Markdown</a>構文を使用します。 詳細と例については、<a "
-"%(zendesk_url)s>ガイド</a>をご覧ください。"
+"wikiは<a %(markUrl)s>Markdown</a>構文を使用します。 詳細と例については、<a "
+"%(zendeskUrl)s>ガイド</a>をご覧ください。"
 
 #: addons/zotero/templates/zotero_node_settings.mako:41
 msgid "Current Library:"
@@ -1027,13 +1027,12 @@ msgstr "同意"
 msgid ""
 "This website relies on cookies to help provide a better user experience. "
 "By clicking Accept or continuing to use the site, you agree. For more "
-"information,            see our <a %(meatwiki_url)s>Privacy Policy</a>"
-"            and information on <a %(meatwiki_url)s>cookie use</a>."
+"information,            see our <a %(meatwikiUrl)s>Privacy Policy</a>"
+"            and information on <a %(meatwikiUrl)s>cookie use</a>."
 msgstr ""
-"このWebサイトは、Cookieを使用して、ユーザーエクスペリエンスを向上させています。 "
-"[同意する]をクリックするか、サイトの使用を継続すると、同意したことになります。 詳細については、<a "
-"%(meatwiki_url)s>プライバシーポリシー</a>および<a "
-"%(meatwiki_url)s>Cookieの使用</a>に関する情報をご覧ください。"
+"このWebサイトは、Cookieを使用して、ユーザーエクスペリエンスを向上させています。[同意する]をクリックするか、サイトの使用を継続すると、同意したことになります。"
+" 詳細については、<a %(meatwikiUrl)s>プライバシーポリシー</a>および<a "
+"%(meatwikiUrl)s>Cookieの使用</a>に関する情報をご覧ください。"
 
 #: website/templates/base.mako:170
 msgid "Start managing your projects on the GakuNin RDM today."
@@ -1078,21 +1077,21 @@ msgstr "メールアドレス: <strong>%(email)s</strong>"
 #: website/templates/claim_account.mako:93
 #, python-format
 msgid ""
-"I have read and agree to the <a %(meatwiki_termsOfUse)s>Terms of Use</a> "
-"and <a %(meatwiki_privacyPolicy)s>Privacy Policy</a>."
+"I have read and agree to the <a %(meatwikiTermsOfUse)s>Terms of Use</a> "
+"and <a %(meatwikiPrivacyPolicy)s>Privacy Policy</a>."
 msgstr ""
-"<a %(meatwiki_termsOfUse)s>利用規約</a>と<a "
-"%(meatwiki_privacyPolicy)s>プライバシーポリシー</a>を読み、同意します。"
+"<a %(meatwikiTermsOfUse)s>利用規約</a>と<a "
+"%(meatwikiPrivacyPolicy)s>プライバシーポリシー</a>を読み、同意します。"
 
 #: website/templates/claim_account.mako:105
 #, python-format
 msgid ""
 "If you are not %(fullname)s, or if you were erroneously added as a "
 "contributor to the project described in the email invitation, please "
-"email <a href=%(mailto_osf_contact_email)s>%(osf_contact_email)s</a>"
+"email <a href=%(mailtoOsfContactEmail)s>%(osfContactEmail)s</a>"
 msgstr ""
 "あなたが%(fullname)sでない場合、または招待メールに記載されているプロジェクトへのコントリビュータとして誤って追加された場合は、<a "
-"href=%(mailto_osf_contact_email)s>%(osf_contact_email)s</a>にメールしてください"
+"href=%(mailtoOsfContactEmail)s>%(osfContactEmail)s</a>にメールしてください"
 
 #: website/templates/claim_account_eppn.mako:2
 #: website/templates/claim_account_eppn.mako:4
@@ -1135,8 +1134,8 @@ msgstr "続行するには資格情報を入力してください。"
 
 #: website/templates/claim_account_registered.mako:23
 #, python-format
-msgid "I am <strong>not</strong> <em>%(user_fullname)s</em>.</a>"
-msgstr "私は<em>%(user_fullname)s</em>では<strong>ありません</strong>。"
+msgid "I am <strong>not</strong> <em>%(userFullname)s</em>.</a>"
+msgstr "私は<em>%(userFullname)s</em>では<strong>ありません</strong>。"
 
 #: website/templates/copyright.mako:7 website/templates/copyright.mako:12
 #: website/templates/footer.mako:11
@@ -1382,48 +1381,45 @@ msgstr "既存のプロジェクトを事前登録する"
 #: website/templates/prereg_landing_page.mako:55
 #, python-format
 msgid ""
-"<p>Improve your research with <a %(cos_prereg_url)s>preregistration</a>. "
-"By writing out specific details such as data collection methods, analysis"
-" plans, and rules for data exclusion, you can make important decisions "
+"<p>Improve your research with <a %(cosPreregUrl)s>preregistration</a>. By"
+" writing out specific details such as data collection methods, analysis "
+"plans, and rules for data exclusion, you can make important decisions "
 "early on and have a clear record of these choices. This can help reduce "
 "biases that occur once the data are in front of you.</p>"
 msgstr ""
-"<p><a %(cos_prereg_url)s>事前登録</a>により研究を改善します。 "
-"データ収集方法、分析計画、データ除外ルールなどの特定の詳細を記述することにより、重要な決定を早期に行い、これらの選択を明確に記録できます。 "
-"これにより、データが目の前にあるときに発生するバイアスを減らすことができます。</p>"
+"<p><a "
+"%(cosPreregUrl)s>事前登録</a>により研究を改善します。データ収集方法、分析計画、データ除外ルールなどの特定の詳細を記述することにより、重要な決定を早期に行い、これらの選択を明確に記録できます。これにより、データが目の前にあるときに発生するバイアスを減らすことができます。</p>"
 
 #: website/templates/prereg_landing_page.mako:56
 #, python-format
 msgid ""
-"<p>Use <a %(osf_registries_url)s>OSF Registries</a> to discover "
-"previously registered work.</p>"
-msgstr "<p><a %(osf_registries_url)s>OSFレジストリ</a>を使用して、以前に登録した作品を発見します。</p>"
+"<p>Use <a %(osfRegistriesUrl)s>OSF Registries</a> to discover previously "
+"registered work.</p>"
+msgstr "<p><a %(osfRegistriesUrl)s>OSFレジストリ</a>を使用して、以前に登録した作品を発見します。</p>"
 
 #: website/templates/prereg_landing_page.mako:58
 #, python-format
 msgid ""
 "<p><strong> Articles must be published by an <a "
-"%(prereg_more_info_url)s>approved</a> journal by December 31, 2018, to be"
-" eligible for a prize. Please use this this helpful workflow to "
+"%(preregMoreInfoUrl)s>approved</a> journal by December 31, 2018, to be "
+"eligible for a prize. Please use this this helpful workflow to "
 "preregister, even if you are not seeking a prize. </strong></p>"
 msgstr ""
 "<p><strong>賞品を獲得するには、2018年12月31日までに<a "
-"%(prereg_more_info_url)s>承認済み</a>ジャーナルで記事を公開する必要があります。 "
-"賞品を探していない場合でも、この便利なワークフローを使用して事前登録してください。</strong></p>"
+"%(preregMoreInfoUrl)s>承認済み</a>ジャーナルで記事を公開する必要があります。賞品を探していない場合でも、この便利なワークフローを使用して事前登録してください。</strong></p>"
 
 #: website/templates/prereg_landing_page.mako:59
 #, python-format
 msgid ""
 "<p> Improve your research with preregistration. The process of creating a"
-" <a %(cos_prereg_url)s> preregistration</a> is beneficial to both the "
+" <a %(cosPreregUrl)s> preregistration</a> is beneficial to both the "
 "scientific field and to you, the scientist. By writing out detailed data "
 "collection methods, analysis plans, and rules for excluding or missing "
 "data, you can make important decisions that affect your workflow earlier,"
 " without the biases that occur once the data are in front of you.</p>"
 msgstr ""
 "<p>事前登録により研究を改善します。 <a "
-"%(cos_prereg_url)s>事前登録</a>を作成するプロセスは、科学分野と科学者の両方にとって有益です。 "
-"詳細なデータ収集方法、分析計画、およびデータの除外または欠落に関するルールを記述することにより、データが目の前に発生するような偏りを生じることなく、ワークフローに影響を与える重要な決定を早期に行うことができます。</p>"
+"%(cosPreregUrl)s>事前登録</a>を作成するプロセスは、科学分野と科学者の両方にとって有益です。詳細なデータ収集方法、分析計画、およびデータの除外または欠落に関するルールを記述することにより、データが目の前に発生するような偏りを生じることなく、ワークフローに影響を与える重要な決定を早期に行うことができます。</p>"
 
 #: website/templates/prereg_landing_page.mako:64
 #: website/templates/prereg_landing_page.mako:110
@@ -1444,8 +1440,8 @@ msgstr "GakuNin RDMに既にあるプロジェクトを事前登録する"
 #, python-format
 msgid ""
 "This account has been merged with <a "
-"%(profile_url)s>%(profile_absolute_url)s</a>"
-msgstr "このアカウントは<a %(profile_url)s>%(profile_absolute_url)s</a>と統合されました"
+"%(profileUrl)s>%(profileAbsoluteUrl)s</a>"
+msgstr "このアカウントは<a %(profileUrl)s>%(profileAbsoluteUrl)s</a>と統合されました"
 
 #: website/templates/profile.mako:43
 msgid "Edit your profile"
@@ -1570,17 +1566,17 @@ msgstr "(プレプリントファイル)"
 
 #: website/templates/search.mako:130
 #, python-format
-msgid "From: <a %(parent_url_title)s></a> <a %(node_url_and_title)s></a>"
-msgstr "<a %(node_url_and_title)s></a> <a %(parent_url_title)s></a>より"
+msgid "From: <a %(parentUrlTitle)s></a> <a %(nodeUrlAndTitle)s></a>"
+msgstr "<a %(nodeUrlAndTitle)s></a> <a %(parentUrlTitle)s></a>より"
 
 #: website/templates/search.mako:131
 #, python-format
 msgid ""
-"From: <span %(parent_title)s><span %(text_parent_title)s></span> /</span>"
-" <a %(node_url_and_title)s></a>"
+"From: <span %(parentTitle)s><span %(textParentTitle)s></span> /</span> <a"
+" %(nodeUrlAndTitle)s></a>"
 msgstr ""
-"<a %(node_url_and_title)s></a> <span %(parent_title)s><span "
-"%(text_parent_title)s></span> /</span>より"
+"<a %(nodeUrlAndTitle)s></a> <span %(parentTitle)s><span "
+"%(textParentTitle)s></span> /</span>より"
 
 #: website/templates/search.mako:240
 msgid " Contributors:"
@@ -1648,7 +1644,9 @@ msgid ""
 "<p>Search uses the <a %(searchQuerySyntaxUrl)s>Lucene search "
 "syntax</a>.This gives you many options, but can be very simple as well. "
 "Examples of valid searches include:</p>"
-msgstr "<p>検索では<a %(searchQuerySyntaxUrl)s>Lucene検索構文</a>を使用します。これにより多くのオプションが提供されますが、非常にシンプルにすることもできます。有効な検索の例は次のとおりです。</p>"
+msgstr ""
+"<p>検索では<a "
+"%(searchQuerySyntaxUrl)s>Lucene検索構文</a>を使用します。これにより多くのオプションが提供されますが、非常にシンプルにすることもできます。有効な検索の例は次のとおりです。</p>"
 
 #: website/templates/include/comment_pane_template.mako:3
 #: website/templates/project/project_header.mako:86
@@ -2476,16 +2474,16 @@ msgstr "GitHubアクセストークンの再認証が必要になる場合があ
 #: website/templates/project/addons.mako:131
 #, python-format
 msgid ""
-"Follow the steps in the <a %(osf_help)s>help guide</a> to resolve the "
+"Follow the steps in the <a %(osfHelp)s>help guide</a> to resolve the "
 "issue."
-msgstr "<a %(osf_help)s>ヘルプガイド</a>の手順に従って問題を解決してください。"
+msgstr "<a %(osfHelp)s>ヘルプガイド</a>の手順に従って問題を解決してください。"
 
 #: website/templates/project/addons.mako:135
 #, python-format
 msgid ""
-"Please contact <a %(mailto_rdmSupport)s>rdm_support@nii.ac.jp</a> if you "
+"Please contact <a %(mailtoRdmSupport)s>rdm_support@nii.ac.jp</a> if you "
 "have questions."
-msgstr "ご質問がある場合は、<a %(mailto_rdmSupport)s>rdm_support@nii.ac.jp</a>までご連絡ください。"
+msgstr "ご質問がある場合は、<a %(mailtoRdmSupport)s>rdm_support@nii.ac.jp</a>までご連絡ください。"
 
 #: website/templates/project/contributors.mako:2
 #: website/templates/project/contributors.mako:8

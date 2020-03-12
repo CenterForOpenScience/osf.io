@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-12 10:37+0900\n"
-"PO-Revision-Date: 2020-03-12 10:37+0900\n"
+"POT-Creation-Date: 2020-03-12 14:26+0900\n"
+"PO-Revision-Date: 2020-03-12 14:26+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -459,8 +459,8 @@ msgstr ""
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:36
 #, python-format
 msgid ""
-"Only Nextcloud instances supporting <a %(webdav_url)s>WebDAV</a> and <a "
-"%(ocs_url)s>                                        OCS v1.7</a> are "
+"Only Nextcloud instances supporting <a %(webdavUrl)s>WebDAV</a> and <a "
+"%(ocsUrl)s>                                        OCS v1.7</a> are "
 "supported."
 msgstr ""
 
@@ -486,7 +486,7 @@ msgstr ""
 #, python-format
 msgid ""
 "These credentials will be encrypted. However, we <strong>strongly "
-"encourage</strong> using a <a %(open_with_new_window)s> Device (or App) "
+"encourage</strong> using a <a %(openWithNewWindow)s> Device (or App) "
 "Password</a>."
 msgstr ""
 
@@ -505,7 +505,7 @@ msgstr ""
 #: addons/nextcloud/templates/nextcloud_user_settings.mako:23
 #: addons/owncloud/templates/owncloud_user_settings.mako:23
 #, python-format
-msgid "Authorized by %(user_name)s on %(profile_page)s"
+msgid "Authorized by %(userName)s on %(profilePage)s"
 msgstr ""
 
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:6
@@ -523,8 +523,8 @@ msgstr ""
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:36
 #, python-format
 msgid ""
-"Only ownCloud instances supporting <a %(webdav_url)s>WebDAV</a> and <a "
-"%(ocs_url)s>                                        OCS v1.7</a> are "
+"Only ownCloud instances supporting <a %(webdavUrl)s>WebDAV</a> and <a "
+"%(ocsUrl)s>                                        OCS v1.7</a> are "
 "supported."
 msgstr ""
 
@@ -532,7 +532,7 @@ msgstr ""
 #, python-format
 msgid ""
 " These credentials will be encrypted. However, we <strong>strongly "
-"encourage</strong> using a <a %(open_with_new_window)s> Device (or App) "
+"encourage</strong> using a <a %(openWithNewWindow)s> Device (or App) "
 "Password</a>."
 msgstr ""
 
@@ -645,7 +645,7 @@ msgstr ""
 msgid ""
 "To use, you must install an appropriate application on your mobile "
 "device. Google Authenticator is a popular choice and is available for "
-"both        <a %(google_url)s>Android</a> and <a %(itunes_url)s>iOS</a>."
+"both        <a %(googleUrl)s>Android</a> and <a %(itunesUrl)s>iOS</a>."
 msgstr ""
 
 #: addons/twofactor/templates/twofactor_user_settings.mako:26
@@ -659,7 +659,7 @@ msgstr ""
 #: addons/twofactor/templates/twofactor_user_settings.mako:28
 #, python-format
 msgid ""
-"Scan the image below, or enter the secret key        %(secret_key)s into "
+"Scan the image below, or enter the secret key        %(secretKey)s into "
 "your authentication device."
 msgstr ""
 
@@ -935,8 +935,8 @@ msgstr ""
 #: addons/wiki/templates/wiki-bar-modal-help.mako:10
 #, python-format
 msgid ""
-"The wiki uses the <a %(mark_url)s>Markdown</a> syntax. For more "
-"information and examples, go to our <a %(zendesk_url)s>Guides.</a>"
+"The wiki uses the <a %(markUrl)s>Markdown</a> syntax. For more "
+"information and examples, go to our <a %(zendeskUrl)s>Guides.</a>"
 msgstr ""
 
 #: addons/zotero/templates/zotero_node_settings.mako:41
@@ -1002,8 +1002,8 @@ msgstr ""
 msgid ""
 "This website relies on cookies to help provide a better user experience. "
 "By clicking Accept or continuing to use the site, you agree. For more "
-"information,            see our <a %(meatwiki_url)s>Privacy Policy</a>"
-"            and information on <a %(meatwiki_url)s>cookie use</a>."
+"information,            see our <a %(meatwikiUrl)s>Privacy Policy</a>"
+"            and information on <a %(meatwikiUrl)s>cookie use</a>."
 msgstr ""
 
 #: website/templates/base.mako:170
@@ -1049,8 +1049,8 @@ msgstr ""
 #: website/templates/claim_account.mako:93
 #, python-format
 msgid ""
-"I have read and agree to the <a %(meatwiki_termsOfUse)s>Terms of Use</a> "
-"and <a %(meatwiki_privacyPolicy)s>Privacy Policy</a>."
+"I have read and agree to the <a %(meatwikiTermsOfUse)s>Terms of Use</a> "
+"and <a %(meatwikiPrivacyPolicy)s>Privacy Policy</a>."
 msgstr ""
 
 #: website/templates/claim_account.mako:105
@@ -1058,7 +1058,7 @@ msgstr ""
 msgid ""
 "If you are not %(fullname)s, or if you were erroneously added as a "
 "contributor to the project described in the email invitation, please "
-"email <a href=%(mailto_osf_contact_email)s>%(osf_contact_email)s</a>"
+"email <a href=%(mailtoOsfContactEmail)s>%(osfContactEmail)s</a>"
 msgstr ""
 
 #: website/templates/claim_account_eppn.mako:2
@@ -1102,7 +1102,7 @@ msgstr ""
 
 #: website/templates/claim_account_registered.mako:23
 #, python-format
-msgid "I am <strong>not</strong> <em>%(user_fullname)s</em>.</a>"
+msgid "I am <strong>not</strong> <em>%(userFullname)s</em>.</a>"
 msgstr ""
 
 #: website/templates/copyright.mako:7 website/templates/copyright.mako:12
@@ -1343,9 +1343,9 @@ msgstr ""
 #: website/templates/prereg_landing_page.mako:55
 #, python-format
 msgid ""
-"<p>Improve your research with <a %(cos_prereg_url)s>preregistration</a>. "
-"By writing out specific details such as data collection methods, analysis"
-" plans, and rules for data exclusion, you can make important decisions "
+"<p>Improve your research with <a %(cosPreregUrl)s>preregistration</a>. By"
+" writing out specific details such as data collection methods, analysis "
+"plans, and rules for data exclusion, you can make important decisions "
 "early on and have a clear record of these choices. This can help reduce "
 "biases that occur once the data are in front of you.</p>"
 msgstr ""
@@ -1353,16 +1353,16 @@ msgstr ""
 #: website/templates/prereg_landing_page.mako:56
 #, python-format
 msgid ""
-"<p>Use <a %(osf_registries_url)s>OSF Registries</a> to discover "
-"previously registered work.</p>"
+"<p>Use <a %(osfRegistriesUrl)s>OSF Registries</a> to discover previously "
+"registered work.</p>"
 msgstr ""
 
 #: website/templates/prereg_landing_page.mako:58
 #, python-format
 msgid ""
 "<p><strong> Articles must be published by an <a "
-"%(prereg_more_info_url)s>approved</a> journal by December 31, 2018, to be"
-" eligible for a prize. Please use this this helpful workflow to "
+"%(preregMoreInfoUrl)s>approved</a> journal by December 31, 2018, to be "
+"eligible for a prize. Please use this this helpful workflow to "
 "preregister, even if you are not seeking a prize. </strong></p>"
 msgstr ""
 
@@ -1370,7 +1370,7 @@ msgstr ""
 #, python-format
 msgid ""
 "<p> Improve your research with preregistration. The process of creating a"
-" <a %(cos_prereg_url)s> preregistration</a> is beneficial to both the "
+" <a %(cosPreregUrl)s> preregistration</a> is beneficial to both the "
 "scientific field and to you, the scientist. By writing out detailed data "
 "collection methods, analysis plans, and rules for excluding or missing "
 "data, you can make important decisions that affect your workflow earlier,"
@@ -1396,7 +1396,7 @@ msgstr ""
 #, python-format
 msgid ""
 "This account has been merged with <a "
-"%(profile_url)s>%(profile_absolute_url)s</a>"
+"%(profileUrl)s>%(profileAbsoluteUrl)s</a>"
 msgstr ""
 
 #: website/templates/profile.mako:43
@@ -1524,14 +1524,14 @@ msgstr ""
 
 #: website/templates/search.mako:130
 #, python-format
-msgid "From: <a %(parent_url_title)s></a> <a %(node_url_and_title)s></a>"
+msgid "From: <a %(parentUrlTitle)s></a> <a %(nodeUrlAndTitle)s></a>"
 msgstr ""
 
 #: website/templates/search.mako:131
 #, python-format
 msgid ""
-"From: <span %(parent_title)s><span %(text_parent_title)s></span> /</span>"
-" <a %(node_url_and_title)s></a>"
+"From: <span %(parentTitle)s><span %(textParentTitle)s></span> /</span> <a"
+" %(nodeUrlAndTitle)s></a>"
 msgstr ""
 
 #: website/templates/search.mako:240
@@ -2410,14 +2410,14 @@ msgstr ""
 #: website/templates/project/addons.mako:131
 #, python-format
 msgid ""
-"Follow the steps in the <a %(osf_help)s>help guide</a> to resolve the "
+"Follow the steps in the <a %(osfHelp)s>help guide</a> to resolve the "
 "issue."
 msgstr ""
 
 #: website/templates/project/addons.mako:135
 #, python-format
 msgid ""
-"Please contact <a %(mailto_rdmSupport)s>rdm_support@nii.ac.jp</a> if you "
+"Please contact <a %(mailtoRdmSupport)s>rdm_support@nii.ac.jp</a> if you "
 "have questions."
 msgstr ""
 

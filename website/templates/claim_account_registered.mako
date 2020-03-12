@@ -20,7 +20,7 @@
                 <input type='hidden' name='next_url' value='${next_url}'>
             %endif
             <span class='help-text'>
-                <a id="signOutLink" href='${signOutUrl}'>${_("I am <strong>not</strong> <em>%(user_fullname)s</em>.</a>") % dict(user_fullname=h(user.fullname)) | n}
+                <a id="signOutLink" href='${signOutUrl}'>${_("I am <strong>not</strong> <em>%(userFullname)s</em>.</a>") % dict(userFullname=h(user.fullname)) | n}
             </span>
             <button type='submit' class="btn btn-submit btn-primary pull-right">${_("Continue")}</button>
         </form>
