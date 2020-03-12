@@ -237,7 +237,11 @@ def iqbrims_post_workflow_state(**kwargs):
     status['workflow_' + part + '_permissions'] = reqdata['permissions']
     if 'updated' in reqdata:
         status['workflow_' + part + '_updated'] = reqdata['updated']
-    _iqbrims_set_status(node, status)
+    if 'status' in reqdata:
+        for k, v in reqdata['status'].items():
+            status[k] = v
+    rstatus = _iqbrims_set_status(node, status)
+    return {'status': 'complete', 'data': rstatus}
 
 @must_be_valid_project
 @must_have_addon(SHORT_NAME, 'node')

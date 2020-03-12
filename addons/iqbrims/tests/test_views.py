@@ -2019,3 +2019,95 @@ URL: http://test.test<br>
         assert_equal(res.json['notify_type'], 'test_notify')
         assert_equal(res.json['notify_body'], 'Variable #1 is Variable #1, Variable #2 is null')
         assert_equal(res.json['user_email'], True)
+
+
+class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
+
+    def setUp(self):
+        super(TestWorkflowStateViews, self).setUp()
+        self.project.contributors[0].emails.create(address='researcher@test.somehost.com')
+
+    def tearDown(self):
+        super(TestWorkflowStateViews, self).tearDown()
+
+    def test_unauthorized_post_workflow_state(self):
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.save()
+
+        url = self.project.api_url_for('iqbrims_post_workflow_state',
+                                       part='rawdata')
+        res = self.app.post(url,
+                            expect_errors=True).maybe_follow()
+
+        assert_equal(res.status_code, 403)
+
+        url = self.project.api_url_for('iqbrims_post_workflow_state',
+                                       part='rawdata')
+        res = self.app.post(url, headers={'X-RDM-Token': 'invalid123'},
+                            expect_errors=True).maybe_follow()
+
+        assert_equal(res.status_code, 403)
+
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    def test_post_minimal_workflow_state(self, mock_get_management_node):
+        management_project = ProjectFactory()
+        mock_get_management_node.return_value = management_project
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
+        url = self.project.api_url_for('iqbrims_post_workflow_state',
+                                       part='rawdata')
+        res = self.app.post_json(url, {
+          'state': 'test',
+          'permissions': ['READ', 'WRITE']
+        }, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_items_equal(res.json, {
+          'status': 'complete',
+          'data': {
+            'workflow_rawdata_state': 'test',
+            'workflow_rawdata_permissions': ['READ', 'WRITE']
+          }
+        })
+
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    def test_post_custom_workflow_state(self, mock_get_management_node):
+        management_project = ProjectFactory()
+        mock_get_management_node.return_value = management_project
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
+        url = self.project.api_url_for('iqbrims_post_workflow_state',
+                                       part='rawdata')
+        res = self.app.post_json(url, {
+          'state': 'test',
+          'permissions': ['READ', 'WRITE'],
+          'status': {'is_directly_submit_data': True}
+        }, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_items_equal(res.json, {
+          'status': 'complete',
+          'data': {
+            'workflow_rawdata_state': 'test',
+            'workflow_rawdata_permissions': ['READ', 'WRITE'],
+            'is_directly_submit_data': True
+          }
+        })
