@@ -323,6 +323,14 @@ def format_results(results):
             result['url'] = '/profile/' + result['id']
         elif result.get('category') == 'wiki':
             result['user_url'] = '/profile/' + result['user_id']
+        elif result.get('category') == 'comment':
+            result['page_url'] = '/' + result['page_id'] + '/'
+            result['user_url'] = '/profile/' + result['user_id']
+            reply_user_id = result.get('reply_user_id', None)
+            if reply_user_id:
+                result['reply_user_url'] = '/profile/' + reply_user_id
+            else:
+                result['reply_user_url'] = None
         elif result.get('category') == 'file':
             parent_info = load_parent(result.get('parent_id'))
             result['parent_url'] = parent_info.get('url') if parent_info else None
@@ -643,17 +651,18 @@ def serialize_group(group, category):
 def serialize_comment(comment, category):
     c = comment
     elastic_document = {}
-    guid = ''
-    name = ''
+    page_id = ''  # GUID
+    page_name = ''
     if c.page == Comment.OVERVIEW:
-        guid = c.node._id
-        name = c.node.title
+        page_id = c.node._id
+        page_name = c.node.title
     elif c.page == Comment.FILES:
-        guid = c.root_target.referent._id
-        name = c.root_target.referent.name
+        guid = c.root_target.referent.get_guid(create=False)
+        page_id = guid._id if guid else None
+        page_name = c.root_target.referent.name
     elif c.page == Comment.WIKI:
-        guid = c.root_target.referent._id
-        name = c.root_target.referent.page_name
+        page_id = c.root_target.referent._id
+        page_name = c.root_target.referent.page_name
     else:
         return None
 
@@ -664,10 +673,11 @@ def serialize_comment(comment, category):
         reply_username = c.target.referent.user.username
 
     elastic_document = {
+        'id': c._id,
         'page_type': c.page,
-        'id': guid,
-        'name': name,
-        'normalized_name': unicode_normalize(name),
+        'page_id': page_id,
+        'page_name': page_name,
+        'normalized_page_name': unicode_normalize(page_name),
         'category': category,
         'node_public': c.node.is_public,
         'created': c.created,
