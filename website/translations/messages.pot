@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-12 19:46+0900\n"
-"PO-Revision-Date: 2020-03-12 19:46+0900\n"
+"POT-Creation-Date: 2020-03-12 22:46+0900\n"
+"PO-Revision-Date: 2020-03-12 22:46+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -65,7 +65,7 @@ msgstr ""
 #: website/templates/project/modal_remove_contributor.mako:122
 #: website/templates/project/nodes_delete.mako:89
 #: website/templates/project/nodes_privacy.mako:104
-#: website/templates/project/project.mako:568
+#: website/templates/project/project.mako:567
 #: website/templates/project/settings.mako:131
 #: website/templates/project/timestamp.mako:71
 #: website/templates/util/render_addon_widget.mako:98
@@ -109,7 +109,7 @@ msgstr ""
 #: website/templates/profile/personal_tokens_detail.mako:55
 #: website/templates/project/addon/node_settings_default.mako:74
 #: website/templates/project/addon/user_settings.mako:13
-#: website/templates/project/project.mako:570
+#: website/templates/project/project.mako:569
 msgid "Save"
 msgstr ""
 
@@ -817,7 +817,7 @@ msgstr ""
 #: addons/wiki/templates/edit.mako:134
 #: website/templates/include/profile/schools.mako:180
 #: website/templates/include/profile/social.mako:184
-#: website/templates/project/project.mako:539
+#: website/templates/project/project.mako:538
 msgid "Edit"
 msgstr ""
 
@@ -1554,7 +1554,7 @@ msgstr ""
 msgid "(Preprint)"
 msgstr ""
 
-#: website/templates/project/project.mako:265
+#: website/templates/project/project.mako:264
 #: website/templates/project/settings.mako:107
 #: website/templates/search.mako:292 website/templates/search.mako:348
 msgid "Description:"
@@ -1609,7 +1609,7 @@ msgstr ""
 #: website/templates/include/comment_pane_template.mako:18
 #: website/templates/project/files.mako:2
 #: website/templates/project/files.mako:5
-#: website/templates/project/project.mako:441
+#: website/templates/project/project.mako:440
 #: website/templates/project/project_header.mako:40
 msgid "Files"
 msgstr ""
@@ -1673,7 +1673,7 @@ msgstr ""
 #: website/templates/project/modal_remove_contributor.mako:96
 #: website/templates/project/modal_remove_contributor.mako:105
 #: website/templates/project/modal_remove_contributor.mako:114
-#: website/templates/project/project.mako:569
+#: website/templates/project/project.mako:568
 #: website/templates/project/settings.mako:498
 #: website/templates/project/settings.mako:501
 msgid "Remove"
@@ -2526,7 +2526,7 @@ msgid "Save Changes"
 msgstr ""
 
 #: website/templates/project/files.mako:8
-#: website/templates/project/project.mako:449
+#: website/templates/project/project.mako:448
 msgid "Click on a storage provider or drag and drop to upload"
 msgstr ""
 
@@ -2861,197 +2861,190 @@ msgstr ""
 msgid "Affiliated Institutions:"
 msgstr ""
 
-#: website/templates/project/project.mako:218
-#, python-format
-msgid ""
-"Forked from <a %(forkedFormId)s>%(forkedFromDisplayAbsoluteUrl)s</a> on"
-"                    <span %(textDateForked)s></span>"
-msgstr ""
-
-#: website/templates/project/project.mako:225
+#: website/templates/project/project.mako:224
 msgid "Date registered:"
 msgstr ""
 
-#: website/templates/project/project.mako:230
+#: website/templates/project/project.mako:229
 msgid "Date created:"
 msgstr ""
 
-#: website/templates/project/project.mako:233
+#: website/templates/project/project.mako:232
 msgid "| Last Updated:"
 msgstr ""
 
-#: website/templates/project/project.mako:248
+#: website/templates/project/project.mako:247
 msgid "Creating DOI. Please wait..."
 msgstr ""
 
-#: website/templates/project/project.mako:254
+#: website/templates/project/project.mako:253
 msgid "Create DOI"
 msgstr ""
 
-#: website/templates/project/project.mako:259
+#: website/templates/project/project.mako:258
 #: website/templates/project/settings.mako:81
 msgid "Category:"
 msgstr ""
 
-#: website/templates/project/project.mako:260
+#: website/templates/project/project.mako:259
 msgid "category"
 msgstr ""
 
-#: website/templates/project/project.mako:282
+#: website/templates/project/project.mako:281
 msgid "License:"
 msgstr ""
 
-#: website/templates/project/project.mako:283
+#: website/templates/project/project.mako:282
 msgid "license"
 msgstr ""
 
-#: website/templates/project/project.mako:291
+#: website/templates/project/project.mako:290
 msgid "View Registration Form"
 msgstr ""
 
-#: website/templates/project/project.mako:296
+#: website/templates/project/project.mako:295
 msgid "View Registration Forms"
 msgstr ""
 
-#: website/templates/project/project.mako:341
+#: website/templates/project/project.mako:340
 msgid "Type:"
 msgstr ""
 
-#: website/templates/project/project.mako:345
-#: website/templates/project/project.mako:396
+#: website/templates/project/project.mako:344
+#: website/templates/project/project.mako:395
 msgid "Status:"
 msgstr ""
 
-#: website/templates/project/project.mako:349
+#: website/templates/project/project.mako:348
 msgid "Volume:"
 msgstr ""
 
-#: website/templates/project/project.mako:353
+#: website/templates/project/project.mako:352
 msgid "Issue:"
 msgstr ""
 
-#: website/templates/project/project.mako:357
+#: website/templates/project/project.mako:356
 msgid "Program Area:"
 msgstr ""
 
-#: website/templates/project/project.mako:363
+#: website/templates/project/project.mako:362
 msgid "Subjects:"
 msgstr ""
 
-#: website/templates/project/project.mako:399
+#: website/templates/project/project.mako:398
 msgid "Withdrawn"
 msgstr ""
 
-#: website/templates/project/project.mako:408
+#: website/templates/project/project.mako:407
 msgid ""
 "This {preprint_word} is publicly available and searchable but is subject "
 "to removal by a moderator."
 msgstr ""
 
-#: website/templates/project/project.mako:411
+#: website/templates/project/project.mako:410
 msgid ""
 "This {preprint_word} is not publicly available or searchable until "
 "approved by a moderator."
 msgstr ""
 
-#: website/templates/project/project.mako:415
+#: website/templates/project/project.mako:414
 msgid "This {preprint_word} is publicly available and searchable."
 msgstr ""
 
-#: website/templates/project/project.mako:417
+#: website/templates/project/project.mako:416
 msgid "This {preprint_word} is not publicly available or searchable."
 msgstr ""
 
-#: website/templates/project/project.mako:461
+#: website/templates/project/project.mako:460
 #: website/templates/project/view_file.mako:57
 msgid "Loading files..."
 msgstr ""
 
-#: website/templates/project/project.mako:502
+#: website/templates/project/project.mako:501
 #: website/templates/util/render_addon_widget.mako:70
 msgid "Citation"
 msgstr ""
 
 #: website/templates/project/addon/citations_widget.mako:16
-#: website/templates/project/project.mako:514
+#: website/templates/project/project.mako:513
 #: website/templates/util/render_addon_widget.mako:136
 msgid "Loading citations..."
 msgstr ""
 
-#: website/templates/project/project.mako:519
+#: website/templates/project/project.mako:518
 msgid "Customize"
 msgstr ""
 
-#: website/templates/project/project.mako:527
+#: website/templates/project/project.mako:526
 msgid "Chicago"
 msgstr ""
 
-#: website/templates/project/project.mako:531
+#: website/templates/project/project.mako:530
 msgid "Get more citations"
 msgstr ""
 
-#: website/templates/project/project.mako:549
+#: website/templates/project/project.mako:548
 #, python-format
 msgid ""
 "<div %(f_x_xl)s>Cite as:</div>                                         "
 "<span %(textCustomCitation)s></span>"
 msgstr ""
 
-#: website/templates/project/project.mako:560
+#: website/templates/project/project.mako:559
 msgid "Enter custom citation"
 msgstr ""
 
-#: website/templates/project/project.mako:587
+#: website/templates/project/project.mako:586
 #: website/templates/project/view_file.mako:76
 msgid "Tags"
 msgstr ""
 
-#: website/templates/project/project.mako:601
+#: website/templates/project/project.mako:600
 msgid "Recent Activity"
 msgstr ""
 
-#: website/templates/project/project.mako:602
+#: website/templates/project/project.mako:601
 msgid "Refresh"
 msgstr ""
 
-#: website/templates/project/project.mako:608
+#: website/templates/project/project.mako:607
 msgid "Parts of User's Fullname"
 msgstr ""
 
-#: website/templates/project/project.mako:613
+#: website/templates/project/project.mako:612
 msgid "Start Date[yyyy-mm-dd]"
 msgstr ""
 
-#: website/templates/project/project.mako:616
+#: website/templates/project/project.mako:615
 msgid "End Date[yyyy-mm-dd]"
 msgstr ""
 
-#: website/templates/project/project.mako:624
+#: website/templates/project/project.mako:623
 msgid "Loading logs..."
 msgstr ""
 
-#: website/templates/project/project.mako:630
+#: website/templates/project/project.mako:629
 msgid "Download as file"
 msgstr ""
 
-#: website/templates/project/project.mako:631
+#: website/templates/project/project.mako:630
 #: website/templates/project/timestamp.mako:206
 msgid "Download"
 msgstr ""
 
-#: website/templates/project/project.mako:644
+#: website/templates/project/project.mako:643
 msgid "Components"
 msgstr ""
 
-#: website/templates/project/project.mako:648
+#: website/templates/project/project.mako:647
 msgid "Add Component"
 msgstr ""
 
-#: website/templates/project/project.mako:650
+#: website/templates/project/project.mako:649
 msgid "Link Projects"
 msgstr ""
 
-#: website/templates/project/project.mako:660
+#: website/templates/project/project.mako:659
 msgid "Add components to organize your project."
 msgstr ""
 

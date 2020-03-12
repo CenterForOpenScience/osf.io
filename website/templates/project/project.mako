@@ -215,9 +215,8 @@
                 % endif
                 % if node['is_fork']:
                     <p>
-                    ${_('Forked from <a %(forkedFormId)s>%(forkedFromDisplayAbsoluteUrl)s</a> on\
-                    <span %(textDateForked)s></span>') % dict(forkedFormId='class="node-forked-from"' + ' href="' + h(/node['forked_from_id']/) + '"',\
-                    forkedFromDisplayAbsoluteUrl=h(node['forked_from_display_absolute_url']),textDateForked='data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"') | n}
+                    Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
+                    <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
                     </p>
                 % endif
                 % if node['is_registration']:
