@@ -3242,7 +3242,7 @@ msgid ""
 "This %(nodeType)s contains supplemental materials for a preprint, but has"
 " been made Private. Make your supplemental materials discoverable by "
 "making this %(nodeType)s Public."
-msgstr "この%(nodeType)sにはプレプリントの補足資料が含まれていますが、非公開になっています。この%(nodetype)sを公開することで、補足資料を見つけやすくします。"
+msgstr "この%(nodeType)sにはプレプリントの補足資料が含まれていますが、非公開になっています。この%(nodeType)sを公開することで、補足資料を見つけやすくします。"
 
 #: website/templates/project/project_header.mako:192
 #, python-format
