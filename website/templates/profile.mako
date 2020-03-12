@@ -86,16 +86,16 @@
 
         <div class="tab-content" id="containDrag">
 
+            <div class="m-t-md tab-pane" id="social">
+                <div data-bind="template: {name: 'profileSocial'}"></div>
+            </div>
+
             <div class="m-t-md tab-pane active" id="jobs">
                 <div data-bind="template: {name: 'profileJobs'}"></div>
             </div>
 
             <div class="m-t-md tab-pane" id="schools">
                 <div data-bind="template: {name: 'profileSchools'}"></div>
-            </div>
-
-            <div class="m-t-md tab-pane" id="social">
-                <div data-bind="template: {name: 'profileSocial'}"></div>
             </div>
 
         </div>
@@ -163,25 +163,25 @@
     % endif
 </div><!-- end row -->
 
+<%include file="include/profile/social.mako" />
 <%include file="include/profile/jobs.mako" />
 <%include file="include/profile/schools.mako" />
-<%include file="include/profile/social.mako" />
 <script type="text/javascript">
   (function() {
+      var socialUrls = {
+          crud: ${ api_url_for('serialize_social', uid=profile['id']) | sjson, n }
+      };
       var jobsUrls = {
           crud: ${ api_url_for('serialize_jobs', uid=profile['id']) | sjson, n }
       };
       var schoolsUrls = {
           crud: ${ api_url_for('serialize_schools', uid=profile['id']) | sjson, n }
       };
-      var socialUrls = {
-          crud: ${ api_url_for('serialize_social', uid=profile['id']) | sjson, n }
-      };
 
       window.contextVars = $.extend(true, {}, window.contextVars, {
+          socialUrls: socialUrls,
           jobsUrls: jobsUrls,
           schoolsUrls: schoolsUrls,
-          socialUrls: socialUrls,
           user: ${ user | sjson, n },
       });
   })();
