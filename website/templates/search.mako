@@ -120,7 +120,7 @@
 
     <script type="text/html" id="file">
         <!-- ko if: guid_url || deep_url -->
-            <h4><a data-bind="attr: {href: guid_url || deep_url}, text: name"></a> ${_('(<span %(is_retracted)s>Withdrawn </span><span %(is_registration)s>Registration </span>File)') % dict(is_retracted='class="text-danger" data-bind="if: is_retracted"',is_registration='data-bind="if: is_registration"') | n}</h4>
+            <h4><a data-bind="attr: {href: guid_url || deep_url}, text: name"></a> (<span class="text-danger" data-bind="if: is_retracted">${_("Withdrawn ")}</span><span data-bind="if: is_registration">${_("Registration  ")}</span>${_("File")})</h4>
         <!-- /ko-->
         <!-- ko ifnot: guid_url || deep_url -->
             <h4> <span data-bind="text:name"></span> ${_("(Preprint File)")}</h4>
@@ -273,7 +273,12 @@
         <!-- ko if: tags.length > 0 -->
         <div data-bind="template: 'tag-cloud'"></div>
         <!-- /ko -->
-        <p>${_('<strong>Jump to:</strong><!-- %(ifStart_n_wikis)s --><a %(wikiUrl)s>Wiki</a> -<!-- %(ifEnd)s --><a %(filesUrl)s>Files</a>') % dict(ifStart_n_wikis='ko if: n_wikis > 0',ifEnd='/ko',wikiUrl='data-bind="attr: {href: wikiUrl}"',filesUrl='data-bind="attr: {href: filesUrl}"') | n }
+        ${_("<p><strong>Jump to:</strong>")}
+            <!-- ko if: n_wikis > 0 -->
+            <a data-bind="attr: {href: wikiUrl}">${_("Wiki")}</a> -
+            <!-- /ko -->
+            <a data-bind="attr: {href: filesUrl}">${_("Files</a>")}
+        </p>
         </p>
     </script>
     <script type="text/html" id="project">
@@ -333,10 +338,10 @@
     </script>
     <script type="text/html" id="registration">
         <!-- ko if: parent_url -->
-        <h4><a data-bind="attr: {href: parent_url}, text: parent_title"></a> / <a data-bind="attr: {href: url}, text: title"></a>  ${_('(<span %(is_retracted)s>Withdrawn </span>Registration)') % dict (is_retracted='class="text-danger" data-bind="if: is_retracted"') | n}</h4>
+        <h4><a data-bind="attr: {href: parent_url}, text: parent_title"></a> / <a data-bind="attr: {href: url}, text: title"></a>  (<span class="text-danger" data-bind="if: is_retracted">${_("Withdrawn ")}</span>${_("Registration")})</h4>
         <!-- /ko -->
         <!-- ko if: !parent_url -->
-        <h4><span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <a data-bind="attr: {href: url}, text: title"></a>  ${_('(<span %(is_retracted)s>Withdrawn </span>Registration)') % dict(is_retracted='class="text-danger" data-bind="if: is_retracted"') | n}</h4>
+        <h4><span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <a data-bind="attr: {href: url}, text: title"></a>  (<span class="text-danger" data-bind="if: is_retracted">${_("Withdrawn ")}</span>${_("Registration")})</h4>
         <!-- /ko -->
         <strong><span data-bind="text: 'Date Registered: ' + dateRegistered['local'], tooltip: {title: dateRegistered['utc']}"></span></strong>
 
@@ -360,7 +365,12 @@
         <!-- ko if: tags.length > 0 -->
         <div data-bind="template: 'tag-cloud'"></div>
         <!-- /ko -->
-        <p>${_('<strong>Jump to:</strong><!-- %(ifStart_n_wikis)s --><a %(wikiUrl)s>Wiki</a> -<!-- %(ifEnd)s --><a %(filesUrl)s>Files</a>') % dict(ifStart_n_wikis='ko if: n_wikis > 0',ifEnd='/ko',wikiUrl='data-bind="attr: {href: wikiUrl}"',filesUrl='data-bind="attr: {href: filesUrl}"') | n }
+        ${_("<p><strong>Jump to:</strong>")}
+            <!-- ko if: n_wikis > 0 -->
+            <a data-bind="attr: {href: wikiUrl}">${_("Wiki")}</a> -
+            <!-- /ko -->
+            <a data-bind="attr: {href: filesUrl}">${_("Files</a>")}
+        </p>
         </p>
     </script>
     <script id="tag-cloud" type="text/html">

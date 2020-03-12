@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-11 16:19+0900\n"
-"PO-Revision-Date: 2020-03-05 15:34+0900\n"
+"POT-Creation-Date: 2020-03-12 10:37+0900\n"
+"PO-Revision-Date: 2020-03-12 09:30+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -260,10 +260,10 @@ msgid ""
 "Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
 " addon credentials                may no longer be valid. Try "
 "deauthorizing and reauthorizing %(addonName)s on your                <a "
-"href=\"%(addons_url)s\">account settings page</a>."
+"href=\"%(addonsUrl)s\">account settings page</a>."
 msgstr ""
-"現在、%(addonName)sの設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。 <a "
-"href=\"%(addons_url)s\">アカウント設定ページ</a>で%(addonName)sの認証解除と再認証を試みてください。"
+"現在、%(addonName)s設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。 <a "
+"href=\"%(addonsUrl)s\">アカウント設定ページ</a>で%(addonName)sの認証解除と再認証を試してください。"
 
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:78
 #: addons/github/templates/github_node_settings.mako:75
@@ -271,10 +271,10 @@ msgstr ""
 msgid ""
 "Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
 " addon credentials                may no longer be valid. Contact "
-"%(auth_osf_name)s to verify."
+"%(authOsfName)s to verify."
 msgstr ""
-"現在、%(addonName)sの設定を取得できませんでした。 %(addonName)sアドオンの資格情報が無効になる場合があります。 "
-"確認するには%(auth_osf_name)sにお問い合わせください。"
+"現在、%(addonName)s 設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。 "
+"%(authOsfName)sに連絡して確認してください。"
 
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:6
 msgid "Connect a Dataverse Account"
@@ -298,8 +298,8 @@ msgstr "APIトークン"
 
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:50
 #, python-format
-msgid "(Get from Dataverse %(dataverse_link)s)"
-msgstr "(Dataverse %(dataverse_link)sから取得)"
+msgid "(Get from Dataverse %(dataverseLink)s)"
+msgstr "(Dataverse %(dataverseLink)sから取得)"
 
 #: addons/dataverse/templates/dataverse_node_settings.mako:43
 msgid "Dataverse Repository:"
@@ -386,8 +386,8 @@ msgstr "パーソナルアクセストークン"
 
 #: addons/gitlab/templates/gitlab_credentials_modal.mako:41
 #, python-format
-msgid "(Get from GitLab <i %(classTag)s></i>)"
-msgstr "(GitLab <i %(classTag)s></i>から取得)"
+msgid "(Get from GitLab %(externalLinkIcon)s)"
+msgstr "(GitLab %(externalLinkIcon)sから取得)"
 
 #: addons/gitlab/templates/gitlab_node_settings.mako:9
 msgid "GitLab"
@@ -403,20 +403,18 @@ msgid ""
 "Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
 " addon credentials                    may no longer be valid. Try "
 "deauthorizing and reauthorizing %(addonName)s on your                    "
-"<a href=\"%(addons_url)s\">account settings page</a>."
+"<a href=\"%(addonsUrl)s\">account settings page</a>."
 msgstr ""
-"現在、%(addonName)sの設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。 <a "
-"href=\"%(addons_url)s\">アカウント設定ページ</a>で%(addonName)sの認証解除と再認証をお試しください"
+"現在、%(addonName)s設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。 <a "
+"href=\"%(addonsUrl)s\">アカウント設定ページ</a>で%(addonName)sの認証解除と再認証を試してください。"
 
 #: addons/gitlab/templates/gitlab_node_settings.mako:84
 #, python-format
 msgid ""
 "Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
 " addon credentials                    may no longer be valid. Contact "
-"%(auth_osf_name)s to verify."
-msgstr ""
-"現在、%(addonName)s設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。 "
-"確認するには%(auth_osf_name)sにお問い合わせください。"
+"%(authOsfName)s to verify."
+msgstr "現在、%(addonName)s設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。%(authOsfName)sに連絡して確認してください。"
 
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:13
 #: addons/wiki/templates/edit.mako:34
@@ -802,6 +800,7 @@ msgstr "削除"
 #: website/templates/include/comment_pane_template.mako:19
 #: website/templates/project/settings.mako:36
 #: website/templates/project/settings.mako:257
+#: website/templates/search.mako:278 website/templates/search.mako:370
 msgid "Wiki"
 msgstr "Wiki"
 
@@ -1552,14 +1551,18 @@ msgstr "前のページ"
 msgid "Next Page"
 msgstr "次のページ"
 
+#: website/templates/search.mako:123 website/templates/search.mako:341
+#: website/templates/search.mako:344
+msgid "Withdrawn "
+msgstr "取り下げられた"
+
 #: website/templates/search.mako:123
-#, python-format
-msgid ""
-"(<span %(is_retracted)s>Withdrawn </span><span "
-"%(is_registration)s>Registration </span>File)"
-msgstr ""
-"(<span %(is_retracted)s>取り下げられた</span><span "
-"%(is_registration)s>登録</span>ファイル名)"
+msgid "Registration  "
+msgstr "登録"
+
+#: website/templates/search.mako:123
+msgid "File"
+msgstr "ファイル"
 
 #: website/templates/search.mako:126
 msgid "(Preprint File)"
@@ -1587,44 +1590,43 @@ msgstr "コントリビュータ:"
 msgid "Affiliated institutions:"
 msgstr "所属機関："
 
-#: website/templates/search.mako:276 website/templates/search.mako:363
-#, python-format
-msgid ""
-"<strong>Jump to:</strong><!-- %(ifStart_n_wikis)s --><a "
-"%(wikiUrl)s>Wiki</a> -<!-- %(ifEnd)s --><a %(filesUrl)s>Files</a>"
-msgstr ""
-"<!-- %(ifStart_n_wikis)s --><a %(wikiUrl)s>Wiki</a> -<!-- %(ifEnd)s --><a"
-" %(filesUrl)s>ファイル</a><strong>へ移動</strong>"
+#: website/templates/search.mako:276 website/templates/search.mako:368
+msgid "<p><strong>Jump to:</strong>"
+msgstr "<p>"
 
-#: website/templates/search.mako:286
+# コードの都合上、[Jump to:]の翻訳を組み込む
+#: website/templates/search.mako:280 website/templates/search.mako:372
+msgid "Files</a>"
+msgstr "ファイル</a>へ移動"
+
+#: website/templates/search.mako:291
 msgid "(Preprint)"
 msgstr "(プレプリント)"
 
 #: website/templates/project/project.mako:265
 #: website/templates/project/settings.mako:107
-#: website/templates/search.mako:287 website/templates/search.mako:343
+#: website/templates/search.mako:292 website/templates/search.mako:348
 msgid "Description:"
 msgstr "説明:"
 
-#: website/templates/project/project.mako:165 website/templates/search.mako:290
-#: website/templates/search.mako:347
+#: website/templates/project/project.mako:165 website/templates/search.mako:295
+#: website/templates/search.mako:352
 msgid "Contributors:"
 msgstr "コントリビュータ:"
 
-#: website/templates/search.mako:309
+#: website/templates/search.mako:314
 msgid "Managers:"
 msgstr "マネージャ:"
 
-#: website/templates/search.mako:322
+#: website/templates/search.mako:327
 msgid "Members:"
 msgstr "メンバー:"
 
-#: website/templates/search.mako:336 website/templates/search.mako:339
-#, python-format
-msgid "(<span %(is_retracted)s>Withdrawn </span>Registration)"
-msgstr "(<span %(is_retracted)s>取り下げられた</span>登録)"
+#: website/templates/search.mako:341 website/templates/search.mako:344
+msgid "Registration"
+msgstr "登録"
 
-#: website/templates/search.mako:367
+#: website/templates/search.mako:377
 msgid "Tags:"
 msgstr "タグ"
 
@@ -1643,13 +1645,10 @@ msgstr "クエリ"
 #: website/templates/search_bar_help_modal.mako:10
 #, python-format
 msgid ""
-"<p>Search uses the <a %(xwiki)s>Lucene search syntax</a>.This gives you "
-"many options, but can be very simple as well. Examples of valid searches "
-"include:</p>"
-msgstr ""
-"<p>検索では<a "
-"%(xwiki)s>Lucene検索構文</a>を使用します。これにより多くのオプションが提供されますが、非常にシンプルにすることもできます。 "
-"有効な検索の例は次のとおりです。</p>"
+"<p>Search uses the <a %(searchQuerySyntaxUrl)s>Lucene search "
+"syntax</a>.This gives you many options, but can be very simple as well. "
+"Examples of valid searches include:</p>"
+msgstr "<p>検索では<a %(searchQuerySyntaxUrl)s>Lucene検索構文</a>を使用します。これにより多くのオプションが提供されますが、非常にシンプルにすることもできます。有効な検索の例は次のとおりです。</p>"
 
 #: website/templates/include/comment_pane_template.mako:3
 #: website/templates/project/project_header.mako:86

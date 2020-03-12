@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-11 16:19+0900\n"
-"PO-Revision-Date: 2020-03-11 16:19+0900\n"
+"POT-Creation-Date: 2020-03-12 10:37+0900\n"
+"PO-Revision-Date: 2020-03-12 10:37+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -259,7 +259,7 @@ msgid ""
 "Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
 " addon credentials                may no longer be valid. Try "
 "deauthorizing and reauthorizing %(addonName)s on your                <a "
-"href=\"%(addons_url)s\">account settings page</a>."
+"href=\"%(addonsUrl)s\">account settings page</a>."
 msgstr ""
 
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:78
@@ -268,7 +268,7 @@ msgstr ""
 msgid ""
 "Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
 " addon credentials                may no longer be valid. Contact "
-"%(auth_osf_name)s to verify."
+"%(authOsfName)s to verify."
 msgstr ""
 
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:6
@@ -293,7 +293,7 @@ msgstr ""
 
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:50
 #, python-format
-msgid "(Get from Dataverse %(dataverse_link)s)"
+msgid "(Get from Dataverse %(dataverseLink)s)"
 msgstr ""
 
 #: addons/dataverse/templates/dataverse_node_settings.mako:43
@@ -381,7 +381,7 @@ msgstr ""
 
 #: addons/gitlab/templates/gitlab_credentials_modal.mako:41
 #, python-format
-msgid "(Get from GitLab <i %(classTag)s></i>)"
+msgid "(Get from GitLab %(externalLinkIcon)s)"
 msgstr ""
 
 #: addons/gitlab/templates/gitlab_node_settings.mako:9
@@ -398,7 +398,7 @@ msgid ""
 "Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
 " addon credentials                    may no longer be valid. Try "
 "deauthorizing and reauthorizing %(addonName)s on your                    "
-"<a href=\"%(addons_url)s\">account settings page</a>."
+"<a href=\"%(addonsUrl)s\">account settings page</a>."
 msgstr ""
 
 #: addons/gitlab/templates/gitlab_node_settings.mako:84
@@ -406,7 +406,7 @@ msgstr ""
 msgid ""
 "Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
 " addon credentials                    may no longer be valid. Contact "
-"%(auth_osf_name)s to verify."
+"%(authOsfName)s to verify."
 msgstr ""
 
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:13
@@ -781,6 +781,7 @@ msgstr ""
 #: website/templates/include/comment_pane_template.mako:19
 #: website/templates/project/settings.mako:36
 #: website/templates/project/settings.mako:257
+#: website/templates/search.mako:278 website/templates/search.mako:370
 msgid "Wiki"
 msgstr ""
 
@@ -1504,11 +1505,17 @@ msgstr ""
 msgid "Next Page"
 msgstr ""
 
+#: website/templates/search.mako:123 website/templates/search.mako:341
+#: website/templates/search.mako:344
+msgid "Withdrawn "
+msgstr ""
+
 #: website/templates/search.mako:123
-#, python-format
-msgid ""
-"(<span %(is_retracted)s>Withdrawn </span><span "
-"%(is_registration)s>Registration </span>File)"
+msgid "Registration  "
+msgstr ""
+
+#: website/templates/search.mako:123
+msgid "File"
 msgstr ""
 
 #: website/templates/search.mako:126
@@ -1535,42 +1542,42 @@ msgstr ""
 msgid "Affiliated institutions:"
 msgstr ""
 
-#: website/templates/search.mako:276 website/templates/search.mako:363
-#, python-format
-msgid ""
-"<strong>Jump to:</strong><!-- %(ifStart_n_wikis)s --><a "
-"%(wikiUrl)s>Wiki</a> -<!-- %(ifEnd)s --><a %(filesUrl)s>Files</a>"
+#: website/templates/search.mako:276 website/templates/search.mako:368
+msgid "<p><strong>Jump to:</strong>"
 msgstr ""
 
-#: website/templates/search.mako:286
+#: website/templates/search.mako:280 website/templates/search.mako:372
+msgid "Files</a>"
+msgstr ""
+
+#: website/templates/search.mako:291
 msgid "(Preprint)"
 msgstr ""
 
 #: website/templates/project/project.mako:265
 #: website/templates/project/settings.mako:107
-#: website/templates/search.mako:287 website/templates/search.mako:343
+#: website/templates/search.mako:292 website/templates/search.mako:348
 msgid "Description:"
 msgstr ""
 
-#: website/templates/project/project.mako:165 website/templates/search.mako:290
-#: website/templates/search.mako:347
+#: website/templates/project/project.mako:165 website/templates/search.mako:295
+#: website/templates/search.mako:352
 msgid "Contributors:"
 msgstr ""
 
-#: website/templates/search.mako:309
+#: website/templates/search.mako:314
 msgid "Managers:"
 msgstr ""
 
-#: website/templates/search.mako:322
+#: website/templates/search.mako:327
 msgid "Members:"
 msgstr ""
 
-#: website/templates/search.mako:336 website/templates/search.mako:339
-#, python-format
-msgid "(<span %(is_retracted)s>Withdrawn </span>Registration)"
+#: website/templates/search.mako:341 website/templates/search.mako:344
+msgid "Registration"
 msgstr ""
 
-#: website/templates/search.mako:367
+#: website/templates/search.mako:377
 msgid "Tags:"
 msgstr ""
 
@@ -1589,9 +1596,9 @@ msgstr ""
 #: website/templates/search_bar_help_modal.mako:10
 #, python-format
 msgid ""
-"<p>Search uses the <a %(xwiki)s>Lucene search syntax</a>.This gives you "
-"many options, but can be very simple as well. Examples of valid searches "
-"include:</p>"
+"<p>Search uses the <a %(searchQuerySyntaxUrl)s>Lucene search "
+"syntax</a>.This gives you many options, but can be very simple as well. "
+"Examples of valid searches include:</p>"
 msgstr ""
 
 #: website/templates/include/comment_pane_template.mako:3
