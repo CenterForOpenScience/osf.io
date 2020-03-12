@@ -133,6 +133,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                                 ('prereg_both', 'Pre-registration of study designs and study analysis')
                                 ]
 
+    HAS_LINKS_CHOICES = [('available', 'Available'),
+                         ('no', 'No'),
+                         ('not_applicable', 'Not applicable')
+                         ]
+
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
                                  related_name='preprints',
@@ -199,7 +204,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         blank=True,
         null=True
     )
-    has_prereg_links = models.NullBooleanField(
+    has_prereg_links = models.TextField(
+        choices=HAS_LINKS_CHOICES,
         null=True,
         blank=True
     )
@@ -220,7 +226,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         null=True,
         blank=True
     )
-    has_data_links = models.NullBooleanField(
+    has_data_links = models.TextField(
+        choices=HAS_LINKS_CHOICES,
         null=True,
         blank=True
     )
@@ -1046,7 +1053,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.data_links == data_links:
             return
 
-        if not self.has_data_links:
+        if not self.has_data_links == 'available':
             raise PreprintStateError('You cannot edit this statement while your data links availability is set to false'
                                      ' or is unanswered.')
 
@@ -1079,11 +1086,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.why_no_data == why_no_data:
             return
 
-        if self.has_data_links is False:
-            self.why_no_data = why_no_data
-        else:
+        if not self.has_data_links == 'available':
             raise PreprintStateError('You cannot edit this statement while your data links availability is set to true or'
                                   ' is unanswered.')
+        else:
+            self.why_no_data = why_no_data
 
         if log:
             self.add_log(
@@ -1142,7 +1149,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if why_no_prereg == self.why_no_prereg:
             return
 
-        if self.has_prereg_links or self.has_prereg_links is None:
+        if self.has_prereg_links == 'available' or self.has_prereg_links is None:
             raise PreprintStateError('You cannot edit this statement while your prereg links '
                                   'availability is set to true or is unanswered.')
 
@@ -1175,7 +1182,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if prereg_links == self.prereg_links:
             return
 
-        if not self.has_prereg_links:
+        if not self.has_prereg_links == 'available':
             raise PreprintStateError('You cannot edit this field while your prereg links'
                                   ' availability is set to false or is unanswered.')
 
@@ -1209,7 +1216,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.prereg_link_info == prereg_link_info:
             return
 
-        if not self.has_prereg_links:
+        if not self.has_prereg_links == 'available':
             raise PreprintStateError('You cannot edit this field while your prereg links'
                                   ' availability is set to false or is unanswered.')
 
