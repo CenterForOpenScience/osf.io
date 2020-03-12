@@ -2941,7 +2941,7 @@ msgid ""
 "Forked from <a %(forkedFormId)s>%(forkedFromDisplayAbsoluteUrl)s</a> on"
 "                    <span %(textDateForked)s></span>"
 msgstr ""
-"%(forkedFormId)s>%(forkedFromDisplayAbsoluteUrl)s</a>からフォーク(<span "
+"<a %(forkedFormId)s>%(forkedFromDisplayAbsoluteUrl)s</a>からフォーク(<span "
 "%(textDateForked)s></span>)"
 
 #: website/templates/project/project.mako:225
