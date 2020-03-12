@@ -70,10 +70,10 @@
             % if is_owner:
                 ${_('Could not retrieve %(addonName)s settings at this time. The %(addonName)s addon credentials\
                 may no longer be valid. Try deauthorizing and reauthorizing %(addonName)s on your\
-                <a href="%(addons_url)s">account settings page</a>.') % dict(addons_url=h(addons_url),addonName='GitHub') | n}
+                <a href="%(addonsUrl)s">account settings page</a>.') % dict(addonsUrl=h(addons_url),addonName='GitHub') | n}
             % else:
                 ${_("Could not retrieve %(addonName)s settings at this time. The %(addonName)s addon credentials\
-                may no longer be valid. Contact %(auth_osf_name)s to verify.") % dict(auth_osf_name=auth_osf_name,addonName='GitHub')}
+                may no longer be valid. Contact %(authOsfName)s to verify.") % dict(authOsfName=auth_osf_name,addonName='GitHub')}
             % endif
         </div>
     % else:
