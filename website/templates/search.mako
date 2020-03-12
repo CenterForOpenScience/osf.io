@@ -127,8 +127,8 @@
         <!-- /ko-->
 
         <h5>
-            <!-- ko if: parent_url --> ${_('From: <a %(parent_url_title)s></a> <a %(node_url_and_title)s></a>') %dict(parent_url_title='data-bind="attr: {href: parent_url}, text: parent_title || \'\' + \' /\'"',node_url_and_title='data-bind="attr: {href: node_url}, text: node_title"') | n}<!-- /ko -->
-            <!-- ko if: !parent_url --> ${_('From: <span %(parent_title)s><span %(text_parent_title)s></span> /</span> <a %(node_url_and_title)s></a>') % dict(parent_title='data-bind="if: parent_title"',text_parent_title='data-bind="text: parent_title"',node_url_and_title='data-bind="attr: {href: node_url}, text: node_title"') | n}<!-- /ko -->
+            <!-- ko if: parent_url --> ${_('From: <a %(parentUrlTitle)s></a> <a %(nodeUrlAndTitle)s></a>') %dict(parentUrlTitle='data-bind="attr: {href: parent_url}, text: parent_title || \'\' + \' /\'"',nodeUrlAndTitle='data-bind="attr: {href: node_url}, text: node_title"') | n}<!-- /ko -->
+            <!-- ko if: !parent_url --> ${_('From: <span %(parentTitle)s><span %(textParentTitle)s></span> /</span> <a %(nodeUrlAndTitle)s></a>') % dict(parentTitle='data-bind="if: parent_title"',textParentTitle='data-bind="text: parent_title"',nodeUrlAndTitle='data-bind="attr: {href: node_url}, text: node_title"') | n}<!-- /ko -->
         </h5>
         <!-- ko if: tags.length > 0 --> <div data-bind="template: 'tag-cloud'"></div> <!-- /ko -->
     </script>
