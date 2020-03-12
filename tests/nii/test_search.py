@@ -54,10 +54,10 @@ def build_query(query_string):
     }
 
 
-def build_private_search_query(query_string):
+def build_private_search_query(query_string, version=1):
     return {
         'api_version': {
-            'version': 1,
+            'version': version,
             'vendor': 'grdm'
         },
         'elasticsearch_dsl': build_query(query_string)
@@ -231,14 +231,14 @@ def tear_down(cls, self):
     import website.search.search as search
     search.delete_all()
 
-def query_private_search(self, qs, user, category=None):
+def query_private_search(self, qs, user, category=None, version=1):
     url = api_url_for('search_search')
     if category:
         url = url + category + '/'
     DEBUG('query_private_search: url=', url)
     res = self.app.post_json(
         url,
-        build_private_search_query(qs),
+        build_private_search_query(qs, version=version),
         auth=user.auth,
         expect_errors=True
     )
@@ -317,11 +317,10 @@ class TestPrivateSearch(OsfTestCase):
         DEBUG('filenames', filenames)
         DEBUG('category count', category_count_map)
 
-        assert_equal(len(results), 11)
+        assert_equal(len(results), 9)
         assert_equal(category_count_map['user'], 2)
         assert_equal(category_count_map['project'], 4)
         assert_equal(category_count_map['file'], 3)
-        assert_equal(category_count_map['wiki'], 2)
         assert_equal(len(user_fullnames), 2)
         assert_equal(len(node_titles), 4)  # private=2, public=2
         assert_equal(len(contributors), 1)
@@ -782,7 +781,7 @@ class TestPrivateSearch(OsfTestCase):
             assert_equal(res.status_code, 400)
 
         qs = 'てすと'
-        bad_request(build_invalid_query1(qs, 2, 'grdm'))
+        bad_request(build_invalid_query1(qs, 1000, 'grdm'))
         bad_request(build_invalid_query1(qs, 1, '__invalid_vendor__'))
         bad_request(build_invalid_query2(qs))
 
@@ -837,6 +836,65 @@ class TestPrivateSearch(OsfTestCase):
                not method_name in EXCLUDES:
                 # migrate() may not update elasticsearch-data immediately.
                 self.retry_call_test(method_name)
+
+
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
+class TestSearchExt(OsfTestCase):
+
+    @enable_private_search
+    def setUp(self):
+        setup(TestSearchExt, self)
+
+    @enable_private_search
+    def tearDown(self):
+        tear_down(TestSearchExt, self)
+
+    @enable_private_search
+    def test_private_search_user1_ext(self):
+        """
+        test_private_search_user1をversion=2で検索し、
+        wikiとcommentを検索できることを確認する。
+        """
+        qs = '日本語'
+        res, results = query_private_search(self, qs, self.user1, version=2)
+        user_fullnames = get_user_fullnames(results)
+        node_titles = get_node_titles(results)
+        contributors = get_contributors(results, self.project_private_user1_1.title)
+        tags = get_tags(results, self.project_private_user1_1.title)
+        filenames = get_filenames(results)
+        category_count_map = get_category_count_map(results)
+
+        DEBUG('results', results)
+        DEBUG('user_fullnames', user_fullnames)
+        DEBUG('node_titles', node_titles)
+        DEBUG('contributors', contributors)
+        DEBUG('tags', tags)
+        DEBUG('filenames', filenames)
+        DEBUG('category count', category_count_map)
+
+        assert_equal(len(results), 11)
+        assert_equal(category_count_map['user'], 2)
+        assert_equal(category_count_map['project'], 4)
+        assert_equal(category_count_map['file'], 3)
+        assert_equal(category_count_map['wiki'], 2)
+        assert_equal(len(user_fullnames), 2)
+        assert_equal(len(node_titles), 4)  # private=2, public=2
+        assert_equal(len(contributors), 1)
+        assert_equal(len(tags), 3)
+        assert_equal(len(filenames), 3)
+        assert_not_in(
+            s2u(self.project_private_user2_1.title),
+            s2u(node_titles)
+        )
+        assert_not_in(
+            s2u(self.project_private_user2_2.title),
+            s2u(node_titles)
+        )
+        assert_not_in(
+            s2u(self.user2.fullname),
+            s2u(contributors)
+        )
 
 
 @pytest.mark.enable_search

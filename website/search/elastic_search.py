@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 
 # These are the doc_types that exist in the search database
-ALIASES = {
+ALIASES_BASE = {
     'project': 'Projects',
     'component': 'Components',
     'registration': 'Registrations',
@@ -53,14 +53,12 @@ ALIASES = {
     'group': 'Groups',
 }
 
-ALIASES_GRDM = {
+ALIASES_EXT = {
     'wiki': 'Wiki',
     'comment': 'Comment',
 }
 
-# TODO These need to be supported in search.js and search.mako
-# if settings.ENABLE_PRIVATE_SEARCH:
-#    ALIASES.update(ALIASES_GRDM)
+ALIASES = {}
 
 DOC_TYPE_TO_MODEL = {
     'component': AbstractNode,
@@ -218,7 +216,7 @@ def get_tags(query, index):
 
 
 @requires_search
-def search(query, index=None, doc_type='_all', raw=False, normalize=True, private=False):
+def search(query, index=None, doc_type='_all', raw=False, normalize=True, private=False, ext=False):
     """Search for a query
 
     :param query: The substring of the username/project name/tag to search for
@@ -227,6 +225,8 @@ def search(query, index=None, doc_type='_all', raw=False, normalize=True, privat
     :param normalize: normalize unicode string
     :param private: allow searching private data
                     (ENABLE_PRIVATE_SEARCH is also required)
+    :param ext: include extended doc_types.
+                (ENABLE_PRIVATE_SEARCH is also required)
 
     :return: List of dictionaries, each containing the results, counts, tags and typeAliases
         results: All results returned by the query, that are within the index and search type
@@ -234,6 +234,12 @@ def search(query, index=None, doc_type='_all', raw=False, normalize=True, privat
         tags: A list of tags that are returned by the search query
         typeAliases: the doc_types that exist in the search database
     """
+    global ALIASES
+
+    ALIASES = copy.deepcopy(ALIASES_BASE)
+    if settings.ENABLE_PRIVATE_SEARCH and ext:
+        ALIASES.update(ALIASES_EXT)
+
     index = es_index_protected(index, private)
 
     # Quote query string for mutilingual search.
@@ -294,21 +300,12 @@ def search(query, index=None, doc_type='_all', raw=False, normalize=True, privat
     else:
         results = [hit['_source'] for hit in raw_results['hits']['hits']]
         results = format_results(results)
-        if settings.ENABLE_PRIVATE_SEARCH:
-            filter_results = []
-            for r in results:
-                category = r.get('category')
-                # TODO need to supported in search.js and search.mako
-                if category and ALIASES_GRDM.get(category) is None:
-                    filter_results.append(r)
-            results = filter_results
-        else:
-            filter_results = []
-            for r in results:
-                category = r.get('category')
-                if category and ALIASES_GRDM.get(category) is None:
-                    filter_results.append(r)
-            results = filter_results
+        supported_results = []
+        for r in results:
+            category = r.get('category')
+            if ALIASES.get(category):  # supported category
+                supported_results.append(r)
+        results = supported_results
 
     return_value = {
         'results': results,

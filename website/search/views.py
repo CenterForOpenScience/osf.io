@@ -55,8 +55,14 @@ def handle_search_errors(func):
     return wrapped
 
 
-SEARCH_API_VERSION = 1
 SEARCH_API_VENDOR = 'grdm'
+SEARCH_API_VERSION_1 = 1
+SEARCH_API_VERSION_2 = 2  # supports 'wiki' and 'comment'
+
+SUPPORTED_VERSIONS = {SEARCH_API_VERSION_1, SEARCH_API_VERSION_2}
+
+def IS_SUPPORTED(version, vendor):
+    return version in SUPPORTED_VERSIONS and vendor == SEARCH_API_VENDOR
 
 def toint(obj):
     try:
@@ -69,11 +75,14 @@ def toint(obj):
 def search_search(**kwargs):
     _type = kwargs.get('type', None)
     auth = kwargs.get('auth', None)
+    raw = kwargs.get('raw', False)
 
     tick = time.time()
 
     if settings.ENABLE_PRIVATE_SEARCH:
-        results = _private_search(_type, auth)
+        results = _private_search(_type, auth, raw=raw)
+    elif raw:
+        raise HTTPError(http.BAD_REQUEST)
     else:
         results = _default_search(_type)
 
@@ -84,25 +93,18 @@ def search_search(**kwargs):
 @handle_search_errors
 @collect_auth
 def search_search_raw(**kwargs):
-    if not settings.ENABLE_PRIVATE_SEARCH:
-        raise HTTPError(http.BAD_REQUEST)
-
-    auth = kwargs.get('auth', None)
-    _type = kwargs.get('type', None)
-
-    tick = time.time()
-    results = _private_search(_type, auth, raw=True)
-    results['time'] = round(time.time() - tick, 2)
-    return results
+    kwargs.update({'raw': True})
+    return search_search(**kwargs)
 
 
 def _private_search(doc_type, auth, raw=False):
     results = {}
 
-    if not auth.logged_in:
+    if not auth or not auth.logged_in:
         raise HTTPError(http.UNAUTHORIZED)
     user = auth.user
 
+    qs = None
     if request.method == 'POST':
         # Since the scope of the renovation of a new API is widened,
         # for the time being, only the query string is extracted from
@@ -110,31 +112,42 @@ def _private_search(doc_type, auth, raw=False):
         # reassembled on the server side.
         json = request.get_json()
         api_ver = json.get('api_version', None)
-        if api_ver is None or \
-           toint(api_ver.get('version', None)) != SEARCH_API_VERSION or \
-           api_ver.get('vendor', None) != SEARCH_API_VENDOR:
+        if api_ver:
+            version = toint(api_ver.get('version', None))
+            vendor = api_ver.get('vendor', None)
+        else:
+            version = None
+            vendor = None
+
+        if not IS_SUPPORTED(version, vendor):
             raise HTTPError(http.BAD_REQUEST, data={
                 'message_short': 'api_version field is invalid',
                 'message_long': 'api_version field is invalid'
             })
         es_dsl = json['elasticsearch_dsl']
         qs = es_dsl['query']['filtered']['query']['query_string']['query']
-        es_dsl = build_private_search_query(user, qs, es_dsl['from'], es_dsl['size'])
-        results = search.search(es_dsl, doc_type=doc_type, private=True, raw=raw)
+        start = es_dsl['from']
+        size = es_dsl['size']
     elif request.method == 'GET':
-        version = request.args.get('version', None)
-        if version is None or toint(version) != SEARCH_API_VERSION or \
-           request.args.get('vendor', None) != SEARCH_API_VENDOR:
+        version = toint(request.args.get('version', None))
+        vendor = request.args.get('vendor', None)
+        if not IS_SUPPORTED(version, vendor):
             raise HTTPError(http.BAD_REQUEST, data={
                 'message_short': 'version or vendor parameter is invalid',
                 'message_long': 'version or vendor parameter is invalid'
             })
-        q = request.args.get('q', '*')
+        qs = request.args.get('q', '*')
         # TODO Match javascript params?
         start = request.args.get('from', '0')
         size = request.args.get('size', '10')
-        es_dsl = build_private_search_query(user, q, start, size)
-        results = search.search(es_dsl, doc_type=doc_type, private=True, raw=raw)
+
+    if qs:
+        ext = False
+        if version == SEARCH_API_VERSION_2:
+            ext = True  # include extended doc_types
+        es_dsl = build_private_search_query(user, qs, start, size)
+        results = search.search(es_dsl, doc_type=doc_type,
+                                private=True, ext=ext, raw=raw)
     return results
 
 def _default_search(doc_type):

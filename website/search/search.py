@@ -20,9 +20,9 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, index=None, doc_type=None, raw=None, private=False):
+def search(query, index=None, doc_type=None, raw=None, private=False, ext=False):
     return search_engine.search(query, index=index, doc_type=doc_type, raw=raw,
-                                private=private)
+                                private=private, ext=ext)
 
 @requires_search
 def update_node(node, index=None, bulk=False, async_update=True, saved_fields=None, wiki_page=None):
