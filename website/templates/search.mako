@@ -273,11 +273,11 @@
         <!-- ko if: tags.length > 0 -->
         <div data-bind="template: 'tag-cloud'"></div>
         <!-- /ko -->
-        ${_("<p><strong>Jump to:</strong>")}
+        ${_("<p><strong>Jump to:</strong>") | n}
             <!-- ko if: n_wikis > 0 -->
             <a data-bind="attr: {href: wikiUrl}">${_("Wiki")}</a> -
             <!-- /ko -->
-            <a data-bind="attr: {href: filesUrl}">${_("Files</a>")}
+            <a data-bind="attr: {href: filesUrl}">${_("Files</a>") | n}
         </p>
         </p>
     </script>
@@ -365,11 +365,11 @@
         <!-- ko if: tags.length > 0 -->
         <div data-bind="template: 'tag-cloud'"></div>
         <!-- /ko -->
-        ${_("<p><strong>Jump to:</strong>")}
+        ${_("<p><strong>Jump to:</strong>") | n}
             <!-- ko if: n_wikis > 0 -->
             <a data-bind="attr: {href: wikiUrl}">${_("Wiki")}</a> -
             <!-- /ko -->
-            <a data-bind="attr: {href: filesUrl}">${_("Files</a>")}
+            <a data-bind="attr: {href: filesUrl}">${_("Files</a>") | n}
         </p>
         </p>
     </script>
