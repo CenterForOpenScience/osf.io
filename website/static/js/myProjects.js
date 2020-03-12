@@ -15,7 +15,9 @@ var AddProject = require('js/addProjectPlugin');
 var mC = require('js/mithrilComponents');
 var lodashGet = require('lodash.get');
 var lodashFind = require('lodash.find');
-var _ = require('js/rdmGettext')._;
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
 var agh = require('agh.sprintf');
 
 var MOBILE_WIDTH = 767; // Mobile view break point for responsiveness

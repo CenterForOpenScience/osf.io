@@ -57,14 +57,8 @@ var OsfLanguage = function() {
     };
 };
 
-var _ = function(msgid) { 
-        var gt = rdmGettext(); 
-        return gt.gettext(msgid); 
-};
-
 module.exports = {
     rdmGettext: rdmGettext,
     getBrowserLang: getBrowserLang,
-    OsfLanguage: OsfLanguage,
-    _: _
+    OsfLanguage: OsfLanguage
 };
