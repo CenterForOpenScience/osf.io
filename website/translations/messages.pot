@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-12 14:26+0900\n"
-"PO-Revision-Date: 2020-03-12 14:26+0900\n"
+"POT-Creation-Date: 2020-03-12 16:22+0900\n"
+"PO-Revision-Date: 2020-03-12 16:22+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -2562,7 +2562,7 @@ msgstr ""
 #: website/templates/project/modal_add_contributor.mako:181
 #, python-format
 msgid ""
-"<a %(gotoInvite)s>Add <strong><em %(text_query)s></em></strong> as an "
+"<a %(gotoInvite)s>Add <strong><em %(textQuery)s></em></strong> as an "
 "unregistered contributor</a>."
 msgstr ""
 
@@ -2585,7 +2585,7 @@ msgstr ""
 #: website/templates/project/modal_add_contributor.mako:196
 #, python-format
 msgid ""
-"<a %(gotoInvite)s>add <strong><em %(text_query)s></em></strong> as an "
+"<a %(gotoInvite)s>add <strong><em %(textQuery)s></em></strong> as an "
 "unregistered contributor</a>."
 msgstr ""
 
@@ -2739,49 +2739,49 @@ msgstr ""
 #: website/templates/project/modal_remove_contributor.mako:15
 #, python-format
 msgid ""
-"<span>Do you want to remove <b %(removed_contributor)s></b> from"
-"                                <b %(text_title)s></b>, or from <b "
-"%(text_title)s></b> and every component in it?</span>"
+"<span>Do you want to remove <b %(removedContributor)s></b> from"
+"                                <b %(textTitle)s></b>, or from <b "
+"%(textTitle)s></b> and every component in it?</span>"
 msgstr ""
 
 #: website/templates/project/modal_remove_contributor.mako:21
 #, python-format
 msgid ""
-"Remove <b %(removed_contributor)s></b> from"
-"                                    <span %(text_title)s></span>."
+"Remove <b %(removedContributor)s></b> from"
+"                                    <span %(textTitle)s></span>."
 msgstr ""
 
 #: website/templates/project/modal_remove_contributor.mako:28
 #, python-format
 msgid ""
-"Remove <b %(removed_contributor)s></b> from"
-"                                    <span %(text_title)s></span> and "
-"every component in it."
+"Remove <b %(removedContributor)s></b> from"
+"                                    <span %(textTitle)s></span> and every"
+" component in it."
 msgstr ""
 
 #: website/templates/project/modal_remove_contributor.mako:37
 #, python-format
-msgid "Remove <b %(removed_contributor)s></b> from <span %(text_title)s></span>?"
+msgid "Remove <b %(removedContributor)s></b> from <span %(textTitle)s></span>?"
 msgstr ""
 
 #: website/templates/project/modal_remove_contributor.mako:48
 #, python-format
 msgid ""
-"<b %(removed_contributor)s>                                        </b> "
+"<b %(removedContributor)s>                                        </b> "
 "will be removed from the following projects and/or components."
 msgstr ""
 
 #: website/templates/project/modal_remove_contributor.mako:65
 #, python-format
 msgid ""
-"<b %(removed_contributor)s>                                        </b> "
+"<b %(removedContributor)s>                                        </b> "
 "cannot be removed from the following projects and/or components."
 msgstr ""
 
 #: website/templates/project/modal_remove_contributor.mako:81
 #, python-format
 msgid ""
-"<b %(removed_contributor)s></b> cannot be                        removed "
+"<b %(removedContributor)s></b> cannot be                        removed "
 "as a contributor.  You need at least one administrator, bibliographic "
 "contributor, and registered user."
 msgstr ""
@@ -2829,7 +2829,7 @@ msgstr ""
 
 #: website/templates/project/project.mako:100
 #, python-format
-msgid "View Forks (%(fork_count)s)"
+msgid "View Forks (%(forkCount)s)"
 msgstr ""
 
 #: website/templates/project/project.mako:115
@@ -2864,9 +2864,8 @@ msgstr ""
 #: website/templates/project/project.mako:218
 #, python-format
 msgid ""
-"Forked from <a "
-"%(forked_form_id)s>%(forked_from_display_absolute_url)s</a> on"
-"                    <span %(text_dateForked)s></span>"
+"Forked from <a %(forkedFormId)s>%(forkedFromDisplayAbsoluteUrl)s</a> on"
+"                    <span %(textDateForked)s></span>"
 msgstr ""
 
 #: website/templates/project/project.mako:225
@@ -2995,7 +2994,7 @@ msgstr ""
 #, python-format
 msgid ""
 "<div %(f_x_xl)s>Cite as:</div>                                         "
-"<span %(text_customCitation)s></span>"
+"<span %(textCustomCitation)s></span>"
 msgstr ""
 
 #: website/templates/project/project.mako:560
@@ -3094,22 +3093,22 @@ msgstr ""
 #: website/templates/project/project_header.mako:129
 #, python-format
 msgid ""
-"The <a %(archived_from_url)s>active file</a> is viewable from within the "
-"<a %(registered_from_url)s>live %(node_type)s</a>."
+"The <a %(archivedFromUrl)s>active file</a> is viewable from within the <a"
+" %(registeredFromUrl)s>live %(nodeType)s</a>."
 msgstr ""
 
 #: website/templates/project/project_header.mako:131
 #, python-format
 msgid ""
 "This registration is a frozen, non-editable version of <a "
-"%(registered_from_url)s>this %(nodetype)s</a>"
+"%(registeredFromUrl)s>this %(nodeType)s</a>"
 msgstr ""
 
 #: website/templates/project/project_header.mako:135
 #, python-format
 msgid ""
-"This is a pending registration of <a %(registered_from_url)s>this "
-"%(node_type)s</a>, awaiting approval from project administrators. This "
+"This is a pending registration of <a %(registeredFromUrl)s>this "
+"%(nodeType)s</a>, awaiting approval from project administrators. This "
 "registration will be final when all project administrators approve the "
 "registration or 48 hours pass, whichever comes first."
 msgstr ""
@@ -3121,21 +3120,21 @@ msgstr ""
 
 #: website/templates/project/project_header.mako:159
 #, python-format
-msgid "This %(node_type)s is currently pending withdrawal."
+msgid "This %(nodeType)s is currently pending withdrawal."
 msgstr ""
 
 #: website/templates/project/project_header.mako:163
 #, python-format
 msgid ""
-"This %(node_type)s is a withdrawn registration of <a "
-"%(registered_from_url)s>this %(node_type)s</a>; the content of the "
-"%(node_type)s has been taken down for the reason(s) stated below."
+"This %(nodeType)s is a withdrawn registration of <a "
+"%(registeredFromUrl)s>this %(nodeType)s</a>; the content of the "
+"%(nodeType)s has been taken down for the reason(s) stated below."
 msgstr ""
 
 #: website/templates/project/project_header.mako:168
 #, python-format
 msgid ""
-"This %(node_type)s is currently pending registration, awaiting approval "
+"This %(nodeType)s is currently pending registration, awaiting approval "
 "from project administrators. This registration will be final and enter "
 "the embargo period when all project administrators approve the "
 "registration or 48 hours pass, whichever comes first. The embargo will "
@@ -3146,29 +3145,29 @@ msgstr ""
 #, python-format
 msgid ""
 "This registration is currently embargoed. It will remain private until "
-"its embargo end date, %(embargo_end_date)s."
+"its embargo end date, %(embargoEndDate)s."
 msgstr ""
 
 #: website/templates/project/project_header.mako:188
 #, python-format
 msgid ""
-"This %(node_type)s contains supplemental materials for a preprint, but "
-"has been made Private. Make your supplemental materials discoverable by "
-"making this %(nodetype)s Public."
+"This %(nodeType)s contains supplemental materials for a preprint, but has"
+" been made Private. Make your supplemental materials discoverable by "
+"making this %(nodeType)s Public."
 msgstr ""
 
 #: website/templates/project/project_header.mako:192
 #, python-format
 msgid ""
-"This %(node_type)s is being viewed through an anonymized, view-only link."
-" If you want to view it as a contributor, click <a "
-"%(redirect_url)s>here</a>."
+"This %(nodeType)s is being viewed through an anonymized, view-only link. "
+"If you want to view it as a contributor, click <a "
+"%(redirectUrl)s>here</a>."
 msgstr ""
 
 #: website/templates/project/project_header.mako:196
 #, python-format
 msgid ""
-"This %(node_type)s is being viewed through a private, view-only link. "
+"This %(nodeType)s is being viewed through a private, view-only link. "
 "Anyone with the link can view this project. Keep the link safe."
 msgstr ""
 
@@ -3246,7 +3245,7 @@ msgstr ""
 #: website/templates/project/settings.mako:150
 #: website/templates/project/settings.mako:163
 #, python-format
-msgid "Delete %(node_type)s"
+msgid "Delete %(nodeType)s"
 msgstr ""
 
 #: website/templates/project/settings.mako:156
@@ -3295,7 +3294,7 @@ msgstr ""
 
 #: website/templates/project/settings.mako:334
 #, python-format
-msgid "When the %(node_type)s is public, any GakuNin RDM user can post comments"
+msgid "When the %(nodeType)s is public, any GakuNin RDM user can post comments"
 msgstr ""
 
 #: website/templates/project/settings.mako:363
@@ -3318,7 +3317,7 @@ msgstr ""
 msgid ""
 "Withdrawing children components of a registration is not allowed. Should "
 "you wish to                                  withdraw this component, "
-"please withdraw its parent registration <a %(web_url_for)s>here</a>."
+"please withdraw its parent registration <a %(webUrlFor)s>here</a>."
 msgstr ""
 
 #: website/templates/project/settings.mako:442
@@ -3493,19 +3492,19 @@ msgstr ""
 #: website/templates/project/addon/page.mako:21
 #: website/templates/project/addon/widget.mako:17
 #, python-format
-msgid "%(full_name)s add-on is not configured properly."
+msgid "%(fullname)s add-on is not configured properly."
 msgstr ""
 
 #: website/templates/project/addon/page.mako:23
 #: website/templates/project/addon/widget.mako:19
 #: website/templates/util/render_addon_widget.mako:240
 #, python-format
-msgid "Configure this add-on on the <a href=%(node_url)s>add-ons</a> page."
+msgid "Configure this add-on on the <a href=%(nodeUrl)s>add-ons</a> page."
 msgstr ""
 
 #: website/templates/util/contributor_list.mako:18
 #, python-format
-msgid "%(others_count)s more"
+msgid "%(othersCount)s more"
 msgstr ""
 
 #: website/templates/util/oauth_complete.mako:9
@@ -3533,7 +3532,7 @@ msgstr ""
 #, python-format
 msgid ""
 "This project contains a forward to                                <a "
-"%(text_url)s></a>."
+"%(textUrl)s></a>."
 msgstr ""
 
 #: website/templates/util/render_addon_widget.mako:99
@@ -3545,7 +3544,7 @@ msgstr ""
 #, python-format
 msgid ""
 "This project contains a forward to                                <a "
-"%(text_linkDisplay)s></a>."
+"%(textLinkDisplay)s></a>."
 msgstr ""
 
 #: website/templates/util/render_addon_widget.mako:144
@@ -3594,7 +3593,7 @@ msgstr ""
 
 #: website/templates/util/render_node.mako:18
 #, python-format
-msgid "Linked %(node_type)s"
+msgid "Linked %(nodeType)s"
 msgstr ""
 
 #: website/templates/util/render_node.mako:22
@@ -3607,7 +3606,7 @@ msgstr ""
 
 #: website/templates/util/render_node.mako:58
 #, python-format
-msgid "Create a fork of %(summary_Title)s"
+msgid "Create a fork of %(summaryTitle)s"
 msgstr ""
 
 #: website/templates/util/render_node.mako:66

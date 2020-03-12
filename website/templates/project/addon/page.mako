@@ -18,9 +18,9 @@
 % else:
 
     <div class='addon-config-error p-sm'>
-        ${_("%(full_name)s add-on is not configured properly.") % dict(full_name=full_name) | n}
+        ${_("%(fullname)s add-on is not configured properly.") % dict(fullname=full_name) | n}
         % if user['is_contributor_or_group_member']:
-            ${_('Configure this add-on on the <a href=%(node_url)s>add-ons</a> page.') % dict(node_url='"' + h(node['url']) + 'addons/"') | n}
+            ${_('Configure this add-on on the <a href=%(nodeUrl)s>add-ons</a> page.') % dict(nodeUrl='"' + h(node['url']) + 'addons/"') | n}
         % endif
     </div>
 

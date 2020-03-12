@@ -97,7 +97,7 @@
                                     % if not disk_saving_mode:
                                     <li class="p-h-md">
                                         <span class="btn btn-primary btn-block m-v-sm" onclick="NodeActions.redirectForkPage();">
-                                            ${_("View Forks (%(fork_count)s)") % dict(fork_count=node['fork_count'])}
+                                            ${_("View Forks (%(forkCount)s)") % dict(forkCount=node['fork_count'])}
                                         </span>
                                     </li>
                                     %endif
@@ -215,9 +215,9 @@
                 % endif
                 % if node['is_fork']:
                     <p>
-                    ${_('Forked from <a %(forked_form_id)s>%(forked_from_display_absolute_url)s</a> on\
-                    <span %(text_dateForked)s></span>') % dict(forked_form_id='class="node-forked-from"' + ' href="/' + h(node['forked_from_id']) + '/"',\
-                    forked_from_display_absolute_url=h(node['forked_from_display_absolute_url']),text_dateForked='data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"') | n}
+                    ${_('Forked from <a %(forkedFormId)s>%(forkedFromDisplayAbsoluteUrl)s</a> on\
+                    <span %(textDateForked)s></span>') % dict(forkedFormId='class="node-forked-from"' + ' href="/' + h(node['forked_from_id']) + '/"',\
+                    forkedFromDisplayAbsoluteUrl=h(node['forked_from_display_absolute_url']),textDateForked='data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"') | n}
                     </p>
                 % endif
                 % if node['is_registration']:
@@ -547,7 +547,7 @@
                                      </div>
                                      <div class="col-xs-9 m-l-sm">
                                          ${_('<div %(f_x_xl)s>Cite as:</div>\
-                                         <span %(text_customCitation)s></span>') % dict(f_x_xl='class="f-w-xl"',text_customCitation='data-bind="text: customCitation"') | n}
+                                         <span %(textCustomCitation)s></span>') % dict(f_x_xl='class="f-w-xl"',textCustomCitation='data-bind="text: customCitation"') | n}
                                      </div>
                                  </div>
                              </div>

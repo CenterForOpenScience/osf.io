@@ -91,7 +91,7 @@
 
                             <div>
                                 ${_('This project contains a forward to\
-                                <a %(text_url)s></a>.') % dict(text_url='data-bind="attr: {href: url}, text: url"') | n}
+                                <a %(textUrl)s></a>.') % dict(textUrl='data-bind="attr: {href: url}, text: url"') | n}
                             </div>
 
                             <div class="spaced-buttons m-t-md" data-bind="visible: redirecting">
@@ -105,7 +105,7 @@
 
                             <div>
                                 ${_('This project contains a forward to\
-                                <a %(text_linkDisplay)s></a>.') % dict(text_linkDisplay='data-bind="attr: {href: url}, text: linkDisplay"') | n}
+                                <a %(textLinkDisplay)s></a>.') % dict(textLinkDisplay='data-bind="attr: {href: url}, text: linkDisplay"') | n}
                             </div>
 
                             <div class="spaced-buttons m-t-sm">
@@ -237,7 +237,7 @@
                 <div class='addon-config-error p-sm'>
                     ${addon_data['full_name']} add-on is not configured properly.
                     % if user['is_contributor_or_group_member']:
-                        ${_('Configure this add-on on the <a href=%(node_url)s>add-ons</a> page.') % dict(node_url='"' + h(node['url']) + 'addons/"') | n}
+                        ${_('Configure this add-on on the <a href=%(nodeUrl)s>add-ons</a> page.') % dict(nodeUrl='"' + h(node['url']) + 'addons/"') | n}
                     % endif
                 </div>
 

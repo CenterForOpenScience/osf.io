@@ -147,7 +147,7 @@
                                     <button
                                     data-toggle="modal" data-target="#nodesDelete"
                                     data-bind="click: $root.delete.bind($root, ${node['child_exists'] | sjson, n}, '${node['node_type']}', ${node['is_supplemental_project'] | sjson, n}, '${node['api_url']}')"
-                                    class="btn btn-danger btn-delete-node">${_("Delete %(node_type)s") % dict(node_type=_(node['node_type']))}</button>
+                                    class="btn btn-danger btn-delete-node">${_("Delete %(nodeType)s") % dict(nodeType=_(node['node_type']))}</button>
                                     <%include file="project/nodes_delete.mako"/>
                                 </span>
                             </span>
@@ -160,7 +160,7 @@
                                     <button disabled="disabled"
                                     data-toggle="modal" data-target="#nodesDelete"
                                     data-bind="click: $root.delete.bind($root, ${node['child_exists'] | sjson, n}, '${node['node_type']}', ${node['is_preprint'] | sjson, n}, '${node['api_url']}')"
-                                    class="btn btn-danger btn-delete-node">${_("Delete %(node_type)s") % dict(node_type=_(node['node_type']))}</button>
+                                    class="btn btn-danger btn-delete-node">${_("Delete %(nodeType)s") % dict(nodeType=_(node['node_type']))}</button>
                                     <%include file="project/nodes_delete.mako"/>
                                 </span>
                             </span>
@@ -331,7 +331,7 @@
                             <div class="radio">
                                 <label>
                                     <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
-                                    ${_("When the %(node_type)s is public, any GakuNin RDM user can post comments") % dict(node_type=h(node['node_type']))}
+                                    ${_("When the %(nodeType)s is public, any GakuNin RDM user can post comments") % dict(nodeType=h(node['node_type']))}
                                 </label>
                             </div>
 
@@ -433,7 +433,7 @@
 
                                 <div class="help-block">
                                   ${_('Withdrawing children components of a registration is not allowed. Should you wish to\
-                                  withdraw this component, please withdraw its parent registration <a %(web_url_for)s>here</a>.') % dict(href='href="' + h(web_url_for=web_url_for('node_setting', pid=node['root_id'])) + '"') | n}
+                                  withdraw this component, please withdraw its parent registration <a %(webUrlFor)s>here</a>.') % dict(href='href="' + h(webUrlFor=web_url_for('node_setting', pid=node['root_id'])) + '"') | n}
                                 </div>
 
                             % else:

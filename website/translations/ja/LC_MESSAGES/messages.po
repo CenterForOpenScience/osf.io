@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-12 14:26+0900\n"
+"POT-Creation-Date: 2020-03-12 16:22+0900\n"
 "PO-Revision-Date: 2020-03-12 09:30+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
@@ -2626,11 +2626,9 @@ msgstr "(未登録)"
 #: website/templates/project/modal_add_contributor.mako:181
 #, python-format
 msgid ""
-"<a %(gotoInvite)s>Add <strong><em %(text_query)s></em></strong> as an "
+"<a %(gotoInvite)s>Add <strong><em %(textQuery)s></em></strong> as an "
 "unregistered contributor</a>."
-msgstr ""
-"<a %(gotoInvite)s>未登録のコントリビュータとして<strong><em "
-"%(text_query)s></em></strong>を追加します。</a>"
+msgstr "<a %(gotoInvite)s>未登録のコントリビュータとして<strong><em %(textQuery)s></em></strong>を追加します。</a>"
 
 #: website/templates/project/modal_add_contributor.mako:186
 msgid "Searching contributors..."
@@ -2651,11 +2649,9 @@ msgstr "または"
 #: website/templates/project/modal_add_contributor.mako:196
 #, python-format
 msgid ""
-"<a %(gotoInvite)s>add <strong><em %(text_query)s></em></strong> as an "
+"<a %(gotoInvite)s>add <strong><em %(textQuery)s></em></strong> as an "
 "unregistered contributor</a>."
-msgstr ""
-"<a %(gotoInvite)s>未登録のコントリビュータとして<strong><em "
-"%(text_query)s></em></strong>を追加します。</a>"
+msgstr "<a %(gotoInvite)s>未登録のコントリビュータとして<strong><em %(textQuery)s></em></strong>を追加します。</a>"
 
 #: website/templates/project/modal_add_contributor.mako:200
 msgid ""
@@ -2809,58 +2805,58 @@ msgstr "全選択解除"
 #: website/templates/project/modal_remove_contributor.mako:15
 #, python-format
 msgid ""
-"<span>Do you want to remove <b %(removed_contributor)s></b> from"
-"                                <b %(text_title)s></b>, or from <b "
-"%(text_title)s></b> and every component in it?</span>"
+"<span>Do you want to remove <b %(removedContributor)s></b> from"
+"                                <b %(textTitle)s></b>, or from <b "
+"%(textTitle)s></b> and every component in it?</span>"
 msgstr ""
-"<b %(removed_contributor)s></b>を<b %(text_title)s></b>から、または<b "
-"%(text_title)s></b> とその中のすべてのコンポーネントから削除しますか？</span>"
+"<b %(removedContributor)s></b>を<b %(textTitle)s></b>から、または<b "
+"%(textTitle)s></b>とその中のすべてのコンポーネントから削除しますか？</span>"
 
 #: website/templates/project/modal_remove_contributor.mako:21
 #, python-format
 msgid ""
-"Remove <b %(removed_contributor)s></b> from"
-"                                    <span %(text_title)s></span>."
-msgstr "<span %(text_title)s></span>から<b %(removed_contributor)s></b>を削除します。"
+"Remove <b %(removedContributor)s></b> from"
+"                                    <span %(textTitle)s></span>."
+msgstr "<span %(textTitle)s></span>から<b %(removedContributor)s></b>を削除します。"
 
 #: website/templates/project/modal_remove_contributor.mako:28
 #, python-format
 msgid ""
-"Remove <b %(removed_contributor)s></b> from"
-"                                    <span %(text_title)s></span> and "
-"every component in it."
+"Remove <b %(removedContributor)s></b> from"
+"                                    <span %(textTitle)s></span> and every"
+" component in it."
 msgstr ""
-"<b %(removed_contributor)s></b>を<span "
-"%(text_title)s></span>およびその中のすべてのコンポーネントから削除します。"
+"<b %(removedContributor)s></b>を<span "
+"%(textTitle)s></span>およびその中のすべてのコンポーネントから削除します。"
 
 #: website/templates/project/modal_remove_contributor.mako:37
 #, python-format
-msgid "Remove <b %(removed_contributor)s></b> from <span %(text_title)s></span>?"
-msgstr "<span %(text_title)s></span>から<b %(removed_contributor)s></b>を削除しますか？"
+msgid "Remove <b %(removedContributor)s></b> from <span %(textTitle)s></span>?"
+msgstr "<span %(textTitle)s></span>から<b %(removedContributor)s></b>を削除しますか？"
 
 #: website/templates/project/modal_remove_contributor.mako:48
 #, python-format
 msgid ""
-"<b %(removed_contributor)s>                                        </b> "
+"<b %(removedContributor)s>                                        </b> "
 "will be removed from the following projects and/or components."
-msgstr "<b %(removed_contributor)s></b>は、以下のプロジェクトおよび/またはコンポーネントから削除されます。"
+msgstr "<b %(removedContributor)s></b>は、以下のプロジェクトおよび/またはコンポーネントから削除されます。"
 
 #: website/templates/project/modal_remove_contributor.mako:65
 #, python-format
 msgid ""
-"<b %(removed_contributor)s>                                        </b> "
+"<b %(removedContributor)s>                                        </b> "
 "cannot be removed from the following projects and/or components."
-msgstr "<b %(removed_contributor)s></b>は、以下のプロジェクトやコンポーネントから削除できません。"
+msgstr "<b %(removedContributor)s></b>は、以下のプロジェクトやコンポーネントから削除できません。"
 
 #: website/templates/project/modal_remove_contributor.mako:81
 #, python-format
 msgid ""
-"<b %(removed_contributor)s></b> cannot be                        removed "
+"<b %(removedContributor)s></b> cannot be                        removed "
 "as a contributor.  You need at least one administrator, bibliographic "
 "contributor, and registered user."
 msgstr ""
-"<b %(removed_contributor)s></b>はコントリビュータとして削除できません。 "
-"少なくとも1人の管理者、目録表示コントリビュータ、および登録ユーザーが必要です。"
+"<b "
+"%(removedContributor)s></b>はコントリビュータとして削除できません。少なくとも1人の管理者、目録表示コントリビュータ、および登録ユーザーが必要です。"
 
 #: website/templates/project/modal_remove_contributor.mako:82
 msgid ""
@@ -2907,8 +2903,8 @@ msgstr "このプロジェクトを複製するには、ログインするかア
 
 #: website/templates/project/project.mako:100
 #, python-format
-msgid "View Forks (%(fork_count)s)"
-msgstr "フォークを表示(%(fork_count)s)"
+msgid "View Forks (%(forkCount)s)"
+msgstr "フォークを表示(%(forkCount)s)"
 
 #: website/templates/project/project.mako:115
 msgid "Bookmark"
@@ -2942,13 +2938,11 @@ msgstr "所属機関:"
 #: website/templates/project/project.mako:218
 #, python-format
 msgid ""
-"Forked from <a "
-"%(forked_form_id)s>%(forked_from_display_absolute_url)s</a> on"
-"                    <span %(text_dateForked)s></span>"
+"Forked from <a %(forkedFormId)s>%(forkedFromDisplayAbsoluteUrl)s</a> on"
+"                    <span %(textDateForked)s></span>"
 msgstr ""
-"Forked from <a "
-"%(forked_form_id)s>%(forked_from_display_absolute_url)s</a>からフォーク(<span "
-"%(text_dateForked)s></span>)"
+"%(forkedFormId)s>%(forkedFromDisplayAbsoluteUrl)s</a>からフォーク(<span "
+"%(textDateForked)s></span>)"
 
 #: website/templates/project/project.mako:225
 msgid "Date registered:"
@@ -3078,8 +3072,8 @@ msgstr "より多くの引用スタイルを取得"
 #, python-format
 msgid ""
 "<div %(f_x_xl)s>Cite as:</div>                                         "
-"<span %(text_customCitation)s></span>"
-msgstr "<span %(text_customCitation)s></span>として<div %(f_x_xl)s>引用：</div>"
+"<span %(textCustomCitation)s></span>"
+msgstr "<span %(textCustomCitation)s></span>として<div %(f_x_xl)s>引用：</div>"
 
 #: website/templates/project/project.mako:560
 msgid "Enter custom citation"
@@ -3177,30 +3171,29 @@ msgstr "このファイルは登録の一部であり、アーカイブバージ
 #: website/templates/project/project_header.mako:129
 #, python-format
 msgid ""
-"The <a %(archived_from_url)s>active file</a> is viewable from within the "
-"<a %(registered_from_url)s>live %(node_type)s</a>."
+"The <a %(archivedFromUrl)s>active file</a> is viewable from within the <a"
+" %(registeredFromUrl)s>live %(nodeType)s</a>."
 msgstr ""
-"<a %(archived_from_url)s>アクティブなファイル</a>は、<a "
-"%(registered_from_url)s>ライブ%(node_type)s</a>内から表示できます。"
+"<a %(archivedFromUrl)s>アクティブなファイル</a>は、<a "
+"%(registeredFromUrl)s>ライブ%(nodeType)s</a>内から表示できます。"
 
 #: website/templates/project/project_header.mako:131
 #, python-format
 msgid ""
 "This registration is a frozen, non-editable version of <a "
-"%(registered_from_url)s>this %(nodetype)s</a>"
-msgstr "この登録は、<a %(registered_from_url)s>この%(nodetype)s</a>の凍結された編集不可バージョンです"
+"%(registeredFromUrl)s>this %(nodeType)s</a>"
+msgstr "この登録は、<a %(registeredFromUrl)s>この%(nodeType)s</a>の凍結された編集不可バージョンです"
 
 #: website/templates/project/project_header.mako:135
 #, python-format
 msgid ""
-"This is a pending registration of <a %(registered_from_url)s>this "
-"%(node_type)s</a>, awaiting approval from project administrators. This "
+"This is a pending registration of <a %(registeredFromUrl)s>this "
+"%(nodeType)s</a>, awaiting approval from project administrators. This "
 "registration will be final when all project administrators approve the "
 "registration or 48 hours pass, whichever comes first."
 msgstr ""
-"これは<a %(registered_from_url)s>この "
-"%(node_type)s</a>の保留中の登録であり、プロジェクト管理者からの承認を待っています。 "
-"この登録は、すべてのプロジェクト管理者が登録または48時間のパスのいずれか早い方を承認したときに最終となります。"
+"これは<a "
+"%(registeredFromUrl)s>この%(nodeType)s</a>の保留中の登録であり、プロジェクト管理者からの承認を待っています。この登録は、すべてのプロジェクト管理者が登録または48時間のパスのいずれか早い方を承認したときに最終となります。"
 
 #: website/templates/project/project_header.mako:141
 #: website/templates/project/project_header.mako:173
@@ -3209,67 +3202,62 @@ msgstr "登録をキャンセル"
 
 #: website/templates/project/project_header.mako:159
 #, python-format
-msgid "This %(node_type)s is currently pending withdrawal."
-msgstr "この%(node_type)sは現在、保留中です。"
+msgid "This %(nodeType)s is currently pending withdrawal."
+msgstr "この%(nodeType)sは現在、保留中です。"
 
 #: website/templates/project/project_header.mako:163
 #, python-format
 msgid ""
-"This %(node_type)s is a withdrawn registration of <a "
-"%(registered_from_url)s>this %(node_type)s</a>; the content of the "
-"%(node_type)s has been taken down for the reason(s) stated below."
+"This %(nodeType)s is a withdrawn registration of <a "
+"%(registeredFromUrl)s>this %(nodeType)s</a>; the content of the "
+"%(nodeType)s has been taken down for the reason(s) stated below."
 msgstr ""
-"この%(node_type)sは、<a "
-"%(registered_from_url)s>この%(node_type)s</a>の登録の撤回です。%(node_type)sのコンテンツは、下記の理由により削除されました。"
+"この%(nodeType)sは、<a "
+"%(registeredFromUrl)s>この%(nodeType)s</a>の登録の撤回です。%(nodeType)sのコンテンツは、下記の理由により削除されました。"
 
 #: website/templates/project/project_header.mako:168
 #, python-format
 msgid ""
-"This %(node_type)s is currently pending registration, awaiting approval "
+"This %(nodeType)s is currently pending registration, awaiting approval "
 "from project administrators. This registration will be final and enter "
 "the embargo period when all project administrators approve the "
 "registration or 48 hours pass, whichever comes first. The embargo will "
 "keep the registration private until the embargo period ends."
-msgstr ""
-"この%(node_type)sは現在登録を保留しており、プロジェクト管理者からの承認を待っています。 "
-"この登録は最終的なものであり、すべてのプロジェクト管理者が登録を承認するか、48時間のパスのいずれか早いほうを承認した時点で禁輸期間に入ります。 "
-"禁輸措置は、禁輸期間が終了するまで登録を非公開にします。"
+msgstr "この%(nodeType)sは現在登録を保留しており、プロジェクト管理者からの承認を待っています。この登録は最終的なものであり、すべてのプロジェクト管理者が登録を承認するか、48時間のパスのいずれか早いほうを承認した時点で禁止期間に入ります。禁止措置は、禁止期間が終了するまで登録を非公開にします。"
 
 #: website/templates/project/project_header.mako:182
 #, python-format
 msgid ""
 "This registration is currently embargoed. It will remain private until "
-"its embargo end date, %(embargo_end_date)s."
-msgstr "現在、この登録は禁止されています。 禁止終了日(%(embargo_end_date)s)まで非公開のままです。"
+"its embargo end date, %(embargoEndDate)s."
+msgstr "現在、この登録は禁止されています。 禁止終了日(%(embargoEndDate)s)まで非公開のままです。"
 
 #: website/templates/project/project_header.mako:188
 #, python-format
 msgid ""
-"This %(node_type)s contains supplemental materials for a preprint, but "
-"has been made Private. Make your supplemental materials discoverable by "
-"making this %(nodetype)s Public."
-msgstr ""
-"この%(node_type)sにはプレプリントの補足資料が含まれていますが、非公開になっています。 "
-"この%(nodetype)sを公開することで、補足資料を見つけやすくします。"
+"This %(nodeType)s contains supplemental materials for a preprint, but has"
+" been made Private. Make your supplemental materials discoverable by "
+"making this %(nodeType)s Public."
+msgstr "この%(nodeType)sにはプレプリントの補足資料が含まれていますが、非公開になっています。この%(nodetype)sを公開することで、補足資料を見つけやすくします。"
 
 #: website/templates/project/project_header.mako:192
 #, python-format
 msgid ""
-"This %(node_type)s is being viewed through an anonymized, view-only link."
-" If you want to view it as a contributor, click <a "
-"%(redirect_url)s>here</a>."
+"This %(nodeType)s is being viewed through an anonymized, view-only link. "
+"If you want to view it as a contributor, click <a "
+"%(redirectUrl)s>here</a>."
 msgstr ""
-"この%(node_type)sは、匿名化された参照専用リンクを介して表示されています。コントリビュータとして表示する場合は、<a "
-"%(redirect_url)s>こちら</a>をクリックしてください。"
+"この%(nodeType)sは、匿名化された参照専用リンクを介して表示されています。コントリビュータとして表示する場合は、<a "
+"%(redirectUrl)s>こちら</a>をクリックしてください。"
 
 #: website/templates/project/project_header.mako:196
 #, python-format
 msgid ""
-"This %(node_type)s is being viewed through a private, view-only link. "
+"This %(nodeType)s is being viewed through a private, view-only link. "
 "Anyone with the link can view this project. Keep the link safe."
 msgstr ""
-"この%(node_type)sは、プライベートな参照専用リンクを介して表示されています。 リンクを知っている全員がこのプロジェクトを閲覧できます。"
-" リンクを安全に保ちます。"
+"この%(nodeType)sは、プライベートな参照専用リンクを介して表示されています。リンクを知っている全員がこのプロジェクトを閲覧できます。 "
+"リンクを安全に保ちます。"
 
 # 変数のためmsgstrを""にしておく
 #: website/templates/project/settings.mako:17
@@ -3346,8 +3334,8 @@ msgstr "プロジェクトにコンポーネントがある場合、プロジェ
 #: website/templates/project/settings.mako:150
 #: website/templates/project/settings.mako:163
 #, python-format
-msgid "Delete %(node_type)s"
-msgstr "%(node_type)sを削除"
+msgid "Delete %(nodeType)s"
+msgstr "%(nodeType)sを削除"
 
 #: website/templates/project/settings.mako:156
 #, python-format
@@ -3397,8 +3385,8 @@ msgstr "コントリビュータのみがコメントを投稿できます"
 
 #: website/templates/project/settings.mako:334
 #, python-format
-msgid "When the %(node_type)s is public, any GakuNin RDM user can post comments"
-msgstr "%(node_type)sがパブリックの場合、GakuNin RDMユーザーはコメントを投稿できます"
+msgid "When the %(nodeType)s is public, any GakuNin RDM user can post comments"
+msgstr "%(nodeType)sが公開の場合、GakuNin RDMユーザーはコメントを投稿できます"
 
 #: website/templates/project/settings.mako:363
 msgid ""
@@ -3420,10 +3408,10 @@ msgstr "登録を取り下げる"
 msgid ""
 "Withdrawing children components of a registration is not allowed. Should "
 "you wish to                                  withdraw this component, "
-"please withdraw its parent registration <a %(web_url_for)s>here</a>."
+"please withdraw its parent registration <a %(webUrlFor)s>here</a>."
 msgstr ""
 "登録の子コンポーネントの撤回は許可されていません。このコンポーネントを撤回する場合は、<a "
-"%(web_url_for)s>ここ</a>でその親登録を撤回してください。"
+"%(webUrlFor)s>ここ</a>でその親登録を撤回してください。"
 
 #: website/templates/project/settings.mako:442
 msgid ""
@@ -3603,20 +3591,20 @@ msgstr "アドオン"
 #: website/templates/project/addon/page.mako:21
 #: website/templates/project/addon/widget.mako:17
 #, python-format
-msgid "%(full_name)s add-on is not configured properly."
-msgstr "%(full_name)sアドオンが正しく構成されていません。"
+msgid "%(fullname)s add-on is not configured properly."
+msgstr "%(fullname)sアドオンが正しく構成されていません。"
 
 #: website/templates/project/addon/page.mako:23
 #: website/templates/project/addon/widget.mako:19
 #: website/templates/util/render_addon_widget.mako:240
 #, python-format
-msgid "Configure this add-on on the <a href=%(node_url)s>add-ons</a> page."
-msgstr "<a href=%(node_url)s>アドオン</a>ページでこのアドオンを構成します。"
+msgid "Configure this add-on on the <a href=%(nodeUrl)s>add-ons</a> page."
+msgstr "<a href=%(nodeUrl)s>アドオン</a>ページでこのアドオンを構成します。"
 
 #: website/templates/util/contributor_list.mako:18
 #, python-format
-msgid "%(others_count)s more"
-msgstr "あと%(others_count)sつ"
+msgid "%(othersCount)s more"
+msgstr "あと%(othersCount)s人"
 
 #: website/templates/util/oauth_complete.mako:9
 msgid "OAuth Complete"
@@ -3643,8 +3631,8 @@ msgstr "Dataverse"
 #, python-format
 msgid ""
 "This project contains a forward to                                <a "
-"%(text_url)s></a>."
-msgstr "このプロジェクトには、<a %(text_url)s></a>への転送が含まれています。"
+"%(textUrl)s></a>."
+msgstr "このプロジェクトには、<a %(textUrl)s></a>への転送が含まれています。"
 
 #: website/templates/util/render_addon_widget.mako:99
 #: website/templates/util/render_addon_widget.mako:112
@@ -3655,8 +3643,8 @@ msgstr "リダイレクト"
 #, python-format
 msgid ""
 "This project contains a forward to                                <a "
-"%(text_linkDisplay)s></a>."
-msgstr "このプロジェクトには、<a %(text_linkDisplay)s></a>への転送が含まれています。"
+"%(textLinkDisplay)s></a>."
+msgstr "このプロジェクトには、<a %(textLinkDisplay)s></a>への転送が含まれています。"
 
 #: website/templates/util/render_addon_widget.mako:144
 #: website/templates/util/render_addon_widget.mako:175
@@ -3704,8 +3692,8 @@ msgstr "コンポーネント"
 
 #: website/templates/util/render_node.mako:18
 #, python-format
-msgid "Linked %(node_type)s"
-msgstr "リンクされた%(node_type)s"
+msgid "Linked %(nodeType)s"
+msgstr "リンクされた%(nodeType)s"
 
 #: website/templates/util/render_node.mako:22
 msgid "This project is private"
@@ -3717,11 +3705,9 @@ msgstr "リンクを削除"
 
 #: website/templates/util/render_node.mako:58
 #, python-format
-msgid "Create a fork of %(summary_Title)s"
-msgstr "%(summary_Title)sのフォークを作成"
+msgid "Create a fork of %(summaryTitle)s"
+msgstr "%(summaryTitle)sのフォークを作成"
 
 #: website/templates/util/render_node.mako:66
 msgid "Manage Contributors"
 msgstr "コントリビュータ管理"
-
-

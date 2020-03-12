@@ -15,7 +15,7 @@
         <h4 class="list-group-item-heading">
             <span class="component-overflow f-w-lg" style="line-height: 1.5;">
             % if not summary['primary']:
-            <i class="fa fa-link" data-toggle="tooltip" title='${_("Linked %(node_type)s") % dict(node_type=_(summary['node_type']))}'></i>
+            <i class="fa fa-link" data-toggle="tooltip" title='${_("Linked %(nodeType)s") % dict(nodeType=_(summary['node_type']))}'></i>
             % endif
 
             % if not summary['is_public']:
@@ -55,7 +55,7 @@
             <div class="pull-right">
                 % if not summary['primary'] and permissions.WRITE in user['permissions'] and not node['is_registration']:
                     <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title='${_("Remove link")}'></i>
-                    <i class="fa fa-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title='${_("Create a fork of %(summary_Title)s") % dict (summary_Title=summary['title'])}'></i>
+                    <i class="fa fa-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title='${_("Create a fork of %(summaryTitle)s") % dict (summaryTitle=summary['title'])}'></i>
                 % endif
                 % if summary['primary'] and summary['logged_in'] and summary['is_contributor_or_group_member'] and not summary['is_registration']:
                     <div class="generic-dropdown dropdown pull-right">

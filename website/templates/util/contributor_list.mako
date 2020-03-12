@@ -15,7 +15,7 @@
     ${render_contributor_dict(contributor) if isinstance(contributor, dict) else render_user_obj(contributor)}
   % endfor
   % if others_count:
-      <a href="${node_url}">${_("%(others_count)s more") % dict(others_count=others_count)}</a>
+      <a href="${node_url}">${_("%(othersCount)s more") % dict(othersCount=others_count)}</a>
   % endif
 </%def>
 
