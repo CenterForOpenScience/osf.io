@@ -36,9 +36,9 @@
 
             <ul class="nav nav-tabs">
                 <li class="active"><a href="#names" data-toggle="tab">Name</a></li>
-                <li><a href="#social" data-toggle="tab">Social</a></li>
                 <li><a href="#jobs" data-toggle="tab">Employment</a></li>
                 <li><a href="#schools" data-toggle="tab">Education</a></li>
+                <li><a href="#social" data-toggle="tab">Social</a></li>
             </ul>
 
             <div class="tab-content" id="containDrag">
