@@ -255,7 +255,7 @@ def get_comments(query, index, doc_type, raw):
                                 #'*': {},
                                 'text': {},
                             },
-                            'fragment_size': 30,  # TODO settingsSEARCH_HIGHLIGHT_FRAGMENT_SIZE
+                            'fragment_size': settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE,
                             'number_of_fragments': 1,
                             'pre_tags': ['<b><i>'],
                             'post_tags': ['</i></b>'],

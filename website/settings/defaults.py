@@ -1963,6 +1963,9 @@ MAPCORE_SECRET = None
 # allow logged-in-user to search private projects
 ENABLE_PRIVATE_SEARCH = False
 
+# maximum length for snippet
+SEARCH_HIGHLIGHT_FRAGMENT_SIZE = 200
+
 # Support searching multilingual (multibyte) string.
 # When default analizer is used, the multibyte words are tokenized
 # for each character, and querying "OR" for each character.
