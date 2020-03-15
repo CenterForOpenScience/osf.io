@@ -418,13 +418,13 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
     return {
         'query': query_body,
         'highlight': {
-            'fragment_size': 100,
+            'fragment_size': 100,  # TODO settingsSEARCH_HIGHLIGHT_FRAGMENT_SIZE
             'number_of_fragments': 1,
             'pre_tags': ['<b><i>'],
             'post_tags': ['</i></b>'],
             'fields': {
-                #'text': {},
-                '*': {},
+                'text': {},
+                #'*': {},
             },
             'require_field_match': False,
             'highlight_query': inner_query,

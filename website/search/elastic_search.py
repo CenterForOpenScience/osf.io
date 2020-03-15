@@ -163,7 +163,7 @@ def requires_search(func):
 
 
 @requires_search
-def get_aggregations(query, doc_type):
+def get_aggregations(query, index, doc_type):
     query['aggregations'] = {
         'licenses': {
             'terms': {
@@ -172,7 +172,7 @@ def get_aggregations(query, doc_type):
         }
     }
 
-    res = client().search(index=es_index(), doc_type=doc_type, search_type='count', body=query)
+    res = client().search(index=index, doc_type=doc_type, search_type='count', body=query)
     ret = {
         doc_type: {
             item['key']: item['doc_count']
@@ -185,7 +185,7 @@ def get_aggregations(query, doc_type):
 
 
 @requires_search
-def get_counts(count_query, clean=True):
+def get_counts(count_query, index, doc_type, clean=True):
     count_query['aggregations'] = {
         'counts': {
             'terms': {
@@ -194,7 +194,7 @@ def get_counts(count_query, clean=True):
         }
     }
 
-    res = client().search(index=es_index(), doc_type=None, search_type='count', body=count_query)
+    res = client().search(index=index, doc_type=doc_type, search_type='count', body=count_query)
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
     counts['total'] = sum([val for val in counts.values()])
@@ -202,21 +202,99 @@ def get_counts(count_query, clean=True):
 
 
 @requires_search
-def get_tags(query, index):
+def get_tags(query, index, doc_type):
     query['aggregations'] = {
         'tag_cloud': {
             'terms': {'field': 'tags'}
         }
     }
 
-    results = client().search(index=index, doc_type=None, body=query)
+    results = client().search(index=index, doc_type=doc_type, body=query)
     tags = results['aggregations']['tag_cloud']['buckets']
 
     return tags
 
 
+def get_query_string(query):
+    if isinstance(query, list):
+        if len(query) == 1:  # expect query[0] only
+            rv = get_query_string(query[0])
+            if rv:
+                return rv
+
+    if not isinstance(query, dict):
+        return None
+
+    for key, val in query.items():
+        if key == 'query' and \
+           (isinstance(val, str) or isinstance(val, unicode)):
+            return val  # found
+        rv = get_query_string(val)
+        if rv:
+            return rv
+        # next key
+
+    return None
+
+
+# TODO experimental code: aggregate comments in Elasticsearch
 @requires_search
-def search(query, index=None, doc_type='_all', raw=False, normalize=True, private=False, ext=False):
+def get_comments(query, index, doc_type, raw):
+    highlight_query = get_query_string(query)
+    logger.debug(u'aggs  highlight_query={}, q={}'.format(highlight_query, query))
+
+    query['aggregations'] = {
+        'comments': {
+            'terms': {'field': 'page_id'},
+            'aggs': {
+                'latest_comment': {
+                    'top_hits': {
+                        '_source': ['id', 'page_id'],
+                        'highlight': {
+                            'fields': {
+                                #'*': {},
+                                'text': {},
+                            },
+                            'fragment_size': 30,  # TODO settingsSEARCH_HIGHLIGHT_FRAGMENT_SIZE
+                            'number_of_fragments': 1,
+                            'pre_tags': ['<b><i>'],
+                            'post_tags': ['</i></b>'],
+                            'require_field_match': False,
+                            'highlight_query': highlight_query,
+                        },
+                        'size': 1,
+                        'sort': [
+                            {
+                                'date_modified': {
+                                    'order': 'desc'  # latest
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+        }
+    }
+
+    # from_ = query['from']
+    # size = query['size']
+    query['size'] = 0  # Returning only aggregation results
+
+    results = client().search(index=index, doc_type=doc_type, body=query)
+    latest_comments = results['aggregations']['comments']['buckets']
+    if raw:
+        #return latest_comments
+        return results
+
+    comments = []
+    for latest_comment in latest_comments:
+        comments.append(latest_comment['latest_comment']['hits']['hits'][0]['_source'])
+
+    return comments
+
+
+@requires_search
+def search(query, index=None, doc_type=None, raw=False, normalize=True, private=False, ext=False):
     """Search for a query
 
     :param query: The substring of the username/project name/tag to search for
@@ -239,6 +317,11 @@ def search(query, index=None, doc_type='_all', raw=False, normalize=True, privat
     ALIASES = copy.deepcopy(ALIASES_BASE)
     if settings.ENABLE_PRIVATE_SEARCH and ext:
         ALIASES.update(ALIASES_EXT)
+
+    if doc_type is None:
+        doc_type = ','.join(ALIASES.keys())
+        if raw:
+            doc_type += ',collectionSubmission'
 
     index = es_index_protected(index, private)
 
@@ -272,6 +355,12 @@ def search(query, index=None, doc_type='_all', raw=False, normalize=True, privat
             q = convert_query_string(q, normalize=normalize)
             query['query']['bool']['should'][0]['query_string']['query'] = q
 
+    comments = None
+    # TODO experimental code: aggregate comments in Elasticsearch
+    # if ext and 'comment' in doc_type:
+    #     comment_query = copy.deepcopy(query)
+    #     comments = get_comments(comment_query, index, 'comment', raw)
+
     tag_query = copy.deepcopy(query)
 
     for key in ['from', 'size', 'sort', 'highlight']:
@@ -283,14 +372,14 @@ def search(query, index=None, doc_type='_all', raw=False, normalize=True, privat
     aggs_query = copy.deepcopy(tag_query)
     count_query = copy.deepcopy(tag_query)
 
-    tags = get_tags(tag_query, index)
+    tags = get_tags(tag_query, index, doc_type)
     try:
         del aggs_query['query']['filtered']['filter']
         del count_query['query']['filtered']['filter']
     except KeyError:
         pass
-    aggregations = get_aggregations(aggs_query, doc_type=doc_type)
-    counts = get_counts(count_query, index)
+    aggregations = get_aggregations(aggs_query, index, doc_type)
+    counts = get_counts(count_query, index, doc_type)
 
     # Run the real query and get the results
     raw_results = client().search(index=index, doc_type=doc_type, body=query)
@@ -299,13 +388,10 @@ def search(query, index=None, doc_type='_all', raw=False, normalize=True, privat
         results = raw_results['hits']['hits']
     else:
         results = [hit['_source'] for hit in raw_results['hits']['hits']]
+        # TODO experimental code: aggregate comments in Python
+        # if ext:
+        #     results, matched_all_comments_count, aggregated_comments_count = aggregate_latest_comment(results)
         results = format_results(results)
-        supported_results = []
-        for r in results:
-            category = r.get('category')
-            if ALIASES.get(category):  # supported category
-                supported_results.append(r)
-        results = supported_results
 
     return_value = {
         'results': results,
@@ -314,7 +400,34 @@ def search(query, index=None, doc_type='_all', raw=False, normalize=True, privat
         'tags': tags,
         'typeAliases': ALIASES
     }
+    if ext and comments:
+        return_value.update({'comments': comments})
+
     return return_value
+
+# TODO experimental code: aggregate comments in Python
+def aggregate_latest_comment(results):
+    ret = []
+    pages = {}  # for comments
+    matched_all_comments_count = 0
+    for result in results:
+        if result.get('category') != 'comment':
+            ret.append(result)
+            continue
+        matched_all_comments_count += 1
+        page_id = result.get('page_id')
+        page = pages.get(page_id, None)
+        if page:
+            date_modified1 = page.get('date_modified')
+            date_modified2 = result.get('date_modified')
+            if date_modified2 > date_modified1:
+                pages[page_id] = result  # set latest comment
+        else:
+            pages[page_id] = result
+    comments = pages.values()
+    ret.extend(comments)
+    aggregated_comments_count = len(comments)
+    return ret, matched_all_comments_count, aggregated_comments_count
 
 def format_results(results):
     ret = []
@@ -591,14 +704,15 @@ def serialize_wiki(wiki_page, category):
     elastic_document = {}
     name = w.page_name
     normalized_name = unicode_normalize(name)
+
     elastic_document = {
         'id': w._id,
         'name': name,
         'normalized_name': normalized_name,
         'category': category,
         'node_public': node.is_public,
-        'created': w.created,
-        'modified': w.modified,
+        'date_created': w.created,
+        'date_modified': w.modified,
         'user_id': latest.user._id,
         'user': latest.user.username,
         'normalized_user': unicode_normalize(latest.user.username),
@@ -672,6 +786,9 @@ def serialize_comment(comment, category):
         reply_user_id = c.target.referent.user._id
         reply_username = c.target.referent.user.username
 
+    text = unicode_normalize(c.content)
+    text = text.replace('&#13;&#10;', '')
+
     elastic_document = {
         'id': c._id,
         'page_type': c.page,
@@ -680,8 +797,8 @@ def serialize_comment(comment, category):
         'normalized_page_name': unicode_normalize(page_name),
         'category': category,
         'node_public': c.node.is_public,
-        'created': c.created,
-        'modified': c.modified,
+        'date_created': c.created,
+        'date_modified': c.modified,
         'user_id': c.user._id,
         'user': c.user.username,
         'normalized_user': unicode_normalize(c.user.username),
@@ -692,7 +809,7 @@ def serialize_comment(comment, category):
             for x in c.node._contributors.filter(contributor__visible=True).order_by('contributor___order')
             .values('guids___id')
         ],
-        'text': unicode_normalize(c.content),
+        'text': text,
         'reply_user_id': reply_user_id,
         'reply_user': reply_username,
         'normalized_reply_user': unicode_normalize(reply_username),
@@ -1216,6 +1333,8 @@ def create_index(index=None):
                     'term_vector': 'with_positions_offsets',
                 })
                 fields = {
+                    'date_created': {'type': 'date'},
+                    'date_modified': {'type': 'date'},
                     'text': prop,
                 }
                 mapping['properties'].update(fields)
