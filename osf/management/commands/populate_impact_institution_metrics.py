@@ -9,6 +9,7 @@ from osf.metrics import (
 
 from osf.models import Institution, OSFUser
 
+
 """
 This management command can be run to populate impact with fake
 institutional metrics data.
@@ -26,6 +27,7 @@ user guids aren't specified)
 
 Example: docker-compose run --rm web python3 manage.py populate_impact_institution_metrics --days 3 --institutions cos --users hy84n bd53u
 """
+
 
 def populate_institution_metrics(users, institutions, dates):
     institution_public_project_count = 25 + (int(25 * random()))
@@ -65,26 +67,24 @@ class Command(BaseCommand):
             '--users',
             nargs='*',
             help='Specify user guids'
-        ),
+        )
         parser.add_argument(
             '--num_users',
-            nargs=1,
             type=int,
             default=3,
             help='Specify number of users to use if not specifying users'
-        ),
+        )
         parser.add_argument(
             '--institutions',
             nargs='*',
             help='Specify insitutions guids'
-        ),
+        )
         parser.add_argument(
             '--num_institutions',
-            nargs=1,
             type=int,
             default=1,
             help='Specify number of institutions to use if not specifying institutions'
-        ),
+        )
         parser.add_argument(
             '--days',
             type=int,
