@@ -460,8 +460,30 @@ def format_results(results):
         ret.append(result)
     return ret
 
+
+# return (guid, fullname)
+def user_id_fullname(guid):
+    if guid:
+        user = OSFUser.load(guid)
+        if user:
+            return (guid, user.fullname)
+    return (None, None)
+
+
+# for 'project', 'component', 'registration'
 def format_result(result, parent_id=None):
     parent_info = load_parent(parent_id)
+
+    # get unnormalized names
+    creator_id, creator_name = user_id_fullname(result.get('creator_id'))
+    modifier_id, modifier_name = user_id_fullname(result.get('modifier_id'))
+    normalized_creator_name = result.get('creator_name')
+    normalized_modifier_name = result.get('modifier_name')
+    if not creator_name:
+        creator_name = normalized_creator_name
+    if not modifier_name:
+        modifier_name = normalized_modifier_name
+
     formatted_result = {
         'contributors': result['contributors'],
         'groups': result.get('groups'),
@@ -482,6 +504,13 @@ def format_result(result, parent_id=None):
         'description': unescape_entities(result['description']),
         'category': result.get('category'),
         'date_created': result.get('date_created'),
+        'date_modified': result.get('date_modified'),
+        'creator_id': creator_id,
+        'creator_name': creator_name,
+        'normalized_creator_name': normalized_creator_name,
+        'modifier_id': modifier_id,
+        'modifier_name': modifier_name,
+        'normalized_modifier_name': normalized_modifier_name,
         'date_registered': result.get('registered_date'),
         'n_wikis': len(result['wikis'] or []),
         'license': result.get('license'),
@@ -607,6 +636,8 @@ def serialize_node(node, category):
 
     tags = list(node.tags.filter(system=False).values_list('name', flat=True))
     normalized_tags = [unicode_normalize(tag) for tag in tags]
+    latest_log = node.logs.order_by('date').last()
+    modifier = latest_log.user
 
     elastic_document = {
         'id': node._id,
@@ -645,6 +676,11 @@ def serialize_node(node, category):
         'wikis': {},
         'parent_id': parent_id,
         'date_created': node.created,
+        'date_modified': latest_log.date,
+        'creator_id': node.creator._id,
+        'creator_name': unicode_normalize(node.creator.fullname),
+        'modifier_id': modifier._id if modifier else None,
+        'modifier_name': unicode_normalize(modifier.fullname) if modifier else None,
         'license': serialize_node_license_record(node.license),
         'affiliated_institutions': list(node.affiliated_institutions.values_list('name', flat=True)),
         'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
@@ -666,6 +702,8 @@ def serialize_preprint(preprint, category):
 
     normalized_title = unicode_normalize(preprint.title)
     tags = list(preprint.tags.filter(system=False).values_list('name', flat=True))
+    latest_log = preprint.logs.order_by('created').last()
+    modifier = latest_log.user
     normalized_tags = [unicode_normalize(tag) for tag in tags]
     elastic_document = {
         'id': preprint._id,
@@ -690,6 +728,11 @@ def serialize_preprint(preprint, category):
         'normalized_description': unicode_normalize(preprint.description),
         'url': preprint.url,
         'date_created': preprint.created,
+        'date_modified': latest_log.created,
+        'creator_id': preprint.creator._id,
+        'creator_name': unicode_normalize(preprint.creator.fullname),
+        'modifier_id': modifier._id if modifier else None,
+        'modifier_name': unicode_normalize(modifier.fullname) if modifier else None,
         'license': serialize_node_license_record(preprint.license),
         'boost': 2,  # More relevant than a registration
         'extra_search_terms': clean_splitters(preprint.title),
@@ -1288,6 +1331,8 @@ def create_index(index=None):
         else:
             mapping = {
                 'properties': {
+                    'date_created': {'type': 'date'},
+                    'date_modified': {'type': 'date'},
                     'tags': NOT_ANALYZED_PROPERTY,
                     'normalized_tags': NOT_ANALYZED_PROPERTY,
                     'license': {

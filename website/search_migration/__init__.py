@@ -98,6 +98,11 @@ SELECT json_agg(
             )
             , 'url', '/' || NODE_GUID._id || '/'
             , 'date_created', N.created
+            , 'date_modified', LATESTLOG.date
+            , 'creator_id', CREATOR_GUID._id
+            , 'modifier_id', MODIFIER_GUID._id
+            , 'creator_name', CREATOR.fullname
+            , 'modifier_name', MODIFIER.fullname
             , 'wikis', CASE
                        WHEN RETRACTION.state != 'approved'
                          THEN
@@ -143,12 +148,51 @@ FROM osf_abstractnode AS N
             LIMIT 1
             ) PARENT_GUID ON TRUE
   LEFT JOIN LATERAL (
+            SELECT fullname
+            FROM osf_osfuser
+            WHERE osf_osfuser.id = N.creator_id
+            LIMIT 1
+            ) CREATOR ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT _id
+            FROM osf_guid
+            WHERE object_id = N.creator_id
+                  AND content_type_id = ANY (SELECT id
+                                             FROM django_content_type
+                                             WHERE model = 'osfuser')
+            LIMIT 1
+            ) CREATOR_GUID ON TRUE
+  LEFT JOIN LATERAL (
             SELECT array_agg(TAG.name) as names
             FROM osf_tag AS TAG
             INNER JOIN osf_abstractnode_tags ON (TAG.id = osf_abstractnode_tags.tag_id)
             WHERE (TAG.system = FALSE AND osf_abstractnode_tags.abstractnode_id = N.id)
             LIMIT 1
             ) TAGS ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT
+              osf_nodelog.date,
+              osf_nodelog.user_id
+            FROM osf_nodelog
+            WHERE (osf_nodelog.node_id =  N.id)
+            ORDER BY osf_nodelog.date DESC
+            LIMIT 1
+            ) LATESTLOG ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT _id
+            FROM osf_guid
+            WHERE object_id = LATESTLOG.user_id
+                  AND content_type_id = ANY (SELECT id
+                                             FROM django_content_type
+                                             WHERE model = 'osfuser')
+            LIMIT 1
+            ) MODIFIER_GUID ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT fullname
+            FROM osf_osfuser
+            WHERE osf_osfuser.id = LATESTLOG.user_id
+            LIMIT 1
+            ) MODIFIER ON TRUE
   LEFT JOIN LATERAL (
             SELECT
               osf_nodelicense.license_id,

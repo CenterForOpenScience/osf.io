@@ -166,6 +166,10 @@ def setup(cls, self):
             fullname=u'\u304b\u3099')  # か+濁点
         self.user4 = factories.AuthUserFactory(
             fullname=u'\u304e')  # ぎ
+        self.user5 = factories.AuthUserFactory(
+            fullname=u'\u306f\u3099')  # は+濁点
+        self.user6 = factories.AuthUserFactory(
+            fullname=u'\u3073')  # び
 
         self.project_private_user1_1 = factories.ProjectFactory(
             title='private日本語プロジェクト1_1',
@@ -216,6 +220,28 @@ def setup(cls, self):
             title='private日本語プロジェクト2_2',
             creator=self.user2,
             is_public=False)
+
+        self.project_private_user3 = factories.ProjectFactory(
+            title=u'private日本語プロジェクト3 \u3054',  # ご
+            creator=self.user3,
+            is_public=False)
+        self.project_private_user3.add_contributor(
+            self.user5, auth=Auth(self.user3))
+        # tagged by user5
+        self.project_private_user3.add_tag(u'tag_for_private_project_3',
+                                           Auth(self.user5),
+                                           save=False)
+
+        self.project_private_user4 = factories.ProjectFactory(
+            title=u'private日本語プロジェクト4 \u305d\u3099',  # そ+濁点
+            creator=self.user4,
+            is_public=False)
+        self.project_private_user4.add_contributor(
+            self.user6, auth=Auth(self.user4))
+        # tagged by user6
+        self.project_private_user4.add_tag(u'tag_for_private_project_4',
+                                           Auth(self.user6),
+                                           save=False)
 
         self.project_public_user1 = factories.ProjectFactory(
             title='public日本語プロジェクト1',
@@ -488,10 +514,12 @@ class TestPrivateSearch(OsfTestCase):
         assert_equal(len(filenames), 1)
 
     @enable_private_search
-    def _common_normalize(self, qs, category=None):
+    def _common_normalize(self, qs, category=None, user=None):
+        if user is None:
+            user = self.user1
         # app.get() requires str
         qs = u2s(qs)
-        res, results = query_private_search(self, qs, self.user1, category=category)
+        res, results = query_private_search(self, qs, user, category=category)
         return (res, results)
 
     def test_normalize_user1(self):
@@ -523,6 +551,35 @@ class TestPrivateSearch(OsfTestCase):
         assert_equal(len(results), 1)
         assert_equal(len(user_fullnames), 1)
 
+    def test_normalize_title1(self):
+        """
+        Unicode正規化のテスト。通常検索でtitleを検索する場合。
+        データベースに登録されている濁点付き文字が結合可能濁点と母体の
+        文字の組み合わせで表現されている場合に、合成済み文字で検索でき
+        ることを確認する。
+        """
+        qs = u'category:project AND \u305e'  # ぞ
+        res, results = self._common_normalize(qs, user=self.user4)
+        node_titles = get_node_titles(results)
+        DEBUG('results', results)
+        DEBUG('node_titles', node_titles)
+        assert_equal(len(results), 1)
+        assert_equal(len(node_titles), 1)
+
+    def test_normalize_title2(self):
+        """
+        Unicode正規化のテスト。通常検索でtitleを検索する場合。
+        データベースに登録されている濁点付き文字が合成済み文字の場合に、
+        結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
+        """
+        qs = u'category:project AND \u3053\u3099'  # こ+濁点
+        res, results = self._common_normalize(qs, user=self.user3)
+        node_titles = get_node_titles(results)
+        DEBUG('results', results)
+        DEBUG('node_titles', node_titles)
+        assert_equal(len(results), 1)
+        assert_equal(len(node_titles), 1)
+
     def test_normalize_description1(self):
         """
         Unicode正規化のテスト。通常検索でdescriptionを検索する場合。
@@ -551,6 +608,87 @@ class TestPrivateSearch(OsfTestCase):
         DEBUG('node_titles', node_titles)
         assert_equal(len(results), 1)
         assert_equal(len(node_titles), 1)
+
+    def test_normalize_creator1(self):
+        """
+        Unicode正規化のテスト。通常検索でcreatorを検索する場合。
+        データベースに登録されている濁点付き文字が結合可能濁点と母体の
+        文字の組み合わせで表現されている場合に、合成済み文字で検索でき
+        ることを確認する。
+        """
+        qs = u'category:project AND \u304c'  # が
+        res, results = self._common_normalize(qs, user=self.user3)
+        node_titles = get_node_titles(results)
+        DEBUG('results', results)
+        DEBUG('node_titles', node_titles)
+        assert_equal(len(results), 1)
+        assert_equal(len(node_titles), 1)
+        r = results[0]
+        c = u'\u304b\u3099' # か+濁点
+        assert_equal(r['creator_id'], self.user3._id)
+        assert_equal(r['creator_name'], c)
+        assert_equal(r['normalized_creator_name'], c)
+
+    def test_normalize_creator2(self):
+        """
+        Unicode正規化のテスト。通常検索でcreatorを検索する場合。
+        データベースに登録されている濁点付き文字が合成済み文字の場合に、
+        結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
+        """
+        c1 = u'\u304d\u3099'  # き+濁点
+        qs = u'category:project AND ' + c1
+        res, results = self._common_normalize(qs, user=self.user4)
+        node_titles = get_node_titles(results)
+        DEBUG('results', results)
+        DEBUG('node_titles', node_titles)
+        assert_equal(len(results), 1)
+        assert_equal(len(node_titles), 1)
+        r = results[0]
+        c2 = u'\u304e' # ぎ
+        assert_equal(r['creator_id'], self.user4._id)
+        assert_equal(r['creator_name'], c2)
+        assert_equal(r['normalized_creator_name'], c1)
+
+    def test_normalize_modifier1(self):
+        """
+        Unicode正規化のテスト。通常検索でmodifierを検索する場合。
+        データベースに登録されている濁点付き文字が結合可能濁点と母体の
+        文字の組み合わせで表現されている場合に、合成済み文字で検索でき
+        ることを確認する。
+        """
+        c1 = u'\u3070'  # ば
+        qs = u'category:project AND ' + c1
+        res, results = self._common_normalize(qs, user=self.user3)
+        node_titles = get_node_titles(results)
+        DEBUG('results', results)
+        DEBUG('node_titles', node_titles)
+        assert_equal(len(results), 1)
+        assert_equal(len(node_titles), 1)
+        r = results[0]
+        c2 = u'\u306f\u3099' # は+濁点
+        assert_equal(r['modifier_id'], self.user5._id)
+        assert_equal(r['modifier_name'], c2)
+        assert_equal(r['normalized_modifier_name'], c2)
+
+    def test_normalize_modifier2(self):
+        """
+        Unicode正規化のテスト。通常検索でmodiierを検索する場合。
+        データベースに登録されている濁点付き文字が合成済み文字の場合に、
+        結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
+        """
+        c1 = u'\u3072\u3099'  # ひ+濁点
+        qs = u'category:project AND ' + c1
+        res, results = self._common_normalize(qs, user=self.user4)
+        node_titles = get_node_titles(results)
+        DEBUG('results', results)
+        DEBUG('node_titles', node_titles)
+        assert_equal(len(results), 1)
+        assert_equal(len(node_titles), 1)
+        r = results[0]
+        c2 = u'\u3073' # び
+        assert_equal(r['modifier_id'], self.user6._id)
+        assert_equal(r['modifier_name'], c2)
+        assert_equal(r['normalized_modifier_name'], c1)
 
     def test_normalize_wikiname1(self):
         """

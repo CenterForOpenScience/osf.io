@@ -72,6 +72,11 @@ def normalize(docs):
                 normalized_tags.append(unicode_normalize(tag))
             doc['doc']['normalized_tags'] = normalized_tags
 
+            creator_name = doc['doc']['creator_name']
+            doc['doc']['creator_name'] = unicode_normalize(creator_name)
+            modifier_name = doc['doc']['modifier_name']
+            doc['doc']['modifier_name'] = unicode_normalize(modifier_name)
+
             wikis = doc['doc']['wikis']
             if isinstance(wikis, list):
                 new_wikis = {}
