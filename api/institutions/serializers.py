@@ -152,3 +152,17 @@ class InstitutionRegistrationsRelationshipSerializer(BaseAPISerializer):
             'data': list(inst.nodes.filter(is_deleted=False, type='osf.registration')),
             'self': inst,
         }
+
+
+class InstitutionDepartmentSerializer(JSONAPISerializer):
+
+    class Meta:
+        type_ = 'institution-departments'
+
+    name = ser.CharField(read_only=True)
+    number_of_users = ser.IntegerField(read_only=True)
+
+    filterable_fields = frozenset([
+        'name',
+        'number_of_users',
+    ])

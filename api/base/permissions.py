@@ -10,7 +10,7 @@ from framework.auth.cas import CasResponse
 
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken
 from website.util.sanitize import is_iterable_but_not_string
-
+from osf.permissions import INSTITUTION_ADMIN
 
 # Implementation built on django-oauth-toolkit, but  with more granular control over read+write permissions
 #   https://github.com/evonove/django-oauth-toolkit/blob/d45431ea0bf64fd31e16f429db1e902dbf30e3a8/oauth2_provider/ext/rest_framework/permissions.py#L15
@@ -147,3 +147,17 @@ def PermissionWithGetter(Base, getter):
             obj = self.get_object(request, view, obj)
             return super(Perm, self).has_object_permission(request, view, obj)
     return Perm
+
+
+class IsInstitutionalAdmin(permissions.BasePermission):
+    """
+    A base class from which all permission classes should inherit.
+    """
+
+    def has_permission(self, request, view):
+        user = request.user
+        if user:
+            institution = view.get_institution()
+            return user.has_perm(INSTITUTION_ADMIN, institution)
+
+        return False

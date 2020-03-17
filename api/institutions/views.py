@@ -1,3 +1,5 @@
+from types import MethodType
+
 from django.db.models import F
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
@@ -8,6 +10,7 @@ from rest_framework.response import Response
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import OSFUser, Node, Institution, Registration
+from osf.metrics import UserInstitutionProjectCounts
 from osf.utils import permissions as osf_permissions
 
 from api.base import permissions as base_permissions
@@ -27,7 +30,13 @@ from api.users.serializers import UserSerializer
 from api.registrations.serializers import RegistrationSerializer
 
 from api.institutions.authentication import InstitutionAuthentication
-from api.institutions.serializers import InstitutionSerializer, InstitutionNodesRelationshipSerializer, InstitutionRegistrationsRelationshipSerializer
+from api.institutions.serializers import (
+    InstitutionSerializer,
+    InstitutionNodesRelationshipSerializer,
+    InstitutionRegistrationsRelationshipSerializer,
+    InstitutionDepartmentSerializer,
+)
+
 from api.institutions.permissions import UserIsAffiliated
 
 class InstitutionMixin(object):
@@ -366,3 +375,69 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         except RelationshipPostMakesNoChanges:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return ret
+
+
+class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, InstitutionMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_users_list).
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        base_permissions.IsInstitutionalAdmin,
+    )
+
+    required_read_scopes = [CoreScopes.INSTITUTION_READ, CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = InstitutionDepartmentSerializer
+
+    view_category = 'institutions'
+    view_name = 'institution-users'
+
+    ordering = ('-id',)
+
+    @classmethod
+    def _make_elasticsearch_results_filterable(cls, results):
+        """
+        since ES returns a result list obj instead of a awesome queryset we are faking the filter feature from querysets.
+        :param results: List ES results
+        :return:
+        """
+        users = set()
+        current_users = []
+        departments = {}
+        for value in results:
+            departments[value.department] = 0
+
+        for value in results:
+            if value.user_id not in users:
+                current_users.append(value)
+                users = users.union([value.user_id])
+
+        for user in current_users:
+            departments[user.department] += 1
+
+        def filter(self, param):
+            if param.children[0][0] == 'department__icontains':
+                return [item for item in self if param.children[0][1] in item['key']]
+
+        results = type('mock_queryset', (list,), {'filter': filter})()
+        id = 1
+        for key, value in departments.items():
+            results.append(type('item', (object,), {'name': key, 'number_of_users': value, 'id': id}))
+            id += 1
+
+        results.filter = MethodType(filter, results)
+        return results
+
+    def get_default_queryset(self):
+        institution = self.get_institution()
+        departments = UserInstitutionProjectCounts.get_departments(institution)
+        if departments:
+            return self._make_elasticsearch_results_filterable(departments)
+        else:
+            return []
+
+    # overrides RetrieveAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()
