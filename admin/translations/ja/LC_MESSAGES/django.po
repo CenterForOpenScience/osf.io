@@ -31,10 +31,10 @@ msgstr "削除バナーを確認"
 #: .\templates\banners\confirm_delete.html:13
 #, python-format
 msgid ""
-"Are you sure you want to delete <b>%(object.name)s</b>? It is scheduled for "
-"%(object.start_date)s -\n"
-"                        %(object.end_date)s"
-msgstr "<b>%(object.name)s</ b>を削除してもよろしいですか？%(object.start_date)s-\n%(object.end_date)sにスケジュールされています"
+"Are you sure you want to delete <b>%(objectName)s</b>? It is scheduled for "
+"%(startDate)s -\n"
+"                        %(endDate)s"
+msgstr "<b>%(objectName)s</ b>を削除してもよろしいですか？%(startDate)s-\n%(endDate)sにスケジュールされています"
 
 #: .\templates\banners\create.html:5
 msgid "GakuNin RDM Admin | Schedule banner"
@@ -93,16 +93,16 @@ msgid "Collection Provider Delete"
 msgstr "コレクションプロバイダーの削除"
 
 #: .\templates\collection_providers\cannot_delete.html:13
-msgid "Cannot Delete %(provider.name)s"
-msgstr "%(provider.name)sを削除できません"
+msgid "Cannot Delete %(providerName)s"
+msgstr "%(providerName)sを削除できません"
 
 #: .\templates\collection_providers\cannot_delete.html:14
 msgid ""
-"%(provider.name)s has "
-"%(provider.primary_collection.collectionsubmission_set.count)s submissions "
+"%(providerName)s has "
+"%(collectionsubmissionSetCount)s submissions "
 "associated with it, and therefore cannot be safely deleted."
 msgstr ""
-"%(provider.name)sには%(provider.primary_collection.collectionsubmission_set.count)sの送信が関連付けられているため、安全に削除できません。"
+"%(providerName)sには%(collectionsubmissionSetCount)sつの送信が関連付けられているため、安全に削除できません。"
 
 #: .\templates\collection_providers\confirm_delete.html:5
 msgid "Delete Collection Provider"
@@ -111,8 +111,8 @@ msgstr "コレクションプロバイダの削除"
 #: .\templates\collection_providers\confirm_delete.html:12
 #: .\templates\institutions\confirm_delete.html:19
 #, python-format
-msgid "Are you sure you want to delete \"%(object.name)s\"?"
-msgstr "\"%(object.name)s\"を削除してもよろしいですか？"
+msgid "Are you sure you want to delete \"%(objectName)s\"?"
+msgstr "\"%(objectName)s\"を削除してもよろしいですか？"
 
 #: .\templates\collection_providers\create.html:9
 msgid "Create Collection Provider"
@@ -321,16 +321,16 @@ msgstr "機関を削除"
 
 #: .\templates\institutions\cannot_delete.html:13
 #, python-format
-msgid "Cannot Delete %(institution.name)s"
-msgstr "%(institution.name)sを削除できません"
+msgid "Cannot Delete %(institutionName)s"
+msgstr "%(institutionName)sを削除できません"
 
 #: .\templates\institutions\cannot_delete.html:14
 #, python-format
 msgid ""
-"%(institution.name)s has %(institution.nodes.count)s nodes associated with "
+"%(institutionName)s has %(institutionNodeCount)s nodes associated with "
 "it, and therefore cannot be safely deleted."
 msgstr ""
-"%(institution.name)sには%(institution.nodes.count)sノードが関連付けられている"
+"%(institutionName)sには%(institutionNodeCount)sつのノードが関連付けられている"
 "ため、安全に削除できません。"
 
 #: .\templates\institutions\cannot_delete.html:15
@@ -1385,8 +1385,8 @@ msgstr "選択したノードはスパムですか？"
 
 #: .\templates\nodes\remove_contributor.html:6
 #, python-format
-msgid "Removing contributor: %(user.name)s"
-msgstr "コントリビュータを削除する：%(user.name)s"
+msgid "Removing contributor: %(userName)s"
+msgstr "コントリビュータを削除する：%(userName)s"
 
 #: .\templates\nodes\remove_contributor.html:9
 #, python-format
@@ -2109,8 +2109,8 @@ msgstr "スパマー向けの推奨メール"
 
 #: .\templates\spam\email.html:7
 #, python-format
-msgid "Dear %(spam.author.fullname)s,"
-msgstr "%(spam.author.fullname)s様,"
+msgid "Dear %(spamAuthorFullname)s,"
+msgstr "%(spamAuthorFullname)s様,"
 
 #: .\templates\spam\email.html:8
 msgid "A comment you made on a GakuNin RDM (GRDM) project"
@@ -2437,21 +2437,6 @@ msgstr "選択したユーザーはスパムですか？"
 
 #: .\templates\util\pagination.html:25
 #, python-format
-msgid "Page %(items.number)s of %(items.paginator.num_pages)s"
-msgstr "ページ%(items.number)s / %(items.paginator.num_pages)s"
+msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
+msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
 
-#: .\views.py:14
-msgid "Internationalization"
-msgstr "国際化"
-
-#: /website/static/templates\license-picker.html:3
-msgid "License:"
-msgstr "ライセンス:"
-
-#: /website/static/templates\license-picker.html:23
-msgid "Choose a license:"
-msgstr "ライセンスを選択"
-
-#: /website/static/templates\license-picker.html:54
-msgid "Save"
-msgstr "保存"
