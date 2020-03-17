@@ -146,7 +146,7 @@ msgstr "水平の罫線 <hr>"
 
 #: addons/wiki/static/pagedown-ace/Markdown.Editor.js:81
 msgid "Undo -"
-msgstr "もとに戻す -"
+msgstr "元に戻す -"
 
 #: addons/wiki/static/pagedown-ace/Markdown.Editor.js:82
 msgid "Redo -"
@@ -3706,7 +3706,7 @@ msgstr "ファイルコンテンツをPUTできませんでした。"
 
 #: website/static/js/filepage/editor.js:181
 msgid "Revert"
-msgstr "もとに戻す"
+msgstr "元に戻す"
 
 #: website/static/js/filepage/index.js:91
 msgid "Direct iframe with fixed height and width"
