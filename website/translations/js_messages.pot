@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-08 00:23+0900\n"
-"PO-Revision-Date: 2020-03-08 00:23+0900\n"
+"POT-Creation-Date: 2020-03-17 17:40+0900\n"
+"PO-Revision-Date: 2020-03-17 17:40+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -2235,83 +2235,79 @@ msgid "Unable to modify this institution!"
 msgstr ""
 
 #: website/static/js/js_messages.js:5
+msgid "Edit"
+msgstr ""
+
+#: website/static/js/js_messages.js:7
 msgid "Analysis"
 msgstr ""
 
-#: website/static/js/js_messages.js:5
+#: website/static/js/js_messages.js:7
 msgid "Communication"
 msgstr ""
 
-#: website/static/js/js_messages.js:5
+#: website/static/js/js_messages.js:7
 msgid "Data"
 msgstr ""
 
-#: website/static/js/js_messages.js:5
+#: website/static/js/js_messages.js:7
 msgid "Hypothesis"
 msgstr ""
 
-#: website/static/js/js_messages.js:5
+#: website/static/js/js_messages.js:7
 msgid "Instrumentation"
 msgstr ""
 
-#: website/static/js/js_messages.js:5
+#: website/static/js/js_messages.js:7
 msgid "Methods and Measures"
 msgstr ""
 
-#: website/static/js/js_messages.js:5
+#: website/static/js/js_messages.js:7
 msgid "Procedure"
 msgstr ""
 
-#: website/static/js/js_messages.js:5
+#: website/static/js/js_messages.js:7
 #: website/static/js/projectSettingsTreebeardBase.js:92
 msgid "Project"
 msgstr ""
 
-#: website/static/js/js_messages.js:5
+#: website/static/js/js_messages.js:7
 msgid "Software"
 msgstr ""
 
-#: website/static/js/js_messages.js:5
+#: website/static/js/js_messages.js:7
 msgid "Other"
 msgstr ""
 
-#: website/static/js/js_messages.js:7 website/static/js/js_messages.js:9
+#: website/static/js/js_messages.js:9 website/static/js/js_messages.js:11
 msgid "Comments added"
 msgstr ""
 
-#: website/static/js/js_messages.js:7 website/static/js/js_messages.js:9
+#: website/static/js/js_messages.js:9 website/static/js/js_messages.js:11
 msgid "Files updated"
 msgstr ""
 
-#: website/static/js/js_messages.js:9
+#: website/static/js/js_messages.js:11
 msgid "Replies to your comments"
 msgstr ""
 
-#: website/static/js/js_messages.js:9
+#: website/static/js/js_messages.js:11
 msgid "Mentions added"
 msgstr ""
 
-#: website/static/js/js_messages.js:9
+#: website/static/js/js_messages.js:11
 msgid "Preprint submissions updated"
 msgstr ""
 
-#: website/static/js/js_messages.js:11
-msgid "No license"
-msgstr ""
-
 #: website/static/js/js_messages.js:13
-msgid ""
-"Because you have not configured the {addon} add-on, your authentication "
-"will not be transferred to the forked {category}. You may authorize and "
-"configure the {addon} add-on in the new fork on the settings page."
+msgid "No license"
 msgstr ""
 
 #: website/static/js/js_messages.js:15
 msgid ""
-"This {category} contains links to other projects. Links will be copied "
-"into your fork, but the projects that they link to will not be forked. If"
-" you wish to fork the linked projects, they need to be forked from the "
-"original project."
+"Because you have not configured the {addon} add-on, your authentication "
+"will not be transferred to the forked {category}. You may authorize and "
+"configure the {addon} add-on in the new fork on the settings page."
 msgstr ""
 
 #: website/static/js/keen.js:116

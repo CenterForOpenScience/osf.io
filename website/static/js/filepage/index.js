@@ -491,7 +491,7 @@ var FileViewPage = {
                             History.pushState(state, 'GakuNin RDM | ' + window.contextVars.file.name, url);
                         }
                     }
-                }, ctrl.editor.title);
+                }, _(ctrl.editor.title));
             }
         };
 
