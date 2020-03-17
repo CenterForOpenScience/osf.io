@@ -235,7 +235,7 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
 
     @classmethod
     def get_departments(cls, institution):
-        search = cls.filter_institution(institution)
+        search = cls.filter_institution(institution).sort('timestamp')
         hits = search.execute().hits
         return hits
 

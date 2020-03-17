@@ -394,7 +394,7 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
     view_category = 'institutions'
     view_name = 'institution-users'
 
-    ordering = ('-id',)
+    ordering = ('-number_of_users',)
 
     @classmethod
     def _make_elasticsearch_results_filterable(cls, results):
@@ -424,7 +424,7 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
         results = type('mock_queryset', (list,), {'filter': filter})()
         id = 1
         for key, value in departments.items():
-            results.append(type('item', (object,), {'name': key, 'number_of_users': value, 'id': id}))
+            results.append(type('item', (object,), {'name': key, 'number_of_users': value}))
             id += 1
 
         results.filter = MethodType(filter, results)

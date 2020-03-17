@@ -94,15 +94,15 @@ class TestInstitutionDepartmentList:
             {'id': '',
              'type': 'institution-departments',
              'attributes': {
-                 'name': 'Defense',
-                 'number_of_users': 0
+                 'name': 'Offense', 'number_of_users': 2
              },
              'links': {}
              },
             {'id': '',
              'type': 'institution-departments',
              'attributes': {
-                 'name': 'Offense', 'number_of_users': 2
+                 'name': 'Defense',
+                 'number_of_users': 0
              },
              'links': {}
              }
