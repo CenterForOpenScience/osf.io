@@ -3,7 +3,7 @@
       action="{% url link guid=guid guid=guid user_id=user.id %}">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">x</button>
-        <h3>{% blocktrans %}Removing contributor: {{ user.name }}{% endblocktrans %}</h3>
+        <h3>{% blocktrans with  userName=user.name %}Removing contributor: {{ userName }}{% endblocktrans %}</h3>
     </div>
     <div class="modal-body">
         {% blocktrans %}User will be removed. Currently only

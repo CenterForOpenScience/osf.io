@@ -9,7 +9,7 @@
         <div class="row">
             <div class="col-md-12">
                 <form action="" method="post">{% csrf_token %}
-                    <p>{% blocktrans %}Are you sure you want to delete "{{ object.name }}"?{% endblocktrans %}</p>
+                    <p>{% blocktrans with objectName=object.name %}Are you sure you want to delete "{{ objectName }}"?{% endblocktrans %}</p>
                     <input class="btn btn-primary" type="submit" value="Confirm" />
                 </form>
             </div>

@@ -10,8 +10,8 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-12">
-                <h3>{% blocktrans %}Cannot Delete {{ institution.name }}{% endblocktrans %}</h3>
-                <p>{% blocktrans %}{{ institution.name }} has {{ institution.nodes.count }} nodes associated with it, and therefore cannot be safely deleted.{% endblocktrans %}</p>
+                <h3>{% blocktrans with institutionName=institution.name %}Cannot Delete {{ institutionName }}{% endblocktrans %}</h3>
+                <p>{% blocktrans with institutionName=institution.name institutionNodeCount=institution.nodes.count %}{{ institutionName }} has {{ institutionNodeCount }} nodes associated with it, and therefore cannot be safely deleted.{% endblocktrans %}</p>
                 <p><a href="{% url 'institutions:nodes' institution.id %}">{% trans "View associated nodes here" %}</a></p>
                 <p><a href="{% url 'institutions:detail' institution.id %}">{% trans "Back to institution detail" %}</a></p>
             </div>

@@ -4,7 +4,7 @@
     <h3>{% trans "Suggested Email message for spammer" %}</h3>
 </div>
 <div class="modal-body">
-    <p>{% blocktrans %}Dear {{ spam.author.fullname }},{% endblocktrans %}</p>
+    <p>{% blocktrans with spamAuthorFullname=spam.author.fullname %}Dear {{ spamAuthorFullname }},{% endblocktrans %}</p>
     <p>{% trans "A comment you made on a GakuNin RDM (GRDM) project" %}
         [<a href="{{ spam.node.absolute_url }}">{{ spam.node.absolute_url }}</a>]
         {% trans "has been reported as" %}

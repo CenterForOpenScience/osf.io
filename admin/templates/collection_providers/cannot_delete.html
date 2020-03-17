@@ -10,8 +10,8 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-12">
-                <h3>{% blocktrans %}Cannot Delete {{ provider.name }}{% endblocktrans %}</h3>
-                <p>{% blocktrans %}{{ provider.name }} has {{ provider.primary_collection.collectionsubmission_set.count }} submissions associated with it, and therefore cannot be safely deleted.{% endblocktrans %}</p>
+                <h3>{% blocktrans with providerName=provider.name %}Cannot Delete {{ providerName }}{% endblocktrans %}</h3>
+                <p>{% blocktrans with providerName=provider.name collectionsubmissionSetCount=provider.primary_collection.collectionsubmission_set.count %}{{ providerName }} has {{ collectionsubmissionSetCount }} submissions associated with it, and therefore cannot be safely deleted.{% endblocktrans %}</p>
             </div>
         </div>
     </div>
