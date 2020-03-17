@@ -448,6 +448,22 @@ def format_results(results):
             parent_info = load_parent(result.get('parent_id'))
             result['parent_url'] = parent_info.get('url') if parent_info else None
             result['parent_title'] = parent_info.get('title') if parent_info else None
+
+            # get unnormalized names
+            creator_id, creator_name = user_id_fullname(
+                result.get('creator_id'))
+            modifier_id, modifier_name = user_id_fullname(
+                result.get('modifier_id'))
+            normalized_creator_name = result.get('creator_name')
+            normalized_modifier_name = result.get('modifier_name')
+            if not creator_name:
+                creator_name = normalized_creator_name
+            if not modifier_name:
+                modifier_name = normalized_modifier_name
+            result['creator_name'] = creator_name
+            result['normalized_creator_name'] = normalized_creator_name
+            result['modifier_name'] = modifier_name
+            result['normalized_modifier_name'] = normalized_modifier_name
         elif result.get('category') in {'project', 'component', 'registration'}:
             result = format_result(result, result.get('parent_id'))
         elif result.get('category') in {'preprint'}:
@@ -1192,6 +1208,28 @@ def update_file(file_, index=None, delete=False):
     tags = list(file_.tags.filter(system=False).values_list('name', flat=True))
     normalized_tags = [unicode_normalize(tag) for tag in tags]
 
+    # FileVersion ordering is '-created'. (reversed order)
+    first_file = file_.versions.all().last()  # may be None
+    last_file = file_.versions.all().first()  # may be None
+    if first_file:
+        creator = first_file.creator
+        creator_id = creator._id
+        creator_name = unicode_normalize(creator.fullname)
+        date_created = first_file.created
+    else:
+        creator_id = None
+        creator_name = None
+        date_created = file_.created
+    if last_file:
+        modifier = last_file.creator
+        modifier_id = modifier._id
+        modifier_name = unicode_normalize(modifier.fullname)
+        date_modified = last_file.created
+    else:
+        modifier_id = None
+        modifier_name = None
+        date_modified = file_.created
+
     guid_url = None
     file_guid = file_.get_guid(create=False)
     if file_guid:
@@ -1200,6 +1238,12 @@ def update_file(file_, index=None, delete=False):
     # just reroute to preprints detail
     file_doc = {
         'id': file_._id,
+        'date_created': date_created,
+        'date_modified': date_modified,
+        'creator_id': creator_id,
+        'creator_name': creator_name,
+        'modifier_id': modifier_id,
+        'modifier_name': modifier_name,
         'deep_url': None if isinstance(target, Preprint) else file_deep_url,
         'guid_url': None if isinstance(target, Preprint) else guid_url,
         'tags': tags,

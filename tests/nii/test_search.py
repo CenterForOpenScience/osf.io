@@ -858,6 +858,128 @@ class TestPrivateSearch(OsfTestCase):
         assert_equal(len(filenames), 1)
         assert_equal(len(tags), 2)
 
+
+    @enable_private_search
+    def _update_file(self, project, user, count):
+        from addons.osfstorage import settings as osfstorage_settings
+        from addons.osfstorage.models import OsfStorageFileNode
+
+        with run_celery_tasks():
+            osfstorage = project.get_addon('osfstorage')
+            root_node = osfstorage.get_root()
+            name = 'test_file'
+            try:
+                test_file = root_node.find_child_by_name(name)
+            except OsfStorageFileNode.DoesNotExist:
+                test_file = None
+            if test_file is None:
+                test_file = root_node.append_file(name)
+            test_file.create_version(user, {
+                  # NOTE: Same object as latest does not update FileVersion
+                'object': '06d80e' + str(count),
+                'service': 'cloud',
+                osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+            }, {
+                'size': 1337,
+                'contentType': 'img/png'
+            }).save()
+
+        assert_equal(test_file.versions.count(), count)
+        assert_equal(test_file.versions.all().first().creator, user)
+
+    def test_normalize_file_creator_modifier1(self):
+        """
+        Unicode正規化のテスト。通常検索でファイルのcreatorとmodifier
+        をそれぞれ検索する場合。
+        データベースに登録されている濁点付き文字が結合可能濁点と母体の
+        文字の組み合わせで表現されている場合に、合成済み文字で検索でき
+        ることを確認する。
+        """
+        # creator
+        self._update_file(self.project_private_user3, self.user3, 1)
+        # modifier
+        self._update_file(self.project_private_user3, self.user5, 2)
+
+        c1 = u'\u304c'  # が (user3)
+        qs = u'category:file AND creator_name:' + c1
+        res, results = self._common_normalize(qs, user=self.user3)
+        filenames = get_filenames(results)
+        tags = get_filetags(results, self.f1.name)
+        DEBUG('results', results)
+        DEBUG('filenames', filenames)
+        DEBUG('tags', tags)
+        assert_equal(len(results), 1)
+        assert_equal(len(filenames), 1)
+        assert_equal(len(tags), 0)
+        r = results[0]
+        c2 = u'\u304b\u3099' # か+濁点
+        assert_equal(r['creator_id'], self.user3._id)
+        assert_equal(r['creator_name'], c2)
+        assert_equal(r['normalized_creator_name'], c2)
+
+        c1 = u'\u3070'  # ば (user5)
+        qs = u'category:file AND modifier_name:' + c1
+        res, results = self._common_normalize(qs, user=self.user3)
+        filenames = get_filenames(results)
+        tags = get_filetags(results, self.f1.name)
+        DEBUG('results', results)
+        DEBUG('filenames', filenames)
+        DEBUG('tags', tags)
+        assert_equal(len(results), 1)
+        assert_equal(len(filenames), 1)
+        assert_equal(len(tags), 0)
+        r = results[0]
+        c2 = u'\u306f\u3099' # は+濁点
+        assert_equal(r['modifier_id'], self.user5._id)
+        assert_equal(r['modifier_name'], c2)
+        assert_equal(r['normalized_modifier_name'], c2)
+
+    def test_normalize_file_creator_modifier2(self):
+        """
+        Unicode正規化のテスト。通常検索でファイルのcreatorとmodifier
+        をそれぞれ検索する場合。
+        データベースに登録されている濁点付き文字が合成済み文字の場合に、
+        結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
+        """
+        # creator
+        self._update_file(self.project_private_user4, self.user4, 1)
+        # modifier
+        self._update_file(self.project_private_user4, self.user6, 2)
+
+        c1 = u'\u304d\u3099'  # き+濁点 (user4)
+        qs = u'category:file AND creator_name:' + c1
+        res, results = self._common_normalize(qs, user=self.user4)
+        filenames = get_filenames(results)
+        tags = get_filetags(results, self.f1.name)
+        DEBUG('results', results)
+        DEBUG('filenames', filenames)
+        DEBUG('tags', tags)
+        assert_equal(len(results), 1)
+        assert_equal(len(filenames), 1)
+        assert_equal(len(tags), 0)
+        r = results[0]
+        c2 = u'\u304e' # ぎ
+        assert_equal(r['creator_id'], self.user4._id)
+        assert_equal(r['creator_name'], c2)
+        assert_equal(r['normalized_creator_name'], c1)
+
+        c1 = u'\u3072\u3099'  # ひ+濁点 (user6)
+        qs = u'category:file AND modifier_name:' + c1
+        res, results = self._common_normalize(qs, user=self.user4)
+        filenames = get_filenames(results)
+        tags = get_filetags(results, self.f1.name)
+        DEBUG('results', results)
+        DEBUG('filenames', filenames)
+        DEBUG('tags', tags)
+        assert_equal(len(results), 1)
+        assert_equal(len(filenames), 1)
+        assert_equal(len(tags), 0)
+        r = results[0]
+        c2 = u'\u3073'  # び
+        assert_equal(r['modifier_id'], self.user6._id)
+        assert_equal(r['modifier_name'], c2)
+        assert_equal(r['normalized_modifier_name'], c1)
+
     @enable_private_search
     def _common_normalize_search_contributor(self, qs):
         # app.get() requires str

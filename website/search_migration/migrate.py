@@ -60,6 +60,11 @@ def normalize(docs):
             for tag in doc['doc']['tags']:
                 normalized_tags.append(unicode_normalize(tag))
             doc['doc']['normalized_tags'] = normalized_tags
+
+            creator_name = doc['doc']['creator_name']
+            doc['doc']['creator_name'] = unicode_normalize(creator_name)
+            modifier_name = doc['doc']['modifier_name']
+            doc['doc']['modifier_name'] = unicode_normalize(modifier_name)
     elif doc_type in PROJECT_LIKE_TYPES:
         for doc in docs:
             title = doc['doc']['title']

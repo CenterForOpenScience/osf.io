@@ -364,6 +364,12 @@ SELECT json_agg(
         , '_op_type', 'update'
         , 'doc', json_build_object(
             'id', F._id
+            , 'date_created', FIRST.created
+            , 'date_modified', LAST.created
+            , 'creator_id', CREATOR_GUID._id
+            , 'creator_name', CREATOR.fullname
+            , 'modifier_id', MODIFIER_GUID._id
+            , 'modifier_name', MODIFIER.fullname
             , 'deep_url', CASE WHEN F.provider = 'osfstorage'
                           THEN '/' || (NODE.DATA ->> 'guid') || '/files/' || F.provider || '/' || F._id
                           ELSE '/' || (NODE.DATA ->> 'guid') || '/files/' || F.provider || F._path
@@ -409,6 +415,52 @@ FROM osf_basefilenode AS F
                   AND content_type_id = (SELECT id FROM django_content_type WHERE model = 'basefilenode')
             LIMIT 1
             ) FILE_GUID ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT created, creator_id
+            FROM osf_fileversion
+            INNER JOIN osf_basefilenode_versions
+            ON (osf_fileversion.id = osf_basefilenode_versions.fileversion_id)
+            WHERE osf_basefilenode_versions.basefilenode_id = F.id
+            ORDER BY osf_fileversion.created DESC
+            LIMIT 1
+            ) FIRST ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT created, creator_id
+            FROM osf_fileversion
+            INNER JOIN osf_basefilenode_versions
+            ON (osf_fileversion.id = osf_basefilenode_versions.fileversion_id)
+            WHERE osf_basefilenode_versions.basefilenode_id = F.id
+            ORDER BY osf_fileversion.created ASC
+            LIMIT 1
+            ) LAST ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT id AS user_id, fullname
+            FROM osf_osfuser
+            WHERE osf_osfuser.id = FIRST.creator_id
+            ) CREATOR ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT id AS user_id, fullname
+            FROM osf_osfuser
+            WHERE osf_osfuser.id = LAST.creator_id
+            ) MODIFIER ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT _id
+            FROM osf_guid
+            WHERE object_id = CREATOR.user_id
+                  AND content_type_id = ANY (SELECT id
+                                             FROM django_content_type
+                                             WHERE model = 'osfuser')
+            LIMIT 1
+            ) CREATOR_GUID ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT _id
+            FROM osf_guid
+            WHERE object_id = MODIFIER.user_id
+                  AND content_type_id = ANY (SELECT id
+                                             FROM django_content_type
+                                             WHERE model = 'osfuser')
+            LIMIT 1
+            ) MODIFIER_GUID ON TRUE
   LEFT JOIN LATERAL (
             SELECT array_agg(TAG.name) AS names
             FROM osf_tag AS TAG

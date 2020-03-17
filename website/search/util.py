@@ -434,6 +434,8 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
     }
 
 def unicode_normalize(text):
+    if text is None:
+        return None
     if not isinstance(text, unicode):
         text = text.decode('utf-8')
     normalized = unicodedata.normalize('NFKD', text)
