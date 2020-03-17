@@ -432,8 +432,8 @@ msgstr "関連ノード"
 #: .\templates\rdm_timestampadd\node_list.html:14
 #: .\templates\rdm_timestampsettings\node_list.html:14
 #, python-format
-msgid "List of Nodes for %(institution.name)s"
-msgstr "次のノードリスト：%(institution.name)s"
+msgid "List of Nodes for %(institutionName)s"
+msgstr "%(institutionName)sのノードリスト"
 
 #: .\templates\institutions\statistical_status_default_storage.html:10
 #, python-format
