@@ -1069,9 +1069,9 @@ class ChronosSubmissionFactory(DjangoModelFactory):
         return instance
 
 
-class BrandAssetsFactory(DjangoModelFactory):
+class BrandFactory(DjangoModelFactory):
     class Meta:
-        model = models.BrandAssets
+        model = models.Brand
 
     hero_logo = factory.Faker('url')
     topnav_logo = factory.Faker('url')
