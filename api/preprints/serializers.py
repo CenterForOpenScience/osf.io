@@ -215,7 +215,10 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     )
     has_data_links = DisableIfSwitch(
         SLOAN_DATA_INPUT,
-        ser.NullBooleanField(required=False),
+        ser.ChoiceField(
+            Preprint.HAS_LINKS_CHOICES,
+            required=False,
+        ),
     )
     why_no_data = DisableIfSwitch(
         SLOAN_DATA_INPUT,
@@ -234,7 +237,10 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     )
     has_prereg_links = DisableIfSwitch(
         SLOAN_PREREG_INPUT,
-        ser.NullBooleanField(required=False),
+        ser.ChoiceField(
+            Preprint.HAS_LINKS_CHOICES,
+            required=False,
+        ),
     )
     why_no_prereg = DisableIfSwitch(
         SLOAN_PREREG_INPUT,
