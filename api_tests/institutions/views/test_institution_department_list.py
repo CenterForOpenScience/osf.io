@@ -63,7 +63,7 @@ class TestInstitutionDepartmentList:
         resp = app.get(url, auth=user.auth, expect_errors=True)
         assert resp.status_code == 403
 
-        resp = app.get(url, auth=admin.auth, expect_errors=True)
+        resp = app.get(url, auth=admin.auth)
         assert resp.status_code == 200
 
         assert resp.json['data'] == []

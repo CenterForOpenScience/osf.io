@@ -5,6 +5,7 @@ import pytest
 from website.app import init_app
 from tests.json_api_test_app import JSONAPITestApp
 from elasticsearch_dsl import connections
+from django.core.management import call_command
 
 
 @pytest.fixture()
@@ -35,6 +36,7 @@ def _es_marker(request, es_client):
             es_client.indices.delete_template('*')
 
         teardown_es()
+        call_command('sync_metrics')
         yield
         teardown_es()
     else:
