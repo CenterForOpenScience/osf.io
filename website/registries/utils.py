@@ -4,20 +4,13 @@ REG_CAMPAIGNS = {
     'registered_report': 'Registered Report Protocol Preregistration',
 }
 
-REG_CAMPAIGNS_VERSION = {
-    'prereg_challenge': 2,
-    'prereg': 3,
-    'registered_report': 4,
-}
-
 def get_campaign_schema(campaign):
     from osf.models import RegistrationSchema
     if campaign not in REG_CAMPAIGNS:
         raise ValueError('campaign must be one of: {}'.format(', '.join(REG_CAMPAIGNS.keys())))
     schema_name = REG_CAMPAIGNS[campaign]
-    schema_version = REG_CAMPAIGNS_VERSION[campaign]
 
-    return RegistrationSchema.objects.get(name=schema_name, schema_version=schema_version)
+    return RegistrationSchema.objects.filter(name=schema_name).order_by('-schema_version').first()
 
 def drafts_for_user(user, campaign=None):
     from osf.models import DraftRegistration, Node
