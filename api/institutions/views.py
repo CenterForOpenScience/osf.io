@@ -1,4 +1,5 @@
 from types import MethodType
+from collections import defaultdict
 
 from django.db.models import F
 from rest_framework import generics
@@ -394,25 +395,18 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
     view_category = 'institutions'
     view_name = 'institution-users'
 
-    ordering = ('-number_of_users',)
+    ordering = ('-number_of_users', 'name',)
 
     @classmethod
-    def _get_current_user_departments(cls, results):
-        users = set()
-        current_users = []
-        departments = {}
-        for value in results:
-            departments[value.department] = 0
+    def _get_departments_counts(cls, institution):
+        department_counts = defaultdict(lambda: 0, {})
 
-        for value in results:
-            if value.user_id not in users:
-                current_users.append(value)
-                users = users.union([value.user_id])
+        user_data = UserInstitutionProjectCounts.get_current_user_metrics(institution)
+        for user in user_data:
+            department_name = getattr(user, 'department', 'N/A')
+            department_counts[department_name] += 1
 
-        for user in current_users:
-            departments[user.department] += 1
-
-        return departments
+        return department_counts
 
     @classmethod
     def _make_elasticsearch_results_filterable(cls, departments):
@@ -422,7 +416,7 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
         :return:
         """
 
-        def filter(self, param):
+        def mock_filter(self, param):
             if param.children[0][0] == 'department__icontains':
                 return [item for item in self if param.children[0][1] in item['key']]
 
@@ -432,13 +426,12 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
             results.append(type('item', (object,), {'name': key, 'number_of_users': value}))
             id += 1
 
-        results.filter = MethodType(filter, results)
+        results.filter = MethodType(mock_filter, results)
         return results
 
     def get_default_queryset(self):
         institution = self.get_institution()
-        departments = UserInstitutionProjectCounts.get_departments(institution)
-        departments = self._get_current_user_departments(departments)
+        departments = self._get_departments_counts(institution)
         return self._make_elasticsearch_results_filterable(departments)
 
     # overrides RetrieveAPIView

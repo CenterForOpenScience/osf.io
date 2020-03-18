@@ -34,6 +34,14 @@ class TestInstitutionDepartmentList:
         return AuthUserFactory()
 
     @pytest.fixture()
+    def user3(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user4(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
     def admin_permission(self):
         return Permission.objects.get(codename=INSTITUTION_ADMIN)
 
@@ -47,7 +55,7 @@ class TestInstitutionDepartmentList:
     def url(self, institution):
         return f'/{API_BASE}institutions/{institution._id}/departments/'
 
-    def test_get(self, app, url, user, user2, admin, institution):
+    def test_get(self, app, url, user, user2, user3, user4, admin, institution):
 
         resp = app.get(url, expect_errors=True)
         assert resp.status_code == 401
@@ -60,44 +68,66 @@ class TestInstitutionDepartmentList:
 
         assert resp.json['data'] == []
 
+        # This represents a Department that had a user, but no longer has any users, so does not appear in results.
         user_counts = UserInstitutionProjectCounts.record_user_institution_project_counts(
             user=user,
             institution=institution,
             public_project_count=1,
             private_project_count=1
         )
-        user_counts.department = 'Offense'
-        user_counts.save()
-        user_counts = UserInstitutionProjectCounts.record_user_institution_project_counts(
-            user=user,
-            institution=institution,
-            public_project_count=1,
-            private_project_count=1
-        )
-        user_counts.department = 'Defense'
+        user_counts.department = 'Old Department'
         user_counts.save()
 
+        # The user has left the department
+        user_counts = UserInstitutionProjectCounts.record_user_institution_project_counts(
+            user=user,
+            institution=institution,
+            public_project_count=1,
+            private_project_count=1
+        )
+        user_counts.department = 'New Department'
+        user_counts.save()
+
+        # A second user entered the department
         user_counts = UserInstitutionProjectCounts.record_user_institution_project_counts(
             user=user2,
             institution=institution,
             public_project_count=1,
             private_project_count=1
         )
-        user_counts.department = 'Offense'
+        user_counts.department = 'New Department'
+        user_counts.save()
+
+        # A new department with a single user to test sorting
+        user_counts = UserInstitutionProjectCounts.record_user_institution_project_counts(
+            user=user3,
+            institution=institution,
+            public_project_count=1,
+            private_project_count=1
+        )
+        user_counts.department = 'Smaller Department'
+        user_counts.save()
+
+        # A user with no department
+        user_counts = UserInstitutionProjectCounts.record_user_institution_project_counts(
+            user=user4,
+            institution=institution,
+            public_project_count=1,
+            private_project_count=1
+        )
         user_counts.save()
 
         import time
         time.sleep(2)  # ES is slow
 
-        resp = app.get(url, auth=admin.auth, expect_errors=True)
-        assert resp.status_code == 200
+        resp = app.get(url, auth=admin.auth)
         assert resp.json['data'] == [
-            {'name': 'Offense', 'number_of_users': 2},
-            {'name': 'Defense', 'number_of_users': 0}
+            {'name': 'New Department', 'number_of_users': 2},
+            {'name': 'Smaller Department', 'number_of_users': 1},
+            {'name': 'N/A', 'number_of_users': 1},
         ]
 
-        resp = app.get(f'{url}?filter[name]=Offense', auth=admin.auth, expect_errors=True)
-        assert resp.status_code == 200
+        resp = app.get(f'{url}?filter[name]=New Department', auth=admin.auth)
         assert resp.json['data'] == [
-            {'name': 'Offense', 'number_of_users': 2}
+            {'name': 'New Department', 'number_of_users': 2}
         ]

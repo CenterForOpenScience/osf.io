@@ -234,10 +234,37 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
         return cls.search().filter('match', institution_id=institution._id)
 
     @classmethod
-    def get_departments(cls, institution):
+    def get_current_user_metrics(cls, institution):
         search = cls.filter_institution(institution).sort('timestamp')
-        hits = search.execute().hits
-        return hits
+
+        search.update_from_dict({
+            'size': 0,
+            'aggs': {
+                'users': {
+                    'terms': {
+                        'field': 'user_id',
+                    },
+                    'aggs': {
+                        'most_recent': {
+                            'top_hits': {
+                                'size': 1,
+                                'sort': [
+                                    {
+                                        'timestamp': {
+                                            'order': 'desc'
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        })
+        buckets = search.execute().aggregations['users']['buckets']
+
+        user_data = [bucket['most_recent']['hits']['hits'][0]['_source'] for bucket in buckets]
+        return user_data
 
 
 class InstitutionProjectCounts(MetricMixin, metrics.Metric):
