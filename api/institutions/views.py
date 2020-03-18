@@ -397,12 +397,7 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
     ordering = ('-number_of_users',)
 
     @classmethod
-    def _make_elasticsearch_results_filterable(cls, results):
-        """
-        since ES returns a result list obj instead of a awesome queryset we are faking the filter feature from querysets.
-        :param results: List ES results
-        :return:
-        """
+    def _get_current_user_departments(cls, results):
         users = set()
         current_users = []
         departments = {}
@@ -416,6 +411,16 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
 
         for user in current_users:
             departments[user.department] += 1
+
+        return departments
+
+    @classmethod
+    def _make_elasticsearch_results_filterable(cls, departments):
+        """
+        since ES returns a result list obj instead of a awesome queryset we are faking the filter feature from querysets.
+        :param results: List ES results
+        :return:
+        """
 
         def filter(self, param):
             if param.children[0][0] == 'department__icontains':
@@ -433,10 +438,8 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
     def get_default_queryset(self):
         institution = self.get_institution()
         departments = UserInstitutionProjectCounts.get_departments(institution)
-        if departments:
-            return self._make_elasticsearch_results_filterable(departments)
-        else:
-            return []
+        departments = self._get_current_user_departments(departments)
+        return self._make_elasticsearch_results_filterable(departments)
 
     # overrides RetrieveAPIView
     def get_queryset(self):

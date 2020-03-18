@@ -154,7 +154,7 @@ class InstitutionRegistrationsRelationshipSerializer(BaseAPISerializer):
         }
 
 
-class InstitutionDepartmentSerializer(JSONAPISerializer):
+class InstitutionDepartmentSerializer(BaseAPISerializer):
 
     class Meta:
         type_ = 'institution-departments'

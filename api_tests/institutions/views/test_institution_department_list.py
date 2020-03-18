@@ -92,31 +92,12 @@ class TestInstitutionDepartmentList:
         resp = app.get(url, auth=admin.auth, expect_errors=True)
         assert resp.status_code == 200
         assert resp.json['data'] == [
-            {'id': '',
-             'type': 'institution-departments',
-             'attributes': {
-                 'name': 'Offense', 'number_of_users': 2
-             },
-             'links': {}
-             },
-            {'id': '',
-             'type': 'institution-departments',
-             'attributes': {
-                 'name': 'Defense',
-                 'number_of_users': 0
-             },
-             'links': {}
-             }
+            {'name': 'Offense', 'number_of_users': 2},
+            {'name': 'Defense', 'number_of_users': 0}
         ]
 
         resp = app.get(f'{url}?filter[name]=Offense', auth=admin.auth, expect_errors=True)
         assert resp.status_code == 200
         assert resp.json['data'] == [
-            {'id': '',
-             'type': 'institution-departments',
-             'attributes': {
-                 'name': 'Offense', 'number_of_users': 2
-             },
-             'links': {}
-             }
+            {'name': 'Offense', 'number_of_users': 2}
         ]
