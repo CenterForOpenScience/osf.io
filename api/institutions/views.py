@@ -389,7 +389,7 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
     serializer_class = InstitutionDepartmentSerializer
 
     view_category = 'institutions'
-    view_name = 'institution-users'
+    view_name = 'institution-users-departments'
 
     ordering = ('-number_of_users', 'name',)
 
