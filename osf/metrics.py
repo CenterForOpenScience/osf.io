@@ -196,40 +196,6 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
         source = metrics.MetaField(enabled=True)
 
     @classmethod
-    def record_user_institution_project_counts(cls, user, institution, public_project_count, private_project_count, **kwargs):
-        return cls.record(
-            user_id=user._id,
-            institution_id=institution._id,
-            department=getattr(user, 'department', None),
-            public_project_count=public_project_count,
-            private_project_count=private_project_count,
-            **kwargs
-        )
-
-    @classmethod
-    def get_latest_user_institution_project_counts(cls, user, institution):
-        search = cls.search().filter('match', user_id=user._id).filter('match', institution_id=institution._id).sort('-timestamp')[:1]
-
-        try:
-            response = search.execute()
-        except NotFoundError:
-            # _get_relevant_indices returned 1 or more indices
-            # that doesn't exist. Fall back to unoptimized query
-            search = search.index().index(cls._default_index())
-            response = search.execute()
-        latest_document = response[0]
-        # No indexed data
-        if not hasattr(latest_document, 'public_project_count'):
-            public_project_count = 0
-        else:
-            public_project_count = latest_document.public_project_count
-        if not hasattr(latest_document, 'private_project_count'):
-            private_project_count = 0
-        else:
-            private_project_count = latest_document.private_project_count
-        return public_project_count, private_project_count
-
-    @classmethod
     def filter_institution(cls, institution):
         return cls.search().filter('match', institution_id=institution._id)
 

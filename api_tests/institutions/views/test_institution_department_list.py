@@ -69,53 +69,48 @@ class TestInstitutionDepartmentList:
         assert resp.json['data'] == []
 
         # This represents a Department that had a user, but no longer has any users, so does not appear in results.
-        user_counts = UserInstitutionProjectCounts.record_user_institution_project_counts(
-            user=user,
-            institution=institution,
+        UserInstitutionProjectCounts.record(
+            user_id=user._id,
+            institution_id=institution._id,
+            department='Old Department',
             public_project_count=1,
-            private_project_count=1
-        )
-        user_counts.department = 'Old Department'
-        user_counts.save()
+            private_project_count=1,
+        ).save()
 
         # The user has left the department
-        user_counts = UserInstitutionProjectCounts.record_user_institution_project_counts(
-            user=user,
-            institution=institution,
+        UserInstitutionProjectCounts.record(
+            user_id=user._id,
+            institution_id=institution._id,
+            department='New Department',
             public_project_count=1,
-            private_project_count=1
-        )
-        user_counts.department = 'New Department'
-        user_counts.save()
+            private_project_count=1,
+        ).save()
 
         # A second user entered the department
-        user_counts = UserInstitutionProjectCounts.record_user_institution_project_counts(
-            user=user2,
-            institution=institution,
+        UserInstitutionProjectCounts.record(
+            user_id=user2._id,
+            institution_id=institution._id,
+            department='New Department',
             public_project_count=1,
             private_project_count=1
-        )
-        user_counts.department = 'New Department'
-        user_counts.save()
+        ).save()
 
         # A new department with a single user to test sorting
-        user_counts = UserInstitutionProjectCounts.record_user_institution_project_counts(
-            user=user3,
-            institution=institution,
+        UserInstitutionProjectCounts.record(
+            user_id=user3._id,
+            institution_id=institution._id,
+            department='Smaller Department',
             public_project_count=1,
             private_project_count=1
-        )
-        user_counts.department = 'Smaller Department'
-        user_counts.save()
+        ).save()
 
         # A user with no department
-        user_counts = UserInstitutionProjectCounts.record_user_institution_project_counts(
-            user=user4,
-            institution=institution,
+        UserInstitutionProjectCounts.record(
+            user_id=user4._id,
+            institution_id=institution._id,
             public_project_count=1,
             private_project_count=1
-        )
-        user_counts.save()
+        ).save()
 
         import time
         time.sleep(2)  # ES is slow
