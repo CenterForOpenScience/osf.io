@@ -201,8 +201,12 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
 
     @classmethod
     def get_current_user_metrics(cls, institution) -> list:
+        """
+        Gets the most recent document for every unique user.
+        :param institution: Institution
+        :return: list
+        """
         search = cls.filter_institution(institution).sort('timestamp')
-
         search.update_from_dict({
             'size': 0,
             'aggs': {
@@ -227,6 +231,7 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
                 }
             }
         })
+
         if search.execute().aggregations:
             buckets = search.execute().aggregations['users']['buckets']
             user_data = [bucket['most_recent']['hits']['hits'][0]['_source'] for bucket in buckets]

@@ -225,3 +225,12 @@ def assert_resource_type(obj, resource_tuple):
 
     a_or_an = 'an' if error_message[0].lower() in 'aeiou' else 'a'
     assert isinstance(obj, resource_tuple), 'obj must be {} {}; got {}'.format(a_or_an, error_message, obj)
+
+
+class MockQueryset(list):
+    """
+    This class is meant to convert a simple list into a filterable queryset look-a-like.
+    """
+    def add_dict_as_item(self, dict):
+        item = type('item', (object,), dict)
+        self.append(item)

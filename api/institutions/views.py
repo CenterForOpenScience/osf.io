@@ -24,6 +24,7 @@ from api.base.parsers import (
     JSONAPIRelationshipParserForRegularJSON,
 )
 from api.base.exceptions import RelationshipPostMakesNoChanges
+from api.base.utils import MockQueryset
 from api.nodes.serializers import NodeSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.users.serializers import UserSerializer
@@ -378,8 +379,6 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
 
 
 class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, InstitutionMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_users_list).
-    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -394,38 +393,41 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
     ordering = ('-number_of_users', 'name',)
 
     @classmethod
-    def _get_departments_counts(cls, institution):
-        department_counts = defaultdict(lambda: 0, {})
+    def _get_departments_counts(cls, current_user_data: list) -> dict:
+        """
+        This takes a list of all current unique users and sums up all the users in each department.
+        :param current_user_data: list of elasticsearch data
+        :return:
+        """
 
-        user_data = UserInstitutionProjectCounts.get_current_user_metrics(institution)
-        for user in user_data:
+        department_counts = defaultdict(lambda: 0, {})
+        for user in current_user_data:
             department_name = getattr(user, 'department', 'N/A')
             department_counts[department_name] += 1
 
         return department_counts
 
     @classmethod
-    def _make_elasticsearch_results_filterable(cls, departments):
+    def _make_elasticsearch_results_filterable(cls, departments: dict) -> MockQueryset:
         """
-        since ES returns a result list obj instead of a awesome queryset we are faking the filter feature from querysets.
-        :param results: List ES results
-        :return:
+        Since ES returns a list obj instead of a awesome filterable queryset we are faking the filter feature used by
+        querysets by create a mock queryset with limited filterbility.
+
+        :param departments: Dict {'Department Name': 3} means "Department Name" has 3 users.
+        :return: mock_queryset
         """
 
-        def mock_filter(self, param):
-            if param.children[0][0] == 'department__icontains':
-                return [item for item in self if param.children[0][1] in item['key']]
-
-        mock_queryset = type('mock_queryset', (list,), {'filter': mock_filter})()
-
+        queryset = MockQueryset()
         for key, value in departments.items():
-            mock_queryset.append(type('item', (object,), {'name': key, 'number_of_users': value}))
+            queryset.add_dict_as_item({'name': key, 'number_of_users': value})
 
-        return mock_queryset
+        return queryset
 
     def get_default_queryset(self):
         institution = self.get_institution()
-        departments = self._get_departments_counts(institution)
+        current_user_data = UserInstitutionProjectCounts.get_current_user_metrics(institution)
+
+        departments = self._get_departments_counts(current_user_data)
         return self._make_elasticsearch_results_filterable(departments)
 
     # overrides RetrieveAPIView
