@@ -141,7 +141,7 @@ def _private_search(doc_type, auth, raw=False):
         start = request.args.get('from', '0')
         size = request.args.get('size', '10')
 
-    if qs:
+    if qs is not None:
         ext = False
         if version == SEARCH_API_VERSION_2:
             ext = True  # include extended doc_types
