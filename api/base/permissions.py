@@ -152,7 +152,7 @@ def PermissionWithGetter(Base, getter):
 
 class IsInstitutionalAdmin(permissions.BasePermission):
     """
-    A base class from which all permission classes should inherit.
+    This checks that the user is the admin of an institution.
     """
 
     def has_permission(self, request, view):
