@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-17 17:40+0900\n"
-"PO-Revision-Date: 2020-03-08 00:23+0900\n"
+"POT-Creation-Date: 2020-03-18 09:28+0900\n"
+"PO-Revision-Date: 2020-03-18 09:28+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -172,6 +172,11 @@ msgstr "フォームを隠す"
 msgid "Modify Collection Provider"
 msgstr "コレクションプロバイダを変更"
 
+#: admin/static/js/rdm_addons/rdm-addons-page.js:66
+#, python-format
+msgid "Disallow %s?"
+msgstr "%sを禁止しますか？"
+
 #: admin/static/js/rdm_addons/rdm-addons-page.js:67
 msgid "Are you sure you want to disallow the %1$s?<br>"
 msgstr "%1$sを禁止してもよろしいですか？<br>"
@@ -229,7 +234,7 @@ msgstr "キャンセル"
 
 #: admin/static/js/rdm_addons/rdm-addons-page.js:76
 msgid "Disallow"
-msgstr "許可しない"
+msgstr "禁止"
 
 #: admin/static/js/rdm_addons/rdm-addons-page.js:87
 msgid "Strings did not match"

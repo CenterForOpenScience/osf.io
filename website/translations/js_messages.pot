@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-17 17:40+0900\n"
-"PO-Revision-Date: 2020-03-17 17:40+0900\n"
+"POT-Creation-Date: 2020-03-18 09:28+0900\n"
+"PO-Revision-Date: 2020-03-18 09:28+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -167,6 +167,11 @@ msgstr ""
 
 #: admin/static/js/collection_providers/collectionProviders.js:12
 msgid "Modify Collection Provider"
+msgstr ""
+
+#: admin/static/js/rdm_addons/rdm-addons-page.js:66
+#, python-format
+msgid "Disallow %s?"
 msgstr ""
 
 #: admin/static/js/rdm_addons/rdm-addons-page.js:67
