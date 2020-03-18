@@ -442,9 +442,6 @@ def root(request, format=None, **kwargs):
 
     flags, cookies = sloan_study_disambiguation(request)
 
-    non_sloan_flags = Flag.objects.exclude(name__in=SLOAN_FLAGS)
-    flags += [flag.name for flag in non_sloan_flags if flag.is_active(request._request)]
-
     samples = [name for name in Sample.objects.values_list('name', flat=True) if sample_is_active(name)]
     switches = list(Switch.objects.filter(active=True).values_list('name', flat=True))
 
@@ -491,14 +488,15 @@ def sloan_study_disambiguation(request):
 
     flags = []
     sloan_data = {}
-    for flag in Flag.objects.filter(name__in=SLOAN_FLAGS):
+    for flag in Flag.objects.all():
         active = flag.is_active(request._request)
-        sloan_data[flag.name] = flag.everyone or active
-        # User tags should override any cookie info
-        if user and not user.is_anonymous:
-            tag_name = SLOAN_FEATURES[flag.name]
-            active = (check_tag(tag_name) and not check_tag(f'no_{tag_name}')) or active
-            sloan_data[flag.name] = active
+        if flag.name in SLOAN_FLAGS:
+            sloan_data[flag.name] = flag.everyone or active
+            # User tags should override any cookie info
+            if user and not user.is_anonymous:
+                tag_name = SLOAN_FEATURES[flag.name]
+                active = (check_tag(tag_name) and not check_tag(f'no_{tag_name}')) or active
+                sloan_data[flag.name] = active
 
         if active:
             flags.append(flag.name)
