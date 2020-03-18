@@ -1,4 +1,3 @@
-from types import MethodType
 from collections import defaultdict
 
 from django.db.models import F
@@ -387,9 +386,6 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
         base_permissions.IsInstitutionalAdmin,
     )
 
-    required_read_scopes = [CoreScopes.INSTITUTION_READ, CoreScopes.USERS_READ]
-    required_write_scopes = [CoreScopes.NULL]
-
     serializer_class = InstitutionDepartmentSerializer
 
     view_category = 'institutions'
@@ -420,14 +416,12 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
             if param.children[0][0] == 'department__icontains':
                 return [item for item in self if param.children[0][1] in item['key']]
 
-        results = type('mock_queryset', (list,), {'filter': filter})()
-        id = 1
-        for key, value in departments.items():
-            results.append(type('item', (object,), {'name': key, 'number_of_users': value}))
-            id += 1
+        mock_queryset = type('mock_queryset', (list,), {'filter': mock_filter})()
 
-        results.filter = MethodType(mock_filter, results)
-        return results
+        for key, value in departments.items():
+            mock_queryset.append(type('item', (object,), {'name': key, 'number_of_users': value}))
+
+        return mock_queryset
 
     def get_default_queryset(self):
         institution = self.get_institution()
