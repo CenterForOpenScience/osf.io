@@ -17,6 +17,7 @@ from guardian.shortcuts import get_objects_for_user
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 
+from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from framework.auth import oauth_scopes
 
@@ -925,6 +926,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         OSFStorage addon
         """
         metadata = payload['metadata']
+        user = auth.user
         params = {
             'preprint': self._id,
             'path': metadata['materialized'],
@@ -940,7 +942,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
         self.add_log(
             'osf_storage_{0}'.format(action),
-            auth=auth,
+            auth=Auth(user),
             params=params
         )
 
