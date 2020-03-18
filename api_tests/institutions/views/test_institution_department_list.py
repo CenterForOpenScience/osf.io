@@ -12,6 +12,7 @@ from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 
 
+@pytest.mark.es
 @pytest.mark.django_db
 class TestInstitutionDepartmentList:
 
