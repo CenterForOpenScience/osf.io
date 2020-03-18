@@ -10,6 +10,7 @@ from framework.auth.cas import CasResponse
 
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken
 from website.util.sanitize import is_iterable_but_not_string
+
 from osf.permissions import INSTITUTION_ADMIN
 
 # Implementation built on django-oauth-toolkit, but  with more granular control over read+write permissions
