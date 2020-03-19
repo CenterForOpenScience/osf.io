@@ -105,7 +105,7 @@ class TestInstitutionDepartmentList:
         time.sleep(2)  # ES is slow
 
         resp = app.get(url, auth=admin.auth)
-
+        print(resp.json['data'][0]['links'])
         assert resp.json['data'] == [{
             'id': institution._id,
             'type': 'institution-departments',
@@ -113,7 +113,7 @@ class TestInstitutionDepartmentList:
                 'name': 'New Department',
                 'number_of_users': 2
             },
-            'links': {}
+            'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/departments/'}
         }, {
             'id': institution._id,
             'type': 'institution-departments',
@@ -121,7 +121,7 @@ class TestInstitutionDepartmentList:
                 'name': 'Smaller Department',
                 'number_of_users': 1
             },
-            'links': {}
+            'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/departments/'}
         }, {
             'id': institution._id,
             'type': 'institution-departments',
@@ -129,7 +129,7 @@ class TestInstitutionDepartmentList:
                 'name': 'N/A',
                 'number_of_users': 1
             },
-            'links': {}
+            'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/departments/'}
         }]
 
         resp = app.get(f'{url}?filter[name]=New Department', auth=admin.auth)
@@ -141,5 +141,5 @@ class TestInstitutionDepartmentList:
                 'name': 'New Department',
                 'number_of_users': 2
             },
-            'links': {}
+            'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/departments/'}
         }]

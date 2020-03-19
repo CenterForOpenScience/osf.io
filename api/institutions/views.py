@@ -388,8 +388,11 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
 
     serializer_class = InstitutionDepartmentSerializer
 
+    required_read_scopes = [CoreScopes.INSTITUTION_READ_METRICS]
+    required_write_scopes = [CoreScopes.NULL]
+
     view_category = 'institutions'
-    view_name = 'institution-users-departments'
+    view_name = 'institution-department-metrics'
 
     ordering = ('-number_of_users', 'name',)
 
