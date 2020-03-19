@@ -5,9 +5,10 @@ from elasticsearch.exceptions import NotFoundError, RequestError
 
 from framework.auth.oauth_scopes import CoreScopes
 from api.base.permissions import TokenHasScope
-from osf.metrics import PreprintDownload, PreprintView
+from osf.metrics import PreprintDownload, PreprintView, InstitutionProjectCounts
+from osf.models import Institution
 from api.metrics.permissions import IsPreprintMetricsUser
-from api.metrics.serializers import PreprintMetricSerializer
+from api.metrics.serializers import PreprintMetricSerializer, InstitutionSummaryMetricSerializer
 from api.metrics.utils import parse_datetimes
 from api.base.views import JSONAPIBaseView
 from elasticsearch_dsl.connections import get_connection
@@ -151,3 +152,33 @@ class PreprintDownloadMetrics(PreprintMetricMixin):
     @property
     def metric(self):
         return PreprintDownload
+
+class InstitutionSummaryMetrics(JSONAPIBaseView):
+    # TODO: Identify necessary permissions level for InstitutionSummaryMetrics
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        drf_permissions.IsAdminUser,
+    )
+
+    view_category = 'institution-metrics'
+    view_name = 'institution-summary-metrics'
+
+    serializer_class = InstitutionSummaryMetricSerializer
+    metrics_class = InstitutionProjectCounts
+    institution_lookup_url_kwarg = 'institution_guid'
+
+    def format_response(self, es_doc, institution_user_count, query_params):
+        # TODO: Format response
+        return {
+            'data': 'DATA',
+        }
+
+    def get(self, *args, **kwargs):
+        # query_params = getattr(self.request, 'query_params', self.request.GET)
+
+        institution_id = self.kwargs[self.institution_lookup_url_kwarg]
+        institution = Institution.load(institution_id)
+        # institution_user_count = Institution.user_set
+
+        project_counts_doc = self.metrics_class.get_latest_institution_project_document(institution)
+        return JsonResponse(project_counts_doc)
