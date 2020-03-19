@@ -4,6 +4,8 @@ import pytest
 
 from website.app import init_app
 from tests.json_api_test_app import JSONAPITestApp
+from elasticsearch_dsl import connections
+from django.core.management import call_command
 
 
 @pytest.fixture()
@@ -14,3 +16,28 @@ def app():
 @pytest.fixture(autouse=True, scope='session')
 def app_init():
     init_app(routes=False, set_backends=False)
+
+
+@pytest.fixture(scope='function')
+def es_client():
+    return connections.get_connection()
+
+
+@pytest.fixture(scope='function', autouse=True)
+def _es_marker(request, es_client):
+    """Clear out all indices and index templates before and after
+    tests marked with ``es``.
+    """
+    marker = request.node.get_closest_marker('es')
+    if marker:
+
+        def teardown_es():
+            es_client.indices.delete(index='*')
+            es_client.indices.delete_template('*')
+
+        teardown_es()
+        call_command('sync_metrics')
+        yield
+        teardown_es()
+    else:
+        yield
