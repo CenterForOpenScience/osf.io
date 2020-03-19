@@ -6,20 +6,11 @@ from osf_tests.factories import (
     AuthUserFactory,
 )
 from osf.metrics import UserInstitutionProjectCounts
-from osf.models import Institution
-from osf.utils.permissions import INSTITUTION_ADMIN
-from django.contrib.auth.models import Permission
-from django.contrib.contenttypes.models import ContentType
 
 
 @pytest.mark.es
 @pytest.mark.django_db
 class TestInstitutionDepartmentList:
-
-    @pytest.fixture(autouse=True)
-    def mock_permission(self):
-        content_type_id = ContentType.objects.get_for_model(Institution).id
-        Permission.objects.create(codename=INSTITUTION_ADMIN, content_type_id=content_type_id)
 
     @pytest.fixture()
     def institution(self):
@@ -40,10 +31,6 @@ class TestInstitutionDepartmentList:
     @pytest.fixture()
     def user4(self):
         return AuthUserFactory()
-
-    @pytest.fixture()
-    def admin_permission(self):
-        return Permission.objects.get(codename=INSTITUTION_ADMIN)
 
     @pytest.fixture()
     def admin(self, admin_permission, institution):

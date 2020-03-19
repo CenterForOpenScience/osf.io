@@ -39,6 +39,7 @@ from api.institutions.serializers import (
 )
 
 from api.institutions.permissions import UserIsAffiliated
+from api.metrics.permissions import IsInstitutionalMetricsUser
 
 class InstitutionMixin(object):
     """Mixin with convenience method get_institution
@@ -382,7 +383,7 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        base_permissions.IsInstitutionalAdmin,
+        IsInstitutionalMetricsUser,
     )
 
     serializer_class = InstitutionDepartmentSerializer

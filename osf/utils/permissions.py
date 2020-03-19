@@ -14,8 +14,6 @@ API_CONTRIBUTOR_PERMISSIONS = [READ, WRITE, ADMIN]
 CREATOR_PERMISSIONS = ADMIN
 DEFAULT_CONTRIBUTOR_PERMISSIONS = WRITE
 
-# Has access to institution metrics and membership
-INSTITUTION_ADMIN = 'institution_admin'
 
 # Roles
 MANAGER = 'manager'
