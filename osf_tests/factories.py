@@ -1073,6 +1073,9 @@ class BrandFactory(DjangoModelFactory):
     class Meta:
         model = models.Brand
 
-    hero_logo = factory.Faker('url')
-    topnav_logo = factory.Faker('url')
-    hero_background = factory.Faker('color')
+    hero_logo_image = factory.Faker('url')
+    topnav_logo_image = factory.Faker('url')
+    hero_background_image = factory.Faker('url')
+
+    primary_color = factory.Faker('color')
+    secondary_color = factory.Faker('color')
