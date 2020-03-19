@@ -19,12 +19,12 @@ def app_init():
 
 
 @pytest.fixture(scope='function')
-def es_client():
+def es6_client():
     return connections.get_connection()
 
 
 @pytest.fixture(scope='function', autouse=True)
-def _es_marker(request, es_client):
+def _es_marker(request, es6_client):
     """Clear out all indices and index templates before and after
     tests marked with ``es``.
     """
@@ -32,8 +32,8 @@ def _es_marker(request, es_client):
     if marker:
 
         def teardown_es():
-            es_client.indices.delete(index='*')
-            es_client.indices.delete_template('*')
+            es6_client.indices.delete(index='*')
+            es6_client.indices.delete_template('*')
 
         teardown_es()
         call_command('sync_metrics')
