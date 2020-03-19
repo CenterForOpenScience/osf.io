@@ -7,7 +7,7 @@ from osf_tests.factories import (
 )
 from osf.metrics import UserInstitutionProjectCounts
 from osf.models import Institution
-from osf.permissions import INSTITUTION_ADMIN
+from osf.utils.permissions import INSTITUTION_ADMIN
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 
