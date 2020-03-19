@@ -110,7 +110,7 @@ var DateMixin = function() {
     self.endYear = ko.observable();
     self.displayDate = ko.observable(' ');
     self.endView = ko.computed(function() {
-        return (self.ongoing() ? 'ongoing' : self.displayDate());
+        return (self.ongoing() ? _('ongoing') : self.displayDate());
     }, self);
     self.startMonth = ko.observable();
     self.startYear = ko.observable();

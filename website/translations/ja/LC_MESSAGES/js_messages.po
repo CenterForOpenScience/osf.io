@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-18 09:28+0900\n"
-"PO-Revision-Date: 2020-03-18 09:28+0900\n"
+"POT-Creation-Date: 2020-03-19 10:22+0900\n"
+"PO-Revision-Date: 2020-03-19 10:22+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -3323,6 +3323,10 @@ msgstr "11月"
 #: website/static/js/profile.js:108
 msgid "December"
 msgstr "12月"
+
+#: website/static/js/profile.js:113
+msgid "ongoing"
+msgstr "継続中"
 
 #: website/static/js/profile.js:153
 msgid "Please enter a year for the start date."
