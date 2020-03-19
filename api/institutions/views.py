@@ -408,8 +408,7 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
 
         return department_counts
 
-    @classmethod
-    def _make_elasticsearch_results_filterable(cls, departments: dict) -> MockQueryset:
+    def _make_elasticsearch_results_filterable(self, departments: dict) -> MockQueryset:
         """
         Since ES returns a list obj instead of a awesome filterable queryset we are faking the filter feature used by
         querysets by create a mock queryset with limited filterbility.
@@ -419,8 +418,10 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
         """
 
         queryset = MockQueryset()
+
+        institution_id = self.get_institution()._id
         for key, value in departments.items():
-            queryset.add_dict_as_item({'name': key, 'number_of_users': value})
+            queryset.add_dict_as_item({'name': key, 'number_of_users': value, 'id': institution_id})
 
         return queryset
 

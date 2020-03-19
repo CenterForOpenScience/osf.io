@@ -154,15 +154,17 @@ class InstitutionRegistrationsRelationshipSerializer(BaseAPISerializer):
         }
 
 
-class InstitutionDepartmentSerializer(BaseAPISerializer):
+class InstitutionDepartmentSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'institution-departments'
 
+    id = ser.CharField(read_only=True)
     name = ser.CharField(read_only=True)
     number_of_users = ser.IntegerField(read_only=True)
 
     filterable_fields = frozenset([
+        'id',
         'name',
         'number_of_users',
     ])

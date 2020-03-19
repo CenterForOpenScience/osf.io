@@ -33,9 +33,11 @@ class TestInstitutionDepartmentList:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def admin(self, admin_permission, institution):
+    def admin(self, institution):
         user = AuthUserFactory()
-        user.add_obj_perm(admin_permission, institution)
+        group = institution.get_group('institutional_admins')
+        group.user_set.add(user)
+        group.save()
         return user
 
     @pytest.fixture()
@@ -103,13 +105,41 @@ class TestInstitutionDepartmentList:
         time.sleep(2)  # ES is slow
 
         resp = app.get(url, auth=admin.auth)
-        assert resp.json['data'] == [
-            {'name': 'New Department', 'number_of_users': 2},
-            {'name': 'Smaller Department', 'number_of_users': 1},
-            {'name': 'N/A', 'number_of_users': 1},
-        ]
+
+        assert resp.json['data'] == [{
+            'id': institution._id,
+            'type': 'institution-departments',
+            'attributes': {
+                'name': 'New Department',
+                'number_of_users': 2
+            },
+            'links': {}
+        }, {
+            'id': institution._id,
+            'type': 'institution-departments',
+            'attributes': {
+                'name': 'Smaller Department',
+                'number_of_users': 1
+            },
+            'links': {}
+        }, {
+            'id': institution._id,
+            'type': 'institution-departments',
+            'attributes': {
+                'name': 'N/A',
+                'number_of_users': 1
+            },
+            'links': {}
+        }]
 
         resp = app.get(f'{url}?filter[name]=New Department', auth=admin.auth)
-        assert resp.json['data'] == [
-            {'name': 'New Department', 'number_of_users': 2}
-        ]
+
+        assert resp.json['data'] == [{
+            'id': institution._id,
+            'type': 'institution-departments',
+            'attributes': {
+                'name': 'New Department',
+                'number_of_users': 2
+            },
+            'links': {}
+        }]

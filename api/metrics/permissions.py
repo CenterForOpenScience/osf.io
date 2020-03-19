@@ -12,8 +12,12 @@ class IsPreprintMetricsUser(permissions.BasePermission):
 
 class IsInstitutionalMetricsUser(permissions.BasePermission):
 
+    def has_permission(self, request, view):
+        institution = view.get_institution()
+        return self.has_object_permission(request, view, institution)
+
     def has_object_permission(self, request, view, obj):
-        auth = get_user_auth(request)
-        if auth.user.has_perm('view_institutional_metrics', obj.institution):
+        user = get_user_auth(request).user
+        if user and user.has_perm('view_institutional_metrics', obj):
             return True
         return False
