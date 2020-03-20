@@ -205,31 +205,38 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
         return cls.search().filter('match', institution_id=institution._id)
 
     @classmethod
-    def get_current_user_metrics(cls, institution) -> list:
+    def get_department_counts(cls, institution) -> list:
         """
         Gets the most recent document for every unique user.
         :param institution: Institution
         :return: list
         """
         search = cls.filter_institution(institution).sort('timestamp')
+        yesterday = dt.date.today() - dt.timedelta(days=1)
+
         search.update_from_dict({
-            'size': 0,
             'aggs': {
-                'users': {
-                    'terms': {
-                        'field': 'user_id',
+                'date_range': {
+                    'filter': {
+                        'range': {
+                            'timestamp': {
+                                'gte': str(yesterday),
+                            }
+                        }
                     },
                     'aggs': {
-                        'most_recent': {
-                            'top_hits': {
-                                'size': 1,
-                                'sort': [
-                                    {
-                                        'timestamp': {
-                                            'order': 'desc'
-                                        }
+                        'departments': {
+                            'terms': {
+                                'field': 'department',
+                                'missing': 'N/A',
+                                'size': 250
+                            },
+                            'aggs': {
+                                'users': {
+                                    'terms': {
+                                        'field': 'user_id'
                                     }
-                                ]
+                                }
                             }
                         }
                     }
@@ -237,8 +244,9 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
             }
         })
 
-        if search.execute().aggregations:
-            buckets = search.execute().aggregations['users']['buckets']
-            user_data = [bucket['most_recent']['hits']['hits'][0]['_source'] for bucket in buckets]
-            return user_data
+        results = search.execute()
+        if results.aggregations:
+            buckets = results.aggregations['date_range']['departments']
+            department_data = [{'name': bucket['key'], 'number_of_users': bucket['doc_count']} for bucket in buckets]
+            return department_data
         return []

@@ -1,4 +1,5 @@
 import pytest
+import datetime
 
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
@@ -64,6 +65,7 @@ class TestInstitutionDepartmentList:
             department='Old Department',
             public_project_count=1,
             private_project_count=1,
+            timestamp=datetime.date(2017, 2, 4)
         ).save()
 
         # The user has left the department

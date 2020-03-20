@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 from django.db.models import F
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
@@ -396,21 +394,6 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
 
     ordering = ('-number_of_users', 'name',)
 
-    @classmethod
-    def _get_departments_counts(cls, current_user_data: list) -> dict:
-        """
-        This takes a list of all current unique users and sums up all the users in each department.
-        :param current_user_data: list of elasticsearch data
-        :return:
-        """
-
-        department_counts = defaultdict(lambda: 0, {})
-        for user in current_user_data:
-            department_name = getattr(user, 'department', 'N/A')
-            department_counts[department_name] += 1
-
-        return department_counts
-
     def _make_elasticsearch_results_filterable(self, departments: dict) -> MockQueryset:
         """
         Since ES returns a list obj instead of a awesome filterable queryset we are faking the filter feature used by
@@ -423,17 +406,16 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
         queryset = MockQueryset()
 
         institution_id = self.get_institution()._id
-        for key, value in departments.items():
-            queryset.add_dict_as_item({'name': key, 'number_of_users': value, 'id': institution_id})
+        for department in departments:
+            department.update({'id': institution_id})
+            queryset.add_dict_as_item(department)
 
         return queryset
 
     def get_default_queryset(self):
         institution = self.get_institution()
-        current_user_data = UserInstitutionProjectCounts.get_current_user_metrics(institution)
-
-        departments = self._get_departments_counts(current_user_data)
-        return self._make_elasticsearch_results_filterable(departments)
+        department_counts = UserInstitutionProjectCounts.get_department_counts(institution)
+        return self._make_elasticsearch_results_filterable(department_counts)
 
     # overrides RetrieveAPIView
     def get_queryset(self):
