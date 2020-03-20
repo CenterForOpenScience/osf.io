@@ -105,7 +105,7 @@ class TestInstitutionDepartmentList:
         time.sleep(2)  # ES is slow
 
         resp = app.get(url, auth=admin.auth)
-        print(resp.json['data'][0]['links'])
+
         assert resp.json['data'] == [{
             'id': institution._id,
             'type': 'institution-departments',
