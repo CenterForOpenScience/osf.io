@@ -4,8 +4,15 @@ from rest_framework import exceptions
 from osf.models import Node, Registration
 from osf.utils import permissions as osf_permissions
 
-from api.base.serializers import JSONAPISerializer, RelationshipField, LinksField, JSONAPIRelationshipSerializer, \
-    BaseAPISerializer, ShowIfVersion
+from api.base.serializers import (
+    JSONAPISerializer,
+    RelationshipField,
+    LinksField,
+    JSONAPIRelationshipSerializer,
+    BaseAPISerializer,
+    ShowIfVersion,
+    IDField,
+)
 from api.base.exceptions import RelationshipPostMakesNoChanges
 
 from api.base.utils import absolute_reverse
@@ -161,7 +168,7 @@ class InstitutionDepartmentSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'institution-departments'
 
-    id = ser.CharField(read_only=True)
+    id = IDField(read_only=True)
     name = ser.CharField(read_only=True)
     number_of_users = ser.IntegerField(read_only=True)
 

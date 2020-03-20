@@ -388,7 +388,7 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
 
     serializer_class = InstitutionDepartmentSerializer
 
-    required_read_scopes = [CoreScopes.INSTITUTION_READ_METRICS]
+    required_read_scopes = [CoreScopes.INSTITUTION_METRICS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
     view_category = 'institutions'
