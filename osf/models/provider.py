@@ -58,7 +58,7 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
     advertises_on_discovery = models.BooleanField(default=True)
     has_landing_page = models.BooleanField(default=False)
 
-    brand_assets = models.ForeignKey('Brand', related_name='providers', null=True, blank=True, on_delete=models.SET_NULL)
+    brand = models.ForeignKey('Brand', related_name='providers', null=True, blank=True, on_delete=models.SET_NULL)
 
     branded_discovery_page = models.BooleanField(default=True)
     advertises_on_discovery = models.BooleanField(default=True)
