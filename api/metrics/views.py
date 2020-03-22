@@ -120,8 +120,8 @@ class PreprintMetricMixin(JSONAPIBaseView):
 
         try:
             results = self.execute_search(search, query)
-        except RequestError as e:
-            raise ValidationError(e.info['error']['root_cause'][0]['reason'])
+        except RequestError:
+            raise ValidationError('Malformed elasticsearch query.')
         return JsonResponse(results.to_dict())
 
 
