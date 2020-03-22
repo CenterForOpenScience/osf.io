@@ -149,32 +149,21 @@ class TestSloanQueries:
         }
 
     @pytest.mark.es
-    def test_reindexing(self, app, url, preprint, user, admin, es6_client):
+    def test_reindexing(self, app, url, preprint, user, admin):
         preprint_download = PreprintDownload.record_for_preprint(
             preprint,
             user,
             version=1,
             path='/MalcolmJenkinsKnockedBrandinCooksOutColdInTheSuperbowl',
-            random_new_field='Hi!'
+            random_new_field='Hi!'  # Here's our unmapped field! It's a text field by default.
         )
         preprint_download.save()
 
         query = {
             'aggs': {
-                'preprints_from_2020': {
-                    'filter': {
-                        'range': {
-                            'timestamp': {
-                                'gte': '2020-01-01',
-                            }
-                        }
-                    },
-                    'aggs': {
-                        'random_new_field': {
-                            'terms': {
-                                'field': 'random_new_field',
-                            }
-                        }
+                'random_new_field': {
+                    'terms': {
+                        'field': 'random_new_field',  # Oh no, this is a text field, you can't query it like that!
                     }
                 }
             }
@@ -188,13 +177,13 @@ class TestSloanQueries:
                 }
             }
         }
-        # Simulates a re-mapped index
+
+        # Hacky way to simulate a re-mapped index template
         index_template = preprint_download._index
         mapping = index_template._mapping
         mapping.properties._params['properties']['random_new_field'] = Keyword(doc_values=True, index=True)
         index_template._mapping._update_from_dict(mapping.to_dict())
 
-        time.sleep(2)  # ES is slow
         # This should 400 because random_new_field is still stored as a text field despite the our index being remapped.
         res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
         assert res.status_code == 400

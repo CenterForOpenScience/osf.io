@@ -15,7 +15,12 @@ class MetricMixin(object):
 
     @classmethod
     def _reindex_and_alias(cls, after: datetime = None) -> None:
-        # First re-index to the new mapping (that means migrate outside of ES world
+        """
+        Re-index (that means migrate outside of ES world) an index to the new mapping.
+        :param Datetime after: get all indices after this date, if none do all indices.
+        :return:
+        """
+        #
         old_indices = cls._get_relevant_indices(after)
         new_indices = [f'remapped_{index}' for index in old_indices]
         client = connections.get_connection()
