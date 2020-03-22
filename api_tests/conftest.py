@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import pytest
-
 from website.app import init_app
 from tests.json_api_test_app import JSONAPITestApp
 from elasticsearch_dsl import connections
@@ -30,14 +29,11 @@ def _es_marker(request, es6_client):
     """
     marker = request.node.get_closest_marker('es')
     if marker:
-
-        def teardown_es():
-            es6_client.indices.delete(index='*')
-            es6_client.indices.delete_template('*')
-
-        teardown_es()
+        es6_client.indices.delete(index='*')
+        es6_client.indices.delete_template('*')
         call_command('sync_metrics')
         yield
-        teardown_es()
+        es6_client.indices.delete(index='*')
+        es6_client.indices.delete_template('*')
     else:
         yield

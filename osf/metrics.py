@@ -1,17 +1,51 @@
 import datetime as dt
+from datetime import datetime
+from typing import List
 
 from elasticsearch.exceptions import NotFoundError
 from elasticsearch_metrics import metrics
 from django.db import models
 from django.utils import timezone
+from elasticsearch_dsl import connections
+
 import pytz
+
 
 class MetricMixin(object):
 
     @classmethod
-    def _get_relevant_indices(cls, after):
-        # NOTE: This will only work for yearly indices. This logic
-        # will need to be updated if we change to monthly or daily indices
+    def _reindex_and_alias(cls, after: datetime = None) -> None:
+        # First re-index to the new mapping (that means migrate outside of ES world
+        old_indices = cls._get_relevant_indices(after)
+        new_indices = [f'remapped_{index}' for index in old_indices]
+        client = connections.get_connection()
+
+        for old_index, new_index in zip(old_indices, new_indices):
+            client.indices.create(new_index, body=cls._index.to_dict(), params={'wait_for_active_shards': 1})
+            body = {
+                'source': {
+                    'index': old_index
+                },
+                'dest': {
+                    'index': new_index
+                }
+            }
+            client.reindex(body, params={'wait_for_completion': 'true'})
+            client.indices.delete(old_index)
+            client.indices.put_alias(new_index, old_index)
+
+    @classmethod
+    def _get_relevant_indices(cls, after: datetime = None) -> List[str]:
+        """
+        This will only work for yearly indices. This logic will need to be updated if we change to monthly or daily
+        indices
+
+        :param after: datetime get indices after this datetime
+        :return: list of indices for this class, or a list of index names, or is there a difference?
+        """
+        #
+        if not after:
+            after = cls.search().sort('-timestamp').execute()[0].timestamp
         year_range = range(after.year, timezone.now().year + 1)
         return [
             # get_index_name takes a datetime, so get Jan 1 for each relevant year
