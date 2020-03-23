@@ -166,7 +166,7 @@ class InstitutionSummaryMetricSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'institution-summary-metrics'
 
-    institution_id = IDField(read_only=True)
+    id = IDField(source='institution_id', read_only=True)
     public_project_count = ser.IntegerField(read_only=True)
     private_project_count = ser.IntegerField(read_only=True)
     user_count = ser.IntegerField(read_only=True)
