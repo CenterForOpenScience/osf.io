@@ -1,29 +1,17 @@
 import datetime as dt
-from datetime import datetime
-from typing import List
 
 from elasticsearch.exceptions import NotFoundError
 from elasticsearch_metrics import metrics
 from django.db import models
 from django.utils import timezone
-
 import pytz
-
 
 class MetricMixin(object):
 
     @classmethod
-    def _get_relevant_indices(cls, after: datetime = None) -> List[str]:
-        """
-        This will only work for yearly indices. This logic will need to be updated if we change to monthly or daily
-        indices
-
-        :param after: datetime get indices after this datetime
-        :return: list of indices for this class, or a list of index names, or is there a difference?
-        """
-        #
-        if not after:
-            after = cls.search().sort('-timestamp').execute()[0].timestamp
+    def _get_relevant_indices(cls, after):
+        # NOTE: This will only work for yearly indices. This logic
+        # will need to be updated if we change to monthly or daily indices
         year_range = range(after.year, timezone.now().year + 1)
         return [
             # get_index_name takes a datetime, so get Jan 1 for each relevant year
