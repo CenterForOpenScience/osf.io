@@ -98,12 +98,12 @@ class Command(BaseCommand):
         num_institutions = options.get('num_institutions')
 
         if options.get('users'):
-            users = [OSFUser.load(user_id) for user_id in options.get('users')]
+            users = OSFUser.objects.filter(guids___id__in=options.get('users'))
         else:
             users = OSFUser.objects.all()[:num_users]
 
         if options.get('institutions'):
-            institutions = [Institution.load(institution_id) for institution_id in options.get('institutions')]
+            institutions = Institution.objects.filter(_id__in=options.get('institutions'))
         else:
             institutions = Institution.objects.all()[:num_institutions]
 

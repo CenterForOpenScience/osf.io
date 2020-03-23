@@ -107,7 +107,7 @@ class Command(BaseCommand):
         avg_counts = options.get('avg_counts')
 
         if options.get('preprints'):
-            preprints = [Preprint.load(preprint_id) for preprint_id in options.get('preprints')]
+            preprints = Preprint.objects.filter(guids___id__in=options.get('preprints'))
         else:
             preprints = Preprint.objects.all()[:num_preprints]
 
