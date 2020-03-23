@@ -102,6 +102,7 @@ class TestReindexingMetrics:
         es6_client.indices.get(f'{preprint_download.meta["index"]}')
 
         call_command('reindex_with_current_metrics_mappings', f'--indices={preprint_download.meta["index"]}')
+        time.sleep(20)  # This is set for Travis, a 1-2 second latency should be good for testing locally.
 
         # Just checking version number incremented properly again
         es6_client.indices.get(f'{preprint_download.meta["index"]}_v3')
