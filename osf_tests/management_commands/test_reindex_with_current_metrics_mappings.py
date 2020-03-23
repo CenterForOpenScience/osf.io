@@ -89,7 +89,7 @@ class TestReindexingMetrics:
                                                   ' Alternatively use a keyword field instead.'
 
         call_command('reindex_with_current_metrics_mappings', f'--indices={preprint_download.meta["index"]}')
-        time.sleep(2)  # ES is slow
+        time.sleep(20)  # This is set for Travis, a 1-2 second latency should be good for testing locally.
 
         res = app.post_json_api(url, payload, auth=admin.auth)
         assert res.status_code == 200
