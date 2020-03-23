@@ -15,7 +15,7 @@ def get_metric_class(index_name: str) -> type:
     return registry.all_metrics[app_label][model_name]
 
 
-def increment_index_versions(old_indices: list):
+def increment_index_versions(client, old_indices: list):
     """
     Increment versions numbers for new indices, these kind don't matter because they should always be aliased to
     the original format of {app_label}_{cls.__name__.lower()}_{year}.
@@ -25,8 +25,9 @@ def increment_index_versions(old_indices: list):
     """
     new_indices = []
     for index in old_indices:
-        if '_v' in index and index[-1].isdigit():
-            name, version_num = index.split('_v')
+        index_name = list(client.indices.get(index).keys())[0]  # in case we've already aliased this index
+        if '_v' in index_name and index_name[-1].isdigit():
+            name, version_num = index_name.split('_v')
             new_index = f'{name}_v{int(version_num) + 1}'
         else:
             new_index = f'{index}_v2'
@@ -47,7 +48,7 @@ def reindex_and_alias(old_indices: list):
     :return: None
     """
     client = connections.get_connection()
-    new_indices = increment_index_versions(old_indices)
+    new_indices = increment_index_versions(client, old_indices)
 
     for old_index, new_index in zip(old_indices, new_indices):
         metric_class = get_metric_class(old_index)
@@ -61,7 +62,8 @@ def reindex_and_alias(old_indices: list):
             }
         }
         client.reindex(body, params={'wait_for_completion': 'true'})
-        client.indices.delete(old_index)
+        old_index_name = list(client.indices.get(old_index).keys())[0]  # in case we've already aliased this index
+        client.indices.delete(old_index_name)
         client.indices.put_alias(new_index, old_index)
 
 

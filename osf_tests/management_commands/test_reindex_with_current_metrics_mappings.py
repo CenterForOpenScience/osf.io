@@ -97,3 +97,16 @@ class TestReindexingMetrics:
 
         # Just checking version number incremented properly
         es6_client.indices.get(f'{preprint_download.meta["index"]}_v2')
+
+        # Just check it was aliased properly
+        es6_client.indices.get(f'{preprint_download.meta["index"]}')
+
+        call_command('reindex_with_current_metrics_mappings', f'--indices={preprint_download.meta["index"]}')
+
+        # Just checking version number incremented properly again
+        es6_client.indices.get(f'{preprint_download.meta["index"]}_v3')
+
+        # Just check it was aliased properly again (to the OG index, not the v2 index)
+        data = es6_client.indices.get(f'{preprint_download.meta["index"]}')
+
+        assert data[f'{preprint_download.meta["index"]}_v3']['aliases'] == {'osf_preprintdownload_2020': {}}
