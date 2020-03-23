@@ -30,6 +30,8 @@ from elasticsearch_metrics.field import Keyword
 from api.base.settings.defaults import SLOAN_ID_COOKIE_NAME
 from tests.json_api_test_app import JSONAPITestApp
 from osf.metrics import PreprintDownload
+from django.core.management import call_command
+
 
 django_app = JSONAPITestApp()
 
@@ -149,7 +151,7 @@ class TestSloanQueries:
         }
 
     @pytest.mark.es
-    def test_reindexing(self, app, url, preprint, user, admin):
+    def test_reindexing(self, app, url, preprint, user, admin, es6_client):
         preprint_download = PreprintDownload.record_for_preprint(
             preprint,
             user,
@@ -193,9 +195,12 @@ class TestSloanQueries:
                                                   'x. Note that this can however use significant memory.' \
                                                   ' Alternatively use a keyword field instead.'
 
-        PreprintDownload._reindex_and_alias()
+        call_command('reindex_with_current_metrics_mappings', f'--indices={preprint_download.meta["index"]}')
         time.sleep(2)  # ES is slow
 
         res = app.post_json_api(url, payload, auth=admin.auth)
         assert res.status_code == 200
         assert res.json['hits']['hits'][0]['_source']['random_new_field'] == 'Hi!'
+
+        # Just checking version number incremented properly
+        es6_client.indices.get(f'{preprint_download.meta["index"]}_v2')
