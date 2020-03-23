@@ -26,12 +26,9 @@ from osf.features import (
     SLOAN_DATA_DISPLAY
 )
 
-from elasticsearch_metrics.field import Keyword
 from api.base.settings.defaults import SLOAN_ID_COOKIE_NAME
 from tests.json_api_test_app import JSONAPITestApp
 from osf.metrics import PreprintDownload
-from django.core.management import call_command
-
 
 django_app = JSONAPITestApp()
 
@@ -149,58 +146,3 @@ class TestSloanQueries:
             'sloan_id': 'my_sloan_id',
             'slaon_coi': True
         }
-
-    @pytest.mark.es
-    def test_reindexing(self, app, url, preprint, user, admin, es6_client):
-        preprint_download = PreprintDownload.record_for_preprint(
-            preprint,
-            user,
-            version=1,
-            path='/MalcolmJenkinsKnockedBrandinCooksOutColdInTheSuperbowl',
-            random_new_field='Hi!'  # Here's our unmapped field! It's a text field by default.
-        )
-        preprint_download.save()
-
-        query = {
-            'aggs': {
-                'random_new_field': {
-                    'terms': {
-                        'field': 'random_new_field',  # Oh no, this is a text field, you can't query it like that!
-                    }
-                }
-            }
-        }
-
-        payload = {
-            'data': {
-                'type': 'preprint_metrics',
-                'attributes': {
-                    'query': query
-                }
-            }
-        }
-
-        # Hacky way to simulate a re-mapped index template
-        index_template = preprint_download._index
-        mapping = index_template._mapping
-        mapping.properties._params['properties']['random_new_field'] = Keyword(doc_values=True, index=True)
-        index_template._mapping._update_from_dict(mapping.to_dict())
-
-        # This should 400 because random_new_field is still stored as a text field despite the our index being remapped.
-        res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Fielddata is disabled on text fields by default. Set ' \
-                                                  'fielddata=true on [random_new_field] in order to load' \
-                                                  ' fielddata in memory by uninverting the inverted inde' \
-                                                  'x. Note that this can however use significant memory.' \
-                                                  ' Alternatively use a keyword field instead.'
-
-        call_command('reindex_with_current_metrics_mappings', f'--indices={preprint_download.meta["index"]}')
-        time.sleep(2)  # ES is slow
-
-        res = app.post_json_api(url, payload, auth=admin.auth)
-        assert res.status_code == 200
-        assert res.json['hits']['hits'][0]['_source']['random_new_field'] == 'Hi!'
-
-        # Just checking version number incremented properly
-        es6_client.indices.get(f'{preprint_download.meta["index"]}_v2')

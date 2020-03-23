@@ -4,7 +4,6 @@ import pytest
 
 from website.app import init_app
 from tests.json_api_test_app import JSONAPITestApp
-from elasticsearch_dsl import connections
 from django.core.management import call_command
 
 
@@ -16,12 +15,6 @@ def app():
 @pytest.fixture(autouse=True, scope='session')
 def app_init():
     init_app(routes=False, set_backends=False)
-
-
-@pytest.fixture(scope='function')
-def es6_client():
-    return connections.get_connection()
-
 
 @pytest.fixture(scope='function', autouse=True)
 def _es_marker(request, es6_client):

@@ -9,6 +9,8 @@ from website import settings as website_settings
 
 from framework.celery_tasks import app as celery_app
 
+from elasticsearch_dsl.connections import connections
+
 logger = logging.getLogger(__name__)
 
 # Silence some 3rd-party logging and some "loud" internal loggers
@@ -116,3 +118,8 @@ def _test_speedups_disable(request, settings, _test_speedups):
 
     for patcher in patchers:
         patcher.start()
+
+
+@pytest.fixture(scope='function')
+def es6_client():
+    return connections.get_connection()
