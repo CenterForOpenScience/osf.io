@@ -53,6 +53,7 @@ def reindex_and_alias(old_indices: list):
     for old_index, new_index in zip(old_indices, new_indices):
         metric_class = get_metric_class(old_index)
         client.indices.create(new_index, body=metric_class._index.to_dict(), params={'wait_for_active_shards': 1})
+        logger.info(f'Created index {new_index}')
         body = {
             'source': {
                 'index': old_index
@@ -61,15 +62,20 @@ def reindex_and_alias(old_indices: list):
                 'index': new_index
             }
         }
+        logger.info(f'Created reindexing {old_index} to {new_index}')
         client.reindex(body, params={'wait_for_completion': 'true'})
+        logger.info(f'Reindexing complete')
         old_index_name = list(client.indices.get(old_index).keys())[0]  # in case we've already aliased this index
 
         if old_index_name == old_index:  # True if not aliased
             client.indices.delete(old_index)
+            logger.info(f'{old_index} deleted')
             client.indices.put_alias(new_index, old_index)
         else:
             client.indices.put_alias(new_index, old_index)
             client.indices.close(old_index)
+            logger.info(f'{old_index} closed')
+
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
