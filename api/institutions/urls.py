@@ -13,4 +13,5 @@ urlpatterns = [
     url(r'^(?P<institution_id>\w+)/relationships/registrations/$', views.InstitutionRegistrationsRelationship.as_view(), name=views.InstitutionRegistrationsRelationship.view_name),
     url(r'^(?P<institution_id>\w+)/relationships/nodes/$', views.InstitutionNodesRelationship.as_view(), name=views.InstitutionNodesRelationship.view_name),
     url(r'^(?P<institution_id>\w+)/users/$', views.InstitutionUserList.as_view(), name=views.InstitutionUserList.view_name),
+    url(r'^(?P<institution_id>\w+)/metrics/$', views.InstitutionSummaryMetrics.as_view(), name=views.InstitutionSummaryMetrics.view_name),
 ]

@@ -7,6 +7,7 @@ from rest_framework.response import Response
 
 from framework.auth.oauth_scopes import CoreScopes
 
+from osf.metrics import InstitutionProjectCounts
 from osf.models import OSFUser, Node, Institution, Registration
 from osf.utils import permissions as osf_permissions
 
@@ -21,14 +22,21 @@ from api.base.parsers import (
     JSONAPIRelationshipParserForRegularJSON,
 )
 from api.base.exceptions import RelationshipPostMakesNoChanges
+from api.metrics.permissions import IsInstitutionalMetricsUser
 from api.nodes.serializers import NodeSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.users.serializers import UserSerializer
 from api.registrations.serializers import RegistrationSerializer
 
 from api.institutions.authentication import InstitutionAuthentication
-from api.institutions.serializers import InstitutionSerializer, InstitutionNodesRelationshipSerializer, InstitutionRegistrationsRelationshipSerializer
+from api.institutions.serializers import (
+    InstitutionSerializer,
+    InstitutionNodesRelationshipSerializer,
+    InstitutionRegistrationsRelationshipSerializer,
+    InstitutionSummaryMetricSerializer,
+)
 from api.institutions.permissions import UserIsAffiliated
+
 
 class InstitutionMixin(object):
     """Mixin with convenience method get_institution
@@ -366,3 +374,24 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         except RelationshipPostMakesNoChanges:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return ret
+
+
+class InstitutionSummaryMetrics(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        IsInstitutionalMetricsUser,
+    )
+
+    view_category = 'institutions'
+    view_name = 'institution-summary-metrics'
+
+    serializer_class = InstitutionSummaryMetricSerializer
+    metrics_class = InstitutionProjectCounts
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        institution = self.get_institution()
+        es_doc = self.metrics_class.get_latest_institution_project_document(institution)
+
+        return es_doc

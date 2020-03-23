@@ -217,6 +217,7 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
 
 class InstitutionProjectCounts(MetricMixin, metrics.Metric):
     institution_id = metrics.Keyword(index=True, doc_values=True, required=True)
+    user_count = metrics.Integer(index=True, doc_values=True, required=True)
     public_project_count = metrics.Integer(index=True, doc_values=True, required=True)
     private_project_count = metrics.Integer(index=True, doc_values=True, required=True)
 
@@ -231,6 +232,7 @@ class InstitutionProjectCounts(MetricMixin, metrics.Metric):
     def record_institution_project_counts(cls, institution, public_project_count, private_project_count, **kwargs):
         return cls.record(
             institution_id=institution._id,
+            user_count=institution.osfuser_set.count(),
             public_project_count=public_project_count,
             private_project_count=private_project_count,
             **kwargs
