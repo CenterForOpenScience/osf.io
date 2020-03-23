@@ -1779,7 +1779,7 @@ msgstr "終了日"
 #: website/templates/include/profile/jobs.mako:85
 #: website/templates/include/profile/schools.mako:85
 msgid "Ongoing"
-msgstr "継続中"
+msgstr "在籍"
 
 #: website/templates/include/profile/jobs.mako:104
 msgid "Add another Employment"

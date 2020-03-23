@@ -3326,7 +3326,7 @@ msgstr "12月"
 
 #: website/static/js/profile.js:113
 msgid "ongoing"
-msgstr "継続中"
+msgstr "在籍"
 
 #: website/static/js/profile.js:153
 msgid "Please enter a year for the start date."
@@ -3334,7 +3334,7 @@ msgstr "開始日の年を入力してください。"
 
 #: website/static/js/profile.js:166
 msgid "Please enter an end date or mark as ongoing."
-msgstr "終了日を入力するか、継続中としてマークしてください。"
+msgstr "終了日を入力するか、在籍としてマークしてください。"
 
 #: website/static/js/profile.js:169
 msgid "Please enter a year for the end date."
