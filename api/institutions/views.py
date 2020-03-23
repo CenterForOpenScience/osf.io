@@ -392,6 +392,9 @@ class InstitutionSummaryMetrics(JSONAPIBaseView, generics.RetrieveAPIView, Insti
     # overrides RetrieveAPIView
     def get_object(self):
         institution = self.get_institution()
-        es_doc = self.metrics_class.get_latest_institution_project_document(institution)
+        try:
+            es_doc = self.metrics_class.get_latest_institution_project_document(institution)
+        except IndexError:
+            raise exceptions.NotFound()
 
         return es_doc
