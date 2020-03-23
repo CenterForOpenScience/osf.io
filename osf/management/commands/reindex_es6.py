@@ -78,8 +78,8 @@ def reindex_and_alias(old_indices: list, dry_run: bool = False):
             client.indices.put_alias(new_index, old_index)
         else:
             client.indices.put_alias(new_index, old_index)
-            client.indices.close(old_index)
-            logger.info(f'{old_index} closed')
+            client.indices.close(old_index_name)
+            logger.info(f'{old_index_name} closed')
 
 
 class Command(BaseCommand):
