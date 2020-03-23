@@ -36,7 +36,7 @@ def increment_index_versions(client, old_indices: list):
     return new_indices
 
 
-def reindex_and_alias(old_indices: list):
+def reindex_and_alias(old_indices: list, dry_run: bool = False):
     """
     To migrate data in ES with new mappings is a 4 step process:
     1) Create an index with new mappings
@@ -47,11 +47,16 @@ def reindex_and_alias(old_indices: list):
     :param old_indices: indices with data that has old mappings
     :return: None
     """
+    if dry_run:
+        logger.info(f'[DRY RUN] THIS IS A DRY RUN.')
     client = connections.get_connection()
     new_indices = increment_index_versions(client, old_indices)
 
     for old_index, new_index in zip(old_indices, new_indices):
         metric_class = get_metric_class(old_index)
+        if dry_run:
+            logger.info(f'[DRY RUN] Would reindex {old_index} to {new_index} for {metric_class}')
+            continue
         client.indices.create(new_index, body=metric_class._index.to_dict(), params={'wait_for_active_shards': 1})
         logger.info(f'Created index {new_index}')
         body = {
@@ -86,7 +91,14 @@ class Command(BaseCommand):
             nargs='+',
             help='List of indices to be reindexed and remapped'
         )
+        parser.add_argument(
+            '--dry',
+            action='store_true',
+            dest='dry_run',
+            help='Run migration and roll back changes to db',
+        )
 
     def handle(self, *args, **options):
         indices = options.get('indices', [])
-        reindex_and_alias(indices)
+        dry_run = options.get('dry_run', True)
+        reindex_and_alias(indices, dry_run)
