@@ -120,18 +120,21 @@ class TestSloanQueries:
         ).save()
 
         data = {
-            'size': 0,
-            'aggs': {
-                'users': {
-                    'terms': {
-                        'field': 'sloan_id',
-                    },
+            'data': {
+                'size': 0,
+                'aggs': {
+                    'users': {
+                        'terms': {
+                            'field': 'sloan_id',
+                        },
+                    }
                 }
             }
         }
         time.sleep(2)  # ES is slow
         res = app.post_json_api(url, data, auth=admin.auth)
         assert res.status_code == 200
+        assert len(res.json['hits']['hits']) == 1
         assert res.json['hits']['hits'][0]['_source'] == {
             'timestamp': timestamp.isoformat(),
             'count': 1,

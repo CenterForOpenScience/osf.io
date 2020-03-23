@@ -23,6 +23,11 @@ def app():
     return test_app
 
 
+@pytest.fixture(autouse=True, scope='session')
+def app_init():
+    init_app(routes=False, set_backends=False)
+
+
 @pytest.yield_fixture()
 def request_context(app):
     context = app.test_request_context(headers={
