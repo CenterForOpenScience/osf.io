@@ -63,9 +63,13 @@ def reindex_and_alias(old_indices: list):
         }
         client.reindex(body, params={'wait_for_completion': 'true'})
         old_index_name = list(client.indices.get(old_index).keys())[0]  # in case we've already aliased this index
-        client.indices.delete(old_index_name)
-        client.indices.put_alias(new_index, old_index)
 
+        if old_index_name == old_index:  # True if not aliased
+            client.indices.delete(old_index)
+            client.indices.put_alias(new_index, old_index)
+        else:
+            client.indices.put_alias(new_index, old_index)
+            client.indices.close(old_index)
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
