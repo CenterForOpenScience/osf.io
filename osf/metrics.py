@@ -201,10 +201,6 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
         source = metrics.MetaField(enabled=True)
 
     @classmethod
-    def filter_institution(cls, institution):
-        return cls.search().filter('match', institution_id=institution._id)
-
-    @classmethod
     def get_department_counts(cls, institution) -> list:
         """
         Gets the most recent document for every unique user.
@@ -263,11 +259,49 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
         )
 
     @classmethod
+    def get_latest_institutional_user_project_counts(cls, institution):
+        search = cls.search().filter('match', institution_id=institution._id).sort('-timestamp')
+        response = search.execute()
+
+        return response
+
+    @classmethod
     def get_latest_user_institution_project_document(cls, user, institution):
         search = cls.search().filter('match', user_id=user._id).filter('match', institution_id=institution._id).sort('-timestamp')[:1]
         response = search.execute()
 
         return response[0]
+
+    @classmethod
+    def filter_institution(cls, institution):
+        return cls.search().filter('match', institution_id=institution._id)
+
+    @classmethod
+    def get_current_user_metrics(cls, institution) -> list:
+        """
+        Gets the most recent document for every unique user.
+        :param institution: Institution
+        :return: list
+        """
+        search = cls.filter_institution(institution).sort('timestamp')
+        search.update_from_dict({
+            'size': 100,
+            'query': {
+                'match_all': {}
+            },
+            'collapse': {
+                'field': 'user_id',
+                'inner_hits': {
+                    'name': 'most_recent',
+                    'size': 1,
+                    'sort': [{'timestamp': 'desc'}]
+                }
+            }
+        })
+
+        buckets = search.execute().hits.hits
+        user_data = [bucket['inner_hits']['most_recent'][0] for bucket in buckets]
+        return user_data
 
 
 class InstitutionProjectCounts(MetricMixin, metrics.Metric):
