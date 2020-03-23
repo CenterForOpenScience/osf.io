@@ -8,7 +8,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0202_add_sloan'),
+        ('osf', '0204_ensure_schemas'),
     ]
 
     operations = [
