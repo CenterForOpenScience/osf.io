@@ -7,19 +7,27 @@ from django.conf import settings
 from django.contrib.postgres import fields
 from django.core.urlresolvers import reverse
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.models import base
 from osf.models.contributor import InstitutionalContributor
-from osf.models.mixins import Loggable
+from osf.models.mixins import Loggable, GuardianMixin
 from website import settings as website_settings
 
 logger = logging.getLogger(__name__)
 
 
-class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
+class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel, GuardianMixin):
 
     # TODO Remove null=True for things that shouldn't be nullable
     # e.g. CharFields should never be null=True
+
+    INSTITUTION_GROUPS = {
+        'institutional_admins': ('view_institutional_metrics', ),
+    }
+    group_format = 'institution_{self._id}_{group}'
+    groups = INSTITUTION_GROUPS
 
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, default='', null=True)
@@ -61,6 +69,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         # custom permissions for use in the OSF Admin App
         permissions = (
             ('view_institution', 'Can view institution details'),
+            ('view_institutional_metrics', 'Can access metrics endpoints for their Institution'),
         )
 
     def __init__(self, *args, **kwargs):
@@ -141,3 +150,8 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     def save(self, *args, **kwargs):
         self.update_search()
         return super(Institution, self).save(*args, **kwargs)
+
+@receiver(post_save, sender=Institution)
+def create_institution_auth_groups(sender, instance, created, **kwargs):
+    if created:
+        instance.update_group_permissions()
