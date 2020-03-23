@@ -250,3 +250,50 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
             department_data = [{'name': bucket['key'], 'number_of_users': bucket['doc_count']} for bucket in buckets]
             return department_data
         return []
+
+    @classmethod
+    def record_user_institution_project_counts(cls, user, institution, public_project_count, private_project_count, **kwargs):
+        return cls.record(
+            user_id=user._id,
+            institution_id=institution._id,
+            department=getattr(user, 'department', None),
+            public_project_count=public_project_count,
+            private_project_count=private_project_count,
+            **kwargs
+        )
+
+    @classmethod
+    def get_latest_user_institution_project_document(cls, user, institution):
+        search = cls.search().filter('match', user_id=user._id).filter('match', institution_id=institution._id).sort('-timestamp')[:1]
+        response = search.execute()
+
+        return response[0]
+
+
+class InstitutionProjectCounts(MetricMixin, metrics.Metric):
+    institution_id = metrics.Keyword(index=True, doc_values=True, required=True)
+    public_project_count = metrics.Integer(index=True, doc_values=True, required=True)
+    private_project_count = metrics.Integer(index=True, doc_values=True, required=True)
+
+    class Index:
+        settings = {
+            'number_of_shards': 1,
+            'number_of_replicas': 1,
+            'refresh_interval': '1s',
+        }
+
+    @classmethod
+    def record_institution_project_counts(cls, institution, public_project_count, private_project_count, **kwargs):
+        return cls.record(
+            institution_id=institution._id,
+            public_project_count=public_project_count,
+            private_project_count=private_project_count,
+            **kwargs
+        )
+
+    @classmethod
+    def get_latest_institution_project_document(cls, institution):
+        search = cls.search().filter('match', institution_id=institution._id).sort('-timestamp')[:1]
+        response = search.execute()
+
+        return response[0]

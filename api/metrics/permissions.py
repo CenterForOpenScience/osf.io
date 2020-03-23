@@ -1,5 +1,6 @@
 from rest_framework import permissions
-from api.base.utils import get_user_auth
+from api.base.utils import assert_resource_type
+from osf.models import Institution
 
 
 class IsPreprintMetricsUser(permissions.BasePermission):
@@ -10,14 +11,20 @@ class IsPreprintMetricsUser(permissions.BasePermission):
             return True
         return False
 
+
 class IsInstitutionalMetricsUser(permissions.BasePermission):
+
+    acceptable_models = (Institution, )
+
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        assert_resource_type(obj, self.acceptable_models)
+        if not user:
+            return False
+        if user.has_perm('view_institutional_metrics', obj):
+            return True
+        return False
 
     def has_permission(self, request, view):
         institution = view.get_institution()
         return self.has_object_permission(request, view, institution)
-
-    def has_object_permission(self, request, view, obj):
-        user = get_user_auth(request).user
-        if user and user.has_perm('view_institutional_metrics', obj):
-            return True
-        return False
