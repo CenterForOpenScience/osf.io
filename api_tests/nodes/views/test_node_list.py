@@ -1,4 +1,5 @@
 import pytest
+from nose.tools import *  # noqa:
 
 from django.utils import timezone
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
@@ -21,6 +22,7 @@ from osf_tests.factories import (
     InstitutionFactory,
     RegionFactory,
     OSFGroupFactory,
+    DraftNodeFactory,
 )
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 from rest_framework import exceptions
@@ -69,9 +71,13 @@ class TestNodeList:
         preprint.save()
         return preprint
 
+    @pytest.fixture()
+    def draft_node(self, user):
+        return DraftNodeFactory(creator=user)
+
     @pytest.mark.parametrize('is_sparse', [True, False])
     def test_return(
-            self, app, user, non_contrib, deleted_project,
+            self, app, user, non_contrib, deleted_project, draft_node,
             private_project, public_project, url, sparse_url, is_sparse):
 
         #   test_only_returns_non_deleted_public_projects
@@ -83,6 +89,7 @@ class TestNodeList:
         assert public_project._id in ids
         assert deleted_project._id not in ids
         assert private_project._id not in ids
+        assert draft_node._id not in ids
 
     #   test_return_public_node_list_logged_out_user
         res = app.get(url)
@@ -91,6 +98,7 @@ class TestNodeList:
         ids = [each['id'] for each in res.json['data']]
         assert public_project._id in ids
         assert private_project._id not in ids
+        assert draft_node._id not in ids
 
     #   test_return_public_node_list_logged_in_user
         res = app.get(url, auth=non_contrib)
@@ -99,12 +107,14 @@ class TestNodeList:
         ids = [each['id'] for each in res.json['data']]
         assert public_project._id in ids
         assert private_project._id not in ids
+        assert draft_node._id not in ids
 
     #   test_return_private_node_list_logged_out_user
         res = app.get(url)
         ids = [each['id'] for each in res.json['data']]
         assert public_project._id in ids
         assert private_project._id not in ids
+        assert draft_node._id not in ids
 
     #   test_return_private_node_list_logged_in_contributor
         res = app.get(url, auth=user.auth)
@@ -113,12 +123,14 @@ class TestNodeList:
         ids = [each['id'] for each in res.json['data']]
         assert public_project._id in ids
         assert private_project._id in ids
+        assert draft_node._id not in ids
 
     #   test_return_private_node_list_logged_in_non_contributor
         res = app.get(url, auth=non_contrib.auth)
         ids = [each['id'] for each in res.json['data']]
         assert public_project._id in ids
         assert private_project._id not in ids
+        assert draft_node._id not in ids
 
     #   test_returns_nodes_through_which_you_have_perms_through_osf_groups
         group = OSFGroupFactory(creator=user)

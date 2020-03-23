@@ -45,11 +45,13 @@ from osf.models.identifiers import IdentifierMixin, Identifier
 from osf.models.mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin, TitleMixin, DescriptionMixin
 from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode, OsfStorageFile
 
-
 from framework.sentry import log_exception
 from osf.exceptions import (
-    PreprintStateError, InvalidTagError, TagNotFoundError
+    PreprintStateError,
+    InvalidTagError,
+    TagNotFoundError
 )
+from django.contrib.postgres.fields import ArrayField
 
 logger = logging.getLogger(__name__)
 
@@ -126,6 +128,16 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         'tags',
     }
 
+    PREREG_LINK_INFO_CHIOCES = [('prereg_designs', 'Pre-registration of study designs'),
+                                ('prereg_analysis', 'Pre-registration of study analysis'),
+                                ('prereg_both', 'Pre-registration of study designs and study analysis')
+                                ]
+
+    HAS_LINKS_CHOICES = [('available', 'Available'),
+                         ('no', 'No'),
+                         ('not_applicable', 'Not applicable')
+                         ]
+
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
                                  related_name='preprints',
@@ -183,6 +195,54 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     }
     # For GuardianMixin
     group_format = 'preprint_{self.id}_{group}'
+
+    conflict_of_interest_statement = models.TextField(
+        blank=True,
+        null=True,
+    )
+    has_coi = models.NullBooleanField(
+        blank=True,
+        null=True
+    )
+    has_prereg_links = models.TextField(
+        choices=HAS_LINKS_CHOICES,
+        null=True,
+        blank=True
+    )
+    why_no_prereg = models.TextField(
+        null=True,
+        blank=True
+    )
+    prereg_links = ArrayField(
+        models.URLField(
+            null=True,
+            blank=True
+        ),
+        blank=True,
+        null=True
+    )
+    prereg_link_info = models.TextField(
+        choices=PREREG_LINK_INFO_CHIOCES,
+        null=True,
+        blank=True
+    )
+    has_data_links = models.TextField(
+        choices=HAS_LINKS_CHOICES,
+        null=True,
+        blank=True
+    )
+    why_no_data = models.TextField(
+        null=True,
+        blank=True
+    )
+    data_links = ArrayField(
+        models.URLField(
+            null=True,
+            blank=True
+        ),
+        blank=True,
+        null=True
+    )
 
     class Meta:
         permissions = (
@@ -886,6 +946,292 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             params=params
         )
 
+    def update_has_coi(self, auth: Auth, has_coi: bool, log: bool = True, save: bool = True):
+        """
+        This method sets the field `has_coi` to indicate if there's a conflict interest statement for this preprint
+        and logs that change.
+
+        :param auth: Auth object
+        :param has_coi: Boolean represents if a user has a conflict of interest statement available.
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+
+        This method brought to you via a grant from the Alfred P Sloan Foundation.
+        """
+        if self.has_coi == has_coi:
+            return
+
+        self.has_coi = has_coi
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_HAS_COI,
+                params={
+                    'user': auth.user._id,
+                    'value': self.has_coi
+                },
+                auth=auth,
+            )
+        if save:
+            self.save()
+
+    def update_conflict_of_interest_statement(self, auth: Auth, coi_statement: str, log: bool = True, save: bool = True):
+        """
+        This method sets the `conflict_of_interest_statement` field for this preprint and logs that change.
+
+        :param auth: Auth object
+        :param coi_statement: String represents a user's conflict of interest statement for their preprint.
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+        :return:
+
+        This method brought to you via a grant from the Alfred P Sloan Foundation.
+        """
+        if self.conflict_of_interest_statement == coi_statement:
+            return
+
+        if not self.has_coi:
+            raise PreprintStateError('You do not have ability to edit a conflict of interest while the has_coi field is '
+                                  'set to false or unanswered')
+
+        self.conflict_of_interest_statement = coi_statement
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_COI_STATEMENT,
+                params={
+                    'user': auth.user._id,
+                },
+                auth=auth,
+            )
+        if save:
+            self.save()
+
+    def update_has_data_links(self, auth: Auth, has_data_links: bool, log: bool = True, save: bool = True):
+        """
+        This method sets the `has_data_links` field that respresent the availability of links to supplementary data
+        for this preprint and logs that change.
+
+        :param auth: Auth object
+        :param has_data_links: Boolean represents the availability of links to supplementary data for this preprint
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+        :return:
+
+        This method brought to you via a grant from the Alfred P Sloan Foundation.
+        """
+        if self.has_data_links == has_data_links:
+            return
+
+        self.has_data_links = has_data_links
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_HAS_DATA_LINKS,
+                params={
+                    'user': auth.user._id,
+                    'value': has_data_links
+                },
+                auth=auth
+            )
+        if save:
+            self.save()
+
+    def update_data_links(self, auth: Auth, data_links: list, log: bool = True, save: bool = True):
+        """
+        This method sets the field `data_links` which is a validated list of links to supplementary data for a
+        preprint and logs that change.
+
+        :param auth: Auth object
+        :param data_links: List urls that should link to supplementary data for a preprint.
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+        :return:
+
+        This method brought to you via a grant from the Alfred P Sloan Foundation.
+        """
+        if self.data_links == data_links:
+            return
+
+        if not self.has_data_links == 'available':
+            raise PreprintStateError('You cannot edit this statement while your data links availability is set to false'
+                                     ' or is unanswered.')
+
+        self.data_links = data_links
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_DATA_LINKS,
+                params={
+                    'user': auth.user._id,
+                },
+                auth=auth
+            )
+        if save:
+            self.save()
+
+    def update_why_no_data(self, auth: Auth, why_no_data: str, log: bool = True, save: bool = True):
+        """
+        This method sets the field `why_no_data` a string that represents a user provided explanation for the
+        unavailability of supplementary data for their preprint.
+
+        :param auth: Auth object
+        :param why_no_data: String a user provided explanation for the unavailability of data links for their preprint.
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+        :return:
+
+        This method brought to you via a grant from the Alfred P Sloan Foundation.
+        """
+        if self.why_no_data == why_no_data:
+            return
+
+        if not self.has_data_links == 'available':
+            raise PreprintStateError('You cannot edit this statement while your data links availability is set to true or'
+                                  ' is unanswered.')
+        else:
+            self.why_no_data = why_no_data
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_WHY_NO_DATA,
+                params={
+                    'user': auth.user._id,
+                },
+                auth=auth
+            )
+        if save:
+            self.save()
+
+    def update_has_prereg_links(self, auth: Auth, has_prereg_links: bool, log: bool = True, save: bool = True):
+        """
+        This method updates the `has_prereg_links` field, that indicates availability of links to prereg data and logs
+        changes to it.
+
+        :param auth: Auth object
+        :param has_prereg_links: Boolean indicates whether the user has links to preregistration materials
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+        :return:
+
+        This method brought to you via a grant from the Alfred P Sloan Foundation.
+        """
+        if has_prereg_links == self.has_prereg_links:
+            return
+
+        self.has_prereg_links = has_prereg_links
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_HAS_PREREG_LINKS,
+                params={
+                    'user': auth.user._id,
+                    'value': has_prereg_links
+                },
+                auth=auth
+            )
+        if save:
+            self.save()
+
+    def update_why_no_prereg(self, auth: Auth, why_no_prereg: str, log: bool = True, save: bool = True):
+        """
+        This method updates the field `why_no_prereg` that contains a user provided explanation of prereg data
+        unavailability and logs changes to it.
+
+        :param auth: Auth object
+        :param why_no_prereg: String explanation of prereg data unavailability
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+        :return:
+
+        This method brought to you via a grant from the Alfred P Sloan Foundation.
+        """
+        if why_no_prereg == self.why_no_prereg:
+            return
+
+        if self.has_prereg_links == 'available' or self.has_prereg_links is None:
+            raise PreprintStateError('You cannot edit this statement while your prereg links '
+                                  'availability is set to true or is unanswered.')
+
+        self.why_no_prereg = why_no_prereg
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_WHY_NO_PREREG,
+                params={
+                    'user': auth.user._id,
+                },
+                auth=auth
+            )
+        if save:
+            self.save()
+
+    def update_prereg_links(self, auth: Auth, prereg_links: list, log: bool = True, save: bool = True):
+        """
+        This method updates the field `prereg_links` that contains a list of validated URLS linking to prereg data
+        and logs changes to it.
+
+        :param auth: Auth object
+        :param prereg_links: List list of validated urls with schemes to links to prereg data
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+        :return:
+
+        This method brought to you via a grant from the Alfred P Sloan Foundation.
+        """
+        if prereg_links == self.prereg_links:
+            return
+
+        if not self.has_prereg_links == 'available':
+            raise PreprintStateError('You cannot edit this field while your prereg links'
+                                  ' availability is set to false or is unanswered.')
+
+        self.prereg_links = prereg_links
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_PREREG_LINKS,
+                params={
+                    'user': auth.user._id,
+                },
+                auth=auth
+            )
+        if save:
+            self.save()
+
+    def update_prereg_link_info(self, auth: Auth, prereg_link_info: str, log: bool = True, save: bool = True):
+        """
+        This method updates the field `prereg_link_info` that contains a one of a finite number of choice strings in
+        contained in the list in the static member `PREREG_LINK_INFO_CHIOCES` that describe the nature of the preprint's
+        prereg links.
+
+        :param auth: Auth object
+        :param prereg_link_info: String a string describing the nature of the preprint's prereg links.
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+        :return:
+
+        This method brought to you via a grant from the Alfred P Sloan Foundation.
+        """
+        if self.prereg_link_info == prereg_link_info:
+            return
+
+        if not self.has_prereg_links == 'available':
+            raise PreprintStateError('You cannot edit this field while your prereg links'
+                                  ' availability is set to false or is unanswered.')
+
+        self.prereg_link_info = prereg_link_info
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_PREREG_LINKS_INFO,
+                params={
+                    'user': auth.user._id,
+                },
+                auth=auth
+            )
+        if save:
+            self.save()
 
 @receiver(post_save, sender=Preprint)
 def create_file_node(sender, instance, **kwargs):

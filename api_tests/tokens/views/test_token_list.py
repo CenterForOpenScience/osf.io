@@ -218,13 +218,21 @@ class TestTokenListScopesAsAttributes:
 
     @pytest.fixture()
     def tokens_user_one(self, user_one):
-        return [ApiOAuth2PersonalTokenFactory(
-            owner=user_one) for i in range(3)]
+        tokens = []
+        for _ in range(3):
+            token = ApiOAuth2PersonalTokenFactory(owner=user_one)
+            token.save()
+            tokens.append(token)
+        return tokens
 
     @pytest.fixture()
     def tokens_user_two(self, user_two):
-        return [ApiOAuth2PersonalTokenFactory(
-            owner=user_two) for i in range(3)]
+        tokens = []
+        for _ in range(3):
+            token = ApiOAuth2PersonalTokenFactory(owner=user_two)
+            token.save()
+            tokens.append(token)
+        return tokens
 
     @pytest.fixture()
     def url_token_list(self):

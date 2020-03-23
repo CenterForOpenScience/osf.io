@@ -17,6 +17,7 @@ from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
 from elasticsearch import exceptions as es_exceptions
 
+from api.base.settings.defaults import SLOAN_ID_COOKIE_NAME
 
 from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFile
@@ -49,6 +50,12 @@ from website.project.decorators import must_be_contributor_or_public, must_be_va
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
 from website.util import rubeus
+
+from osf.features import (
+    SLOAN_COI_DISPLAY,
+    SLOAN_DATA_DISPLAY,
+    SLOAN_PREREG_DISPLAY
+)
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
@@ -339,12 +346,19 @@ def get_auth(auth, **kwargs):
                         if isinstance(node, Preprint):
                             metric_class = get_metric_class_for_action(action, from_mfr=from_mfr)
                             if metric_class:
+                                sloan_flag = {
+                                    'sloan_coi': request.cookies.get(SLOAN_COI_DISPLAY),
+                                    'sloan_data': request.cookies.get(SLOAN_DATA_DISPLAY),
+                                    'sloan_prereg': request.cookies.get(SLOAN_PREREG_DISPLAY),
+                                    'sloan_id': request.cookies.get(SLOAN_ID_COOKIE_NAME)
+                                }
                                 try:
                                     metric_class.record_for_preprint(
                                         preprint=node,
                                         user=auth.user,
                                         version=fileversion.identifier if fileversion else None,
-                                        path=path
+                                        path=path,
+                                        **sloan_flag
                                     )
                                 except es_exceptions.ConnectionError:
                                     log_exception()
