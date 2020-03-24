@@ -259,13 +259,6 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
         )
 
     @classmethod
-    def get_latest_institutional_user_project_counts(cls, institution):
-        search = cls.search().filter('match', institution_id=institution._id).sort('-timestamp')
-        response = search.execute()
-
-        return response
-
-    @classmethod
     def get_latest_user_institution_project_document(cls, user, institution):
         search = cls.search().filter('match', user_id=user._id).filter('match', institution_id=institution._id).sort('-timestamp')[:1]
         response = search.execute()
