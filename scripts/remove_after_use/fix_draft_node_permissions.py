@@ -4,6 +4,7 @@ import sys
 from website.app import setup_django
 setup_django()
 
+import pytz
 from django.db import transaction
 from osf.models import EmbargoTerminationApproval
 from osf.models import Sanction
@@ -21,7 +22,7 @@ def main(dry=True):
     to a widespread permissions errors for draft registrations made prior to the migration. This should fix that.
     Migration ran at 2120 (EDT).
     """
-    date_of_migration = datetime.datetime(2020, 3, 24, 21, 20)
+    date_of_migration = datetime.datetime(2020, 3, 24, 21, 20, tzinfo=pytz.utc)
 
     bugged_regs = DraftRegistration.objects.filter(created__lte=date_of_migration)
 
