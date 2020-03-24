@@ -182,12 +182,12 @@ services:
       - /bin/bash
       - -c
       - invoke install --develop &&
-        (python -m compileall /usr/local/lib/python3.5 || true) &&
-        rm -Rf /python3.5/* &&
-        cp -Rf -p /usr/local/lib/python3.5 /
+        (python -m compileall /usr/local/lib/python3.6 || true) &&
+        rm -Rf /python3.6/* &&
+        cp -Rf -p /usr/local/lib/python3.6 /
     restart: 'no'
     volumes:
-      - wb_requirements_vol:/python3.5
+      - wb_requirements_vol:/python3.6
       - wb_requirements_local_bin_vol:/usr/local/bin
 
   wb:
@@ -199,7 +199,7 @@ services:
     env_file:
       - .docker-compose.wb.env
     volumes:
-      - wb_requirements_vol:/usr/local/lib/python3.5
+      - wb_requirements_vol:/usr/local/lib/python3.6
       - wb_requirements_local_bin_vol:/usr/local/bin
       - osfstoragecache_vol:/code/website/osfstoragecache
       - wb_tmp_vol:/tmp
@@ -217,7 +217,7 @@ services:
     env_file:
       - .docker-compose.wb.env
     volumes:
-      - wb_requirements_vol:/usr/local/lib/python3.5
+      - wb_requirements_vol:/usr/local/lib/python3.6
       - osfstoragecache_vol:/code/website/osfstoragecache
       - wb_tmp_vol:/tmp
     stdin_open: true

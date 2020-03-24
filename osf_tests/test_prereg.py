@@ -100,9 +100,11 @@ class TestPreregLandingPage(OsfTestCase):
 
     def test_has_project_and_draft_registration(self):
         prereg_schema = RegistrationSchema.objects.get(name='Prereg Challenge')
+        project = factories.ProjectFactory(creator=self.user)
         factories.DraftRegistrationFactory(
             initiator=self.user,
-            registration_schema=prereg_schema
+            registration_schema=prereg_schema,
+            branched_from=project,
         )
 
         assert_equal(
@@ -118,10 +120,11 @@ class TestPreregLandingPage(OsfTestCase):
         )
 
         with override_switch(name=OSF_PREREGISTRATION, active=True):
-            prereg_schema = RegistrationSchema.objects.get(name='OSF Preregistration')
+            prereg_schema = RegistrationSchema.objects.get(name='OSF Preregistration', schema_version=3)
             factories.DraftRegistrationFactory(
                 initiator=self.user,
-                registration_schema=prereg_schema
+                registration_schema=prereg_schema,
+                branched_from=project
             )
             assert_equal(
                 landing_page(user=self.user),
