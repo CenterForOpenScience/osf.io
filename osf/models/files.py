@@ -190,11 +190,35 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     @classmethod
     def get_or_create(cls, target, path):
         content_type = ContentType.objects.get_for_model(target)
+
+        ### BaseFileNode cannot be created atomically,
+        ### because (target_object_id, _path) is not unique.
+        ### [GRDM-13530, 15698, 17045, 17065]
+        # try:
+        #     obj = cls.objects.get(target_object_id=target.id, target_content_type=content_type, _path='/' + path.lstrip('/'))
+        # except cls.DoesNotExist:
+        #     obj = cls(target_object_id=target.id, target_content_type=content_type, _path='/' + path.lstrip('/'))
+        # return obj
+
+        kwargs = {'target_object_id': target.id,
+                  'target_content_type': content_type,
+                  '_path': '/' + path.lstrip('/')}
         try:
-            obj = cls.objects.get(target_object_id=target.id, target_content_type=content_type, _path='/' + path.lstrip('/'))
-        except cls.DoesNotExist:
-            obj = cls(target_object_id=target.id, target_content_type=content_type, _path='/' + path.lstrip('/'))
-        return obj
+            obj, _ = cls.objects.get_or_create(**kwargs)
+            return obj
+        except cls.MultipleObjectsReturned:
+            # recover the entry
+            first_obj = None
+            for o in cls.objects.filter(**kwargs).order_by('id'):
+                if first_obj is None:
+                    first_obj = o
+                else:
+                    try:
+                        super(BaseModel, o).delete()
+                        logger.info('A duplicated *FileNode was deleted')
+                    except Exception:
+                        pass
+            return first_obj
 
     @classmethod
     def get_file_guids(cls, materialized_path, provider, target):

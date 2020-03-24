@@ -17,7 +17,8 @@ def get_institusion_settings_template(config):
     short_name = config.short_name
     base_path = os.path.join('rdm_addons', 'addons')
 
-    if short_name in ['dataverse', 'owncloud', 's3', 'iqbrims']:
+    if short_name in ['dataverse', 'owncloud', 's3', 'iqbrims',
+                      'dropboxbusiness']:
         return os.path.join(base_path, '{}_institution_settings.html'.format(short_name))
     return os.path.join(base_path, 'institution_settings_default.html')
 
@@ -58,13 +59,37 @@ def collect_addon_js(addons):
             js_url_list.append(js_url)
     return js_url_list
 
-def get_rdm_addon_option(institution_id, addon_name):
+def _get_rdm_addon_option_get_only(institution_id, addon_name):
+    try:
+        if institution_id:
+            rdm_addon_option = RdmAddonOption.objects.get(
+                institution_id=institution_id,
+                provider=addon_name)
+        else:
+            rdm_addon_option = RdmAddonNoInstitutionOption.objects.get(
+                provider=addon_name)
+        return rdm_addon_option
+    except Exception:
+        return None
+
+def get_rdm_addon_option(institution_id, addon_name, create=True):
     """get model objects of RdmAddonOption or RdmAddonNoInstitutionOption"""
+    if not create:
+        return _get_rdm_addon_option_get_only(institution_id, addon_name)
     if institution_id:
-        rdm_addon_option, _ = RdmAddonOption.objects.get_or_create(institution_id=institution_id,
-            provider=addon_name)
+        rdm_addon_option, created = RdmAddonOption.objects.get_or_create(
+            institution_id=institution_id, provider=addon_name)
     else:
-        rdm_addon_option, _ = RdmAddonNoInstitutionOption.objects.get_or_create(provider=addon_name)
+        rdm_addon_option, created = RdmAddonNoInstitutionOption.objects.get_or_create(provider=addon_name)
+    if not created:
+        return rdm_addon_option
+
+    app = settings.ADDONS_AVAILABLE_DICT.get(addon_name)
+    if app:
+        is_allowed_default = getattr(app, 'is_allowed_default', True)
+        if is_allowed_default is False:
+            rdm_addon_option.is_allowed = False
+            rdm_addon_option.save()
     return rdm_addon_option
 
 def update_with_rdm_addon_settings(addon_setting, user):

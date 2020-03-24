@@ -779,8 +779,12 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             raise InvalidModelValueError(detail=e.messages[0])
         if affiliated_institutions:
             new_institutions = [{'_id': institution} for institution in affiliated_institutions]
-            update_institutions(node, new_institutions, user, post=True)
-            node.save()
+            try:
+                update_institutions(node, new_institutions, user, post=True)
+                node.save()
+            except RelationshipPostMakesNoChanges:
+                # ignore this exception after use_as_template(). [GRDM-17261]
+                pass
         if len(tag_instances):
             for tag in tag_instances:
                 node.tags.add(tag)

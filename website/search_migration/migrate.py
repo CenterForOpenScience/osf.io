@@ -9,7 +9,6 @@ import logging
 from django.db import connection
 from django.core.paginator import Paginator
 from elasticsearch2 import helpers
-import six
 
 import website.search.search as search
 from website.search.elastic_search import client
@@ -25,8 +24,9 @@ from website.app import init_app
 from website.search.elastic_search import client as es_client
 from website.search.elastic_search import bulk_update_cgm
 from website.search.elastic_search import PROJECT_LIKE_TYPES
+from website.search.elastic_search import es_index
 from website.search.search import update_institution, bulk_update_collected_metadata
-from website.search.util import normalize as util_normalize
+from website.search.util import unicode_normalize
 
 
 logger = logging.getLogger(__name__)
@@ -48,20 +48,47 @@ def normalize(docs):
             normalized_names = {}
             for key, val in doc['doc']['names'].items():
                 if val is not None:
-                    try:
-                        val = six.u(val)
-                    except TypeError:
-                        pass  # This is fine, will only happen in 2.x if val is already unicode
-                    normalized_names[key] = util_normalize(val)
+                    normalized_names[key] = unicode_normalize(val)
             doc['doc']['normalized_user'] = normalized_names['fullname']
             doc['doc']['normalized_names'] = normalized_names
+    elif doc_type == 'file':
+        for doc in docs:
+            name = doc['doc']['name']
+            doc['doc']['normalized_name'] = unicode_normalize(name)
+            normalized_tags = []
+            for tag in doc['doc']['tags']:
+                normalized_tags.append(unicode_normalize(tag))
+            doc['doc']['normalized_tags'] = normalized_tags
     elif doc_type in PROJECT_LIKE_TYPES:
         for doc in docs:
-            try:
-                title = six.u(doc['doc']['title'])
-            except TypeError:
-                title = doc['doc']['title']
-            doc['doc']['normalized_title'] = util_normalize(title)
+            title = doc['doc']['title']
+            doc['doc']['normalized_title'] = unicode_normalize(title)
+            description = doc['doc']['description']
+            if description:
+                doc['doc']['normalized_description'] = unicode_normalize(description)
+            normalized_tags = []
+            for tag in doc['doc']['tags']:
+                normalized_tags.append(unicode_normalize(tag))
+            doc['doc']['normalized_tags'] = normalized_tags
+
+            wikis = doc['doc']['wikis']
+            if isinstance(wikis, list):
+                new_wikis = {}
+                for kv in wikis:
+                    if isinstance(kv, dict):
+                        for k, v in kv.items():
+                            new_wikis[k] = v
+                wikis = new_wikis
+            elif not isinstance(wikis, dict):
+                wikis = {}
+            normalized_wikis = {}
+            normalized_wiki_names = []
+            for wikiname, wikidata in wikis.items():
+                wikiname = unicode_normalize(wikiname)
+                normalized_wikis[wikiname] = unicode_normalize(wikidata)
+                normalized_wiki_names.append(wikiname)
+            doc['doc']['wikis'] = normalized_wikis
+            doc['doc']['wiki_names'] = normalized_wiki_names
 
 def sql_migrate(index, sql, max_id, increment, es_args=None, **kwargs):
     """ Run provided SQL and send output to elastic.
@@ -228,7 +255,7 @@ def migrate_institutions(index):
     for inst in Institution.objects.filter(is_deleted=False):
         update_institution(inst, index)
 
-def migrate(delete, remove=False, index=None, app=None):
+def migrate(delete, remove=False, remove_all=False, index=None, app=None):
     """Reindexes relevant documents in ES
 
     :param bool delete: Delete documents that should not be indexed
@@ -236,7 +263,7 @@ def migrate(delete, remove=False, index=None, app=None):
     :param str index: index alias to version and migrate
     :param App app: Flask app for context
     """
-    index = index or settings.ELASTIC_INDEX
+    index = es_index(index)
     app = app or init_app('website.settings', set_backends=True, routes=True)
 
     script_utils.add_file_logger(logger, __file__)
@@ -262,17 +289,23 @@ def migrate(delete, remove=False, index=None, app=None):
 
     if remove:
         remove_old_index(new_index)
+    if remove_all:
+        remove_all_old_index(new_index)
 
     ctx.pop()
 
 def set_up_index(idx):
-    alias = es_client().indices.get_aliases(index=idx)
+    try:
+        alias = es_client().indices.get_aliases(index=idx)
+    except Exception:
+        alias = None
 
     if not alias or not alias.keys() or idx in alias.keys():
         # Deal with empty indices or the first migration
         index = '{}_v1'.format(idx)
         search.create_index(index=index)
         logger.info('Reindexing {0} to {1}_v1'.format(idx, idx))
+        es_client().indices.create(index=idx, ignore=[400])  # HTTP 400 if index already exists
         helpers.reindex(es_client(), idx, index)
         logger.info('Deleting {} index'.format(idx))
         es_client().indices.delete(index=idx)
@@ -297,6 +330,7 @@ def set_up_alias(old_index, index):
 
 
 def remove_old_index(index):
+    logger.info('remove_old_index: {}'.format(index))
     old_version = int(index.split('_v')[1]) - 1
     if old_version < 1:
         logger.info('No index before {} to delete'.format(index))
@@ -306,6 +340,13 @@ def remove_old_index(index):
         logger.info('Deleting {}'.format(old_index))
         es_client().indices.delete(index=old_index, ignore=404)
 
+def remove_all_old_index(index):
+    logger.info('remove_all_old_index: {}'.format(index))
+    old_version = int(index.split('_v')[1]) - 1
+    for v in range(1, old_version + 1):
+        old_index = index.split('_v')[0] + '_v' + str(v)
+        logger.info('Deleting {}'.format(old_index))
+        es_client().indices.delete(index=old_index, ignore=404)
 
 if __name__ == '__main__':
     migrate(False)

@@ -118,6 +118,7 @@ INSTALLED_APPS = (
     'addons.weko',
     'addons.jupyterhub',
     'addons.iqbrims',
+    'addons.dropboxbusiness',
 )
 
 # local development using https
@@ -416,6 +417,10 @@ SSL_GET_TIMESTAMP_RESPONSE = 'openssl' + TST_COMMAND_DELIMITER + \
                              '{1}' + TST_COMMAND_DELIMITER + \
                              '-CAfile' + TST_COMMAND_DELIMITER + \
                              '{2}'
+
+SSL_CREATE_TIMESTAMP_HASH_REQUEST = 'openssl ts -query -digest {digest} {digest_type} -cert'
+SSL_GET_TIMESTAMP_HASH_RESPONSE = 'openssl ts -verify {digest_type} -digest {digest} -in {input} -CAfile {ca}'
+
 # openssl ts verify check value
 OPENSSL_VERIFY_RESULT_OK = 'OK'
 # timestamp verify rootKey
@@ -432,8 +437,10 @@ USE_UPKI = False
 
 #uPKI operation commands
 UPKI_TIMESTAMP_URL = ''
-UPKI_CREATE_TIMESTAMP = ''
-UPKI_VERIFY_TIMESTAMP = ''
+UPKI_CREATE_TIMESTAMP = ''  # {0}=target, {1}=out
+UPKI_VERIFY_TIMESTAMP = ''  # {0}=target, {1}=in
+UPKI_CREATE_TIMESTAMP_HASH = ''  # {digest_type}, {digest}, {output}
+UPKI_VERIFY_TIMESTAMP_HASH = ''  # {digest}, {input}
 UPKI_VERIFY_INVALID_MSG = 'LPC_ERR_VERIFY_INVALID'
 
 # TimeStamp Inspection Status

@@ -12,3 +12,4 @@ from website.files.models.googledrive import *  # noqa
 from website.files.models.iqbrims import *  # noqa
 from website.files.models.swift import *  # noqa
 from website.files.models.azureblobstorage import *  # noqa
+from website.files.models.dropboxbusiness import *  # noqa

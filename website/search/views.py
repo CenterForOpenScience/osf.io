@@ -86,9 +86,10 @@ def search_search(**kwargs):
         size = request.args.get('size', '10')
         results = search.search(build_query(q, start, size), doc_type=_type)
     elif request.method == 'POST' and settings.ENABLE_PRIVATE_SEARCH:
-        # 新しいAPIの新設等は改修範囲が広くなるため、当面はクライアン
-        # トから来たクエリからクエリ文字列だけを取り出してサーバー側で
-        # 検索クエリを組み直している。
+        # Since the scope of the renovation of a new API is widened,
+        # for the time being, only the query string is extracted from
+        # the JSON that came from the client, and the search query is
+        # reassembled on the server side.
         json = request.get_json()
         api_ver = json.get('api_version', None)
         if api_ver is None or \
@@ -101,7 +102,7 @@ def search_search(**kwargs):
         es_dsl = json['elasticsearch_dsl']
         qs = es_dsl['query']['filtered']['query']['query_string']['query']
         es_dsl = build_private_search_query(user, qs, es_dsl['from'], es_dsl['size'])
-        results = search.search(es_dsl, doc_type=_type)
+        results = search.search(es_dsl, doc_type=_type, private=True)
     elif request.method == 'GET' and settings.ENABLE_PRIVATE_SEARCH:
         version = request.args.get('version', None)
         if version is None or toint(version) != SEARCH_API_VERSION or \
@@ -115,7 +116,7 @@ def search_search(**kwargs):
         start = request.args.get('from', '0')
         size = request.args.get('size', '10')
         es_dsl = build_private_search_query(user, q, start, size)
-        results = search.search(es_dsl, doc_type=_type)
+        results = search.search(es_dsl, doc_type=_type, private=True)
 
     results['time'] = round(time.time() - tick, 2)
     return results

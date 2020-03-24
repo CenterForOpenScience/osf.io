@@ -5,6 +5,7 @@ from django.db import models
 from osf.models.base import BaseModel
 from osf.models import ExternalAccount, Institution, AbstractNode
 
+# see admin.rdm_addons.utils.get_rdm_addon_option
 
 class RdmAddonOption(BaseModel):
     provider = models.CharField(max_length=50, blank=False, null=False, db_index=True)

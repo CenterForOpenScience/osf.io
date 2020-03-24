@@ -74,6 +74,9 @@ class BaseAddonAppConfig(AppConfig):
     categories = []
     has_page_icon = True
 
+    # default value for RdmAddonOption.is_allowed for GRDM Admin
+    is_allowed_default = True
+
     def __init__(self, *args, **kwargs):
         ret = super(BaseAddonAppConfig, self).__init__(*args, **kwargs).__init__()
         # Build template lookup

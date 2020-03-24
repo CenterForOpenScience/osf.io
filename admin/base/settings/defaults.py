@@ -134,7 +134,8 @@ INSTALLED_APPS = (
     'addons.nextcloud',
     'addons.gitlab',
     'addons.onedrive',
-    'addons.iqbrims'
+    'addons.iqbrims',
+    'addons.dropboxbusiness',
 )
 
 MIGRATION_MODULES = {
@@ -162,7 +163,8 @@ MIGRATION_MODULES = {
     'addons_nextcloud': None,
     'addons_gitlab': None,
     'addons_onedrive': None,
-    'addons_iqbrims': None
+    'addons_iqbrims': None,
+    'addons_dropboxbusiness': None
 }
 
 UNSUPPORTED_FORCE_TO_USE_ADDONS = [

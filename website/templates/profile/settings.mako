@@ -38,7 +38,7 @@
                 <li class="active"><a href="#names" data-toggle="tab">${_("Name")}</a></li>
                 <li><a href="#jobs" data-toggle="tab">${_("Employment")}</a></li>
                 <li><a href="#schools" data-toggle="tab">${_("Education")}</a></li>
-				<li><a href="#social" data-toggle="tab">${_("Social")}</a></li>
+                <li><a href="#social" data-toggle="tab">${_("Social")}</a></li>
             </ul>
 
             <div class="tab-content" id="containDrag">

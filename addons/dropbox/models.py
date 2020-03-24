@@ -79,21 +79,26 @@ class Provider(ExternalProvider):
         session.save()
         return ret
 
-    # Overrides ExternalProvider
-    def auth_callback(self, user):
+    def auth_callback_common(self):
         # TODO: consider not using client library during auth flow
         try:
             access_token = self.oauth_flow.finish(request.values).access_token
+            return access_token
         except (oauth.NotApprovedException, oauth.BadStateException):
             # 1) user cancelled and client library raised exc., or
             # 2) the state was manipulated, possibly due to time.
             # Either way, return and display info about how to properly connect.
-            return
+            return None
         except (oauth.ProviderException, oauth.CsrfException):
             raise HTTPError(http.FORBIDDEN)
         except oauth.BadRequestException:
             raise HTTPError(http.BAD_REQUEST)
 
+    # Overrides ExternalProvider
+    def auth_callback(self, user):
+        access_token = self.auth_callback_common()
+        if access_token is None:
+            return False
         self.client = Dropbox(access_token)
 
         info = self.client.users_get_current_account()

@@ -41,10 +41,7 @@ REVIEW_FOLDERS = {'paper': u'最終原稿・組図',
                   'raw': u'生データ',
                   'checklist': u'チェックリスト',
                   'scan': u'スキャン結果'}
-INITIAL_FOLDERS_PERMISSIONS = {'paper': ['VISIBLE', 'WRITABLE'],
-                               'raw': ['VISIBLE', 'WRITABLE'],
-                               'checklist': ['VISIBLE', 'WRITABLE'],
-                               'scan': []}
+REVIEW_FILE_LIST = '.files.txt'
 
 
 # TODO make iqbrims "pathfollowing"
@@ -233,7 +230,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         permissions = [(fname,
                         status['workflow_' + fid + '_permissions']
                         if 'workflow_' + fid + '_permissions' in status else
-                        INITIAL_FOLDERS_PERMISSIONS[fid])
+                        [])
                        for fid, fname in REVIEW_FOLDERS.items()]
         return {
             'folder': {
@@ -283,14 +280,15 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         self.status = json.dumps(status)
         self.save()
 
-    def get_process_definition_id(self, register_type=None):
+    def get_process_definition_id(self, user_settings=None, register_type=None):
         if register_type is None:
             return self.process_definition_id
         app_id = None
+        assert user_settings is not None
         if register_type == 'deposit':
-            app_id = drive_settings.FLOWABLE_RESEARCH_APP_ID
+            app_id = user_settings.FLOWABLE_RESEARCH_APP_ID
         elif register_type == 'check':
-            app_id = drive_settings.FLOWABLE_SCAN_APP_ID
+            app_id = user_settings.FLOWABLE_SCAN_APP_ID
         else:
             return None
         if self.process_definition_id is None:
@@ -386,6 +384,11 @@ def update_folder_name(sender, instance, created, **kwargs):
         return
     iqbrims = node.get_addon(IQBRIMSAddonConfig.short_name)
     if not iqbrims.has_auth:
+        return
+    if RdmAddonOption.objects.filter(
+        provider=IQBRIMSAddonConfig.short_name,
+        management_node=node
+    ).exists():
         return
     try:
         access_token = iqbrims.fetch_access_token()

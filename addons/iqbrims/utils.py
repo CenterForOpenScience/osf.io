@@ -4,30 +4,21 @@
 import functools
 import hashlib
 import httplib as http
-import json
 import logging
 import os
+import re
 
 from flask import request
 
 from addons.iqbrims.apps import IQBRIMSAddonConfig
 from framework.exceptions import HTTPError
-from osf.models import ExternalAccount
+from osf.models import Guid, Comment, ExternalAccount
 from website.util import api_v2_url
 
 logger = logging.getLogger(__name__)
-_log_actions = None
 
+MAX_COMMENT_LENGTH = 800
 
-def get_log_actions():
-    global _log_actions
-    if _log_actions is not None:
-        return _log_actions
-    HERE = os.path.dirname(os.path.abspath(__file__))
-    STATIC_PATH = os.path.join(HERE, 'static')
-    with open(os.path.join(STATIC_PATH, 'iqbrimsLogActionList.json')) as fp:
-        _log_actions = json.load(fp)
-    return _log_actions
 
 def build_iqbrims_urls(item, node, path):
     return {
@@ -132,6 +123,22 @@ def create_or_update_external_account_with_other(other_external_account):
 def get_folder_title(node):
     return u'{0}-{1}'.format(node.title.replace('/', '_'), node._id)
 
+def validate_file_list(client, file_list, all_files):
+    filenames = client.get_content(file_list['id'])
+    all_filenames = [f['title'] for f in all_files]
+    for filename in filenames.decode('utf8').split('\n'):
+        if len(filename) and filename not in all_filenames:
+            return False
+    return True
+
+def add_comment(node, user, title, body):
+    content = u'**{title}** {body}'.format(title=title, body=body)
+    target = Guid.load(node._id)
+    comment = Comment(user=user, node=node, content=content,
+                      target=target, root_target=target)
+    comment.save()
+    return comment
+
 def must_have_valid_hash():
     """Decorator factory that ensures that a request have valid X-RDM-Token header.
 
@@ -162,3 +169,16 @@ def must_have_valid_hash():
         return wrapped
 
     return wrapper
+
+def to_comment_string(notify_body):
+    a_pat = re.compile(r'<a\s+href=[\'"]?(https?://[^>\'"]+)[\'"]?>' +
+                       r'(https?://[^>]+)</a>')
+    notify_body = a_pat.sub(r'\1', notify_body)
+    if len(notify_body) < MAX_COMMENT_LENGTH:
+        return notify_body
+    return notify_body[:MAX_COMMENT_LENGTH - 3] + '...'
+
+def embed_variables(message, variables):
+    for k, v in variables.items():
+        message = message.replace('${' + k + '}', v if v is not None else 'null')
+    return message

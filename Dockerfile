@@ -102,6 +102,7 @@ COPY ./addons/box/requirements.txt ./addons/box/
 #COPY ./addons/citations/requirements.txt ./addons/citations/
 COPY ./addons/dataverse/requirements.txt ./addons/dataverse/
 COPY ./addons/dropbox/requirements.txt ./addons/dropbox/
+#COPY ./addons/dropboxbusiness/requirements.txt ./addons/dropboxbusiness/
 #COPY ./addons/figshare/requirements.txt ./addons/figshare/
 #COPY ./addons/forward/requirements.txt ./addons/forward/
 COPY ./addons/github/requirements.txt ./addons/github/
@@ -166,6 +167,7 @@ COPY ./addons/box/static/ ./addons/box/static/
 COPY ./addons/citations/static/ ./addons/citations/static/
 COPY ./addons/dataverse/static/ ./addons/dataverse/static/
 COPY ./addons/dropbox/static/ ./addons/dropbox/static/
+COPY ./addons/dropboxbusiness/static/ ./addons/dropboxbusiness/static/
 COPY ./addons/figshare/static/ ./addons/figshare/static/
 COPY ./addons/forward/static/ ./addons/forward/static/
 COPY ./addons/github/static/ ./addons/github/static/

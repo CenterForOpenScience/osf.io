@@ -66,8 +66,8 @@
     padding-top: 60px;
 }
 
-/*Moves maintenance alert under search bar*/
-#maintenance.alert {
+/*Moves maintenance alert and alert container under search bar*/
+#maintenance.alert, #alert-container.alert {
     position: relative;
     top: 55px;
 }

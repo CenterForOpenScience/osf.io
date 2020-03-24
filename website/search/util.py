@@ -75,7 +75,7 @@ def clean_splitters(text):
     new_text = text.replace('_', ' ').replace('-', ' ').replace('.', ' ')
     if new_text == text:
         return ''
-    return new_text
+    return unicode_normalize(new_text)
 
 
 def es_escape(text):
@@ -89,7 +89,7 @@ def es_escape(text):
 
 
 def _is_delimiter(char):
-    # XXX FIXME: Python3に移行するときはre.UNICODEフラグを取り除くべき
+    # FIXME: re.UNICODE is unnecessary in Python3
     return re.match(r'\s\Z', char, flags=re.UNICODE) or char in [u'(', u')']
 
 
@@ -98,18 +98,17 @@ def quote(string):
     return: (quoted_string, quoted)
     """
 
-    # ダブルクオートで囲まれた文字列の中や後にワイルドカード(*と?)を付
-    # 与すると意図した動作をしないため、ASCIIの英数字及びワイルドカー
-    # ドのみで構成されるトークンの場合はダブルクオートで囲まない。
-    # e.g. abc*
-    # 期待: abc及びその後に文字が任意数続く検索対象にヒット
-    # クオート1: "abc"* は "abc" OR * 相当。全ての検索対象にヒット
-    # クオート2: "abc*" は "abc " 相当。abcとある検索対象のみにヒット
-    # XXX FIXME: Python3に移行するときはflags=re.ASCIIを追加する
+    # Alphanumeric with * or ? string is not quoted.
+    # e.g. abc* -> abc*
+    # If abc* is quoted, ...
+    #   bad pattern 1: "abc"* -> equivalent "abc" OR * -> matche all
+    #   bat pattern 2: "abc*" -> equivalent "abc " -> match "abc" only
+
+    # FIXME: flags=re.ASCII is necessary in Python3
     if re.match(r'[\w\*\?]+\Z', string):
         return (string, False)
     else:
-        return (u'"{}"'.format(string), True)
+        return (u'"{}"'.format(string), True)  # quoted
 
 
 def _quote(string):
@@ -119,7 +118,7 @@ def _quote(string):
 
 def _quote_token(token):
     """
-    Elasticsearch query string言語のクオーティング
+    quoting Elasticsearch query string:
     https://www.elastic.co/guide/en/elasticsearch/reference/2.3/query-dsl-query-string-query.html#query-string-syntax
     """
 
@@ -185,15 +184,15 @@ def _quote_token(token):
 
 def quote_query_string(chars):
     """
-    Elasticsearchのenglish analyzerで漢字の単語を検索すると一文字ずつ
-    トークンとして分解されてOR検索されてしまうため、ダブルクオートで囲
-    んで(クオーティング)ひとまとまりとして扱うようにする。
-    e.g. 「神保町」は「神」か「保」か「町」を検索する。
-    一方、「"神保町"」は「神保町」を検索する。
+    Multibyte charactor string is quoted by double quote.
+    Because english analyzer of Elasticsearch decomposes
+    multibyte character strings with OR expression.
+    e.g. 神保町 -> 神 OR 保 OR 町
+         "神保町"-> 神保町
     """
 
     if not isinstance(chars, unicode):
-        raise TypeError('quote_query_string argument must be str type or unicode type.')
+        chars = chars.decode('utf-8')
 
     token = u''
     qs = u''
@@ -246,6 +245,22 @@ def quote_query_string(chars):
 
     return qs
 
+NORMALIZED_FIELDS = ('user', 'names', 'title', 'description', 'name', 'tags')
+
+def replace_normalized_field(qs):
+    for name in NORMALIZED_FIELDS:
+        qs = re.sub('(^|[\\(\\s]){}\\:'.format(name),
+                    '\\1normalized_{}:'.format(name), qs)
+    return qs
+
+def convert_query_string(qs, normalize=False):
+    qs = quote_query_string(qs)
+    qs = replace_normalized_field(qs)
+    logger.debug(u'convert_query_string: {}'.format(qs))
+    if normalize:
+        return unicode_normalize(qs)
+    else:
+        return qs
 
 def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
     match_node = {
@@ -311,15 +326,14 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
 
     query_body = {
         'bool': {
+            # This is a filter to search only accessible data.
+            # If bool query context is used in a "filter"
+            # context and it has "should" clauses then at least
+            # one "should" clause is required to match.
+            # So "must" is used instead of "filter" here.
+            # See: https://www.elastic.co/guide/en/elasticsearch/reference/2.3/query-dsl-bool-query.html
             'must': [
                 build_query_string(qs),
-                # 自分に関係ない他人のプライベートなデータを見ないよう
-                # にするための絞り込み。
-                # 下記のクエリは検索対象の除外が目的なのでmustではなく
-                # filterを使うべきだが、filter contextの中でboolクエリ
-                # のshould句を使う場合は必ずひとつ以上はヒットしなけれ
-                # ばならない制限があるため、mustで絞り込んでいる。
-                # https://www.elastic.co/guide/en/elasticsearch/reference/2.3/query-dsl-bool-query.html
                 {
                     'bool': {
                         'should': [
@@ -330,7 +344,7 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
                                     'category': [
                                         'user',
                                         'institution',
-                                        'collectionSubmission'
+                                        'collectionsubmission'
                                     ]
                                 }
                             }
@@ -347,7 +361,9 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
         'size': size,
     }
 
-def normalize(text):
+def unicode_normalize(text):
+    if not isinstance(text, unicode):
+        text = text.decode('utf-8')
     normalized = unicodedata.normalize('NFKD', text)
     if not settings.ENABLE_MULTILINGUAL_SEARCH:
         normalized = normalized.encode('ascii', 'ignore')

@@ -93,7 +93,9 @@ var OAuthAddonSettingsViewModel = oop.defclass({
             var accountCount = self.accounts().length;
             self.updateAccounts().done( function() {
                 if (self.accounts().length > 0 && self.accounts().length >= accountCount) {  // If there's more than 1 and the count stays the same, probably reauthorizing
-                    if (self.name === 'dropbox') {
+                    if (self.name === 'dropbox' ||
+                        self.name === 'dropboxbusiness' ||
+                        self.name === 'dropboxbusiness_manage') {
                         self.setMessage('Add-on successfully authorized. If you wish to link a different account, log out of dropbox.com before attempting to connect to a second Dropbox account on the GakuNin RDM. This will clear the credentials stored in your browser.', 'text-success');
                     } else if (self.name === 'bitbucket') {
                         self.setMessage('Add-on successfully authorized. If you wish to link a different account, log out of bitbucket.org before attempting to connect to a second Bitbucket account on the GakuNin RDM. This will clear the credentials stored in your browser.', 'text-success');

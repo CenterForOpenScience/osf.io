@@ -31,6 +31,8 @@ BCRYPT_LOG_ROUNDS = 12
 LOG_LEVEL = logging.INFO
 TEST_ENV = False
 
+RECURSION_LIMIT = 2000  # [GRDM-9050, GRDM-16889]
+
 with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
     VERSION = json.load(fobj)['version']
 
@@ -105,6 +107,7 @@ SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = '127.0.0.1:9200'
 ELASTIC_TIMEOUT = 10
 ELASTIC_INDEX = 'website'
+ELASTIC_INDEX_PRIVATE_PREFIX = 'private__'  # for ENABLE_PRIVATE_SEARCH
 ELASTIC_KWARGS = {
     # 'use_ssl': False,
     # 'verify_certs': True,
@@ -1957,15 +1960,23 @@ MAPCORE_AUTHCODE_MAGIC = 'GRDM_mAP_AuthCode'
 MAPCORE_CLIENTID = None
 MAPCORE_SECRET = None
 
+# allow logged-in-user to search private projects
 ENABLE_PRIVATE_SEARCH = False
 
-# Elasticsearchを用いた全文検索でラテン文字以外の文字(特に漢字)の検索
-# を実用可能にするオプション。
-# デフォルトのenglishアナライザーだと漢字等の単語が一文字ずつにトーク
-# ナイズされてしまい、各文字のOR検索となってしまう。
+# Support searching multilingual (multibyte) string.
+# When default analizer is used, the multibyte words are tokenized
+# for each character, and querying "OR" for each character.
+# (see: https://www.elastic.co/jp/blog/how-to-search-ch-jp-kr-part-1)
+# When this flag is True, each words are surrounded with double quotes
+# instead of using other analyzer for simplicity.
+#
+# Elasticsearchを用いた全文検索で英数字以外の文字の検索を実用可能にする
+# オプション。
+# 検索機能ではenglishアナライザーが使用されているが、漢字等の単語が一文
+# 字ずつにトークナイズされてしまい、各文字のOR検索となってしまう。
 # 多言語検索には対応する自然言語のアナライザーを用いて対応するのが一般
 # 的である。
-# https://www.elastic.co/jp/blog/how-to-search-ch-jp-kr-part-1
+# 参考: https://www.elastic.co/jp/blog/how-to-search-ch-jp-kr-part-1
 # しかし、他のアナライザーを用いる方式は多くの改修が必要であるため、現
 # 状では比較的簡単な別の方法で幾らかの精度の向上を図っている。具体的に
 # は、englishアナライザーのまま漢字などをダブルクオートで囲ってひとま

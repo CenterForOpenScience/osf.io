@@ -10,8 +10,6 @@ import math
 import re
 from framework import sentry
 
-import six
-
 from django.apps import apps
 from django.core.paginator import Paginator
 from django.contrib.contenttypes.models import ContentType
@@ -35,7 +33,7 @@ from website import settings
 from website.filters import profile_image_url
 from osf.models.licenses import serialize_node_license_record
 from website.search import exceptions
-from website.search.util import build_query, clean_splitters, es_escape, quote_query_string, normalize, quote
+from website.search.util import build_query, clean_splitters, es_escape, convert_query_string, unicode_normalize, quote
 from website.views import validate_page_num
 
 from django.utils.translation import ugettext_lazy as _
@@ -74,7 +72,22 @@ NOT_ANALYZED_PROPERTY = {'type': 'string', 'index': 'not_analyzed'}
 # Perform stemming on the field it's applied to.
 ENGLISH_ANALYZER_PROPERTY = {'type': 'string', 'analyzer': 'english'}
 
+# INDEX is modified by tests. (TODO: INDEX is unnecessary for GRDM ver.)
 INDEX = settings.ELASTIC_INDEX
+
+def es_index_protected(index, private):
+    if not index:
+        # settings.ELASTIC_INDEX is modified by tests.
+        index = settings.ELASTIC_INDEX
+
+    if settings.ENABLE_PRIVATE_SEARCH and private and \
+       not index.startswith(settings.ELASTIC_INDEX_PRIVATE_PREFIX):
+        # allow only expected implementations to search private projects
+        index = settings.ELASTIC_INDEX_PRIVATE_PREFIX + index
+    return index
+
+def es_index(index=None):
+    return es_index_protected(index, True)
 
 CLIENT = None
 
@@ -153,7 +166,7 @@ def get_aggregations(query, doc_type):
         }
     }
 
-    res = client().search(index=INDEX, doc_type=doc_type, search_type='count', body=query)
+    res = client().search(index=es_index(), doc_type=doc_type, search_type='count', body=query)
     ret = {
         doc_type: {
             item['key']: item['doc_count']
@@ -175,7 +188,7 @@ def get_counts(count_query, clean=True):
         }
     }
 
-    res = client().search(index=INDEX, doc_type=None, search_type='count', body=count_query)
+    res = client().search(index=es_index(), doc_type=None, search_type='count', body=count_query)
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
     counts['total'] = sum([val for val in counts.values()])
@@ -197,12 +210,15 @@ def get_tags(query, index):
 
 
 @requires_search
-def search(query, index=None, doc_type='_all', raw=False):
+def search(query, index=None, doc_type='_all', raw=False, normalize=True, private=False):
     """Search for a query
 
     :param query: The substring of the username/project name/tag to search for
     :param index:
     :param doc_type:
+    :param normalize: normalize unicode string
+    :param private: allow searching private data
+                    (ENABLE_PRIVATE_SEARCH is also required)
 
     :return: List of dictionaries, each containing the results, counts, tags and typeAliases
         results: All results returned by the query, that are within the index and search type
@@ -210,17 +226,14 @@ def search(query, index=None, doc_type='_all', raw=False):
         tags: A list of tags that are returned by the search query
         typeAliases: the doc_types that exist in the search database
     """
-    index = index or INDEX
+    index = es_index_protected(index, private)
 
     # Quote query string for mutilingual search.
-    # 本関数には4種類のElasticsearch生DSLがあることが現状では分かって
-    # いる
-    # - Webブラウザからくるもの(filteredを使用)
-    # - website.search.util.build_queryを使用して作成したもの(2種類)
-    # - website.search.util.build_private_search_queryを使用して作成し
-    #   たもの
-    # クオーティングをsearchを呼ぶ前に行うと散らばってしまうため、
-    # search内でひとまとめに行う。
+    # This search() is called from ...
+    #   - Web Browser  (filtered)
+    #   - website.search.util.build_private_search_query
+    #   - website.search.util.build_query
+    #   - website.search.util.build_query with GUID
     if settings.ENABLE_MULTILINGUAL_SEARCH:
         from_browser = 'filtered' in query['query']
         from_build_private_search_query = 'bool' in query['query'] and \
@@ -230,19 +243,19 @@ def search(query, index=None, doc_type='_all', raw=False):
                                      'should' in query['query']['bool']
         if from_browser:
             q = query['query']['filtered']['query']['query_string']['query']
-            q = quote_query_string(q)
+            q = convert_query_string(q, normalize=normalize)
             query['query']['filtered']['query']['query_string']['query'] = q
         elif from_build_private_search_query:
             q = query['query']['bool']['must'][0]['query_string']['query']
-            q = quote_query_string(q)
+            q = convert_query_string(q, normalize=normalize)
             query['query']['bool']['must'][0]['query_string']['query'] = q
         elif from_build_query:
             q = query['query']['query_string']['query']
-            q = quote_query_string(q)
+            q = convert_query_string(q, normalize=normalize)
             query['query']['query_string']['query'] = q
         elif from_build_query_with_guid:
             q = query['query']['bool']['should'][0]['query_string']['query']
-            q = quote_query_string(q)
+            q = convert_query_string(q, normalize=normalize)
             query['query']['bool']['should'][0]['query_string']['query'] = q
 
     tag_query = copy.deepcopy(query)
@@ -429,11 +442,11 @@ def serialize_node(node, category):
     elastic_document = {}
     parent_id = node.parent_id
 
-    try:
-        normalized_title = six.u(node.title)
-    except TypeError:
-        normalized_title = node.title
-    normalized_title = normalize(normalized_title)
+    normalized_title = unicode_normalize(node.title)
+
+    tags = list(node.tags.filter(system=False).values_list('name', flat=True))
+    normalized_tags = [unicode_normalize(tag) for tag in tags]
+
     elastic_document = {
         'id': node._id,
         'contributors': [
@@ -456,8 +469,10 @@ def serialize_node(node, category):
         'normalized_title': normalized_title,
         'category': category,
         'public': node.is_public,
-        'tags': list(node.tags.filter(system=False).values_list('name', flat=True)),
+        'tags': tags,
+        'normalized_tags': normalized_tags,
         'description': node.description,
+        'normalized_description': unicode_normalize(node.description),
         'url': node.url,
         'is_registration': node.is_registration,
         'is_pending_registration': node.is_pending_registration,
@@ -475,20 +490,22 @@ def serialize_node(node, category):
         'extra_search_terms': clean_splitters(node.title),
     }
     if not node.is_retracted:
+        wiki_names = []
         for wiki in WikiPage.objects.get_wiki_pages_latest(node):
             # '.' is not allowed in field names in ES2
-            elastic_document['wikis'][wiki.wiki_page.page_name.replace('.', ' ')] = wiki.raw_text(node)
+            wiki_name = unicode_normalize(wiki.wiki_page.page_name.replace('.', ' '))
+            elastic_document['wikis'][wiki_name] = unicode_normalize(wiki.raw_text(node))
+            wiki_names.append(wiki_name)
+        elastic_document['wiki_names'] = wiki_names
 
     return elastic_document
 
 def serialize_preprint(preprint, category):
     elastic_document = {}
 
-    try:
-        normalized_title = six.u(preprint.title)
-    except TypeError:
-        normalized_title = preprint.title
-    normalized_title = normalize(normalized_title)
+    normalized_title = unicode_normalize(preprint.title)
+    tags = list(preprint.tags.filter(system=False).values_list('name', flat=True))
+    normalized_tags = [unicode_normalize(tag) for tag in tags]
     elastic_document = {
         'id': preprint._id,
         'contributors': [
@@ -506,8 +523,10 @@ def serialize_preprint(preprint, category):
         'public': preprint.is_public,
         'published': preprint.verified_publishable,
         'is_retracted': preprint.is_retracted,
-        'tags': list(preprint.tags.filter(system=False).values_list('name', flat=True)),
+        'tags': tags,
+        'normalized_tags': normalized_tags,
         'description': preprint.description,
+        'normalized_description': unicode_normalize(preprint.description),
         'url': preprint.url,
         'date_created': preprint.created,
         'license': serialize_node_license_record(preprint.license),
@@ -520,11 +539,7 @@ def serialize_preprint(preprint, category):
 def serialize_group(group, category):
     elastic_document = {}
 
-    try:
-        normalized_title = six.u(group.name)
-    except TypeError:
-        normalized_title = group.name
-    normalized_title = normalize(normalized_title)
+    normalized_title = unicode_normalize(group.name)
     elastic_document = {
         'id': group._id,
         'members': [
@@ -555,7 +570,7 @@ def serialize_group(group, category):
 @requires_search
 def update_node(node, index=None, bulk=False, async_update=False):
     from addons.osfstorage.models import OsfStorageFile
-    index = index or INDEX
+    index = es_index(index)
     for file_ in paginated(OsfStorageFile, Q(target_content_type=ContentType.objects.get_for_model(type(node)), target_object_id=node.id)):
         update_file(file_, index=index)
 
@@ -573,7 +588,7 @@ def update_node(node, index=None, bulk=False, async_update=False):
 @requires_search
 def update_preprint(preprint, index=None, bulk=False, async_update=False):
     from addons.osfstorage.models import OsfStorageFile
-    index = index or INDEX
+    index = es_index(index)
     for file_ in paginated(OsfStorageFile, Q(target_content_type=ContentType.objects.get_for_model(type(preprint)), target_object_id=preprint.id)):
         update_file(file_, index=index)
 
@@ -590,7 +605,7 @@ def update_preprint(preprint, index=None, bulk=False, async_update=False):
 
 @requires_search
 def update_group(group, index=None, bulk=False, async_update=False, deleted_id=None):
-    index = index or INDEX
+    index = es_index(index)
 
     if deleted_id:
         delete_group_doc(deleted_id, index=index)
@@ -610,7 +625,7 @@ def bulk_update_nodes(serialize, nodes, index=None, category=None):
     :param str index: Index of the nodes
     :return:
     """
-    index = index or INDEX
+    index = es_index(index)
     actions = []
     for node in nodes:
         serialized = serialize(node)
@@ -634,6 +649,9 @@ def serialize_cgm_contributor(contrib):
 
 def serialize_cgm(cgm):
     obj = cgm.guid.referent
+    tags = list(obj.tags.filter(system=False).values_list('name', flat=True))
+    normalized_tags = [unicode_normalize(tag) for tag in tags]
+
     contributors = []
     if hasattr(obj, '_contributors'):
         contributors = obj._contributors.filter(contributor__visible=True).order_by('contributor___order').values('fullname', 'guids___id', 'is_active')
@@ -652,13 +670,14 @@ def serialize_cgm(cgm):
         'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'title': getattr(obj, 'title', ''),
         'url': getattr(obj, 'url', ''),
-        'tags': list(obj.tags.filter(system=False).values_list('name', flat=True)),
+        'tags': tags,
+        'normalized_tags': normalized_tags,
         'category': 'collectionSubmission',
     }
 
 @requires_search
 def bulk_update_cgm(cgms, actions=None, op='update', index=None):
-    index = index or INDEX
+    index = es_index(index)
     if not actions and cgms:
         actions = ({
             '_op_type': op,
@@ -703,7 +722,7 @@ def update_contributors_async(self, user_id):
 @requires_search
 def update_user(user, index=None):
 
-    index = index or INDEX
+    index = es_index(index)
     if not user.is_active:
         try:
             client().delete(index=index, doc_type='user', id=user._id, refresh=True, ignore=[404])
@@ -733,11 +752,7 @@ def update_user(user, index=None):
     normalized_names = {}
     for key, val in names.items():
         if val is not None:
-            try:
-                val = six.u(val)
-            except TypeError:
-                pass  # This is fine, will only happen in 2.x if val is already unicode
-            normalized_names[key] = normalize(val)
+            normalized_names[key] = unicode_normalize(val)
 
     user_doc = {
         'id': user._id,
@@ -761,7 +776,7 @@ def update_user(user, index=None):
 
 @requires_search
 def update_file(file_, index=None, delete=False):
-    index = index or INDEX
+    index = es_index(index)
     target = file_.target
 
     # TODO: Can remove 'not file_.name' if we remove all base file nodes with name=None
@@ -805,6 +820,9 @@ def update_file(file_, index=None, delete=False):
     else:
         node_url = '/{target_id}/'.format(target_id=target._id)
 
+    tags = list(file_.tags.filter(system=False).values_list('name', flat=True))
+    normalized_tags = [unicode_normalize(tag) for tag in tags]
+
     guid_url = None
     file_guid = file_.get_guid(create=False)
     if file_guid:
@@ -815,8 +833,10 @@ def update_file(file_, index=None, delete=False):
         'id': file_._id,
         'deep_url': None if isinstance(target, Preprint) else file_deep_url,
         'guid_url': None if isinstance(target, Preprint) else guid_url,
-        'tags': list(file_.tags.filter(system=False).values_list('name', flat=True)),
+        'tags': tags,
+        'normalized_tags': normalized_tags,
         'name': file_.name,
+        'normalized_name': unicode_normalize(file_.name),
         'category': 'file',
         'node_url': node_url,
         'node_title': getattr(target, 'title', None),
@@ -844,7 +864,7 @@ def update_file(file_, index=None, delete=False):
 
 @requires_search
 def update_institution(institution, index=None):
-    index = index or INDEX
+    index = es_index(index)
     id_ = institution._id
     if institution.is_deleted:
         client().delete(index=index, doc_type='institution', id=id_, refresh=True, ignore=[404])
@@ -895,7 +915,7 @@ def update_cgm_async(self, cgm_id, collection_id=None, op='update', index=None):
 
 @requires_search
 def update_cgm(cgm, op='update', index=None):
-    index = index or INDEX
+    index = es_index(index)
     if op == 'delete':
         client().delete(index=index, doc_type='collectionSubmission', id=cgm._id, refresh=True, ignore=[404])
         return
@@ -904,7 +924,7 @@ def update_cgm(cgm, op='update', index=None):
 
 @requires_search
 def delete_all():
-    delete_index(INDEX)
+    delete_index(es_index())
 
 
 @requires_search
@@ -918,7 +938,7 @@ def create_index(index=None):
     """Creates index with some specified mappings to begin with,
     all of which are applied to all projects, components, preprints, and registrations.
     """
-    index = index or INDEX
+    index = es_index(index)
     document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint', 'collectionSubmission']
     project_like_types = PROJECT_LIKE_TYPES
     analyzed_fields = ['title', 'description']
@@ -943,6 +963,7 @@ def create_index(index=None):
             mapping = {
                 'properties': {
                     'tags': NOT_ANALYZED_PROPERTY,
+                    'normalized_tags': NOT_ANALYZED_PROPERTY,
                     'license': {
                         'properties': {
                             'id': NOT_ANALYZED_PROPERTY,
@@ -983,7 +1004,7 @@ def create_index(index=None):
 
 @requires_search
 def delete_doc(elastic_document_id, node, index=None, category=None):
-    index = index or INDEX
+    index = es_index(index)
     if not category:
         if isinstance(node, Preprint):
             category = 'preprint'
@@ -995,7 +1016,7 @@ def delete_doc(elastic_document_id, node, index=None, category=None):
 
 @requires_search
 def delete_group_doc(deleted_id, index=None):
-    index = index or INDEX
+    index = es_index(index)
     client().delete(index=index, doc_type='group', id=deleted_id, refresh=True, ignore=[404])
 
 @requires_search
@@ -1020,11 +1041,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     exclude = exclude or []
     normalized_items = []
     for item in items:
-        try:
-            normalized_item = six.u(item)
-        except TypeError:
-            normalized_item = item
-        normalized_item = normalize(normalized_item)
+        normalized_item = unicode_normalize(item)
         normalized_items.append(normalized_item)
     items = normalized_items
 
@@ -1050,7 +1067,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
             current_user.affiliated_institutions.values_list('_id', flat=True)
         ))
 
-    results = search(build_query(query, start=start, size=size, sort=None, user_guid=escaped_query), index=INDEX, doc_type='user')
+    results = search(build_query(query, start=start, size=size, sort=None, user_guid=escaped_query), index=None, doc_type='user', normalize=False, private=True)
     docs = results['results']
     pages = math.ceil(results['counts'].get('user', 0) / size)
     validate_page_num(page, pages)
