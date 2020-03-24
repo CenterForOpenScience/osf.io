@@ -20,7 +20,7 @@ def main(dry=True, page_size=1000):
     to a widespread permissions errors for draft registrations made prior to the migration. This should fix that.
     Migration ran at 2120 (EDT).
     """
-    date_of_migration = datetime.datetime(2020, 3, 23, 17, 20, tzinfo=pytz.utc)
+    date_of_migration = datetime.datetime(2020, 3, 24, 1, 20, tzinfo=pytz.utc)
 
     bugged_regs = DraftRegistration.objects.filter(created__lte=date_of_migration)
     paginator = Paginator(bugged_regs, page_size)
