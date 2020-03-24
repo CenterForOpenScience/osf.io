@@ -7,7 +7,7 @@
 
         <form role="form" data-bind="submit: submit">
 
-            <label>Your websites</label>
+            <label>${_("Your websites")}</label>
             <div data-bind="sortable: {
                         data: profileWebsites,
                         options: {
@@ -28,10 +28,10 @@
                     </div>
                 </div>
             </div>
-            <div data-bind="ifnot: hasValidWebsites" class="text-danger">Please enter a valid website</div>
+            <div data-bind="ifnot: hasValidWebsites" class="text-danger">${_("Please enter a valid website")}</div>
             <div class="p-t-sm p-b-sm">
                 <a class="btn btn-default" data-bind="click: addWebsiteInput">
-                    Add website
+                    ${_("Add website")}
                 </a>
             </div>
 
@@ -63,7 +63,7 @@
                 <label>GitHub</label>
                 <div class="input-group">
                     <span class="input-group-addon">https://github.com/</span>
-                    <input class="form-control" data-bind="value: github" placeholder="username"/>
+                    <input class="form-control" data-bind="value: github" placeholder="${_('username')}"/>
                     <span class="input-group-btn" data-bind="if: github.hasAddon()">
                         <button
                                 class="btn btn-primary"
@@ -85,7 +85,7 @@
                 <label>ImpactStory</label>
                 <div class="input-group">
                 <span class="input-group-addon">https://impactstory.org/u/</span>
-                <input class="form-control" data-bind="value: impactStory" placeholder="profileID"/>
+                <input class="form-control" data-bind="value: impactStory" placeholder="${_('profileID')}"/>
                 </div>
             </div>
 
@@ -93,7 +93,7 @@
                 <label>Google Scholar</label>
                 <div class="input-group">
                 <span class="input-group-addon">http://scholar.google.com/citations?user=</span>
-                <input class="form-control" data-bind="value: scholar" placeholder="profileID"/>
+                <input class="form-control" data-bind="value: scholar" placeholder="${_('profileID')}"/>
                 </div>
             </div>
 
@@ -101,7 +101,7 @@
                 <label>ResearchGate</label>
                 <div class="input-group">
                 <span class="input-group-addon">https://researchgate.net/profile/</span>
-                <input class="form-control" data-bind="value: researchGate" placeholder="profileID"/>
+                <input class="form-control" data-bind="value: researchGate" placeholder="${_('profileID')}"/>
                 </div>
             </div>
 
@@ -109,9 +109,9 @@
                 <label>Academia</label>
                 <div class="input-group">
                 <span class="input-group-addon">https://</span>
-                <input class="form-control" data-bind="value: academiaInstitution" placeholder="institution" size="5"/>
+                <input class="form-control" data-bind="value: academiaInstitution" placeholder="${_('institution')}" size="5"/>
                 <span class="input-group-addon">.academia.edu/</span>
-                <input class="form-control" data-bind="value: academiaProfileID" placeholder="profileID"/>
+                <input class="form-control" data-bind="value: academiaProfileID" placeholder="${_('profileID')}"/>
                 </div>
             </div>
 
@@ -119,7 +119,7 @@
                 <label>Baidu Scholar</label>
                 <div class="input-group">
                 <span class="input-group-addon">http://xueshu.baidu.com/scholarID/</span>
-                <input class="form-control" data-bind="value: baiduScholar" placeholder="profileID"/>
+                <input class="form-control" data-bind="value: baiduScholar" placeholder="${_('profileID')}"/>
                 </div>
             </div>
 
@@ -127,7 +127,7 @@
                 <label>SSRN</label>
                 <div class="input-group">
                 <span class="input-group-addon">http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id=</span>
-                <input class="form-control" data-bind="value: ssrn" placeholder="profileID"/>
+                <input class="form-control" data-bind="value: ssrn" placeholder="${_('profileID')}"/>
                 </div>
             </div>
 
@@ -137,13 +137,13 @@
                         type="button"
                         class="btn btn-default"
                         data-bind="click: cancel"
-                    >Discard changes</button>
+                    >${_("Discard changes")}</button>
 
                 <button
-                        data-bind="disable: saving(), text: saving() ? 'Saving' : 'Save'"
+                        data-bind="disable: saving(), text: saving() ? '${_("Saving")}' : '${_("Save")}'"
                         type="submit"
                         class="btn btn-success"
-                    >Save</button>
+                    >${_("Save")}</button>
             </div>
 
             <!-- Flashed Messages -->
@@ -177,11 +177,11 @@
         </table>
 
         <div data-bind="ifnot: hasValues()">
-            <div class="well well-sm">Not provided</div>
+            <div class="well well-sm">${_("Not provided")}</div>
         </div>
 
         <div data-bind="if: editAllowed">
-            <a class="btn btn-primary" data-bind="click: edit">Edit</a>
+            <a class="btn btn-primary" data-bind="click: edit">${_("Edit")}</a>
         </div>
 
     </div>

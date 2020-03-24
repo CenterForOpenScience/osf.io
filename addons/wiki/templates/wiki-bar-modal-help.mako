@@ -3,15 +3,15 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true"></span>&times;</button>
-                    <h3 class="modal-title">Wiki syntax help</h3>
+                    <h3 class="modal-title">${_("Wiki syntax help")}</h3>
                 </div>
                 <div class="modal-body">
                   <p>
-                    The wiki uses the <a href="https://daringfireball.net/projects/markdown/">Markdown</a> syntax. For more information and examples, go to our <a href="https://openscience.zendesk.com/hc/en-us/sections/360003569274">Guides.</a>
+                    ${_('The wiki uses the <a %(markUrl)s>Markdown</a> syntax. For more information and examples, go to our <a %(zendeskUrl)s>Guides.</a>') % dict(markUrl='href="https://daringfireball.net/projects/markdown/"', zendeskUrl='href="https://openscience.zendesk.com/hc/en-us/sections/360003569274"') | n}
                   </p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">${_("Close")}</button>
                 </div>
             </div>
         </div>

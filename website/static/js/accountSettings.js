@@ -8,6 +8,10 @@ var oop = require('js/oop');
 var Raven = require('raven-js');
 var ChangeMessageMixin = require('js/changeMessage');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 var UserEmail = oop.defclass({
     constructor: function(params) {
@@ -78,8 +82,8 @@ var UserProfileClient = oop.defclass({
             ret.resolve(this.unserialize(data));
         }.bind(this));
         request.fail(function(xhr, status, error) {
-            $osf.growl('Error', 'Could not fetch user profile.', 'danger');
-            Raven.captureMessage('Error fetching user profile', {
+            $osf.growl('Error', _('Could not fetch user profile.'), 'danger');
+            Raven.captureMessage(_('Error fetching user profile'), {
                 extra: {
                     url: this.urls.fetch,
                     status: status,
@@ -107,11 +111,10 @@ var UserProfileClient = oop.defclass({
                 $osf.growl('Error', xhr.responseJSON.message_long);
 
             } else {
-                $osf.growl('Error', 'User profile not updated. Please refresh the page and try ' +
-                'again or contact ' + $osf.osfSupportLink() + ' if the problem persists.', 'danger');
+                $osf.growl('Error', agh.sprintf(_('User profile not updated. Please refresh the page and try again or contact %1$s if the problem persists.'),$osf.osfSupportLink()), 'danger');
             }
 
-            Raven.captureMessage('Error fetching user profile', {
+            Raven.captureMessage(_('Error fetching user profile'), {
                 extra: {
                     url: this.urls.update,
                     status: status,
@@ -195,7 +198,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
             // ensure email isn't already in the list
             for (var i=0; i<this.profile().emails().length; i++) {
                 if (this.profile().emails()[i].address() === email.address()) {
-                    this.changeMessage('Duplicate Email', 'text-warning');
+                    this.changeMessage(_('Duplicate Email'), 'text-warning');
                     this.emailInput('');
                     return;
                 }
@@ -216,13 +219,13 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                 if (emailAdded === true) {
                     var safeAddr = $osf.htmlEscape(email.address());
                     bootbox.alert({
-                                title: 'Confirmation email sent',
-                                message: '<em>' + safeAddr + '</em>' + ' was added to your account.' +
-                                ' You will receive a confirmation email at ' + '<em>' + safeAddr + '</em>.' +
-                                ' Please click the link in your email to confirm this action. You will be required to enter your password.',
+                                title: _('Confirmation email sent'),
+                                message: agh.sprintf(_('<em>%1$s</em> was added to your account.'),safeAddr) +
+                                agh.sprintf(_(' You will receive a confirmation email at <em>%1$s</em>.'),safeAddr) +
+                                _(' Please click the link in your email to confirm this action. You will be required to enter your password.'),
                                 buttons: {
                                     ok: {
-                                        label: 'Close',
+                                        label: _('Close'),
                                         className: 'btn-default'
                                     }
                                 }
@@ -232,7 +235,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                 this.profile().emails.remove(email);
             }.bind(this));
         } else {
-            this.changeMessage('Email cannot be empty.', 'text-danger');
+            this.changeMessage(_('Email cannot be empty.'), 'text-danger');
         }
     },
     resendConfirmation: function(email){
@@ -240,22 +243,22 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         self.changeMessage('', 'text-info');
         var safeAddr = $osf.htmlEscape(email.address());
         bootbox.confirm({
-            title: 'Resend Email Confirmation?',
-            message: 'Are you sure that you want to resend email confirmation to ' + '<em>' + safeAddr + '</em>?',
+            title: _('Resend Email Confirmation?'),
+            message: agh.sprintf(_('Are you sure that you want to resend email confirmation to <em>%1$s</em>?'),safeAddr),
             callback: function (confirmed) {
                 if (confirmed) {
                     self.client.update(self.profile(), email).done(function () {
                         $osf.growl(
-                            'Email confirmation resent to <em>' + safeAddr + '</em>',
-                            'You will receive a new confirmation email at <em>' + safeAddr  + '</em>.' +
-                            ' Please log out of this account and check your email to confirm this action.',
+                            agh.sprintf(_('Email confirmation resent to <em>%1$s</em>'),safeAddr),
+                            agh.sprintf(_('You will receive a new confirmation email at <em>%1$s</em>.'),safeAddr) +
+                            _(' Please log out of this account and check your email to confirm this action.'),
                             'success');
                     });
                 }
             },
             buttons:{
                 confirm:{
-                    label:'Resend'
+                    label:_('Resend')
                 }
             }
         });
@@ -266,8 +269,8 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         if (self.profile().emails().indexOf(email) !== -1) {
             var addrText = $osf.htmlEscape(email.address());
             bootbox.confirm({
-                title: 'Remove Email?',
-                message: 'Are you sure that you want to remove ' + '<em>' + addrText + '</em>' + ' from your email list?',
+                title: _('Remove Email?'),
+                message: agh.sprintf(_('Are you sure that you want to remove <em>%1$s</em> from your email list?'),addrText),
                 callback: function (confirmed) {
                     if (confirmed) {
                         self.profile().emails.remove(email);
@@ -278,13 +281,16 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                 },
                 buttons:{
                     confirm:{
-                        label:'Remove',
+                        label:_('Remove'),
                         className:'btn-danger'
+                    },
+                    cancel:{
+                        label:_('Cancel')
                     }
                 }
             });
         } else {
-            $osf.growl('Error', 'Please refresh the page and try again.', 'danger');
+            $osf.growl('Error', _('Please refresh the page and try again.'), 'danger');
         }
     },
     makeEmailPrimary: function (email) {
@@ -297,7 +303,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                 $osf.growl('Made Primary', '<em>' + addrText + '<em>', 'success');
             });
         } else {
-            $osf.growl('Error', 'Please refresh the page and try again.', 'danger');
+            $osf.growl('Error', _('Please refresh the page and try again.'), 'danger');
         }
     }
 });
@@ -310,15 +316,15 @@ var ExternalIdentityViewModel = oop.defclass({
     _removeIdentity: function(identity) {
         var request = $osf.ajaxJSON('PATCH', this.urls.delete, {'data': {'identity': identity}});
         request.done(function() {
-            $osf.growl('Success', 'You have revoked this connected identity.', 'success');
+            $osf.growl('Success', _('You have revoked this connected identity.'), 'success');
             window.location.reload();
         }.bind(this));
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
-                'Revocation request failed. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.',
+                agh.sprintf(_('Revocation request failed. Please contact %1$s if the problem persists.'),$osf.osfSupportLink()),
                 'danger'
             );
-            Raven.captureMessage('Error revoking connected identity', {
+            Raven.captureMessage(_('Error revoking connected identity'), {
                 extra: {
                     url: this.urls.update,
                     status: status,
@@ -331,8 +337,8 @@ var ExternalIdentityViewModel = oop.defclass({
     removeIdentity: function (identity) {
         var self = this;
         bootbox.confirm({
-            title: 'Remove authorization?',
-            message: 'Are you sure you want to remove this authorization?',
+            title: _('Remove authorization?'),
+            message: _('Are you sure you want to remove this authorization?'),
             callback: function(confirmed) {
                 if (confirmed) {
                     return self._removeIdentity(identity);
@@ -340,8 +346,11 @@ var ExternalIdentityViewModel = oop.defclass({
             },
             buttons:{
                 confirm:{
-                    label:'Remove',
+                    label:_('Remove'),
                     className:'btn-danger'
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });
@@ -373,14 +382,14 @@ var UpdateDefaultStorageLocation = oop.defclass({
     updateDefaultStorageLocation: function() {
         var request = $osf.ajaxJSON('PUT', this.urls.update, {'data': {'region_id': this.locationSelected()._id}});
         request.done(function() {
-            $osf.growl('Success', 'You have successfully changed your default storage location to <b>' + this.locationSelected().name + '</b>.', 'success');
+            $osf.growl('Success', agh.sprintf(_('You have successfully changed your default storage location to <b>%1$s</b>.'),this.locationSelected().name), 'success');
         }.bind(this));
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
-                'Your attempt to change your default storage location has failed. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.',
+                agh.sprintf(_('Your attempt to change your default storage location has failed. Please contact %1$s if the problem persists.'),$osf.osfSupportLink()),
                 'danger'
             );
-            Raven.captureMessage('Error updating default storage location ', {
+            Raven.captureMessage(_('Error updating default storage location '), {
                 extra: {
                     url: this.urls.update,
                     status: status,
@@ -403,7 +412,7 @@ var DeactivateAccountViewModel = oop.defclass({
     _requestDeactivation: function() {
         var request = $osf.postJSON(this.urls.update, {});
         request.done(function() {
-            $osf.growl('Success', 'An OSF administrator will contact you shortly to confirm your deactivation request.', 'success');
+            $osf.growl('Success', _('An GakuNin RDM administrator will contact you shortly to confirm your deactivation request.'), 'success');
             this.requestPending(true);
         }.bind(this));
         request.fail(function(xhr, status, error) {
@@ -411,11 +420,11 @@ var DeactivateAccountViewModel = oop.defclass({
                 $osf.growl('Error', xhr.responseJSON.message_long, 'danger');
             } else {
                 $osf.growl('Error',
-                    'Deactivation request failed. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.',
+                    agh.sprintf(_('Deactivation request failed. Please contact %1$s if the problem persists.'),$osf.osfSupportLink()),
                     'danger'
                 );
             }
-            Raven.captureMessage('Error requesting account deactivation', {
+            Raven.captureMessage(_('Error requesting account deactivation'), {
                 extra: {
                     url: this.urls.update,
                     status: status,
@@ -428,7 +437,7 @@ var DeactivateAccountViewModel = oop.defclass({
     _cancelRequestDeactivation: function() {
         var request = $osf.postJSON(this.urls.cancelDeactivate, {});
         request.done(function() {
-            $osf.growl('Success', 'An OSF account is no longer up for review.', 'success');
+            $osf.growl('Success', _('An GakuNin RDM account is no longer up for review.'), 'success');
             this.requestPending(false);
         }.bind(this));
         request.fail(function(xhr, status, error) {
@@ -436,11 +445,11 @@ var DeactivateAccountViewModel = oop.defclass({
                 $osf.growl('Error', xhr.responseJSON.message_long, 'danger');
             } else {
                 $osf.growl('Error',
-                    'Deactivation request failed. Please contact <a href="mailto: rdm_support@nii.ac.jp">rdm_support@nii.ac.jp</a> if the problem persists.',
+                    _('Deactivation request failed. Please contact <a href="mailto: rdm_support@nii.ac.jp">rdm_support@nii.ac.jp</a> if the problem persists.'),
                     'danger'
                 );
             }
-            Raven.captureMessage('Error requesting account deactivation', {
+            Raven.captureMessage(_('Error requesting account deactivation'), {
                 extra: {
                     url: this.urls.rescind_deactivate,
                     status: status,
@@ -453,9 +462,9 @@ var DeactivateAccountViewModel = oop.defclass({
     submit: function () {
         var self = this;
         bootbox.confirm({
-            title: 'Request account deactivation?',
-            message: 'Are you sure you want to request account deactivation? An OSF administrator will review your request. If accepted, you ' +
-                     'will <strong>NOT</strong> be able to reactivate your account.',
+            title: _('Request account deactivation?'),
+            message: _('Are you sure you want to request account deactivation? A GakuNinRDM administrator will review your request. If accepted, you ') +
+                     _('will <strong>NOT</strong> be able to reactivate your account.'),
             callback: function(confirmed) {
                 if (confirmed) {
                     return self._requestDeactivation();
@@ -463,8 +472,11 @@ var DeactivateAccountViewModel = oop.defclass({
             },
             buttons:{
                 confirm:{
-                    label:'Request',
+                    label:_('Request'),
                     className:'btn-danger'
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });
@@ -472,8 +484,8 @@ var DeactivateAccountViewModel = oop.defclass({
     cancel: function () {
         var self = this;
         bootbox.confirm({
-            title: 'Cancel deactivation request?',
-            message: 'Are you sure you want to rescind your account deactivation request? This will preserve your account status.',
+            title: _('Cancel deactivation request?'),
+            message: _('Are you sure you want to rescind your account deactivation request? This will preserve your account status.'),
             callback: function (confirmed) {
                 if (confirmed) {
                     return self._cancelRequestDeactivation();
@@ -481,7 +493,7 @@ var DeactivateAccountViewModel = oop.defclass({
             },
             buttons: {
                 confirm: {
-                    label: 'Cancel Deactivation Request',
+                    label: _('Cancel Deactivation Request'),
                     className: 'btn-success'
                 }
             }
@@ -499,7 +511,7 @@ var ExportAccountViewModel = oop.defclass({
     _requestExport: function() {
         var request = $osf.postJSON(this.urls.update, {});
         request.done(function() {
-            $osf.growl('Success', 'An OSF administrator will contact you shortly to confirm your export request.', 'success');
+            $osf.growl('Success', _('An GakuNin RDM administrator will contact you shortly to confirm your export request.'), 'success');
             this.success(true);
         }.bind(this));
         request.fail(function(xhr, status, error) {
@@ -507,11 +519,11 @@ var ExportAccountViewModel = oop.defclass({
                 $osf.growl('Error', xhr.responseJSON.message_long, 'danger');
             } else {
                 $osf.growl('Error',
-                    'Export request failed. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.',
+                    agh.sprintf(_('Export request failed. Please contact %1$s if the problem persists.'),$osf.osfSupportLink()),
                     'danger'
                 );
             }
-            Raven.captureMessage('Error requesting account export', {
+            Raven.captureMessage(_('Error requesting account export'), {
                 extra: {
                     url: this.urls.update,
                     status: status,
@@ -524,8 +536,8 @@ var ExportAccountViewModel = oop.defclass({
     submit: function () {
         var self = this;
         bootbox.confirm({
-            title: 'Request account export?',
-            message: 'Are you sure you want to request account export?',
+            title: _('Request account export?'),
+            message: _('Are you sure you want to request account export?'),
             callback: function(confirmed) {
                 if (confirmed) {
                     return self._requestExport();
@@ -533,7 +545,10 @@ var ExportAccountViewModel = oop.defclass({
             },
             buttons:{
                 confirm:{
-                    label:'Request'
+                    label:_('Request')
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });

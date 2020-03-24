@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load render_bundle from webpack_loader %}
 {% load node_extras %}
 {% block top_includes %}
@@ -7,10 +8,10 @@
 
 {% load static %}
 {% block title %}
-    <title>Affiliated Nodes</title>
+    <title>{% trans "Affiliated Nodes" %}</title>
 {% endblock title %}
 {% block content %}
-    <h2>List of Nodes for {{ institution.name }}
+    <h2>{% blocktrans with institutionName=institution.name %}List of Nodes for {{ institutionName }}{% endblocktrans %}
         <img class="institution-logo" src="{{ logohost }}/static/img/institutions/shields/{{ institution.logo_name }}">
     </h2>
     {% include 'nodes/node_list.html' %}

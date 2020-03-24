@@ -15,6 +15,11 @@ var CommentPane = require('js/commentpane');
 var markdown = require('js/markdown');
 var atMention = require('js/atMention');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
+
 // Cached contributor and group member data, to prevent multiple fetches for @mentions
 var __contributorCache = null;
 
@@ -48,7 +53,7 @@ var getContributorAndGroupMemberList = function(url, contributors, ret) {
             ret.resolve(data);
         });
         request.fail(function(xhr, status, error) {
-            Raven.captureMessage('Error getting contributors and group members', {
+            Raven.captureMessage(_('Error getting contributors and group members'), {
                 extra: {
                     url: url,
                     status: status,
@@ -66,9 +71,9 @@ var MAXLENGTH = 1000;
 var WARNLENGTH = 5;
 
 var ABUSE_CATEGORIES = {
-    spam: 'Spam or advertising',
-    hate: 'Hate speech',
-    violence: 'Violence or harmful behavior'
+    spam: _('Spam or advertising'),
+    hate: _('Hate speech'),
+    violence: _('Violence or harmful behavior')
 };
 
 var FILES = 'files';
@@ -203,7 +208,7 @@ var BaseComment = function() {
     });
 
     self.commentButtonText = ko.computed(function() {
-        return self.submittingReply() ? 'Commenting' : 'Comment';
+        return self.submittingReply() ? _('Commenting') : _('Comment');
     });
 
     self.validateReply = ko.pureComputed(function() {
@@ -223,7 +228,7 @@ BaseComment.prototype.handleEditableUpdate = function(element) {
     var underOrEqualMaxLength = inputTextLength <= parseInt(charLimit) + 1 || charLimit == undefined;  // jshint ignore: line
     self.currentCount(showLength);
     self.underMaxLength(underOrEqualMaxLength);
-    self.errorMessage(underOrEqualMaxLength ? '' : 'Exceeds character limit. Please reduce to ' + charLimit + ' characters or less.');
+    self.errorMessage(underOrEqualMaxLength ? '' : agh.sprintf(_('Exceeds character limit. Please reduce to %1$s characters or less.'),charLimit));
 };
 
 BaseComment.prototype.abuseLabel = function(item) {
@@ -338,7 +343,7 @@ BaseComment.prototype.getTargetType = function() {
 BaseComment.prototype.submitReply = function() {
     var self = this;
     if (!self.replyContent()) {
-        self.replyErrorMessage('Please enter a comment');
+        self.replyErrorMessage(_('Please enter a comment'));
         return;
     }
     // Quit if already submitting reply
@@ -384,8 +389,8 @@ BaseComment.prototype.submitReply = function() {
     });
     request.fail(function(xhr, status, error) {
         self.cancelReply();
-        self.errorMessage('Could not submit comment');
-        Raven.captureMessage('Error creating comment', {
+        self.errorMessage(_('Could not submit comment'));
+        Raven.captureMessage(_('Error creating comment'), {
             extra: {
                 url: url,
                 status: status,
@@ -546,7 +551,7 @@ CommentModel.prototype.submitEdit = function(data, event) {
         .closest('.comment-container')
         .find('[data-toggle="tooltip"]');
     if (!self.content()) {
-        self.editErrorMessage('Please enter a comment');
+        self.editErrorMessage(_('Please enter a comment'));
         return;
     }
     var url = osfHelpers.apiV2Url('comments/' + self.id() + '/', {});
@@ -579,8 +584,8 @@ CommentModel.prototype.submitEdit = function(data, event) {
     });
     request.fail(function(xhr, status, error) {
         self.cancelEdit();
-        self.errorMessage('Could not submit comment');
-        Raven.captureMessage('Error editing comment', {
+        self.errorMessage(_('Could not submit comment'));
+        Raven.captureMessage(_('Error editing comment'), {
             extra: {
                 url: url,
                 status: status,
@@ -625,8 +630,8 @@ CommentModel.prototype.submitAbuse = function() {
         self.hasReport(true);
     });
     request.fail(function(xhr, status, error) {
-        self.errorMessage('Could not report abuse.');
-        Raven.captureMessage('Error reporting abuse', {
+        self.errorMessage(_('Could not report abuse.'));
+        Raven.captureMessage(_('Error reporting abuse'), {
             extra: {
                 url: url,
                 status: status,
@@ -655,7 +660,7 @@ CommentModel.prototype.submitDelete = function() {
     });
     request.fail(function(xhr, status, error) {
         self.deleting(false);
-        Raven.captureMessage('Error deleting comment', {
+        Raven.captureMessage(_('Error deleting comment'), {
             extra: {
                 url: url,
                 status: status,
@@ -693,7 +698,7 @@ CommentModel.prototype.submitUndelete = function() {
         self.isDeleted(false);
     });
     request.fail(function(xhr, status, error) {
-        Raven.captureMessage('Error undeleting comment', {
+        Raven.captureMessage(_('Error undeleting comment'), {
             extra: {
                 url: url,
                 status: status,
@@ -718,7 +723,7 @@ CommentModel.prototype.submitUnreportAbuse = function() {
         self.isAbuse(false);
     });
     request.fail(function(xhr, status, error) {
-        Raven.captureMessage('Error unreporting comment', {
+        Raven.captureMessage(_('Error unreporting comment'), {
             extra: {
                 url: url,
                 status: status,
@@ -798,8 +803,8 @@ CommentListModel.prototype.initListeners = function() {
     var self = this;
     $(window).on('beforeunload', function() {
         if (self.editors) {
-            return 'Your comments have unsaved changes. Are you sure ' +
-                'you want to leave this page?';
+            return _('Your comments have unsaved changes. Are you sure ') +
+                _('you want to leave this page?');
         }
     });
 };
@@ -817,7 +822,7 @@ var onOpen = function(page, rootId, nodeApiUrl, currentUserId) {
         }
     );
     request.fail(function(xhr, textStatus, errorThrown) {
-        Raven.captureMessage('Could not update comment timestamp', {
+        Raven.captureMessage(_('Could not update comment timestamp'), {
             extra: {
                 url: timestampUrl,
                 textStatus: textStatus,

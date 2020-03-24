@@ -1,3 +1,4 @@
+{% load i18n %}
 <div class="modal fade" id="s3compat_modal" tabindex="-1" role="dialog" aria-labelledby="s3compat_modal_label">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
@@ -5,7 +6,7 @@
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
-                <h3 id="s3compat_modal_label">Connect a S3 Compatible Storage Account</h3>
+                <h3 id="s3compat_modal_label">{% trans "Connect a S3 Compatible Storage Account" %}</h3>
             </div>
             <div class="modal-body">
                 <div class='row'>
@@ -13,19 +14,19 @@
                     </div>
                     <div class='col-sm-6'>
                         <div class="form-group">
-                            <label for="s3compat_access_key">Endpoint URL</label>
+                            <label for="s3compat_access_key">{% trans "Endpoint URL" %}</label>
                             <input type="text" class="form-control s3compat-params" id="s3compat_endpoint_url" required>
                         </div>
                         <div class="form-group">
-                            <label for="s3compat_access_key">Access Key</label>
+                            <label for="s3compat_access_key">{% trans "Access Key" %}</label>
                             <input type="text" class="form-control s3compat-params" id="s3compat_access_key" required>
                         </div>
                         <div class="form-group">
-                            <label for="s3compat_secret_key">Secret Key</label>
+                            <label for="s3compat_secret_key">{% trans "Secret Key" %}</label>
                             <input type="password" class="form-control s3compat-params" id="s3compat_secret_key" required>
                         </div>
                         <div class="form-group">
-                            <label for="s3compat_bucket">Bucket</label>
+                            <label for="s3compat_bucket">{% trans "Bucket" %}</label>
                             <input type="text" class="form-control s3compat-params" id="s3compat_bucket" required>
                         </div>
                         <div class="help-block">
@@ -36,9 +37,9 @@
 
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-success test-connection" id="s3compat_connect" disabled>Connect</button>
-                <button type="button" class="btn btn-default save-credentials" id="s3compat_save" disabled>Save</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
+                <button type="button" class="btn btn-success test-connection" id="s3compat_connect" disabled>{% trans "Connect" %}</button>
+                <button type="button" class="btn btn-default save-credentials" id="s3compat_save" disabled>{% trans "Save" %}</button>
             </div>
         </div>
     </div>

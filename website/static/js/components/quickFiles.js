@@ -11,6 +11,9 @@ var withPagination = require('js/components/pagination').withPagination;
 
 var QUICKFILES_PAGE_SIZE = 10;
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
 
 var _buildUrl = function(page, user) {
 
@@ -50,7 +53,7 @@ var _getNextItems = function(ctrl, url, updatePagination) {
             ctrl.failed = true;
             ctrl.requestPending(false);
             m.redraw();
-            Raven.captureMessage('Error retrieving quickfiles', {
+            Raven.captureMessage(_('Error retrieving quickfiles'), {
                 extra: {
                     url: url,
                     textStatus: textStatus,
@@ -117,9 +120,9 @@ var QuickFiles = {
         return m('ul.list-group m-md', [
             // Error message if the request fails
             ctrl.failed ? m('p', [
-                    'Unable to retrieve quickfiles at this time. Please refresh the page or contact ',
+                    _('Unable to retrieve quickfiles at this time. Please refresh the page or contact '),
                     m('a', {'href': 'mailto:rdm_support@nii.ac.jp'}, 'rdm_support@nii.ac.jp'),
-                    ' if the problem persists.'
+                    _(' if the problem persists.')
                 ]) :
 
             // Show laoding icon while there is a pending request
@@ -130,8 +133,8 @@ var QuickFiles = {
                 ctrl.quickFiles().length !== 0 ? ctrl.quickFiles().map(function(file) {
                     return m.component(QuickFile, {file: file});
                 }) : ctrl.isProfile ?
-                    m('div.help-block', {}, 'You have no public quickfiles')
-                : m('div.help-block', {}, 'This user has no public quickfiles.')
+                    m('div.help-block', {}, _('You have no public quickfiles'))
+                : m('div.help-block', {}, _('This user has no public quickfiles.'))
             ]
         ]);
     }

@@ -11,6 +11,10 @@ var $osf = require('./osfHelpers');
 var koHelpers = require('./koHelpers');
 require('js/objectCreateShim');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 // Adapted from Django URLValidator
 function urlRegex() {
     var ul = '\\u00a1-\\uffff'; // unicode character range
@@ -100,13 +104,13 @@ SerializeMixin.prototype.unserialize = function(data) {
 var DateMixin = function() {
     var self = this;
     self.ongoing = ko.observable(false);
-    self.months = ['January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'];
+    self.months = [_('January'), _('February'), _('March'), _('April'), _('May'), _('June'),
+        _('July'), _('August'), _('September'), _('October'), _('November'), _('December')];
     self.endMonth = ko.observable();
     self.endYear = ko.observable();
     self.displayDate = ko.observable(' ');
     self.endView = ko.computed(function() {
-        return (self.ongoing() ? 'ongoing' : self.displayDate());
+        return (self.ongoing() ? _('ongoing') : self.displayDate());
     }, self);
     self.startMonth = ko.observable();
     self.startYear = ko.observable();
@@ -146,7 +150,7 @@ var DateMixin = function() {
             onlyIf: function() {
                 return !!self.endMonth() || !!self.endYear() || self.ongoing() || !!self.startMonth();
             },
-            message: 'Please enter a year for the start date.'
+            message: _('Please enter a year for the start date.')
         },
         year: true,
         pyDate: true
@@ -159,10 +163,10 @@ var DateMixin = function() {
             },
             message: function() {
                 if (!self.endMonth()) {
-                    return 'Please enter an end date or mark as ongoing.';
+                    return _('Please enter an end date or mark as ongoing.');
                 }
                 else {
-                    return 'Please enter a year for the end date.';
+                    return _('Please enter a year for the end date.');
                 }
             }
         },
@@ -259,7 +263,7 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
     if (preventUnsaved !== false) {
         $(window).on('beforeunload', function() {
             if (self.dirty()) {
-                return 'There are unsaved changes to your settings.';
+                return _('There are unsaved changes to your settings.');
             }
         });
     }
@@ -268,9 +272,9 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
     if (preventUnsaved !== false) {
         $('body').on('show.bs.tab', function() {
             if (self.dirty()) {
-                $osf.growl('There are unsaved changes to your settings.',
-                        'Please save or discard your changes before switching ' +
-                        'tabs.');
+                $osf.growl(_('There are unsaved changes to your settings.'),
+                        _('Please save or discard your changes before switching ') +
+                        _('tabs.'));
                 return false;
             }
             return true;
@@ -305,7 +309,7 @@ BaseViewModel.prototype.handleSuccess = function() {
         this.mode('view');
     } else {
         this.changeMessage(
-            'Settings updated',
+            _('Settings updated'),
             'text-success',
             5000
         );
@@ -314,7 +318,7 @@ BaseViewModel.prototype.handleSuccess = function() {
 
 BaseViewModel.prototype.handleError = function(response) {
     this.saving(false);
-    var defaultMsg = 'Could not update settings';
+    var defaultMsg = _('Could not update settings');
     var msg = response.message_long || defaultMsg;
     this.changeMessage(
         msg,
@@ -335,7 +339,7 @@ BaseViewModel.prototype.fetch = function(callback) {
         url: this.urls.crud,
         dataType: 'json',
         success: [this.unserialize.bind(this), self.setOriginal.bind(self), callback.bind(self)],
-        error: this.handleError.bind(this, 'Could not fetch data')
+        error: this.handleError.bind(this, _('Could not fetch data'))
     });
 };
 
@@ -351,8 +355,8 @@ BaseViewModel.prototype.cancel = function(data, event) {
 
     if (this.dirty()) {
         bootbox.confirm({
-            title: 'Discard changes?',
-            message: 'Are you sure you want to discard your unsaved changes?',
+            title: _('Discard changes?'),
+            message: _('Are you sure you want to discard your unsaved changes?'),
             callback: function(confirmed) {
                 if (confirmed) {
                     self.restoreOriginal();
@@ -363,8 +367,11 @@ BaseViewModel.prototype.cancel = function(data, event) {
             },
             buttons:{
                 confirm:{
-                    label:'Discard',
+                    label:_('Discard'),
                     className:'btn-danger'
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });
@@ -711,15 +718,15 @@ var SocialViewModel = function(urls, modes, preventUnsaved) {
     self.removeWebsite = function(profileWebsite) {
         var profileWebsites = ko.toJS(self.profileWebsites());
             bootbox.confirm({
-                title: 'Remove website?',
-                message: 'Are you sure you want to remove this website from your profile?',
+                title: _('Remove website?'),
+                message: _('Are you sure you want to remove this website from your profile?'),
                 callback: function(confirmed) {
                     if (confirmed) {
                         var idx = profileWebsites.indexOf(profileWebsite);
                         self.profileWebsites.splice(idx, 1);
                         self.submit();
                         self.changeMessage(
-                            'Website removed',
+                            _('Website removed'),
                             'text-danger',
                             5000
                         );
@@ -730,8 +737,11 @@ var SocialViewModel = function(urls, modes, preventUnsaved) {
                 },
                 buttons:{
                     confirm:{
-                        label:'Remove',
+                        label:_('Remove'),
                         className:'btn-danger'
+                    },
+                    cancel:{
+                        label:_('Cancel')
                     }
                 }
             });
@@ -803,7 +813,7 @@ SocialViewModel.prototype.unserialize = function(data) {
 SocialViewModel.prototype.submit = function() {
     if (!this.hasValidWebsites()) {
         this.changeMessage(
-            'Please update your website',
+            _('Please update your website'),
             'text-danger',
             5000
         );
@@ -941,8 +951,8 @@ ListViewModel.prototype.removeContent = function(content) {
     var self = this;
 
     bootbox.confirm({
-        title: 'Remove Institution?',
-        message: 'Are you sure you want to remove this institution?',
+        title: _('Remove Institution?'),
+        message: _('Are you sure you want to remove this institution?'),
         callback: function(confirmed) {
             if (confirmed) {
                 self.contents.splice(idx, 1);
@@ -951,7 +961,7 @@ ListViewModel.prototype.removeContent = function(content) {
                 }
                 self.submit();
                 self.changeMessage(
-                    'Institution Removed',
+                    _('Institution Removed'),
                     'text-danger',
                     5000
                 );
@@ -959,8 +969,11 @@ ListViewModel.prototype.removeContent = function(content) {
         },
         buttons: {
             confirm: {
-                label: 'Remove',
+                label: _('Remove'),
                 className: 'btn-danger'
+            },
+            cancel:{
+                label:_('Cancel')
             }
         }
     });
@@ -1063,7 +1076,7 @@ var JobViewModel = function() {
             onlyIf: function() {
                return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
             },
-            message: 'Institution/Employer required'
+            message: _('Institution/Employer required')
         }
     });
 
@@ -1117,7 +1130,7 @@ var SchoolViewModel = function() {
             onlyIf: function() {
                 return !!self.department() || !!self.degree() || !!self.startYear() || !!self.endYear();
             },
-            message: 'Institution required'
+            message: _('Institution required')
         }
     });
 

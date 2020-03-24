@@ -1,48 +1,49 @@
+{% load i18n %}
 <div class="modal fade" id="swift_modal" tabindex="-1" role="dialog" aria-labelledby="swift_modal_label">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
                         aria-hidden="true">&times;</span></button>
-                <h3 id="swift_modal_label">Connect an OpenStack Swift Account</h3>
+                <h3 id="swift_modal_label">{% trans "Connect an OpenStack Swift Account" %}</h3>
             </div>
             <div class="modal-body">
                 <div class="row">
                     <div class="col-sm-3"></div>
                     <div class="col-sm-6">
                         <div class="form-group">
-                            <label for="swift_auth_version">Authentication(Keystone) Version</label>
+                            <label for="swift_auth_version">{% trans "Authentication(Keystone) Version" %}</label>
                             <select class="form-control swift-params" id="swift_auth_version" required>
                                 <option value="2" selected>v2</option>
                                 <option value="3">v3</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="swift_auth_url">Authentication URL</label>
+                            <label for="swift_auth_url">{% trans "Authentication URL" %}</label>
                             <input type="text" class="form-control swift-params" id="swift_auth_url" required>
                         </div>
                         <div class="form-group">
-                            <label for="swift_tenant_name">Tenant name</label>
+                            <label for="swift_tenant_name">{% trans "Tenant name" %}</label>
                             <input type="text" class="form-control swift-params" id="swift_tenant_name" required>
                         </div>
                         <div class="form-group">
-                            <label for="swift_project_domain_name">Project Domain name</label>
+                            <label for="swift_project_domain_name">{% trans "Project Domain name" %}</label>
                             <input type="text" class="form-control swift-params" id="swift_project_domain_name" disabled>
                         </div>
                         <div class="form-group">
-                            <label for="swift_access_key">Username</label>
+                            <label for="swift_access_key">{% trans "Username" %}</label>
                             <input type="text" class="form-control swift-params" id="swift_access_key" required>
                         </div>
                         <div class="form-group">
-                            <label for="swift_user_domain_name">User Domain name</label>
+                            <label for="swift_user_domain_name">{% trans "User Domain name" %}</label>
                             <input type="text" class="form-control swift-params" id="swift_user_domain_name" disabled>
                         </div>
                         <div class="form-group">
-                            <label for="swift_secret_key">Password</label>
+                            <label for="swift_secret_key">{% trans "Password" %}</label>
                             <input type="password" class="form-control swift-params" id="swift_secret_key" required>
                         </div>
                         <div class="form-group">
-                            <label for="swift_container">Container</label>
+                            <label for="swift_container">{% trans "Container" %}</label>
                             <input type="text" class="form-control swift-params" id="swift_container" placeholder="my_container"
                                                                                          required>
                         </div>
@@ -53,9 +54,9 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-success test-connection" id="swift_connect" disabled>Connect</button>
-                <button type="button" class="btn btn-default save-credentials" id="swift_save" disabled>Save</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
+                <button type="button" class="btn btn-success test-connection" id="swift_connect" disabled>{% trans "Connect" %}</button>
+                <button type="button" class="btn btn-default save-credentials" id="swift_save" disabled>{% trans "Save" %}</button>
             </div>
         </div>
     </div>

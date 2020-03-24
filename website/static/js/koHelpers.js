@@ -10,6 +10,10 @@ require('css/koHelpers.css');
 
 var iconmap = require('js/iconmap');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 var makeExtender = function(interceptor) {
     return function(target, options) {
         var result = ko.computed({
@@ -124,7 +128,7 @@ ko.validation.rules.minDate = {
         // Compare dates
         return dateVal >= dateMin;
     },
-    message: 'End date must be greater than or equal to the start date.'
+    message: _('End date must be greater than or equal to the start date.')
 };
 
 ko.validation.rules.pyDate = {
@@ -142,7 +146,7 @@ ko.validation.rules.pyDate = {
         // Compare years
         return parseInt(uwVal) >= 1900;
     },
-    message: 'Date must be greater than or equal to 1900.'
+    message: _('Date must be greater than or equal to 1900.')
 };
 
 ko.validation.rules.notInFuture = {
@@ -164,13 +168,13 @@ ko.validation.rules.notInFuture = {
         return dateVal <= now;
 
     },
-    message: 'Please enter a date prior to the current date.'
+    message: _('Please enter a date prior to the current date.')
 };
 
 
 ko.validation.rules.year = makeRegexValidator(
     new RegExp('^\\d{4}$'),
-    'Please enter a valid year.'
+    _('Please enter a valid year.')
 );
 
 
@@ -185,14 +189,14 @@ ko.validation.rules.url = makeRegexValidator(
             '(?:/?|[/?]\\S+)$',
         'i'
     ),
-    'Please enter a valid URL.'
+    _('Please enter a valid URL.')
 );
 
 ko.validation.rules.mustEqual = {
     validator: function (val, otherVal) {
         return val === otherVal;
     },
-    message: 'The field does not match the required input.'
+    message: _('The field does not match the required input.')
 };
 
 // Add custom effects

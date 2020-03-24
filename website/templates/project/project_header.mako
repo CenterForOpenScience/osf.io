@@ -13,7 +13,7 @@
                         <span class="fa fa-bars fa-lg"></span>
                     </button>
                     <span class="navbar-brand visible-xs visible-sm">
-                        ${'Project' if node['node_type'] == 'project' else 'Component'} Navigation
+                        ${_('Project') if node['node_type'] == 'project' else _('Component')} ${ _("Navigation") }
                     </span>
                 </div>
                 <div class="collapse navbar-collapse project-nav">
@@ -37,10 +37,10 @@
                     % if not node['is_retracted']:
                         <li id="projectNavFiles">
                             <a href="${node['url']}files/">
-                                Files
+                                ${_("Files")}
                             </a>
                         </li>
-                        <!-- Add-on tabs -->
+                        <!-- Add-on tabs  -->
                         % for addon in addons_enabled:
 
                             % if addons[addon]['has_page']:
@@ -58,32 +58,32 @@
 
                         % if project_analytics:
                         % if node['is_public'] or user['is_contributor_or_group_member']:
-                            <li><a href="${node['url']}analytics/">Analytics</a></li>
+                            <li><a href="${node['url']}analytics/">${ _("Analytics") }</a></li>
                         % endif
                         % endif
 
                         % if project_registrations:
                         % if not node['is_registration'] and not node['anonymous']:
-                            <li><a href="${node['url']}registrations/">Registrations</a></li>
+                            <li><a href="${node['url']}registrations/">${ _("Registrations") }</a></li>
                         % endif
                         % endif
 
                         % if user['is_contributor_or_group_member']:
-                            <li><a href="${node['url']}contributors/">Contributors</a></li>
+                            <li><a href="${node['url']}contributors/">${_("Contributors")}</a></li>
                         % endif
 
                         % if permissions.WRITE in user['permissions'] and not node['is_registration']:
-                            <li><a href="${node['url']}addons/">Add-ons</a></li>
+                            <li><a href="${node['url']}addons/">${ _("Add-ons") }</a></li>
                         % endif
 
                         % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and permissions.WRITE in user['permissions']):
-                            <li><a href="${node['url']}settings/">Settings</a></li>
+                            <li><a href="${node['url']}settings/">${ _("Settings") }</a></li>
                         % endif
                     % endif
                     % if (user['can_comment'] or node['has_comments']) and not node['anonymous']:
                         <li id="commentsLink">
                             <a href="" class="hidden-lg hidden-md cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
-                                Comments
+                                ${ _("Comments") }
                                 <span data-bind="if: unreadComments() !== 0">
                                     <span data-bind="text: displayCount" class="badge"></span>
                                 </span>
@@ -93,7 +93,7 @@
                     % if 'admin' in user['permissions']:
                        <li id="projectNavTimestamp">
                            <a href="${node['url']}timestamp/">
-                              Timestamp
+                              ${ _("Timestamp") }
                            </a>
                        </li>
                     % endif
@@ -125,20 +125,20 @@
         % if not node['is_retracted']:
             % if not node['is_pending_registration']:
                 % if file_name and urls.get('archived_from'):
-                        <div class="alert alert-info">This file is part of a registration and is being shown in its archived version (and cannot be altered).
-                            The <a class="link-solid" href="${urls['archived_from']}">active file</a> is viewable from within the <a class="link-solid" href="${node['registered_from_url']}">live ${node['node_type']}</a>.</div>
+                        <div class="alert alert-info">${ _("This file is part of a registration and is being shown in its archived version (and cannot be altered).")}
+                            ${_("The <a %(archivedFromUrl)s>active file</a> is viewable from within the <a %(registeredFromUrl)s>live %(nodeType)s</a>.") % dict(archivedFromUrl='class="link-solid" href="' + urls['archived_from'] +'"',registeredFromUrl='class="link-solid" href="' + node['registered_from_url'] + '"',nodeType=node['node_type'] ) | n}</div>
                 % else:
-                    <div class="alert alert-info">This registration is a frozen, non-editable version of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a></div>
+                    <div class="alert alert-info">${ _('This registration is a frozen, non-editable version of <a %(registeredFromUrl)s>this %(nodeType)s</a>') % dict(registeredFromUrl='class="link-solid" href="' + h(node['registered_from_url']) + '"',nodeType=node['node_type']) }</div>
                 % endif
             % else:
                 <div class="alert alert-info">
-                    <div>This is a pending registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>, awaiting approval from project administrators. This registration will be final when all project administrators approve the registration or 48 hours pass, whichever comes first.</div>
+                    <div>${ _('This is a pending registration of <a %(registeredFromUrl)s>this %(nodeType)s</a>, awaiting approval from project administrators. This registration will be final when all project administrators approve the registration or 48 hours pass, whichever comes first.') % dict(registeredFromUrl='class="link-solid" href="' + h(node['registered_from_url']) + '"', nodeType=h(node['node_type'])) | n }</div>
 
                     % if 'permissions.ADMIN' in user['permissions']:
                         <div>
                             <br>
                             <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
-                                Cancel registration
+                                ${ _("Cancel registration") }
                             </button>
                         </div>
                         <%include file="modal_confirm_cancel_registration.mako"/>
@@ -156,21 +156,21 @@
         % endif
 
         % if node['is_pending_retraction']:
-            <div class="alert alert-info">This ${node['node_type']} is currently pending withdrawal.</div>
+            <div class="alert alert-info">${ _("This %(nodeType)s is currently pending withdrawal.") % dict(nodeType=node['node_type']) }</div>
         % endif
 
         % if node['is_retracted']:
-            <div class="alert alert-danger">This ${node['node_type']} is a withdrawn registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been taken down for the reason(s) stated below.</div>
+            <div class="alert alert-danger">${ _('This %(nodeType)s is a withdrawn registration of <a %(registeredFromUrl)s>this %(nodeType)s</a>; the content of the %(nodeType)s has been taken down for the reason(s) stated below.') % dict(nodeType=node['node_type'],registeredFromUrl='class="link-solid" href="' + h(node['registered_from_url']) + '"') | n }</div>
         % endif
 
         % if node['is_pending_embargo']:
             <div
-                class="alert alert-info">This ${node['node_type']} is currently pending registration, awaiting approval from project administrators. This registration will be final and enter the embargo period when all project administrators approve the registration or 48 hours pass, whichever comes first. The embargo will keep the registration private until the embargo period ends.
+                class="alert alert-info">${ _('This %(nodeType)s is currently pending registration, awaiting approval from project administrators. This registration will be final and enter the embargo period when all project administrators approve the registration or 48 hours pass, whichever comes first. The embargo will keep the registration private until the embargo period ends.') % dict(nodeType=node['node_type']) }
                 % if permissions.ADMIN in user['permissions']:
                         <div>
                             <br>
                             <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
-                                Cancel registration
+                                ${ _("Cancel registration") }
                             </button>
                         </div>
                         <%include file="modal_confirm_cancel_registration.mako"/>
@@ -179,25 +179,25 @@
         % endif
 
         % if node['is_embargoed']:
-            <div class="alert alert-danger">This registration is currently embargoed. It will remain private until its embargo end date, ${ node['embargo_end_date'] }.</div>
+            <div class="alert alert-danger">${ _('This registration is currently embargoed. It will remain private until its embargo end date, %(embargoEndDate)s.') % dict(embargoEndDate=node['embargo_end_date']) }</div>
         % endif
 
     % endif  ## End registration undismissable labels
 
     % if node['is_supplemental_project'] and user['is_contributor_or_group_member'] and not node['is_public']:
-        <div class="alert alert-info">This ${node['node_type']} contains supplemental materials for a preprint, but has been made Private. Make your supplemental materials discoverable by making this ${node['node_type']} Public.</div>
+        <div class="alert alert-info">${ _('This %(nodeType)s contains supplemental materials for a preprint, but has been made Private. Make your supplemental materials discoverable by making this %(nodeType)s Public.') % dict(nodeType=node['node_type']) }</div>
     % endif
 
     % if node['anonymous'] and user['is_contributor_or_group_member']:
-        <div class="alert alert-info">This ${node['node_type']} is being viewed through an anonymized, view-only link. If you want to view it as a contributor, click <a class="link-solid" href="${node['redirect_url']}">here</a>.</div>
+        <div class="alert alert-info">${ _('This %(nodeType)s is being viewed through an anonymized, view-only link. If you want to view it as a contributor, click <a %(redirectUrl)s>here</a>.') % dict(nodeType=node['node_type'],redirectUrl='class="link-solid" href="' + h(node['redirect_url']) + '"') }</div>
     % endif
 
     % if node['link'] and not node['is_public'] and not user['is_contributor_or_group_member']:
-        <div class="alert alert-info">This ${node['node_type']} is being viewed through a private, view-only link. Anyone with the link can view this project. Keep the link safe.</div>
+        <div class="alert alert-info">${ _('This %(nodeType)s is being viewed through a private, view-only link. Anyone with the link can view this project. Keep the link safe.') % dict(nodeType=node['node_type']) }</div>
     % endif
 
     % if disk_saving_mode:
-        <div class="alert alert-info"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the GakuNin RDM undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
+        <div class="alert alert-info">${ _("<strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the GakuNin RDM undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.") | n }</div>
     % endif
 
 </div>

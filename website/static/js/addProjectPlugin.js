@@ -12,15 +12,19 @@ var mHelpers = require('js/mithrilHelpers');
 var institutionComponents = require('js/components/institution');
 var SelectableInstitution = institutionComponents.SelectableInstitution;
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 var AddProject = {
     controller : function (options) {
         var self = this;
         self.defaults = {
-            buttonTemplate : m('.btn.btn-primary[data-toggle="modal"][data-target="#addProjectModal"]', 'Create new project'),
+            buttonTemplate : m('.btn.btn-primary[data-toggle="modal"][data-target="#addProjectModal"]', _('Create new project')),
             parentID : null,
             parentTitle : '',
-            title : 'Create new project',
+            title : _('Create new project'),
             modalID : 'addProjectModal',
             stayCallback :null, // Function to call when user decides to stay after project creation
             categoryList : [],
@@ -53,7 +57,7 @@ var AddProject = {
         self.saveResult = m.prop({});
         self.errorMessageType = m.prop('unknown');
         self.errorMessage = {
-            'unknown' : 'There was an unknown error. Please try again later.'
+            'unknown' : _('There was an unknown error. Please try again later.')
         };
         self.userProjects =  m.prop([]); // User nodes
 
@@ -180,7 +184,7 @@ var AddProject = {
                 m('.modal-body', [
                     m('.text-left', [
                         m('.form-group.m-v-sm', [
-                            m('label[for="projectName].f-w-lg.text-bigger', 'Title'),
+                            m('label[for="projectName].f-w-lg.text-bigger', _('Title')),
                             m('input[type="text"].form-control.project-name', {
                                 onkeyup: function(ev){
                                     var val = ev.target.value;
@@ -194,26 +198,26 @@ var AddProject = {
                                     //  This will not be reliably running!
                                     $osf.trackClick(options.trackingCategory, options.trackingAction, 'type-project-name');
                                 },
-                                placeholder : 'Enter ' + ctrl.nodeType + ' title',
+                                placeholder : agh.sprintf(_('Enter %1$s title'),_(ctrl.nodeType)),
                                 name : 'projectName'
                             })
                         ]),
                         ctrl.institutions.length ? m('.form-group.m-v-sm', [
-                            m('label.f-w-lg.text-bigger', 'Affiliation'),
+                            m('label.f-w-lg.text-bigger', _('Affiliation')),
                             m('a', {onclick: function(){
                                 ctrl.institutions.map(
                                     function(inst){
                                         ctrl.checkedInstitutions[inst.id] = false;
                                     }
                                 );
-                            }, style: {float: 'right'}},'Remove all'),
+                            }, style: {float: 'right'}},_('Remove all')),
                             m('a', {onclick: function(){
                                 ctrl.institutions.map(
                                     function(inst){
                                         ctrl.checkedInstitutions[inst.id] = true;
                                     }
                                 );
-                            }, style: {float: 'right', marginRight: '12px'}}, 'Select all'),
+                            }, style: {float: 'right', marginRight: '12px'}}, _('Select all')),
                             m('table', m('tr', ctrl.institutions.map(
                                 function(inst){
                                     return m('td',
@@ -229,7 +233,7 @@ var AddProject = {
                         ]): '',
                         ctrl.storageFlagIsActive() ? m('.form-group.m-v-sm', [
                             m('row',
-                                m('f-w-lg.text-bigger', 'Storage location'),
+                                m('f-w-lg.text-bigger', _('Storage location')),
                                 m.component(SelectStorageLocation, {
                                     value: ctrl.newProjectStorageLocation,
                                     locations: ctrl.storageRegions
@@ -247,9 +251,9 @@ var AddProject = {
                                     onchange : function() {
                                         ctrl.newProjectInheritContribs(this.checked);
                                     }
-                                }), ' Add contributors from ', m('b', options.parentTitle),
+                                }), _(' Add contributors from '), m('b', options.parentTitle),
                                 m('br'),
-                                m('i', ' Admins of ', m('b', options.parentTitle), ' will have read access to this component.')
+                                m('i', _(' Admins of '), m('b', options.parentTitle), _(' will have read access to this component.'))
                             ),
                             m('br'),
                             m('label.f-w-md',
@@ -260,16 +264,16 @@ var AddProject = {
                                     onchange : function() {
                                         ctrl.newProjectInheritTags(this.checked);
                                     }
-                                }), ' Add tags from ', m('b', options.parentTitle)
+                                }), _(' Add tags from '), m('b', options.parentTitle)
                             )
                         ]) : '',
                         ctrl.options.parentID !== null ? m('.span', [
-                                m('label.f-w-lg.text-bigger', 'License'),
+                                m('label.f-w-lg.text-bigger', _('License')),
                                 m('p',
-                                    m('i', ' This component will inherit the same license as ',
+                                    m('i', _(' This component will inherit the same license as '),
                                         m('b', options.parentTitle),
                                         '. ',
-                                        m('a[target="_blank"][href="https://openscience.zendesk.com/hc/en-us/articles/360019737854"]', 'Learn more.' )
+                                        m('a[target="_blank"][href="https://openscience.zendesk.com/hc/en-us/articles/360019737854"]', _('Learn more.') )
                                     )
                                 )
                         ]): '',
@@ -278,11 +282,11 @@ var AddProject = {
                             $osf.trackClick(options.trackingCategory, options.trackingAction, 'show-more-or-less');
                         }},[
                             ctrl.showMore() ? m('i.fa.fa-caret-down', { style: 'width: 10px;'}) : m('i.fa.fa-caret-right', { style: 'width: 10px;'}),
-                            ' More'
+                            _(' More')
                         ]),
                         ctrl.showMore() ? [
                             m('.form-group.m-v-sm', [
-                                m('label[for="projectDesc].f-w-lg.text-bigger', 'Description'),
+                                m('label[for="projectDesc].f-w-lg.text-bigger', _('Description')),
                                 m('input[type="text"].form-control.noresize.project-desc', {
                                     onkeyup: function (ev){
                                         ctrl.newProjectDesc($(this).val());
@@ -291,19 +295,19 @@ var AddProject = {
                                         $osf.trackClick(options.trackingCategory, options.trackingAction, 'type-project-description');
                                     },
                                     name : 'projectDesc',
-                                    placeholder : 'Enter ' + ctrl.nodeType + ' description'
+                                    placeholder : agh.sprintf(_('Enter %1$s description'),_(ctrl.nodeType))
                                 })
                             ]),
                             ctrl.options.parentID !== null ? [
-                                m('label.f-w-lg.text-bigger','Category'),
-                                m('i', ' (for descriptive purposes)'),
+                                m('label.f-w-lg.text-bigger',_('Category')),
+                                m('i', _(' (for descriptive purposes)')),
                                 m('div.dropdown.dropup.generic-dropdown.category-list', [
                                     m('button[data-toggle="dropdown"]', {
                                         className: 'btn btn-default dropdown-toggle',
                                         type: 'button'
                                       }, [
                                         m('i', { className : mHelpers.getIcon(ctrl.newProjectCategory()) }),
-                                        m('span.text-capitalize', ctrl.newProjectCategory() || 'Uncategorized'),
+                                        m('span.text-capitalize', ctrl.newProjectCategory() || _('Uncategorized')),
                                         m('i.fa.fa-sort')
                                       ]),
                                     m('ul.dropdown-menu', [
@@ -316,7 +320,7 @@ var AddProject = {
                                                             }
                                                   }, [
                                                     m('i', { className : mHelpers.getIcon(cat.value) }),
-                                                    m('span', cat.display_name || '(Empty category)')
+                                                    m('span', _(cat.display_name) || _('(Empty category)'))
                                                   ]
                                                 )
                                             );
@@ -326,9 +330,9 @@ var AddProject = {
 
                             ] : '',
                              ctrl.options.parentID === null ? m('.form-group.m-v-md', [
-                                m('label[for="projectTemplate].f-w-lg.text-bigger', 'Template (optional)'),
-                                m('p.f-w-xs.help-text', 'Start typing to search your projects. Selecting project as template will duplicate its ' +
-                                    'structure in the new project without importing the content of that project.'),
+                                m('label[for="projectTemplate].f-w-lg.text-bigger', _('Template (optional)')),
+                                m('p.f-w-xs.help-text', _('Start typing to search your projects. Selecting project as template will duplicate its ') +
+                                    _('structure in the new project without importing the content of that project.')),
                                 m.component(Select2Template, {
                                     value: ctrl.newProjectTemplate,
                                     trackingCategory: options.trackingCategory,
@@ -343,11 +347,11 @@ var AddProject = {
                     m('button[type="button"].btn.btn-default[data-dismiss="modal"]', { onclick : function(){
                         ctrl.reset();
                         $osf.trackClick(options.trackingCategory, options.trackingAction, 'click-cancel-button');
-                    }},  'Cancel'),
+                    }},  _('Cancel')),
                     ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : function(){
                         ctrl.add();
                         $osf.trackClick(options.trackingCategory, options.trackingAction, 'click-create-button');
-                    }},'Create') : m('button[type="button"].btn.btn-success[disabled]','Create')
+                    }},_('Create')) : m('button[type="button"].btn.btn-success[disabled]',_('Create'))
                 ])
             ]),
             processing : m('.modal-content',
@@ -358,7 +362,7 @@ var AddProject = {
                         ])
                     ]),
                     m('.modal-body.text-left', [
-                            m('.add-project-processing', 'Saving your ' + ctrl.nodeType + '...')
+                            m('.add-project-processing', _('Saving your ') + ctrl.nodeType + '...')
                         ]
                     )
                 )
@@ -372,7 +376,7 @@ var AddProject = {
                             }}, [
                                 m('span[aria-hidden="true"]','×')
                             ]),
-                            m('h4.add-project-success.text-success', 'New ' + ctrl.nodeType + ' created successfully!')
+                            m('h4.add-project-success.text-success', agh.sprintf(_('New %1$s created successfully!'),_(ctrl.nodeType)))
                         ]
                     ),
                     m('.modal-footer', [
@@ -382,13 +386,13 @@ var AddProject = {
                                 ctrl.options.stayCallback.call(ctrl); // results are at ctrl.saveResult
                                 $osf.trackClick(options.trackingCategory, options.trackingAction, 'keep-working-here');
                             }
-                        },  'Keep working here'),
+                        },  _('Keep working here')),
                         m('a.btn.btn-success', {
                             href : ctrl.goToProjectLink(),
                             onclick: function(){
                             $osf.trackClick(options.trackingCategory, options.trackingAction, 'go-to-new-project');
                             }
-                        },'Go to new ' + ctrl.nodeType + '')
+                        },agh.sprintf(_('Go to new %1$s'),_(ctrl.nodeType)))
                     ])
                 )
             ]),
@@ -401,7 +405,7 @@ var AddProject = {
                                 }}, [
                                 m('span[aria-hidden="true"]','×')
                             ]),
-                            m('h4.add-project-error.text-danger', 'Couldn\'t create your ' + ctrl.nodeType + ''),
+                            m('h4.add-project-error.text-danger', agh.sprintf(_('Couldn\'t create your %1$s'),ctrl.nodeType)),
                             m('p', ctrl.errorMessage[ctrl.errorMessageType()])
                         ]
                     ),
@@ -420,7 +424,7 @@ var AddProject = {
                                 }}, [
                                 m('span[aria-hidden="true"]','×')
                             ]),
-                            m('h4.add-project-error.text-danger', 'Could not add institution affiliation to your new ' + ctrl.nodeType + ''),
+                            m('h4.add-project-error.text-danger', agh.sprintf(_('Could not add institution affiliation to your new %1$s') , ctrl.nodeType)),
                             m('p', ctrl.errorMessage[ctrl.errorMessageType()])
                         ]
                     ),
@@ -430,10 +434,10 @@ var AddProject = {
                                 ctrl.reset();
                                 ctrl.options.stayCallback.call(ctrl); // results are at ctrl.saveResult
                             }
-                        },  'Keep working here'),
+                        },  _('Keep working here')),
                         m('a.btn.btn-success', {
                             href : ctrl.goToProjectLink()
-                        },'Go to new ' + ctrl.nodeType + '')
+                        },agh.sprintf(_('Go to new %1$s') , _(ctrl.nodeType)))
                     ])
                 )
             ])
@@ -467,7 +471,7 @@ var Select2Template = {
         return function(element, isInitialized) {
             var $el = $(element);
             if (!isInitialized) {
-                $el.select2({placeholder: 'Select a project to use as a template', allowClear: true, width: '100%'}).on('change', function(e) {
+                $el.select2({placeholder: _('Select a project to use as a template'), allowClear: true, width: '100%'}).on('change', function(e) {
                     var id = $el.select2('val');
                     m.startComputation();
                     //Set the value to the selected option

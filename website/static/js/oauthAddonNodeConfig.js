@@ -13,6 +13,10 @@ var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var FolderPickerViewModel = require('js/folderPickerNodeConfig');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 /**
  * View model to support instances of AddonNodeConfig (folder picker widget)
@@ -42,8 +46,8 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             return (userHasAuth && selected) ? selected.type : '';
         });
         self.messages.submitSettingsSuccess =  ko.pureComputed(function() {
-            return 'Successfully linked "' + $osf.htmlEscape(self.options.decodeFolder(self.folder().name)) + '". Go to the <a href="' +
-                self.urls().files + '">Files page</a> to view your content.';
+            return agh.sprintf(_('Successfully linked "%1$s"') , $osf.htmlEscape(self.options.decodeFolder(self.folder().name))) +
+            agh.sprintf(_(' Go to the <a href="%1$s">Files page</a> to view your content.'),self.urls().files);
         });
         var defaults = {
             onPickFolder: function(evt, item) {
@@ -138,7 +142,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         self.updateAccounts().then(function () {
             if (self.accounts().length > 1) {
                 bootbox.prompt({
-                    title: 'Choose ' + $osf.htmlEscape(self.addonName) + ' Account to Import',
+                    title: agh.sprintf(_('Choose %1$s Account to Import'),$osf.htmlEscape(self.addonName)),
                     inputType: 'select',
                     inputOptions: ko.utils.arrayMap(
                         self.accounts(),
@@ -148,13 +152,16 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     callback: (self.connectExistingAccount.bind(self)),
                     buttons: {
                         confirm:{
-                            label:'Import',
+                            label:_('Import'),
+                        },
+                        cancel:{
+                            label:_('Cancel')
                         }
                     }
                 });
             } else {
                 bootbox.confirm({
-                    title: 'Import ' + self.addonName + ' Account?',
+                    title: agh.sprintf(_('Import %1$s Account?'),self.addonName),
                     message: self.messages.confirmAuth(),
                     callback: function(confirmed) {
                         if (confirmed) {
@@ -163,7 +170,10 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     },
                     buttons: {
                         confirm: {
-                            label:'Import',
+                            label:_('Import'),
+                        },
+                        cancel:{
+                            label:_('Cancel')
                         }
                     }
                 });
@@ -198,7 +208,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             }));
         }).fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.updateAccountsError(), 'text-warning');
-            Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
+            Raven.captureMessage(agh.sprintf(_('Could not GET %1$s accounts for user'),self.addonName), {
                 extra: {
                     url: self.url,
                     textStatus: textStatus,

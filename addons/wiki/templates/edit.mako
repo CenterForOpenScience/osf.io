@@ -1,5 +1,5 @@
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">${node['title']} Wiki</%def>
+<%def name="title()">${node['title']} ${_("Wiki")}</%def>
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}
@@ -31,15 +31,15 @@
                 <div class="panel-heading wiki-panel-header clearfix" data-bind="css: {  'osf-panel-heading-flex': !$root.singleVis()}">
                     % if user['can_edit']:
                         <div class="wiki-toolbar-icon text-success" data-toggle="modal" data-target="#newWiki">
-                            <i class="fa fa-plus text-success"></i><span>New</span>
+                            <i class="fa fa-plus text-success"></i><span>${_("New")}</span>
                         </div>
                         % if wiki_id and wiki_name != 'home':
                             <div class="wiki-toolbar-icon text-danger" data-toggle="modal" data-target="#deleteWiki">
-                                <i class="fa fa-trash-o text-danger"></i><span>Delete</span>
+                                <i class="fa fa-trash-o text-danger"></i><span>${_("Delete")}</span>
                             </div>
                         % endif
                     % else:
-                        <h3 class="panel-title"> <i class="fa fa-list"></i>  Menu </h3>
+                        <h3 class="panel-title"> <i class="fa fa-list"></i>  ${_("Menu")} </h3>
                     % endif
                     <div id="toggleIcon" class="pull-right hidden-xs">
                         <div class="panel-collapse pointer"><i class="fa fa-angle-left"></i></div>
@@ -50,7 +50,7 @@
                         <div class="ball-scale ball-scale-blue">
                             <div></div>
                         </div>
-                        <p class="m-t-sm fg-load-message"> Loading wiki pages...  </p>
+                        <p class="m-t-sm fg-load-message"> ${_("Loading wiki pages...")}  </p>
                     </div>
                 </div>
                 <div class="hidden text-danger" id="wikiErrorMessage" style="padding: 15px"></div>
@@ -79,22 +79,22 @@
                 <div class="panel-heading wiki-panel-header wiki-single-heading" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }">
                     <div class="row wiki-view-icon-container">
                         <div class="col-lg-4">
-                            <div class="panel-title" > <i class="fa fa-eye"> </i>  View</div>
+                            <div class="panel-title" > <i class="fa fa-eye"> </i>  ${_("View")}</div>
                         </div>
                         <div class="col-sm-8">
 
                             <div class="pull-right">
                                 <!-- Version Picker -->
-                                <span>Wiki Version:</span>
+                                <span>${_("Wiki Version:")}</span>
                                 <div style="display: inline-block">
                                 <select class="form-control" data-bind="value:viewVersion" id="viewVersionSelect">
                                     % if user['can_edit_wiki_body']:
-                                        <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
+                                        <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>${_("Preview")}</option>
                                     % endif
                                     % if len(versions) > 0:
                                         <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>(Current) ${versions[0]['user_fullname']}: ${versions[0]['date']}</option>
                                     % else:
-                                        <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
+                                        <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>${_("Current")}</option>
                                     % endif
                                     % if len(versions) > 1:
                                         % for version in versions[1:]:
@@ -114,7 +114,7 @@
                       % if wiki_content:
                           ${wiki_content}
                       % else:
-                          <p class="text-muted"><em>Add important information, links, or images here to describe your project.</em></p>
+                          <p class="text-muted"><em>${_("Add important information, links, or images here to describe your project.")}</em></p>
                       % endif
                   </div>
                 </div>
@@ -131,7 +131,7 @@
                   <div class="panel-heading wiki-panel-header clearfix" data-bind="css : { 'wiki-single-heading': $root.singleVis() === 'edit' }">
                     <div class="row">
                       <div class="col-md-6">
-                           <h3 class="panel-title" > <i class="fa fa-pencil-square-o"> </i>   Edit </h3>
+                           <h3 class="panel-title" > <i class="fa fa-pencil-square-o"> </i>   ${_("Edit")} </h3>
                       </div>
                         <div class="col-md-6">
                           <div class="pull-right">
@@ -171,7 +171,7 @@
                                   <div></div>
                               </div>
                               <div id="editor" class="wmd-input wiki-editor"
-                                   data-bind="ace: currentText">Loading. . .</div>
+                                   data-bind="ace: currentText">${_("Loading. . .")}</div>
                           </div>
                         </div>
                       </div>
@@ -183,10 +183,10 @@
                               <button id="revert-button"
                                       class="btn btn-danger"
                                       data-bind="click: revertChanges"
-                                      >Revert</button>
+                                      >${_("Revert")}</button>
                               <input type="submit"
                                      class="btn btn-success"
-                                     value="Save"
+                                     value="${_('Save')}"
                                      onclick=$(window).off('beforeunload')>
                           </div>
                         </div>
@@ -209,7 +209,7 @@
               <div class="panel-heading osf-panel-heading-flex" data-bind="css: {  'osf-panel-heading-flex': $root.singleVis() !== 'compare', 'wiki-single-heading': $root.singleVis() === 'compare'}">
                   <div class="row">
                       <div class="col-xs-12">
-                          <span class="panel-title m-r-xs"> <i class="fa fa-exchange"> </i>   Compare </span>
+                          <span class="panel-title m-r-xs"> <i class="fa fa-exchange"> </i>   ${_("Compare")} </span>
                           <div class="inline" data-bind="css: { 'pull-right' :  $root.singleVis() === 'compare' }">
                             <!-- Version Picker -->
                             <span class="compare-version-text"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
@@ -217,7 +217,7 @@
                                   % if len(versions) > 0:
                                       <option value="current" ${'selected' if version_settings['compare'] == 'current' else ''}>(Current) ${versions[0]['user_fullname']}: ${versions[0]['date']}</option>
                                   % else:
-                                      <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
+                                      <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>${_("Current")}</option>
                                   % endif
                                   % if len(versions) > 1:
                                       % for version in versions[1:]:
@@ -254,10 +254,10 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">Page permissions have changed</h3>
+        <h3 class="modal-title">${_("Page permissions have changed")}</h3>
       </div>
       <div class="modal-body">
-        <p>Your browser should refresh shortly&hellip;</p>
+        <p>${_("Your browser should refresh shortly")}&hellip;</p>
       </div>
     </div>
   </div>
@@ -270,7 +270,7 @@
                 <div class="ball-scale ball-scale-blue">
                     <div></div>
                 </div>
-                 <p class="m-t-sm fg-load-message"> Renaming wiki...  </p>
+                 <p class="m-t-sm fg-load-message"> ${_("Renaming wiki...")}  </p>
             </div>
         </div>
     </div>
@@ -280,13 +280,13 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">Wiki page deleted</h3>
+        <h3 class="modal-title">${_("Wiki page deleted")}</h3>
       </div>
       <div class="modal-body">
-        <p>Press Confirm to return to the project wiki home page.</p>
+        <p>${_("Press Confirm to return to the project wiki home page.")}</p>
       </div>
       <div class="modal-footer">
-          <button type="button" class="btn btn-success" data-dismiss="modal">Confirm</button>
+          <button type="button" class="btn btn-success" data-dismiss="modal">${_("Confirm")}</button>
       </div>
     </div>
   </div>
@@ -297,17 +297,17 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Connected to the collaborative wiki</h3>
+        <h3 class="modal-title">${_("Connected to the collaborative wiki")}</h3>
       </div>
       <div class="modal-body">
         <p>
-            This page is currently connected to the collaborative wiki. All edits made will be visible to
-            contributors with write permission in real time. Changes will be stored
-            but not published until you click the "Save" button.
+            ${_('This page is currently connected to the collaborative wiki. All edits made will be visible to\
+            contributors with write permission in real time. Changes will be stored\
+            but not published until you click the "Save" button.')}
         </p>
       </div>
       <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">${_("Close")}</button>
       </div>
     </div>
   </div>
@@ -318,12 +318,12 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Connecting to the collaborative wiki</h3>
+        <h3 class="modal-title">${_("Connecting to the collaborative wiki")}</h3>
       </div>
       <div class="modal-body">
         <p>
-            This page is currently attempting to connect to the collaborative wiki. You may continue to make edits.
-            <strong>Changes will not be saved until you press the "Save" button.</strong>
+            ${_("This page is currently attempting to connect to the collaborative wiki. You may continue to make edits.")}
+            <strong> ${_('Changes will not be saved until you press the "Save" button.')}</strong>
         </p>
       </div>
     </div>
@@ -335,12 +335,12 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Collaborative wiki is unavailable</h3>
+        <h3 class="modal-title">${_("Collaborative wiki is unavailable")}</h3>
       </div>
       <div class="modal-body">
         <p>
-            The collaborative wiki is currently unavailable. You may continue to make edits.
-            <strong>Changes will not be saved until you press the "Save" button.</strong>
+            ${_("The collaborative wiki is currently unavailable. You may continue to make edits.")}
+            <strong>${_('Changes will not be saved until you press the "Save" button.')}</strong>
         </p>
       </div>
     </div>
@@ -352,12 +352,12 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Browser unsupported</h3>
+        <h3 class="modal-title">${_("Browser unsupported")}</h3>
       </div>
       <div class="modal-body">
         <p>
-            Your browser does not support collaborative editing. You may continue to make edits.
-            <strong>Changes will not be saved until you press the "Save" button.</strong>
+            ${_("Your browser does not support collaborative editing. You may continue to make edits.")}
+            <strong>${_('Changes will not be saved until you press the "Save" button.')}</strong>
         </p>
       </div>
     </div>

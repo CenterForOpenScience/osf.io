@@ -1,5 +1,5 @@
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">${node['title']} Timestamp</%def>
+<%def name="title()">${node['title']} ${_("Timestamp")}</%def>
 
 <div class="page-header  visible-xs">
     <h2 class="text-300">Timestamp</h2>
@@ -7,7 +7,7 @@
 
 <div class="row">
     <div class="col-sm-5">
-        <h2 class="break-word">Timestamp Control</h2>
+        <h2 class="break-word">${_("Timestamp Control")}</h2>
     </div>
     <div class="col-sm-7">
         <div id="toggleBar" class="pull-right"></div>
@@ -24,7 +24,7 @@
             <!-- Begin sidebar -->
             <ul class="nav nav-stacked nav-pills">
                 <li class="active">
-                    <a href="#">Timestamp Error</a>
+                    <a href="#">${_("Timestamp Error")}</a>
                 </li>
             </ul>
         </div>
@@ -38,26 +38,26 @@
                         <div class="form-group row">
                             <div class="col-sm-6">
                                 <div class="input-group">
-                                    <div class="input-group-addon">Start Date</div>
+                                    <div class="input-group-addon">${_("Start Date")}</div>
                                     <input id="startDateFilter" type="text" placeholder="YYYY-MM-DD" class="form-control" />
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <div class="input-group">
-                                    <div class="input-group-addon">End Date</div>
+                                    <div class="input-group-addon">${_("End Date")}</div>
                                     <input id="endDateFilter" type="text" placeholder="YYYY-MM-DD" class="form-control" />
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <div class="input-group">
-                                    <div class="input-group-addon">User</div>
+                                    <div class="input-group-addon">${_("User")}</div>
                                     <select id="userFilterSelect" class="form-control">
                                         <option value=""></option>
                                     </select>
                                 </div>
                             </div>
                             <div class="col-sm-12">
-                                <button type="button" class="btn btn-primary" id="applyFiltersButton">Apply</button>
+                                <button type="button" class="btn btn-primary" id="applyFiltersButton">${_("Apply")}</button>
                             </div>
                         </div>
                     </form>
@@ -66,9 +66,9 @@
                     <div class="row">
                         <div class="col-sm-7">
                             <span>
-                                <button type="button" class="btn btn-success" id="btn-verify" ${ 'disabled=disabled' if not async_task['ready'] else '' }>Verify</button>
-                                <button type="button" class="btn btn-success" id="btn-addtimestamp" ${ 'disabled=disabled' if not async_task['ready'] else '' }>Request Trusted Timestamp</button>
-                                <button type="button" class="btn btn-default" id="btn-cancel" ${ 'disabled=disabled' if async_task['ready'] else '' }>Cancel</button>
+                                <button type="button" class="btn btn-success" id="btn-verify" ${ 'disabled=disabled' if not async_task['ready'] else '' }>${_("Verify")}</button>
+                                <button type="button" class="btn btn-success" id="btn-addtimestamp" ${ 'disabled=disabled' if not async_task['ready'] else '' }>${_("Request Trusted Timestamp")}</button>
+                                <button type="button" class="btn btn-default" id="btn-cancel" ${ 'disabled=disabled' if async_task['ready'] else '' }>${_("Cancel")}</button>
                             </span>
                         </div>
                         <div class="col-sm-5"></div>
@@ -78,7 +78,7 @@
             <div class="row" id="loading-row" style="${ 'display: none;' if async_task['ready'] else '' }">
                 <div class="col-xs-12">
                     <div class="spinner-loading-wrapper">
-                        <p class="m-t-sm fg-load-message" id="loading-message">Processing, please wait...</p>
+                        <p class="m-t-sm fg-load-message" id="loading-message">${_("Processing, please wait...")}</p>
                         <div class="logo-spin logo-lg"></div>
                     </div>
                 </div>
@@ -96,7 +96,7 @@
                     </ul>
                 </div>
                 <div class="col-sm-2">
-                    <label class="pull-right" style="margin: 20px 0;">per page:</label>
+                    <label class="pull-right" style="margin: 20px 0;">${_("per page:")}</label>
                 </div>
                 <div class="col-sm-2">
                     <select id="pageLength" class="form-control" style="margin: 15px 0;">
@@ -119,35 +119,35 @@
                                         <i id="sort_up_provider" class="fa fa-chevron-up tb-sort-inactive asc-btn m-r-xs"></i>
                                         <i id="sort_down_provider" class="fa fa-chevron-down tb-sort-inactive desc-btn"></i>
                                     </span>
-                                    <span class="header_text m-r-sm" title="Provider">Provider</span>
+                                    <span class="header_text m-r-sm" title="Provider">${_("Provider")}</span>
                                 </th>
                                 <th width="29%">
                                     <span class="sorter">
                                         <i id="sort_up_file_path" class="fa fa-chevron-up tb-sort-inactive asc-btn m-r-xs"></i>
                                         <i id="sort_down_file_path" class="fa fa-chevron-down tb-sort-inactive desc-btn"></i>
                                     </span>
-                                    <span class="header_text m-r-sm" title="File Path">File Path</span>
+                                    <span class="header_text m-r-sm" title="File Path">${_("File Path")}</span>
                                 </th>
                                 <th width="15%">
                                     <span class="sorter">
                                         <i id="sort_up_verify_user_name_id" class="fa fa-chevron-up tb-sort-inactive asc-btn m-r-xs"></i>
                                         <i id="sort_down_verify_user_name_id" class="fa fa-chevron-down tb-sort-inactive desc-btn"></i>
                                     </span>
-                                    <span class="header_text m-r-sm" title="Timestamp by">Timestamp by</span>
+                                    <span class="header_text m-r-sm" title="Timestamp by">${_("Timestamp by")}</span>
                                 </th>
                                 <th width="19%">
                                     <span class="sorter">
                                         <i id="sort_up_verify_date" class="fa fa-chevron-up tb-sort-inactive asc-btn m-r-xs"></i>
                                         <i id="sort_down_verify_date" class="fa fa-chevron-down tb-sort-inactive desc-btn"></i>
                                     </span>
-                                    <span class="header_text m-r-sm" title="Updated at">Updated at</span>
+                                    <span class="header_text m-r-sm" title="Updated at">${_("Updated at")}</span>
                                 </th>
                                 <th width="20%">
                                     <span class="sorter">
                                         <i id="sort_up_verify_result_title" class="fa fa-chevron-up tb-sort-inactive asc-btn m-r-xs"></i>
                                         <i id="sort_down_verify_result_title" class="fa fa-chevron-down tb-sort-inactive desc-btn"></i>
                                     </span>
-                                    <span class="header_text m-r-sm" title="Timestamp Verification">Timestamp Verification</span>
+                                    <span class="header_text m-r-sm" title="Timestamp Verification">${_("Timestamp Verification")}</span>
                                 </th>
                             </tr>
                         </thead>
@@ -203,7 +203,7 @@
                 </div>
                 <div class="col-sm-2">
                     <span>
-                        <button type="button" class="btn btn-success" id="btn-download">Download</button>
+                        <button type="button" class="btn btn-success" id="btn-download">${_("Download")}</button>
                     </span>
                 </div>
                 <div class="col-sm-7"></div>

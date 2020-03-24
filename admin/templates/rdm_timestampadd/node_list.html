@@ -1,16 +1,17 @@
 {% extends "base.html" %}
 {% load render_bundle from webpack_loader %}
 {% load node_extras %}
+{% load i18n %}
 {% block top_includes %}
   <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
 {% endblock %}
 
 {% load static %}
 {% block title %}
-    <title>Affiliated Nodes</title>
+    <title>{% trans "Affiliated Nodes" %}</title>
 {% endblock title %}
 {% block content %}
-    <h2>List of Nodes for {{ institution.name }}
+    <h2>{% blocktrans with institutionName=institution.name %}List of Nodes for {{ institutionName }}{% endblocktrans %}
         <img class="institution-logo" src="{{ logohost }}/static/img/institutions/shields/{{ institution.logo_name }}">
     </h2>
     {% load node_extras %}
@@ -34,17 +35,17 @@
                     </script>
                 </th>
                 {% endif %}
-                <th>GUID</th>
+                <th>{% trans "GUID" %}</th>
                 <th>
-                    Title
+                    {% trans "Title" %}
                 </th>
-                <th>Parent</th>
-                <th>Root</th>
-                <th>Date created</th>
-                <th>Public</th>
-                <th>Withdrawn</th>
-                <th>Embargo</th>
-                <th>Contributors</th>
+                <th>{% trans "Parent" %}</th>
+                <th>{% trans "Root" %}</th>
+                <th>{% trans "Date created" %}</th>
+                <th>{% trans "Public" %}</th>
+                <th>{% trans "Withdrawn" %}</th>
+                <th>{% trans "Embargo" %}</th>
+                <th>{% trans "Contributors" %}</th>
             </tr>
         </thead>
         <tbody>
@@ -107,19 +108,19 @@
     </table>
     {% if form_action and perms.osf.mark_spam %}
     <button class="btn btn-warning" type="button" data-toggle="modal" data-target="#confirmSpamListModal">
-        Confirm Spam
+        {% trans "Confirm Spam" %}
     </button>
     <div id="confirmSpamListModal" class="modal fade well" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">x</button>
-                    <h3>Are you sure the selected node(s) are spam?</h3>
+                    <h3>{% trans "Are you sure the selected node(s) are spam?" %}</h3>
                 </div>
                 <div class="modal-footer">
                     <input class="btn btn-danger" type="submit" value="Confirm" />
                     <button type="button" class="btn btn-default" data-dismiss="modal">
-                        Cancel
+                        {% trans "Cancel" %}
                     </button>
                 </div>
             </div>

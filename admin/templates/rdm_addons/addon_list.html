@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
 {% load render_bundle from webpack_loader %}
+{% load i18n %}
 
 {% block title %}
-<title>RDM Addons</title>
+<title>{% trans "RDM Addons" %}</title>
 {% endblock title %}
 
 {% block top_includes %}
@@ -13,15 +14,15 @@
 {% block content %}
 
     {% if institution.id %}
-        <h2>RDM Addons <small>({{ institution.name }})</small></h2>
+        <h2>{% trans "RDM Addons " %}<small>({{ institution.name }})</small></h2>
     {% else %}
-        <h2>RDM Addons</h2>
+        <h2>{% trans "RDM Addons" %}</h2>
     {% endif %}
 
 <div id="addonSettings" class="row">
     <div class="col-md-12">
         <div class="panel panel-default">
-            <div class="panel-heading clearfix"><h3 class="panel-title">Configure Add-on Accounts</h3></div>
+            <div class="panel-heading clearfix"><h3 class="panel-title">{% trans "Configure Add-on Accounts" %}</h3></div>
             <div class="panel-body">
                 <table class="table table-condensed">
                 {% for addon in addon_settings %}
@@ -47,7 +48,7 @@
                                     <input type="checkbox"
                                         data-addon-short-name="{{ addon.addon_short_name }}"
                                         data-institution-id="{{ institution.id }}"
-                                        {% if addon.option.is_forced %}checked{% endif %}> Force to use
+                                        {% if addon.option.is_forced %}checked{% endif %}> {% trans "Force to use" %}
                                 </label>
                             </div>
                             {% endif %}

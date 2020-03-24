@@ -5,7 +5,7 @@
 
 <%def name="content()">
 % if disk_saving_mode:
-    <div class="alert alert-info"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the GakuNin RDM undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
+    <div class="alert alert-info">${_("<strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the GakuNin RDM undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.") | n}</div>
 % endif
     <div id="inst">
         <div class="dashboard-header dashboard-header-institution">

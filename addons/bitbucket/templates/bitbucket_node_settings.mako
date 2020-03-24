@@ -12,17 +12,17 @@
                         </a>
                     % if not is_registration:
                         <a id="bitbucketRemoveToken" class="text-danger pull-right addon-auth" >
-                          Disconnect Account
+                          ${_("Disconnect Account")}
                         </a>
                     % endif
                 % else:
                     % if user_has_auth:
                         <a id="bitbucketImportToken" class="text-primary pull-right addon-auth">
-                           Import Account from Profile
+                           ${_("Import Account from Profile")}
                         </a>
                     % else:
                         <a id="bitbucketCreateToken" class="text-primary pull-right addon-auth">
-                           Connect Account
+                           ${_("Connect Account")}
                         </a>
                     % endif
                 % endif
@@ -62,7 +62,7 @@
         % elif bitbucket_repo_full_name:
             <a href="${files_url}">${bitbucket_repo_full_name}</a></p>
         % else:
-            <span>None</span></p>
+            <span>${_("None")}</span></p>
         % endif
     % endif
 
@@ -71,12 +71,12 @@
     % if node_has_auth and not valid_credentials:
         <div class="addon-settings-message text-danger p-t-sm">
             % if is_owner:
-                Could not retrieve Bitbucket settings at this time. The Bitbucket addon credentials
-                may no longer be valid. Try deauthorizing and reauthorizing Bitbucket on your
-                <a href="${addons_url}">account settings page</a>.
+                ${_('Could not retrieve %(addonName)s settings at this time. The %(addonName)s addon credentials\
+                may no longer be valid. Try deauthorizing and reauthorizing %(addonName)s on your\
+                <a href="%(addonsUrl)s">account settings page</a>.') % dict(addonsUrl=h(addons_url),addonName='Bitbucket') | n}
             % else:
-                Could not retrieve Bitbucket settings at this time. The Bitbucket addon credentials
-                may no longer be valid. Contact ${auth_osf_name} to verify.
+                ${_('Could not retrieve %(addonName)s settings at this time. The %(addonName)s addon credentials\
+                may no longer be valid. Contact %(authOsfName)s to verify.') % dict(authOsfName=auth_osf_name,addonName='Bitbucket')}
             % endif
         </div>
     % else:

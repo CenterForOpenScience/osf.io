@@ -13,6 +13,10 @@ var language = require('js/osfLanguage').Addons.s3;
 var osfHelpers = require('js/osfHelpers');
 var addonSettings = require('../rdmAddonSettings');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 var ExternalAccount = addonSettings.ExternalAccount;
 
@@ -43,17 +47,17 @@ function ViewModel(url, institutionId) {
     self.connectAccount = function() {
         // Selection should not be empty
         if( !self.accessKey() && !self.secretKey() ){
-            self.changeMessage('Please enter both an API access key and secret key.', 'text-danger');
+            self.changeMessage(_('Please enter both an API access key and secret key.'), 'text-danger');
             return;
         }
 
         if (!self.accessKey() ){
-            self.changeMessage('Please enter an API access key.', 'text-danger');
+            self.changeMessage(_('Please enter an API access key.'), 'text-danger');
             return;
         }
 
         if (!self.secretKey() ){
-            self.changeMessage('Please enter an API secret key.', 'text-danger');
+            self.changeMessage(_('Please enter an API secret key.'), 'text-danger');
             return;
         }
         return osfHelpers.postJSON(
@@ -70,7 +74,7 @@ function ViewModel(url, institutionId) {
         }).fail(function(xhr, textStatus, error) {
             var errorMessage = (xhr.status === 400 && xhr.responseJSON.message !== undefined) ? xhr.responseJSON.message : language.authError;
             self.changeMessage(errorMessage, 'text-danger');
-            Raven.captureMessage('Could not authenticate with S3', {
+            Raven.captureMessage(_('Could not authenticate with S3'), {
                 extra: {
                     url: self.account_url,
                     textStatus: textStatus,
@@ -95,7 +99,7 @@ function ViewModel(url, institutionId) {
             $('#s3-header').osfToggleHeight({height: 160});
         }).fail(function(xhr, status, error) {
             self.changeMessage(language.userSettingsError, 'text-danger');
-            Raven.captureMessage('Error while updating addon account', {
+            Raven.captureMessage(_('Error while updating addon account'), {
                 extra: {
                     url: url,
                     status: status,
@@ -108,10 +112,9 @@ function ViewModel(url, institutionId) {
     self.askDisconnect = function(account) {
         var self = this;
         bootbox.confirm({
-            title: 'Disconnect Amazon S3 Account?',
+            title: _('Disconnect Amazon S3 Account?'),
             message: '<p class="overflow">' +
-                'Are you sure you want to disconnect the S3 account <strong>' +
-                osfHelpers.htmlEscape(account.name) + '</strong>? This will revoke access to S3 for all projects associated with this account.' +
+                agh.sprintf(_('Are you sure you want to disconnect the S3 account <strong>%1$s</strong>? This will revoke access to S3 for all projects associated with this account.'),osfHelpers.htmlEscape(account.name)) +
                 '</p>',
             callback: function (confirm) {
                 if (confirm) {
@@ -120,7 +123,7 @@ function ViewModel(url, institutionId) {
             },
             buttons:{
                 confirm:{
-                    label:'Disconnect',
+                    label:_('Disconnect'),
                     className:'btn-danger'
                 }
             }
@@ -138,7 +141,7 @@ function ViewModel(url, institutionId) {
             self.updateAccounts();
         });
         request.fail(function(xhr, status, error) {
-            Raven.captureMessage('Error while removing addon authorization for ' + account.id, {
+            Raven.captureMessage(agh.sprintf(_('Error while removing addon authorization for %1$s') , account.id), {
                 extra: {
                     url: url,
                     status: status,

@@ -2,7 +2,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-              <h3>Create a new link to share your project</h3>
+              <h3>${_("Create a new link to share your project")}</h3>
             </div>
 
             <div class="modal-body">
@@ -10,12 +10,12 @@
                 <div>
                     <div>
                         <div class="form-group">
-                            <label for="privateLinkName">Link name</label>
+                            <label for="privateLinkName">${_("Link name")}</label>
                             <input data-bind="value:name"
                                 id="privateLinkName"
                                 type="text"
                                 class="form-control private-link-name"
-                                placeholder='Optional link name (e.g., For peer review, Sharing data, Share project)' />
+                                placeholder='${_("Optional link name (e.g., For peer review, Sharing data, Share project)")}' />
                         </div>
                         <div class="help-block">
                             <p data-bind="html: message, attr: {class: messageClass}"></p>
@@ -27,18 +27,18 @@
                     <div class="checkbox">
                         <label>
                             <input type="checkbox" data-bind="checked: anonymous"/>
-                            <strong>Anonymize</strong> contributor list for this link (e.g., for blind peer review).
+                            ${_("<strong>Anonymize</strong> contributor list for this link (e.g., for blind peer review).") | n}
                             <br>
-                            <i>Ensure the wiki pages, files, registration forms and add-ons do not contain identifying information.</i>
+                            <i>${_("Ensure the wiki pages, files, registration forms and add-ons do not contain identifying information.")}</i>
                         </label>
                     </div>
 
                     <hr />
 
                     <div style="margin-bottom:10px;">
-                        <strong>Which components would you like to associate with this link?</strong>
-                        Anyone with the private link can view&mdash;but not edit&mdash;the
-                        components associated with the link.
+                        ${_("<strong>Which components would you like to associate with this link?</strong>") | n}
+                        ${_("Anyone with the private link can view&mdash;but not edit&mdash;the\
+                        components associated with the link.") | n}
                     </div>
 
 
@@ -48,7 +48,7 @@
                             <div class="list-overflow">
                             <input type="checkbox" checked disabled />
 
-                            <span data-bind="text:title"></span> (current component<span data-bind="if: isPublic">, public</span>)
+                            <span data-bind="text:title"></span> ${_('(current component<span %(isPublic)s>, public</span>)') % dict(isPublic='data-bind="if: isPublic"') | n}
 
                             <div data-bind="foreach:nodes">
                                 <div data-bind="style:{'marginLeft': margin}">
@@ -56,10 +56,10 @@
                                     <input type="checkbox" data-bind="checked:$parent.nodesToChange, value:id" />
                                     <!-- /ko -->
                                     <!-- ko ifnot: $root.isChildVisible($data) -->
-                                        <i class="fa fa-question-circle" data-bind="tooltip: {title: 'Parent needs to be checked'}"></i>
+                                        <i class="fa fa-question-circle" data-bind="tooltip: {title: '${_("Parent needs to be checked")}'}"></i>
                                     <!-- /ko -->
                                     <span data-bind="text:$data.title"></span>
-                                    <span data-bind="if: $data.is_public">(public)</span>
+                                    <span data-bind="if: $data.is_public">${_("(public)")}</span>
                                 </div>
                             </div>
                             </div>
@@ -68,10 +68,10 @@
                         <div class="col-md-6">
 
                             <div>
-                                <a data-bind="click:selectNodes, css:{disabled:cantSelectNodes()}">Select all</a>
+                                <a data-bind="click:selectNodes, css:{disabled:cantSelectNodes()}">${_("Select all")}</a>
                             </div>
                             <div>
-                                <a data-bind="click:deselectNodes, css:{disabled:cantDeselectNodes()}">De-select all</a>
+                                <a data-bind="click:deselectNodes, css:{disabled:cantDeselectNodes()}">${_("De-select all")}</a>
                             </div>
                         </div>
 
@@ -83,7 +83,7 @@
 
             <div class="modal-footer">
 
-                <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
+                <a href="#" class="btn btn-default" data-dismiss="modal">${_("Cancel")}</a>
                 <a class="btn btn-primary" data-bind="click:submit, css:{disabled: disableSubmit}, text: submitText"></a>
 
             </div><!-- end modal-footer -->

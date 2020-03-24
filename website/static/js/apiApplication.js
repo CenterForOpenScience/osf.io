@@ -19,6 +19,14 @@ var $osf = require('./osfHelpers');
 var oop = require('js/oop');
 var language = require('js/osfLanguage');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
+
+var defaultDomain = 'apiOauth2Application';
+var osfLanguage = new rdmGettext.OsfLanguage(defaultDomain);
+
 /*
  *  Store the data related to a single API application
  */
@@ -187,10 +195,10 @@ var ApplicationsListViewModel = oop.defclass({
 
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
-                language.apiOauth2Application.dataListFetchError,
+                osfLanguage.t('dataListFetchError'),
                 'danger');
 
-            Raven.captureMessage('Error fetching list of registered applications', {
+            Raven.captureMessage(_('Error fetching list of registered applications'), {
                 extra: {
                     url: this.apiListUrl,
                     status: status,
@@ -201,27 +209,30 @@ var ApplicationsListViewModel = oop.defclass({
     },
     deleteApplication: function (appData) {
         bootbox.confirm({
-            title: 'Deactivate application?',
-            message: language.apiOauth2Application.deactivateConfirm,
+            title: _('Deactivate application?'),
+            message: osfLanguage.t('deactivateConfirm'),
             callback: function (confirmed) {
                 if (confirmed) {
                     var request = this.client.deleteOne(appData);
                     request.done(function () {
                             this.appData.destroy(appData);
                             var appName = $osf.htmlEscape(appData.name());
-                            $osf.growl('Deletion', '"' + appName + '" has been deactivated', 'success');
+                            $osf.growl('Deletion', '"' + appName + '"' + _(' has been deactivated'), 'success');
                     }.bind(this));
                     request.fail(function () {
                             $osf.growl('Error',
-                                       language.apiOauth2Application.deactivateError,
+                                       osfLanguage.t('deactivateError'),
                                        'danger');
                     }.bind(this));
                 }
             }.bind(this),
             buttons:{
                 confirm:{
-                    label:'Deactivate',
+                    label:_('Deactivate'),
                     className:'btn-danger'
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });
@@ -267,7 +278,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
             // Add listener to prevent user from leaving page if there are unsaved changes
             $(window).on('beforeunload', function () {
                 if (this.dirty() && !this.allowExit()) {
-                    return 'There are unsaved changes on this page.';
+                    return _('There are unsaved changes on this page.');
                 }
             }.bind(this));
 
@@ -278,10 +289,10 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
             }.bind(this));
             request.fail(function(xhr, status, error) {
                 $osf.growl('Error',
-                             language.apiOauth2Application.dataFetchError,
+                             osfLanguage.t('dataFetchError'),
                             'danger');
 
-                Raven.captureMessage('Error fetching application data', {
+                Raven.captureMessage(_('Error fetching application data'), {
                     extra: {
                         url: this.apiDetailUrl(),
                         status: status,
@@ -295,7 +306,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
         if (!this.dirty()){
             // No data needs to be sent to the server, but give the illusion that form was submitted
             this.changeMessage(
-                language.apiOauth2Application.dataUpdated,
+                osfLanguage.t('dataUpdated'),
                 'text-success',
                 5000);
             return;
@@ -306,17 +317,17 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
             this.appData(dataObj);
             this.originalValues(dataObj.serialize());
             this.changeMessage(
-                language.apiOauth2Application.dataUpdated,
+                osfLanguage.t('dataUpdated'),
                 'text-success',
                 5000);
         }.bind(this));
 
         request.fail(function (xhr, status, error) {
             $osf.growl('Error',
-                       language.apiOauth2Application.dataSendError,
+                       osfLanguage.t('dataSendError'),
                        'danger');
 
-            Raven.captureMessage('Error updating instance', {
+            Raven.captureMessage(_('Error updating instance'), {
                 extra: {
                     url: this.apiDetailUrl,
                     status: status,
@@ -332,17 +343,17 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
             this.appData(dataObj);
             this.originalValues(dataObj.serialize());
 
-            this.changeMessage(language.apiOauth2Application.creationSuccess, 'text-success', 5000);
+            this.changeMessage(osfLanguage.t('creationSuccess'), 'text-success', 5000);
             this.apiDetailUrl(dataObj.apiDetailUrl); // Toggle ViewModel --> act like a display view now.
             historyjs.replaceState({}, '', dataObj.webDetailUrl);  // Update address bar to show new detail page
         }.bind(this));
 
         request.fail(function (xhr, status, error) {
             $osf.growl('Error',
-                       language.apiOauth2Application.dataSendError,
+                       osfLanguage.t('dataSendError'),
                        'danger');
 
-            Raven.captureMessage('Error registering new OAuth2 application', {
+            Raven.captureMessage(_('Error registering new OAuth2 application'), {
                 extra: {
                     url: this.apiDetailUrl,
                     status: status,
@@ -368,8 +379,8 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
     deleteApplication: function () {
         var appData = this.appData();
         bootbox.confirm({
-            title: 'Deactivate application?',
-            message: language.apiOauth2Application.deactivateConfirm,
+            title: _('Deactivate application?'),
+            message: osfLanguage.t('deactivateConfirm'),
             callback: function (confirmed) {
                 if (confirmed) {
                     var request = this.client.deleteOne(appData );
@@ -381,15 +392,18 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                     }.bind(this));
                     request.fail(function () {
                             $osf.growl('Error',
-                                       language.apiOauth2Application.deactivateError,
+                                       osfLanguage.t('deactivateError'),
                                        'danger');
                     }.bind(this));
                 }
             }.bind(this),
             buttons:{
                 confirm:{
-                    label:'Deactivate',
+                    label:_('Deactivate'),
                     className:'btn-danger'
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });
@@ -398,7 +412,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
         var appData = this.appData();
         var self = this;
         bootbox.confirm({
-            title: 'Reset client secret?',
+            title: _('Reset client secret?'),
             message: language.apiOauth2Application.resetSecretConfirm,
             callback: function (confirmed) {
                 if (confirmed){
@@ -407,7 +421,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                         self.appData().clientSecret(dataObj.clientSecret());
                         self.originalValues(self.appData().serialize());
                         self.changeMessage(
-                            language.apiOauth2Application.dataUpdated,
+                            osfLanguage.t('dataUpdated'),
                             'text-success',
                             5000);
                     }.bind(self));
@@ -416,7 +430,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                             language.apiOauth2Application.resetSecretError,
                             'danger');
 
-                        Raven.captureMessage('Error resetting instance secret', {
+                        Raven.captureMessage(_('Error resetting instance secret'), {
                             extra: {
                                 url: appData.apiResetUrl,
                                 status: status,
@@ -428,7 +442,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
             },
             buttons: {
                 confirm: {
-                    label: 'Reset Secret',
+                    label: _('Reset Secret'),
                     className: 'btn-danger'
                 }
             }
@@ -442,8 +456,8 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
             this.visitList();
         } else {
             bootbox.confirm({
-                title: 'Discard changes?',
-                message: language.apiOauth2Application.discardUnchanged,
+                title: _('Discard changes?'),
+                message: osfLanguage.t('discardUnchanged'),
                 callback: function(confirmed) {
                     if (confirmed) {
                         this.allowExit(true);
@@ -452,8 +466,11 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                 }.bind(this),
                 buttons: {
                     confirm: {
-                        label:'Discard',
+                        label:_('Discard'),
                         className:'btn-danger'
+                    },
+                    cancel:{
+                        label:_('Cancel')
                     }
                 }
             });

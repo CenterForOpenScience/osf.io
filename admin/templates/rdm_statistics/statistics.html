@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block top_includes %}
     <link rel="stylesheet" type="text/css" href="{% static 'css/institutions.css' %}" />
@@ -28,15 +29,15 @@ div.image_box{
 {% endblock top_includes %}
 
 {% block title %}
-<title>RDM Statistics</title>
+<title>{% trans "RDM Statistics" %}</title>
 {% endblock title %}
 {% block content %}
-<h2>RDM Statistics</h2>
+<h2>{% trans "RDM Statistics" %}</h2>
 
 <div class="row">
     <div class="col-sm-12">
         <div class="panel panel-default">
-            <div class="panel-heading clearfix"><div><h3 class="panel-title"> Institution </h3></div></div>
+            <div class="panel-heading clearfix"><div><h3 class="panel-title"> {% trans "Institution" %} </h3></div></div>
             <div class="panel-body">
                 <table cellspacing="0">
                     <tr><td>
@@ -64,7 +65,7 @@ div.image_box{
                     <div>
                         <table class="stat-table table table-striped table-bordered" style="width:auto;">
                             <tr>
-                                <th class='stat-name'>date</th>
+                                <th class='stat-name'>{% trans "date" %}</th>
                                 {% for label in statistic_data.label %}
                                     <th>{{ label }}</th>
                                 {% endfor %}
@@ -96,8 +97,8 @@ div.image_box{
             <div class="panel panel-default">
                 <div class="panel-body">
                     <!-- <input type="button" value="send PDF"> -->
-                    <a role="button" href="{% url 'statistics:report' institution.id %}" class="btn btn-primary">download PDF</a>
-                    <a role="button" href="{% url 'statistics:csv' institution.id %}" class="btn btn-primary">download CSV</a>
+                    <a role="button" href="{% url 'statistics:report' institution.id %}" class="btn btn-primary">{% trans "download PDF" %}</a>
+                    <a role="button" href="{% url 'statistics:csv' institution.id %}" class="btn btn-primary">{% trans "download CSV" %}</a>
                 </div>
 
         </div>

@@ -1,16 +1,17 @@
 {% extends "base.html" %}
 {% load render_bundle from webpack_loader %}
 {% load node_extras %}
+{% load i18n %}
 {% block top_includes %}
   <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
 {% endblock %}
 
 {% load static %}
 {% block title %}
-    <title>Affiliated Nodes</title>
+    <title>{% trans "Affiliated Nodes" %}</title>
 {% endblock title %}
 {% block content %}
-    <h2>List of Nodes for {{ institution.name }}
+    <h2>{% blocktrans with institutionName=institution.name %}List of Nodes for {{ institutionName }}{% endblocktrans %}
         <img class="institution-logo" src="{{ logohost }}/static/img/institutions/shields/{{ institution.logo_name }}">
     </h2>
     {% load node_extras %}
@@ -31,15 +32,15 @@
                     </script>
                 </th>
                 {% endif %}
-                <th>GUID</th>
+                <th>{% trans "GUID" %}</th>
                 {% if show_title %}
                 <th>
-                    Title
+                    {% trans "Title" %}
                 </th>
                 {% endif %}
-                <th>Parent</th>
-                <th>Root</th>
-                <th>Select Timestamp Function</th>
+                <th>{% trans "Parent" %}</th>
+                <th>{% trans "Root" %}</th>
+                <th>{% trans "Select Timestamp Function" %}</th>
                 <th>&nbsp;</th>
             </tr>
         </thead>

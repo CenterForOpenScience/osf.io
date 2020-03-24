@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load render_bundle from webpack_loader %}
 
 {% load static %}
 {% block title %}
-    <title>OSF Admin | Meetings</title>
+    <title>{% trans "GakuNIn RDM Admin | Meetings" %}</title>
 {% endblock title %}
 
 {% block content %}

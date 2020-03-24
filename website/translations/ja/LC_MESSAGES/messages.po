@@ -1,0 +1,3709 @@
+# Japanese translations for .
+# Copyright (C) 2020 ORGANIZATION
+# This file is distributed under the same license as the  project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version:  0.6.0\n"
+"Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
+"POT-Creation-Date: 2020-03-12 22:46+0900\n"
+"PO-Revision-Date: 2020-03-23 17:37+0900\n"
+"Last-Translator: Shunta Nishikawa\n"
+"Language: ja\n"
+"Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.7.0\n"
+
+#: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:6
+msgid "Connect an Azure Blob Storage Account"
+msgstr "Azure Blob Storageアカウントを接続する"
+
+#: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:17
+msgid "Account Name"
+msgstr "アカウント名"
+
+#: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:21
+msgid "Account Key"
+msgstr "アカウントキー"
+
+#: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:36
+#: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:77
+#: addons/dataverse/templates/dataverse_credentials_modal.mako:75
+#: addons/gitlab/templates/gitlab_credentials_modal.mako:55
+#: addons/jupyterhub/templates/jupyterhub_node_settings.mako:99
+#: addons/nextcloud/templates/nextcloud_credentials_modal.mako:71
+#: addons/nextcloud/templates/nextcloud_node_settings.mako:72
+#: addons/owncloud/templates/owncloud_credentials_modal.mako:71
+#: addons/owncloud/templates/owncloud_node_settings.mako:72
+#: addons/s3/templates/s3_credentials_modal.mako:36
+#: addons/s3/templates/s3_node_settings.mako:77
+#: addons/s3compat/templates/s3compat_credentials_modal.mako:40
+#: addons/s3compat/templates/s3compat_node_settings.mako:77
+#: addons/swift/templates/swift_credentials_modal.mako:56
+#: addons/swift/templates/swift_node_settings.mako:77
+#: addons/weko/templates/weko_credentials_modal.mako:57
+#: addons/wiki/templates/add_wiki_page.mako:17
+#: addons/wiki/templates/delete_wiki_page.mako:13
+#: addons/zotero/templates/zotero_node_settings.mako:83
+#: addons/zotero/templates/zotero_node_settings.mako:127
+#: website/templates/include/comment_pane_template.mako:32
+#: website/templates/include/comment_template.mako:91
+#: website/templates/include/comment_template.mako:141
+#: website/templates/include/comment_template.mako:148
+#: website/templates/include/comment_template.mako:170
+#: website/templates/profile/oauth_app_detail.mako:84
+#: website/templates/profile/personal_tokens_detail.mako:49
+#: website/templates/project/addon/node_settings_default.mako:72
+#: website/templates/project/modal_add_contributor.mako:340
+#: website/templates/project/modal_generate_private_link.mako:86
+#: website/templates/project/modal_remove_contributor.mako:95
+#: website/templates/project/modal_remove_contributor.mako:104
+#: website/templates/project/modal_remove_contributor.mako:113
+#: website/templates/project/modal_remove_contributor.mako:122
+#: website/templates/project/nodes_delete.mako:89
+#: website/templates/project/nodes_privacy.mako:104
+#: website/templates/project/project.mako:567
+#: website/templates/project/settings.mako:131
+#: website/templates/project/timestamp.mako:71
+#: website/templates/util/render_addon_widget.mako:98
+msgid "Cancel"
+msgstr "キャンセル"
+
+#: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:39
+#: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:79
+#: addons/dataverse/templates/dataverse_credentials_modal.mako:78
+#: addons/dataverse/templates/dataverse_node_settings.mako:118
+#: addons/forward/templates/forward_node_settings.mako:36
+#: addons/github/templates/github_node_settings.mako:54
+#: addons/gitlab/templates/gitlab_credentials_modal.mako:57
+#: addons/gitlab/templates/gitlab_node_settings.mako:64
+#: addons/jupyterhub/templates/jupyterhub_node_settings.mako:18
+#: addons/nextcloud/templates/nextcloud_credentials_modal.mako:74
+#: addons/nextcloud/templates/nextcloud_node_settings.mako:74
+#: addons/owncloud/templates/owncloud_credentials_modal.mako:74
+#: addons/owncloud/templates/owncloud_node_settings.mako:74
+#: addons/s3/templates/s3_credentials_modal.mako:39
+#: addons/s3/templates/s3_node_settings.mako:79
+#: addons/s3compat/templates/s3compat_credentials_modal.mako:43
+#: addons/s3compat/templates/s3compat_node_settings.mako:79
+#: addons/swift/templates/swift_credentials_modal.mako:59
+#: addons/swift/templates/swift_node_settings.mako:79
+#: addons/weko/templates/weko_node_settings.mako:83
+#: addons/wiki/templates/edit.mako:189
+#: addons/zotero/templates/zotero_node_settings.mako:85
+#: addons/zotero/templates/zotero_node_settings.mako:129
+#: website/templates/claim_account.mako:112
+#: website/templates/include/comment_template.mako:93
+#: website/templates/include/profile/jobs.mako:117
+#: website/templates/include/profile/jobs.mako:120
+#: website/templates/include/profile/names.mako:76
+#: website/templates/include/profile/names.mako:79
+#: website/templates/include/profile/schools.mako:117
+#: website/templates/include/profile/schools.mako:120
+#: website/templates/include/profile/social.mako:143
+#: website/templates/include/profile/social.mako:146
+#: website/templates/profile/oauth_app_detail.mako:88
+#: website/templates/profile/personal_tokens_detail.mako:55
+#: website/templates/project/addon/node_settings_default.mako:74
+#: website/templates/project/addon/user_settings.mako:13
+#: website/templates/project/project.mako:569
+msgid "Save"
+msgstr "保存"
+
+#: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:14
+#: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:18
+#: addons/bitbucket/templates/bitbucket_node_settings.mako:15
+#: addons/dataverse/templates/dataverse_node_settings.mako:15
+#: addons/dataverse/templates/dataverse_user_settings.mako:18
+#: addons/github/templates/github_node_settings.mako:15
+#: addons/gitlab/templates/gitlab_node_settings.mako:18
+#: addons/gitlab/templates/gitlab_user_settings.mako:18
+#: addons/nextcloud/templates/nextcloud_node_settings.mako:15
+#: addons/nextcloud/templates/nextcloud_user_settings.mako:18
+#: addons/owncloud/templates/owncloud_node_settings.mako:15
+#: addons/owncloud/templates/owncloud_user_settings.mako:18
+#: addons/s3/templates/s3_node_settings.mako:14
+#: addons/s3/templates/s3_user_settings.mako:18
+#: addons/s3compat/templates/s3compat_node_settings.mako:14
+#: addons/s3compat/templates/s3compat_user_settings.mako:18
+#: addons/swift/templates/swift_node_settings.mako:14
+#: addons/swift/templates/swift_user_settings.mako:18
+#: addons/weko/templates/weko_node_settings.mako:15
+#: addons/weko/templates/weko_user_settings.mako:18
+#: addons/zotero/templates/zotero_node_settings.mako:10
+#: website/templates/profile/user_settings_default.mako:14
+#: website/templates/project/addon/node_settings_default.mako:10
+msgid "Disconnect Account"
+msgstr "アカウントを切断"
+
+#: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:21
+#: addons/bitbucket/templates/bitbucket_node_settings.mako:21
+#: addons/dataverse/templates/dataverse_node_settings.mako:22
+#: addons/github/templates/github_node_settings.mako:21
+#: addons/gitlab/templates/gitlab_node_settings.mako:24
+#: addons/nextcloud/templates/nextcloud_node_settings.mako:22
+#: addons/owncloud/templates/owncloud_node_settings.mako:22
+#: addons/s3/templates/s3_node_settings.mako:21
+#: addons/s3compat/templates/s3compat_node_settings.mako:21
+#: addons/swift/templates/swift_node_settings.mako:21
+#: addons/weko/templates/weko_node_settings.mako:22
+#: addons/zotero/templates/zotero_node_settings.mako:17
+#: website/templates/project/addon/node_settings_default.mako:17
+msgid "Import Account from Profile"
+msgstr "プロフィールからアカウントをインポート"
+
+#: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:28
+#: addons/s3/templates/s3_node_settings.mako:28
+#: addons/s3compat/templates/s3compat_node_settings.mako:28
+#: addons/swift/templates/swift_node_settings.mako:28
+#: addons/zotero/templates/zotero_node_settings.mako:24
+#: website/templates/project/addon/node_settings_default.mako:24
+msgid "Loading ..."
+msgstr "ロード中..."
+
+#: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:35
+#: addons/dataverse/templates/dataverse_node_settings.mako:29
+#: addons/nextcloud/templates/nextcloud_node_settings.mako:29
+#: addons/owncloud/templates/owncloud_node_settings.mako:29
+#: addons/s3/templates/s3_node_settings.mako:35
+#: addons/s3compat/templates/s3compat_node_settings.mako:35
+#: addons/swift/templates/swift_node_settings.mako:35
+#: addons/weko/templates/weko_node_settings.mako:29
+msgid "Connect  Account"
+msgstr "アカウントに接続する"
+
+#: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:50
+#: addons/bitbucket/templates/bitbucket_node_settings.mako:65
+#: addons/github/templates/github_node_settings.mako:62
+#: addons/gitlab/templates/gitlab_node_settings.mako:71
+#: addons/owncloud/templates/owncloud_node_settings.mako:47
+#: addons/s3/templates/s3_node_settings.mako:50
+#: addons/s3compat/templates/s3compat_node_settings.mako:50
+#: addons/swift/templates/swift_node_settings.mako:50
+#: addons/weko/templates/weko_node_settings.mako:49
+#: addons/zotero/templates/zotero_node_settings.mako:46
+#: addons/zotero/templates/zotero_node_settings.mako:101
+#: website/templates/project/addon/node_settings_default.mako:46
+#: website/templates/project/project.mako:202
+msgid "None"
+msgstr "無し"
+
+#: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:58
+#: addons/swift/templates/swift_node_settings.mako:58
+msgid "Create container"
+msgstr "コンテナを作成"
+
+#: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:63
+#: addons/swift/templates/swift_node_settings.mako:63
+msgid "Loading containers..."
+msgstr "コンテナをロード中..."
+
+#: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:72
+#: addons/nextcloud/templates/nextcloud_node_settings.mako:67
+#: addons/owncloud/templates/owncloud_node_settings.mako:67
+#: addons/s3/templates/s3_node_settings.mako:72
+#: addons/s3compat/templates/s3compat_node_settings.mako:72
+#: addons/swift/templates/swift_node_settings.mako:72
+#: addons/zotero/templates/zotero_node_settings.mako:122
+#: website/templates/project/addon/node_settings_default.mako:67
+#, python-format
+msgid "Connect %(folderName)s?"
+msgstr "%(folderName)sに接続しますか？"
+
+#: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:12
+#: addons/dataverse/templates/dataverse_user_settings.mako:12
+#: addons/gitlab/templates/gitlab_user_settings.mako:12
+#: addons/nextcloud/templates/nextcloud_user_settings.mako:12
+#: addons/owncloud/templates/owncloud_user_settings.mako:12
+#: addons/s3/templates/s3_user_settings.mako:12
+#: addons/s3compat/templates/s3compat_user_settings.mako:12
+#: addons/swift/templates/swift_user_settings.mako:12
+#: addons/weko/templates/weko_user_settings.mako:12
+#: website/templates/profile/user_settings_default.mako:9
+msgid "Connect or Reauthorize Account"
+msgstr "アカウントの接続または再認証"
+
+#: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:24
+#, python-format
+msgid "Authorized by %(userName)s"
+msgstr "承認者：%(userName)s"
+
+#: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:32
+#: addons/dataverse/templates/dataverse_user_settings.mako:31
+#: addons/gitlab/templates/gitlab_user_settings.mako:31
+#: addons/nextcloud/templates/nextcloud_user_settings.mako:31
+#: addons/owncloud/templates/owncloud_user_settings.mako:31
+#: addons/s3/templates/s3_user_settings.mako:32
+#: addons/s3compat/templates/s3compat_user_settings.mako:32
+#: addons/swift/templates/swift_user_settings.mako:32
+#: addons/weko/templates/weko_user_settings.mako:31
+#: website/templates/profile/user_settings_default.mako:28
+msgid "Private project"
+msgstr "非公開プロジェクト"
+
+#: addons/bitbucket/templates/bitbucket_node_settings.mako:25
+#: addons/github/templates/github_node_settings.mako:25
+#: addons/gitlab/templates/gitlab_node_settings.mako:28
+#: addons/zotero/templates/zotero_node_settings.mako:31
+#: website/templates/project/addon/node_settings_default.mako:31
+msgid "Connect Account"
+msgstr "アカウントに接続する"
+
+#: addons/bitbucket/templates/bitbucket_node_settings.mako:74
+#: addons/github/templates/github_node_settings.mako:71
+#, python-format
+msgid ""
+"Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
+" addon credentials                may no longer be valid. Try "
+"deauthorizing and reauthorizing %(addonName)s on your                <a "
+"href=\"%(addonsUrl)s\">account settings page</a>."
+msgstr ""
+"現在、%(addonName)s設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。 <a "
+"href=\"%(addonsUrl)s\">アカウント設定ページ</a>で%(addonName)sの認証解除と再認証を試してください。"
+
+#: addons/bitbucket/templates/bitbucket_node_settings.mako:78
+#: addons/github/templates/github_node_settings.mako:75
+#, python-format
+msgid ""
+"Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
+" addon credentials                may no longer be valid. Contact "
+"%(authOsfName)s to verify."
+msgstr ""
+"現在、%(addonName)s 設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。 "
+"%(authOsfName)sに連絡して確認してください。"
+
+#: addons/dataverse/templates/dataverse_credentials_modal.mako:6
+msgid "Connect a Dataverse Account"
+msgstr "Dataverseアカウントに接続する"
+
+#: addons/dataverse/templates/dataverse_credentials_modal.mako:18
+msgid "Dataverse Repository"
+msgstr "Dataverseレポジトリ"
+
+#: addons/dataverse/templates/dataverse_credentials_modal.mako:22
+msgid "Select a Dataverse repository"
+msgstr "Dataverseレポジトリを選択する"
+
+#: addons/dataverse/templates/dataverse_credentials_modal.mako:35
+msgid "Only Dataverse repositories v4.0 or higher are supported."
+msgstr "Dataverseリポジトリv4.0以降のみがサポートされています。"
+
+#: addons/dataverse/templates/dataverse_credentials_modal.mako:46
+msgid "API Token"
+msgstr "APIトークン"
+
+#: addons/dataverse/templates/dataverse_credentials_modal.mako:50
+#, python-format
+msgid "(Get from Dataverse %(dataverseLink)s)"
+msgstr "(Dataverse %(dataverseLink)sから取得)"
+
+#: addons/dataverse/templates/dataverse_node_settings.mako:43
+msgid "Dataverse Repository:"
+msgstr "Dataverseレポジトリ："
+
+#: addons/dataverse/templates/dataverse_node_settings.mako:49
+msgid "Current Dataset:"
+msgstr "現在のデータセット："
+
+#: addons/dataverse/templates/dataverse_node_settings.mako:65
+msgid "The current dataset was not found on Dataverse."
+msgstr "現在のデータセットがDataverseで見つかりませんでした。"
+
+#: addons/dataverse/templates/dataverse_node_settings.mako:74
+msgid "Dataverse:"
+msgstr "Dataverse:"
+
+#: addons/dataverse/templates/dataverse_node_settings.mako:86
+msgid "Dataset:"
+msgstr "データセット："
+
+#: addons/dataverse/templates/dataverse_node_settings.mako:97
+msgid "No datasets available."
+msgstr "利用可能なデータセットがありません。"
+
+#: addons/dataverse/templates/dataverse_node_settings.mako:103
+msgid "Retrieving datasets..."
+msgstr "データセットを取得しています..."
+
+#: addons/dataverse/templates/dataverse_node_settings.mako:110
+msgid ""
+"There are no dataverses, datasets, or files associated with the connected"
+" account."
+msgstr "接続されたアカウントに関連付けられたデータバース、データセット、またはファイルはありません。"
+
+#: addons/dataverse/templates/dataverse_user_settings.mako:23
+#: addons/gitlab/templates/gitlab_user_settings.mako:23
+#, python-format
+msgid "Authorized on %(addonHost)s"
+msgstr "%(addonHost)sで認証済み"
+
+#: addons/forward/templates/forward_node_settings.mako:14
+msgid "Send people who visit your GakuNin RDM project page to this link instead"
+msgstr "代わりに、GakuNin RDMプロジェクトページにアクセスするユーザーをこのリンクに送信します"
+
+#: addons/forward/templates/forward_node_settings.mako:19
+msgid "Label"
+msgstr "ラベル"
+
+#: addons/forward/templates/forward_node_settings.mako:24
+#: website/templates/profile/oauth_app_detail.mako:67
+#: website/templates/project/settings.mako:108
+msgid "Optional"
+msgstr "任意"
+
+#: addons/github/templates/github_node_settings.mako:38
+#: addons/gitlab/templates/gitlab_node_settings.mako:42
+msgid "Current Repo: "
+msgstr "現在のレポジトリ："
+
+#: addons/github/templates/github_node_settings.mako:56
+msgid "Create Repo"
+msgstr "レポジトリを作成する"
+
+#: addons/gitlab/templates/gitlab_credentials_modal.mako:4
+msgid "Connect a GitLab Account"
+msgstr "GitLabアカウントに接続"
+
+#: addons/gitlab/templates/gitlab_credentials_modal.mako:11
+msgid "GitLab Repository"
+msgstr "GitLabレポジトリ"
+
+#: addons/gitlab/templates/gitlab_credentials_modal.mako:14
+msgid "Select a GitLab repository"
+msgstr "GitLabレポジトリを選択"
+
+#: addons/gitlab/templates/gitlab_credentials_modal.mako:27
+msgid "Only GitLab repositories v4.0 or higher are supported."
+msgstr "GitLabリポジトリv4.0以降のみがサポートされています。"
+
+#: addons/gitlab/templates/gitlab_credentials_modal.mako:37
+msgid "Personal Access Token"
+msgstr "パーソナルアクセストークン"
+
+#: addons/gitlab/templates/gitlab_credentials_modal.mako:41
+#, python-format
+msgid "(Get from GitLab %(externalLinkIcon)s)"
+msgstr "(GitLab %(externalLinkIcon)sから取得)"
+
+#: addons/gitlab/templates/gitlab_node_settings.mako:9
+msgid "GitLab"
+msgstr "GitLab"
+
+#: addons/gitlab/templates/gitlab_node_settings.mako:12
+msgid "authorized by"
+msgstr "認証者"
+
+#: addons/gitlab/templates/gitlab_node_settings.mako:80
+#, python-format
+msgid ""
+"Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
+" addon credentials                    may no longer be valid. Try "
+"deauthorizing and reauthorizing %(addonName)s on your                    "
+"<a href=\"%(addonsUrl)s\">account settings page</a>."
+msgstr ""
+"現在、%(addonName)s設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。 <a "
+"href=\"%(addonsUrl)s\">アカウント設定ページ</a>で%(addonName)sの認証解除と再認証を試してください。"
+
+#: addons/gitlab/templates/gitlab_node_settings.mako:84
+#, python-format
+msgid ""
+"Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
+" addon credentials                    may no longer be valid. Contact "
+"%(authOsfName)s to verify."
+msgstr "現在、%(addonName)s設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。%(authOsfName)sに連絡して確認してください。"
+
+#: addons/jupyterhub/templates/jupyterhub_node_settings.mako:13
+#: addons/wiki/templates/edit.mako:34
+msgid "New"
+msgstr "新規"
+
+#: addons/jupyterhub/templates/jupyterhub_node_settings.mako:31
+#: addons/jupyterhub/templates/jupyterhub_node_settings.mako:80
+msgid "Service Name"
+msgstr "サービス名"
+
+#: addons/jupyterhub/templates/jupyterhub_node_settings.mako:32
+msgid "Base URL"
+msgstr "ベースURL"
+
+#: addons/jupyterhub/templates/jupyterhub_node_settings.mako:56
+msgid "No JupyterHubs"
+msgstr "JupyterHubはありません"
+
+#: addons/jupyterhub/templates/jupyterhub_node_settings.mako:69
+msgid "Link JupyterHub"
+msgstr "JupyterHubをリンク"
+
+#: addons/jupyterhub/templates/jupyterhub_node_settings.mako:84
+msgid "Service Base URL"
+msgstr "サービスベースURL"
+
+#: addons/jupyterhub/templates/jupyterhub_node_settings.mako:102
+msgid "OK"
+msgstr "OK"
+
+#: addons/nextcloud/templates/nextcloud_credentials_modal.mako:6
+msgid "Connect an Nextcloud Account"
+msgstr "Nextcloudアカウントに接続"
+
+#: addons/nextcloud/templates/nextcloud_credentials_modal.mako:17
+msgid "Nextcloud Instance"
+msgstr "Nextcloudインスタンス"
+
+#: addons/nextcloud/templates/nextcloud_credentials_modal.mako:21
+msgid "Select an Nextcloud Instance"
+msgstr "Nextcloudインスタンスを選択"
+
+#: addons/nextcloud/templates/nextcloud_credentials_modal.mako:30
+#: addons/owncloud/templates/owncloud_credentials_modal.mako:30
+msgid "Host URL"
+msgstr "ホストURL"
+
+#: addons/nextcloud/templates/nextcloud_credentials_modal.mako:36
+#, python-format
+msgid ""
+"Only Nextcloud instances supporting <a %(webdavUrl)s>WebDAV</a> and <a "
+"%(ocsUrl)s>                                        OCS v1.7</a> are "
+"supported."
+msgstr ""
+"<a %(webdavUrl)s>WebDAV</a>および<a %(ocsUrl)s>OCS v1.7</a> "
+"をサポートするNextcloudインスタンスのみがサポートされます。"
+
+#: addons/nextcloud/templates/nextcloud_credentials_modal.mako:46
+#: addons/owncloud/templates/owncloud_credentials_modal.mako:46
+#: addons/swift/templates/swift_credentials_modal.mako:33
+msgid "Username"
+msgstr "ユーザ名"
+
+#: addons/nextcloud/templates/nextcloud_credentials_modal.mako:48
+#: addons/owncloud/templates/owncloud_credentials_modal.mako:48
+#: website/templates/include/profile/social.mako:66
+msgid "username"
+msgstr "ユーザ名"
+
+#: addons/nextcloud/templates/nextcloud_credentials_modal.mako:50
+#: addons/owncloud/templates/owncloud_credentials_modal.mako:50
+#: addons/swift/templates/swift_credentials_modal.mako:41
+msgid "Password"
+msgstr "パスワード"
+
+#: addons/nextcloud/templates/nextcloud_credentials_modal.mako:55
+#, python-format
+msgid ""
+"These credentials will be encrypted. However, we <strong>strongly "
+"encourage</strong> using a <a %(openWithNewWindow)s> Device (or App) "
+"Password</a>."
+msgstr ""
+"これらの資格情報は暗号化されます。 ただし、<a "
+"%(openWithNewWindow)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
+
+#: addons/nextcloud/templates/nextcloud_node_settings.mako:53
+#: addons/owncloud/templates/owncloud_node_settings.mako:53
+msgid "Change"
+msgstr "変更"
+
+#: addons/nextcloud/templates/nextcloud_node_settings.mako:58
+#: addons/owncloud/templates/owncloud_node_settings.mako:58
+#: addons/zotero/templates/zotero_node_settings.mako:113
+#: website/templates/project/addon/node_settings_default.mako:58
+msgid "Loading folders..."
+msgstr "フォルダをロード中..."
+
+#: addons/nextcloud/templates/nextcloud_user_settings.mako:23
+#: addons/owncloud/templates/owncloud_user_settings.mako:23
+#, python-format
+msgid "Authorized by %(userName)s on %(profilePage)s"
+msgstr "%(profilePage)sでの認証者:%(userName)s"
+
+#: addons/owncloud/templates/owncloud_credentials_modal.mako:6
+msgid "Connect an ownCloud Account"
+msgstr "ownCloudアカウントに接続"
+
+#: addons/owncloud/templates/owncloud_credentials_modal.mako:17
+msgid "ownCloud Instance"
+msgstr "ownCloudインスタンス"
+
+#: addons/owncloud/templates/owncloud_credentials_modal.mako:21
+msgid "Select an ownCloud Instance"
+msgstr "ownCloudインスタンスを選択"
+
+#: addons/owncloud/templates/owncloud_credentials_modal.mako:36
+#, python-format
+msgid ""
+"Only ownCloud instances supporting <a %(webdavUrl)s>WebDAV</a> and <a "
+"%(ocsUrl)s>                                        OCS v1.7</a> are "
+"supported."
+msgstr ""
+"<a %(webdavUrl)s>WebDAV</a>および<a %(ocsUrl)s>OCS "
+"v1.7</a>をサポートするownCloudインスタンスのみがサポートされます。"
+
+#: addons/owncloud/templates/owncloud_credentials_modal.mako:55
+#, python-format
+msgid ""
+" These credentials will be encrypted. However, we <strong>strongly "
+"encourage</strong> using a <a %(openWithNewWindow)s> Device (or App) "
+"Password</a>."
+msgstr ""
+"これらの資格情報は暗号化されます。 ただし、<a "
+"%(openWithNewWindow)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
+
+#: addons/owncloud/templates/owncloud_node_settings.mako:42
+#: website/templates/project/addon/node_settings_default.mako:41
+msgid "Current Folder:"
+msgstr "現在のフォルダ:"
+
+#: addons/s3/templates/s3_credentials_modal.mako:6
+msgid "Connect an Amazon S3 Account"
+msgstr "Amazon S3に接続"
+
+#: addons/s3/templates/s3_credentials_modal.mako:17
+#: addons/s3compat/templates/s3compat_credentials_modal.mako:21
+msgid "Access Key"
+msgstr "アクセスキー"
+
+#: addons/s3/templates/s3_credentials_modal.mako:21
+#: addons/s3compat/templates/s3compat_credentials_modal.mako:25
+msgid "Secret Key"
+msgstr "シークレットキー"
+
+#: addons/s3/templates/s3_node_settings.mako:58
+#: addons/s3compat/templates/s3compat_node_settings.mako:58
+msgid "Create bucket"
+msgstr "bucketを作成"
+
+#: addons/s3/templates/s3_node_settings.mako:63
+msgid "Loading buckets..."
+msgstr "bucketをロード中..."
+
+#: addons/s3/templates/s3_user_settings.mako:24
+#: addons/s3compat/templates/s3compat_user_settings.mako:24
+#: addons/swift/templates/swift_user_settings.mako:24
+#: addons/weko/templates/weko_user_settings.mako:23
+#: website/templates/profile/user_settings_default.mako:20
+msgid "Authorized by "
+msgstr "認証者:"
+
+#: addons/s3compat/templates/s3compat_credentials_modal.mako:6
+msgid "Connect an S3 Compatible Storage Account"
+msgstr "S3互換ストレージアカウントを接続する"
+
+#: addons/s3compat/templates/s3compat_credentials_modal.mako:17
+msgid "S3 Compatible Service"
+msgstr "S3互換サービス"
+
+#: addons/s3compat/templates/s3compat_node_settings.mako:45
+msgid "Current Bucket:"
+msgstr "現在のBucket："
+
+#: addons/swift/templates/swift_credentials_modal.mako:6
+msgid "Connect an OpenStack Swift Account"
+msgstr "OpenStack Swiftアカウントを接続する"
+
+#: addons/swift/templates/swift_credentials_modal.mako:17
+msgid "Authentication(Keystone) Version"
+msgstr "認証(キーストーン)バージョン"
+
+#: addons/swift/templates/swift_credentials_modal.mako:21
+msgid "Authentication URL"
+msgstr "認証URL"
+
+#: addons/swift/templates/swift_credentials_modal.mako:25
+msgid "Tenant name"
+msgstr "テナント名"
+
+#: addons/swift/templates/swift_credentials_modal.mako:29
+msgid "Project Domain name"
+msgstr "プロジェクトドメイン名"
+
+#: addons/swift/templates/swift_credentials_modal.mako:37
+msgid "User Domain name"
+msgstr "ユーザドメイン名"
+
+#: addons/swift/templates/swift_node_settings.mako:45
+msgid "Current Container:"
+msgstr "現在のコンテナ："
+
+#: addons/twofactor/templates/twofactor_user_settings.mako:3
+msgid "Two-factor Authentication"
+msgstr "２要素認証"
+
+#: addons/twofactor/templates/twofactor_user_settings.mako:7
+msgid "Disable Two-Factor Authentication"
+msgstr "２要素認証を無効にする"
+
+#: addons/twofactor/templates/twofactor_user_settings.mako:12
+msgid "Enable Two-Factor Authentication"
+msgstr "２要素認証を有効にする"
+
+#: addons/twofactor/templates/twofactor_user_settings.mako:19
+msgid ""
+"By using two-factor authentication, you'll protect your GakuNin RDM "
+"account with both your password and your mobile phone."
+msgstr "２要素認証を使用すると、パスワードと携帯電話の両方でGakuNin RDMアカウントを保護できます。"
+
+#: addons/twofactor/templates/twofactor_user_settings.mako:22
+msgid "Important: "
+msgstr "重要："
+
+#: addons/twofactor/templates/twofactor_user_settings.mako:22
+msgid ""
+" If you lose access to your mobile device, you will not be able to log in"
+" to your GakuNin RDM account."
+msgstr "モバイルデバイスにアクセスできなくなると、GakuNin RDMアカウントにログインできなくなります。"
+
+#: addons/twofactor/templates/twofactor_user_settings.mako:24
+#, python-format
+msgid ""
+"To use, you must install an appropriate application on your mobile "
+"device. Google Authenticator is a popular choice and is available for "
+"both        <a %(googleUrl)s>Android</a> and <a %(itunesUrl)s>iOS</a>."
+msgstr ""
+"使用するには、モバイルデバイスに適切なアプリケーションをインストールする必要があります。Google認証システムは人気のある選択肢であり、<a "
+"%(googleUrl)s>Android</a>と<a %(itunesUrl)s>iOS</a>の両方で利用できます。"
+
+#: addons/twofactor/templates/twofactor_user_settings.mako:26
+msgid ""
+"Once verified, your device will display a six-digit code that must be "
+"entered during the login process. This code changes every few seconds, "
+"which means that unauthorized users will not be able to log in to you "
+"account, <em>even if they know your password</em>."
+msgstr ""
+"確認が完了すると、ログインプロセス中に入力する必要がある6桁のコードがデバイスに表示されます。 "
+"このコードは数秒ごとに変更されます。つまり、権限のないユーザーは、<em>パスワードを知っていても</em>アカウントにログインできません。"
+
+#: addons/twofactor/templates/twofactor_user_settings.mako:28
+#, python-format
+msgid ""
+"Scan the image below, or enter the secret key        %(secretKey)s into "
+"your authentication device."
+msgstr "以下の画像をスキャンするか、認証デバイスにシークレットキー%(secretKey)sを入力します。"
+
+#: addons/twofactor/templates/twofactor_user_settings.mako:34
+msgid "Enter your verification code:"
+msgstr "確認コードを入力してください："
+
+#: addons/weko/templates/weko_credentials_modal.mako:6
+msgid "Connect a WEKO Account"
+msgstr "WEKOアカウントに接続"
+
+#: addons/weko/templates/weko_credentials_modal.mako:18
+msgid "WEKO Repository"
+msgstr "WEKOレポジトリ"
+
+#: addons/weko/templates/weko_credentials_modal.mako:22
+msgid "Select a WEKO repository"
+msgstr "WEKOレポジトリを選択"
+
+#: addons/weko/templates/weko_credentials_modal.mako:33
+msgid "WEKO SWORD URL"
+msgstr "WEKO SWORD URL"
+
+#: addons/weko/templates/weko_credentials_modal.mako:37
+msgid "WEKO Username"
+msgstr "WEKOユーザ名"
+
+#: addons/weko/templates/weko_credentials_modal.mako:41
+msgid "WEKO Password"
+msgstr "WEKOパスワード"
+
+#: addons/weko/templates/weko_credentials_modal.mako:60
+msgid "Connect"
+msgstr "接続"
+
+#: addons/weko/templates/weko_node_settings.mako:43
+msgid "Current Index:"
+msgstr "現在のインデックス："
+
+#: addons/weko/templates/weko_node_settings.mako:63
+msgid "Index:"
+msgstr "インデックス："
+
+#: addons/weko/templates/weko_node_settings.mako:75
+msgid "There are no indices associated with the connected account."
+msgstr "接続されたアカウントに関連付けられたインデックスはありません。"
+
+#: addons/wiki/templates/add_wiki_page.mako:8
+msgid "Add new wiki page"
+msgstr "新しいWikiページを追加"
+
+#: addons/wiki/templates/add_wiki_page.mako:12
+msgid "New Wiki Name"
+msgstr "新しいWiki名"
+
+#: addons/wiki/templates/add_wiki_page.mako:18
+#: website/templates/project/contributors.mako:57
+#: website/templates/project/contributors.mako:164
+#: website/templates/project/contributors.mako:337
+#: website/templates/project/contributors.mako:385
+#: website/templates/project/modal_add_contributor.mako:346
+#: website/templates/project/modal_add_contributor.mako:350
+#: website/templates/project/modal_add_contributor.mako:356
+#: website/templates/project/settings.mako:209
+#: website/templates/project/settings.mako:522
+msgid "Add"
+msgstr "追加"
+
+#: addons/wiki/templates/add_wiki_page.mako:41
+msgid "The new wiki page name cannot be empty"
+msgstr "新しいWikiページ名は空にできません"
+
+#: addons/wiki/templates/add_wiki_page.mako:46
+msgid "The new wiki page name cannot be more than 100 characters."
+msgstr "新しいWikiページ名は100文字を超えることはできません。"
+
+#: addons/wiki/templates/add_wiki_page.mako:52
+msgid "The new wiki page name cannot contain forward slashes."
+msgstr "新しいWikiページ名にスラッシュを含めることはできません。"
+
+#: addons/wiki/templates/add_wiki_page.mako:70
+msgid "A wiki page with that name already exists."
+msgstr "その名前のWikiページは既に存在します。"
+
+#: addons/wiki/templates/add_wiki_page.mako:73
+msgid "You do not have permission to perform this action."
+msgstr "このアクションを実行する権限がありません。"
+
+#: addons/wiki/templates/add_wiki_page.mako:74
+msgid "Unauthorized user can view wiki add button"
+msgstr "許可されていないユーザーはwiki追加ボタンを表示できます"
+
+#: addons/wiki/templates/add_wiki_page.mako:83
+msgid "Could not validate wiki page. Please try again."
+msgstr "Wikiページを検証できませんでした。 もう一度やり直してください。"
+
+#: addons/wiki/templates/add_wiki_page.mako:84
+msgid "Error occurred while validating page"
+msgstr "ページの検証中にエラーが発生しました"
+
+#: addons/wiki/templates/delete_wiki_page.mako:7
+msgid "Delete wiki page"
+msgstr "Wikiページを削除"
+
+#: addons/wiki/templates/delete_wiki_page.mako:10
+msgid "Are you sure you want to delete this wiki page?"
+msgstr "このWikiページを削除してもよろしいですか？"
+
+#: addons/wiki/templates/delete_wiki_page.mako:14
+#: addons/wiki/templates/edit.mako:38
+#: website/templates/include/comment_template.mako:149
+#: website/templates/profile/personal_tokens_detail.mako:53
+#: website/templates/project/nodes_delete.mako:91
+#: website/templates/util/render_node.mako:74
+msgid "Delete"
+msgstr "削除"
+
+#: addons/wiki/templates/edit.mako:2
+#: website/templates/include/comment_pane_template.mako:19
+#: website/templates/project/settings.mako:36
+#: website/templates/project/settings.mako:257
+#: website/templates/search.mako:278 website/templates/search.mako:370
+msgid "Wiki"
+msgstr "Wiki"
+
+#: addons/wiki/templates/edit.mako:42
+msgid "Menu"
+msgstr "メニュー"
+
+#: addons/wiki/templates/edit.mako:53
+msgid "Loading wiki pages..."
+msgstr "Wikiページをロード中"
+
+#: addons/wiki/templates/edit.mako:82
+msgid "View"
+msgstr "ビュー"
+
+#: addons/wiki/templates/edit.mako:88
+msgid "Wiki Version:"
+msgstr "WIkiバージョン"
+
+#: addons/wiki/templates/edit.mako:92
+msgid "Preview"
+msgstr "プレビュー"
+
+#: addons/wiki/templates/edit.mako:97 addons/wiki/templates/edit.mako:220
+msgid "Current"
+msgstr "最新"
+
+#: addons/wiki/templates/edit.mako:117
+#: website/templates/util/render_addon_widget.mako:24
+msgid "Add important information, links, or images here to describe your project."
+msgstr "重要な情報、リンク、または画像をここに追加して、プロジェクトを説明します。"
+
+#: addons/wiki/templates/edit.mako:134
+#: website/templates/include/profile/schools.mako:180
+#: website/templates/include/profile/social.mako:184
+#: website/templates/project/project.mako:538
+msgid "Edit"
+msgstr "編集"
+
+#: addons/wiki/templates/edit.mako:174
+msgid "Loading. . ."
+msgstr "ロード中..."
+
+#: addons/wiki/templates/edit.mako:186
+msgid "Revert"
+msgstr "元に戻す"
+
+#: addons/wiki/templates/edit.mako:212
+msgid "Compare"
+msgstr "比較"
+
+#: addons/wiki/templates/edit.mako:257
+msgid "Page permissions have changed"
+msgstr "ページの権限が変更されました"
+
+#: addons/wiki/templates/edit.mako:260
+msgid "Your browser should refresh shortly"
+msgstr "ブラウザは間もなく更新されます"
+
+#: addons/wiki/templates/edit.mako:273
+msgid "Renaming wiki..."
+msgstr "wikiの名前を変更しています..."
+
+#: addons/wiki/templates/edit.mako:283
+msgid "Wiki page deleted"
+msgstr "Wikiページを削除しました"
+
+#: addons/wiki/templates/edit.mako:286
+msgid "Press Confirm to return to the project wiki home page."
+msgstr "[確認]を押して、プロジェクトWikiのホームページに戻ります。"
+
+#: addons/wiki/templates/edit.mako:289
+msgid "Confirm"
+msgstr "確認"
+
+#: addons/wiki/templates/edit.mako:300
+msgid "Connected to the collaborative wiki"
+msgstr "共同ウィキに接続しました"
+
+# Notice: ”Save" は別のmsgid "Save"への参照なので文言を揃える
+#: addons/wiki/templates/edit.mako:304
+msgid ""
+"This page is currently connected to the collaborative wiki. All edits "
+"made will be visible to            contributors with write permission in "
+"real time. Changes will be stored            but not published until you "
+"click the \"Save\" button."
+msgstr ""
+"このページは現在、共同ウィキに接続されています。 行われたすべての編集は、書き込み許可を持つ投稿者にリアルタイムで表示されます。 "
+"変更は保存されますが、[保存]ボタンをクリックするまで公開されません。"
+
+#: addons/wiki/templates/edit.mako:310
+#: addons/wiki/templates/wiki-bar-modal-help.mako:14
+#: website/templates/profile/modal_change_avatar.mako:20
+#: website/templates/project/view_file.mako:117
+#: website/templates/project/view_file.mako:137
+#: website/templates/project/view_file.mako:157
+#: website/templates/project/view_file.mako:177
+#: website/templates/search_bar_help_modal.mako:18
+msgid "Close"
+msgstr "閉じる"
+
+#: addons/wiki/templates/edit.mako:321
+msgid "Connecting to the collaborative wiki"
+msgstr "共同ウィキへの接続"
+
+#: addons/wiki/templates/edit.mako:325
+msgid ""
+"This page is currently attempting to connect to the collaborative wiki. "
+"You may continue to make edits."
+msgstr "このページは現在、共同ウィキに接続しようとしています。 引き続き編集を行うことができます。"
+
+# Notice: ”Save" は別のmsgid "Save"への参照なので文言を揃える
+#: addons/wiki/templates/edit.mako:326 addons/wiki/templates/edit.mako:343
+#: addons/wiki/templates/edit.mako:360
+#: website/templates/project/view_file.mako:133
+#: website/templates/project/view_file.mako:153
+#: website/templates/project/view_file.mako:173
+msgid "Changes will not be saved until you press the \"Save\" button."
+msgstr "[保存]ボタンを押すまで、変更は保存されません。"
+
+#: addons/wiki/templates/edit.mako:338
+msgid "Collaborative wiki is unavailable"
+msgstr "共同ウィキは利用できません"
+
+#: addons/wiki/templates/edit.mako:342
+msgid ""
+"The collaborative wiki is currently unavailable. You may continue to make"
+" edits."
+msgstr "共同ウィキは現在利用できません。 引き続き編集を行うことができます。"
+
+#: addons/wiki/templates/edit.mako:355
+#: website/templates/project/view_file.mako:168
+msgid "Browser unsupported"
+msgstr "サポートされていないブラウザ"
+
+#: addons/wiki/templates/edit.mako:359
+#: website/templates/project/view_file.mako:172
+msgid ""
+"Your browser does not support collaborative editing. You may continue to "
+"make edits."
+msgstr "お使いのブラウザは共有編集をサポートしていません。 引き続き編集を行うことができます。"
+
+#: addons/wiki/templates/status.mako:7
+msgid "Note: Home page cannot be renamed."
+msgstr "注：ホームページの名前は変更できません。"
+
+#: addons/wiki/templates/status.mako:9
+msgid "Home"
+msgstr "ホーム"
+
+#: addons/wiki/templates/wiki-bar-modal-help.mako:6
+msgid "Wiki syntax help"
+msgstr "Wiki構文のヘルプ"
+
+#: addons/wiki/templates/wiki-bar-modal-help.mako:10
+#, python-format
+msgid ""
+"The wiki uses the <a %(markUrl)s>Markdown</a> syntax. For more "
+"information and examples, go to our <a %(zendeskUrl)s>Guides.</a>"
+msgstr ""
+"wikiは<a %(markUrl)s>Markdown</a>構文を使用します。 詳細と例については、<a "
+"%(zendeskUrl)s>ガイド</a>をご覧ください。"
+
+#: addons/zotero/templates/zotero_node_settings.mako:41
+msgid "Current Library:"
+msgstr "現在のライブラリ："
+
+#: addons/zotero/templates/zotero_node_settings.mako:59
+msgid "Loading libraries..."
+msgstr "ライブラリをロード中..."
+
+#: addons/zotero/templates/zotero_node_settings.mako:66
+msgid "Libraries"
+msgstr "ライブラリ"
+
+#: addons/zotero/templates/zotero_node_settings.mako:69
+msgid "Select"
+msgstr "選択"
+
+#: framework/auth/oauth_scopes.py:294
+msgid ""
+"View all information associated with this account, including for private "
+"projects."
+msgstr "プライベートプロジェクトを含む、このアカウントに関連付けられているすべての情報を表示します。"
+
+#: framework/auth/oauth_scopes.py:297
+msgid ""
+"View and edit all information associated with this account, including for"
+" private projects."
+msgstr "プライベートプロジェクトを含む、このアカウントに関連付けられているすべての情報を表示および編集します。"
+
+#: framework/auth/oauth_scopes.py:300
+msgid "Read your profile data."
+msgstr "プロフィールデータを読込む"
+
+#: framework/auth/oauth_scopes.py:303
+msgid "Read your primary email address."
+msgstr "プライマリメールアドレスを読込む"
+
+#: website/templates/base.mako:110
+msgid "Title"
+msgstr "タイトル"
+
+#: website/templates/base.mako:111
+msgid "Date Merged"
+msgstr "合併日"
+
+#: website/templates/base.mako:134
+msgid "<strong>WARNING</strong>: This site is running in development mode."
+msgstr "<strong>警告</strong>: このサイトは開発モードで実行されています。"
+
+#: website/templates/base.mako:145
+msgid ""
+"OSF does not support the use of Internet Explorer. For optimal "
+"performance, please switch to another browser."
+msgstr "OSFはInternet Explorerの使用をサポートしていません。 最適なパフォーマンスを得るには、別のブラウザに切り替えてください。"
+
+#: website/templates/base.mako:148 website/templates/base.mako:159
+msgid "Accept"
+msgstr "同意"
+
+#: website/templates/base.mako:154
+#, python-format
+msgid ""
+"This website relies on cookies to help provide a better user experience. "
+"By clicking Accept or continuing to use the site, you agree. For more "
+"information,            see our <a %(meatwikiUrl)s>Privacy Policy</a>"
+"            and information on <a %(meatwikiUrl)s>cookie use</a>."
+msgstr ""
+"このWebサイトは、Cookieを使用して、ユーザーエクスペリエンスを向上させています。[同意する]をクリックするか、サイトの使用を継続すると、同意したことになります。"
+" 詳細については、<a %(meatwikiUrl)s>プライバシーポリシー</a>および<a "
+"%(meatwikiUrl)s>Cookieの使用</a>に関する情報をご覧ください。"
+
+#: website/templates/base.mako:170
+msgid "Start managing your projects on the GakuNin RDM today."
+msgstr "GakuNin RDMでプロジェクトの管理を今すぐ始めましょう。"
+
+#: website/templates/base.mako:171
+msgid ""
+"Free and easy to use, the GakuNin RDM supports the entire research "
+"lifecycle: planning, execution, reporting, archiving, and discovery."
+msgstr "使いやすいGakuNin RDMは、計画、実行、レポート、アーカイブ、および発見という研究ライフサイクル全体をサポートします。"
+
+#: website/templates/base.mako:173
+msgid "Create an Account"
+msgstr "アカウント作成"
+
+#: website/templates/base.mako:175
+msgid "Learn More"
+msgstr "もっと詳しく知る"
+
+#: website/templates/base.mako:176
+msgid "Hide this message"
+msgstr "このメッセージを非表示"
+
+#: website/templates/claim_account.mako:2
+msgid "Claim Account"
+msgstr "アカウントを請求"
+
+#: website/templates/claim_account.mako:4
+msgid "Set Password"
+msgstr "パスワードを設定"
+
+#: website/templates/claim_account.mako:9
+#, python-format
+msgid "Hello %(firstname)s! Please set a password to claim your account."
+msgstr "こんにちは%(firstname)sさん！アカウントを申請するにはパスワードを設定してください。"
+
+#: website/templates/claim_account.mako:10
+#, python-format
+msgid "E-mail: <strong>%(email)s</strong>"
+msgstr "メールアドレス: <strong>%(email)s</strong>"
+
+#: website/templates/claim_account.mako:93
+#, python-format
+msgid ""
+"I have read and agree to the <a %(meatwikiTermsOfUse)s>Terms of Use</a> "
+"and <a %(meatwikiPrivacyPolicy)s>Privacy Policy</a>."
+msgstr ""
+"<a %(meatwikiTermsOfUse)s>利用規約</a>と<a "
+"%(meatwikiPrivacyPolicy)s>プライバシーポリシー</a>を読み、同意します。"
+
+#: website/templates/claim_account.mako:105
+#, python-format
+msgid ""
+"If you are not %(fullname)s, or if you were erroneously added as a "
+"contributor to the project described in the email invitation, please "
+"email <a href=%(mailtoOsfContactEmail)s>%(osfContactEmail)s</a>"
+msgstr ""
+"あなたが%(fullname)sでない場合、または招待メールに記載されているプロジェクトへのコントリビュータとして誤って追加された場合は、<a "
+"href=%(mailtoOsfContactEmail)s>%(osfContactEmail)s</a>にメールしてください"
+
+#: website/templates/claim_account_eppn.mako:2
+#: website/templates/claim_account_eppn.mako:4
+#: website/templates/claim_account_registered.mako:2
+#: website/templates/claim_account_registered.mako:4
+msgid "Claim Contributor"
+msgstr "コントリビュータを請求"
+
+#: website/templates/claim_account_eppn.mako:9
+msgid "Please confirm to continue."
+msgstr "続行するには確認してください。"
+
+#: website/templates/claim_account_eppn.mako:12
+msgid "Full name (can be changed later):"
+msgstr "氏名(後で変更できます):"
+
+#: website/templates/claim_account_eppn.mako:16
+msgid "Primary Email (Username) (can be changed later):"
+msgstr "\"プライマリメール(ユーザ名)(後で変更できます)"
+
+#: website/templates/claim_account_eppn.mako:21
+msgid "Alternate Email (can be changed later):"
+msgstr "代替メールアドレス(後で変更できます)"
+
+#: website/templates/claim_account_eppn.mako:27
+#, python-format
+msgid "I am <strong>not</strong> <em>%(username)s</em>."
+msgstr "私は<em>%(username)s</em>では<strong>ありません</strong>。"
+
+#: website/templates/claim_account_eppn.mako:29
+#: website/templates/claim_account_registered.mako:25
+#: website/templates/prereg_landing_page.mako:24
+#: website/templates/project/modal_remove_contributor.mako:97
+msgid "Continue"
+msgstr "続ける"
+
+#: website/templates/claim_account_registered.mako:9
+msgid "Please enter your credentials to continue."
+msgstr "続行するには資格情報を入力してください。"
+
+#: website/templates/claim_account_registered.mako:23
+#, python-format
+msgid "I am <strong>not</strong> <em>%(userFullname)s</em>.</a>"
+msgstr "私は<em>%(userFullname)s</em>では<strong>ありません</strong>。"
+
+#: website/templates/copyright.mako:7 website/templates/copyright.mako:12
+#: website/templates/footer.mako:11
+msgid "National Institute of Informatics"
+msgstr "国立情報学研究所"
+
+#: website/templates/copyright.mako:8
+msgid "Terms of Use"
+msgstr "利用規約"
+
+#: website/templates/copyright.mako:9
+msgid "Privacy Policy"
+msgstr "プライバシーポリシー"
+
+#: website/templates/footer.mako:17
+msgid "Terms&nbsp;of&nbsp;Use"
+msgstr "利用規約"
+
+#: website/templates/footer.mako:23
+msgid "Privacy&nbsp;Policy"
+msgstr "プライバシーポリシー"
+
+#: website/templates/footer.mako:30
+msgid "Status"
+msgstr "ステータス"
+
+#: website/templates/footer.mako:44
+msgid "TOP Guidelines"
+msgstr "トップガイドライン"
+
+#: website/templates/footer.mako:52
+msgid "Reproducibility&nbsp;Project: Psychology"
+msgstr "再現性&nbsp;プロジェクト：心理学"
+
+#: website/templates/footer.mako:60
+msgid "Reproducibility&nbsp;Project: Cancer Biology"
+msgstr "再現性&nbsp;プロジェクト：がん生物学"
+
+#: website/templates/institution.mako:8
+#: website/templates/project/project_header.mako:200
+msgid ""
+"<strong>NOTICE: </strong>Forks, registrations, and uploads will be "
+"temporarily disabled while the GakuNin RDM undergoes a hardware upgrade. "
+"These features will return shortly. Thank you for your patience."
+msgstr ""
+"<strong>注意: </strong>GakuNin "
+"RDMのハードウェアアップグレード中は、フォーク、登録、アップロードが一時的に無効になります。 これらの機能はまもなく戻ります。 "
+"お待たせして申し訳ありません。"
+
+#: website/templates/messages.mako:1
+msgid "Duplicate template"
+msgstr "テンプレートを複製"
+
+#: website/templates/messages.mako:2
+msgid "Fork this Project"
+msgstr "このプロジェクトをフォーク"
+
+#: website/templates/messages.mako:3
+msgid "Citations"
+msgstr "文献管理"
+
+#: website/templates/messages.mako:4
+msgid "Storage"
+msgstr "ストレージ"
+
+#: website/templates/messages.mako:5
+msgid "Other"
+msgstr "その他"
+
+#: website/templates/messages.mako:6
+msgid "No license"
+msgstr "ライセンスなし"
+
+#: website/templates/messages.mako:7
+msgid "Analysis"
+msgstr "分析"
+
+#: website/templates/messages.mako:8
+msgid "Communication"
+msgstr "コミュニケーション"
+
+#: website/templates/messages.mako:9
+msgid "Data"
+msgstr "データ"
+
+#: website/templates/messages.mako:10
+msgid "Hypothesis"
+msgstr "仮説"
+
+#: website/templates/messages.mako:11
+msgid "Instrumentation"
+msgstr "器具"
+
+#: website/templates/messages.mako:12
+msgid "Methods and Measures"
+msgstr "方法と対策"
+
+#: website/templates/messages.mako:13
+msgid "Procedure"
+msgstr "手順"
+
+#: website/templates/messages.mako:14
+msgid "Software"
+msgstr "ソフトウェア"
+
+#: website/templates/my_projects.mako:2 website/templates/nav.mako:51
+msgid "My Projects"
+msgstr "マイプロジェクト"
+
+#: website/templates/my_projects.mako:8
+msgid ""
+"<strong>NOTICE: </strong>Forks, registrations, and uploads will be "
+"temporarily disabled while the GakuNin RDM undergoes a hardware upgrade. "
+"These features will return shortly. Thank you for your patience.</div>"
+msgstr ""
+"<strong>注意: </strong>GakuNin "
+"RDMのハードウェアアップグレード中は、フォーク、登録、アップロードが一時的に無効になります。 これらの機能はまもなく戻ります。 "
+"お待たせしてすみません。"
+
+#: website/templates/nav.mako:23
+msgid "HOME"
+msgstr "ホーム"
+
+#: website/templates/nav.mako:24
+msgid "PREPRINTS"
+msgstr "プレプリント"
+
+#: website/templates/nav.mako:25
+msgid "REGISTRIES"
+msgstr "レジストリー"
+
+#: website/templates/nav.mako:26
+msgid "MEETINGS"
+msgstr "ミーティング"
+
+#: website/templates/nav.mako:28
+msgid "INSTITUTIONS"
+msgstr "インスティチューション"
+
+#: website/templates/nav.mako:34
+msgid "Toggle navigation"
+msgstr "ナビゲーションを切り替える"
+
+#: website/templates/nav.mako:49
+msgid "My Quick Files"
+msgstr "マイクイックファイル"
+
+#: website/templates/nav.mako:54
+#: website/templates/project/modal_add_contributor.mako:22
+#: website/templates/search.mako:2
+msgid "Search"
+msgstr "検索"
+
+#: website/templates/nav.mako:59
+msgid "Support"
+msgstr "サポート"
+
+#: website/templates/nav.mako:63
+msgid "Donate"
+msgstr "寄付"
+
+#: website/templates/nav.mako:78
+msgid "My Profile"
+msgstr "プロフィール"
+
+#: website/templates/nav.mako:79 website/templates/profile/account.mako:8
+#: website/templates/profile/add_email.mako:14
+#: website/templates/profile/addons.mako:19
+#: website/templates/profile/notifications.mako:6
+#: website/templates/profile/oauth_app_list.mako:4
+#: website/templates/profile/personal_tokens_detail.mako:5
+#: website/templates/profile/personal_tokens_list.mako:4
+#: website/templates/profile/settings.mako:2
+#: website/templates/profile/settings.mako:9
+#: website/templates/project/project_header.mako:80
+#: website/templates/project/settings.mako:2
+#: website/templates/project/settings.mako:5
+#: website/templates/util/render_node.mako:67
+msgid "Settings"
+msgstr "設定"
+
+#: website/templates/nav.mako:81
+msgid "RDM Support"
+msgstr "RDM サポート"
+
+#: website/templates/nav.mako:83
+msgid "Log out"
+msgstr "ログアウト"
+
+#: website/templates/nav.mako:92
+msgid "Sign in"
+msgstr "サインイン"
+
+#: website/templates/nav.mako:102
+msgid "Sign Up"
+msgstr "サインアップ"
+
+#: website/templates/nav.mako:104
+msgid "Sign In"
+msgstr "サインイン"
+
+#: website/templates/nav.mako:140
+msgid "Notice:"
+msgstr "注意:"
+
+#: website/templates/nav.mako:144
+msgid ""
+"The site will undergo maintenance between <span "
+"id=\"maintenanceTime\"></span>."
+msgstr "<span id=\"maintenanceTime\"></span>の間メンテナスが行われます。"
+
+#: website/templates/nav.mako:145
+msgid "Thank you for your patience."
+msgstr "お待たせしてすみません。"
+
+#: website/templates/prereg_landing_page.mako:5
+msgid "GakuNin RDM Preregistration"
+msgstr "GakuNin RDM 事前登録"
+
+#: website/templates/prereg_landing_page.mako:7
+msgid "GakuNin RDM Prereg Challenge"
+msgstr "GakuNin RDM プレレグチャレンジ"
+
+#: website/templates/prereg_landing_page.mako:22
+msgid "Please provide a title for your project:"
+msgstr "プロジェクトのタイトルを入力してください:"
+
+#: website/templates/prereg_landing_page.mako:30
+msgid "Go to an existing preregistration:"
+msgstr "既存の事前登録に移動します:"
+
+#: website/templates/prereg_landing_page.mako:32
+#: website/templates/prereg_landing_page.mako:41
+#: website/templates/prereg_landing_page.mako:71
+#: website/templates/prereg_landing_page.mako:115
+msgid "Preregister"
+msgstr "事前登録"
+
+#: website/templates/prereg_landing_page.mako:39
+msgid "Preregister an existing project:"
+msgstr "既存のプロジェクトを事前登録する"
+
+#: website/templates/prereg_landing_page.mako:55
+#, python-format
+msgid ""
+"<p>Improve your research with <a %(cosPreregUrl)s>preregistration</a>. By"
+" writing out specific details such as data collection methods, analysis "
+"plans, and rules for data exclusion, you can make important decisions "
+"early on and have a clear record of these choices. This can help reduce "
+"biases that occur once the data are in front of you.</p>"
+msgstr ""
+"<p><a "
+"%(cosPreregUrl)s>事前登録</a>により研究を改善します。データ収集方法、分析計画、データ除外ルールなどの特定の詳細を記述することにより、重要な決定を早期に行い、これらの選択を明確に記録できます。これにより、データが目の前にあるときに発生するバイアスを減らすことができます。</p>"
+
+#: website/templates/prereg_landing_page.mako:56
+#, python-format
+msgid ""
+"<p>Use <a %(osfRegistriesUrl)s>OSF Registries</a> to discover previously "
+"registered work.</p>"
+msgstr "<p><a %(osfRegistriesUrl)s>OSFレジストリ</a>を使用して、以前に登録した作品を発見します。</p>"
+
+#: website/templates/prereg_landing_page.mako:58
+#, python-format
+msgid ""
+"<p><strong> Articles must be published by an <a "
+"%(preregMoreInfoUrl)s>approved</a> journal by December 31, 2018, to be "
+"eligible for a prize. Please use this this helpful workflow to "
+"preregister, even if you are not seeking a prize. </strong></p>"
+msgstr ""
+"<p><strong>賞品を獲得するには、2018年12月31日までに<a "
+"%(preregMoreInfoUrl)s>承認済み</a>ジャーナルで記事を公開する必要があります。賞品を探していない場合でも、この便利なワークフローを使用して事前登録してください。</strong></p>"
+
+#: website/templates/prereg_landing_page.mako:59
+#, python-format
+msgid ""
+"<p> Improve your research with preregistration. The process of creating a"
+" <a %(cosPreregUrl)s> preregistration</a> is beneficial to both the "
+"scientific field and to you, the scientist. By writing out detailed data "
+"collection methods, analysis plans, and rules for excluding or missing "
+"data, you can make important decisions that affect your workflow earlier,"
+" without the biases that occur once the data are in front of you.</p>"
+msgstr ""
+"<p>事前登録により研究を改善します。 <a "
+"%(cosPreregUrl)s>事前登録</a>を作成するプロセスは、科学分野と科学者の両方にとって有益です。詳細なデータ収集方法、分析計画、およびデータの除外または欠落に関するルールを記述することにより、データが目の前に発生するような偏りを生じることなく、ワークフローに影響を与える重要な決定を早期に行うことができます。</p>"
+
+#: website/templates/prereg_landing_page.mako:64
+#: website/templates/prereg_landing_page.mako:110
+msgid "Start a new preregistration"
+msgstr "新しい事前登録を開始する"
+
+#: website/templates/prereg_landing_page.mako:76
+#: website/templates/prereg_landing_page.mako:121
+msgid "Continue working on an existing draft preregistration"
+msgstr "既存の事前登録ドラフトの作業を続行します"
+
+#: website/templates/prereg_landing_page.mako:84
+#: website/templates/prereg_landing_page.mako:126
+msgid "Preregister a project you already have on the GakuNin RDM"
+msgstr "GakuNin RDMに既にあるプロジェクトを事前登録する"
+
+#: website/templates/profile.mako:23
+#, python-format
+msgid ""
+"This account has been merged with <a "
+"%(profileUrl)s>%(profileAbsoluteUrl)s</a>"
+msgstr "このアカウントは<a %(profileUrl)s>%(profileAbsoluteUrl)s</a>と統合されました"
+
+#: website/templates/profile.mako:43
+msgid "Edit your profile"
+msgstr "プロフィールを編集"
+
+#: website/templates/profile.mako:57
+msgid "Member&nbsp;Since"
+msgstr "利用開始日"
+
+#: website/templates/profile.mako:63
+msgid "Public&nbsp;Profile"
+msgstr "公開プロフィール"
+
+#: website/templates/profile.mako:69
+msgid "No"
+msgstr "0"
+
+#: website/templates/profile.mako:69
+msgid "activity point"
+msgid_plural "activity points"
+msgstr[0] "回の貢献"
+
+#: website/templates/profile.mako:70
+msgid "project"
+msgstr "プロジェクト"
+
+#: website/templates/profile.mako:70
+msgid " "
+msgid_plural "s"
+msgstr[0] " "
+
+#: website/templates/profile.mako:73
+msgid "Usage of storage"
+msgstr "ストレージ使用率"
+
+#: website/templates/profile.mako:82 website/templates/profile/settings.mako:39
+msgid "Employment"
+msgstr "職歴"
+
+#: website/templates/profile.mako:83 website/templates/profile/settings.mako:40
+msgid "Education"
+msgstr "学歴"
+
+#: website/templates/profile.mako:84 website/templates/profile/settings.mako:41
+msgid "Social"
+msgstr "SNS"
+
+#: website/templates/profile.mako:115
+msgid "Public projects"
+msgstr "公開プロジェクト"
+
+#: website/templates/profile.mako:135
+msgid "Public components"
+msgstr "公開コンポーネント"
+
+#: website/templates/profile.mako:152
+msgid "Quick files"
+msgstr "クイックファイル"
+
+#: website/templates/request_access.mako:2
+msgid "Request Access"
+msgstr "アクセスをリクエスト"
+
+#: website/templates/request_access.mako:11
+msgid "You Need Permission"
+msgstr "許可が必要です"
+
+#: website/templates/request_access.mako:13
+msgid "Ask for access, or switch to an account with permission."
+msgstr "アクセスを要求するか、許可を得てアカウントに切り替えてください。"
+
+#: website/templates/request_access.mako:14
+msgid ""
+"Your request for access has been sent. You will receive an email if and "
+"when your request is approved."
+msgstr "アクセスのリクエストが送信されました。 リクエストが承認されると、メールが届きます。"
+
+#: website/templates/request_access.mako:23
+msgid "Switch account"
+msgstr "アカウントを切り替える"
+
+#: website/templates/search.mako:36
+msgid "Improve your search:"
+msgstr "検索結果をしぼる"
+
+#: website/templates/search.mako:69
+msgid "Filter by license:"
+msgstr "ライセンスでフィルタ"
+
+#: website/templates/search.mako:93
+msgid "No results found."
+msgstr "結果が見つかりません。"
+
+#: website/templates/search.mako:96
+msgid "Type your search terms in the box above."
+msgstr "上のボックスに検索キーワードを入力します。"
+
+#: website/templates/search.mako:104
+msgid "Previous Page"
+msgstr "前のページ"
+
+#: website/templates/search.mako:110
+msgid "Next Page"
+msgstr "次のページ"
+
+#: website/templates/search.mako:123 website/templates/search.mako:341
+#: website/templates/search.mako:344
+msgid "Withdrawn "
+msgstr "取り下げられた"
+
+#: website/templates/search.mako:123
+msgid "Registration  "
+msgstr "登録"
+
+#: website/templates/search.mako:123
+msgid "File"
+msgstr "ファイル"
+
+#: website/templates/search.mako:126
+msgid "(Preprint File)"
+msgstr "(プレプリントファイル)"
+
+#: website/templates/search.mako:130
+#, python-format
+msgid "From: <a %(parentUrlTitle)s></a> <a %(nodeUrlAndTitle)s></a>"
+msgstr "<a %(nodeUrlAndTitle)s></a> <a %(parentUrlTitle)s></a>より"
+
+#: website/templates/search.mako:131
+#, python-format
+msgid ""
+"From: <span %(parentTitle)s><span %(textParentTitle)s></span> /</span> <a"
+" %(nodeUrlAndTitle)s></a>"
+msgstr ""
+"<a %(nodeUrlAndTitle)s></a> <span %(parentTitle)s><span "
+"%(textParentTitle)s></span> /</span>より"
+
+#: website/templates/search.mako:240
+msgid " Contributors:"
+msgstr "コントリビュータ:"
+
+#: website/templates/search.mako:262
+msgid "Affiliated institutions:"
+msgstr "所属機関："
+
+#: website/templates/search.mako:276 website/templates/search.mako:368
+msgid "<p><strong>Jump to:</strong>"
+msgstr "<p>"
+
+# コードの都合上、[Jump to:]の翻訳を組み込む
+#: website/templates/search.mako:280 website/templates/search.mako:372
+msgid "Files</a>"
+msgstr "ファイル</a>へ移動"
+
+#: website/templates/search.mako:291
+msgid "(Preprint)"
+msgstr "(プレプリント)"
+
+#: website/templates/project/project.mako:264
+#: website/templates/project/settings.mako:107
+#: website/templates/search.mako:292 website/templates/search.mako:348
+msgid "Description:"
+msgstr "説明:"
+
+#: website/templates/project/project.mako:165 website/templates/search.mako:295
+#: website/templates/search.mako:352
+msgid "Contributors:"
+msgstr "コントリビュータ:"
+
+#: website/templates/search.mako:314
+msgid "Managers:"
+msgstr "マネージャ:"
+
+#: website/templates/search.mako:327
+msgid "Members:"
+msgstr "メンバー:"
+
+#: website/templates/search.mako:341 website/templates/search.mako:344
+msgid "Registration"
+msgstr "登録"
+
+#: website/templates/search.mako:377
+msgid "Tags:"
+msgstr "タグ"
+
+#: website/templates/search_bar.mako:7 website/templates/search_bar.mako:8
+msgid "GakuNin RDM Search"
+msgstr "GakuNin RDM 検索"
+
+#: website/templates/search_bar_help_modal.mako:6
+msgid "Search help"
+msgstr "検索ヘルプ"
+
+#: website/templates/search_bar_help_modal.mako:9
+msgid "Queries"
+msgstr "クエリ"
+
+#: website/templates/search_bar_help_modal.mako:10
+#, python-format
+msgid ""
+"<p>Search uses the <a %(searchQuerySyntaxUrl)s>Lucene search "
+"syntax</a>.This gives you many options, but can be very simple as well. "
+"Examples of valid searches include:</p>"
+msgstr ""
+"<p>検索では<a "
+"%(searchQuerySyntaxUrl)s>Lucene検索構文</a>を使用します。これにより多くのオプションが提供されますが、非常にシンプルにすることもできます。有効な検索の例は次のとおりです。</p>"
+
+#: website/templates/include/comment_pane_template.mako:3
+#: website/templates/project/project_header.mako:86
+msgid "Comments"
+msgstr "コメント"
+
+#: website/templates/include/comment_pane_template.mako:18
+#: website/templates/project/files.mako:2
+#: website/templates/project/files.mako:5
+#: website/templates/project/project.mako:440
+#: website/templates/project/project_header.mako:40
+msgid "Files"
+msgstr "ファイル"
+
+#: website/templates/include/comment_pane_template.mako:18
+#: website/templates/include/comment_pane_template.mako:19
+#: website/templates/include/comment_pane_template.mako:20
+msgid "Discussion"
+msgstr "ディスカッション"
+
+#: website/templates/include/comment_pane_template.mako:26
+#: website/templates/include/comment_template.mako:165
+msgid "Add a comment"
+msgstr "コメントを追加"
+
+#: website/templates/include/comment_template.mako:13
+msgid "Comment confirmed as spam."
+msgstr "コメントはスパムとして確認されました。"
+
+#: website/templates/include/comment_template.mako:23
+msgid "Comment deleted."
+msgstr "コメントは削除されました"
+
+#: website/templates/include/comment_template.mako:30
+msgid "Restore"
+msgstr "戻す"
+
+#: website/templates/include/comment_template.mako:37
+msgid "Comment reported."
+msgstr "コメントが報告されました。"
+
+#: website/templates/include/comment_template.mako:44
+msgid "Not abuse"
+msgstr "不正使用ではない"
+
+#: website/templates/include/comment_template.mako:86
+msgid "Edit comment"
+msgstr "コメントを編集"
+
+#: website/templates/include/comment_template.mako:138
+msgid "Describe abuse"
+msgstr "不正使用を説明"
+
+#: website/templates/include/comment_template.mako:142
+msgid "Report"
+msgstr "報告"
+
+#: website/templates/include/comment_template.mako:186
+msgid "More replies"
+msgstr "より多くの返信"
+
+#: website/templates/include/profile/jobs.mako:19
+#: website/templates/include/profile/schools.mako:19
+msgid "Position"
+msgstr "ポジション"
+
+#: website/templates/include/profile/jobs.mako:26
+#: website/templates/include/profile/schools.mako:26
+#: website/templates/project/contributors.mako:332
+#: website/templates/project/contributors.mako:387
+#: website/templates/project/modal_remove_contributor.mako:96
+#: website/templates/project/modal_remove_contributor.mako:105
+#: website/templates/project/modal_remove_contributor.mako:114
+#: website/templates/project/project.mako:568
+#: website/templates/project/settings.mako:498
+#: website/templates/project/settings.mako:501
+msgid "Remove"
+msgstr "削除"
+
+#: website/templates/include/profile/jobs.mako:31
+#: website/templates/include/profile/schools.mako:31
+msgid "Read IdP Profile"
+msgstr "IdPプロフィールから読込み"
+
+#: website/templates/include/profile/jobs.mako:35
+msgid "Institution / Employer"
+msgstr "機関 / 雇用者"
+
+#: website/templates/include/profile/jobs.mako:37
+#: website/templates/include/profile/schools.mako:37
+#: website/templates/profile/oauth_app_detail.mako:55
+#: website/templates/profile/oauth_app_detail.mako:61
+#: website/templates/profile/oauth_app_detail.mako:73
+#: website/templates/profile/personal_tokens_detail.mako:26
+msgid "Required"
+msgstr "必須"
+
+#: website/templates/include/profile/jobs.mako:44
+msgid "Department / Institute"
+msgstr "部門 / 研究所"
+
+#: website/templates/include/profile/jobs.mako:49
+msgid "Job title"
+msgstr "職名"
+
+#: website/templates/include/profile/jobs.mako:54
+#: website/templates/include/profile/schools.mako:54
+msgid "Start date"
+msgstr "開始日"
+
+#: website/templates/include/profile/jobs.mako:58
+#: website/templates/include/profile/jobs.mako:73
+#: website/templates/include/profile/schools.mako:58
+#: website/templates/include/profile/schools.mako:73
+msgid "-- Month --"
+msgstr "-- 月 --"
+
+#: website/templates/include/profile/jobs.mako:63
+#: website/templates/include/profile/jobs.mako:78
+#: website/templates/include/profile/schools.mako:63
+#: website/templates/include/profile/schools.mako:78
+msgid "Year"
+msgstr "年"
+
+#: website/templates/include/profile/jobs.mako:69
+#: website/templates/include/profile/schools.mako:69
+msgid "End date"
+msgstr "終了日"
+
+#: website/templates/include/profile/jobs.mako:85
+#: website/templates/include/profile/schools.mako:85
+msgid "Ongoing"
+msgstr "在籍"
+
+#: website/templates/include/profile/jobs.mako:104
+msgid "Add another Employment"
+msgstr "別の職歴を追加"
+
+#: website/templates/include/profile/jobs.mako:114
+#: website/templates/include/profile/names.mako:73
+#: website/templates/include/profile/schools.mako:114
+#: website/templates/include/profile/social.mako:140
+msgid "Discard changes"
+msgstr "変更を破棄"
+
+#: website/templates/include/profile/jobs.mako:117
+#: website/templates/include/profile/names.mako:76
+#: website/templates/include/profile/schools.mako:117
+#: website/templates/include/profile/social.mako:143
+msgid "Saving"
+msgstr "保存中"
+
+#: website/templates/include/profile/jobs.mako:136
+#: website/templates/include/profile/schools.mako:136
+#: website/templates/include/profile/social.mako:180
+msgid "Not provided"
+msgstr "未設定"
+
+#: website/templates/include/profile/jobs.mako:156
+msgid "Department / Institute:"
+msgstr "部門 / 研究所:"
+
+#: website/templates/include/profile/jobs.mako:157
+#: website/templates/project/settings.mako:101
+msgid "Title:"
+msgstr "タイトル:"
+
+#: website/templates/include/profile/jobs.mako:158
+#: website/templates/include/profile/schools.mako:157
+msgid "Dates:"
+msgstr "日付:"
+
+#: website/templates/include/profile/names.mako:6
+msgid "Full name (e.g. Rosalind Elsie Franklin)"
+msgstr "氏名 (例: Taro  Suzuki Sato)"
+
+#: website/templates/include/profile/names.mako:15
+msgid ""
+"Your full name, above, is the name that will be displayed in your "
+"profile.            To control the way your name will appear in "
+"citations, you can use the            \"Auto-fill\" button to "
+"automatically infer your first name, last            name, etc., or edit "
+"the fields directly below."
+msgstr ""
+"上記の氏名は、プロフィールに表示される名前です。引用での名前の表示方法を制御するには、[自動入力]ボタンを使用して、名や姓などを自動的に補完できます。"
+" または下のフィールドを編集します。"
+
+#: website/templates/include/profile/names.mako:22
+msgid "Auto-fill"
+msgstr "自動入力"
+
+#: website/templates/include/profile/names.mako:26
+msgid "Given name (e.g. Rosalind)"
+msgstr "名 (例: Taro)"
+
+#: website/templates/include/profile/names.mako:31
+msgid "Middle name(s) (e.g. Elsie)"
+msgstr "旧姓・ミドルネーム等 (例: Suzuki)"
+
+#: website/templates/include/profile/names.mako:36
+msgid "Family name (e.g. Franklin)"
+msgstr "姓 (例: Sato)"
+
+#: website/templates/include/profile/names.mako:41
+msgid "Suffix"
+msgstr "敬称 (例:Dr., Prof., Ph.D., M.D.等)"
+
+#: website/templates/include/profile/names.mako:47
+msgid "Citation preview"
+msgstr "引用のプレビュー"
+
+#: website/templates/include/profile/names.mako:51
+msgid "Style"
+msgstr "スタイル"
+
+#: website/templates/include/profile/names.mako:52
+msgid "Citation format"
+msgstr "引用形式"
+
+#: website/templates/include/profile/schools.mako:35
+msgid "Institution"
+msgstr "機関"
+
+#: website/templates/include/profile/schools.mako:44
+msgid "Department"
+msgstr "部門"
+
+#: website/templates/include/profile/schools.mako:49
+msgid "Degree"
+msgstr "学位"
+
+#: website/templates/include/profile/schools.mako:104
+msgid "Add another Education"
+msgstr "別の学歴を追加"
+
+#: website/templates/include/profile/schools.mako:155
+msgid "Department:"
+msgstr "部門:"
+
+#: website/templates/include/profile/schools.mako:156
+msgid "Degree:"
+msgstr "学位:"
+
+#: website/templates/include/profile/settings_navpanel.mako:6
+msgid "Profile information"
+msgstr "プロフィール"
+
+#: website/templates/include/profile/settings_navpanel.mako:9
+msgid "Account settings"
+msgstr "アカウント設定"
+
+#: website/templates/include/profile/settings_navpanel.mako:12
+msgid "Configure add-on accounts"
+msgstr "アドオンアカウント構成"
+
+#: website/templates/include/profile/settings_navpanel.mako:15
+#: website/templates/profile/notifications.mako:2
+msgid "Notifications"
+msgstr "メール通知設定"
+
+#: website/templates/include/profile/settings_navpanel.mako:18
+msgid "Developer apps"
+msgstr "開発者アプリ"
+
+#: website/templates/include/profile/settings_navpanel.mako:21
+msgid "Personal access tokens"
+msgstr "パーソナルアクセストークン"
+
+#: website/templates/include/profile/social.mako:10
+msgid "Your websites"
+msgstr "あなたのウェブサイト"
+
+#: website/templates/include/profile/social.mako:31
+msgid "Please enter a valid website"
+msgstr "有効なウェブサイトを入力してください"
+
+#: website/templates/include/profile/social.mako:34
+msgid "Add website"
+msgstr "ウェブサイトを追加"
+
+#: website/templates/include/profile/social.mako:88
+#: website/templates/include/profile/social.mako:96
+#: website/templates/include/profile/social.mako:104
+#: website/templates/include/profile/social.mako:114
+#: website/templates/include/profile/social.mako:122
+#: website/templates/include/profile/social.mako:130
+msgid "profileID"
+msgstr "プロフィールID"
+
+#: website/templates/include/profile/social.mako:112
+msgid "institution"
+msgstr "機関"
+
+#: website/templates/profile/account.mako:4
+#: website/templates/profile/add_email.mako:4
+msgid "Account Settings"
+msgstr "アカウント設定"
+
+#: website/templates/profile/account.mako:15
+#: website/templates/profile/add_email.mako:21
+msgid "Connected Emails"
+msgstr "メールアドレスに接続しました"
+
+#: website/templates/profile/account.mako:20
+#: website/templates/profile/add_email.mako:27
+msgid "Primary Email"
+msgstr "プライマリメール"
+
+#: website/templates/profile/account.mako:34
+#: website/templates/profile/add_email.mako:57
+msgid "Alternate Emails"
+msgstr "代替メール"
+
+#: website/templates/profile/account.mako:40
+#: website/templates/profile/add_email.mako:63
+msgid "make&nbsp;primary"
+msgstr "プライマリにする"
+
+#: website/templates/profile/account.mako:48
+#: website/templates/profile/add_email.mako:72
+msgid "Unconfirmed Emails"
+msgstr "未確認のメール"
+
+#: website/templates/profile/account.mako:55
+#: website/templates/profile/add_email.mako:79
+msgid "resend&nbsp;confirmation"
+msgstr "確認を再送する"
+
+#: website/templates/profile/account.mako:64
+#: website/templates/profile/add_email.mako:88
+msgid ""
+"To merge an existing account with this one or to log in with multiple "
+"email addresses, add an alternate email address below."
+msgstr "既存のアカウントをこのアカウントと統合するか、複数のメールアドレスでログインするには、下に別のメールアドレスを追加します。"
+
+#: website/templates/profile/account.mako:65
+#: website/templates/profile/add_email.mako:89
+msgid ""
+"Merging accounts will move all projects and components associated with "
+"two emails into one account. All projects and components will be "
+"displayed under the email address listed as primary."
+msgstr ""
+"アカウントを統合すると、2つのメールに関連付けられたすべてのプロジェクトとコンポーネントが1つのアカウントに移動します。 "
+"すべてのプロジェクトとコンポーネントは、プライマリとしてリストされているメールアドレスの下に表示されます。"
+
+#: website/templates/profile/account.mako:68
+msgid ""
+"To log in with multiple email addresses, add an alternate email address "
+"below."
+msgstr "複数のメールアドレスでログインするには、下に別のメールアドレスを追加してください。"
+
+#: website/templates/profile/account.mako:73
+#: website/templates/profile/add_email.mako:98
+msgid "Email address"
+msgstr "メールアドレス"
+
+#: website/templates/profile/account.mako:75
+#: website/templates/profile/add_email.mako:100
+msgid "Add email"
+msgstr "メールアドレスを追加"
+
+#: website/templates/profile/account.mako:90
+msgid "Default Storage Location"
+msgstr "デフォルトの保管場所"
+
+#: website/templates/profile/account.mako:98
+msgid ""
+"This location will be applied to new projects and components. It will not"
+" affect existing projects and components."
+msgstr "この場所は、新しいプロジェクトとコンポーネントに適用されます。 既存のプロジェクトとコンポーネントには影響しません。"
+
+#: website/templates/profile/account.mako:103
+msgid "Update location"
+msgstr "ロケーションを更新"
+
+#: website/templates/profile/account.mako:109
+#: website/templates/profile/add_email.mako:117
+msgid "Connected Identities"
+msgstr "接続されたアイデンティティ"
+
+#: website/templates/profile/account.mako:111
+#: website/templates/profile/add_email.mako:119
+msgid ""
+"Connected identities allow you to log in to the GakuNin RDM via a third-"
+"party service."
+msgstr "接続されたアイデンティティにより、サードパーティのサービスを介してGakuNin RDMにログインできます。"
+
+#: website/templates/profile/account.mako:112
+#: website/templates/profile/add_email.mako:120
+msgid "You can revoke these authorizations here."
+msgstr "ここでこれらの認証を取り消すことができます。"
+
+#: website/templates/profile/account.mako:115
+#: website/templates/profile/add_email.mako:123
+msgid ""
+"You have not authorized any external services to log in to the GakuNin "
+"RDM."
+msgstr "GakuNin RDMにログインする外部サービスを許可していません。"
+
+#: website/templates/profile/account.mako:125
+#: website/templates/profile/add_email.mako:133
+msgid "Verified"
+msgstr "検証済"
+
+#: website/templates/profile/account.mako:127
+#: website/templates/profile/add_email.mako:135
+msgid "Pending"
+msgstr "保留中"
+
+#: website/templates/profile/account.mako:145
+#: website/templates/profile/add_email.mako:155
+msgid "Change Password"
+msgstr "パスワードを変更する"
+
+#: website/templates/profile/account.mako:149
+#: website/templates/profile/add_email.mako:159
+msgid "Old password"
+msgstr "古いパスワード"
+
+#: website/templates/profile/account.mako:154
+#: website/templates/profile/add_email.mako:164
+msgid "Old Password"
+msgstr "古いパスワード"
+
+#: website/templates/profile/account.mako:166
+#: website/templates/profile/add_email.mako:176
+msgid "New password"
+msgstr "新しいパスワード"
+
+#: website/templates/profile/account.mako:171
+#: website/templates/profile/add_email.mako:181
+msgid "New Password"
+msgstr "新しいパスワード"
+
+#: website/templates/profile/account.mako:201
+#: website/templates/profile/add_email.mako:211
+msgid "Confirm new password"
+msgstr "新しいパスワードを確認"
+
+#: website/templates/profile/account.mako:206
+#: website/templates/profile/add_email.mako:216
+msgid "Verify Password"
+msgstr "パスワードを照合"
+
+#: website/templates/profile/account.mako:217
+#: website/templates/profile/add_email.mako:227
+msgid "Update password"
+msgstr "パスワードを更新"
+
+#: website/templates/profile/account.mako:223
+#: website/templates/profile/add_email.mako:232
+msgid "Security Settings"
+msgstr "セキュリティ設定"
+
+#: website/templates/profile/account.mako:235
+#: website/templates/profile/add_email.mako:245
+msgid "Export Account Data"
+msgstr "アカウントデータをエクスポート"
+
+#: website/templates/profile/account.mako:237
+#: website/templates/profile/add_email.mako:247
+msgid ""
+"Exporting your account data allows you to keep a permanent copy of the "
+"current state of your account. Keeping a copy of your account data can "
+"provide peace of mind or assist in transferring your information to "
+"another provider."
+msgstr ""
+"アカウントデータをエクスポートすると、アカウントの現在の状態の永続的なコピーを保持できます。 "
+"アカウントデータのコピーを保存しておくと、安心して他のプロバイダーに情報を転送するのに役立ちます。"
+
+#: website/templates/profile/account.mako:238
+#: website/templates/profile/add_email.mako:248
+msgid "Request export"
+msgstr "エクスポートをリクエスト"
+
+#: website/templates/profile/account.mako:242
+#: website/templates/profile/add_email.mako:254
+msgid "Deactivate Account"
+msgstr "アカウントを非アクティブにする"
+
+#: website/templates/profile/account.mako:244
+msgid ""
+"<strong>Warning:</strong> Once your deactivation has been approved the "
+"effects are irreversible."
+msgstr "<strong>警告:</strong> 非アクティブ化が承認されると、元に戻せません。"
+
+#: website/templates/profile/account.mako:245
+#: website/templates/profile/add_email.mako:259
+msgid ""
+"Deactivating your account will remove you from all public projects to "
+"which you are a contributor. Your account will no longer be associated "
+"with GakuNin RDM projects, and your work on the GakuNin RDM will be "
+"inaccessible."
+msgstr ""
+"アカウントを非アクティブにすると、投稿者であるすべての公開プロジェクトから削除されます。 アカウントはGakuNin "
+"RDMプロジェクトに関連付けられなくなり、GakuNin RDMでの作業にアクセスできなくなります。"
+
+#: website/templates/profile/account.mako:246
+#: website/templates/profile/add_email.mako:263
+msgid "Your account is currently pending deactivation."
+msgstr "アカウントは現在、非アクティブ化が保留されています。"
+
+#: website/templates/profile/account.mako:247
+#: website/templates/profile/add_email.mako:261
+msgid "Request deactivation"
+msgstr "非アクティブ化をリクエスト"
+
+#: website/templates/profile/account.mako:248
+msgid "Cancel deactivation request"
+msgstr "非アクティブ化をキャンセル"
+
+#: website/templates/profile/add_email.mako:42
+msgid "eduPersonPrincipalName (ePPN)"
+msgstr "eduPersonPrincipalName (ePPN)"
+
+#: website/templates/profile/add_email.mako:92
+msgid "Add an email address below."
+msgstr "以下にメールアドレスを追加してください。"
+
+#: website/templates/profile/add_email.mako:257
+msgid "<strong>Warning:</strong> This action is irreversible."
+msgstr "<strong>警告:</strong> この操作は元に戻せません。"
+
+#: website/templates/profile/addon_permissions.mako:4
+#, python-format
+msgid "Authorized by <em>%(name)s</em>"
+msgstr "認証者:<em>%(name)s</em>"
+
+#: website/templates/profile/addons.mako:2
+#: website/templates/profile/addons.mako:29
+msgid "Configure Add-on Accounts"
+msgstr "アドオンアカウントを構成する"
+
+#: website/templates/profile/modal_change_avatar.mako:6
+msgid "Change Avatar"
+msgstr "アバターを変更"
+
+#: website/templates/profile/modal_change_avatar.mako:9
+msgid ""
+"Avatars on the GakuNin RDM use                    <a "
+"href=\"http://gravatar.org/\">gravatar.org</a>, a free"
+"                    service that allows users to easily control their "
+"identity                    and profile on multiple service across the "
+"Internet."
+msgstr ""
+"GakuNin RDMのアバターは<a "
+"href=\"http://gravatar.org/\">gravatar.org</a>を使用します。これは、ユーザーがインターネット上の複数のサービスで自分のIDとプロファイルを簡単に制御できるようにする無料のサービスです。"
+
+#: website/templates/profile/modal_change_avatar.mako:14
+msgid ""
+"To change your avatar image, please login or register at"
+"                   <a href=\"http://gravatar.org/\">gravatar.org</a>, and"
+" add the                   email address you use on the GakuNin RDM to "
+"your Gravatar account."
+msgstr ""
+"アバター画像を変更するには、<a "
+"href=\"http://gravatar.org/\">gravatar.org</a>でログインまたは登録し、GakuNin "
+"RDMで使用するメールアドレスをGravatarアカウントに追加してください。"
+
+#: website/templates/profile/notifications.mako:16
+msgid "Configure Email Preferences"
+msgstr "メール設定を構成する"
+
+#: website/templates/profile/notifications.mako:26
+msgid "Receive general notifications about the GakuNin RDM every 2-3 weeks."
+msgstr "GakuNin RDMに関する一般的な通知を2〜3週間ごとに受け取ります。"
+
+#: website/templates/profile/notifications.mako:35
+msgid ""
+"Receive helpful tips on how to make the most of the GakuNin RDM, up to "
+"once per week."
+msgstr "GakuNin RDMを最大限に活用する方法に関する役立つヒントを週に1回まで受け取ります。"
+
+#: website/templates/profile/notifications.mako:53
+msgid "Configure Notification Preferences"
+msgstr "メール通知を設定する"
+
+#: website/templates/profile/notifications.mako:56
+msgid ""
+"NOTE: Regardless of your selected preferences, GakuNin RDM will continue "
+"to provide transactional and administrative service emails."
+msgstr "注：選択した設定に関係なく、GakuNin RDMは引き続きトランザクションサービスおよび管理サービスの電子メールを提供します。"
+
+#: website/templates/profile/notifications.mako:64
+#: website/templates/project/settings.mako:371
+msgid "Loading notification settings..."
+msgstr "通知設定をロード中..."
+
+#: website/templates/profile/oauth_app_detail.mako:2
+#: website/templates/profile/oauth_app_detail.mako:5
+msgid "Application Detail"
+msgstr "アプリケーション詳細"
+
+#: website/templates/profile/oauth_app_detail.mako:16
+msgid "Return to list of registered applications"
+msgstr "登録済みアプリケーションのリストに戻る"
+
+#: website/templates/profile/oauth_app_detail.mako:25
+msgid "The unique identifier for the application. May be seen publicly by others."
+msgstr "アプリケーションの一意の識別子。 他人に公開される可能性があります。"
+
+#: website/templates/profile/oauth_app_detail.mako:32
+msgid ""
+"The client secret is known only to you and the GakuNin RDM. Do not "
+"display or expose this information."
+msgstr "クライアントシークレットは、あなたとGakuNin RDMのみが知っています。 この情報を表示または公開しないでください。"
+
+#: website/templates/profile/oauth_app_detail.mako:39
+msgid "Hide"
+msgstr "隠す"
+
+#: website/templates/profile/oauth_app_detail.mako:40
+msgid "Show"
+msgstr "表示する"
+
+#: website/templates/profile/oauth_app_detail.mako:42
+msgid "Reset Secret"
+msgstr "シークレットをリセット"
+
+#: website/templates/profile/oauth_app_detail.mako:44
+msgid ""
+"Resetting the client secret will render your application unusable until "
+"it is updated with the new client secret, and all users must reauthorize "
+"access. Previously issued access tokens will no longer work."
+msgstr ""
+"クライアントシークレットをリセットすると、新しいクライアントシークレットで更新されるまでアプリケーションが使用できなくなり、すべてのユーザーがアクセスを再認証する必要があります。"
+" 以前に発行されたアクセストークンは機能しなくなります。"
+
+#: website/templates/profile/oauth_app_detail.mako:48
+msgid "Deactivate application"
+msgstr "非アクティブアプリケーション"
+
+#: website/templates/profile/oauth_app_detail.mako:54
+msgid "Application name"
+msgstr "アプリケーション名"
+
+#: website/templates/profile/oauth_app_detail.mako:60
+msgid "Project homepage URL"
+msgstr "プロジェクトホームページURL"
+
+#: website/templates/profile/oauth_app_detail.mako:66
+msgid "Application description"
+msgstr "アプリケーションの説明"
+
+#: website/templates/profile/oauth_app_detail.mako:72
+msgid "Authorization callback URL"
+msgstr "認証コールバックURL"
+
+#: website/templates/profile/oauth_app_detail.mako:86
+msgid "Register"
+msgstr "登録"
+
+#: website/templates/profile/oauth_app_list.mako:2
+#: website/templates/profile/oauth_app_list.mako:15
+msgid "Developer Applications"
+msgstr "開発者向けアプリケーション"
+
+#: website/templates/profile/oauth_app_list.mako:17
+msgid "New application"
+msgstr "新しいアプリケーション登録"
+
+#: website/templates/profile/oauth_app_list.mako:22
+msgid ""
+"The GakuNin RDM allows third-party web applications to connect to the "
+"GakuNin RDM on behalf of other users via the OAuth 2.0 web application "
+"flow."
+msgstr ""
+"GakuNin RDMを使用すると、サードパーティのWebアプリケーションがOAuth 2.0 "
+"Webアプリケーションフローを介して他のユーザーに代わってGakuNin RDMに接続できます。"
+
+#: website/templates/profile/oauth_app_list.mako:24
+msgid ""
+"You have not registered any applications that can connect to the GakuNin "
+"RDM on behalf of other users."
+msgstr "他のユーザーに代わってGakuNin RDMに接続できるアプリケーションを登録していません。"
+
+#: website/templates/profile/oauth_app_list.mako:26
+msgid ""
+"You have registered the following applications that can connect to the "
+"GakuNin RDM on behalf of other users:"
+msgstr "他のユーザーに代わってGakuNin RDMに接続できる次のアプリケーションを登録しました。"
+
+#: website/templates/profile/oauth_app_list.mako:31
+msgid "Application"
+msgstr "アプリケーション"
+
+#: website/templates/profile/oauth_app_list.mako:34
+#: website/templates/profile/personal_tokens_list.mako:34
+msgid "Deactivate"
+msgstr "非アクティブ"
+
+#: website/templates/profile/oauth_app_list.mako:43
+msgid "Client ID:"
+msgstr "クライアントID"
+
+#: website/templates/profile/personal_tokens_detail.mako:2
+msgid "Personal Token Detail"
+msgstr "個人トークンの詳細"
+
+#: website/templates/profile/personal_tokens_detail.mako:16
+msgid "Return to list of registered tokens"
+msgstr "登録済みトークンのリストに戻る"
+
+#: website/templates/profile/personal_tokens_detail.mako:25
+msgid "Token name:"
+msgstr "トークン名"
+
+#: website/templates/profile/personal_tokens_detail.mako:25
+msgid "What this token is for."
+msgstr "このトークンの目的"
+
+#: website/templates/profile/personal_tokens_detail.mako:31
+msgid "Scopes:"
+msgstr "スコープ"
+
+#: website/templates/profile/personal_tokens_detail.mako:32
+msgid "Scopes limit access for personal access tokens."
+msgstr "スコープは、個人アクセストークンのアクセスを制限します。"
+
+#: website/templates/profile/personal_tokens_detail.mako:51
+msgid "Create"
+msgstr "作成"
+
+#: website/templates/profile/personal_tokens_detail.mako:65
+msgid "This is the only time your token will be displayed."
+msgstr "画面を離れると、トークンは二度と表示されません"
+
+#: website/templates/profile/personal_tokens_detail.mako:66
+msgid "Token ID"
+msgstr "トークンID"
+
+#: website/templates/profile/personal_tokens_detail.mako:67
+msgid "ID used to authenticate with this token. This will be shown only once."
+msgstr "このトークンでの認証に使用されるID。 これは一度だけ表示されます。"
+
+#: website/templates/profile/personal_tokens_detail.mako:70
+msgid "Copy to clipboard"
+msgstr "クリップボードにコピー"
+
+#: website/templates/profile/personal_tokens_list.mako:2
+#: website/templates/profile/personal_tokens_list.mako:15
+#: website/templates/profile/personal_tokens_list.mako:31
+msgid "Personal Access Tokens"
+msgstr "パーソナルアクセストークン"
+
+#: website/templates/profile/personal_tokens_list.mako:17
+msgid "New token"
+msgstr "新規トークン"
+
+#: website/templates/profile/personal_tokens_list.mako:22
+msgid ""
+"Personal access tokens function like ordinary OAuth access tokens. They "
+"can be used to authenticate to the API."
+msgstr "パーソナルアクセストークンは、通常のOAuthアクセストークンのように機能します。 APIの認証に使用できます。"
+
+#: website/templates/profile/personal_tokens_list.mako:24
+msgid ""
+"You have not created any access tokens that can connect to the GakuNin "
+"RDM."
+msgstr "GakuNin RDMに接続できるアクセストークンを作成していません。"
+
+#: website/templates/profile/personal_tokens_list.mako:26
+msgid "You have generated the following personal access tokens:"
+msgstr "次のパーソナルアクセストークンを生成しました。"
+
+#: website/templates/profile/settings.mako:11
+msgid "View your profile"
+msgstr "プロフィールを表示"
+
+#: website/templates/profile/settings.mako:38
+#: website/templates/project/contributors.mako:182
+#: website/templates/project/contributors.mako:229
+#: website/templates/project/modal_add_contributor.mako:216
+msgid "Name"
+msgstr "名前"
+
+#: website/templates/project/addons.mako:14
+#: website/templates/project/addons.mako:33
+msgid "Select Add-ons"
+msgstr "アドオンを選択"
+
+#: website/templates/project/addons.mako:15
+#: website/templates/project/addons.mako:111
+msgid "Configure Add-ons"
+msgstr "アドオンを構成"
+
+#: website/templates/project/addons.mako:38
+msgid ""
+"Sync your projects with external services to help stay connected and "
+"organized. Select a category and browse the options."
+msgstr "プロジェクトを外部サービスと同期して、接続と整理を維持します。 カテゴリーを選択し、オプションを参照します。"
+
+#: website/templates/project/addons.mako:44
+msgid "Categories"
+msgstr "カテゴリー"
+
+#: website/templates/project/addons.mako:47
+msgid "Search..."
+msgstr "検索する..."
+
+#: website/templates/project/addons.mako:56
+msgid "All"
+msgstr "すべて"
+
+#: website/templates/project/addons.mako:82
+msgid "(This is a default addon)"
+msgstr "(これは標準ストレージです)"
+
+#: website/templates/project/addons.mako:84
+msgid "Disable"
+msgstr "無効にする"
+
+#: website/templates/project/addons.mako:86
+msgid "Enable"
+msgstr "有効にする"
+
+#: website/templates/project/addons.mako:128
+msgid "Don’t see your GitHub organization repositories?"
+msgstr "GitHub組織のリポジトリが表示されませんか？"
+
+#: website/templates/project/addons.mako:130
+msgid "You may need to reauthorize your GitHub access token."
+msgstr "GitHubアクセストークンの再認証が必要になる場合があります。"
+
+#: website/templates/project/addons.mako:131
+#, python-format
+msgid ""
+"Follow the steps in the <a %(osfHelp)s>help guide</a> to resolve the "
+"issue."
+msgstr "<a %(osfHelp)s>ヘルプガイド</a>の手順に従って問題を解決してください。"
+
+#: website/templates/project/addons.mako:135
+#, python-format
+msgid ""
+"Please contact <a %(mailtoRdmSupport)s>rdm_support@nii.ac.jp</a> if you "
+"have questions."
+msgstr "ご質問がある場合は、<a %(mailtoRdmSupport)s>rdm_support@nii.ac.jp</a>までご連絡ください。"
+
+#: website/templates/project/contributors.mako:2
+#: website/templates/project/contributors.mako:8
+#: website/templates/project/contributors.mako:54
+#: website/templates/project/project.mako:163
+#: website/templates/project/project_header.mako:72
+msgid "Contributors"
+msgstr "コントリビュータ"
+
+#: website/templates/project/contributors.mako:13
+msgid "Filter by name"
+msgstr "氏名でフィルタ"
+
+#: website/templates/project/contributors.mako:14
+#: website/templates/project/contributors.mako:186
+#: website/templates/project/contributors.mako:232
+#: website/templates/project/modal_add_contributor.mako:227
+msgid "Permissions"
+msgstr "権限"
+
+#: website/templates/project/contributors.mako:17
+#: website/templates/project/contributors.mako:189
+#: website/templates/project/contributors.mako:235
+#: website/templates/project/modal_add_contributor.mako:230
+msgid "Permission Information"
+msgstr "権限管理の情報"
+
+#: website/templates/project/contributors.mako:24
+#: website/templates/project/contributors.mako:75
+msgid "Administrator"
+msgstr "管理者"
+
+#: website/templates/project/contributors.mako:27
+#: website/templates/project/contributors.mako:76
+msgid "Read + Write"
+msgstr "読込み / 書込み"
+
+#: website/templates/project/contributors.mako:30
+#: website/templates/project/contributors.mako:77
+msgid "Read"
+msgstr "読込み"
+
+#: website/templates/project/contributors.mako:33
+#: website/templates/project/contributors.mako:196
+#: website/templates/project/contributors.mako:242
+#: website/templates/project/modal_add_contributor.mako:218
+msgid "Bibliographic Contributor"
+msgstr "目録表示コントリビュータ"
+
+#: website/templates/project/contributors.mako:36
+#: website/templates/project/contributors.mako:199
+#: website/templates/project/contributors.mako:245
+#: website/templates/project/modal_add_contributor.mako:221
+msgid "Bibliographic Contributor Information"
+msgstr "目録表示コントリビュータの情報"
+
+#: website/templates/project/contributors.mako:43
+msgid "Bibliographic"
+msgstr "目録で表示"
+
+#: website/templates/project/contributors.mako:46
+msgid "Non-Bibliographic"
+msgstr "目録で非表示"
+
+#: website/templates/project/contributors.mako:63
+msgid "Drag and drop contributors to change listing order."
+msgstr "コントリビュータをドラッグ&ドロップして、リストの順序を変更します。"
+
+#: website/templates/project/contributors.mako:106
+msgid "No contributors found"
+msgstr "コントリビュータが見つかりません"
+
+#: website/templates/project/contributors.mako:111
+msgid "Admins on Parent Projects"
+msgstr "親プロジェクトの管理者"
+
+#: website/templates/project/contributors.mako:135
+msgid "No administrators from parent project found."
+msgstr "親プロジェクトの管理者が見つかりません"
+
+#: website/templates/project/contributors.mako:144
+msgid "The following users have requested access to this project."
+msgstr "次のユーザーがこのプロジェクトへのアクセスをリクエストしています。"
+
+#: website/templates/project/contributors.mako:162
+#: website/templates/project/settings.mako:29
+#: website/templates/project/settings.mako:202
+msgid "View-only Links"
+msgstr "参照用リンク"
+
+#: website/templates/project/contributors.mako:167
+#: website/templates/project/settings.mako:206
+msgid ""
+"Create a link to share this project so those who have the link can "
+"view&mdash;but not edit&mdash;the project."
+msgstr "このプロジェクトを共有するリンクを作成して、リンクを知っているユーザーがプロジェクトを表示できるようにします。(編集はできません)"
+
+#: website/templates/project/contributors.mako:396
+msgid "Discard Changes"
+msgstr "変更を破棄"
+
+#: website/templates/project/contributors.mako:397
+msgid "Save Changes"
+msgstr "変更を保存"
+
+#: website/templates/project/files.mako:8
+#: website/templates/project/project.mako:448
+msgid "Click on a storage provider or drag and drop to upload"
+msgstr "ストレージプロバイダーをクリックするか、ドラッグ&ドロップしてファイルをアップロードします"
+
+#: website/templates/project/modal_add_contributor.mako:20
+msgid "Search by name or user profile information"
+msgstr "名前またはユーザープロフィール情報で検索する"
+
+#: website/templates/project/modal_add_contributor.mako:25
+msgid "Invite new contributor by e-mail"
+msgstr "メールで新規コントリビュータを招待する"
+
+#: website/templates/project/modal_add_contributor.mako:46
+msgid "Results"
+msgstr "結果"
+
+#: website/templates/project/modal_add_contributor.mako:47
+msgid "Add all"
+msgstr "全て追加する"
+
+#: website/templates/project/modal_add_contributor.mako:63
+msgid "Add contributor"
+msgstr "コントリビュータを追加"
+
+#: website/templates/project/modal_add_contributor.mako:66
+msgid "Already added"
+msgstr "追加済"
+
+#: website/templates/project/modal_add_contributor.mako:164
+#: website/templates/project/modal_add_contributor.mako:254
+msgid "(unregistered)"
+msgstr "(未登録)"
+
+#: website/templates/project/modal_add_contributor.mako:181
+#, python-format
+msgid ""
+"<a %(gotoInvite)s>Add <strong><em %(textQuery)s></em></strong> as an "
+"unregistered contributor</a>."
+msgstr ""
+"<a %(gotoInvite)s>未登録のコントリビュータとして<strong><em "
+"%(textQuery)s></em></strong>を追加します。</a>"
+
+#: website/templates/project/modal_add_contributor.mako:186
+msgid "Searching contributors..."
+msgstr "コントリビュータを検索しています..."
+
+#: website/templates/project/modal_add_contributor.mako:190
+msgid "No results found. Try a more specific search."
+msgstr "結果が見つかりません。より具体的な検索を試してください。"
+
+#: website/templates/project/modal_add_contributor.mako:193
+msgid "No results found. Try a more specific search"
+msgstr "結果が見つかりません。より具体的な検索を試してください"
+
+#: website/templates/project/modal_add_contributor.mako:195
+msgid "or"
+msgstr "または"
+
+#: website/templates/project/modal_add_contributor.mako:196
+#, python-format
+msgid ""
+"<a %(gotoInvite)s>add <strong><em %(textQuery)s></em></strong> as an "
+"unregistered contributor</a>."
+msgstr ""
+"<a %(gotoInvite)s>未登録のコントリビュータとして<strong><em "
+"%(textQuery)s></em></strong>を追加します。</a>"
+
+#: website/templates/project/modal_add_contributor.mako:200
+msgid ""
+"It looks like you are trying to search by email address. Please try your "
+"search again using your collaborator's name. You will be able to add "
+"users without GakuNin RDM accounts as unregistered contributors."
+msgstr ""
+"メールアドレスで検索しようとしているようです。 共同編集者の名前を使用して検索を再試行してください。 GakuNin "
+"RDMアカウントを持たないユーザーを未登録のコントリビュータとして追加できます。"
+
+#: website/templates/project/modal_add_contributor.mako:207
+msgid "Adding"
+msgstr "追加中"
+
+#: website/templates/project/modal_add_contributor.mako:208
+msgid "Remove all"
+msgstr "全て削除"
+
+#: website/templates/project/modal_add_contributor.mako:241
+msgid "Remove contributor"
+msgstr "コントリビュータを削除"
+
+#: website/templates/project/modal_add_contributor.mako:281
+msgid "Adding contributor(s)"
+msgstr "コントリビュータを追加中"
+
+#: website/templates/project/modal_add_contributor.mako:289
+msgid ""
+"You can also add the contributor(s) to any components on which you are an"
+" admin."
+msgstr "管理者であるコンポーネントにコントリビュータを追加することもできます。"
+
+#: website/templates/project/modal_add_contributor.mako:294
+#: website/templates/project/modal_generate_private_link.mako:71
+msgid "Select all"
+msgstr "全て選択"
+
+#: website/templates/project/modal_add_contributor.mako:296
+msgid "Select none"
+msgstr "何も選択しない"
+
+#: website/templates/project/modal_add_contributor.mako:309
+msgid "Loading projects and components..."
+msgstr "プロジェクトとコンポーネントの読み込み..."
+
+#: website/templates/project/modal_add_contributor.mako:320
+msgid "Full Name"
+msgstr "氏名"
+
+#: website/templates/project/modal_add_contributor.mako:322
+msgid "Full name"
+msgstr "氏名"
+
+#: website/templates/project/modal_add_contributor.mako:325
+#: website/templates/project/modal_add_contributor.mako:327
+msgid "Email"
+msgstr "メールアドレス"
+
+#: website/templates/project/modal_add_contributor.mako:330
+msgid "We will notify the user that they have been added to your project."
+msgstr "プロジェクトに追加されたことをユーザーに通知します。"
+
+#: website/templates/project/modal_add_contributor.mako:343
+#: website/templates/project/modal_add_contributor.mako:355
+#: website/templates/project/modal_remove_contributor.mako:112
+#: website/templates/project/nodes_delete.mako:87
+msgid "Back"
+msgstr "戻る"
+
+#: website/templates/project/modal_add_contributor.mako:351
+msgid "Next"
+msgstr "次へ"
+
+#: website/templates/project/modal_add_pointer.mako:8
+msgid "Link other GakuNin RDM projects"
+msgstr "他のGakuNin RDMプロジェクトをリンク"
+
+#: website/templates/project/modal_add_pointer.mako:15
+msgid "Search projects"
+msgstr "プロジェクトの検索"
+
+#: website/templates/project/modal_add_pointer.mako:43
+msgid "Projects"
+msgstr "プロジェクト"
+
+#: website/templates/project/modal_add_pointer.mako:55
+msgid "Results: All Projects"
+msgstr "結果:全てのプロジェクト"
+
+#: website/templates/project/modal_add_pointer.mako:56
+msgid "Results: My Projects"
+msgstr "結果:マイプロジェクト"
+
+#: website/templates/project/modal_add_pointer.mako:96
+msgid "Done"
+msgstr "決定"
+
+#: website/templates/project/modal_generate_private_link.mako:5
+msgid "Create a new link to share your project"
+msgstr "プロジェクトを共有するための新しいリンクを作成します"
+
+#: website/templates/project/modal_generate_private_link.mako:13
+msgid "Link name"
+msgstr "リンク名"
+
+#: website/templates/project/modal_generate_private_link.mako:18
+msgid "Optional link name (e.g., For peer review, Sharing data, Share project)"
+msgstr "オプションのリンク名（例：査読、データの共有、プロジェクトの共有）"
+
+#: website/templates/project/modal_generate_private_link.mako:30
+msgid ""
+"<strong>Anonymize</strong> contributor list for this link (e.g., for "
+"blind peer review)."
+msgstr "このリンクの投稿者リストを匿名化します（例：ブラインドピアレビュー用）。"
+
+#: website/templates/project/modal_generate_private_link.mako:32
+msgid ""
+"Ensure the wiki pages, files, registration forms and add-ons do not "
+"contain identifying information."
+msgstr "Wikiページ、ファイル、登録フォーム、アドオンに識別情報が含まれていないことを確認してください。"
+
+#: website/templates/project/modal_generate_private_link.mako:39
+msgid ""
+"<strong>Which components would you like to associate with this "
+"link?</strong>"
+msgstr "このリンクにどのコンポーネントを関連付けますか？"
+
+#: website/templates/project/modal_generate_private_link.mako:40
+msgid ""
+"Anyone with the private link can view&mdash;but not edit&mdash;the"
+"                        components associated with the link."
+msgstr "プライベートリンクを持つユーザーは誰でも、リンクに関連付けられているコンポーネントを表示できますが、編集することはできません。"
+
+#: website/templates/project/modal_generate_private_link.mako:51
+#, python-format
+msgid "(current component<span %(isPublic)s>, public</span>)"
+msgstr "(現在のコンポーネント、<span %(isPublic)s>公開</span>)"
+
+#: website/templates/project/modal_generate_private_link.mako:59
+msgid "Parent needs to be checked"
+msgstr "親を確認する必要があります"
+
+#: website/templates/project/modal_generate_private_link.mako:62
+msgid "(public)"
+msgstr "（公開）"
+
+#: website/templates/project/modal_generate_private_link.mako:74
+msgid "De-select all"
+msgstr "全選択解除"
+
+#: website/templates/project/modal_remove_contributor.mako:15
+#, python-format
+msgid ""
+"<span>Do you want to remove <b %(removedContributor)s></b> from"
+"                                <b %(textTitle)s></b>, or from <b "
+"%(textTitle)s></b> and every component in it?</span>"
+msgstr ""
+"<b %(removedContributor)s></b>を<b %(textTitle)s></b>から、または<b "
+"%(textTitle)s></b>とその中のすべてのコンポーネントから削除しますか？</span>"
+
+#: website/templates/project/modal_remove_contributor.mako:21
+#, python-format
+msgid ""
+"Remove <b %(removedContributor)s></b> from"
+"                                    <span %(textTitle)s></span>."
+msgstr "<span %(textTitle)s></span>から<b %(removedContributor)s></b>を削除します。"
+
+#: website/templates/project/modal_remove_contributor.mako:28
+#, python-format
+msgid ""
+"Remove <b %(removedContributor)s></b> from"
+"                                    <span %(textTitle)s></span> and every"
+" component in it."
+msgstr ""
+"<b %(removedContributor)s></b>を<span "
+"%(textTitle)s></span>およびその中のすべてのコンポーネントから削除します。"
+
+#: website/templates/project/modal_remove_contributor.mako:37
+#, python-format
+msgid "Remove <b %(removedContributor)s></b> from <span %(textTitle)s></span>?"
+msgstr "<span %(textTitle)s></span>から<b %(removedContributor)s></b>を削除しますか？"
+
+#: website/templates/project/modal_remove_contributor.mako:48
+#, python-format
+msgid ""
+"<b %(removedContributor)s>                                        </b> "
+"will be removed from the following projects and/or components."
+msgstr "<b %(removedContributor)s></b>は、以下のプロジェクトおよび/またはコンポーネントから削除されます。"
+
+#: website/templates/project/modal_remove_contributor.mako:65
+#, python-format
+msgid ""
+"<b %(removedContributor)s>                                        </b> "
+"cannot be removed from the following projects and/or components."
+msgstr "<b %(removedContributor)s></b>は、以下のプロジェクトやコンポーネントから削除できません。"
+
+#: website/templates/project/modal_remove_contributor.mako:81
+#, python-format
+msgid ""
+"<b %(removedContributor)s></b> cannot be                        removed "
+"as a contributor.  You need at least one administrator, bibliographic "
+"contributor, and registered user."
+msgstr ""
+"<b "
+"%(removedContributor)s></b>はコントリビュータとして削除できません。少なくとも1人の管理者、目録表示コントリビュータ、および登録ユーザーが必要です。"
+
+#: website/templates/project/modal_remove_contributor.mako:82
+msgid ""
+"data-bind=\"text:removeSelf() ? 'You' : "
+"contributorToRemove()['fullname']\""
+msgstr ""
+"data-bind=\"text:removeSelf() ? 'あなた' : "
+"contributorToRemove()['fullname']\""
+
+#: website/templates/project/modal_remove_contributor.mako:85
+msgid ""
+"Please save or discard your existing changes before removing a "
+"contributor."
+msgstr "コントリビュータを削除する前に、既存の変更を保存または破棄してください。"
+
+#: website/templates/project/nodes_delete.mako:66
+#: website/templates/project/nodes_delete.mako:77
+msgid "Type the following to continue:"
+msgstr "次の文字列を入力して続行します:"
+
+#: website/templates/project/project.mako:22
+msgid "Private Project"
+msgstr "非公開プロジェクト"
+
+#: website/templates/project/project.mako:45
+msgid "Private"
+msgstr "非公開"
+
+#: website/templates/project/project.mako:49
+msgid "Make Public"
+msgstr "公開にする"
+
+#: website/templates/project/project.mako:58
+msgid "Make Private"
+msgstr "非公開にする"
+
+#: website/templates/project/project.mako:60
+msgid "Public"
+msgstr "公開"
+
+#: website/templates/project/project.mako:65
+msgid "Log in or create an account to duplicate this project"
+msgstr "このプロジェクトを複製するには、ログインするかアカウントを作成してください"
+
+#: website/templates/project/project.mako:100
+#, python-format
+msgid "View Forks (%(forkCount)s)"
+msgstr "フォークを表示(%(forkCount)s)"
+
+#: website/templates/project/project.mako:115
+msgid "Bookmark"
+msgstr "ブックマーク"
+
+#: website/templates/project/project.mako:118
+msgid "Remove from bookmarks"
+msgstr "ブックマークから削除"
+
+#: website/templates/project/project.mako:127
+msgid "Create view-only link"
+msgstr "参照用リンクを作成"
+
+#: website/templates/project/project.mako:137
+msgid "Share"
+msgstr "共有"
+
+#: website/templates/project/project.mako:150
+msgid "Log in to request access"
+msgstr "ログインしてアクセスをリクエスト"
+
+#: website/templates/project/project.mako:169
+msgid "Anonymous Contributors"
+msgstr "匿名コントリビュータ"
+
+#: website/templates/project/project.mako:192
+#: website/templates/project/settings.mako:488
+msgid "Affiliated Institutions:"
+msgstr "所属機関:"
+
+#: website/templates/project/project.mako:224
+msgid "Date registered:"
+msgstr "登録日"
+
+#: website/templates/project/project.mako:229
+msgid "Date created:"
+msgstr "作成日時"
+
+#: website/templates/project/project.mako:232
+msgid "| Last Updated:"
+msgstr "| 最終更新日時"
+
+#: website/templates/project/project.mako:247
+msgid "Creating DOI. Please wait..."
+msgstr "DOIを作成しています。お待ち下さい..."
+
+#: website/templates/project/project.mako:253
+msgid "Create DOI"
+msgstr "DOIを作成"
+
+#: website/templates/project/project.mako:258
+#: website/templates/project/settings.mako:81
+msgid "Category:"
+msgstr "カテゴリー："
+
+# 変数のためmsgstrを""にしておく
+#: website/templates/project/project.mako:259
+msgid "category"
+msgstr ""
+
+#: website/templates/project/project.mako:281
+msgid "License:"
+msgstr "ライセンス："
+
+# 変数のためmsgstrを""にしておく
+#: website/templates/project/project.mako:282
+msgid "license"
+msgstr ""
+
+#: website/templates/project/project.mako:290
+msgid "View Registration Form"
+msgstr "登録フォームを表示"
+
+#: website/templates/project/project.mako:295
+msgid "View Registration Forms"
+msgstr "登録フォームを表示"
+
+#: website/templates/project/project.mako:340
+msgid "Type:"
+msgstr "タイプ:"
+
+#: website/templates/project/project.mako:344
+#: website/templates/project/project.mako:395
+msgid "Status:"
+msgstr "ステータス:"
+
+#: website/templates/project/project.mako:348
+msgid "Volume:"
+msgstr "ボリューム:"
+
+#: website/templates/project/project.mako:352
+msgid "Issue:"
+msgstr "イシュー:"
+
+#: website/templates/project/project.mako:356
+msgid "Program Area:"
+msgstr "プログラムエリア"
+
+#: website/templates/project/project.mako:362
+msgid "Subjects:"
+msgstr "学科:"
+
+#: website/templates/project/project.mako:398
+msgid "Withdrawn"
+msgstr "取り下げ"
+
+#: website/templates/project/project.mako:407
+msgid ""
+"This {preprint_word} is publicly available and searchable but is subject "
+"to removal by a moderator."
+msgstr "この{preprint_word}は一般公開されており検索可能ですが、モデレーターによる削除の対象となります。"
+
+#: website/templates/project/project.mako:410
+msgid ""
+"This {preprint_word} is not publicly available or searchable until "
+"approved by a moderator."
+msgstr "この{preprint_word}は、モデレーターによって承認されるまで公開または検索できません。"
+
+#: website/templates/project/project.mako:414
+msgid "This {preprint_word} is publicly available and searchable."
+msgstr "この{preprint_word}は公開されており、検索可能です。"
+
+#: website/templates/project/project.mako:416
+msgid "This {preprint_word} is not publicly available or searchable."
+msgstr "この{preprint_word}は一般公開も検索もできません。"
+
+#: website/templates/project/project.mako:460
+#: website/templates/project/view_file.mako:57
+msgid "Loading files..."
+msgstr "ファイルをロード中"
+
+#: website/templates/project/project.mako:501
+#: website/templates/util/render_addon_widget.mako:70
+msgid "Citation"
+msgstr "引用"
+
+#: website/templates/project/addon/citations_widget.mako:16
+#: website/templates/project/project.mako:513
+#: website/templates/util/render_addon_widget.mako:136
+msgid "Loading citations..."
+msgstr "引用をロード中..."
+
+#: website/templates/project/project.mako:518
+msgid "Customize"
+msgstr "カスタマイズ"
+
+#: website/templates/project/project.mako:526
+msgid "Chicago"
+msgstr "シカゴ"
+
+#: website/templates/project/project.mako:530
+msgid "Get more citations"
+msgstr "より多くの引用スタイルを取得"
+
+#: website/templates/project/project.mako:548
+#, python-format
+msgid ""
+"<div %(f_x_xl)s>Cite as:</div>                                         "
+"<span %(textCustomCitation)s></span>"
+msgstr "<span %(textCustomCitation)s></span>として<div %(f_x_xl)s>引用：</div>"
+
+#: website/templates/project/project.mako:559
+msgid "Enter custom citation"
+msgstr "カスタム引用の入力"
+
+#: website/templates/project/project.mako:586
+#: website/templates/project/view_file.mako:76
+msgid "Tags"
+msgstr "タグ"
+
+#: website/templates/project/project.mako:600
+msgid "Recent Activity"
+msgstr "最近の活動"
+
+#: website/templates/project/project.mako:601
+msgid "Refresh"
+msgstr "更新"
+
+#: website/templates/project/project.mako:607
+msgid "Parts of User's Fullname"
+msgstr "ユーザ氏名の一部"
+
+#: website/templates/project/project.mako:612
+msgid "Start Date[yyyy-mm-dd]"
+msgstr "開始日 [yyyy-mm-dd]"
+
+#: website/templates/project/project.mako:615
+msgid "End Date[yyyy-mm-dd]"
+msgstr "終了日 [yyyy-mm-dd]"
+
+#: website/templates/project/project.mako:623
+msgid "Loading logs..."
+msgstr "ログをロード中..."
+
+#: website/templates/project/project.mako:629
+msgid "Download as file"
+msgstr "ファイルをダウンロード"
+
+#: website/templates/project/project.mako:630
+#: website/templates/project/timestamp.mako:206
+msgid "Download"
+msgstr "ダウンロード"
+
+#: website/templates/project/project.mako:643
+msgid "Components"
+msgstr "コンポーネント"
+
+#: website/templates/project/project.mako:647
+msgid "Add Component"
+msgstr "コンポーネントを追加"
+
+#: website/templates/project/project.mako:649
+msgid "Link Projects"
+msgstr "プロジェクトをリンク"
+
+#: website/templates/project/project.mako:659
+msgid "Add components to organize your project."
+msgstr "コンポーネントを追加して、プロジェクトを整理します。"
+
+#: website/templates/project/project_header.mako:16
+msgid "Project"
+msgstr "プロジェクト"
+
+#: website/templates/project/project_header.mako:16
+msgid "Component"
+msgstr "コンポーネント"
+
+#: website/templates/project/project_header.mako:16
+msgid "Navigation"
+msgstr "ナビゲーション"
+
+#: website/templates/project/project_header.mako:61
+msgid "Analytics"
+msgstr "分析"
+
+#: website/templates/project/project_header.mako:67
+msgid "Registrations"
+msgstr "登録"
+
+#: website/templates/project/project_header.mako:76
+msgid "Add-ons"
+msgstr "アドオン"
+
+#: website/templates/project/project_header.mako:96
+#: website/templates/project/timestamp.mako:2
+msgid "Timestamp"
+msgstr "証跡管理"
+
+#: website/templates/project/project_header.mako:128
+msgid ""
+"This file is part of a registration and is being shown in its archived "
+"version (and cannot be altered)."
+msgstr "このファイルは登録の一部であり、アーカイブバージョンで表示されています（変更できません）。"
+
+#: website/templates/project/project_header.mako:129
+#, python-format
+msgid ""
+"The <a %(archivedFromUrl)s>active file</a> is viewable from within the <a"
+" %(registeredFromUrl)s>live %(nodeType)s</a>."
+msgstr ""
+"<a %(archivedFromUrl)s>アクティブなファイル</a>は、<a "
+"%(registeredFromUrl)s>ライブ%(nodeType)s</a>内から表示できます。"
+
+#: website/templates/project/project_header.mako:131
+#, python-format
+msgid ""
+"This registration is a frozen, non-editable version of <a "
+"%(registeredFromUrl)s>this %(nodeType)s</a>"
+msgstr "この登録は、<a %(registeredFromUrl)s>この%(nodeType)s</a>の凍結された編集不可バージョンです"
+
+#: website/templates/project/project_header.mako:135
+#, python-format
+msgid ""
+"This is a pending registration of <a %(registeredFromUrl)s>this "
+"%(nodeType)s</a>, awaiting approval from project administrators. This "
+"registration will be final when all project administrators approve the "
+"registration or 48 hours pass, whichever comes first."
+msgstr ""
+"これは<a "
+"%(registeredFromUrl)s>この%(nodeType)s</a>の保留中の登録であり、プロジェクト管理者からの承認を待っています。この登録は、すべてのプロジェクト管理者が登録または48時間のパスのいずれか早い方を承認したときに最終となります。"
+
+#: website/templates/project/project_header.mako:141
+#: website/templates/project/project_header.mako:173
+msgid "Cancel registration"
+msgstr "登録をキャンセル"
+
+#: website/templates/project/project_header.mako:159
+#, python-format
+msgid "This %(nodeType)s is currently pending withdrawal."
+msgstr "この%(nodeType)sは現在、保留中です。"
+
+#: website/templates/project/project_header.mako:163
+#, python-format
+msgid ""
+"This %(nodeType)s is a withdrawn registration of <a "
+"%(registeredFromUrl)s>this %(nodeType)s</a>; the content of the "
+"%(nodeType)s has been taken down for the reason(s) stated below."
+msgstr ""
+"この%(nodeType)sは、<a "
+"%(registeredFromUrl)s>この%(nodeType)s</a>の登録の撤回です。%(nodeType)sのコンテンツは、下記の理由により削除されました。"
+
+#: website/templates/project/project_header.mako:168
+#, python-format
+msgid ""
+"This %(nodeType)s is currently pending registration, awaiting approval "
+"from project administrators. This registration will be final and enter "
+"the embargo period when all project administrators approve the "
+"registration or 48 hours pass, whichever comes first. The embargo will "
+"keep the registration private until the embargo period ends."
+msgstr "この%(nodeType)sは現在登録を保留しており、プロジェクト管理者からの承認を待っています。この登録は最終的なものであり、すべてのプロジェクト管理者が登録を承認するか、48時間のパスのいずれか早いほうを承認した時点で禁止期間に入ります。禁止措置は、禁止期間が終了するまで登録を非公開にします。"
+
+#: website/templates/project/project_header.mako:182
+#, python-format
+msgid ""
+"This registration is currently embargoed. It will remain private until "
+"its embargo end date, %(embargoEndDate)s."
+msgstr "現在、この登録は禁止されています。 禁止終了日(%(embargoEndDate)s)まで非公開のままです。"
+
+#: website/templates/project/project_header.mako:188
+#, python-format
+msgid ""
+"This %(nodeType)s contains supplemental materials for a preprint, but has"
+" been made Private. Make your supplemental materials discoverable by "
+"making this %(nodeType)s Public."
+msgstr "この%(nodeType)sにはプレプリントの補足資料が含まれていますが、非公開になっています。この%(nodeType)sを公開することで、補足資料を見つけやすくします。"
+
+#: website/templates/project/project_header.mako:192
+#, python-format
+msgid ""
+"This %(nodeType)s is being viewed through an anonymized, view-only link. "
+"If you want to view it as a contributor, click <a "
+"%(redirectUrl)s>here</a>."
+msgstr ""
+"この%(nodeType)sは、匿名化された参照専用リンクを介して表示されています。コントリビュータとして表示する場合は、<a "
+"%(redirectUrl)s>こちら</a>をクリックしてください。"
+
+#: website/templates/project/project_header.mako:196
+#, python-format
+msgid ""
+"This %(nodeType)s is being viewed through a private, view-only link. "
+"Anyone with the link can view this project. Keep the link safe."
+msgstr ""
+"この%(nodeType)sは、プライベートな参照専用リンクを介して表示されています。リンクを知っている全員がこのプロジェクトを閲覧できます。 "
+"リンクを安全に保ちます。"
+
+# 変数のためmsgstrを""にしておく
+#: website/templates/project/settings.mako:17
+#: website/templates/project/settings.mako:76
+#: website/templates/project/settings.mako:150
+#: website/templates/project/settings.mako:163
+#: website/templates/util/render_node.mako:18
+msgid "node_type"
+msgstr ""
+
+#: website/templates/project/settings.mako:21
+#: website/templates/project/settings.mako:178
+msgid "Storage Location"
+msgstr "ストレージロケーション"
+
+#: website/templates/project/settings.mako:33
+#: website/templates/project/settings.mako:225
+msgid "Access Requests"
+msgstr "アクセスリクエスト"
+
+#: website/templates/project/settings.mako:39
+#: website/templates/project/settings.mako:318
+msgid "Commenting"
+msgstr "コメント"
+
+#: website/templates/project/settings.mako:42
+#: website/templates/project/settings.mako:359
+msgid "Email Notifications"
+msgstr "メール通知"
+
+#: website/templates/project/settings.mako:44
+#: website/templates/project/settings.mako:391
+msgid "Redirect Link"
+msgstr "リダイレクトリンク"
+
+#: website/templates/project/settings.mako:51
+msgid "Withdraw Public Registration"
+msgstr "公開登録を取り下げる"
+
+#: website/templates/project/settings.mako:57
+#: website/templates/project/settings.mako:469
+msgid "Project Affiliation / Branding"
+msgstr "プロジェクト管理機関"
+
+#: website/templates/project/settings.mako:82
+msgid "(For descriptive purposes)"
+msgstr "説明のため"
+
+#: website/templates/project/settings.mako:87
+msgid "Uncategorized"
+msgstr "未分類"
+
+#: website/templates/project/settings.mako:114
+msgid "Select Timestamp Function:"
+msgstr "タイムスタンプ機能を選択:"
+
+#: website/templates/project/settings.mako:117
+#: website/templates/project/settings.mako:122
+msgid "Timestamp only"
+msgstr "タイムスタンプのみ"
+
+#: website/templates/project/settings.mako:133
+msgid "Save changes"
+msgstr "変更を保存"
+
+#: website/templates/project/settings.mako:141
+msgid ""
+"A project cannot be deleted if it has any components within it."
+"                                To delete a parent project, you must "
+"first delete all child components                                by "
+"visiting their settings pages."
+msgstr "プロジェクトにコンポーネントがある場合、プロジェクトを削除することはできません。親プロジェクトを削除するには、まず設定ページにアクセスして、すべての子コンポーネントを削除する必要があります。"
+
+#: website/templates/project/settings.mako:150
+#: website/templates/project/settings.mako:163
+#, python-format
+msgid "Delete %(nodeType)s"
+msgstr "%(nodeType)sを削除"
+
+#: website/templates/project/settings.mako:156
+#, python-format
+msgid ""
+"A project which is related to a external group (%(group)s) cannot be "
+"deleted."
+msgstr "外部グループ(%(group)s)に関連するプロジェクトは削除できません。"
+
+#: website/templates/project/settings.mako:185
+msgid "Storage location cannot be changed after project is created."
+msgstr "プロジェクトの作成後、保存場所を変更することはできません。"
+
+#: website/templates/project/settings.mako:237
+msgid "Allow users to request access to this project."
+msgstr "ユーザーがこのプロジェクトへのアクセスをリクエストできるようにします。"
+
+#: website/templates/project/settings.mako:270
+#, python-format
+msgid "Enable the wiki in <b>%(title)s</b>."
+msgstr "<b>%(title)s</b>内でウィキを有効にする"
+
+#: website/templates/project/settings.mako:283
+msgid "Configure"
+msgstr "構成"
+
+#: website/templates/project/settings.mako:286
+#, python-format
+msgid "Control who can edit the wiki of <b>%(title)s</b>"
+msgstr "<b>%(title)s</b>内のWikiを編集できるユーザーを制御します"
+
+#: website/templates/project/settings.mako:288
+#, python-format
+msgid ""
+"Control who can edit your wiki. To allow all GakuNin RDM users to edit "
+"the wiki, <b>%(title)s</b> must be public."
+msgstr ""
+"Wikiを編集できるユーザーを制御します。 すべてのGakuNin "
+"RDMユーザーがwikiを編集できるようにするには、<b>%(title)s</b>を公開する必要があります。"
+
+#: website/templates/project/settings.mako:298
+msgid "Loading wiki settings..."
+msgstr "ウィキの設定をロード中..."
+
+#: website/templates/project/settings.mako:328
+msgid "Only contributors can post comments"
+msgstr "コントリビュータのみがコメントを投稿できます"
+
+#: website/templates/project/settings.mako:334
+#, python-format
+msgid "When the %(nodeType)s is public, any GakuNin RDM user can post comments"
+msgstr "%(nodeType)sが公開の場合、GakuNin RDMユーザーはコメントを投稿できます"
+
+#: website/templates/project/settings.mako:363
+msgid ""
+"These notification settings only apply to you. They do NOT affect any "
+"other contributor on this project."
+msgstr "これらの通知設定は自分にのみ適用されます。 このプロジェクトの他のコントリビュータには影響しません。"
+
+#: website/templates/project/settings.mako:402
+msgid "Redirect visitors from your project page to an external webpage"
+msgstr "訪問者をプロジェクトページから外部Webページにリダイレクトする"
+
+#: website/templates/project/settings.mako:427
+#: website/templates/project/settings.mako:449
+msgid "Withdraw Registration"
+msgstr "登録を取り下げる"
+
+#: website/templates/project/settings.mako:435
+#, python-format
+msgid ""
+"Withdrawing children components of a registration is not allowed. Should "
+"you wish to                                  withdraw this component, "
+"please withdraw its parent registration <a %(webUrlFor)s>here</a>."
+msgstr ""
+"登録の子コンポーネントの撤回は許可されていません。このコンポーネントを撤回する場合は、<a "
+"%(webUrlFor)s>ここ</a>でその親登録を撤回してください。"
+
+#: website/templates/project/settings.mako:442
+msgid ""
+"Withdrawing a registration will remove its content from the GakuNin RDM, "
+"but leave basic metadata                                    behind. The "
+"title of a withdrawn registration and its contributor list will remain, "
+"as will                                    justification or explanation "
+"of the withdrawal, should you wish to provide it. Withdrawn"
+"                                    registrations will be marked with a "
+"<strong>withdrawn</strong> tag."
+msgstr ""
+"登録を取り消すと、コンテンツがGakuNin RDMから削除されますが、基本的なメタデータは残されます。 "
+"取り下げられた登録のタイトルとそのコントリビュータリストは、引き取りの正当化または説明と同様に、もしあなたがそれを提供したいなら、残ります。 "
+"取り下げられた登録には、<strong>取り下げられた</strong>タグが付いています。"
+
+#: website/templates/project/settings.mako:451
+msgid "This registration is already pending withdrawal."
+msgstr "この登録は既に取り下げが保留されています。"
+
+#: website/templates/project/settings.mako:474
+msgid ""
+"Contributors with read-only permissions to this project cannot add or "
+"remove institutional affiliations."
+msgstr "このプロジェクトの参照専用権限を持つコントリビュータは、所属機関を追加または削除できません。"
+
+#: website/templates/project/settings.mako:477
+msgid ""
+"Projects can be affiliated with institutions that have created GakuNin "
+"RDM for Institutions accounts."
+msgstr "プロジェクトは、機関向けGakuNin RDMアカウントを作成した機関と提携できます。"
+
+#: website/templates/project/settings.mako:478
+msgid "This allows:"
+msgstr "これにより"
+
+#: website/templates/project/settings.mako:480
+msgid "institutional logos to be displayed on public projects"
+msgstr "公開プロジェクトに表示される機関のロゴ"
+
+#: website/templates/project/settings.mako:481
+msgid "public projects to be discoverable on specific institutional landing pages"
+msgstr "特定の機関のリンク先ページで発見できる公開プロジェクト"
+
+#: website/templates/project/settings.mako:482
+msgid "single sign-on to the GakuNin RDM with institutional credentials"
+msgstr "機関証明書を使用したGakuNin RDMへのシングルサインオン"
+
+#: website/templates/project/settings.mako:483
+msgid "FAQ"
+msgstr "FAQ"
+
+#: website/templates/project/settings.mako:511
+msgid "Available Institutions:"
+msgstr "利用可能な機関:"
+
+#: website/templates/project/timestamp.mako:10
+msgid "Timestamp Control"
+msgstr "証跡管理"
+
+#: website/templates/project/timestamp.mako:27
+msgid "Timestamp Error"
+msgstr "タイムスタンプ管理"
+
+#: website/templates/project/timestamp.mako:41
+msgid "Start Date"
+msgstr "開始日"
+
+#: website/templates/project/timestamp.mako:47
+msgid "End Date"
+msgstr "終了日"
+
+#: website/templates/project/timestamp.mako:53
+msgid "User"
+msgstr "ユーザー"
+
+#: website/templates/project/timestamp.mako:60
+msgid "Apply"
+msgstr "適用"
+
+#: website/templates/project/timestamp.mako:69
+msgid "Verify"
+msgstr "確認"
+
+#: website/templates/project/timestamp.mako:70
+msgid "Request Trusted Timestamp"
+msgstr "打刻"
+
+#: website/templates/project/timestamp.mako:81
+msgid "Processing, please wait..."
+msgstr "処理しています。お待ちください..."
+
+#: website/templates/project/timestamp.mako:99
+msgid "per page:"
+msgstr "1ページあたり"
+
+#: website/templates/project/timestamp.mako:122
+msgid "Provider"
+msgstr "プロバイダ"
+
+#: website/templates/project/timestamp.mako:129
+msgid "File Path"
+msgstr "ファイルパス"
+
+#: website/templates/project/timestamp.mako:136
+msgid "Timestamp by"
+msgstr "タイムスタンプ押印者"
+
+#: website/templates/project/timestamp.mako:143
+msgid "Updated at"
+msgstr "更新日時"
+
+#: website/templates/project/timestamp.mako:150
+msgid "Timestamp Verification"
+msgstr "タイムスタンプの検証"
+
+#: website/templates/project/view_file.mako:19
+msgid "Version:"
+msgstr "バージョン:"
+
+#: website/templates/project/view_file.mako:34
+#: website/templates/project/view_file.mako:36
+msgid "Timestamp verification:"
+msgstr "タイムスタンプの検証"
+
+#: website/templates/project/view_file.mako:52
+msgid "No files"
+msgstr "ファイルなし"
+
+#: website/templates/project/view_file.mako:107
+msgid "Connected to collaborative file editing"
+msgstr "共有ファイル編集に接続しました"
+
+# Notice: ”Save" は別のmsgid "Save"への参照なので文言を揃える
+#: website/templates/project/view_file.mako:111
+msgid ""
+"This page is currently connected to collaborative file editing. All edits"
+" made will be visible to          contributors with write permission in "
+"real time. Changes will be stored          but not published until you "
+"click the \"Save\" button."
+msgstr ""
+"このページは現在、共有ファイル編集に接続されています。 行われたすべての編集は、書き込み許可を持つコントリビュータにリアルタイムで表示されます。 "
+"変更は保存されますが、[保存]ボタンをクリックするまで公開されません。"
+
+#: website/templates/project/view_file.mako:128
+msgid "Connecting to collaborative file editing"
+msgstr "共有ファイル編集へ接続しています"
+
+#: website/templates/project/view_file.mako:132
+msgid ""
+"This page is currently attempting to connect to collaborative file "
+"editing. You may continue to make edits."
+msgstr "このページは現在、共有ファイル編集に接続しようとしています。 引き続き編集を行うことができます。"
+
+#: website/templates/project/view_file.mako:148
+msgid "Collaborative file editing is unavailable"
+msgstr "共有ファイル編集は利用できません"
+
+#: website/templates/project/view_file.mako:152
+msgid ""
+"Collaborative file editing is currently unavailable. You may continue to "
+"make edits."
+msgstr "共有ファイル編集は現在利用できません。 引き続き編集を行うことができます。"
+
+#: website/templates/project/addon/node_settings.mako:15
+msgid "Submit"
+msgstr "提出"
+
+#: website/templates/project/addon/node_settings_default.mako:7
+#, python-format
+msgid "authorized by %(ownerName)s"
+msgstr "は%(ownerName)sによって認証済みです"
+
+#: website/templates/project/addon/page.mako:4
+msgid "Add-on"
+msgstr "アドオン"
+
+#: website/templates/project/addon/page.mako:21
+#: website/templates/project/addon/widget.mako:17
+#, python-format
+msgid "%(fullname)s add-on is not configured properly."
+msgstr "%(fullname)sアドオンが正しく構成されていません。"
+
+#: website/templates/project/addon/page.mako:23
+#: website/templates/project/addon/widget.mako:19
+#: website/templates/util/render_addon_widget.mako:240
+#, python-format
+msgid "Configure this add-on on the <a href=%(nodeUrl)s>add-ons</a> page."
+msgstr "<a href=%(nodeUrl)s>アドオン</a>ページでこのアドオンを構成します。"
+
+#: website/templates/util/contributor_list.mako:18
+#, python-format
+msgid "%(othersCount)s more"
+msgstr "あと%(othersCount)s人"
+
+#: website/templates/util/oauth_complete.mako:9
+msgid "OAuth Complete"
+msgstr "OAuthの完了"
+
+#: website/templates/util/render_addon_widget.mako:30
+msgid "Read More"
+msgstr "続きを読む"
+
+#: website/templates/util/render_addon_widget.mako:61
+msgid "Dataset"
+msgstr "データセット"
+
+#: website/templates/util/render_addon_widget.mako:64
+msgid "Global ID"
+msgstr "グローバルID"
+
+#: website/templates/util/render_addon_widget.mako:67
+#: website/templates/util/render_addon_widget.mako:68
+msgid "Dataverse"
+msgstr "Dataverse"
+
+#: website/templates/util/render_addon_widget.mako:93
+#, python-format
+msgid ""
+"This project contains a forward to                                <a "
+"%(textUrl)s></a>."
+msgstr "このプロジェクトには、<a %(textUrl)s></a>への転送が含まれています。"
+
+#: website/templates/util/render_addon_widget.mako:99
+#: website/templates/util/render_addon_widget.mako:112
+msgid "Redirect"
+msgstr "リダイレクト"
+
+#: website/templates/util/render_addon_widget.mako:107
+#, python-format
+msgid ""
+"This project contains a forward to                                <a "
+"%(textLinkDisplay)s></a>."
+msgstr "このプロジェクトには、<a %(textLinkDisplay)s></a>への転送が含まれています。"
+
+#: website/templates/util/render_addon_widget.mako:144
+#: website/templates/util/render_addon_widget.mako:175
+msgid "Loading"
+msgstr "ロード中"
+
+#: website/templates/util/render_addon_widget.mako:147
+#: website/templates/util/render_addon_widget.mako:178
+msgid "Error occurred"
+msgstr "エラーが発生しました。"
+
+#: website/templates/util/render_addon_widget.mako:151
+msgid "Linked JupyterHubs"
+msgstr "リンクされたJupyterHubs"
+
+#: website/templates/util/render_addon_widget.mako:158
+msgid "Launch"
+msgstr "始める"
+
+#: website/templates/util/render_addon_widget.mako:166
+msgid "No Linked JupyterHubs"
+msgstr "リンクされたJupyterHubはありません"
+
+#: website/templates/util/render_addon_widget.mako:182
+msgid "Management Project"
+msgstr "管理プロジェクト"
+
+#: website/templates/util/render_addon_widget.mako:184
+msgid "Flowable Task Service"
+msgstr "Flowable タスクサービス"
+
+#: website/templates/util/render_addon_widget.mako:192
+#: website/templates/util/render_addon_widget.mako:219
+msgid "Deposit Manuscript & Data"
+msgstr "論文登録申請"
+
+#: website/templates/util/render_addon_widget.mako:200
+#: website/templates/util/render_addon_widget.mako:225
+msgid "Image Scan Service"
+msgstr "画像スキャン依頼"
+
+#: website/templates/util/render_node.mako:5
+msgid "component"
+msgstr "コンポーネント"
+
+#: website/templates/util/render_node.mako:18
+#, python-format
+msgid "Linked %(nodeType)s"
+msgstr "リンクされた%(nodeType)s"
+
+#: website/templates/util/render_node.mako:22
+msgid "This project is private"
+msgstr "このプロジェクトは非公開です"
+
+#: website/templates/util/render_node.mako:57
+msgid "Remove link"
+msgstr "リンクを削除"
+
+#: website/templates/util/render_node.mako:58
+#, python-format
+msgid "Create a fork of %(summaryTitle)s"
+msgstr "%(summaryTitle)sのフォークを作成"
+
+#: website/templates/util/render_node.mako:66
+msgid "Manage Contributors"
+msgstr "コントリビュータ管理"
+

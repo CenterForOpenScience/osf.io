@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load render_bundle from webpack_loader %}
+{% load i18n %}
 
 {% load static %}
 {% block top_includes %}
@@ -7,11 +8,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.4/js/select2.min.js"></script>
 {% endblock %}
 {% block title %}
-    <title>List of Provider Asset Files</title>
+    <title>{% trans "List of Provider Asset Files" %}</title>
 {% endblock title %}
 {% block content %}
 
-    <h2>List of Provider Asset Files</h2>
+    <h2>{% trans "List of Provider Asset Files" %}</h2>
     <form method="GET">
         Filter: <select class="provider-filter-selector" name="provider_id" onchange="filterSubjects(this.value)">
         {% for id, name in filterable_provider_ids.items %}
@@ -24,16 +25,16 @@
     <table class="table table-striped table-hover table-responsive">
     <thead>
         <tr>
-            <th>Name</th>
-            <th>File Link</th>
-            <th>Providers</th>
+            <th>{% trans "Name" %}</th>
+            <th>{% trans "File Link" %}</th>
+            <th>{% trans "Providers" %}</th>
         </tr>
     </thead>
     <tbody>
         {% for object in asset_files %}
         <tr>
             <td><a href="{% url 'asset_files:detail' asset_id=object.id %}">{{ object.name }}</a></td>
-            <td><a target="_blank" href={{ object.file.url }}>Preview</a></td>
+            <td><a target="_blank" href={{ object.file.url }}>{% trans "Preview" %}</a></td>
             <td>
               {% for provider in object.providers.all %}
                   {{provider.name}},

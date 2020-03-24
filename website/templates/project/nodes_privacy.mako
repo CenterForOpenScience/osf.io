@@ -101,7 +101,7 @@
                     <a href="#" class="btn btn-default" data-bind="click: back" data-dismiss="modal">Back</a>
                 </span>
 
-                    <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
+                    <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">${_("Cancel")}</a>
 
                     <span data-bind="if: page() == WARNING">
                       <span data-bind="if: parentIsEmbargoed">

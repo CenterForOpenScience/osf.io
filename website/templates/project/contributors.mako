@@ -1,49 +1,49 @@
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">${node['title']} Contributors</%def>
+<%def name="title()">${node['title']} ${_("Contributors")}</%def>
 
 <%include file="project/modal_add_contributor.mako"/>
 <%include file="project/modal_remove_contributor.mako"/>
 
 <div class="page-header  visible-xs">
-  <h2 class="text-300">Contributors</h2>
+  <h2 class="text-300">${_("Contributors")}</h2>
 </div>
 
 <div class="col-md-3 col-xs-12">
     <div class="filters">
-        <input type="text" class="form-control searchable" id="nameSearch" placeholder="Filter by name"/>
-        <h5 class="m-t-md">Permissions
+        <input type="text" class="form-control searchable" id="nameSearch" placeholder="${_('Filter by name')}"/>
+        <h5 class="m-t-md">${_("Permissions")}
                 <i class="fa fa-question-circle permission-info"
                     data-toggle="popover"
-                    data-title="Permission Information"
+                    data-title="${_('Permission Information')}"
                     data-container="body"
                     data-placement="right"
                     data-html="true"
                 ></i></h5>
         <div class="btn-group btn-group-justified-vertical filtergroup" id='permissionFilter'>
             <div class="btn-group">
-                <button class="filter-btn btn-default btn" id="admins">Administrator</button>
+                <button class="filter-btn btn-default btn" id="admins">${_("Administrator")}</button>
             </div>
             <div class="btn-group">
-                <button class="filter-btn btn-default btn" id="write">Read + Write</button>
+                <button class="filter-btn btn-default btn" id="write">${_("Read + Write")}</button>
             </div>
             <div class="btn-group">
-                <button class="filter-btn btn-default btn" id="read">Read</button>
+                <button class="filter-btn btn-default btn" id="read">${_("Read")}</button>
             </div>
         </div>
-        <h5 class="m-t-md">Bibliographic Contributor
+        <h5 class="m-t-md">${_("Bibliographic Contributor")}
                 <i class="fa fa-question-circle visibility-info"
                     data-toggle="popover"
-                    data-title="Bibliographic Contributor Information"
+                    data-title=${_('Bibliographic Contributor Information')}
                     data-container="body"
                     data-placement="right"
                     data-html="true"
                 ></i></h5>
         <div class="btn-group btn-group-justified-vertical filtergroup" id='visibleFilter'>
             <div class="btn-group">
-                <button class="filter-btn btn-default btn" id='visible'>Bibliographic</button>
+                <button class="filter-btn btn-default btn" id='visible'>${_("Bibliographic")}</button>
             </div>
             <div class="btn-group">
-                <button class="filter-btn btn-default btn" id='notVisible'>Non-Bibliographic</button>
+                <button class="filter-btn btn-default btn" id='notVisible'>${_("Non-Bibliographic")}</button>
             </div>
         </div>
     </div>
@@ -51,16 +51,16 @@
 
 <div class="col-md-9 col-xs-12">
     <div id="manageContributors" class="scripted">
-        <h3> Contributors
+        <h3> ${_("Contributors")}
             <!-- ko if: canEdit -->
                 <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-sm m-l-md">
-                  <i class="fa fa-plus"></i> Add
+                  <i class="fa fa-plus"></i> ${_("Add")}
                 </a>
             <!-- /ko -->
         </h3>
 
         % if permissions.ADMIN in user['permissions'] and not node['is_registration']:
-            <p class="m-b-xs">Drag and drop contributors to change listing order.</p>
+            <p class="m-b-xs">${_("Drag and drop contributors to change listing order.")}</p>
         % endif
 
     <div data-bind="filters: {
@@ -72,9 +72,9 @@
                     filter: '.permission-filter',
                     type: 'text',
                     buttons: {
-                        admins: 'Administrator',
-                        write: 'Read + Write',
-                        read: 'Read'
+                        admins: '${_("Administrator")}',
+                        write: '${_("Read + Write")}',
+                        read: '${_("Read")}'
                     }
                 },
                 visibleFilter: {
@@ -103,12 +103,12 @@
         </table>
     </div>
     <div data-bind="visible: $root.empty" class="no-items text-danger m-b-md">
-        No contributors found
+        ${_("No contributors found")}
     </div>
     <span id="adminContributorsAnchor" class="project-page anchor"></span>
     <div id="adminContributors" data-bind="if: adminContributors().length">
         <h4>
-            Admins on Parent Projects
+            ${_("Admins on Parent Projects")}
             <i class="fa fa-question-circle admin-info"
                   data-content="These users are not contributors on
                   this component but can view and register it because they
@@ -132,7 +132,7 @@
                 }">
         </table>
         <div id="noAdminContribs" data-bind="visible: $root.adminEmpty" class="text-danger no-items m-b-md">
-            No administrators from parent project found.
+            ${_("No administrators from parent project found.")}
         </div>
     </div>
         ${buttonGroup()}
@@ -141,7 +141,7 @@
     % if permissions.ADMIN in user['permissions'] and access_requests and node['access_requests_enabled']:
     <div id="manageAccessRequests">
         <h3> Requests for Access</h3>
-        <p class="m-b-xs">The following users have requested access to this project.</p>
+        <p class="m-b-xs">${_("The following users have requested access to this project.")}</p>
         <table  id="manageAccessRequestsTable"
         class="table responsive-table responsive-table-xxs"
         data-bind="template: {
@@ -159,12 +159,12 @@
       % if not use_viewonlylinks:
         <div style="display: none;">
       % endif
-        <h3 class="m-t-xl">View-only Links
+        <h3 class="m-t-xl">${_("View-only Links")}
             <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm m-l-md">
-              <i class="fa fa-plus"></i> Add
+              <i class="fa fa-plus"></i> ${_("Add")}
             </a>
         </h3>
-        <p>Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project.</p>
+        <p>${_("Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project.") | n}</p>
         <%include file="project/private_links.mako"/>
       % if not use_viewonlylinks:
         </div>
@@ -179,24 +179,24 @@
     <thead>
         <tr>
             <th class="responsive-table-hide"
-                data-bind="css: {sortable: ($data === 'contrib' && $root.isSortable())}">Name
+                data-bind="css: {sortable: ($data === 'contrib' && $root.isSortable())}">${_("Name")}
             </th>
             <th></th>
             <th>
-                Permissions
+                ${_("Permissions")}
                 <i class="fa fa-question-circle permission-info"
                     data-toggle="popover"
-                    data-title="Permission Information"
+                    data-title="${_('Permission Information')}"
                     data-container="body"
                     data-placement="right"
                     data-html="true"
                 ></i>
             </th>
             <th class="biblio-contrib">
-                Bibliographic Contributor
+                ${_("Bibliographic Contributor")}
                 <i class="fa fa-question-circle visibility-info"
                     data-toggle="popover"
-                    data-title="Bibliographic Contributor Information"
+                    data-title="${_('Bibliographic Contributor Information')}"
                     data-container="body"
                     data-placement="right"
                     data-html="true"
@@ -226,23 +226,23 @@
 <script id="accessRequestsTable" type="text/html">
     <thead>
         <tr>
-            <th class="responsive-table-hide">Name</th>
+            <th class="responsive-table-hide">${_("Name")}</th>
             <th></th>
             <th class="access-permissions">
-                Permissions
+                ${_("Permissions")}
                 <i class="fa fa-question-circle permission-info"
                     data-toggle="popover"
-                    data-title="Permission Information"
+                    data-title="${_('Permission Information')}"
                     data-container="body"
                     data-placement="right"
                     data-html="true"
                 ></i>
             </th>
             <th class="biblio-contrib">
-                Bibliographic Contributor
+                ${_("Bibliographic Contributor")}
                 <i class="fa fa-question-circle visibility-info"
                     data-toggle="popover"
-                    data-title="Bibliographic Contributor Information"
+                    data-title="${_('Bibliographic Contributor Information')}"
                     data-container="body"
                     data-placement="right"
                     data-html="true"
@@ -329,12 +329,12 @@
                            data-toggle="modal"><i class="fa fa-times fa-2x remove-or-reject"></i></span>
                         <button href="#removeContributor" class="btn btn-default btn-sm m-l-md"
                            data-bind="click: remove, visible: $root.collapsed()"
-                           data-toggle="modal"><i class="fa fa-times"></i> Remove</button>
+                           data-toggle="modal"><i class="fa fa-times"></i> ${_("Remove")}</button>
                 <!-- /ko -->
                 <!-- ko if: (canAddAdminContrib) -->
                         <button class="btn btn-success btn-sm m-l-md"
                            data-bind="click: addParentAdmin"
-                        ><i class="fa fa-plus"></i> Add</button>
+                        ><i class="fa fa-plus"></i> ${_("Add")}</button>
                 <!-- /ko -->
             </div>
         </td>
@@ -382,9 +382,9 @@
             <div class="td-content" data-bind="visible: !$root.collapsed() || accessRequest.expanded()">
                 <button class="btn btn-success btn-sm m-l-md request-accept-button"
                        data-bind="click: function() {respondToAccessRequest('accept')}"
-                ><i class="fa fa-plus"></i> Add</button>
+                ><i class="fa fa-plus"></i> ${_("Add")}</button>
                 <span data-bind="click: function() {respondToAccessRequest('reject')}, visible: !$root.collapsed()"><i class="fa fa-times fa-2x remove-or-reject"></i></span>
-                <button class="btn btn-default btn-sm m-l-md" data-bind="click: function() {respondToAccessRequest('reject')}, visible: $root.collapsed()"><i class="fa fa-times"></i> Remove</button>
+                <button class="btn btn-default btn-sm m-l-md" data-bind="click: function() {respondToAccessRequest('reject')}, visible: $root.collapsed()"><i class="fa fa-times"></i> ${_("Remove")}</button>
             </div>
         </td>
     </tr>
@@ -393,8 +393,8 @@
 <%def name="buttonGroup()">
     % if permissions.ADMIN in user['permissions']:
         <div class="m-b-sm">
-            <a class="btn btn-danger contrib-button" data-bind="click: cancel, visible: changed">Discard Changes</a>
-            <a class="btn btn-success contrib-button" data-bind="click: submit, visible: canSubmit">Save Changes</a>
+            <a class="btn btn-danger contrib-button" data-bind="click: cancel, visible: changed">${_("Discard Changes")}</a>
+            <a class="btn btn-success contrib-button" data-bind="click: submit, visible: canSubmit">${_("Save Changes")}</a>
         </div>
     % endif
         <div data-bind="foreach: messages">

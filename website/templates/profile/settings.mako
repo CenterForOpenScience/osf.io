@@ -1,14 +1,14 @@
 <%inherit file="base.mako"/>
-<%def name="title()">Settings</%def>
+<%def name="title()">${_("Settings")}</%def>
 <%def name="resource()"><%
     return 'user'
 %>
 </%def>
 <%def name="content()">
 <% from website import settings %>
-<h2 class="page-header">Settings
+<h2 class="page-header">${_("Settings")}
     <div class="pull-right">
-        <a href="/profile" class="btn btn-link"><i class="fa fa-user m-r-sm"></i>View your profile </a>
+        <a href="/profile" class="btn btn-link"><i class="fa fa-user m-r-sm"></i>${_("View your profile")} </a>
     </div>
 </h2>
 
@@ -16,9 +16,9 @@
 ##<div class="row">
 ##    <div class="col-sm-6">
 ##        <div class="panel panel-default">
-##            <div class="panel-heading"><h3 class="panel-title">Merge Accounts</h3></div>
+##            <div class="panel-heading"><h3 class="panel-title">${_("Merge Accounts")}</h3></div>
 ##            <div class="panel-body">
-##                <a href="/user/merge/">Merge with duplicate account</a>
+##                <a href="/user/merge/">${_("Merge with duplicate account")}</a>
 ##            </div>
 ##        </div>
 ##    </div>
@@ -35,10 +35,10 @@
         <div id="userProfile">
 
             <ul class="nav nav-tabs">
-                <li class="active"><a href="#names" data-toggle="tab">Name</a></li>
-                <li><a href="#jobs" data-toggle="tab">Employment</a></li>
-                <li><a href="#schools" data-toggle="tab">Education</a></li>
-                <li><a href="#social" data-toggle="tab">Social</a></li>
+                <li class="active"><a href="#names" data-toggle="tab">${_("Name")}</a></li>
+                <li><a href="#jobs" data-toggle="tab">${_("Employment")}</a></li>
+                <li><a href="#schools" data-toggle="tab">${_("Education")}</a></li>
+                <li><a href="#social" data-toggle="tab">${_("Social")}</a></li>
             </ul>
 
             <div class="tab-content" id="containDrag">

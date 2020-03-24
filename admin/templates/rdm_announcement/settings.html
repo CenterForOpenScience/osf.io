@@ -1,15 +1,16 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block title %}
-<title>RDM Announcement - Options</title>
+<title>{% trans "RDM Announcement - Options" %}</title>
 {% endblock title %}
 {% block content %}
 
 {% if institution_name %}
-  <h2>RDM Announcement - Options <small>({{ institution_name }})</small></h2>
+  <h2>{% trans "RDM Announcement - Options " %}<small>({{ institution_name }})</small></h2>
 {% else %}
-  <h2>RDM Announcement - Options</h2>
+  <h2>{% trans "RDM Announcement - Options" %}</h2>
 {% endif %}
 
 <div class="row">
@@ -90,7 +91,7 @@
             <div class="text-center">
                 {# if perms.rdm.change_rdmannouncementoption #}
                 <input type="submit" class="btn btn-primary" value="Save">
-                <a role="button" href="{% url 'announcement:index' %}" class="btn btn-default">Cancel</a>
+                <a role="button" href="{% url 'announcement:index' %}" class="btn btn-default">{% trans "Cancel" %}</a>
                 {# endif #}
             </div>
         </div>

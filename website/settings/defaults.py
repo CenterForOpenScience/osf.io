@@ -1982,3 +1982,19 @@ ENABLE_PRIVATE_SEARCH = False
 # は、englishアナライザーのまま漢字などをダブルクオートで囲ってひとま
 # とめにして検索する。
 ENABLE_MULTILINGUAL_SEARCH = False
+
+BABEL_TRANSLATION_DIRECTORIES = os.path.join(BASE_PATH, 'translations')
+BABEL_DOMAIN = 'messages'
+BABEL_LANGUAGES = {
+    'en': 'English',
+    'ja': '日本語'
+}
+BABEL_DEFAULT_LOCALE = 'ja'
+
+
+MIDDLEWARE = (
+
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
+    'django.middleware.common.CommonMiddleware',
+)

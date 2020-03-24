@@ -4,13 +4,17 @@ var bootbox = require('bootbox');
 var $osf = require('js/osfHelpers');
 var ctx = window.contextVars;
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 var changeAddonSettingsSuccess = function () {
-    $osf.growl('Success', 'Your add-on settings have been successfully changed.', 'success');
+    $osf.growl('Success', _('Your add-on settings have been successfully changed.'), 'success');
     location.reload();
 };
 
 var changeAddonSettingsFailure = function () {
-    var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: rdm_support@nii.ac.jp">rdm_support@nii.ac.jp</a>';
+    var msg = _('Sorry, we had trouble saving your settings. If this persists please contact ') + '<a href="mailto: rdm_support@nii.ac.jp">rdm_support@nii.ac.jp</a>';
     $osf.growl('Failure', msg, 'danger');
 };
 
@@ -21,8 +25,8 @@ $('.addon-container').each(function(ind, elm) {
             var data = {};
             data[elm.attr('name')] = false;
             bootbox.confirm({
-                title: 'Disable Add-on?',
-                message: 'Are you sure you want to disable this add-on?',
+                title: _('Disable Add-on?'),
+                message: _('Are you sure you want to disable this add-on?'),
                 callback: function (result) {
                     if (result) {
                         var request = $osf.postJSON(ctx.node.urls.api + 'settings/addons/', data);
@@ -32,8 +36,11 @@ $('.addon-container').each(function(ind, elm) {
                 },
                 buttons: {
                     confirm: {
-                        label: 'Disable',
+                        label: _('Disable'),
                         className: 'btn-danger'
+                    },
+                    cancel:{
+                        label:_('Cancel')
                     }
                 }
             });
@@ -55,7 +62,10 @@ $('.addon-container').each(function(ind, elm) {
                 },
                 buttons:{
                     confirm:{
-                        label:'Confirm'
+                        label:_('Confirm')
+                    },
+                    cancel:{
+                        label:_('Cancel')
                     }
                 }
             });

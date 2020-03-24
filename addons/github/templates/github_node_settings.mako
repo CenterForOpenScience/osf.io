@@ -12,17 +12,17 @@
                         </a>
                     % if not is_registration:
                         <a id="githubRemoveToken" class="text-danger pull-right addon-auth" >
-                          Disconnect Account
+                          ${_("Disconnect Account")}
                         </a>
                     % endif
                 % else:
                     % if user_has_auth:
                         <a id="githubImportToken" class="text-primary pull-right addon-auth">
-                           Import Account from Profile
+                           ${_("Import Account from Profile")}
                         </a>
                     % else:
                         <a id="githubCreateToken" class="text-primary pull-right addon-auth">
-                           Connect Account
+                           ${_("Connect Account")}
                         </a>
                     % endif
                 % endif
@@ -35,7 +35,7 @@
         <input type="hidden" id="githubUser" name="github_user" value="${github_user}" />
         <input type="hidden" id="githubRepo" name="github_repo" value="${github_repo}" />
 
-        <p><strong>Current Repo: </strong>
+        <p><strong>${_("Current Repo: ")}</strong>
 
         % if is_owner and not is_registration:
         </p>
@@ -51,15 +51,15 @@
 
             <div class="col-md-6 m-b-sm">
                 <button class="btn btn-success addon-settings-submit">
-                    Save
+                    ${_("Save")}
                 </button>
-                <a id="githubCreateRepo" class="btn btn-success pull-right">Create Repo</a>
+                <a id="githubCreateRepo" class="btn btn-success pull-right">${_("Create Repo")}</a>
             </div>
         </div>
         % elif github_repo_full_name:
             <a href="${files_url}">${github_repo_full_name}</a></p>
         % else:
-            <span>None</span></p>
+            <span>${_("None")}</span></p>
         % endif
     % endif
 
@@ -68,12 +68,12 @@
     % if node_has_auth and not valid_credentials:
         <div class="addon-settings-message text-danger p-t-sm">
             % if is_owner:
-                Could not retrieve GitHub settings at this time. The GitHub addon credentials
-                may no longer be valid. Try deauthorizing and reauthorizing GitHub on your
-                <a href="${addons_url}">account settings page</a>.
+                ${_('Could not retrieve %(addonName)s settings at this time. The %(addonName)s addon credentials\
+                may no longer be valid. Try deauthorizing and reauthorizing %(addonName)s on your\
+                <a href="%(addonsUrl)s">account settings page</a>.') % dict(addonsUrl=h(addons_url),addonName='GitHub') | n}
             % else:
-                Could not retrieve GitHub settings at this time. The GitHub addon credentials
-                may no longer be valid. Contact ${auth_osf_name} to verify.
+                ${_("Could not retrieve %(addonName)s settings at this time. The %(addonName)s addon credentials\
+                may no longer be valid. Contact %(authOsfName)s to verify.") % dict(authOsfName=auth_osf_name,addonName='GitHub')}
             % endif
         </div>
     % else:

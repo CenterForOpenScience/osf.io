@@ -13,6 +13,11 @@ var FileRevisionsTable = require('./revisions.js');
 var storageAddons = require('json-loader!storageAddons.json');
 var CommentModel = require('js/comment');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
+
 var History = require('exports-loader?History!history');
 var SocialShare = require('js/components/socialshare');
 
@@ -83,7 +88,7 @@ var SharePopover =  {
                                     'var mfrRender = new mfr.Render("mfrIframe", "' + renderLink + '");' +
                                 '</script>' + '"]'
                             ), m('br'),
-                            m('p', 'Direct iframe with fixed height and width'),
+                            m('p', _('Direct iframe with fixed height and width')),
                             m('textarea.form-control[readonly][value="' +
                                 '<iframe src="' + renderLink + '" width="100%" scrolling="yes" height="' + params.height + '" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen>"]'
                             )
@@ -125,15 +130,15 @@ var FileViewPage = {
             };
             if (self.file.isPreregCheckout){
                 m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m('span', [
-                    m('strong', 'File is checked out.'),
-                    ' This file has been checked out by a COS Preregistration Challenge Reviewer and will become available when review is complete.',
+                    m('strong', _('File is checked out.')),
+                    _(' This file has been checked out by a COS Preregistration Challenge Reviewer and will become available when review is complete.'),
                 ])));
             } else if ((self.file.checkoutUser) && (self.file.checkoutUser !== self.context.currentUser.id)) {
                 m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m('span', [
-                    m('strong', 'File is checked out.'),
-                    ' This file has been checked out by a ',
-                    m('a[href="/' + self.file.checkoutUser + '"]', 'collaborator'),
-                    '. It needs to be checked in before any changes can be made.'
+                    m('strong', _('File is checked out.')),
+                    _(' This file has been checked out by a '),
+                    m('a[href="/' + self.file.checkoutUser + '"]', _('collaborator')),
+                    _('. It needs to be checked in before any changes can be made.')
                 ])));
             }
         } else if (self.file.provider === 'bitbucket' || self.file.provider === 'gitlab' || self.file.provider === 'onedrive') {
@@ -178,10 +183,10 @@ var FileViewPage = {
         }
 
         $(document).on('fileviewpage:delete', function() {
-            var title = 'Delete file?';
+            var title = _('Delete file?');
             var message = '<p class="overflow">' +
-                    'Are you sure you want to delete <strong>' +
-                    self.file.safeName + '</strong>?' + '</p>';
+                    agh.sprintf(_('Are you sure you want to delete <strong>%1$s</strong>?'),self.file.safeName) +
+                    '</p>';
 
 
             bootbox.confirm({
@@ -198,23 +203,26 @@ var FileViewPage = {
                     }).done(function() {
                         window.location = self.node.urls.files;
                     }).fail(function() {
-                        $osf.growl('Error', 'Could not delete file.');
+                        $osf.growl('Error', _('Could not delete file.'));
                     });
                 },
                 buttons:{
                     confirm:{
-                        label:'Delete',
+                        label:_('Delete'),
                         className:'btn-danger'
+                    },
+                    cancel:{
+                        label:_('Cancel')
                     }
                 }
             });
         });
         $(document).on('fileviewpage:checkout', function() {
             bootbox.confirm({
-                title: 'Confirm file check out?',
-                message: 'This would mean ' +
-                    'other contributors cannot edit, delete or upload new versions of this file ' +
-                    'as long as it is checked out. You can check it back in at anytime.',
+                title: _('Confirm file check out?'),
+                message: _('This would mean ') +
+                    _('other contributors cannot edit, delete or upload new versions of this file ') +
+                    _('as long as it is checked out. You can check it back in at anytime.'),
                 callback: function(confirm) {
                     if (!confirm) {
                         return;
@@ -234,12 +242,12 @@ var FileViewPage = {
                     }).done(function(resp) {
                         window.location.reload();
                     }).fail(function(resp) {
-                        $osf.growl('Error', 'Unable to check out file');
+                        $osf.growl('Error', _('Unable to check out file'));
                     });
                 },
                 buttons:{
                     confirm:{
-                        label: 'Check out file',
+                        label: _('Check out file'),
                         className: 'btn-warning'
                     }
                 }
@@ -261,16 +269,16 @@ var FileViewPage = {
             }).done(function(resp) {
                 window.location.reload();
             }).fail(function(resp) {
-                $osf.growl('Error', 'Unable to check in file');
+                $osf.growl('Error', _('Unable to check in file'));
             });
         });
         $(document).on('fileviewpage:force_checkin', function() {
             bootbox.confirm({
-                title: 'Force check in file?',
-                message: 'This will check in the file for all users, allowing it to be edited. Are you sure?',
+                title: _('Force check in file?'),
+                message: _('This will check in the file for all users, allowing it to be edited. Are you sure?'),
                 buttons: {
                     confirm:{
-                        label: 'Force check in',
+                        label: _('Force check in'),
                         className: 'btn-danger'
                     }
                 },
@@ -293,7 +301,7 @@ var FileViewPage = {
                     }).done(function(resp) {
                         window.location.reload();
                     }).fail(function(resp) {
-                        $osf.growl('Error', 'Unable to force check in file. Make sure you have admin privileges.');
+                        $osf.growl('Error', _('Unable to force check in file. Make sure you have admin privileges.'));
                     });
                 }
 
@@ -334,11 +342,11 @@ var FileViewPage = {
                                 }, [
                                     m('span.progress-bar-content', [
                                         {
-                                            connected: 'Live editing mode ',
-                                            connecting: 'Attempting to connect ',
-                                            unsupported: 'Unsupported browser ',
-                                            saving: 'Saving... '
-                                        }[self.shareJSObservables.status()] || 'Unavailable: Live editing ',
+                                            connected: _('Live editing mode '),
+                                            connecting: _('Attempting to connect '),
+                                            unsupported: _('Unsupported browser '),
+                                            saving: _('Saving... ')
+                                        }[self.shareJSObservables.status()] || _('Unavailable: Live editing '),
                                         m('i.fa.fa-question-circle.fa-large')
                                     ])
                                 ])
@@ -400,7 +408,7 @@ var FileViewPage = {
             var state = {
                 scrollTop: $(window).scrollTop(),
             };
-            History.pushState(state, 'OSF | ' + window.contextVars.file.name, url);
+            History.pushState(state, 'GakuNin RDM | ' + window.contextVars.file.name, url);
         }
 
         function changeVersionHeader(){
@@ -461,7 +469,7 @@ var FileViewPage = {
 
         if(ctrl.file.urls.external && !ctrl.file.privateRepo) {
             m.render(document.getElementById('externalView'), [
-                m('p.text-muted', 'View this file on ', [
+                m('p.text-muted', _('View this file on '), [
                     m('a', {href:ctrl.file.urls.external}, storageAddons[ctrl.file.provider].fullName)
                 ], '.')
             ]);
@@ -480,10 +488,10 @@ var FileViewPage = {
                             state = {
                                 scrollTop: $(window).scrollTop(),
                             };
-                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, url);
+                            History.pushState(state, 'GakuNin RDM | ' + window.contextVars.file.name, url);
                         }
                     }
-                }, ctrl.editor.title);
+                }, _(ctrl.editor.title));
             }
         };
 
@@ -493,19 +501,19 @@ var FileViewPage = {
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && (ctrl.context.currentUser.isAdmin) && (ctrl.file.provider !== 'bitbucket') && (ctrl.file.provider !== 'gitlab') && (ctrl.file.provider !== 'onedrive') && !ctrl.context.file.isPreregCheckout ? m('.btn-group.m-l-xs.m-t-xs', [
-                ctrl.isLatestVersion ? m('.btn.btn-sm.btn-default', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check in') : null
+                ctrl.isLatestVersion ? m('.btn.btn-sm.btn-default', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, _('Force check in')) : null
             ]) : '',
             ctrl.canEdit() && (!ctrl.file.checkoutUser) && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
-                ctrl.isLatestVersion ? m('.btn.btn-sm.btn-default', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check out') : null
+                ctrl.isLatestVersion ? m('.btn.btn-sm.btn-default', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, _('Check out')) : null
             ]) : '',
             (ctrl.canEdit() && (ctrl.file.checkoutUser === ctrl.context.currentUser.id) ) ? m('.btn-group.m-l-xs.m-t-xs', [
-                ctrl.isLatestVersion ? m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkin')}, 'Check in') : null
+                ctrl.isLatestVersion ? m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkin')}, _('Check in')) : null
             ]) : '',
             // Special case whether or not to show the delete button for published Dataverse files
             // Special case to not show delete for public figshare files
             // Special case to not show force check-in for read-only providers
             (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-t-xs', [
-                ctrl.isLatestVersion ? m('a.btn.btn-sm.btn-primary.file-addtimestamp', {href: 'addtimestamp'}, 'Request Trusted Timestamp') : null
+                ctrl.isLatestVersion ? m('a.btn.btn-sm.btn-primary.file-addtimestamp', {href: 'addtimestamp'}, _('Request Trusted Timestamp')) : null
             ]) : '',
             (
                 ctrl.canEdit() &&
@@ -513,16 +521,16 @@ var FileViewPage = {
                 (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) &&
                 (document.URL.indexOf('version=latest-published') < 0)
             ) ? m('.btn-group.m-l-xs.m-t-xs', [
-                ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-default.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete') }, 'Delete') : null
+                ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-default.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete') }, _('Delete')) : null
             ]) : '',
             m('.btn-group.m-t-xs', [
-                ctrl.isLatestVersion ? m('a.btn.btn-sm.btn-primary.file-download', {href: 'download'}, 'Download') : null
+                ctrl.isLatestVersion ? m('a.btn.btn-sm.btn-primary.file-download', {href: 'download'}, _('Download')) : null
             ]),
             window.contextVars.node.isPublic? m('.btn-group.m-t-xs', [
                 m.component(SharePopover, {link: link, height: height})
             ]) : '',
             m('.btn-group.btn-group-sm.m-t-xs', [
-               ctrl.editor ? m( '.btn.btn-default.disabled', 'Toggle view: ') : null
+               ctrl.editor ? m( '.btn.btn-default.disabled', _('Toggle view: ')) : null
             ].concat(
                 m('button.btn' + (ctrl.mfrIframeParent.is(':visible') ? '.btn-primary' : '.btn-default'), {
                     onclick: function (e) {
@@ -531,14 +539,14 @@ var FileViewPage = {
                         if (!ctrl.mfrIframeParent.is(':visible') || panelsShown > 1) {
                             ctrl.mfrIframeParent.toggle();
                             ctrl.revisions.selected = false;
-                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'view'));
+                            History.pushState(state, 'GakuNin RDM | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'view'));
                         } else if (ctrl.mfrIframeParent.is(':visible') && !ctrl.editor){
                             ctrl.mfrIframeParent.toggle();
                             ctrl.revisions.selected = true;
-                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'revision'));
+                            History.pushState(state, 'GakuNin RDM | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'revision'));
                         }
                     }
-                }, 'View'), editButton())
+                }, _('View')), editButton())
             ),
             m('.btn-group.m-t-xs', [
                 m('button.btn.btn-sm' + (ctrl.revisions.selected ? '.btn-primary': '.btn-default'), {onclick: function(){
@@ -552,16 +560,16 @@ var FileViewPage = {
                             ctrl.editor.selected = false;
                         }
                         ctrl.revisions.selected = true;
-                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'revision'));
+                        History.pushState(state, 'GakuNin RDM | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'revision'));
                     } else {
                         ctrl.mfrIframeParent.toggle();
                         if (ctrl.editor) {
                             ctrl.editor.selected = false;
                         }
                         ctrl.revisions.selected = false;
-                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'view'));
+                        History.pushState(state, 'GakuNin RDM | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'view'));
                     }
-                }}, 'Revisions')
+                }}, _('Revisions'))
             ])
         ]));
 

@@ -11,29 +11,34 @@ var osfHelpers = require('js/osfHelpers');
 var m = require('mithril');
 var NodesPrivacyTreebeard = require('js/nodesPrivacySettingsTreebeard');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
+
 var MESSAGES = {
     makeProjectPublicWarning:
-    'Please review your projects, components, and add-ons for sensitive or restricted information before making them public.' +
-    '<br><br>Once they are made public, you should assume they will always be public. You can ' +
-        'return them to private later, but search engines (including Google’s cache) or others may access files, wiki pages, or analytics before you do.',
+    _('Please review your projects, components, and add-ons for sensitive or restricted information before making them public.') +
+    _('<br><br>Once they are made public, you should assume they will always be public. You can ') +
+        _('return them to private later, but search engines (including Google’s cache) or others may access files, wiki pages, or analytics before you do.'),
     makeProjectPrivateWarning:
-    '<ul><li>Public forks and registrations of this project will remain public.</li>' +
-    '<li>Search engines (including Google\'s cache) or others may have accessed files, wiki pages, or analytics while this project was public.</li></ul>',
+    _('<ul><li>Public forks and registrations of this project will remain public.</li>') +
+    _('<li>Search engines (including Google\'s cache) or others may have accessed files, wiki pages, or analytics while this project was public.</li></ul>'),
     makeSupplementalProjectPrivateWarning:
-    '<ul><li>Preprints will remain public.</li><li>Public forks and registrations of this project will remain public.</li>' +
-    '<li>Search engines (including Google\'s cache) or others may have accessed files, wiki pages, or analytics while this project was public.</li></ul>',
-    makeEmbargoPublicWarning: 'By clicking confirm, an email will be sent to project administrator(s) to approve ending the embargo. If approved, this registration, including any components, will be made public immediately. This action is irreversible.',
-    makeEmbargoPublicTitle: 'End embargo early',
-    selectNodes: 'Adjust your privacy settings by checking the boxes below. ' +
-    '<br><br><b>Checked</b> projects and components will be <b>public</b>.  <br><b>Unchecked</b> components will be <b>private</b>.',
+    _('<ul><li>Preprints will remain public.</li><li>Public forks and registrations of this project will remain public.</li>') +
+    _('<li>Search engines (including Google\'s cache) or others may have accessed files, wiki pages, or analytics while this project was public.</li></ul>'),
+    makeEmbargoPublicWarning: _('By clicking confirm, an email will be sent to project administrator(s) to approve ending the embargo. If approved, this registration, including any components, will be made public immediately. This action is irreversible.'),
+    makeEmbargoPublicTitle: _('End embargo early'),
+    selectNodes: _('Adjust your privacy settings by checking the boxes below. ') +
+    _('<br><br><b>Checked</b> projects and components will be <b>public</b>.  <br><b>Unchecked</b> components will be <b>private</b>.'),
     confirmWarning: {
-        nodesPublic: 'The following projects and components will be made <b>public</b>.',
-        nodesPrivate: 'The following projects and components will be made <b>private</b>.',
-        nodesNotChangedWarning: 'No privacy settings were changed. Go back to make a change.',
-        tooManyNodesWarning: 'You can only change the privacy of 100 projects and components at a time.  Please go back and limit your selection.',
+        nodesPublic: _('The following projects and components will be made <b>public</b>.'),
+        nodesPrivate: _('The following projects and components will be made <b>private</b>.'),
+        nodesNotChangedWarning: _('No privacy settings were changed. Go back to make a change.'),
+        tooManyNodesWarning: _('You can only change the privacy of 100 projects and components at a time.  Please go back and limit your selection.'),
     },
-    preprintPrivateWarning: 'This project/component contains supplemental materials for a preprint.'  +
-        '<p><strong>Making this project/component private will prevent others from accessing it.</strong></p>'
+    preprintPrivateWarning: _('This project/component contains supplemental materials for a preprint.')  +
+        _('<p><strong>Making this project/component private will prevent others from accessing it.</strong></p>')
 
 };
 
@@ -149,10 +154,10 @@ var NodesPrivacyViewModel = function(node, onSetPrivacy) {
 
         return {
             warning: self.parentIsPublic ?
-                'Make ' + self.parentNodeType + ' private' :
-                'Warning',
-            select: 'Change privacy settings',
-            confirm: 'Projects and components affected'
+                agh.sprintf(_('Make %1$s private'),self.parentNodeType) :
+                _('Warning'),
+            select: _('Change privacy settings'),
+            confirm: _('Projects and components affected')
         }[self.page()];
     });
 
@@ -201,8 +206,8 @@ NodesPrivacyViewModel.prototype.fetchNodeTree = function() {
         nodesState[nodeParent].changed = true;
         self.nodesState(nodesState);
     }).fail(function(xhr, status, error) {
-        $osf.growl('Error', 'Unable to retrieve project settings');
-        Raven.captureMessage('Could not GET project settings.', {
+        $osf.growl('Error', _('Unable to retrieve project settings'));
+        Raven.captureMessage(_('Could not GET project settings.'), {
             extra: {
                 url: self.treebeardUrl, status: status, error: error
             }
@@ -241,7 +246,7 @@ NodesPrivacyViewModel.prototype.confirmChanges =  function() {
     });
     //The API's bulk limit is 100 nodes.  We catch the exception in nodes_privacy.mako.
     if (nodesChanged.length <= 100) {
-        $osf.block('Updating Privacy');
+        $osf.block(_('Updating Privacy'));
         patchNodesPrivacy(nodesChanged, self.dataType).then(function () {
             self.onSetPrivacy(nodesChanged);
 
@@ -251,12 +256,12 @@ NodesPrivacyViewModel.prototype.confirmChanges =  function() {
             window.location.reload();
         }).fail(function (xhr) {
             $osf.unblock();
-            var errorMessage = 'Unable to update project privacy';
+            var errorMessage = _('Unable to update project privacy');
             if (xhr.responseJSON && xhr.responseJSON.errors) {
                 errorMessage = xhr.responseJSON.errors[0].detail;
             }
-            $osf.growl('Problem changing privacy', errorMessage);
-            Raven.captureMessage('Could not PATCH project settings.');
+            $osf.growl(_('Problem changing privacy'), errorMessage);
+            Raven.captureMessage(_('Could not PATCH project settings.'));
             self.clear();
             $('#nodesPrivacy').modal('hide');
         }).always(function() {
@@ -312,14 +317,14 @@ NodesPrivacyViewModel.prototype.makeEmbargoPublic = function() {
 	}
 	return null;
     }).filter(Boolean);
-    $osf.block('Submitting request to end embargo early ...');
+    $osf.block(_('Submitting request to end embargo early ...'));
     patchNodesPrivacy(nodesChanged, self.dataType).then(function (res) {
         $osf.unblock();
         $('.modal').modal('hide');
         self.onSetPrivacy(nodesChanged, true);
         $osf.growl(
-            'Email sent',
-            'The administrator(s) can approve or cancel the action within 48 hours. If 48 hours pass without any action taken, then the registration will become public.',
+            _('Email sent'),
+            _('The administrator(s) can approve or cancel the action within 48 hours. If 48 hours pass without any action taken, then the registration will become public.'),
             'success'
         );
     });

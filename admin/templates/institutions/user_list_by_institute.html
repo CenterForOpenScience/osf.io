@@ -1,5 +1,6 @@
-<h2 id="title">Statistical Status of NII Storage</h2>
-<h3 id="sub-title">NII Storage > {{ institution_name }}</h3>
+{% load i18n %}
+<h2 id="title">{% trans "Statistical Status of NII Storage" %}</h2>
+<h3 id="sub-title">{% blocktrans %}NII Storage > {{ institution_name }}{% endblocktrans %}</h3>
 
 {% include "util/pagination.html" with items=page status=direction order=order_by %}
 <table class="table table-striped table-hover table-responsive">
@@ -7,32 +8,32 @@
         <tr>
             <th>GUID</th>
             <th>
-                Username
+                {% trans "Username" %}
                 <a href="?order_by=username&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
                 <span class="dropup"><a href="?order_by=username&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
             </th>
             <th>
-                Fullname
+                {% trans "Fullname" %}
                 <a href="?order_by=fullname&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
                 <span class="dropup"><a href="?order_by=fullname&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
             </th>
             <th>
-                Ratio
+                {% trans "Ratio" %}
                 <a href="?order_by=ratio&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
                 <span class="dropup"><a href="?order_by=ratio&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
             </th>
             <th>
-                Usage
+                {% trans "Usage" %}
                 <a href="?order_by=usage&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
                 <span class="dropup"><a href="?order_by=usage&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
             </th>
             <th>
-                Remaining
+                {% trans "Remaining" %}
                 <a href="?order_by=remaining&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
                 <span class="dropup"><a href="?order_by=remaining&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
             </th>
             <th>
-                Quota
+                {% trans "Quota" %}
                 <a href="?order_by=quota&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
                 <span class="dropup"><a href="?order_by=quota&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
             </th>

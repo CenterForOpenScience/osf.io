@@ -5,6 +5,11 @@ var ko = require('knockout');
 var $osf = require('./osfHelpers');
 var ChangeMessageMixin = require('js/changeMessage');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
+
 
 var NODE_OFFSET = 25;
 
@@ -57,9 +62,9 @@ var PrivateLinkViewModel = function(url) {
     }
 
     function onFetchError() {
-        $osf.growl('Could not retrieve projects.', 'Please refresh the page or ' +
-                'contact ' + $osf.osfSupportLink() + ' if the ' +
-                'problem persists.');
+        $osf.growl(_('Could not retrieve projects.'), _('Please refresh the page or ') +
+                agh.sprintf(_('contact %1$s') , $osf.osfSupportLink()) + _(' if the ') +
+                _('problem persists.'));
     }
 
     function fetch() {
@@ -99,7 +104,7 @@ var PrivateLinkViewModel = function(url) {
     self.submit = function() {
 
         self.disableSubmit(true);
-        self.submitText('Please wait');
+        self.submitText(_('Please wait'));
 
         $osf.postJSON(
             nodeApiUrl + 'private_link/',

@@ -4,33 +4,34 @@
 {% load user_extras %}
 
 {% load static %}
+{% load i18n %}
 {% block title %}
-    <title>User Spam</title>
+    <title>{% trans "User Spam" %}</title>
 {% endblock title %}
 {% block content %}
-    <h2>User's List of Spam</h2>
+    <h2>{% trans "User's List of Spam" %}</h2>
     <a href="{{ user_id | reverse_user }}" class="btn btn-primary">
         <i class="fa fa-arrow-left"></i>
-        User details
+        {% trans "User details" %}
     </a>
     <div class="btn-group">
     {% if status == '1' %}
-        <a href="" class="btn btn-primary active disabled">Flagged</a>
+        <a href="" class="btn btn-primary active disabled">{% trans "Flagged" %}</a>
     {% else %}
         <a href="{% reverse_spam_user user_id page=page_number status=1 %}"
-           class="btn btn-primary">Flagged</a>
+           class="btn btn-primary">{% trans "Flagged" %}</a>
     {% endif %}
     {% if status == '2' %}
-        <a href="" class="btn btn-primary active disabled">Spam</a>
+        <a href="" class="btn btn-primary active disabled">{% trans "Spam" %}</a>
     {% else %}
         <a href="{% reverse_spam_user user_id page=page_number status=2 %}"
-           class="btn btn-primary">Spam</a>
+           class="btn btn-primary">{% trans "Spam" %}</a>
     {% endif %}
     {% if status == '4' %}
-        <a href="" class="btn btn-primary active disabled">Ham</a>
+        <a href="" class="btn btn-primary active disabled">{% trans "Ham" %}</a>
     {% else %}
         <a href="{% reverse_spam_user user_id page=page_number status=4 %}"
-           class="btn btn-primary">Ham</a>
+           class="btn btn-primary">{% trans "Ham" %}</a>
     {% endif %}
     </div>
     {% include "util/pagination.html" with items=page status=status %}
@@ -40,10 +41,10 @@
             <th><label for="all"></label>
                 <input id="all" type="checkbox" disabled>
             </th>
-            <th>Author</th>
-            <th>Reporter</th>
-            <th>Date</th>
-            <th>Content</th>
+            <th>{% trans "Author" %}</th>
+            <th>{% trans "Reporter" %}</th>
+            <th>{% trans "Date" %}</th>
+            <th>{% trans "Content" %}</th>
         </tr>
     </thead>
     <tbody>
@@ -70,13 +71,13 @@
         <td>
             <a href="{% reverse_spam_detail comment.id page=page_number status=status %}"
                class="btn btn-primary">
-                Detail
+                {% trans "Detail" %}
             </a>
         </td>
     </tr>
     {% empty %}
     <tr>
-        <td>No more Spam!</td>
+        <td>{% trans "No more Spam!" %}</td>
     </tr>
     {% endfor %}
     </tbody>

@@ -1,31 +1,32 @@
+{% load i18n %}
 <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal">x</button>
-    <h3>Suggested Email message for spammer</h3>
+    <h3>{% trans "Suggested Email message for spammer" %}</h3>
 </div>
 <div class="modal-body">
-    <p>Dear {{ spam.author.fullname }},</p>
-    <p>A comment you made on a GakuNin RDM (GRDM) project
+    <p>{% blocktrans with spamAuthorFullname=spam.author.fullname %}Dear {{ spamAuthorFullname }},{% endblocktrans %}</p>
+    <p>{% trans "A comment you made on a GakuNin RDM (GRDM) project" %}
         [<a href="{{ spam.node.absolute_url }}">{{ spam.node.absolute_url }}</a>]
-        has been reported as
+        {% trans "has been reported as" %}
         {% if spam.category == 'hate' %}
-            hate speech
+            {% trans "hate speech" %}
         {% elif  spam.category == 'violence' %}
-            violent or harmful behavior
+            {% trans "violent or harmful behavior" %}
         {% else %}
-            spam
+            {% trans "spam" %}
         {% endif %}
-        Our team reviewed your comment and found it to be in violation
-        of the GakuNin RDM Terms of Service:
+        {% trans "Our team reviewed your comment and found it to be in violation
+        of the GakuNin RDM Terms of Service:" %}
         <a href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419">
             https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419
         </a>.
-        As a result, your comment has been removed from the project.
-        If you have questions about this action, please contact
+        {% trans "As a result, your comment has been removed from the project.
+        If you have questions about this action, please contact" %}
         <a href="mailto:{{ spam.osf_support_email }}">{{ spam.osf_support_email }}</a>.
     </p>
-    <p>Best,</p>
-    <p>The OSF Team</p>
+    <p>{% trans "Best," %}</p>
+    <p>{% trans "The GakuNin RDM Team" %}</p>
 </div>
 <div class="modal-footer">
-    <button type="button" class="btn" data-dismiss="modal" >Close</button>
+    <button type="button" class="btn" data-dismiss="modal" >{% trans "Close" %}</button>
 </div>

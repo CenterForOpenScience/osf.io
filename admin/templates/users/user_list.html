@@ -1,3 +1,4 @@
+{% load i18n %}
 {% include "util/pagination.html" with items=page status=status %}
 {% if form_action %}
 <form action={{form_action}} method="POST">
@@ -18,11 +19,11 @@
                 </script>
             </th>
             {% endif %}
-            <th>GUID</th>
-            <th>Username</th>
-            <th>Fullname</th>
-            <th>Date confirmed</th>
-            <th>Date disabled</th>
+            <th>{% trans "GUID" %}</th>
+            <th>{% trans "Username" %}</th>
+            <th>{% trans "Fullname" %}</th>
+            <th>{% trans "Date confirmed" %}</th>
+            <th>{% trans "Date disabled" %}</th>
         </tr>
     </thead>
     <tbody>
@@ -57,19 +58,19 @@
 </table>
 {% if form_action and perms.osf.mark_spam %}
 <button class="btn btn-warning" type="button" data-toggle="modal" data-target="#confirmSpamListModal">
-    Confirm Spam
+    {% trans "Confirm Spam" %}
 </button>
 <div id="confirmSpamListModal" class="modal fade well" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal">x</button>
-                <h3>Are you sure the selected user(s) are spam?</h3>
+                <h3>{% trans "Are you sure the selected user(s) are spam?" %}</h3>
             </div>
             <div class="modal-footer">
                 <input class="btn btn-danger" type="submit" value="Confirm" />
                 <button type="button" class="btn btn-default" data-dismiss="modal">
-                    Cancel
+                    {% trans "Cancel" %}
                 </button>
             </div>
         </div>

@@ -14,9 +14,9 @@
             </div>
         % else:
             <div class='addon-config-error p-sm'>
-                ${full_name} add-on is not configured properly.
+                ${_("%(fullname)s add-on is not configured properly.") % dict(fullname=full_name)}
                 % if user['is_contributor_or_group_member']:
-                    Configure this add-on on the <a href="${node['url']}addons/">add-ons</a> page.
+                    ${_('Configure this add-on on the <a href=%(nodeUrl)s>add-ons</a> page.') % dict(nodeUrl='"' + h(node['url']) + 'addons/"') | n}
                 % endif
             </div>
 

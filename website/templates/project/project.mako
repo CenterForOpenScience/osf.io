@@ -19,7 +19,7 @@
                         </h2>
                     % else:
                         <h2 class="node-parent-title unavailable">
-                            <span>Private Project</span>&nbsp;/
+                            <span>${_("Private Project")}</span>&nbsp;/
                         </h2>
                     % endif
                 % endif
@@ -42,11 +42,11 @@
                     % endif
                     <div class="btn-group">
                     % if not node["is_public"]:
-                        <button class="btn btn-default disabled">Private</button>
+                        <button class="btn btn-default disabled">${_("Private")}</button>
                         % if project_makepublic:
                         % if permissions.ADMIN in user['permissions'] and not (node['is_pending_registration'] or node['is_pending_embargo']) and not (node['is_embargoed'] and parent_node['exists']):
                         <a disabled data-bind="attr: {'disabled': false}, css: {'disabled': nodeIsPendingEmbargoTermination}" class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">
-                          Make Public
+                          ${_("Make Public")}
                           <!-- ko if: nodeIsPendingEmbargoTermination -->
                           <span class="fa fa-info-circle hidden" data-bind="css: {'hidden': false}, tooltip: {title: makePublicTooltip, placement: 'bottom', disabled: true}"></span>
                           <!-- /ko -->
@@ -55,14 +55,14 @@
                         % endif
                     % else:
                         % if permissions.ADMIN in user['permissions'] and not node['is_registration']:
-                            <a class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">Make Private</a>
+                            <a class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">${_("Make Private")}</a>
                         % endif
-                        <button class="btn btn-default disabled">Public</button>
+                        <button class="btn btn-default disabled">${_("Public")}</button>
                     % endif
                     </div>
                     <div class="btn-group"
                         % if not user_name:
-                            data-bind="tooltip: {title: 'Log in or create an account to duplicate this project', placement: 'top'}"
+                            data-bind="tooltip: {title: '${_("Log in or create an account to duplicate this project")}', placement: 'top'}"
                         % endif
                         >
                             <div class="dropdown">
@@ -83,7 +83,7 @@
                                            data-dismiss="modal"
                                            onclick="NodeActions.forkNode();"
                                         >
-                                            ${ language.FORK_ACTION | n }
+                                            ${ _(language.FORK_ACTION) | n }
                                         </span>
                                     </li>
                                     %endif
@@ -91,13 +91,13 @@
                                         <span class="btn btn-primary btn-block m-t-sm form-control${'' if user_name and (user['is_contributor_or_group_member'] or node['is_public']) else ' disabled'}"
                                            onclick="NodeActions.useAsTemplate();"
                                         >
-                                            ${ language.TEMPLATE_ACTION | n }
+                                            ${ _(language.TEMPLATE_ACTION) | n }
                                         </span>
                                     </li>
                                     % if not disk_saving_mode:
                                     <li class="p-h-md">
                                         <span class="btn btn-primary btn-block m-v-sm" onclick="NodeActions.redirectForkPage();">
-                                            View Forks (${ node['fork_count']})
+                                            ${_("View Forks (%(forkCount)s)") % dict(forkCount=node['fork_count'])}
                                         </span>
                                     </li>
                                     %endif
@@ -112,10 +112,10 @@
                             <ul class="dropdown-menu dropdown-menu-right">
                                 <li data-bind="visible: canBeOrganized()" class="keep-open">
                                     <a role="button" href="#" id="addDashboardFolder" data-bind="visible: !inDashboard(), click: addToDashboard">
-                                        Bookmark
+                                        ${_("Bookmark")}
                                     </a>
                                     <a role="button" href="#" id="removeDashboardFolder" data-bind="visible: inDashboard(), click: removeFromDashboard">
-                                        Remove from bookmarks
+                                        ${_("Remove from bookmarks")}
                                     </a>
                                 </li>
                                 % if permissions.ADMIN in user['permissions'] and not node['is_registration']:  ## Create view-only link
@@ -124,7 +124,7 @@
                                   % endif
                                     <li>
                                         <a href="${node['url']}settings/#createVolsAnchor">
-                                            Create view-only link
+                                            ${_("Create view-only link")}
                                         </a>
                                     </li>
                                   % if not use_viewonlylinks:  ## Create view-only link
@@ -134,7 +134,7 @@
                                 % if node['is_public']:
                                     <li class="keep-open" id="shareButtonsPopover">
                                         <a href="#" role="button">
-                                            Share
+                                            ${_("Share")}
                                         </a>
                                     </li>
                                 %endif
@@ -147,7 +147,7 @@
                                                         css: {'disabled': requestAccess.accessRequestPendingOrDenied()},
                                                         tooltip: {title: requestAccess.accessRequestTooltip(),'disabled': true, 'placement': 'left'}">
                                         </a>
-                                        <a data-bind="visible: !user.username" role="button" class="btn btn-block" href="${login_url}" >Log in to request access</a>
+                                        <a data-bind="visible: !user.username" role="button" class="btn btn-block" href="${login_url}" >${_("Log in to request access")}</a>
                                     </li>
                                 % endif
                             </ul>
@@ -160,13 +160,13 @@
             <div class="col-sm-12">
                 <div id="contributorsList" style="height: 25px; overflow: hidden">
                 % if user['is_contributor_or_group_member']:
-                    <a class="link-dashed" href="${node['url']}contributors/">Contributors</a>:
+                    <a class="link-dashed" href="${node['url']}contributors/">${_("Contributors")}</a>:
                 % else:
-                    Contributors:
+                    ${_("Contributors:")}
                 % endif
 
                 % if node['anonymous']:
-                    <ol>Anonymous Contributors</ol>
+                    <ol>${_("Anonymous Contributors")}</ol>
                 % else:
                     <ol>
                         ${contributor_list.render_contributors_full(contributors=node['contributors'])}
@@ -189,7 +189,7 @@
                 % endif
                 % if enable_institutions and not node['anonymous']:
                     % if (permissions.ADMIN in user['permissions'] and not node['is_registration']) and (len(node['institutions']) != 0 or len(user['institutions']) != 0):
-                        <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institutions:</a>
+                        <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">${_("Affiliated Institutions:")}</a>
                         % if node['institutions'] != []:
                             % for inst in node['institutions']:
                                 % if inst != node['institutions'][-1]:
@@ -199,7 +199,7 @@
                                 % endif
                             % endfor
                         % else:
-                            <span> None </span>
+                            <span> ${_("None")} </span>
                         % endif
                     % endif
                     % if not (permissions.ADMIN in user['permissions'] and not node['is_registration']) and node['institutions'] != []:
@@ -221,15 +221,15 @@
                 % endif
                 % if node['is_registration']:
                     <p>
-                    Date registered:
+                    ${_("Date registered:")}
                     <span data-bind="text: dateRegistered.local, tooltip: {title: dateRegistered.utc}" class="date node-date-registered"></span>
                     </p>
                 % endif
                     <p>
-                    Date created:
+                    ${_("Date created:")}
                     <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
                     % if not node['is_registration']:
-                        | Last Updated:
+                        ${_("| Last Updated:")}
                         <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
                     % endif
                     </p>
@@ -244,24 +244,24 @@
                   <!-- ko if: idCreationInProgress() -->
                     <p>
                       <i class="fa fa-spinner fa-lg fa-spin"></i>
-                        <span class="text-info">Creating DOI. Please wait...</span>
+                        <span class="text-info">${_("Creating DOI. Please wait...")}</span>
                     </p>
                   <!-- /ko -->
 
                   <!-- ko ifnot: idCreationInProgress() -->
                   <p>
-                  <a data-bind="click: askCreateIdentifiers, visible: !idCreationInProgress()">Create DOI</a>
+                  <a data-bind="click: askCreateIdentifiers, visible: !idCreationInProgress()">${_("Create DOI")}</a>
                   </p>
                   <!-- /ko -->
                 </span>
                 <p>
-                    Category: <span data-bind="css: icon"></span>
-                    <span id="nodeCategoryEditable">${node['category']}</span>
+                    ${_("Category:")} <span data-bind="css: icon"></span>
+                    <span id="nodeCategoryEditable">${_(node['category'])}</span>
                 </p>
 
                 % if (node['description']) or (not node['description'] and permissions.WRITE in user['permissions'] and not node['is_registration']):
                     <p>
-                    <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">
+                    <span id="description">${_("Description:")}</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">
                         ${node['description']}</span>
                     </p>
                 % endif
@@ -278,8 +278,8 @@
                                                           license: window.contextVars.node.license,
                                                           saveLicenseKey: 'node_license',
                                                           readonly: ${ node['is_registration'] | sjson, n}">
-                                    <span id="license">License:</span>
-                                    <span class="text-muted"> ${node['license'].get('name', 'No license')} </span>
+                                    <span id="license">${_("License:")}</span>
+                                <span class="text-muted"> ${_(node['license'].get('name', 'No license'))} </span>
                                   </license-picker>
                                 </p>
                              % endif
@@ -287,12 +287,12 @@
                         % if node['is_registration']:
                             <div class="col-xs-6">
                                 % if len(node['registered_schemas']) == 1:
-                                    <a class="btn btn-primary pull-right" href="${node['url']}register/${node['registered_schemas'][0]['id']}">View Registration Form</a>
+                                    <a class="btn btn-primary pull-right" href="${node['url']}register/${node['registered_schemas'][0]['id']}">${_("View Registration Form")}</a>
                                 % else:
                                     ## This is a special case that is right now only possible on 12 Nodes in production
                                     <div class="dropdown">
                                         <button class="btn btn-primary dropdown-toggle pull-right" type="button" id="RegFormMenu" data-toggle="dropdown">
-                                            View Registration Forms
+                                            ${_("View Registration Forms")}
                                             <span class="caret"></span>
                                         </button>
                                         <ul class="dropdown-menu pull-right">
@@ -337,29 +337,29 @@
                 <ul style="margin-left: 30px; padding: 0; margin-bottom: 0;" class="list-unstyled">
 
                     % if collection['type']:
-                      <li>Type:&nbsp;&nbsp;<b>${collection['type']}</b></li>
+                      <li>${_("Type:")}&nbsp;&nbsp;<b>${collection['type']}</b></li>
                     % endif
 
                     % if collection['status']:
-                      <li>Status:&nbsp;&nbsp;<b>${collection['status']}</b></li>
+                      <li>${_("Status:")}&nbsp;&nbsp;<b>${collection['status']}</b></li>
                     % endif
 
                     % if collection['volume']:
-                      <li>Volume:&nbsp;&nbsp;<b>${collection['volume']}</b></li>
+                      <li>${_("Volume:")}&nbsp;&nbsp;<b>${collection['volume']}</b></li>
                     % endif
 
                     % if collection['issue']:
-                      <li>Issue:&nbsp;&nbsp;<b>${collection['issue']}</b></li>
+                      <li>${_("Issue:")}&nbsp;&nbsp;<b>${collection['issue']}</b></li>
                     % endif
 
                     % if collection['program_area']:
-                      <li>Program Area:&nbsp;&nbsp;<b>${collection['program_area']}</b></li>
+                      <li>${_("Program Area:")}&nbsp;&nbsp;<b>${collection['program_area']}</b></li>
                     % endif
 
                     % if collection['subjects']:
                       <li>
                         <dl class="dl-horizontal dl-subjects">
-                          <dt>Subjects:&nbsp;&nbsp;</dt>
+                          <dt>${_("Subjects:")}&nbsp;&nbsp;</dt>
                           <dd>
                           % for subject in collection['subjects']:
                             <span class='subject-preview'>
@@ -392,10 +392,10 @@
            <div id="metadatapreprint${i}" class="collection-details collapse">
                <ul style="margin-left: 30px; padding: 0; margin-bottom: 5;" class="list-unstyled">
                     <li>
-                        Status:&nbsp;&nbsp;
+                        ${_("Status:")}&nbsp;&nbsp;
                             <b>
                                 % if preprint['is_withdrawn']:
-                                    Withdrawn
+                                    ${_("Withdrawn")}
                                 % else:
                                     ${preprint['state'].capitalize()}
                                 % endif
@@ -404,16 +404,16 @@
                             <% icon_tooltip = ''%>
                             % if preprint['state'] == 'pending':
                                 % if preprint['provider']['workflow'] == 'post-moderation':
-                                    <% icon_tooltip = 'This {preprint_word} is publicly available and searchable but is subject to' \
-                                    ' removal by a moderator.'.format(preprint_word=preprint['word'])%>
+                                    <% icon_tooltip = _('This {preprint_word} is publicly available and searchable but is subject to' \
+                                    ' removal by a moderator.').format(preprint_word=preprint['word'])%>
                                 % else:
-                                    <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable until approved ' \
-                                    'by a moderator.'.format(preprint_word=preprint['word'])%>
+                                    <% icon_tooltip = _('This {preprint_word} is not publicly available or searchable until approved ' \
+                                    'by a moderator.').format(preprint_word=preprint['word'])%>
                                 % endif
                             % elif preprint['state'] == 'accepted':
-                                <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=preprint['word'])%>
+                                <% icon_tooltip = _('This {preprint_word} is publicly available and searchable.').format(preprint_word=preprint['word'])%>
                             % else:
-                                <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=preprint['word'])%>
+                                <% icon_tooltip = _('This {preprint_word} is not publicly available or searchable.').format(preprint_word=preprint['word'])%>
                             % endif
                             <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>
                         % endif
@@ -437,7 +437,7 @@
         <!-- Files -->
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
-                <h3 class="panel-title">Files</h3>
+                <h3 class="panel-title">${_("Files")}</h3>
                 <div class="pull-right">
                    <a href="${node['url']}files/"> <i class="fa fa-external-link"></i> </a>
                 </div>
@@ -445,7 +445,7 @@
             % if not node['is_registration'] and not node['anonymous'] and permissions.WRITE in user['permissions']:
                 <div class="row">
                     <div class="col-sm-12 m-t-sm m-l-md">
-                        <span class="f-w-xl">Click on a storage provider or drag and drop to upload</span>
+                        <span class="f-w-xl">${_("Click on a storage provider or drag and drop to upload")}</span>
                     </div>
                 </div>
                <div class="panel-body panel-body-with-instructions">
@@ -457,7 +457,7 @@
                             <div class="ball-scale ball-scale-blue">
                                 <div></div>
                             </div>
-                             <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                             <p class="m-t-sm fg-load-message"> ${_("Loading files...")}  </p>
                         </div>
                     </div>
                 </div><!-- end .panel-body -->
@@ -498,7 +498,7 @@
 
          <div class="citations panel panel-default">
              <div class="panel-heading clearfix">
-                <h3 class="panel-title"  style="padding-top: 3px">Citation</h3>
+                <h3 class="panel-title"  style="padding-top: 3px">${_("Citation")}</h3>
                 <div class="pull-right">
                     <button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
                 </div>
@@ -510,12 +510,12 @@
                             <div class="ball-scale ball-scale-blue">
                                 <div></div>
                             </div>
-                            <p class="m-t-sm fg-load-message"> Loading citations...  </p>
+                            <p class="m-t-sm fg-load-message"> ${_("Loading citations...")}  </p>
                         </div>
                      </div>
                      <div data-bind="visible: page() == 'standard'" style="display: none;">
                          % if not node['anonymous'] and permissions.ADMIN in user['permissions']:
-                             <a data-bind="click: showEditBox" class="pull-right"><i class="glyphicon glyphicon-pencil"></i> Customize</a>
+                             <a data-bind="click: showEditBox" class="pull-right"><i class="glyphicon glyphicon-pencil"></i> ${_("Customize")}</a>
                          % endif
                          <div class="m-b-md">
                              <div class="citation-list">
@@ -523,11 +523,11 @@
                                  <span data-bind="text: apa"></span>
                                  <div class="f-w-xl m-t-md">MLA</div>
                                  <span data-bind="text: mla"></span>
-                                 <div class="f-w-xl m-t-md">Chicago</div>
+                                 <div class="f-w-xl m-t-md">${_("Chicago")}</div>
                                  <span data-bind="text: chicago"></span>
                              </div>
                          </div>
-                         <p><strong>Get more citations</strong></p>
+                         <p><strong>${_("Get more citations")}</strong></p>
                          <div id="citationStylePanel" class="citation-picker">
                              <input id="citationStyleInput" type="hidden" />
                          </div>
@@ -535,7 +535,7 @@
                      </div>
                      <div data-bind="visible: page() == 'custom'" style="display: none;">
                          % if not node['anonymous'] and permissions.ADMIN in user['permissions']:
-                            <a data-bind="click: showEditBox" class="pull-right"><i class="glyphicon glyphicon-pencil"></i> Edit</a>
+                            <a data-bind="click: showEditBox" class="pull-right"><i class="glyphicon glyphicon-pencil"></i> ${_("Edit")}</a>
                          % endif
 
                          <div class="m-b-md">
@@ -545,8 +545,8 @@
                                          <span id="custom-citation-copy-button" type="button" data-bind="attr: {'data-clipboard-text': customCitation}" class="btn btn-sm btn-default"><i class="fa fa-copy"></i></span>
                                      </div>
                                      <div class="col-xs-9 m-l-sm">
-                                         <div class="f-w-xl">Cite as:</div>
-                                         <span data-bind="text: customCitation"></span>
+                                         ${_('<div %(f_x_xl)s>Cite as:</div>\
+                                         <span %(textCustomCitation)s></span>') % dict(f_x_xl='class="f-w-xl"',textCustomCitation='data-bind="text: customCitation"') | n}
                                      </div>
                                  </div>
                              </div>
@@ -556,7 +556,7 @@
                          <div class="row">
                              <div class="col-md-12 form-group">
                                  <textarea class="form-control"
-                                           placeholder="Enter custom citation"
+                                           placeholder="${_('Enter custom citation')}"
                                            data-bind="value: customCitation, valueUpdate: 'afterkeydown'"
                                            type="text">
 
@@ -564,9 +564,9 @@
                              </div>
                          </div>
                          <div class=" pull-right" role="group">
-                             <button type="button" data-bind="click: cancelCitation" class="btn btn-sm btn-default">Cancel</button>
-                             <button type="button" data-bind="click: clearCitation, disable: disableRemove" class="btn btn-sm btn-danger">Remove</button>
-                             <button type="button" data-bind="click: saveCitation, disable: disableSave" class="btn btn-sm btn-success">Save</button>
+                             <button type="button" data-bind="click: cancelCitation" class="btn btn-sm btn-default">${_("Cancel")}</button>
+                             <button type="button" data-bind="click: clearCitation, disable: disableRemove" class="btn btn-sm btn-danger">${_("Remove")}</button>
+                             <button type="button" data-bind="click: saveCitation, disable: disableSave" class="btn btn-sm btn-success">${_("Save")}</button>
                          </div>
                      </div>
                  </div>
@@ -583,7 +583,7 @@
         %if node['tags'] or permissions.WRITE in user['permissions']:
          <div class="tags panel panel-default">
             <div class="panel-heading clearfix">
-                <h3 class="panel-title">Tags </h3>
+                <h3 class="panel-title">${_("Tags")} </h3>
                 <div class="pull-right">
                 </div>
             </div>
@@ -597,22 +597,22 @@
         <!-- Recent Activity (Logs) -->
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
-                <h3 class="panel-title">Recent Activity</h3>
-                <div id="RefreshLog" class="btn btn-sm btn-default pull-right">Refresh</div>
+                <h3 class="panel-title">${_("Recent Activity")}</h3>
+                <div id="RefreshLog" class="btn btn-sm btn-default pull-right">${_("Refresh")}</div>
             </div>
             <div class="panel-body">
                 <div class="db-poFilter m-r-xs row">
                      <div class="db-buttonRow col-xs-10 col-sm-6 col-lg-4">
                          <form>
-                             <input type="text" id="LogSearchName" placeholder="Parts of User's Fullname">
+                             <input type="text" id="LogSearchName" placeholder='${_("Parts of User's Fullname")}'>
                          </form>
                          <input type="hidden" id="LogSearchUserKeys">
                      </div>
                      <div class="db-buttonRow col-xs-10 col-sm-6 col-lg-4">
-                         <input type="text" id="LogSearchS" placeholder="Start Date[yyyy-mm-dd]">
+                         <input type="text" id="LogSearchS" placeholder='${_("Start Date[yyyy-mm-dd]")}'>
                      </div>
                      <div class="db-buttonRow col-xs-10 col-sm-6 col-lg-4">
-                         <input type="text" id="LogSearchE" placeholder="End Date[yyyy-mm-dd]">
+                         <input type="text" id="LogSearchE" placeholder='${_("End Date[yyyy-mm-dd]")}'>
                      </div>
                 </div>
                 <div id="logFeed">
@@ -620,14 +620,14 @@
                         <div class="ball-scale ball-scale-blue">
                             <div></div>
                         </div>
-                         <p class="m-t-sm fg-load-message"> Loading logs...  </p>
+                         <p class="m-t-sm fg-load-message"> ${_("Loading logs...")}  </p>
                     </div>
                 </div>
             </div>
             % if 'admin' in user['permissions']:
             <div class="panel-heading clearfix">
-                <h4 class="panel-title">Download as file</h4>
-                <div id="DownloadLog" class="btn btn-sm btn-default pull-right">Download</div>
+                <h4 class="panel-title">${_("Download as file")}</h4>
+                <div id="DownloadLog" class="btn btn-sm btn-default pull-right">${_("Download")}</div>
             </div>
             % endif
         </div>
@@ -640,13 +640,13 @@
 % if (permissions.WRITE in user['permissions'] and not node['is_registration']) or node['children']:
     <div class="components panel panel-default">
         <div class="panel-heading clearfix">
-            <h3 class="panel-title" style="padding-bottom: 5px; padding-top: 5px;">Components </h3>
+            <h3 class="panel-title" style="padding-bottom: 5px; padding-top: 5px;">${_("Components")} </h3>
             <div class="pull-right">
                 % if permissions.WRITE in user['permissions'] and not node['is_registration']:
                     <span id="newComponent">
-                        <button class="btn btn-sm btn-default" disabled="true">Add Component</button>
+                        <button class="btn btn-sm btn-default" disabled="true">${_("Add Component")}</button>
                     </span>
-                    <a class="btn btn-sm btn-default" id="linkProjects" role="button" data-toggle="modal" data-target="#addPointer">Link Projects</a>
+                    <a class="btn btn-sm btn-default" id="linkProjects" role="button" data-toggle="modal" data-target="#addPointer">${_("Link Projects")}</a>
                 % endif
             </div>
         </div><!-- end addon-widget-header -->
@@ -656,7 +656,7 @@
                     ${render_nodes.render_nodes(nodes=node['descendants'], sortable=user['can_sort'], user=user, pluralized_node_type='components', show_path=False, include_js=True)}
                 </div>
             % else:
-              <p class="text-muted">Add components to organize your project.</p>
+              <p class="text-muted">${_("Add components to organize your project.")}</p>
             % endif
         </div><!-- end addon-widget-body -->
     </div><!-- end components -->

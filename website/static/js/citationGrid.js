@@ -11,6 +11,11 @@ var apaStyle = require('raw-loader!styles/apa.csl');
 
 var errorPage = require('raw-loader!citations_load_error.html');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
+
 require('css/fangorn.css');
 
 function resolveToggle(item) {
@@ -174,7 +179,7 @@ var renderActions = function(item, col) {
             name: '',
             icon: 'fa fa-file-o',
             css: 'btn btn-default btn-xs',
-            tooltip: 'Copy citation',
+            tooltip: _('Copy citation'),
             config: makeClipboardConfig()
         });
         // Add link to external document
@@ -184,7 +189,7 @@ var renderActions = function(item, col) {
                 name: '',
                 icon: 'fa fa-external-link',
                 css: 'btn btn-default btn-xs',
-                tooltip: 'View original document',
+                tooltip: _('View original document'),
                 onclick: function(event) {
                     window.open(externalUrl);
                 }
@@ -196,7 +201,7 @@ var renderActions = function(item, col) {
                 name: '',
                 icon: 'fa fa-link',
                 css: 'btn btn-default btn-xs',
-                tooltip: 'View on ' + self.provider,
+                tooltip: agh.sprintf(_('View on %1$s') , self.provider),
                 onclick: function(event) {
                     window.open(item.data.serviceUrl);
                 }
@@ -207,7 +212,7 @@ var renderActions = function(item, col) {
             name: '',
             icon: 'fa fa-arrow-circle-o-down',
             css: 'btn btn-default btn-xs',
-            tooltip: 'Download citations',
+            tooltip: _('Download citations'),
             config: function(elm, isInit, ctx) {
                 // In JS, double-backlashes escape in-string backslashes,
                 // Quick overview of RTF file formatting (see https://msdn.microsoft.com/en-us/library/aa140284%28v=office.10%29.aspx for more):
@@ -236,11 +241,11 @@ var treebeardOptions = {
     },
     columnTitles: function() {
         return [{
-            title: 'Citation',
+            title: _('Citation'),
             width: '80%',
             sort: false
         }, {
-            title: 'Actions',
+            title: _('Actions'),
             width: '20%',
             sort: false
         }];
@@ -288,7 +293,7 @@ CitationGrid.prototype.initTreebeard = function() {
         if (self.provider === 'Zotero') {
             if (data.length >= 200) {
                 data.push({
-                    name: 'Only 200 citations may be displayed',
+                    name: _('Only 200 citations may be displayed'),
                     kind: 'message'
                 });
             }
@@ -305,7 +310,7 @@ CitationGrid.prototype.initStyleSelect = function() {
         allowClear: false,
         formatResult: formatResult,
         formatSelection: formatSelection,
-        placeholder: 'Enter citation style (e.g. "APA")',
+        placeholder: _('Enter citation style (e.g. "APA")'),
         minimumInputLength: 1,
         ajax: {
             url: '/api/v1/citations/styles/',
@@ -327,7 +332,7 @@ CitationGrid.prototype.initStyleSelect = function() {
         $.get(styleUrl).done(function(xml) {
             self.updateStyle(event.val, xml);
         }).fail(function(jqxhr, status, error) {
-            Raven.captureMessage('Error while selecting citation style: ' + event.val, {
+            Raven.captureMessage(_('Error while selecting citation style: ') + event.val, {
                 extra: {
                     url: styleUrl,
                     status: status,
@@ -406,7 +411,7 @@ CitationGrid.prototype.resolveRowAux = function(item) {
                 try {
                     citationContent = self.getCitation(item);
                 } catch(err) {
-                    citationContent = '<em>Could not render entry. Please check the contents of your citations for correctness.</em>';
+                    citationContent = _('<em>Could not render entry. Please check the contents of your citations for correctness.</em>');
                 }
                 return m('span', {id: item.data.csl.id}, [m.trust(citationContent)]);
             }

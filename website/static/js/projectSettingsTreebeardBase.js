@@ -8,6 +8,9 @@
 var m = require('mithril');
 var Fangorn = require('js/fangorn').Fangorn;
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
 
 function resolveToggle(item) {
     var toggleMinus = m('i.fa.fa-minus', ' '),
@@ -86,13 +89,13 @@ module.exports = {
         columnTitles : function columnTitles(item, col) {
             return [
                 {
-                    title: 'Project',
+                    title: _('Project'),
                     width: '60%',
                     sortType : 'text',
                     sort : false
                 },
                 {
-                    title: 'Editing Toggle',
+                    title: _('Editing Toggle'),
                     width : '40%',
                     sort : false
 
