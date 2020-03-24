@@ -196,7 +196,7 @@ class InstitutionDepartmentSerializer(JSONAPISerializer):
 class InstitutionUserMetricsSerializer(JSONAPISerializer):
 
     class Meta:
-        type_ = 'institution_users'
+        type_ = 'institution-users'
 
     id = IDField(read_only=True)
     user_id = IDField(read_only=True)

@@ -85,7 +85,7 @@ class TestInstitutionUserMetricList:
         assert resp.json['data'] == [
             {
                 'id': institution._id,
-                'type': 'institution_users',
+                'type': 'institution-users',
                 'attributes': {
                     'user_id': user._id,
                     'user': f'({user._id}) {user.fullname}',
@@ -125,7 +125,7 @@ class TestInstitutionUserMetricList:
             },
             {
                 'id': institution._id,
-                'type': 'institution_users',
+                'type': 'institution-users',
                 'attributes': {
                     'user_id': user2._id,
                     'user': f'({user2._id}) {user2.fullname}',
