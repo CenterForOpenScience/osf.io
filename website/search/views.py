@@ -128,6 +128,7 @@ def _private_search(doc_type, auth, raw=False):
         qs = es_dsl['query']['filtered']['query']['query_string']['query']
         start = es_dsl['from']
         size = es_dsl['size']
+        sort = es_dsl.get('sort', None)
     elif request.method == 'GET':
         version = toint(request.args.get('version', None))
         vendor = request.args.get('vendor', None)
@@ -140,12 +141,19 @@ def _private_search(doc_type, auth, raw=False):
         # TODO Match javascript params?
         start = request.args.get('from', '0')
         size = request.args.get('size', '10')
+        sort = request.args.get('sort', None)
 
     if qs is not None:
         ext = False
         if version == SEARCH_API_VERSION_2:
             ext = True  # include extended doc_types
-        es_dsl = build_private_search_query(user, qs, start, size)
+        try:
+            es_dsl = build_private_search_query(user, qs, start, size, sort)
+        except Exception as e:
+            raise HTTPError(http.BAD_REQUEST, data={
+                'message_short': e.message,
+                'message_long': e.message
+            })
         results = search.search(es_dsl, doc_type=doc_type,
                                 private=True, ext=ext, raw=raw)
     return results

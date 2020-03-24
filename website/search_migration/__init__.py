@@ -581,6 +581,8 @@ SELECT json_agg(
         , '_op_type', 'update'
         , 'doc', json_build_object(
             'id', USER_GUID._id
+            , 'date_created', U.created
+            , 'date_modified', U.modified
             , 'user', U.fullname
             , 'normalized_user', U.fullname
             , 'normalized_names', json_build_object(

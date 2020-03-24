@@ -768,6 +768,8 @@ def serialize_wiki(wiki_page, category):
         'id': w._id,
         'name': name,
         'normalized_name': normalized_name,
+        'sort_wiki_name': name,
+        'sort_node_name': node.title,
         'category': category,
         'node_public': node.is_public,
         'date_created': w.created,
@@ -1142,6 +1144,9 @@ def update_user(user, index=None):
     user_doc = {
         'id': user._id,
         'user': user.fullname,
+        'sort_user_name': user.fullname,
+        'date_created': user.created,
+        'date_modified': user.modified,
         'normalized_user': normalized_names['fullname'],
         'normalized_names': normalized_names,
         'names': names,
@@ -1240,6 +1245,8 @@ def update_file(file_, index=None, delete=False):
         'id': file_._id,
         'date_created': date_created,
         'date_modified': date_modified,
+        'sort_file_name': file_.name,
+        'sort_node_name': getattr(target, 'title', None),
         'creator_id': creator_id,
         'creator_name': creator_name,
         'modifier_id': modifier_id,
@@ -1288,6 +1295,9 @@ def update_institution(institution, index=None):
             'logo_path': institution.logo_path,
             'category': 'institution',
             'name': institution.name,
+            'sort_institution_name': institution.name,
+            'date_created': institution.created,
+            'date_modified': institution.modified,
         }
 
         client().index(index=index, doc_type='institution', body=institution_doc, id=id_, refresh=True)
@@ -1377,6 +1387,11 @@ def create_index(index=None):
                 'properties': {
                     'date_created': {'type': 'date'},
                     'date_modified': {'type': 'date'},
+                    'sort_node_name': NOT_ANALYZED_PROPERTY,
+                    'sort_file_name': NOT_ANALYZED_PROPERTY,
+                    'sort_wiki_name': NOT_ANALYZED_PROPERTY,
+                    'sort_user_name': NOT_ANALYZED_PROPERTY,
+                    'sort_institution_name': NOT_ANALYZED_PROPERTY,
                     'tags': NOT_ANALYZED_PROPERTY,
                     'normalized_tags': NOT_ANALYZED_PROPERTY,
                     'license': {
@@ -1422,8 +1437,6 @@ def create_index(index=None):
                     'term_vector': 'with_positions_offsets',
                 })
                 fields = {
-                    'date_created': {'type': 'date'},
-                    'date_modified': {'type': 'date'},
                     'text': prop,
                 }
                 mapping['properties'].update(fields)

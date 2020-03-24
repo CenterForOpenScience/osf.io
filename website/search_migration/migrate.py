@@ -46,6 +46,7 @@ def normalize(docs):
     doc_type = docs[0]['_type']
     if doc_type == 'user':
         for doc in docs:
+            doc['doc']['sort_user_name'] = doc['doc']['user']
             normalized_names = {}
             for key, val in doc['doc']['names'].items():
                 if val is not None:
@@ -55,6 +56,8 @@ def normalize(docs):
     elif doc_type == 'file':
         for doc in docs:
             name = doc['doc']['name']
+            doc['doc']['sort_file_name'] = name
+            doc['doc']['sort_node_name'] = doc['doc']['node_title']
             doc['doc']['normalized_name'] = unicode_normalize(name)
             normalized_tags = []
             for tag in doc['doc']['tags']:
@@ -68,6 +71,7 @@ def normalize(docs):
     elif doc_type in PROJECT_LIKE_TYPES:
         for doc in docs:
             title = doc['doc']['title']
+            doc['doc']['sort_node_name'] = title
             doc['doc']['normalized_title'] = unicode_normalize(title)
             description = doc['doc']['description']
             if description:

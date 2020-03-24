@@ -415,7 +415,7 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
         }
     }
 
-    return {
+    query = {
         'query': query_body,
         'highlight': {
             'fragment_size': settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE,
@@ -432,6 +432,127 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
         'from': start,
         'size': size,
     }
+
+    if sort:
+        query['sort'] = sort_query(sort)
+
+    return query
+
+def sort_query(sort):
+    def _split_target_order(sort):
+        try:
+            to = sort.split('_')
+            return to[0], to[1]
+        except Exception:
+            return None, None  # use default
+
+    target, order = _split_target_order(sort)
+
+    ASC = 'asc'
+    DESC = 'desc'
+    MODIFIED = 'date_modified'
+    CREATED = 'date_created'
+    PROJECT = 'sort_node_name'
+    FILE = 'sort_file_name'
+    WIKI = 'sort_wiki_name'
+    USER = 'sort_user_name'
+    INSTITUTION = 'sort_institution_name'
+    SCORE = '_score'
+
+    ERROR = 'unknown sort parameter: {}'.format(sort)
+
+    if order != ASC and order != DESC:
+        # order = None  # use default
+        raise Exception(ERROR)
+
+    if target == 'project':
+        if order is None:
+            order = ASC
+        query = [
+            {PROJECT: order},
+            {FILE: order},
+            {WIKI: order},
+            {USER: order},
+            {INSTITUTION: order},
+            {MODIFIED: DESC},
+            {SCORE: ASC}
+        ]
+    elif target == 'file':
+        if order is None:
+            order = ASC
+        query = [
+            {FILE: order},
+            {PROJECT: order},
+            {WIKI: order},
+            {USER: order},
+            {INSTITUTION: order},
+            {MODIFIED: DESC},
+            {SCORE: ASC}
+        ]
+    elif target == 'wiki':
+        if order is None:
+            order = ASC
+        query = [
+            {WIKI: order},
+            {PROJECT: order},
+            {FILE: order},
+            {USER: order},
+            {INSTITUTION: order},
+            {MODIFIED: DESC},
+            {SCORE: ASC}
+        ]
+    elif target == 'user':
+        if order is None:
+            order = ASC
+        query = [
+            {USER: order},
+            {PROJECT: order},
+            {WIKI: order},
+            {FILE: order},
+            {INSTITUTION: order},
+            {MODIFIED: DESC},
+            {SCORE: ASC}
+        ]
+    elif target == 'institution':
+        if order is None:
+            order = ASC
+        query = [
+            {INSTITUTION: order},
+            {PROJECT: order},
+            {WIKI: order},
+            {FILE: order},
+            {USER: order},
+            {MODIFIED: DESC},
+            {SCORE: ASC}
+        ]
+    elif target == 'created':
+        if order is None:
+            order = DESC
+        query = [
+            {CREATED: order},
+            {PROJECT: ASC},
+            {FILE: ASC},
+            {WIKI: ASC},
+            {USER: ASC},
+            {INSTITUTION: ASC},
+            {SCORE: ASC}
+        ]
+    elif target is None or target == 'modified':
+        if order is None:
+            order = DESC
+        query = [
+            {MODIFIED: order},
+            {PROJECT: ASC},
+            {FILE: ASC},
+            {WIKI: ASC},
+            {USER: ASC},
+            {INSTITUTION: ASC},
+            {SCORE: ASC}
+        ]
+    else:
+        raise Exception(ERROR)
+
+    return query
 
 def unicode_normalize(text):
     if text is None:
