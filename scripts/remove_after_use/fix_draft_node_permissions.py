@@ -13,6 +13,8 @@ logging.basicConfig(level=logging.INFO)
 from scripts import utils as scripts_utils
 from osf.models import DraftRegistration
 from django.core.paginator import Paginator
+from osf.models import DraftRegistrationContributor
+
 
 def main(dry=True, page_size=1000):
     """
@@ -38,6 +40,13 @@ def main(dry=True, page_size=1000):
                         continue
                     draft_perm_group.user_set.add(*node_users)
 
+                for contrib in reg.branched_from.contributor_set.all():
+                    DraftRegistrationContributor(
+                        draft_registration=reg,
+                        _order=contrib._order,
+                        visible=contrib.visible,
+                        user=contrib.user
+                    ).save()
 
 if __name__ == '__main__':
     dry = '--dry' in sys.argv
