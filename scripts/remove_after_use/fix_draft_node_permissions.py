@@ -48,6 +48,10 @@ def main(dry=True, page_size=1000):
                     draft_perm_group.user_set.add(*node_users)
 
                 for contrib in reg.branched_from.contributor_set.all():
+                    if dry:
+                        logger.info(f'{contrib._id} added')
+                        continue
+
                     DraftRegistrationContributor(
                         draft_registration=reg,
                         _order=contrib._order,
@@ -57,7 +61,6 @@ def main(dry=True, page_size=1000):
 
 
 if __name__ == '__main__':
-    dry = '--dry' in sys.argv
 
     cli = argparse.ArgumentParser()
     cli.add_argument(
@@ -66,8 +69,12 @@ if __name__ == '__main__':
         default=1000,
         help='How many items at a time to include for each query',
     )
+    cli.add_argument(
+        '--dry',
+        action='store_true',
+    )
     args = cli.parse_args()
 
-    if not dry:
+    if not args.dry:
         scripts_utils.add_file_logger(logger, __file__)
-    main(dry=dry, page_size=args.page_size)
+    main(dry=args.dry, page_size=args.page_size)
