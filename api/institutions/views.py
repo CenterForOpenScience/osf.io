@@ -35,12 +35,10 @@ from api.institutions.serializers import (
     InstitutionSerializer,
     InstitutionNodesRelationshipSerializer,
     InstitutionRegistrationsRelationshipSerializer,
-
     InstitutionSummaryMetricSerializer,
     InstitutionDepartmentSerializer,
 )
 from api.institutions.permissions import UserIsAffiliated
-from api.metrics.permissions import IsInstitutionalMetricsUser
 
 
 class InstitutionMixin(object):
@@ -380,15 +378,14 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
             return Response(status=status.HTTP_204_NO_CONTENT)
         return ret
 
-      
+
 class InstitutionSummaryMetrics(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
-    
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         IsInstitutionalMetricsUser,
     )
-    
+
     view_category = 'institutions'
     view_name = 'institution-summary-metrics'
 
@@ -406,7 +403,6 @@ class InstitutionSummaryMetrics(JSONAPIBaseView, generics.RetrieveAPIView, Insti
         return es_doc
 
 class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, InstitutionMixin):
-
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,

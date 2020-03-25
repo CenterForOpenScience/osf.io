@@ -13,9 +13,8 @@ from api.base.serializers import (
     ShowIfVersion,
     IDField,
 )
-from api.base.exceptions import RelationshipPostMakesNoChanges
-from api.base.utils import absolute_reverse
 
+from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.utils import absolute_reverse
 
 
@@ -173,16 +172,18 @@ class InstitutionSummaryMetricSerializer(JSONAPISerializer):
     public_project_count = ser.IntegerField(read_only=True)
     private_project_count = ser.IntegerField(read_only=True)
     user_count = ser.IntegerField(read_only=True)
-    
+
     links = LinksField({
         'self': 'get_absolute_url',
     })
-  
+
     def get_absolute_url(self, obj):
         return absolute_reverse(
             'institutions:institution-summary-metrics',
             kwargs={
                 'institution_id': obj.institution_id,
+            },
+        )
 
 
 class InstitutionDepartmentSerializer(JSONAPISerializer):
@@ -194,6 +195,10 @@ class InstitutionDepartmentSerializer(JSONAPISerializer):
     name = ser.CharField(read_only=True)
     number_of_users = ser.IntegerField(read_only=True)
 
+    links = LinksField({
+        'self': 'get_absolute_url',
+    })
+
     filterable_fields = frozenset([
         'id',
         'name',
@@ -201,12 +206,10 @@ class InstitutionDepartmentSerializer(JSONAPISerializer):
     ])
 
     def get_absolute_url(self, obj):
-
         return absolute_reverse(
             'institutions:institution-department-metrics',
             kwargs={
                 'institution_id': obj.id,
-
                 'version': 'v2',
             },
         )
