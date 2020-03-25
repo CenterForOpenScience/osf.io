@@ -219,6 +219,12 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
 
         try:
             search.search.update_comment(self, bulk=False, async_update=True)
+            if self.page == Comment.OVERVIEW:
+                self.node.update_search()
+            elif self.page == Comment.FILES:
+                search.search.update_file(self.root_target.referent)
+            elif self.page == Comment.WIKI:
+                self.node.update_search(wiki_page=self.root_target.referent)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
 

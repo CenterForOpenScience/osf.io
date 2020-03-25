@@ -26,6 +26,7 @@ from osf.models import OSFGroup
 from osf.models import QuickFilesNode
 from osf.models import Preprint
 from osf.models import SpamStatus
+from osf.models import Guid
 from addons.wiki.models import WikiPage
 from osf.models import CollectionSubmission
 from osf.models import Comment
@@ -39,6 +40,8 @@ from website.views import validate_page_num
 
 logger = logging.getLogger(__name__)
 
+# True: use ALIASES_COMMENT
+ENABLE_DOC_TYPE_COMMENT = False
 
 # These are the doc_types that exist in the search database
 ALIASES_BASE = {
@@ -55,7 +58,10 @@ ALIASES_BASE = {
 
 ALIASES_EXT = {
     'wiki': 'Wiki',
-    'comment': 'Comment',
+}
+
+ALIASES_COMMENT = {
+    'comment': 'Comments',
 }
 
 ALIASES = {}
@@ -76,7 +82,9 @@ DOC_TYPE_TO_MODEL = {
 NOT_ANALYZED_PROPERTY = {'type': 'string', 'index': 'not_analyzed'}
 
 # Perform stemming on the field it's applied to.
-ENGLISH_ANALYZER_PROPERTY = {'type': 'string', 'analyzer': 'english'}
+ENGLISH_ANALYZER_PROPERTY = {'type': 'string', 'analyzer': 'english',
+                             'term_vector': 'with_positions_offsets'}
+# with_positions_offsets: adjust highlighted fields to the middle position.
 
 # INDEX is modified by tests. (TODO: INDEX is unnecessary for GRDM ver.)
 INDEX = settings.ELASTIC_INDEX
@@ -317,6 +325,8 @@ def search(query, index=None, doc_type=None, raw=False, normalize=True, private=
     ALIASES = copy.deepcopy(ALIASES_BASE)
     if settings.ENABLE_PRIVATE_SEARCH and ext:
         ALIASES.update(ALIASES_EXT)
+    if ENABLE_DOC_TYPE_COMMENT:
+        ALIASES.update(ALIASES_COMMENT)
 
     if doc_type is None:
         doc_type = ','.join(ALIASES.keys())
@@ -387,7 +397,10 @@ def search(query, index=None, doc_type=None, raw=False, normalize=True, private=
     if raw:
         results = raw_results['hits']['hits']
     else:
-        results = [hit['_source'] for hit in raw_results['hits']['hits']]
+        hits = raw_results['hits']['hits']
+        hits = merge_highlight(hits)
+        hits = set_last_comment(hits)
+        results = [hit['_source'] for hit in hits]
         # TODO experimental code: aggregate comments in Python
         # if ext:
         #     results, matched_all_comments_count, aggregated_comments_count = aggregate_latest_comment(results)
@@ -404,6 +417,45 @@ def search(query, index=None, doc_type=None, raw=False, normalize=True, private=
         return_value.update({'comments': comments})
 
     return return_value
+
+def merge_highlight(hits):
+    for hit in hits:
+        hit['_source']['highlight'] = hit.get('highlight', {})
+    return hits
+
+def set_last_comment(hits):
+    for hit in hits:
+        s = hit['_source']
+        highlight = s['highlight']
+        last_comment = None
+        last_text = None
+        for key, value in highlight.items():
+            if not key.startswith('comments.'):
+                continue
+            try:
+                comment_id = int(key.split('.')[1])
+            except Exception:
+                continue  # unexpected type, ignore
+            c = Comment.objects.get(id=comment_id)
+            if last_comment is None or c.created > last_comment.created:
+                last_comment = c
+                last_text = value[0]
+        if last_comment is None:
+            s['comment'] = None
+            continue  # no comment, skip
+        d = {}
+        d['text'] = last_text
+        d['user_id'] = last_comment.user._id
+        d['user_name'] = last_comment.user.fullname
+        replyto_user_id = None
+        replyto_username = None
+        if isinstance(last_comment.target.referent, Comment):
+            replyto_user_id = last_comment.target.referent.user._id
+            replyto_username = last_comment.target.referent.user.fullname
+        d['replyto_user_id'] = replyto_user_id
+        d['replyto_user_name'] = replyto_username
+        s['comment'] = d
+    return hits
 
 # TODO experimental code: aggregate comments in Python
 def aggregate_latest_comment(results):
@@ -432,19 +484,20 @@ def aggregate_latest_comment(results):
 def format_results(results):
     ret = []
     for result in results:
-        if result.get('category') == 'user':
+        category = result.get('category')
+        if category == 'user':
             result['url'] = '/profile/' + result['id']
-        elif result.get('category') == 'wiki':
+        elif category == 'wiki':
             result['user_url'] = '/profile/' + result['user_id']
-        elif result.get('category') == 'comment':
+        elif category == 'comment':
             result['page_url'] = '/' + result['page_id'] + '/'
             result['user_url'] = '/profile/' + result['user_id']
-            reply_user_id = result.get('reply_user_id', None)
-            if reply_user_id:
-                result['reply_user_url'] = '/profile/' + reply_user_id
+            replyto_user_id = result.get('replyto_user_id', None)
+            if replyto_user_id:
+                result['replyto_user_url'] = '/profile/' + replyto_user_id
             else:
-                result['reply_user_url'] = None
-        elif result.get('category') == 'file':
+                result['replyto_user_url'] = None
+        elif category == 'file':
             parent_info = load_parent(result.get('parent_id'))
             result['parent_url'] = parent_info.get('url') if parent_info else None
             result['parent_title'] = parent_info.get('title') if parent_info else None
@@ -464,13 +517,13 @@ def format_results(results):
             result['normalized_creator_name'] = normalized_creator_name
             result['modifier_name'] = modifier_name
             result['normalized_modifier_name'] = normalized_modifier_name
-        elif result.get('category') in {'project', 'component', 'registration'}:
+        elif category in {'project', 'component', 'registration'}:
             result = format_result(result, result.get('parent_id'))
-        elif result.get('category') in {'preprint'}:
+        elif category in {'preprint'}:
             result = format_preprint_result(result)
-        elif result.get('category') == 'collectionSubmission':
+        elif category == 'collectionSubmission':
             continue
-        elif not result.get('category'):
+        elif not category:
             continue
 
         ret.append(result)
@@ -478,11 +531,11 @@ def format_results(results):
 
 
 # return (guid, fullname)
-def user_id_fullname(guid):
-    if guid:
-        user = OSFUser.load(guid)
+def user_id_fullname(guid_id):
+    if guid_id:
+        user = OSFUser.load(guid_id)
         if user:
-            return (guid, user.fullname)
+            return (guid_id, user.fullname)
     return (None, None)
 
 
@@ -531,6 +584,8 @@ def format_result(result, parent_id=None):
         'n_wikis': len(result['wikis'] or []),
         'license': result.get('license'),
         'affiliated_institutions': result.get('affiliated_institutions'),
+        'highlight': result.get('highlight'),
+        'comment': result.get('comment'),
     }
 
     return formatted_result
@@ -701,6 +756,7 @@ def serialize_node(node, category):
         'affiliated_institutions': list(node.affiliated_institutions.values_list('name', flat=True)),
         'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         'extra_search_terms': clean_splitters(node.title),
+        'comments': comments_to_doc(node._id),
     }
     if not node.is_retracted:
         wiki_names = []
@@ -710,8 +766,15 @@ def serialize_node(node, category):
             elastic_document['wikis'][wiki_name] = unicode_normalize(wiki.raw_text(node))
             wiki_names.append(wiki_name)
         elastic_document['wiki_names'] = wiki_names
-
     return elastic_document
+
+def comments_to_doc(guid_id):
+    comments = {}
+    for c in Guid.load(guid_id).comments.iterator():
+        if c.is_deleted or c.root_target is None:
+            continue
+        comments[c.id] = remove_newline(unicode_normalize(c.content))
+    return comments
 
 def serialize_preprint(preprint, category):
     elastic_document = {}
@@ -775,8 +838,8 @@ def serialize_wiki(wiki_page, category):
         'date_created': w.created,
         'date_modified': w.modified,
         'user_id': latest.user._id,
-        'user': latest.user.username,
-        'normalized_user': unicode_normalize(latest.user.username),
+        'user': latest.user.fullname,
+        'normalized_user': unicode_normalize(latest.user.fullname),
         'node_title': node.title,
         'normalized_node_title': unicode_normalize(node.title),
         'node_url': node.url,
@@ -789,6 +852,7 @@ def serialize_wiki(wiki_page, category):
         ],
         'url': w.deep_url,
         'text': unicode_normalize(w.get_version().raw_text(node)),
+        'comments': comments_to_doc(w._id),
     }
     return elastic_document
 
@@ -823,6 +887,9 @@ def serialize_group(group, category):
 
     return elastic_document
 
+def remove_newline(text):
+    return text.replace('&#13;&#10;', '')
+
 def serialize_comment(comment, category):
     c = comment
     elastic_document = {}
@@ -841,14 +908,13 @@ def serialize_comment(comment, category):
     else:
         return None
 
-    reply_user_id = ''
-    reply_username = ''
+    replyto_user_id = ''
+    replyto_username = ''
     if isinstance(c.target.referent, Comment):
-        reply_user_id = c.target.referent.user._id
-        reply_username = c.target.referent.user.username
+        replyto_user_id = c.target.referent.user._id
+        replyto_username = c.target.referent.user.fullname
 
-    text = unicode_normalize(c.content)
-    text = text.replace('&#13;&#10;', '')
+    text = remove_newline(unicode_normalize(c.content))
 
     elastic_document = {
         'id': c._id,
@@ -861,8 +927,8 @@ def serialize_comment(comment, category):
         'date_created': c.created,
         'date_modified': c.modified,
         'user_id': c.user._id,
-        'user': c.user.username,
-        'normalized_user': unicode_normalize(c.user.username),
+        'user': c.user.fullname,
+        'normalized_user': unicode_normalize(c.user.fullname),
         'node_contributors': [
             {
                 'id': x['guids___id']
@@ -871,9 +937,9 @@ def serialize_comment(comment, category):
             .values('guids___id')
         ],
         'text': text,
-        'reply_user_id': reply_user_id,
-        'reply_user': reply_username,
-        'normalized_reply_user': unicode_normalize(reply_username),
+        'replyto_user_id': replyto_user_id,
+        'replyto_user': replyto_username,
+        'normalized_replyto_user': unicode_normalize(replyto_username),
     }
     return elastic_document
 
@@ -1271,7 +1337,8 @@ def update_file(file_, index=None, delete=False):
             for x in target._contributors.filter(contributor__visible=True).order_by('contributor___order')
             .values('guids___id')
         ],
-        'node_public': target.is_public
+        'node_public': target.is_public,
+        'comments': comments_to_doc(file_guid._id) if file_guid else {}
     }
 
     client().index(
@@ -1364,7 +1431,7 @@ def create_index(index=None):
     index = es_index(index)
     document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint', 'collectionSubmission', 'wiki', 'comment']
     project_like_types = PROJECT_LIKE_TYPES
-    analyzed_fields = ['title', 'description']
+    analyzed_fields = ['title', 'description']  # for project_like_types
 
     client().indices.create(index, ignore=[400])  # HTTP 400 if index already exists
     for type_ in document_types:
@@ -1409,9 +1476,23 @@ def create_index(index=None):
                 analyzers = {field: ENGLISH_ANALYZER_PROPERTY
                              for field in analyzed_fields}
                 mapping['properties'].update(analyzers)
+                mapping['dynamic_templates'] = [
+                    {
+                        'comments_fields': {
+                            'path_match': 'comments.*',
+                            'mapping': ENGLISH_ANALYZER_PROPERTY
+                        }
+                    }, {
+                        'wikis_fields': {
+                            'path_match': 'wikis.*',
+                            'mapping': ENGLISH_ANALYZER_PROPERTY
+                        }
+                    }
+                ]
 
             if type_ == 'user':
                 fields = {
+                    'uesr': ENGLISH_ANALYZER_PROPERTY,
                     'job': {
                         'type': 'string',
                         'boost': '1',
@@ -1430,14 +1511,29 @@ def create_index(index=None):
                     },
                 }
                 mapping['properties'].update(fields)
-            elif type_ == 'wiki' or type_ == 'comment':
-                prop = dict(ENGLISH_ANALYZER_PROPERTY)
-                prop.update({
-                    # to adjust highlighted fields to the middle position.
-                    'term_vector': 'with_positions_offsets',
-                })
+            elif type_ == 'file' or type_ == 'wiki':
                 fields = {
-                    'text': prop,
+                    'name': ENGLISH_ANALYZER_PROPERTY,
+                    'text': ENGLISH_ANALYZER_PROPERTY,
+                }
+                mapping['properties'].update(fields)
+                mapping['dynamic_templates'] = [
+                    {
+                        'comments_fields': {
+                            'path_match': 'comments.*',
+                            'mapping': ENGLISH_ANALYZER_PROPERTY
+                        }
+                    }
+                ]
+            elif type_ == 'comment':
+                fields = {
+                    'page_name': ENGLISH_ANALYZER_PROPERTY,
+                    'text': ENGLISH_ANALYZER_PROPERTY,
+                }
+                mapping['properties'].update(fields)
+            elif type_ == 'institution':
+                fields = {
+                    'name': ENGLISH_ANALYZER_PROPERTY,
                 }
                 mapping['properties'].update(fields)
 

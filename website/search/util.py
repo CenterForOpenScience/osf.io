@@ -420,11 +420,11 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
         'highlight': {
             'fragment_size': settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE,
             'number_of_fragments': 1,
-            'pre_tags': ['<b><i>'],
-            'post_tags': ['</i></b>'],
+            'pre_tags': ['<b>'],
+            'post_tags': ['</b>'],
             'fields': {
-                'text': {},
-                #'*': {},
+                #'text': {},
+                '*': {},
             },
             'require_field_match': False,
             'highlight_query': inner_query,
