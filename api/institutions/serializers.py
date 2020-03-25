@@ -4,9 +4,18 @@ from rest_framework import exceptions
 from osf.models import Node, Registration
 from osf.utils import permissions as osf_permissions
 
-from api.base.serializers import JSONAPISerializer, RelationshipField, LinksField, JSONAPIRelationshipSerializer, \
-    BaseAPISerializer, ShowIfVersion
+from api.base.serializers import (
+    JSONAPISerializer,
+    RelationshipField,
+    LinksField,
+    JSONAPIRelationshipSerializer,
+    BaseAPISerializer,
+    ShowIfVersion,
+    IDField,
+)
 from api.base.exceptions import RelationshipPostMakesNoChanges
+
+from api.base.utils import absolute_reverse
 
 
 class InstitutionSerializer(JSONAPISerializer):
@@ -152,3 +161,33 @@ class InstitutionRegistrationsRelationshipSerializer(BaseAPISerializer):
             'data': list(inst.nodes.filter(is_deleted=False, type='osf.registration')),
             'self': inst,
         }
+
+
+class InstitutionDepartmentSerializer(JSONAPISerializer):
+
+    class Meta:
+        type_ = 'institution-departments'
+
+    id = IDField(read_only=True)
+    name = ser.CharField(read_only=True)
+    number_of_users = ser.IntegerField(read_only=True)
+
+    links = LinksField({
+        'self': 'get_absolute_url',
+    })
+
+    filterable_fields = frozenset([
+        'id',
+        'name',
+        'number_of_users',
+    ])
+
+    def get_absolute_url(self, obj):
+
+        return absolute_reverse(
+            'institutions:institution-department-metrics',
+            kwargs={
+                'institution_id': obj.id,
+                'version': 'v2',
+            },
+        )
