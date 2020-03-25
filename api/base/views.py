@@ -440,7 +440,7 @@ def root(request, format=None, **kwargs):
     else:
         current_user = None
 
-    flags, cookies = sloan_study_disambiguation(request)
+    flags = sloan_study_disambiguation(request)
 
     samples = [name for name in Sample.objects.values_list('name', flat=True) if sample_is_active(name)]
     switches = list(Switch.objects.filter(active=True).values_list('name', flat=True))
@@ -470,9 +470,21 @@ def root(request, format=None, **kwargs):
 
     resp = Response(return_val)
 
-    # This is used current for our partnership with Sloan and can be deleted after their study is complete.
-    for key, value in cookies.items():
-        resp.set_cookie(key, value)
+    sloan_flags = [flag for flag in return_val['meta']['active_flags'] if flag in SLOAN_FLAGS]
+    for flag in sloan_flags:
+        if request.environ['SERVER_NAME'] == 'localhost':
+            domain = 'localhost'
+        else:
+            domain = '.' + request.environ['SERVER_NAME']
+
+        resp.set_cookie(
+            f'dwf_{flag}',
+            value=True,
+            max_age=None,
+            secure=True,
+            expires=None,
+            domain=domain,
+        )
 
     return resp
 
@@ -482,7 +494,6 @@ def sloan_study_disambiguation(request):
     This is a hack to set flags and cookies for out Sloan study, it can be deleted when the study is complete.
     """
     user = request.user
-    cookies = {}
 
     check_tag = lambda name: user.all_tags.filter(name=name).exists()
 
@@ -506,9 +517,9 @@ def sloan_study_disambiguation(request):
 
     if provider and provider.in_sloan_study:
         for key, value in sloan_data.items():
-            cookies.update(set_tags_and_cookies_for_sloan(user, key, value))
+            set_tags_for_sloan(user, key, value)
 
-    return flags, cookies
+    return flags
 
 
 def get_provider_from_url(referer_url: str) -> Optional[PreprintProvider]:
@@ -542,7 +553,7 @@ def get_provider_from_url(referer_url: str) -> Optional[PreprintProvider]:
         return PreprintProvider.objects.get(_id='osf')
 
 
-def set_tags_and_cookies_for_sloan(user, flag_name: str, flag_value: bool) -> dict:
+def set_tags_for_sloan(user, flag_name: str, flag_value: bool) -> dict:
     """
     This is a hack to set flags and cookies for out Sloan study, it can be deleted when the study is complete.
     """
@@ -552,7 +563,6 @@ def set_tags_and_cookies_for_sloan(user, flag_name: str, flag_value: bool) -> di
             user.add_system_tag(tag_name)
         else:
             user.add_system_tag(f'no_{tag_name}')
-    return {flag_name: flag_value}
 
 
 @api_view(('GET',))

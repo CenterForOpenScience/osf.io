@@ -21,6 +21,9 @@ from framework.celery_tasks.handlers import (
 )
 from .api_globals import api_globals
 from api.base import settings as api_settings
+from django.utils.encoding import smart_str
+
+from waffle.utils import get_setting
 
 
 class CeleryTaskMiddleware(MiddlewareMixin):
@@ -157,43 +160,30 @@ class SloanIdMiddleware(MiddlewareMixin):
             )
         return response
 
-from django.utils.deprecation import MiddlewareMixin
-from django.utils.encoding import smart_str
-
-from waffle.utils import get_setting
-
 
 class WaffleMiddleware(MiddlewareMixin):
+    """
+    This must be overriden for our domain rules and to ensure the cookies never expire,
+    """
     def process_response(self, request, response):
         secure = get_setting('SECURE')
-        max_age = get_setting('MAX_AGE')
 
-        if request.environ['HTTP_REFERER'].startswith('http://localhost'):
+        if request.environ['SERVER_NAME'] == 'localhost':
             domain = 'localhost'
         else:
-            domain = '.' + request.environ['HTTP_REFERER'].lstrip('https://').lstrip('http://').split('/')[0]
+            domain = '.' + request.environ['SERVER_NAME']
 
         if hasattr(request, 'waffles'):
             for k in request.waffles:
                 name = smart_str(get_setting('COOKIE') % k)
-                active, rollout = request.waffles[k]
-                if rollout and not active:
-                    # "Inactive" is a session cookie during rollout mode.
-                    age = None
-                else:
-                    age = max_age
+                active, _ = request.waffles[k]
                 response.set_cookie(
                     name,
                     value=active,
-                    max_age=age,
+                    max_age=None,
                     secure=secure,
                     expires=None,
                     domain=domain,
                 )
-        if hasattr(request, 'waffle_tests'):
-            for k in request.waffle_tests:
-                name = smart_str(get_setting('TEST_COOKIE') % k)
-                value = request.waffle_tests[k]
-                response.set_cookie(name, value=value)
 
         return response
