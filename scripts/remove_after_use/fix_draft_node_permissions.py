@@ -14,6 +14,8 @@ from scripts import utils as scripts_utils
 from osf.models import DraftRegistration
 from django.core.paginator import Paginator
 from osf.models import DraftRegistrationContributor
+from tqdm import tqdm
+
 
 
 def main(dry=True, page_size=1000):
@@ -24,12 +26,17 @@ def main(dry=True, page_size=1000):
     """
     date_of_migration = datetime.datetime(2020, 3, 24, 1, 20, tzinfo=pytz.utc)
 
-    bugged_regs = DraftRegistration.objects.filter(created__lte=date_of_migration)
+    bugged_regs = DraftRegistration.objects.filter(
+        created__lte=date_of_migration
+    ).exclude(
+        _contributors__isnull=False
+    )
+
     paginator = Paginator(bugged_regs, page_size)
-    for page_num in paginator.page_range:
+    for page_num in tqdm(paginator.page_range, desc='Page of migration'):
         page = paginator.page(page_num)
         with transaction.atomic():
-            for reg in page:
+            for reg in tqdm(page, desc='Progress'):
                 draft_perm_groups = reg.group_objects.order_by('name')
                 node_perm_groups = reg.branched_from.group_objects.order_by('name')
 
@@ -47,6 +54,7 @@ def main(dry=True, page_size=1000):
                         visible=contrib.visible,
                         user=contrib.user
                     ).save()
+
 
 if __name__ == '__main__':
     dry = '--dry' in sys.argv
