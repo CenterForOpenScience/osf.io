@@ -201,6 +201,10 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
         source = metrics.MetaField(enabled=True)
 
     @classmethod
+    def filter_institution(cls, institution):
+        return cls.search().filter('match', institution_id=institution._id)
+
+    @classmethod
     def get_department_counts(cls, institution) -> list:
         """
         Gets the most recent document for every unique user.
@@ -266,10 +270,6 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
         return response[0]
 
     @classmethod
-    def filter_institution(cls, institution):
-        return cls.search().filter('match', institution_id=institution._id)
-
-    @classmethod
     def get_current_user_metrics(cls, institution) -> list:
         """
         Gets the most recent document for every unique user.
@@ -277,24 +277,10 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
         :return: list
         """
         search = cls.filter_institution(institution).sort('timestamp')
-        search.update_from_dict({
-            'size': 100,
-            'query': {
-                'match_all': {}
-            },
-            'collapse': {
-                'field': 'user_id',
-                'inner_hits': {
-                    'name': 'most_recent',
-                    'size': 1,
-                    'sort': [{'timestamp': 'desc'}]
-                }
-            }
-        })
+        yesterday = dt.date.today() - dt.timedelta(days=1)
 
-        buckets = search.execute().hits.hits
-        user_data = [bucket['inner_hits']['most_recent'][0] for bucket in buckets]
-        return user_data
+        search = search.filter('range', timestamp={'gte': yesterday})
+        return search.execute()
 
 
 class InstitutionProjectCounts(MetricMixin, metrics.Metric):

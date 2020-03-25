@@ -1,6 +1,5 @@
 from rest_framework import permissions
 from api.base.utils import assert_resource_type
-
 from osf.models import Institution
 
 

@@ -14,7 +14,6 @@ from osf.utils import permissions as osf_permissions
 from api.base import permissions as base_permissions
 from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView
-from api.base.utils import MockQueryset
 from api.base.serializers import JSONAPISerializer
 from api.base.utils import get_object_or_error, get_user_auth
 from api.base.pagination import MaxSizePagination
@@ -444,7 +443,6 @@ class InstitutionUserMetricsList(JSONAPIBaseView, ListFilterMixin, generics.List
         queryset = MockQueryset()
 
         results = UserInstitutionProjectCounts.get_current_user_metrics(institution)
-
         for user_record in results:
             record_dict = {}
             user_id = user_record.user_id

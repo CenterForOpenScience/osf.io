@@ -14,7 +14,6 @@ from api.base.serializers import (
     IDField,
 )
 from api.base.exceptions import RelationshipPostMakesNoChanges
-from api.base.utils import absolute_reverse
 
 from api.base.utils import absolute_reverse
 
@@ -184,6 +183,7 @@ class InstitutionDepartmentSerializer(JSONAPISerializer):
     ])
 
     def get_absolute_url(self, obj):
+
         return absolute_reverse(
             'institutions:institution-department-metrics',
             kwargs={
