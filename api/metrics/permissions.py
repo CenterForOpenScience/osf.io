@@ -1,6 +1,5 @@
 from rest_framework import permissions
 from api.base.utils import assert_resource_type
-
 from osf.models import Institution
 
 
@@ -11,6 +10,7 @@ class IsPreprintMetricsUser(permissions.BasePermission):
         if user.system_tags.filter(name='preprint_metrics').exists():
             return True
         return False
+
 
 class IsInstitutionalMetricsUser(permissions.BasePermission):
 
