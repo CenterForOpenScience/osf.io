@@ -6,6 +6,7 @@ from django.db import models
 from django.utils import timezone
 import pytz
 
+
 class MetricMixin(object):
 
     @classmethod
@@ -195,6 +196,60 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
             'number_of_replicas': 1,
             'refresh_interval': '1s',
         }
+
+    class Meta:
+        source = metrics.MetaField(enabled=True)
+
+    @classmethod
+    def filter_institution(cls, institution):
+        return cls.search().filter('match', institution_id=institution._id)
+
+    @classmethod
+    def get_department_counts(cls, institution) -> list:
+        """
+        Gets the most recent document for every unique user.
+        :param institution: Institution
+        :return: list
+        """
+        search = cls.filter_institution(institution).sort('timestamp')
+        yesterday = dt.date.today() - dt.timedelta(days=1)
+
+        search.update_from_dict({
+            'aggs': {
+                'date_range': {
+                    'filter': {
+                        'range': {
+                            'timestamp': {
+                                'gte': str(yesterday),
+                            }
+                        }
+                    },
+                    'aggs': {
+                        'departments': {
+                            'terms': {
+                                'field': 'department',
+                                'missing': 'N/A',
+                                'size': 250
+                            },
+                            'aggs': {
+                                'users': {
+                                    'terms': {
+                                        'field': 'user_id'
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        })
+
+        results = search.execute()
+        if results.aggregations:
+            buckets = results.aggregations['date_range']['departments']
+            department_data = [{'name': bucket['key'], 'number_of_users': bucket['doc_count']} for bucket in buckets]
+            return department_data
+        return []
 
     @classmethod
     def record_user_institution_project_counts(cls, user, institution, public_project_count, private_project_count, **kwargs):
