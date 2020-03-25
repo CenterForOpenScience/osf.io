@@ -544,7 +544,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
 
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
     # Email users for projects, or for components where they are not contributors on the parent node.
-    if contributor.is_registered and (isinstance(node, Preprint) or
+    if contributor.is_registered and ((isinstance(node, (Preprint, DraftRegistration))) or
             (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor)))):
         mimetype = 'html'
         preprint_provider = None
@@ -558,6 +558,8 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
                 logo = settings.OSF_PREPRINTS_LOGO
             else:
                 logo = preprint_provider._id
+        elif email_template == 'draft_registration':
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DRAFT_REGISTRATION'.format(email_template.upper()))
         elif email_template == 'access_request':
             mimetype = 'html'
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST'.format(email_template.upper()))
@@ -566,7 +568,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
             logo = settings.OSF_PREPRINTS_LOGO
         else:
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT'.format(email_template.upper()))
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT')
 
         contributor_record = contributor.contributor_added_email_records.get(node._id, {})
         if contributor_record:
@@ -589,7 +591,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             can_change_preferences=False,
             logo=logo if logo else settings.OSF_LOGO,
             osf_contact_email=settings.OSF_CONTACT_EMAIL,
-            published_preprints=[] if isinstance(node, Preprint) else serialize_preprints(node, user=None)
+            published_preprints=[] if isinstance(node, (Preprint, DraftRegistration)) else serialize_preprints(node, user=None)
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
@@ -600,7 +602,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
 
 @contributor_added.connect
 def add_recently_added_contributor(node, contributor, auth=None, *args, **kwargs):
-    if isinstance(node, Preprint):
+    if isinstance(node, (Preprint, DraftRegistration)):
         return
     MAX_RECENT_LENGTH = 15
     # Add contributor to recently added list for user

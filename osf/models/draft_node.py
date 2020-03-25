@@ -67,7 +67,7 @@ class DraftNode(AbstractNode):
         self.convert_draft_node_to_node(auth)
         # Copies editable fields from the DraftRegistration back to the Node
         self.copy_editable_fields(draft_registration, auth=auth, save=True)
-        # TODO - queue this? This could fire off a lot of emails
+        # Queued downstream by mails.send_mail
         self.subscribe_contributors_to_node()
 
         # Calls super on Node, since self is no longer a DraftNode

@@ -4,7 +4,7 @@ import datetime
 
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
-from osf.exceptions import UserNotAffiliatedError, DraftRegistrationStateError
+from osf.exceptions import UserNotAffiliatedError, DraftRegistrationStateError, NodeStateError
 from osf.models import RegistrationSchema, DraftRegistration, DraftRegistrationContributor, NodeLicense, Node, NodeLog
 from osf.utils.permissions import ADMIN, READ, WRITE
 from osf_tests.test_node import TestNodeEditableFieldsMixin, TestTagging, TestNodeLicenses, TestNodeSubjects
@@ -77,6 +77,19 @@ class TestDraftRegistrations:
         with pytest.raises(PermissionsError):
             draft_2.register(Auth(member))
         assert not draft_2.registered_node
+
+    @mock.patch('website.settings.ENABLE_ARCHIVER', False)
+    def test_register_no_title_fails(self):
+        user = factories.UserFactory()
+        auth = Auth(user)
+        project = factories.ProjectFactory(creator=user)
+        draft = factories.DraftRegistrationFactory(branched_from=project)
+        draft.title = ''
+        draft.save()
+        with pytest.raises(NodeStateError) as e:
+            draft.register(auth)
+
+        assert str(e.value) == 'Draft Registration must have title to be registered'
 
     def test_update_metadata_updates_registration_responses(self, project):
         schema = RegistrationSchema.objects.get(
@@ -385,25 +398,7 @@ class TestSetDraftRegistrationEditableFields(TestNodeEditableFieldsMixin):
         return DraftRegistration
 
 
-class TestDraftRegistrationContributorMethods:
-    @pytest.fixture()
-    def draft_registration(self, project):
-        return factories.DraftRegistrationFactory(branched_from=project, title='That Was Then', description='A description')
-
-    @pytest.fixture()
-    def contrib(self):
-        return factories.UserFactory()
-
-    @pytest.fixture()
-    def contributor_model(self):
-        return DraftRegistrationContributor
-
-    @pytest.fixture()
-    def make_resource_contributor(self, user, resource, visible=True):
-        def make_contributor(user, resource, visible=True):
-            contrib = DraftRegistrationContributor.objects.create(user=user, draft_registration=resource, visible=visible)
-            return contrib
-        return make_contributor
+class TestDraftRegistrationContributorMethods():
 
     def test_add_contributor(self, draft_registration, user, auth):
         # A user is added as a contributor

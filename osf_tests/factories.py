@@ -279,7 +279,7 @@ class PrivateLinkFactory(DjangoModelFactory):
     class Meta:
         model = models.PrivateLink
 
-    name = factory.Faker('word')
+    name = factory.Sequence(lambda n: 'Example Private Link #{}'.format(n))
     key = factory.Faker('md5')
     anonymous = False
     creator = factory.SubFactory(UserFactory)
@@ -715,7 +715,7 @@ class TagFactory(DjangoModelFactory):
     class Meta:
         model = models.Tag
 
-    name = factory.Faker('word')
+    name = factory.Sequence(lambda n: 'Example Tag #{}'.format(n))
     system = False
 
 class DismissedAlertFactory(DjangoModelFactory):
@@ -734,7 +734,7 @@ class ApiOAuth2ScopeFactory(DjangoModelFactory):
     class Meta:
         model = models.ApiOAuth2Scope
 
-    name = factory.Faker('word')
+    name = factory.Sequence(lambda n: 'scope{}'.format(n))
     is_public = True
     is_active = True
     description = factory.Faker('text')

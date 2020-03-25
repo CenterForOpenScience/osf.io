@@ -59,6 +59,7 @@ DEBUG_PROPAGATE_EXCEPTIONS = True
 SESSION_COOKIE_NAME = 'api'
 SESSION_COOKIE_SECURE = osf_settings.SECURE_MODE
 SESSION_COOKIE_HTTPONLY = osf_settings.SESSION_COOKIE_HTTPONLY
+SESSION_COOKIE_SAMESITE = osf_settings.SESSION_COOKIE_SAMESITE
 
 # csrf:
 CSRF_COOKIE_NAME = 'api-csrf'
@@ -170,6 +171,7 @@ REST_FRAMEWORK = {
         '2.17',
         '2.18',
         '2.19',
+        '2.20',
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
@@ -227,6 +229,7 @@ MIDDLEWARE = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'waffle.middleware.WaffleMiddleware',
+    'api.base.middleware.SloanIdMiddleware',
 )
 
 TEMPLATES = [
@@ -328,3 +331,5 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     },
 }
+
+SLOAN_ID_COOKIE_NAME = 'sloan_id'
