@@ -487,6 +487,20 @@ def format_results(results):
         category = result.get('category')
         if category == 'user':
             result['url'] = '/profile/' + result['id']
+            # unnormalized
+            user = OSFUser.load(result['id'])
+            if user:
+                job, school = user.get_ongoing_job_school()
+                if job is None:
+                    job = {}
+                result['ongoing_job'] = job.get('institution', '')
+                result['ongoing_job_department'] = job.get('department', '')
+                result['ongoing_job_title'] = job.get('title', '')
+                if school is None:
+                    school = {}
+                result['ongoing_school'] = school.get('institution', '')
+                result['ongoing_school_department'] = school.get('department', '')
+                result['ongoing_school_degree'] = school.get('degree', '')
         elif category == 'wiki':
             result['user_url'] = '/profile/' + result['user_id']
         elif category == 'comment':
@@ -1207,6 +1221,18 @@ def update_user(user, index=None):
         if val is not None:
             normalized_names[key] = unicode_normalize(val)
 
+    ogjob, ogschool = user.get_ongoing_job_school()
+    if ogjob is None:
+        ogjob = {}
+    ongoing_job = unicode_normalize(ogjob.get('institution', ''))
+    ongoing_job_department = unicode_normalize(ogjob.get('department', ''))
+    ongoing_job_title = unicode_normalize(ogjob.get('title', ''))
+    if ogschool is None:
+        ogschool = {}
+    ongoing_school = unicode_normalize(ogschool.get('institution', ''))
+    ongoing_school_department = unicode_normalize(ogschool.get('department', ''))
+    ongoing_school_degree = unicode_normalize(ogschool.get('degree', ''))
+
     user_doc = {
         'id': user._id,
         'user': user.fullname,
@@ -1226,6 +1252,12 @@ def update_user(user, index=None):
         'social': user.social_links,
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
         'user_affiliated_institutions': list(user.affiliated_institutions.values_list('_id', flat=True)),
+        'ongoing_job': ongoing_job,
+        'ongoing_job_department': ongoing_job_department,
+        'ongoing_job_title': ongoing_job_title,
+        'ongoing_school': ongoing_school,
+        'ongoing_school_department': ongoing_school_department,
+        'ongoing_school_degree': ongoing_school_degree,
     }
 
     client().index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)

@@ -56,6 +56,12 @@ def fill_and_normalize(docs):
                     normalized_names[key] = unicode_normalize(val)
             d['normalized_user'] = normalized_names['fullname']
             d['normalized_names'] = normalized_names
+
+            ongoing_list = ('job', 'job_department', 'job_title',
+                            'school', 'school_department', 'school_degree')
+            for suffix in ongoing_list:
+                name = 'ongoing_' + suffix
+                d[name] = unicode_normalize(d[name])
     elif doc_type == 'file':
         for doc in docs:
             d = doc['doc']

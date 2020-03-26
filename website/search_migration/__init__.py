@@ -599,34 +599,40 @@ SELECT json_agg(
                 , 'middle_names', U.middle_names
                 , 'suffix', U.suffix
             )
+            , 'ongoing_job', (ONGOING_JOB.JOB :: JSON ->> 'institution') :: TEXT
+            , 'ongoing_job_department', (ONGOING_JOB.JOB :: JSON ->> 'department') :: TEXT
+            , 'ongoing_job_title', (ONGOING_JOB.JOB :: JSON ->> 'title') :: TEXT
+            , 'ongoing_school', (ONGOING_SCHOOL.SCHOOL :: JSON ->> 'institution') :: TEXT
+            , 'ongoing_school_department', (ONGOING_SCHOOL.SCHOOL :: JSON ->> 'department') :: TEXT
+            , 'ongoing_school_degree', (ONGOING_SCHOOL.SCHOOL :: JSON ->> 'degree') :: TEXT
             , 'job', CASE
-                     WHEN U.jobs :: JSON -> 0 -> 'institution' IS NOT NULL
+                     WHEN U.jobs :: JSON -> 0 ->> 'institution' IS NOT NULL
                        THEN
-                         (U.jobs :: JSON -> 0 -> 'institution') :: TEXT
+                         (U.jobs :: JSON -> 0 ->> 'institution') :: TEXT
                      ELSE
                        ''
                      END
             , 'job_title', (CASE
-                            WHEN U.jobs :: JSON -> 0 -> 'title' IS NOT NULL
+                            WHEN U.jobs :: JSON -> 0 ->> 'title' IS NOT NULL
                               THEN
-                                (U.jobs :: JSON -> 0 -> 'title') :: TEXT
+                                (U.jobs :: JSON -> 0 ->> 'title') :: TEXT
                             ELSE
                               ''
                             END)
-            , 'all_jobs', (SELECT array_agg(DISTINCT (JOB :: JSON -> 'institution') :: TEXT)
+            , 'all_jobs', (SELECT (array_agg(DISTINCT (JOB :: JSON ->> 'institution') :: TEXT))[2:]
                            FROM
                              (SELECT json_array_elements(jobs :: JSON) AS JOB
                               FROM osf_osfuser
                               WHERE id = U.id
                              ) AS JOBS)
             , 'school', (CASE
-                         WHEN U.schools :: JSON -> 0 -> 'institution' IS NOT NULL
+                         WHEN U.schools :: JSON -> 0 ->> 'institution' IS NOT NULL
                            THEN
-                             (U.schools :: JSON -> 0 -> 'institution') :: TEXT
+                             (U.schools :: JSON -> 0 ->> 'institution') :: TEXT
                          ELSE
                            ''
                          END)
-            , 'all_schools', (SELECT array_agg(DISTINCT (SCHOOL :: JSON -> 'institution') :: TEXT)
+            , 'all_schools', (SELECT array_agg(DISTINCT (SCHOOL :: JSON ->> 'institution') :: TEXT)
                               FROM
                                 (SELECT json_array_elements(schools :: JSON) AS SCHOOL
                                  FROM osf_osfuser
@@ -634,9 +640,9 @@ SELECT json_agg(
                                 ) AS SCHOOLS)
             , 'category', 'user'
             , 'degree', (CASE
-                         WHEN U.schools :: JSON -> 0 -> 'degree' IS NOT NULL
+                         WHEN U.schools :: JSON -> 0 ->> 'degree' IS NOT NULL
                            THEN
-                             (U.schools :: JSON -> 0 -> 'degree') :: TEXT
+                             (U.schools :: JSON -> 0 ->> 'degree') :: TEXT
                          ELSE
                            ''
                          END)
@@ -700,6 +706,24 @@ FROM osf_osfuser AS U
                                              WHERE model = 'osfuser')
             LIMIT 1
             ) USER_GUID ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT JOB
+            FROM
+            (SELECT json_array_elements(jobs :: JSON) AS JOB
+             FROM osf_osfuser
+             WHERE id = U.id) AS JOBS
+            WHERE (JOB :: JSON ->> 'ongoing') :: BOOLEAN = TRUE
+            LIMIT 1
+            ) ONGOING_JOB ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT SCHOOL
+            FROM
+            (SELECT json_array_elements(schools :: JSON) AS SCHOOL
+             FROM osf_osfuser
+             WHERE id = U.id) AS SCHOOLS
+            WHERE (SCHOOL :: JSON ->> 'ongoing') :: BOOLEAN = TRUE
+            LIMIT 1
+            ) ONGOING_SCHOOL ON TRUE
 WHERE is_active = TRUE
       AND id > {page_start}
       AND id <= {page_end}
