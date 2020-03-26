@@ -245,62 +245,6 @@ def get_query_string(query):
     return None
 
 
-# TODO experimental code: aggregate comments in Elasticsearch
-@requires_search
-def get_comments(query, index, doc_type, raw):
-    highlight_query = get_query_string(query)
-    logger.debug(u'aggs  highlight_query={}, q={}'.format(highlight_query, query))
-
-    query['aggregations'] = {
-        'comments': {
-            'terms': {'field': 'page_id'},
-            'aggs': {
-                'latest_comment': {
-                    'top_hits': {
-                        '_source': ['id', 'page_id'],
-                        'highlight': {
-                            'fields': {
-                                #'*': {},
-                                'text': {},
-                            },
-                            'fragment_size': settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE,
-                            'number_of_fragments': 1,
-                            'pre_tags': ['<b><i>'],
-                            'post_tags': ['</i></b>'],
-                            'require_field_match': False,
-                            'highlight_query': highlight_query,
-                        },
-                        'size': 1,
-                        'sort': [
-                            {
-                                'date_modified': {
-                                    'order': 'desc'  # latest
-                                }
-                            }
-                        ]
-                    }
-                }
-            },
-        }
-    }
-
-    # from_ = query['from']
-    # size = query['size']
-    query['size'] = 0  # Returning only aggregation results
-
-    results = client().search(index=index, doc_type=doc_type, body=query)
-    latest_comments = results['aggregations']['comments']['buckets']
-    if raw:
-        #return latest_comments
-        return results
-
-    comments = []
-    for latest_comment in latest_comments:
-        comments.append(latest_comment['latest_comment']['hits']['hits'][0]['_source'])
-
-    return comments
-
-
 @requires_search
 def search(query, index=None, doc_type=None, raw=False, normalize=True, private=False, ext=False):
     """Search for a query
@@ -365,12 +309,6 @@ def search(query, index=None, doc_type=None, raw=False, normalize=True, private=
             q = convert_query_string(q, normalize=normalize)
             query['query']['bool']['should'][0]['query_string']['query'] = q
 
-    comments = None
-    # TODO experimental code: aggregate comments in Elasticsearch
-    # if ext and 'comment' in doc_type:
-    #     comment_query = copy.deepcopy(query)
-    #     comments = get_comments(comment_query, index, 'comment', raw)
-
     tag_query = copy.deepcopy(query)
 
     for key in ['from', 'size', 'sort', 'highlight']:
@@ -401,9 +339,6 @@ def search(query, index=None, doc_type=None, raw=False, normalize=True, private=
         hits = merge_highlight(hits)
         hits = set_last_comment(hits)
         results = [hit['_source'] for hit in hits]
-        # TODO experimental code: aggregate comments in Python
-        # if ext:
-        #     results, matched_all_comments_count, aggregated_comments_count = aggregate_latest_comment(results)
         results = format_results(results)
 
     return_value = {
@@ -413,8 +348,6 @@ def search(query, index=None, doc_type=None, raw=False, normalize=True, private=
         'tags': tags,
         'typeAliases': ALIASES
     }
-    if ext and comments:
-        return_value.update({'comments': comments})
 
     return return_value
 
@@ -456,30 +389,6 @@ def set_last_comment(hits):
         d['replyto_user_name'] = replyto_username
         s['comment'] = d
     return hits
-
-# TODO experimental code: aggregate comments in Python
-def aggregate_latest_comment(results):
-    ret = []
-    pages = {}  # for comments
-    matched_all_comments_count = 0
-    for result in results:
-        if result.get('category') != 'comment':
-            ret.append(result)
-            continue
-        matched_all_comments_count += 1
-        page_id = result.get('page_id')
-        page = pages.get(page_id, None)
-        if page:
-            date_modified1 = page.get('date_modified')
-            date_modified2 = result.get('date_modified')
-            if date_modified2 > date_modified1:
-                pages[page_id] = result  # set latest comment
-        else:
-            pages[page_id] = result
-    comments = pages.values()
-    ret.extend(comments)
-    aggregated_comments_count = len(comments)
-    return ret, matched_all_comments_count, aggregated_comments_count
 
 def format_results(results):
     ret = []
