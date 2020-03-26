@@ -41,6 +41,12 @@ class DraftRegistrationMixin(DraftMixin):
         # We do not have to check the branched_from relationship. node_id is not a kwarg
         return
 
+    # Overrides DraftMixin
+    def check_resource_permissions(self, resource):
+        # Checks permissions on draft_registration, regardless of whether or not
+        # draft_registration is branched off of a nodeg
+        return self.check_object_permissions(self.request, resource)
+
 
 class DraftRegistrationList(NodeDraftRegistrationsList):
     permission_classes = (
