@@ -288,6 +288,16 @@ def query_search_contributor(self, qs, user):
     DEBUG('query_search_contributor', res)
     return res, res.json.get('users')
 
+def query_for_normalize_tests(self, qs, category=None, user=None, version=1):
+    if user is None:
+        user = self.user1
+    # app.get() requires str
+    qs = u2s(qs)
+    res, results = query_private_search(self, qs, user, category=category,
+                                        version=version)
+    return (res, results)
+
+
 # see osf_tests/test_search_views.py
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
@@ -514,13 +524,9 @@ class TestPrivateSearch(OsfTestCase):
         assert_equal(len(filenames), 1)
 
     @enable_private_search
-    def _common_normalize(self, qs, category=None, user=None):
-        if user is None:
-            user = self.user1
-        # app.get() requires str
-        qs = u2s(qs)
-        res, results = query_private_search(self, qs, user, category=category)
-        return (res, results)
+    def _common_normalize(self, qs, category=None, user=None, version=1):
+        return query_for_normalize_tests(self, qs, category=category,
+                                         user=user, version=version)
 
     def test_normalize_user1(self):
         """
@@ -551,7 +557,7 @@ class TestPrivateSearch(OsfTestCase):
         assert_equal(len(results), 1)
         assert_equal(len(user_fullnames), 1)
 
-    def test_normalize_title1(self):
+    def test_normalize_prj_title1(self):
         """
         Unicode正規化のテスト。通常検索でtitleを検索する場合。
         データベースに登録されている濁点付き文字が結合可能濁点と母体の
@@ -566,7 +572,7 @@ class TestPrivateSearch(OsfTestCase):
         assert_equal(len(results), 1)
         assert_equal(len(node_titles), 1)
 
-    def test_normalize_title2(self):
+    def test_normalize_prj_title2(self):
         """
         Unicode正規化のテスト。通常検索でtitleを検索する場合。
         データベースに登録されている濁点付き文字が合成済み文字の場合に、
@@ -580,7 +586,7 @@ class TestPrivateSearch(OsfTestCase):
         assert_equal(len(results), 1)
         assert_equal(len(node_titles), 1)
 
-    def test_normalize_description1(self):
+    def test_normalize_prj_description1(self):
         """
         Unicode正規化のテスト。通常検索でdescriptionを検索する場合。
         データベースに登録されている濁点付き文字が結合可能濁点と母体の
@@ -595,7 +601,7 @@ class TestPrivateSearch(OsfTestCase):
         assert_equal(len(results), 1)
         assert_equal(len(node_titles), 1)
 
-    def test_normalize_description2(self):
+    def test_normalize_prj_description2(self):
         """
         Unicode正規化のテスト。通常検索でdescriptionを検索する場合。
         データベースに登録されている濁点付き文字が合成済み文字の場合に、
@@ -609,9 +615,9 @@ class TestPrivateSearch(OsfTestCase):
         assert_equal(len(results), 1)
         assert_equal(len(node_titles), 1)
 
-    def test_normalize_creator1(self):
+    def test_normalize_prj_creator1(self):
         """
-        Unicode正規化のテスト。通常検索でcreatorを検索する場合。
+        Unicode正規化のテスト。通常検索でプロジェクトcreatorを検索する場合。
         データベースに登録されている濁点付き文字が結合可能濁点と母体の
         文字の組み合わせで表現されている場合に、合成済み文字で検索でき
         ることを確認する。
@@ -627,11 +633,10 @@ class TestPrivateSearch(OsfTestCase):
         c = u'\u304b\u3099' # か+濁点
         assert_equal(r['creator_id'], self.user3._id)
         assert_equal(r['creator_name'], c)
-        assert_equal(r['normalized_creator_name'], c)
 
-    def test_normalize_creator2(self):
+    def test_normalize_prj_creator2(self):
         """
-        Unicode正規化のテスト。通常検索でcreatorを検索する場合。
+        Unicode正規化のテスト。通常検索でプロジェクトcreatorを検索する場合。
         データベースに登録されている濁点付き文字が合成済み文字の場合に、
         結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
         """
@@ -647,11 +652,10 @@ class TestPrivateSearch(OsfTestCase):
         c2 = u'\u304e' # ぎ
         assert_equal(r['creator_id'], self.user4._id)
         assert_equal(r['creator_name'], c2)
-        assert_equal(r['normalized_creator_name'], c1)
 
-    def test_normalize_modifier1(self):
+    def test_normalize_prj_modifier1(self):
         """
-        Unicode正規化のテスト。通常検索でmodifierを検索する場合。
+        Unicode正規化のテスト。通常検索でプロジェクトmodifierを検索する場合。
         データベースに登録されている濁点付き文字が結合可能濁点と母体の
         文字の組み合わせで表現されている場合に、合成済み文字で検索でき
         ることを確認する。
@@ -668,11 +672,10 @@ class TestPrivateSearch(OsfTestCase):
         c2 = u'\u306f\u3099' # は+濁点
         assert_equal(r['modifier_id'], self.user5._id)
         assert_equal(r['modifier_name'], c2)
-        assert_equal(r['normalized_modifier_name'], c2)
 
-    def test_normalize_modifier2(self):
+    def test_normalize_prj_modifier2(self):
         """
-        Unicode正規化のテスト。通常検索でmodiierを検索する場合。
+        Unicode正規化のテスト。通常検索でプロジェクトmodifierを検索する場合。
         データベースに登録されている濁点付き文字が合成済み文字の場合に、
         結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
         """
@@ -688,17 +691,16 @@ class TestPrivateSearch(OsfTestCase):
         c2 = u'\u3073' # び
         assert_equal(r['modifier_id'], self.user6._id)
         assert_equal(r['modifier_name'], c2)
-        assert_equal(r['normalized_modifier_name'], c1)
 
-    def test_normalize_wikiname1(self):
+    def test_normalize_prj_wikiname1(self):
         """
         Unicode正規化のテスト。通常検索でwikiページ名を検索する場合。
         データベースに登録されている濁点付き文字が結合可能濁点と母体の
         文字の組み合わせで表現されている場合に、合成済み文字で検索でき
         ることを確認する。
         """
-        qs = u'\u3056'  # ざ
-        res, results = self._common_normalize(qs, 'project')
+        qs = u'category:project AND \u3056'  # ざ
+        res, results = self._common_normalize(qs, 'project', version=1)
         node_titles = get_node_titles(results)
         tags = get_tags(results, self.project_private_user1_1.title)
         DEBUG('results', results)
@@ -708,14 +710,14 @@ class TestPrivateSearch(OsfTestCase):
         assert_equal(len(node_titles), 1)
         assert_equal(len(tags), 3)
 
-    def test_normalize_wikiname2(self):
+    def test_normalize_prj_wikiname2(self):
         """
         Unicode正規化のテスト。通常検索でwikiページ名を検索する場合。
         データベースに登録されている濁点付き文字が合成済み文字の場合に、
         結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
         """
-        qs = u'\u3057\u3099'  # し+濁点
-        res, results = self._common_normalize(qs, 'project')
+        qs = u'category:project AND \u3057\u3099'  # し+濁点
+        res, results = self._common_normalize(qs, 'project', version=1)
         node_titles = get_node_titles(results)
         tags = get_tags(results, self.project_private_user1_1.title)
         DEBUG('results', results)
@@ -725,15 +727,15 @@ class TestPrivateSearch(OsfTestCase):
         assert_equal(len(node_titles), 1)
         assert_equal(len(tags), 3)
 
-    def test_normalize_wikicontent1(self):
+    def test_normalize_prj_wikicontent1(self):
         """
         Unicode正規化のテスト。通常検索でwikiページ本文を検索する場合。
         データベースに登録されている濁点付き文字が結合可能濁点と母体の
         文字の組み合わせで表現されている場合に、合成済み文字で検索でき
         ることを確認する。
         """
-        qs = u'\u305a'  # ず
-        res, results = self._common_normalize(qs, 'project')
+        qs = u'category:project AND \u305a'  # ず
+        res, results = self._common_normalize(qs, 'project', version=1)
         node_titles = get_node_titles(results)
         tags = get_tags(results, self.project_private_user1_1.title)
         DEBUG('results', results)
@@ -743,14 +745,14 @@ class TestPrivateSearch(OsfTestCase):
         assert_equal(len(node_titles), 1)
         assert_equal(len(tags), 3)
 
-    def test_normalize_wikicontent2(self):
+    def test_normalize_prj_wikicontent2(self):
         """
         Unicode正規化のテスト。通常検索でwikiページ本文を検索する場合。
         データベースに登録されている濁点付き文字が合成済み文字の場合に、
         結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
         """
-        qs = u'\u305b\u3099'  # せ+濁点
-        res, results = self._common_normalize(qs, 'project')
+        qs = u'category:project AND \u305b\u3099'  # せ+濁点
+        res, results = self._common_normalize(qs, 'project', version=1)
         node_titles = get_node_titles(results)
         tags = get_tags(results, self.project_private_user1_1.title)
         DEBUG('results', results)
@@ -858,7 +860,6 @@ class TestPrivateSearch(OsfTestCase):
         assert_equal(len(filenames), 1)
         assert_equal(len(tags), 2)
 
-
     @enable_private_search
     def _update_file(self, project, user, count):
         from addons.osfstorage import settings as osfstorage_settings
@@ -885,6 +886,7 @@ class TestPrivateSearch(OsfTestCase):
             }).save()
 
         assert_equal(test_file.versions.count(), count)
+        # first() of file.versions is latest
         assert_equal(test_file.versions.all().first().creator, user)
 
     def test_normalize_file_creator_modifier1(self):
@@ -915,7 +917,6 @@ class TestPrivateSearch(OsfTestCase):
         c2 = u'\u304b\u3099' # か+濁点
         assert_equal(r['creator_id'], self.user3._id)
         assert_equal(r['creator_name'], c2)
-        assert_equal(r['normalized_creator_name'], c2)
 
         c1 = u'\u3070'  # ば (user5)
         qs = u'category:file AND modifier_name:' + c1
@@ -932,7 +933,6 @@ class TestPrivateSearch(OsfTestCase):
         c2 = u'\u306f\u3099' # は+濁点
         assert_equal(r['modifier_id'], self.user5._id)
         assert_equal(r['modifier_name'], c2)
-        assert_equal(r['normalized_modifier_name'], c2)
 
     def test_normalize_file_creator_modifier2(self):
         """
@@ -961,7 +961,6 @@ class TestPrivateSearch(OsfTestCase):
         c2 = u'\u304e' # ぎ
         assert_equal(r['creator_id'], self.user4._id)
         assert_equal(r['creator_name'], c2)
-        assert_equal(r['normalized_creator_name'], c1)
 
         c1 = u'\u3072\u3099'  # ひ+濁点 (user6)
         qs = u'category:file AND modifier_name:' + c1
@@ -978,7 +977,6 @@ class TestPrivateSearch(OsfTestCase):
         c2 = u'\u3073'  # び
         assert_equal(r['modifier_id'], self.user6._id)
         assert_equal(r['modifier_name'], c2)
-        assert_equal(r['normalized_modifier_name'], c1)
 
     @enable_private_search
     def _common_normalize_search_contributor(self, qs):
@@ -1155,6 +1153,169 @@ class TestSearchExt(OsfTestCase):
             s2u(self.user2.fullname),
             s2u(contributors)
         )
+
+    @enable_private_search
+    def _common_normalize(self, qs, category=None, user=None, version=1):
+        return query_for_normalize_tests(self, qs, category=category,
+                                         user=user, version=version)
+
+    def test_normalize_wiki_name1(self):
+        """
+        Unicode正規化のテスト。通常検索でwikiページ名を検索する場合。
+        データベースに登録されている濁点付き文字が結合可能濁点と母体の
+        文字の組み合わせで表現されている場合に、合成済み文字で検索でき
+        ることを確認する。
+        """
+        qs = u'\u3056'  # ざ
+        res, results = self._common_normalize(qs, 'wiki', version=2)
+        node_titles = get_node_titles(results)
+        tags = get_tags(results, self.project_private_user1_1.title)
+        DEBUG('results', results)
+        assert_equal(len(results), 1)
+        r = results[0]
+        c2 = u'\u3055\u3099' # さ+濁点
+        assert_equal(r['name'], c2)
+
+    def test_normalize_wiki_name2(self):
+        """
+        Unicode正規化のテスト。通常検索でwikiページ名を検索する場合。
+        データベースに登録されている濁点付き文字が合成済み文字の場合に、
+        結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
+        """
+        qs = u'category:wiki AND \u3057\u3099'  # し+濁点
+        res, results = self._common_normalize(qs, version=2)
+        node_titles = get_node_titles(results)
+        tags = get_tags(results, self.project_private_user1_1.title)
+        DEBUG('results', results)
+        assert_equal(len(results), 1)
+        r = results[0]
+        c2 = u'\u3058' # じ
+        assert_equal(r['name'], c2)
+
+    def test_normalize_wiki_content1(self):
+        """
+        Unicode正規化のテスト。通常検索でwikiページ本文を検索する場合。
+        データベースに登録されている濁点付き文字が結合可能濁点と母体の
+        文字の組み合わせで表現されている場合に、合成済み文字で検索でき
+        ることを確認する。
+        """
+        qs = u'\u305a'  # ず
+        res, results = self._common_normalize(qs, 'wiki', version=2)
+        node_titles = get_node_titles(results)
+        tags = get_tags(results, self.project_private_user1_1.title)
+        DEBUG('results', results)
+        assert_equal(len(results), 1)
+        r = results[0]
+        # text is not return to original strings.
+        c2 = u'\u3059\u3099' # す+濁点
+        assert_equal(r['text'], c2)
+
+    def test_normalize_wiki_content2(self):
+        """
+        Unicode正規化のテスト。通常検索でwikiページ本文を検索する場合。
+        データベースに登録されている濁点付き文字が合成済み文字の場合に、
+        結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
+        """
+        c1 = u'\u305b\u3099'  # せ+濁点
+        qs = u'category:wiki AND ' + c1
+        res, results = self._common_normalize(qs, version=2)
+        node_titles = get_node_titles(results)
+        tags = get_tags(results, self.project_private_user1_1.title)
+        DEBUG('results', results)
+        assert_equal(len(results), 1)
+        r = results[0]
+        assert_equal(r['text'], c1)
+        # c2 = u'\u305c' # ぜ
+        # assert_not_equal(r['text'], c2)
+
+    @enable_private_search
+    def _update_wiki(self, project, user, count):
+        with run_celery_tasks():
+            name = 'test_wiki'
+            content = 'content wiki' + str(count)
+            wiki = WikiPage.objects.get_for_node(project, name)
+            if wiki:
+                wiki.update(user, content)
+            else:
+                wiki = WikiPage.objects.create_for_node(
+                    project, name, content, Auth(user))
+
+        assert_equal(wiki.versions.count(), count)
+        # latest
+        assert_equal(wiki.get_versions().first().user, user)
+
+    def test_normalize_wiki_creator_modifier1(self):
+        """
+        Unicode正規化のテスト。通常検索でWikiのcreatorとmodifier
+        をそれぞれ検索する場合。
+        データベースに登録されている濁点付き文字が結合可能濁点と母体の
+        文字の組み合わせで表現されている場合に、合成済み文字で検索でき
+        ることを確認する。
+        """
+        # creator
+        self._update_wiki(self.project_private_user3, self.user3, 1)
+        # modifier
+        self._update_wiki(self.project_private_user3, self.user5, 2)
+
+        c1 = u'\u304c'  # が (user3)
+        qs = u'category:wiki AND creator_name:' + c1
+        res, results = self._common_normalize(qs, user=self.user3, version=2)
+        filenames = get_filenames(results)
+        tags = get_filetags(results, self.f1.name)
+        DEBUG('results', results)
+        assert_equal(len(results), 1)
+        r = results[0]
+        c2 = u'\u304b\u3099' # か+濁点
+        assert_equal(r['creator_id'], self.user3._id)
+        assert_equal(r['creator_name'], c2)
+
+        c1 = u'\u3070'  # ば (user5)
+        qs = u'category:wiki AND modifier_name:' + c1
+        res, results = self._common_normalize(qs, user=self.user3, version=2)
+        filenames = get_filenames(results)
+        tags = get_filetags(results, self.f1.name)
+        DEBUG('results', results)
+        assert_equal(len(results), 1)
+        r = results[0]
+        c2 = u'\u306f\u3099' # は+濁点
+        assert_equal(r['modifier_id'], self.user5._id)
+        assert_equal(r['modifier_name'], c2)
+
+    def test_normalize_wiki_creator_modifier2(self):
+        """
+        Unicode正規化のテスト。通常検索でWikiのcreatorとmodifier
+        をそれぞれ検索する場合。
+        データベースに登録されている濁点付き文字が合成済み文字の場合に、
+        結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
+        """
+        # creator
+        self._update_wiki(self.project_private_user4, self.user4, 1)
+        # modifier
+        self._update_wiki(self.project_private_user4, self.user6, 2)
+
+        c1 = u'\u304d\u3099'  # き+濁点 (user4)
+        qs = u'category:wiki AND creator_name:' + c1
+        res, results = self._common_normalize(qs, user=self.user4, version=2)
+        filenames = get_filenames(results)
+        tags = get_filetags(results, self.f1.name)
+        DEBUG('results', results)
+        assert_equal(len(results), 1)
+        r = results[0]
+        c2 = u'\u304e' # ぎ
+        assert_equal(r['creator_id'], self.user4._id)
+        assert_equal(r['creator_name'], c2)
+
+        c1 = u'\u3072\u3099'  # ひ+濁点 (user6)
+        qs = u'category:wiki AND modifier_name:' + c1
+        res, results = self._common_normalize(qs, user=self.user4, version=2)
+        filenames = get_filenames(results)
+        tags = get_filetags(results, self.f1.name)
+        DEBUG('results', results)
+        assert_equal(len(results), 1)
+        r = results[0]
+        c2 = u'\u3073'  # び
+        assert_equal(r['modifier_id'], self.user6._id)
+        assert_equal(r['modifier_name'], c2)
 
 
 @pytest.mark.enable_search

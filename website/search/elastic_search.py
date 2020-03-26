@@ -411,7 +411,13 @@ def format_results(results):
                 result['ongoing_school_department'] = school.get('department', '')
                 result['ongoing_school_degree'] = school.get('degree', '')
         elif category == 'wiki':
-            result['user_url'] = '/profile/' + result['user_id']
+            # get unnormalized names
+            creator_id, creator_name = user_id_fullname(
+                result.get('creator_id'))
+            modifier_id, modifier_name = user_id_fullname(
+                result.get('modifier_id'))
+            result['creator_name'] = creator_name
+            result['modifier_name'] = modifier_name
         elif category == 'comment':
             result['page_url'] = '/' + result['page_id'] + '/'
             result['user_url'] = '/profile/' + result['user_id']
@@ -424,22 +430,13 @@ def format_results(results):
             parent_info = load_parent(result.get('parent_id'))
             result['parent_url'] = parent_info.get('url') if parent_info else None
             result['parent_title'] = parent_info.get('title') if parent_info else None
-
             # get unnormalized names
             creator_id, creator_name = user_id_fullname(
                 result.get('creator_id'))
             modifier_id, modifier_name = user_id_fullname(
                 result.get('modifier_id'))
-            normalized_creator_name = result.get('creator_name')
-            normalized_modifier_name = result.get('modifier_name')
-            if not creator_name:
-                creator_name = normalized_creator_name
-            if not modifier_name:
-                modifier_name = normalized_modifier_name
             result['creator_name'] = creator_name
-            result['normalized_creator_name'] = normalized_creator_name
             result['modifier_name'] = modifier_name
-            result['normalized_modifier_name'] = normalized_modifier_name
         elif category in {'project', 'component', 'registration'}:
             result = format_result(result, result.get('parent_id'))
         elif category in {'preprint'}:
@@ -459,7 +456,7 @@ def user_id_fullname(guid_id):
         user = OSFUser.load(guid_id)
         if user:
             return (guid_id, user.fullname)
-    return (None, None)
+    return ('', '')
 
 
 # for 'project', 'component', 'registration'
@@ -469,12 +466,6 @@ def format_result(result, parent_id=None):
     # get unnormalized names
     creator_id, creator_name = user_id_fullname(result.get('creator_id'))
     modifier_id, modifier_name = user_id_fullname(result.get('modifier_id'))
-    normalized_creator_name = result.get('creator_name')
-    normalized_modifier_name = result.get('modifier_name')
-    if not creator_name:
-        creator_name = normalized_creator_name
-    if not modifier_name:
-        modifier_name = normalized_modifier_name
 
     formatted_result = {
         'contributors': result['contributors'],
@@ -499,10 +490,8 @@ def format_result(result, parent_id=None):
         'date_modified': result.get('date_modified'),
         'creator_id': creator_id,
         'creator_name': creator_name,
-        'normalized_creator_name': normalized_creator_name,
         'modifier_id': modifier_id,
         'modifier_name': modifier_name,
-        'normalized_modifier_name': normalized_modifier_name,
         'date_registered': result.get('registered_date'),
         'n_wikis': len(result['wikis'] or []),
         'license': result.get('license'),
@@ -744,11 +733,29 @@ def serialize_preprint(preprint, category):
 
 def serialize_wiki(wiki_page, category):
     w = wiki_page
-    latest = w.get_version()
+    last_ver = w.get_version()
+    first_ver = w.get_version(version=1)
+
     node = w.node
     elastic_document = {}
     name = w.page_name
     normalized_name = unicode_normalize(name)
+
+    creator = first_ver.user
+    if creator:
+        creator_id = creator._id
+        creator_name = unicode_normalize(creator.fullname)
+    else:
+        creator_id = ''
+        creator_name = ''
+
+    modifier = last_ver.user
+    if modifier:
+        modifier_id = modifier._id
+        modifier_name = unicode_normalize(modifier.fullname)
+    else:
+        modifier_id = ''
+        modifier_name = ''
 
     elastic_document = {
         'id': w._id,
@@ -760,9 +767,10 @@ def serialize_wiki(wiki_page, category):
         'node_public': node.is_public,
         'date_created': w.created,
         'date_modified': w.modified,
-        'user_id': latest.user._id,
-        'user': latest.user.fullname,
-        'normalized_user': unicode_normalize(latest.user.fullname),
+        'creator_id': creator_id,
+        'creator_name': creator_name,
+        'modifier_id': modifier_id,
+        'modifier_name': modifier_name,
         'node_title': node.title,
         'normalized_node_title': unicode_normalize(node.title),
         'node_url': node.url,
