@@ -7,6 +7,7 @@ var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
+var gt = require('js/rdmGettext').rdmGettext();
 var _ = require('js/rdmGettext')._;
 var agh = require('agh.sprintf');
 
