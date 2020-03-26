@@ -573,7 +573,7 @@ function doItemOp(operation, to, from, rename, conflict) {
             if (filesRemaining.conflicts.length > 0) {
                 var s = filesRemaining.conflicts.length > 1 ? 's' : '';
                 var mithrilContent = m('div', { className: 'text-center' }, [
-                    m('p.h4', agh.sprintf(gt.ngettext('%1$s conflicts left to resolve.','%1$s conflict left to resolve.',filesRemaining.conflicts.length),filesRemaining.conflicts.length)),
+                    m('p.h4', sprintf(gt.ngettext('%1$s conflicts left to resolve.','%1$s conflict left to resolve.',filesRemaining.conflicts.length),filesRemaining.conflicts.length)),
                     m('div', {className: 'ball-pulse ball-scale-blue text-center'}, [
                         m('div',''),
                         m('div',''),
