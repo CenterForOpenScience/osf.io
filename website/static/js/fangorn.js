@@ -20,6 +20,7 @@ var waterbutler = require('js/waterbutler');
 var iconmap = require('js/iconmap');
 var storageAddons = require('json-loader!storageAddons.json');
 
+var gt = require('js/rdmGettext').rdmGettext();
 var _ = require('js/rdmGettext')._;
 var agh = require('agh.sprintf');
 
