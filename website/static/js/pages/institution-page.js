@@ -9,9 +9,7 @@ var Projects = _myProjects.MyProjects;
 var LinkObject = _myProjects.LinkObject;
 var InstitutionNodes = require('js/institutionNodes.js');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 var agh = require('agh.sprintf');
 
 $(document).ready(function() {

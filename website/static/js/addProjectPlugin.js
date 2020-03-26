@@ -11,10 +11,7 @@ var $osf = require('js/osfHelpers');
 var mHelpers = require('js/mithrilHelpers');
 var institutionComponents = require('js/components/institution');
 var SelectableInstitution = institutionComponents.SelectableInstitution;
-
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 var agh = require('agh.sprintf');
 
 var AddProject = {

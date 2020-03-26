@@ -5,9 +5,7 @@ var Raven = require('raven-js');
 
 var $osf = require('js/osfHelpers');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 var ViewModel = function(context) {
     var self = this;

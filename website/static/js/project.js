@@ -8,9 +8,7 @@ var bootbox = require('bootbox');
 var Raven = require('raven-js');
 var ko = require('knockout');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 var $osf = require('js/osfHelpers');
 

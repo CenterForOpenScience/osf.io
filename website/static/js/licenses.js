@@ -3,9 +3,7 @@ var $ = require('jquery');
 var licenses = require('json-loader!@centerforopenscience/list-of-licenses');
 delete licenses.AFL3;
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 var DEFAULT_LICENSE, OTHER_LICENSE;
 var list = $.map(licenses, function(value, key) {

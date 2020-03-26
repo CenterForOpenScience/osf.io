@@ -11,9 +11,7 @@ var lodashGet = require('lodash.get');
 var KeenTracker = require('js/keen');
 var linkify = require('linkifyjs/html');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 var agh = require('agh.sprintf');
 
 // TODO: For some reason, this require is necessary for custom ko validators to work

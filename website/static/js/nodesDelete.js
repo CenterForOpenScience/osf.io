@@ -11,9 +11,7 @@ var m = require('mithril');
 var bootbox = require('bootbox');
 var NodesDeleteTreebeard = require('js/nodesDeleteTreebeard');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 var agh = require('agh.sprintf');
 
 var BULK_DELETE_LIMIT = 100;

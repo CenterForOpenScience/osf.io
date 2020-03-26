@@ -23,9 +23,7 @@ var KeenTracker = require('js/keen');
 var DevModeControls = require('js/devModeControls');
 var bootbox = require('bootbox');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 var agh = require('agh.sprintf');
 
 // Prevent IE from caching responses

@@ -9,9 +9,7 @@ var bootbox = require('bootbox');
 var oop = require('js/oop');
 var makeClient = require('js/clipboard');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 var agh = require('agh.sprintf');
 
 var BASE_URL = '/static/vendor/bower_components/styles/';
