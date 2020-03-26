@@ -1,9 +1,7 @@
 'use strict';
 var $ = require('jquery');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 var SaveManager = function(url, method, opts) {
     var self = this;

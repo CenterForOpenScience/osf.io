@@ -12,9 +12,7 @@ var DEFAULT_LICENSE = siteLicenses.DEFAULT_LICENSE;
 
 var $osf = require('js/osfHelpers');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 var agh = require('agh.sprintf');
 
 // Disable IE Caching of JSON

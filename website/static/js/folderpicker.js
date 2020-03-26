@@ -17,9 +17,7 @@ var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 function treebeardToggleCheck(item) {
     return ((typeof item.data.hasChildren === 'undefined') || item.data.hasChildren);

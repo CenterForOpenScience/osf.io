@@ -11,9 +11,7 @@ var apaStyle = require('raw-loader!styles/apa.csl');
 
 var errorPage = require('raw-loader!citations_load_error.html');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 var agh = require('agh.sprintf');
 
 require('css/fangorn.css');

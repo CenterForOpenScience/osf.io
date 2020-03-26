@@ -11,9 +11,7 @@ var $osf = require('./osfHelpers');
 var koHelpers = require('./koHelpers');
 require('js/objectCreateShim');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 // Adapted from Django URLValidator
 function urlRegex() {

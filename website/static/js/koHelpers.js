@@ -10,9 +10,7 @@ require('css/koHelpers.css');
 
 var iconmap = require('js/iconmap');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 var makeExtender = function(interceptor) {
     return function(target, options) {

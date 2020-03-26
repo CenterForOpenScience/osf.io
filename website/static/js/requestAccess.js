@@ -7,9 +7,7 @@ var ko = require('knockout');
 var Raven = require('raven-js');
 var ChangeMessageMixin = require('js/changeMessage');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 var agh = require('agh.sprintf');
 
 var RequestAccessViewModel = function(currentUserRequestState, nodeId, user) {

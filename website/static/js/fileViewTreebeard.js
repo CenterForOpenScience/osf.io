@@ -2,9 +2,7 @@ var Fangorn = require('js/fangorn').Fangorn;
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 var agh = require('agh.sprintf');
 
 function FileViewTreebeard(data) {

@@ -9,9 +9,7 @@ var $osf = require('js/osfHelpers');
 var AddonPermissionsTable = require('js/addonPermissions');
 var addonSettings = require('js/addonSettings');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 // Show capabilities modal on selecting an addon; unselect if user
 // rejects terms

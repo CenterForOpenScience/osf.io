@@ -3,9 +3,7 @@ var m = require('mithril');
 var iconmap = require('js/iconmap');
 var Treebeard = require('treebeard');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 require('../css/fangorn.css');
 

@@ -8,9 +8,7 @@ var Cookie = require('js-cookie');
 var lodashGet = require('lodash.get');
 var keenTracking = require('keen-tracking');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 var agh = require('agh.sprintf');
 
 var KeenTracker = (function() {

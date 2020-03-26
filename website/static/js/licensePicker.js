@@ -14,9 +14,7 @@ var DEFAULT_LICENSE = siteLicenses.DEFAULT_LICENSE;
 var OTHER_LICENSE = siteLicenses.OTHER_LICENSE;
 var licenseGroups = siteLicenses.groups;
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 var LICENSE_PROPERTIES = {
     'year': _('Year'),

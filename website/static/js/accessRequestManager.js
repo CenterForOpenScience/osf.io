@@ -12,10 +12,7 @@ var rt = require('js/responsiveTable');
 var $osf = require('./osfHelpers');
 require('js/filters');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-
+var _ = require('js/rdmGettext')._;
 var agh = require('agh.sprintf');
 
 var AccessRequestModel = function(accessRequest, pageOwner, isRegistration, isParentAdmin, options) {

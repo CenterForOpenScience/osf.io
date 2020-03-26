@@ -18,12 +18,9 @@ var koHelpers = require('./koHelpers');  // URL validators etc
 var $osf = require('./osfHelpers');
 var oop = require('js/oop');
 var language = require('js/osfLanguage');
-
 var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 var agh = require('agh.sprintf');
-
 var defaultDomain = 'apiOauth2Application';
 var osfLanguage = new rdmGettext.OsfLanguage(defaultDomain);
 

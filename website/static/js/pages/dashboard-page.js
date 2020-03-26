@@ -13,9 +13,7 @@ var MyProjects = require('js/myProjects.js').MyProjects;
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 require('loaders.css/loaders.min.css');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 var agh = require('agh.sprintf');
 
 var ensureUserTimezone = function(savedTimezone, savedLocale, id) {

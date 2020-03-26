@@ -11,9 +11,7 @@ var withPagination = require('js/components/pagination').withPagination;
 
 var QUICKFILES_PAGE_SIZE = 10;
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 var _buildUrl = function(page, user) {
 
