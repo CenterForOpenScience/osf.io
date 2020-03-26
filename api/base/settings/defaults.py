@@ -228,7 +228,7 @@ MIDDLEWARE = (
     # 'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'api.base.middleware.WaffleMiddleware',
+    'waffle.middleware.WaffleMiddleware',
     'api.base.middleware.SloanIdMiddleware',
 )
 

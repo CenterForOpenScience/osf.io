@@ -182,9 +182,9 @@ class TestSloanStudyWaffling:
 
         cookies = resp.headers.getall('Set-Cookie')
 
-        assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=localhost; Path=/; Secure' in cookies
-        assert f' dwf_{SLOAN_DATA_DISPLAY}=True; Domain=localhost; Path=/; Secure' in cookies
-        assert f' dwf_{SLOAN_PREREG_DISPLAY}=True; Domain=localhost; Path=/; Secure' in cookies
+        assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=.burdixiv.burds; Path=/; Secure' in cookies
+        assert f' dwf_{SLOAN_DATA_DISPLAY}=True; Domain=.burdixiv.burds; Path=/; Secure' in cookies
+        assert f' dwf_{SLOAN_PREREG_DISPLAY}=True; Domain=.burdixiv.burds; Path=/; Secure' in cookies
 
     @pytest.mark.enable_quickfiles_creation
     @mock.patch('waffle.models.Decimal', active)
@@ -218,25 +218,3 @@ class TestSloanStudyWaffling:
         cookies = resp.headers.getall('Set-Cookie')
         assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=localhost; Path=/; Secure' in cookies
         assert f' dwf_{SLOAN_PREREG_DISPLAY}=False; Domain=localhost; Path=/; Secure' in cookies
-
-    @pytest.mark.enable_quickfiles_creation
-    @mock.patch('waffle.models.Decimal', active)
-    def test_sloan_study_non_localhost(self, app, user, preprint):
-        headers = {'Referer': preprint.absolute_url}
-        resp = app.get('/v2/', auth=user.auth, headers=headers, extra_environ={'SERVER_NAME': 'osf.io'})
-
-        tags = user.all_tags.all().values_list('name', flat=True)
-
-        assert SLOAN_COI in tags
-        assert SLOAN_DATA in tags
-        assert SLOAN_PREREG in tags
-
-        assert SLOAN_COI_DISPLAY in resp.json['meta']['active_flags']
-        assert SLOAN_DATA_DISPLAY in resp.json['meta']['active_flags']
-        assert SLOAN_PREREG_DISPLAY in resp.json['meta']['active_flags']
-
-        cookies = resp.headers.getall('Set-Cookie')
-
-        assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=.osf.io; Path=/; Secure' in cookies
-        assert f' dwf_{SLOAN_DATA_DISPLAY}=True; Domain=.osf.io; Path=/; Secure' in cookies
-        assert f' dwf_{SLOAN_PREREG_DISPLAY}=True; Domain=.osf.io; Path=/; Secure' in cookies

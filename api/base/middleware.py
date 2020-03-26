@@ -21,9 +21,6 @@ from framework.celery_tasks.handlers import (
 )
 from .api_globals import api_globals
 from api.base import settings as api_settings
-from django.utils.encoding import smart_str
-
-from waffle.utils import get_setting
 
 
 class CeleryTaskMiddleware(MiddlewareMixin):
@@ -158,32 +155,4 @@ class SloanIdMiddleware(MiddlewareMixin):
                 path=settings.CSRF_COOKIE_PATH,
                 httponly=settings.CSRF_COOKIE_HTTPONLY,
             )
-        return response
-
-
-class WaffleMiddleware(MiddlewareMixin):
-    """
-    This must be overriden for our domain rules and to ensure the cookies never expire,
-    """
-    def process_response(self, request, response):
-        secure = get_setting('SECURE')
-
-        if request.environ['SERVER_NAME'] == 'localhost':
-            domain = 'localhost'
-        else:
-            domain = '.' + request.environ['SERVER_NAME']
-
-        if hasattr(request, 'waffles'):
-            for k in request.waffles:
-                name = smart_str(get_setting('COOKIE') % k)
-                active, _ = request.waffles[k]
-                response.set_cookie(
-                    name,
-                    value=active,
-                    max_age=None,
-                    secure=secure,
-                    expires=None,
-                    domain=domain,
-                )
-
         return response

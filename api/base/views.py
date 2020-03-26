@@ -475,6 +475,16 @@ def root(request, format=None, **kwargs):
     return resp
 
 
+def get_domain_from_refferer(referer):
+    if referer.startswith('http://localhost:'):
+        domain = 'localhost'
+    else:
+        # https://osf.io/preprint/... -> .osf.io
+        domain = '.' + referer.lstrip('http://').lstrip('https://').split('/')[0]
+
+    return domain
+
+
 def set_sloan_cookies(sloan_data, request, resp):
     """
     Set sloan flags for users who are only active due to user tags
@@ -483,20 +493,25 @@ def set_sloan_cookies(sloan_data, request, resp):
     :param resp:
     :return:
     """
+    # special case out sloan cookies from other cookies
+    waffles = getattr(request, 'waffles')
+    if waffles:
+        for sloan_flag in SLOAN_FLAGS:
+            if waffles.get(sloan_flag):
+                del waffles[sloan_flag]
+
     for name, active in sloan_data.items():
-        if request.environ['SERVER_NAME'] == 'localhost':
-            domain = 'localhost'
-        else:
-            domain = '.' + request.environ['SERVER_NAME']
-        print(name, active)
-        resp.set_cookie(
-            f'dwf_{name}',
-            value=active,
-            max_age=None,
-            secure=True,
-            expires=None,
-            domain=domain,
-        )
+        referer_url = request.environ.get('HTTP_REFERER', '')
+        if referer_url:
+            domain = get_domain_from_refferer(referer_url)
+            resp.set_cookie(
+                f'dwf_{name}',
+                value=active,
+                max_age=None,
+                secure=True,
+                expires=None,
+                domain=domain,
+            )
 
 
 def sloan_study_disambiguation(request):
@@ -516,9 +531,7 @@ def sloan_study_disambiguation(request):
             # User tags should override any cookie info
             if user and not user.is_anonymous:
                 tag_name = SLOAN_FEATURES[flag.name]
-                print(tag_name)
                 active = (check_tag(tag_name) and not check_tag(f'no_{tag_name}')) or active
-                print(active)
                 sloan_data[flag.name] = active
 
         if active:
