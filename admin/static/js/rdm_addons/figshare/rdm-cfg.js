@@ -2,10 +2,8 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 var language = require('js/osfLanguage').Addons.figshare;
 require('js/osfToggleHeight')
-var rdmGettext = require('js/rdmGettext');
 
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 var agh = require('agh.sprintf');
 
  $(document).ready(function() {
