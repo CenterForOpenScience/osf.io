@@ -4,7 +4,6 @@ var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
 
 var util = require('./util.js');
 var makeClient = require('js/clipboard');

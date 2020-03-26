@@ -3,7 +3,7 @@ var m = require('mithril');
 var $osf = require('js/osfHelpers');
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
+var sprintf = require('agh.sprintf').sprintf;
 
 function FileViewTreebeard(data) {
 
@@ -117,7 +117,7 @@ function FileViewTreebeard(data) {
                         folderIcons: true,
                         filter: true,
                         custom: function () {
-                            return m('span.text-muted', agh.sprintf(_('Uploading %1$s...'), item.data.name ));
+                            return m('span.text-muted', sprintf(_('Uploading %1$s...'), item.data.name ));
                         }
                     }
                 ];

@@ -5,7 +5,6 @@ var $osf = require('js/osfHelpers');
 var Cookie = require('js-cookie');
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
 
 $('[name=options]').change(function () {
     $('#storage_name').attr('disabled', this.value === 'osfstorage');

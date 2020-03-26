@@ -16,7 +16,7 @@ var markdown = require('js/markdown');
 var atMention = require('js/atMention');
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
+var sprintf = require('agh.sprintf').sprintf;
 
 // Cached contributor and group member data, to prevent multiple fetches for @mentions
 var __contributorCache = null;
@@ -226,7 +226,7 @@ BaseComment.prototype.handleEditableUpdate = function(element) {
     var underOrEqualMaxLength = inputTextLength <= parseInt(charLimit) + 1 || charLimit == undefined;  // jshint ignore: line
     self.currentCount(showLength);
     self.underMaxLength(underOrEqualMaxLength);
-    self.errorMessage(underOrEqualMaxLength ? '' : agh.sprintf(_('Exceeds character limit. Please reduce to %1$s characters or less.'),charLimit));
+    self.errorMessage(underOrEqualMaxLength ? '' : sprintf(_('Exceeds character limit. Please reduce to %1$s characters or less.'),charLimit));
 };
 
 BaseComment.prototype.abuseLabel = function(item) {

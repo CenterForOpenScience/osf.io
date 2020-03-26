@@ -10,7 +10,7 @@ var oop = require('js/oop');
 var makeClient = require('js/clipboard');
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
+var sprintf = require('agh.sprintf').sprintf;
 
 var BASE_URL = '/static/vendor/bower_components/styles/';
 var STYLES = {
@@ -111,7 +111,7 @@ var ViewModel = oop.defclass({
 		    }
         }).fail(function() {
             $osf.growl('Error', _('Your custom citation not updated. Please refresh the page and try ') +
-            agh.sprintf(_('again or contact %1$s') , $osf.osfSupportLink()) + _(' if the problem persists.'), 'danger');
+            sprintf(_('again or contact %1$s') , $osf.osfSupportLink()) + _(' if the problem persists.'), 'danger');
         }).always(function() {
             self.loading(false);
         });

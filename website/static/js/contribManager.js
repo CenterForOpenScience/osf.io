@@ -16,7 +16,7 @@ var $osf = require('./osfHelpers');
 require('js/filters');
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
+var sprintf = require('agh.sprintf').sprintf;
 
 //http://stackoverflow.com/questions/12822954/get-previous-value-of-an-observable-in-subscribe-of-same-observable
 ko.subscribable.fn.subscribeChanged = function (callback) {
@@ -134,7 +134,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
             window.location.reload();
         }).fail(function(xhr, status, error){
             $osf.unblock();
-            var errorMessage = lodashGet(xhr, 'responseJSON.message') || (agh.sprintf(_('There was a problem trying to add the contributor. ') , osfLanguage.REFRESH_OR_SUPPORT));
+            var errorMessage = lodashGet(xhr, 'responseJSON.message') || (sprintf(_('There was a problem trying to add the contributor. ') , osfLanguage.REFRESH_OR_SUPPORT));
             $osf.growl(_('Could not add contributor'), errorMessage);
             Raven.captureMessage(_('Error adding contributors'), {
                 extra: {

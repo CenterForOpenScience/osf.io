@@ -4,7 +4,6 @@ var language = require('js/osfLanguage').Addons.figshare;
 require('js/osfToggleHeight')
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
 
  $(document).ready(function() {
         $('#figshare-header').osfToggleHeight({height: 150});

@@ -16,7 +16,7 @@ var NodeActions = require('js/project.js');
 var NodesPrivacy = require('js/nodesPrivacy').NodesPrivacy;
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
+var sprintf = require('agh.sprintf').sprintf;
 
 var RequestAccess = require('js/requestAccess.js');
 
@@ -115,7 +115,7 @@ var ProjectViewModel = function(data, options) {
         $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
             name: 'description',
             title: _('Edit Description'),
-            emptytext: agh.sprintf(_('Add a brief description to your %1$s'),project_or_component_label),
+            emptytext: sprintf(_('Add a brief description to your %1$s'),project_or_component_label),
             emptyclass: 'text-muted',
             value: $osf.decodeText(self.description()),
             success: function(response, newValue) {
@@ -211,7 +211,7 @@ var ProjectViewModel = function(data, options) {
         bootbox.confirm({
             title: _('Create DOI'),
             message: '<p class="overflow">' +
-                agh.sprintf(_('Are you sure you want to create a DOI for this %1$s') ,
+                sprintf(_('Are you sure you want to create a DOI for this %1$s') ,
                 $osf.htmlEscape(self.nodeType)) + _('? A DOI') +
                 _(' is persistent and will always resolve to this page.'),
             callback: function(confirmed) {
@@ -244,7 +244,7 @@ var ProjectViewModel = function(data, options) {
         }).fail(function(xhr) {
             var message = _('We could not create the identifier at this time. ') +
                 _('The DOI acquisition service may be down right now. ') +
-                agh.sprintf(_('Please try again soon and/or contact %1$s') , $osf.osfSupportLink());
+                sprintf(_('Please try again soon and/or contact %1$s') , $osf.osfSupportLink());
             $osf.growl('Error', message, 'danger');
             Raven.captureMessage(_('Could not create doi'), {extra: {url: url, status: xhr.status}});
         }).always(function() {

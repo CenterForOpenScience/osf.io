@@ -6,7 +6,7 @@ var lodashGet = require('lodash.get');
 require('css/scheduled-banner.css');
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
+var sprintf = require('agh.sprintf').sprintf;
 
 var ScheduledBanner = {
     controller: function() {
@@ -22,7 +22,7 @@ var ScheduledBanner = {
             self.banner(result.data);
             self.bannerLoaded(true);
         }, function(error) {
-            Raven.captureMessage(agh.sprintf(_('Error in request to %1$s') , bannerUrl), {
+            Raven.captureMessage(sprintf(_('Error in request to %1$s') , bannerUrl), {
                 extra: {error: error}
             });
         });

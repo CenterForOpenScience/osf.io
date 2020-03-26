@@ -8,7 +8,7 @@ var $osf = require('js/osfHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
+var sprintf = require('agh.sprintf').sprintf;
 
 var ViewModel = function(data) {
     var self = this;
@@ -56,17 +56,17 @@ var ViewModel = function(data) {
         var modifyAllMessage;
         var htmlMessage;
         if (self.isAddInstitution()) {
-            message = agh.sprintf(_('Add <b>%1$s</b> to <b>%2$s</b> or to <b>%3$s</b> and every component in it?<br><br>'),item.name,data.node.title,data.node.title);
-            modifyOneMessage = agh.sprintf(_('Add to <b>%1$s</b>.'),data.node.title),
-            modifyAllMessage = agh.sprintf(_('Add to <b>%1$s</b> and every component for which you have permission.'),data.node.title);
+            message = sprintf(_('Add <b>%1$s</b> to <b>%2$s</b> or to <b>%3$s</b> and every component in it?<br><br>'),item.name,data.node.title,data.node.title);
+            modifyOneMessage = sprintf(_('Add to <b>%1$s</b>.'),data.node.title),
+            modifyAllMessage = sprintf(_('Add to <b>%1$s</b> and every component for which you have permission.'),data.node.title);
         }
         else {
-            message = agh.sprintf(_('Remove <b>%1$s</b> from <b>%2$s</b> or from <b>%3$s</b> and every component in it?<br><br>'),item.name,data.node.title,data.node.title);
-            modifyOneMessage = agh.sprintf(_('Remove from <b>%1$s</b>.'),data.node.title),
-            modifyAllMessage = agh.sprintf(_('Remove from <b>%1$s</b> and every component for which you have permission.'),data.node.title);
+            message = sprintf(_('Remove <b>%1$s</b> from <b>%2$s</b> or from <b>%3$s</b> and every component in it?<br><br>'),item.name,data.node.title,data.node.title);
+            modifyOneMessage = sprintf(_('Remove from <b>%1$s</b>.'),data.node.title),
+            modifyAllMessage = sprintf(_('Remove from <b>%1$s</b> and every component for which you have permission.'),data.node.title);
         }
         if (self.needsWarning()) {
-            message += '<div class="text-danger f-w-xl">' + agh.sprintf(_('Warning, you are not affiliated with <b>%1$s</b>.') , item.name) +
+            message += '<div class="text-danger f-w-xl">' + sprintf(_('Warning, you are not affiliated with <b>%1$s</b>.') , item.name) +
                     _(' If you remove it from your project, you cannot add it back.</div></br>');
         }
         //If the Institution has children, give the choice to select.  If not, that means a warning is necessary.
@@ -82,8 +82,8 @@ var ViewModel = function(data) {
                         modifyAllMessage + ' </label> ' + '</div>' + '</div>';
         }
         else {
-            message = agh.sprintf(_('Remove <b>%1$s</b> from <b>%2$s</b>.') ,item.name, data.node.title) + '<br><br>' +
-                '<div class="text-danger f-w-xl">' + agh.sprintf(_('Warning, you are not affiliated with <b>%1$s</b>.') , item.name) +
+            message = sprintf(_('Remove <b>%1$s</b> from <b>%2$s</b>.') ,item.name, data.node.title) + '<br><br>' +
+                '<div class="text-danger f-w-xl">' + sprintf(_('Warning, you are not affiliated with <b>%1$s</b>.') , item.name) +
                 _(' If you remove it from your project, you cannot add it back.</div></br>');
             htmlMessage = '<div class="row">  ' +
                         '<div class="col-md-12"> ' +
@@ -199,7 +199,7 @@ var ViewModel = function(data) {
                 }
             }
         }).fail(function (xhr, status, error) {
-            $osf.growl(agh.sprintf(_('Unable to modify the institution on this node. Please try again. If the problem persists, email %1$s') , $osf.osfSupportLink()));
+            $osf.growl(sprintf(_('Unable to modify the institution on this node. Please try again. If the problem persists, email %1$s') , $osf.osfSupportLink()));
             Raven.captureMessage(_('Unable to modify this institution!'), {
                 extra: {
                     url: url,

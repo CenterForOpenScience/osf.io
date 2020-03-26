@@ -10,7 +10,6 @@ var oop = require('js/oop');
 var $modal = $('#ownCloudCredentialsModal');
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
 
 var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
     constructor: function(url, institutionId){

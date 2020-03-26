@@ -22,7 +22,7 @@ var storageAddons = require('json-loader!storageAddons.json');
 
 var gt = require('js/rdmGettext').rdmGettext();
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
+var sprintf = require('agh.sprintf').sprintf;
 
 // CSS
 require('css/fangorn.css');
@@ -494,7 +494,7 @@ function displayConflict(tb, item, folder, cb) {
     }
 
     var mithrilContent = m('', [
-        m('p', agh.sprintf(_('An item named "%1$s" already exists in this location.'),item.data.name)),
+        m('p', sprintf(_('An item named "%1$s" already exists in this location.'),item.data.name)),
         m('h5.replace-file',
             '"' + _('Keep Both') + '"' + _(' will retain both files (and their version histories) in this location.')),
         m('h5.replace-file',
@@ -527,7 +527,7 @@ function checkConflictsRename(tb, item, name, cb) {
         var child = parent.children[i];
         if (child.data.name === name && child.id !== item.id) {
             messageArray.push([
-                m('p', agh.sprintf(_('An item named "%1$s" already exists in this location.'),child.data.name)),
+                m('p', sprintf(_('An item named "%1$s" already exists in this location.'),child.data.name)),
                 m('h5.replace-file',
                     '"' + _('Keep Both') + '"' + _(' will retain both files (and their version histories) in this location.')),
                 m('h5.replace-file',
@@ -543,7 +543,7 @@ function checkConflictsRename(tb, item, name, cb) {
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')}, 'Replace')
                 ],
-                m('h3.break-word.modal-title', agh.sprintf(_('Replace "%1$s"?'),child.data.name))
+                m('h3.break-word.modal-title', sprintf(_('Replace "%1$s"?'),child.data.name))
             );
             return;
         }
@@ -652,9 +652,9 @@ function doItemOp(operation, to, from, rename, conflict) {
         }
         if (xhr.status === 202) {
             var mithrilContent = m('div', [
-                m('h3.break-word', agh.sprintf(_('%1$s "%2$s" to "%3$s" is taking a bit longer than expected.'),operation.action,(from.data.materialized || '/'),(to.data.materialized || '/'))),
+                m('h3.break-word', sprintf(_('%1$s "%2$s" to "%3$s" is taking a bit longer than expected.'),operation.action,(from.data.materialized || '/'),(to.data.materialized || '/'))),
                 m('p', _('We\'ll send you an email when it has finished.')),
-                m('p', agh.sprintf(_('In the mean time you can leave this page; your %1$s will still be completed.'),operation.status))
+                m('p', sprintf(_('In the mean time you can leave this page; your %1$s will still be completed.'),operation.status))
             ]);
             var mithrilButtons = m('div', [
                 m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); }}, 'Close')
@@ -665,7 +665,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         }
         from.data = tb.options.lazyLoadPreprocess.call(this, resp).data;
         from.data.status = undefined;
-        from.notify.update(agh.sprintf(_('Successfully %1$s.') , operation.passed), 'success', null, 1000);
+        from.notify.update(sprintf(_('Successfully %1$s.') , operation.passed), 'success', null, 1000);
 
         if (xhr.status === 200) {
             to.children.forEach(function(child) {
@@ -712,7 +712,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         } else if (xhr.status === 503) {
             message = textStatus;
         } else {
-            message = agh.sprintf(_('Please refresh the page or contact %1$s if the problem persists.'),$osf.osfSupportLink());
+            message = sprintf(_('Please refresh the page or contact %1$s if the problem persists.'),$osf.osfSupportLink());
         }
 
         $osf.growl(operation.verb + ' failed.', message);
@@ -1020,7 +1020,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
              msgText += _('1. Cannot upload folders. <br>2. ');
          }
          msgText += _('Unable to reach the provider, please try again later. ');
-         msgText += agh.sprintf(_('If the problem persists, please contact %1$s.') , $osf.osfSupportEmail());
+         msgText += sprintf(_('If the problem persists, please contact %1$s.') , $osf.osfSupportEmail());
     } else {
         //Osfstorage and most providers store message in {Object}message.{string}message,
         //but some, like Dataverse, have it in {string} message.
@@ -1212,7 +1212,7 @@ function _removeEvent (event, items, col) {
                 m('span.btn.btn-default', { onclick : function() { cancelDelete.call(tb); } }, _('Cancel')),
                 m('span.btn.btn-danger', { onclick : function() { runDelete(folder); } }, _('Delete'))
             ]);
-            tb.modal.update(mithrilContent, mithrilButtons, m('h3.break-word.modal-title', agh.sprintf(_('Delete "%1$s"?') ,folder.data.name)));
+            tb.modal.update(mithrilContent, mithrilButtons, m('h3.break-word.modal-title', sprintf(_('Delete "%1$s"?') ,folder.data.name)));
         } else {
             folder.notify.update(_('You don\'t have permission to delete this file.'), 'info', undefined, 3000);
         }
@@ -1237,7 +1237,7 @@ function _removeEvent (event, items, col) {
             ]);
             // This is already being checked before this step but will keep this edit permission check
             if(items[0].data.permissions.edit){
-                tb.modal.update(mithrilContentSingle, mithrilButtonsSingle, m('h3.break-word.modal-title', agh.sprintf(_('Delete "%1$s"?') , items[0].data.name)));
+                tb.modal.update(mithrilContentSingle, mithrilButtonsSingle, m('h3.break-word.modal-title', sprintf(_('Delete "%1$s"?') , items[0].data.name)));
             }
         }
         if(items[0].kind === 'folder') {
@@ -1760,7 +1760,7 @@ function expandStateLoad(item) {
         }).fail(function(xhr) {
             item.notify.update(_('Unable to retrieve components.'), 'danger', undefined, 3000);
             item.open = false;
-            Raven.captureMessage(agh.sprintf(_('Unable to retrieve components for node %1$s') , item.data.nodeID), {
+            Raven.captureMessage(sprintf(_('Unable to retrieve components for node %1$s') , item.data.nodeID), {
                 extra: {
                     xhr: xhr
                 }
@@ -2038,7 +2038,7 @@ var FGItemButtons = {
                     rowButtons.push(
                         m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
                             m('i.fa.fa-external-link'),
-                            m('span', agh.sprintf(_('View on %1$s') , providerFullName))
+                            m('span', sprintf(_('View on %1$s') , providerFullName))
                         ])
                     );
                 }
@@ -2607,7 +2607,7 @@ function displayMoveStats(tb) {
               m('h3.break-word.modal-title', 'Move Status'),
               m('p', [
                   m('span', failed !== total ? total - failed + '/' + total + _(' files successfully moved.'): ''),
-                  m('span', skipped ? agh.sprintf(_(' Skipped %1$s/%2$s files.'),skipped,total): '')
+                  m('span', skipped ? sprintf(_(' Skipped %1$s/%2$s files.'),skipped,total): '')
                 ])
       ]));
     } else {
@@ -2914,7 +2914,7 @@ tbOptions = {
                 if (size > maxSize) {
                     displaySize = $osf.humanFileSize(file.size, true);
                     maxSize = $osf.humanFileSize(maxSize * 1000000, true);
-                    msgText = agh.sprintf(_('This file is too large (%1$s). Max file size is %2$s.'),displaySize,maxSize);
+                    msgText = sprintf(_('This file is too large (%1$s). Max file size is %2$s.'),displaySize,maxSize);
                     $osf.growl(msgText);
                     addFileStatus(treebeard, file, false, msgText, '');
                     removeFromUI(file, treebeard);
@@ -2938,7 +2938,7 @@ tbOptions = {
                     if (quota.used + file.size > quota.max * window.contextVars.threshold) {
                         $osf.growl(
                             _('Quota usage alert'),
-                            agh.sprintf(_('You have used more than %1$s% of your quota.'),(window.contextVars.threshold * 100)),
+                            sprintf(_('You have used more than %1$s% of your quota.'),(window.contextVars.threshold * 100)),
                             'warning'
                         );
                     }

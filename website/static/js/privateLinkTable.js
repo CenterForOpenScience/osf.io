@@ -12,7 +12,7 @@ require('bootstrap-editable');
 var ctx = window.contextVars;
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
+var sprintf = require('agh.sprintf').sprintf;
 
 function LinkViewModel(data, $root) {
 
@@ -70,7 +70,7 @@ function ViewModel(url, nodeIsPublic, table) {
 
     function onFetchError() {
         $osf.growl(_('Could not retrieve view-only links.'), _('Please refresh the page or ') +
-                agh.sprintf(_('contact %1$s') , $osf.osfSupportLink()) + _(' if the ') +
+                sprintf(_('contact %1$s') , $osf.osfSupportLink()) + _(' if the ') +
                 _('problem persists.'));
     }
 
