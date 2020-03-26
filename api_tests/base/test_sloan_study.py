@@ -1,5 +1,6 @@
+import mock
 import pytest
-from api_tests.utils import retry_assertion
+from decimal import Decimal
 
 from waffle.models import Flag
 
@@ -31,6 +32,14 @@ from website.settings import DOMAIN
 from api.base.views import get_provider_from_url
 
 
+def active(*args, **kwargs):
+    return Decimal('0')
+
+
+def inactive(*args, **kwargs):
+    return Decimal('100')
+
+
 @pytest.mark.django_db
 class TestSloanStudyWaffling:
 
@@ -51,10 +60,9 @@ class TestSloanStudyWaffling:
     def flags(self, user):
         Flag.objects.filter(name__in=SLOAN_FLAGS, percent=50).update(everyone=None)
 
-    @retry_assertion()
     @pytest.mark.enable_quickfiles_creation
+    @mock.patch('waffle.models.Decimal', active)
     def test_sloan_study_variable(self, app, user, preprint):
-        Flag.objects.filter(name__in=SLOAN_FLAGS).update(percent=99)
 
         headers = {'Referer': preprint.absolute_url}
         resp = app.get('/v2/', auth=user.auth, headers=headers)
@@ -75,8 +83,8 @@ class TestSloanStudyWaffling:
         assert f' dwf_{SLOAN_DATA_DISPLAY}=True; Domain=localhost; Path=/; Secure' in cookies
         assert f' dwf_{SLOAN_PREREG_DISPLAY}=True; Domain=localhost; Path=/; Secure' in cookies
 
-    @retry_assertion()
     @pytest.mark.enable_quickfiles_creation
+    @mock.patch('waffle.models.Decimal', inactive)
     def test_sloan_study_control(self, app, user, preprint):
         Flag.objects.filter(name__in=SLOAN_FLAGS).update(percent=1)
 
@@ -99,10 +107,8 @@ class TestSloanStudyWaffling:
         assert f' dwf_{SLOAN_DATA_DISPLAY}=False; Domain=localhost; Path=/; Secure' in cookies
         assert f' dwf_{SLOAN_PREREG_DISPLAY}=False; Domain=localhost; Path=/; Secure' in cookies
 
-    @retry_assertion()
+    @mock.patch('waffle.models.Decimal', active)
     def test_sloan_study_variable_unauth(self, app, user, preprint):
-        Flag.objects.filter(name__in=SLOAN_FLAGS).update(percent=99)
-
         headers = {'Referer': preprint.absolute_url}
         resp = app.get('/v2/', headers=headers)
 
@@ -116,7 +122,7 @@ class TestSloanStudyWaffling:
         assert f' dwf_{SLOAN_DATA_DISPLAY}=True; Domain=localhost; Path=/; Secure' in cookies
         assert f' dwf_{SLOAN_PREREG_DISPLAY}=True; Domain=localhost; Path=/; Secure' in cookies
 
-    @retry_assertion()
+    @mock.patch('waffle.models.Decimal', inactive)
     def test_sloan_study_control_unauth(self, app, user, preprint):
         Flag.objects.filter(name__in=SLOAN_FLAGS).update(percent=1)
 
@@ -155,11 +161,9 @@ class TestSloanStudyWaffling:
         provider = get_provider_from_url(reffer_url)
         assert provider is None
 
-    @retry_assertion()
     @pytest.mark.enable_quickfiles_creation
+    @mock.patch('waffle.models.Decimal', active)
     def test_provider_custom_domain(self, app, user, preprint):
-        Flag.objects.filter(name__in=SLOAN_FLAGS).update(percent=99)
-
         provider = preprint.provider
         provider.domain = 'https://burdixiv.burds/'
         provider.save()
@@ -182,11 +186,9 @@ class TestSloanStudyWaffling:
         assert f' dwf_{SLOAN_DATA_DISPLAY}=True; Domain=localhost; Path=/; Secure' in cookies
         assert f' dwf_{SLOAN_PREREG_DISPLAY}=True; Domain=localhost; Path=/; Secure' in cookies
 
-    @retry_assertion()
     @pytest.mark.enable_quickfiles_creation
+    @mock.patch('waffle.models.Decimal', active)
     def test_unauth_user_logs_in(self, app, user, preprint):
-        Flag.objects.filter(name__in=SLOAN_FLAGS).update(percent=99)
-
         user.add_system_tag(SLOAN_COI)
         user.add_system_tag(SLOAN_PREREG)
 
@@ -206,7 +208,6 @@ class TestSloanStudyWaffling:
         assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=localhost; Path=/; Secure' in cookies
         assert f' dwf_{SLOAN_PREREG_DISPLAY}=True; Domain=localhost; Path=/; Secure' in cookies
 
-    @retry_assertion()
     @pytest.mark.enable_quickfiles_creation
     def test_user_get_cookie_when_flag_is_everyone(self, app, user, preprint):
         user.add_system_tag(f'no_{SLOAN_PREREG}')
@@ -216,14 +217,11 @@ class TestSloanStudyWaffling:
 
         cookies = resp.headers.getall('Set-Cookie')
         assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=localhost; Path=/; Secure' in cookies
-        assert f' dwf_{SLOAN_DATA_DISPLAY}=True; Domain=localhost; Path=/; Secure' in cookies
         assert f' dwf_{SLOAN_PREREG_DISPLAY}=False; Domain=localhost; Path=/; Secure' in cookies
 
-    @retry_assertion()
     @pytest.mark.enable_quickfiles_creation
+    @mock.patch('waffle.models.Decimal', active)
     def test_sloan_study_non_localhost(self, app, user, preprint):
-        Flag.objects.filter(name__in=SLOAN_FLAGS).update(percent=99)
-
         headers = {'Referer': preprint.absolute_url}
         resp = app.get('/v2/', auth=user.auth, headers=headers, extra_environ={'SERVER_NAME': 'osf.io'})
 

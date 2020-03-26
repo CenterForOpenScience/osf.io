@@ -440,7 +440,7 @@ def root(request, format=None, **kwargs):
     else:
         current_user = None
 
-    flags = sloan_study_disambiguation(request)
+    flags, cookies = sloan_study_disambiguation(request)
 
     samples = [name for name in Sample.objects.values_list('name', flat=True) if sample_is_active(name)]
     switches = list(Switch.objects.filter(active=True).values_list('name', flat=True))
@@ -470,23 +470,33 @@ def root(request, format=None, **kwargs):
 
     resp = Response(return_val)
 
-    sloan_flags = [flag for flag in return_val['meta']['active_flags'] if flag in SLOAN_FLAGS]
-    for flag in sloan_flags:
+    set_sloan_cookies(cookies, request, resp)
+
+    return resp
+
+
+def set_sloan_cookies(sloan_data, request, resp):
+    """
+    Set sloan flags for users who are only active due to user tags
+    :param flags: List active flags
+    :param request:
+    :param resp:
+    :return:
+    """
+    for name, active in sloan_data.items():
         if request.environ['SERVER_NAME'] == 'localhost':
             domain = 'localhost'
         else:
             domain = '.' + request.environ['SERVER_NAME']
-
+        print(name, active)
         resp.set_cookie(
-            f'dwf_{flag}',
-            value=True,
+            f'dwf_{name}',
+            value=active,
             max_age=None,
             secure=True,
             expires=None,
             domain=domain,
         )
-
-    return resp
 
 
 def sloan_study_disambiguation(request):
@@ -506,7 +516,9 @@ def sloan_study_disambiguation(request):
             # User tags should override any cookie info
             if user and not user.is_anonymous:
                 tag_name = SLOAN_FEATURES[flag.name]
+                print(tag_name)
                 active = (check_tag(tag_name) and not check_tag(f'no_{tag_name}')) or active
+                print(active)
                 sloan_data[flag.name] = active
 
         if active:
@@ -519,7 +531,7 @@ def sloan_study_disambiguation(request):
         for key, value in sloan_data.items():
             set_tags_for_sloan(user, key, value)
 
-    return flags
+    return flags, sloan_data
 
 
 def get_provider_from_url(referer_url: str) -> Optional[PreprintProvider]:
@@ -555,7 +567,7 @@ def get_provider_from_url(referer_url: str) -> Optional[PreprintProvider]:
 
 def set_tags_for_sloan(user, flag_name: str, flag_value: bool) -> dict:
     """
-    This is a hack to set flags and cookies for out Sloan study, it can be deleted when the study is complete.
+    This is a hack to set tags for Sloan study, it can be deleted when the study is complete.
     """
     tag_name = SLOAN_FEATURES[flag_name]
     if user and not user.is_anonymous and not user.all_tags.filter(Q(name=tag_name) | Q(name=f'no_{tag_name}')):
