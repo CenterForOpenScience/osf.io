@@ -9,7 +9,7 @@ var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
 var gt = require('js/rdmGettext').rdmGettext();
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
+var sprintf = require('agh.sprintf').sprintf;
 
 function expandOnLoad() {
     var tb = this;  // jshint ignore: line
@@ -24,7 +24,7 @@ function beforeChangePermissions(item, permission){
     if(permission === 'public'){
         bootbox.dialog({
             title: _('Make publicly editable'),
-            message: agh.sprintf(_('Are you sure you want to make the wiki of <b>%1$s</b> publicly editable? This will allow any logged in user to edit the content of this wiki. '),safeTitle) +
+            message: sprintf(_('Are you sure you want to make the wiki of <b>%1$s</b> publicly editable? This will allow any logged in user to edit the content of this wiki. '),safeTitle) +
                 _('<b>Note</b>: Users without write access will not be able to add, delete, or rename pages.'),
             buttons: {
                 cancel : {

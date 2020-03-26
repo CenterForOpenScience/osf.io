@@ -6,7 +6,7 @@ require('bootstrap-editable');
 require('osf-panel');
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
+var sprintf = require('agh.sprintf').sprintf;
 
 var WikiPage = require('wikiPage');
 
@@ -106,7 +106,7 @@ $(document).ready(function () {
         grid.addClass('hidden');
         errorMsg.removeClass('hidden');
         errorMsg.append(_('<p>Could not retrieve wiki pages. If this issue persists, ') +
-            agh.sprintf(_('please report it to %1$s') , $osf.osfSupportLink()));
+            sprintf(_('please report it to %1$s') , $osf.osfSupportLink()));
         Raven.captureMessage(_('Could not GET wiki menu pages'), {
             extra: { url: ctx.urls.grid, status: status, error: error }
         });

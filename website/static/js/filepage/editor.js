@@ -11,7 +11,6 @@ Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizin
 require('imports-loader?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
 
 var util = require('./util.js');
 

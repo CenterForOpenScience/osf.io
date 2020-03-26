@@ -9,7 +9,7 @@ var Raven = require('raven-js');
 var withPagination = require('js/components/pagination.js').withPagination;
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
+var sprintf = require('agh.sprintf').sprintf;
 
 var PROJECTS_PAGE_SIZE = 5;
 
@@ -187,7 +187,7 @@ var PublicNodes = {
         return m('ul.list-group m-md', [
             // Error message if the request fails
             ctrl.failed ? m('p', [
-                agh.sprintf(_('Unable to retrieve public %1$s') , ctrl.nodeType) + _(' at this time. Please refresh the page or contact '),
+                sprintf(_('Unable to retrieve public %1$s') , ctrl.nodeType) + _(' at this time. Please refresh the page or contact '),
                 m('a', {'href': 'mailto:' + OSF_SUPPORT_EMAIL}, OSF_SUPPORT_EMAIL),
                 _(' if the problem persists.')
             ]) :
@@ -201,14 +201,14 @@ var PublicNodes = {
                     return m.component(PublicNode, {nodeType: ctrl.nodeType, node: node});
                 }) : ctrl.isProfile ?
                     m('div.help-block', {}, [
-                        agh.sprintf(_('You have no public %1$s.') , ctrl.nodeType),
+                        sprintf(_('You have no public %1$s.') , ctrl.nodeType),
                         m('p', {}, [
-                            agh.sprintf(_('Find out how to make your %1$s') , ctrl.nodeType) + ' ',
+                            sprintf(_('Find out how to make your %1$s') , ctrl.nodeType) + ' ',
                             m('a', {'href': 'https://openscience.zendesk.com/hc/en-us/articles/360018981414', 'target': '_blank'}, _('public')),
                             '.'
                         ])
                     ])
-                : m('div.help-block', {}, agh.sprintf(_('This user has no public %1$s.') , ctrl.nodeType ))
+                : m('div.help-block', {}, sprintf(_('This user has no public %1$s.') , ctrl.nodeType ))
 
             ]
         ]);

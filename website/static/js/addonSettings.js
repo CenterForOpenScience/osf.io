@@ -9,7 +9,7 @@ var oop = require('js/oop');
 
 var $osf = require('js/osfHelpers');
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
+var sprintf = require('agh.sprintf').sprintf;
 
 var ConnectedProject = function(data) {
     var self = this;
@@ -56,7 +56,7 @@ var ExternalAccount = oop.defclass({
         var self = this;
         bootbox.confirm({
             title: _('Remove addon?'),
-            message: agh.sprintf(_('Are you sure you want to remove the %1$s authorization from this project?'),$osf.htmlEscape(self.providerName)),
+            message: sprintf(_('Are you sure you want to remove the %1$s authorization from this project?'),$osf.htmlEscape(self.providerName)),
             callback: function(confirm) {
                 if (confirm) {
                     self._deauthorizeNodeConfirm(node);
@@ -103,10 +103,10 @@ var OAuthAddonSettingsViewModel = oop.defclass({
                     } else if (self.name === 'onedrive') {
                         self.setMessage(_('Add-on successfully authorized. If you wish to link a different account, log out of onedrive.live.com before attempting to connect to a second OneDrive account on the GakuNin RDM. This will clear the credentials stored in your browser.'), 'text-success');
                     } else {
-                        self.setMessage(agh.sprintf(_('Add-on successfully authorized. To link this add-on to an GakuNin RDM project, go to the settings page of the project, enable %1$s, and choose content to connect.'),self.properName), 'text-success');
+                        self.setMessage(sprintf(_('Add-on successfully authorized. To link this add-on to an GakuNin RDM project, go to the settings page of the project, enable %1$s, and choose content to connect.'),self.properName), 'text-success');
                     }
                 } else {
-                    self.setMessage(agh.sprintf(_('Error while authorizing add-on. Please log in to your %1$s account and grant access to the GakuNin RDM to enable this add-on.'),self.properName), 'text-danger');
+                    self.setMessage(sprintf(_('Error while authorizing add-on. Please log in to your %1$s account and grant access to the GakuNin RDM to enable this add-on.'),self.properName), 'text-danger');
                 }
             });
         };
@@ -117,7 +117,7 @@ var OAuthAddonSettingsViewModel = oop.defclass({
         bootbox.confirm({
             title: _('Disconnect Account?'),
             message: '<p class="overflow">' +
-                agh.sprintf(_('Are you sure you want to disconnect the %1$s account <strong>%2$s</strong>? This will revoke access to %1$s for all projects you have authorized.'),$osf.htmlEscape(self.properName),$osf.htmlEscape(account.name)) +
+                sprintf(_('Are you sure you want to disconnect the %1$s account <strong>%2$s</strong>? This will revoke access to %1$s for all projects you have authorized.'),$osf.htmlEscape(self.properName),$osf.htmlEscape(account.name)) +
                 '</p>',
             callback: function(confirm) {
                 if (confirm) {
@@ -147,7 +147,7 @@ var OAuthAddonSettingsViewModel = oop.defclass({
             self.updateAccounts();
         });
         request.fail(function(xhr, status, error) {
-            Raven.captureMessage(agh.sprintf(_('Error while removing addon authorization for %1$s') , account.id), {
+            Raven.captureMessage(sprintf(_('Error while removing addon authorization for %1$s') , account.id), {
                 extra: {
                     url: url,
                     status: status,

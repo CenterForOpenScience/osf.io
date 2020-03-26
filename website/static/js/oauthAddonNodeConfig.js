@@ -14,7 +14,7 @@ var oop = require('js/oop');
 var FolderPickerViewModel = require('js/folderPickerNodeConfig');
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
+var sprintf = require('agh.sprintf').sprintf;
 
 /**
  * View model to support instances of AddonNodeConfig (folder picker widget)
@@ -44,8 +44,8 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             return (userHasAuth && selected) ? selected.type : '';
         });
         self.messages.submitSettingsSuccess =  ko.pureComputed(function() {
-            return agh.sprintf(_('Successfully linked "%1$s"') , $osf.htmlEscape(self.options.decodeFolder(self.folder().name))) +
-            agh.sprintf(_(' Go to the <a href="%1$s">Files page</a> to view your content.'),self.urls().files);
+            return sprintf(_('Successfully linked "%1$s"') , $osf.htmlEscape(self.options.decodeFolder(self.folder().name))) +
+            sprintf(_(' Go to the <a href="%1$s">Files page</a> to view your content.'),self.urls().files);
         });
         var defaults = {
             onPickFolder: function(evt, item) {
@@ -140,7 +140,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         self.updateAccounts().then(function () {
             if (self.accounts().length > 1) {
                 bootbox.prompt({
-                    title: agh.sprintf(_('Choose %1$s Account to Import'),$osf.htmlEscape(self.addonName)),
+                    title: sprintf(_('Choose %1$s Account to Import'),$osf.htmlEscape(self.addonName)),
                     inputType: 'select',
                     inputOptions: ko.utils.arrayMap(
                         self.accounts(),
@@ -159,7 +159,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                 });
             } else {
                 bootbox.confirm({
-                    title: agh.sprintf(_('Import %1$s Account?'),self.addonName),
+                    title: sprintf(_('Import %1$s Account?'),self.addonName),
                     message: self.messages.confirmAuth(),
                     callback: function(confirmed) {
                         if (confirmed) {
@@ -206,7 +206,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             }));
         }).fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.updateAccountsError(), 'text-warning');
-            Raven.captureMessage(agh.sprintf(_('Could not GET %1$s accounts for user'),self.addonName), {
+            Raven.captureMessage(sprintf(_('Could not GET %1$s accounts for user'),self.addonName), {
                 extra: {
                     url: self.url,
                     textStatus: textStatus,

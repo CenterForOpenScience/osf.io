@@ -14,7 +14,7 @@ var storageAddons = require('json-loader!storageAddons.json');
 var CommentModel = require('js/comment');
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
+var sprintf = require('agh.sprintf').sprintf;
 
 var History = require('exports-loader?History!history');
 var SocialShare = require('js/components/socialshare');
@@ -183,7 +183,7 @@ var FileViewPage = {
         $(document).on('fileviewpage:delete', function() {
             var title = _('Delete file?');
             var message = '<p class="overflow">' +
-                    agh.sprintf(_('Are you sure you want to delete <strong>%1$s</strong>?'),self.file.safeName) +
+                    sprintf(_('Are you sure you want to delete <strong>%1$s</strong>?'),self.file.safeName) +
                     '</p>';
 
 

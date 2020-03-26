@@ -7,7 +7,6 @@ var OAuthAddonSettingsViewModel = require('../rdmAddonSettings.js').OAuthAddonSe
 var oop = require('js/oop');
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
 
 var projectUrlRegex = /^https?:\/\/[^\/]+?\/([^\/]+?)\/?$/;
 

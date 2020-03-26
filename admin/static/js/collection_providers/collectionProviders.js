@@ -1,5 +1,4 @@
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
 
 $(document).ready(function() {
     $("#show-modify-form").click(function() {

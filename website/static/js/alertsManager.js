@@ -5,7 +5,7 @@ var ko = require('knockout');
 var $osf = require('./osfHelpers');
 var Raven = require('raven-js');
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
+var sprintf = require('agh.sprintf').sprintf;
 
 var AlertsViewModel = function() {
     var self = this;

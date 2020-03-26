@@ -6,7 +6,7 @@ var $osf = require('./osfHelpers');
 var ChangeMessageMixin = require('js/changeMessage');
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
+var sprintf = require('agh.sprintf').sprintf;
 
 
 var NODE_OFFSET = 25;
@@ -61,7 +61,7 @@ var PrivateLinkViewModel = function(url) {
 
     function onFetchError() {
         $osf.growl(_('Could not retrieve projects.'), _('Please refresh the page or ') +
-                agh.sprintf(_('contact %1$s') , $osf.osfSupportLink()) + _(' if the ') +
+                sprintf(_('contact %1$s') , $osf.osfSupportLink()) + _(' if the ') +
                 _('problem persists.'));
     }
 

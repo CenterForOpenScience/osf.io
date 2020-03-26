@@ -31,7 +31,6 @@ var nodeCategories = ctx.nodeCategories || [];
 var currentUserRequestState = ctx.currentUserRequestState;
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
 
 // Listen for the nodeLoad event (prevents multiple requests for data)
 $('body').on('nodeLoad', function(event, data) {

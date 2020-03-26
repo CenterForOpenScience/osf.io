@@ -12,7 +12,6 @@ var osfHelpers = require('js/osfHelpers');
 var ChangeMessageMixin = require('js/changeMessage');
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
 
 function ViewModel(settingsUrl, qrCodeSelector) {
     var self = this;

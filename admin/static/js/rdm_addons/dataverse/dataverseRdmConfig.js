@@ -14,7 +14,7 @@ var osfHelpers = require('js/osfHelpers');
 var addonSettings = require('../rdmAddonSettings');
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
+var sprintf = require('agh.sprintf').sprintf;
 
 var ExternalAccount = addonSettings.ExternalAccount;
 
@@ -143,7 +143,7 @@ function ViewModel(url, institutionId) {
         bootbox.confirm({
             title: _('Disconnect Dataverse Account?'),
             message: '<p class="overflow">' +
-                agh.sprintf(_('Are you sure you want to disconnect the Dataverse account on <strong>%1$s</strong>? This will revoke access to Dataverse for all projects associated with this account.'),osfHelpers.htmlEscape(account.name)) +
+                sprintf(_('Are you sure you want to disconnect the Dataverse account on <strong>%1$s</strong>? This will revoke access to Dataverse for all projects associated with this account.'),osfHelpers.htmlEscape(account.name)) +
                 '</p>',
             callback: function (confirm) {
                 if (confirm) {
@@ -170,7 +170,7 @@ function ViewModel(url, institutionId) {
             self.updateAccounts();
         });
         request.fail(function(xhr, status, error) {
-            Raven.captureMessage(agh.sprintf(_('Error while removing addon authorization for %1$s') , account.id), {
+            Raven.captureMessage(sprintf(_('Error while removing addon authorization for %1$s') , account.id), {
                 extra: {
                     url: url,
                     status: status,

@@ -9,7 +9,7 @@ var Raven = require('raven-js');
 var ChangeMessageMixin = require('js/changeMessage');
 
 var _ = require('js/rdmGettext')._;
-var agh = require('agh.sprintf');
+var sprintf = require('agh.sprintf').sprintf;
 
 var UserEmail = oop.defclass({
     constructor: function(params) {
@@ -109,7 +109,7 @@ var UserProfileClient = oop.defclass({
                 $osf.growl('Error', xhr.responseJSON.message_long);
 
             } else {
-                $osf.growl('Error', agh.sprintf(_('User profile not updated. Please refresh the page and try again or contact %1$s if the problem persists.'),$osf.osfSupportLink()), 'danger');
+                $osf.growl('Error', sprintf(_('User profile not updated. Please refresh the page and try again or contact %1$s if the problem persists.'),$osf.osfSupportLink()), 'danger');
             }
 
             Raven.captureMessage(_('Error fetching user profile'), {
@@ -218,8 +218,8 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                     var safeAddr = $osf.htmlEscape(email.address());
                     bootbox.alert({
                                 title: _('Confirmation email sent'),
-                                message: agh.sprintf(_('<em>%1$s</em> was added to your account.'),safeAddr) +
-                                agh.sprintf(_(' You will receive a confirmation email at <em>%1$s</em>.'),safeAddr) +
+                                message: sprintf(_('<em>%1$s</em> was added to your account.'),safeAddr) +
+                                sprintf(_(' You will receive a confirmation email at <em>%1$s</em>.'),safeAddr) +
                                 _(' Please click the link in your email to confirm this action. You will be required to enter your password.'),
                                 buttons: {
                                     ok: {
@@ -242,13 +242,13 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         var safeAddr = $osf.htmlEscape(email.address());
         bootbox.confirm({
             title: _('Resend Email Confirmation?'),
-            message: agh.sprintf(_('Are you sure that you want to resend email confirmation to <em>%1$s</em>?'),safeAddr),
+            message: sprintf(_('Are you sure that you want to resend email confirmation to <em>%1$s</em>?'),safeAddr),
             callback: function (confirmed) {
                 if (confirmed) {
                     self.client.update(self.profile(), email).done(function () {
                         $osf.growl(
-                            agh.sprintf(_('Email confirmation resent to <em>%1$s</em>'),safeAddr),
-                            agh.sprintf(_('You will receive a new confirmation email at <em>%1$s</em>.'),safeAddr) +
+                            sprintf(_('Email confirmation resent to <em>%1$s</em>'),safeAddr),
+                            sprintf(_('You will receive a new confirmation email at <em>%1$s</em>.'),safeAddr) +
                             _(' Please log out of this account and check your email to confirm this action.'),
                             'success');
                     });
@@ -268,7 +268,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
             var addrText = $osf.htmlEscape(email.address());
             bootbox.confirm({
                 title: _('Remove Email?'),
-                message: agh.sprintf(_('Are you sure that you want to remove <em>%1$s</em> from your email list?'),addrText),
+                message: sprintf(_('Are you sure that you want to remove <em>%1$s</em> from your email list?'),addrText),
                 callback: function (confirmed) {
                     if (confirmed) {
                         self.profile().emails.remove(email);
@@ -319,7 +319,7 @@ var ExternalIdentityViewModel = oop.defclass({
         }.bind(this));
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
-                agh.sprintf(_('Revocation request failed. Please contact %1$s if the problem persists.'),$osf.osfSupportLink()),
+                sprintf(_('Revocation request failed. Please contact %1$s if the problem persists.'),$osf.osfSupportLink()),
                 'danger'
             );
             Raven.captureMessage(_('Error revoking connected identity'), {
@@ -380,11 +380,11 @@ var UpdateDefaultStorageLocation = oop.defclass({
     updateDefaultStorageLocation: function() {
         var request = $osf.ajaxJSON('PUT', this.urls.update, {'data': {'region_id': this.locationSelected()._id}});
         request.done(function() {
-            $osf.growl('Success', agh.sprintf(_('You have successfully changed your default storage location to <b>%1$s</b>.'),this.locationSelected().name), 'success');
+            $osf.growl('Success', sprintf(_('You have successfully changed your default storage location to <b>%1$s</b>.'),this.locationSelected().name), 'success');
         }.bind(this));
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
-                agh.sprintf(_('Your attempt to change your default storage location has failed. Please contact %1$s if the problem persists.'),$osf.osfSupportLink()),
+                sprintf(_('Your attempt to change your default storage location has failed. Please contact %1$s if the problem persists.'),$osf.osfSupportLink()),
                 'danger'
             );
             Raven.captureMessage(_('Error updating default storage location '), {
@@ -418,7 +418,7 @@ var DeactivateAccountViewModel = oop.defclass({
                 $osf.growl('Error', xhr.responseJSON.message_long, 'danger');
             } else {
                 $osf.growl('Error',
-                    agh.sprintf(_('Deactivation request failed. Please contact %1$s if the problem persists.'),$osf.osfSupportLink()),
+                    sprintf(_('Deactivation request failed. Please contact %1$s if the problem persists.'),$osf.osfSupportLink()),
                     'danger'
                 );
             }
@@ -517,7 +517,7 @@ var ExportAccountViewModel = oop.defclass({
                 $osf.growl('Error', xhr.responseJSON.message_long, 'danger');
             } else {
                 $osf.growl('Error',
-                    agh.sprintf(_('Export request failed. Please contact %1$s if the problem persists.'),$osf.osfSupportLink()),
+                    sprintf(_('Export request failed. Please contact %1$s if the problem persists.'),$osf.osfSupportLink()),
                     'danger'
                 );
             }
