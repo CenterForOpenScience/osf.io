@@ -104,6 +104,48 @@ module.exports = {
                         $osf.osfSupportLink(),
             submitSettingsSuccess : 'フォルダーが正常にリンクされました',
         },
+        swift: {
+            authError: '現在、OpenStack Swiftに接続できませんでした。 後でもう一度やり直してください。',
+            userSettingsError: '設定を取得できませんでした。 ページを更新するか、' +
+                '問題が解決しない場合は' + $osf.osfSupportLink() + 'へお問い合わせください。',
+        },
+        azureblobstorage: {
+            authError: '現在、Azure Blob Storageに接続できませんでした。 後でもう一度やり直してください。',
+            userSettingsError: '設定を取得できませんでした。 ページを更新するか、' +
+                '問題が解決しない場合は' + $osf.osfSupportLink() + 'へお問い合わせください。',
+        },
+        weko: {
+            authError: '現在、WEKOに接続できませんでした。 後でもう一度やり直してください。',
+            userSettingsError: '設定を取得できませんでした。 ページを更新するか、' +
+                '問題が解決しない場合は' + $osf.osfSupportLink() + 'へお問い合わせください。',
+        },
+        s3compat: {
+            authError: '現在、S3互換ストレージに接続できませんでした。 後でもう一度やり直してください。',
+            userSettingsError: '設定を取得できませんでした。 ページを更新するか、' +
+                '問題が解決しない場合は' + $osf.osfSupportLink() + 'へお問い合わせください。',
+        },
+        nextcloud: {
+            authError: '無効なNextcloudサーバー',
+            authInvalid: '無効な資格情報。 有効なユーザー名とパスワードを入力してください。',
+            userSettingsError: '設定を取得できませんでした。 ページを更新するか、' +
+                '問題が解決しない場合は' + $osf.osfSupportLink() + 'へお問い合わせください。',
+        },
+        iqbrims: {
+            // Shown on clicking "Delete Access Token" for iqbrims
+            confirmDeauth: 'IQB-RIMSアカウントの接続を解除してもよろしいですか？' +
+                'これにより、このアカウントに関連付けたすべてのプロジェクトのIQB-RIMSへのアクセスが取り消されます。',
+            deauthError: '現在、IQB-RIMSアカウントを切断できませんでした',
+            depositHelp: '論文を登録して承認を申請する',
+            checkHelp: '論文を提出する前に画像のみのスキャンサービスを実行する',
+            labo: '研究分野',
+            accepted_date: '受理日',
+            journal_name: '雑誌名',
+            doi: 'DOI',
+            publish_date: '出版日',
+            volume: '巻（号）',
+            page_number: 'ページ番号',
+            workflow_overall_state: '審査状況'
+        },
     },
     apiOauth2Application: {
         discardUnchanged: '保存していない変更を破棄してもよろしいですか？',
