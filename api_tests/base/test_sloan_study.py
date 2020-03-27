@@ -29,7 +29,10 @@ from osf.system_tags import (
 )
 
 from website.settings import DOMAIN
-from api.base.views import get_provider_from_url
+from api.base.views import (
+    get_provider_from_url,
+    get_domain_from_refferer
+)
 
 
 def active(*args, **kwargs):
@@ -218,3 +221,13 @@ class TestSloanStudyWaffling:
         cookies = resp.headers.getall('Set-Cookie')
         assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=localhost; Path=/; samesite=None; Secure' in cookies
         assert f' dwf_{SLOAN_PREREG_DISPLAY}=False; Domain=localhost; Path=/; samesite=None; Secure' in cookies
+
+    @pytest.mark.parametrize('reffer_url, expected_domain', [
+        ('https://osf.io/preprints/sdadadsad', '.osf.io'),
+        ('https://agrixiv.org/bhzjs/', '.agrixiv.org'),
+        ('https://staging-agrixiv.cos.io/', '.cos.io'),
+        ('https://staging.osf.io/preprints/', '.osf.io'),
+    ])
+    def test_get_domain_from_refferer(self, reffer_url, expected_domain):
+        actual_domain = get_domain_from_refferer(reffer_url)
+        assert actual_domain == expected_domain

@@ -1,6 +1,8 @@
 from builtins import str
 import re
 
+from urllib.parse import urlparse
+
 from collections import defaultdict
 from distutils.version import StrictVersion
 from http.cookies import Morsel
@@ -478,12 +480,14 @@ def root(request, format=None, **kwargs):
 
 def get_domain_from_refferer(referer):
     if referer.startswith('http://localhost:'):
-        domain = 'localhost'
+        return 'localhost'
     else:
         # https://osf.io/preprint/... -> .osf.io
-        domain = '.' + referer.lstrip('http://').lstrip('https://').split('/')[0]
+        netloc = urlparse(referer).netloc
+        if netloc.count('.') > 1:
+            netloc = '.'.join(netloc.split('.')[1:])
 
-    return domain
+        return '.' + netloc
 
 
 def set_sloan_cookies(sloan_data, request, resp):
