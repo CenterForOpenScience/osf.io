@@ -336,6 +336,7 @@ WEBSITE_TESTS = [
 ]
 
 API_TESTS1 = [
+    'api_tests/draft_registrations'
     'api_tests/identifiers',
     'api_tests/institutions',
     'api_tests/licenses',
