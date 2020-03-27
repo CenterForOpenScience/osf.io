@@ -1,5 +1,3 @@
-import time
-import functools
 from blinker import ANY
 from future.moves.urllib.parse import urlparse
 from contextlib import contextmanager
@@ -66,22 +64,3 @@ def only_supports_methods(view, expected_methods):
         view = view()
     expected_methods.append('OPTIONS')
     return set(expected_methods) == set(view.allowed_methods)
-
-
-def retry_assertion(interval=0.3, retries=3):
-    def test_wrapper(func):
-        t_interval = interval
-        t_retries = retries
-
-        @functools.wraps(func)
-        def wrapped(*args, **kwargs):
-            try:
-                func(*args, **kwargs)
-            except AssertionError as e:
-                if retries:
-                    time.sleep(t_interval)
-                    retry_assertion(interval=t_interval, retries=t_retries - 1)(func)(*args, **kwargs)
-                else:
-                    raise e
-        return wrapped
-    return test_wrapper

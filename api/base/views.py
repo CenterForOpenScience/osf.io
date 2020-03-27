@@ -3,6 +3,7 @@ import re
 
 from collections import defaultdict
 from distutils.version import StrictVersion
+from http.cookies import Morsel
 
 from django_bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
@@ -493,8 +494,8 @@ def set_sloan_cookies(sloan_data, request, resp):
     :param resp:
     :return:
     """
-    # special case out sloan cookies from other cookies
-    waffles = getattr(request, 'waffles')
+    # By deleting the waffle data here we ensure the Waffle middleware doesn't attempt to make the cookies their way.
+    waffles = getattr(request, 'waffles', None)
     if waffles:
         for sloan_flag in SLOAN_FLAGS:
             if waffles.get(sloan_flag):
@@ -504,14 +505,17 @@ def set_sloan_cookies(sloan_data, request, resp):
         referer_url = request.environ.get('HTTP_REFERER', '')
         if referer_url:
             domain = get_domain_from_refferer(referer_url)
-            resp.set_cookie(
-                f'dwf_{name}',
-                value=active,
-                max_age=None,
-                secure=True,
-                expires=None,
-                domain=domain,
-            )
+            cookie = Morsel()
+            cookie._reserved.update({'samesite': 'samesite'})  # This seems terrible but is fixed in py 3.8
+            cookie._key = f'dwf_{name}'  # lets just stick with the waffle prefix in case
+            cookie._coded_value = active
+            cookie.update({
+                'Domain': domain,
+                'Path': '/',
+                'Secure': True,
+                'samesite': 'None',
+            })
+            resp.cookies[f'dwf_{name}'] = cookie
 
 
 def sloan_study_disambiguation(request):
@@ -531,7 +535,11 @@ def sloan_study_disambiguation(request):
             # User tags should override any cookie info
             if user and not user.is_anonymous:
                 tag_name = SLOAN_FEATURES[flag.name]
-                active = (check_tag(tag_name) and not check_tag(f'no_{tag_name}')) or active
+                if check_tag(tag_name):
+                    active = True
+                elif check_tag(f'no_{tag_name}'):
+                    active = False
+
                 sloan_data[flag.name] = active
 
         if active:
