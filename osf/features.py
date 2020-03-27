@@ -43,6 +43,6 @@ SLOAN_DATA_INPUT = 'sloan_data_input'
 SLOAN_PREREG_INPUT = 'sloan_prereg_input'
 
 # The SLOAN_..._DISPLAY values are flags control when those features are visible for individual users.
-SLOAN_COI_DISPLAY = 'dwf_sloan_coi_display'
-SLOAN_DATA_DISPLAY = 'dwf_sloan_data_display'
-SLOAN_PREREG_DISPLAY = 'dwf_sloan_prereg_display'
+SLOAN_COI_DISPLAY = 'sloan_coi_display'
+SLOAN_DATA_DISPLAY = 'sloan_data_display'
+SLOAN_PREREG_DISPLAY = 'sloan_prereg_display'

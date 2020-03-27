@@ -1,8 +1,11 @@
 from builtins import str
 import re
 
+from urllib.parse import urlparse
+
 from collections import defaultdict
 from distutils.version import StrictVersion
+from http.cookies import Morsel
 
 from django_bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
@@ -470,11 +473,53 @@ def root(request, format=None, **kwargs):
 
     resp = Response(return_val)
 
-    # This is used current for our partnership with Sloan and can be deleted after their study is complete.
-    for key, value in cookies.items():
-        resp.set_cookie(key, value)
+    set_sloan_cookies(cookies, request, resp)
 
     return resp
+
+
+def get_domain_from_refferer(referer):
+    if referer.startswith('http://localhost:'):
+        return 'localhost'
+    else:
+        # https://osf.io/preprint/... -> .osf.io
+        netloc = urlparse(referer).netloc
+        if netloc.count('.') > 1:
+            netloc = '.'.join(netloc.split('.')[1:])
+
+        return '.' + netloc
+
+
+def set_sloan_cookies(sloan_data, request, resp):
+    """
+    Set sloan flags for users who are only active due to user tags
+    :param flags: List active flags
+    :param request:
+    :param resp:
+    :return:
+    """
+    # By deleting the waffle data here we ensure the Waffle middleware doesn't attempt to make the cookies their way.
+    waffles = getattr(request, 'waffles', None)
+    if waffles:
+        for sloan_flag in SLOAN_FLAGS:
+            if waffles.get(sloan_flag):
+                del waffles[sloan_flag]
+
+    for name, active in sloan_data.items():
+        referer_url = request.environ.get('HTTP_REFERER', '')
+        if referer_url:
+            domain = get_domain_from_refferer(referer_url)
+            cookie = Morsel()
+            cookie._reserved.update({'samesite': 'samesite'})  # This seems terrible but is fixed in py 3.8
+            cookie._key = f'dwf_{name}'  # lets just stick with the waffle prefix in case
+            cookie._coded_value = active
+            cookie.update({
+                'Domain': domain,
+                'Path': '/',
+                'Secure': True,
+                'samesite': 'None',
+            })
+            resp.cookies[f'dwf_{name}'] = cookie
 
 
 def sloan_study_disambiguation(request):
@@ -482,7 +527,6 @@ def sloan_study_disambiguation(request):
     This is a hack to set flags and cookies for out Sloan study, it can be deleted when the study is complete.
     """
     user = request.user
-    cookies = {}
 
     check_tag = lambda name: user.all_tags.filter(name=name).exists()
 
@@ -495,7 +539,11 @@ def sloan_study_disambiguation(request):
             # User tags should override any cookie info
             if user and not user.is_anonymous:
                 tag_name = SLOAN_FEATURES[flag.name]
-                active = (check_tag(tag_name) and not check_tag(f'no_{tag_name}')) or active
+                if check_tag(tag_name):
+                    active = True
+                elif check_tag(f'no_{tag_name}'):
+                    active = False
+
                 sloan_data[flag.name] = active
 
         if active:
@@ -506,9 +554,9 @@ def sloan_study_disambiguation(request):
 
     if provider and provider.in_sloan_study:
         for key, value in sloan_data.items():
-            cookies.update(set_tags_and_cookies_for_sloan(user, key, value))
+            set_tags_for_sloan(user, key, value)
 
-    return flags, cookies
+    return flags, sloan_data
 
 
 def get_provider_from_url(referer_url: str) -> Optional[PreprintProvider]:
@@ -542,9 +590,9 @@ def get_provider_from_url(referer_url: str) -> Optional[PreprintProvider]:
         return PreprintProvider.objects.get(_id='osf')
 
 
-def set_tags_and_cookies_for_sloan(user, flag_name: str, flag_value: bool) -> dict:
+def set_tags_for_sloan(user, flag_name: str, flag_value: bool) -> dict:
     """
-    This is a hack to set flags and cookies for out Sloan study, it can be deleted when the study is complete.
+    This is a hack to set tags for Sloan study, it can be deleted when the study is complete.
     """
     tag_name = SLOAN_FEATURES[flag_name]
     if user and not user.is_anonymous and not user.all_tags.filter(Q(name=tag_name) | Q(name=f'no_{tag_name}')):
@@ -552,7 +600,6 @@ def set_tags_and_cookies_for_sloan(user, flag_name: str, flag_value: bool) -> di
             user.add_system_tag(tag_name)
         else:
             user.add_system_tag(f'no_{tag_name}')
-    return {flag_name: flag_value}
 
 
 @api_view(('GET',))
