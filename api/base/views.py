@@ -485,7 +485,7 @@ def get_domain_from_refferer(referer):
         # https://osf.io/preprint/... -> .osf.io
         netloc = urlparse(referer).netloc
         if netloc.count('.') > 1:
-            netloc = '.'.join(netloc.split('.')[1:])
+            netloc = '.'.join(netloc.split('.'))
 
         return '.' + netloc
 

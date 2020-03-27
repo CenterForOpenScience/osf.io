@@ -225,8 +225,8 @@ class TestSloanStudyWaffling:
     @pytest.mark.parametrize('reffer_url, expected_domain', [
         ('https://osf.io/preprints/sdadadsad', '.osf.io'),
         ('https://agrixiv.org/bhzjs/', '.agrixiv.org'),
-        ('https://staging-agrixiv.cos.io/', '.cos.io'),
-        ('https://staging.osf.io/preprints/', '.osf.io'),
+        ('https://staging-agrixiv.cos.io/', '.staging-agrixiv.cos.io'),
+        ('https://staging.osf.io/preprints/', '.staging.osf.io'),
     ])
     def test_get_domain_from_refferer(self, reffer_url, expected_domain):
         actual_domain = get_domain_from_refferer(reffer_url)
