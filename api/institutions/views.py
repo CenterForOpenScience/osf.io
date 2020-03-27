@@ -444,15 +444,10 @@ class InstitutionUserMetricsList(JSONAPIBaseView, ListFilterMixin, generics.List
 
         results = UserInstitutionProjectCounts.get_current_user_metrics(institution)
         for user_record in results:
-            record_dict = {}
+            record_dict = user_record.to_dict()
             user_id = user_record.user_id
             fullname = OSFUser.objects.get(guids___id=user_id).fullname
             record_dict['user'] = f'({user_id}) {fullname}'
-            record_dict['user_id'] = user_id
-            record_dict['public_projects'] = user_record.public_project_count
-            record_dict['private_projects'] = user_record.private_project_count
-            record_dict['department'] = user_record.department
-            record_dict['id'] = user_record.institution_id
 
             queryset.add_dict_as_item(record_dict)
 

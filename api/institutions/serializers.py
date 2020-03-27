@@ -198,21 +198,15 @@ class InstitutionUserMetricsSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'institution-users'
 
-    id = IDField(read_only=True)
-    user_id = IDField(read_only=True)
-    user = ser.CharField(read_only=True)
-    public_projects = ser.IntegerField(read_only=True)
-    private_projects = ser.IntegerField(read_only=True)
+    id = IDField(source='user_id', read_only=True)
+    user_name = ser.CharField(source='user', read_only=True)
+    public_projects = ser.IntegerField(source='public_project_count', read_only=True)
+    private_projects = ser.IntegerField(source='private_project_count', read_only=True)
     department = ser.CharField(read_only=True)
 
-    users = RelationshipField(
+    user = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<user_id>'},
-    )
-
-    institution = RelationshipField(
-        related_view='institutions:institution-detail',
-        related_view_kwargs={'institution_id': '<id>'},
     )
 
     links = LinksField({
@@ -223,7 +217,7 @@ class InstitutionUserMetricsSerializer(JSONAPISerializer):
         return absolute_reverse(
             'institutions:institution-user-metrics',
             kwargs={
-                'institution_id': obj.id,
+                'institution_id': obj.institution_id,
                 'version': 'v2',
             },
         )

@@ -84,17 +84,16 @@ class TestInstitutionUserMetricList:
 
         assert resp.json['data'] == [
             {
-                'id': institution._id,
+                'id': user._id,
                 'type': 'institution-users',
                 'attributes': {
-                    'user_id': user._id,
-                    'user': f'({user._id}) {user.fullname}',
+                    'user_name': f'({user._id}) {user.fullname}',
                     'public_projects': 6,
                     'private_projects': 5,
                     'department': 'Biology dept'
                 },
                 'relationships': {
-                    'users': {
+                    'user': {
                         'links': {
                             'related': {
                                 'href': f'http://localhost:8000/v2/users/{user._id}/',
@@ -105,18 +104,6 @@ class TestInstitutionUserMetricList:
                             'id': user._id,
                             'type': 'users'
                         }
-                    },
-                    'institution': {
-                        'links': {
-                            'related': {
-                                'href': f'http://localhost:8000/v2/institutions/{institution._id}/',
-                                'meta': {}
-                            }
-                        },
-                        'data': {
-                            'id': institution._id,
-                            'type': 'institutions'
-                        }
                     }
                 },
                 'links': {
@@ -124,17 +111,16 @@ class TestInstitutionUserMetricList:
                 }
             },
             {
-                'id': institution._id,
+                'id': user2._id,
                 'type': 'institution-users',
                 'attributes': {
-                    'user_id': user2._id,
-                    'user': f'({user2._id}) {user2.fullname}',
+                    'user_name': f'({user2._id}) {user2.fullname}',
                     'public_projects': 3,
                     'private_projects': 2,
                     'department': 'Psychology dept'
                 },
                 'relationships': {
-                    'users': {
+                    'user': {
                         'links': {
                             'related': {
                                 'href': f'http://localhost:8000/v2/users/{user2._id}/',
@@ -144,18 +130,6 @@ class TestInstitutionUserMetricList:
                         'data': {
                             'id': user2._id,
                             'type': 'users'
-                        }
-                    },
-                    'institution': {
-                        'links': {
-                            'related': {
-                                'href': f'http://localhost:8000/v2/institutions/{institution._id}/',
-                                'meta': {}
-                            }
-                        },
-                        'data': {
-                            'id': institution._id,
-                            'type': 'institutions'
                         }
                     }
                 },
