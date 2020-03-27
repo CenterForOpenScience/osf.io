@@ -335,7 +335,7 @@
                                 </label>
                             </div>
 
-                            <button class="btn btn-success">Save</button>
+                            <button class="btn btn-success">${_("Save")}</button>
 
                             <!-- Flashed Messages -->
                             <div class="help-block">

@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-12 22:46+0900\n"
-"PO-Revision-Date: 2020-03-23 17:37+0900\n"
+"POT-Creation-Date: 2020-03-27 11:52+0900\n"
+"PO-Revision-Date: 2020-03-27 11:52+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -111,6 +111,7 @@ msgstr "キャンセル"
 #: website/templates/project/addon/node_settings_default.mako:74
 #: website/templates/project/addon/user_settings.mako:13
 #: website/templates/project/project.mako:569
+#: website/templates/project/settings.mako:338
 msgid "Save"
 msgstr "保存"
 
