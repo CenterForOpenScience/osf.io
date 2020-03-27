@@ -134,6 +134,15 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         res = app.get(url_draft_registrations, auth=draft_admin.auth)
         assert res.status_code == 200
 
+    # Overwrites TestDraftRegistrationDetail
+    def test_can_view_after_added(
+            self, app, schema, draft_registration, url_draft_registrations):
+        user = AuthUserFactory()
+        project = draft_registration.branched_from
+        project.add_contributor(user, ADMIN)
+        res = app.get(url_draft_registrations, auth=user.auth, expect_errors=True)
+        assert res.status_code == 403
+
     # Overrides TestDraftRegistrationDetail
     def test_reviewer_can_see_draft_registration(
             self, app, schema, draft_registration, url_draft_registrations):
@@ -259,7 +268,7 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
 
         res = app.put_json_api(
             url_draft_registrations, editable_fields_payload,
-            auth=user.auth, expect_errors=True)
+            auth=user.auth)
         assert res.status_code == 200
         attributes = res.json['data']['attributes']
 
