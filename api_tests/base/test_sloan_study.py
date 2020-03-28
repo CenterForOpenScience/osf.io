@@ -29,11 +29,8 @@ from osf.system_tags import (
 )
 
 from website.settings import DOMAIN
-from api.base.views import (
-    get_provider_from_url,
-    get_domain_from_refferer
-)
 
+from api.base.middleware import SloanOverrideWaffleMiddleware
 
 def active(*args, **kwargs):
     return Decimal('0')
@@ -153,7 +150,7 @@ class TestSloanStudyWaffling:
         (f'{DOMAIN}preprints/foorxiv/foo/bar/baz/', 'foorxiv')
     ])
     def test_weird_domains(self, reffer_url, expected_provider_id):
-        provider = get_provider_from_url(reffer_url)
+        provider = SloanOverrideWaffleMiddleware.get_provider_from_url(reffer_url)
         assert expected_provider_id == provider._id
 
     @pytest.mark.parametrize('reffer_url', [
@@ -161,7 +158,7 @@ class TestSloanStudyWaffling:
         f'{DOMAIN}not-preprints/',
     ])
     def test_too_weird_domains(self, reffer_url):
-        provider = get_provider_from_url(reffer_url)
+        provider = SloanOverrideWaffleMiddleware.get_provider_from_url(reffer_url)
         assert provider is None
 
     @pytest.mark.enable_quickfiles_creation
@@ -222,12 +219,12 @@ class TestSloanStudyWaffling:
         assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=localhost; Path=/; samesite=None; Secure' in cookies
         assert f' dwf_{SLOAN_PREREG_DISPLAY}=False; Domain=localhost; Path=/; samesite=None; Secure' in cookies
 
-    @pytest.mark.parametrize('reffer_url, expected_domain', [
+    @pytest.mark.parametrize('url, expected_domain', [
         ('https://osf.io/preprints/sdadadsad', '.osf.io'),
         ('https://agrixiv.org/bhzjs/', '.agrixiv.org'),
         ('https://staging-agrixiv.cos.io/', '.staging-agrixiv.cos.io'),
         ('https://staging.osf.io/preprints/', '.staging.osf.io'),
     ])
-    def test_get_domain_from_refferer(self, reffer_url, expected_domain):
-        actual_domain = get_domain_from_refferer(reffer_url)
+    def test_get_domain(self, url, expected_domain):
+        actual_domain = SloanOverrideWaffleMiddleware.get_domain(url)
         assert actual_domain == expected_domain
