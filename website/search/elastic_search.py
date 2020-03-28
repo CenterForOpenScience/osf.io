@@ -1458,6 +1458,12 @@ def create_index(index=None):
                         'type': 'string',
                         'boost': '0.01'
                     },
+                    'ongoing_job': ENGLISH_ANALYZER_PROPERTY,
+                    'ongoing_job_department': ENGLISH_ANALYZER_PROPERTY,
+                    'ongoing_job_title': ENGLISH_ANALYZER_PROPERTY,
+                    'ongoing_school': ENGLISH_ANALYZER_PROPERTY,
+                    'ongoing_school_department': ENGLISH_ANALYZER_PROPERTY,
+                    'ongoing_school_degree': ENGLISH_ANALYZER_PROPERTY,
                 }
                 mapping['properties'].update(fields)
             elif type_ == 'file' or type_ == 'wiki':

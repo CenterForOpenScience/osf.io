@@ -4,6 +4,8 @@ from __future__ import print_function
 import sys
 import inspect
 import functools
+from unicodedata import normalize
+from pprint import pformat as pp
 
 import mock
 import pytest
@@ -89,7 +91,7 @@ def u2s(obj):
 
 # string-escape
 def se(listordict):
-    return str(listordict).decode('string-escape')
+    return pp(listordict).decode('string-escape')
 
 def get_contributors(results, node_title):
     node_title = s2u(node_title)
@@ -297,6 +299,50 @@ def query_for_normalize_tests(self, qs, category=None, user=None, version=1):
                                         version=version)
     return (res, results)
 
+def nfc(text):
+    return normalize('NFC', text)
+
+def nfd(text):
+    return normalize('NFD', text)
+
+@retry_assertion(retries=10)
+def retry_call_func(func):
+    func()
+
+@enable_private_search
+def rebuild_search(self_):
+    DEBUG('self._use_migrate', self_._use_migrate)
+    if self_._use_migrate:
+        migrate(delete=False, remove=False,
+                index=None, app=self_.app.app)
+
+def run_after_rebuild_search(self_, func):
+    rebuild_search(self_)
+    # migrate() may not update elasticsearch-data immediately.
+    retry_call_func(func)
+
+@enable_private_search
+def run_test_all_after_rebuild_search(self_, my_method_name):
+    """
+    invoke rebuild_search 相当の migrate() を実行後、
+    TestPrivateSearch の各テストが成功することを確認する。
+    """
+    self_._use_migrate = True
+    rebuild_search(self_)
+
+    EXCLUDES = (my_method_name,
+                'test_search_not_allowed',)
+    for method_info in inspect.getmembers(self_, inspect.ismethod):
+        method_name = method_info[0]
+        DEBUG('*** method_name ***', '{}'.format(method_name))
+        if method_name.startswith('test_') and \
+           not method_name in EXCLUDES:
+            # migrate() may not update elasticsearch-data immediately.
+            retry_call_func(getattr(self_, method_name))
+        self_._use_migrate = False
+
+
+###### tests #####
 
 # see osf_tests/test_search_views.py
 @pytest.mark.enable_search
@@ -556,6 +602,86 @@ class TestPrivateSearch(OsfTestCase):
         DEBUG('user_fullnames', user_fullnames)
         assert_equal(len(results), 1)
         assert_equal(len(user_fullnames), 1)
+
+    @enable_private_search
+    def _set_job_school(self, user, nmlz):
+        def job(inst, depart, title, ongoing):
+            return {
+                'institution': nmlz(inst),
+                'department': nmlz(depart),
+                'title': nmlz(title),
+                'ongoing': ongoing,
+            }
+
+        def school(inst, depart, degree, ongoing):
+            return {
+                'institution': nmlz(inst),
+                'department':nmlz(depart),
+                'degree': nmlz(degree),
+                'ongoing': ongoing,
+            }
+
+        with run_celery_tasks():
+            user.jobs = []
+            user.jobs.append(
+                job(u'かきくけこ', u'さしすせそ', u'たちつてと', False))
+            user.jobs.append(
+                job(u'がぎぐげご', u'ざじずぜぞ', u'だぢづでど', True))
+            user.jobs.append(
+                job(u'NG', u'NG', u'NG', True))
+            user.schools = []
+            user.schools.append(
+                school(u'カキクケコ', u'サシスセソ', u'タチツテト', False))
+            user.schools.append(
+                school(u'ガギグゲゴ', u'ザジズゼゾ', u'ダヂヅデド', True))
+            user.schools.append(
+                school(u'NG', u'NG', u'NG', True))
+            user.save()
+
+    def test_normalize_user_ongoing_job_school(self):
+        """
+        Unicode正規化のテスト。通常検索でUserのprofileを検索する場合。
+        データベースに登録されている濁点付き文字が
+        結合可能濁点と母体の文字の組み合わせ(結合文字)の場合と、
+        または合成済み文字の場合とで、検索する場合の濁点文字列の
+        正規化手段を反対にして検索できることを確認する。
+        同時に、ongoingがTrueかつ一件目の所属情報を返すことも確認する。
+        """
+        hga = (u'がぎぐげご', 'job')
+        hza = (u'ざじずぜぞ', 'job_department')
+        hda = (u'だぢづでど', 'job_title')
+        kga = (u'ガギグゲゴ', 'school')
+        kza = (u'ザジズゼゾ', 'school_department')
+        kda = (u'ダヂヅデド', 'school_degree')
+        all_ = (hga, hza, hda, kga, kza, kda)
+
+        self._set_job_school(self.user3, nfd)  # 結合文字をDBに格納
+
+        def test1():
+            for p in all_:
+                qs = nfc(p[0])  # 合成済み文字で検索
+                res, results = self._common_normalize(qs, 'user')
+                user_fullnames = get_user_fullnames(results)
+                DEBUG('results', results)
+                assert_equal(len(results), 1)
+                r = results[0]
+                assert_equal(r['ongoing_' + p[1]], nfd(p[0]))  # DB側の形式
+
+        run_after_rebuild_search(self, test1)
+
+        self._set_job_school(self.user3, nfc)  # 合成済み文字をDBに格納
+
+        def test2():
+            for p in all_:
+                qs = nfd(p[0])  # 結合文字で検索
+                res, results = self._common_normalize(qs, 'user')
+                user_fullnames = get_user_fullnames(results)
+                DEBUG('results', results)
+                assert_equal(len(results), 1)
+                r = results[0]
+                assert_equal(r['ongoing_' + p[1]], nfc(p[0]))  # DB側の形式
+
+        run_after_rebuild_search(self, test2)
 
     def test_normalize_prj_title1(self):
         """
@@ -897,42 +1023,44 @@ class TestPrivateSearch(OsfTestCase):
         文字の組み合わせで表現されている場合に、合成済み文字で検索でき
         ることを確認する。
         """
+        def test1():
+            c1 = u'\u304c'  # が (user3)
+            qs = u'category:file AND creator_name:' + c1
+            res, results = self._common_normalize(qs, user=self.user3)
+            filenames = get_filenames(results)
+            tags = get_filetags(results, self.f1.name)
+            DEBUG('results', results)
+            DEBUG('filenames', filenames)
+            DEBUG('tags', tags)
+            assert_equal(len(results), 1)
+            assert_equal(len(filenames), 1)
+            assert_equal(len(tags), 0)
+            r = results[0]
+            c2 = u'\u304b\u3099' # か+濁点
+            assert_equal(r['creator_id'], self.user3._id)
+            assert_equal(r['creator_name'], c2)
+
+            c1 = u'\u3070'  # ば (user5)
+            qs = u'category:file AND modifier_name:' + c1
+            res, results = self._common_normalize(qs, user=self.user3)
+            filenames = get_filenames(results)
+            tags = get_filetags(results, self.f1.name)
+            DEBUG('results', results)
+            DEBUG('filenames', filenames)
+            DEBUG('tags', tags)
+            assert_equal(len(results), 1)
+            assert_equal(len(filenames), 1)
+            assert_equal(len(tags), 0)
+            r = results[0]
+            c2 = u'\u306f\u3099' # は+濁点
+            assert_equal(r['modifier_id'], self.user5._id)
+            assert_equal(r['modifier_name'], c2)
+
         # creator
         self._update_file(self.project_private_user3, self.user3, 1)
         # modifier
         self._update_file(self.project_private_user3, self.user5, 2)
-
-        c1 = u'\u304c'  # が (user3)
-        qs = u'category:file AND creator_name:' + c1
-        res, results = self._common_normalize(qs, user=self.user3)
-        filenames = get_filenames(results)
-        tags = get_filetags(results, self.f1.name)
-        DEBUG('results', results)
-        DEBUG('filenames', filenames)
-        DEBUG('tags', tags)
-        assert_equal(len(results), 1)
-        assert_equal(len(filenames), 1)
-        assert_equal(len(tags), 0)
-        r = results[0]
-        c2 = u'\u304b\u3099' # か+濁点
-        assert_equal(r['creator_id'], self.user3._id)
-        assert_equal(r['creator_name'], c2)
-
-        c1 = u'\u3070'  # ば (user5)
-        qs = u'category:file AND modifier_name:' + c1
-        res, results = self._common_normalize(qs, user=self.user3)
-        filenames = get_filenames(results)
-        tags = get_filetags(results, self.f1.name)
-        DEBUG('results', results)
-        DEBUG('filenames', filenames)
-        DEBUG('tags', tags)
-        assert_equal(len(results), 1)
-        assert_equal(len(filenames), 1)
-        assert_equal(len(tags), 0)
-        r = results[0]
-        c2 = u'\u306f\u3099' # は+濁点
-        assert_equal(r['modifier_id'], self.user5._id)
-        assert_equal(r['modifier_name'], c2)
+        run_after_rebuild_search(self, test1)
 
     def test_normalize_file_creator_modifier2(self):
         """
@@ -941,42 +1069,44 @@ class TestPrivateSearch(OsfTestCase):
         データベースに登録されている濁点付き文字が合成済み文字の場合に、
         結合可能濁点と母体の文字の組み合わせで検索できることを確認する。
         """
+        def test1():
+            c1 = u'\u304d\u3099'  # き+濁点 (user4)
+            qs = u'category:file AND creator_name:' + c1
+            res, results = self._common_normalize(qs, user=self.user4)
+            filenames = get_filenames(results)
+            tags = get_filetags(results, self.f1.name)
+            DEBUG('results', results)
+            DEBUG('filenames', filenames)
+            DEBUG('tags', tags)
+            assert_equal(len(results), 1)
+            assert_equal(len(filenames), 1)
+            assert_equal(len(tags), 0)
+            r = results[0]
+            c2 = u'\u304e' # ぎ
+            assert_equal(r['creator_id'], self.user4._id)
+            assert_equal(r['creator_name'], c2)
+
+            c1 = u'\u3072\u3099'  # ひ+濁点 (user6)
+            qs = u'category:file AND modifier_name:' + c1
+            res, results = self._common_normalize(qs, user=self.user4)
+            filenames = get_filenames(results)
+            tags = get_filetags(results, self.f1.name)
+            DEBUG('results', results)
+            DEBUG('filenames', filenames)
+            DEBUG('tags', tags)
+            assert_equal(len(results), 1)
+            assert_equal(len(filenames), 1)
+            assert_equal(len(tags), 0)
+            r = results[0]
+            c2 = u'\u3073'  # び
+            assert_equal(r['modifier_id'], self.user6._id)
+            assert_equal(r['modifier_name'], c2)
+
         # creator
         self._update_file(self.project_private_user4, self.user4, 1)
         # modifier
         self._update_file(self.project_private_user4, self.user6, 2)
-
-        c1 = u'\u304d\u3099'  # き+濁点 (user4)
-        qs = u'category:file AND creator_name:' + c1
-        res, results = self._common_normalize(qs, user=self.user4)
-        filenames = get_filenames(results)
-        tags = get_filetags(results, self.f1.name)
-        DEBUG('results', results)
-        DEBUG('filenames', filenames)
-        DEBUG('tags', tags)
-        assert_equal(len(results), 1)
-        assert_equal(len(filenames), 1)
-        assert_equal(len(tags), 0)
-        r = results[0]
-        c2 = u'\u304e' # ぎ
-        assert_equal(r['creator_id'], self.user4._id)
-        assert_equal(r['creator_name'], c2)
-
-        c1 = u'\u3072\u3099'  # ひ+濁点 (user6)
-        qs = u'category:file AND modifier_name:' + c1
-        res, results = self._common_normalize(qs, user=self.user4)
-        filenames = get_filenames(results)
-        tags = get_filetags(results, self.f1.name)
-        DEBUG('results', results)
-        DEBUG('filenames', filenames)
-        DEBUG('tags', tags)
-        assert_equal(len(results), 1)
-        assert_equal(len(filenames), 1)
-        assert_equal(len(tags), 0)
-        r = results[0]
-        c2 = u'\u3073'  # び
-        assert_equal(r['modifier_id'], self.user6._id)
-        assert_equal(r['modifier_name'], c2)
+        run_after_rebuild_search(self, test1)
 
     @enable_private_search
     def _common_normalize_search_contributor(self, qs):
@@ -1071,29 +1201,12 @@ class TestPrivateSearch(OsfTestCase):
         res = self.app.get(url, auth=None)
         assert_equal(res.status_code, 302)
 
-    @retry_assertion(retries=10)
-    def retry_call_test(self, method_name):
-        getattr(self, method_name)()
+    _use_migrate = False
 
     @enable_private_search
     def test_after_rebuild_search(self):
-        """
-        invoke rebuild_search 相当の migrate() を実行後、
-        TestPrivateSearch の各テストが成功することを確認する。
-        """
-        migrate(delete=False, remove=False,
-                index=None, app=self.app.app)
-
         my_method_name = sys._getframe().f_code.co_name
-        EXCLUDES = (my_method_name,
-                    'test_search_not_allowed',)
-        for method_info in inspect.getmembers(self, inspect.ismethod):
-            method_name = method_info[0]
-            DEBUG('*** method_name ***', '{}'.format(method_name))
-            if method_name.startswith('test_') and \
-               not method_name in EXCLUDES:
-                # migrate() may not update elasticsearch-data immediately.
-                self.retry_call_test(method_name)
+        run_test_all_after_rebuild_search(self, my_method_name)
 
 
 @pytest.mark.enable_search
@@ -1257,29 +1370,32 @@ class TestSearchExt(OsfTestCase):
         # modifier
         self._update_wiki(self.project_private_user3, self.user5, 2)
 
-        c1 = u'\u304c'  # が (user3)
-        qs = u'category:wiki AND creator_name:' + c1
-        res, results = self._common_normalize(qs, user=self.user3, version=2)
-        filenames = get_filenames(results)
-        tags = get_filetags(results, self.f1.name)
-        DEBUG('results', results)
-        assert_equal(len(results), 1)
-        r = results[0]
-        c2 = u'\u304b\u3099' # か+濁点
-        assert_equal(r['creator_id'], self.user3._id)
-        assert_equal(r['creator_name'], c2)
+        def test1():
+            c1 = u'\u304c'  # が (user3)
+            qs = u'category:wiki AND creator_name:' + c1
+            res, results = self._common_normalize(qs, user=self.user3, version=2)
+            filenames = get_filenames(results)
+            tags = get_filetags(results, self.f1.name)
+            DEBUG('results', results)
+            assert_equal(len(results), 1)
+            r = results[0]
+            c2 = u'\u304b\u3099' # か+濁点
+            assert_equal(r['creator_id'], self.user3._id)
+            assert_equal(r['creator_name'], c2)
 
-        c1 = u'\u3070'  # ば (user5)
-        qs = u'category:wiki AND modifier_name:' + c1
-        res, results = self._common_normalize(qs, user=self.user3, version=2)
-        filenames = get_filenames(results)
-        tags = get_filetags(results, self.f1.name)
-        DEBUG('results', results)
-        assert_equal(len(results), 1)
-        r = results[0]
-        c2 = u'\u306f\u3099' # は+濁点
-        assert_equal(r['modifier_id'], self.user5._id)
-        assert_equal(r['modifier_name'], c2)
+            c1 = u'\u3070'  # ば (user5)
+            qs = u'category:wiki AND modifier_name:' + c1
+            res, results = self._common_normalize(qs, user=self.user3, version=2)
+            filenames = get_filenames(results)
+            tags = get_filetags(results, self.f1.name)
+            DEBUG('results', results)
+            assert_equal(len(results), 1)
+            r = results[0]
+            c2 = u'\u306f\u3099' # は+濁点
+            assert_equal(r['modifier_id'], self.user5._id)
+            assert_equal(r['modifier_name'], c2)
+
+        run_after_rebuild_search(self, test1)
 
     def test_normalize_wiki_creator_modifier2(self):
         """
@@ -1293,29 +1409,39 @@ class TestSearchExt(OsfTestCase):
         # modifier
         self._update_wiki(self.project_private_user4, self.user6, 2)
 
-        c1 = u'\u304d\u3099'  # き+濁点 (user4)
-        qs = u'category:wiki AND creator_name:' + c1
-        res, results = self._common_normalize(qs, user=self.user4, version=2)
-        filenames = get_filenames(results)
-        tags = get_filetags(results, self.f1.name)
-        DEBUG('results', results)
-        assert_equal(len(results), 1)
-        r = results[0]
-        c2 = u'\u304e' # ぎ
-        assert_equal(r['creator_id'], self.user4._id)
-        assert_equal(r['creator_name'], c2)
+        def test1():
+            c1 = u'\u304d\u3099'  # き+濁点 (user4)
+            qs = u'category:wiki AND creator_name:' + c1
+            res, results = self._common_normalize(qs, user=self.user4, version=2)
+            filenames = get_filenames(results)
+            tags = get_filetags(results, self.f1.name)
+            DEBUG('results', results)
+            assert_equal(len(results), 1)
+            r = results[0]
+            c2 = u'\u304e' # ぎ
+            assert_equal(r['creator_id'], self.user4._id)
+            assert_equal(r['creator_name'], c2)
 
-        c1 = u'\u3072\u3099'  # ひ+濁点 (user6)
-        qs = u'category:wiki AND modifier_name:' + c1
-        res, results = self._common_normalize(qs, user=self.user4, version=2)
-        filenames = get_filenames(results)
-        tags = get_filetags(results, self.f1.name)
-        DEBUG('results', results)
-        assert_equal(len(results), 1)
-        r = results[0]
-        c2 = u'\u3073'  # び
-        assert_equal(r['modifier_id'], self.user6._id)
-        assert_equal(r['modifier_name'], c2)
+            c1 = u'\u3072\u3099'  # ひ+濁点 (user6)
+            qs = u'category:wiki AND modifier_name:' + c1
+            res, results = self._common_normalize(qs, user=self.user4, version=2)
+            filenames = get_filenames(results)
+            tags = get_filetags(results, self.f1.name)
+            DEBUG('results', results)
+            assert_equal(len(results), 1)
+            r = results[0]
+            c2 = u'\u3073'  # び
+            assert_equal(r['modifier_id'], self.user6._id)
+            assert_equal(r['modifier_name'], c2)
+
+        run_after_rebuild_search(self, test1)
+
+    _use_migrate = False
+
+    @enable_private_search
+    def test_after_rebuild_search_for_ext(self):
+        my_method_name = sys._getframe().f_code.co_name
+        run_test_all_after_rebuild_search(self, my_method_name)
 
 
 @pytest.mark.enable_search

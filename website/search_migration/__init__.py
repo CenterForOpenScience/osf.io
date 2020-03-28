@@ -421,7 +421,7 @@ FROM osf_basefilenode AS F
             INNER JOIN osf_basefilenode_versions
             ON (osf_fileversion.id = osf_basefilenode_versions.fileversion_id)
             WHERE osf_basefilenode_versions.basefilenode_id = F.id
-            ORDER BY osf_fileversion.created DESC
+            ORDER BY osf_fileversion.created ASC
             LIMIT 1
             ) FIRST ON TRUE
   LEFT JOIN LATERAL (
@@ -430,7 +430,7 @@ FROM osf_basefilenode AS F
             INNER JOIN osf_basefilenode_versions
             ON (osf_fileversion.id = osf_basefilenode_versions.fileversion_id)
             WHERE osf_basefilenode_versions.basefilenode_id = F.id
-            ORDER BY osf_fileversion.created ASC
+            ORDER BY osf_fileversion.created DESC
             LIMIT 1
             ) LAST ON TRUE
   LEFT JOIN LATERAL (
