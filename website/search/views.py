@@ -128,7 +128,7 @@ def _private_search(doc_type, auth, raw=False):
         qs = es_dsl['query']['filtered']['query']['query_string']['query']
         start = es_dsl['from']
         size = es_dsl['size']
-        sort = es_dsl.get('sort', None)
+        sort = json.get('sort', None)
     elif request.method == 'GET':
         version = toint(request.args.get('version', None))
         vendor = request.args.get('vendor', None)

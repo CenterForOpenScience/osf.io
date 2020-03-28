@@ -20,7 +20,10 @@ from tests.utils import run_celery_tasks
 from website import settings
 from website.util import web_url_for, api_url_for
 from website.views import find_bookmark_collection
+import website.search.search as search
 from addons.wiki.models import WikiPage
+from addons.osfstorage import settings as osfstorage_settings
+from addons.osfstorage.models import OsfStorageFileNode
 
 from website.search.util import (quote_query_string, convert_query_string,
                                  NORMALIZED_FIELDS)
@@ -56,14 +59,19 @@ def build_query(query_string):
     }
 
 
-def build_private_search_query(query_string, version=1):
-    return {
+def build_private_search_query(query_string, version=1, sort=None):
+    q = {
         'api_version': {
             'version': version,
             'vendor': 'grdm'
         },
         'elasticsearch_dsl': build_query(query_string)
     }
+    if sort:
+        q['sort'] = sort
+    DEBUG('build_private_search_query', q)
+    return q
+
 
 def DEBUG(name, obj):
     if ENABLE_DEBUG:
@@ -154,12 +162,12 @@ def enable_private_search(func):
 
     return wrapped
 
-def setup(cls, self):
+def setup(cls, self, create_obj=True):
     super(cls, self).setUp()
-    import website.search.search as search
     search.delete_all()
-
     search.create_index(None)
+    if not create_obj:
+        return
 
     with run_celery_tasks():
         self.user1 = factories.AuthUserFactory(fullname='日本語ユーザー1')
@@ -259,14 +267,14 @@ def tear_down(cls, self):
     import website.search.search as search
     search.delete_all()
 
-def query_private_search(self, qs, user, category=None, version=1):
+def query_private_search(self, qs, user, category=None, version=1, sort=None):
     url = api_url_for('search_search')
     if category:
         url = url + category + '/'
     DEBUG('query_private_search: url=', url)
     res = self.app.post_json(
         url,
-        build_private_search_query(qs, version=version),
+        build_private_search_query(qs, version=version, sort=sort),
         auth=user.auth,
         expect_errors=True
     )
@@ -299,6 +307,25 @@ def query_for_normalize_tests(self, qs, category=None, user=None, version=1):
                                         version=version)
     return (res, results)
 
+def update_dummy_file(user, dir_node, name, version):
+    try:
+        test_file = dir_node.find_child_by_name(name)
+    except OsfStorageFileNode.DoesNotExist:
+        test_file = None
+    if test_file is None:
+        test_file = dir_node.append_file(name)
+
+    test_file.create_version(user, {
+        # NOTE: Same object as latest does not update FileVersion
+        'object': '06d80e' + str(version),
+        'service': 'cloud',
+        osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+    }, {
+        'size': 1337 + version,
+        'contentType': 'img/png'
+    }).save()
+    return test_file
+
 def nfc(text):
     return normalize('NFC', text)
 
@@ -317,12 +344,15 @@ def rebuild_search(self_):
                 index=None, app=self_.app.app)
 
 def run_after_rebuild_search(self_, func):
-    rebuild_search(self_)
-    # migrate() may not update elasticsearch-data immediately.
-    retry_call_func(func)
+    if self_._use_migrate:
+        rebuild_search(self_)
+        # migrate() may not update elasticsearch-data immediately.
+        retry_call_func(func)
+    else:
+        func()
 
 @enable_private_search
-def run_test_all_after_rebuild_search(self_, my_method_name):
+def run_test_all_after_rebuild_search(self_, my_method_name, clear_index=False):
     """
     invoke rebuild_search 相当の migrate() を実行後、
     TestPrivateSearch の各テストが成功することを確認する。
@@ -337,6 +367,10 @@ def run_test_all_after_rebuild_search(self_, my_method_name):
         DEBUG('*** method_name ***', '{}'.format(method_name))
         if method_name.startswith('test_') and \
            not method_name in EXCLUDES:
+            # print('*** after rebuild_search: {}'.format(method_name), file=sys.stderr)
+            if clear_index:
+                search.delete_all()
+                search.create_index(None)
             # migrate() may not update elasticsearch-data immediately.
             retry_call_func(getattr(self_, method_name))
         self_._use_migrate = False
@@ -988,28 +1022,11 @@ class TestPrivateSearch(OsfTestCase):
 
     @enable_private_search
     def _update_file(self, project, user, count):
-        from addons.osfstorage import settings as osfstorage_settings
-        from addons.osfstorage.models import OsfStorageFileNode
-
         with run_celery_tasks():
             osfstorage = project.get_addon('osfstorage')
             root_node = osfstorage.get_root()
             name = 'test_file'
-            try:
-                test_file = root_node.find_child_by_name(name)
-            except OsfStorageFileNode.DoesNotExist:
-                test_file = None
-            if test_file is None:
-                test_file = root_node.append_file(name)
-            test_file.create_version(user, {
-                  # NOTE: Same object as latest does not update FileVersion
-                'object': '06d80e' + str(count),
-                'service': 'cloud',
-                osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
-            }, {
-                'size': 1337,
-                'contentType': 'img/png'
-            }).save()
+            test_file = update_dummy_file(user, root_node, name, count)
 
         assert_equal(test_file.versions.count(), count)
         # first() of file.versions is latest
@@ -1281,8 +1298,6 @@ class TestSearchExt(OsfTestCase):
         """
         qs = u'\u3056'  # ざ
         res, results = self._common_normalize(qs, 'wiki', version=2)
-        node_titles = get_node_titles(results)
-        tags = get_tags(results, self.project_private_user1_1.title)
         DEBUG('results', results)
         assert_equal(len(results), 1)
         r = results[0]
@@ -1297,8 +1312,6 @@ class TestSearchExt(OsfTestCase):
         """
         qs = u'category:wiki AND \u3057\u3099'  # し+濁点
         res, results = self._common_normalize(qs, version=2)
-        node_titles = get_node_titles(results)
-        tags = get_tags(results, self.project_private_user1_1.title)
         DEBUG('results', results)
         assert_equal(len(results), 1)
         r = results[0]
@@ -1314,8 +1327,6 @@ class TestSearchExt(OsfTestCase):
         """
         qs = u'\u305a'  # ず
         res, results = self._common_normalize(qs, 'wiki', version=2)
-        node_titles = get_node_titles(results)
-        tags = get_tags(results, self.project_private_user1_1.title)
         DEBUG('results', results)
         assert_equal(len(results), 1)
         r = results[0]
@@ -1332,8 +1343,6 @@ class TestSearchExt(OsfTestCase):
         c1 = u'\u305b\u3099'  # せ+濁点
         qs = u'category:wiki AND ' + c1
         res, results = self._common_normalize(qs, version=2)
-        node_titles = get_node_titles(results)
-        tags = get_tags(results, self.project_private_user1_1.title)
         DEBUG('results', results)
         assert_equal(len(results), 1)
         r = results[0]
@@ -1374,8 +1383,6 @@ class TestSearchExt(OsfTestCase):
             c1 = u'\u304c'  # が (user3)
             qs = u'category:wiki AND creator_name:' + c1
             res, results = self._common_normalize(qs, user=self.user3, version=2)
-            filenames = get_filenames(results)
-            tags = get_filetags(results, self.f1.name)
             DEBUG('results', results)
             assert_equal(len(results), 1)
             r = results[0]
@@ -1386,8 +1393,6 @@ class TestSearchExt(OsfTestCase):
             c1 = u'\u3070'  # ば (user5)
             qs = u'category:wiki AND modifier_name:' + c1
             res, results = self._common_normalize(qs, user=self.user3, version=2)
-            filenames = get_filenames(results)
-            tags = get_filetags(results, self.f1.name)
             DEBUG('results', results)
             assert_equal(len(results), 1)
             r = results[0]
@@ -1443,6 +1448,244 @@ class TestSearchExt(OsfTestCase):
         my_method_name = sys._getframe().f_code.co_name
         run_test_all_after_rebuild_search(self, my_method_name)
 
+
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
+class TestSearchSort(OsfTestCase):
+
+    @enable_private_search
+    def setUp(self):
+        setup(TestSearchSort, self, create_obj=False)
+
+    @enable_private_search
+    def tearDown(self):
+        tear_down(TestSearchSort, self)
+
+    @enable_private_search
+    def test_search_sort_project(self):
+        with run_celery_tasks():
+            u1 = factories.AuthUserFactory()
+            p1 = factories.ProjectFactory(
+                title=u'あいうえお',
+                creator=u1,
+                is_public=False)
+            p2 = factories.ProjectFactory(
+                title=u'かきくけこ',
+                creator=u1,
+                is_public=False)
+            p3 = factories.ProjectFactory(
+                title=u'さしすせそ',
+                creator=u1,
+                is_public=False)
+
+        def _search(sort):
+            qs = 'creator_id:' + u1._id
+            return query_private_search(
+                self, qs, u1, category='project', version=2, sort=sort)
+
+        def test1():
+            asc_list = ('created_asc', 'modified_asc', 'project_asc')
+            for sort in asc_list:
+                res, results = _search(sort)
+                DEBUG('results', results)
+                assert_equal(len(results), 3)
+                assert_equal(results[0]['title'], p1.title)
+                assert_equal(results[1]['title'], p2.title)
+                assert_equal(results[2]['title'], p3.title)
+
+            # default: sort=None -> modified_desc
+            desc_list = (None, 'created_desc', 'modified_desc', 'project_desc')
+            for sort in desc_list:
+                res, results = _search(sort)
+                DEBUG('results', results)
+                assert_equal(len(results), 3)
+                assert_equal(results[0]['title'], p3.title)
+                assert_equal(results[1]['title'], p2.title)
+                assert_equal(results[2]['title'], p1.title)
+
+        run_after_rebuild_search(self, test1)
+
+    @enable_private_search
+    def test_search_sort_file(self):
+        with run_celery_tasks():
+            u1 = factories.AuthUserFactory()
+            p1 = factories.ProjectFactory(
+                creator=u1,
+                is_public=False)
+            rootdir = p1.get_addon('osfstorage').get_root()
+            f1 = update_dummy_file(u1, rootdir, u'あいうえお', 1)
+            f2 = update_dummy_file(u1, rootdir, u'かきくけこ', 1)
+            f3 = update_dummy_file(u1, rootdir, u'さしすせそ', 1)
+
+        def _search(sort):
+            qs = 'creator_id:' + u1._id
+            return query_private_search(
+                self, qs, u1, category='file', version=2, sort=sort)
+
+        def test1():
+            asc_list = ('created_asc', 'modified_asc', 'project_asc', 'file_asc')
+            for sort in asc_list:
+                res, results = _search(sort)
+                DEBUG('results', results)
+                assert_equal(len(results), 3)
+                assert_equal(results[0]['name'], f1.name)
+                assert_equal(results[1]['name'], f2.name)
+                assert_equal(results[2]['name'], f3.name)
+
+            # default: sort=None -> modified_desc
+            desc_list = (None, 'created_desc', 'modified_desc', 'project_desc', 'file_desc')
+            for sort in desc_list:
+                res, results = _search(sort)
+                DEBUG('results', results)
+                assert_equal(len(results), 3)
+                assert_equal(results[0]['name'], f3.name)
+                assert_equal(results[1]['name'], f2.name)
+                assert_equal(results[2]['name'], f1.name)
+
+        run_after_rebuild_search(self, test1)
+
+    @enable_private_search
+    def test_search_sort_wiki(self):
+        with run_celery_tasks():
+            u1 = factories.AuthUserFactory()
+            p1 = factories.ProjectFactory(
+                creator=u1,
+                is_public=False)
+            n1 = u'あいうえお'
+            n2 = u'かきくけこ'
+            n3 = u'さしすせそ'
+            w1 = WikiPage.objects.create_for_node(p1, n1, n1, Auth(u1))
+            w2 = WikiPage.objects.create_for_node(p1, n2, n2, Auth(u1))
+            w2 = WikiPage.objects.create_for_node(p1, n3, n3, Auth(u1))
+
+        def _search(sort):
+            qs = 'creator_id:' + u1._id
+            return query_private_search(
+                self, qs, u1, category='wiki', version=2, sort=sort)
+
+        def test1():
+            asc_list = ('created_asc', 'modified_asc', 'project_asc', 'wiki_asc')
+            for sort in asc_list:
+                res, results = _search(sort)
+                DEBUG('results', results)
+                assert_equal(len(results), 3)
+                assert_equal(results[0]['name'], n1)
+                assert_equal(results[1]['name'], n2)
+                assert_equal(results[2]['name'], n3)
+
+            # default: sort=None -> modified_desc
+            desc_list = (None, 'created_desc', 'modified_desc', 'project_desc', 'wiki_desc')
+            for sort in desc_list:
+                res, results = _search(sort)
+                DEBUG('results', results)
+                assert_equal(len(results), 3)
+                assert_equal(results[0]['name'], n3)
+                assert_equal(results[1]['name'], n2)
+                assert_equal(results[2]['name'], n1)
+
+        run_after_rebuild_search(self, test1)
+
+    @enable_private_search
+    def test_search_sort_user(self):
+        with run_celery_tasks():
+            n1 = u'あいうえお'
+            n2 = u'かきくけこ'
+            n3 = u'さしすせそ'
+            u1 = factories.AuthUserFactory(fullname=n1)
+            u2 = factories.AuthUserFactory(fullname=n2)
+            u3 = factories.AuthUserFactory(fullname=n3)
+
+        def _search(sort):
+            qs = '*'
+            return query_private_search(
+                self, qs, u1, category='user', version=2, sort=sort)
+
+        def test1():
+            asc_list = ('created_asc', 'modified_asc', 'user_asc')
+            for sort in asc_list:
+                res, results = _search(sort)
+                DEBUG('results', results)
+                assert_equal(len(results), 3)
+                assert_equal(results[0]['user'], n1)
+                assert_equal(results[1]['user'], n2)
+                assert_equal(results[2]['user'], n3)
+
+            # default: sort=None -> modified_desc
+            desc_list = (None, 'created_desc', 'modified_desc', 'user_desc')
+            for sort in desc_list:
+                res, results = _search(sort)
+                DEBUG('results', results)
+                assert_equal(len(results), 3)
+                assert_equal(results[0]['user'], n3)
+                assert_equal(results[1]['user'], n2)
+                assert_equal(results[2]['user'], n1)
+
+        run_after_rebuild_search(self, test1)
+
+    @enable_private_search
+    def test_search_sort_institution(self):
+        with run_celery_tasks():
+            n1 = u'あいうえお'
+            n2 = u'かきくけこ'
+            n3 = u'さしすせそ'
+            i1 = factories.InstitutionFactory(name=n1)
+            i2 = factories.InstitutionFactory(name=n2)
+            i3 = factories.InstitutionFactory(name=n3)
+            u1 = factories.AuthUserFactory()
+
+        def _search(sort):
+            qs = '*'
+            return query_private_search(
+                self, qs, u1, category='institution', version=2, sort=sort)
+
+        def test1():
+            asc_list = ('created_asc', 'modified_asc', 'institution_asc')
+            for sort in asc_list:
+                res, results = _search(sort)
+                DEBUG('results', results)
+                assert_equal(len(results), 3)
+                assert_equal(results[0]['name'], n1)
+                assert_equal(results[1]['name'], n2)
+                assert_equal(results[2]['name'], n3)
+
+            # default: sort=None -> modified_desc
+            desc_list = (None, 'created_desc', 'modified_desc', 'user_desc')
+            for sort in desc_list:
+                res, results = _search(sort)
+                DEBUG('results', results)
+                assert_equal(len(results), 3)
+                assert_equal(results[0]['name'], n3)
+                assert_equal(results[1]['name'], n2)
+                assert_equal(results[2]['name'], n1)
+
+        run_after_rebuild_search(self, test1)
+
+    @enable_private_search
+    def test_search_sort_unknown(self):
+        with run_celery_tasks():
+            u1 = factories.AuthUserFactory()
+
+        def _search(sort):
+            qs = '*'
+            return query_private_search(
+                self, qs, u1, version=2, sort=sort)
+
+        unknown_list = ('unknown_asc', 'project_unknown', '__')
+        for sort in unknown_list:
+            res, results = _search(sort)
+            expected_msg = 'unknown sort parameter: {}'.format(sort)
+            assert_equal(res.status_code, 400)
+            assert_equal(res.json.get('code'), 400)
+            assert_equal(res.json.get('message_short'), expected_msg)
+            assert_equal(res.json.get('message_long'), expected_msg)
+
+    _use_migrate = False
+
+    @enable_private_search
+    def test_after_rebuild_search_for_sort(self):
+        my_method_name = sys._getframe().f_code.co_name
+        run_test_all_after_rebuild_search(self, my_method_name,
+                                          clear_index=True)
 
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task

@@ -171,7 +171,11 @@ def sql_migrate(index, sql, max_id, increment, es_args=None, **kwargs):
 
 def migrate_nodes(index, delete, increment=10000):
     logger.info('Migrating nodes to index: {}'.format(index))
-    max_nid = AbstractNode.objects.last().id
+    last = AbstractNode.objects.last()
+    if last is None:
+        logger.info('0 node migrated')
+        return
+    max_nid = last.id
     total_nodes = sql_migrate(
         index,
         JSON_UPDATE_NODES_SQL,
@@ -241,7 +245,11 @@ def migrate_comments(index, delete):
 
 def migrate_files(index, delete, increment=10000):
     logger.info('Migrating files to index: {}'.format(index))
-    max_fid = BaseFileNode.objects.last().id
+    last = BaseFileNode.objects.last()
+    if last is None:
+        logger.info('0 file migrated')
+        return
+    max_fid = last.id
     total_files = sql_migrate(
         index,
         JSON_UPDATE_FILES_SQL,
@@ -263,7 +271,11 @@ def migrate_files(index, delete, increment=10000):
 
 def migrate_users(index, delete, increment=10000):
     logger.info('Migrating users to index: {}'.format(index))
-    max_uid = OSFUser.objects.last().id
+    last = OSFUser.objects.last()
+    if last is None:
+        logger.info('0 user migrated')
+        return
+    max_uid = last.id
     total_users = sql_migrate(
         index,
         JSON_UPDATE_USERS_SQL,

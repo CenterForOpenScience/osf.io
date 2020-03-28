@@ -431,20 +431,20 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
         },
         'from': start,
         'size': size,
+        'sort': sort_query(sort),
     }
-
-    if sort:
-        query['sort'] = sort_query(sort)
-
     return query
 
 def sort_query(sort):
+    if sort is None:  # default
+        sort = 'modified_desc'
+
     def _split_target_order(sort):
         try:
             to = sort.split('_')
             return to[0], to[1]
         except Exception:
-            return None, None  # use default
+            return None, None
 
     target, order = _split_target_order(sort)
 
@@ -466,8 +466,6 @@ def sort_query(sort):
         raise Exception(ERROR)
 
     if target == 'project':
-        if order is None:
-            order = ASC
         query = [
             {PROJECT: order},
             {FILE: order},
@@ -478,8 +476,6 @@ def sort_query(sort):
             {SCORE: ASC}
         ]
     elif target == 'file':
-        if order is None:
-            order = ASC
         query = [
             {FILE: order},
             {PROJECT: order},
@@ -490,8 +486,6 @@ def sort_query(sort):
             {SCORE: ASC}
         ]
     elif target == 'wiki':
-        if order is None:
-            order = ASC
         query = [
             {WIKI: order},
             {PROJECT: order},
@@ -502,8 +496,6 @@ def sort_query(sort):
             {SCORE: ASC}
         ]
     elif target == 'user':
-        if order is None:
-            order = ASC
         query = [
             {USER: order},
             {PROJECT: order},
@@ -514,8 +506,6 @@ def sort_query(sort):
             {SCORE: ASC}
         ]
     elif target == 'institution':
-        if order is None:
-            order = ASC
         query = [
             {INSTITUTION: order},
             {PROJECT: order},
@@ -526,8 +516,6 @@ def sort_query(sort):
             {SCORE: ASC}
         ]
     elif target == 'created':
-        if order is None:
-            order = DESC
         query = [
             {CREATED: order},
             {PROJECT: ASC},
@@ -537,9 +525,7 @@ def sort_query(sort):
             {INSTITUTION: ASC},
             {SCORE: ASC}
         ]
-    elif target is None or target == 'modified':
-        if order is None:
-            order = DESC
+    elif target == 'modified':
         query = [
             {MODIFIED: order},
             {PROJECT: ASC},

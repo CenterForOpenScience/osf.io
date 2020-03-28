@@ -642,6 +642,7 @@ def serialize_node(node, category):
         ],
         'title': node.title,
         'normalized_title': normalized_title,
+        'sort_node_name': node.title,
         'category': category,
         'public': node.is_public,
         'tags': tags,
