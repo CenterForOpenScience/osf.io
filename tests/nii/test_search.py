@@ -346,6 +346,8 @@ def rebuild_search(self_):
                 index=None, app=self_.app.app)
 
 def run_after_rebuild_search(self_, func):
+    # run_test_all_after_rebuild_search から呼ばれたテスト内で
+    # rebuild_search を実行したい場合に利用する。
     if self_._use_migrate:
         rebuild_search(self_)
         # migrate() may not update elasticsearch-data immediately.
@@ -355,10 +357,6 @@ def run_after_rebuild_search(self_, func):
 
 @enable_private_search
 def run_test_all_after_rebuild_search(self_, my_method_name, clear_index=False):
-    """
-    invoke rebuild_search 相当の migrate() を実行後、
-    TestPrivateSearch の各テストが成功することを確認する。
-    """
     self_._use_migrate = True
     rebuild_search(self_)
 
@@ -1224,6 +1222,10 @@ class TestPrivateSearch(OsfTestCase):
 
     @enable_private_search
     def test_after_rebuild_search(self):
+        """
+        invoke rebuild_search 相当の migrate() を実行後、
+        TestPrivateSearch の各テストが成功することを確認する。
+        """
         my_method_name = sys._getframe().f_code.co_name
         run_test_all_after_rebuild_search(self, my_method_name)
 
@@ -1243,8 +1245,8 @@ class TestSearchExt(OsfTestCase):
     @enable_private_search
     def test_private_search_user1_ext(self):
         """
-        test_private_search_user1をversion=2で検索し、
-        wikiとcommentを検索できることを確認する。
+        test_private_search_user1と同様の検索をversion=2で実行し、
+        user1だけがアクセス可能なwikiとcommentを検索できることを確認する。
         """
         qs = '日本語'
         res, results = query_private_search(self, qs, self.user1, version=2)
@@ -1447,6 +1449,10 @@ class TestSearchExt(OsfTestCase):
 
     @enable_private_search
     def test_after_rebuild_search_for_ext(self):
+        """
+        invoke rebuild_search 相当の migrate() を実行後、
+        TestSearchExt の各テストが成功することを確認する。
+        """
         my_method_name = sys._getframe().f_code.co_name
         run_test_all_after_rebuild_search(self, my_method_name)
 
@@ -1482,10 +1488,20 @@ class TestSearchHighlight(OsfTestCase):
 
     @enable_private_search
     def test_highlight_prj_comment(self):
+        """
+        プロジェクトに付加したコメントを検索できることを確認する。
+        マッチしたコメントのうち、最後のコメントであることを確認する。
+        コメントはスニペットになっていることを確認する。
+        コメントしたユーザーの情報があることを確認する。
+        返信コメントの場合は返信相手の情報があることを確認する。
+        """
         with run_celery_tasks():
             u1 = factories.AuthUserFactory()
             u2 = factories.AuthUserFactory()
             p1 = factories.ProjectFactory(creator=u1, is_public=False)
+            c_old = factories.CommentFactory(
+                node=p1, user=u1, page=Comment.OVERVIEW,
+                content=u'ぎぐげ')  # old and short comment
             c1 = factories.CommentFactory(
                 node=p1, user=u1, page=Comment.OVERVIEW,
                 content=self._gen_text(u'がぎぐげご'))
@@ -1536,12 +1552,23 @@ class TestSearchHighlight(OsfTestCase):
 
     @enable_private_search
     def test_highlight_file_comment(self):
+        """
+        ファイルに付加したコメントを検索できることを確認する。
+        マッチしたコメントのうち、最後のコメントであることを確認する。
+        コメントはスニペットになっていることを確認する。
+        コメントしたユーザーの情報があることを確認する。
+        返信コメントの場合は返信相手の情報があることを確認する。
+        """
         with run_celery_tasks():
             u1 = factories.AuthUserFactory()
             u2 = factories.AuthUserFactory()
             p1 = factories.ProjectFactory(creator=u1, is_public=False)
             rootdir = p1.get_addon('osfstorage').get_root()
             f1 = api_utils.create_test_file(p1, u1, create_guid=True)
+            c_old = factories.CommentFactory(
+                node=p1, user=u1, page=Comment.FILES,
+                target=f1.get_guid(create=False),
+                content=u'ぎぐげ')  # old and short comment
             c1 = factories.CommentFactory(
                 node=p1, user=u1, page=Comment.FILES,
                 target=f1.get_guid(create=False),
@@ -1593,12 +1620,23 @@ class TestSearchHighlight(OsfTestCase):
 
     @enable_private_search
     def test_highlight_wiki_comment(self):
+        """
+        Wikiに付加したコメントを検索できることを確認する。
+        マッチしたコメントのうち、最後のコメントであることを確認する。
+        コメントはスニペットになっていることを確認する。
+        コメントしたユーザーの情報があることを確認する。
+        返信コメントの場合は返信相手の情報があることを確認する。
+        """
         with run_celery_tasks():
             u1 = factories.AuthUserFactory()
             u2 = factories.AuthUserFactory()
             p1 = factories.ProjectFactory(creator=u1, is_public=False)
             w1 = WikiPage.objects.create_for_node(
                 p1, 'test_wiki', 'test_wiki', Auth(u1))
+            c_old = factories.CommentFactory(
+                node=p1, user=u1, page=Comment.WIKI,
+                target=Guid.load(w1._id),
+                content=u'ぎぐげ')  # old and short comment
             c1 = factories.CommentFactory(
                 node=p1, user=u1, page=Comment.WIKI,
                 target=Guid.load(w1._id),
@@ -1650,6 +1688,9 @@ class TestSearchHighlight(OsfTestCase):
 
     @enable_private_search
     def test_highlight_wiki_title_text(self):
+        """
+        Wikiのページ名と内容のスニペットが返ることを確認する。
+        """
         with run_celery_tasks():
             u1 = factories.AuthUserFactory()
             u2 = factories.AuthUserFactory()
@@ -1695,6 +1736,10 @@ class TestSearchHighlight(OsfTestCase):
 
     @enable_private_search
     def test_after_rebuild_search_for_highlight(self):
+        """
+        invoke rebuild_search 相当の migrate() を実行後、
+        TestSearchHighlight の各テストが成功することを確認する。
+        """
         my_method_name = sys._getframe().f_code.co_name
         run_test_all_after_rebuild_search(self, my_method_name,
                                           clear_index=True)
@@ -1713,6 +1758,11 @@ class TestSearchSort(OsfTestCase):
 
     @enable_private_search
     def test_search_sort_project(self):
+        """
+        プロジェクトの検索結果を、更新日時、作成日時、プロジェクト名、それ
+        ぞれ昇順・降順にソートできることを確認する。ソート順を指定しない場
+        合、デフォルトでは更新日時の降順であることを確認する。
+        """
         with run_celery_tasks():
             u1 = factories.AuthUserFactory()
             p1 = factories.ProjectFactory(
@@ -1757,6 +1807,11 @@ class TestSearchSort(OsfTestCase):
 
     @enable_private_search
     def test_search_sort_file(self):
+        """
+        ファイルの検索結果を、更新日時、作成日時、プロジェクト名、ファイル
+        名、それぞれ昇順・降順にソートできることを確認する。ソート順を指定
+        しない場合、デフォルトでは更新日時の降順であることを確認する。
+        """
         with run_celery_tasks():
             u1 = factories.AuthUserFactory()
             p1 = factories.ProjectFactory(
@@ -1796,6 +1851,11 @@ class TestSearchSort(OsfTestCase):
 
     @enable_private_search
     def test_search_sort_wiki(self):
+        """
+        Wikiの検索結果を、更新日時、作成日時、プロジェクト名、Wikiページ名、
+        それぞれ昇順・降順にソートできることを確認する。ソート順を指定しな
+        い場合、デフォルトでは更新日時の降順であることを確認する。
+        """
         with run_celery_tasks():
             u1 = factories.AuthUserFactory()
             p1 = factories.ProjectFactory(
@@ -1837,6 +1897,11 @@ class TestSearchSort(OsfTestCase):
 
     @enable_private_search
     def test_search_sort_user(self):
+        """
+        ユーザーの検索結果を、更新日時、作成日時、ユーザー名、それぞれ昇順・
+        降順にソートできることを確認する。ソート順を指定しない場合、デフォ
+        ルトでは更新日時の降順であることを確認する。
+        """
         with run_celery_tasks():
             n1 = u'あいうえお'
             n2 = u'かきくけこ'
@@ -1874,6 +1939,11 @@ class TestSearchSort(OsfTestCase):
 
     @enable_private_search
     def test_search_sort_institution(self):
+        """
+        機関(Institution)の検索結果を、更新日時、作成日時、機関名、それぞれ
+        昇順・降順にソートできることを確認する。ソート順を指定しない場合、
+        デフォルトでは更新日時の降順であることを確認する。
+        """
         with run_celery_tasks():
             n1 = u'あいうえお'
             n2 = u'かきくけこ'
