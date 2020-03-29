@@ -77,12 +77,13 @@ def search_search(**kwargs):
     auth = kwargs.get('auth', None)
     raw = kwargs.get('raw', False)
 
+    if raw and not settings.DEBUG_MODE:
+        raise HTTPError(http.BAD_REQUEST)
+
     tick = time.time()
 
     if settings.ENABLE_PRIVATE_SEARCH:
         results = _private_search(_type, auth, raw=raw)
-    elif raw:
-        raise HTTPError(http.BAD_REQUEST)
     else:
         results = _default_search(_type)
 
