@@ -14,9 +14,11 @@ from nose.tools import *  # noqa: F403
 from framework.auth.core import Auth
 from osf_tests import factories
 from osf_tests.test_elastic_search import retry_assertion
+from api_tests import utils as api_utils
 from tests.base import OsfTestCase
 from tests.utils import run_celery_tasks
 
+from osf.models import Guid, Comment
 from website import settings
 from website.util import web_url_for, api_url_for
 from website.views import find_bookmark_collection
@@ -1448,6 +1450,254 @@ class TestSearchExt(OsfTestCase):
         my_method_name = sys._getframe().f_code.co_name
         run_test_all_after_rebuild_search(self, my_method_name)
 
+
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
+class TestSearchHighlight(OsfTestCase):
+
+    @enable_private_search
+    def setUp(self):
+        setup(TestSearchHighlight, self, create_obj=False)
+
+    @enable_private_search
+    def tearDown(self):
+        tear_down(TestSearchHighlight, self)
+
+    tag1 = u'<b>'
+    tag2 = u'</b>'
+    taglen = len(tag1 + tag2)
+
+    def _tagged(self, text):
+        return self.tag1 + nfd(text) + self.tag2
+
+    def _gen_text(self, base, size=400):
+        len_kanji = size / 2
+        tmp = []
+        for i in range(len_kanji):
+            tmp.append(u'漢')
+        tmp.append(base)
+        for i in range(len_kanji):
+            tmp.append(u'漢')
+        return ''.join(tmp)
+
+    @enable_private_search
+    def test_highlight_prj_comment(self):
+        with run_celery_tasks():
+            u1 = factories.AuthUserFactory()
+            u2 = factories.AuthUserFactory()
+            p1 = factories.ProjectFactory(creator=u1, is_public=False)
+            c1 = factories.CommentFactory(
+                node=p1, user=u1, page=Comment.OVERVIEW,
+                content=self._gen_text(u'がぎぐげご'))
+            c2_reply = factories.CommentFactory(
+                node=p1, user=u2, page=Comment.OVERVIEW,
+                target=Guid.load(c1._id),
+                content=self._gen_text(u'ざじずぜぞ'))
+
+        def _search(qs):
+            return query_private_search(
+                self, qs, u1, category='project', version=2)
+
+        def test1():
+            qs = u'ぎぐげ'
+            res, results = _search(qs)
+            DEBUG('results', results)
+            assert_equal(len(results), 1)
+            r = results[0]
+            comment = r.get('comment')
+            assert_equal(comment['user_id'], u1._id)
+            assert_equal(comment['user_name'], u1.fullname)
+            assert_equal(comment['replyto_user_id'], None)
+            assert_equal(comment['replyto_user_name'], None)
+            assert_in(self._tagged(qs), comment['text'])
+            size = len(comment['text'])
+            assert_greater_equal(size,
+                                 settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE)
+            assert_less_equal(size,
+                              settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE + self.taglen)
+
+            qs = u'じずぜ'
+            res, results = _search(qs)
+            DEBUG('results', results)
+            assert_equal(len(results), 1)
+            r = results[0]
+            comment = r.get('comment')
+            assert_equal(comment['user_id'], u2._id)
+            assert_equal(comment['user_name'], u2.fullname)
+            assert_equal(comment['replyto_user_id'], u1._id)
+            assert_equal(comment['replyto_user_name'], u1.fullname)
+            assert_in(self._tagged(qs), comment['text'])
+            assert_greater_equal(len(comment['text']),
+                                 settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE)
+            assert_less_equal(len(comment['text']),
+                              settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE + self.taglen)
+
+        run_after_rebuild_search(self, test1)
+
+    @enable_private_search
+    def test_highlight_file_comment(self):
+        with run_celery_tasks():
+            u1 = factories.AuthUserFactory()
+            u2 = factories.AuthUserFactory()
+            p1 = factories.ProjectFactory(creator=u1, is_public=False)
+            rootdir = p1.get_addon('osfstorage').get_root()
+            f1 = api_utils.create_test_file(p1, u1, create_guid=True)
+            c1 = factories.CommentFactory(
+                node=p1, user=u1, page=Comment.FILES,
+                target=f1.get_guid(create=False),
+                content=self._gen_text(u'がぎぐげご'))
+            c2_reply = factories.CommentFactory(
+                node=p1, user=u2, page=Comment.FILES,
+                target=Guid.load(c1._id),
+                content=self._gen_text(u'ざじずぜぞ'))
+
+        def _search(qs):
+            return query_private_search(
+                self, qs, u1, category='file', version=2)
+
+        def test1():
+            qs = u'ぎぐげ'
+            res, results = _search(qs)
+            DEBUG('results', results)
+            assert_equal(len(results), 1)
+            r = results[0]
+            comment = r.get('comment')
+            assert_equal(comment['user_id'], u1._id)
+            assert_equal(comment['user_name'], u1.fullname)
+            assert_equal(comment['replyto_user_id'], None)
+            assert_equal(comment['replyto_user_name'], None)
+            assert_in(self._tagged(qs), comment['text'])
+            size = len(comment['text'])
+            assert_greater_equal(size,
+                                 settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE)
+            assert_less_equal(size,
+                              settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE + self.taglen)
+
+            qs = u'じずぜ'
+            res, results = _search(qs)
+            DEBUG('results', results)
+            assert_equal(len(results), 1)
+            r = results[0]
+            comment = r.get('comment')
+            assert_equal(comment['user_id'], u2._id)
+            assert_equal(comment['user_name'], u2.fullname)
+            assert_equal(comment['replyto_user_id'], u1._id)
+            assert_equal(comment['replyto_user_name'], u1.fullname)
+            assert_in(self._tagged(qs), comment['text'])
+            assert_greater_equal(len(comment['text']),
+                                 settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE)
+            assert_less_equal(len(comment['text']),
+                              settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE + self.taglen)
+
+        run_after_rebuild_search(self, test1)
+
+    @enable_private_search
+    def test_highlight_wiki_comment(self):
+        with run_celery_tasks():
+            u1 = factories.AuthUserFactory()
+            u2 = factories.AuthUserFactory()
+            p1 = factories.ProjectFactory(creator=u1, is_public=False)
+            w1 = WikiPage.objects.create_for_node(
+                p1, 'test_wiki', 'test_wiki', Auth(u1))
+            c1 = factories.CommentFactory(
+                node=p1, user=u1, page=Comment.WIKI,
+                target=Guid.load(w1._id),
+                content=self._gen_text(u'がぎぐげご'))
+            c2_reply = factories.CommentFactory(
+                node=p1, user=u2, page=Comment.WIKI,
+                target=Guid.load(c1._id),
+                content=self._gen_text(u'ざじずぜぞ'))
+
+        def _search(qs):
+            return query_private_search(
+                self, qs, u1, category='wiki', version=2)
+
+        def test1():
+            qs = u'ぎぐげ'
+            res, results = _search(qs)
+            DEBUG('results', results)
+            assert_equal(len(results), 1)
+            r = results[0]
+            comment = r.get('comment')
+            assert_equal(comment['user_id'], u1._id)
+            assert_equal(comment['user_name'], u1.fullname)
+            assert_equal(comment['replyto_user_id'], None)
+            assert_equal(comment['replyto_user_name'], None)
+            assert_in(self._tagged(qs), comment['text'])
+            size = len(comment['text'])
+            assert_greater_equal(size,
+                                 settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE)
+            assert_less_equal(size,
+                              settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE + self.taglen)
+
+            qs = u'じずぜ'
+            res, results = _search(qs)
+            DEBUG('results', results)
+            assert_equal(len(results), 1)
+            r = results[0]
+            comment = r.get('comment')
+            assert_equal(comment['user_id'], u2._id)
+            assert_equal(comment['user_name'], u2.fullname)
+            assert_equal(comment['replyto_user_id'], u1._id)
+            assert_equal(comment['replyto_user_name'], u1.fullname)
+            assert_in(self._tagged(qs), comment['text'])
+            assert_greater_equal(len(comment['text']),
+                                 settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE)
+            assert_less_equal(len(comment['text']),
+                              settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE + self.taglen)
+
+        run_after_rebuild_search(self, test1)
+
+    @enable_private_search
+    def test_highlight_wiki_title_text(self):
+        with run_celery_tasks():
+            u1 = factories.AuthUserFactory()
+            u2 = factories.AuthUserFactory()
+            p1 = factories.ProjectFactory(creator=u1, is_public=False)
+            w1 = WikiPage.objects.create_for_node(
+                p1,
+                self._gen_text(u'だぢづでど', 100),
+                self._gen_text(u'ばびぶべぼ'),
+                Auth(u1))
+
+        def _search(qs):
+            return query_private_search(
+                self, qs, u1, category='wiki', version=2)
+
+        def test1():
+            qs = u'ぢづで'
+            res, results = _search(qs)
+            DEBUG('results', results)
+            assert_equal(len(results), 1)
+            r = results[0]
+            assert_equal(r['id'], w1._id)
+            title = r['highlight']['name'][0]
+            assert_in(self._tagged(qs), title)
+            ### title length < highlight fragment size
+
+            qs = u'びぶべ'
+            res, results = _search(qs)
+            DEBUG('results', results)
+            assert_equal(len(results), 1)
+            r = results[0]
+            assert_equal(r['id'], w1._id)
+            text = r['highlight']['text'][0]
+            assert_in(self._tagged(qs), text)
+            size = len(text)
+            assert_greater_equal(size,
+                                 settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE)
+            assert_less_equal(size,
+                              settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE + self.taglen)
+
+        run_after_rebuild_search(self, test1)
+
+    _use_migrate = False
+
+    @enable_private_search
+    def test_after_rebuild_search_for_highlight(self):
+        my_method_name = sys._getframe().f_code.co_name
+        run_test_all_after_rebuild_search(self, my_method_name,
+                                          clear_index=True)
 
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task

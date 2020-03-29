@@ -412,6 +412,9 @@ def format_results(results):
                 result['ongoing_school_degree'] = school.get('degree', '')
         elif category == 'wiki':
             # get unnormalized names
+            wiki = WikiPage.load(result['id'])
+            if wiki:
+                result['name'] = wiki.page_name
             creator_id, creator_name = user_id_fullname(
                 result.get('creator_id'))
             modifier_id, modifier_name = user_id_fullname(
@@ -760,8 +763,7 @@ def serialize_wiki(wiki_page, category):
 
     elastic_document = {
         'id': w._id,
-        'name': name,
-        'normalized_name': normalized_name,
+        'name': normalized_name,
         'sort_wiki_name': name,
         'sort_node_name': node.title,
         'category': category,
@@ -827,18 +829,16 @@ def serialize_comment(comment, category):
     elastic_document = {}
     page_id = ''  # GUID
     page_name = ''
-    if c.page == Comment.OVERVIEW:
-        page_id = c.node._id
-        page_name = c.node.title
-    elif c.page == Comment.FILES:
+    if c.page == Comment.FILES:
         guid = c.root_target.referent.get_guid(create=False)
         page_id = guid._id if guid else None
         page_name = c.root_target.referent.name
     elif c.page == Comment.WIKI:
         page_id = c.root_target.referent._id
         page_name = c.root_target.referent.page_name
-    else:
-        return None
+    else:  # c.page == Comment.OVERVIEW
+        page_id = c.node._id
+        page_name = c.node.title
 
     replyto_user_id = ''
     replyto_username = ''
