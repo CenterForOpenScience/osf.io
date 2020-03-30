@@ -43,7 +43,7 @@ def inactive(*args, **kwargs):
 @pytest.mark.django_db
 class TestSloanStudyWaffling:
     """
-    DEV_MODE is mocked so cookies they behave as in they using https.
+    DEV_MODE is mocked so cookies they behave as if they were using https.
     """
 
     @pytest.fixture()
