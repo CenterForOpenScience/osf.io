@@ -8,7 +8,7 @@ var osfHelpers = require('js/osfHelpers');
 var language = require('js/osfLanguage').Addons.iqbrims;
 
 var rdmGettext = require('js/rdmGettext');
-var defaultDomain = ['language','Addons','iqbrims'];
+var defaultDomain = 'Addons';
 var osfLanguage = new rdmGettext.OsfLanguage(defaultDomain);
 
 var logPrefix = '[iqbrims] ';
