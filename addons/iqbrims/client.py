@@ -848,6 +848,20 @@ class IQBRIMSWorkflowUserSettings(object):
             return json.loads(current['settings']['MESSAGES'])
         return settings.MESSAGES
 
+    @property
+    def INDEXSHEET_FILES_SHEET_NAME(self):
+        current = self.load()
+        if 'INDEXSHEET_FILES_SHEET_NAME' in current['settings']:
+            return current['settings']['INDEXSHEET_FILES_SHEET_NAME']
+        return settings.INDEXSHEET_FILES_SHEET_NAME
+
+    @property
+    def INDEXSHEET_MANAGEMENT_SHEET_NAME(self):
+        current = self.load()
+        if 'INDEXSHEET_MANAGEMENT_SHEET_NAME' in current['settings']:
+            return current['settings']['INDEXSHEET_MANAGEMENT_SHEET_NAME']
+        return settings.INDEXSHEET_MANAGEMENT_SHEET_NAME
+
 
 class IQBRIMSFlowableClient(BaseClient):
 

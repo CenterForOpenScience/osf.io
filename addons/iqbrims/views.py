@@ -287,14 +287,20 @@ def iqbrims_get_storage(**kwargs):
                                                        folders[0]['id']))
     all_files = client.files(folder_id=folders[0]['id'])
     files = all_files
+
+    management_node = _get_management_node(node)
+    management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
+    if management_node_addon is None:
+        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
+    user_settings = IQBRIMSWorkflowUserSettings(access_token, management_node_addon.folder_id)
+
     logger.debug(u'Result files: {}'.format([f['title'] for f in files]))
     if file_name is not None:
         files = [f for f in files
-                 if f['title'] == file_name and (validate is None or validate(access_token, f))]
+                 if f['title'] == file_name and (validate is None or validate(user_settings, access_token, f))]
     if len(files) > 0 and file_name == REVIEW_FILE_LIST:
         files = files if validate_file_list(client, files[0], all_files) else []
     folder_path = iqbrims.folder_path
-    management_node = _get_management_node(node)
     base_folder_path = management_node.get_addon('googledrive').folder_path
     assert folder_path.startswith(base_folder_path)
     root_folder_path = folder_path[len(base_folder_path):]
@@ -357,6 +363,12 @@ def iqbrims_reject_storage(**kwargs):
     except exceptions.InvalidAuthError:
         raise HTTPError(403)
 
+    management_node = _get_management_node(node)
+    management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
+    if management_node_addon is None:
+        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
+    user_settings = IQBRIMSWorkflowUserSettings(access_token, management_node_addon.folder_id)
+
     client = IQBRIMSClient(access_token)
     folder_name = None
     file_name = None
@@ -364,7 +376,7 @@ def iqbrims_reject_storage(**kwargs):
     if folder == 'index':
         folder_name = REVIEW_FOLDERS['raw']
         file_name = settings.INDEXSHEET_FILENAME
-        reject = lambda f: _iqbrims_reset_index(access_token, f)
+        reject = lambda f: _iqbrims_reset_index(user_settings, access_token, f)
     else:
         folder_name = REVIEW_FOLDERS[folder]
     folders = client.folders(folder_id=iqbrims.folder_id)
@@ -376,7 +388,6 @@ def iqbrims_reject_storage(**kwargs):
     files = [f for f in files if file_name is None or f['title'] == file_name]
 
     folder_path = iqbrims.folder_path
-    management_node = _get_management_node(node)
     base_folder_path = management_node.get_addon('googledrive').folder_path
     assert folder_path.startswith(base_folder_path)
     root_folder_path = folder_path[len(base_folder_path):]
@@ -464,26 +475,26 @@ def iqbrims_create_index(**kwargs):
     all_sheets = sclient.sheets()
     files_sheets = [s
                     for s in all_sheets
-                    if s['properties']['title'] == settings.INDEXSHEET_FILES_SHEET_NAME]
+                    if s['properties']['title'] == user_settings.INDEXSHEET_FILES_SHEET_NAME]
     mgmt_sheets = [s
                    for s in all_sheets
-                   if s['properties']['title'] == settings.INDEXSHEET_MANAGEMENT_SHEET_NAME]
+                   if s['properties']['title'] == user_settings.INDEXSHEET_MANAGEMENT_SHEET_NAME]
     logger.info('Spreadsheet: id={}, sheet={}'.format(r['id'], files_sheets))
     added = False
     if len(mgmt_sheets) == 0:
-        sclient.add_sheet(settings.INDEXSHEET_MANAGEMENT_SHEET_NAME)
+        sclient.add_sheet(user_settings.INDEXSHEET_MANAGEMENT_SHEET_NAME)
         added = True
-    if len(files_sheets) == 0:
-        sclient.add_sheet(settings.INDEXSHEET_FILES_SHEET_NAME)
+    if len(files_sheets) == 0 and user_settings.INDEXSHEET_MANAGEMENT_SHEET_NAME != user_settings.INDEXSHEET_FILES_SHEET_NAME:
+        sclient.add_sheet(user_settings.INDEXSHEET_FILES_SHEET_NAME)
         added = True
     if added:
         all_sheets = sclient.sheets()
         files_sheets = [s
                         for s in all_sheets
-                        if s['properties']['title'] == settings.INDEXSHEET_FILES_SHEET_NAME]
+                        if s['properties']['title'] == user_settings.INDEXSHEET_FILES_SHEET_NAME]
         mgmt_sheets = [s
                        for s in all_sheets
-                       if s['properties']['title'] == settings.INDEXSHEET_MANAGEMENT_SHEET_NAME]
+                       if s['properties']['title'] == user_settings.INDEXSHEET_MANAGEMENT_SHEET_NAME]
     assert len(files_sheets) == 1 and len(mgmt_sheets) == 1
     files_sheet_id = files_sheets[0]['properties']['title']
     mgmt_sheet_id = mgmt_sheets[0]['properties']['title']
@@ -755,30 +766,29 @@ def _iqbrims_update_spreadsheet(node, management_node, register_type, status):
                                              user_settings)
         sclient.update_row(sheet_id, v, row_index)
 
-def _iqbrims_filled_index(access_token, f):
+def _iqbrims_filled_index(user_settings, access_token, f):
     sclient = SpreadsheetClient(f['id'], access_token)
     sheets = [s
               for s in sclient.sheets()
-              if s['properties']['title'] == settings.INDEXSHEET_MANAGEMENT_SHEET_NAME]
+              if s['properties']['title'] == user_settings.INDEXSHEET_MANAGEMENT_SHEET_NAME]
     assert len(sheets) == 1
     sheet_props = sheets[0]['properties']
     sheet_id = sheet_props['title']
     col_count = sheet_props['gridProperties']['columnCount']
-    row_count = sheet_props['gridProperties']['rowCount']
-    logger.info('Grid: {}, {}'.format(col_count, row_count))
+    logger.info('Grid: cols={}'.format(col_count))
     columns = sclient.get_column_values(sheet_id, 1, col_count)
     fills = sclient.get_row_values(sheet_id, columns.index('Filled'), 2)
     procs = [fill for fill in fills if fill != 'TRUE']
     return len(procs) == 0
 
-def _iqbrims_reset_index(access_token, f):
+def _iqbrims_reset_index(user_settings, access_token, f):
     client = IQBRIMSClient(access_token)
     client.grant_access_from_anyone(f['id'])
 
     sclient = SpreadsheetClient(f['id'], access_token)
     sheets = [s
               for s in sclient.sheets()
-              if s['properties']['title'] == settings.INDEXSHEET_MANAGEMENT_SHEET_NAME]
+              if s['properties']['title'] == user_settings.INDEXSHEET_MANAGEMENT_SHEET_NAME]
     assert len(sheets) == 1
     sheet_props = sheets[0]['properties']
     sheet_id = sheet_props['title']

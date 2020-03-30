@@ -633,6 +633,129 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 403)
 
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    @mock.patch.object(IQBRIMSClient, 'folders')
+    @mock.patch.object(IQBRIMSClient, 'files')
+    @mock.patch.object(IQBRIMSClient, 'get_content')
+    @mock.patch.object(SpreadsheetClient, 'sheets')
+    @mock.patch.object(SpreadsheetClient, 'get_column_values')
+    @mock.patch.object(SpreadsheetClient, 'get_row_values')
+    def test_get_index_storage(self, mock_get_row_values,
+                               mock_get_column_values, mock_sheets,
+                               mock_get_content, mock_files, mock_folders,
+                               mock_get_management_node,
+                               mock_workflow_user_settings):
+        management_project = ProjectFactory()
+        management_project.add_addon('iqbrims', auth=None)
+        management_project.add_addon('googledrive', auth=None)
+        gdsettings = management_project.get_addon('googledrive')
+        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.save()
+        mock_get_management_node.return_value = management_project
+        mock_folders.return_value = [{'id': 'folderid123',
+                                      'title': u'生データ'}]
+        mock_files.return_value = [{'id': 'filesheet',
+                                    'title': 'Raw Files'},
+                                   {'id': 'fileidlist',
+                                    'title': '.files.txt'}]
+        mock_get_content.return_value = b'dummy.txt'
+        sgp = {'columnCount': 2}
+        mock_sheets.return_value = [{'properties': {'title': 'Files',
+                                                    'sheetId': 'ss123'}},
+                                    {'properties': {'title': 'Management',
+                                                    'sheetId': 'ss456',
+                                                    'gridProperties': sgp}}]
+        mock_get_column_values.return_value = ['Filled']
+        mock_get_row_values.return_value = ['FALSE']
+        user_settings = {}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.status = json.dumps({'testkey': 'testvalue'})
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.folder_path = 'testgdpath/iqb123/'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_get_storage',
+                                       folder='index')
+        res = self.app.get(url, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'processing')
+        assert_equal(res.json['whole']['testkey'], 'testvalue')
+
+        mock_get_column_values.assert_called_once()
+        cargs, _ = mock_get_column_values.call_args
+        assert_equal(cargs[0], 'Management')
+        mock_get_row_values.assert_called_once()
+        mock_sheets.assert_called_once()
+
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    @mock.patch.object(IQBRIMSClient, 'folders')
+    @mock.patch.object(IQBRIMSClient, 'files')
+    @mock.patch.object(IQBRIMSClient, 'get_content')
+    @mock.patch.object(SpreadsheetClient, 'sheets')
+    @mock.patch.object(SpreadsheetClient, 'get_column_values')
+    @mock.patch.object(SpreadsheetClient, 'get_row_values')
+    def test_get_index_storage_custom_sheet(self, mock_get_row_values,
+                                            mock_get_column_values, mock_sheets,
+                                            mock_get_content, mock_files,
+                                            mock_folders,
+                                            mock_get_management_node,
+                                            mock_workflow_user_settings):
+        management_project = ProjectFactory()
+        management_project.add_addon('iqbrims', auth=None)
+        management_project.add_addon('googledrive', auth=None)
+        gdsettings = management_project.get_addon('googledrive')
+        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.save()
+        mock_get_management_node.return_value = management_project
+        mock_folders.return_value = [{'id': 'folderid123',
+                                      'title': u'生データ'}]
+        mock_files.return_value = [{'id': 'filesheet',
+                                    'title': 'Raw Files'},
+                                   {'id': 'fileidlist',
+                                    'title': '.files.txt'}]
+        mock_get_content.return_value = b'dummy.txt'
+        sgp = {'columnCount': 2}
+        mock_sheets.return_value = [{'properties': {'title': 'Files',
+                                                    'sheetId': 'ss123',
+                                                    'gridProperties': sgp}},
+                                    {'properties': {'title': 'Management',
+                                                    'sheetId': 'ss456'}}]
+        mock_get_column_values.return_value = ['Filled']
+        mock_get_row_values.return_value = ['FALSE']
+        user_settings = {'INDEXSHEET_MANAGEMENT_SHEET_NAME': 'Files'}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.status = json.dumps({'testkey': 'testvalue'})
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.folder_path = 'testgdpath/iqb123/'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_get_storage',
+                                       folder='index')
+        res = self.app.get(url, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'processing')
+        assert_equal(res.json['whole']['testkey'], 'testvalue')
+
+        mock_get_column_values.assert_called_once()
+        cargs, _ = mock_get_column_values.call_args
+        assert_equal(cargs[0], 'Files')
+        mock_get_row_values.assert_called_once()
+        mock_sheets.assert_called_once()
+
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
     @mock.patch.object(IQBRIMSClient, 'files')
@@ -640,6 +763,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
     def test_get_checklist_storage(self, mock_get_content, mock_files, mock_folders,
                                    mock_get_management_node):
         management_project = ProjectFactory()
+        management_project.add_addon('iqbrims', auth=None)
         management_project.add_addon('googledrive', auth=None)
         gdsettings = management_project.get_addon('googledrive')
         gdsettings.folder_path = 'testgdpath/'
@@ -677,6 +801,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
     def test_get_checklist_ja_storage(self, mock_get_content, mock_files, mock_folders,
                                       mock_get_management_node):
         management_project = ProjectFactory()
+        management_project.add_addon('iqbrims', auth=None)
         management_project.add_addon('googledrive', auth=None)
         gdsettings = management_project.get_addon('googledrive')
         gdsettings.folder_path = 'testgdpath/'
@@ -712,6 +837,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
     def test_get_checklist_ja_storage_partial(self, mock_get_content, mock_files,
                                               mock_folders, mock_get_management_node):
         management_project = ProjectFactory()
+        management_project.add_addon('iqbrims', auth=None)
         management_project.add_addon('googledrive', auth=None)
         gdsettings = management_project.get_addon('googledrive')
         gdsettings.folder_path = 'testgdpath/'
@@ -746,6 +872,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
     def test_get_imagelist_storage(self, mock_files, mock_folders,
                                    mock_get_management_node):
         management_project = ProjectFactory()
+        management_project.add_addon('iqbrims', auth=None)
         management_project.add_addon('googledrive', auth=None)
         gdsettings = management_project.get_addon('googledrive')
         gdsettings.folder_path = 'testgdpath'
@@ -802,6 +929,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
     def test_get_working_imagelist_storage_1(self, mock_files, mock_folders,
                                              mock_get_management_node):
         management_project = ProjectFactory()
+        management_project.add_addon('iqbrims', auth=None)
         management_project.add_addon('googledrive', auth=None)
         gdsettings = management_project.get_addon('googledrive')
         gdsettings.folder_path = 'testgdpath/'
@@ -845,6 +973,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
     def test_get_working_imagelist_storage_2(self, mock_files, mock_folders,
                                              mock_get_management_node):
         management_project = ProjectFactory()
+        management_project.add_addon('iqbrims', auth=None)
         management_project.add_addon('googledrive', auth=None)
         gdsettings = management_project.get_addon('googledrive')
         gdsettings.folder_path = 'testgdpath/'
@@ -911,6 +1040,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                       mock_rename_folder, mock_create_folder,
                                       mock_get_management_node):
         management_project = ProjectFactory()
+        management_project.add_addon('iqbrims', auth=None)
         management_project.add_addon('googledrive', auth=None)
         gdsettings = management_project.get_addon('googledrive')
         gdsettings.folder_path = 'testgdpath/'
@@ -960,6 +1090,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_true(res.json['urls'][1]['url'].endswith(folderurlpath + '/test2.pdf'))
         assert_equal(res.json['root_folder'], 'iqb123/')
 
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
     @mock.patch.object(IQBRIMSClient, 'files')
@@ -971,8 +1102,10 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                   mock_get_column_values, mock_sheets,
                                   mock_grant_access_from_anyone,
                                   mock_files, mock_folders,
-                                  mock_get_management_node):
+                                  mock_get_management_node,
+                                  mock_workflow_user_settings):
         management_project = ProjectFactory()
+        management_project.add_addon('iqbrims', auth=None)
         management_project.add_addon('googledrive', auth=None)
         gdsettings = management_project.get_addon('googledrive')
         gdsettings.folder_path = 'testgdpath/'
@@ -988,6 +1121,8 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                                     'sheetId': 'ss456',
                                                     'gridProperties': sgp}}]
         mock_get_column_values.return_value = ['Filled']
+        user_settings = {}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
 
         node_settings = self.project.get_addon('iqbrims')
         node_settings.secret = 'secret123'
@@ -1006,6 +1141,63 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                 'root_folder': 'iqb123/'})
         mock_update_row.assert_called_once()
         assert_equal(mock_update_row.call_args, (('Management', ['FALSE'], 0),))
+        mock_grant_access_from_anyone.assert_called_once()
+        assert_equal(mock_grant_access_from_anyone.call_args,
+                     (('rmfileid123',),))
+
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    @mock.patch.object(IQBRIMSClient, 'folders')
+    @mock.patch.object(IQBRIMSClient, 'files')
+    @mock.patch.object(IQBRIMSClient, 'grant_access_from_anyone')
+    @mock.patch.object(SpreadsheetClient, 'sheets')
+    @mock.patch.object(SpreadsheetClient, 'get_column_values')
+    @mock.patch.object(SpreadsheetClient, 'update_row')
+    def test_reject_index_storage_custom_sheet(self, mock_update_row,
+                                               mock_get_column_values,
+                                               mock_sheets,
+                                               mock_grant_access_from_anyone,
+                                               mock_files, mock_folders,
+                                               mock_get_management_node,
+                                               mock_workflow_user_settings):
+        management_project = ProjectFactory()
+        management_project.add_addon('iqbrims', auth=None)
+        management_project.add_addon('googledrive', auth=None)
+        gdsettings = management_project.get_addon('googledrive')
+        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.save()
+        mock_get_management_node.return_value = management_project
+        mock_folders.return_value = [{'id': 'rmfolderid123',
+                                      'title': u'生データ'}]
+        mock_files.return_value = [{'id': 'rmfileid123', 'title': 'Raw Files'}]
+        sgp = {'columnCount': 2}
+        mock_sheets.return_value = [{'properties': {'title': 'Files',
+                                                    'sheetId': 'ss123',
+                                                    'gridProperties': sgp}},
+                                    {'properties': {'title': 'Management',
+                                                    'sheetId': 'ss456',
+                                                    'gridProperties': sgp}}]
+        mock_get_column_values.return_value = ['Filled']
+        user_settings = {'INDEXSHEET_MANAGEMENT_SHEET_NAME': 'Files'}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.folder_path = 'testgdpath/iqb123/'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_reject_storage',
+                                       folder='index')
+        res = self.app.delete(url, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, {'status': 'rejected',
+                                'root_folder': 'iqb123/'})
+        mock_update_row.assert_called_once()
+        assert_equal(mock_update_row.call_args, (('Files', ['FALSE'], 0),))
         mock_grant_access_from_anyone.assert_called_once()
         assert_equal(mock_grant_access_from_anyone.call_args,
                      (('rmfileid123',),))
@@ -1105,6 +1297,70 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         mock_add_files.assert_called_once()
         assert_equal(mock_add_files.call_args,
                      (('Files', 'ss123', 'Management', 'ss456',
+                       ['f1.txt', 'f2.txt', 'test/file3.txt', '']),))
+
+    @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    @mock.patch.object(IQBRIMSClient, 'get_content')
+    @mock.patch.object(IQBRIMSClient, 'folders')
+    @mock.patch.object(IQBRIMSClient, 'files')
+    @mock.patch.object(IQBRIMSClient, 'create_spreadsheet')
+    @mock.patch.object(SpreadsheetClient, 'sheets')
+    @mock.patch.object(SpreadsheetClient, 'add_files')
+    @mock.patch.object(IQBRIMSClient, 'grant_access_from_anyone')
+    @mock.patch.object(IQBRIMSClient, 'get_file_link')
+    def test_create_index_custom_sheet(self, mock_get_file_link,
+                                       mock_grant_access_from_anyone,
+                                       mock_add_files,
+                                       mock_sheets, mock_create_spreadsheet,
+                                       mock_files, mock_folders,
+                                       mock_get_content,
+                                       mock_get_management_node,
+                                       mock_workflow_user_settings):
+        management_project = ProjectFactory()
+        management_project.add_addon('googledrive', auth=None)
+        gdsettings = management_project.get_addon('googledrive')
+        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.save()
+        management_project.add_addon('iqbrims', auth=None)
+        mock_get_management_node.return_value = management_project
+        mock_get_content.return_value = b'f1.txt\nf2.txt\ntest/file3.txt\n'
+        mock_folders.return_value = [{'id': 'rmfolderid123',
+                                      'title': u'生データ'}]
+        mock_files.return_value = [{'id': 'fileid123', 'title': 'files.txt'}]
+        mock_create_spreadsheet.return_value = {'id': 'sheet123'}
+        mock_sheets.return_value = [{'properties': {'title': 'Files',
+                                                    'sheetId': 'ss123'}},
+                                    {'properties': {'title': 'Management',
+                                                    'sheetId': 'ss456'}}]
+        mock_grant_access_from_anyone.return_value = {}
+        mock_get_file_link.return_value = 'https://a.b/sheet123'
+        user_settings = {'INDEXSHEET_MANAGEMENT_SHEET_NAME': 'Files'}
+        mock_workflow_user_settings.return_value = {'settings': user_settings}
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.folder_path = 'testgdpath/iqb123/'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_create_index',
+                                       folder='scan')
+        res = self.app.put(url, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, {'status': 'complete',
+                                'url': 'https://a.b/sheet123'})
+        mock_get_content.assert_called_once()
+        assert_equal(mock_get_content.call_args, (('fileid123',),))
+        mock_grant_access_from_anyone.assert_called_once()
+        assert_equal(mock_grant_access_from_anyone.call_args,
+                     (('sheet123',),))
+        mock_add_files.assert_called_once()
+        assert_equal(mock_add_files.call_args,
+                     (('Files', 'ss123', 'Files', 'ss123',
                        ['f1.txt', 'f2.txt', 'test/file3.txt', '']),))
 
     @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
@@ -1323,6 +1579,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
     def test_get_storage_no_comment(self, mock_files, mock_folders,
                                    mock_get_management_node):
         management_project = ProjectFactory()
+        management_project.add_addon('iqbrims', auth=None)
         management_project.add_addon('googledrive', auth=None)
         gdsettings = management_project.get_addon('googledrive')
         gdsettings.folder_path = 'testgdpath/'
@@ -1356,6 +1613,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
     def test_get_storage_comment(self, mock_files, mock_folders,
                                    mock_get_management_node):
         management_project = ProjectFactory()
+        management_project.add_addon('iqbrims', auth=None)
         management_project.add_addon('googledrive', auth=None)
         gdsettings = management_project.get_addon('googledrive')
         gdsettings.folder_path = 'testgdpath/'
