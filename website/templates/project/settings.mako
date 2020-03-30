@@ -331,7 +331,7 @@
                             <div class="radio">
                                 <label>
                                     <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
-                                    ${_("When the %(nodeType)s is public, any GakuNin RDM user can post comments") % dict(nodeType=h(node['node_type']))}
+                                    ${_("When the %(nodeType)s is public, any GakuNin RDM user can post comments") % dict(nodeType=_(h(node['node_type'])))}
                                 </label>
                             </div>
 
