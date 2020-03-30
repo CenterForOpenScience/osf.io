@@ -56,7 +56,6 @@ SLOAN_FEATURES = {
 
 }
 
-from http.cookies import Morsel
 from django.db.models import Q
 
 
@@ -180,12 +179,15 @@ class ProfileMiddleware(MiddlewareMixin):
 
 
 class SloanOverrideWaffleMiddleware(WaffleMiddleware):
+    """
+    This class exist to override Waffles normal cookie behavior, so sloan cookies are cross-domain and have no
+    expiration date. It can be deleted when the Sloan study is complete/
+    """
 
     def process_response(self, request, response):
         waffles = getattr(request, 'waffles', None)
-        user = getattr(request, 'user', None)
-
         if request.path == '/v2/':
+            user = getattr(request, 'user', None)
             referer_url = request.environ.get('HTTP_REFERER', '')
             provider = self.get_provider_from_url(referer_url)
 
@@ -303,14 +305,13 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
         :param resp:
         :return:
         """
-        cookie = Morsel()
-        cookie._reserved.update({'samesite': 'samesite'})  # This seems terrible but is fixed in py 3.8
-        cookie._key = f'dwf_{name}'  # lets just stick with the waffle prefix in case
-        cookie._coded_value = active
-        cookie.update({
-            'Domain': self.get_domain(request.environ['HTTP_REFERER']),
-            'Path': '/',
-            'Secure': True,
-            'samesite': 'None',
-        })
-        resp.cookies[f'dwf_{name}'] = cookie
+        resp.cookies[f'dwf_{name}'] = active
+        resp.cookies[f'dwf_{name}']._reserved.update({'samesite': 'samesite'})  # This seems terrible but is fixed in py 3.8
+
+        resp.cookies[f'dwf_{name}']['path'] = '/'
+        resp.cookies[f'dwf_{name}']['domain'] = self.get_domain(request.environ['HTTP_REFERER'])
+
+        # Browsers won't allow use to use these cookie attributes unless you're sending the data over https.
+        resp.cookies[f'dwf_{name}']['secure'] = not settings.DEV_MODE
+        if not settings.DEV_MODE:
+            resp.cookies[f'dwf_{name}']['samesite'] = None
