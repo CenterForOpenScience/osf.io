@@ -192,18 +192,20 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
             if provider and provider.in_sloan_study:
                 for sloan_flag_name in SLOAN_FLAGS:
                     active = self.override_flag_activity(sloan_flag_name, waffles, user)
+
                     if active is not None:
                         self.set_sloan_tags(user, sloan_flag_name, active)
-                        self.set_sloan_cookies(sloan_flag_name, active, request, response)
+                        self.set_sloan_cookie(sloan_flag_name, active, request, response)
 
                     response.data['meta']['active_flags'].append(sloan_flag_name)
 
+        # `set_sloan_cookies` has set the cookies, make sure WaffleMiddleware doesn't try to set them again.
         if waffles:
             for sloan_flag_name in SLOAN_FLAGS:
                 if waffles.get(sloan_flag_name):
-                    del waffles[sloan_flag_name]  # ensure Waffle doesn't try to make two sets of cookies
+                    del waffles[sloan_flag_name]
 
-        # Give all users a unique id, logged in or not.
+        # Give all users a unique id 'sloan_id` cookie, logged in or not.
         if not request.COOKIES.get(settings.SLOAN_ID_COOKIE_NAME):
             response.set_cookie(
                 settings.SLOAN_ID_COOKIE_NAME,
@@ -216,11 +218,17 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
         return super(SloanOverrideWaffleMiddleware, self).process_response(request, response)
 
     @staticmethod
-    def get_domain(url):
+    def get_domain(url: str) -> str:
+        """
+        http://localhost:8000/preprints -> localhost
+        http://osf.io/preprints/... -> .osf.io
+
+        :param url:
+        :return:
+        """
         if url.startswith('http://localhost:'):
             return 'localhost'
         else:
-            # https://osf.io/preprint/... -> .osf.io
             netloc = urlparse(url).netloc
             if netloc.count('.') > 1:
                 netloc = '.'.join(netloc.split('.'))
@@ -262,7 +270,7 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
 
     @staticmethod
     def override_flag_activity(sloan_flag_name, waffles_data, user):
-        if waffles_data.get(sloan_flag_name):
+        if waffles_data and waffles_data.get(sloan_flag_name):
             active = Flag.objects.get(name=sloan_flag_name).everyone or waffles_data[sloan_flag_name][0]
 
             if user and not user.is_anonymous:
@@ -286,10 +294,11 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
             else:
                 user.add_system_tag(f'no_{tag_name}')
 
-    def set_sloan_cookies(self, name, active, request, resp):
+    def set_sloan_cookie(self, name: str, active: bool, request, resp):
         """
-        Set sloan flags for users who are only active due to user tags
-        :param flags: List active flags
+        Set sloan cookies to sloan study specifications
+        :param name: The name of the flag that will get a cookie
+        :param active: Is the flag active?
         :param request:
         :param resp:
         :return:

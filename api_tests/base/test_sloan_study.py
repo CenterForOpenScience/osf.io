@@ -3,6 +3,8 @@ import pytest
 from decimal import Decimal
 
 from waffle.models import Flag
+from website.settings import DOMAIN
+from api.base.middleware import SloanOverrideWaffleMiddleware
 
 from osf_tests.factories import (
     AuthUserFactory,
@@ -28,9 +30,6 @@ from osf.system_tags import (
     SLOAN_DATA,
 )
 
-from website.settings import DOMAIN
-
-from api.base.middleware import SloanOverrideWaffleMiddleware
 
 def active(*args, **kwargs):
     return Decimal('0')
