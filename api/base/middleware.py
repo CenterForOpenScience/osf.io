@@ -231,11 +231,7 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
         if url.startswith('http://localhost:'):
             return 'localhost'
         else:
-            netloc = urlparse(url).netloc
-            if netloc.count('.') > 1:
-                netloc = '.'.join(netloc.split('.'))
-
-            return '.' + netloc
+            return '.' + urlparse(url).netloc
 
     @staticmethod
     def get_provider_from_url(referer_url: str) -> Optional[PreprintProvider]:
