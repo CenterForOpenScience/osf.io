@@ -1,9 +1,11 @@
+import re
 import gc
 import uuid
 from io import StringIO
 import cProfile
 import pstats
 import threading
+from urllib.parse import urlparse
 
 from django.conf import settings
 from django.utils.deprecation import MiddlewareMixin
@@ -21,6 +23,40 @@ from framework.celery_tasks.handlers import (
 )
 from .api_globals import api_globals
 from api.base import settings as api_settings
+from waffle.middleware import WaffleMiddleware
+from waffle.models import Flag
+
+from website.settings import DOMAIN
+from osf.models import PreprintProvider
+from typing import Optional
+
+from osf.features import (
+    SLOAN_COI_DISPLAY,
+    SLOAN_PREREG_DISPLAY,
+    SLOAN_DATA_DISPLAY,
+)
+
+from osf.system_tags import (
+    SLOAN_COI,
+    SLOAN_PREREG,
+    SLOAN_DATA,
+)
+
+SLOAN_FLAGS = (
+    SLOAN_COI_DISPLAY,
+    SLOAN_PREREG_DISPLAY,
+    SLOAN_DATA_DISPLAY,
+)
+
+# User tags must follow convention so we must translate flag names
+SLOAN_FEATURES = {
+    SLOAN_COI_DISPLAY: SLOAN_COI,
+    SLOAN_PREREG_DISPLAY: SLOAN_PREREG,
+    SLOAN_DATA_DISPLAY: SLOAN_DATA,
+
+}
+
+from django.db.models import Q
 
 
 class CeleryTaskMiddleware(MiddlewareMixin):
@@ -142,11 +178,36 @@ class ProfileMiddleware(MiddlewareMixin):
         return response
 
 
-class SloanIdMiddleware(MiddlewareMixin):
-    """Sloan middleware give all users a unique id, logged in or not."""
+class SloanOverrideWaffleMiddleware(WaffleMiddleware):
+    """
+    This class exist to override Waffles normal cookie behavior, so sloan cookies are cross-domain and have no
+    expiration date. It can be deleted when the Sloan study is complete/
+    """
 
     def process_response(self, request, response):
-        """give user a Sloan ID if they don't have one already"""
+        waffles = getattr(request, 'waffles', None)
+        if request.path == '/v2/':
+            user = getattr(request, 'user', None)
+            referer_url = request.environ.get('HTTP_REFERER', '')
+            provider = self.get_provider_from_url(referer_url)
+
+            if provider and provider.in_sloan_study:
+                for sloan_flag_name in SLOAN_FLAGS:
+                    active = self.override_flag_activity(sloan_flag_name, waffles, user)
+
+                    if active is not None:
+                        self.set_sloan_tags(user, sloan_flag_name, active)
+                        self.set_sloan_cookie(sloan_flag_name, active, request, response)
+
+                    response.data['meta']['active_flags'].append(sloan_flag_name)
+
+        # `set_sloan_cookies` has set the cookies, make sure WaffleMiddleware doesn't try to set them again.
+        if waffles:
+            for sloan_flag_name in SLOAN_FLAGS:
+                if waffles.get(sloan_flag_name):
+                    del waffles[sloan_flag_name]
+
+        # Give all users a unique id 'sloan_id` cookie, logged in or not.
         if not request.COOKIES.get(settings.SLOAN_ID_COOKIE_NAME):
             response.set_cookie(
                 settings.SLOAN_ID_COOKIE_NAME,
@@ -155,4 +216,98 @@ class SloanIdMiddleware(MiddlewareMixin):
                 path=settings.CSRF_COOKIE_PATH,
                 httponly=settings.CSRF_COOKIE_HTTPONLY,
             )
-        return response
+
+        return super(SloanOverrideWaffleMiddleware, self).process_response(request, response)
+
+    @staticmethod
+    def get_domain(url: str) -> str:
+        """
+        http://localhost:8000/preprints -> localhost
+        http://osf.io/preprints/... -> .osf.io
+
+        :param url:
+        :return:
+        """
+        if url.startswith('http://localhost:'):
+            return 'localhost'
+        else:
+            return '.' + urlparse(url).netloc
+
+    @staticmethod
+    def get_provider_from_url(referer_url: str) -> Optional[PreprintProvider]:
+        """
+        Takes the many preprint refer urls and try to figure out the provider based on that.
+        This will be eliminated post-sloan.
+        :param referer_url:
+        :return: PreprintProvider
+        """
+
+        # matches custom domains:
+        provider_domains = list(PreprintProvider.objects.exclude(domain='').values_list('domain', flat=True))
+        provider_domains = [domains for domains in provider_domains if referer_url.startswith(domains)]
+        if provider_domains:
+            return PreprintProvider.objects.get(domain=provider_domains[0])
+
+        provider_ids_regex = '|'.join(
+            [re.escape(id) for id in PreprintProvider.objects.all().values_list('_id', flat=True)],
+        )
+        # matches:
+        # /preprints
+        # /preprints/
+        # /preprints/notfound
+        # /preprints/foorxiv
+        # /preprints/foorxiv/
+        # /preprints/foorxiv/guid0
+        provider_regex = r'preprints($|\/$|\/(?P<provider_id>{})|)'.format(provider_ids_regex)
+        match = re.match(re.escape(DOMAIN) + provider_regex, referer_url)
+        if match:
+            provider_id = match.groupdict().get('provider_id')
+            if provider_id:
+                return PreprintProvider.objects.get(_id=provider_id)
+            return PreprintProvider.objects.get(_id='osf')
+
+    @staticmethod
+    def override_flag_activity(sloan_flag_name, waffles_data, user):
+        if waffles_data and waffles_data.get(sloan_flag_name):
+            active = Flag.objects.get(name=sloan_flag_name).everyone or waffles_data[sloan_flag_name][0]
+
+            if user and not user.is_anonymous:
+                tag_name = SLOAN_FEATURES[sloan_flag_name]
+                if user.all_tags.filter(name=tag_name).exists():
+                    active = True
+                elif user.all_tags.filter(name=f'no_{tag_name}').exists():
+                    active = False
+
+            return active
+
+    @staticmethod
+    def set_sloan_tags(user, flag_name: str, flag_value: bool):
+        """
+        This sets user tags for Sloan study, it can be deleted when the study is complete.
+        """
+        tag_name = SLOAN_FEATURES[flag_name]
+        if user and not user.is_anonymous and not user.all_tags.filter(Q(name=tag_name) | Q(name=f'no_{tag_name}')):
+            if flag_value:  # 50/50 chance flag is active
+                user.add_system_tag(tag_name)
+            else:
+                user.add_system_tag(f'no_{tag_name}')
+
+    def set_sloan_cookie(self, name: str, active: bool, request, resp):
+        """
+        Set sloan cookies to sloan study specifications
+        :param name: The name of the flag that will get a cookie
+        :param active: Is the flag active?
+        :param request:
+        :param resp:
+        :return:
+        """
+        resp.cookies[f'dwf_{name}'] = active
+        resp.cookies[f'dwf_{name}']._reserved.update({'samesite': 'samesite'})  # This seems terrible but is fixed in py 3.8
+
+        resp.cookies[f'dwf_{name}']['path'] = '/'
+        resp.cookies[f'dwf_{name}']['domain'] = self.get_domain(request.environ['HTTP_REFERER'])
+
+        # Browsers won't allow use to use these cookie attributes unless you're sending the data over https.
+        resp.cookies[f'dwf_{name}']['secure'] = not settings.DEV_MODE
+        if not settings.DEV_MODE:
+            resp.cookies[f'dwf_{name}']['samesite'] = None
