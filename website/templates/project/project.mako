@@ -216,7 +216,7 @@
                 % if node['is_fork']:
                     <p>
                     ${_('Forked from <a %(forkedFromId)s>%(forkedFromDisplayAbsoluteUrl)s</a> on\
-                    <span %(dateForked)s></span>') % dict(forkedFromId='class="node-forked-from"' + ' href=' + h(node['forked_from_id']),\
+                    <span %(dateForked)s></span>') % dict(forkedFromId='class="node-forked-from"' + ' href=/' + h(node['forked_from_id']) + '/',\
                     forkedFromDisplayAbsoluteUrl=h(node['forked_from_display_absolute_url']),dateForked='data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"') | n}
                     </p>
                 % endif
