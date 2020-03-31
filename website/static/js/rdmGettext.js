@@ -55,12 +55,6 @@ var OsfLanguage = function() {
         }
         return msgstr;
     };
-    
-    this.l = function() {
-        var msgid = [].slice.call(arguments);
-        var browserlanguage = getBrowserLang();
-        return this.languages[browserlanguage];
-    };
 };
 
 var _ = function(msgid) {
