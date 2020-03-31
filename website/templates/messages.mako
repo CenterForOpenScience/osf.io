@@ -12,3 +12,5 @@ ${_("Instrumentation")}
 ${_("Methods and Measures")}
 ${_("Procedure")}
 ${_("Software")}
+${_("Component has been successfully deleted.")}
+${_("Project has been successfully deleted.")}
