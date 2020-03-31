@@ -205,6 +205,17 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
         return cls.search().filter('match', institution_id=institution._id)
 
     @classmethod
+    def get_recent_datetime(cls, institution):
+        search = cls.filter_institution(institution).sort('-timestamp')
+
+        # Rounding to the nearest minute
+        results = search.execute()
+        if results:
+            return search.execute()[0].timestamp.replace(microsecond=0, second=0)
+        # If there are no results, assume yesterday.
+        return dt.datetime.now() - dt.timedelta(days=1)
+
+    @classmethod
     def get_department_counts(cls, institution) -> list:
         """
         Gets the most recent document for every unique user.
@@ -212,7 +223,7 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
         :return: list
         """
         search = cls.filter_institution(institution).sort('timestamp')
-        yesterday = dt.date.today() - dt.timedelta(days=1)
+        last_record_time = cls.get_recent_datetime(institution)
 
         search.update_from_dict({
             'aggs': {
@@ -220,7 +231,7 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
                     'filter': {
                         'range': {
                             'timestamp': {
-                                'gte': str(yesterday),
+                                'gte': last_record_time,
                             }
                         }
                     },
@@ -268,6 +279,19 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
         response = search.execute()
 
         return response[0]
+
+    @classmethod
+    def get_current_user_metrics(cls, institution) -> list:
+        """
+        Gets the most recent document for every unique user.
+        :param institution: Institution
+        :return: list
+        """
+        last_record_time = cls.get_recent_datetime(institution)
+        search = cls.filter_institution(institution).sort('timestamp')
+
+        search = search.filter('range', timestamp={'gte': last_record_time})
+        return search.execute()
 
 
 class InstitutionProjectCounts(MetricMixin, metrics.Metric):
