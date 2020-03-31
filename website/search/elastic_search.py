@@ -47,7 +47,7 @@ ALIASES = {
     'component': unicode(_('Components')),
     'registration': unicode(_('Registrations')),
     'user': unicode(_('Users')),
-    'total': unicode(_('All GakuNin RDM Results')),
+    'total': unicode(_('All Results')),
     'file': unicode(_('Files')),
     'institution': unicode(_('Institutions')),
     'preprint': unicode(_('Preprints')),
