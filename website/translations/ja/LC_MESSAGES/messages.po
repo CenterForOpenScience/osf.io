@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-30 19:58+0900\n"
+"POT-Creation-Date: 2020-03-31 14:19+0900\n"
 "PO-Revision-Date: 2020-03-27 11:52+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
@@ -1241,6 +1241,14 @@ msgstr "手順"
 #: website/templates/messages.mako:14
 msgid "Software"
 msgstr "ソフトウェア"
+
+#: website/templates/messages.mako:15
+msgid "Component has been successfully deleted."
+msgstr "コンポーネントは正常に削除されました。"
+
+#: website/templates/messages.mako:16
+msgid "Project has been successfully deleted."
+msgstr "プロジェクトは正常に削除されました。"
 
 #: website/templates/my_projects.mako:2 website/templates/nav.mako:51
 msgid "My Projects"
@@ -2945,7 +2953,9 @@ msgstr "所属機関:"
 msgid ""
 "Forked from <a %(forkedFromId)s>%(forkedFromDisplayAbsoluteUrl)s</a> on"
 "                    <span %(dateForked)s></span>"
-msgstr "<a %(forkedFromId)s>%(forkedFromDisplayAbsoluteUrl)s</a>からフォーク(<span %(dateForked)s></span>)"
+msgstr ""
+"<a %(forkedFromId)s>%(forkedFromDisplayAbsoluteUrl)s</a>からフォーク(<span "
+"%(dateForked)s></span>)"
 
 #: website/templates/project/project.mako:225
 msgid "Date registered:"
