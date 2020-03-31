@@ -306,11 +306,9 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
 
         resp.cookies[f'dwf_{name}']['path'] = '/'
         resp.cookies[f'dwf_{name}']['domain'] = self.get_domain(request.environ['HTTP_REFERER'])
-
-        # ↓ Magical mystery line that doesn't effect local tests at all but makes test pass on travis.
-        resp.cookies[f'dwf_{name}']['httponly'] = settings.CSRF_COOKIE_HTTPONLY
+        resp.cookies[f'dwf_{name}']['httponly'] = settings.SESSION_COOKIE_HTTPONLY
 
         # Browsers won't allow use to use these cookie attributes unless you're sending the data over https.
         resp.cookies[f'dwf_{name}']['secure'] = not settings.SESSION_COOKIE_SECURE
         if not settings.SESSION_COOKIE_SECURE:
-            resp.cookies[f'dwf_{name}']['samesite'] = None
+            resp.cookies[f'dwf_{name}']['samesite'] = settings.SESSION_COOKIE_HTTPONLY
