@@ -67,7 +67,6 @@ class TestSloanStudyWaffling:
     @pytest.mark.enable_quickfiles_creation
     @mock.patch('waffle.models.Decimal', active)
     def test_sloan_study_variable(self, app, user, preprint):
-
         headers = {'Referer': preprint.absolute_url}
         resp = app.get('/v2/', auth=user.auth, headers=headers)
 
@@ -91,8 +90,6 @@ class TestSloanStudyWaffling:
     @pytest.mark.enable_quickfiles_creation
     @mock.patch('waffle.models.Decimal', inactive)
     def test_sloan_study_control(self, app, user, preprint):
-        Flag.objects.filter(name__in=SLOAN_FLAGS).update(percent=1)
-
         headers = {'Referer': preprint.absolute_url}
         resp = app.get('/v2/', auth=user.auth, headers=headers)
 
@@ -131,8 +128,6 @@ class TestSloanStudyWaffling:
     @override_settings(DEV_MODE=False)
     @mock.patch('waffle.models.Decimal', inactive)
     def test_sloan_study_control_unauth(self, app, user, preprint):
-        Flag.objects.filter(name__in=SLOAN_FLAGS).update(percent=1)
-
         headers = {'Referer': preprint.absolute_url}
         resp = app.get('/v2/', headers=headers)
 
