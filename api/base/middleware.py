@@ -302,12 +302,12 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
         :return:
         """
         resp.cookies[f'dwf_{name}'] = active
-        resp.cookies[f'dwf_{name}']._reserved.update({'samesite': 'samesite'})  # This seems terrible but is fixed in py 3.8
+        # ↓ This line seems terrible but is fixed in py 3.8
+        resp.cookies[f'dwf_{name}']._reserved.update({'samesite': 'samesite'})
 
         resp.cookies[f'dwf_{name}']['path'] = '/'
         resp.cookies[f'dwf_{name}']['domain'] = self.get_domain(request.environ['HTTP_REFERER'])
 
         # Browsers won't allow use to use these cookie attributes unless you're sending the data over https.
-        resp.cookies[f'dwf_{name}']['secure'] = not settings.DEV_MODE
-        if not settings.DEV_MODE:
-            resp.cookies[f'dwf_{name}']['samesite'] = None
+        resp.cookies[f'dwf_{name}']['secure'] = settings.SESSION_COOKIE_SECURE
+        resp.cookies[f'dwf_{name}']['samesite'] = settings.SESSION_COOKIE_SAMESITE
