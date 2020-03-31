@@ -1,7 +1,5 @@
 from .defaults import *  # noqa
 
-DEV_MODE = True
-
 VARNISH_SERVERS = ['http://127.0.0.1:8080']
 ENABLE_VARNISH = True
 ENABLE_ESI = False

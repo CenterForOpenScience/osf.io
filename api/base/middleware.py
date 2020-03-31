@@ -308,6 +308,6 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
         resp.cookies[f'dwf_{name}']['domain'] = self.get_domain(request.environ['HTTP_REFERER'])
 
         # Browsers won't allow use to use these cookie attributes unless you're sending the data over https.
-        resp.cookies[f'dwf_{name}']['secure'] = not settings.DEV_MODE
-        if not settings.DEV_MODE:
+        resp.cookies[f'dwf_{name}']['secure'] = not settings.SESSION_COOKIE_SECURE
+        if not settings.SESSION_COOKIE_SECURE:
             resp.cookies[f'dwf_{name}']['samesite'] = None
