@@ -234,6 +234,12 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
             return 'localhost'
         else:
             # for custom domains
+            if url.startswith('http://staging3') or url.startswith('https://staging3'):
+                return '.staging3.osf.io'
+            if url.startswith('http://staging2') or url.startswith('https://staging2'):
+                return '.staging2.osf.io'
+            if url.startswith('http://test') or url.startswith('https://test'):
+                return '.test.osf.io'
             if url.startswith('http://staging') or url.startswith('https://staging'):
                 return '.staging.osf.io'
             else:
