@@ -5,7 +5,6 @@ from io import StringIO
 import cProfile
 import pstats
 import threading
-from urllib.parse import urlparse
 
 from django.conf import settings
 from django.utils.deprecation import MiddlewareMixin
@@ -224,6 +223,9 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
         """
         http://localhost:8000/preprints -> localhost
         http://osf.io/preprints/... -> .osf.io
+        http://im-a-custom-domain.io/... -> .osf.io
+        http://staging-im-a-custom-domain.io/... -> .staging.osf.io
+
 
         :param url:
         :return:
@@ -231,7 +233,11 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
         if url.startswith('http://localhost:'):
             return 'localhost'
         else:
-            return '.' + urlparse(url).netloc
+            # for custom domains
+            if url.startswith('http://staging') or url.startswith('https://staging'):
+                return '.staging.osf.io'
+            else:
+                return '.osf.io'
 
     @staticmethod
     def get_provider_from_url(referer_url: str) -> Optional[PreprintProvider]:
@@ -309,5 +315,5 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
         resp.cookies[f'dwf_{name}']['domain'] = self.get_domain(request.environ['HTTP_REFERER'])
 
         # Browsers won't allow use to use these cookie attributes unless you're sending the data over https.
-        resp.cookies[f'dwf_{name}']['secure'] = settings.SESSION_COOKIE_SECURE
-        resp.cookies[f'dwf_{name}']['samesite'] = settings.SESSION_COOKIE_SAMESITE
+        resp.cookies[f'dwf_{name}']['secure'] = True
+        resp.cookies[f'dwf_{name}']['samesite'] = 'None'

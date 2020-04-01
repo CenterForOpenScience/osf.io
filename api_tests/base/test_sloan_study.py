@@ -3,7 +3,7 @@ import pytest
 from decimal import Decimal
 
 from waffle.models import Flag
-from website.settings import DOMAIN
+from website.settings import DOMAIN, TRAVIS_MODE
 from api.base.middleware import SloanOverrideWaffleMiddleware
 
 from osf_tests.factories import (
@@ -40,6 +40,7 @@ def inactive(*args, **kwargs):
 
 
 @pytest.mark.django_db
+@pytest.mark.skipif(TRAVIS_MODE, reason='Travis is balking at the idea of sending secure cookies via the testing app.')
 class TestSloanStudyWaffling:
     """
     DEV_MODE is mocked so cookies they behave as if they were using https.
@@ -57,6 +58,7 @@ class TestSloanStudyWaffling:
     def providers(self, user):
         PreprintProviderFactory(_id='foorxiv').save()
         PreprintProviderFactory(_id='osf').save()
+        PreprintProviderFactory(_id='burdixiv', domain='https://burdixiv.burds/').save()
 
     @pytest.fixture(autouse=True)
     def flags(self, user):
@@ -80,9 +82,9 @@ class TestSloanStudyWaffling:
 
         cookies = resp.headers.getall('Set-Cookie')
 
-        assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=localhost; Path=/; samesite=None' in cookies
-        assert f' dwf_{SLOAN_DATA_DISPLAY}=True; Domain=localhost; Path=/; samesite=None' in cookies
-        assert f' dwf_{SLOAN_PREREG_DISPLAY}=True; Domain=localhost; Path=/; samesite=None' in cookies
+        assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=localhost; Path=/; samesite=None; Secure' in cookies
+        assert f' dwf_{SLOAN_DATA_DISPLAY}=True; Domain=localhost; Path=/; samesite=None; Secure' in cookies
+        assert f' dwf_{SLOAN_PREREG_DISPLAY}=True; Domain=localhost; Path=/; samesite=None; Secure' in cookies
 
     @pytest.mark.enable_quickfiles_creation
     @mock.patch('waffle.models.Decimal', inactive)
@@ -102,9 +104,9 @@ class TestSloanStudyWaffling:
 
         cookies = resp.headers.getall('Set-Cookie')
 
-        assert f' dwf_{SLOAN_COI_DISPLAY}=False; Domain=localhost; Path=/; samesite=None' in cookies
-        assert f' dwf_{SLOAN_DATA_DISPLAY}=False; Domain=localhost; Path=/; samesite=None' in cookies
-        assert f' dwf_{SLOAN_PREREG_DISPLAY}=False; Domain=localhost; Path=/; samesite=None' in cookies
+        assert f' dwf_{SLOAN_COI_DISPLAY}=False; Domain=localhost; Path=/; samesite=None; Secure' in cookies
+        assert f' dwf_{SLOAN_DATA_DISPLAY}=False; Domain=localhost; Path=/; samesite=None; Secure' in cookies
+        assert f' dwf_{SLOAN_PREREG_DISPLAY}=False; Domain=localhost; Path=/; samesite=None; Secure' in cookies
 
     @mock.patch('waffle.models.Decimal', active)
     def test_sloan_study_variable_unauth(self, app, user, preprint):
@@ -117,9 +119,9 @@ class TestSloanStudyWaffling:
 
         cookies = resp.headers.getall('Set-Cookie')
 
-        assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=localhost; Path=/; samesite=None' in cookies
-        assert f' dwf_{SLOAN_DATA_DISPLAY}=True; Domain=localhost; Path=/; samesite=None' in cookies
-        assert f' dwf_{SLOAN_PREREG_DISPLAY}=True; Domain=localhost; Path=/; samesite=None' in cookies
+        assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=localhost; Path=/; samesite=None; Secure' in cookies
+        assert f' dwf_{SLOAN_DATA_DISPLAY}=True; Domain=localhost; Path=/; samesite=None; Secure' in cookies
+        assert f' dwf_{SLOAN_PREREG_DISPLAY}=True; Domain=localhost; Path=/; samesite=None; Secure' in cookies
 
     @mock.patch('waffle.models.Decimal', inactive)
     def test_sloan_study_control_unauth(self, app, user, preprint):
@@ -132,11 +134,13 @@ class TestSloanStudyWaffling:
 
         cookies = resp.headers.getall('Set-Cookie')
 
-        assert f' dwf_{SLOAN_COI_DISPLAY}=False; Domain=localhost; Path=/; samesite=None' in cookies
-        assert f' dwf_{SLOAN_DATA_DISPLAY}=False; Domain=localhost; Path=/; samesite=None' in cookies
-        assert f' dwf_{SLOAN_PREREG_DISPLAY}=False; Domain=localhost; Path=/; samesite=None' in cookies
+        assert f' dwf_{SLOAN_COI_DISPLAY}=False; Domain=localhost; Path=/; samesite=None; Secure' in cookies
+        assert f' dwf_{SLOAN_DATA_DISPLAY}=False; Domain=localhost; Path=/; samesite=None; Secure' in cookies
+        assert f' dwf_{SLOAN_PREREG_DISPLAY}=False; Domain=localhost; Path=/; samesite=None; Secure' in cookies
 
     @pytest.mark.parametrize('reffer_url, expected_provider_id', [
+        (f'https://burdixiv.burds/', 'burdixiv'),
+        (f'https://burdixiv.burds/guid0', 'burdixiv'),
         (f'{DOMAIN}preprints', 'osf'),
         (f'{DOMAIN}preprints/', 'osf'),
         (f'{DOMAIN}preprints/not/a/valid/path/', 'osf'),
@@ -161,9 +165,6 @@ class TestSloanStudyWaffling:
     @pytest.mark.enable_quickfiles_creation
     @mock.patch('waffle.models.Decimal', active)
     def test_provider_custom_domain(self, app, user, preprint):
-        provider = preprint.provider
-        provider.domain = 'https://burdixiv.burds/'
-        provider.save()
         headers = {'Referer': f'https://burdixiv.burds/preprints/{preprint._id}'}
         resp = app.get('/v2/', auth=user.auth, headers=headers)
 
@@ -179,9 +180,9 @@ class TestSloanStudyWaffling:
 
         cookies = resp.headers.getall('Set-Cookie')
 
-        assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=.burdixiv.burds; Path=/; samesite=None' in cookies
-        assert f' dwf_{SLOAN_DATA_DISPLAY}=True; Domain=.burdixiv.burds; Path=/; samesite=None' in cookies
-        assert f' dwf_{SLOAN_PREREG_DISPLAY}=True; Domain=.burdixiv.burds; Path=/; samesite=None' in cookies
+        assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=.osf.io; Path=/; samesite=None; Secure' in cookies
+        assert f' dwf_{SLOAN_DATA_DISPLAY}=True; Domain=.osf.io; Path=/; samesite=None; Secure' in cookies
+        assert f' dwf_{SLOAN_PREREG_DISPLAY}=True; Domain=.osf.io; Path=/; samesite=None; Secure' in cookies
 
     @pytest.mark.enable_quickfiles_creation
     @mock.patch('waffle.models.Decimal', active)
@@ -202,8 +203,8 @@ class TestSloanStudyWaffling:
 
         cookies = resp.headers.getall('Set-Cookie')
 
-        assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=localhost; Path=/; samesite=None' in cookies
-        assert f' dwf_{SLOAN_PREREG_DISPLAY}=True; Domain=localhost; Path=/; samesite=None' in cookies
+        assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=localhost; Path=/; samesite=None; Secure' in cookies
+        assert f' dwf_{SLOAN_PREREG_DISPLAY}=True; Domain=localhost; Path=/; samesite=None; Secure' in cookies
 
     @pytest.mark.enable_quickfiles_creation
     def test_user_get_cookie_when_flag_is_everyone(self, app, user, preprint):
@@ -213,13 +214,13 @@ class TestSloanStudyWaffling:
         resp = app.get('/v2/', auth=user.auth, headers=headers)
 
         cookies = resp.headers.getall('Set-Cookie')
-        assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=localhost; Path=/; samesite=None' in cookies
-        assert f' dwf_{SLOAN_PREREG_DISPLAY}=False; Domain=localhost; Path=/; samesite=None' in cookies
+        assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=localhost; Path=/; samesite=None; Secure' in cookies
+        assert f' dwf_{SLOAN_PREREG_DISPLAY}=False; Domain=localhost; Path=/; samesite=None; Secure' in cookies
 
     @pytest.mark.parametrize('url, expected_domain', [
         ('https://osf.io/preprints/sdadadsad', '.osf.io'),
-        ('https://agrixiv.org/bhzjs/', '.agrixiv.org'),
-        ('https://staging-agrixiv.cos.io/', '.staging-agrixiv.cos.io'),
+        ('https://agrixiv.org/bhzjs/', '.osf.io'),
+        ('https://staging-agrixiv.cos.io/', '.staging.osf.io'),
         ('https://staging.osf.io/preprints/', '.staging.osf.io'),
     ])
     def test_get_domain(self, url, expected_domain):
