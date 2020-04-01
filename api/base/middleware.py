@@ -208,13 +208,17 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
 
         # Give all users a unique id 'sloan_id` cookie, logged in or not.
         if not request.COOKIES.get(settings.SLOAN_ID_COOKIE_NAME):
-            response.set_cookie(
-                settings.SLOAN_ID_COOKIE_NAME,
-                str(uuid.uuid4()),
-                domain=settings.CSRF_COOKIE_DOMAIN,
-                path=settings.CSRF_COOKIE_PATH,
-                httponly=settings.CSRF_COOKIE_HTTPONLY,
-            )
+            response.cookies[settings.SLOAN_ID_COOKIE_NAME] = str(uuid.uuid4())
+
+            # ↓ This line seems terrible but is fixed in py 3.8
+            response.cookies[settings.SLOAN_ID_COOKIE_NAME]._reserved.update({'samesite': 'samesite'})
+
+            response.cookies[settings.SLOAN_ID_COOKIE_NAME]['path'] = '/'
+            response.cookies[settings.SLOAN_ID_COOKIE_NAME]['domain'] = self.get_domain(request.environ['HTTP_REFERER'])
+
+            # Browsers won't allow use to use these cookie attributes unless you're sending the data over https.
+            response.cookies[settings.SLOAN_ID_COOKIE_NAME]['secure'] = True
+            response.cookies[settings.SLOAN_ID_COOKIE_NAME]['samesite'] = 'None'
 
         return super(SloanOverrideWaffleMiddleware, self).process_response(request, response)
 
