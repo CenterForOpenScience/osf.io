@@ -137,6 +137,8 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
     # Overwrites TestDraftRegistrationDetail
     def test_can_view_after_added(
             self, app, schema, draft_registration, url_draft_registrations):
+        # Draft Registration permissions should be independent of the branched_from node
+
         user = AuthUserFactory()
         project = draft_registration.branched_from
         project.add_contributor(user, ADMIN)
