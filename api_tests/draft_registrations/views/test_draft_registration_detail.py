@@ -318,16 +318,17 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
         # Override - not required
         assert res.status_code == 200
 
-    def test_invalid_editable_title(
-            self, app, user, editable_fields_payload, url_draft_registrations):
+    def test_editable_title(
+            self, app, user, editable_fields_payload, url_draft_registrations, institution_one):
+        # User must have permissions on the institution included in the editable_fields_payload
+        user.affiliated_institutions.add(institution_one)
 
-        # test blank title
+        # test blank title - should be allowed
         editable_fields_payload['data']['attributes']['title'] = ''
         res = app.put_json_api(
             url_draft_registrations, editable_fields_payload,
-            auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'This field may not be blank.'
+            auth=user.auth)
+        assert res.status_code == 200
 
         # test null title
         editable_fields_payload['data']['attributes']['title'] = None
