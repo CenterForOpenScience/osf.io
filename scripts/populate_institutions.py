@@ -1611,6 +1611,20 @@ INSTITUTIONS = {
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'uit',
+                'name': 'UiT The Arctic University of Norway [Test]',
+                'description': 'UiT The Arctic University of Norway is a medium-sized research '
+                               'university that contributes to knowledge-based development at the '
+                               'regional, national and international level.',
+                'banner_name': 'uit-banner.png',
+                'logo_name': 'uit-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': ['test-osf-uit.cos.io'],
+                'email_domains': ['uit.no'],
+                'delegation_protocol': '',
+            },
+            {
                 '_id': 'unc',
                 'name': 'University of North Carolina at Chapel Hill [Test]',
                 'description': 'This service is supported by <a href="https://odum.unc.edu/">The Odum Institute for Research in Social Science</a> and <a href="https://library.unc.edu">University Libraries at the University of North Carolina at Chapel Hill</a>. Please do not store or transfer personally identifiable information, personal health information, or any other sensitive or proprietary data in the OSF. Projects should follow applicable <a href="https://unc.policystat.com/">UNC policies</a>. Contact the <a href="mailto:odumarchive@unc.edu">Odum Institute Data Archive</a> with any questions.',
