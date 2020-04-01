@@ -357,7 +357,7 @@ def get_auth(auth, **kwargs):
                                 for flag_name in SLOAN_FLAGS:
                                     value = request.cookies.get(f'dwf_{flag_name}')
                                     if value:
-                                        sloan_flags[flag_name] = strtobool(value)
+                                        sloan_flags[flag_name.rstrip('_display')] = strtobool(value)
 
                                 try:
                                     metric_class.record_for_preprint(

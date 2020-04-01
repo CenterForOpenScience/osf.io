@@ -222,6 +222,9 @@ class TestSloanStudyWaffling:
         ('https://agrixiv.org/bhzjs/', '.osf.io'),
         ('https://staging-agrixiv.cos.io/', '.staging.osf.io'),
         ('https://staging.osf.io/preprints/', '.staging.osf.io'),
+        ('https://staging2.osf.io/preprints/', '.staging2.osf.io'),
+        ('https://staging3.osf.io/preprints/', '.staging3.osf.io'),
+        ('https://test.osf.io/preprints/', '.test.osf.io'),
     ])
     def test_get_domain(self, url, expected_domain):
         actual_domain = SloanOverrideWaffleMiddleware.get_domain(url)
