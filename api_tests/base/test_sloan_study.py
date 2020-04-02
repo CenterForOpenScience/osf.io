@@ -59,6 +59,7 @@ class TestSloanStudyWaffling:
         PreprintProviderFactory(_id='foorxiv').save()
         PreprintProviderFactory(_id='osf').save()
         PreprintProviderFactory(_id='burdixiv', domain='https://burdixiv.burds/').save()
+        PreprintProviderFactory(_id='shady', domain='https://staging2-engrxiv.cos.io/').save()
 
     @pytest.fixture(autouse=True)
     def flags(self, user):
@@ -141,6 +142,8 @@ class TestSloanStudyWaffling:
     @pytest.mark.parametrize('reffer_url, expected_provider_id', [
         (f'https://burdixiv.burds/', 'burdixiv'),
         (f'https://burdixiv.burds/guid0', 'burdixiv'),
+        (f'https://burdixiv.burds/guid0', 'burdixiv'),
+        (f'https://staging2.osf.io/', None),
         (f'{DOMAIN}preprints', 'osf'),
         (f'{DOMAIN}preprints/', 'osf'),
         (f'{DOMAIN}preprints/not/a/valid/path/', 'osf'),
@@ -152,7 +155,7 @@ class TestSloanStudyWaffling:
     ])
     def test_weird_domains(self, reffer_url, expected_provider_id):
         provider = SloanOverrideWaffleMiddleware.get_provider_from_url(reffer_url)
-        assert expected_provider_id == provider._id
+        assert expected_provider_id == getattr(provider, '_id', None)
 
     @pytest.mark.parametrize('reffer_url', [
         DOMAIN,
@@ -171,18 +174,13 @@ class TestSloanStudyWaffling:
         tags = user.all_tags.all().values_list('name', flat=True)
 
         assert SLOAN_COI in tags
-        assert SLOAN_DATA in tags
-        assert SLOAN_PREREG in tags
 
         assert SLOAN_COI_DISPLAY in resp.json['meta']['active_flags']
-        assert SLOAN_DATA_DISPLAY in resp.json['meta']['active_flags']
-        assert SLOAN_PREREG_DISPLAY in resp.json['meta']['active_flags']
 
         cookies = resp.headers.getall('Set-Cookie')
 
         assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=.osf.io; Path=/; samesite=None; Secure' in cookies
-        assert f' dwf_{SLOAN_DATA_DISPLAY}=True; Domain=.osf.io; Path=/; samesite=None; Secure' in cookies
-        assert f' dwf_{SLOAN_PREREG_DISPLAY}=True; Domain=.osf.io; Path=/; samesite=None; Secure' in cookies
+        assert f' dwf_{SLOAN_COI_DISPLAY}_custom_domain=True; Domain=.burdixiv.burds; Path=/; samesite=None; Secure' in cookies
 
     @pytest.mark.enable_quickfiles_creation
     @mock.patch('waffle.models.Decimal', active)
@@ -225,6 +223,7 @@ class TestSloanStudyWaffling:
         ('https://staging2.osf.io/preprints/', '.staging2.osf.io'),
         ('https://staging3.osf.io/preprints/', '.staging3.osf.io'),
         ('https://test.osf.io/preprints/', '.test.osf.io'),
+        ('https://staging2-engrxiv.cos.io/', '.staging2.osf.io'),
     ])
     def test_get_domain(self, url, expected_domain):
         actual_domain = SloanOverrideWaffleMiddleware.get_domain(url)
