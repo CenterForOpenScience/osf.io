@@ -1,6 +1,5 @@
 import pytest
 import datetime
-import random
 
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
@@ -48,9 +47,9 @@ class TestInstitutionSummaryMetrics:
         assert resp.status_code == 404
 
         # Record latest institutional metrics to ES
-        public_project_count_latest = int(50 * random.random())
-        private_project_count_latest = int(50 * random.random())
-        institution_user_count_latest = 5 + (int(10 * random.random()))
+        public_project_count_latest = 24
+        private_project_count_latest = 26
+        institution_user_count_latest = 9
         timestamp_latest = datetime.datetime.now()
 
         # Uses record to specify user_count
@@ -63,9 +62,9 @@ class TestInstitutionSummaryMetrics:
         ).save()
 
         # Record earlier institutional metrics to ES
-        public_project_count_early = int(50 * random.random())
-        private_project_count_early = int(50 * random.random())
-        institution_user_count_early = institution_user_count_latest - 4
+        public_project_count_early = 20
+        private_project_count_early = 18
+        institution_user_count_early = 4
         timestamp_early = timestamp_latest - datetime.timedelta(days=1)
 
         # Uses record to specify user_count
