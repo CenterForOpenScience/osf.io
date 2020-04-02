@@ -1,4 +1,5 @@
 {
+    "##comment##":  "make the sentence correspond with 'logActionsList_extract.js' for i18n",
     "project_created":  "${user} created ${node}",
     "project_registered": "${user} registered ${node}",
     "project_registered_no_user": "${node} registered",
