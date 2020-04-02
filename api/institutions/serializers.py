@@ -166,7 +166,7 @@ class InstitutionRegistrationsRelationshipSerializer(BaseAPISerializer):
 class InstitutionSummaryMetricSerializer(JSONAPISerializer):
 
     class Meta:
-        type_ = 'institution-summary-metrics'
+        type_ = 'institution-metrics'
 
     id = IDField(source='institution_id', read_only=True)
     public_project_count = ser.IntegerField(read_only=True)
@@ -182,6 +182,7 @@ class InstitutionSummaryMetricSerializer(JSONAPISerializer):
             'institutions:institution-summary-metrics',
             kwargs={
                 'institution_id': obj.institution_id,
+                'version': 'v2',
             },
         )
 
