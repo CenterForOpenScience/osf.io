@@ -249,7 +249,16 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
         """
 
         # matches custom domains:
-        provider_domains = list(PreprintProvider.objects.exclude(domain='').values_list('domain', flat=True))
+        provider_domains = list(
+            PreprintProvider.objects.exclude(
+                domain='',
+            ).filter(
+                domain_redirect_enabled=True,  # must exclude our native domains like https://staging2.osf.io/
+            ).values_list(
+                'domain',
+                flat=True,
+            ),
+        )
         provider_domains = [domains for domains in provider_domains if referer_url.startswith(domains)]
         if provider_domains:
             return PreprintProvider.objects.get(domain=provider_domains[0])
