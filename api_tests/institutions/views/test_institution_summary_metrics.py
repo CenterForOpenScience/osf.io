@@ -31,7 +31,7 @@ class TestInstitutionSummaryMetrics:
 
     @pytest.fixture()
     def url(self, institution):
-        return f'/{API_BASE}institutions/{institution._id}/metrics/'
+        return f'/{API_BASE}institutions/{institution._id}/metrics/summary/'
 
     def test_get(self, app, url, institution, user, admin):
         # Tests unauthenticated user
