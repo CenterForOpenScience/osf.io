@@ -312,7 +312,10 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
         resp.cookies[name]._reserved.update({'samesite': 'samesite'})
 
         resp.cookies[name]['path'] = '/'
-        resp.cookies[name]['domain'] = self.get_domain(request.environ['HTTP_REFERER'])
+        if request.environ.get('HTTP_REFERER'):
+            resp.cookies[name]['domain'] = self.get_domain(request.environ['HTTP_REFERER'])
+        else:
+            resp.cookies[name]['domain'] = settings.CSRF_COOKIE_DOMAIN
 
         # Browsers won't allow use to use these cookie attributes unless you're sending the data over https.
         resp.cookies[name]['secure'] = True
