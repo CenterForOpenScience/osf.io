@@ -1,9 +1,5 @@
 from osf.models.base import BaseModel
 from django.db import models
-<<<<<<< HEAD
-=======
-from colorfield.fields import ColorField
->>>>>>> add Brand model with migration
 
 
 class Brand(BaseModel):
