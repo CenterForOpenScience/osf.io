@@ -37,6 +37,7 @@ from api.institutions.serializers import (
     InstitutionRegistrationsRelationshipSerializer,
     InstitutionSummaryMetricSerializer,
     InstitutionDepartmentSerializer,
+    InstitutionUserMetricsSerializer,
 )
 from api.institutions.permissions import UserIsAffiliated
 
@@ -443,5 +444,40 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
         return self._make_elasticsearch_results_filterable(department_counts)
 
     # overrides RetrieveAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+class InstitutionUserMetricsList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, InstitutionMixin):
+
+    permission_classes = {
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        IsInstitutionalMetricsUser,
+    }
+
+    required_read_scopes = [CoreScopes.INSTITUTION_METRICS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = InstitutionUserMetricsSerializer
+
+    view_category = 'institutions'
+    view_name = 'institution-user-metrics'
+
+    def get_default_queryset(self):
+        institution = self.get_institution()
+        queryset = MockQueryset()
+
+        results = UserInstitutionProjectCounts.get_current_user_metrics(institution)
+        for user_record in results:
+            record_dict = user_record.to_dict()
+            user_id = user_record.user_id
+            fullname = OSFUser.objects.get(guids___id=user_id).fullname
+            record_dict['user'] = f'({user_id}) {fullname}'
+
+            queryset.add_dict_as_item(record_dict)
+
+        return queryset
+
+    #overrides RetrieveApiView
     def get_queryset(self):
         return self.get_queryset_from_request()
