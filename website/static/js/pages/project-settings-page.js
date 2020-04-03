@@ -76,7 +76,7 @@ $(document).ready(function() {
         var projectSettingsVM = new ProjectSettings.ProjectSettings( {
             currentTitle: ctx.node.title,
             currentDescription: ctx.node.description,
-            category: ctx.node.category,
+            category: _(ctx.node.category),
             categoryOptions: categoryOptions,
             node_id: ctx.node.id,
             timestampPattern: ctx.timestampPattern,
