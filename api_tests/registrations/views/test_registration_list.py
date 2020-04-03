@@ -1545,6 +1545,16 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
         # is not transferred to the reg, the draft's is.
         assert res.json['data']['attributes']['title'] != 'Recently updated title'
 
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_draft_registration_title_enforced(
+            self, mock_enqueue, app, user, url_registrations_ver, payload_ver, draft_registration):
+
+        draft_registration.title = ''
+        draft_registration.save()
+        res = app.post_json_api(url_registrations_ver, payload_ver, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Draft Registration must have title to be registered'
+
 
 @pytest.mark.django_db
 class TestRegistrationBulkUpdate:
