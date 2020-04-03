@@ -5,6 +5,7 @@ from io import StringIO
 import cProfile
 import pstats
 import threading
+from urllib.parse import urlparse
 
 from django.conf import settings
 from django.utils.deprecation import MiddlewareMixin
@@ -198,6 +199,15 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
                         self.set_sloan_tags(user, sloan_flag_name, active)
                         self.set_sloan_cookie(f'dwf_{sloan_flag_name}', active, request, response)
 
+                        if provider.domain:
+                            self.set_sloan_cookie(
+                                f'dwf_{sloan_flag_name}_custom_domain',
+                                active,
+                                request,
+                                response,
+                                custom_domain=provider.domain,
+                            )
+
                     response.data['meta']['active_flags'].append(sloan_flag_name)
 
         # `set_sloan_cookies` has set the cookies, make sure WaffleMiddleware doesn't try to set them again.
@@ -260,6 +270,7 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
             ),
         )
         provider_domains = [domains for domains in provider_domains if referer_url.startswith(domains)]
+
         if provider_domains:
             return PreprintProvider.objects.get(domain=provider_domains[0])
 
@@ -307,7 +318,7 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
             else:
                 user.add_system_tag(f'no_{tag_name}')
 
-    def set_sloan_cookie(self, name: str, value, request, resp):
+    def set_sloan_cookie(self, name: str, value, request, resp, custom_domain=None):
         """
         Set sloan cookies to sloan study specifications
         :param name: The name of the flag that will get a cookie
@@ -321,10 +332,14 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
         resp.cookies[name]._reserved.update({'samesite': 'samesite'})
 
         resp.cookies[name]['path'] = '/'
-        if request.environ.get('HTTP_REFERER'):
-            resp.cookies[name]['domain'] = self.get_domain(request.environ['HTTP_REFERER'])
-        else:
+
+        if request.environ.get('HTTP_REFERER') is None:
             resp.cookies[name]['domain'] = settings.CSRF_COOKIE_DOMAIN
+        else:
+            resp.cookies[name]['domain'] = self.get_domain(request.environ['HTTP_REFERER'])
+
+        if custom_domain:
+            resp.cookies[name]['domain'] = '.' + urlparse(custom_domain).netloc
 
         # Browsers won't allow use to use these cookie attributes unless you're sending the data over https.
         resp.cookies[name]['secure'] = True

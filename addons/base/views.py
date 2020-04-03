@@ -355,7 +355,7 @@ def get_auth(auth, **kwargs):
                             if metric_class:
                                 sloan_flags = {'sloan_id': request.cookies.get(SLOAN_ID_COOKIE_NAME)}
                                 for flag_name in SLOAN_FLAGS:
-                                    value = request.cookies.get(f'dwf_{flag_name}')
+                                    value = request.cookies.get(f'dwf_{flag_name}_custom_domain') or request.cookies.get(f'dwf_{flag_name}')
                                     if value:
                                         sloan_flags[flag_name.replace('_display', '')] = strtobool(value)
 
