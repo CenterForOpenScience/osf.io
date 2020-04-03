@@ -307,6 +307,9 @@ class InstitutionProjectCounts(MetricMixin, metrics.Metric):
             'refresh_interval': '1s',
         }
 
+    class Meta:
+        source = metrics.MetaField(enabled=True)
+
     @classmethod
     def record_institution_project_counts(cls, institution, public_project_count, private_project_count, **kwargs):
         return cls.record(
@@ -321,5 +324,4 @@ class InstitutionProjectCounts(MetricMixin, metrics.Metric):
     def get_latest_institution_project_document(cls, institution):
         search = cls.search().filter('match', institution_id=institution._id).sort('-timestamp')[:1]
         response = search.execute()
-
         return response[0]

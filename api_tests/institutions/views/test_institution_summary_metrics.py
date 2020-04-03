@@ -93,6 +93,6 @@ class TestInstitutionSummaryMetrics:
                 'user_count': institution_user_count_latest
             },
             'links': {
-                'self': url
+                'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/summary/'
             }
         }
