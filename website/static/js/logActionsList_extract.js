@@ -1,7 +1,7 @@
 {
     "project_created":  _("${user} created ${node}"),
     "project_registered": _("${user} registered ${node}"),
-    "project_registered_no_user": _("${node} registered")),
+    "project_registered_no_user": _("${node} registered"),
     "prereg_registration_initiated": _("${user} submitted for review to the Preregistration Challenge a registration of ${node}"),
     "project_deleted":  _("${user} deleted ${node}"),
     "created_from":     _("${user} created ${node} based on ${template}"),
@@ -89,5 +89,5 @@
     "mapcore_map_group_not_created": _("[MAPCORE_SYNC:ERROR] ${user} cannot create a new mAP group for GRDM project <${node}> (See logs for details)"),
     "mapcore_map_group_not_updated": _("[MAPCORE_SYNC:ERROR] mAP group for GRDM project <${node}> cannot be updated (See logs for details)"),
     "mapcore_rdm_project_not_updated": _("[MAPCORE_SYNC:ERROR] GRDM project <${node}> cannot be updated with mAP group (See logs for details)"),
-    "mapcore_rdm_unknown_user": _("[MAPCORE_SYNC:NOTICE] Unknown (unregistered in GRDM) users belong to mAP group <${node}> (ignored) (See logs for details))"
+    "mapcore_rdm_unknown_user": _("[MAPCORE_SYNC:NOTICE] Unknown (unregistered in GRDM) users belong to mAP group <${node}> (ignored) (See logs for details)")
 }
