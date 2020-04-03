@@ -1,3 +1,4 @@
+var logActionList =
 {
     "project_created":  _("${user} created ${node}"),
     "project_registered": _("${user} registered ${node}"),
