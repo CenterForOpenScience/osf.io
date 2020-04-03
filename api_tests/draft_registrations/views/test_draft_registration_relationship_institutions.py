@@ -63,8 +63,8 @@ class TestDraftRegistrationRelationshipInstitutions(TestNodeRelationshipInstitut
         )
 
         node.reload()
-        # Need to have admin perms to edit draft registration institutions
-        assert res.status_code == 403
+
+        assert res.status_code == 200
 
     # Overrides TestNodeRelationshipInstitutions
     def test_delete_user_is_read_write(
@@ -84,7 +84,7 @@ class TestDraftRegistrationRelationshipInstitutions(TestNodeRelationshipInstitut
             expect_errors=True
         )
 
-        assert res.status_code == 403
+        assert res.status_code == 204
 
     # Overrides TestNodeRelationshipInstitutions
     def test_read_write_contributor_can_add_affiliated_institution(
@@ -102,7 +102,7 @@ class TestDraftRegistrationRelationshipInstitutions(TestNodeRelationshipInstitut
             expect_errors=True
         )
         node.reload()
-        assert res.status_code == 403
+        assert res.status_code == 201
 
     def test_read_write_contributor_can_remove_affiliated_institution(
             self, app, write_contrib, write_contrib_institution, node, node_institutions_url):
@@ -121,4 +121,4 @@ class TestDraftRegistrationRelationshipInstitutions(TestNodeRelationshipInstitut
             expect_errors=True
         )
         node.reload()
-        assert res.status_code == 403
+        assert res.status_code == 204
