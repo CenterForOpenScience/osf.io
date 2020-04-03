@@ -58,8 +58,8 @@ class TestSloanStudyWaffling:
     def providers(self, user):
         PreprintProviderFactory(_id='foorxiv').save()
         PreprintProviderFactory(_id='osf').save()
-        PreprintProviderFactory(_id='burdixiv', domain='https://burdixiv.burds/').save()
-        PreprintProviderFactory(_id='shady', domain='https://staging2-engrxiv.cos.io/').save()
+        PreprintProviderFactory(_id='burdixiv', domain='https://burdixiv.burds/', domain_redirect_enabled=True).save()
+        PreprintProviderFactory(_id='shady', domain='https://staging2.osf.io/', domain_redirect_enabled=False).save()
 
     @pytest.fixture(autouse=True)
     def flags(self, user):
@@ -140,6 +140,7 @@ class TestSloanStudyWaffling:
         assert f' dwf_{SLOAN_PREREG_DISPLAY}=False; Domain=localhost; Path=/; samesite=None; Secure' in cookies
 
     @pytest.mark.parametrize('reffer_url, expected_provider_id', [
+        (f'https://staging2.osf.io/', None),
         (f'https://burdixiv.burds/', 'burdixiv'),
         (f'https://burdixiv.burds/guid0', 'burdixiv'),
         (f'https://burdixiv.burds/guid0', 'burdixiv'),
