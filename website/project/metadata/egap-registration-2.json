@@ -1,6 +1,6 @@
 {
 	"name": "EGAP Registration",
-	"version": 2,
+	"version": 3,
 	"config": {
         "hasFiles": true
     },
@@ -96,25 +96,6 @@
 						"Yes",
 						"No"
 					],
-					"description": "(with random assignment of units to different conditions)"
-				},
-				{
-					"qid": "q11",
-					"title": "Date of start of study",
-					"nav": "Date of start of study",
-					"type": "string",
-					"format": "text",
-					"description": "Understood as first date of treatment assignment or equivalent for observational study",
-					"help": "E.g., 06/02/2018"
-				},
-				{
-					"qid": "q12",
-					"title": "Gate Date",
-					"nav": "Gate Date?",
-					"type": "string",
-					"format": "text",
-					"description": "Gating is discouraged, but if necessary, EGAP policy limits the gate range to 18 months maximum.",
-					"help": "E.g., 06/02/2018"
 				},
 				{
 					"qid": "q13",
@@ -127,7 +108,6 @@
 						"No",
 						"Yes"
 					],
-					"description": "Indicate if the design received feedback from a EGAP design workshop or other special EGAP session prior to registration"
 				},
 				{
 					"qid": "q14",
@@ -253,7 +233,8 @@
 					"qid": "q27",
 					"title": "Other",
 					"format": "textarea",
-					"required": false
+					"required": false,
+					"description": "Other (additional information if 'other' was selected above)"
 				},
 				{
 					"qid": "q28",
@@ -272,7 +253,8 @@
 					"qid": "q29",
 					"title": "Other",
 					"format": "textarea",
-					"required": false
+					"required": false,
+					"description": "Other (additional information if 'other' was selected above)"
 				},
 				{
 					"qid": "q30",
@@ -291,7 +273,8 @@
 					"qid": "q31",
 					"title": "Other",
 					"format": "textarea",
-					"required": false
+					"required": false,
+					"description": "Other (additional information if 'other' was selected above)"
 				},
 				{
 					"qid": "q32",
@@ -299,7 +282,7 @@
 					"nav": "JEL classification(s)",
 					"type": "string",
 					"format": "text",
-					"description": "Please provide alphanumeric code(s). If multiple classifications, separate by commas (e.g. D31, C19, F22)"
+					"description": "Please provide alphanumeric code(s). If multiple classifications, separate by commas (e.g. D31, C19, F22). For more information, see here<https://www.aeaweb.org/jel/guide/jel.php>."
 				}
 			]
 		},
@@ -354,22 +337,22 @@
 				"nav": "Confirmation",
 				"type": "choose",
 				"format": "singleselect",
-				"description": "You should receive a confirmation of your registration within three business days. Your registration is considered complete only when confirmation is received. If you do not receive confirmation within three business days please contact paps@egap.org.",
+				"description": "You should receive a confirmation of your registration within three business days. Your registration is considered complete only when confirmation is received. If you do not receive confirmation within five business days please contact paps@egap.org.",
 				"options": [
 					"Agree"
 				],
 				"required": true
 			}, {
 				"qid": "q37",
-				"nav": "Additional Documentation",
-				"title": "Additional Documentation",
+				"nav": "Additional documentation",
+				"title": "Additional documentation",
 				"type": "osf-upload",
 				"format": "osf-upload-open",
 				"description": "Please upload your pre-analysis plan, along with any other supporting documents, such as survey instrument, research protocol, any data, etc."
 			}, {
 				"qid": "q38",
-				"nav": "Anonymous Documentation",
-				"title": "Anonymous Documentation",
+				"nav": "Anonymous documentation",
+				"title": "Anonymous documentation",
 				"type": "osf-upload",
 				"format": "osf-upload-open",
 				"description": "Please upload your anonymized pre-analysis plan, along with any other supporting documents, such as survey instrument, research protocol, any data, etc."
