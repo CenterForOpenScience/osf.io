@@ -1,6 +1,6 @@
 {
 	"name": "EGAP Registration",
-	"version": 2,
+	"version": 3,
 	"config": {
         "hasFiles": true
     },
