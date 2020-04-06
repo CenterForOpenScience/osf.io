@@ -5,6 +5,7 @@ from io import StringIO
 import cProfile
 import pstats
 import threading
+from urllib.parse import urlparse
 
 from django.conf import settings
 from django.utils.deprecation import MiddlewareMixin
@@ -196,7 +197,16 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
 
                     if active is not None:
                         self.set_sloan_tags(user, sloan_flag_name, active)
-                        self.set_sloan_cookie(sloan_flag_name, active, request, response)
+                        self.set_sloan_cookie(f'dwf_{sloan_flag_name}', active, request, response)
+
+                        if provider.domain:
+                            self.set_sloan_cookie(
+                                f'dwf_{sloan_flag_name}_custom_domain',
+                                active,
+                                request,
+                                response,
+                                custom_domain=provider.domain,
+                            )
 
                     response.data['meta']['active_flags'].append(sloan_flag_name)
 
@@ -208,13 +218,7 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
 
         # Give all users a unique id 'sloan_id` cookie, logged in or not.
         if not request.COOKIES.get(settings.SLOAN_ID_COOKIE_NAME):
-            response.set_cookie(
-                settings.SLOAN_ID_COOKIE_NAME,
-                str(uuid.uuid4()),
-                domain=settings.CSRF_COOKIE_DOMAIN,
-                path=settings.CSRF_COOKIE_PATH,
-                httponly=settings.CSRF_COOKIE_HTTPONLY,
-            )
+            self.set_sloan_cookie(settings.SLOAN_ID_COOKIE_NAME, str(uuid.uuid4()), request, response)
 
         return super(SloanOverrideWaffleMiddleware, self).process_response(request, response)
 
@@ -255,8 +259,18 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
         """
 
         # matches custom domains:
-        provider_domains = list(PreprintProvider.objects.exclude(domain='').values_list('domain', flat=True))
+        provider_domains = list(
+            PreprintProvider.objects.exclude(
+                domain='',
+            ).filter(
+                domain_redirect_enabled=True,  # must exclude our native domains like https://staging2.osf.io/
+            ).values_list(
+                'domain',
+                flat=True,
+            ),
+        )
         provider_domains = [domains for domains in provider_domains if referer_url.startswith(domains)]
+
         if provider_domains:
             return PreprintProvider.objects.get(domain=provider_domains[0])
 
@@ -304,22 +318,29 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
             else:
                 user.add_system_tag(f'no_{tag_name}')
 
-    def set_sloan_cookie(self, name: str, active: bool, request, resp):
+    def set_sloan_cookie(self, name: str, value, request, resp, custom_domain=None):
         """
         Set sloan cookies to sloan study specifications
         :param name: The name of the flag that will get a cookie
-        :param active: Is the flag active?
+        :param value: Is the flag active, what's it's value if sloan_id
         :param request:
         :param resp:
         :return:
         """
-        resp.cookies[f'dwf_{name}'] = active
+        resp.cookies[name] = value
         # ↓ This line seems terrible but is fixed in py 3.8
-        resp.cookies[f'dwf_{name}']._reserved.update({'samesite': 'samesite'})
+        resp.cookies[name]._reserved.update({'samesite': 'samesite'})
 
-        resp.cookies[f'dwf_{name}']['path'] = '/'
-        resp.cookies[f'dwf_{name}']['domain'] = self.get_domain(request.environ['HTTP_REFERER'])
+        resp.cookies[name]['path'] = '/'
+
+        if request.environ.get('HTTP_REFERER') is None:
+            resp.cookies[name]['domain'] = settings.CSRF_COOKIE_DOMAIN
+        else:
+            resp.cookies[name]['domain'] = self.get_domain(request.environ['HTTP_REFERER'])
+
+        if custom_domain:
+            resp.cookies[name]['domain'] = '.' + urlparse(custom_domain).netloc
 
         # Browsers won't allow use to use these cookie attributes unless you're sending the data over https.
-        resp.cookies[f'dwf_{name}']['secure'] = True
-        resp.cookies[f'dwf_{name}']['samesite'] = 'None'
+        resp.cookies[name]['secure'] = True
+        resp.cookies[name]['samesite'] = 'None'
