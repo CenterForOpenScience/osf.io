@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-02 11:58+0900\n"
-"PO-Revision-Date: 2020-04-02 11:58+0900\n"
+"POT-Creation-Date: 2020-04-03 14:51+0900\n"
+"PO-Revision-Date: 2020-04-03 14:51+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -2344,6 +2344,67 @@ msgstr ""
 "{addon}アドオンを設定していないため、認証は分岐した{category}に転送されません。 "
 "設定ページの新しいフォークで{addon}アドオンを許可および設定できます。"
 
+#: website/static/js/js_messages.js:15 website/static/js/passwordForms.js:178
+#: website/static/js/passwordForms.js:241
+msgid "This field is required."
+msgstr "この項目は必須です。"
+
+#: website/static/js/js_messages.js:15
+msgid "Please enter a value greater than or equal to {0}."
+msgstr "{0}以上の値を入力してください。"
+
+#: website/static/js/js_messages.js:15
+msgid "Please enter a value less than or equal to {0}."
+msgstr "{0}以下の値を入力してください。"
+
+#: website/static/js/js_messages.js:15
+msgid "Please enter at least {0} characters."
+msgstr "{0}文字以上入力してください。"
+
+#: website/static/js/js_messages.js:15
+msgid "Please enter no more than {0} characters."
+msgstr "{0}文字以下で入力してください。"
+
+#: website/static/js/js_messages.js:15
+msgid "Please check this value."
+msgstr "値を確認してください。"
+
+#: website/static/js/js_messages.js:15
+msgid "The value must increment by {0}."
+msgstr "値は{0}ずつ増加する必要があります。"
+
+#: website/static/js/js_messages.js:15
+msgid "Please enter a proper email address."
+msgstr "正しいメールアドレスを入力してください。"
+
+#: website/static/js/js_messages.js:15
+msgid "Please enter a proper date."
+msgstr "適切な日付を入力してください。"
+
+#: website/static/js/js_messages.js:15
+msgid "Please enter a number."
+msgstr "数字を入力してください。"
+
+#: website/static/js/js_messages.js:15
+msgid "Please enter a digit."
+msgstr "数字を入力してください。"
+
+#: website/static/js/js_messages.js:15
+msgid "Please specify a valid phone number."
+msgstr "有効な電話番号を指定してください。"
+
+#: website/static/js/js_messages.js:15
+msgid "Values must equal."
+msgstr "値は等しくなければなりません。"
+
+#: website/static/js/js_messages.js:15
+msgid "Please choose another value."
+msgstr "別の値を選択してください。"
+
+#: website/static/js/js_messages.js:15
+msgid "Please make sure the value is unique."
+msgstr "値が一意であることを確認してください。"
+
 #: website/static/js/keen.js:114
 msgid "Error sending Keen data to %1$s:<%2$s>"
 msgstr "Keenデータの%1$sへの送信エラー：<%2$s>"
@@ -2819,6 +2880,12 @@ msgstr ""
 msgid ""
 "[MAPCORE_SYNC:ERROR] GRDM project <${node}> cannot be updated with mAP "
 "group (See logs for details)"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:92
+msgid ""
+"[MAPCORE_SYNC:NOTICE] Unknown (unregistered in GRDM) users belong to mAP "
+"group <${node}> (ignored) (See logs for details)"
 msgstr ""
 
 #: website/static/js/meetings.js:24
@@ -3531,11 +3598,6 @@ msgstr "新しいパスワードを古いパスワードと同じにすること
 #: website/static/js/passwordForms.js:203
 msgid "Passwords must match."
 msgstr "パスワードが一致する必要があります。"
-
-#: website/static/js/passwordForms.js:178
-#: website/static/js/passwordForms.js:241
-msgid "This field is required."
-msgstr "この項目は必須です。"
 
 #: website/static/js/passwordForms.js:230
 msgid "Email addresses must match."
