@@ -104,7 +104,7 @@ def send_share_node_data(node):
     token = node.provider.access_token if getattr(node, 'provider') else settings.SHARE_API_TOKEN
 
     resp = requests.post(
-        f'{settings.SHARE_URL}api/normalizeddata/',
+        f'{settings.SHARE_URL}/api/normalizeddata/',
         json=data,
         headers={
             'Authorization': f'Bearer {token}',
