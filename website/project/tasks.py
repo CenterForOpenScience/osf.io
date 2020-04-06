@@ -1,14 +1,13 @@
-from django.apps import apps
 import logging
-from future.moves.urllib.parse import urljoin
 import random
 import requests
+from urllib.parse import urljoin
 
+from django.apps import apps
 from framework.celery_tasks import app as celery_app
 
 from website import settings, mails
 from website.util.share import GraphNode, format_contributor
-
 
 logger = logging.getLogger(__name__)
 
@@ -50,23 +49,25 @@ def update_collecting_metadata(node, saved_fields):
 
 
 def update_node_share(node):
-    # Wrapper that ensures share_url and token exist
-    if settings.SHARE_URL:
-        if not settings.SHARE_API_TOKEN:
-            return logger.warning('SHARE_API_TOKEN not set. Could not send "{}" to SHARE.'.format(node._id))
-        _update_node_share(node)
-
-
-def _update_node_share(node):
     # Any modifications to this function may need to change _async_update_node_share
+    print('settings', not settings.SHARE_URL or not settings.SHARE_API_TOKEN)
+    if not settings.SHARE_URL or not settings.SHARE_API_TOKEN:
+        logger.warning(f'SHARE_API_TOKEN not set. Could not send "{node._id}" to SHARE.')
+        return
+
     resp = send_share_node_data(node)
+
     try:
         resp.raise_for_status()
-    except Exception:
+    except requests.exceptions.RequestException:
         if resp.status_code >= 500:
             _async_update_node_share.delay(node._id)
         else:
             send_desk_share_error(node, resp, 0)
+
+
+def calculate_backoff_time_celery(retries):
+    return (random.random() + 1) * min(60 + settings.CELERY_RETRY_BACKOFF_BASE ** retries, 60 * 10)
 
 
 @celery_app.task(bind=True, max_retries=4, acks_late=True)
@@ -75,17 +76,18 @@ def _async_update_node_share(self, node_id):
     # Takes node_id to ensure async retries push fresh data
     AbstractNode = apps.get_model('osf.AbstractNode')
     node = AbstractNode.load(node_id)
+    request = self.request
 
     resp = send_share_node_data(node)
     try:
         resp.raise_for_status()
-    except Exception as e:
+    except requests.exceptions.RequestException as e:
         if resp.status_code >= 500:
             if self.request.retries == self.max_retries:
-                send_desk_share_error(node, resp, self.request.retries)
+                send_desk_share_error(node, resp, request.retries)
             raise self.retry(
                 exc=e,
-                countdown=(random.random() + 1) * min(60 + settings.CELERY_RETRY_BACKOFF_BASE ** self.request.retries, 60 * 10)
+                countdown=calculate_backoff_time_celery(request.retries)
             )
         else:
             send_desk_share_error(node, resp, self.request.retries)
@@ -99,7 +101,7 @@ def send_share_node_data(node):
     """
     data = serialize_share_node_data(node)
 
-    token = node.provider.access_token if hasattr(node, 'provider') else settings.SHARE_API_TOKEN
+    token = node.provider.access_token if getattr(node, 'provider') else settings.SHARE_API_TOKEN
 
     resp = requests.post(
         f'{settings.SHARE_URL}api/normalizeddata/',
@@ -110,6 +112,7 @@ def send_share_node_data(node):
         }
     )
 
+    logger.debug(resp.content)
     return resp
 
 
@@ -213,6 +216,6 @@ def check_if_qa_node(node) -> bool:
     don_not_index_tags = set(settings.DO_NOT_INDEX_LIST['tags'])
     has_forbid_index_tags = bool(don_not_index_tags.intersection(node_tags))
 
-    has_forbid_index_title = (substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
+    has_forbid_index_title = any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
 
     return has_forbid_index_tags or has_forbid_index_title
