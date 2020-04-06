@@ -5,7 +5,6 @@ from io import StringIO
 import cProfile
 import pstats
 import threading
-from urllib.parse import urlparse
 
 from django.conf import settings
 from django.utils.deprecation import MiddlewareMixin
@@ -339,7 +338,7 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
             resp.cookies[name]['domain'] = self.get_domain(request.environ['HTTP_REFERER'])
 
         if custom_domain:
-            resp.cookies[name]['domain'] = '.' + urlparse(custom_domain).netloc
+            resp.cookies[name]['domain'] = custom_domain
 
         # Browsers won't allow use to use these cookie attributes unless you're sending the data over https.
         resp.cookies[name]['secure'] = True
