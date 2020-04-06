@@ -50,7 +50,6 @@ def update_collecting_metadata(node, saved_fields):
 
 def update_node_share(node):
     # Any modifications to this function may need to change _async_update_node_share
-    print('settings', not settings.SHARE_URL or not settings.SHARE_API_TOKEN)
     if not settings.SHARE_URL or not settings.SHARE_API_TOKEN:
         logger.warning(f'SHARE_API_TOKEN not set. Could not send "{node._id}" to SHARE.')
         return
@@ -79,6 +78,7 @@ def _async_update_node_share(self, node_id):
     request = self.request
 
     resp = send_share_node_data(node)
+
     try:
         resp.raise_for_status()
     except requests.exceptions.RequestException as e:
