@@ -65,8 +65,8 @@ class TestSloanMetrics(OsfTestCase):
         sloan_cookie_value = resp.headers['Set-Cookie'].split('=')[1].split(';')[0]
 
         # tests cookies get sent to impact
-        self.app.set_cookie(SLOAN_COI_DISPLAY, 'True')
-        self.app.set_cookie(SLOAN_DATA_DISPLAY, 'False')
+        self.app.set_cookie(f'dwf_{SLOAN_COI_DISPLAY}', 'True')
+        self.app.set_cookie(f'dwf_{SLOAN_DATA_DISPLAY}', 'False')
         self.app.set_cookie(SLOAN_ID_COOKIE_NAME, sloan_cookie_value)
         with override_switch(ELASTICSEARCH_METRICS, active=True):
             self.app.get(self.build_url(path=test_file.path))
@@ -76,10 +76,9 @@ class TestSloanMetrics(OsfTestCase):
             preprint=self.preprint,
             user=None,
             version='1',
-            sloan_coi='True',
-            sloan_data='False',
+            sloan_coi=1,
+            sloan_data=0,
             sloan_id=sloan_cookie_value,
-            sloan_prereg=None,
         )
 
 
