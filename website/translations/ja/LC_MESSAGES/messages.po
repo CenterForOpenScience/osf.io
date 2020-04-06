@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-31 14:19+0900\n"
-"PO-Revision-Date: 2020-03-27 11:52+0900\n"
+"POT-Creation-Date: 2020-04-03 20:08+0900\n"
+"PO-Revision-Date: 2020-04-03 20:08+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -813,7 +813,7 @@ msgstr "メニュー"
 msgid "Loading wiki pages..."
 msgstr "Wikiページをロード中"
 
-#: addons/wiki/templates/edit.mako:82
+#: addons/wiki/templates/edit.mako:75 addons/wiki/templates/edit.mako:82
 msgid "View"
 msgstr "ビュー"
 
@@ -834,7 +834,7 @@ msgstr "最新"
 msgid "Add important information, links, or images here to describe your project."
 msgstr "重要な情報、リンク、または画像をここに追加して、プロジェクトを説明します。"
 
-#: addons/wiki/templates/edit.mako:134
+#: addons/wiki/templates/edit.mako:126 addons/wiki/templates/edit.mako:134
 #: website/templates/include/profile/schools.mako:180
 #: website/templates/include/profile/social.mako:184
 #: website/templates/project/project.mako:539
@@ -849,7 +849,7 @@ msgstr "ロード中..."
 msgid "Revert"
 msgstr "元に戻す"
 
-#: addons/wiki/templates/edit.mako:212
+#: addons/wiki/templates/edit.mako:205 addons/wiki/templates/edit.mako:212
 msgid "Compare"
 msgstr "比較"
 
