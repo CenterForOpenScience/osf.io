@@ -1,6 +1,6 @@
 var _ = require('js/rdmGettext')._;
-var logActionList =
-{
+var logActionList = JSON.stringify(
+  {
     "project_created":  _("${user} created ${node}"),
     "project_registered": _("${user} registered ${node}"),
     "project_registered_no_user": _("${node} registered"),
@@ -92,4 +92,5 @@ var logActionList =
     "mapcore_map_group_not_updated": _("[MAPCORE_SYNC:ERROR] mAP group for GRDM project <${node}> cannot be updated (See logs for details)"),
     "mapcore_rdm_project_not_updated": _("[MAPCORE_SYNC:ERROR] GRDM project <${node}> cannot be updated with mAP group (See logs for details)"),
     "mapcore_rdm_unknown_user": _("[MAPCORE_SYNC:NOTICE] Unknown (unregistered in GRDM) users belong to mAP group <${node}> (ignored) (See logs for details)")
-}
+  }
+)
