@@ -1,3 +1,4 @@
+var _ = require('js/rdmGettext')._;
 var logActionList =
 {
     "project_created":  _("${user} created ${node}"),
@@ -13,7 +14,7 @@ var logActionList =
     "group_removed":  _("${user} removed ${group} from ${node}"),
     "group_updated":   _("${user} changed ${group} permissions to ${node}"),
     "made_public":  _("${user} made ${node} public"),
-    "made_public_no_user":  "${node} made public"),
+    "made_public_no_user":   _("${node} made public"),
     "made_private":     _("${user} made ${node} private"),
     "tag_added":    _("${user} added tag ${tag} to ${node}"),
     "tag_removed":  _("${user} removed tag ${tag} from ${node}"),
@@ -54,7 +55,7 @@ var logActionList =
     "comment_updated":  _("${user} updated a comment ${comment_location} in ${node}"),
     "embargo_initiated":    _("${user} initiated an embargoed registration of ${node}"),
     "embargo_approved":     _("${user} approved embargoed registration of ${node}"),
-    "embargo_approved_no_user": "Embargo of registration of ${node} approved"),
+    "embargo_approved_no_user": _("Embargo of registration of ${node} approved"),
     "embargo_cancelled":    _("${user} cancelled embargoed registration of ${node}"),
     "embargo_completed":    _("${user} completed embargo of ${node}"),
     "embargo_completed_no_user": _("Embargo for ${node} completed"),
