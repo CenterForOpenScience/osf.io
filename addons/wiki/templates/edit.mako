@@ -72,7 +72,7 @@
     <div class="panel-expand col-sm-${'9' if 'menu' in panels_used else '11'}">
       <div class="row">
 
-          <div data-osf-panel="View"
+          <div data-osf-panel="${_('View')}"
                class="${'col-sm-{0}'.format(12 / num_columns)}"
                style="${'' if 'view' in panels_used else 'display: none'}">
               <div class="osf-panel panel panel-default no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
@@ -123,7 +123,7 @@
 
           % if user['can_edit_wiki_body']:
             <div data-bind="with: $root.editVM.wikiEditor.viewModel"
-                 data-osf-panel="Edit"
+                 data-osf-panel="${_('Edit')}"
                  class="${'col-sm-{0}'.format(12 / num_columns)}"
                  style="${'' if 'edit' in panels_used else 'display: none' | n}">
               <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
@@ -202,7 +202,7 @@
           % endif
 
 
-          <div data-osf-panel="Compare"
+          <div data-osf-panel="${_('Compare')}"
                class="${'col-sm-{0}'.format(12 / num_columns)}"
                style="${'' if 'compare' in panels_used else 'display: none'}">
             <div class="osf-panel panel panel-default osf-panel-flex" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'compare', 'osf-panel-flex': $root.singleVis() !== 'compare' }">
