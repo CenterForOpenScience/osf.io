@@ -926,7 +926,7 @@ class ScheduledBannerFactory(DjangoModelFactory):
     default_photo = factory.Faker('file_name')
     mobile_photo = factory.Faker('file_name')
     license = factory.Faker('name')
-    color = 'white'
+    color = factory.Faker('color')
     start_date = timezone.now()
     end_date = factory.LazyAttribute(lambda o: o.start_date)
 
@@ -1067,3 +1067,16 @@ class ChronosSubmissionFactory(DjangoModelFactory):
         instance = super(ChronosSubmissionFactory, cls)._create(target_class, *args, **kwargs)
         instance.save()
         return instance
+
+
+class BrandFactory(DjangoModelFactory):
+    class Meta:
+        model = models.Brand
+
+    name = factory.Faker('company')
+    hero_logo_image = factory.Faker('url')
+    topnav_logo_image = factory.Faker('url')
+    hero_background_image = factory.Faker('url')
+
+    primary_color = factory.Faker('color')
+    secondary_color = factory.Faker('color')
