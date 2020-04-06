@@ -50,6 +50,7 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
                                         null=True, blank=True, on_delete=models.CASCADE)
     allow_submissions = models.BooleanField(default=True)
     allow_commenting = models.BooleanField(default=False)
+    access_token = EncryptedTextField(null=True, blank=True)
 
     def __repr__(self):
         return ('(name={self.name!r}, default_license={self.default_license!r}, '
@@ -158,7 +159,7 @@ class PreprintProvider(AbstractProvider):
     share_source = models.CharField(blank=True, max_length=200)
     share_title = models.TextField(default='', blank=True)
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
-    access_token = EncryptedTextField(null=True, blank=True)
+
     doi_prefix = models.CharField(blank=True, max_length=32)
     in_sloan_study = models.NullBooleanField(default=True)
 
