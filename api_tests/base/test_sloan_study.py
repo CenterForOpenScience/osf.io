@@ -54,6 +54,17 @@ class TestSloanStudyWaffling:
     def preprint(self, user):
         return PreprintFactory(creator=user)
 
+    @pytest.fixture()
+    def preprint_with_guid(self):
+        preprint_with_guid = PreprintFactory()
+        preprint_with_guid.provider._id = 'test id'
+        preprint_with_guid.provider.save()
+        guid = preprint_with_guid.guids.last()
+        guid._id = 'ispp0'
+        guid.save()
+
+        return preprint_with_guid
+
     @pytest.fixture(autouse=True)
     def providers(self, user):
         PreprintProviderFactory(_id='foorxiv').save()
@@ -141,6 +152,7 @@ class TestSloanStudyWaffling:
 
     @pytest.mark.parametrize('reffer_url, expected_provider_id', [
         (f'https://staging2.osf.io/', None),
+        (f'https://staging2.osf.io/ispp0/', 'test id'),
         (f'https://burdixiv.burds/', 'burdixiv'),
         (f'https://burdixiv.burds/guid0', 'burdixiv'),
         (f'https://burdixiv.burds/guid0', 'burdixiv'),
@@ -153,8 +165,10 @@ class TestSloanStudyWaffling:
         (f'{DOMAIN}preprints/foorxiv/aguid', 'foorxiv'),
         (f'{DOMAIN}preprints/foorxiv/aguid/', 'foorxiv'),
         (f'{DOMAIN}preprints/foorxiv/foo/bar/baz/', 'foorxiv')
+
     ])
-    def test_weird_domains(self, reffer_url, expected_provider_id):
+    def test_weird_domains(self, reffer_url, expected_provider_id, preprint_with_guid):
+
         provider = SloanOverrideWaffleMiddleware.get_provider_from_url(reffer_url)
         assert expected_provider_id == getattr(provider, '_id', None)
 

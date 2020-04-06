@@ -2,6 +2,7 @@ import re
 import gc
 import uuid
 from io import StringIO
+from urllib.parse import urlparse
 import cProfile
 import pstats
 import threading
@@ -26,7 +27,10 @@ from waffle.middleware import WaffleMiddleware
 from waffle.models import Flag
 
 from website.settings import DOMAIN
-from osf.models import PreprintProvider
+from osf.models import (
+    Preprint,
+    PreprintProvider,
+)
 from typing import Optional
 
 from osf.features import (
@@ -276,6 +280,13 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
         provider_ids_regex = '|'.join(
             [re.escape(id) for id in PreprintProvider.objects.all().values_list('_id', flat=True)],
         )
+        # matches:
+        # /ispp0  (preprint id)
+        path = urlparse(referer_url).path.replace('/', '')
+        preprint = Preprint.load(path)
+        if preprint:
+            return preprint.provider
+
         # matches:
         # /preprints
         # /preprints/
