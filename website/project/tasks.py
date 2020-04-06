@@ -101,7 +101,10 @@ def send_share_node_data(node):
     """
     data = serialize_share_node_data(node)
 
-    token = node.provider.access_token if getattr(node, 'provider') else settings.SHARE_API_TOKEN
+    if node.provider and getattr(node.provider, 'access_token'):
+        token = node.provider.access_token
+    else:
+        token = settings.SHARE_API_TOKEN
 
     resp = requests.post(
         f'{settings.SHARE_URL}/api/normalizeddata/',
