@@ -6,6 +6,7 @@ import markupsafe
 from future.moves.urllib.parse import quote
 from django.utils import timezone
 
+from distutils.util import strtobool
 from flask import make_response
 from flask import redirect
 from flask import request
@@ -52,6 +53,12 @@ from website.project.utils import serialize_node
 from website.util import rubeus
 
 from osf.features import (
+    SLOAN_COI_DISPLAY,
+    SLOAN_DATA_DISPLAY,
+    SLOAN_PREREG_DISPLAY
+)
+
+SLOAN_FLAGS = (
     SLOAN_COI_DISPLAY,
     SLOAN_DATA_DISPLAY,
     SLOAN_PREREG_DISPLAY
@@ -346,19 +353,19 @@ def get_auth(auth, **kwargs):
                         if isinstance(node, Preprint):
                             metric_class = get_metric_class_for_action(action, from_mfr=from_mfr)
                             if metric_class:
-                                sloan_flag = {
-                                    'sloan_coi': request.cookies.get(SLOAN_COI_DISPLAY),
-                                    'sloan_data': request.cookies.get(SLOAN_DATA_DISPLAY),
-                                    'sloan_prereg': request.cookies.get(SLOAN_PREREG_DISPLAY),
-                                    'sloan_id': request.cookies.get(SLOAN_ID_COOKIE_NAME)
-                                }
+                                sloan_flags = {'sloan_id': request.cookies.get(SLOAN_ID_COOKIE_NAME)}
+                                for flag_name in SLOAN_FLAGS:
+                                    value = request.cookies.get(f'dwf_{flag_name}_custom_domain') or request.cookies.get(f'dwf_{flag_name}')
+                                    if value:
+                                        sloan_flags[flag_name.replace('_display', '')] = strtobool(value)
+
                                 try:
                                     metric_class.record_for_preprint(
                                         preprint=node,
                                         user=auth.user,
                                         version=fileversion.identifier if fileversion else None,
                                         path=path,
-                                        **sloan_flag
+                                        **sloan_flags
                                     )
                                 except es_exceptions.ConnectionError:
                                     log_exception()

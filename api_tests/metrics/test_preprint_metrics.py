@@ -101,7 +101,7 @@ class TestPreprintMetrics:
         return '/{}metrics/preprints/'.format(API_BASE)
 
     @mock.patch('api.metrics.views.PreprintDownloadMetrics.execute_search')
-    def test_custom_metric_misformed_query(self, mock_execute, app, user, base_url):
+    def test_custom_metric_malformed_query(self, mock_execute, app, user, base_url):
         mock_execute.side_effect = RequestError
         post_url = '{}downloads/'.format(base_url)
         post_data = {
@@ -114,7 +114,7 @@ class TestPreprintMetrics:
         }
         res = app.post_json_api(post_url, post_data, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Misformed elasticsearch query.'
+        assert res.json['errors'][0]['detail'] == 'Malformed elasticsearch query.'
 
     @pytest.mark.es
     def test_agg_query(self, app, user, base_url):

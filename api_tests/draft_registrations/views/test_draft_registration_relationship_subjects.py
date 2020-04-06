@@ -21,3 +21,22 @@ class TestDraftRegistrationRelationshipSubjects(SubjectsRelationshipMixin):
     @pytest.fixture()
     def url(self, resource):
         return '/{}draft_registrations/{}/relationships/subjects/'.format(API_BASE, resource._id)
+
+    # Overwrites SubjectsRelationshipMixin
+    def test_update_subjects_relationship_permissions(self, app, user_write_contrib,
+            user_read_contrib, user_non_contrib, resource, url, payload):
+        # test_unauthorized
+        res = app.patch_json_api(url, payload, expect_errors=True)
+        assert res.status_code == 401
+
+        # test_noncontrib
+        res = app.patch_json_api(url, payload, auth=user_non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_write_contrib
+        res = app.patch_json_api(url, payload, auth=user_write_contrib.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        # test_read_contrib
+        res = app.patch_json_api(url, payload, auth=user_read_contrib.auth, expect_errors=True)
+        assert res.status_code == 403

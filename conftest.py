@@ -9,6 +9,9 @@ from website import settings as website_settings
 
 from framework.celery_tasks import app as celery_app
 
+from elasticsearch_dsl.connections import connections
+from django.core.management import call_command
+
 logger = logging.getLogger(__name__)
 
 # Silence some 3rd-party logging and some "loud" internal loggers
@@ -116,3 +119,28 @@ def _test_speedups_disable(request, settings, _test_speedups):
 
     for patcher in patchers:
         patcher.start()
+
+
+@pytest.fixture(scope='function')
+def es6_client():
+    return connections.get_connection()
+
+
+@pytest.fixture(scope='function', autouse=True)
+def _es_marker(request, es6_client):
+    """Clear out all indices and index templates before and after
+    tests marked with ``es``.
+    """
+    marker = request.node.get_closest_marker('es')
+    if marker:
+
+        def teardown_es():
+            es6_client.indices.delete(index='*')
+            es6_client.indices.delete_template('*')
+
+        teardown_es()
+        call_command('sync_metrics')
+        yield
+        teardown_es()
+    else:
+        yield
