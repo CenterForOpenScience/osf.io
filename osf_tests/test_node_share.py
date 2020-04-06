@@ -2,8 +2,6 @@ import mock
 import json
 
 import pytest
-import random
-import string
 import responses
 
 from framework.auth.core import Auth
@@ -53,6 +51,14 @@ class TestSHAREOnNodeUpdate:
         )
 
     @pytest.fixture()
+    def do_not_index_tag(self):
+        return settings.DO_NOT_INDEX_LIST['tags'][0]
+
+    @pytest.fixture()
+    def do_not_index_title(self):
+        return settings.DO_NOT_INDEX_LIST['titles'][0]
+
+    @pytest.fixture()
     def user(self):
         return UserFactory()
 
@@ -91,8 +97,7 @@ class TestSHAREOnNodeUpdate:
         assert responses.calls[0].request.headers['Authorization'] == 'Bearer Token'
         assert graph[0]['uri'] == f'{settings.DOMAIN}{node._id}/'
 
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @responses.activate
     def test_on_node_updated_status(self, node, user):
 
         cases = [{
@@ -111,7 +116,6 @@ class TestSHAREOnNodeUpdate:
 
         for i, case in enumerate(cases):
             for attr, value in case['attrs'].items():
-                print(attr, value)
                 setattr(node, attr, value)
             node.save()
 
@@ -152,8 +156,8 @@ class TestSHAREOnNodeUpdate:
             assert payload['is_deleted'] == case['is_deleted']
 
     @responses.activate
-    def test_dont_update_share_with_qa_tags(self, node, user):
-        node.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))
+    def test_dont_update_share_with_qa_tags(self, node, user, do_not_index_tag):
+        node.add_tag(do_not_index_tag, auth=Auth(user))
         on_node_updated(node._id, user._id, False, {'is_public'})
 
         data = json.loads(responses.calls[0].request.body)
@@ -170,15 +174,15 @@ class TestSHAREOnNodeUpdate:
         assert payload['is_deleted'] is False
 
     @responses.activate
-    def test_dont_update_share_with_qa_tags_registrations(self, registration, user):
-        registration.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))
+    def test_dont_update_share_with_qa_tags_registrations(self, registration, user, do_not_index_tag):
+        registration.add_tag(do_not_index_tag, auth=Auth(user))
         on_node_updated(registration._id, user._id, False, {'is_public'})
         data = json.loads(responses.calls[0].request.body)
         graph = data['data']['attributes']['data']['@graph']
         payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is True
 
-        registration.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
+        registration.remove_tag(do_not_index_tag, auth=Auth(user), save=True)
         on_node_updated(registration._id, user._id, False, {'is_public'})
         data = json.loads(responses.calls[3].request.body)
         graph = data['data']['attributes']['data']['@graph']
@@ -186,9 +190,8 @@ class TestSHAREOnNodeUpdate:
         assert payload['is_deleted'] is False
 
     @responses.activate
-    def test_update_share_correctly_for_projects_with_qa_titles(self, node, user):
-
-        node.title = settings.DO_NOT_INDEX_LIST['titles'][0].join(random.choice(string.ascii_lowercase) for i in range(5))
+    def test_update_share_correctly_for_projects_with_qa_titles(self, node, user, do_not_index_title):
+        node.title = do_not_index_title
         node.save()
         on_node_updated(node._id, user._id, False, {'is_public'})
         data = json.loads(responses.calls[0].request.body)
@@ -206,9 +209,10 @@ class TestSHAREOnNodeUpdate:
         assert payload['is_deleted'] is False
 
     @responses.activate
-    def test_update_share_correctly_for_registrations_with_qa_titles(self, registration, user):
-        registration.title = settings.DO_NOT_INDEX_LIST['titles'][0].join(random.choice(string.ascii_lowercase) for i in range(5))
+    def test_update_share_correctly_for_registrations_with_qa_titles(self, registration, user, do_not_index_title):
+        registration.title = do_not_index_title
         registration.save()
+
         on_node_updated(registration._id, user._id, False, {'is_public'})
         data = json.loads(responses.calls[0].request.body)
         graph = data['data']['attributes']['data']['@graph']
@@ -233,7 +237,6 @@ class TestSHAREOnNodeUpdate:
 
     @responses.activate
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'http://a_real_url.old')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'a_real_token')
     @mock.patch('website.project.tasks._async_update_node_share.delay')
     def test_call_async_update_on_500_failure(self, mock_async, node, user):
         responses.add(
@@ -249,7 +252,6 @@ class TestSHAREOnNodeUpdate:
 
     @responses.activate
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'http://a_real_url.old')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'a_real_token')
     @mock.patch('website.project.tasks.send_desk_share_error')
     @mock.patch('website.project.tasks._async_update_node_share.delay')
     def test_no_call_async_update_on_400_failure(self, mock_async, mock_mail, node, user):
@@ -257,7 +259,7 @@ class TestSHAREOnNodeUpdate:
             responses.Response(
                 responses.POST,
                 'http://a_real_url.old/api/normalizeddata/',
-                status=501
+                status=400
             )
         )
 
@@ -265,7 +267,7 @@ class TestSHAREOnNodeUpdate:
         assert mock_mail.called
         assert not mock_async.called
 
-    def test_format_registration_gets_parent_hierarchy_for_component_registrations(self, component_registration, user):
+    def test_format_registration_gets_parent_hierarchy_for_component_registrations(self, component_registration):
 
         graph = format_registration(component_registration)
 
