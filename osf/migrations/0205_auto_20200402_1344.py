@@ -53,4 +53,8 @@ class Migration(migrations.Migration):
             name='brand',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='providers', to='osf.Brand'),
         ),
+        migrations.AlterModelOptions(
+            name='brand',
+            options={'permissions': (('view_brand', 'Can view brand details'), ('modify_brand', 'Can modify brands'))},
+        ),
     ]

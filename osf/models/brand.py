@@ -7,6 +7,13 @@ class Brand(BaseModel):
     This model holds data custom styled assets for providers
     """
 
+    class Meta:
+        # Custom permissions for use in the OSF Admin App
+        permissions = (
+            ('view_brand', 'Can view brand details'),
+            ('modify_brand', 'Can modify brands')
+        )
+
     name = models.CharField(max_length=30, blank=True, null=True)
 
     hero_logo_image = models.URLField()
