@@ -304,7 +304,7 @@ var AddProject = {
                                         type: 'button'
                                       }, [
                                         m('i', { className : mHelpers.getIcon(ctrl.newProjectCategory()) }),
-                                        m('span.text-capitalize', ctrl.newProjectCategory() || _('Uncategorized')),
+                                        m('span.text-capitalize', ctrl.newProjectCategory() ? _(ctrl.newProjectCategory()) : ctrl.newProjectCategory() || _('Uncategorized')),
                                         m('i.fa.fa-sort')
                                       ]),
                                     m('ul.dropdown-menu', [
@@ -317,7 +317,7 @@ var AddProject = {
                                                             }
                                                   }, [
                                                     m('i', { className : mHelpers.getIcon(cat.value) }),
-                                                    m('span', _(cat.display_name) || _('(Empty category)'))
+                                                    m('span', cat.display_name ? _(cat.display_name) : cat.display_name || _('(Empty category)'))
                                                   ]
                                                 )
                                             );
