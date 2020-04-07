@@ -8,7 +8,6 @@ from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Brand
 from api.base import permissions as base_permissions
 from api.base.pagination import MaxSizePagination
-from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.brands.serializers import BrandSerializer
 
@@ -30,7 +29,7 @@ class BrandMixin(object):
         return inst
 
 
-class BrandList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, BrandMixin):
+class BrandList(JSONAPIBaseView, generics.ListAPIView, BrandMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_list).
     """
     permission_classes = (
@@ -38,7 +37,7 @@ class BrandList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, BrandMix
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.INSTITUTION_READ]
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
     required_write_scopes = [CoreScopes.NULL]
     model_class = Brand
 
@@ -49,12 +48,9 @@ class BrandList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, BrandMix
 
     ordering = ('name', )
 
-    def get_default_queryset(self):
-        return Brand.objects.filter()
-
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request()
+        return Brand.objects.filter()
 
 
 class BrandDetail(JSONAPIBaseView, generics.RetrieveAPIView, BrandMixin):
