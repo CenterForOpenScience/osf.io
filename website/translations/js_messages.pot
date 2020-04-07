@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-06 19:26+0900\n"
-"PO-Revision-Date: 2020-04-06 19:26+0900\n"
+"POT-Creation-Date: 2020-04-07 15:47+0900\n"
+"PO-Revision-Date: 2020-04-07 15:47+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -1141,86 +1141,6 @@ msgstr ""
 
 #: website/static/js/alertsManager.js:76
 msgid "Could not fetch alerts for this page. Please refresh page and try again."
-msgstr ""
-
-#: website/static/js/apiApplication.js:35
-#: website/static/js/apiPersonalToken.js:34
-msgid "required"
-msgstr ""
-
-#: website/static/js/apiApplication.js:36
-#: website/static/js/apiPersonalToken.js:35
-msgid "min"
-msgstr ""
-
-#: website/static/js/apiApplication.js:37
-#: website/static/js/apiPersonalToken.js:36
-msgid "max"
-msgstr ""
-
-#: website/static/js/apiApplication.js:38
-#: website/static/js/apiPersonalToken.js:37
-msgid "minLength"
-msgstr ""
-
-#: website/static/js/apiApplication.js:39
-#: website/static/js/apiPersonalToken.js:38
-msgid "maxLength"
-msgstr ""
-
-#: website/static/js/apiApplication.js:40
-#: website/static/js/apiPersonalToken.js:39
-msgid "pattern"
-msgstr ""
-
-#: website/static/js/apiApplication.js:41
-#: website/static/js/apiPersonalToken.js:40
-msgid "step"
-msgstr ""
-
-#: website/static/js/apiApplication.js:42
-#: website/static/js/apiPersonalToken.js:41
-msgid "email"
-msgstr ""
-
-#: website/static/js/apiApplication.js:43
-#: website/static/js/apiPersonalToken.js:42
-msgid "date"
-msgstr ""
-
-#: website/static/js/apiApplication.js:44
-#: website/static/js/apiPersonalToken.js:43
-msgid "dateISO"
-msgstr ""
-
-#: website/static/js/apiApplication.js:45
-#: website/static/js/apiPersonalToken.js:44
-msgid "number"
-msgstr ""
-
-#: website/static/js/apiApplication.js:46
-#: website/static/js/apiPersonalToken.js:45
-msgid "digit"
-msgstr ""
-
-#: website/static/js/apiApplication.js:47
-#: website/static/js/apiPersonalToken.js:46
-msgid "phoneUS"
-msgstr ""
-
-#: website/static/js/apiApplication.js:48
-#: website/static/js/apiPersonalToken.js:47
-msgid "equal"
-msgstr ""
-
-#: website/static/js/apiApplication.js:49
-#: website/static/js/apiPersonalToken.js:48
-msgid "notEqual"
-msgstr ""
-
-#: website/static/js/apiApplication.js:50
-#: website/static/js/apiPersonalToken.js:49
-msgid "unique"
 msgstr ""
 
 #: website/static/js/apiApplication.js:215
@@ -2609,380 +2529,380 @@ msgstr ""
 msgid "Code - Other:"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:4
-#: website/static/js/logActionsList_extract.js:71
+#: website/static/js/logActionsList_extract.js:3
+#: website/static/js/logActionsList_extract.js:70
 msgid "${user} created ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:5
+#: website/static/js/logActionsList_extract.js:4
 msgid "${user} registered ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:6
+#: website/static/js/logActionsList_extract.js:5
 msgid "${node} registered"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:7
+#: website/static/js/logActionsList_extract.js:6
 msgid ""
 "${user} submitted for review to the Preregistration Challenge a "
 "registration of ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:8
+#: website/static/js/logActionsList_extract.js:7
 msgid "${user} deleted ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:9
+#: website/static/js/logActionsList_extract.js:8
 msgid "${user} created ${node} based on ${template}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:10
+#: website/static/js/logActionsList_extract.js:9
 msgid "${user} created a link to ${pointer_category} ${pointer}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:11
+#: website/static/js/logActionsList_extract.js:10
 msgid "${user} forked a link to ${pointer_category} ${pointer}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:12
+#: website/static/js/logActionsList_extract.js:11
 msgid "${user} removed a link to ${pointer_category} ${pointer}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:13
+#: website/static/js/logActionsList_extract.js:12
 msgid "${user} added ${group} to ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:14
+#: website/static/js/logActionsList_extract.js:13
 msgid "${user} removed ${group} from ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:15
+#: website/static/js/logActionsList_extract.js:14
 msgid "${user} changed ${group} permissions to ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:16
+#: website/static/js/logActionsList_extract.js:15
 msgid "${user} made ${node} public"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:17
+#: website/static/js/logActionsList_extract.js:16
 msgid "${node} made public"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:18
+#: website/static/js/logActionsList_extract.js:17
 msgid "${user} made ${node} private"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:19
+#: website/static/js/logActionsList_extract.js:18
 msgid "${user} added tag ${tag} to ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:20
+#: website/static/js/logActionsList_extract.js:19
 msgid "${user} removed tag ${tag} from ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:21
+#: website/static/js/logActionsList_extract.js:20
 msgid "${user} changed the title from ${title_original} to ${title_new}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:22
+#: website/static/js/logActionsList_extract.js:21
 msgid "${user} edited description of ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:23
+#: website/static/js/logActionsList_extract.js:22
 msgid "${user} changed the ${updated_fields} for ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:24
+#: website/static/js/logActionsList_extract.js:23
 msgid "${user} created external identifier(s) ${identifiers} on ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:25
+#: website/static/js/logActionsList_extract.js:24
 msgid "${user} created a custom citation for ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:26
+#: website/static/js/logActionsList_extract.js:25
 msgid "${user} edited a custom citation for ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:27
+#: website/static/js/logActionsList_extract.js:26
 msgid "${user} removed a custom citation for ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:28
+#: website/static/js/logActionsList_extract.js:27
 msgid "${user} added ${contributors} as contributor(s) to ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:29
+#: website/static/js/logActionsList_extract.js:28
 msgid "${user} removed ${contributors} as contributor(s) from ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:30
+#: website/static/js/logActionsList_extract.js:29
 msgid "${user} reordered contributors for ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:31
+#: website/static/js/logActionsList_extract.js:30
 msgid "${user} changed permissions for ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:32
+#: website/static/js/logActionsList_extract.js:31
 msgid ""
 "${user} made non-bibliographic contributor ${contributors} a "
 "bibliographic contributor on ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:33
+#: website/static/js/logActionsList_extract.js:32
 msgid ""
 "${user} made bibliographic contributor ${contributors} a non-"
 "bibliographic contributor on ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:34
+#: website/static/js/logActionsList_extract.js:33
 msgid "${user} updated wiki page ${page} to version ${version} of ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:35
+#: website/static/js/logActionsList_extract.js:34
 msgid "${user} deleted wiki page ${page} of ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:36
+#: website/static/js/logActionsList_extract.js:35
 msgid "${user} renamed wiki page ${old_page} to ${page} of ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:37
+#: website/static/js/logActionsList_extract.js:36
 msgid "${user} made the wiki of ${node} publicly editable"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:38
+#: website/static/js/logActionsList_extract.js:37
 msgid "${user} made the wiki of ${node} privately editable"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:39
+#: website/static/js/logActionsList_extract.js:38
 msgid "${user} added addon ${addon} to ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:40
+#: website/static/js/logActionsList_extract.js:39
 msgid "${user} removed addon ${addon} from ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:41
+#: website/static/js/logActionsList_extract.js:40
 msgid "${user} moved ${source} to ${destination} in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:42
+#: website/static/js/logActionsList_extract.js:41
 msgid "${user} copied ${source} to ${destination} in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:43
+#: website/static/js/logActionsList_extract.js:42
 msgid "${user} renamed ${source} to ${destination} in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:44
+#: website/static/js/logActionsList_extract.js:43
 msgid "${user} created a folder in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:45
+#: website/static/js/logActionsList_extract.js:44
 msgid "${user} added file ${path} to ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:46
+#: website/static/js/logActionsList_extract.js:45
 msgid "${user} updated file in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:47
+#: website/static/js/logActionsList_extract.js:46
 msgid "${user} removed ${path_type} ${path} from ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:48
+#: website/static/js/logActionsList_extract.js:47
 msgid "${user} restored file ${path} from ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:49
+#: website/static/js/logActionsList_extract.js:48
 msgid "${user} updated the file metadata for ${path}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:50
+#: website/static/js/logActionsList_extract.js:49
 msgid "${user} checked out ${kind} ${path} from ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:51
+#: website/static/js/logActionsList_extract.js:50
 msgid "${user} checked in ${kind} ${path} to ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:52
+#: website/static/js/logActionsList_extract.js:51
 msgid "${user} added a comment ${comment_location} in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:53
+#: website/static/js/logActionsList_extract.js:52
 msgid "${user} deleted a comment ${comment_location} in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:54
+#: website/static/js/logActionsList_extract.js:53
 msgid "${user} restored a comment ${comment_location}  in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:55
+#: website/static/js/logActionsList_extract.js:54
 msgid "${user} updated a comment ${comment_location} in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:56
+#: website/static/js/logActionsList_extract.js:55
 msgid "${user} initiated an embargoed registration of ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:57
+#: website/static/js/logActionsList_extract.js:56
 msgid "${user} approved embargoed registration of ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:58
+#: website/static/js/logActionsList_extract.js:57
 msgid "Embargo of registration of ${node} approved"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:59
+#: website/static/js/logActionsList_extract.js:58
 msgid "${user} cancelled embargoed registration of ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:60
+#: website/static/js/logActionsList_extract.js:59
 msgid "${user} completed embargo of ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:61
+#: website/static/js/logActionsList_extract.js:60
 msgid "Embargo for ${node} completed"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:62
+#: website/static/js/logActionsList_extract.js:61
 msgid "Embargo for ${node} ended"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:63
+#: website/static/js/logActionsList_extract.js:62
 msgid "${user} initiated withdrawal of registration of ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:64
+#: website/static/js/logActionsList_extract.js:63
 msgid "A withdrawal of registration of ${node} is proposed"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:65
+#: website/static/js/logActionsList_extract.js:64
 msgid "${user} approved withdrawal of registration of ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:66
+#: website/static/js/logActionsList_extract.js:65
 msgid "${user} cancelled withdrawal of registration of ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:67
+#: website/static/js/logActionsList_extract.js:66
 msgid "${user} initiated registration of ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:68
+#: website/static/js/logActionsList_extract.js:67
 msgid "${user} approved registration of ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:69
+#: website/static/js/logActionsList_extract.js:68
 msgid "Registration of ${node} approved"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:70
+#: website/static/js/logActionsList_extract.js:69
 msgid "${user} cancelled registration of ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:72
+#: website/static/js/logActionsList_extract.js:71
 msgid "${user} created fork from ${forked_from}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:73
+#: website/static/js/logActionsList_extract.js:72
 msgid "${user} removed ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:74
+#: website/static/js/logActionsList_extract.js:73
 msgid "${user} enabled access requests for ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:75
+#: website/static/js/logActionsList_extract.js:74
 msgid "${user} disabled access requests for ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:76
+#: website/static/js/logActionsList_extract.js:75
 msgid "${user} updated the license of ${node} ${license}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:77
+#: website/static/js/logActionsList_extract.js:76
 msgid "${user} added tag ${tag} to ${path} in ${storage_name} in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:78
+#: website/static/js/logActionsList_extract.js:77
 msgid "${user} removed tag ${tag} from ${path} in ${storage_name} in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:79
+#: website/static/js/logActionsList_extract.js:78
 msgid "${user} added file ${path} to ${storage_name} in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:80
+#: website/static/js/logActionsList_extract.js:79
 msgid "${user} created folder ${path} in ${storage_name} in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:81
+#: website/static/js/logActionsList_extract.js:80
 msgid "${user} updated file ${path} in ${storage_name} in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:82
+#: website/static/js/logActionsList_extract.js:81
 msgid "${user} removed ${path_type} ${path} from ${storage_name} in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:83
+#: website/static/js/logActionsList_extract.js:82
 msgid "${user} added ${institution} affiliation to ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:84
+#: website/static/js/logActionsList_extract.js:83
 msgid "${user} removed ${institution} affiliation from ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:85
+#: website/static/js/logActionsList_extract.js:84
 msgid "${user} made ${node} a ${preprint} on ${preprint_provider} Preprints"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:86
+#: website/static/js/logActionsList_extract.js:85
 msgid ""
 "${user} updated the primary file of this ${preprint} on "
 "${preprint_provider} Preprints"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:87
+#: website/static/js/logActionsList_extract.js:86
 msgid ""
 "${user} updated the license of this ${preprint} on ${preprint_provider} "
 "Preprints ${license}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:88
+#: website/static/js/logActionsList_extract.js:87
 msgid "${user} updated the subjects on ${node} to ${subjects}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:89
+#: website/static/js/logActionsList_extract.js:88
 msgid "${user} created ${anonymous_link} view-only link to ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:90
+#: website/static/js/logActionsList_extract.js:89
 msgid "${user} removed ${anonymous_link} view-only link to ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:91
+#: website/static/js/logActionsList_extract.js:90
 msgid ""
 "[MAPCORE_SYNC:ERROR] ${user} cannot create a new mAP group for GRDM "
 "project <${node}> (See logs for details)"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:92
+#: website/static/js/logActionsList_extract.js:91
 msgid ""
 "[MAPCORE_SYNC:ERROR] mAP group for GRDM project <${node}> cannot be "
 "updated (See logs for details)"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:93
+#: website/static/js/logActionsList_extract.js:92
 msgid ""
 "[MAPCORE_SYNC:ERROR] GRDM project <${node}> cannot be updated with mAP "
 "group (See logs for details)"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:94
+#: website/static/js/logActionsList_extract.js:93
 msgid ""
 "[MAPCORE_SYNC:NOTICE] Unknown (unregistered in GRDM) users belong to mAP "
 "group <${node}> (ignored) (See logs for details)"
