@@ -86,7 +86,7 @@ class TestInstitutionSummaryMetrics:
         # Validates the summary metrics returned by the API
         assert resp.json['data'] == {
             'id': institution._id,
-            'type': 'institution-metrics',
+            'type': 'institution-summary-metrics',
             'attributes': {
                 'public_project_count': public_project_count_latest,
                 'private_project_count': private_project_count_latest,
