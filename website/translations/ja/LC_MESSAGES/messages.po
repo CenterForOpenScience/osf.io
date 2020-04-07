@@ -2353,7 +2353,7 @@ msgstr "クライアントID"
 
 #: website/templates/profile/personal_tokens_detail.mako:2
 msgid "Personal Token Detail"
-msgstr "個人トークンの詳細"
+msgstr "パーソナルトークンの詳細"
 
 #: website/templates/profile/personal_tokens_detail.mako:16
 msgid "Return to list of registered tokens"
