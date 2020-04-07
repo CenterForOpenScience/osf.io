@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-06 10:27+0900\n"
-"PO-Revision-Date: 2020-04-06 10:27+0900\n"
+"POT-Creation-Date: 2020-04-06 19:26+0900\n"
+"PO-Revision-Date: 2020-04-06 19:26+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -2364,95 +2364,138 @@ msgstr ""
 msgid "Other"
 msgstr ""
 
-#: website/static/js/js_messages.js:7 website/static/js/js_messages.js:9
+#: website/static/js/js_messages.js:7
+msgid "analysis"
+msgstr ""
+
+#: website/static/js/js_messages.js:7
+msgid "communication"
+msgstr ""
+
+#: website/static/js/js_messages.js:7
+msgid "data"
+msgstr ""
+
+#: website/static/js/js_messages.js:7
+msgid "hypothesis"
+msgstr ""
+
+#: website/static/js/js_messages.js:7
+msgid "instrumentation"
+msgstr ""
+
+#: website/static/js/js_messages.js:7
+msgid "methods and measures"
+msgstr ""
+
+#: website/static/js/js_messages.js:7
+msgid "procedure"
+msgstr ""
+
+#: website/static/js/js_messages.js:7 website/static/js/nodeControl.js:114
+#: website/static/js/nodeSelectTreebeard.js:87
+#: website/static/js/nodesDeleteTreebeard.js:62
+#: website/static/js/nodesPrivacySettingsTreebeard.js:62
+msgid "project"
+msgstr ""
+
+#: website/static/js/js_messages.js:7
+msgid "software"
+msgstr ""
+
+#: website/static/js/js_messages.js:7
+msgid "other"
+msgstr ""
+
+#: website/static/js/js_messages.js:9 website/static/js/js_messages.js:11
 msgid "Comments added"
 msgstr ""
 
-#: website/static/js/js_messages.js:7 website/static/js/js_messages.js:9
+#: website/static/js/js_messages.js:9 website/static/js/js_messages.js:11
 msgid "Files updated"
 msgstr ""
 
-#: website/static/js/js_messages.js:9
+#: website/static/js/js_messages.js:11
 msgid "Replies to your comments"
 msgstr ""
 
-#: website/static/js/js_messages.js:9
+#: website/static/js/js_messages.js:11
 msgid "Mentions added"
 msgstr ""
 
-#: website/static/js/js_messages.js:9
+#: website/static/js/js_messages.js:11
 msgid "Preprint submissions updated"
 msgstr ""
 
-#: website/static/js/js_messages.js:11
+#: website/static/js/js_messages.js:13
 msgid "No license"
 msgstr ""
 
-#: website/static/js/js_messages.js:13
+#: website/static/js/js_messages.js:15
 msgid ""
 "Because you have not configured the {addon} add-on, your authentication "
 "will not be transferred to the forked {category}. You may authorize and "
 "configure the {addon} add-on in the new fork on the settings page."
 msgstr ""
 
-#: website/static/js/js_messages.js:15 website/static/js/passwordForms.js:178
+#: website/static/js/js_messages.js:17 website/static/js/passwordForms.js:178
 #: website/static/js/passwordForms.js:241
 msgid "This field is required."
 msgstr ""
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please enter a value greater than or equal to {0}."
 msgstr ""
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please enter a value less than or equal to {0}."
 msgstr ""
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please enter at least {0} characters."
 msgstr ""
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please enter no more than {0} characters."
 msgstr ""
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please check this value."
 msgstr ""
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "The value must increment by {0}."
 msgstr ""
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please enter a proper email address."
 msgstr ""
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please enter a proper date."
 msgstr ""
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please enter a number."
 msgstr ""
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please enter a digit."
 msgstr ""
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please specify a valid phone number."
 msgstr ""
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Values must equal."
 msgstr ""
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please choose another value."
 msgstr ""
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please make sure the value is unique."
 msgstr ""
 
@@ -2564,6 +2607,385 @@ msgstr ""
 
 #: website/static/js/licenses.js:39
 msgid "Code - Other:"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:4
+#: website/static/js/logActionsList_extract.js:71
+msgid "${user} created ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:5
+msgid "${user} registered ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:6
+msgid "${node} registered"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:7
+msgid ""
+"${user} submitted for review to the Preregistration Challenge a "
+"registration of ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:8
+msgid "${user} deleted ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:9
+msgid "${user} created ${node} based on ${template}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:10
+msgid "${user} created a link to ${pointer_category} ${pointer}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:11
+msgid "${user} forked a link to ${pointer_category} ${pointer}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:12
+msgid "${user} removed a link to ${pointer_category} ${pointer}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:13
+msgid "${user} added ${group} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:14
+msgid "${user} removed ${group} from ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:15
+msgid "${user} changed ${group} permissions to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:16
+msgid "${user} made ${node} public"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:17
+msgid "${node} made public"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:18
+msgid "${user} made ${node} private"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:19
+msgid "${user} added tag ${tag} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:20
+msgid "${user} removed tag ${tag} from ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:21
+msgid "${user} changed the title from ${title_original} to ${title_new}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:22
+msgid "${user} edited description of ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:23
+msgid "${user} changed the ${updated_fields} for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:24
+msgid "${user} created external identifier(s) ${identifiers} on ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:25
+msgid "${user} created a custom citation for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:26
+msgid "${user} edited a custom citation for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:27
+msgid "${user} removed a custom citation for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:28
+msgid "${user} added ${contributors} as contributor(s) to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:29
+msgid "${user} removed ${contributors} as contributor(s) from ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:30
+msgid "${user} reordered contributors for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:31
+msgid "${user} changed permissions for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:32
+msgid ""
+"${user} made non-bibliographic contributor ${contributors} a "
+"bibliographic contributor on ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:33
+msgid ""
+"${user} made bibliographic contributor ${contributors} a non-"
+"bibliographic contributor on ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:34
+msgid "${user} updated wiki page ${page} to version ${version} of ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:35
+msgid "${user} deleted wiki page ${page} of ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:36
+msgid "${user} renamed wiki page ${old_page} to ${page} of ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:37
+msgid "${user} made the wiki of ${node} publicly editable"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:38
+msgid "${user} made the wiki of ${node} privately editable"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:39
+msgid "${user} added addon ${addon} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:40
+msgid "${user} removed addon ${addon} from ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:41
+msgid "${user} moved ${source} to ${destination} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:42
+msgid "${user} copied ${source} to ${destination} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:43
+msgid "${user} renamed ${source} to ${destination} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:44
+msgid "${user} created a folder in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:45
+msgid "${user} added file ${path} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:46
+msgid "${user} updated file in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:47
+msgid "${user} removed ${path_type} ${path} from ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:48
+msgid "${user} restored file ${path} from ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:49
+msgid "${user} updated the file metadata for ${path}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:50
+msgid "${user} checked out ${kind} ${path} from ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:51
+msgid "${user} checked in ${kind} ${path} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:52
+msgid "${user} added a comment ${comment_location} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:53
+msgid "${user} deleted a comment ${comment_location} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:54
+msgid "${user} restored a comment ${comment_location}  in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:55
+msgid "${user} updated a comment ${comment_location} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:56
+msgid "${user} initiated an embargoed registration of ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:57
+msgid "${user} approved embargoed registration of ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:58
+msgid "Embargo of registration of ${node} approved"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:59
+msgid "${user} cancelled embargoed registration of ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:60
+msgid "${user} completed embargo of ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:61
+msgid "Embargo for ${node} completed"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:62
+msgid "Embargo for ${node} ended"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:63
+msgid "${user} initiated withdrawal of registration of ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:64
+msgid "A withdrawal of registration of ${node} is proposed"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:65
+msgid "${user} approved withdrawal of registration of ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:66
+msgid "${user} cancelled withdrawal of registration of ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:67
+msgid "${user} initiated registration of ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:68
+msgid "${user} approved registration of ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:69
+msgid "Registration of ${node} approved"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:70
+msgid "${user} cancelled registration of ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:72
+msgid "${user} created fork from ${forked_from}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:73
+msgid "${user} removed ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:74
+msgid "${user} enabled access requests for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:75
+msgid "${user} disabled access requests for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:76
+msgid "${user} updated the license of ${node} ${license}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:77
+msgid "${user} added tag ${tag} to ${path} in ${storage_name} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:78
+msgid "${user} removed tag ${tag} from ${path} in ${storage_name} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:79
+msgid "${user} added file ${path} to ${storage_name} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:80
+msgid "${user} created folder ${path} in ${storage_name} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:81
+msgid "${user} updated file ${path} in ${storage_name} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:82
+msgid "${user} removed ${path_type} ${path} from ${storage_name} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:83
+msgid "${user} added ${institution} affiliation to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:84
+msgid "${user} removed ${institution} affiliation from ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:85
+msgid "${user} made ${node} a ${preprint} on ${preprint_provider} Preprints"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:86
+msgid ""
+"${user} updated the primary file of this ${preprint} on "
+"${preprint_provider} Preprints"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:87
+msgid ""
+"${user} updated the license of this ${preprint} on ${preprint_provider} "
+"Preprints ${license}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:88
+msgid "${user} updated the subjects on ${node} to ${subjects}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:89
+msgid "${user} created ${anonymous_link} view-only link to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:90
+msgid "${user} removed ${anonymous_link} view-only link to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:91
+msgid ""
+"[MAPCORE_SYNC:ERROR] ${user} cannot create a new mAP group for GRDM "
+"project <${node}> (See logs for details)"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:92
+msgid ""
+"[MAPCORE_SYNC:ERROR] mAP group for GRDM project <${node}> cannot be "
+"updated (See logs for details)"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:93
+msgid ""
+"[MAPCORE_SYNC:ERROR] GRDM project <${node}> cannot be updated with mAP "
+"group (See logs for details)"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:94
+msgid ""
+"[MAPCORE_SYNC:NOTICE] Unknown (unregistered in GRDM) users belong to mAP "
+"group <${node}> (ignored) (See logs for details)"
 msgstr ""
 
 #: website/static/js/meetings.js:24
@@ -2863,13 +3285,6 @@ msgstr ""
 
 #: website/static/js/nodeControl.js:109
 msgid "Title cannot exceed 512 characters."
-msgstr ""
-
-#: website/static/js/nodeControl.js:114
-#: website/static/js/nodeSelectTreebeard.js:87
-#: website/static/js/nodesDeleteTreebeard.js:62
-#: website/static/js/nodesPrivacySettingsTreebeard.js:62
-msgid "project"
 msgstr ""
 
 #: website/static/js/nodeControl.js:114

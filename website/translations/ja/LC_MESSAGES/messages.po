@@ -1091,7 +1091,7 @@ msgid ""
 "contributor to the project described in the email invitation, please "
 "email <a href=%(mailtoOsfContactEmail)s>%(osfContactEmail)s</a>"
 msgstr ""
-"あなたが%(fullname)sでない場合、または招待メールに記載されているプロジェクトへのコントリビュータとして誤って追加された場合は、<a "
+"あなたが%(fullname)sでない場合、または招待メールに記載されているプロジェクトへのメンバーとして誤って追加された場合は、<a "
 "href=%(mailtoOsfContactEmail)s>%(osfContactEmail)s</a>にメールしてください"
 
 #: website/templates/claim_account_eppn.mako:2
@@ -1099,7 +1099,7 @@ msgstr ""
 #: website/templates/claim_account_registered.mako:2
 #: website/templates/claim_account_registered.mako:4
 msgid "Claim Contributor"
-msgstr "コントリビュータを請求"
+msgstr "メンバーを請求"
 
 #: website/templates/claim_account_eppn.mako:9
 msgid "Please confirm to continue."
@@ -1589,7 +1589,7 @@ msgstr ""
 
 #: website/templates/search.mako:240
 msgid " Contributors:"
-msgstr "コントリビュータ:"
+msgstr "メンバー:"
 
 #: website/templates/search.mako:262
 msgid "Affiliated institutions:"
@@ -1617,7 +1617,7 @@ msgstr "説明:"
 #: website/templates/project/project.mako:165 website/templates/search.mako:295
 #: website/templates/search.mako:352
 msgid "Contributors:"
-msgstr "コントリビュータ:"
+msgstr "メンバー:"
 
 #: website/templates/search.mako:314
 msgid "Managers:"
@@ -1625,7 +1625,7 @@ msgstr "マネージャ:"
 
 #: website/templates/search.mako:327
 msgid "Members:"
-msgstr "メンバー:"
+msgstr "グループメンバー:"
 
 #: website/templates/search.mako:341 website/templates/search.mako:344
 msgid "Registration"
@@ -2500,7 +2500,7 @@ msgstr "ご質問がある場合は、<a %(mailtoRdmSupport)s>rdm_support@nii.ac
 #: website/templates/project/project.mako:163
 #: website/templates/project/project_header.mako:72
 msgid "Contributors"
-msgstr "コントリビュータ"
+msgstr "メンバー"
 
 #: website/templates/project/contributors.mako:13
 msgid "Filter by name"
@@ -2540,14 +2540,14 @@ msgstr "読込み"
 #: website/templates/project/contributors.mako:242
 #: website/templates/project/modal_add_contributor.mako:218
 msgid "Bibliographic Contributor"
-msgstr "目録表示コントリビュータ"
+msgstr "目録表示メンバー"
 
 #: website/templates/project/contributors.mako:36
 #: website/templates/project/contributors.mako:199
 #: website/templates/project/contributors.mako:245
 #: website/templates/project/modal_add_contributor.mako:221
 msgid "Bibliographic Contributor Information"
-msgstr "目録表示コントリビュータの情報"
+msgstr "目録表示メンバーの情報"
 
 #: website/templates/project/contributors.mako:43
 msgid "Bibliographic"
@@ -2559,11 +2559,11 @@ msgstr "目録で非表示"
 
 #: website/templates/project/contributors.mako:63
 msgid "Drag and drop contributors to change listing order."
-msgstr "コントリビュータをドラッグ&ドロップして、リストの順序を変更します。"
+msgstr "メンバーをドラッグ&ドロップして、リストの順序を変更します。"
 
 #: website/templates/project/contributors.mako:106
 msgid "No contributors found"
-msgstr "コントリビュータが見つかりません"
+msgstr "メンバーが見つかりません"
 
 #: website/templates/project/contributors.mako:111
 msgid "Admins on Parent Projects"
@@ -2609,7 +2609,7 @@ msgstr "名前またはユーザープロフィール情報で検索する"
 
 #: website/templates/project/modal_add_contributor.mako:25
 msgid "Invite new contributor by e-mail"
-msgstr "メールで新規コントリビュータを招待する"
+msgstr "メールで新規メンバーを招待する"
 
 #: website/templates/project/modal_add_contributor.mako:46
 msgid "Results"
@@ -2621,7 +2621,7 @@ msgstr "全て追加する"
 
 #: website/templates/project/modal_add_contributor.mako:63
 msgid "Add contributor"
-msgstr "コントリビュータを追加"
+msgstr "メンバーを追加"
 
 #: website/templates/project/modal_add_contributor.mako:66
 msgid "Already added"
@@ -2638,12 +2638,12 @@ msgid ""
 "<a %(gotoInvite)s>Add <strong><em %(textQuery)s></em></strong> as an "
 "unregistered contributor</a>."
 msgstr ""
-"<a %(gotoInvite)s>未登録のコントリビュータとして<strong><em "
+"<a %(gotoInvite)s>未登録のメンバーとして<strong><em "
 "%(textQuery)s></em></strong>を追加します。</a>"
 
 #: website/templates/project/modal_add_contributor.mako:186
 msgid "Searching contributors..."
-msgstr "コントリビュータを検索しています..."
+msgstr "メンバーを検索しています..."
 
 #: website/templates/project/modal_add_contributor.mako:190
 msgid "No results found. Try a more specific search."
@@ -2663,7 +2663,7 @@ msgid ""
 "<a %(gotoInvite)s>add <strong><em %(textQuery)s></em></strong> as an "
 "unregistered contributor</a>."
 msgstr ""
-"<a %(gotoInvite)s>未登録のコントリビュータとして<strong><em "
+"<a %(gotoInvite)s>未登録のメンバーとして<strong><em "
 "%(textQuery)s></em></strong>を追加します。</a>"
 
 #: website/templates/project/modal_add_contributor.mako:200
@@ -2673,7 +2673,7 @@ msgid ""
 "users without GakuNin RDM accounts as unregistered contributors."
 msgstr ""
 "メールアドレスで検索しようとしているようです。 共同編集者の名前を使用して検索を再試行してください。 GakuNin "
-"RDMアカウントを持たないユーザーを未登録のコントリビュータとして追加できます。"
+"RDMアカウントを持たないユーザーを未登録のメンバーとして追加できます。"
 
 #: website/templates/project/modal_add_contributor.mako:207
 msgid "Adding"
@@ -2685,17 +2685,17 @@ msgstr "全て削除"
 
 #: website/templates/project/modal_add_contributor.mako:241
 msgid "Remove contributor"
-msgstr "コントリビュータを削除"
+msgstr "メンバーを削除"
 
 #: website/templates/project/modal_add_contributor.mako:281
 msgid "Adding contributor(s)"
-msgstr "コントリビュータを追加中"
+msgstr "メンバーを追加中"
 
 #: website/templates/project/modal_add_contributor.mako:289
 msgid ""
 "You can also add the contributor(s) to any components on which you are an"
 " admin."
-msgstr "管理者であるコンポーネントにコントリビュータを追加することもできます。"
+msgstr "管理者であるコンポーネントにメンバーを追加することもできます。"
 
 #: website/templates/project/modal_add_contributor.mako:294
 #: website/templates/project/modal_generate_private_link.mako:71
@@ -2869,7 +2869,7 @@ msgid ""
 "contributor, and registered user."
 msgstr ""
 "<b "
-"%(removedContributor)s></b>はコントリビュータとして削除できません。少なくとも1人の管理者、目録表示コントリビュータ、および登録ユーザーが必要です。"
+"%(removedContributor)s></b>はメンバーとして削除できません。少なくとも1人の管理者、目録表示メンバー、および登録ユーザーが必要です。"
 
 #: website/templates/project/modal_remove_contributor.mako:82
 msgid ""
@@ -2883,7 +2883,7 @@ msgstr ""
 msgid ""
 "Please save or discard your existing changes before removing a "
 "contributor."
-msgstr "コントリビュータを削除する前に、既存の変更を保存または破棄してください。"
+msgstr "メンバーを削除する前に、既存の変更を保存または破棄してください。"
 
 #: website/templates/project/nodes_delete.mako:66
 #: website/templates/project/nodes_delete.mako:77
@@ -2941,7 +2941,7 @@ msgstr "ログインしてアクセスをリクエスト"
 
 #: website/templates/project/project.mako:169
 msgid "Anonymous Contributors"
-msgstr "匿名コントリビュータ"
+msgstr "匿名メンバー"
 
 #: website/templates/project/project.mako:192
 #: website/templates/project/settings.mako:488
@@ -3260,7 +3260,7 @@ msgid ""
 "If you want to view it as a contributor, click <a "
 "%(redirectUrl)s>here</a>."
 msgstr ""
-"この%(nodeType)sは、匿名化された参照専用リンクを介して表示されています。コントリビュータとして表示する場合は、<a "
+"この%(nodeType)sは、匿名化された参照専用リンクを介して表示されています。メンバーとして表示する場合は、<a "
 "%(redirectUrl)s>こちら</a>をクリックしてください。"
 
 #: website/templates/project/project_header.mako:196
@@ -3394,7 +3394,7 @@ msgstr "ウィキの設定をロード中..."
 
 #: website/templates/project/settings.mako:328
 msgid "Only contributors can post comments"
-msgstr "コントリビュータのみがコメントを投稿できます"
+msgstr "メンバーのみがコメントを投稿できます"
 
 #: website/templates/project/settings.mako:334
 #, python-format
@@ -3405,7 +3405,7 @@ msgstr "%(nodeType)sが公開の場合、GakuNin RDMユーザーはコメント�
 msgid ""
 "These notification settings only apply to you. They do NOT affect any "
 "other contributor on this project."
-msgstr "これらの通知設定は自分にのみ適用されます。 このプロジェクトの他のコントリビュータには影響しません。"
+msgstr "これらの通知設定は自分にのみ適用されます。 このプロジェクトの他のメンバーには影響しません。"
 
 #: website/templates/project/settings.mako:402
 msgid "Redirect visitors from your project page to an external webpage"
@@ -3437,7 +3437,7 @@ msgid ""
 "<strong>withdrawn</strong> tag."
 msgstr ""
 "登録を取り消すと、コンテンツがGakuNin RDMから削除されますが、基本的なメタデータは残されます。 "
-"取り下げられた登録のタイトルとそのコントリビュータリストは、引き取りの正当化または説明と同様に、もしあなたがそれを提供したいなら、残ります。 "
+"取り下げられた登録のタイトルとそのメンバーリストは、引き取りの正当化または説明と同様に、もしあなたがそれを提供したいなら、残ります。 "
 "取り下げられた登録には、<strong>取り下げられた</strong>タグが付いています。"
 
 #: website/templates/project/settings.mako:451
@@ -3448,7 +3448,7 @@ msgstr "この登録は既に取り下げが保留されています。"
 msgid ""
 "Contributors with read-only permissions to this project cannot add or "
 "remove institutional affiliations."
-msgstr "このプロジェクトの参照専用権限を持つコントリビュータは、所属機関を追加または削除できません。"
+msgstr "このプロジェクトの参照専用権限を持つメンバーは、所属機関を追加または削除できません。"
 
 #: website/templates/project/settings.mako:477
 msgid ""
@@ -3565,7 +3565,7 @@ msgid ""
 "real time. Changes will be stored          but not published until you "
 "click the \"Save\" button."
 msgstr ""
-"このページは現在、共有ファイル編集に接続されています。 行われたすべての編集は、書き込み許可を持つコントリビュータにリアルタイムで表示されます。 "
+"このページは現在、共有ファイル編集に接続されています。 行われたすべての編集は、書き込み許可を持つメンバーにリアルタイムで表示されます。 "
 "変更は保存されますが、[保存]ボタンをクリックするまで公開されません。"
 
 #: website/templates/project/view_file.mako:128
@@ -3723,5 +3723,5 @@ msgstr "%(summaryTitle)sのフォークを作成"
 
 #: website/templates/util/render_node.mako:66
 msgid "Manage Contributors"
-msgstr "コントリビュータ管理"
+msgstr "メンバー管理"
 
