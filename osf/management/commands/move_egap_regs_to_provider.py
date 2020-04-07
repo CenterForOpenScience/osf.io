@@ -23,7 +23,7 @@ def main(dry_run):
         '-schema_version'
     )[0]
 
-    egap_regs = Registration.objects.filter(registered_schema=egap_schema.id)
+    egap_regs = Registration.objects.filter(registered_schema=egap_schema.id, provider___id='osf')
 
     if dry_run:
         logger.info(f'[DRY RUN] {egap_regs.count()} updated to {epag_provider} with id {epag_provider.id}')
