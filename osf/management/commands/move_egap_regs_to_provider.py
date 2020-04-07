@@ -12,10 +12,10 @@ from osf.models import (
     RegistrationSchema,
     Registration
 )
-
+from django.conf import settings
 
 def main(dry_run):
-    epag_provider = RegistrationProvider.object.get(name='Egap Provider')
+    epag_provider = RegistrationProvider.objects.get(name=settings.EGAP_PROVIDER_NAME)
 
     egap_schema = RegistrationSchema.objects.filter(
         name='EGAP Registration'

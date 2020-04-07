@@ -1,26 +1,20 @@
 # encoding: utf-8
-import os
-import shutil
 import pytest
-import responses
-HERE = os.path.dirname(os.path.abspath(__file__))
 
 from osf_tests.factories import (
-    AuthUserFactory,
-    NodeFactory,
     RegistrationFactory,
     RegistrationProviderFactory
 )
 
 from osf.models import (
     RegistrationSchema,
-    ApiOAuth2PersonalToken
 )
 
 from osf.management.commands.move_egap_regs_to_provider import (
     main as move_egap_regs
 )
-EGAP_PROVIDER_NAME = 'EGAP Provider'
+
+from django.conf import settings
 
 
 @pytest.mark.django_db
@@ -28,8 +22,22 @@ class TestEGAPMoveToProvider:
 
     @pytest.fixture()
     def egap_provider(self):
-        return RegistrationProviderFactory(name=EGAP_PROVIDER_NAME)
+        return RegistrationProviderFactory(name=settings.EGAP_PROVIDER_NAME)
 
+    @pytest.fixture()
+    def egap_reg(self):
+        egap_schema = RegistrationSchema.objects.filter(
+            name='EGAP Registration'
+        ).order_by(
+            '-schema_version'
+        )[0]
+        cos = RegistrationProviderFactory(_id='osf')
+        return RegistrationFactory(schema=egap_schema, provider=cos)
 
-    def test_move_to_provider(self):
-        pass
+    def test_move_to_provider(self, egap_provider, egap_reg):
+        assert egap_reg.provider != egap_provider
+
+        move_egap_regs(dry_run=False)
+
+        egap_reg.refresh_from_db()
+        assert egap_reg.provider == egap_provider
