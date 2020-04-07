@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-03 14:51+0900\n"
-"PO-Revision-Date: 2020-04-03 14:51+0900\n"
+"POT-Creation-Date: 2020-04-06 19:26+0900\n"
+"PO-Revision-Date: 2020-04-06 19:26+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -199,12 +199,12 @@ msgstr "次を入力して続行します。<strong>%1$s</ strong><br><br>"
 #: website/static/js/addProjectPlugin.js:347
 #: website/static/js/addonPermissions.js:55
 #: website/static/js/addonSettings.js:71 website/static/js/addonSettings.js:134
-#: website/static/js/apiApplication.js:232
-#: website/static/js/apiApplication.js:403
-#: website/static/js/apiApplication.js:470
-#: website/static/js/apiPersonalToken.js:211
-#: website/static/js/apiPersonalToken.js:382
-#: website/static/js/apiPersonalToken.js:409
+#: website/static/js/apiApplication.js:249
+#: website/static/js/apiApplication.js:420
+#: website/static/js/apiApplication.js:487
+#: website/static/js/apiPersonalToken.js:228
+#: website/static/js/apiPersonalToken.js:399
+#: website/static/js/apiPersonalToken.js:426
 #: website/static/js/citationsNodeConfig.js:169
 #: website/static/js/citationsNodeConfig.js:187
 #: website/static/js/fangorn.js:537 website/static/js/fangorn.js:542
@@ -447,7 +447,7 @@ msgstr "機関のストレージを変更してもよろしいですか？"
 msgid ""
 "<p>The previous storage will no longer be available to all contributors "
 "on the project.</p>"
-msgstr "<p>以前のストレージは、プロジェクトのすべてのコントリビュータが利用できなくなります。</p>"
+msgstr "<p>以前のストレージは、プロジェクトのすべてのメンバーが利用できなくなります。</p>"
 
 #: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:35
 #: website/static/js/folderPickerNodeConfig.js:100
@@ -661,7 +661,7 @@ msgstr "%1$sとして申し立てますか？"
 
 #: website/static/js/accountClaimer.js:42
 msgid "If you claim this account, a contributor of this project "
-msgstr "このアカウントを申請すると、このプロジェクトのコントリビュータ"
+msgstr "このアカウントを申請すると、このプロジェクトのメンバー"
 
 #: website/static/js/accountClaimer.js:43
 msgid "will be emailed to confirm your identity."
@@ -940,7 +940,7 @@ msgstr "ストレージロケーション"
 
 #: website/static/js/addProjectPlugin.js:251
 msgid " Add contributors from "
-msgstr "次からコントリビュータを追加する："
+msgstr "次からメンバーを追加する："
 
 #: website/static/js/addProjectPlugin.js:253
 msgid " Admins of "
@@ -1167,84 +1167,164 @@ msgstr "ユーザーアラートの取得エラー"
 msgid "Could not fetch alerts for this page. Please refresh page and try again."
 msgstr "このページのアラートを取得できませんでした。 ページを更新してもう一度お試しください。"
 
-#: website/static/js/apiApplication.js:198
+#: website/static/js/apiApplication.js:35
+#: website/static/js/apiPersonalToken.js:34
+msgid "required"
+msgstr ""
+
+#: website/static/js/apiApplication.js:36
+#: website/static/js/apiPersonalToken.js:35
+msgid "min"
+msgstr ""
+
+#: website/static/js/apiApplication.js:37
+#: website/static/js/apiPersonalToken.js:36
+msgid "max"
+msgstr ""
+
+#: website/static/js/apiApplication.js:38
+#: website/static/js/apiPersonalToken.js:37
+msgid "minLength"
+msgstr ""
+
+#: website/static/js/apiApplication.js:39
+#: website/static/js/apiPersonalToken.js:38
+msgid "maxLength"
+msgstr ""
+
+#: website/static/js/apiApplication.js:40
+#: website/static/js/apiPersonalToken.js:39
+msgid "pattern"
+msgstr ""
+
+#: website/static/js/apiApplication.js:41
+#: website/static/js/apiPersonalToken.js:40
+msgid "step"
+msgstr ""
+
+#: website/static/js/apiApplication.js:42
+#: website/static/js/apiPersonalToken.js:41
+msgid "email"
+msgstr ""
+
+#: website/static/js/apiApplication.js:43
+#: website/static/js/apiPersonalToken.js:42
+msgid "date"
+msgstr ""
+
+#: website/static/js/apiApplication.js:44
+#: website/static/js/apiPersonalToken.js:43
+msgid "dateISO"
+msgstr ""
+
+#: website/static/js/apiApplication.js:45
+#: website/static/js/apiPersonalToken.js:44
+msgid "number"
+msgstr ""
+
+#: website/static/js/apiApplication.js:46
+#: website/static/js/apiPersonalToken.js:45
+msgid "digit"
+msgstr ""
+
+#: website/static/js/apiApplication.js:47
+#: website/static/js/apiPersonalToken.js:46
+msgid "phoneUS"
+msgstr ""
+
+#: website/static/js/apiApplication.js:48
+#: website/static/js/apiPersonalToken.js:47
+msgid "equal"
+msgstr ""
+
+#: website/static/js/apiApplication.js:49
+#: website/static/js/apiPersonalToken.js:48
+msgid "notEqual"
+msgstr ""
+
+#: website/static/js/apiApplication.js:50
+#: website/static/js/apiPersonalToken.js:49
+msgid "unique"
+msgstr ""
+
+#: website/static/js/apiApplication.js:215
 msgid "Error fetching list of registered applications"
 msgstr "登録済みアプリケーションのリストの取得エラー"
 
-#: website/static/js/apiApplication.js:209
-#: website/static/js/apiApplication.js:379
+#: website/static/js/apiApplication.js:226
+#: website/static/js/apiApplication.js:396
 msgid "Deactivate application?"
 msgstr "アプリケーションを無効にしますか？"
 
-#: website/static/js/apiApplication.js:217
-#: website/static/js/apiPersonalToken.js:196
+#: website/static/js/apiApplication.js:234
+#: website/static/js/apiPersonalToken.js:213
 msgid " has been deactivated"
 msgstr "は無効化されました"
 
-#: website/static/js/apiApplication.js:228
-#: website/static/js/apiApplication.js:399
-#: website/static/js/apiPersonalToken.js:207
-#: website/static/js/apiPersonalToken.js:378
+#: website/static/js/apiApplication.js:245
+#: website/static/js/apiApplication.js:416
+#: website/static/js/apiPersonalToken.js:224
+#: website/static/js/apiPersonalToken.js:395
 msgid "Deactivate"
 msgstr "無効にする"
 
-#: website/static/js/apiApplication.js:278
-#: website/static/js/apiPersonalToken.js:257
+#: website/static/js/apiApplication.js:295
+#: website/static/js/apiPersonalToken.js:274
 msgid "There are unsaved changes on this page."
 msgstr "このページには未保存の変更があります。"
 
-#: website/static/js/apiApplication.js:292
+#: website/static/js/apiApplication.js:309
 msgid "Error fetching application data"
 msgstr "アプリケーションデータの取得エラー"
 
-#: website/static/js/apiApplication.js:327
-#: website/static/js/apiPersonalToken.js:306
+#: website/static/js/apiApplication.js:344
+#: website/static/js/apiPersonalToken.js:323
 msgid "Error updating instance"
 msgstr "インスタンスの更新エラー"
 
-#: website/static/js/apiApplication.js:353
+#: website/static/js/apiApplication.js:370
 msgid "Error registering new OAuth2 application"
 msgstr "新しいOAuth2アプリケーションの登録エラー"
 
-#: website/static/js/apiApplication.js:412
+#: website/static/js/apiApplication.js:429
 msgid "Reset client secret?"
 msgstr "クライアントシークレットをリセットしますか？"
 
-#: website/static/js/apiApplication.js:430
+#: website/static/js/apiApplication.js:447
 msgid "Error resetting instance secret"
 msgstr "インスタンスシークレットのリセットエラー"
 
-#: website/static/js/apiApplication.js:442
+#: website/static/js/apiApplication.js:459
 msgid "Reset Secret"
 msgstr "シークレットをリセット"
 
-#: website/static/js/apiApplication.js:456
-#: website/static/js/apiPersonalToken.js:395 website/static/js/profile.js:356
+#: website/static/js/apiApplication.js:473
+#: website/static/js/apiPersonalToken.js:412 website/static/js/profile.js:356
 msgid "Discard changes?"
 msgstr "変更を破棄しますか？"
 
-#: website/static/js/apiApplication.js:466
-#: website/static/js/apiPersonalToken.js:405 website/static/js/profile.js:368
+#: website/static/js/apiApplication.js:483
+#: website/static/js/apiPersonalToken.js:422 website/static/js/profile.js:368
 msgid "Discard"
 msgstr "破棄"
 
-#: website/static/js/apiPersonalToken.js:177
+#: website/static/js/apiPersonalToken.js:194
 msgid "Error fetching list of registered personal access tokens"
 msgstr "登録済みの個人アクセストークンのリストの取得エラー"
 
-#: website/static/js/apiPersonalToken.js:188
+#: website/static/js/apiPersonalToken.js:205
 msgid "Deactivate personal access token?"
 msgstr "パーソナルアクセストークンを無効にしますか？"
 
-#: website/static/js/apiPersonalToken.js:271
+#: website/static/js/apiPersonalToken.js:288
 msgid "Error fetching token data"
 msgstr "トークンデータの取得エラー"
 
-#: website/static/js/apiPersonalToken.js:332
+#: website/static/js/apiPersonalToken.js:349
 msgid "Error registering new OAuth2 personal access token"
 msgstr "新しいOAuth2個人用アクセストークンの登録エラー"
 
-#: website/static/js/apiPersonalToken.js:358
+#: website/static/js/apiPersonalToken.js:375
 msgid "Deactivate token?"
 msgstr "トークンを無効にしますか？"
 
@@ -1361,7 +1441,7 @@ msgstr "コピーが失敗しました！"
 
 #: website/static/js/comment.js:54
 msgid "Error getting contributors and group members"
-msgstr "コントリビュータとグループメンバーの取得エラー"
+msgstr "メンバーとグループメンバーの取得エラー"
 
 #: website/static/js/comment.js:72
 msgid "Spam or advertising"
@@ -1469,7 +1549,7 @@ msgstr "共通プロジェクト"
 
 #: website/static/js/contribAdder.js:82
 msgid "Add Contributors"
-msgstr "コントリビュータを追加"
+msgstr "メンバーを追加"
 
 #: website/static/js/contribAdder.js:83
 msgid "Select Components"
@@ -1477,11 +1557,11 @@ msgstr "コンポーネントを選択"
 
 #: website/static/js/contribAdder.js:85
 msgid "Invite new contributor by e-mail"
-msgstr "電子メールで新しいコントリビュータを招待する"
+msgstr "電子メールで新しいメンバーを招待する"
 
 #: website/static/js/contribAdder.js:86
 msgid "Add Unregistered Contributor"
-msgstr "未登録のコントリビュータを追加"
+msgstr "未登録のメンバーを追加"
 
 #: website/static/js/contribAdder.js:331
 msgid "Full Name is required."
@@ -1497,16 +1577,16 @@ msgstr "%1$sはすでにキューにあります。"
 
 #: website/static/js/contribAdder.js:460
 msgid "There was a problem trying to add contributors%1$s."
-msgstr "コントリビュータ%1$sを追加しようとして問題が発生しました。"
+msgstr "メンバー%1$sを追加しようとして問題が発生しました。"
 
 #: website/static/js/contribAdder.js:461
 msgid "Could not add contributors"
-msgstr "コントリビュータを追加できませんでした"
+msgstr "メンバーを追加できませんでした"
 
 #: website/static/js/contribAdder.js:462
 #: website/static/js/contribManager.js:139
 msgid "Error adding contributors"
-msgstr "コントリビュータの追加エラー"
+msgstr "メンバーの追加エラー"
 
 #: website/static/js/contribAdder.js:532
 #: website/static/js/institutionProjectSettings.js:254
@@ -1522,27 +1602,27 @@ msgstr "プロジェクト設定を取得できませんでした。"
 
 #: website/static/js/contribManager.js:137
 msgid "There was a problem trying to add the contributor. "
-msgstr "コントリビュータを追加しようとして問題が発生しました。"
+msgstr "メンバーを追加しようとして問題が発生しました。"
 
 #: website/static/js/contribManager.js:138
 msgid "Could not add contributor"
-msgstr "コントリビュータを追加できませんでした"
+msgstr "メンバーを追加できませんでした"
 
 #: website/static/js/contribManager.js:300
 msgid "Must have at least one registered admin contributor"
-msgstr "登録された管理コントリビューターが少なくとも1人必要です"
+msgstr "登録された管理メンバーーが少なくとも1人必要です"
 
 #: website/static/js/contribManager.js:308
 msgid "Must have at least one bibliographic contributor"
-msgstr "少なくとも1人の書誌コントリビュータが必要です。"
+msgstr "少なくとも1人の書誌メンバーが必要です。"
 
 #: website/static/js/contribManager.js:364
 msgid "Your contributor list has unsaved changes. Please "
-msgstr "コントリビュータリストには未保存の変更があります。 "
+msgstr "メンバーリストには未保存の変更があります。 "
 
 #: website/static/js/contribManager.js:365
 msgid "save or cancel your changes before adding "
-msgstr "コントリビュータを追加する前に、変更を保存または"
+msgstr "メンバーを追加する前に、変更を保存または"
 
 #: website/static/js/contribManager.js:366
 msgid "contributors."
@@ -1550,7 +1630,7 @@ msgstr "キャンセルしてください。"
 
 #: website/static/js/contribManager.js:375
 msgid "There are unsaved changes to your contributor settings"
-msgstr "コントリビュータの設定に保存されていない変更があります"
+msgstr "メンバーの設定に保存されていない変更があります"
 
 #: website/static/js/contribManager.js:404
 msgid "Save changes?"
@@ -1573,7 +1653,7 @@ msgstr "保存"
 #: website/static/js/contribRemover.js:57
 #: website/static/js/contribRemover.js:58
 msgid "Remove Contributor"
-msgstr "コントリビュータを削除"
+msgstr "メンバーを削除"
 
 #: website/static/js/contribRemover.js:208
 #: website/static/js/contribRemover.js:209
@@ -1582,11 +1662,11 @@ msgstr "プロジェクトとコンポーネントを取得できません"
 
 #: website/static/js/contribRemover.js:232
 msgid "Unable to delete Contributor"
-msgstr "コントリビュータを削除できません"
+msgstr "メンバーを削除できません"
 
 #: website/static/js/contribRemover.js:233
 msgid "Could not DELETE Contributor."
-msgstr "コントリビュータを削除できませんでした"
+msgstr "メンバーを削除できませんでした"
 
 #: website/static/js/fangorn.js:38
 msgid "Upload pending..."
@@ -1892,7 +1972,7 @@ msgstr "これは、"
 msgid ""
 "other contributors cannot edit, delete or upload new versions of this "
 "file "
-msgstr "チェックアウトされている限り他のコントリビュータがこのファイルの新しいバージョンを編集、削除、またはアップロードできないことを意味します。"
+msgstr "チェックアウトされている限り他のメンバーがこのファイルの新しいバージョンを編集、削除、またはアップロードできないことを意味します。"
 
 #: website/static/js/fangorn.js:2004
 msgid "as long as it is checked-out. You can check it back in at anytime."
@@ -1996,7 +2076,7 @@ msgstr "オプション（WindowsではAlt）を押しながら、ファイル�
 
 #: website/static/js/fangorn.js:2253
 msgid " Only for contributors with write access."
-msgstr "書き込みアクセス権を持つコントリビュータのみ。"
+msgstr "書き込みアクセス権を持つメンバーのみ。"
 
 #: website/static/js/fangorn.js:2259
 msgid "How to Use the File Browser"
@@ -2311,31 +2391,74 @@ msgstr "ソフトウェア"
 msgid "Other"
 msgstr "その他"
 
-#: website/static/js/js_messages.js:7 website/static/js/js_messages.js:9
+#: website/static/js/js_messages.js:7
+msgid "analysis"
+msgstr "分析"
+
+#: website/static/js/js_messages.js:7
+msgid "communication"
+msgstr "コミュニケーション"
+
+#: website/static/js/js_messages.js:7
+msgid "data"
+msgstr "データ"
+
+#: website/static/js/js_messages.js:7
+msgid "hypothesis"
+msgstr "仮説"
+
+#: website/static/js/js_messages.js:7
+msgid "instrumentation"
+msgstr "器具"
+
+#: website/static/js/js_messages.js:7
+msgid "methods and measures"
+msgstr "方法と対策"
+
+#: website/static/js/js_messages.js:7
+msgid "procedure"
+msgstr "手順"
+
+#: website/static/js/js_messages.js:7 website/static/js/nodeControl.js:114
+#: website/static/js/nodeSelectTreebeard.js:87
+#: website/static/js/nodesDeleteTreebeard.js:62
+#: website/static/js/nodesPrivacySettingsTreebeard.js:62
+msgid "project"
+msgstr "プロジェクト"
+
+#: website/static/js/js_messages.js:7
+msgid "software"
+msgstr "ソフトウェア"
+
+#: website/static/js/js_messages.js:7
+msgid "other"
+msgstr "その他"
+
+#: website/static/js/js_messages.js:9 website/static/js/js_messages.js:11
 msgid "Comments added"
 msgstr "コメント追加時"
 
-#: website/static/js/js_messages.js:7 website/static/js/js_messages.js:9
+#: website/static/js/js_messages.js:9 website/static/js/js_messages.js:11
 msgid "Files updated"
 msgstr "ファイルアップロード時"
 
-#: website/static/js/js_messages.js:9
+#: website/static/js/js_messages.js:11
 msgid "Replies to your comments"
 msgstr "コメントへの返信時"
 
-#: website/static/js/js_messages.js:9
+#: website/static/js/js_messages.js:11
 msgid "Mentions added"
 msgstr "メンション追加時"
 
-#: website/static/js/js_messages.js:9
+#: website/static/js/js_messages.js:11
 msgid "Preprint submissions updated"
 msgstr "プレプリント提出の更新時"
 
-#: website/static/js/js_messages.js:11
+#: website/static/js/js_messages.js:13
 msgid "No license"
 msgstr "ライセンスなし"
 
-#: website/static/js/js_messages.js:13
+#: website/static/js/js_messages.js:15
 msgid ""
 "Because you have not configured the {addon} add-on, your authentication "
 "will not be transferred to the forked {category}. You may authorize and "
@@ -2344,64 +2467,64 @@ msgstr ""
 "{addon}アドオンを設定していないため、認証は分岐した{category}に転送されません。 "
 "設定ページの新しいフォークで{addon}アドオンを許可および設定できます。"
 
-#: website/static/js/js_messages.js:15 website/static/js/passwordForms.js:178
+#: website/static/js/js_messages.js:17 website/static/js/passwordForms.js:178
 #: website/static/js/passwordForms.js:241
 msgid "This field is required."
 msgstr "この項目は必須です。"
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please enter a value greater than or equal to {0}."
 msgstr "{0}以上の値を入力してください。"
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please enter a value less than or equal to {0}."
 msgstr "{0}以下の値を入力してください。"
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please enter at least {0} characters."
 msgstr "{0}文字以上入力してください。"
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please enter no more than {0} characters."
 msgstr "{0}文字以下で入力してください。"
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please check this value."
 msgstr "値を確認してください。"
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "The value must increment by {0}."
 msgstr "値は{0}ずつ増加する必要があります。"
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please enter a proper email address."
 msgstr "正しいメールアドレスを入力してください。"
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please enter a proper date."
 msgstr "適切な日付を入力してください。"
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please enter a number."
 msgstr "数字を入力してください。"
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please enter a digit."
 msgstr "数字を入力してください。"
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please specify a valid phone number."
 msgstr "有効な電話番号を指定してください。"
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Values must equal."
 msgstr "値は等しくなければなりません。"
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please choose another value."
 msgstr "別の値を選択してください。"
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid "Please make sure the value is unique."
 msgstr "値が一意であることを確認してください。"
 
@@ -2517,372 +2640,380 @@ msgstr "コード用 - コピーレフト"
 msgid "Code - Other:"
 msgstr "コード用 - その他"
 
-#: website/static/js/logActionsList_extract.js:2
-#: website/static/js/logActionsList_extract.js:69
+#: website/static/js/logActionsList_extract.js:4
+#: website/static/js/logActionsList_extract.js:71
 msgid "${user} created ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:3
+#: website/static/js/logActionsList_extract.js:5
 msgid "${user} registered ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:4
+#: website/static/js/logActionsList_extract.js:6
 msgid "${node} registered"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:5
+#: website/static/js/logActionsList_extract.js:7
 msgid ""
 "${user} submitted for review to the Preregistration Challenge a "
 "registration of ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:6
+#: website/static/js/logActionsList_extract.js:8
 msgid "${user} deleted ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:7
+#: website/static/js/logActionsList_extract.js:9
 msgid "${user} created ${node} based on ${template}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:8
+#: website/static/js/logActionsList_extract.js:10
 msgid "${user} created a link to ${pointer_category} ${pointer}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:9
+#: website/static/js/logActionsList_extract.js:11
 msgid "${user} forked a link to ${pointer_category} ${pointer}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:10
+#: website/static/js/logActionsList_extract.js:12
 msgid "${user} removed a link to ${pointer_category} ${pointer}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:11
+#: website/static/js/logActionsList_extract.js:13
 msgid "${user} added ${group} to ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:12
+#: website/static/js/logActionsList_extract.js:14
 msgid "${user} removed ${group} from ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:13
+#: website/static/js/logActionsList_extract.js:15
 msgid "${user} changed ${group} permissions to ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:14
+#: website/static/js/logActionsList_extract.js:16
 msgid "${user} made ${node} public"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:16
-msgid "${user} made ${node} private"
-msgstr ""
-
 #: website/static/js/logActionsList_extract.js:17
-msgid "${user} added tag ${tag} to ${node}"
+msgid "${node} made public"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:18
-msgid "${user} removed tag ${tag} from ${node}"
+msgid "${user} made ${node} private"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:19
-msgid "${user} changed the title from ${title_original} to ${title_new}"
+msgid "${user} added tag ${tag} to ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:20
-msgid "${user} edited description of ${node}"
+msgid "${user} removed tag ${tag} from ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:21
-msgid "${user} changed the ${updated_fields} for ${node}"
+msgid "${user} changed the title from ${title_original} to ${title_new}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:22
-msgid "${user} created external identifier(s) ${identifiers} on ${node}"
+msgid "${user} edited description of ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:23
-msgid "${user} created a custom citation for ${node}"
+msgid "${user} changed the ${updated_fields} for ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:24
-msgid "${user} edited a custom citation for ${node}"
+msgid "${user} created external identifier(s) ${identifiers} on ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:25
-msgid "${user} removed a custom citation for ${node}"
+msgid "${user} created a custom citation for ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:26
-msgid "${user} added ${contributors} as contributor(s) to ${node}"
+msgid "${user} edited a custom citation for ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:27
-msgid "${user} removed ${contributors} as contributor(s) from ${node}"
+msgid "${user} removed a custom citation for ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:28
-msgid "${user} reordered contributors for ${node}"
+msgid "${user} added ${contributors} as contributor(s) to ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:29
-msgid "${user} changed permissions for ${node}"
+msgid "${user} removed ${contributors} as contributor(s) from ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:30
+msgid "${user} reordered contributors for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:31
+msgid "${user} changed permissions for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:32
 msgid ""
 "${user} made non-bibliographic contributor ${contributors} a "
 "bibliographic contributor on ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:31
+#: website/static/js/logActionsList_extract.js:33
 msgid ""
 "${user} made bibliographic contributor ${contributors} a non-"
 "bibliographic contributor on ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:32
+#: website/static/js/logActionsList_extract.js:34
 msgid "${user} updated wiki page ${page} to version ${version} of ${node}"
 msgstr "${user}が${node}のWiki(${page})をバージョン${version}に更新"
 
-#: website/static/js/logActionsList_extract.js:33
+#: website/static/js/logActionsList_extract.js:35
 msgid "${user} deleted wiki page ${page} of ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:34
+#: website/static/js/logActionsList_extract.js:36
 msgid "${user} renamed wiki page ${old_page} to ${page} of ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:35
+#: website/static/js/logActionsList_extract.js:37
 msgid "${user} made the wiki of ${node} publicly editable"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:36
+#: website/static/js/logActionsList_extract.js:38
 msgid "${user} made the wiki of ${node} privately editable"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:37
+#: website/static/js/logActionsList_extract.js:39
 msgid "${user} added addon ${addon} to ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:38
+#: website/static/js/logActionsList_extract.js:40
 msgid "${user} removed addon ${addon} from ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:39
+#: website/static/js/logActionsList_extract.js:41
 msgid "${user} moved ${source} to ${destination} in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:40
+#: website/static/js/logActionsList_extract.js:42
 msgid "${user} copied ${source} to ${destination} in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:41
+#: website/static/js/logActionsList_extract.js:43
 msgid "${user} renamed ${source} to ${destination} in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:42
+#: website/static/js/logActionsList_extract.js:44
 msgid "${user} created a folder in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:43
+#: website/static/js/logActionsList_extract.js:45
 msgid "${user} added file ${path} to ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:44
+#: website/static/js/logActionsList_extract.js:46
 msgid "${user} updated file in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:45
+#: website/static/js/logActionsList_extract.js:47
 msgid "${user} removed ${path_type} ${path} from ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:46
+#: website/static/js/logActionsList_extract.js:48
 msgid "${user} restored file ${path} from ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:47
+#: website/static/js/logActionsList_extract.js:49
 msgid "${user} updated the file metadata for ${path}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:48
+#: website/static/js/logActionsList_extract.js:50
 msgid "${user} checked out ${kind} ${path} from ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:49
+#: website/static/js/logActionsList_extract.js:51
 msgid "${user} checked in ${kind} ${path} to ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:50
+#: website/static/js/logActionsList_extract.js:52
 msgid "${user} added a comment ${comment_location} in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:51
+#: website/static/js/logActionsList_extract.js:53
 msgid "${user} deleted a comment ${comment_location} in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:52
+#: website/static/js/logActionsList_extract.js:54
 msgid "${user} restored a comment ${comment_location}  in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:53
+#: website/static/js/logActionsList_extract.js:55
 msgid "${user} updated a comment ${comment_location} in ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:54
+#: website/static/js/logActionsList_extract.js:56
 msgid "${user} initiated an embargoed registration of ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:55
+#: website/static/js/logActionsList_extract.js:57
 msgid "${user} approved embargoed registration of ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:57
-msgid "${user} cancelled embargoed registration of ${node}"
-msgstr ""
-
 #: website/static/js/logActionsList_extract.js:58
-msgid "${user} completed embargo of ${node}"
+msgid "Embargo of registration of ${node} approved"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:59
-msgid "Embargo for ${node} completed"
+msgid "${user} cancelled embargoed registration of ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:60
-msgid "Embargo for ${node} ended"
+msgid "${user} completed embargo of ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:61
-msgid "${user} initiated withdrawal of registration of ${node}"
+msgid "Embargo for ${node} completed"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:62
-msgid "A withdrawal of registration of ${node} is proposed"
+msgid "Embargo for ${node} ended"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:63
-msgid "${user} approved withdrawal of registration of ${node}"
+msgid "${user} initiated withdrawal of registration of ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:64
-msgid "${user} cancelled withdrawal of registration of ${node}"
+msgid "A withdrawal of registration of ${node} is proposed"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:65
-msgid "${user} initiated registration of ${node}"
+msgid "${user} approved withdrawal of registration of ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:66
-msgid "${user} approved registration of ${node}"
+msgid "${user} cancelled withdrawal of registration of ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:67
-msgid "Registration of ${node} approved"
+msgid "${user} initiated registration of ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:68
-msgid "${user} cancelled registration of ${node}"
+msgid "${user} approved registration of ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:69
+msgid "Registration of ${node} approved"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:70
-msgid "${user} created fork from ${forked_from}"
-msgstr ""
-
-#: website/static/js/logActionsList_extract.js:71
-msgid "${user} removed ${node}"
+msgid "${user} cancelled registration of ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:72
-msgid "${user} enabled access requests for ${node}"
+msgid "${user} created fork from ${forked_from}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:73
-msgid "${user} disabled access requests for ${node}"
+msgid "${user} removed ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:74
-msgid "${user} updated the license of ${node} ${license}"
+msgid "${user} enabled access requests for ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:75
-msgid "${user} added tag ${tag} to ${path} in ${storage_name} in ${node}"
+msgid "${user} disabled access requests for ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:76
-msgid "${user} removed tag ${tag} from ${path} in ${storage_name} in ${node}"
+msgid "${user} updated the license of ${node} ${license}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:77
-msgid "${user} added file ${path} to ${storage_name} in ${node}"
+msgid "${user} added tag ${tag} to ${path} in ${storage_name} in ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:78
-msgid "${user} created folder ${path} in ${storage_name} in ${node}"
+msgid "${user} removed tag ${tag} from ${path} in ${storage_name} in ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:79
-msgid "${user} updated file ${path} in ${storage_name} in ${node}"
+msgid "${user} added file ${path} to ${storage_name} in ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:80
-msgid "${user} removed ${path_type} ${path} from ${storage_name} in ${node}"
+msgid "${user} created folder ${path} in ${storage_name} in ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:81
-msgid "${user} added ${institution} affiliation to ${node}"
+msgid "${user} updated file ${path} in ${storage_name} in ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:82
-msgid "${user} removed ${institution} affiliation from ${node}"
+msgid "${user} removed ${path_type} ${path} from ${storage_name} in ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:83
-msgid "${user} made ${node} a ${preprint} on ${preprint_provider} Preprints"
+msgid "${user} added ${institution} affiliation to ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:84
+msgid "${user} removed ${institution} affiliation from ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:85
+msgid "${user} made ${node} a ${preprint} on ${preprint_provider} Preprints"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:86
 msgid ""
 "${user} updated the primary file of this ${preprint} on "
 "${preprint_provider} Preprints"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:85
+#: website/static/js/logActionsList_extract.js:87
 msgid ""
 "${user} updated the license of this ${preprint} on ${preprint_provider} "
 "Preprints ${license}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:86
+#: website/static/js/logActionsList_extract.js:88
 msgid "${user} updated the subjects on ${node} to ${subjects}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:87
+#: website/static/js/logActionsList_extract.js:89
 msgid "${user} created ${anonymous_link} view-only link to ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:88
+#: website/static/js/logActionsList_extract.js:90
 msgid "${user} removed ${anonymous_link} view-only link to ${node}"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:89
+#: website/static/js/logActionsList_extract.js:91
 msgid ""
 "[MAPCORE_SYNC:ERROR] ${user} cannot create a new mAP group for GRDM "
 "project <${node}> (See logs for details)"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:90
+#: website/static/js/logActionsList_extract.js:92
 msgid ""
 "[MAPCORE_SYNC:ERROR] mAP group for GRDM project <${node}> cannot be "
 "updated (See logs for details)"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:91
+#: website/static/js/logActionsList_extract.js:93
 msgid ""
 "[MAPCORE_SYNC:ERROR] GRDM project <${node}> cannot be updated with mAP "
 "group (See logs for details)"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:92
+#: website/static/js/logActionsList_extract.js:94
 msgid ""
 "[MAPCORE_SYNC:NOTICE] Unknown (unregistered in GRDM) users belong to mAP "
 "group <${node}> (ignored) (See logs for details)"
@@ -2997,7 +3128,7 @@ msgstr "プロジェクト、登録、またはプレプリントをコレクシ
 msgid ""
 "No components to display. Either there are no components, or there are "
 "private components in which you are not a contributor."
-msgstr "表示するコンポーネントはありません。 コンポーネントがないか、コントリビュータではないプライベートコンポーネントがあります。"
+msgstr "表示するコンポーネントはありません。 コンポーネントがないか、メンバーではないプライベートコンポーネントがあります。"
 
 #: website/static/js/myProjects.js:966
 msgid "Collections could not be loaded."
@@ -3115,21 +3246,21 @@ msgstr "コンポーネントを作成"
 msgid ""
 "No contributors to display in this collection. Project administrators can"
 " add contributors."
-msgstr "このコレクションに表示するコントリビュータはいません。 プロジェクト管理者はコントリビュータを追加できます。"
+msgstr "このコレクションに表示するメンバーはいません。 プロジェクト管理者はメンバーを追加できます。"
 
 #: website/static/js/myProjects.js:1898
 msgid ""
 "No tags to display in this collection. Project administrators and write "
 "contributors can add tags."
-msgstr "このコレクションに表示するタグはありません。 プロジェクト管理者とコントリビュータはタグを追加できます。"
+msgstr "このコレクションに表示するタグはありません。 プロジェクト管理者とメンバーはタグを追加できます。"
 
 #: website/static/js/myProjects.js:1924
 msgid "Contributors "
-msgstr "コントリビュータ"
+msgstr "メンバー"
 
 #: website/static/js/myProjects.js:1927
 msgid "Click a contributor's name to see projects that you have in common."
-msgstr "コントリビュータの名前をクリックすると、共通のプロジェクトが表示されます。"
+msgstr "メンバーの名前をクリックすると、共通のプロジェクトが表示されます。"
 
 #: website/static/js/myProjects.js:1938 website/static/js/myProjects.js:2019
 msgid "Tags"
@@ -3190,13 +3321,6 @@ msgstr "タイトルを空白にすることはできません。"
 #: website/static/js/nodeControl.js:109
 msgid "Title cannot exceed 512 characters."
 msgstr "タイトルは512文字を超えることはできません。"
-
-#: website/static/js/nodeControl.js:114
-#: website/static/js/nodeSelectTreebeard.js:87
-#: website/static/js/nodesDeleteTreebeard.js:62
-#: website/static/js/nodesPrivacySettingsTreebeard.js:62
-msgid "project"
-msgstr "プロジェクト"
 
 #: website/static/js/nodeControl.js:114
 msgid "component"
@@ -3271,11 +3395,11 @@ msgstr "この%1$sには、<strong>プレプリント</strong>の補足資料も
 
 #: website/static/js/nodesDelete.js:39
 msgid " no longer be available to contributors or connected to the preprint."
-msgstr "コントリビュータは利用できなくなり、プレプリントに接続できなくなります。"
+msgstr "メンバーは利用できなくなり、プレプリントに接続できなくなります。"
 
 #: website/static/js/nodesDelete.js:43
 msgid "It will no longer be available to other contributors on the project."
-msgstr "プロジェクトの他のコントリビュータは利用できなくなります。"
+msgstr "プロジェクトの他のメンバーは利用できなくなります。"
 
 #: website/static/js/nodesDelete.js:49
 msgid "Are you sure you want to delete this %1$s?"
@@ -3343,7 +3467,7 @@ msgid ""
 "available to other contributors on the %5$s"
 msgstr ""
 "%1$sを削除すると、すべての%2$sデータが消去され、このプロセスは不可逆であることに注意してください。 "
-"削除された%3$sと%4$sは、%5$sの他のコントリビュータが利用できなくなります"
+"削除された%3$sと%4$sは、%5$sの他のメンバーが利用できなくなります"
 
 #: website/static/js/nodesDelete.js:168
 msgid " and will be disconnected from your preprints."
@@ -3826,11 +3950,11 @@ msgstr "機関が必要です"
 #: website/static/js/components/publicNodes.js:103
 #: website/static/js/project-organizer.js:99
 msgid "A contributor"
-msgstr "一人のコントリビュータ"
+msgstr "一人のメンバー"
 
 #: website/static/js/project-organizer.js:194
 msgid "Contributors"
-msgstr "コントリビュータ"
+msgstr "メンバー"
 
 #: website/static/js/project-organizer.js:413
 msgid ""
@@ -3922,7 +4046,7 @@ msgstr "<li>読込み/書込み権限</li>"
 
 #: website/static/js/project.js:213
 msgid "<li>Manage contributor</li>"
-msgstr "<li>コントリビュータの管理</li>"
+msgstr "<li>メンバーの管理</li>"
 
 #: website/static/js/project.js:214
 msgid ""
@@ -3936,8 +4060,8 @@ msgid ""
 "list and in project citations. Non-bibliographic contributors can read "
 "and modify the project as normal."
 msgstr ""
-"コントリビュータリストおよびプロジェクトの引用には、書誌のコントリビュータのみが表示されます。 "
-"書誌以外のコントリビュータは、通常どおりプロジェクトを読んで修正できます。"
+"メンバーリストおよびプロジェクトの引用には、書誌のメンバーのみが表示されます。 "
+"書誌以外のメンバーは、通常どおりプロジェクトを読んで修正できます。"
 
 #: website/static/js/project.js:238
 msgid "Remove this link?"
@@ -4040,7 +4164,7 @@ msgstr[0] "この機能はプライベート%1$sのWikiでは無効になって�
 
 #: website/static/js/wikiSettingsTreebeard.js:133
 msgid "Contributors (with write access)"
-msgstr "コントリビュータ（書き込みアクセス権付き）"
+msgstr "メンバー（書き込みアクセス権付き）"
 
 #: website/static/js/wikiSettingsTreebeard.js:134
 msgid "All GakuNin RDM users"
@@ -4297,7 +4421,7 @@ msgstr ""
 
 #: website/static/js/filepage/revisions.js:133
 msgid "Anonymous Contributor"
-msgstr "匿名のコントリビュータ"
+msgstr "匿名のメンバー"
 
 #: website/static/js/filepage/util.js:36
 msgid " Loading... "
