@@ -83,7 +83,7 @@
                             <div class="dropdown generic-dropdown category-list">
                                 <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">
                                     <span data-bind="getIcon: selectedCategory"></span>
-                                    <span data-bind="text: selectedCategory" class="text-capitalize"></span>
+                                    <span data-bind="text: selectedCategoryLabel" class="text-capitalize"></span>
                                     <span data-bind="ifnot: selectedCategory">${_("Uncategorized")}</span>
                                     <i class="fa fa-sort"></i>
                                 </button>

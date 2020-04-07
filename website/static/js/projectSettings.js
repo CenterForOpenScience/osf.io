@@ -31,6 +31,7 @@ var ProjectSettings = oop.extend(
             self.categoryOptions = params.categoryOptions;
             self.categoryPlaceholder = params.category;
             self.selectedCategory = ko.observable(params.category);
+            self.selectedCategoryLabel = ko.observable(params.category ? _(params.category) : params.category);
 
             if (!params.updateUrl) {
                 throw new Error(language.instantiationErrorMessage);
@@ -99,6 +100,7 @@ var ProjectSettings = oop.extend(
         setCategory: function(category){
             var self = this;
             self.selectedCategory(category);
+            self.selectedCategoryLabel(category ? _(category) : category);
         },
         /*cancel handler*/
         cancelAll: function() {
