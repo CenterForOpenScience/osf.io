@@ -202,7 +202,7 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
                         self.set_sloan_tags(user, sloan_flag_name, active)
                         self.set_sloan_cookie(f'dwf_{sloan_flag_name}', active, request, response)
 
-                        if provider.domain:
+                        if provider.domain_redirect_enabled and provider.domain:
                             self.set_sloan_cookie(
                                 f'dwf_{sloan_flag_name}_custom_domain',
                                 active,
@@ -349,7 +349,7 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
             resp.cookies[name]['domain'] = self.get_domain(request.environ['HTTP_REFERER'])
 
         if custom_domain:
-            resp.cookies[name]['domain'] = custom_domain
+            resp.cookies[name]['domain'] = '.' + urlparse(custom_domain).netloc
 
         # Browsers won't allow use to use these cookie attributes unless you're sending the data over https.
         resp.cookies[name]['secure'] = True
