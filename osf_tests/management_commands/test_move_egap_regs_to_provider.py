@@ -38,10 +38,16 @@ class TestEGAPMoveToProvider:
         cos = RegistrationProviderFactory(_id='osf')
         return RegistrationFactory(schema=egap_schema, provider=cos)
 
-    def test_move_to_provider(self, egap_provider, egap_reg, non_egap_provider):
+    @pytest.fixture()
+    def egap_non_reg(self, non_egap_provider):
+        return RegistrationFactory(provider=non_egap_provider)
+
+    def test_move_to_provider(self, egap_provider, egap_reg, non_egap_provider, egap_non_reg):
         assert egap_reg.provider != egap_provider
+        assert egap_non_reg.provider != egap_provider
 
         move_egap_regs(dry_run=False)
 
         egap_reg.refresh_from_db()
         assert egap_reg.provider == egap_provider
+        assert egap_non_reg.provider != egap_provider
