@@ -29,6 +29,11 @@
     % endif
     </p>
 
+    % if is_admin:
+        <li>Submit your preprint for publication in an APA-published journal. <a href=“https://help.osf.io/hc/en-us/articles/360044820913-Submit-to-APA-Journals-via-PsyArXiv-”>Learn more.</a></li>
+    % endif
+
+
     % if not is_rejected:
     <p>
         <table style="padding: 0; border: 0;" width="100%" border="0" cellspacing="0" cellpadding="0" align="center">
