@@ -21,7 +21,7 @@ WELCOME_MESSAGE = """
 TERMS_OF_SERVICE_SENTENCE = _("""
 <div style="text-align: center">
 <div>
-<h4>We've updated our <a target="_blank" href="https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md">Terms of Use</a> and <a target="_blank" href="https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>. Please read them carefully.</h4>""")
+<h4>We've updated our <a target="_blank" href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419">Terms of Use</a> and <a target="_blank" href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422">Privacy Policy</a>. Please read them carefully.</h4>""")
 HAVE_READ_AGREE = _("""<h5><input type="checkbox" id="accept" style="margin-right: 5px">I have read and agree to these terms.</input></h5>
     </div>""")
 CONTINUE = _("""<button class="btn btn-primary" data-dismiss="alert" id="continue" disabled>Continue</button>
