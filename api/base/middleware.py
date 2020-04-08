@@ -2,10 +2,10 @@ import re
 import gc
 import uuid
 from io import StringIO
+from urllib.parse import urlparse
 import cProfile
 import pstats
 import threading
-from urllib.parse import urlparse
 
 from django.conf import settings
 from django.utils.deprecation import MiddlewareMixin
@@ -27,7 +27,10 @@ from waffle.middleware import WaffleMiddleware
 from waffle.models import Flag
 
 from website.settings import DOMAIN
-from osf.models import PreprintProvider
+from osf.models import (
+    Preprint,
+    PreprintProvider,
+)
 from typing import Optional
 
 from osf.features import (
@@ -199,7 +202,7 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
                         self.set_sloan_tags(user, sloan_flag_name, active)
                         self.set_sloan_cookie(f'dwf_{sloan_flag_name}', active, request, response)
 
-                        if provider.domain:
+                        if provider.domain_redirect_enabled and provider.domain:
                             self.set_sloan_cookie(
                                 f'dwf_{sloan_flag_name}_custom_domain',
                                 active,
@@ -277,6 +280,13 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
         provider_ids_regex = '|'.join(
             [re.escape(id) for id in PreprintProvider.objects.all().values_list('_id', flat=True)],
         )
+        # matches:
+        # /ispp0  (preprint id)
+        path = urlparse(referer_url).path.replace('/', '')
+        preprint = Preprint.load(path)
+        if preprint:
+            return preprint.provider
+
         # matches:
         # /preprints
         # /preprints/
