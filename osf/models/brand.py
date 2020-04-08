@@ -1,8 +1,6 @@
 from osf.models.base import BaseModel
 from django.db import models
 
-from website.util import api_v2_url
-
 
 class Brand(BaseModel):
     """
@@ -17,6 +15,3 @@ class Brand(BaseModel):
 
     primary_color = models.CharField(max_length=7)
     secondary_color = models.CharField(max_length=7)
-
-    def get_absolute_url(self):
-        return api_v2_url('brands/{}/'.format(self.id))
