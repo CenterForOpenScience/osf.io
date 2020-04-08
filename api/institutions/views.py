@@ -387,6 +387,9 @@ class InstitutionSummaryMetrics(JSONAPIBaseView, generics.RetrieveAPIView, Insti
         IsInstitutionalMetricsUser,
     )
 
+    required_read_scopes = [CoreScopes.INSTITUTION_METRICS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
     view_category = 'institutions'
     view_name = 'institution-summary-metrics'
 
@@ -402,6 +405,7 @@ class InstitutionSummaryMetrics(JSONAPIBaseView, generics.RetrieveAPIView, Insti
             raise exceptions.NotFound()
 
         return es_doc
+
 
 class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, InstitutionMixin):
     permission_classes = (

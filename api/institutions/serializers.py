@@ -51,6 +51,21 @@ class InstitutionSerializer(JSONAPISerializer):
         related_view_kwargs={'institution_id': '<_id>'},
     )
 
+    department_metrics = RelationshipField(
+        related_view='institutions:institution-department-metrics',
+        related_view_kwargs={'institution_id': '<_id>'},
+    )
+
+    user_metrics = RelationshipField(
+        related_view='institutions:institution-user-metrics',
+        related_view_kwargs={'institution_id': '<_id>'},
+    )
+
+    summary_metrics = RelationshipField(
+        related_view='institutions:institution-summary-metrics',
+        related_view_kwargs={'institution_id': '<_id>'},
+    )
+
     def get_api_url(self, obj):
         return obj.absolute_api_v2_url
 
@@ -166,7 +181,7 @@ class InstitutionRegistrationsRelationshipSerializer(BaseAPISerializer):
 class InstitutionSummaryMetricSerializer(JSONAPISerializer):
 
     class Meta:
-        type_ = 'institution-metrics'
+        type_ = 'institution-summary-metrics'
 
     id = IDField(source='institution_id', read_only=True)
     public_project_count = ser.IntegerField(read_only=True)
