@@ -74,6 +74,7 @@ class TestSloanMetrics(OsfTestCase):
         mock_record.assert_called_with(
             path=test_file.path,
             preprint=self.preprint,
+            user=None,
             version='1',
             sloan_coi=1,
             sloan_data=0,
