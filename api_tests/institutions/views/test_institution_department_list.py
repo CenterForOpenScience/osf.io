@@ -43,7 +43,7 @@ class TestInstitutionDepartmentList:
 
     @pytest.fixture()
     def url(self, institution):
-        return f'/{API_BASE}institutions/{institution._id}/departments/'
+        return f'/{API_BASE}institutions/{institution._id}/metrics/departments/'
 
     def test_get(self, app, url, user, user2, user3, user4, admin, institution):
 
@@ -115,7 +115,7 @@ class TestInstitutionDepartmentList:
                 'name': 'New Department',
                 'number_of_users': 2
             },
-            'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/departments/'}
+            'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
         }, {
             'id': institution._id,
             'type': 'institution-departments',
@@ -123,7 +123,7 @@ class TestInstitutionDepartmentList:
                 'name': 'Smaller Department',
                 'number_of_users': 1
             },
-            'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/departments/'}
+            'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
         }, {
             'id': institution._id,
             'type': 'institution-departments',
@@ -131,7 +131,7 @@ class TestInstitutionDepartmentList:
                 'name': 'N/A',
                 'number_of_users': 1
             },
-            'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/departments/'}
+            'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
         }]
 
         resp = app.get(f'{url}?filter[name]=New Department', auth=admin.auth)
@@ -143,5 +143,5 @@ class TestInstitutionDepartmentList:
                 'name': 'New Department',
                 'number_of_users': 2
             },
-            'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/departments/'}
+            'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
         }]

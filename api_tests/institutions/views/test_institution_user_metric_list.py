@@ -35,7 +35,7 @@ class TestInstitutionUserMetricList:
 
     @pytest.fixture()
     def url(self, institution):
-        return f'/{API_BASE}institutions/{institution._id}/user_metrics/'
+        return f'/{API_BASE}institutions/{institution._id}/metrics/users/'
 
     def test_get(self, app, url, user, user2, admin, institution):
 
@@ -107,7 +107,7 @@ class TestInstitutionUserMetricList:
                     }
                 },
                 'links': {
-                    'self': f'http://localhost:8000/v2/institutions/{institution._id}/user_metrics/'
+                    'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/users/'
                 }
             },
             {
@@ -134,7 +134,7 @@ class TestInstitutionUserMetricList:
                     }
                 },
                 'links': {
-                    'self': f'http://localhost:8000/v2/institutions/{institution._id}/user_metrics/'
+                    'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/users/'
                 }
             }
         ]
