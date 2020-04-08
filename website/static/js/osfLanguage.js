@@ -137,8 +137,8 @@ module.exports = {
                 'This will revoke access to IQB-RIMS for all projects you have ' +
                 'associated with this account.',
             deauthError: 'Could not disconnect the IQB-RIMS account at this time',
-            depositHelp: 'Register a paper and apply for approval',
-            checkHelp: 'Perform image only scan service before submitting a paper',
+            depositHelp: 'Register an accepted paper and deposit data',
+            checkHelp: 'Pre-submission image scan service',
             labo: 'Research Field',
             accepted_date: 'Accepted Date',
             journal_name: 'Journal Name',
