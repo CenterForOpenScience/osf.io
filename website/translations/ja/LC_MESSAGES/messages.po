@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-03 20:08+0900\n"
-"PO-Revision-Date: 2020-04-03 20:08+0900\n"
+"POT-Creation-Date: 2020-04-08 16:58+0900\n"
+"PO-Revision-Date: 2020-04-08 16:45+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -1001,6 +1001,111 @@ msgstr "プロフィールデータを読込む"
 msgid "Read your primary email address."
 msgstr "プライマリメールアドレスを読込む"
 
+# ##Please translate carefully with html.
+#: website/language.py:21
+msgid ""
+"\n"
+"<div style=\"text-align: center\">\n"
+"<div>\n"
+"<h4>We've updated our <a target=\"_blank\" "
+"href=\"https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md\">Terms"
+" of Use</a> and <a target=\"_blank\" "
+"href=\"https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md\">Privacy"
+" Policy</a>. Please read them carefully.</h4>"
+msgstr ""
+"\n"
+"<div style=\"text-align: center\">\n"
+"<div>\n"
+"<h4><a target=\"_blank\"  "
+"href=\"https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md\">利用規約</a>と<a"
+" target=\"_blank\" "
+"href=\"https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md\">プライバシーポリシー</a>を更新しました。</a>"
+" 注意深くお読みください。</h4>"
+
+# ##Please translate carefully with html.
+#: website/language.py:25
+msgid ""
+"<h5><input type=\"checkbox\" id=\"accept\" style=\"margin-right: 5px\">I "
+"have read and agree to these terms.</input></h5>\n"
+"    </div>"
+msgstr ""
+"<h5><input type=\"checkbox\" id=\"accept\" style=\"margin-right: "
+"5px\">これらの規約を読み、同意します</input></h5>\n"
+"    </div>"
+
+# ##Please translate carefully with html.
+#: website/language.py:27
+msgid ""
+"<button class=\"btn btn-primary\" data-dismiss=\"alert\" id=\"continue\" "
+"disabled>Continue</button>\n"
+"</div>"
+msgstr ""
+"<button class=\"btn btn-primary\" data-dismiss=\"alert\" id=\"continue\" "
+"disabled>続ける</button>\n"
+"</div>"
+
+#: website/notifications/utils.py:502
+msgid "Default Notification Settings"
+msgstr ""
+
+#: website/notifications/utils.py:503
+msgid ""
+"These are default settings for new projects you create or are added to. "
+"Modifying these settings will not modify settings on existing projects."
+msgstr ""
+
+#: website/notifications/utils.py:511
+msgid "Project Notifications"
+msgstr ""
+
+#: website/project/__init__.py:64
+msgid "Bookmarks"
+msgstr ""
+
+#: website/search/elastic_search.py:46
+#: website/templates/project/modal_add_pointer.mako:43
+msgid "Projects"
+msgstr "プロジェクト"
+
+#: website/search/elastic_search.py:47
+#: website/templates/project/project.mako:644
+msgid "Components"
+msgstr "コンポーネント"
+
+#: website/search/elastic_search.py:48
+#: website/templates/project/project_header.mako:67
+msgid "Registrations"
+msgstr "登録"
+
+#: website/search/elastic_search.py:49
+msgid "Users"
+msgstr ""
+
+#: website/search/elastic_search.py:50
+msgid "All Results"
+msgstr ""
+
+#: website/search/elastic_search.py:51
+#: website/templates/include/comment_pane_template.mako:18
+#: website/templates/project/files.mako:2
+#: website/templates/project/files.mako:5
+#: website/templates/project/project.mako:441
+#: website/templates/project/project_header.mako:40
+msgid "Files"
+msgstr "ファイル"
+
+#: website/search/elastic_search.py:52
+msgid "Institutions"
+msgstr ""
+
+#: website/search/elastic_search.py:53
+msgid "Preprints"
+msgstr ""
+
+#: website/search/elastic_search.py:54
+msgid "Groups"
+msgstr ""
+
 #: website/templates/base.mako:110
 msgid "Title"
 msgstr "タイトル"
@@ -1661,14 +1766,6 @@ msgstr ""
 #: website/templates/project/project_header.mako:86
 msgid "Comments"
 msgstr "コメント"
-
-#: website/templates/include/comment_pane_template.mako:18
-#: website/templates/project/files.mako:2
-#: website/templates/project/files.mako:5
-#: website/templates/project/project.mako:441
-#: website/templates/project/project_header.mako:40
-msgid "Files"
-msgstr "ファイル"
 
 #: website/templates/include/comment_pane_template.mako:18
 #: website/templates/include/comment_pane_template.mako:19
@@ -2746,10 +2843,6 @@ msgstr "他のGakuNin RDMプロジェクトをリンク"
 msgid "Search projects"
 msgstr "プロジェクトの検索"
 
-#: website/templates/project/modal_add_pointer.mako:43
-msgid "Projects"
-msgstr "プロジェクト"
-
 #: website/templates/project/modal_add_pointer.mako:55
 msgid "Results: All Projects"
 msgstr "結果:全てのプロジェクト"
@@ -3130,10 +3223,6 @@ msgstr "ファイルをダウンロード"
 msgid "Download"
 msgstr "ダウンロード"
 
-#: website/templates/project/project.mako:644
-msgid "Components"
-msgstr "コンポーネント"
-
 #: website/templates/project/project.mako:648
 msgid "Add Component"
 msgstr "コンポーネントを追加"
@@ -3161,10 +3250,6 @@ msgstr "ナビゲーション"
 #: website/templates/project/project_header.mako:61
 msgid "Analytics"
 msgstr "分析"
-
-#: website/templates/project/project_header.mako:67
-msgid "Registrations"
-msgstr "登録"
 
 #: website/templates/project/project_header.mako:76
 msgid "Add-ons"
