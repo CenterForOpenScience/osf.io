@@ -3589,11 +3589,11 @@ msgstr "適用"
 
 #: website/templates/project/timestamp.mako:69
 msgid "Verify"
-msgstr "確認"
+msgstr "タイムスタンプ確認"
 
 #: website/templates/project/timestamp.mako:70
 msgid "Request Trusted Timestamp"
-msgstr "打刻"
+msgstr "タイムスタンプ取得"
 
 #: website/templates/project/timestamp.mako:81
 msgid "Processing, please wait..."
