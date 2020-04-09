@@ -16,5 +16,5 @@ var beforeFork = _('Because you have not configured the {addon} add-on, your aut
 
 var validationMessages = [_('This field is required.'),_('Please enter a value greater than or equal to {0}.'),_('Please enter a value less than or equal to {0}.'),_('Please enter at least {0} characters.'),_('Please enter no more than {0} characters.'),_('Please check this value.'),_('The value must increment by {0}.'),_('Please enter a proper email address.'),_('Please enter a proper date.'),_('Please enter a proper date.'),_('Please enter a number.'),_('Please enter a digit.'),_('Please specify a valid phone number.'),_('Values must equal.'),_('Please choose another value.'),_('Please make sure the value is unique.')];
 
-var wikiTitle = [_('Project Wiki Pages'),_('Component Wiki Pages'),_('Home')]
+var wikiTitle = [_('Project Wiki Pages'),_('Component Wiki Pages'),_('Home')];
 
