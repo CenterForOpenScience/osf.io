@@ -1,14 +1,13 @@
-from django.apps import apps
 import logging
-from future.moves.urllib.parse import urljoin
 import random
 import requests
+from urllib.parse import urljoin
 
+from django.apps import apps
 from framework.celery_tasks import app as celery_app
 
 from website import settings, mails
 from website.util.share import GraphNode, format_contributor
-
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +37,7 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
     if node.get_identifier_value('doi') and bool(node.IDENTIFIER_UPDATE_FIELDS.intersection(saved_fields)):
         node.request_identifier_update(category='doi')
 
+
 def update_collecting_metadata(node, saved_fields):
     from website.search.search import update_collected_metadata
     if node.is_collected:
@@ -47,24 +47,27 @@ def update_collecting_metadata(node, saved_fields):
             if 'is_public' in saved_fields:
                 update_collected_metadata(node._id, op='delete')
 
-def update_node_share(node):
-    # Wrapper that ensures share_url and token exist
-    if settings.SHARE_URL:
-        if not settings.SHARE_API_TOKEN:
-            return logger.warning('SHARE_API_TOKEN not set. Could not send "{}" to SHARE.'.format(node._id))
-        _update_node_share(node)
 
-def _update_node_share(node):
+def update_node_share(node):
     # Any modifications to this function may need to change _async_update_node_share
-    data = serialize_share_node_data(node)
-    resp = send_share_node_data(data)
+    if not settings.SHARE_URL or not settings.SHARE_API_TOKEN:
+        logger.warning(f'SHARE_API_TOKEN not set. Could not send "{node._id}" to SHARE.')
+        return
+
+    resp = send_share_node_data(node)
+
     try:
         resp.raise_for_status()
-    except Exception:
+    except requests.exceptions.RequestException:
         if resp.status_code >= 500:
             _async_update_node_share.delay(node._id)
         else:
             send_desk_share_error(node, resp, 0)
+
+
+def calculate_backoff_time_celery(retries):
+    return (random.random() + 1) * min(60 + settings.CELERY_RETRY_BACKOFF_BASE ** retries, 60 * 10)
+
 
 @celery_app.task(bind=True, max_retries=4, acks_late=True)
 def _async_update_node_share(self, node_id):
@@ -72,26 +75,49 @@ def _async_update_node_share(self, node_id):
     # Takes node_id to ensure async retries push fresh data
     AbstractNode = apps.get_model('osf.AbstractNode')
     node = AbstractNode.load(node_id)
+    request = self.request
 
-    data = serialize_share_node_data(node)
-    resp = send_share_node_data(data)
+    resp = send_share_node_data(node)
+
     try:
         resp.raise_for_status()
-    except Exception as e:
+    except requests.exceptions.RequestException as e:
         if resp.status_code >= 500:
             if self.request.retries == self.max_retries:
-                send_desk_share_error(node, resp, self.request.retries)
+                send_desk_share_error(node, resp, request.retries)
             raise self.retry(
                 exc=e,
-                countdown=(random.random() + 1) * min(60 + settings.CELERY_RETRY_BACKOFF_BASE ** self.request.retries, 60 * 10)
+                countdown=calculate_backoff_time_celery(request.retries)
             )
         else:
             send_desk_share_error(node, resp, self.request.retries)
 
-def send_share_node_data(data):
-    resp = requests.post('{}api/normalizeddata/'.format(settings.SHARE_URL), json=data, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'})
+
+def send_share_node_data(node):
+    """
+    Sends data about an updating node/registration data to SHARE for indexing.
+    :param data: dictionary of XML data.
+    :return:
+    """
+    data = serialize_share_node_data(node)
+
+    if node.provider and getattr(node.provider, 'access_token'):
+        token = node.provider.access_token
+    else:
+        token = settings.SHARE_API_TOKEN
+
+    resp = requests.post(
+        f'{settings.SHARE_URL}/api/normalizeddata/',
+        json=data,
+        headers={
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/vnd.api+json'
+        }
+    )
+
     logger.debug(resp.content)
     return resp
+
 
 def serialize_share_node_data(node):
     return {
@@ -105,9 +131,9 @@ def serialize_share_node_data(node):
         }
     }
 
+
 def format_node(node):
-    is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) \
-        or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
+    is_qa_node = check_if_qa_node(node)
     return [
         {
             '@id': '_:123',
@@ -121,9 +147,9 @@ def format_node(node):
         }
     ]
 
+
 def format_registration(node):
-    is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) \
-        or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
+    is_qa_node = check_if_qa_node(node)
 
     registration_graph = GraphNode('registration', **{
         'title': node.title,
@@ -170,6 +196,7 @@ def format_registration(node):
 
     return [node_.serialize() for node_ in visited]
 
+
 def send_desk_share_error(node, resp, retries):
     mails.send_mail(
         to_addr=settings.OSF_SUPPORT_EMAIL,
@@ -179,3 +206,19 @@ def send_desk_share_error(node, resp, retries):
         retries=retries,
         can_change_preferences=False,
     )
+
+
+def check_if_qa_node(node) -> bool:
+    """
+    Checks if a node or registration has a tag or title that shouldn't be indexed. QA uses these to test things on prod
+    without effecting search results.
+    :param node:
+    :return: bool whether this is a QA test node.
+    """
+    node_tags = node.tags.all().values_list('name', flat=True)
+    don_not_index_tags = set(settings.DO_NOT_INDEX_LIST['tags'])
+    has_forbid_index_tags = bool(don_not_index_tags.intersection(node_tags))
+
+    has_forbid_index_title = any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
+
+    return has_forbid_index_tags or has_forbid_index_title
