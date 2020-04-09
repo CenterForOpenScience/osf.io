@@ -277,36 +277,28 @@ class TestNodeReindex(AdminTestCase):
         self.node = ProjectFactory(creator=self.user)
         self.registration = RegistrationFactory(project=self.node, creator=self.user)
 
-    @mock.patch('website.project.tasks.format_node')
-    @mock.patch('website.project.tasks.format_registration')
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
     @mock.patch('website.project.tasks.send_share_node_data')
-    def test_reindex_node_share(self, mock_update_share, mock_format_registration, mock_format_node):
+    def test_reindex_node_share(self, mock_update_share):
         count = AdminLogEntry.objects.count()
         view = NodeReindexShare()
         view = setup_log_view(view, self.request, guid=self.node._id)
         view.delete(self.request)
 
         nt.assert_true(mock_update_share.called)
-        nt.assert_true(mock_format_node.called)
-        nt.assert_false(mock_format_registration.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
-    @mock.patch('website.project.tasks.format_node')
-    @mock.patch('website.project.tasks.format_registration')
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
     @mock.patch('website.project.tasks.send_share_node_data')
-    def test_reindex_registration_share(self, mock_update_share, mock_format_registration, mock_format_node):
+    def test_reindex_registration_share(self, mock_update_share):
         count = AdminLogEntry.objects.count()
         view = NodeReindexShare()
         view = setup_log_view(view, self.request, guid=self.registration._id)
         view.delete(self.request)
 
         nt.assert_true(mock_update_share.called)
-        nt.assert_false(mock_format_node.called)
-        nt.assert_true(mock_format_registration.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     @mock.patch('website.search.search.update_node')
