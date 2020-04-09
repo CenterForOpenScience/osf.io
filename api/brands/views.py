@@ -1,4 +1,3 @@
-
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
@@ -7,7 +6,6 @@ from rest_framework.exceptions import NotFound
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Brand
 from api.base import permissions as base_permissions
-from api.base.pagination import MaxSizePagination
 from api.base.views import JSONAPIBaseView
 from api.brands.serializers import BrandSerializer
 
@@ -41,7 +39,6 @@ class BrandList(JSONAPIBaseView, generics.ListAPIView, BrandMixin):
     required_write_scopes = [CoreScopes.NULL]
     model_class = Brand
 
-    pagination_class = MaxSizePagination
     serializer_class = BrandSerializer
     view_category = 'brands'
     view_name = 'brand-list'
