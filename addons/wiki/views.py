@@ -41,8 +41,6 @@ from .exceptions import (
     InvalidVersionError,
 )
 
-from flask_babel import gettext as _
-
 logger = logging.getLogger(__name__)
 
 
@@ -462,7 +460,7 @@ def project_wiki_validate_name(wname, auth, node, **kwargs):
 def project_wiki_grid_data(auth, node, **kwargs):
     pages = []
     project_wiki_pages = {
-        'title': _('Project Wiki Pages'),
+        'title': 'Project Wiki Pages',
         'kind': 'folder',
         'type': 'heading',
         'children': format_project_wiki_pages(node, auth)
@@ -470,7 +468,7 @@ def project_wiki_grid_data(auth, node, **kwargs):
     pages.append(project_wiki_pages)
 
     component_wiki_pages = {
-        'title': _('Component Wiki Pages'),
+        'title': 'Component Wiki Pages',
         'kind': 'folder',
         'type': 'heading',
         'children': format_component_wiki_pages(node, auth)
@@ -486,7 +484,7 @@ def format_home_wiki_page(node):
     home_wiki_page = {
         'page': {
             'url': node.web_url_for('project_wiki_home'),
-            'name': _('Home'),
+            'name': 'Home',
             'id': 'None',
         }
     }
@@ -494,7 +492,7 @@ def format_home_wiki_page(node):
         home_wiki_page = {
             'page': {
                 'url': node.web_url_for('project_wiki_view', wname='home', _guid=True),
-                'name': _('Home'),
+                'name': 'Home',
                 'id': home_wiki._primary_key,
             }
         }
@@ -542,7 +540,7 @@ def serialize_component_wiki(node, auth):
     component_home_wiki = {
         'page': {
             'url': url,
-            'name': _('Home'),
+            'name': 'Home',
             # Handle pointers
             'id': node._id
         }

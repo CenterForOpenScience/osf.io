@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-09 11:16+0900\n"
-"PO-Revision-Date: 2020-04-09 11:16+0900\n"
+"POT-Creation-Date: 2020-04-08 19:21+0900\n"
+"PO-Revision-Date: 2020-04-08 16:45+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -727,19 +727,6 @@ msgstr "インデックス："
 msgid "There are no indices associated with the connected account."
 msgstr "接続されたアカウントに関連付けられたインデックスはありません。"
 
-#: addons/wiki/views.py:465
-msgid "Project Wiki Pages"
-msgstr "プロジェクトのWiki"
-
-#: addons/wiki/views.py:473
-msgid "Component Wiki Pages"
-msgstr "コンポーネントのWiki"
-
-#: addons/wiki/templates/status.mako:9 addons/wiki/views.py:489
-#: addons/wiki/views.py:497 addons/wiki/views.py:545
-msgid "Home"
-msgstr "ホーム"
-
 #: addons/wiki/templates/add_wiki_page.mako:8
 msgid "Add new wiki page"
 msgstr "新しいWikiページを追加"
@@ -961,6 +948,10 @@ msgstr "お使いのブラウザは共有編集をサポートしていません
 msgid "Note: Home page cannot be renamed."
 msgstr "注：ホームページの名前は変更できません。"
 
+#: addons/wiki/templates/status.mako:9
+msgid "Home"
+msgstr "ホーム"
+
 #: addons/wiki/templates/wiki-bar-modal-help.mako:6
 msgid "Wiki syntax help"
 msgstr "Wiki構文のヘルプ"
@@ -989,95 +980,6 @@ msgstr "ライブラリ"
 #: addons/zotero/templates/zotero_node_settings.mako:69
 msgid "Select"
 msgstr "選択"
-
-#: admin/base/utils.py:23
-msgid "Enter a valid 'slug' consisting only of lowercase letters."
-msgstr ""
-
-#: api/base/exceptions.py:103
-msgid "This endpoint is not yet implemented."
-msgstr ""
-
-#: api/base/exceptions.py:108
-msgid "Service is unavailable at this time."
-msgstr ""
-
-#: api/base/exceptions.py:201
-msgid "Query string contains a malformed filter."
-msgstr ""
-
-#: api/base/exceptions.py:210
-msgid "Comparison operators are only supported for dates and numbers."
-msgstr ""
-
-#: api/base/exceptions.py:216
-msgid "Match operators are only supported for strings and lists."
-msgstr ""
-
-#: api/base/exceptions.py:222
-msgid "Query contained one or more filters for invalid fields."
-msgstr ""
-
-#: api/base/exceptions.py:233
-msgid "Please confirm your account before using the API."
-msgstr ""
-
-#: api/base/exceptions.py:238
-msgid "Please claim your account before using the API."
-msgstr ""
-
-#: api/base/exceptions.py:243
-msgid ""
-"Making API requests with credentials associated with a deactivated "
-"account is not allowed."
-msgstr ""
-
-#: api/base/exceptions.py:248
-msgid ""
-"Making API requests with credentials associated with a merged account is "
-"not allowed."
-msgstr ""
-
-#: api/base/exceptions.py:253
-msgid ""
-"Making API requests with credentials associated with an invalid account "
-"is not allowed."
-msgstr ""
-
-#: api/base/exceptions.py:257
-msgid "Must specify two-factor authentication OTP code."
-msgstr ""
-
-#: api/base/exceptions.py:263
-msgid "Invalid value in POST/PUT/PATCH request."
-msgstr ""
-
-#: api/base/exceptions.py:278
-msgid ""
-"The node {0} cannot be affiliated with this View Only Link because the "
-"node you're trying to affiliate is not descended from the node that the "
-"View Only Link is attached to."
-msgstr ""
-
-#: api/base/authentication/drf.py:165
-msgid "Invalid username/password."
-msgstr ""
-
-#: api/base/authentication/drf.py:192
-msgid "Invalid two-factor authentication OTP code."
-msgstr ""
-
-#: api/base/authentication/drf.py:223
-msgid "User provided an invalid OAuth2 access token"
-msgstr ""
-
-#: api/base/authentication/drf.py:226
-msgid "CAS server failed to authenticate this token"
-msgstr ""
-
-#: api/base/authentication/drf.py:230
-msgid "Could not find the user associated with this token"
-msgstr ""
 
 #: framework/auth/oauth_scopes.py:294
 msgid ""
@@ -1115,8 +1017,7 @@ msgstr ""
 "<div style=\"text-align: center\">\n"
 "<div>\n"
 "<h4><a target=\"_blank\" "
-"href=\"https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419\">利用規約</a>と<a"
-" target=\"_blank\" "
+"href=\"https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419\">利用規約</a>と<a target=\"_blank\" "
 "href=\"https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422\">プライバシーポリシー</a>を更新しました。注意深くお読みください。</h4>"
 
 # ##Please translate carefully with html.
