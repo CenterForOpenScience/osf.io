@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-07 15:43+0900\n"
-"PO-Revision-Date: 2020-04-07 15:43+0900\n"
+"POT-Creation-Date: 2020-04-09 14:07+0900\n"
+"PO-Revision-Date: 2020-04-09 14:07+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -567,6 +567,32 @@ msgstr ""
 
 #: framework/auth/oauth_scopes.py:303
 msgid "Read your primary email address."
+msgstr ""
+
+#: website/language.py:21
+msgid ""
+"\n"
+"<div style=\"text-align: center\">\n"
+"<div>\n"
+"<h4>We've updated our <a target=\"_blank\" "
+"href=\"https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419\">Terms"
+" of Use</a> and <a target=\"_blank\" "
+"href=\"https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422\">Privacy"
+" Policy</a>. Please read them carefully.</h4>"
+msgstr ""
+
+#: website/language.py:25
+msgid ""
+"<h5><input type=\"checkbox\" id=\"accept\" style=\"margin-right: 5px\">I "
+"have read and agree to these terms.</input></h5>\n"
+"    </div>"
+msgstr ""
+
+#: website/language.py:27
+msgid ""
+"<button class=\"btn btn-primary\" data-dismiss=\"alert\" id=\"continue\" "
+"disabled>Continue</button>\n"
+"</div>"
 msgstr ""
 
 #: website/notifications/utils.py:502
@@ -2447,6 +2473,18 @@ msgstr "別の値を選択してください。"
 #: website/static/js/js_messages.js:17
 msgid "Please make sure the value is unique."
 msgstr "値が一意であることを確認してください。"
+
+#: website/static/js/js_messages.js:19
+msgid "Project Wiki Pages"
+msgstr "プロジェクトのWiki"
+
+#: website/static/js/js_messages.js:19
+msgid "Component Wiki Pages"
+msgstr "コンポーネントのWiki"
+
+#: website/static/js/js_messages.js:19
+msgid "Home"
+msgstr "ホーム"
 
 #: website/static/js/keen.js:114
 msgid "Error sending Keen data to %1$s:<%2$s>"
