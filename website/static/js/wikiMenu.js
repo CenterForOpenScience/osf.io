@@ -75,7 +75,7 @@ function WikiMenu(data, wikiID, canEdit) {
                 columns.push({
                     folderIcons: true,
                     custom: function() {
-                        return m('b', item.data.title);
+                        return m('b', _(item.data.title));
                     }
                 });
             } else {
@@ -86,7 +86,7 @@ function WikiMenu(data, wikiID, canEdit) {
                 columns.push({
                     folderIcons: true,
                     custom: function() {
-                        return m('a.fg-file-links', {href: item.data.page.url}, item.data.page.name);
+                        return m('a.fg-file-links', {href: item.data.page.url}, _(item.data.page.name));
                     }
                 });
             }
