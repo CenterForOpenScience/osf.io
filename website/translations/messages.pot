@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-08 19:21+0900\n"
-"PO-Revision-Date: 2020-04-08 19:21+0900\n"
+"POT-Creation-Date: 2020-04-09 17:31+0900\n"
+"PO-Revision-Date: 2020-04-09 17:31+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -956,114 +956,6 @@ msgstr ""
 msgid "Select"
 msgstr ""
 
-#: framework/auth/oauth_scopes.py:294
-msgid ""
-"View all information associated with this account, including for private "
-"projects."
-msgstr ""
-
-#: framework/auth/oauth_scopes.py:297
-msgid ""
-"View and edit all information associated with this account, including for"
-" private projects."
-msgstr ""
-
-#: framework/auth/oauth_scopes.py:300
-msgid "Read your profile data."
-msgstr ""
-
-#: framework/auth/oauth_scopes.py:303
-msgid "Read your primary email address."
-msgstr ""
-
-#: website/language.py:21
-msgid ""
-"\n"
-"<div style=\"text-align: center\">\n"
-"<div>\n"
-"<h4>We've updated our <a target=\"_blank\" "
-"href=\"https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419\">Terms"
-" of Use</a> and <a target=\"_blank\" "
-"href=\"https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422\">Privacy"
-" Policy</a>. Please read them carefully.</h4>"
-msgstr ""
-
-#: website/language.py:25
-msgid ""
-"<h5><input type=\"checkbox\" id=\"accept\" style=\"margin-right: 5px\">I "
-"have read and agree to these terms.</input></h5>\n"
-"    </div>"
-msgstr ""
-
-#: website/language.py:27
-msgid ""
-"<button class=\"btn btn-primary\" data-dismiss=\"alert\" id=\"continue\" "
-"disabled>Continue</button>\n"
-"</div>"
-msgstr ""
-
-#: website/notifications/utils.py:502
-msgid "Default Notification Settings"
-msgstr ""
-
-#: website/notifications/utils.py:503
-msgid ""
-"These are default settings for new projects you create or are added to. "
-"Modifying these settings will not modify settings on existing projects."
-msgstr ""
-
-#: website/notifications/utils.py:511
-msgid "Project Notifications"
-msgstr ""
-
-#: website/project/__init__.py:64
-msgid "Bookmarks"
-msgstr ""
-
-#: website/search/elastic_search.py:46
-#: website/templates/project/modal_add_pointer.mako:43
-msgid "Projects"
-msgstr ""
-
-#: website/search/elastic_search.py:47
-#: website/templates/project/project.mako:644
-msgid "Components"
-msgstr ""
-
-#: website/search/elastic_search.py:48
-#: website/templates/project/project_header.mako:67
-msgid "Registrations"
-msgstr ""
-
-#: website/search/elastic_search.py:49
-msgid "Users"
-msgstr ""
-
-#: website/search/elastic_search.py:50
-msgid "All Results"
-msgstr ""
-
-#: website/search/elastic_search.py:51
-#: website/templates/include/comment_pane_template.mako:18
-#: website/templates/project/files.mako:2
-#: website/templates/project/files.mako:5
-#: website/templates/project/project.mako:441
-#: website/templates/project/project_header.mako:40
-msgid "Files"
-msgstr ""
-
-#: website/search/elastic_search.py:52
-msgid "Institutions"
-msgstr ""
-
-#: website/search/elastic_search.py:53
-msgid "Preprints"
-msgstr ""
-
-#: website/search/elastic_search.py:54
-msgid "Groups"
-msgstr ""
-
 #: website/templates/base.mako:110
 msgid "Title"
 msgstr ""
@@ -1301,6 +1193,52 @@ msgstr ""
 
 #: website/templates/messages.mako:16
 msgid "Project has been successfully deleted."
+msgstr ""
+
+#: website/templates/messages.mako:17
+msgid ""
+"View all information associated with this account, including for private "
+"projects."
+msgstr ""
+
+#: website/templates/messages.mako:18
+msgid ""
+"View and edit all information associated with this account, including for"
+" private projects."
+msgstr ""
+
+#: website/templates/messages.mako:19
+msgid "Read your profile data."
+msgstr ""
+
+#: website/templates/messages.mako:20
+msgid "Read your primary email address."
+msgstr ""
+
+#: website/templates/messages.mako:22
+msgid ""
+"\n"
+"<div style=\"text-align: center\">\n"
+"<div>\n"
+"<h4>We've updated our <a target=\"_blank\" "
+"href=\"https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419\">Terms"
+" of Use</a> and <a target=\"_blank\" "
+"href=\"https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422\">Privacy"
+" Policy</a>. Please read them carefully.</h4>"
+msgstr ""
+
+#: website/templates/messages.mako:26
+msgid ""
+"<h5><input type=\"checkbox\" id=\"accept\" style=\"margin-right: 5px\">I "
+"have read and agree to these terms.</input></h5>\n"
+"    </div>"
+msgstr ""
+
+#: website/templates/messages.mako:28
+msgid ""
+"<button class=\"btn btn-primary\" data-dismiss=\"alert\" id=\"continue\" "
+"disabled>Continue</button>\n"
+"</div>"
 msgstr ""
 
 #: website/templates/my_projects.mako:2 website/templates/nav.mako:51
@@ -1701,6 +1639,14 @@ msgstr ""
 #: website/templates/include/comment_pane_template.mako:3
 #: website/templates/project/project_header.mako:86
 msgid "Comments"
+msgstr ""
+
+#: website/templates/include/comment_pane_template.mako:18
+#: website/templates/project/files.mako:2
+#: website/templates/project/files.mako:5
+#: website/templates/project/project.mako:441
+#: website/templates/project/project_header.mako:40
+msgid "Files"
 msgstr ""
 
 #: website/templates/include/comment_pane_template.mako:18
@@ -2756,6 +2702,10 @@ msgstr ""
 msgid "Search projects"
 msgstr ""
 
+#: website/templates/project/modal_add_pointer.mako:43
+msgid "Projects"
+msgstr ""
+
 #: website/templates/project/modal_add_pointer.mako:55
 msgid "Results: All Projects"
 msgstr ""
@@ -3124,6 +3074,10 @@ msgstr ""
 msgid "Download"
 msgstr ""
 
+#: website/templates/project/project.mako:644
+msgid "Components"
+msgstr ""
+
 #: website/templates/project/project.mako:648
 msgid "Add Component"
 msgstr ""
@@ -3150,6 +3104,10 @@ msgstr ""
 
 #: website/templates/project/project_header.mako:61
 msgid "Analytics"
+msgstr ""
+
+#: website/templates/project/project_header.mako:67
+msgid "Registrations"
 msgstr ""
 
 #: website/templates/project/project_header.mako:76
