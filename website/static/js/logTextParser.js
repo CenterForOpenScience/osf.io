@@ -10,7 +10,6 @@ var $ = require('jquery');  // jQuery
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 var lodashGet = require('lodash.get');
-var _ = require('js/rdmGettext')._;
 
 var ravenMessagesCache = []; // Cache messages to avoid sending multiple times in one page view
 var nodeCategories = require('json-loader!built/nodeCategories.json');
@@ -175,7 +174,7 @@ var LogText = {
         return null;
         };
         var message = '';
-        var text = _(logText());
+        var text = logText();
         if(text){
             if (logObject.anonymous) { return m('span.osf-log-item', text); }
             var list = text.split(/(\${.*?})/);
