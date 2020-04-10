@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-09 14:07+0900\n"
-"PO-Revision-Date: 2020-04-09 14:07+0900\n"
+"POT-Creation-Date: 2020-04-10 10:19+0900\n"
+"PO-Revision-Date: 2020-04-10 10:19+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -159,10 +159,6 @@ msgstr "Wiki構文のヘルプ"
 #: addons/wiki/static/pagedown-ace/Markdown.Editor.js:1939
 msgid "Autocomplete"
 msgstr "自動更新"
-
-#: admin/base/utils.py:23
-msgid "Enter a valid 'slug' consisting only of lowercase letters."
-msgstr ""
 
 #: admin/static/js/collection_providers/collectionProviders.js:9
 msgid "Hide Form"
@@ -463,191 +459,6 @@ msgstr "いくつかのエラーが発生しました"
 #: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:210
 msgid "Institutional Storage set successfully"
 msgstr "機関ストレージが正常に設定されました"
-
-#: api/base/exceptions.py:103
-msgid "This endpoint is not yet implemented."
-msgstr ""
-
-#: api/base/exceptions.py:108
-msgid "Service is unavailable at this time."
-msgstr ""
-
-#: api/base/exceptions.py:201
-msgid "Query string contains a malformed filter."
-msgstr ""
-
-#: api/base/exceptions.py:210
-msgid "Comparison operators are only supported for dates and numbers."
-msgstr ""
-
-#: api/base/exceptions.py:216
-msgid "Match operators are only supported for strings and lists."
-msgstr ""
-
-#: api/base/exceptions.py:222
-msgid "Query contained one or more filters for invalid fields."
-msgstr ""
-
-#: api/base/exceptions.py:233
-msgid "Please confirm your account before using the API."
-msgstr ""
-
-#: api/base/exceptions.py:238
-msgid "Please claim your account before using the API."
-msgstr ""
-
-#: api/base/exceptions.py:243
-msgid ""
-"Making API requests with credentials associated with a deactivated "
-"account is not allowed."
-msgstr ""
-
-#: api/base/exceptions.py:248
-msgid ""
-"Making API requests with credentials associated with a merged account is "
-"not allowed."
-msgstr ""
-
-#: api/base/exceptions.py:253
-msgid ""
-"Making API requests with credentials associated with an invalid account "
-"is not allowed."
-msgstr ""
-
-#: api/base/exceptions.py:257
-msgid "Must specify two-factor authentication OTP code."
-msgstr ""
-
-#: api/base/exceptions.py:263
-msgid "Invalid value in POST/PUT/PATCH request."
-msgstr ""
-
-#: api/base/exceptions.py:278
-msgid ""
-"The node {0} cannot be affiliated with this View Only Link because the "
-"node you're trying to affiliate is not descended from the node that the "
-"View Only Link is attached to."
-msgstr ""
-
-#: api/base/authentication/drf.py:165
-msgid "Invalid username/password."
-msgstr ""
-
-#: api/base/authentication/drf.py:192
-msgid "Invalid two-factor authentication OTP code."
-msgstr ""
-
-#: api/base/authentication/drf.py:223
-msgid "User provided an invalid OAuth2 access token"
-msgstr ""
-
-#: api/base/authentication/drf.py:226
-msgid "CAS server failed to authenticate this token"
-msgstr ""
-
-#: api/base/authentication/drf.py:230
-msgid "Could not find the user associated with this token"
-msgstr ""
-
-#: framework/auth/oauth_scopes.py:294
-msgid ""
-"View all information associated with this account, including for private "
-"projects."
-msgstr ""
-
-#: framework/auth/oauth_scopes.py:297
-msgid ""
-"View and edit all information associated with this account, including for"
-" private projects."
-msgstr ""
-
-#: framework/auth/oauth_scopes.py:300
-msgid "Read your profile data."
-msgstr ""
-
-#: framework/auth/oauth_scopes.py:303
-msgid "Read your primary email address."
-msgstr ""
-
-#: website/language.py:21
-msgid ""
-"\n"
-"<div style=\"text-align: center\">\n"
-"<div>\n"
-"<h4>We've updated our <a target=\"_blank\" "
-"href=\"https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419\">Terms"
-" of Use</a> and <a target=\"_blank\" "
-"href=\"https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422\">Privacy"
-" Policy</a>. Please read them carefully.</h4>"
-msgstr ""
-
-#: website/language.py:25
-msgid ""
-"<h5><input type=\"checkbox\" id=\"accept\" style=\"margin-right: 5px\">I "
-"have read and agree to these terms.</input></h5>\n"
-"    </div>"
-msgstr ""
-
-#: website/language.py:27
-msgid ""
-"<button class=\"btn btn-primary\" data-dismiss=\"alert\" id=\"continue\" "
-"disabled>Continue</button>\n"
-"</div>"
-msgstr ""
-
-#: website/notifications/utils.py:502
-msgid "Default Notification Settings"
-msgstr "デフォルトの通知設定"
-
-#: website/notifications/utils.py:503
-msgid ""
-"These are default settings for new projects you create or are added to. "
-"Modifying these settings will not modify settings on existing projects."
-msgstr "これらは、作成または追加される新しいプロジェクトのデフォルト設定です。 これらの設定を変更しても、既存のプロジェクトの設定は変更されません。"
-
-#: website/notifications/utils.py:511
-msgid "Project Notifications"
-msgstr "プロジェクト通知"
-
-#: website/project/__init__.py:64
-msgid "Bookmarks"
-msgstr "ブックマーク"
-
-#: website/search/elastic_search.py:46
-msgid "Projects"
-msgstr "プロジェクト"
-
-#: website/search/elastic_search.py:47
-msgid "Components"
-msgstr "コンポーネント"
-
-#: website/search/elastic_search.py:48
-msgid "Registrations"
-msgstr "登録"
-
-#: website/search/elastic_search.py:49
-msgid "Users"
-msgstr "ユーザー"
-
-#: website/search/elastic_search.py:50
-msgid "All Results"
-msgstr "全検索結果"
-
-#: website/search/elastic_search.py:51
-msgid "Files"
-msgstr "ファイル"
-
-#: website/search/elastic_search.py:52
-msgid "Institutions"
-msgstr "機関"
-
-#: website/search/elastic_search.py:53
-msgid "Preprints"
-msgstr "プレプリント"
-
-#: website/search/elastic_search.py:54
-msgid "Groups"
-msgstr "グループ"
 
 #: website/static/js/accessRequestManager.js:85
 msgid "There was a problem trying to %1$s the request from the user. %2$s"
@@ -2293,118 +2104,122 @@ msgid "Unable to modify this institution!"
 msgstr "この機関を変更できません！"
 
 #: website/static/js/js_messages.js:3
+msgid "Bookmarks"
+msgstr "ブックマーク"
+
+#: website/static/js/js_messages.js:5
 msgid "Edit"
 msgstr "編集"
 
-#: website/static/js/js_messages.js:5
+#: website/static/js/js_messages.js:7
 msgid "Analysis"
 msgstr "分析"
 
-#: website/static/js/js_messages.js:5
+#: website/static/js/js_messages.js:7
 msgid "Communication"
 msgstr "コミュニケーション"
 
-#: website/static/js/js_messages.js:5
+#: website/static/js/js_messages.js:7
 msgid "Data"
 msgstr "データ"
 
-#: website/static/js/js_messages.js:5
+#: website/static/js/js_messages.js:7
 msgid "Hypothesis"
 msgstr "仮説"
 
-#: website/static/js/js_messages.js:5
+#: website/static/js/js_messages.js:7
 msgid "Instrumentation"
 msgstr "器具"
 
-#: website/static/js/js_messages.js:5
+#: website/static/js/js_messages.js:7
 msgid "Methods and Measures"
 msgstr "方法と対策"
 
-#: website/static/js/js_messages.js:5
+#: website/static/js/js_messages.js:7
 msgid "Procedure"
 msgstr "手順"
 
-#: website/static/js/js_messages.js:5
+#: website/static/js/js_messages.js:7
 #: website/static/js/projectSettingsTreebeardBase.js:90
 msgid "Project"
 msgstr "プロジェクト"
 
-#: website/static/js/js_messages.js:5
+#: website/static/js/js_messages.js:7
 msgid "Software"
 msgstr "ソフトウェア"
 
-#: website/static/js/js_messages.js:5
+#: website/static/js/js_messages.js:7
 msgid "Other"
 msgstr "その他"
 
-#: website/static/js/js_messages.js:7
+#: website/static/js/js_messages.js:9
 msgid "analysis"
 msgstr "分析"
 
-#: website/static/js/js_messages.js:7
+#: website/static/js/js_messages.js:9
 msgid "communication"
 msgstr "コミュニケーション"
 
-#: website/static/js/js_messages.js:7
+#: website/static/js/js_messages.js:9
 msgid "data"
 msgstr "データ"
 
-#: website/static/js/js_messages.js:7
+#: website/static/js/js_messages.js:9
 msgid "hypothesis"
 msgstr "仮説"
 
-#: website/static/js/js_messages.js:7
+#: website/static/js/js_messages.js:9
 msgid "instrumentation"
 msgstr "器具"
 
-#: website/static/js/js_messages.js:7
+#: website/static/js/js_messages.js:9
 msgid "methods and measures"
 msgstr "方法と対策"
 
-#: website/static/js/js_messages.js:7
+#: website/static/js/js_messages.js:9
 msgid "procedure"
 msgstr "手順"
 
-#: website/static/js/js_messages.js:7 website/static/js/nodeControl.js:114
+#: website/static/js/js_messages.js:9 website/static/js/nodeControl.js:114
 #: website/static/js/nodeSelectTreebeard.js:87
 #: website/static/js/nodesDeleteTreebeard.js:62
 #: website/static/js/nodesPrivacySettingsTreebeard.js:62
 msgid "project"
 msgstr "プロジェクト"
 
-#: website/static/js/js_messages.js:7
+#: website/static/js/js_messages.js:9
 msgid "software"
 msgstr "ソフトウェア"
 
-#: website/static/js/js_messages.js:7
+#: website/static/js/js_messages.js:9
 msgid "other"
 msgstr "その他"
 
-#: website/static/js/js_messages.js:9 website/static/js/js_messages.js:11
+#: website/static/js/js_messages.js:11 website/static/js/js_messages.js:13
 msgid "Comments added"
 msgstr "コメント追加時"
 
-#: website/static/js/js_messages.js:9 website/static/js/js_messages.js:11
+#: website/static/js/js_messages.js:11 website/static/js/js_messages.js:13
 msgid "Files updated"
 msgstr "ファイルアップロード時"
 
-#: website/static/js/js_messages.js:11
+#: website/static/js/js_messages.js:13
 msgid "Replies to your comments"
 msgstr "コメントへの返信時"
 
-#: website/static/js/js_messages.js:11
+#: website/static/js/js_messages.js:13
 msgid "Mentions added"
 msgstr "メンション追加時"
 
-#: website/static/js/js_messages.js:11
+#: website/static/js/js_messages.js:13
 msgid "Preprint submissions updated"
 msgstr "プレプリント提出の更新時"
 
-#: website/static/js/js_messages.js:13
+#: website/static/js/js_messages.js:15
 msgid "No license"
 msgstr "ライセンスなし"
 
-#: website/static/js/js_messages.js:15
+#: website/static/js/js_messages.js:17
 msgid ""
 "Because you have not configured the {addon} add-on, your authentication "
 "will not be transferred to the forked {category}. You may authorize and "
@@ -2413,78 +2228,128 @@ msgstr ""
 "{addon}アドオンを設定していないため、認証は分岐した{category}に転送されません。 "
 "設定ページの新しいフォークで{addon}アドオンを許可および設定できます。"
 
-#: website/static/js/js_messages.js:17 website/static/js/passwordForms.js:178
+#: website/static/js/js_messages.js:19 website/static/js/passwordForms.js:178
 #: website/static/js/passwordForms.js:241
 msgid "This field is required."
 msgstr "この項目は必須です。"
 
-#: website/static/js/js_messages.js:17
+#: website/static/js/js_messages.js:19
 msgid "Please enter a value greater than or equal to {0}."
 msgstr "{0}以上の値を入力してください。"
 
-#: website/static/js/js_messages.js:17
+#: website/static/js/js_messages.js:19
 msgid "Please enter a value less than or equal to {0}."
 msgstr "{0}以下の値を入力してください。"
 
-#: website/static/js/js_messages.js:17
+#: website/static/js/js_messages.js:19
 msgid "Please enter at least {0} characters."
 msgstr "{0}文字以上入力してください。"
 
-#: website/static/js/js_messages.js:17
+#: website/static/js/js_messages.js:19
 msgid "Please enter no more than {0} characters."
 msgstr "{0}文字以下で入力してください。"
 
-#: website/static/js/js_messages.js:17
+#: website/static/js/js_messages.js:19
 msgid "Please check this value."
 msgstr "値を確認してください。"
 
-#: website/static/js/js_messages.js:17
+#: website/static/js/js_messages.js:19
 msgid "The value must increment by {0}."
 msgstr "値は{0}ずつ増加する必要があります。"
 
-#: website/static/js/js_messages.js:17
+#: website/static/js/js_messages.js:19
 msgid "Please enter a proper email address."
 msgstr "正しいメールアドレスを入力してください。"
 
-#: website/static/js/js_messages.js:17
+#: website/static/js/js_messages.js:19
 msgid "Please enter a proper date."
 msgstr "適切な日付を入力してください。"
 
-#: website/static/js/js_messages.js:17
+#: website/static/js/js_messages.js:19
 msgid "Please enter a number."
 msgstr "数字を入力してください。"
 
-#: website/static/js/js_messages.js:17
+#: website/static/js/js_messages.js:19
 msgid "Please enter a digit."
 msgstr "数字を入力してください。"
 
-#: website/static/js/js_messages.js:17
+#: website/static/js/js_messages.js:19
 msgid "Please specify a valid phone number."
 msgstr "有効な電話番号を指定してください。"
 
-#: website/static/js/js_messages.js:17
+#: website/static/js/js_messages.js:19
 msgid "Values must equal."
 msgstr "値は等しくなければなりません。"
 
-#: website/static/js/js_messages.js:17
+#: website/static/js/js_messages.js:19
 msgid "Please choose another value."
 msgstr "別の値を選択してください。"
 
-#: website/static/js/js_messages.js:17
+#: website/static/js/js_messages.js:19
 msgid "Please make sure the value is unique."
 msgstr "値が一意であることを確認してください。"
 
-#: website/static/js/js_messages.js:19
+#: website/static/js/js_messages.js:21
 msgid "Project Wiki Pages"
 msgstr "プロジェクトのWiki"
 
-#: website/static/js/js_messages.js:19
+#: website/static/js/js_messages.js:21
 msgid "Component Wiki Pages"
 msgstr "コンポーネントのWiki"
 
-#: website/static/js/js_messages.js:19
+#: website/static/js/js_messages.js:21
 msgid "Home"
 msgstr "ホーム"
+
+#: website/static/js/js_messages.js:23
+msgid "Projects"
+msgstr "プロジェクト"
+
+#: website/static/js/js_messages.js:23
+msgid "Components"
+msgstr "コンポーネント"
+
+#: website/static/js/js_messages.js:23
+msgid "Registrations"
+msgstr "登録"
+
+#: website/static/js/js_messages.js:23
+msgid "Users"
+msgstr "ユーザー"
+
+#: website/static/js/js_messages.js:23
+msgid "All Results"
+msgstr "全検索結果"
+
+#: website/static/js/js_messages.js:23
+msgid "Files"
+msgstr "ファイル"
+
+#: website/static/js/js_messages.js:23
+msgid "Institutions"
+msgstr "機関"
+
+#: website/static/js/js_messages.js:23
+msgid "Preprints"
+msgstr "プレプリント"
+
+#: website/static/js/js_messages.js:23
+msgid "Groups"
+msgstr "グループ"
+
+#: website/static/js/js_messages.js:25
+msgid "Default Notification Settings"
+msgstr "デフォルトの通知設定"
+
+#: website/static/js/js_messages.js:25
+msgid ""
+"These are default settings for new projects you create or are added to. "
+"Modifying these settings will not modify settings on existing projects."
+msgstr "これらは、作成または追加される新しいプロジェクトのデフォルト設定です。 これらの設定を変更しても、既存のプロジェクトの設定は変更されません。"
+
+#: website/static/js/js_messages.js:25
+msgid "Project Notifications"
+msgstr "プロジェクト通知"
 
 #: website/static/js/keen.js:114
 msgid "Error sending Keen data to %1$s:<%2$s>"
