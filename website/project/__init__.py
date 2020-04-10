@@ -8,8 +8,6 @@ from framework.auth.core import Auth
 from osf.exceptions import NodeStateError
 from osf.utils.sanitize import strip_html
 
-from django.utils.translation import ugettext_lazy as _
-
 # TODO: This should be a class method of Node
 def new_node(category, title, user, description='', parent=None):
     """Create a new project or component.
@@ -61,7 +59,7 @@ def new_bookmark_collection(user):
         raise NodeStateError('Users may only have one bookmark collection')
 
     collection = Collection(
-        title=unicode(_('Bookmarks')),
+        title='Bookmarks',
         creator=user,
         is_bookmark_collection=True
     )
