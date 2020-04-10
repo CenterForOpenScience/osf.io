@@ -3,6 +3,8 @@
 """
 from website import settings
 
+from flask_babel import lazy_gettext as _
+
 # Status Messages
 #################
 
@@ -16,14 +18,16 @@ WELCOME_MESSAGE = """
 <p>Visit our <a href="http://help.osf.io/" target="_blank" rel="noreferrer">Guides</a> to learn about creating a project, or get inspiration from <a href="https://rdm.nii.ac.jp/explore/activity/#popularPublicProjects">popular public projects</a>.</p>
 """
 
-TERMS_OF_SERVICE = """
+TERMS_OF_SERVICE_SENTENCE = _("""
 <div style="text-align: center">
-    <div>
-        <h4>We've updated our <a target="_blank" href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419">Terms of Use</a> and <a target="_blank" href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422">Privacy Policy</a>. Please read them carefully.</h4>
-        <h5><input type="checkbox" id="accept" style="margin-right: 5px">I have read and agree to these terms.</input></h5>
-    </div>
-    <button class="btn btn-primary" data-dismiss="alert" id="continue" disabled>Continue</button>
-</div>
+<div>
+<h4>We've updated our <a target="_blank" href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419">Terms of Use</a> and <a target="_blank" href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422">Privacy Policy</a>. Please read them carefully.</h4>""")
+HAVE_READ_AGREE = _("""<h5><input type="checkbox" id="accept" style="margin-right: 5px">I have read and agree to these terms.</input></h5>
+    </div>""")
+CONTINUE = _("""<button class="btn btn-primary" data-dismiss="alert" id="continue" disabled>Continue</button>
+</div>""")
+
+TERMS_OF_SERVICE_SCRIPT = """
 <script>
     $('#accept').on('change', function() {{
         $('#continue').prop('disabled', !$('#accept').prop('checked'));
