@@ -73,15 +73,12 @@ from website.mapcore.views import mapcore_oauth_start, mapcore_oauth_complete
 
 from api.waffle.utils import flag_is_active
 
-from flask_babel import lazy_gettext as _
-
 def set_status_message(user):
     if user and not user.accepted_terms_of_service:
         status.push_status_message(
-            message=_(language.TERMS_OF_SERVICE_SENTENCE).format(api_domain=settings.API_DOMAIN, user_id=user._id, csrf_token=json.dumps(g.get('csrf_token'))) +
-            _(language.HAVE_READ_AGREE).format(api_domain=settings.API_DOMAIN, user_id=user._id, csrf_token=json.dumps(g.get('csrf_token'))) +
-            _(language.CONTINUE).format(api_domain=settings.API_DOMAIN, user_id=user._id, csrf_token=json.dumps(g.get('csrf_token'))) +
-            _(language.TERMS_OF_SERVICE_SCRIPT).format(api_domain=settings.API_DOMAIN, user_id=user._id, csrf_token=json.dumps(g.get('csrf_token'))),
+            message=language.TERMS_OF_SERVICE.format(api_domain=settings.API_DOMAIN,
+                                                     user_id=user._id,
+                                                     csrf_token=json.dumps(g.get('csrf_token'))),
             kind='default',
             dismissible=True,
             trust=True,
