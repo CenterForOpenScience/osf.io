@@ -8,7 +8,6 @@ from website import settings
 
 # NOTE: in status messages, newlines are not preserved, so triple-quotes strings
 # are ok
-# If changes of description happen, please change messages.mako sentence as well.
 
 # Status message shown at settings page on first login
 # (upon clicking primary email confirmation link)
