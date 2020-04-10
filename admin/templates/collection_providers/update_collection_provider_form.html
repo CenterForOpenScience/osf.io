@@ -1,3 +1,4 @@
+{% load i18n %}
 <head>
     <script>
         var TINYMCE_BASE_CONFIG = {
@@ -58,31 +59,31 @@
             {% csrf_token %}
             {{ form.as_p }}
             <div>
-                <label>Collected type choices:</label>
+                <label>{% trans "Collected type choices:" %}</label>
                 <div class="bootstrap-tagsinput">
                     <input id="tags-input-collected-types" type="text" data-role="tagsinput"/>
                 </div>
             </div>
             <div>
-                <label>Status choices:</label>
+                <label>{% trans "Status choices:" %}</label>
                 <div class="bootstrap-tagsinput">
                     <input id="tags-input-status" type="text" data-role="tagsinput"/>
                 </div>
             </div>
             <div>
-                <label>Volume choices:</label>
+                <label>{% trans "Volume choices:" %}</label>
                 <div class="bootstrap-tagsinput">
                     <input id="tags-input-volume" type="text" data-role="tagsinput"/>
                 </div>
             </div>
             <div>
-                <label>Issue choices:</label>
+                <label>{% trans "Issue choices:" %}</label>
                 <div class="bootstrap-tagsinput">
                     <input id="tags-input-issue" type="text" data-role="tagsinput"/>
                 </div>
             </div>
             <div>
-                <label>Program Area choices:</label>
+                <label>{% trans "Program Area choices:" %}</label>
                 <div class="bootstrap-tagsinput">
                     <input id="tags-input-program-area" type="text" data-role="tagsinput"/>
                 </div>
@@ -92,9 +93,9 @@
     </div>
     <div class="col-md-3">
         <div>
-            <h4>Import from JSON</h4>
-            <p>Choose a JSON file that has been previously exported from another Collection Provider detail page. This will
-                pre-populate the Collection Provider change form with those details.</p>
+            <h4>{% trans "Import from JSON" %}</h4>
+            <p>{% trans "Choose a JSON file that has been previously exported from another Collection Provider detail page. This will
+                pre-populate the Collection Provider change form with those details." %}</p>
             {% if collection_provider %}
                 <form action = {% url 'collection_providers:import' collection_provider_id=collection_provider.id %} method="post" enctype="multipart/form-data" >
             {% else %}

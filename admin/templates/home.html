@@ -1,10 +1,11 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
 <h1> Hello {{ user.get_username }}, </h1>
     <section class="content">
-        <h3>Welcome to the GakuNin RDM Admin Home Page</h3>
-        <p> Use the menu on the left to access admin pages. </p>
+        <h3>{% trans "Welcome to the GakuNin RDM Admin Home Page" %}</h3>
+        <p>{% trans " Use the menu on the left to access admin pages. " %}</p>
         <div>
             {% if messages %}
             <ul class="login_page_messages">

@@ -20,6 +20,11 @@ var waterbutler = require('js/waterbutler');
 var iconmap = require('js/iconmap');
 var storageAddons = require('json-loader!storageAddons.json');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
+
 // CSS
 require('css/fangorn.css');
 
@@ -31,19 +36,19 @@ var tempCounter = 1;
 
 var STATE_MAP = {
     upload: {
-        display: 'Upload pending...'
+        display: _('Upload pending...')
     },
     copy: {
-        display: 'Copying '
+        display: _('Copying ')
     },
     delete: {
-        display: 'Deleting '
+        display: _('Deleting ')
     },
     move: {
-        display: 'Moving '
+        display: _('Moving ')
     },
     rename: {
-        display: 'Renaming '
+        display: _('Renaming ')
     }
 };
 
@@ -441,7 +446,7 @@ function _fangornToggleCheck(item) {
     if (item.data.permissions.view) {
         return true;
     }
-    item.notify.update('Not allowed: Private folder', 'warning', 1, undefined);
+    item.notify.update(_('Not allowed: Private folder'), 'warning', 1, undefined);
     return false;
 }
 
@@ -485,16 +490,16 @@ function handleCancel(tb, provider, mode, item){
 function displayConflict(tb, item, folder, cb) {
 
     if('/' + item.data.name + '/'  === WIKI_IMAGES_FOLDER_PATH) {
-        $osf.growl('Error', 'You cannot replace the Wiki images folder');
+        $osf.growl('Error', _('You cannot replace the Wiki images folder'));
         return;
     }
 
     var mithrilContent = m('', [
-        m('p', 'An item named "' + item.data.name + '" already exists in this location.'),
+        m('p', agh.sprintf(_('An item named "%1$s" already exists in this location.'),item.data.name)),
         m('h5.replace-file',
-            '"Keep Both" will retain both files (and their version histories) in this location.'),
+            '"' + _('Keep Both') + '"' + _(' will retain both files (and their version histories) in this location.')),
         m('h5.replace-file',
-            '"Replace" will overwrite the existing file in this location. ' +
+            '"' + _('Replace') + '"' + _(' will overwrite the existing file in this location. ') +
             'You will lose previous versions of the overwritten file. ' +
             'You will keep previous versions of the moved file.'),
         m('h5.replace-file', '"Skip" will skip the current file.'),
@@ -506,7 +511,7 @@ function displayConflict(tb, item, folder, cb) {
         m('span.btn.btn-default.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'skip', item);}}, 'Skip'),
         m('span.btn.btn-danger.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'stop');}}, 'Stop')
     ];
-    var header = m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?');
+    var header = m('h3.break-word.modal-title', 'Replace '+ '"' + item.data.name + '"' + '?');
     tb.modal.update(mithrilContent, mithrilButtons, header);
 }
 
@@ -515,7 +520,7 @@ function checkConflictsRename(tb, item, name, cb) {
     var parent = item.parent();
 
     if(item.data.kind === 'folder' && parent.data.name === 'OSF Storage' && '/' + name + '/'  === WIKI_IMAGES_FOLDER_PATH){
-        $osf.growl('Error', 'You cannot replace the Wiki images folder');
+        $osf.growl('Error', _('You cannot replace the Wiki images folder'));
         return;
     }
 
@@ -523,23 +528,23 @@ function checkConflictsRename(tb, item, name, cb) {
         var child = parent.children[i];
         if (child.data.name === name && child.id !== item.id) {
             messageArray.push([
-                m('p', 'An item named "' + child.data.name + '" already exists in this location.'),
+                m('p', agh.sprintf(_('An item named "%1$s" already exists in this location.'),child.data.name)),
                 m('h5.replace-file',
-                    '"Keep Both" will retain both files (and their version histories) in this location.'),
+                    '"' + _('Keep Both') + '"' + _(' will retain both files (and their version histories) in this location.')),
                 m('h5.replace-file',
-                    '"Replace" will overwrite the existing file in this location. ' +
-                    'You will lose previous versions of the overwritten file. ' +
-                    'You will keep previous versions of the moved file.'),
-                m('h5.replace-file', '"Cancel" will cancel the move.')
+                    '"' + _('Replace') + '"' + _(' will overwrite the existing file in this location. ') +
+                    _('You will lose previous versions of the overwritten file. ') +
+                    _('You will keep previous versions of the moved file.')),
+                m('h5.replace-file', '"' + _('Cancel') + '"' + _(' will cancel the move.'))
             ]);
 
             tb.modal.update(
                 m('', messageArray), [
-                    m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                    m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, _('Cancel')), //jshint ignore:line
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')}, 'Replace')
                 ],
-                m('h3.break-word.modal-title', 'Replace "' + child.data.name + '"?')
+                m('h3.break-word.modal-title', agh.sprintf(_('Replace "%1$s"?'),child.data.name))
             );
             return;
         }
@@ -569,7 +574,7 @@ function doItemOp(operation, to, from, rename, conflict) {
             if (filesRemaining.conflicts.length > 0) {
                 var s = filesRemaining.conflicts.length > 1 ? 's' : '';
                 var mithrilContent = m('div', { className: 'text-center' }, [
-                    m('p.h4', filesRemaining.conflicts.length + ' conflict' + s + ' left to resolve.'),
+                    m('p.h4', agh.sprintf(gt.ngettext('%1$s conflicts left to resolve.','%1$s conflict left to resolve.',filesRemaining.conflicts.length),filesRemaining.conflicts.length)),
                     m('div', {className: 'ball-pulse ball-scale-blue text-center'}, [
                         m('div',''),
                         m('div',''),
@@ -648,20 +653,20 @@ function doItemOp(operation, to, from, rename, conflict) {
         }
         if (xhr.status === 202) {
             var mithrilContent = m('div', [
-                m('h3.break-word', operation.action + ' "' + (from.data.materialized || '/') + '" to "' + (to.data.materialized || '/') + '" is taking a bit longer than expected.'),
-                m('p', 'We\'ll send you an email when it has finished.'),
-                m('p', 'In the mean time you can leave this page; your ' + operation.status + ' will still be completed.')
+                m('h3.break-word', agh.sprintf(_('%1$s "%2$s" to "%3$s" is taking a bit longer than expected.'),operation.action,(from.data.materialized || '/'),(to.data.materialized || '/'))),
+                m('p', _('We\'ll send you an email when it has finished.')),
+                m('p', agh.sprintf(_('In the mean time you can leave this page; your %1$s will still be completed.'),operation.status))
             ]);
             var mithrilButtons = m('div', [
                 m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); }}, 'Close')
             ]);
-            var header =  m('h3.modal-title.break-word', 'Operation Information');
+            var header =  m('h3.modal-title.break-word', _('Operation Information'));
             tb.modal.update(mithrilContent, mithrilButtons, header);
             return;
         }
         from.data = tb.options.lazyLoadPreprocess.call(this, resp).data;
         from.data.status = undefined;
-        from.notify.update('Successfully ' + operation.passed + '.', 'success', null, 1000);
+        from.notify.update(agh.sprintf(_('Successfully %1$s.') , operation.passed), 'success', null, 1000);
 
         if (xhr.status === 200) {
             to.children.forEach(function(child) {
@@ -708,12 +713,12 @@ function doItemOp(operation, to, from, rename, conflict) {
         } else if (xhr.status === 503) {
             message = textStatus;
         } else {
-            message = 'Please refresh the page or contact ' + $osf.osfSupportLink() + ' if the problem persists.';
+            message = agh.sprintf(_('Please refresh the page or contact %1$s if the problem persists.'),$osf.osfSupportLink());
         }
 
         $osf.growl(operation.verb + ' failed.', message);
 
-        Raven.captureMessage('Failed to move or copy file', {
+        Raven.captureMessage(_('Failed to move or copy file'), {
             extra: {
                 xhr: xhr,
                 requestData: moveSpec
@@ -991,8 +996,8 @@ function _fangornDropzoneRemovedFile(treebeard, file, message, xhr) {
  * @param message Error message returned
  * @private
  */
-var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid ' +
-    'or the file folder has been deleted.';
+var DEFAULT_ERROR_MESSAGE = _('Could not upload file. The file may be invalid ') +
+    _('or the file folder has been deleted.');
 function _fangornDropzoneError(treebeard, file, message, xhr) {
     var tb = treebeard;
     var msgText;
@@ -1000,23 +1005,23 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     // Unpatched Dropzone silently does nothing when folders are uploaded on Windows IE
     // Patched Dropzone.prototype.drop to emit error with file = 'None' to catch the error
     if (file === 'None'){
-        $osf.growl('Error', 'Cannot upload folders.');
+        $osf.growl('Error', _('Cannot upload folders.'));
         return;
     }
 
     if (file.isDirectory) {
-        msgText = 'Cannot upload folders.';
+        msgText = _('Cannot upload folders.');
     } else if (xhr && xhr.status === 507) {
-        msgText = 'Cannot upload file due to insufficient storage.';
+        msgText = _('Cannot upload file due to insufficient storage.');
     } else if (xhr && xhr.status === 0) {
         // There is no way for Safari to know if it was a folder at present
          msgText = '';
          if ($osf.isSafari()) {
-             msgText += 'Could not upload file. Possible reasons: <br>';
-             msgText += '1. Cannot upload folders. <br>2. ';
+             msgText += _('Could not upload file. Possible reasons: <br>');
+             msgText += _('1. Cannot upload folders. <br>2. ');
          }
-         msgText += 'Unable to reach the provider, please try again later. ';
-         msgText += 'If the problem persists, please contact ' + $osf.osfSupportEmail() + '.';
+         msgText += _('Unable to reach the provider, please try again later. ');
+         msgText += agh.sprintf(_('If the problem persists, please contact %1$s.') , $osf.osfSupportEmail());
     } else {
         //Osfstorage and most providers store message in {Object}message.{string}message,
         //but some, like Dataverse, have it in {string} message.
@@ -1104,11 +1109,11 @@ function _createFolder(event, dismissCallback, helpText) {
          tb.updateFolder(null, parent);
     }
     if (val.length < 1) {
-        helpText('Please enter a folder name.');
+        helpText(_('Please enter a folder name.'));
         return;
     }
     if (val.indexOf('/') !== -1) {
-        helpText('Folder name contains illegal characters.');
+        helpText(_('Folder name contains illegal characters.'));
         return;
     }
 
@@ -1131,7 +1136,7 @@ function _createFolder(event, dismissCallback, helpText) {
         inheritFromParent({data: item}, parent, ['branch']);
         item = tb.createItem(item, parent.id);
         orderFolder.call(tb, parent);
-        item.notify.update('New folder created!', 'success', undefined, 1000);
+        item.notify.update(_('New folder created!'), 'success', undefined, 1000);
         if(dismissCallback) {
             dismissCallback();
         }
@@ -1140,7 +1145,7 @@ function _createFolder(event, dismissCallback, helpText) {
             helpText(data.message);
             m.redraw();
         } else {
-            helpText('Folder creation failed.');
+            helpText(_('Folder creation failed.'));
         }
     });
 }
@@ -1158,7 +1163,7 @@ function _removeEvent (event, items, col) {
         tb.modal.dismiss();
     }
     function runDelete(item) {
-        tb.select('.modal-footer .btn-danger').html('<i> Deleting...</i>').removeClass('btn-danger').addClass('btn-default disabled');
+        tb.select('.modal-footer .btn-danger').html(_('<i> Deleting...</i>')).removeClass('btn-danger').addClass('btn-default disabled');
         // delete from server, if successful delete from view
         var url = resolveconfigOption.call(this, item, 'resolveDeleteUrl', [item]);
         url = url || waterbutler.buildTreeBeardDelete(item);
@@ -1180,7 +1185,7 @@ function _removeEvent (event, items, col) {
         .fail(function(data){
             tb.modal.dismiss();
             tb.clearMultiselect();
-            item.notify.update('Delete failed.', 'danger', undefined, 3000);
+            item.notify.update(_('Delete failed.'), 'danger', undefined, 3000);
         });
     }
     function runDeleteMultiple(items){
@@ -1195,22 +1200,22 @@ function _removeEvent (event, items, col) {
         if (folder.data.permissions.edit) {
             if(folder.data.materialized === WIKI_IMAGES_FOLDER_PATH){
                 deleteMessage = m('p.text-danger',
-                    'This folder and all of its contents will be deleted. This folder is linked to ' +
-                    'your wiki(s). Deleting it will remove images embedded in your wiki(s). ' +
-                    'This action is irreversible.');
+                    _('This folder and all of its contents will be deleted. This folder is linked to ') +
+                    _('your wiki(s). Deleting it will remove images embedded in your wiki(s). ') +
+                    _('This action is irreversible.'));
             } else {
                 deleteMessage = m('p.text-danger',
-                    'This folder and ALL its contents will be deleted. This action is irreversible.');
+                    _('This folder and ALL its contents will be deleted. This action is irreversible.'));
             }
 
             var mithrilContent = m('div', [deleteMessage]);
             var mithrilButtons = m('div', [
-                m('span.btn.btn-default', { onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
-                m('span.btn.btn-danger', { onclick : function() { runDelete(folder); } }, 'Delete')
+                m('span.btn.btn-default', { onclick : function() { cancelDelete.call(tb); } }, _('Cancel')),
+                m('span.btn.btn-danger', { onclick : function() { runDelete(folder); } }, _('Delete'))
             ]);
-            tb.modal.update(mithrilContent, mithrilButtons, m('h3.break-word.modal-title', 'Delete "' + folder.data.name+ '"?'));
+            tb.modal.update(mithrilContent, mithrilButtons, m('h3.break-word.modal-title', agh.sprintf(_('Delete "%1$s"?') ,folder.data.name)));
         } else {
-            folder.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
+            folder.notify.update(_('You don\'t have permission to delete this file.'), 'info', undefined, 3000);
         }
     }
 
@@ -1218,22 +1223,22 @@ function _removeEvent (event, items, col) {
     if(items.length === 1) {
         var detail;
         if(items[0].data.materialized.substring(0, WIKI_IMAGES_FOLDER_PATH.length) === WIKI_IMAGES_FOLDER_PATH) {
-            detail = m('span', 'This file may be linked to your wiki(s). Deleting it will remove the' +
-                ' image embedded in your wiki(s). ');
+            detail = m('span', _('This file may be linked to your wiki(s). Deleting it will remove the') +
+                _(' image embedded in your wiki(s). '));
         } else {
             detail = '';
         }
         if(items[0].kind !== 'folder'){
             var mithrilContentSingle = m('div', [
-                m('p.text-danger', detail, 'This action is irreversible.')
+                m('p.text-danger', detail, _('This action is irreversible.'))
             ]);
             var mithrilButtonsSingle = m('div', [
-                m('span.btn.btn-default', { onclick : function() { cancelDelete(); } }, 'Cancel'),
-                m('span.btn.btn-danger', { onclick : function() { runDelete(items[0]); } }, 'Delete')
+                m('span.btn.btn-default', { onclick : function() { cancelDelete(); } }, _('Cancel')),
+                m('span.btn.btn-danger', { onclick : function() { runDelete(items[0]); } }, _('Delete'))
             ]);
             // This is already being checked before this step but will keep this edit permission check
             if(items[0].data.permissions.edit){
-                tb.modal.update(mithrilContentSingle, mithrilButtonsSingle, m('h3.break-word.modal-title', 'Delete "' + items[0].data.name + '"?'));
+                tb.modal.update(mithrilContentSingle, mithrilButtonsSingle, m('h3.break-word.modal-title', agh.sprintf(_('Delete "%1$s"?') , items[0].data.name)));
             }
         }
         if(items[0].kind === 'folder') {
@@ -1248,7 +1253,7 @@ function _removeEvent (event, items, col) {
         var canDelete = true;
         var deleteList = [];
         var noDeleteList = [];
-        var deleteMessage = [m('p', 'This action is irreversible.')];
+        var deleteMessage = [m('p', _('This action is irreversible.'))];
         var mithrilContentMultiple;
         var mithrilButtonsMultiple;
         items.forEach(function(item, index, arr){
@@ -1259,7 +1264,7 @@ function _removeEvent (event, items, col) {
                 deleteList.push(item);
             }
             if(item.kind === 'folder' && deleteMessage.length === 1) {
-                deleteMessage.push(m('p.text-danger', 'Some of the selected items are folders. This will delete the folder(s) and ALL of their content.'));
+                deleteMessage.push(m('p.text-danger', _('Some of the selected items are folders. This will delete the folder(s) and ALL of their content.')));
             }
         });
         // If all items can be deleted
@@ -1273,20 +1278,20 @@ function _removeEvent (event, items, col) {
                                 ]);
                         }
                         if(n.data.materialized.substring(0, WIKI_IMAGES_FOLDER_PATH.length) === WIKI_IMAGES_FOLDER_PATH) {
-                            return m('p.text-danger', m('b', n.data.name), ' may be linked to' +
-                                ' your wiki(s). Deleting them will remove images embedded in your wiki(s). ');
+                            return m('p.text-danger', m('b', n.data.name), _(' may be linked to') +
+                                _(' your wiki(s). Deleting them will remove images embedded in your wiki(s). '));
                         } else {
                             return m('.fangorn-canDelete.text-success.break-word', n.data.name);
                         }
                     })
                 ]);
             mithrilButtonsMultiple = m('div', [
-                    m('span.btn.btn-default', { onclick : function() { tb.modal.dismiss(); } }, 'Cancel'),
-                    m('span.btn.btn-danger', { onclick : function() { runDeleteMultiple.call(tb, deleteList); } }, 'Delete All')
+                    m('span.btn.btn-default', { onclick : function() { tb.modal.dismiss(); } }, _('Cancel')),
+                    m('span.btn.btn-danger', { onclick : function() { runDeleteMultiple.call(tb, deleteList); } }, _('Delete All'))
                 ]);
         } else {
             mithrilContentMultiple = m('div', [
-                    m('p', 'Some of these files can\'t be deleted but you can delete the ones highlighted with green. This action is irreversible.'),
+                    m('p', _('Some of these files can\'t be deleted but you can delete the ones highlighted with green. This action is irreversible.')),
                     deleteList.map(function(n){
                         if(n.kind === 'folder'){
                             return m('.fangorn-canDelete.text-success.break-word', [
@@ -1300,11 +1305,11 @@ function _removeEvent (event, items, col) {
                     })
                 ]);
             mithrilButtonsMultiple = m('div', [
-                    m('span.btn.btn-default', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); } }, 'Cancel'),
-                    m('span.btn.btn-danger', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); } }, 'Delete Some')
+                    m('span.btn.btn-default', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); } }, _('Cancel')),
+                    m('span.btn.btn-danger', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); } }, _('Delete Some'))
                 ]);
         }
-        tb.modal.update(mithrilContentMultiple, mithrilButtonsMultiple, m('h3.break-word.modal-title', 'Delete multiple files?'));
+        tb.modal.update(mithrilContentMultiple, mithrilButtonsMultiple, m('h3.break-word.modal-title', _('Delete multiple files?')));
     }
 }
 
@@ -1330,8 +1335,8 @@ function doCheckout(item, checkout, showError) {
         }
     }).fail(function(xhr) {
         if (showError) {
-            $osf.growl('Error', 'Unable to check out file. This is most likely due to the file being already checked-out' +
-                ' by another user.');
+            $osf.growl('Error', _('Unable to check out file. This is most likely due to the file being already checked-out') +
+                _(' by another user.'));
         }
     });
 }
@@ -1663,24 +1668,24 @@ function _fangornResolveRows(item) {
 function _fangornColumnTitles () {
     var columns = [];
     columns.push({
-        title : 'Name',
+        title : _('Name'),
         width : '54%',
         sort : true,
         sortType : 'text'
     }, {
-        title : 'Size',
+        title : _('Size'),
         width : '8%',
         sort : false
     }, {
-        title : 'Version',
+        title : _('Version'),
         width : '10%',
         sort : false
     }, {
-        title : 'Downloads',
+        title : _('Downloads'),
         width : '8%',
         sort : false
     }, {
-        title : 'Modified',
+        title : _('Modified'),
         width : '20%',
         sort : true,
         sortType : 'text'
@@ -1754,9 +1759,9 @@ function expandStateLoad(item) {
             tb.updateFolder(data, item);
             tb.redraw();
         }).fail(function(xhr) {
-            item.notify.update('Unable to retrieve components.', 'danger', undefined, 3000);
+            item.notify.update(_('Unable to retrieve components.'), 'danger', undefined, 3000);
             item.open = false;
-            Raven.captureMessage('Unable to retrieve components for node ' + item.data.nodeID, {
+            Raven.captureMessage(agh.sprintf(_('Unable to retrieve components for node %1$s') , item.data.nodeID), {
                 extra: {
                     xhr: xhr
                 }
@@ -1838,7 +1843,7 @@ function _renameEvent () {
         return;
     }
     if(item.data.materialized === WIKI_IMAGES_FOLDER_PATH){
-        $osf.growl('Error', 'You cannot rename your Wiki images folder.');
+        $osf.growl('Error', _('You cannot rename your Wiki images folder.'));
         return;
     }
 
@@ -1946,21 +1951,21 @@ var FGItemButtons = {
                         onclick: function(event) {_uploadEvent.call(tb, event, item); },
                         icon: 'fa fa-upload',
                         className : 'text-success'
-                    }, 'Upload'),
+                    }, _('Upload')),
                     m.component(FGButton, {
                         onclick: function () {
                             mode(toolbarModes.ADDFOLDER);
                         },
                         icon: 'fa fa-plus',
                         className: 'text-success'
-                    }, 'Create Folder'));
+                    }, _('Create Folder')));
                 if (item.data.path) {
                     rowButtons.push(
                         m.component(FGButton, {
                             onclick: function(event) {_removeEvent.call(tb, event, [item]); },
                             icon: 'fa fa-trash',
                             className : 'text-danger'
-                        }, 'Delete Folder'));
+                        }, _('Delete Folder')));
                 }
             }
             if (item.kind === 'file') {
@@ -1969,7 +1974,7 @@ var FGItemButtons = {
                         onclick: function (event) { _downloadEvent.call(tb, event, item); },
                         icon: 'fa fa-download',
                         className: 'text-primary'
-                    }, 'Download')
+                    }, _('Download'))
                 );
                 if (item.data.permissions && item.data.permissions.view) {
                     rowButtons.push(
@@ -1979,7 +1984,7 @@ var FGItemButtons = {
                             },
                             icon: 'fa fa-file-o',
                             className: 'text-info'
-                        }, 'View'));
+                        }, _('View')));
                 }
                 if (item.data.permissions && item.data.permissions.edit) {
                     if (item.data.provider === 'osfstorage') {
@@ -1989,25 +1994,25 @@ var FGItemButtons = {
                                     onclick: function(event) { _removeEvent.call(tb, event, [item]); },
                                     icon: 'fa fa-trash',
                                     className: 'text-danger'
-                                }, 'Delete'));
+                                }, _('Delete')));
 
                             rowButtons.push(
                                 m.component(FGButton, {
                                     onclick: function(event) {
                                         tb.modal.update(m('', [
-                                            m('p', 'This would mean ' +
-                                                'other contributors cannot edit, delete or upload new versions of this file ' +
-                                                'as long as it is checked-out. You can check it back in at anytime.')
+                                            m('p', _('This would mean ') +
+                                                _('other contributors cannot edit, delete or upload new versions of this file ') +
+                                                _('as long as it is checked-out. You can check it back in at anytime.'))
                                         ]), m('', [
-                                            m('a.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                                            m('a.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, _('Cancel')), //jshint ignore:line
                                             m('a.btn.btn-warning', {onclick: function() {
                                                 doCheckout(item, window.contextVars.currentUser.id, true);
-                                            }}, 'Check out file')
-                                        ]), m('h3.break-word.modal-title', 'Confirm file check-out?'));
+                                            }}, _('Check out file'))
+                                        ]), m('h3.break-word.modal-title', _('Confirm file check-out?')));
                                     },
                                     icon: 'fa fa-sign-out',
                                     className : 'text-warning'
-                                }, 'Check out file'));
+                                }, _('Check out file')));
                         } else if (item.data.extra.checkout && item.data.extra.checkout._id === window.contextVars.currentUser.id) {
                             rowButtons.push(
                                 m.component(FGButton, {
@@ -2016,7 +2021,7 @@ var FGItemButtons = {
                                     },
                                     icon: 'fa fa-sign-in',
                                     className : 'text-warning'
-                                }, 'Check in file')
+                                }, _('Check in file'))
                             );
                         }
                     } else {
@@ -2025,7 +2030,7 @@ var FGItemButtons = {
                             onclick: function (event) { _removeEvent.call(tb, event, [item]); },
                             icon: 'fa fa-trash',
                             className: 'text-danger'
-                        }, 'Delete'));
+                        }, _('Delete')));
 
                     }
                 }
@@ -2034,7 +2039,7 @@ var FGItemButtons = {
                     rowButtons.push(
                         m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
                             m('i.fa.fa-external-link'),
-                            m('span', 'View on ' + providerFullName)
+                            m('span', agh.sprintf(_('View on %1$s') , providerFullName))
                         ])
                     );
                 }
@@ -2044,7 +2049,7 @@ var FGItemButtons = {
                         onclick: function (event) { _downloadZipEvent.call(tb, event, item); },
                         icon: 'fa fa-download',
                         className: 'text-primary'
-                    }, 'Download as zip')
+                    }, _('Download as zip'))
                 );
             }
             if (item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit && (item.data.provider !== 'osfstorage' || !item.data.extra.checkout)) {
@@ -2055,7 +2060,7 @@ var FGItemButtons = {
                         },
                         icon: 'fa fa-pencil',
                         className: 'text-info'
-                    }, 'Rename')
+                    }, _('Rename'))
                 );
             }
             return m('span', rowButtons);
@@ -2137,7 +2142,7 @@ var FGToolbar = {
                         id: 'createFolderInput',
                         value: ctrl.nameData(),
                         helpTextId: 'createFolderHelp',
-                        placeholder: 'New folder name',
+                        placeholder: _('New folder name'),
                     }, ctrl.helpText())
                 ]),
                 m('.col-xs-3.tb-buttons-col',
@@ -2165,7 +2170,7 @@ var FGToolbar = {
                         id: 'renameInput',
                         value: ctrl.renameData(),
                         helpTextId: 'renameHelpText',
-                        placeholder: 'Enter name',
+                        placeholder: _('Enter name'),
                     }, ctrl.helpText())
                 ),
                 m('.col-xs-3.tb-buttons-col',
@@ -2202,7 +2207,7 @@ var FGToolbar = {
                     },
                     icon: 'fa fa-time-circle',
                     className : 'text-danger'
-                }, 'Cancel Pending Uploads')
+                }, _('Cancel Pending Uploads'))
             );
         }
         // multiple selection icons
@@ -2226,7 +2231,7 @@ var FGToolbar = {
                         },
                         icon: 'fa fa-trash',
                         className : 'text-danger'
-                    }, 'Delete Multiple')
+                    }, _('Delete Multiple'))
                 );
             }
         }
@@ -2237,22 +2242,22 @@ var FGToolbar = {
                 },
                 icon: 'fa fa-search',
                 className : 'text-primary'
-            }, 'Filter'));
+            }, _('Filter')));
             if (ctrl.tb.options.placement !== 'fileview') {
                 generalButtons.push(m.component(FGButton, {
                     onclick: function(event){
                         var mithrilContent = m('div', [
-                            m('p', [ m('b', 'Select rows:'), m('span', ' Click on a row (outside the add-on, file, or folder name) to show further actions in the toolbar. Use Command or Shift keys to select multiple files.')]),
-                            m('p', [ m('b', 'Open files:'), m('span', ' Click a file name to go to view the file in the GakuNin RDM.')]),
-                            m('p', [ m('b', 'Open files in new tab:'), m('span', ' Press Command (Ctrl in Windows) and click a file name to open it in a new tab.')]),
-                            m('p', [ m('b', 'Download as zip:'), m('span', ' Click on the row of an add-on or folder and click the Download as Zip button in the toolbar.'), m('i', ' Not available for all storage add-ons.')]),
-                            m('p', [ m('b', 'Copy files:'), m('span', ' Press Option (Alt in Windows) while dragging a file to a new folder or component.'), m('i', ' Only for contributors with write access.')])
+                            m('p', [ m('b', _('Select rows:')), m('span', _(' Click on a row (outside the add-on, file, or folder name) to show further actions in the toolbar. Use Command or Shift keys to select multiple files.'))]),
+                            m('p', [ m('b', _('Open files:')), m('span', _(' Click a file name to go to view the file in the GakuNin RDM.'))]),
+                            m('p', [ m('b', _('Open files in new tab:')), m('span', _(' Press Command (Ctrl in Windows) and click a file name to open it in a new tab.'))]),
+                            m('p', [ m('b', _('Download as zip:')), m('span', _(' Click on the row of an add-on or folder and click the Download as Zip button in the toolbar.')), m('i', _(' Not available for all storage add-ons.'))]),
+                            m('p', [ m('b', _('Copy files:')), m('span', _(' Press Option (Alt in Windows) while dragging a file to a new folder or component.')), m('i', _(' Only for contributors with write access.'))])
                         ]);
                         var mithrilButtons = m('button', {
                                 'type':'button',
                                 'class' : 'btn btn-default',
-                                onclick : function(event) { ctrl.tb.modal.dismiss(); } }, 'Close');
-                        ctrl.tb.modal.update(mithrilContent, mithrilButtons, m('h3.modal-title.break-word', 'How to Use the File Browser'));
+                                onclick : function(event) { ctrl.tb.modal.dismiss(); } }, _('Close'));
+                        ctrl.tb.modal.update(mithrilContent, mithrilButtons, m('h3.modal-title.break-word', _('How to Use the File Browser')));
                     },
                     icon: 'fa fa-info',
                     className : 'text-info'
@@ -2316,7 +2321,7 @@ function filterRows(rows) {
                 $('.tb-row[data-id="' + rows[i].id + '"]').stop().css('background-color', '#D18C93')
                     .animate({ backgroundColor: '#fff'}, 500, changeColor);
                 if (inProgress) {
-                    $osf.growl('Error', 'Please wait for current action to complete');
+                    $osf.growl('Error', _('Please wait for current action to complete'));
                 }
             }
         }
@@ -2497,7 +2502,7 @@ function _fangornQueueComplete(treebeard) {
             ])
         ]), m('', [
             m('a.btn.btn-primary', {onclick: function() {treebeard.modal.dismiss();}}, 'Done'), //jshint ignore:line
-        ]), m('', [m('h3.break-word.modal-title', 'Upload Status'), m('p', total - failed + '/' + total + ' files succeeded.')]));
+        ]), m('', [m('h3.break-word.modal-title', _('Upload Status')), m('p', total - failed + '/' + total + _(' files succeeded.'))]));
         $('[data-toggle="tooltip"]').tooltip();
     } else {
         fileStatuses.map(function(status) {
@@ -2602,8 +2607,8 @@ function displayMoveStats(tb) {
        ]), m('', [
               m('h3.break-word.modal-title', 'Move Status'),
               m('p', [
-                  m('span', failed !== total ? total - failed + '/' + total + ' files successfully moved.': ''),
-                  m('span', skipped ? ' Skipped ' + skipped + '/' + total + ' files.': '')
+                  m('span', failed !== total ? total - failed + '/' + total + _(' files successfully moved.'): ''),
+                  m('span', skipped ? agh.sprintf(_(' Skipped %1$s/%2$s files.'),skipped,total): '')
                 ])
       ]));
     } else {
@@ -2873,10 +2878,10 @@ tbOptions = {
         });
         $(window).on('beforeunload', function() {
             if(tb.dropzone && tb.dropzone.getUploadingFiles().length) {
-                return 'You have pending uploads, if you leave this page they may not complete.';
+                return _('You have pending uploads, if you leave this page they may not complete.');
             }
             if(tb.pendingFileOps.length > 0) {
-                return 'You have pending file operations, if you leave this page they may not complete.';
+                return _('You have pending file operations, if you leave this page they may not complete.');
             }
         });
         if(tb.options.placement === 'project-files') {
@@ -2910,7 +2915,7 @@ tbOptions = {
                 if (size > maxSize) {
                     displaySize = $osf.humanFileSize(file.size, true);
                     maxSize = $osf.humanFileSize(maxSize * 1000000, true);
-                    msgText = 'This file is too large (' + displaySize + '). Max file size is ' + maxSize + '.';
+                    msgText = agh.sprintf(_('This file is too large (%1$s). Max file size is %2$s.'),displaySize,maxSize);
                     $osf.growl(msgText);
                     addFileStatus(treebeard, file, false, msgText, '');
                     removeFromUI(file, treebeard);
@@ -2926,15 +2931,15 @@ tbOptions = {
                 if (quota.responseJSON) {
                     quota = quota.responseJSON;
                     if (quota.used + file.size > quota.max) {
-                        msgText = 'Not enough quota to upload the file.';
+                        msgText = _('Not enough quota to upload the file.');
                         item.notify.update(msgText, 'warning', undefined, 3000);
                         addFileStatus(treebeard, file, false, msgText, '');
                         return false;
                     }
                     if (quota.used + file.size > quota.max * window.contextVars.threshold) {
                         $osf.growl(
-                            'Quota usage alert',
-                            'You have used more than ' + (window.contextVars.threshold * 100) + '% of your quota.',
+                            _('Quota usage alert'),
+                            agh.sprintf(_('You have used more than %1$s% of your quota.'),(window.contextVars.threshold * 100)),
                             'warning'
                         );
                     }
@@ -2948,7 +2953,7 @@ tbOptions = {
         reapplyTooltips();
     },
     onmultiselect : _fangornMultiselect,
-    filterPlaceholder : 'Filter',
+    filterPlaceholder : _('Filter'),
     onmouseoverrow : _fangornMouseOverRow,
     sortDepth : 2,
     dropzone : {                                           // All dropzone options.

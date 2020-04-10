@@ -122,3 +122,7 @@ datacite==1.0.1
 
 # Metrics
 django-elasticsearch-metrics==5.0.0
+
+# I18n Support
+Babel==2.5.1
+Flask-Babel==0.12.2

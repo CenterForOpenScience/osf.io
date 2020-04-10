@@ -1,0 +1,884 @@
+# Translations template for PROJECT.
+# Copyright (C) 2020 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2020-01-14 16:43+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.7.0\n"
+
+#: azureblobstorage/templates/azureblobstorage_credentials_modal.mako:6
+msgid "Connect an Azure Blob Storage Account"
+msgstr ""
+
+#: azureblobstorage/templates/azureblobstorage_credentials_modal.mako:17
+msgid "Account Name"
+msgstr ""
+
+#: azureblobstorage/templates/azureblobstorage_credentials_modal.mako:21
+msgid "Account Key"
+msgstr ""
+
+#: azureblobstorage/templates/azureblobstorage_credentials_modal.mako:36
+#: azureblobstorage/templates/azureblobstorage_node_settings.mako:77
+#: dataverse/templates/dataverse_credentials_modal.mako:75
+#: gitlab/templates/gitlab_credentials_modal.mako:55
+#: jupyterhub/templates/jupyterhub_node_settings.mako:99
+#: nextcloud/templates/nextcloud_credentials_modal.mako:71
+#: nextcloud/templates/nextcloud_node_settings.mako:72
+#: owncloud/templates/owncloud_credentials_modal.mako:71
+#: owncloud/templates/owncloud_node_settings.mako:72
+#: s3/templates/s3_credentials_modal.mako:36
+#: s3/templates/s3_node_settings.mako:77
+#: s3compat/templates/s3compat_credentials_modal.mako:40
+#: s3compat/templates/s3compat_node_settings.mako:77
+#: swift/templates/swift_credentials_modal.mako:56
+#: swift/templates/swift_node_settings.mako:77
+#: weko/templates/weko_credentials_modal.mako:57
+#: wiki/templates/add_wiki_page.mako:17 wiki/templates/delete_wiki_page.mako:13
+#: zotero/templates/zotero_node_settings.mako:83
+#: zotero/templates/zotero_node_settings.mako:127
+msgid "Cancel"
+msgstr ""
+
+#: azureblobstorage/templates/azureblobstorage_credentials_modal.mako:39
+#: azureblobstorage/templates/azureblobstorage_node_settings.mako:79
+#: dataverse/templates/dataverse_credentials_modal.mako:78
+#: dataverse/templates/dataverse_node_settings.mako:118
+#: forward/templates/forward_node_settings.mako:36
+#: github/templates/github_node_settings.mako:54
+#: gitlab/templates/gitlab_credentials_modal.mako:57
+#: gitlab/templates/gitlab_node_settings.mako:64
+#: jupyterhub/templates/jupyterhub_node_settings.mako:18
+#: nextcloud/templates/nextcloud_credentials_modal.mako:74
+#: nextcloud/templates/nextcloud_node_settings.mako:74
+#: owncloud/templates/owncloud_credentials_modal.mako:74
+#: owncloud/templates/owncloud_node_settings.mako:74
+#: s3/templates/s3_credentials_modal.mako:39
+#: s3/templates/s3_node_settings.mako:79
+#: s3compat/templates/s3compat_credentials_modal.mako:43
+#: s3compat/templates/s3compat_node_settings.mako:79
+#: swift/templates/swift_credentials_modal.mako:59
+#: swift/templates/swift_node_settings.mako:79
+#: weko/templates/weko_node_settings.mako:83 wiki/templates/edit.mako:189
+#: zotero/templates/zotero_node_settings.mako:85
+#: zotero/templates/zotero_node_settings.mako:129
+msgid "Save"
+msgstr ""
+
+#: azureblobstorage/templates/azureblobstorage_node_settings.mako:14
+#: azureblobstorage/templates/azureblobstorage_user_settings.mako:18
+#: bitbucket/templates/bitbucket_node_settings.mako:15
+#: dataverse/templates/dataverse_node_settings.mako:15
+#: dataverse/templates/dataverse_user_settings.mako:18
+#: github/templates/github_node_settings.mako:15
+#: gitlab/templates/gitlab_node_settings.mako:18
+#: gitlab/templates/gitlab_user_settings.mako:18
+#: nextcloud/templates/nextcloud_node_settings.mako:15
+#: nextcloud/templates/nextcloud_user_settings.mako:18
+#: owncloud/templates/owncloud_node_settings.mako:15
+#: owncloud/templates/owncloud_user_settings.mako:18
+#: s3/templates/s3_node_settings.mako:14 s3/templates/s3_user_settings.mako:18
+#: s3compat/templates/s3compat_node_settings.mako:14
+#: s3compat/templates/s3compat_user_settings.mako:18
+#: swift/templates/swift_node_settings.mako:14
+#: swift/templates/swift_user_settings.mako:18
+#: weko/templates/weko_node_settings.mako:15
+#: weko/templates/weko_user_settings.mako:18
+#: zotero/templates/zotero_node_settings.mako:10
+msgid "Disconnect Account"
+msgstr ""
+
+#: azureblobstorage/templates/azureblobstorage_node_settings.mako:21
+#: bitbucket/templates/bitbucket_node_settings.mako:21
+#: dataverse/templates/dataverse_node_settings.mako:22
+#: github/templates/github_node_settings.mako:21
+#: gitlab/templates/gitlab_node_settings.mako:24
+#: nextcloud/templates/nextcloud_node_settings.mako:22
+#: owncloud/templates/owncloud_node_settings.mako:22
+#: s3/templates/s3_node_settings.mako:21
+#: s3compat/templates/s3compat_node_settings.mako:21
+#: swift/templates/swift_node_settings.mako:21
+#: weko/templates/weko_node_settings.mako:22
+#: zotero/templates/zotero_node_settings.mako:17
+msgid "Import Account from Profile"
+msgstr ""
+
+#: azureblobstorage/templates/azureblobstorage_node_settings.mako:28
+#: s3/templates/s3_node_settings.mako:28
+#: s3compat/templates/s3compat_node_settings.mako:28
+#: swift/templates/swift_node_settings.mako:28
+#: zotero/templates/zotero_node_settings.mako:24
+msgid "Loading ..."
+msgstr ""
+
+#: azureblobstorage/templates/azureblobstorage_node_settings.mako:35
+#: dataverse/templates/dataverse_node_settings.mako:29
+#: nextcloud/templates/nextcloud_node_settings.mako:29
+#: owncloud/templates/owncloud_node_settings.mako:29
+#: s3/templates/s3_node_settings.mako:35
+#: s3compat/templates/s3compat_node_settings.mako:35
+#: swift/templates/swift_node_settings.mako:35
+#: weko/templates/weko_node_settings.mako:29
+msgid "Connect  Account"
+msgstr ""
+
+#: azureblobstorage/templates/azureblobstorage_node_settings.mako:50
+#: bitbucket/templates/bitbucket_node_settings.mako:65
+#: github/templates/github_node_settings.mako:62
+#: gitlab/templates/gitlab_node_settings.mako:71
+#: owncloud/templates/owncloud_node_settings.mako:47
+#: s3/templates/s3_node_settings.mako:50
+#: s3compat/templates/s3compat_node_settings.mako:50
+#: swift/templates/swift_node_settings.mako:50
+#: weko/templates/weko_node_settings.mako:49
+#: zotero/templates/zotero_node_settings.mako:46
+#: zotero/templates/zotero_node_settings.mako:101
+msgid "None"
+msgstr ""
+
+#: azureblobstorage/templates/azureblobstorage_node_settings.mako:58
+#: swift/templates/swift_node_settings.mako:58
+msgid "Create container"
+msgstr ""
+
+#: azureblobstorage/templates/azureblobstorage_node_settings.mako:63
+#: swift/templates/swift_node_settings.mako:63
+msgid "Loading containers..."
+msgstr ""
+
+#: azureblobstorage/templates/azureblobstorage_node_settings.mako:72
+#: owncloud/templates/owncloud_node_settings.mako:67
+#: s3/templates/s3_node_settings.mako:72
+#: s3compat/templates/s3compat_node_settings.mako:72
+#: swift/templates/swift_node_settings.mako:72
+#: zotero/templates/zotero_node_settings.mako:122
+#, python-format
+msgid "Connect <b>&ldquo;<span %(data_bind)s></span>&rdquo;</b>?"
+msgstr ""
+
+#: azureblobstorage/templates/azureblobstorage_user_settings.mako:12
+#: dataverse/templates/dataverse_user_settings.mako:12
+#: gitlab/templates/gitlab_user_settings.mako:12
+#: nextcloud/templates/nextcloud_user_settings.mako:12
+#: owncloud/templates/owncloud_user_settings.mako:12
+#: s3/templates/s3_user_settings.mako:12
+#: s3compat/templates/s3compat_user_settings.mako:12
+#: swift/templates/swift_user_settings.mako:12
+#: weko/templates/weko_user_settings.mako:12
+msgid "Connect or Reauthorize Account"
+msgstr ""
+
+#: azureblobstorage/templates/azureblobstorage_user_settings.mako:24
+msgid "Authorized by <em><span data-bind=\"text: name\"></span></em>"
+msgstr ""
+
+#: azureblobstorage/templates/azureblobstorage_user_settings.mako:32
+#: dataverse/templates/dataverse_user_settings.mako:31
+#: gitlab/templates/gitlab_user_settings.mako:31
+#: nextcloud/templates/nextcloud_user_settings.mako:31
+#: owncloud/templates/owncloud_user_settings.mako:31
+#: s3/templates/s3_user_settings.mako:32
+#: s3compat/templates/s3compat_user_settings.mako:32
+#: swift/templates/swift_user_settings.mako:32
+#: weko/templates/weko_user_settings.mako:31
+msgid "Private project"
+msgstr ""
+
+#: bitbucket/templates/bitbucket_node_settings.mako:25
+#: github/templates/github_node_settings.mako:25
+#: gitlab/templates/gitlab_node_settings.mako:28
+#: zotero/templates/zotero_node_settings.mako:31
+msgid "Connect Account"
+msgstr ""
+
+#: bitbucket/templates/bitbucket_node_settings.mako:74
+#, python-format
+msgid ""
+"Could not retrieve Bitbucket settings at this time. The Bitbucket addon "
+"credentials                may no longer be valid. Try deauthorizing and "
+"reauthorizing Bitbucket on your                <a "
+"%(href)s%(addons_url)s%(quotation)s>account settings page</a>."
+msgstr ""
+
+#: bitbucket/templates/bitbucket_node_settings.mako:78
+#, python-format
+msgid ""
+"Could not retrieve Bitbucket settings at this time. The Bitbucket addon "
+"credentials                may no longer be valid. Contact "
+"%(auth_osf_name)s to verify."
+msgstr ""
+
+#: dataverse/templates/dataverse_credentials_modal.mako:6
+msgid "Connect a Dataverse Account"
+msgstr ""
+
+#: dataverse/templates/dataverse_credentials_modal.mako:18
+msgid "Dataverse Repository"
+msgstr ""
+
+#: dataverse/templates/dataverse_credentials_modal.mako:22
+msgid "Select a Dataverse repository"
+msgstr ""
+
+#: dataverse/templates/dataverse_credentials_modal.mako:35
+msgid "Only Dataverse repositories v4.0 or higher are supported."
+msgstr ""
+
+#: dataverse/templates/dataverse_credentials_modal.mako:46
+msgid "API Token"
+msgstr ""
+
+#: dataverse/templates/dataverse_credentials_modal.mako:50
+#, python-format
+msgid "(Get from Dataverse <i %(classTag)s></i>)"
+msgstr ""
+
+#: dataverse/templates/dataverse_node_settings.mako:43
+msgid "Dataverse Repository:"
+msgstr ""
+
+#: dataverse/templates/dataverse_node_settings.mako:49
+msgid "Current Dataset:"
+msgstr ""
+
+#: dataverse/templates/dataverse_node_settings.mako:65
+msgid "The current dataset was not found on Dataverse."
+msgstr ""
+
+#: dataverse/templates/dataverse_node_settings.mako:74
+msgid "Dataverse:"
+msgstr ""
+
+#: dataverse/templates/dataverse_node_settings.mako:86
+msgid "Dataset:"
+msgstr ""
+
+#: dataverse/templates/dataverse_node_settings.mako:97
+msgid "No datasets available."
+msgstr ""
+
+#: dataverse/templates/dataverse_node_settings.mako:103
+msgid "Retrieving datasets..."
+msgstr ""
+
+#: dataverse/templates/dataverse_node_settings.mako:110
+msgid ""
+"There are no dataverses, datasets, or files associated with the connected"
+" account."
+msgstr ""
+
+#: dataverse/templates/dataverse_user_settings.mako:23
+#: gitlab/templates/gitlab_user_settings.mako:23
+#, python-format
+msgid "Authorized on <a %(data_bind1)s><em %(data_bind2)s></em></a>"
+msgstr ""
+
+#: forward/templates/forward_node_settings.mako:14
+msgid "Send people who visit your GakuNin RDM project page to this link instead"
+msgstr ""
+
+#: forward/templates/forward_node_settings.mako:19
+msgid "Label"
+msgstr ""
+
+#: forward/templates/forward_node_settings.mako:24
+msgid "Optional"
+msgstr ""
+
+#: github/templates/github_node_settings.mako:38
+#: gitlab/templates/gitlab_node_settings.mako:42
+msgid "Current Repo: "
+msgstr ""
+
+#: github/templates/github_node_settings.mako:56
+msgid "Create Repo"
+msgstr ""
+
+#: github/templates/github_node_settings.mako:71
+#, python-format
+msgid ""
+"Could not retrieve GitHub settings at this time. The GitHub addon "
+"credentials                may no longer be valid. Try deauthorizing and "
+"reauthorizing GitHub on your                <a "
+"%(href)s%(addons_url)s%(quotation)s%(quotation)s>account settings "
+"page</a>."
+msgstr ""
+
+#: github/templates/github_node_settings.mako:75
+#, python-format
+msgid ""
+"Could not retrieve GitHub settings at this time. The GitHub addon "
+"credentials                may no longer be valid. Contact "
+"%(auth_osf_name)s to verify."
+msgstr ""
+
+#: gitlab/templates/gitlab_credentials_modal.mako:4
+msgid "Connect a GitLab Account"
+msgstr ""
+
+#: gitlab/templates/gitlab_credentials_modal.mako:11
+msgid "GitLab Repository"
+msgstr ""
+
+#: gitlab/templates/gitlab_credentials_modal.mako:14
+msgid "Select a GitLab repository"
+msgstr ""
+
+#: gitlab/templates/gitlab_credentials_modal.mako:27
+msgid "Only GitLab repositories v4.0 or higher are supported."
+msgstr ""
+
+#: gitlab/templates/gitlab_credentials_modal.mako:37
+msgid "Personal Access Token"
+msgstr ""
+
+#: gitlab/templates/gitlab_credentials_modal.mako:41
+#, python-format
+msgid "(Get from GitLab <i %(classTag)s></i>)"
+msgstr ""
+
+#: gitlab/templates/gitlab_node_settings.mako:9
+msgid "GitLab"
+msgstr ""
+
+#: gitlab/templates/gitlab_node_settings.mako:12
+msgid "authorized by"
+msgstr ""
+
+#: gitlab/templates/gitlab_node_settings.mako:80
+#, python-format
+msgid ""
+"Could not retrieve GitLab settings at this time. The GitLab addon "
+"credentials                    may no longer be valid. Try deauthorizing "
+"and reauthorizing GitLab on your                    <a "
+"href=\"%(addons_url)s\">account settings page</a>."
+msgstr ""
+
+#: gitlab/templates/gitlab_node_settings.mako:84
+#, python-format
+msgid ""
+"Could not retrieve GitLab settings at this time. The GitLab addon "
+"credentials                    may no longer be valid. Contact "
+"%(auth_osf_name)s to verify."
+msgstr ""
+
+#: jupyterhub/templates/jupyterhub_node_settings.mako:13
+#: wiki/templates/edit.mako:34
+msgid "New"
+msgstr ""
+
+#: jupyterhub/templates/jupyterhub_node_settings.mako:31
+#: jupyterhub/templates/jupyterhub_node_settings.mako:80
+msgid "Service Name"
+msgstr ""
+
+#: jupyterhub/templates/jupyterhub_node_settings.mako:32
+msgid "Base URL"
+msgstr ""
+
+#: jupyterhub/templates/jupyterhub_node_settings.mako:56
+msgid "No JupyterHubs"
+msgstr ""
+
+#: jupyterhub/templates/jupyterhub_node_settings.mako:69
+msgid "Link JupyterHub"
+msgstr ""
+
+#: jupyterhub/templates/jupyterhub_node_settings.mako:84
+msgid "Service Base URL"
+msgstr ""
+
+#: jupyterhub/templates/jupyterhub_node_settings.mako:102
+msgid "OK"
+msgstr ""
+
+#: nextcloud/templates/nextcloud_credentials_modal.mako:6
+msgid "Connect an Nextcloud Account"
+msgstr ""
+
+#: nextcloud/templates/nextcloud_credentials_modal.mako:17
+msgid "Nextcloud Instance"
+msgstr ""
+
+#: nextcloud/templates/nextcloud_credentials_modal.mako:21
+msgid "Select an Nextcloud Instance"
+msgstr ""
+
+#: nextcloud/templates/nextcloud_credentials_modal.mako:30
+#: owncloud/templates/owncloud_credentials_modal.mako:30
+msgid "Host URL"
+msgstr ""
+
+#: nextcloud/templates/nextcloud_credentials_modal.mako:36
+#, python-format
+msgid ""
+"Only Nextcloud instances supporting <a %(href_target1)s>WebDAV</a> and <a"
+" %(href_target2)s>                                        OCS v1.7</a> "
+"are supported."
+msgstr ""
+
+#: nextcloud/templates/nextcloud_credentials_modal.mako:46
+#: owncloud/templates/owncloud_credentials_modal.mako:46
+#: swift/templates/swift_credentials_modal.mako:33
+msgid "Username"
+msgstr ""
+
+#: nextcloud/templates/nextcloud_credentials_modal.mako:48
+#: owncloud/templates/owncloud_credentials_modal.mako:48
+msgid "username"
+msgstr ""
+
+#: nextcloud/templates/nextcloud_credentials_modal.mako:50
+#: owncloud/templates/owncloud_credentials_modal.mako:50
+#: swift/templates/swift_credentials_modal.mako:41
+msgid "Password"
+msgstr ""
+
+#: nextcloud/templates/nextcloud_credentials_modal.mako:55
+#, python-format
+msgid ""
+"These credentials will be encrypted. However, we <strong>strongly "
+"encourage</strong> using a <a %(href_target)s> Device (or App) "
+"Password</a>."
+msgstr ""
+
+#: nextcloud/templates/nextcloud_node_settings.mako:53
+#: owncloud/templates/owncloud_node_settings.mako:53
+msgid "Change"
+msgstr ""
+
+#: nextcloud/templates/nextcloud_node_settings.mako:58
+#: owncloud/templates/owncloud_node_settings.mako:58
+#: zotero/templates/zotero_node_settings.mako:113
+msgid "Loading folders..."
+msgstr ""
+
+#: nextcloud/templates/nextcloud_node_settings.mako:67
+#, python-format
+msgid "Connect <b>&ldquo;<span %(spanTag)s></span>&rdquo;</b>?"
+msgstr ""
+
+#: nextcloud/templates/nextcloud_user_settings.mako:23
+#, python-format
+msgid ""
+"Authorized by <em><span %(data_bind1)s></span></em> on <a "
+"%(data_bind2)s><em %(data_bind3)s></em></a>"
+msgstr ""
+
+#: owncloud/templates/owncloud_credentials_modal.mako:6
+msgid "Connect an ownCloud Account"
+msgstr ""
+
+#: owncloud/templates/owncloud_credentials_modal.mako:17
+msgid "ownCloud Instance"
+msgstr ""
+
+#: owncloud/templates/owncloud_credentials_modal.mako:21
+msgid "Select an ownCloud Instance"
+msgstr ""
+
+#: owncloud/templates/owncloud_credentials_modal.mako:36
+#, python-format
+msgid ""
+"Only ownCloud instances supporting <a %(href_target1)s>WebDAV</a> and <a "
+"%(href_target2)s>                                        OCS v1.7</a> are"
+" supported."
+msgstr ""
+
+#: owncloud/templates/owncloud_credentials_modal.mako:55
+#, python-format
+msgid ""
+" These credentials will be encrypted. However, we <strong>strongly "
+"encourage</strong> using a <a %(href_target)s> Device (or App) "
+"Password</a>."
+msgstr ""
+
+#: owncloud/templates/owncloud_node_settings.mako:42
+msgid "Current Folder:"
+msgstr ""
+
+#: owncloud/templates/owncloud_user_settings.mako:23
+#, python-format
+msgid ""
+"Authorized by <em><span %(data_bind1)s\"></span></em> on <a "
+"%(data_bind2)s><em data-bind=\"text: profileUrl\"></em></a>"
+msgstr ""
+
+#: s3/templates/s3_credentials_modal.mako:6
+msgid "Connect an Amazon S3 Account"
+msgstr ""
+
+#: s3/templates/s3_credentials_modal.mako:17
+#: s3compat/templates/s3compat_credentials_modal.mako:21
+msgid "Access Key"
+msgstr ""
+
+#: s3/templates/s3_credentials_modal.mako:21
+#: s3compat/templates/s3compat_credentials_modal.mako:25
+msgid "Secret Key"
+msgstr ""
+
+#: s3/templates/s3_node_settings.mako:58
+#: s3compat/templates/s3compat_node_settings.mako:58
+msgid "Create bucket"
+msgstr ""
+
+#: s3/templates/s3_node_settings.mako:63
+msgid "Loading buckets..."
+msgstr ""
+
+#: s3/templates/s3_user_settings.mako:24
+#: s3compat/templates/s3compat_user_settings.mako:24
+#: swift/templates/swift_user_settings.mako:24
+#: weko/templates/weko_user_settings.mako:23
+msgid "Authorized by "
+msgstr ""
+
+#: s3compat/templates/s3compat_credentials_modal.mako:6
+msgid "Connect an S3 Compatible Storage Account"
+msgstr ""
+
+#: s3compat/templates/s3compat_credentials_modal.mako:17
+msgid "S3 Compatible Service"
+msgstr ""
+
+#: s3compat/templates/s3compat_node_settings.mako:45
+msgid "Current Bucket:"
+msgstr ""
+
+#: swift/templates/swift_credentials_modal.mako:6
+msgid "Connect an OpenStack Swift Account"
+msgstr ""
+
+#: swift/templates/swift_credentials_modal.mako:17
+msgid "Authentication(Keystone) Version"
+msgstr ""
+
+#: swift/templates/swift_credentials_modal.mako:21
+msgid "Authentication URL"
+msgstr ""
+
+#: swift/templates/swift_credentials_modal.mako:25
+msgid "Tenant name"
+msgstr ""
+
+#: swift/templates/swift_credentials_modal.mako:29
+msgid "Project Domain name"
+msgstr ""
+
+#: swift/templates/swift_credentials_modal.mako:37
+msgid "User Domain name"
+msgstr ""
+
+#: swift/templates/swift_node_settings.mako:45
+msgid "Current Container:"
+msgstr ""
+
+#: twofactor/templates/twofactor_user_settings.mako:3
+msgid "Two-factor Authentication"
+msgstr ""
+
+#: twofactor/templates/twofactor_user_settings.mako:7
+msgid "Disable Two-Factor Authentication"
+msgstr ""
+
+#: twofactor/templates/twofactor_user_settings.mako:12
+msgid "Enable Two-Factor Authentication"
+msgstr ""
+
+#: twofactor/templates/twofactor_user_settings.mako:19
+msgid ""
+"By using two-factor authentication, you'll protect your GakuNin RDM "
+"account with both your password and your mobile phone."
+msgstr ""
+
+#: twofactor/templates/twofactor_user_settings.mako:22
+msgid "Important: "
+msgstr ""
+
+#: twofactor/templates/twofactor_user_settings.mako:22
+msgid ""
+" If you lose access to your mobile device, you will not be able to log in"
+" to your GakuNin RDM account."
+msgstr ""
+
+#: twofactor/templates/twofactor_user_settings.mako:24
+#, python-format
+msgid ""
+"To use, you must install an appropriate application on your mobile "
+"device. Google Authenticator is a popular choice and is available for "
+"both        <a %(href1)s>Android</a> and <a %(href2)s>iOS</a>."
+msgstr ""
+
+#: twofactor/templates/twofactor_user_settings.mako:26
+msgid ""
+"Once verified, your device will display a six-digit code that must be "
+"entered during the login process. This code changes every few seconds, "
+"which means that unauthorized users will not be able to log in to you "
+"account, <em>even if they know your password</em>."
+msgstr ""
+
+#: twofactor/templates/twofactor_user_settings.mako:28
+#, python-format
+msgid ""
+"Scan the image below, or enter the secret key        <code "
+"%(data_bind)s></code> into your authentication device."
+msgstr ""
+
+#: twofactor/templates/twofactor_user_settings.mako:34
+msgid "Enter your verification code:"
+msgstr ""
+
+#: weko/templates/weko_credentials_modal.mako:6
+msgid "Connect a WEKO Account"
+msgstr ""
+
+#: weko/templates/weko_credentials_modal.mako:18
+msgid "WEKO Repository"
+msgstr ""
+
+#: weko/templates/weko_credentials_modal.mako:22
+msgid "Select a WEKO repository"
+msgstr ""
+
+#: weko/templates/weko_credentials_modal.mako:33
+msgid "WEKO SWORD URL"
+msgstr ""
+
+#: weko/templates/weko_credentials_modal.mako:37
+msgid "WEKO Username"
+msgstr ""
+
+#: weko/templates/weko_credentials_modal.mako:41
+msgid "WEKO Password"
+msgstr ""
+
+#: weko/templates/weko_credentials_modal.mako:60
+msgid "Connect"
+msgstr ""
+
+#: weko/templates/weko_node_settings.mako:43
+msgid "Current Index:"
+msgstr ""
+
+#: weko/templates/weko_node_settings.mako:63
+msgid "Index:"
+msgstr ""
+
+#: weko/templates/weko_node_settings.mako:75
+msgid "There are no indices associated with the connected account."
+msgstr ""
+
+#: wiki/templates/add_wiki_page.mako:8
+msgid "Add new wiki page"
+msgstr ""
+
+#: wiki/templates/add_wiki_page.mako:12
+msgid "New Wiki Name"
+msgstr ""
+
+#: wiki/templates/add_wiki_page.mako:18
+msgid "Add"
+msgstr ""
+
+#: wiki/templates/add_wiki_page.mako:41
+msgid "The new wiki page name cannot be empty"
+msgstr ""
+
+#: wiki/templates/add_wiki_page.mako:46
+msgid "The new wiki page name cannot be more than 100 characters."
+msgstr ""
+
+#: wiki/templates/add_wiki_page.mako:52
+msgid "The new wiki page name cannot contain forward slashes."
+msgstr ""
+
+#: wiki/templates/add_wiki_page.mako:70
+msgid "A wiki page with that name already exists."
+msgstr ""
+
+#: wiki/templates/add_wiki_page.mako:73
+msgid "You do not have permission to perform this action."
+msgstr ""
+
+#: wiki/templates/add_wiki_page.mako:74
+msgid "Unauthorized user can view wiki add button"
+msgstr ""
+
+#: wiki/templates/add_wiki_page.mako:83
+msgid "Could not validate wiki page. Please try again."
+msgstr ""
+
+#: wiki/templates/add_wiki_page.mako:84
+msgid "Error occurred while validating page"
+msgstr ""
+
+#: wiki/templates/delete_wiki_page.mako:7
+msgid "Delete wiki page"
+msgstr ""
+
+#: wiki/templates/delete_wiki_page.mako:10
+msgid "Are you sure you want to delete this wiki page?"
+msgstr ""
+
+#: wiki/templates/delete_wiki_page.mako:14 wiki/templates/edit.mako:38
+msgid "Delete"
+msgstr ""
+
+#: wiki/templates/edit.mako:2
+msgid "Wiki"
+msgstr ""
+
+#: wiki/templates/edit.mako:42
+msgid "Menu"
+msgstr ""
+
+#: wiki/templates/edit.mako:53
+msgid "Loading wiki pages..."
+msgstr ""
+
+#: wiki/templates/edit.mako:82
+msgid "View"
+msgstr ""
+
+#: wiki/templates/edit.mako:92
+msgid "Preview"
+msgstr ""
+
+#: wiki/templates/edit.mako:117
+msgid "Add important information, links, or images here to describe your project."
+msgstr ""
+
+#: wiki/templates/edit.mako:174
+msgid "Loading. . ."
+msgstr ""
+
+#: wiki/templates/edit.mako:186
+msgid "Revert"
+msgstr ""
+
+#: wiki/templates/edit.mako:212
+msgid "Compare"
+msgstr ""
+
+#: wiki/templates/edit.mako:220
+msgid "Current"
+msgstr ""
+
+#: wiki/templates/edit.mako:257
+msgid "Page permissions have changed"
+msgstr ""
+
+#: wiki/templates/edit.mako:260
+msgid "Your browser should refresh shortly"
+msgstr ""
+
+#: wiki/templates/edit.mako:273
+msgid "Renaming wiki..."
+msgstr ""
+
+#: wiki/templates/edit.mako:283
+msgid "Wiki page deleted"
+msgstr ""
+
+#: wiki/templates/edit.mako:286
+msgid "Press Confirm to return to the project wiki home page."
+msgstr ""
+
+#: wiki/templates/edit.mako:289
+msgid "Confirm"
+msgstr ""
+
+#: wiki/templates/edit.mako:300
+msgid "Connected to the collaborative wiki"
+msgstr ""
+
+#: wiki/templates/edit.mako:304
+msgid ""
+"This page is currently connected to the collaborative wiki. All edits "
+"made will be visible to            contributors with write permission in "
+"real time. Changes will be stored            but not published until you "
+"click the \"Save\" button."
+msgstr ""
+
+#: wiki/templates/edit.mako:310 wiki/templates/wiki-bar-modal-help.mako:14
+msgid "Close"
+msgstr ""
+
+#: wiki/templates/edit.mako:321
+msgid "Connecting to the collaborative wiki"
+msgstr ""
+
+#: wiki/templates/edit.mako:325
+msgid ""
+"This page is currently attempting to connect to the collaborative wiki. "
+"You may continue to make edits."
+msgstr ""
+
+#: wiki/templates/edit.mako:326 wiki/templates/edit.mako:343
+#: wiki/templates/edit.mako:360
+msgid "Changes will not be saved until you press the \"Save\" button."
+msgstr ""
+
+#: wiki/templates/edit.mako:338
+msgid "Collaborative wiki is unavailable"
+msgstr ""
+
+#: wiki/templates/edit.mako:342
+msgid ""
+"The collaborative wiki is currently unavailable. You may continue to make"
+" edits."
+msgstr ""
+
+#: wiki/templates/edit.mako:355
+msgid "Browser unsupported"
+msgstr ""
+
+#: wiki/templates/edit.mako:359
+msgid ""
+"Your browser does not support collaborative editing. You may continue to "
+"make edits."
+msgstr ""
+
+#: wiki/templates/status.mako:7
+msgid "Note: Home page cannot be renamed."
+msgstr ""
+
+#: wiki/templates/wiki-bar-modal-help.mako:6
+msgid "Wiki syntax help"
+msgstr ""
+
+#: wiki/templates/wiki-bar-modal-help.mako:10
+#, python-format
+msgid ""
+"The wiki uses the <a %(href1)s>Markdown</a> syntax. For more information "
+"and examples, go to our <a %(href2)s>Guides.</a>"
+msgstr ""
+
+#: zotero/templates/zotero_node_settings.mako:41
+msgid "Current Library:"
+msgstr ""
+
+#: zotero/templates/zotero_node_settings.mako:59
+msgid "Loading libraries..."
+msgstr ""
+
+#: zotero/templates/zotero_node_settings.mako:66
+msgid "Libraries"
+msgstr ""
+
+#: zotero/templates/zotero_node_settings.mako:69
+msgid "Select"
+msgstr ""
+

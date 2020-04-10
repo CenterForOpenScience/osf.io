@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
 {% load render_bundle from webpack_loader %}
+{% load i18n %}
 
 {% block title %}
-<title>OSFAdmin | Log in</title>
+<title>{% trans "GakuNin RDM Admin | Log in" %}</title>
 {% endblock %}
 
 <!-- hide navbar, sidebar, and User account menu -->
@@ -16,10 +17,10 @@
 <div class="login-page">
     <div class="login-box">
         <div class="login-logo">
-            <b>OSF</b>Admin</a>
+            <b>{% trans "GakuNin RDM" %}</b>{% trans "Admin" %}</a>
         </div><!-- /.login-logo -->
         <div class="login-box-body">
-            <p class="login-box-msg">Sign in to start your session</p>
+            <p class="login-box-msg">{% trans "Sign in to start your session" %}</p>
 {% if enable_form %}
             <form action="" method="post">
                 {% csrf_token %}
@@ -31,19 +32,19 @@
                 </ul>
                 {% endif %}
                 <div class="form-group">
-                    <label for="username">Email:</label>
+                    <label for="username">{% trans "Email:" %}</label>
                     <p>{{ form.email }}</p>
                     {% if form.email.errors %}<span class="text-danger"> {{ form.email.errors }}</span>{% endif %}
                 </div>
                 <div class="form-group">
-                    <label for="username">Password:</label>
+                    <label for="username">{% trans "Password:" %}</label>
                     <p>{{ form.password }}</p>
                     {% if form.password.errors %}<span class="text-danger"> {{ form.password.errors }}</span>{% endif %}
                 </div>
                 <div class="row">
                     <div class="col-xs-4"></div>
                     <div class="col-xs-4">
-                        <button type="submit" class="btn btn-primary btn-block btn-flat">Sign In</button>
+                        <button type="submit" class="btn btn-primary btn-block btn-flat">{% trans "Sign In" %}</button>
                     </div>
                     <div class="col-xs-4"></div>
                 </div>

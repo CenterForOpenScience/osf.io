@@ -20,18 +20,18 @@
                 <span class="fa fa-caret-down fa-2x"></span>
             </button>
             <ul class="dropdown-menu service-dropdown" role="menu">
-                <li><a data-bind="click: trackClick.bind($data, 'Home')" href="${domain}">${osf_page_name}<b>HOME</b></a></li>
-                <li><a data-bind="click: trackClick.bind($data, 'Preprints')" href="${domain}preprints/">${osf_page_name}<b>PREPRINTS</b></a></li>
-                <li><a data-bind="click: trackClick.bind($data, 'Registries')" href="${domain}registries/">${osf_page_name}<b>REGISTRIES</b></a></li>
-                <li><a data-bind="click: trackClick.bind($data, 'Meetings')" href="${domain}meetings/">${osf_page_name}<b>MEETINGS</b></a></li>
+                <li><a data-bind="click: trackClick.bind($data, 'Home')" href="${domain}">${osf_page_name}<b>${_("HOME")}</b></a></li>
+                <li><a data-bind="click: trackClick.bind($data, 'Preprints')" href="${domain}preprints/">${osf_page_name}<b>${_("PREPRINTS")}</b></a></li>
+                <li><a data-bind="click: trackClick.bind($data, 'Registries')" href="${domain}registries/">${osf_page_name}<b>${_("REGISTRIES")}</b></a></li>
+                <li><a data-bind="click: trackClick.bind($data, 'Meetings')" href="${domain}meetings/">${osf_page_name}<b>${_("MEETINGS")}</b></a></li>
                 % if institutional_landing_flag:
-                    <li><a data-bind="click: trackClick.bind($data, 'Institutions')" href="${domain}institutions/">${osf_page_name}<b>INSTITUTIONS</b></a></li>
+                    <li><a data-bind="click: trackClick.bind($data, 'Institutions')" href="${domain}institutions/">${osf_page_name}<b>${_("INSTITUTIONS")}</b></a></li>
                 % endif
             </ul>
         </div>
         % endif
         <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#secondary-navigation" aria-label="Toggle secondary navigation"}}>
-            <span class="sr-only">Toggle navigation</span>
+            <span class="sr-only">${_("Toggle navigation")}</span>
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
@@ -46,21 +46,21 @@
             % if service_name == 'HOME':
                 % if user_name:
                     % if nav_quickfiles:
-                    <li><a data-bind="click: trackClick.bind($data, 'MyQuickFiles')" href="${domain}${user_id}/quickfiles/">My Quick Files</a></li>
+                    <li><a data-bind="click: trackClick.bind($data, 'MyQuickFiles')" href="${domain}${user_id}/quickfiles/">${_("My Quick Files")}</a></li>
                     % endif
-                    <li><a data-bind="click: trackClick.bind($data, 'MyProjects')" href="${domain}myprojects/">My Projects</a></li>
+                    <li><a data-bind="click: trackClick.bind($data, 'MyProjects')" href="${domain}myprojects/">${_("My Projects")}</a></li>
                 % endif
                     % if nav_search:
-                    <li><a id="navbar-search" data-bind="click: trackClick.bind($data, 'Search')" href="${domain}search/">Search</a></li>
+                    <li><a id="navbar-search" data-bind="click: trackClick.bind($data, 'Search')" href="${domain}search/">${_("Search")}</a></li>
                     % endif
             % endif
             % if nav_support:
             <li class="dropdown">
-            <a id="navbar-support" data-bind="click: trackClick.bind($data, '${service_name} Support')" href="${service_support_url}">Support</a>
+            <a id="navbar-support" data-bind="click: trackClick.bind($data, '${service_name} Support')" href="${service_support_url}">${_("Support")}</a>
             </li>
             % endif
             % if nav_donate:
-            <li class="navbar-donate-button"><a id="navbar-donate" data-bind="click: trackClick.bind($data, 'Donate')" href="https://nii.ac.jp/donate">Donate</a></li>
+            <li class="navbar-donate-button"><a id="navbar-donate" data-bind="click: trackClick.bind($data, 'Donate')" href="https://nii.ac.jp/donate">${_("Donate")}</a></li>
             % endif
             % if user_name and display_name:
             <li class="dropdown secondary-nav-dropdown">
@@ -75,12 +75,12 @@
                 </a>
 
                 <ul class="dropdown-menu auth-dropdown" role="menu">
-                    <li><a data-bind="click: trackClick.bind($data, 'MyProfile')" href="${domain}profile/"><i class="fa fa-user fa-lg p-r-xs"></i> My Profile</a></li>
+                    <li><a data-bind="click: trackClick.bind($data, 'MyProfile')" href="${domain}profile/"><i class="fa fa-user fa-lg p-r-xs"></i> ${_("My Profile")}</a></li>
+                    <li><a data-bind="click: trackClick.bind($data, 'Settings')" href="${web_url_for('user_profile')}"><i class="fa fa-cog fa-lg p-r-xs"></i> ${_("Settings")}</a></li>
                     % if nav_support or nav_global_support:
-                    <li><a data-bind="click: trackClick.bind($data, 'Support')" href="${global_support_url}" target="${global_support_target}"><i class="fa fa-life-ring fa-lg p-r-xs"></i> RDM Support</a></li>
+                    <li><a data-bind="click: trackClick.bind($data, 'Support')" href="${global_support_url}" target="${global_support_target}"><i class="fa fa-life-ring fa-lg p-r-xs"></i> ${_("RDM Support")}</a></li>
                     % endif
-                    <li><a data-bind="click: trackClick.bind($data, 'Settings')" href="${web_url_for('user_profile')}"><i class="fa fa-cog fa-lg p-r-xs"></i> Settings</a></li>
-                    <li><a data-bind="click: trackClick.bind($data, 'Logout')" href="${web_url_for('auth_logout')}"><i class="fa fa-sign-out fa-lg p-r-xs"></i> Log out</a></li>
+                    <li><a data-bind="click: trackClick.bind($data, 'Logout')" href="${web_url_for('auth_logout')}"><i class="fa fa-sign-out fa-lg p-r-xs"></i> ${_("Log out")}</a></li>
                 </ul>
             </li>
             % elif allow_login:
@@ -89,7 +89,7 @@
                     <div class="btn-group">
                         <a href="${domain}login/?campaign=institution&next=${redirect_url}">
                             <button type="button" class="btn btn-info btn-top-login">
-                            Sign in <span class="hidden-xs"><i class="fa fa-arrow-right"></i></span>
+                            ${_("Sign in")} <span class="hidden-xs"><i class="fa fa-arrow-right"></i></span>
                             </button>
                         </a>
                     </div>
@@ -99,9 +99,9 @@
                     <div class="col-sm-12">
 		        %if not embedded_ds:
                         %if nav_signup:
-                        <a data-bind="click: trackClick.bind($data, 'SignUp')" href="${sign_up_url}" class="btn btn-success btn-top-signup m-r-xs">Sign Up</a>
+                        <a data-bind="click: trackClick.bind($data, 'SignUp')" href="${sign_up_url}" class="btn btn-success btn-top-signup m-r-xs">${_("Sign Up")}</a>
                         % endif:
-                        <a data-bind="click: trackClick.bind($data, 'SignIn')" href="${login_url}" class="btn btn-info btn-top-login p-sm">Sign In</a>
+                        <a data-bind="click: trackClick.bind($data, 'SignIn')" href="${login_url}" class="btn btn-info btn-top-login p-sm">${_("Sign In")}</a>
 		        %else :
 <!-- embedded DS -->
 <script type="text/javascript" charset="UTF-8"><!--
@@ -137,12 +137,12 @@
                     <div id="maintenance" class="scripted alert alert-dismissible" role="alert">
                     <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span></button>
-                    <strong>Notice:</strong>
+                    <strong>${_('Notice:')}</strong>
                     % if maintenance['message']:
                         ${maintenance['message']}
                     % else:
-                        The site will undergo maintenance between <span id="maintenanceTime"></span>.
-                        Thank you for your patience.
+                        ${_('The site will undergo maintenance between <span id="maintenanceTime"></span>.') | n}
+                        ${_("Thank you for your patience.")}
                     % endif
                 </div>
                 % endif

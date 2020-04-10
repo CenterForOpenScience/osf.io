@@ -7,6 +7,10 @@ var vkbeautify = require('vkbeautify');
 var taskStatusUpdaterIntervalId = null;
 var taskStatusUrl = null;
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 var dateString = new Date().toLocaleDateString('ja-JP', {
     year: 'numeric',
     month: '2-digit',
@@ -165,10 +169,10 @@ var verify = function (params) {
         dataType: 'json',
         method: 'POST'
     }).done(function () {
-        $osf.growl('Timestamp', 'A verify request is being processed!', 'success');
+        $osf.growl('Timestamp', _('A verify request is being processed!'), 'success');
         taskStatusUpdaterIntervalId = setInterval(taskStatusUpdater, 1500);
     }).fail(function () {
-        $osf.growl('Timestamp', 'Something went wrong with the Verify request.', 'danger');
+        $osf.growl('Timestamp', _('Something went wrong with the Verify request.'), 'danger');
     });
 };
 
@@ -184,7 +188,7 @@ var add = function (param) {
     });
 
     if (fileList.length === 0) {
-        $osf.growl('Timestamp', 'Using the checkbox, please select the files to request timestamp.', 'danger');
+        $osf.growl('Timestamp', _('Using the checkbox, please select the files to request timestamp.'), 'danger');
         return false;
     }
 
@@ -207,15 +211,15 @@ var add = function (param) {
         contentType: 'application/json; charset=utf-8',
         dataType: 'json'
     }).done(function () {
-        $osf.growl('Timestamp', 'Timestamp is being added to the selected files!', 'success');
+        $osf.growl('Timestamp', _('Timestamp is being added to the selected files!'), 'success');
         taskStatusUpdaterIntervalId = setInterval(taskStatusUpdater, 1500);
     }).fail(function () {
-        $osf.growl('Timestamp', 'Something went wrong with the Request Trusted Timestamp request.', 'danger');
+        $osf.growl('Timestamp', _('Something went wrong with the Request Trusted Timestamp request.'), 'danger');
     });
 };
 
 var cancel = function (url) {
-    $osf.growl('Timestamp', 'The task has been cancelled.', 'info');
+    $osf.growl('Timestamp', _('The task has been cancelled.'), 'info');
     $('#btn-cancel').attr('disabled', true);
     $.ajax({
         url: url,
@@ -224,10 +228,10 @@ var cancel = function (url) {
         if (result.success === true) {
             $('#btn-cancel').attr('disabled', true);
         } else {
-            $osf.growl('Timestamp', 'The task already finished.', 'info');
+            $osf.growl('Timestamp', _('The task already finished.'), 'info');
         }
     }).fail(function () {
-        $osf.growl('Timestamp', 'Something went wrong in the cancel request.', 'danger');
+        $osf.growl('Timestamp', _('Something went wrong in the cancel request.'), 'danger');
     });
 };
 
@@ -281,7 +285,7 @@ var download = function () {
     });
 
     if (fileList.length === 0) {
-        $osf.growl('Timestamp', 'Using the checkbox, please select the files to download.', 'danger');
+        $osf.growl('Timestamp', _('Using the checkbox, please select the files to download.'), 'danger');
         return false;
     }
 

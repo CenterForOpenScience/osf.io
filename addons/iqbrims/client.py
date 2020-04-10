@@ -67,23 +67,50 @@ class IQBRIMSClient(BaseClient):
 
     def grant_access_from_anyone(self, file_id):
         res = self._make_request(
-            'POST',
+            'GET',
             self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
             file_id, 'permissions'),
-            headers={
-                'Content-Type': 'application/json',
-            },
-            data=json.dumps({
-                'role': 'writer',
-                'type': 'anyone',
-                'allowFileDiscovery': False,
-            }),
             expects=(200, ),
             throws=HTTPError(401)
         )
-        return res.json()
+        permissions = res.json()['permissions']
+        permissions = [p
+                       for p in permissions
+                       if 'type' in p and p['type'] == 'anyone']
+        if len(permissions) > 0:
+            for p in permissions:
+                res = self._make_request(
+                    'PATCH',
+                    self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
+                    file_id, 'permissions', p['id']),
+                    headers={
+                        'Content-Type': 'application/json',
+                    },
+                    data=json.dumps({
+                        'role': 'writer',
+                    }),
+                    expects=(200, ),
+                    throws=HTTPError(401)
+                )
+        else:
+            res = self._make_request(
+                'POST',
+                self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
+                file_id, 'permissions'),
+                headers={
+                    'Content-Type': 'application/json',
+                },
+                data=json.dumps({
+                    'role': 'writer',
+                    'type': 'anyone',
+                    'allowFileDiscovery': False,
+                }),
+                expects=(200, ),
+                throws=HTTPError(401)
+            )
+            return res.json()
 
-    def revoke_access_from_anyone(self, file_id):
+    def revoke_access_from_anyone(self, file_id, drop_all=True):
         res = self._make_request(
             'GET',
             self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
@@ -95,14 +122,30 @@ class IQBRIMSClient(BaseClient):
         permissions = [p
                        for p in permissions
                        if 'type' in p and p['type'] == 'anyone']
-        for p in permissions:
-            res = self._make_request(
-                'DELETE',
-                self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
-                file_id, 'permissions', p['id']),
-                expects=(200, ),
-                throws=HTTPError(401)
-            )
+        if not drop_all:
+            for p in permissions:
+                res = self._make_request(
+                    'PATCH',
+                    self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
+                    file_id, 'permissions', p['id']),
+                    headers={
+                        'Content-Type': 'application/json',
+                    },
+                    data=json.dumps({
+                        'role': 'reader',
+                    }),
+                    expects=(200, ),
+                    throws=HTTPError(401)
+                )
+        else:
+            for p in permissions:
+                res = self._make_request(
+                    'DELETE',
+                    self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
+                    file_id, 'permissions', p['id']),
+                    expects=(200, ),
+                    throws=HTTPError(401)
+                )
         return permissions
 
     def get_folder_info(self, folder_id):
@@ -110,6 +153,39 @@ class IQBRIMSClient(BaseClient):
             'GET',
             self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files',
             folder_id),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.json()
+
+    def create_content(self, folder_id, title, mime_type, content):
+        params = {
+            'title': title,
+            'parents': [{
+                'id': folder_id
+            }]
+        }
+        metadata = ('metadata', json.dumps(params), 'application/json; charset=UTF-8')
+        files = {'data': metadata, 'file': (title, content, mime_type)}
+        res = self._make_request(
+            'POST',
+            self._build_url(settings.API_BASE_URL, 'upload', 'drive', 'v2',
+                            'files') + '?uploadType=multipart',
+            files=files,
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.json()
+
+    def update_content(self, file_id, mime_type, content):
+        res = self._make_request(
+            'POST',
+            self._build_url(settings.API_BASE_URL, 'upload', 'drive', 'v2',
+                            'files', file_id) + '?uploadType=media',
+            headers={
+                'Content-Type': mime_type,
+            },
+            data=content,
             expects=(200, ),
             throws=HTTPError(401)
         )
@@ -236,6 +312,34 @@ class IQBRIMSClient(BaseClient):
             return False, exists[0]
         else:
             return True, self.create_spreadsheet(folder_id, title)
+
+    def copy_file(self, src_file_id, folder_id, title):
+        res = self._make_request(
+            'POST',
+            self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files',
+                            src_file_id, 'copy'),
+            headers={
+                'Content-Type': 'application/json',
+            },
+            data=json.dumps({
+                'title': title,
+                'parents': [{
+                    'id': folder_id
+                }],
+            }),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.json()
+
+    def copy_file_if_not_exists(self, src_file_id, folder_id, title):
+        items = self.files(folder_id)
+        exists = filter(lambda item: item['title'] == title, items)
+
+        if len(exists) > 0:
+            return False, exists[0]
+        else:
+            return True, self.copy_file(src_file_id, folder_id, title)
 
 
 class SpreadsheetClient(BaseClient):
@@ -407,7 +511,8 @@ class SpreadsheetClient(BaseClient):
         logger.info('Updated: {}'.format(res.json()))
         return ecolumns + new_columns
 
-    def add_files(self, sheet_id, sheet_idx, files):
+    def add_files(self, files_sheet_id, files_sheet_idx,
+                  mgmt_sheet_id, mgmt_sheet_idx, files):
         top = {'depth': 0, 'name': None, 'files': [], 'dirs': []}
         max_depth = 0
         for f in files:
@@ -434,15 +539,22 @@ class SpreadsheetClient(BaseClient):
                     target['dirs'].append(d)
                     next_target = d
                 target = next_target
-        self.ensure_columns(sheet_id, ['Filled'], row=1)
-        fcolumns = ['Persons Involved', 'Remarks', 'Software Used']
-        c = self.ensure_columns(sheet_id,
-                                ['L{}'.format(i)
-                                 for i in range(0, max_depth + 2)] +
+        fc = self.ensure_columns(mgmt_sheet_id, ['Filled'], row=1)
+        self.update_row(mgmt_sheet_id,
+                        ['FALSE' if c == 'Filled' else '' for c in fc],
+                        0)
+        num_of_fcolumns = 2
+        fcolumns = ['Remarks']
+        entry_cols = ['L{}'.format(i) for i in range(0, max_depth + 2)]
+        COMMENT_MARGIN = 3
+        c = self.ensure_columns(files_sheet_id,
+                                entry_cols +
+                                ['Persons Involved(File)'] +
                                 ['{}(File)'.format(col) for col in fcolumns] +
                                 ['Extension'] +
+                                ['Software Used(Extension)'] +
                                 ['{}(Extension)'.format(col) for col in fcolumns],
-                                row=3)
+                                row=1 + COMMENT_MARGIN)
         values = self._to_file_list(top, [])
         exts = sorted(set([os.path.splitext(v[-1])[-1]
                            for v, t in values if t == 'file']))
@@ -450,7 +562,7 @@ class SpreadsheetClient(BaseClient):
         exts += ['' for i in range(0, len(values) - len(exts))]
         values = [self._to_file_row(c, t, v, ex)
                   for (v, t), ex in zip(values, exts)]
-        r = u'{0}!A3:{1}3'.format(sheet_id, self._row_name(len(c)))
+        r = u'{0}!A{2}:{1}{2}'.format(files_sheet_id, self._row_name(len(c)), 1 + COMMENT_MARGIN)
         res = self._make_request(
             'POST',
             self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
@@ -468,8 +580,24 @@ class SpreadsheetClient(BaseClient):
             throws=HTTPError(401)
         )
         logger.info('Inserted: {}'.format(res.json()))
-        ext_col_index = max_depth + 2 + len(fcolumns)
-        col_count = ext_col_index + 1 + len(fcolumns)
+        ext_col_index = max_depth + 2 + num_of_fcolumns
+        col_count = ext_col_index + 1 + num_of_fcolumns
+
+        hide_col_reqs = [{
+            'updateDimensionProperties': {
+                'range': {
+                    'sheetId': files_sheet_idx,
+                    'dimension': 'COLUMNS',
+                    'startIndex': i,
+                    'endIndex': i + 1,
+                },
+                'properties': {
+                    'hiddenByUser': True,
+                },
+                'fields': 'hiddenByUser',
+            }
+        } for i, col in enumerate(c) if col.startswith('L') and col not in entry_cols]
+
         res = self._make_request(
             'POST',
             self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
@@ -479,24 +607,11 @@ class SpreadsheetClient(BaseClient):
             },
             data=json.dumps({
                 'requests': [{
-                    'setDataValidation': {
-                        'range': {'sheetId': sheet_idx,
-                                  'startColumnIndex': 0,
-                                  'endColumnIndex': 1,
-                                  'startRowIndex': 1,
-                                  'endRowIndex': 2},
-                        'rule': {
-                            'condition': {
-                                'type': 'BOOLEAN'
-                            }
-                        }
-                    }
-                }, {
                     'addProtectedRange': {
                         'protectedRange': {
-                            'range': {'sheetId': sheet_idx,
+                            'range': {'sheetId': files_sheet_idx,
                                       'startColumnIndex': 0,
-                                      'endColumnIndex': 1,
+                                      'endColumnIndex': col_count,
                                       'startRowIndex': 0,
                                       'endRowIndex': 1},
                             'warningOnly': True
@@ -505,37 +620,37 @@ class SpreadsheetClient(BaseClient):
                 }, {
                     'addProtectedRange': {
                         'protectedRange': {
-                            'range': {'sheetId': sheet_idx,
+                            'range': {'sheetId': files_sheet_idx,
                                       'startColumnIndex': 0,
                                       'endColumnIndex': col_count,
-                                      'startRowIndex': 2,
-                                      'endRowIndex': 3},
+                                      'startRowIndex': 0 + COMMENT_MARGIN,
+                                      'endRowIndex': 1 + COMMENT_MARGIN},
                             'warningOnly': True
                         }
                     }
                 }, {
                     'addProtectedRange': {
                         'protectedRange': {
-                            'range': {'sheetId': sheet_idx,
+                            'range': {'sheetId': files_sheet_idx,
                                       'startColumnIndex': 0,
                                       'endColumnIndex': max_depth + 2,
-                                      'startRowIndex': 3,
-                                      'endRowIndex': 3 + len(values)},
+                                      'startRowIndex': 1 + COMMENT_MARGIN,
+                                      'endRowIndex': 1 + COMMENT_MARGIN + len(values)},
                             'warningOnly': True
                         }
                     }
                 }, {
                     'addProtectedRange': {
                         'protectedRange': {
-                            'range': {'sheetId': sheet_idx,
+                            'range': {'sheetId': files_sheet_idx,
                                       'startColumnIndex': ext_col_index,
                                       'endColumnIndex': ext_col_index + 1,
-                                      'startRowIndex': 3,
-                                      'endRowIndex': 3 + len(values)},
+                                      'startRowIndex': 1 + COMMENT_MARGIN,
+                                      'endRowIndex': 1 + COMMENT_MARGIN + len(values)},
                             'warningOnly': True
                         }
                     }
-                }]
+                }] + hide_col_reqs
             }),
             expects=(200, ),
             throws=HTTPError(401)
@@ -718,6 +833,20 @@ class IQBRIMSWorkflowUserSettings(object):
         if 'FLOWABLE_SCAN_APP_ID' in current['settings']:
             return current['settings']['FLOWABLE_SCAN_APP_ID']
         return settings.FLOWABLE_SCAN_APP_ID
+
+    @property
+    def FLOWABLE_DATALIST_TEMPLATE_ID(self):
+        current = self.load()
+        if 'FLOWABLE_DATALIST_TEMPLATE_ID' in current['settings']:
+            return current['settings']['FLOWABLE_DATALIST_TEMPLATE_ID']
+        return settings.FLOWABLE_DATALIST_TEMPLATE_ID
+
+    @property
+    def MESSAGES(self):
+        current = self.load()
+        if 'MESSAGES' in current['settings']:
+            return json.loads(current['settings']['MESSAGES'])
+        return settings.MESSAGES
 
 
 class IQBRIMSFlowableClient(BaseClient):

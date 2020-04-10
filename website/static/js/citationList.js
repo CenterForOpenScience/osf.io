@@ -9,6 +9,11 @@ var bootbox = require('bootbox');
 var oop = require('js/oop');
 var makeClient = require('js/clipboard');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
+
 var BASE_URL = '/static/vendor/bower_components/styles/';
 var STYLES = {
     apa: 'apa.csl',
@@ -107,8 +112,8 @@ var ViewModel = oop.defclass({
 		        self.fetch();
 		    }
         }).fail(function() {
-            $osf.growl('Error', 'Your custom citation not updated. Please refresh the page and try ' +
-            'again or contact ' + $osf.osfSupportLink() + ' if the problem persists.', 'danger');
+            $osf.growl('Error', _('Your custom citation not updated. Please refresh the page and try ') +
+            agh.sprintf(_('again or contact %1$s') , $osf.osfSupportLink()) + _(' if the problem persists.'), 'danger');
         }).always(function() {
             self.loading(false);
         });

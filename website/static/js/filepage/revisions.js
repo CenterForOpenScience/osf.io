@@ -3,6 +3,11 @@ var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
+
 var util = require('./util.js');
 var makeClient = require('js/clipboard');
 
@@ -67,8 +72,8 @@ var FileRevisionsTable = {
                 m.startComputation();
                 model.loaded(true);
                 model.errorMessage = response.responseJSON ?
-                    response.responseJSON.message || 'Unable to fetch versions' :
-                    'Unable to fetch versions';
+                    response.responseJSON.message || _('Unable to fetch versions') :
+                    _('Unable to fetch versions');
                 m.endComputation();
 
                 // model.errorMessage(err);
@@ -103,15 +108,15 @@ var FileRevisionsTable = {
         self.getTableHead = function() {
             return m('thead', [
                 m('tr', [
-                    m('th', 'Version ID'),
-                    model.hasDate ? m('th', 'Date') : false,
-                    model.hasUser ? m('th', 'User') : false,
-                    m('th[colspan=2]', 'Download'),
+                    m('th', _('Version ID')),
+                    model.hasDate ? m('th', _('Date')) : false,
+                    model.hasUser ? m('th', _('User')) : false,
+                    m('th[colspan=2]', _('Download')),
                     model.hasHashes ? m('th', [
-                        'MD5 ', m('.fa.fa-question-circle[data-content="MD5 is an algorithm used to verify data integrity."][rel="popover"]' +
+                        'MD5 ', m(_('.fa.fa-question-circle[data-content="MD5 is an algorithm used to verify data integrity."][rel="popover"]') +
                             '[data-placement="top"][data-trigger="hover"]', {config: popOver}) ]) : false,
                     model.hasHashes ? m('th', [
-                        'SHA2 ', m('.fa.fa-question-circle[data-content="SHA-2 is a cryptographic hash function designed by the NSA used to verify data integrity."][rel="popover"]' +
+                        'SHA2 ', m(_('.fa.fa-question-circle[data-content="SHA-2 is a cryptographic hash function designed by the NSA used to verify data integrity."][rel="popover"]') +
                             '[data-placement="top"][data-trigger="hover"]', {config: popOver}) ]) : false,
                 ].filter(TRUTHY))
             ]);
@@ -128,7 +133,7 @@ var FileRevisionsTable = {
                   m('a', {href: parseInt(revision.displayVersion) === model.revisions.length ? self.baseUrl : revision.osfViewUrl}, revision.displayVersion)
                 ),
                 model.hasDate ? m('td', revision.displayDate) : false,
-                model.hasUser ? window.contextVars.node.anonymous ? m('td', 'Anonymous Contributor') :
+                model.hasUser ? window.contextVars.node.anonymous ? m('td', _('Anonymous Contributor')) :
                     m('td', revision.extra.user.url ?
                             m('a', {href: revision.extra.user.url}, revision.extra.user.name) :
                             revision.extra.user.name
@@ -168,7 +173,7 @@ var FileRevisionsTable = {
     },
     view: function(ctrl) {
         return m('#revisionsPanel.panel.panel-default', [
-            m('.panel-heading.clearfix', m('h3.panel-title', 'Revisions')),
+            m('.panel-heading.clearfix', m('h3.panel-title', _('Revisions'))),
             m('.panel-body', {style:{'padding-right': '0','padding-left':'0', 'padding-bottom' : '0',
                 'overflow': 'auto'}}, (function() {
                 if (!model.loaded()) {

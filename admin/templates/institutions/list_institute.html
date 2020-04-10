@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block top_includes %}
@@ -6,12 +7,12 @@
 {% endblock %}
 
 {% block title %}
-<title>{{ institution_name }} User List - Statistical Status of NII Storage</title>
+<title>{% blocktrans %}{{ institution_name }} User List - Statistical Status of NII Storage{% endblocktrans %}</title>
 {% endblock title %}
 
 {% block content %}
   {% include 'institutions/user_list_by_institute.html' %}
     {% if not users|length %}
-     <h3>No results found</h3>
+     <h3>{% trans "No results found" %}</h3>
     {% endif %}
 {% endblock content %}

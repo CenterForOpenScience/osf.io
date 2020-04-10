@@ -7,6 +7,11 @@ var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
+
 function expandOnLoad() {
     var tb = this;  // jshint ignore: line
     for (var i = 0; i < tb.treeData.children.length; i++) {
@@ -19,18 +24,17 @@ function beforeChangePermissions(item, permission){
     var safeTitle = $osf.htmlEscape(item.parent().data.node.title);
     if(permission === 'public'){
         bootbox.dialog({
-            title: 'Make publicly editable',
-            message: 'Are you sure you want to make the wiki of <b>' + safeTitle +
-                '</b> publicly editable? This will allow any logged in user to edit the content of this wiki. ' +
-                '<b>Note</b>: Users without write access will not be able to add, delete, or rename pages.',
+            title: _('Make publicly editable'),
+            message: agh.sprintf(_('Are you sure you want to make the wiki of <b>%1$s</b> publicly editable? This will allow any logged in user to edit the content of this wiki. '),safeTitle) +
+                _('<b>Note</b>: Users without write access will not be able to add, delete, or rename pages.'),
             buttons: {
                 cancel : {
-                    label: 'Cancel',
+                    label: _('Cancel'),
                     className: 'btn-default',
                     callback: function() {item.notify.update('', 'notify-primary', 1, 10);}
                 },
                 success: {
-                    label: 'Apply',
+                    label: _('Apply'),
                     className: 'btn-primary',
                     callback: function() {changePermissions(item, permission);}
                 }
@@ -48,10 +52,10 @@ function changePermissions(item, permission) {
     return $osf.putJSON(
         buildPermissionsURL(item), {'permission': permission}
     ).done(function(){
-        item.notify.update('Settings updated', 'notify-success', 1, 2000);
+        item.notify.update(_('Settings updated'), 'notify-success', 1, 2000);
         item.data.select.permission = permission;
     }).fail(function() {
-        item.notify.update('Could not update settings', 'notify-danger', 1, 2000);
+        item.notify.update(_('Could not update settings'), 'notify-danger', 1, 2000);
     });
 }
 
@@ -108,9 +112,9 @@ function ProjectWiki(data) {
                     custom : function() {
 
                         if(!item.parent().data.permissions.admin){
-                            return 'Only admins may change permissions of this wiki.';
+                            return _('Only admins may change permissions of this wiki.');
                         } else {
-                            return item.parent().data.node.is_public ? 'Select who can edit' : 'This feature is disabled for wikis of private '  + item.parent().data.nodeType + 's.';
+                            return item.parent().data.node.is_public ? _('Select who can edit') : agh.sprintf(gt.ngettext('This feature is disabled for wikis of private %1$s','This feature is disabled for wikis of private %1$ss',  item.parent().data.nodeType ),item.parent().data.nodeType);
                         }
                     }
                 },
@@ -127,8 +131,8 @@ function ProjectWiki(data) {
                                 disabled: !item.parent().data.node.is_public || !item.parent().data.permissions.admin
                                 },
                                 [
-                                    m('option', {value: 'private', selected : item.data.select.permission === 'public' ? 'selected': ''}, 'Contributors (with write access)'),
-                                    m('option', {value: 'public', selected : item.data.select.permission === 'public' ? 'selected': '' }, 'All OSF users')
+                                    m('option', {value: 'private', selected : item.data.select.permission === 'public' ? 'selected': ''}, _('Contributors (with write access)')),
+                                    m('option', {value: 'public', selected : item.data.select.permission === 'public' ? 'selected': '' }, _('All GakuNin RDM users'))
                             ])
                         ]);
                     }

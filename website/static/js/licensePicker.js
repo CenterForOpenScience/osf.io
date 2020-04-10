@@ -14,12 +14,20 @@ var DEFAULT_LICENSE = siteLicenses.DEFAULT_LICENSE;
 var OTHER_LICENSE = siteLicenses.OTHER_LICENSE;
 var licenseGroups = siteLicenses.groups;
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 var LICENSE_PROPERTIES = {
-    'year': 'Year',
-    'copyrightHolders': 'Copyright Holders'
+    'year': _('Year'),
+    'copyrightHolders': _('Copyright Holders')
 };
 
 var template = require('raw-loader!templates/license-picker.html');
+
+      template = template.replace( 'License:', _('License:'));
+      template = template.replace( 'Choose a license:', _('Choose a license:'));
+      template = template.replace( '>Save<', _('>Save<'));
 
 /**
  * @class LicensePicker: Knockout.js view model for project license selection
@@ -59,7 +67,7 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
 
         self.savedLicense = ko.observable(license);
         self.savedLicenseName = ko.pureComputed(function() {
-            return self.savedLicense().name === 'No license' ? 'Add a license' : self.savedLicense().name;
+            return self.savedLicense().name === 'No license' ? _('Add a license') : _(self.savedLicense().name);
         });
         self.savedLicenseId = ko.computed(function() {
             return self.savedLicense().id;
@@ -95,11 +103,11 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
             required: true,
             pattern: {
                 params: /^\d{4}\s*$/,
-                message: 'Please specify a valid year.'
+                message: _('Please specify a valid year.')
             },
             max: {
                 params: new Date().getFullYear(),
-                message: 'Future years are not allowed.'
+                message: _('Future years are not allowed.')
             }
         });
         self.copyrightHolders = ko.observable((license.copyright_holders || []).join(', ')).extend({
@@ -181,14 +189,14 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
 
         self.previewing(false);
         self.savedLicense(selectedLicense);
-        self.changeMessage('License updated successfully.', 'text-success', 2500);
+        self.changeMessage(_('License updated successfully.'), 'text-success', 2500);
     },
     onSaveFail: function(xhr, status, error) {
         var self = this;
 
-        self.changeMessage('There was a problem updating your license. Please try again.', 'text-danger', 2500);
+        self.changeMessage(_('There was a problem updating your license. Please try again.'), 'text-danger', 2500);
 
-        Raven.captureMessage('Error fetching user profile', {
+        Raven.captureMessage(_('Error fetching user profile'), {
             extra: {
                 url: self.saveUrl,
                 status: status,
@@ -230,15 +238,15 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
         if (license.id === OTHER_LICENSE.id) {
             var ret = $.Deferred();
             bootbox.dialog({
-                title: 'Your Own License',
-                message: 'You have opted to use your own license. Please upload a license file named "license.txt" into the GakuNin RDM Storage of this project.',
+                title: _('Your Own License'),
+                message: _('You have opted to use your own license. Please upload a license file named "license.txt" into the GakuNin RDM Storage of this project.'),
                 buttons: {
                     cancel: {
-                        label: 'Cancel',
+                        label: _('Cancel'),
                         className: 'btn btn-default'
                     },
                     main: {
-                        label: 'Add license',
+                        label: _('Add license'),
                         className: 'btn btn-primary',
                         callback: function(confirmed) {
                             if (confirmed) {

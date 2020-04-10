@@ -1,9 +1,10 @@
+{% load i18n %}
 {% if resource.spam_status == SPAM_STATUS.UNKNOWN %}
-    <span class="label label-default">Unknown</span>
+    <span class="label label-default">{% trans "Unknown" %}</span>
 {% elif resource.spam_status == SPAM_STATUS.FLAGGED %}
-    <span class="label label-warning">Flagged</span>
+    <span class="label label-warning">{% trans "Flagged" %}</span>
 {% elif resource.spam_status == SPAM_STATUS.SPAM %}
-    <span class="label label-danger">Spam</span>
+    <span class="label label-danger">{% trans "Spam" %}</span>
 {% elif resource.spam_status == SPAM_STATUS.HAM %}
-    <span class="label label-success">Ham</span>
+    <span class="label label-success">{% trans "Ham" %}</span>
 {% endif %}

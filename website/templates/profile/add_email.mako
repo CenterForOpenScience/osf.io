@@ -1,7 +1,7 @@
 
 <%inherit file="base.mako"/>
 
-<%def name="title()">Account Settings</%def>
+<%def name="title()">${_("Account Settings")}</%def>
 
 <%def name="stylesheets()">
    ${parent.stylesheets()}
@@ -11,20 +11,20 @@
 <%def name="content()">
     <% from website import settings %>
     <div id="accountSettings">
-        <h2 class="page-header">Settings</h2>
+        <h2 class="page-header">${_("Settings")}</h2>
         <div class="row">
             <div class="col-md-3 affix-parent">
               <%include file="include/profile/settings_navpanel.mako" args="current_page='account'"/>
             </div>
             <div class="col-md-6">
                 <div id="connectedEmails" class="panel panel-default scripted">
-                    <div class="panel-heading clearfix"><h3 class="panel-title">Connected Emails</h3></div>
+                    <div class="panel-heading clearfix"><h3 class="panel-title">${_("Connected Emails")}</h3></div>
                     <div class="panel-body">
 % if False:
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th colspan="2">Primary Email</th>
+                                    <th colspan="2">${_("Primary Email")}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -39,7 +39,7 @@
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th colspan="2">eduPersonPrincipalName (ePPN)</th>
+                                    <th colspan="2">${_("eduPersonPrincipalName (ePPN)")}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -54,13 +54,13 @@
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th colspan="3">Alternate Emails</th>
+                                    <th colspan="3">${_("Alternate Emails")}</th>
                                 </tr>
                             </thead>
                             <tbody data-bind="foreach: profile().alternateEmails()">
                                 <tr>
                                     <td style="word-break: break-all;"><span data-bind="text: $data.address"></span></td>
-                                    <td style="width:150px;"><a data-bind="click: $parent.makeEmailPrimary.bind($parent)">make&nbsp;primary</a></td>
+                                    <td style="width:150px;"><a data-bind="click: $parent.makeEmailPrimary.bind($parent)">${_("make&nbsp;primary") | n}</a></td>
                                     <td style="width:50px;"><a data-bind="click: $parent.removeEmail.bind($parent)"><i class="fa fa-times text-danger"></i></a></td>
                                 </tr>
                             </tbody>
@@ -69,14 +69,14 @@
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th colspan="3">Unconfirmed Emails</th>
+                                    <th colspan="3">${_("Unconfirmed Emails")}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <!-- ko foreach: profile().unconfirmedEmails() -->
                                 <tr>
                                     <td style="word-break: break-all;"><span data-bind="text: $data.address"></span></td>
-                                    <td style="width:150px;"><a data-bind="click: $parent.resendConfirmation.bind($parent)">resend&nbsp;confirmation</a></td>
+                                    <td style="width:150px;"><a data-bind="click: $parent.resendConfirmation.bind($parent)">${_("resend&nbsp;confirmation") | n}</a></td>
                                     <td style="width:50px;" ><a data-bind="click: $parent.removeEmail.bind($parent)"><i class="fa fa-times text-danger"></i></a></td>
                                 </tr>
                                 <!-- /ko -->
@@ -85,19 +85,19 @@
                                         <form data-bind="submit: addEmail">
                                             <p>
                                             % if user_merge:
-                                            To merge an existing account with this one or to log in with multiple email addresses, add an alternate email address below.
-                                            <span class="fa fa-info-circle" data-bind="tooltip: {title: 'Merging accounts will move all projects and components associated with two emails into one account. All projects and components will be displayed under the email address listed as primary.',
+                                            ${_("To merge an existing account with this one or to log in with multiple email addresses, add an alternate email address below.")}
+                                            <span class="fa fa-info-circle" data-bind="tooltip: {title: '${_("Merging accounts will move all projects and components associated with two emails into one account. All projects and components will be displayed under the email address listed as primary.")}',
                                              placement: 'bottom', container : 'body'}"></span>
                                             % else:
-                                            Add an email address below.
+                                            ${_("Add an email address below.")}
 					    % endif
                                             </p>
 
                                             <div class="form-group">
                                                 ## email input verification is not supported on safari
-                                              <input placeholder="Email address" type="email" data-bind="value: emailInput" class="form-control" required maxlength="254">
+                                              <input placeholder='${_("Email address")}' type="email" data-bind="value: emailInput" class="form-control" required maxlength="254">
                                             </div>
-                                            <input type="submit" value="Add email" class="btn btn-success">
+                                            <input type="submit" value="${_('Add email')}" class="btn btn-success">
                                         </form>
 
                                         <div class="help-block">
@@ -114,13 +114,13 @@
 		<!----------------------------------------------------------->
 		<div style="visibility:hidden; display:none;">
                 <div id="externalIdentity" class="panel panel-default">
-                    <div class="panel-heading clearfix"><h3 class="panel-title">Connected Identities</h3></div>
+                    <div class="panel-heading clearfix"><h3 class="panel-title">${_("Connected Identities")}</h3></div>
                     <div class="panel-body">
-                        <p> Connected identities allow you to log in to the GakuNin RDM via a third-party service. <br/>
-                        You can revoke these authorizations here.</p>
+                        <p> ${_("Connected identities allow you to log in to the GakuNin RDM via a third-party service.")} <br/>
+                        ${_("You can revoke these authorizations here.")}</p>
                         <hr />
                         % if not external_identity:
-                        <p >You have not authorized any external services to log in to the GakuNin RDM.</p>
+                        <p >${_("You have not authorized any external services to log in to the GakuNin RDM.")}</p>
                         % endif
                         <tbody>
                         % for identity in external_identity:
@@ -130,9 +130,9 @@
                                 <td>
                                     ${identity}: ${id} (
                                     % if external_identity[identity][id] == "VERIFIED":
-                                        Verified
+                                        ${_("Verified")}
                                     % else:
-                                        Pending
+                                        ${_("Pending")}
                                     % endif
                                     )
                                 </td>
@@ -152,16 +152,16 @@
                 </div>  <!-- hidden -->
 		<div style="visibility:hidden; display:none;">
                 <div id="changePassword" class="panel panel-default">
-                    <div class="panel-heading clearfix"><h3 class="panel-title">Change Password</h3></div>
+                    <div class="panel-heading clearfix"><h3 class="panel-title">${_("Change Password")}</h3></div>
                     <div class="panel-body">
                         <form id="changePasswordForm" role="form" action="${ web_url_for('user_account_password') }" method="post">
                             <div class="form-group">
-                                <label for="old_password">Old password</label>
+                                <label for="old_password">${_("Old password")}</label>
                                 <input
                                     type="password"
                                     class="form-control"
                                     id="changePassword"
-                                    placeholder="Old Password"
+                                    placeholder="${_('Old Password')}"
                                     name="old_password"
                                     data-bind="
                                         textInput: oldPassword,
@@ -173,12 +173,12 @@
                                 <p class="help-block" data-bind="validationMessage: oldPassword" style="display: none;"></p>
                             </div>
                             <div class="form-group">
-                                <label for="new_password">New password</label>
+                                <label for="new_password">${_("New password")}</label>
                                 <input
                                     type="password"
                                     class="form-control"
                                     id="resetPassword"
-                                    placeholder="New Password"
+                                    placeholder="${_('New Password')}"
                                     name="new_password"
                                     data-bind="
                                         textInput: typedPassword,
@@ -208,12 +208,12 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label for="confirm_password">Confirm new password</label>
+                                <label for="confirm_password">${_("Confirm new password")}</label>
                                 <input
                                     type="password"
                                     class="form-control"
                                     id="resetPasswordConfirmation"
-                                    placeholder="Verify Password"
+                                    placeholder="${_('Verify Password')}"
                                     name="confirm_password"
                                     data-bind="
                                         value: passwordConfirmation,
@@ -224,12 +224,12 @@
                                 <p class="help-block" data-bind="validationMessage: passwordConfirmation" style="display: none;"></p>
                             </div>
                             ## TODO: [#OSF-6764] change so that password strength submit validation happens in knockout on the form, not with this disable
-                            <button type="submit" class="btn btn-primary" data-bind="disable: !password.isValid()">Update password</button>
+                            <button type="submit" class="btn btn-primary" data-bind="disable: !password.isValid()">${_("Update password")}</button>
                         </form>
                     </div>
                 </div>
                 <div class="panel panel-default">
-                  <div class="panel-heading clearfix"><h3 class="panel-title">Security Settings</h3></div>
+                  <div class="panel-heading clearfix"><h3 class="panel-title">${_("Security Settings")}</h3></div>
                   <div class="panel-body">
                     % for addon in addons:
                     ${render_user_settings(addon) }
@@ -242,25 +242,25 @@
                 </div>  <!-- hidden -->
 		<div style="visibility:hidden; display:none;">
                 <div id="exportAccount" class="panel panel-default">
-                    <div class="panel-heading clearfix"><h3 class="panel-title">Export Account Data</h3></div>
+                    <div class="panel-heading clearfix"><h3 class="panel-title">${_("Export Account Data")}</h3></div>
                     <div class="panel-body">
-                        <p>Exporting your account data allows you to keep a permanent copy of the current state of your account. Keeping a copy of your account data can provide peace of mind or assist in transferring your information to another provider.</p>
-                        <a class="btn btn-primary" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request export</a>
+                        <p>${_("Exporting your account data allows you to keep a permanent copy of the current state of your account. Keeping a copy of your account data can provide peace of mind or assist in transferring your information to another provider.")}</p>
+                        <a class="btn btn-primary" data-bind="click: submit, css: success() === true ? 'disabled' : ''">${_("Request export")}</a>
                     </div>
                 </div>
                 </div>  <!-- hidden -->
 		<div style="visibility:hidden; display:none;">
                 <div id="deactivateAccount" class="panel panel-default">
-                    <div class="panel-heading clearfix"><h3 class="panel-title">Deactivate Account</h3></div>
+                    <div class="panel-heading clearfix"><h3 class="panel-title">${_("Deactivate Account")}</h3></div>
                     <div class="panel-body">
                         %if not requested_deactivation:
-                            <p class="alert alert-warning"><strong>Warning:</strong> This action is irreversible.</p>
+                            <p class="alert alert-warning">${_("<strong>Warning:</strong> This action is irreversible.") | n}</p>
                         %endif
-                        <p>Deactivating your account will remove you from all public projects to which you are a contributor. Your account will no longer be associated with GakuNin RDM projects, and your work on the GakuNin RDM will be inaccessible.</p>
+                        <p>${_("Deactivating your account will remove you from all public projects to which you are a contributor. Your account will no longer be associated with GakuNin RDM projects, and your work on the GakuNin RDM will be inaccessible.")}</p>
                         %if not requested_deactivation:
-                             <a class="btn btn-danger" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request deactivation</a>
+                             <a class="btn btn-danger" data-bind="click: submit, css: success() === true ? 'disabled' : ''">${_("Request deactivation")}</a>
                         %else:
-                             <p><b>Your account is currently pending deactivation.</b></p>
+                             <p><b>${_("Your account is currently pending deactivation.")}</b></p>
                         %endif
                     </div>
                 </div>

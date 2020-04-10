@@ -16,7 +16,7 @@
     <h2 class="break-word">
       ## Split file name into two parts: with and without extension
       ${file_name_title | h}<span id="file-ext">${file_name_ext | h}</span>
-      <a id='versionLink' class='scripted'>(Version: ${ version_id | h})</a>
+      <a id='versionLink' class='scripted'>(${_("Version:")} ${ version_id | h})</a>
       % if file_revision:
         <small>&nbsp;${file_revision | h}</small>
       % endif
@@ -31,9 +31,9 @@
 % if timestamp_verify_result_title:
     <h4 class="break-word">
     % if timestamp_verify_result_title == 'OK':
-      <font color="green"><b>Timestamp verification:${ timestamp_verify_result_title | h}</b></font>
+      <font color="green"><b>${_("Timestamp verification:")}${ timestamp_verify_result_title | h}</b></font>
     % else:
-      <font color="red"><b>Timestamp verification:${ timestamp_verify_result_title | h}</b></font>
+      <font color="red"><b>${_("Timestamp verification:")}${ timestamp_verify_result_title | h}</b></font>
     % endif
     </h4>
 % endif
@@ -49,12 +49,12 @@
         <div id="grid">
           <div class="spinner-loading-wrapper">
             % if target_deleted:
-            <p class="m-t-sm fg-load-message">No files</p>
+            <p class="m-t-sm fg-load-message">${_("No files")}</p>
             %else:
             <div class="ball-scale ball-scale-blue">
                 <div></div>
             </div>
-            <p class="m-t-sm fg-load-message"> Loading files...  </p>
+            <p class="m-t-sm fg-load-message"> ${_("Loading files...")}  </p>
             %endif
           </div>
         </div>
@@ -73,7 +73,7 @@
       %if (file_tags or permissions.WRITE in user['permissions']) and provider == 'osfstorage' and not error:
        <div class="panel panel-default">
         <div class="panel-heading clearfix">
-            <h3 class="panel-title">Tags</h3>
+            <h3 class="panel-title">${_("Tags")}</h3>
             <div class="pull-right">
             </div>
         </div>
@@ -104,17 +104,17 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Connected to collaborative file editing</h3>
+        <h3 class="modal-title">${_("Connected to collaborative file editing")}</h3>
       </div>
       <div class="modal-body">
         <p>
-          This page is currently connected to collaborative file editing. All edits made will be visible to
-          contributors with write permission in real time. Changes will be stored
-          but not published until you click the "Save" button.
+          ${_('This page is currently connected to collaborative file editing. All edits made will be visible to\
+          contributors with write permission in real time. Changes will be stored\
+          but not published until you click the "Save" button.')}
         </p>
       </div>
       <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">${_("Close")}</button>
       </div>
     </div>
   </div>
@@ -125,16 +125,16 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Connecting to collaborative file editing</h3>
+        <h3 class="modal-title">${_("Connecting to collaborative file editing")}</h3>
       </div>
       <div class="modal-body">
         <p>
-          This page is currently attempting to connect to collaborative file editing. You may continue to make edits.
-          <strong>Changes will not be saved until you press the "Save" button.</strong>
+          ${_("This page is currently attempting to connect to collaborative file editing. You may continue to make edits.")}
+          <strong>${_('Changes will not be saved until you press the "Save" button.')}</strong>
         </p>
       </div>
       <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">${_("Close")}</button>
       </div>
     </div>
   </div>
@@ -145,16 +145,16 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Collaborative file editing is unavailable</h3>
+        <h3 class="modal-title">${_("Collaborative file editing is unavailable")}</h3>
       </div>
       <div class="modal-body">
         <p>
-          Collaborative file editing is currently unavailable. You may continue to make edits.
-          <strong>Changes will not be saved until you press the "Save" button.</strong>
+          ${_("Collaborative file editing is currently unavailable. You may continue to make edits.")}
+          <strong>${_('Changes will not be saved until you press the "Save" button.')}</strong>
         </p>
       </div>
       <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">${_("Close")}</button>
       </div>
     </div>
   </div>
@@ -165,16 +165,16 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Browser unsupported</h3>
+        <h3 class="modal-title">${_("Browser unsupported")}</h3>
       </div>
       <div class="modal-body">
         <p>
-          Your browser does not support collaborative editing. You may continue to make edits.
-          <strong>Changes will not be saved until you press the "Save" button.</strong>
+          ${_("Your browser does not support collaborative editing. You may continue to make edits.")}
+          <strong>${_('Changes will not be saved until you press the "Save" button.')}</strong>
         </p>
       </div>
       <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">${_("Close")}</button>
       </div>
     </div>
   </div>

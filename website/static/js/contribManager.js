@@ -15,6 +15,11 @@ var rt = require('js/responsiveTable');
 var $osf = require('./osfHelpers');
 require('js/filters');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
+
 //http://stackoverflow.com/questions/12822954/get-previous-value-of-an-observable-in-subscribe-of-same-observable
 ko.subscribable.fn.subscribeChanged = function (callback) {
     var self = this;
@@ -131,9 +136,9 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
             window.location.reload();
         }).fail(function(xhr, status, error){
             $osf.unblock();
-            var errorMessage = lodashGet(xhr, 'responseJSON.message') || ('There was a problem trying to add the contributor. ' + osfLanguage.REFRESH_OR_SUPPORT);
-            $osf.growl('Could not add contributor', errorMessage);
-            Raven.captureMessage('Error adding contributors', {
+            var errorMessage = lodashGet(xhr, 'responseJSON.message') || (agh.sprintf(_('There was a problem trying to add the contributor. ') , osfLanguage.REFRESH_OR_SUPPORT));
+            $osf.growl(_('Could not add contributor'), errorMessage);
+            Raven.captureMessage(_('Error adding contributors'), {
                 extra: {
                     url: url,
                     status: status,
@@ -205,9 +210,9 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.adminTable = $(adminTable);
 
     self.permissionMap = {
-        read: 'Read',
-        write: 'Read + Write',
-        admin: 'Administrator'
+        read: _('Read'),
+        write: _('Read + Write'),
+        admin: _('Administrator')
     };
 
     self.permissionList = Object.keys(self.permissionMap);
@@ -294,7 +299,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         if(!self.adminCount()) {
             messages.push(
                 new MessageModel(
-                    'Must have at least one registered admin contributor',
+                    _('Must have at least one registered admin contributor'),
                     'error'
                 )
             );
@@ -302,7 +307,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         if (!self.visibleCount()) {
             messages.push(
                 new MessageModel(
-                    'Must have at least one bibliographic contributor',
+                    _('Must have at least one bibliographic contributor'),
                     'error'
                 )
             );
@@ -358,9 +363,9 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     $('[href="#addContributors"]').on('click', function() {
         if (self.changed()) {
             $osf.growl('Error:',
-                    'Your contributor list has unsaved changes. Please ' +
-                    'save or cancel your changes before adding ' +
-                    'contributors.'
+                    _('Your contributor list has unsaved changes. Please ') +
+                    _('save or cancel your changes before adding ') +
+                    _('contributors.')
             );
             return false;
         }
@@ -369,7 +374,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     $(window).bind('beforeunload', function() {
         if (self.changed() && !self.forceSubmit()) {
             // TODO: Use GrowlBox.
-            return 'There are unsaved changes to your contributor settings';
+            return _('There are unsaved changes to your contributor settings');
         }
     });
 
@@ -398,8 +403,8 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.submit = function() {
         self.forceSubmit(true);
         bootbox.confirm({
-            title: 'Save changes?',
-            message: 'Are you sure you want to save these changes?',
+            title: _('Save changes?'),
+            message: _('Are you sure you want to save these changes?'),
             callback: function(result) {
                 if (result) {
                     $osf.postJSON(
@@ -415,7 +420,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
                     }).fail(function(xhr) {
                         var response = xhr.responseJSON;
                         $osf.growl('Error:',
-                            'Submission failed: ' + response.message_long
+                            _('Submission failed: ') + response.message_long
                         );
                         self.forceSubmit(false);
                     });
@@ -423,7 +428,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
             },
             buttons:{
                 confirm:{
-                    label:'Save',
+                    label:_('Save'),
                     className:'btn-success'
                 }
             }

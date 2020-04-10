@@ -5,29 +5,29 @@
             <div class="col-sm-12 col-md-8 col-md-offset-2">
                 <p>
                     <span>
-                        Copyright &copy; 2017-${datetime.utcnow().year}
+                        Copyright &copy; 2016-${datetime.utcnow().year}
                     </span>
                     <a href="${footer_links['cos']}">
-                        National Institute of Informatics
+                        ${_("National Institute of Informatics")}
                     </a>
                     <span>
                         |
                     </span>
                     <a href="${footer_links['terms']}">
-                        Terms&nbsp;of&nbsp;Use
+                        ${_("Terms&nbsp;of&nbsp;Use") | n}
                     </a>
                     <span>
                         |
                     </span>
                     <a href="${footer_links['privacyPolicy']}">
-                        Privacy&nbsp;Policy
+                        ${_("Privacy&nbsp;Policy") | n}
                     </a>
                     <!--
                     <span>
                         |
                     </span>
                     <a href="${footer_links['statusPage']}">
-                        Status
+                        ${_("Status")}
                     </a>
                     -->
                     <!--
@@ -41,7 +41,7 @@
                     <br>
                     <!--
                     <a href="${footer_links['topGuidelines']}">
-                        TOP Guidelines
+                        ${_("TOP Guidelines")}
                     </a>
                     -->
                     <!--
@@ -49,7 +49,7 @@
                         |
                     </span>
                     <a href="${footer_links['rpp']}">
-                        Reproducibility&nbsp;Project: Psychology
+                        ${_("Reproducibility&nbsp;Project: Psychology") | n}
                     </a>
                     -->
                     <!--
@@ -57,7 +57,7 @@
                         |
                     </span>
                     <a href="${footer_links['rpcb']}">
-                        Reproducibility&nbsp;Project: Cancer Biology
+                        ${_("Reproducibility&nbsp;Project: Cancer Biology") | n}
                     </a>
                     -->
                 </p>

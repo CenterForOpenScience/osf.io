@@ -1,5 +1,6 @@
 {% load staticfiles %}
 {% load render_bundle from webpack_loader %}
+{% load i18n %}
 <!DOCTYPE html>
 <html>
 
@@ -13,7 +14,7 @@
         }
     </script>
     <meta charset="UTF-8">
-    <title>OAuth Complete</title>
+    <title>{% trans "OAuth Complete" %}</title>
     <!-- Tell the browser to be responsive to screen width -->
     <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
     <!-- Bootstrap -->
@@ -49,11 +50,11 @@
     <div class="row">
         <div class="col-sm-12" style="margin-left: 15px;">
             <p>
-                Successfully connected to {{addon_name|title}} Account.
+                {% blocktrans %}Successfully connected to {{addon_name|title}} Account.{% endblocktrans %}
                 <br />
-                Please close this tab.
+                {% trans "Please close this tab." %}
             </p>
-            <button type="button" class="btn btn-success" onclick="window.close();"> Close</button>
+            <button type="button" class="btn btn-success" onclick="window.close();"> {% trans "Close" %}</button>
         </div>
     </div>
 

@@ -1,7 +1,7 @@
 <%inherit file="base.mako"/>
-<%def name="title()">Personal Access Tokens</%def>
+<%def name="title()">${_("Personal Access Tokens")}</%def>
 <%def name="content()">
-<h2 class="page-header">Settings</h2>
+<h2 class="page-header">${_("Settings")}</h2>
 
 <div id="personalTokenListPage" class="row">
     <div class="col-sm-3 affix-parent">
@@ -12,26 +12,26 @@
 
         <div id="tokensList" class="panel panel-default scripted" style="display:none;" data-bind="visible: true">
             <div class="panel-heading clearfix">
-                <h3 class="panel-title" style="padding-bottom: 5px; padding-top: 5px;">Personal Access Tokens</h3>
+                <h3 class="panel-title" style="padding-bottom: 5px; padding-top: 5px;">${_("Personal Access Tokens")}</h3>
                 <div class="pull-right">
-                    <a data-bind="attr: {href: webCreateUrl}" role="button" class="btn btn-sm btn-default">New token</a>
+                    <a data-bind="attr: {href: webCreateUrl}" role="button" class="btn btn-sm btn-default">${_("New token")}</a>
                 </div>
             </div>
             <div class="panel-body">
 
-                <p> Personal access tokens function like ordinary OAuth access tokens. They can be used to authenticate to the API.</p>
+                <p> ${_("Personal access tokens function like ordinary OAuth access tokens. They can be used to authenticate to the API.")}</p>
 
-                <p data-bind="visible: (tokenData().length == 0)">You have not created any access tokens that can connect to the GakuNin RDM.</p>
+                <p data-bind="visible: (tokenData().length == 0)">${_("You have not created any access tokens that can connect to the GakuNin RDM.")}</p>
                 <div id="if-tokens" data-bind="visible: (tokenData().length > 0)">
-                    <p>You have generated the following personal access tokens:</p>
+                    <p>${_("You have generated the following personal access tokens:")}</p>
 
                     <table class="table table-condensed">
                         <thead>
                         <tr>
-                            <th>Personal Access Tokens</th>
+                            <th>${_("Personal Access Tokens")}</th>
                             <th>
                                 <span class="pull-right">
-                                    Deactivate
+                                    ${_("Deactivate")}
                                 </span>
                             </th>
                         </tr>

@@ -5,6 +5,11 @@ var Raven = require('raven-js');
 require('bootstrap-editable');
 require('osf-panel');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
+
 var WikiPage = require('wikiPage');
 
 require('ace-noconflict');
@@ -58,9 +63,9 @@ if (ctx.canEditPageName) {
         },
         validate: function(value) {
             if($.trim(value) === ''){
-                return 'The wiki page name cannot be empty.';
+                return _('The wiki page name cannot be empty.');
             } else if(value.length > 100){
-                return 'The wiki page name cannot be more than 100 characters.';
+                return _('The wiki page name cannot be more than 100 characters.');
             }
         },
         params: function(params) {
@@ -75,14 +80,14 @@ if (ctx.canEditPageName) {
                 return msg;
             } else {
                 // Log unexpected error with Raven
-                Raven.captureMessage('Error in renaming wiki', {
+                Raven.captureMessage(_('Error in renaming wiki'), {
                     extra: {
                         url: ctx.urls.rename,
                         responseText: response.responseText,
                         statusText: response.statusText
                     }
                 });
-                return 'An unexpected error occurred. Please try again.';
+                return _('An unexpected error occurred. Please try again.');
             }
         }
     });
@@ -102,9 +107,9 @@ $(document).ready(function () {
     .fail(function(xhr, status, error) {
         grid.addClass('hidden');
         errorMsg.removeClass('hidden');
-        errorMsg.append('<p>Could not retrieve wiki pages. If this issue persists, ' +
-            'please report it to ' + $osf.osfSupportLink());
-        Raven.captureMessage('Could not GET wiki menu pages', {
+        errorMsg.append(_('<p>Could not retrieve wiki pages. If this issue persists, ') +
+            agh.sprintf(_('please report it to %1$s') , $osf.osfSupportLink()));
+        Raven.captureMessage(_('Could not GET wiki menu pages'), {
             extra: { url: ctx.urls.grid, status: status, error: error }
         });
     });

@@ -1,19 +1,20 @@
+{% load i18n %}
 <form class="well" method="post" action="{% url 'users:notes' osf_id %}">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">x</button>
-        <h3>Notes for OSF User</h3>
+        <h3>{% trans "Notes for GakuNin RDM User" %}</h3>
     </div>
     <div class="modal-body">
-        <h4>User: {{ osf_id }}</h4>
+        <h4>{% blocktrans %}User: {{ osf_id }}{% endblocktrans %}</h4>
         {% csrf_token %}
         <label for="{{ form.notes.id_for_label }}">
-            <strong>Notes for OSF user:</strong>
+            <strong>{% trans "Notes for GakuNIn user:" %}</strong>
         </label>
         <br>
         {{ form.notes }}
     </div>
     <div class="modal-footer">
         <input class="btn btn-primary" type="submit" value="Save" />
-        <button type="button" class="btn" data-dismiss="modal" >Cancel</button>
+        <button type="button" class="btn" data-dismiss="modal" >{% trans "Cancel" %}</button>
     </div>
 </form>

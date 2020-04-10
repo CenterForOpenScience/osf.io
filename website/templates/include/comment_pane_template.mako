@@ -1,6 +1,6 @@
 <div class="scripted comment-pane">
 
-    <div class="cp-handle-div cp-handle pull-right pointer visible-lg visible-md" data-bind="click:removeCount" data-toggle="tooltip" data-placement="bottom" title="Comments">
+    <div class="cp-handle-div cp-handle pull-right pointer visible-lg visible-md" data-bind="click:removeCount" data-toggle="tooltip" data-placement="bottom" title="${_('Comments')}">
         <span data-bind="if: unreadComments() !== 0">
             <span data-bind="text: displayCount" class="badge unread-comments-count"></span>
         </span>
@@ -15,21 +15,21 @@
                 <i class="fa fa-times"></i>
             </button>
             <h4>
-                <span data-bind="if: page() == 'files'">Files | <span data-bind="text: pageTitle"></span> Discussion</span>
-                <span data-bind="if: page() == 'wiki'">Wiki | <span data-bind="text: pageTitle"></span> Discussion</span>
-                <span data-bind="if: page() == 'node'"><span data-bind="text: pageTitle"></span> | Discussion</span>
+                <span data-bind="if: page() == 'files'">${_("Files")} | <span data-bind="text: pageTitle"></span> ${_("Discussion")}</span>
+                <span data-bind="if: page() == 'wiki'">${_("Wiki")} | <span data-bind="text: pageTitle"></span> ${_("Discussion")}</span>
+                <span data-bind="if: page() == 'node'"><span data-bind="text: pageTitle"></span> | ${_("Discussion")}</span>
             </h4>
 
             <div data-bind="if: canComment" style="margin-top: 20px">
                 <form class="form">
                     <div class="form-group">
-                        <div class="form-control atwho-input comment-box" placeholder="Add a comment" data-bind="editableHTML: {observable: replyContent, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
+                        <div class="form-control atwho-input comment-box" placeholder='${_("Add a comment")}' data-bind="editableHTML: {observable: replyContent, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
                         <div data-bind="visible: replyNotEmpty, text: counter, css: counterColor" class="pull-right label counter-comment"></div>
                     </div>
                     <div data-bind="if: replyNotEmpty" class="form-group">
                         <div class="clearfix">
                             <div class="pull-right">
-                                <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}">Cancel</a>
+                                <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}">${_("Cancel")}</a>
                                 <span data-bind="tooltip: {title: errorMessage(), placement: 'bottom', disabled: !validateReply()}">
                                     <a class="btn btn-success btn-sm" data-bind="click: submitReply, css: {disabled: !validateReply() || submittingReply()}, text: commentButtonText"></a>
                                 </span>

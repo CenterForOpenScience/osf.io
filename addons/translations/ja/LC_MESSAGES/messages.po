@@ -1,0 +1,915 @@
+# Japanese translations for PROJECT.
+# Copyright (C) 2020 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2020-01-14 16:43+0900\n"
+"PO-Revision-Date: 2019-12-09 18:08+0900\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.7.0\n"
+
+#: azureblobstorage/templates/azureblobstorage_credentials_modal.mako:6
+msgid "Connect an Azure Blob Storage Account"
+msgstr "Azure Blob Storageアカウントを接続"
+
+#: azureblobstorage/templates/azureblobstorage_credentials_modal.mako:17
+msgid "Account Name"
+msgstr "アカウント名"
+
+#: azureblobstorage/templates/azureblobstorage_credentials_modal.mako:21
+msgid "Account Key"
+msgstr "アカウントキー"
+
+#: azureblobstorage/templates/azureblobstorage_credentials_modal.mako:36
+#: azureblobstorage/templates/azureblobstorage_node_settings.mako:77
+#: dataverse/templates/dataverse_credentials_modal.mako:75
+#: gitlab/templates/gitlab_credentials_modal.mako:55
+#: jupyterhub/templates/jupyterhub_node_settings.mako:99
+#: nextcloud/templates/nextcloud_credentials_modal.mako:71
+#: nextcloud/templates/nextcloud_node_settings.mako:72
+#: owncloud/templates/owncloud_credentials_modal.mako:71
+#: owncloud/templates/owncloud_node_settings.mako:72
+#: s3/templates/s3_credentials_modal.mako:36
+#: s3/templates/s3_node_settings.mako:77
+#: s3compat/templates/s3compat_credentials_modal.mako:40
+#: s3compat/templates/s3compat_node_settings.mako:77
+#: swift/templates/swift_credentials_modal.mako:56
+#: swift/templates/swift_node_settings.mako:77
+#: weko/templates/weko_credentials_modal.mako:57
+#: wiki/templates/add_wiki_page.mako:17 wiki/templates/delete_wiki_page.mako:13
+#: zotero/templates/zotero_node_settings.mako:83
+#: zotero/templates/zotero_node_settings.mako:127
+msgid "Cancel"
+msgstr "キャンセル"
+
+#: azureblobstorage/templates/azureblobstorage_credentials_modal.mako:39
+#: azureblobstorage/templates/azureblobstorage_node_settings.mako:79
+#: dataverse/templates/dataverse_credentials_modal.mako:78
+#: dataverse/templates/dataverse_node_settings.mako:118
+#: forward/templates/forward_node_settings.mako:36
+#: github/templates/github_node_settings.mako:54
+#: gitlab/templates/gitlab_credentials_modal.mako:57
+#: gitlab/templates/gitlab_node_settings.mako:64
+#: jupyterhub/templates/jupyterhub_node_settings.mako:18
+#: nextcloud/templates/nextcloud_credentials_modal.mako:74
+#: nextcloud/templates/nextcloud_node_settings.mako:74
+#: owncloud/templates/owncloud_credentials_modal.mako:74
+#: owncloud/templates/owncloud_node_settings.mako:74
+#: s3/templates/s3_credentials_modal.mako:39
+#: s3/templates/s3_node_settings.mako:79
+#: s3compat/templates/s3compat_credentials_modal.mako:43
+#: s3compat/templates/s3compat_node_settings.mako:79
+#: swift/templates/swift_credentials_modal.mako:59
+#: swift/templates/swift_node_settings.mako:79
+#: weko/templates/weko_node_settings.mako:83 wiki/templates/edit.mako:189
+#: zotero/templates/zotero_node_settings.mako:85
+#: zotero/templates/zotero_node_settings.mako:129
+msgid "Save"
+msgstr "保存"
+
+#: azureblobstorage/templates/azureblobstorage_node_settings.mako:14
+#: azureblobstorage/templates/azureblobstorage_user_settings.mako:18
+#: bitbucket/templates/bitbucket_node_settings.mako:15
+#: dataverse/templates/dataverse_node_settings.mako:15
+#: dataverse/templates/dataverse_user_settings.mako:18
+#: github/templates/github_node_settings.mako:15
+#: gitlab/templates/gitlab_node_settings.mako:18
+#: gitlab/templates/gitlab_user_settings.mako:18
+#: nextcloud/templates/nextcloud_node_settings.mako:15
+#: nextcloud/templates/nextcloud_user_settings.mako:18
+#: owncloud/templates/owncloud_node_settings.mako:15
+#: owncloud/templates/owncloud_user_settings.mako:18
+#: s3/templates/s3_node_settings.mako:14 s3/templates/s3_user_settings.mako:18
+#: s3compat/templates/s3compat_node_settings.mako:14
+#: s3compat/templates/s3compat_user_settings.mako:18
+#: swift/templates/swift_node_settings.mako:14
+#: swift/templates/swift_user_settings.mako:18
+#: weko/templates/weko_node_settings.mako:15
+#: weko/templates/weko_user_settings.mako:18
+#: zotero/templates/zotero_node_settings.mako:10
+msgid "Disconnect Account"
+msgstr "アカウントを切断"
+
+#: azureblobstorage/templates/azureblobstorage_node_settings.mako:21
+#: bitbucket/templates/bitbucket_node_settings.mako:21
+#: dataverse/templates/dataverse_node_settings.mako:22
+#: github/templates/github_node_settings.mako:21
+#: gitlab/templates/gitlab_node_settings.mako:24
+#: nextcloud/templates/nextcloud_node_settings.mako:22
+#: owncloud/templates/owncloud_node_settings.mako:22
+#: s3/templates/s3_node_settings.mako:21
+#: s3compat/templates/s3compat_node_settings.mako:21
+#: swift/templates/swift_node_settings.mako:21
+#: weko/templates/weko_node_settings.mako:22
+#: zotero/templates/zotero_node_settings.mako:17
+msgid "Import Account from Profile"
+msgstr "プロフィールからアカウントをインポート"
+
+#: azureblobstorage/templates/azureblobstorage_node_settings.mako:28
+#: s3/templates/s3_node_settings.mako:28
+#: s3compat/templates/s3compat_node_settings.mako:28
+#: swift/templates/swift_node_settings.mako:28
+#: zotero/templates/zotero_node_settings.mako:24
+msgid "Loading ..."
+msgstr "ロード中..."
+
+#: azureblobstorage/templates/azureblobstorage_node_settings.mako:35
+#: dataverse/templates/dataverse_node_settings.mako:29
+#: nextcloud/templates/nextcloud_node_settings.mako:29
+#: owncloud/templates/owncloud_node_settings.mako:29
+#: s3/templates/s3_node_settings.mako:35
+#: s3compat/templates/s3compat_node_settings.mako:35
+#: swift/templates/swift_node_settings.mako:35
+#: weko/templates/weko_node_settings.mako:29
+msgid "Connect  Account"
+msgstr "アカウントを接続"
+
+#: azureblobstorage/templates/azureblobstorage_node_settings.mako:50
+#: bitbucket/templates/bitbucket_node_settings.mako:65
+#: github/templates/github_node_settings.mako:62
+#: gitlab/templates/gitlab_node_settings.mako:71
+#: owncloud/templates/owncloud_node_settings.mako:47
+#: s3/templates/s3_node_settings.mako:50
+#: s3compat/templates/s3compat_node_settings.mako:50
+#: swift/templates/swift_node_settings.mako:50
+#: weko/templates/weko_node_settings.mako:49
+#: zotero/templates/zotero_node_settings.mako:46
+#: zotero/templates/zotero_node_settings.mako:101
+msgid "None"
+msgstr "無し"
+
+#: azureblobstorage/templates/azureblobstorage_node_settings.mako:58
+#: swift/templates/swift_node_settings.mako:58
+msgid "Create container"
+msgstr "コンテナを作成"
+
+#: azureblobstorage/templates/azureblobstorage_node_settings.mako:63
+#: swift/templates/swift_node_settings.mako:63
+msgid "Loading containers..."
+msgstr "コンテナをロード中..."
+
+#: azureblobstorage/templates/azureblobstorage_node_settings.mako:72
+#: owncloud/templates/owncloud_node_settings.mako:67
+#: s3/templates/s3_node_settings.mako:72
+#: s3compat/templates/s3compat_node_settings.mako:72
+#: swift/templates/swift_node_settings.mako:72
+#: zotero/templates/zotero_node_settings.mako:122
+#, python-format
+msgid "Connect <b>&ldquo;<span %(data_bind)s></span>&rdquo;</b>?"
+msgstr "<b>&ldquo;<span %(data_bind)s></span>&rdquo;</b>へ接続しますか？"
+
+#: azureblobstorage/templates/azureblobstorage_user_settings.mako:12
+#: dataverse/templates/dataverse_user_settings.mako:12
+#: gitlab/templates/gitlab_user_settings.mako:12
+#: nextcloud/templates/nextcloud_user_settings.mako:12
+#: owncloud/templates/owncloud_user_settings.mako:12
+#: s3/templates/s3_user_settings.mako:12
+#: s3compat/templates/s3compat_user_settings.mako:12
+#: swift/templates/swift_user_settings.mako:12
+#: weko/templates/weko_user_settings.mako:12
+msgid "Connect or Reauthorize Account"
+msgstr "アカウントの接続または再認証"
+
+#: azureblobstorage/templates/azureblobstorage_user_settings.mako:24
+msgid "Authorized by <em><span data-bind=\"text: name\"></span></em>"
+msgstr "承認者：<em><span data-bind=\"text: name\"></span></em>"
+
+#: azureblobstorage/templates/azureblobstorage_user_settings.mako:32
+#: dataverse/templates/dataverse_user_settings.mako:31
+#: gitlab/templates/gitlab_user_settings.mako:31
+#: nextcloud/templates/nextcloud_user_settings.mako:31
+#: owncloud/templates/owncloud_user_settings.mako:31
+#: s3/templates/s3_user_settings.mako:32
+#: s3compat/templates/s3compat_user_settings.mako:32
+#: swift/templates/swift_user_settings.mako:32
+#: weko/templates/weko_user_settings.mako:31
+msgid "Private project"
+msgstr "非公開プロジェクト"
+
+#: bitbucket/templates/bitbucket_node_settings.mako:25
+#: github/templates/github_node_settings.mako:25
+#: gitlab/templates/gitlab_node_settings.mako:28
+#: zotero/templates/zotero_node_settings.mako:31
+msgid "Connect Account"
+msgstr "アカウントに接続"
+
+#: bitbucket/templates/bitbucket_node_settings.mako:74
+#, python-format
+msgid ""
+"Could not retrieve Bitbucket settings at this time. The Bitbucket addon "
+"credentials                may no longer be valid. Try deauthorizing and "
+"reauthorizing Bitbucket on your                <a "
+"%(href)s%(addons_url)s%(quotation)s>account settings page</a>."
+msgstr ""
+"現在、Bitbucket設定を取得できませんでした。 Bitbucketアドオンの資格情報が無効になる場合があります。 <a "
+"%(href)s%(addons_url)s%(quotation)s>アカウント設定ページ</a>でBitbucketの認証解除と再認証を試してください。"
+
+#: bitbucket/templates/bitbucket_node_settings.mako:78
+#, python-format
+msgid ""
+"Could not retrieve Bitbucket settings at this time. The Bitbucket addon "
+"credentials                may no longer be valid. Contact "
+"%(auth_osf_name)s to verify."
+msgstr ""
+"現在、Bitbucket設定を取得できませんでした。 Bitbucketアドオンの資格情報が無効になる場合があります。 "
+"確認するには%(auth_osf_name)sにお問い合わせください。"
+
+#: dataverse/templates/dataverse_credentials_modal.mako:6
+msgid "Connect a Dataverse Account"
+msgstr "Dataverseアカウントに接続する"
+
+#: dataverse/templates/dataverse_credentials_modal.mako:18
+msgid "Dataverse Repository"
+msgstr "Dataverseレポジトリ"
+
+#: dataverse/templates/dataverse_credentials_modal.mako:22
+msgid "Select a Dataverse repository"
+msgstr "Dataverseレポジトリを選択する"
+
+#: dataverse/templates/dataverse_credentials_modal.mako:35
+msgid "Only Dataverse repositories v4.0 or higher are supported."
+msgstr "Dataverseリポジトリv4.0以降のみがサポートされています。"
+
+#: dataverse/templates/dataverse_credentials_modal.mako:46
+msgid "API Token"
+msgstr "APIトークン"
+
+#: dataverse/templates/dataverse_credentials_modal.mako:50
+#, python-format
+msgid "(Get from Dataverse <i %(classTag)s></i>)"
+msgstr "（Dataverse<i %(classTag)s></i>から取得する）"
+
+#: dataverse/templates/dataverse_node_settings.mako:43
+msgid "Dataverse Repository:"
+msgstr "Dataverseレポジトリ："
+
+#: dataverse/templates/dataverse_node_settings.mako:49
+msgid "Current Dataset:"
+msgstr "現在のデータセット："
+
+#: dataverse/templates/dataverse_node_settings.mako:65
+msgid "The current dataset was not found on Dataverse."
+msgstr "現在のデータセットがDataverseで見つかりませんでした。"
+
+#: dataverse/templates/dataverse_node_settings.mako:74
+msgid "Dataverse:"
+msgstr "Dataverse："
+
+#: dataverse/templates/dataverse_node_settings.mako:86
+msgid "Dataset:"
+msgstr "データセット："
+
+#: dataverse/templates/dataverse_node_settings.mako:97
+msgid "No datasets available."
+msgstr "利用可能なデータセットがありません。"
+
+#: dataverse/templates/dataverse_node_settings.mako:103
+msgid "Retrieving datasets..."
+msgstr "データセットを取得しています..."
+
+#: dataverse/templates/dataverse_node_settings.mako:110
+msgid ""
+"There are no dataverses, datasets, or files associated with the connected"
+" account."
+msgstr "接続されたアカウントに関連付けられたdataverse、データセット、またはファイルはありません。"
+
+#: dataverse/templates/dataverse_user_settings.mako:23
+#: gitlab/templates/gitlab_user_settings.mako:23
+#, python-format
+msgid "Authorized on <a %(data_bind1)s><em %(data_bind2)s></em></a>"
+msgstr "<a %(data_bind1)s><em %(data_bind2)s></em></a>で承認済み"
+
+#: forward/templates/forward_node_settings.mako:14
+msgid "Send people who visit your GakuNin RDM project page to this link instead"
+msgstr "代わりに、GakuNin RDMプロジェクトページにアクセスするユーザーをこのリンクに送信します"
+
+#: forward/templates/forward_node_settings.mako:19
+msgid "Label"
+msgstr "ラベル"
+
+#: forward/templates/forward_node_settings.mako:24
+msgid "Optional"
+msgstr "任意"
+
+#: github/templates/github_node_settings.mako:38
+#: gitlab/templates/gitlab_node_settings.mako:42
+msgid "Current Repo: "
+msgstr "現在のレポジトリ："
+
+#: github/templates/github_node_settings.mako:56
+msgid "Create Repo"
+msgstr "レポジトリを作成"
+
+#: github/templates/github_node_settings.mako:71
+#, python-format
+msgid ""
+"Could not retrieve GitHub settings at this time. The GitHub addon "
+"credentials                may no longer be valid. Try deauthorizing and "
+"reauthorizing GitHub on your                <a "
+"%(href)s%(addons_url)s%(quotation)s%(quotation)s>account settings "
+"page</a>."
+msgstr ""
+"現時点ではGitHub設定を取得できませんでした。 GitHubアドオンの資格情報が無効になる場合があります。<a "
+"%(href)s%(addons_url)s%(quotation)s%(quotation)s>アカウント設定ページ</a>でGitHubの認証解除と再認証を試みてください。"
+
+#: github/templates/github_node_settings.mako:75
+#, python-format
+msgid ""
+"Could not retrieve GitHub settings at this time. The GitHub addon "
+"credentials                may no longer be valid. Contact "
+"%(auth_osf_name)s to verify."
+msgstr ""
+"現時点ではGitHub設定を取得できませんでした。 GitHubアドオンの資格情報が無効になる場合があります。 "
+"確認するには%(auth_osf_name)sにお問い合わせください。"
+
+#: gitlab/templates/gitlab_credentials_modal.mako:4
+msgid "Connect a GitLab Account"
+msgstr "GitLabアカウントに接続する"
+
+#: gitlab/templates/gitlab_credentials_modal.mako:11
+msgid "GitLab Repository"
+msgstr "GitLabレポジトリ"
+
+#: gitlab/templates/gitlab_credentials_modal.mako:14
+msgid "Select a GitLab repository"
+msgstr "GitLabレポジトリを選択してください"
+
+#: gitlab/templates/gitlab_credentials_modal.mako:27
+msgid "Only GitLab repositories v4.0 or higher are supported."
+msgstr "GitLabリポジトリv4.0以降のみがサポートされています。"
+
+#: gitlab/templates/gitlab_credentials_modal.mako:37
+msgid "Personal Access Token"
+msgstr "パーソナルアクセストークン"
+
+#: gitlab/templates/gitlab_credentials_modal.mako:41
+#, python-format
+msgid "(Get from GitLab <i %(classTag)s></i>)"
+msgstr "(GitLabから取得する<i %(classTag)s></i>)"
+
+#: gitlab/templates/gitlab_node_settings.mako:9
+msgid "GitLab"
+msgstr "GitLab"
+
+#: gitlab/templates/gitlab_node_settings.mako:12
+msgid "authorized by"
+msgstr "承認者："
+
+#: gitlab/templates/gitlab_node_settings.mako:80
+#, python-format
+msgid ""
+"Could not retrieve GitLab settings at this time. The GitLab addon "
+"credentials                    may no longer be valid. Try deauthorizing "
+"and reauthorizing GitLab on your                    <a "
+"href=\"%(addons_url)s\">account settings page</a>."
+msgstr ""
+"現時点ではGitLab設定を取得できませんでした。 GitLabアドオンの資格情報が無効になる場合があります。<a "
+"href=\"%(addons_url)s\">アカウント設定ページ</a>でGitLabの認証解除と再認証を試してください。"
+
+#: gitlab/templates/gitlab_node_settings.mako:84
+#, python-format
+msgid ""
+"Could not retrieve GitLab settings at this time. The GitLab addon "
+"credentials                    may no longer be valid. Contact "
+"%(auth_osf_name)s to verify."
+msgstr ""
+"現時点ではGitLab設定を取得できませんでした。 GitLabアドオンの資格情報が無効になる場合があります。 "
+"確認するには%(auth_osf_name)sにお問い合わせください。"
+
+#: jupyterhub/templates/jupyterhub_node_settings.mako:13
+#: wiki/templates/edit.mako:34
+msgid "New"
+msgstr "新しい"
+
+#: jupyterhub/templates/jupyterhub_node_settings.mako:31
+#: jupyterhub/templates/jupyterhub_node_settings.mako:80
+msgid "Service Name"
+msgstr "サービスネーム"
+
+#: jupyterhub/templates/jupyterhub_node_settings.mako:32
+msgid "Base URL"
+msgstr "ベースURL"
+
+#: jupyterhub/templates/jupyterhub_node_settings.mako:56
+msgid "No JupyterHubs"
+msgstr "JupyterHubsはありません。"
+
+#: jupyterhub/templates/jupyterhub_node_settings.mako:69
+msgid "Link JupyterHub"
+msgstr "JupyterHubをリンク"
+
+#: jupyterhub/templates/jupyterhub_node_settings.mako:84
+msgid "Service Base URL"
+msgstr "サービスベースURL"
+
+#: jupyterhub/templates/jupyterhub_node_settings.mako:102
+msgid "OK"
+msgstr "OK"
+
+#: nextcloud/templates/nextcloud_credentials_modal.mako:6
+msgid "Connect an Nextcloud Account"
+msgstr "Nextcloudアカウントに接続する"
+
+#: nextcloud/templates/nextcloud_credentials_modal.mako:17
+msgid "Nextcloud Instance"
+msgstr "Nextcloudインスタンス"
+
+#: nextcloud/templates/nextcloud_credentials_modal.mako:21
+msgid "Select an Nextcloud Instance"
+msgstr "\"Nextcloudインスタンスを選択す"
+
+#: nextcloud/templates/nextcloud_credentials_modal.mako:30
+#: owncloud/templates/owncloud_credentials_modal.mako:30
+msgid "Host URL"
+msgstr "ホストURL"
+
+#: nextcloud/templates/nextcloud_credentials_modal.mako:36
+#, python-format
+msgid ""
+"Only Nextcloud instances supporting <a %(href_target1)s>WebDAV</a> and <a"
+" %(href_target2)s>                                        OCS v1.7</a> "
+"are supported."
+msgstr ""
+"<a %(href_target1)s>WebDAV</a>および<a %(href_target2)s>OCS "
+"v1.7</a>をサポートするNextcloudインスタンスのみがサポートされます。"
+
+#: nextcloud/templates/nextcloud_credentials_modal.mako:46
+#: owncloud/templates/owncloud_credentials_modal.mako:46
+#: swift/templates/swift_credentials_modal.mako:33
+msgid "Username"
+msgstr "ユーザ名"
+
+#: nextcloud/templates/nextcloud_credentials_modal.mako:48
+#: owncloud/templates/owncloud_credentials_modal.mako:48
+msgid "username"
+msgstr "ユーザー名"
+
+#: nextcloud/templates/nextcloud_credentials_modal.mako:50
+#: owncloud/templates/owncloud_credentials_modal.mako:50
+#: swift/templates/swift_credentials_modal.mako:41
+msgid "Password"
+msgstr "パスワード"
+
+#: nextcloud/templates/nextcloud_credentials_modal.mako:55
+#, python-format
+msgid ""
+"These credentials will be encrypted. However, we <strong>strongly "
+"encourage</strong> using a <a %(href_target)s> Device (or App) "
+"Password</a>."
+msgstr ""
+"これらの資格情報は暗号化されます。 ただし、<a "
+"%(href_target)s>デバイス（またはアプリ）パスワード</a>の使用を<strong>強くお勧め</strong>します。"
+
+#: nextcloud/templates/nextcloud_node_settings.mako:53
+#: owncloud/templates/owncloud_node_settings.mako:53
+msgid "Change"
+msgstr "変更"
+
+#: nextcloud/templates/nextcloud_node_settings.mako:58
+#: owncloud/templates/owncloud_node_settings.mako:58
+#: zotero/templates/zotero_node_settings.mako:113
+msgid "Loading folders..."
+msgstr "フォルダをロード中..."
+
+#: nextcloud/templates/nextcloud_node_settings.mako:67
+#, python-format
+msgid "Connect <b>&ldquo;<span %(spanTag)s></span>&rdquo;</b>?"
+msgstr "<b>&ldquo;<span %(spanTag)s></span>&rdquo;</b>へ接続しますか？"
+
+#: nextcloud/templates/nextcloud_user_settings.mako:23
+#, python-format
+msgid ""
+"Authorized by <em><span %(data_bind1)s></span></em> on <a "
+"%(data_bind2)s><em %(data_bind3)s></em></a>"
+msgstr ""
+"<a %(data_bind2)s><em %(data_bind3)s></em></a>で<em><span "
+"%(data_bind1)s></span></em>によって承認されました"
+
+#: owncloud/templates/owncloud_credentials_modal.mako:6
+msgid "Connect an ownCloud Account"
+msgstr "ownCloudアカウントに接続"
+
+#: owncloud/templates/owncloud_credentials_modal.mako:17
+msgid "ownCloud Instance"
+msgstr "ownCloudインスタンス"
+
+#: owncloud/templates/owncloud_credentials_modal.mako:21
+msgid "Select an ownCloud Instance"
+msgstr "ownCloudインスタンスを選択"
+
+#: owncloud/templates/owncloud_credentials_modal.mako:36
+#, python-format
+msgid ""
+"Only ownCloud instances supporting <a %(href_target1)s>WebDAV</a> and <a "
+"%(href_target2)s>                                        OCS v1.7</a> are"
+" supported."
+msgstr ""
+"Only ownCloud instances supporting <a %(href_target1)s>WebDAV</a> and <a "
+"%(href_target2)s> OCS v1.7</a> are  supported."
+
+#: owncloud/templates/owncloud_credentials_modal.mako:55
+#, python-format
+msgid ""
+" These credentials will be encrypted. However, we <strong>strongly "
+"encourage</strong> using a <a %(href_target)s> Device (or App) "
+"Password</a>."
+msgstr ""
+"これらの資格情報は暗号化されます。 ただし、<a "
+"%(href_target)s>デバイス（またはアプリ）パスワード</a>の使用を<strong>強くお勧め</strong>します。"
+
+#: owncloud/templates/owncloud_node_settings.mako:42
+msgid "Current Folder:"
+msgstr "現在のフォルダ"
+
+#: owncloud/templates/owncloud_user_settings.mako:23
+#, python-format
+msgid ""
+"Authorized by <em><span %(data_bind1)s\"></span></em> on <a "
+"%(data_bind2)s><em data-bind=\"text: profileUrl\"></em></a>"
+msgstr ""
+"<a %(data_bind2)s><em data-bind=\"text: profileUrl\"></em></a>で<em><span "
+"%(data_bind1)s\"></span></em>によって承認されました"
+
+#: s3/templates/s3_credentials_modal.mako:6
+msgid "Connect an Amazon S3 Account"
+msgstr "Amazon S3アカウントに接続"
+
+#: s3/templates/s3_credentials_modal.mako:17
+#: s3compat/templates/s3compat_credentials_modal.mako:21
+msgid "Access Key"
+msgstr "アクセスキー"
+
+#: s3/templates/s3_credentials_modal.mako:21
+#: s3compat/templates/s3compat_credentials_modal.mako:25
+msgid "Secret Key"
+msgstr "シークレットキー"
+
+#: s3/templates/s3_node_settings.mako:58
+#: s3compat/templates/s3compat_node_settings.mako:58
+msgid "Create bucket"
+msgstr "バケットを作成"
+
+#: s3/templates/s3_node_settings.mako:63
+msgid "Loading buckets..."
+msgstr "バケットをロード中..."
+
+#: s3/templates/s3_user_settings.mako:24
+#: s3compat/templates/s3compat_user_settings.mako:24
+#: swift/templates/swift_user_settings.mako:24
+#: weko/templates/weko_user_settings.mako:23
+msgid "Authorized by "
+msgstr "承認者："
+
+#: s3compat/templates/s3compat_credentials_modal.mako:6
+msgid "Connect an S3 Compatible Storage Account"
+msgstr "S3互換ストレージアカウントに接続"
+
+#: s3compat/templates/s3compat_credentials_modal.mako:17
+msgid "S3 Compatible Service"
+msgstr "S3互換サービス"
+
+#: s3compat/templates/s3compat_node_settings.mako:45
+msgid "Current Bucket:"
+msgstr "現在のバケット"
+
+#: swift/templates/swift_credentials_modal.mako:6
+msgid "Connect an OpenStack Swift Account"
+msgstr "OpenStack Swiftアカウントに接続"
+
+#: swift/templates/swift_credentials_modal.mako:17
+msgid "Authentication(Keystone) Version"
+msgstr "認証（キーストーン）バージョン"
+
+#: swift/templates/swift_credentials_modal.mako:21
+msgid "Authentication URL"
+msgstr "認証 URL"
+
+#: swift/templates/swift_credentials_modal.mako:25
+msgid "Tenant name"
+msgstr "テナント名"
+
+#: swift/templates/swift_credentials_modal.mako:29
+msgid "Project Domain name"
+msgstr "プロジェクトドメイン名"
+
+#: swift/templates/swift_credentials_modal.mako:37
+msgid "User Domain name"
+msgstr "ユーザドメイン名"
+
+#: swift/templates/swift_node_settings.mako:45
+msgid "Current Container:"
+msgstr "現在のコンテナ："
+
+#: twofactor/templates/twofactor_user_settings.mako:3
+msgid "Two-factor Authentication"
+msgstr "二要素認証"
+
+#: twofactor/templates/twofactor_user_settings.mako:7
+msgid "Disable Two-Factor Authentication"
+msgstr "二要素認証を無効にする"
+
+#: twofactor/templates/twofactor_user_settings.mako:12
+msgid "Enable Two-Factor Authentication"
+msgstr "二要素認証を有効にする"
+
+#: twofactor/templates/twofactor_user_settings.mako:19
+msgid ""
+"By using two-factor authentication, you'll protect your GakuNin RDM "
+"account with both your password and your mobile phone."
+msgstr "二要素認証を使用すると、パスワードと携帯電話の両方でGakuNin RDMアカウントを保護できます。"
+
+#: twofactor/templates/twofactor_user_settings.mako:22
+msgid "Important: "
+msgstr " 重要："
+
+#: twofactor/templates/twofactor_user_settings.mako:22
+msgid ""
+" If you lose access to your mobile device, you will not be able to log in"
+" to your GakuNin RDM account."
+msgstr "モバイルデバイスにアクセスできなくなると、GakuNin RDMアカウントにログインできなくなります。"
+
+#: twofactor/templates/twofactor_user_settings.mako:24
+#, python-format
+msgid ""
+"To use, you must install an appropriate application on your mobile "
+"device. Google Authenticator is a popular choice and is available for "
+"both        <a %(href1)s>Android</a> and <a %(href2)s>iOS</a>."
+msgstr ""
+"使用するには、モバイルデバイスに適切なアプリケーションをインストールする必要があります。 Google認証システムは人気のある選択肢であり、<a "
+"%(href1)s>Android</a>と<a %(href2)s>iOS</a>の両方で利用できます。"
+
+#: twofactor/templates/twofactor_user_settings.mako:26
+msgid ""
+"Once verified, your device will display a six-digit code that must be "
+"entered during the login process. This code changes every few seconds, "
+"which means that unauthorized users will not be able to log in to you "
+"account, <em>even if they know your password</em>."
+msgstr ""
+"検証が完了すると、ログインプロセス中に入力する必要がある6桁のコードがデバイスに表示されます。 "
+"このコードは数秒ごとに変更されます。つまり、許可されていないユーザーは、<em>パスワードを知っていても</em>アカウントにログインできません。"
+
+#: twofactor/templates/twofactor_user_settings.mako:28
+#, python-format
+msgid ""
+"Scan the image below, or enter the secret key        <code "
+"%(data_bind)s></code> into your authentication device."
+msgstr "以下の画像をスキャンするか、秘密鍵<code %(data_bind)s></code>を認証デバイスに入力します。"
+
+#: twofactor/templates/twofactor_user_settings.mako:34
+msgid "Enter your verification code:"
+msgstr "確認コードを入力してください："
+
+#: weko/templates/weko_credentials_modal.mako:6
+msgid "Connect a WEKO Account"
+msgstr "WEKOアカウントに接続"
+
+#: weko/templates/weko_credentials_modal.mako:18
+msgid "WEKO Repository"
+msgstr "WEKOレポジトリ"
+
+#: weko/templates/weko_credentials_modal.mako:22
+msgid "Select a WEKO repository"
+msgstr "WEKOレポジトリを選択"
+
+#: weko/templates/weko_credentials_modal.mako:33
+msgid "WEKO SWORD URL"
+msgstr "WEKO SWORDのURL"
+
+#: weko/templates/weko_credentials_modal.mako:37
+msgid "WEKO Username"
+msgstr "WEKO ユーザ名"
+
+#: weko/templates/weko_credentials_modal.mako:41
+msgid "WEKO Password"
+msgstr "WEKO パスワード"
+
+#: weko/templates/weko_credentials_modal.mako:60
+msgid "Connect"
+msgstr "接続"
+
+#: weko/templates/weko_node_settings.mako:43
+msgid "Current Index:"
+msgstr "現在のインデックス："
+
+#: weko/templates/weko_node_settings.mako:63
+msgid "Index:"
+msgstr "インデックス："
+
+#: weko/templates/weko_node_settings.mako:75
+msgid "There are no indices associated with the connected account."
+msgstr "接続されたアカウントに関連付けられたインデックスはありません。"
+
+#: wiki/templates/add_wiki_page.mako:8
+msgid "Add new wiki page"
+msgstr "新しいWikiページを追加"
+
+#: wiki/templates/add_wiki_page.mako:12
+msgid "New Wiki Name"
+msgstr "新しいWiki名"
+
+#: wiki/templates/add_wiki_page.mako:18
+msgid "Add"
+msgstr "追加"
+
+#: wiki/templates/add_wiki_page.mako:41
+msgid "The new wiki page name cannot be empty"
+msgstr "新しいWikiページ名は空にできません。"
+
+#: wiki/templates/add_wiki_page.mako:46
+msgid "The new wiki page name cannot be more than 100 characters."
+msgstr "新しいWikiページ名は100文字を超えることはできません。"
+
+#: wiki/templates/add_wiki_page.mako:52
+msgid "The new wiki page name cannot contain forward slashes."
+msgstr "新しいWikiページ名にスラッシュを含めることはできません。"
+
+#: wiki/templates/add_wiki_page.mako:70
+msgid "A wiki page with that name already exists."
+msgstr "その名前のWikiページは既に存在します。"
+
+#: wiki/templates/add_wiki_page.mako:73
+msgid "You do not have permission to perform this action."
+msgstr "このアクションを実行する権限がありません。"
+
+#: wiki/templates/add_wiki_page.mako:74
+msgid "Unauthorized user can view wiki add button"
+msgstr "許可されていないユーザーはWiki追加ボタンを表示できます"
+
+#: wiki/templates/add_wiki_page.mako:83
+msgid "Could not validate wiki page. Please try again."
+msgstr "Wikiページを検証できませんでした。 もう一度試してください。"
+
+#: wiki/templates/add_wiki_page.mako:84
+msgid "Error occurred while validating page"
+msgstr "ページの検証中にエラーが発生しました"
+
+#: wiki/templates/delete_wiki_page.mako:7
+msgid "Delete wiki page"
+msgstr "Wikiページを削除"
+
+#: wiki/templates/delete_wiki_page.mako:10
+msgid "Are you sure you want to delete this wiki page?"
+msgstr "このWikiページを削除してもよろしいですか？"
+
+#: wiki/templates/delete_wiki_page.mako:14 wiki/templates/edit.mako:38
+msgid "Delete"
+msgstr "削除"
+
+#: wiki/templates/edit.mako:2
+msgid "Wiki"
+msgstr "Wik"
+
+#: wiki/templates/edit.mako:42
+msgid "Menu"
+msgstr "メニュー"
+
+#: wiki/templates/edit.mako:53
+msgid "Loading wiki pages..."
+msgstr "Wikiページをロード中..."
+
+#: wiki/templates/edit.mako:82
+msgid "View"
+msgstr "ビュー"
+
+#: wiki/templates/edit.mako:92
+msgid "Preview"
+msgstr "プレビュー"
+
+#: wiki/templates/edit.mako:117
+msgid "Add important information, links, or images here to describe your project."
+msgstr "重要な情報、リンク、または画像をここに追加して、プロジェクトを説明します。"
+
+#: wiki/templates/edit.mako:174
+msgid "Loading. . ."
+msgstr "ロード中..."
+
+#: wiki/templates/edit.mako:186
+msgid "Revert"
+msgstr " もとに戻す"
+
+#: wiki/templates/edit.mako:212
+msgid "Compare"
+msgstr "比較する"
+
+#: wiki/templates/edit.mako:220
+msgid "Current"
+msgstr "現在"
+
+#: wiki/templates/edit.mako:257
+msgid "Page permissions have changed"
+msgstr "ページの権限が変更されました"
+
+#: wiki/templates/edit.mako:260
+msgid "Your browser should refresh shortly"
+msgstr "ブラウザは間もなく更新されます"
+
+#: wiki/templates/edit.mako:273
+msgid "Renaming wiki..."
+msgstr "ウィキの名前を変更しています..."
+
+#: wiki/templates/edit.mako:283
+msgid "Wiki page deleted"
+msgstr "Wikiページを削除しました"
+
+#: wiki/templates/edit.mako:286
+msgid "Press Confirm to return to the project wiki home page."
+msgstr "[確認]を押して、プロジェクトWikiのホームページに戻ります。"
+
+#: wiki/templates/edit.mako:289
+msgid "Confirm"
+msgstr "確認"
+
+#: wiki/templates/edit.mako:300
+msgid "Connected to the collaborative wiki"
+msgstr "共同ウィキに接続しました"
+
+#: wiki/templates/edit.mako:304
+msgid ""
+"This page is currently connected to the collaborative wiki. All edits "
+"made will be visible to            contributors with write permission in "
+"real time. Changes will be stored            but not published until you "
+"click the \"Save\" button."
+msgstr ""
+"このページは現在、共同ウィキに接続されています。 行われたすべての編集は、書き込み許可を持つ投稿者にリアルタイムで表示されます。 "
+"変更は保存されますが、[保存]ボタンをクリックするまで公開されません。"
+
+#: wiki/templates/edit.mako:310 wiki/templates/wiki-bar-modal-help.mako:14
+msgid "Close"
+msgstr "閉じる"
+
+#: wiki/templates/edit.mako:321
+msgid "Connecting to the collaborative wiki"
+msgstr "共同ウィキへの接続"
+
+#: wiki/templates/edit.mako:325
+msgid ""
+"This page is currently attempting to connect to the collaborative wiki. "
+"You may continue to make edits."
+msgstr "このページは現在、共同Wikiに接続しようとしています。引き続き編集を行うことができます。"
+
+#: wiki/templates/edit.mako:326 wiki/templates/edit.mako:343
+#: wiki/templates/edit.mako:360
+msgid "Changes will not be saved until you press the \"Save\" button."
+msgstr "[保存]ボタンを押すまで、変更は保存されません。"
+
+#: wiki/templates/edit.mako:338
+msgid "Collaborative wiki is unavailable"
+msgstr "共同WIkiは利用できません"
+
+#: wiki/templates/edit.mako:342
+msgid ""
+"The collaborative wiki is currently unavailable. You may continue to make"
+" edits."
+msgstr "共同Wikiは現在利用できません。 引き続き編集を行うことができます。"
+
+#: wiki/templates/edit.mako:355
+msgid "Browser unsupported"
+msgstr "サポートされていないブラウザ"
+
+#: wiki/templates/edit.mako:359
+msgid ""
+"Your browser does not support collaborative editing. You may continue to "
+"make edits."
+msgstr "ご使用のブラウザは共同編集をサポートしていません。 引き続き編集を行うことができます。"
+
+#: wiki/templates/status.mako:7
+msgid "Note: Home page cannot be renamed."
+msgstr "注：ホームページの名前は変更できません。"
+
+#: wiki/templates/wiki-bar-modal-help.mako:6
+msgid "Wiki syntax help"
+msgstr "Wiki構文のヘルプ"
+
+#: wiki/templates/wiki-bar-modal-help.mako:10
+#, python-format
+msgid ""
+"The wiki uses the <a %(href1)s>Markdown</a> syntax. For more information "
+"and examples, go to our <a %(href2)s>Guides.</a>"
+msgstr "wikiはMarkdown構文を使用します。 詳細と例については、<a %(href2)s>ガイド</a>をご覧ください。"
+
+#: zotero/templates/zotero_node_settings.mako:41
+msgid "Current Library:"
+msgstr "現在のライブラリ："
+
+#: zotero/templates/zotero_node_settings.mako:59
+msgid "Loading libraries..."
+msgstr "ライブラリをロード中..."
+
+#: zotero/templates/zotero_node_settings.mako:66
+msgid "Libraries"
+msgstr "ライブラリ"
+
+#: zotero/templates/zotero_node_settings.mako:69
+msgid "Select"
+msgstr "選択"
+

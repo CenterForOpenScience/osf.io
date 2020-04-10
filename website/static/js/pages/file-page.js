@@ -6,6 +6,10 @@ var Raven = require('raven-js');
 
 require('jquery-tagsinput');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+
 m.mount(document.getElementsByClassName('file-view-panels')[0], FileViewPage(window.contextVars));
 
 var tagUrl = '/api/v1/' + window.contextVars.node.id + '/osfstorage' + window.contextVars.file.path + '/tags/';
@@ -16,13 +20,13 @@ $(function() {
         width: '100%',
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
-        defaultText: 'Add a tag to enhance discoverability',
+        defaultText: _('Add a file tag to enhance discoverability'),
         onAddTag: function (tag) {
             var url = tagUrl;
             var request = $osf.postJSON(url, {'tag': tag });
             request.fail(function (xhr, textStatus, error) {
-                $osf.growl('Error', 'Could not add tag.');
-                Raven.captureMessage('Failed to add tag', {
+                $osf.growl('Error', _('Could not add tag.'));
+                Raven.captureMessage(_('Failed to add tag'), {
                     extra: { tag: tag, url: url, textStatus: textStatus, error: error }
                 });
             });
@@ -36,8 +40,8 @@ $(function() {
             request.fail(function (xhr, textStatus, error) {
                 // Suppress "tag not found" errors, as the end result is what the user wanted (tag is gone)- eg could be because two people were working at same time
                 if (xhr.status !== 409) {
-                    $osf.growl('Error', 'Could not remove tag.');
-                    Raven.captureMessage('Failed to remove tag', {
+                    $osf.growl('Error', _('Could not remove tag.'));
+                    Raven.captureMessage(_('Failed to remove tag'), {
                         extra: {tag: tag, url: tagUrl, textStatus: textStatus, error: error}
                     });
                 }
@@ -82,9 +86,9 @@ $(function() {
             },
             validate: function(value) {
                 if($.trim(value) === ''){
-                    return 'The file title cannot be empty.';
+                    return _('The file title cannot be empty.');
                 } else if(value.length > 100){
-                    return 'The file title cannot be more than 100 characters.';
+                    return _('The file title cannot be more than 100 characters.');
                 }
             },
             params: function(params) {
@@ -95,7 +99,7 @@ $(function() {
                 return JSON.stringify(payload);
             },
             success: function(response) {
-                $osf.growl('Success', 'Your file was successfully renamed. To view the new filename in the file tree below, refresh the page.', 'success');
+                $osf.growl('Success', _('Your file was successfully renamed. To view the new filename in the file tree below, refresh the page.'), 'success');
             },
             error: function (response) {
                 var msg = response.responseJSON.message;

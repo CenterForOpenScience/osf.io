@@ -9,6 +9,10 @@ var Projects = _myProjects.MyProjects;
 var LinkObject = _myProjects.LinkObject;
 var InstitutionNodes = require('js/institutionNodes.js');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 $(document).ready(function() {
     var institutionId = window.contextVars.institution.id;
@@ -25,7 +29,7 @@ $(document).ready(function() {
     m.mount(document.getElementById('fileBrowser'), m.component(Projects, {
         wrapperSelector : '#fileBrowser',
         systemCollections:[
-            new LinkObject('collection', { link : instNodes, query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors'}, nodeType : 'nodes'}, 'All Projects'),
+            new LinkObject('collection', { link : instNodes, query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors'}, nodeType : 'nodes'}, _('All Projects')),
         ],
         viewOnly: true,
         projectOrganizerOptions: {
@@ -38,7 +42,7 @@ $(document).ready(function() {
     setTimeout(function(){
         if($('#inst .spinner-loading-wrapper').length > 0) {
             var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
-            $('#inst').append('<div class="text-danger text-center text-bigger">This is taking longer than normal. <br>  Try reloading the page. If the problem persist, please contact us at ' + OSF_SUPPORT_EMAIL + '.</div>');
+            $('#inst').append('<div class="text-danger text-center text-bigger">' + agh.sprintf(_('This is taking longer than normal. <br>  Try reloading the page. If the problem persist, please contact us at %1$s.') , OSF_SUPPORT_EMAIL) + '</div>');
         }
     }, 10000);
 });

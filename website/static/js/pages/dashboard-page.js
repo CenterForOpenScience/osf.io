@@ -13,6 +13,11 @@ var MyProjects = require('js/myProjects.js').MyProjects;
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 require('loaders.css/loaders.min.css');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
+
 var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
     var clientTimezone = jstz.determine().name();
     var clientLocale = window.navigator.userLanguage || window.navigator.language;
@@ -29,7 +34,7 @@ var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
             }
         );
         request.fail(function(xhr, textStatus, error) {
-            Raven.captureMessage('Could not set user timezone or locale', {
+            Raven.captureMessage(_('Could not set user timezone or locale'), {
                 extra: {
                     url: url,
                     textStatus: textStatus,
@@ -47,7 +52,7 @@ $(document).ready(function() {
     // Appears in 10 second if the spinner is still there.
     setTimeout(function(){
         if($('#dashboard>.ball-scale').length > 0) {
-            $('#dashboard').append('<div class="text-danger text-center text-bigger">This is taking longer than normal. <br>  Try reloading the page. If the problem persist, please contact us at ' + OSF_SUPPORT_EMAIL + '.</div>');
+            $('#dashboard').append('<div class="text-danger text-center text-bigger">' + agh.sprintf(_('This is taking longer than normal. <br>  Try reloading the page. If the problem persist, please contact us at %1$s') , OSF_SUPPORT_EMAIL) + '.</div>');
         }
     }, 10000);
 });

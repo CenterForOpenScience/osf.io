@@ -7,6 +7,10 @@ var ko = require('knockout');
 var Raven = require('raven-js');
 var ChangeMessageMixin = require('js/changeMessage');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 var RequestAccessViewModel = function(currentUserRequestState, nodeId, user) {
     var self = this;
@@ -62,10 +66,10 @@ var RequestAccessViewModel = function(currentUserRequestState, nodeId, user) {
         request.fail(function(xhr, status, error) {
             self.accessRequestPendingOrDenied(false);
             $osf.growl('Error',
-                'Access request failed. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.',
+                agh.sprintf(_('Access request failed. Please contact %1$s if the problem persists.') , $osf.osfSupportLink() ),
                 'danger'
             );
-            Raven.captureMessage('Error requesting project access', {
+            Raven.captureMessage(_('Error requesting project access'), {
                 extra: {
                     url: self.updateUrl,
                     status: status,
@@ -78,7 +82,7 @@ var RequestAccessViewModel = function(currentUserRequestState, nodeId, user) {
 
     self.init = function() {
         self.checkRequestStatus();
-        self.supportMessage = 'If this should not have occurred, please contact ' + $osf.osfSupportLink() + '.';
+        self.supportMessage = agh.sprintf(_('If this should not have occurred, please contact %1$s.') , $osf.osfSupportLink() );
     };
 
     self.init();

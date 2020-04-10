@@ -19,43 +19,218 @@ from tests.base import OsfTestCase
 
 pytestmark = pytest.mark.django_db
 
+class TestIQBRIMSClient(OsfTestCase):
+
+    def test_create_content(self):
+        client = IQBRIMSClient('0001')
+        with mock.patch.object(client, '_make_request',
+                               return_value=MockResponse('{"test": true}',
+                                                         200)) as mkreq:
+            client.create_content('folderid456', 'files.txt', 'text/plain', 'TEST')
+            assert_equal(len(mkreq.mock_calls), 1)
+            name, args, kwargs = mkreq.mock_calls[0]
+            assert_equal(args, ('POST', 'https://www.googleapis.com/upload/drive/v2/files?uploadType=multipart'))
+            assert_equal(kwargs['files']['data'],
+                         ('metadata',
+                          '{"parents": [{"id": "folderid456"}], "title": "files.txt"}',
+                          'application/json; charset=UTF-8'))
+            assert_equal(kwargs['files']['file'],
+                         ('files.txt',
+                          'TEST',
+                          'text/plain'))
+
+    def test_update_content(self):
+        client = IQBRIMSClient('0001')
+        with mock.patch.object(client, '_make_request',
+                               return_value=MockResponse('{"test": true}',
+                                                         200)) as mkreq:
+            client.update_content('fileid456', 'text/plain', 'TEST')
+            assert_equal(len(mkreq.mock_calls), 1)
+            name, args, kwargs = mkreq.mock_calls[0]
+            assert_equal(args, ('POST', 'https://www.googleapis.com/upload/drive/v2/files/fileid456?uploadType=media'))
+            assert_equal(kwargs['data'], 'TEST')
+
+    def test_grant_access_from_anyone_first(self):
+        client = IQBRIMSClient('0001')
+        dummyresp = {'permissions': []}
+        with mock.patch.object(client, '_make_request',
+                               return_value=MockResponse(json.dumps(dummyresp),
+                                                         200)) as mkreq:
+            client.grant_access_from_anyone('fileid123')
+            assert_equal(len(mkreq.mock_calls), 2)
+            name, args, kwargs = mkreq.mock_calls[1]
+            assert_equal(args, ('POST', 'https://www.googleapis.com/drive/v3/files/fileid123/permissions'))
+            assert_equal(kwargs['data'], '{"type": "anyone", "role": "writer", "allowFileDiscovery": false}')
+
+    def test_grant_access_from_anyone_second(self):
+        client = IQBRIMSClient('0001')
+        dummyresp = {'permissions': [{
+          'id': 'permid456',
+          'type': 'anyone',
+          'role': 'reader',
+        }]}
+        with mock.patch.object(client, '_make_request',
+                               return_value=MockResponse(json.dumps(dummyresp),
+                                                         200)) as mkreq:
+            client.grant_access_from_anyone('fileid123')
+            assert_equal(len(mkreq.mock_calls), 2)
+            name, args, kwargs = mkreq.mock_calls[1]
+            assert_equal(args, ('PATCH', 'https://www.googleapis.com/drive/v3/files/fileid123/permissions/permid456'))
+            assert_equal(kwargs['headers'], {'Content-Type': 'application/json'})
+            assert_equal(kwargs['data'], '{"role": "writer"}')
+
+    def test_revoke_access_from_anyone_no_access(self):
+        client = IQBRIMSClient('0001')
+        dummyresp = {'permissions': [{
+          'id': 'permid456',
+          'type': 'anyone',
+          'role': 'writer',
+        }]}
+        with mock.patch.object(client, '_make_request',
+                               return_value=MockResponse(json.dumps(dummyresp),
+                                                         200)) as mkreq:
+            client.revoke_access_from_anyone('fileid123', drop_all=True)
+            assert_equal(len(mkreq.mock_calls), 2)
+            name, args, kwargs = mkreq.mock_calls[1]
+            assert_equal(args, ('DELETE', 'https://www.googleapis.com/drive/v3/files/fileid123/permissions/permid456'))
+
+    def test_revoke_access_from_anyone_read(self):
+        client = IQBRIMSClient('0001')
+        dummyresp = {'permissions': [{
+          'id': 'permid456',
+          'type': 'anyone',
+          'role': 'writer',
+        }]}
+        with mock.patch.object(client, '_make_request',
+                               return_value=MockResponse(json.dumps(dummyresp),
+                                                         200)) as mkreq:
+            client.revoke_access_from_anyone('fileid123', drop_all=False)
+            assert_equal(len(mkreq.mock_calls), 2)
+            name, args, kwargs = mkreq.mock_calls[1]
+            assert_equal(args, ('PATCH', 'https://www.googleapis.com/drive/v3/files/fileid123/permissions/permid456'))
+            assert_equal(kwargs['headers'], {'Content-Type': 'application/json'})
+            assert_equal(kwargs['data'], '{"role": "reader"}')
+
+
 class TestIQBRIMSSpreadsheetClient(OsfTestCase):
 
-    def test_add_files(self):
+    def test_add_files_no_dirs(self):
         client = SpreadsheetClient('0001')
         with mock.patch.object(client, 'ensure_columns',
                                side_effect=lambda sid, cols, row: cols):
             with mock.patch.object(client, '_make_request',
                                    return_value=MockResponse('{"test": true}',
                                                              200)) as mkreq:
-                client.add_files('sheet01', 1,
+                client.add_files('sheet01', 1, 'sheet02', 2,
                                  ['file1.txt', 'file2.txt'])
+                assert_equal(len(mkreq.mock_calls), 3)
                 name, args, kwargs = mkreq.mock_calls[0]
                 assert_equal(json.loads(kwargs['data']), {
-                  'range': 'sheet01!A3:J3',
-                  'values': [[u'\u251c\u2212\u2212', 'file1.txt', '', '', '', '.txt', '', '', ''],
-                             [u'\u2514\u2212\u2212', 'file2.txt', '', '', '', '', '', '', '']],
+                  'range': 'sheet02!A2:C2',
+                  'values': [['FALSE']],
                   'majorDimension': 'ROWS'
                 })
                 name, args, kwargs = mkreq.mock_calls[1]
                 assert_equal(json.loads(kwargs['data']), {
-                  'requests': [{
-                    'setDataValidation': {
+                  'range': 'sheet01!A4:H4',
+                  'values': [[u'\u251c\u2212\u2212', 'file1.txt', '', '', '.txt', '', ''],
+                             [u'\u2514\u2212\u2212', 'file2.txt', '', '', '', '', '']],
+                  'majorDimension': 'ROWS'
+                })
+                name, args, kwargs = mkreq.mock_calls[2]
+                requests = json.loads(kwargs['data'])['requests']
+                assert_equal(len(requests), 4);
+                assert_equal(requests[0], {
+                  'addProtectedRange': {
+                    'protectedRange': {
                       'range': {
-                        'endRowIndex': 2,
-                        'endColumnIndex': 1,
+                        'endRowIndex': 1,
+                        'endColumnIndex': 7,
                         'sheetId': 1,
                         'startColumnIndex': 0,
-                        'startRowIndex': 1
+                        'startRowIndex': 0
                       },
-                      'rule': {'condition': {'type': 'BOOLEAN'}}
+                      'warningOnly': True
                     }
-                  }, {
+                  }
+                })
+                assert_equal(requests[1], {
+                  'addProtectedRange': {
+                    'protectedRange': {
+                      'range': {
+                        'endRowIndex': 1 + 3,
+                        'endColumnIndex': 7,
+                        'sheetId': 1,
+                        'startColumnIndex': 0,
+                        'startRowIndex': 0 + 3
+                      },
+                      'warningOnly': True
+                    }
+                  }
+                })
+                assert_equal(requests[2], {
+                  'addProtectedRange': {
+                    'protectedRange': {
+                      'range': {
+                        'endRowIndex': 3 + 3,
+                        'endColumnIndex': 2,
+                        'sheetId': 1,
+                        'startColumnIndex': 0,
+                        'startRowIndex': 1 + 3
+                      },
+                      'warningOnly': True
+                    }
+                  }
+                })
+                assert_equal(requests[3], {
+                  'addProtectedRange': {
+                    'protectedRange': {
+                      'range': {
+                        'endRowIndex': 3 + 3,
+                        'endColumnIndex': 5,
+                        'sheetId': 1,
+                        'startColumnIndex': 4,
+                        'startRowIndex': 1 + 3
+                      },
+                      'warningOnly': True
+                    }
+                  }
+                })
+
+    def test_add_files_with_dir(self):
+        client = SpreadsheetClient('0001')
+        with mock.patch.object(client, 'ensure_columns',
+                               side_effect=lambda sid, cols, row: cols):
+            with mock.patch.object(client, '_make_request',
+                                   return_value=MockResponse('{"test": true}',
+                                                             200)) as mkreq:
+                client.add_files('sheet01', 1, 'sheet02', 2,
+                                 ['file1.txt', 'file2.txt', 'test/file3.txt'])
+                assert_equal(len(mkreq.mock_calls), 3)
+                name, args, kwargs = mkreq.mock_calls[0]
+                assert_equal(json.loads(kwargs['data']), {
+                  'range': 'sheet02!A2:C2',
+                  'values': [['FALSE']],
+                  'majorDimension': 'ROWS'
+                })
+                name, args, kwargs = mkreq.mock_calls[1]
+                assert_equal(json.loads(kwargs['data']), {
+                  'range': 'sheet01!A4:I4',
+                  'values': [[u'\u251c\u2212\u2212', 'test', '', '', '', '.txt', '', ''],
+                             [u'\u2502', u'\u2514\u2212\u2212', 'file3.txt', '', '', '', '', ''],
+                             [u'\u251c\u2212\u2212', 'file1.txt', '', '', '', '', '', ''],
+                             [u'\u2514\u2212\u2212', 'file2.txt', '', '', '', '', '', '']],
+                  'majorDimension': 'ROWS'
+                })
+                name, args, kwargs = mkreq.mock_calls[2]
+                requests = json.loads(kwargs['data'])['requests']
+                assert_equal(len(requests), 4);
+                assert_equal(requests[0], {
                     'addProtectedRange': {
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 1,
-                          'endColumnIndex': 1,
+                          'endColumnIndex': 8,
                           'sheetId': 1,
                           'startColumnIndex': 0,
                           'startRowIndex': 0
@@ -63,160 +238,85 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                         'warningOnly': True
                       }
                     }
-                  }, {
+                })
+                assert_equal(requests[1], {
                     'addProtectedRange': {
                       'protectedRange': {
                         'range': {
-                          'endRowIndex': 3,
-                          'endColumnIndex': 9,
+                          'endRowIndex': 1 + 3,
+                          'endColumnIndex': 8,
                           'sheetId': 1,
                           'startColumnIndex': 0,
-                          'startRowIndex': 2
+                          'startRowIndex': 0 + 3
                         },
                         'warningOnly': True
                       }
                     }
-                  }, {
+                })
+                assert_equal(requests[2], {
                     'addProtectedRange': {
                       'protectedRange': {
                         'range': {
-                          'endRowIndex': 5,
-                          'endColumnIndex': 2,
+                          'endRowIndex': 5 + 3,
+                          'endColumnIndex': 3,
                           'sheetId': 1,
                           'startColumnIndex': 0,
-                          'startRowIndex': 3
+                          'startRowIndex': 1 + 3
                         },
                         'warningOnly': True
                       }
                     }
-                  }, {
+                })
+                assert_equal(requests[3], {
                     'addProtectedRange': {
                       'protectedRange': {
                         'range': {
-                          'endRowIndex': 5,
+                          'endRowIndex': 5 + 3,
                           'endColumnIndex': 6,
                           'sheetId': 1,
                           'startColumnIndex': 5,
-                          'startRowIndex': 3
+                          'startRowIndex': 1 + 3
                         },
                         'warningOnly': True
                       }
                     }
-                  }]})
-            with mock.patch.object(client, '_make_request',
-                                   return_value=MockResponse('{"test": true}',
-                                                             200)) as mkreq:
-                client.add_files('sheet01', 1,
-                                 ['file1.txt', 'file2.txt', 'test/file3.txt'])
-                name, args, kwargs = mkreq.mock_calls[0]
-                assert_equal(json.loads(kwargs['data']), {
-                  'range': 'sheet01!A3:K3',
-                  'values': [[u'\u251c\u2212\u2212', 'test', '', '', '', '', '.txt', '', '', ''],
-                             [u'\u2502', u'\u2514\u2212\u2212', 'file3.txt', '', '', '', '', '', '', ''],
-                             [u'\u251c\u2212\u2212', 'file1.txt', '', '', '', '', '', '', '', ''],
-                             [u'\u2514\u2212\u2212', 'file2.txt', '', '', '', '', '', '', '', '']],
-                  'majorDimension': 'ROWS'
                 })
-                name, args, kwargs = mkreq.mock_calls[1]
-                assert_equal(json.loads(kwargs['data']), {
-                  'requests': [{
-                    'setDataValidation': {
-                      'range': {
-                        'endRowIndex': 2,
-                        'endColumnIndex': 1,
-                        'sheetId': 1,
-                        'startColumnIndex': 0,
-                        'startRowIndex': 1
-                      },
-                      'rule': {'condition': {'type': 'BOOLEAN'}}
-                    }
-                  }, {
-                    'addProtectedRange': {
-                      'protectedRange': {
-                        'range': {
-                          'endRowIndex': 1,
-                          'endColumnIndex': 1,
-                          'sheetId': 1,
-                          'startColumnIndex': 0,
-                          'startRowIndex': 0
-                        },
-                        'warningOnly': True
-                      }
-                    }
-                  }, {
-                    'addProtectedRange': {
-                      'protectedRange': {
-                        'range': {
-                          'endRowIndex': 3,
-                          'endColumnIndex': 10,
-                          'sheetId': 1,
-                          'startColumnIndex': 0,
-                          'startRowIndex': 2
-                        },
-                        'warningOnly': True
-                      }
-                    }
-                  }, {
-                    'addProtectedRange': {
-                      'protectedRange': {
-                        'range': {
-                          'endRowIndex': 7,
-                          'endColumnIndex': 3,
-                          'sheetId': 1,
-                          'startColumnIndex': 0,
-                          'startRowIndex': 3
-                        },
-                        'warningOnly': True
-                      }
-                    }
-                  }, {
-                    'addProtectedRange': {
-                      'protectedRange': {
-                        'range': {
-                          'endRowIndex': 7,
-                          'endColumnIndex': 7,
-                          'sheetId': 1,
-                          'startColumnIndex': 6,
-                          'startRowIndex': 3
-                        },
-                        'warningOnly': True
-                      }
-                    }
-                  }]})
+
+    def test_add_files_with_multibytes_dir(self):
+        client = SpreadsheetClient('0001')
+        with mock.patch.object(client, 'ensure_columns',
+                               side_effect=lambda sid, cols, row: cols):
             with mock.patch.object(client, '_make_request',
                                    return_value=MockResponse('{"test": true}',
                                                              200)) as mkreq:
-                client.add_files('sheet01', 1,
+                client.add_files('sheet01', 1, 'sheet02', 2,
                                  [u'ファイル1.txt', u'ファイル2.txt',
                                   u'テスト/ファイル3.txt'])
+                assert_equal(len(mkreq.mock_calls), 3)
                 name, args, kwargs = mkreq.mock_calls[0]
                 assert_equal(json.loads(kwargs['data']), {
-                  'range': 'sheet01!A3:K3',
-                  'values': [[u'\u251c\u2212\u2212', u'テスト', '', '', '', '', '.txt', '', '', ''],
-                             [u'\u2502', u'\u2514\u2212\u2212', u'ファイル3.txt', '', '', '', '', '', '', ''],
-                             [u'\u251c\u2212\u2212', u'ファイル1.txt', '', '', '', '', '', '', '', ''],
-                             [u'\u2514\u2212\u2212', u'ファイル2.txt', '', '', '', '', '', '', '', '']],
+                  'range': 'sheet02!A2:C2',
+                  'values': [['FALSE']],
                   'majorDimension': 'ROWS'
                 })
                 name, args, kwargs = mkreq.mock_calls[1]
                 assert_equal(json.loads(kwargs['data']), {
-                  'requests': [{
-                    'setDataValidation': {
-                      'range': {
-                        'endRowIndex': 2,
-                        'endColumnIndex': 1,
-                        'sheetId': 1,
-                        'startColumnIndex': 0,
-                        'startRowIndex': 1
-                      },
-                      'rule': {'condition': {'type': 'BOOLEAN'}}
-                    }
-                  }, {
+                  'range': 'sheet01!A4:I4',
+                  'values': [[u'\u251c\u2212\u2212', u'テスト', '', '', '', '.txt', '', ''],
+                             [u'\u2502', u'\u2514\u2212\u2212', u'ファイル3.txt', '', '', '', '', ''],
+                             [u'\u251c\u2212\u2212', u'ファイル1.txt', '', '', '', '', '', ''],
+                             [u'\u2514\u2212\u2212', u'ファイル2.txt', '', '', '', '', '', '']],
+                  'majorDimension': 'ROWS'
+                })
+                name, args, kwargs = mkreq.mock_calls[2]
+                requests = json.loads(kwargs['data'])['requests']
+                assert_equal(len(requests), 4);
+                assert_equal(requests[0], {
                     'addProtectedRange': {
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 1,
-                          'endColumnIndex': 1,
+                          'endColumnIndex': 8,
                           'sheetId': 1,
                           'startColumnIndex': 0,
                           'startRowIndex': 0
@@ -224,47 +324,160 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                         'warningOnly': True
                       }
                     }
-                  }, {
+                })
+                assert_equal(requests[1], {
                     'addProtectedRange': {
                       'protectedRange': {
                         'range': {
-                          'endRowIndex': 3,
-                          'endColumnIndex': 10,
+                          'endRowIndex': 1 + 3,
+                          'endColumnIndex': 8,
                           'sheetId': 1,
                           'startColumnIndex': 0,
-                          'startRowIndex': 2
+                          'startRowIndex': 0 + 3
                         },
                         'warningOnly': True
                       }
                     }
-                  }, {
+                })
+                assert_equal(requests[2], {
                     'addProtectedRange': {
                       'protectedRange': {
                         'range': {
-                          'endRowIndex': 7,
+                          'endRowIndex': 5 + 3,
                           'endColumnIndex': 3,
                           'sheetId': 1,
                           'startColumnIndex': 0,
-                          'startRowIndex': 3
+                          'startRowIndex': 1 + 3
                         },
                         'warningOnly': True
                       }
                     }
-                  }, {
+                })
+                assert_equal(requests[3], {
                     'addProtectedRange': {
                       'protectedRange': {
                         'range': {
-                          'endRowIndex': 7,
-                          'endColumnIndex': 7,
+                          'endRowIndex': 5 + 3,
+                          'endColumnIndex': 6,
                           'sheetId': 1,
-                          'startColumnIndex': 6,
-                          'startRowIndex': 3
+                          'startColumnIndex': 5,
+                          'startRowIndex': 1 + 3
                         },
                         'warningOnly': True
                       }
                     }
-                  }]})
+                })
 
+    def test_add_files_with_preset_cols(self):
+        client = SpreadsheetClient('0001')
+        with mock.patch.object(client, 'ensure_columns',
+                               side_effect=lambda sid, cols, row: cols + ['L9', 'L10']):
+            with mock.patch.object(client, '_make_request',
+                                   return_value=MockResponse('{"test": true}',
+                                                             200)) as mkreq:
+                client.add_files('sheet01', 1, 'sheet02', 2,
+                                 ['file1.txt', 'file2.txt'])
+                assert_equal(len(mkreq.mock_calls), 3)
+                name, args, kwargs = mkreq.mock_calls[0]
+                assert_equal(json.loads(kwargs['data']), {
+                  'range': 'sheet02!A2:E2',
+                  'values': [['FALSE', '', '']],
+                  'majorDimension': 'ROWS'
+                })
+                name, args, kwargs = mkreq.mock_calls[1]
+                assert_equal(json.loads(kwargs['data']), {
+                  'range': 'sheet01!A4:J4',
+                  'values': [[u'\u251c\u2212\u2212', 'file1.txt', '', '', '.txt', '', '', '', ''],
+                             [u'\u2514\u2212\u2212', 'file2.txt', '', '', '', '', '', '', '']],
+                  'majorDimension': 'ROWS'
+                })
+                name, args, kwargs = mkreq.mock_calls[2]
+                reqs = json.loads(kwargs['data'])['requests']
+                assert_equal(len(reqs), 6)
+                assert_equal(reqs[0], {
+                    'addProtectedRange': {
+                      'protectedRange': {
+                        'range': {
+                          'endRowIndex': 1,
+                          'endColumnIndex': 7,
+                          'sheetId': 1,
+                          'startColumnIndex': 0,
+                          'startRowIndex': 0
+                        },
+                        'warningOnly': True
+                      }
+                    }
+                })
+                assert_equal(reqs[1], {
+                    'addProtectedRange': {
+                      'protectedRange': {
+                        'range': {
+                          'endRowIndex': 1 + 3,
+                          'endColumnIndex': 7,
+                          'sheetId': 1,
+                          'startColumnIndex': 0,
+                          'startRowIndex': 0 + 3
+                        },
+                        'warningOnly': True
+                      }
+                    }
+                })
+                assert_equal(reqs[2], {
+                    'addProtectedRange': {
+                      'protectedRange': {
+                        'range': {
+                          'endRowIndex': 3 + 3,
+                          'endColumnIndex': 2,
+                          'sheetId': 1,
+                          'startColumnIndex': 0,
+                          'startRowIndex': 1 + 3
+                        },
+                        'warningOnly': True
+                      }
+                    }
+                })
+                assert_equal(reqs[3], {
+                    'addProtectedRange': {
+                      'protectedRange': {
+                        'range': {
+                          'endRowIndex': 3 + 3,
+                          'endColumnIndex': 5,
+                          'sheetId': 1,
+                          'startColumnIndex': 4,
+                          'startRowIndex': 1 + 3
+                        },
+                        'warningOnly': True
+                      }
+                    }
+                })
+                assert_equal(reqs[4], {
+                    'updateDimensionProperties': {
+                      'range': {
+                        'sheetId': 1,
+                        'dimension': 'COLUMNS',
+                        'startIndex': 7,
+                        'endIndex': 8,
+                      },
+                      'properties': {
+                        'hiddenByUser': True,
+                      },
+                      'fields': 'hiddenByUser',
+                    }
+                })
+                assert_equal(reqs[5], {
+                    'updateDimensionProperties': {
+                      'range': {
+                        'sheetId': 1,
+                        'dimension': 'COLUMNS',
+                        'startIndex': 8,
+                        'endIndex': 9,
+                      },
+                      'properties': {
+                        'hiddenByUser': True,
+                      },
+                      'fields': 'hiddenByUser',
+                    }
+                })
 
 class TestIQBRIMSWorkflowUserSettings(OsfTestCase):
 

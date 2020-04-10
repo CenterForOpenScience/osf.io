@@ -1,52 +1,53 @@
+{% load i18n %}
 <div class="modal fade" id="nextcloud_modal" tabindex="-1" role="dialog" aria-labelledby="nextcloud_modal_label">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
                             aria-hidden="true">&times;</span></button>
-                    <h3 class="modal-title" id="nextcloud_modal_label">Connect a Nextcloud Account</h3>
+                    <h3 class="modal-title" id="nextcloud_modal_label">{% trans "Connect a Nextcloud Account" %}</h3>
                 </div>
                 <div class="modal-body">
                     <div class='row'>
                         <div class="col-sm-6">
                             <!-- Custom input -->
                             <div id="nextcloud_custom_host_div">
-                                <label>Host URL</label>
+                                <label>{% trans "Host URL" %}</label>
                                 <div class="input-group form-group">
                                     <div class="input-group-addon">https://</div>
                                     <input type="text" class="form-control nextcloud-params" id='nextcloud_host'  placeholder="nextcloud.example.org" required>
                                 </div>
                                 <div class="text-muted" style="text-align: center">
-                                    <em>Only Nextcloud instances supporting <a
+                                    <em>{% blocktrans %}Only Nextcloud instances supporting <a
                                             href="https://doc.nextcloud.org/server/9.1/user_manual/files/access_webdav.html"
                                             target="_blank">WebDAV</a> and <a
                                             href="https://www.freedesktop.org/wiki/Specifications/open-collaboration-services-1.7/"
                                             target="_blank">
-                                            OCS v1.7</a> are supported.
+                                            OCS v1.7</a> are supported.{% endblocktrans %}
                                     </em>
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label for="nextcloud_folder">Folder</label>
+                                <label for="nextcloud_folder">{% trans "Folder" %}</label>
                                 <input type="text" class="form-control nextcloud-params" id="nextcloud_folder"
                                     placeholder="/institutional/OSF Storage/" required>
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <div class="form-group">
-                                <label for="nextcloud_username">Username</label>
+                                <label for="nextcloud_username">{% trans "Username" %}</label>
                                 <input type="text" class="form-control nextcloud-params" id="nextcloud_username" placeholder="username" required>
                             </div>
                             <div class="form-group">
-                                <label for="nextcloud_password">Password</label>
+                                <label for="nextcloud_password">{% trans "Password" %}</label>
                                 <input type="password" class="form-control nextcloud-params" id="nextcloud_password"
                                     placeholder="********" required>
                             </div>
                             <div class="text-muted" style="text-align: center">
-                                <em> These credentials will be encrypted. However, we <strong>strongly
+                                <em>{% blocktrans %} These credentials will be encrypted. However, we <strong>strongly
                                         encourage</strong> using a <a
                                         href="https://doc.nextcloud.org/server/9.1/user_manual/session_management.html#managing-devices"
-                                        target="_blank"> Device (or App) Password</a>.
+                                        target="_blank"> Device (or App) Password</a>.{% endblocktrans %}
                                 </em>
                             </div>
                         </div>
@@ -57,9 +58,9 @@
 
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-success test-connection" id="nextcloud_connect" disabled>Connect</button>
-                    <button type="button" class="btn btn-default save-credentials" id="nextcloud_save" disabled>Save</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
+                    <button type="button" class="btn btn-success test-connection" id="nextcloud_connect" disabled>{% trans "Connect" %}</button>
+                    <button type="button" class="btn btn-default save-credentials" id="nextcloud_save" disabled>{% trans "Save" %}</button>
                 </div>
             </div>
         </div>

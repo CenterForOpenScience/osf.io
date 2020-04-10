@@ -4,6 +4,7 @@ from flask import (Flask, request, jsonify, render_template,  # noqa
     redirect as flask_redirect, url_for, send_from_directory, current_app
 )
 import furl
+from flask_babel import Babel
 
 from website import settings
 
@@ -18,6 +19,15 @@ app = Flask(
 app.debug = settings.DEBUG_MODE
 app.config['SENTRY_TAGS'] = {'App': 'web'}
 app.config['SENTRY_RELEASE'] = settings.VERSION
+
+app.config['BABEL_TRANSLATION_DIRECTORIES'] = settings.BABEL_TRANSLATION_DIRECTORIES
+app.config['BABEL_DOMAIN'] = settings.BABEL_DOMAIN
+app.config['BABEL_DEFAULT_LOCALE'] = settings.BABEL_DEFAULT_LOCALE
+babel = Babel(app)
+
+@babel.localeselector
+def get_locale():
+    return request.accept_languages.best_match(settings.BABEL_LANGUAGES.keys())
 
 def rm_handler(app, handler_name, func, key=None):
     """Remove a handler from an application.

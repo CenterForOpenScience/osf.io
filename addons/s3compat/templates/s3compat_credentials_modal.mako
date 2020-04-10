@@ -3,7 +3,7 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h3>Connect an S3 Compatible Storage Account</h3>
+                <h3>${_("Connect an S3 Compatible Storage Account")}</h3>
             </div>
 
             <form>
@@ -14,15 +14,15 @@
 
                         <div class="col-sm-6">
                             <div class="form-group">
-                                <label for="s3compatAddon">S3 Compatible Service</label>
+                                <label for="s3compatAddon">${_("S3 Compatible Service")}</label>
                                 <select class="form-control" data-bind="value: selectedService, options: availableServices, optionsText: 'name'" id="selected_service" name="selected_service" ${'disabled' if disabled else ''}></select>
                             </div>
                             <div class="form-group">
-                                <label for="s3compatAddon">Access Key</label>
+                                <label for="s3compatAddon">${_("Access Key")}</label>
                                 <input class="form-control" data-bind="value: accessKey" name="access_key" ${'disabled' if disabled else ''} />
                             </div>
                             <div class="form-group">
-                                <label for="s3compatAddon">Secret Key</label>
+                                <label for="s3compatAddon">${_("Secret Key")}</label>
                                 <input type="password" class="form-control" data-bind="value: secretKey" name="secret_key" ${'disabled' if disabled else ''} />
                             </div>
                         </div>
@@ -37,10 +37,10 @@
 
                 <div class="modal-footer">
 
-                    <a href="#" class="btn btn-default" data-bind="click: clearModal" data-dismiss="modal">Cancel</a>
+                    <a href="#" class="btn btn-default" data-bind="click: clearModal" data-dismiss="modal">${_("Cancel")}</a>
 
                     <!-- Save Button -->
-                    <button data-bind="click: connectAccount" class="btn btn-success">Save</button>
+                    <button data-bind="click: connectAccount" class="btn btn-success">${_("Save")}</button>
 
                 </div><!-- end modal-footer -->
 

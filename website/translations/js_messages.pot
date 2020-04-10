@@ -1,0 +1,4124 @@
+# Translations template for PROJECT.
+# Copyright (C) 2020 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: 0.6.0\n"
+"Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
+"POT-Creation-Date: 2020-03-19 10:22+0900\n"
+"PO-Revision-Date: 2020-03-23 17:37+0900\n"
+"Last-Translator: Shunta Nishikawa\n"
+"Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.7.0\n"
+
+#: addons/twofactor/static/twoFactorUserConfig.js:178
+msgid "Enable Two-factor Authentication"
+msgstr ""
+
+#: addons/twofactor/static/twoFactorUserConfig.js:179
+msgid ""
+"Enabling two-factor authentication will not immediately activate this "
+"feature for your account. You will need to follow the steps that appear "
+"below to complete the activation of two-factor authentication for your "
+"account."
+msgstr ""
+
+#: addons/twofactor/static/twoFactorUserConfig.js:187
+msgid "Enable"
+msgstr ""
+
+#: addons/wiki/static/WikiEditor.js:88
+msgid "Live editing mode"
+msgstr ""
+
+#: addons/wiki/static/WikiEditor.js:90
+msgid "Attempting to connect"
+msgstr ""
+
+#: addons/wiki/static/WikiEditor.js:92
+msgid "Unsupported browser"
+msgstr ""
+
+#: addons/wiki/static/WikiEditor.js:94
+msgid "Unavailable: Live editing"
+msgstr ""
+
+#: addons/wiki/static/WikiEditor.js:155
+msgid "The wiki content could not be loaded."
+msgstr ""
+
+#: addons/wiki/static/WikiEditor.js:157
+msgid "Could not GET wiki contents."
+msgstr ""
+
+#: addons/wiki/static/WikiEditor.js:178
+msgid "There are unsaved changes to your wiki. If you exit "
+msgstr ""
+
+#: addons/wiki/static/WikiEditor.js:179
+msgid "the page now, those changes may be lost."
+msgstr ""
+
+#: addons/wiki/static/wikiPage.js:96
+#: website/static/js/pages/project-dashboard-page.js:553
+msgid ""
+"*Add important information, links, or images here to describe your "
+"project.*"
+msgstr ""
+
+#: addons/wiki/static/wikiPage.js:98
+#: website/static/js/pages/project-dashboard-page.js:555
+msgid "*No wiki content.*"
+msgstr ""
+
+#: addons/wiki/static/wikiPage.js:222
+msgid "Live preview"
+msgstr ""
+
+#: addons/wiki/static/wikiPage.js:224
+msgid "Current version"
+msgstr ""
+
+#: addons/wiki/static/wikiPage.js:226
+msgid "Previous version"
+msgstr ""
+
+#: addons/wiki/static/wikiPage.js:228
+msgid "Version "
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:50
+msgid "Strong <strong>"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:53
+msgid "Emphasis <em>"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:56
+msgid "Spellcheck: Toggle spellcheck on and off"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:58
+msgid "Hyperlink <a>"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:62
+msgid "Blockquote <blockquote>"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:65
+msgid "Code Sample <pre><code>"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:68
+msgid "Image <img>"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:72
+msgid "Numbered List <ol>"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:73
+msgid "Bulleted List <ul>"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:74
+msgid "List item"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:76
+msgid "Heading <h1>/<h2>"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:79
+msgid "Horizontal Rule <hr>"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:81
+msgid "Undo -"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:82
+msgid "Redo -"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:84
+msgid "Wiki Syntax Help"
+msgstr ""
+
+#: addons/wiki/static/pagedown-ace/Markdown.Editor.js:1941
+msgid "Autocomplete"
+msgstr ""
+
+#: admin/base/utils.py:23
+msgid "Enter a valid 'slug' consisting only of lowercase letters."
+msgstr ""
+
+#: admin/static/js/collection_providers/collectionProviders.js:12
+msgid "Hide Form"
+msgstr ""
+
+#: admin/static/js/collection_providers/collectionProviders.js:12
+msgid "Modify Collection Provider"
+msgstr ""
+
+#: admin/static/js/rdm_addons/rdm-addons-page.js:66
+#, python-format
+msgid "Disallow %s?"
+msgstr ""
+
+#: admin/static/js/rdm_addons/rdm-addons-page.js:67
+msgid "Are you sure you want to disallow the %1$s?<br>"
+msgstr ""
+
+#: admin/static/js/rdm_addons/rdm-addons-page.js:68
+msgid ""
+"This will revoke access to %1$s for all projects using the "
+"accounts.<br><br>"
+msgstr ""
+
+#: admin/static/js/rdm_addons/rdm-addons-page.js:69
+msgid "Type the following to continue: <strong>%1$s</strong><br><br>"
+msgstr ""
+
+#: admin/static/js/rdm_addons/rdm-addons-page.js:73
+#: website/static/js/accountSettings.js:288
+#: website/static/js/accountSettings.js:353
+#: website/static/js/accountSettings.js:479
+#: website/static/js/accountSettings.js:551
+#: website/static/js/addProjectPlugin.js:350
+#: website/static/js/addonPermissions.js:58
+#: website/static/js/addonSettings.js:74 website/static/js/addonSettings.js:137
+#: website/static/js/apiApplication.js:235
+#: website/static/js/apiApplication.js:406
+#: website/static/js/apiApplication.js:473
+#: website/static/js/apiPersonalToken.js:214
+#: website/static/js/apiPersonalToken.js:385
+#: website/static/js/apiPersonalToken.js:412
+#: website/static/js/citationsNodeConfig.js:171
+#: website/static/js/citationsNodeConfig.js:189
+#: website/static/js/fangorn.js:538 website/static/js/fangorn.js:543
+#: website/static/js/fangorn.js:1213 website/static/js/fangorn.js:1236
+#: website/static/js/fangorn.js:1289 website/static/js/fangorn.js:1308
+#: website/static/js/fangorn.js:2007 website/static/js/filepage/index.js:215
+#: website/static/js/folderPickerNodeConfig.js:512
+#: website/static/js/folderPickerNodeConfig.js:568
+#: website/static/js/institutionProjectSettings.js:104
+#: website/static/js/licensePicker.js:245 website/static/js/myProjects.js:1562
+#: website/static/js/myProjects.js:1610 website/static/js/myProjects.js:1634
+#: website/static/js/nodeControl.js:229
+#: website/static/js/oauthAddonNodeConfig.js:158
+#: website/static/js/oauthAddonNodeConfig.js:176
+#: website/static/js/osfHelpers.js:798 website/static/js/osfHelpers.js:899
+#: website/static/js/pages/profile-settings-addons-page.js:37
+#: website/static/js/pages/profile-settings-addons-page.js:103
+#: website/static/js/pages/project-addons-page.js:43
+#: website/static/js/pages/project-addons-page.js:68
+#: website/static/js/privateLinkTable.js:121 website/static/js/profile.js:374
+#: website/static/js/profile.js:744 website/static/js/profile.js:976
+#: website/static/js/project.js:41 website/static/js/project.js:145
+#: website/static/js/project.js:255
+#: website/static/js/wikiSettingsTreebeard.js:32
+msgid "Cancel"
+msgstr ""
+
+#: admin/static/js/rdm_addons/rdm-addons-page.js:76
+msgid "Disallow"
+msgstr ""
+
+#: admin/static/js/rdm_addons/rdm-addons-page.js:87
+msgid "Strings did not match"
+msgstr ""
+
+#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:28
+#: admin/static/js/rdm_addons/owncloud/owncloudRdmConfig.js:22
+msgid "Other (Please Specify)"
+msgstr ""
+
+#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:87
+#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:102
+#: website/static/js/addonSettings.js:174
+msgid "Error while updating addon account"
+msgstr ""
+
+#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:102
+msgid "Please select a Dataverse repository."
+msgstr ""
+
+#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:107
+msgid "Please enter an API token."
+msgstr ""
+
+#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:112
+msgid "Please enter a Dataverse host and an API token."
+msgstr ""
+
+#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:133
+msgid "Could not authenticate with Dataverse"
+msgstr ""
+
+#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:146
+msgid "Disconnect Dataverse Account?"
+msgstr ""
+
+#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:148
+msgid ""
+"Are you sure you want to disconnect the Dataverse account on "
+"<strong>%1$s</strong>? This will revoke access to Dataverse for all "
+"projects associated with this account."
+msgstr ""
+
+#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:157
+#: admin/static/js/rdm_addons/figshare/rdm-cfg.js:37
+#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:126
+#: website/static/js/addonSettings.js:133
+#: website/static/js/folderPickerNodeConfig.js:564
+msgid "Disconnect"
+msgstr ""
+
+#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:175
+#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:144
+#: website/static/js/addonSettings.js:153
+msgid "Error while removing addon authorization for %1$s"
+msgstr ""
+
+#: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:214
+msgid "Could not GET Dataverse settings"
+msgstr ""
+
+#: admin/static/js/rdm_addons/figshare/rdm-cfg.js:20
+msgid "Disconnect figshare Account?"
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:49
+msgid "Invalid management URL: "
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:64
+msgid "Saving management project was successful"
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:66
+msgid "Error while saving addon management project"
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:74
+msgid "Permission error while saving management project"
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:76
+msgid "Error while saving management project"
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:94
+msgid "Removing management project was successful"
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:96
+msgid "Error while removing addon management project"
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:104
+msgid "Permission error while removing management project"
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:106
+msgid "Error while removing management project"
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:121
+msgid "Error while fetching addon management project"
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:152
+msgid "Saving organizational project was successful"
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:154
+msgid "Error while saving addon organizational project"
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:162
+msgid "Permission error while saving organizational project"
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:164
+msgid "Error while saving organizational project"
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:182
+msgid "Removing organizational project was successful"
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:184
+msgid "Error while removing addon organizational project"
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:192
+msgid "Permission error while removing organizational project"
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:194
+msgid "Error while removing organizational project"
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:209
+msgid "Error while fetching addon organization project"
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:225
+msgid "Error while fetching management project"
+msgstr ""
+
+#: admin/static/js/rdm_addons/iqbrims/iqbrimsRdmConfig.js:229
+msgid "Error while fetching organizational project"
+msgstr ""
+
+#: admin/static/js/rdm_addons/owncloud/owncloudRdmConfig.js:61
+msgid "Could not GET OwnCloud settings"
+msgstr ""
+
+#: admin/static/js/rdm_addons/owncloud/owncloudRdmConfig.js:78
+msgid "Please enter an ownCloud server."
+msgstr ""
+
+#: admin/static/js/rdm_addons/owncloud/owncloudRdmConfig.js:80
+msgid "Please select an ownCloud server."
+msgstr ""
+
+#: admin/static/js/rdm_addons/owncloud/owncloudRdmConfig.js:85
+msgid "Please enter a username and password."
+msgstr ""
+
+#: admin/static/js/rdm_addons/owncloud/owncloudRdmConfig.js:89
+msgid "Please enter an ownCloud host and credentials."
+msgstr ""
+
+#: admin/static/js/rdm_addons/owncloud/owncloudRdmConfig.js:107
+msgid "Could not authenticate with ownCloud"
+msgstr ""
+
+#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:50
+msgid "Please enter both an API access key and secret key."
+msgstr ""
+
+#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:55
+msgid "Please enter an API access key."
+msgstr ""
+
+#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:60
+msgid "Please enter an API secret key."
+msgstr ""
+
+#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:77
+msgid "Could not authenticate with S3"
+msgstr ""
+
+#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:115
+msgid "Disconnect Amazon S3 Account?"
+msgstr ""
+
+#: admin/static/js/rdm_addons/s3/s3RdmConfig.js:117
+msgid ""
+"Are you sure you want to disconnect the S3 account <strong>%1$s</strong>?"
+" This will revoke access to S3 for all projects associated with this "
+"account."
+msgstr ""
+
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:33
+msgid "Are you sure you want to change institutional storage?"
+msgstr ""
+
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:34
+msgid ""
+"<p>The previous storage will no longer be available to all contributors "
+"on the project.</p>"
+msgstr ""
+
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:38
+#: website/static/js/folderPickerNodeConfig.js:102
+#: website/static/js/folderPickerNodeConfig.js:104
+#: website/static/js/folderPickerNodeConfig.js:596
+msgid "Change"
+msgstr ""
+
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:178
+msgid "Some errors occurred"
+msgstr ""
+
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:213
+msgid "Institutional Storage set successfully"
+msgstr ""
+
+#: api/base/exceptions.py:103
+msgid "This endpoint is not yet implemented."
+msgstr ""
+
+#: api/base/exceptions.py:108
+msgid "Service is unavailable at this time."
+msgstr ""
+
+#: api/base/exceptions.py:201
+msgid "Query string contains a malformed filter."
+msgstr ""
+
+#: api/base/exceptions.py:210
+msgid "Comparison operators are only supported for dates and numbers."
+msgstr ""
+
+#: api/base/exceptions.py:216
+msgid "Match operators are only supported for strings and lists."
+msgstr ""
+
+#: api/base/exceptions.py:222
+msgid "Query contained one or more filters for invalid fields."
+msgstr ""
+
+#: api/base/exceptions.py:233
+msgid "Please confirm your account before using the API."
+msgstr ""
+
+#: api/base/exceptions.py:238
+msgid "Please claim your account before using the API."
+msgstr ""
+
+#: api/base/exceptions.py:243
+msgid ""
+"Making API requests with credentials associated with a deactivated "
+"account is not allowed."
+msgstr ""
+
+#: api/base/exceptions.py:248
+msgid ""
+"Making API requests with credentials associated with a merged account is "
+"not allowed."
+msgstr ""
+
+#: api/base/exceptions.py:253
+msgid ""
+"Making API requests with credentials associated with an invalid account "
+"is not allowed."
+msgstr ""
+
+#: api/base/exceptions.py:257
+msgid "Must specify two-factor authentication OTP code."
+msgstr ""
+
+#: api/base/exceptions.py:263
+msgid "Invalid value in POST/PUT/PATCH request."
+msgstr ""
+
+#: api/base/exceptions.py:278
+msgid ""
+"The node {0} cannot be affiliated with this View Only Link because the "
+"node you're trying to affiliate is not descended from the node that the "
+"View Only Link is attached to."
+msgstr ""
+
+#: api/base/authentication/drf.py:165
+msgid "Invalid username/password."
+msgstr ""
+
+#: api/base/authentication/drf.py:192
+msgid "Invalid two-factor authentication OTP code."
+msgstr ""
+
+#: api/base/authentication/drf.py:223
+msgid "User provided an invalid OAuth2 access token"
+msgstr ""
+
+#: api/base/authentication/drf.py:226
+msgid "CAS server failed to authenticate this token"
+msgstr ""
+
+#: api/base/authentication/drf.py:230
+msgid "Could not find the user associated with this token"
+msgstr ""
+
+#: framework/auth/oauth_scopes.py:294
+msgid ""
+"View all information associated with this account, including for private "
+"projects."
+msgstr ""
+
+#: framework/auth/oauth_scopes.py:297
+msgid ""
+"View and edit all information associated with this account, including for"
+" private projects."
+msgstr ""
+
+#: framework/auth/oauth_scopes.py:300
+msgid "Read your profile data."
+msgstr ""
+
+#: framework/auth/oauth_scopes.py:303
+msgid "Read your primary email address."
+msgstr ""
+
+#: website/notifications/utils.py:502
+msgid "Default Notification Settings"
+msgstr ""
+
+#: website/notifications/utils.py:503
+msgid ""
+"These are default settings for new projects you create or are added to. "
+"Modifying these settings will not modify settings on existing projects."
+msgstr ""
+
+#: website/notifications/utils.py:511
+msgid "Project Notifications"
+msgstr ""
+
+#: website/project/__init__.py:64
+msgid "Bookmarks"
+msgstr ""
+
+#: website/search/elastic_search.py:48
+msgid "Projects"
+msgstr ""
+
+#: website/search/elastic_search.py:49
+msgid "Components"
+msgstr ""
+
+#: website/search/elastic_search.py:50
+msgid "Registrations"
+msgstr ""
+
+#: website/search/elastic_search.py:51
+msgid "Users"
+msgstr ""
+
+#: website/search/elastic_search.py:52
+msgid "All GakuNin RDM Results"
+msgstr ""
+
+#: website/search/elastic_search.py:53
+msgid "Files"
+msgstr ""
+
+#: website/search/elastic_search.py:54
+msgid "Institutions"
+msgstr ""
+
+#: website/search/elastic_search.py:55
+msgid "Preprints"
+msgstr ""
+
+#: website/search/elastic_search.py:56
+msgid "Groups"
+msgstr ""
+
+#: website/static/js/accessRequestManager.js:88
+msgid "There was a problem trying to %1$s the request from the user. %2$s"
+msgstr ""
+
+#: website/static/js/accessRequestManager.js:89
+#: website/static/js/accessRequestManager.js:90
+msgid "Could not %1$s access request"
+msgstr ""
+
+#: website/static/js/accessRequestManager.js:118
+#: website/static/js/contribAdder.js:74 website/static/js/contribManager.js:213
+msgid "Read"
+msgstr ""
+
+#: website/static/js/accessRequestManager.js:119
+#: website/static/js/contribAdder.js:75 website/static/js/contribManager.js:214
+msgid "Read + Write"
+msgstr ""
+
+#: website/static/js/accessRequestManager.js:120
+#: website/static/js/contribAdder.js:76 website/static/js/contribManager.js:215
+msgid "Administrator"
+msgstr ""
+
+#: website/static/js/accountClaimer.js:36
+msgid "Email will arrive shortly"
+msgstr ""
+
+#: website/static/js/accountClaimer.js:36
+msgid "Please check <em>"
+msgstr ""
+
+#: website/static/js/accountClaimer.js:43
+msgid "Claim as %1$s?"
+msgstr ""
+
+#: website/static/js/accountClaimer.js:44
+msgid "If you claim this account, a contributor of this project "
+msgstr ""
+
+#: website/static/js/accountClaimer.js:45
+msgid "will be emailed to confirm your identity."
+msgstr ""
+
+#: website/static/js/accountClaimer.js:63
+msgid "Claim"
+msgstr ""
+
+#: website/static/js/accountClaimer.js:75
+msgid "Is this you? Click to claim"
+msgstr ""
+
+#: website/static/js/accountClaimer.js:101
+msgid "Claim Account"
+msgstr ""
+
+#: website/static/js/accountClaimer.js:103
+msgid "Enter email..."
+msgstr ""
+
+#: website/static/js/accountClaimer.js:107
+msgid "Not a valid email."
+msgstr ""
+
+#: website/static/js/accountSettings.js:85
+msgid "Could not fetch user profile."
+msgstr ""
+
+#: website/static/js/accountSettings.js:86
+#: website/static/js/accountSettings.js:117
+#: website/static/js/licensePicker.js:199
+msgid "Error fetching user profile"
+msgstr ""
+
+#: website/static/js/accountSettings.js:114
+msgid ""
+"User profile not updated. Please refresh the page and try again or "
+"contact %1$s if the problem persists."
+msgstr ""
+
+#: website/static/js/accountSettings.js:201
+msgid "Duplicate Email"
+msgstr ""
+
+#: website/static/js/accountSettings.js:222
+msgid "Confirmation email sent"
+msgstr ""
+
+#: website/static/js/accountSettings.js:223
+msgid "<em>%1$s</em> was added to your account."
+msgstr ""
+
+#: website/static/js/accountSettings.js:224
+msgid " You will receive a confirmation email at <em>%1$s</em>."
+msgstr ""
+
+#: website/static/js/accountSettings.js:225
+msgid ""
+" Please click the link in your email to confirm this action. You will be "
+"required to enter your password."
+msgstr ""
+
+#: website/static/js/accountSettings.js:228 website/static/js/fangorn.js:2259
+#: website/static/js/folderPickerNodeConfig.js:593
+#: website/static/js/pages/profile-settings-addons-page.js:74
+#: website/static/js/pages/project-settings-page.js:120
+msgid "Close"
+msgstr ""
+
+#: website/static/js/accountSettings.js:238
+msgid "Email cannot be empty."
+msgstr ""
+
+#: website/static/js/accountSettings.js:246
+msgid "Resend Email Confirmation?"
+msgstr ""
+
+#: website/static/js/accountSettings.js:247
+msgid "Are you sure that you want to resend email confirmation to <em>%1$s</em>?"
+msgstr ""
+
+#: website/static/js/accountSettings.js:252
+msgid "Email confirmation resent to <em>%1$s</em>"
+msgstr ""
+
+#: website/static/js/accountSettings.js:253
+msgid "You will receive a new confirmation email at <em>%1$s</em>."
+msgstr ""
+
+#: website/static/js/accountSettings.js:254
+msgid ""
+" Please log out of this account and check your email to confirm this "
+"action."
+msgstr ""
+
+#: website/static/js/accountSettings.js:261
+msgid "Resend"
+msgstr ""
+
+#: website/static/js/accountSettings.js:272
+msgid "Remove Email?"
+msgstr ""
+
+#: website/static/js/accountSettings.js:273
+msgid "Are you sure that you want to remove <em>%1$s</em> from your email list?"
+msgstr ""
+
+#: website/static/js/accountSettings.js:284
+#: website/static/js/accountSettings.js:349
+#: website/static/js/addonPermissions.js:54
+#: website/static/js/addonSettings.js:70
+#: website/static/js/pages/profile-settings-addons-page.js:99
+#: website/static/js/privateLinkTable.js:117 website/static/js/profile.js:740
+#: website/static/js/profile.js:972 website/static/js/project.js:251
+msgid "Remove"
+msgstr ""
+
+#: website/static/js/accountSettings.js:293
+#: website/static/js/accountSettings.js:306
+msgid "Please refresh the page and try again."
+msgstr ""
+
+#: website/static/js/accountSettings.js:319
+msgid "You have revoked this connected identity."
+msgstr ""
+
+#: website/static/js/accountSettings.js:324
+msgid "Revocation request failed. Please contact %1$s if the problem persists."
+msgstr ""
+
+#: website/static/js/accountSettings.js:327
+msgid "Error revoking connected identity"
+msgstr ""
+
+#: website/static/js/accountSettings.js:340
+msgid "Remove authorization?"
+msgstr ""
+
+#: website/static/js/accountSettings.js:341
+msgid "Are you sure you want to remove this authorization?"
+msgstr ""
+
+#: website/static/js/accountSettings.js:385
+msgid ""
+"You have successfully changed your default storage location to "
+"<b>%1$s</b>."
+msgstr ""
+
+#: website/static/js/accountSettings.js:389
+msgid ""
+"Your attempt to change your default storage location has failed. Please "
+"contact %1$s if the problem persists."
+msgstr ""
+
+#: website/static/js/accountSettings.js:392
+msgid "Error updating default storage location "
+msgstr ""
+
+#: website/static/js/accountSettings.js:415
+msgid ""
+"An GakuNin RDM administrator will contact you shortly to confirm your "
+"deactivation request."
+msgstr ""
+
+#: website/static/js/accountSettings.js:423
+msgid "Deactivation request failed. Please contact %1$s if the problem persists."
+msgstr ""
+
+#: website/static/js/accountSettings.js:427
+#: website/static/js/accountSettings.js:452
+msgid "Error requesting account deactivation"
+msgstr ""
+
+#: website/static/js/accountSettings.js:440
+msgid "An GakuNin RDM account is no longer up for review."
+msgstr ""
+
+#: website/static/js/accountSettings.js:448
+msgid ""
+"Deactivation request failed. Please contact <a href=\"mailto: "
+"rdm_support@nii.ac.jp\">rdm_support@nii.ac.jp</a> if the problem "
+"persists."
+msgstr ""
+
+#: website/static/js/accountSettings.js:465
+msgid "Request account deactivation?"
+msgstr ""
+
+#: website/static/js/accountSettings.js:466
+msgid ""
+"Are you sure you want to request account deactivation? A GakuNinRDM "
+"administrator will review your request. If accepted, you "
+msgstr ""
+
+#: website/static/js/accountSettings.js:467
+msgid "will <strong>NOT</strong> be able to reactivate your account."
+msgstr ""
+
+#: website/static/js/accountSettings.js:475
+#: website/static/js/accountSettings.js:548
+msgid "Request"
+msgstr ""
+
+#: website/static/js/accountSettings.js:487
+msgid "Cancel deactivation request?"
+msgstr ""
+
+#: website/static/js/accountSettings.js:488
+msgid ""
+"Are you sure you want to rescind your account deactivation request? This "
+"will preserve your account status."
+msgstr ""
+
+#: website/static/js/accountSettings.js:496
+msgid "Cancel Deactivation Request"
+msgstr ""
+
+#: website/static/js/accountSettings.js:514
+msgid ""
+"An GakuNin RDM administrator will contact you shortly to confirm your "
+"export request."
+msgstr ""
+
+#: website/static/js/accountSettings.js:522
+msgid "Export request failed. Please contact %1$s if the problem persists."
+msgstr ""
+
+#: website/static/js/accountSettings.js:526
+msgid "Error requesting account export"
+msgstr ""
+
+#: website/static/js/accountSettings.js:539
+msgid "Request account export?"
+msgstr ""
+
+#: website/static/js/accountSettings.js:540
+msgid "Are you sure you want to request account export?"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:24
+#: website/static/js/addProjectPlugin.js:27
+#: website/static/js/myProjects.js:1120
+msgid "Create new project"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:60
+msgid "There was an unknown error. Please try again later."
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:187 website/static/js/conference.js:21
+msgid "Title"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:201
+msgid "Enter %1$s title"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:206
+msgid "Affiliation"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:213
+msgid "Remove all"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:220
+msgid "Select all"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:236
+msgid "Storage location"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:254
+msgid " Add contributors from "
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:256
+msgid " Admins of "
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:256
+msgid " will have read access to this component."
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:267
+msgid " Add tags from "
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:271
+msgid "License"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:273
+msgid " This component will inherit the same license as "
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:276
+msgid "Learn more."
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:285
+msgid " More"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:289
+msgid "Description"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:298
+msgid "Enter %1$s description"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:302 website/static/js/conference.js:33
+msgid "Category"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:303
+msgid " (for descriptive purposes)"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:310
+msgid "Uncategorized"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:323
+msgid "(Empty category)"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:333
+msgid "Template (optional)"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:334
+msgid ""
+"Start typing to search your projects. Selecting project as template will "
+"duplicate its "
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:335
+msgid ""
+"structure in the new project without importing the content of that "
+"project."
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:354
+#: website/static/js/nodeControl.js:226 website/static/js/project.js:142
+msgid "Create"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:365
+msgid "Saving your "
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:379
+msgid "New %1$s created successfully!"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:389
+#: website/static/js/addProjectPlugin.js:437 website/static/js/project.js:64
+msgid "Keep working here"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:395
+#: website/static/js/addProjectPlugin.js:440
+msgid "Go to new %1$s"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:408
+msgid "Couldn't create your %1$s"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:427
+msgid "Could not add institution affiliation to your new %1$s"
+msgstr ""
+
+#: website/static/js/addProjectPlugin.js:474
+msgid "Select a project to use as a template"
+msgstr ""
+
+#: website/static/js/addonHelper.js:40
+#: website/static/js/nodeSelectTreebeard.js:61
+#: website/static/js/notificationsTreebeard.js:61
+#: website/static/js/profile.js:312
+#: website/static/js/wikiSettingsTreebeard.js:55
+msgid "Settings updated"
+msgstr ""
+
+#: website/static/js/addonHelper.js:49
+msgid "Settings not updated."
+msgstr ""
+
+#: website/static/js/addonNodeConfig.js:42
+#: website/static/js/oauthAddonNodeConfig.js:49
+msgid "Successfully linked \"%1$s\""
+msgstr ""
+
+#: website/static/js/addonNodeConfig.js:43
+#: website/static/js/oauthAddonNodeConfig.js:50
+msgid " Go to the <a href=\"%1$s\">Files page</a> to view your content."
+msgstr ""
+
+#: website/static/js/addonPermissions.js:24
+#: website/static/js/addonSettings.js:61
+msgid "Remove addon?"
+msgstr ""
+
+#: website/static/js/addonPermissions.js:25
+msgid "Are you sure you want to disconnnect the %1$s account from this project?"
+msgstr ""
+
+#: website/static/js/addonPermissions.js:46
+msgid "An error occurred, the account is still connected to the project. "
+msgstr ""
+
+#: website/static/js/addonPermissions.js:47
+msgid "If the issue persists, please report it to %1$s."
+msgstr ""
+
+#: website/static/js/addonSettings.js:49
+msgid "Error deauthorizing node: "
+msgstr ""
+
+#: website/static/js/addonSettings.js:62
+msgid "Are you sure you want to remove the %1$s authorization from this project?"
+msgstr ""
+
+#: website/static/js/addonSettings.js:103
+msgid ""
+"Add-on successfully authorized. If you wish to link a different account, "
+"log out of dropbox.com before attempting to connect to a second Dropbox "
+"account on the GakuNin RDM. This will clear the credentials stored in "
+"your browser."
+msgstr ""
+
+#: website/static/js/addonSettings.js:105
+msgid ""
+"Add-on successfully authorized. If you wish to link a different account, "
+"log out of bitbucket.org before attempting to connect to a second "
+"Bitbucket account on the GakuNin RDM. This will clear the credentials "
+"stored in your browser."
+msgstr ""
+
+#: website/static/js/addonSettings.js:107
+msgid ""
+"Add-on successfully authorized. If you wish to link a different account, "
+"log out of onedrive.live.com before attempting to connect to a second "
+"OneDrive account on the GakuNin RDM. This will clear the credentials "
+"stored in your browser."
+msgstr ""
+
+#: website/static/js/addonSettings.js:109
+msgid ""
+"Add-on successfully authorized. To link this add-on to an GakuNin RDM "
+"project, go to the settings page of the project, enable %1$s, and choose "
+"content to connect."
+msgstr ""
+
+#: website/static/js/addonSettings.js:112
+msgid ""
+"Error while authorizing add-on. Please log in to your %1$s account and "
+"grant access to the GakuNin RDM to enable this add-on."
+msgstr ""
+
+#: website/static/js/addonSettings.js:121
+msgid "Disconnect Account?"
+msgstr ""
+
+#: website/static/js/addonSettings.js:123
+msgid ""
+"Are you sure you want to disconnect the %1$s account "
+"<strong>%2$s</strong>? This will revoke access to %1$s for all projects "
+"you have authorized."
+msgstr ""
+
+#: website/static/js/alertsManager.js:45
+msgid "Could not dismiss alert. Please refresh page and try again."
+msgstr ""
+
+#: website/static/js/alertsManager.js:46 website/static/js/alertsManager.js:80
+msgid "Error fetching user alerts"
+msgstr ""
+
+#: website/static/js/alertsManager.js:79
+msgid "Could not fetch alerts for this page. Please refresh page and try again."
+msgstr ""
+
+#: website/static/js/apiApplication.js:201
+msgid "Error fetching list of registered applications"
+msgstr ""
+
+#: website/static/js/apiApplication.js:212
+#: website/static/js/apiApplication.js:382
+msgid "Deactivate application?"
+msgstr ""
+
+#: website/static/js/apiApplication.js:220
+#: website/static/js/apiPersonalToken.js:199
+msgid " has been deactivated"
+msgstr ""
+
+#: website/static/js/apiApplication.js:231
+#: website/static/js/apiApplication.js:402
+#: website/static/js/apiPersonalToken.js:210
+#: website/static/js/apiPersonalToken.js:381
+msgid "Deactivate"
+msgstr ""
+
+#: website/static/js/apiApplication.js:281
+#: website/static/js/apiPersonalToken.js:260
+msgid "There are unsaved changes on this page."
+msgstr ""
+
+#: website/static/js/apiApplication.js:295
+msgid "Error fetching application data"
+msgstr ""
+
+#: website/static/js/apiApplication.js:330
+#: website/static/js/apiPersonalToken.js:309
+msgid "Error updating instance"
+msgstr ""
+
+#: website/static/js/apiApplication.js:356
+msgid "Error registering new OAuth2 application"
+msgstr ""
+
+#: website/static/js/apiApplication.js:415
+msgid "Reset client secret?"
+msgstr ""
+
+#: website/static/js/apiApplication.js:433
+msgid "Error resetting instance secret"
+msgstr ""
+
+#: website/static/js/apiApplication.js:445
+msgid "Reset Secret"
+msgstr ""
+
+#: website/static/js/apiApplication.js:459
+#: website/static/js/apiPersonalToken.js:398 website/static/js/profile.js:358
+msgid "Discard changes?"
+msgstr ""
+
+#: website/static/js/apiApplication.js:469
+#: website/static/js/apiPersonalToken.js:408 website/static/js/profile.js:370
+msgid "Discard"
+msgstr ""
+
+#: website/static/js/apiPersonalToken.js:180
+msgid "Error fetching list of registered personal access tokens"
+msgstr ""
+
+#: website/static/js/apiPersonalToken.js:191
+msgid "Deactivate personal access token?"
+msgstr ""
+
+#: website/static/js/apiPersonalToken.js:274
+msgid "Error fetching token data"
+msgstr ""
+
+#: website/static/js/apiPersonalToken.js:335
+msgid "Error registering new OAuth2 personal access token"
+msgstr ""
+
+#: website/static/js/apiPersonalToken.js:361
+msgid "Deactivate token?"
+msgstr ""
+
+#: website/static/js/citationGrid.js:182
+msgid "Copy citation"
+msgstr ""
+
+#: website/static/js/citationGrid.js:192
+msgid "View original document"
+msgstr ""
+
+#: website/static/js/citationGrid.js:204 website/static/js/fangorn.js:2042
+msgid "View on %1$s"
+msgstr ""
+
+#: website/static/js/citationGrid.js:215
+msgid "Download citations"
+msgstr ""
+
+#: website/static/js/citationGrid.js:244
+msgid "Citation"
+msgstr ""
+
+#: website/static/js/citationGrid.js:248
+msgid "Actions"
+msgstr ""
+
+#: website/static/js/citationGrid.js:296
+msgid "Only 200 citations may be displayed"
+msgstr ""
+
+#: website/static/js/citationGrid.js:313 website/static/js/citationWidget.js:44
+msgid "Enter citation style (e.g. \"APA\")"
+msgstr ""
+
+#: website/static/js/citationGrid.js:335
+msgid "Error while selecting citation style: "
+msgstr ""
+
+#: website/static/js/citationGrid.js:414
+msgid ""
+"<em>Could not render entry. Please check the contents of your citations "
+"for correctness.</em>"
+msgstr ""
+
+#: website/static/js/citationList.js:115
+msgid "Your custom citation not updated. Please refresh the page and try "
+msgstr ""
+
+#: website/static/js/citationList.js:116
+msgid "again or contact %1$s"
+msgstr ""
+
+#: website/static/js/citationList.js:116
+#: website/static/js/components/publicNodes.js:194
+#: website/static/js/components/quickFiles.js:125
+#: website/static/js/osfHelpers.js:313
+msgid " if the problem persists."
+msgstr ""
+
+#: website/static/js/citationWidget.js:74
+msgid "Citation render failed"
+msgstr ""
+
+#: website/static/js/citationWidget.js:75
+msgid "The requested citation format generated an error."
+msgstr ""
+
+#: website/static/js/citationWidget.js:78
+msgid "Unexpected error when fetching citation"
+msgstr ""
+
+#: website/static/js/citationsNodeConfig.js:40
+#: website/static/js/citationsNodeConfig.js:44
+msgid "Successfully linked \"%1$s\"."
+msgstr ""
+
+#: website/static/js/citationsNodeConfig.js:40
+msgid " Go to the <a href=\"%1$s\">Overview page</a> to view your citations."
+msgstr ""
+
+#: website/static/js/citationsNodeConfig.js:44
+msgid " Next, choose which folder to link above."
+msgstr ""
+
+#: website/static/js/citationsNodeConfig.js:83
+#: website/static/js/oauthAddonNodeConfig.js:211
+msgid "Could not GET %1$s accounts for user"
+msgstr ""
+
+#: website/static/js/citationsNodeConfig.js:149
+msgid "Choose %1$s Access Token to Import"
+msgstr ""
+
+#: website/static/js/citationsNodeConfig.js:168
+#: website/static/js/citationsNodeConfig.js:186
+#: website/static/js/folderPickerNodeConfig.js:509
+#: website/static/js/oauthAddonNodeConfig.js:155
+#: website/static/js/oauthAddonNodeConfig.js:173
+msgid "Import"
+msgstr ""
+
+#: website/static/js/citationsNodeConfig.js:177
+msgid "Import %1$s access token"
+msgstr ""
+
+#: website/static/js/clipboard.js:29
+msgid "Copied!"
+msgstr ""
+
+#: website/static/js/clipboard.js:34
+msgid "Copy failed!"
+msgstr ""
+
+#: website/static/js/comment.js:56
+msgid "Error getting contributors and group members"
+msgstr ""
+
+#: website/static/js/comment.js:74
+msgid "Spam or advertising"
+msgstr ""
+
+#: website/static/js/comment.js:75
+msgid "Hate speech"
+msgstr ""
+
+#: website/static/js/comment.js:76
+msgid "Violence or harmful behavior"
+msgstr ""
+
+#: website/static/js/comment.js:211
+msgid "Commenting"
+msgstr ""
+
+#: website/static/js/comment.js:211
+msgid "Comment"
+msgstr ""
+
+#: website/static/js/comment.js:231
+msgid "Exceeds character limit. Please reduce to %1$s characters or less."
+msgstr ""
+
+#: website/static/js/comment.js:346 website/static/js/comment.js:554
+msgid "Please enter a comment"
+msgstr ""
+
+#: website/static/js/comment.js:392 website/static/js/comment.js:587
+msgid "Could not submit comment"
+msgstr ""
+
+#: website/static/js/comment.js:393
+msgid "Error creating comment"
+msgstr ""
+
+#: website/static/js/comment.js:588
+msgid "Error editing comment"
+msgstr ""
+
+#: website/static/js/comment.js:633
+msgid "Could not report abuse."
+msgstr ""
+
+#: website/static/js/comment.js:634
+msgid "Error reporting abuse"
+msgstr ""
+
+#: website/static/js/comment.js:663
+msgid "Error deleting comment"
+msgstr ""
+
+#: website/static/js/comment.js:701
+msgid "Error undeleting comment"
+msgstr ""
+
+#: website/static/js/comment.js:726
+msgid "Error unreporting comment"
+msgstr ""
+
+#: website/static/js/comment.js:806
+msgid "Your comments have unsaved changes. Are you sure "
+msgstr ""
+
+#: website/static/js/comment.js:807
+msgid "you want to leave this page?"
+msgstr ""
+
+#: website/static/js/comment.js:825
+msgid "Could not update comment timestamp"
+msgstr ""
+
+#: website/static/js/commentpane.js:34
+msgid "Option `toggleWidth` must be greater than or equal to "
+msgstr ""
+
+#: website/static/js/commentpane.js:35
+msgid "option `maxWidthProp`."
+msgstr ""
+
+#: website/static/js/conference.js:27
+msgid "Author"
+msgstr ""
+
+#: website/static/js/conference.js:39
+msgid "Date Created"
+msgstr ""
+
+#: website/static/js/conference.js:45 website/static/js/fangorn.js:1684
+msgid "Downloads"
+msgstr ""
+
+#: website/static/js/contribAdder.js:29
+msgid " project in common"
+msgstr ""
+
+#: website/static/js/contribAdder.js:31
+msgid "Yourself"
+msgstr ""
+
+#: website/static/js/contribAdder.js:33
+msgid " projects in common"
+msgstr ""
+
+#: website/static/js/contribAdder.js:85
+msgid "Add Contributors"
+msgstr ""
+
+#: website/static/js/contribAdder.js:86
+msgid "Select Components"
+msgstr ""
+
+#: website/static/js/contribAdder.js:88
+msgid "Invite new contributor by e-mail"
+msgstr ""
+
+#: website/static/js/contribAdder.js:89
+msgid "Add Unregistered Contributor"
+msgstr ""
+
+#: website/static/js/contribAdder.js:334
+msgid "Full Name is required."
+msgstr ""
+
+#: website/static/js/contribAdder.js:337
+msgid "Not a valid email address."
+msgstr ""
+
+#: website/static/js/contribAdder.js:344
+msgid "%1$s is already in queue."
+msgstr ""
+
+#: website/static/js/contribAdder.js:463
+msgid "There was a problem trying to add contributors%1$s."
+msgstr ""
+
+#: website/static/js/contribAdder.js:464
+msgid "Could not add contributors"
+msgstr ""
+
+#: website/static/js/contribAdder.js:465
+#: website/static/js/contribManager.js:141
+msgid "Error adding contributors"
+msgstr ""
+
+#: website/static/js/contribAdder.js:535
+#: website/static/js/institutionProjectSettings.js:256
+#: website/static/js/nodesDelete.js:196 website/static/js/nodesPrivacy.js:209
+msgid "Unable to retrieve project settings"
+msgstr ""
+
+#: website/static/js/contribAdder.js:536
+#: website/static/js/institutionProjectSettings.js:257
+#: website/static/js/nodesDelete.js:197 website/static/js/nodesPrivacy.js:210
+msgid "Could not GET project settings."
+msgstr ""
+
+#: website/static/js/contribManager.js:139
+msgid "There was a problem trying to add the contributor. "
+msgstr ""
+
+#: website/static/js/contribManager.js:140
+msgid "Could not add contributor"
+msgstr ""
+
+#: website/static/js/contribManager.js:302
+msgid "Must have at least one registered admin contributor"
+msgstr ""
+
+#: website/static/js/contribManager.js:310
+msgid "Must have at least one bibliographic contributor"
+msgstr ""
+
+#: website/static/js/contribManager.js:366
+msgid "Your contributor list has unsaved changes. Please "
+msgstr ""
+
+#: website/static/js/contribManager.js:367
+msgid "save or cancel your changes before adding "
+msgstr ""
+
+#: website/static/js/contribManager.js:368
+msgid "contributors."
+msgstr ""
+
+#: website/static/js/contribManager.js:377
+msgid "There are unsaved changes to your contributor settings"
+msgstr ""
+
+#: website/static/js/contribManager.js:406
+msgid "Save changes?"
+msgstr ""
+
+#: website/static/js/contribManager.js:407
+msgid "Are you sure you want to save these changes?"
+msgstr ""
+
+#: website/static/js/contribManager.js:423
+msgid "Submission failed: "
+msgstr ""
+
+#: website/static/js/contribManager.js:431
+#: website/static/js/filepage/editor.js:183
+msgid "Save"
+msgstr ""
+
+#: website/static/js/contribRemover.js:59
+#: website/static/js/contribRemover.js:60
+#: website/static/js/contribRemover.js:61
+msgid "Remove Contributor"
+msgstr ""
+
+#: website/static/js/contribRemover.js:211
+#: website/static/js/contribRemover.js:212
+msgid "Unable to retrieve projects and components"
+msgstr ""
+
+#: website/static/js/contribRemover.js:235
+msgid "Unable to delete Contributor"
+msgstr ""
+
+#: website/static/js/contribRemover.js:236
+msgid "Could not DELETE Contributor."
+msgstr ""
+
+#: website/static/js/fangorn.js:39
+msgid "Upload pending..."
+msgstr ""
+
+#: website/static/js/fangorn.js:42
+msgid "Copying "
+msgstr ""
+
+#: website/static/js/fangorn.js:45
+msgid "Deleting "
+msgstr ""
+
+#: website/static/js/fangorn.js:48
+msgid "Moving "
+msgstr ""
+
+#: website/static/js/fangorn.js:51
+msgid "Renaming "
+msgstr ""
+
+#: website/static/js/fangorn.js:449
+msgid "Not allowed: Private folder"
+msgstr ""
+
+#: website/static/js/fangorn.js:493 website/static/js/fangorn.js:523
+msgid "You cannot replace the Wiki images folder"
+msgstr ""
+
+#: website/static/js/fangorn.js:498 website/static/js/fangorn.js:531
+msgid "An item named \"%1$s\" already exists in this location."
+msgstr ""
+
+#: website/static/js/fangorn.js:500 website/static/js/fangorn.js:533
+msgid "Keep Both"
+msgstr ""
+
+#: website/static/js/fangorn.js:500 website/static/js/fangorn.js:533
+msgid " will retain both files (and their version histories) in this location."
+msgstr ""
+
+#: website/static/js/fangorn.js:502 website/static/js/fangorn.js:535
+msgid "Replace"
+msgstr ""
+
+#: website/static/js/fangorn.js:502 website/static/js/fangorn.js:535
+msgid " will overwrite the existing file in this location. "
+msgstr ""
+
+#: website/static/js/fangorn.js:536
+msgid "You will lose previous versions of the overwritten file. "
+msgstr ""
+
+#: website/static/js/fangorn.js:537
+msgid "You will keep previous versions of the moved file."
+msgstr ""
+
+#: website/static/js/fangorn.js:538
+msgid " will cancel the move."
+msgstr ""
+
+#: website/static/js/fangorn.js:547
+msgid "Replace \"%1$s\"?"
+msgstr ""
+
+#: website/static/js/fangorn.js:577
+msgid "%1$s conflicts left to resolve."
+msgid_plural "%1$s conflict left to resolve."
+msgstr[0] ""
+msgstr[1] ""
+
+#: website/static/js/fangorn.js:656
+msgid "%1$s \"%2$s\" to \"%3$s\" is taking a bit longer than expected."
+msgstr ""
+
+#: website/static/js/fangorn.js:657
+msgid "We'll send you an email when it has finished."
+msgstr ""
+
+#: website/static/js/fangorn.js:658
+msgid ""
+"In the mean time you can leave this page; your %1$s will still be "
+"completed."
+msgstr ""
+
+#: website/static/js/fangorn.js:663
+msgid "Operation Information"
+msgstr ""
+
+#: website/static/js/fangorn.js:669
+msgid "Successfully %1$s."
+msgstr ""
+
+#: website/static/js/fangorn.js:716
+msgid "Please refresh the page or contact %1$s if the problem persists."
+msgstr ""
+
+#: website/static/js/fangorn.js:721
+msgid "Failed to move or copy file"
+msgstr ""
+
+#: website/static/js/fangorn.js:999
+msgid "Could not upload file. The file may be invalid "
+msgstr ""
+
+#: website/static/js/fangorn.js:1000
+msgid "or the file folder has been deleted."
+msgstr ""
+
+#: website/static/js/fangorn.js:1008 website/static/js/fangorn.js:1013
+msgid "Cannot upload folders."
+msgstr ""
+
+#: website/static/js/fangorn.js:1015
+msgid "Cannot upload file due to insufficient storage."
+msgstr ""
+
+#: website/static/js/fangorn.js:1020
+msgid "Could not upload file. Possible reasons: <br>"
+msgstr ""
+
+#: website/static/js/fangorn.js:1021
+msgid "1. Cannot upload folders. <br>2. "
+msgstr ""
+
+#: website/static/js/fangorn.js:1023
+msgid "Unable to reach the provider, please try again later. "
+msgstr ""
+
+#: website/static/js/fangorn.js:1024
+msgid "If the problem persists, please contact %1$s."
+msgstr ""
+
+#: website/static/js/fangorn.js:1112
+msgid "Please enter a folder name."
+msgstr ""
+
+#: website/static/js/fangorn.js:1116
+msgid "Folder name contains illegal characters."
+msgstr ""
+
+#: website/static/js/fangorn.js:1139
+msgid "New folder created!"
+msgstr ""
+
+#: website/static/js/fangorn.js:1148
+msgid "Folder creation failed."
+msgstr ""
+
+#: website/static/js/fangorn.js:1166
+msgid "<i> Deleting...</i>"
+msgstr ""
+
+#: website/static/js/fangorn.js:1188
+msgid "Delete failed."
+msgstr ""
+
+#: website/static/js/fangorn.js:1203
+msgid ""
+"This folder and all of its contents will be deleted. This folder is "
+"linked to "
+msgstr ""
+
+#: website/static/js/fangorn.js:1204
+msgid "your wiki(s). Deleting it will remove images embedded in your wiki(s). "
+msgstr ""
+
+#: website/static/js/fangorn.js:1205 website/static/js/fangorn.js:1233
+#: website/static/js/fangorn.js:1256 website/static/js/pages/base-page.js:134
+msgid "This action is irreversible."
+msgstr ""
+
+#: website/static/js/fangorn.js:1208
+msgid ""
+"This folder and ALL its contents will be deleted. This action is "
+"irreversible."
+msgstr ""
+
+#: website/static/js/fangorn.js:1214 website/static/js/fangorn.js:1237
+#: website/static/js/fangorn.js:1997 website/static/js/fangorn.js:2033
+#: website/static/js/filepage/index.js:211
+#: website/static/js/filepage/index.js:524 website/static/js/myProjects.js:1639
+msgid "Delete"
+msgstr ""
+
+#: website/static/js/fangorn.js:1216 website/static/js/fangorn.js:1241
+msgid "Delete \"%1$s\"?"
+msgstr ""
+
+#: website/static/js/fangorn.js:1218
+msgid "You don't have permission to delete this file."
+msgstr ""
+
+#: website/static/js/fangorn.js:1226
+msgid "This file may be linked to your wiki(s). Deleting it will remove the"
+msgstr ""
+
+#: website/static/js/fangorn.js:1227
+msgid " image embedded in your wiki(s). "
+msgstr ""
+
+#: website/static/js/fangorn.js:1267
+msgid ""
+"Some of the selected items are folders. This will delete the folder(s) "
+"and ALL of their content."
+msgstr ""
+
+#: website/static/js/fangorn.js:1281
+msgid " may be linked to"
+msgstr ""
+
+#: website/static/js/fangorn.js:1282
+msgid " your wiki(s). Deleting them will remove images embedded in your wiki(s). "
+msgstr ""
+
+#: website/static/js/fangorn.js:1290
+msgid "Delete All"
+msgstr ""
+
+#: website/static/js/fangorn.js:1294
+msgid ""
+"Some of these files can't be deleted but you can delete the ones "
+"highlighted with green. This action is irreversible."
+msgstr ""
+
+#: website/static/js/fangorn.js:1309
+msgid "Delete Some"
+msgstr ""
+
+#: website/static/js/fangorn.js:1312
+msgid "Delete multiple files?"
+msgstr ""
+
+#: website/static/js/fangorn.js:1338
+msgid ""
+"Unable to check out file. This is most likely due to the file being "
+"already checked-out"
+msgstr ""
+
+#: website/static/js/fangorn.js:1339
+msgid " by another user."
+msgstr ""
+
+#: website/static/js/fangorn.js:1671 website/static/js/fileViewTreebeard.js:65
+#: website/static/js/filesWidget.js:36 website/static/js/meetings.js:20
+#: website/static/js/pages/project-dashboard-page.js:372
+#: website/static/js/project-organizer.js:191
+#: website/static/js/project-organizer.js:207 website/static/js/wikiMenu.js:60
+msgid "Name"
+msgstr ""
+
+#: website/static/js/fangorn.js:1676
+msgid "Size"
+msgstr ""
+
+#: website/static/js/fangorn.js:1680
+msgid "Version"
+msgstr ""
+
+#: website/static/js/fangorn.js:1688
+#: website/static/js/pages/project-dashboard-page.js:378
+#: website/static/js/project-organizer.js:200
+msgid "Modified"
+msgstr ""
+
+#: website/static/js/fangorn.js:1762
+msgid "Unable to retrieve components."
+msgstr ""
+
+#: website/static/js/fangorn.js:1764
+msgid "Unable to retrieve components for node %1$s"
+msgstr ""
+
+#: website/static/js/fangorn.js:1846
+msgid "You cannot rename your Wiki images folder."
+msgstr ""
+
+#: website/static/js/fangorn.js:1954
+msgid "Upload"
+msgstr ""
+
+#: website/static/js/fangorn.js:1961
+msgid "Create Folder"
+msgstr ""
+
+#: website/static/js/fangorn.js:1968
+msgid "Delete Folder"
+msgstr ""
+
+#: website/static/js/fangorn.js:1977 website/static/js/filepage/index.js:527
+#: website/static/js/filepage/revisions.js:114
+msgid "Download"
+msgstr ""
+
+#: website/static/js/fangorn.js:1987 website/static/js/filepage/index.js:549
+msgid "View"
+msgstr ""
+
+#: website/static/js/fangorn.js:2003 website/static/js/filepage/index.js:223
+msgid "This would mean "
+msgstr ""
+
+#: website/static/js/fangorn.js:2004 website/static/js/filepage/index.js:224
+msgid ""
+"other contributors cannot edit, delete or upload new versions of this "
+"file "
+msgstr ""
+
+#: website/static/js/fangorn.js:2005
+msgid "as long as it is checked-out. You can check it back in at anytime."
+msgstr ""
+
+#: website/static/js/fangorn.js:2010 website/static/js/fangorn.js:2015
+#: website/static/js/filepage/index.js:250
+msgid "Check out file"
+msgstr ""
+
+#: website/static/js/fangorn.js:2011
+msgid "Confirm file check-out?"
+msgstr ""
+
+#: website/static/js/fangorn.js:2024
+msgid "Check in file"
+msgstr ""
+
+#: website/static/js/fangorn.js:2052
+msgid "Download as zip"
+msgstr ""
+
+#: website/static/js/fangorn.js:2063 website/static/js/myProjects.js:1615
+msgid "Rename"
+msgstr ""
+
+#: website/static/js/fangorn.js:2145
+msgid "New folder name"
+msgstr ""
+
+#: website/static/js/fangorn.js:2173
+msgid "Enter name"
+msgstr ""
+
+#: website/static/js/fangorn.js:2210
+msgid "Cancel Pending Uploads"
+msgstr ""
+
+#: website/static/js/fangorn.js:2234
+msgid "Delete Multiple"
+msgstr ""
+
+#: website/static/js/fangorn.js:2245 website/static/js/fangorn.js:2956
+msgid "Filter"
+msgstr ""
+
+#: website/static/js/fangorn.js:2250
+msgid "Select rows:"
+msgstr ""
+
+#: website/static/js/fangorn.js:2250
+msgid ""
+" Click on a row (outside the add-on, file, or folder name) to show "
+"further actions in the toolbar. Use Command or Shift keys to select "
+"multiple files."
+msgstr ""
+
+#: website/static/js/fangorn.js:2251
+msgid "Open files:"
+msgstr ""
+
+#: website/static/js/fangorn.js:2251
+msgid " Click a file name to go to view the file in the GakuNin RDM."
+msgstr ""
+
+#: website/static/js/fangorn.js:2252
+msgid "Open files in new tab:"
+msgstr ""
+
+#: website/static/js/fangorn.js:2252
+msgid ""
+" Press Command (Ctrl in Windows) and click a file name to open it in a "
+"new tab."
+msgstr ""
+
+#: website/static/js/fangorn.js:2253
+msgid "Download as zip:"
+msgstr ""
+
+#: website/static/js/fangorn.js:2253
+msgid ""
+" Click on the row of an add-on or folder and click the Download as Zip "
+"button in the toolbar."
+msgstr ""
+
+#: website/static/js/fangorn.js:2253
+msgid " Not available for all storage add-ons."
+msgstr ""
+
+#: website/static/js/fangorn.js:2254
+msgid "Copy files:"
+msgstr ""
+
+#: website/static/js/fangorn.js:2254
+msgid ""
+" Press Option (Alt in Windows) while dragging a file to a new folder or "
+"component."
+msgstr ""
+
+#: website/static/js/fangorn.js:2254
+msgid " Only for contributors with write access."
+msgstr ""
+
+#: website/static/js/fangorn.js:2260
+msgid "How to Use the File Browser"
+msgstr ""
+
+#: website/static/js/fangorn.js:2324
+msgid "Please wait for current action to complete"
+msgstr ""
+
+#: website/static/js/fangorn.js:2505
+msgid "Upload Status"
+msgstr ""
+
+#: website/static/js/fangorn.js:2505
+msgid " files succeeded."
+msgstr ""
+
+#: website/static/js/fangorn.js:2610
+msgid " files successfully moved."
+msgstr ""
+
+#: website/static/js/fangorn.js:2611
+msgid " Skipped %1$s/%2$s files."
+msgstr ""
+
+#: website/static/js/fangorn.js:2881
+msgid "You have pending uploads, if you leave this page they may not complete."
+msgstr ""
+
+#: website/static/js/fangorn.js:2884
+msgid ""
+"You have pending file operations, if you leave this page they may not "
+"complete."
+msgstr ""
+
+#: website/static/js/fangorn.js:2918
+msgid "This file is too large (%1$s). Max file size is %2$s."
+msgstr ""
+
+#: website/static/js/fangorn.js:2934
+msgid "Not enough quota to upload the file."
+msgstr ""
+
+#: website/static/js/fangorn.js:2941
+msgid "Quota usage alert"
+msgstr ""
+
+#: website/static/js/fangorn.js:2942
+#, python-format
+msgid "You have used more than %1$s% of your quota."
+msgstr ""
+
+#: website/static/js/fileViewTreebeard.js:122
+msgid "Uploading %1$s..."
+msgstr ""
+
+#: website/static/js/filesWidget.js:79
+msgid "Could not GET files"
+msgstr ""
+
+#: website/static/js/filesWidget.js:94
+msgid "Sorry, we could not load files right now. "
+msgstr ""
+
+#: website/static/js/firebase-messaging-sw.js:13
+msgid "RDM Announcements"
+msgstr ""
+
+#: website/static/js/firebase-messaging-sw.js:15
+msgid "Background Message body."
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:110
+msgid ""
+"Could not retrieve %1$s settings at this time. The credentials associated"
+" with this %1$s account may no longer be valid."
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:111
+msgid ""
+" Try disconnecting and reconnecting the %1$s account on your <a "
+"href=\"%2$s\">account settings page</a>."
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:114
+msgid ""
+"Could not retrieve %1$s settings at this time. The %1$s addon credentials"
+" may no longer be valid."
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:115
+msgid " Contact %1$s to verify."
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:118
+msgid ""
+"Could not retrieve %1$s settings at this time. Please refresh the page. "
+"If the problem persists, email %2$s."
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:121
+msgid ""
+"Could not retrieve %1$s account list at this time. Please refresh the "
+"page. If the problem persists, email %2$s."
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:124
+msgid "Disconnected %1$s."
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:127
+msgid ""
+"Could not disconnect %1$s account because of an error. Please try again "
+"later."
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:130
+msgid "Successfully connected a %1$s account"
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:133
+msgid ""
+"Error while authorizing addon. Please log in to your %1$s account and "
+"grant access to the GakuNin RDM to enable this addon."
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:141
+msgid "Could not change %1$s settings. Please try again later."
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:144
+msgid "Are you sure you want to remove this %1$s account?"
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:147
+msgid "Are you sure you want to link your %1$s account with this project?"
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:150
+msgid "Successfully imported %1$s account from profile."
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:153
+msgid "Error occurred while importing %1$s account."
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:156
+msgid "Error occurred while importing %1$s group libraries."
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:159
+msgid "Could not connect to %1$s at this time. Please try again later."
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:323
+msgid "Could not GET %1$s settings"
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:351
+#: website/static/js/folderPickerNodeConfig.js:384
+msgid "Failed to update %1$s settings."
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:433
+msgid "Failed to import %1$s access token."
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:445
+msgid "Failed to import %1$s group libraries."
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:499
+#: website/static/js/oauthAddonNodeConfig.js:164
+msgid "Import %1$s Account?"
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:538
+msgid "Could not deauthorize %1$s account from node"
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:554
+msgid "Disconnect %1$s Account?"
+msgstr ""
+
+#: website/static/js/folderPickerNodeConfig.js:647
+#: website/static/js/folderPickerNodeConfig.js:658
+msgid "Could not GET get %1$s contents."
+msgstr ""
+
+#: website/static/js/folderpicker.js:103
+msgid "Folders"
+msgstr ""
+
+#: website/static/js/folderpicker.js:107
+msgid "Select"
+msgstr ""
+
+#: website/static/js/institutionNodes.js:28
+msgid "Failed to load Institution's nodes"
+msgstr ""
+
+#: website/static/js/institutionProjectSettings.js:49
+#: website/static/js/institutionProjectSettings.js:129
+msgid "Add institution"
+msgstr ""
+
+#: website/static/js/institutionProjectSettings.js:49
+#: website/static/js/institutionProjectSettings.js:129
+msgid "Remove institution"
+msgstr ""
+
+#: website/static/js/institutionProjectSettings.js:61
+msgid ""
+"Add <b>%1$s</b> to <b>%2$s</b> or to <b>%3$s</b> and every component in "
+"it?<br><br>"
+msgstr ""
+
+#: website/static/js/institutionProjectSettings.js:62
+msgid "Add to <b>%1$s</b>."
+msgstr ""
+
+#: website/static/js/institutionProjectSettings.js:63
+msgid "Add to <b>%1$s</b> and every component for which you have permission."
+msgstr ""
+
+#: website/static/js/institutionProjectSettings.js:66
+msgid ""
+"Remove <b>%1$s</b> from <b>%2$s</b> or from <b>%3$s</b> and every "
+"component in it?<br><br>"
+msgstr ""
+
+#: website/static/js/institutionProjectSettings.js:67
+msgid "Remove from <b>%1$s</b>."
+msgstr ""
+
+#: website/static/js/institutionProjectSettings.js:68
+msgid "Remove from <b>%1$s</b> and every component for which you have permission."
+msgstr ""
+
+#: website/static/js/institutionProjectSettings.js:71
+#: website/static/js/institutionProjectSettings.js:88
+msgid "Warning, you are not affiliated with <b>%1$s</b>."
+msgstr ""
+
+#: website/static/js/institutionProjectSettings.js:72
+#: website/static/js/institutionProjectSettings.js:89
+msgid " If you remove it from your project, you cannot add it back.</div></br>"
+msgstr ""
+
+#: website/static/js/institutionProjectSettings.js:87
+msgid "Remove <b>%1$s</b> from <b>%2$s</b>."
+msgstr ""
+
+#: website/static/js/institutionProjectSettings.js:159
+msgid "Updating affiliation... this may take a minute."
+msgstr ""
+
+#: website/static/js/institutionProjectSettings.js:204
+msgid ""
+"Unable to modify the institution on this node. Please try again. If the "
+"problem persists, email %1$s"
+msgstr ""
+
+#: website/static/js/institutionProjectSettings.js:205
+msgid "Unable to modify this institution!"
+msgstr ""
+
+#: website/static/js/js_messages.js:5
+msgid "Edit"
+msgstr ""
+
+#: website/static/js/js_messages.js:7
+msgid "Analysis"
+msgstr ""
+
+#: website/static/js/js_messages.js:7
+msgid "Communication"
+msgstr ""
+
+#: website/static/js/js_messages.js:7
+msgid "Data"
+msgstr ""
+
+#: website/static/js/js_messages.js:7
+msgid "Hypothesis"
+msgstr ""
+
+#: website/static/js/js_messages.js:7
+msgid "Instrumentation"
+msgstr ""
+
+#: website/static/js/js_messages.js:7
+msgid "Methods and Measures"
+msgstr ""
+
+#: website/static/js/js_messages.js:7
+msgid "Procedure"
+msgstr ""
+
+#: website/static/js/js_messages.js:7
+#: website/static/js/projectSettingsTreebeardBase.js:92
+msgid "Project"
+msgstr ""
+
+#: website/static/js/js_messages.js:7
+msgid "Software"
+msgstr ""
+
+#: website/static/js/js_messages.js:7
+msgid "Other"
+msgstr ""
+
+#: website/static/js/js_messages.js:9 website/static/js/js_messages.js:11
+msgid "Comments added"
+msgstr ""
+
+#: website/static/js/js_messages.js:9 website/static/js/js_messages.js:11
+msgid "Files updated"
+msgstr ""
+
+#: website/static/js/js_messages.js:11
+msgid "Replies to your comments"
+msgstr ""
+
+#: website/static/js/js_messages.js:11
+msgid "Mentions added"
+msgstr ""
+
+#: website/static/js/js_messages.js:11
+msgid "Preprint submissions updated"
+msgstr ""
+
+#: website/static/js/js_messages.js:13
+msgid "No license"
+msgstr ""
+
+#: website/static/js/js_messages.js:15
+msgid ""
+"Because you have not configured the {addon} add-on, your authentication "
+"will not be transferred to the forked {category}. You may authorize and "
+"configure the {addon} add-on in the new fork on the settings page."
+msgstr ""
+
+#: website/static/js/keen.js:116
+msgid "Error sending Keen data to %1$s:<%2$s>"
+msgstr ""
+
+#: website/static/js/keen.js:134
+msgid "Error sending Keen data for multiple events: <%1$s>"
+msgstr ""
+
+#: website/static/js/keen.js:143
+msgid "Error sending Keen data to %1$s."
+msgstr ""
+
+#: website/static/js/keen.js:155
+msgid "Cannot instantiate another KeenTracker instance."
+msgstr ""
+
+#: website/static/js/koHelpers.js:131
+msgid "End date must be greater than or equal to the start date."
+msgstr ""
+
+#: website/static/js/koHelpers.js:149
+msgid "Date must be greater than or equal to 1900."
+msgstr ""
+
+#: website/static/js/koHelpers.js:171
+msgid "Please enter a date prior to the current date."
+msgstr ""
+
+#: website/static/js/koHelpers.js:177
+msgid "Please enter a valid year."
+msgstr ""
+
+#: website/static/js/koHelpers.js:192
+msgid "Please enter a valid URL."
+msgstr ""
+
+#: website/static/js/koHelpers.js:199
+msgid "The field does not match the required input."
+msgstr ""
+
+#: website/static/js/licensePicker.js:22
+msgid "Year"
+msgstr ""
+
+#: website/static/js/licensePicker.js:23
+msgid "Copyright Holders"
+msgstr ""
+
+#: website/static/js/licensePicker.js:28
+msgid "License:"
+msgstr ""
+
+#: website/static/js/licensePicker.js:29
+msgid "Choose a license:"
+msgstr ""
+
+#: website/static/js/licensePicker.js:30
+msgid ">Save<"
+msgstr ""
+
+#: website/static/js/licensePicker.js:70
+msgid "Add a license"
+msgstr ""
+
+#: website/static/js/licensePicker.js:106
+msgid "Please specify a valid year."
+msgstr ""
+
+#: website/static/js/licensePicker.js:110
+msgid "Future years are not allowed."
+msgstr ""
+
+#: website/static/js/licensePicker.js:192
+msgid "License updated successfully."
+msgstr ""
+
+#: website/static/js/licensePicker.js:197
+msgid "There was a problem updating your license. Please try again."
+msgstr ""
+
+#: website/static/js/licensePicker.js:241
+msgid "Your Own License"
+msgstr ""
+
+#: website/static/js/licensePicker.js:242
+msgid ""
+"You have opted to use your own license. Please upload a license file "
+"named \"license.txt\" into the GakuNin RDM Storage of this project."
+msgstr ""
+
+#: website/static/js/licensePicker.js:249
+msgid "Add license"
+msgstr ""
+
+#: website/static/js/licenses.js:29
+msgid "Content:"
+msgstr ""
+
+#: website/static/js/licenses.js:33
+msgid "Code - Permissive:"
+msgstr ""
+
+#: website/static/js/licenses.js:37
+msgid "Code - Copyleft:"
+msgstr ""
+
+#: website/static/js/licenses.js:41
+msgid "Code - Other:"
+msgstr ""
+
+#: website/static/js/meetings.js:26
+msgid "Submissions"
+msgstr ""
+
+#: website/static/js/meetings.js:32
+msgid "Location"
+msgstr ""
+
+#: website/static/js/filepage/revisions.js:112 website/static/js/meetings.js:38
+msgid "Date"
+msgstr ""
+
+#: website/static/js/myProjects.js:310
+msgid "We're having some trouble contacting our servers. Try reloading the page."
+msgstr ""
+
+#: website/static/js/myProjects.js:310
+msgid "Something went wrong!"
+msgstr ""
+
+#: website/static/js/myProjects.js:435
+msgid "All my projects"
+msgstr ""
+
+#: website/static/js/myProjects.js:463
+msgid "Error loading project category names."
+msgstr ""
+
+#: website/static/js/myProjects.js:667
+msgid "Some projects"
+msgstr ""
+
+#: website/static/js/myProjects.js:671
+msgid " could not be removed from the collection"
+msgstr ""
+
+#: website/static/js/myProjects.js:673
+msgid "Please try again."
+msgstr ""
+
+#: website/static/js/myProjects.js:766
+msgid "You have not created any projects yet."
+msgstr ""
+
+#: website/static/js/myProjects.js:770
+msgid ""
+"There have been no completed registrations for this institution, but you "
+"can view the "
+msgstr ""
+
+#: website/static/js/myProjects.js:771
+msgid "newest public registrations"
+msgstr ""
+
+#: website/static/js/myProjects.js:772 website/static/js/myProjects.js:780
+msgid " or "
+msgstr ""
+
+#: website/static/js/myProjects.js:773
+msgid "popular public registrations."
+msgstr ""
+
+#: website/static/js/myProjects.js:776
+msgid "You have not made any registrations yet. Go to "
+msgstr ""
+
+#: website/static/js/myProjects.js:777
+msgid "Guides"
+msgstr ""
+
+#: website/static/js/myProjects.js:777
+msgid " to learn how registrations work."
+msgstr ""
+
+#: website/static/js/myProjects.js:780
+msgid "You have not made any preprints yet. Learn more about preprints in the "
+msgstr ""
+
+#: website/static/js/myProjects.js:780
+msgid "OSF Guides"
+msgstr ""
+
+#: website/static/js/myProjects.js:780
+msgid "make one now."
+msgstr ""
+
+#: website/static/js/myProjects.js:782
+msgid ""
+"You have no bookmarks. You can add projects or registrations by dragging "
+"them into your bookmarks or by clicking the Add to Bookmark button on the"
+" project or registration."
+msgstr ""
+
+#: website/static/js/myProjects.js:784
+msgid "This collection is empty."
+msgstr ""
+
+#: website/static/js/myProjects.js:786
+msgid ""
+" You can add projects, registrations, or preprints by dragging them into "
+"the collection."
+msgstr ""
+
+#: website/static/js/myProjects.js:797
+msgid ""
+"No components to display. Either there are no components, or there are "
+"private components in which you are not a contributor."
+msgstr ""
+
+#: website/static/js/myProjects.js:968
+msgid "Collections could not be loaded."
+msgstr ""
+
+#: website/static/js/myProjects.js:969
+msgid "Please reload the page."
+msgstr ""
+
+#: website/static/js/myProjects.js:1111
+msgid "My Projects "
+msgstr ""
+
+#: website/static/js/myProjects.js:1112
+msgid "Browse and organize all your projects"
+msgstr ""
+
+#: website/static/js/myProjects.js:1117
+msgid "Create Project"
+msgstr ""
+
+#: website/static/js/myProjects.js:1174
+msgid "Fetching more projects"
+msgstr ""
+
+#: website/static/js/myProjects.js:1280
+msgid "\" collection could not be created."
+msgstr ""
+
+#: website/static/js/myProjects.js:1281 website/static/js/myProjects.js:1313
+#: website/static/js/myProjects.js:1338
+msgid "Please try again"
+msgstr ""
+
+#: website/static/js/myProjects.js:1312
+msgid "\" could not be deleted."
+msgstr ""
+
+#: website/static/js/myProjects.js:1337
+msgid "\" could not be renamed."
+msgstr ""
+
+#: website/static/js/myProjects.js:1385
+msgid "\" is already in \"%1$s\""
+msgstr ""
+
+#: website/static/js/myProjects.js:1471
+msgid "Collections "
+msgstr ""
+
+#: website/static/js/myProjects.js:1474
+msgid ""
+"Collections are groups of projects. You can create custom collections. "
+"Drag and drop your projects or bookmarked projects to add them."
+msgstr ""
+
+#: website/static/js/myProjects.js:1503
+msgid " Rename"
+msgstr ""
+
+#: website/static/js/myProjects.js:1512
+msgid " Delete"
+msgstr ""
+
+#: website/static/js/myProjects.js:1530
+msgid "Add new collection"
+msgstr ""
+
+#: website/static/js/myProjects.js:1533
+msgid ""
+"Collections are groups of projects that help you organize your work. "
+"After you create your collection, you can add projects by dragging them "
+"into the collection."
+msgstr ""
+
+#: website/static/js/myProjects.js:1535
+msgid "Collection name"
+msgstr ""
+
+#: website/static/js/myProjects.js:1550
+msgid "e.g.  My Replications"
+msgstr ""
+
+#: website/static/js/myProjects.js:1567
+msgid "Add"
+msgstr ""
+
+#: website/static/js/myProjects.js:1578
+msgid "Rename collection"
+msgstr ""
+
+#: website/static/js/myProjects.js:1583
+msgid "Rename to: "
+msgstr ""
+
+#: website/static/js/myProjects.js:1626
+msgid "Delete collection \"%1$s\"?"
+msgstr ""
+
+#: website/static/js/myProjects.js:1629
+msgid "This will delete your collection, but your projects will not be deleted."
+msgstr ""
+
+#: website/static/js/myProjects.js:1739
+msgid "Parent projects"
+msgstr ""
+
+#: website/static/js/myProjects.js:1788
+msgid "Create component"
+msgstr ""
+
+#: website/static/js/myProjects.js:1877
+msgid ""
+"No contributors to display in this collection. Project administrators can"
+" add contributors."
+msgstr ""
+
+#: website/static/js/myProjects.js:1900
+msgid ""
+"No tags to display in this collection. Project administrators and write "
+"contributors can add tags."
+msgstr ""
+
+#: website/static/js/myProjects.js:1926
+msgid "Contributors "
+msgstr ""
+
+#: website/static/js/myProjects.js:1929
+msgid "Click a contributor's name to see projects that you have in common."
+msgstr ""
+
+#: website/static/js/myProjects.js:1940 website/static/js/myProjects.js:2021
+msgid "Tags"
+msgstr ""
+
+#: website/static/js/myProjects.js:1965
+msgid "Select a row to view project details."
+msgstr ""
+
+#: website/static/js/myProjects.js:1996
+msgid "Information"
+msgstr ""
+
+#: website/static/js/myProjects.js:2000
+msgid "Activity"
+msgstr ""
+
+#: website/static/js/myProjects.js:2007
+msgid "Visibility: "
+msgstr ""
+
+#: website/static/js/myProjects.js:2007
+msgid "Public"
+msgstr ""
+
+#: website/static/js/myProjects.js:2007
+msgid "Private"
+msgstr ""
+
+#: website/static/js/myProjects.js:2009
+msgid "Category: "
+msgstr ""
+
+#: website/static/js/myProjects.js:2013
+msgid "Permission: "
+msgstr ""
+
+#: website/static/js/myProjects.js:2014
+msgid "Last Modified on: "
+msgstr ""
+
+#: website/static/js/myProjects.js:2042
+msgid "Remove selected from collection"
+msgstr ""
+
+#: website/static/js/nodeControl.js:63
+msgid "A request to make this registration public is pending"
+msgstr ""
+
+#: website/static/js/nodeControl.js:104
+msgid "Edit Title"
+msgstr ""
+
+#: website/static/js/nodeControl.js:108
+msgid "Title cannot be blank."
+msgstr ""
+
+#: website/static/js/nodeControl.js:111
+msgid "Title cannot exceed 512 characters."
+msgstr ""
+
+#: website/static/js/nodeControl.js:116
+#: website/static/js/nodeSelectTreebeard.js:89
+#: website/static/js/nodesDeleteTreebeard.js:64
+#: website/static/js/nodesPrivacySettingsTreebeard.js:64
+msgid "project"
+msgstr ""
+
+#: website/static/js/nodeControl.js:116
+msgid "component"
+msgstr ""
+
+#: website/static/js/nodeControl.js:119
+msgid "Edit Description"
+msgstr ""
+
+#: website/static/js/nodeControl.js:120
+msgid "Add a brief description to your %1$s"
+msgstr ""
+
+#: website/static/js/nodeControl.js:137
+msgid "Select a category"
+msgstr ""
+
+#: website/static/js/nodeControl.js:177
+msgid "The project could not be removed"
+msgstr ""
+
+#: website/static/js/nodeControl.js:214
+msgid "Create DOI"
+msgstr ""
+
+#: website/static/js/nodeControl.js:216
+msgid "Are you sure you want to create a DOI for this %1$s"
+msgstr ""
+
+#: website/static/js/nodeControl.js:217
+msgid "? A DOI"
+msgstr ""
+
+#: website/static/js/nodeControl.js:218
+msgid " is persistent and will always resolve to this page."
+msgstr ""
+
+#: website/static/js/nodeControl.js:247
+msgid "We could not create the identifier at this time. "
+msgstr ""
+
+#: website/static/js/nodeControl.js:248
+msgid "The DOI acquisition service may be down right now. "
+msgstr ""
+
+#: website/static/js/nodeControl.js:249
+msgid "Please try again soon and/or contact %1$s"
+msgstr ""
+
+#: website/static/js/nodeControl.js:251
+msgid "Could not create doi"
+msgstr ""
+
+#: website/static/js/nodeSelectTreebeard.js:64
+#: website/static/js/notificationsTreebeard.js:64
+#: website/static/js/profile.js:321
+#: website/static/js/wikiSettingsTreebeard.js:58
+msgid "Could not update settings"
+msgstr ""
+
+#: website/static/js/nodeSelectTreebeard.js:83
+#: website/static/js/nodesDeleteTreebeard.js:58
+#: website/static/js/nodesPrivacySettingsTreebeard.js:58
+msgid "checkBox"
+msgstr ""
+
+#: website/static/js/nodesDelete.js:40
+msgid ""
+"This %1$s also contains supplemental materials for a "
+"<strong>preprint</strong>.  It will"
+msgstr ""
+
+#: website/static/js/nodesDelete.js:41
+msgid " no longer be available to contributors or connected to the preprint."
+msgstr ""
+
+#: website/static/js/nodesDelete.js:45
+msgid "It will no longer be available to other contributors on the project."
+msgstr ""
+
+#: website/static/js/nodesDelete.js:51
+msgid "Are you sure you want to delete this %1$s?"
+msgstr ""
+
+#: website/static/js/nodesDelete.js:82 website/static/js/nodesDelete.js:342
+msgid "Unable to delete %1$s"
+msgstr ""
+
+#: website/static/js/nodesDelete.js:86 website/static/js/nodesDelete.js:346
+msgid "Problem deleting %1$s"
+msgstr ""
+
+#: website/static/js/nodesDelete.js:87
+msgid "Could not delete %$1s"
+msgstr ""
+
+#: website/static/js/nodesDelete.js:118
+msgid ""
+"<br><br>This %1$s also contains supplemental materials for a "
+"<strong>preprint</strong>, and one or more of its %2$s contains "
+"supplemental materials for a <strong>preprint</strong>."
+msgstr ""
+
+#: website/static/js/nodesDelete.js:121
+msgid ""
+"<br><br>This %1$s also contains supplemental materials for a "
+"<strong>preprint</strong>."
+msgstr ""
+
+#: website/static/js/nodesDelete.js:124
+msgid ""
+"<br><br>This %1$s also has one or more %2$s that contain supplemental "
+"materials for a <strong>preprint</strong>."
+msgstr ""
+
+#: website/static/js/nodesDelete.js:152
+msgid "Delete %1$s"
+msgstr ""
+
+#: website/static/js/nodesDelete.js:153
+msgid "Delete %1$s and %2$s"
+msgstr ""
+
+#: website/static/js/nodesDelete.js:158
+msgid "This %1$s contains %2$s."
+msgstr ""
+
+#: website/static/js/nodesDelete.js:158
+msgid " To delete this %1$s, you must also delete all %2$s."
+msgstr ""
+
+#: website/static/js/nodesDelete.js:160
+msgid " The following %1$s and %2$s will be deleted."
+msgstr ""
+
+#: website/static/js/nodesDelete.js:163
+msgid " This action is irreversible."
+msgstr ""
+
+#: website/static/js/nodesDelete.js:169
+msgid ""
+"Please note that deleting your %1$s will erase all your %2$s data and "
+"this process is IRREVERSIBLE. Deleted %3$s and %4$s will no longer be "
+"available to other contributors on the %5$s"
+msgstr ""
+
+#: website/static/js/nodesDelete.js:170
+msgid " and will be disconnected from your preprints."
+msgstr ""
+
+#: website/static/js/nodesDelete.js:170
+msgid "."
+msgstr ""
+
+#: website/static/js/nodesDelete.js:333
+msgid "Your %1$s has been successfully deleted."
+msgstr ""
+
+#: website/static/js/nodesDelete.js:347
+msgid "Could not batch delete project and its components."
+msgstr ""
+
+#: website/static/js/nodesDeleteTreebeard.js:86
+msgid "You must have admin permissions on this component to be able to delete it."
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:21
+msgid ""
+"Please review your projects, components, and add-ons for sensitive or "
+"restricted information before making them public."
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:22
+msgid ""
+"<br><br>Once they are made public, you should assume they will always be "
+"public. You can "
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:23
+msgid ""
+"return them to private later, but search engines (including Google’s "
+"cache) or others may access files, wiki pages, or analytics before you "
+"do."
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:25
+msgid ""
+"<ul><li>Public forks and registrations of this project will remain "
+"public.</li>"
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:26 website/static/js/nodesPrivacy.js:29
+msgid ""
+"<li>Search engines (including Google's cache) or others may have accessed"
+" files, wiki pages, or analytics while this project was public.</li></ul>"
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:28
+msgid ""
+"<ul><li>Preprints will remain public.</li><li>Public forks and "
+"registrations of this project will remain public.</li>"
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:30
+msgid ""
+"By clicking confirm, an email will be sent to project administrator(s) to"
+" approve ending the embargo. If approved, this registration, including "
+"any components, will be made public immediately. This action is "
+"irreversible."
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:31
+msgid "End embargo early"
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:32
+msgid "Adjust your privacy settings by checking the boxes below. "
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:33
+msgid ""
+"<br><br><b>Checked</b> projects and components will be <b>public</b>.  "
+"<br><b>Unchecked</b> components will be <b>private</b>."
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:35
+msgid "The following projects and components will be made <b>public</b>."
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:36
+msgid "The following projects and components will be made <b>private</b>."
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:37
+msgid "No privacy settings were changed. Go back to make a change."
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:38
+msgid ""
+"You can only change the privacy of 100 projects and components at a time."
+"  Please go back and limit your selection."
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:40
+msgid "This project/component contains supplemental materials for a preprint."
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:41
+msgid ""
+"<p><strong>Making this project/component private will prevent others from"
+" accessing it.</strong></p>"
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:157
+msgid "Make %1$s private"
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:158
+msgid "Warning"
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:159
+msgid "Change privacy settings"
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:160
+msgid "Projects and components affected"
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:249
+msgid "Updating Privacy"
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:259
+msgid "Unable to update project privacy"
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:263
+msgid "Problem changing privacy"
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:264
+msgid "Could not PATCH project settings."
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:320
+msgid "Submitting request to end embargo early ..."
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:326
+msgid "Email sent"
+msgstr ""
+
+#: website/static/js/nodesPrivacy.js:327
+msgid ""
+"The administrator(s) can approve or cancel the action within 48 hours. If"
+" 48 hours pass without any action taken, then the registration will "
+"become public."
+msgstr ""
+
+#: website/static/js/notificationsConfig.js:33
+msgid "Could not retrieve settings information."
+msgstr ""
+
+#: website/static/js/notificationsConfig.js:65
+msgid "Could not update email preferences at this time. If this issue persists, "
+msgstr ""
+
+#: website/static/js/notificationsConfig.js:66
+#: website/static/js/osfHelpers.js:318
+msgid "please report it to %1$s."
+msgstr ""
+
+#: website/static/js/notificationsTreebeard.js:70
+#: website/static/js/notificationsTreebeard.js:184
+#: website/static/js/notificationsTreebeard.js:189
+#: website/static/js/notificationsTreebeard.js:232
+msgid "Instantly"
+msgstr ""
+
+#: website/static/js/notificationsTreebeard.js:71
+#: website/static/js/notificationsTreebeard.js:190
+#: website/static/js/notificationsTreebeard.js:233
+msgid "Daily"
+msgstr ""
+
+#: website/static/js/notificationsTreebeard.js:72
+msgid "Adopt setting from parent project"
+msgstr ""
+
+#: website/static/js/notificationsTreebeard.js:73
+#: website/static/js/notificationsTreebeard.js:188
+#: website/static/js/notificationsTreebeard.js:231
+msgid "Never"
+msgstr ""
+
+#: website/static/js/notificationsTreebeard.js:120
+msgid " No configured projects."
+msgstr ""
+
+#: website/static/js/notificationsTreebeard.js:230
+msgid "Adopt setting from parent project %1$s"
+msgstr ""
+
+#: website/static/js/oauthAddonNodeConfig.js:145
+msgid "Choose %1$s Account to Import"
+msgstr ""
+
+#: website/static/js/osfHelpers.js:313
+msgid "Please refresh the page and try again or contact %1$s"
+msgstr ""
+
+#: website/static/js/osfHelpers.js:317
+msgid "GakuNin RDM was unable to resolve your request. If this issue persists, "
+msgstr ""
+
+#: website/static/js/osfHelpers.js:341
+msgid "Unexpected error occurred in JSON request"
+msgstr ""
+
+#: website/static/js/osfHelpers.js:346
+msgid "Unexpected error occurred in an editable input"
+msgstr ""
+
+#: website/static/js/osfHelpers.js:363
+#: website/static/js/privateLinkManager.js:107
+msgid "Please wait"
+msgstr ""
+
+#: website/static/js/osfHelpers.js:802
+#: website/static/js/pages/profile-settings-addons-page.js:34
+#: website/static/js/pages/project-addons-page.js:65
+msgid "Confirm"
+msgstr ""
+
+#: website/static/js/osfHelpers.js:813
+msgid "<p>Type the following to continue: <strong>"
+msgstr ""
+
+#: website/static/js/passwordForms.js:25
+msgid "Please enter a more complex password."
+msgstr ""
+
+#: website/static/js/passwordForms.js:119
+#: website/static/js/passwordForms.js:194
+#: website/static/js/passwordForms.js:260
+msgid "Your password cannot be the same as your email address."
+msgstr ""
+
+#: website/static/js/passwordForms.js:134
+msgid "Your new password cannot be the same as your old password."
+msgstr ""
+
+#: website/static/js/passwordForms.js:145
+#: website/static/js/passwordForms.js:205
+msgid "Passwords must match."
+msgstr ""
+
+#: website/static/js/passwordForms.js:180
+#: website/static/js/passwordForms.js:243
+msgid "This field is required."
+msgstr ""
+
+#: website/static/js/passwordForms.js:232
+msgid "Email addresses must match."
+msgstr ""
+
+#: website/static/js/passwordForms.js:303
+msgid "You have already submitted. You cannot sign up more than once."
+msgstr ""
+
+#: website/static/js/passwordForms.js:324
+msgid "Please complete reCAPTCHA"
+msgstr ""
+
+#: website/static/js/pointers.js:30
+msgid "Search all projects"
+msgstr ""
+
+#: website/static/js/pointers.js:31
+msgid "Search my projects"
+msgstr ""
+
+#: website/static/js/pointers.js:32
+msgid "Searching..."
+msgstr ""
+
+#: website/static/js/pointers.js:135
+msgid "No results found."
+msgstr ""
+
+#: website/static/js/pointers.js:185
+msgid "Error retrieving nodes"
+msgstr ""
+
+#: website/static/js/pointers.js:330
+msgid "Registered: "
+msgstr ""
+
+#: website/static/js/pointers.js:332
+msgid "Created: "
+msgstr ""
+
+#: website/static/js/pointers.js:332
+msgid ""
+"\n"
+"Modified: "
+msgstr ""
+
+#: website/static/js/pointers.js:364
+msgid "Could not get links"
+msgstr ""
+
+#: website/static/js/privateLinkManager.js:65
+msgid "Could not retrieve projects."
+msgstr ""
+
+#: website/static/js/privateLinkManager.js:65
+#: website/static/js/privateLinkTable.js:74
+msgid "Please refresh the page or "
+msgstr ""
+
+#: website/static/js/privateLinkManager.js:66
+#: website/static/js/privateLinkTable.js:75
+msgid "contact %1$s"
+msgstr ""
+
+#: website/static/js/privateLinkManager.js:66
+#: website/static/js/privateLinkTable.js:75
+msgid " if the "
+msgstr ""
+
+#: website/static/js/privateLinkManager.js:67
+#: website/static/js/privateLinkTable.js:76
+msgid "problem persists."
+msgstr ""
+
+#: website/static/js/privateLinkTable.js:39
+msgid "Yes"
+msgstr ""
+
+#: website/static/js/privateLinkTable.js:39
+msgid "No"
+msgstr ""
+
+#: website/static/js/privateLinkTable.js:74
+msgid "Could not retrieve view-only links."
+msgstr ""
+
+#: website/static/js/privateLinkTable.js:98
+msgid "Remove view-only link?"
+msgstr ""
+
+#: website/static/js/privateLinkTable.js:99
+msgid "Are you sure you want to remove this view-only link?"
+msgstr ""
+
+#: website/static/js/privateLinkTable.js:111
+msgid "Failed to delete the private link."
+msgstr ""
+
+#: website/static/js/privateLinkTable.js:140
+msgid "Edit Link Name"
+msgstr ""
+
+#: website/static/js/profile.js:107
+msgid "January"
+msgstr ""
+
+#: website/static/js/profile.js:107
+msgid "February"
+msgstr ""
+
+#: website/static/js/profile.js:107
+msgid "March"
+msgstr ""
+
+#: website/static/js/profile.js:107
+msgid "April"
+msgstr ""
+
+#: website/static/js/profile.js:107
+msgid "May"
+msgstr ""
+
+#: website/static/js/profile.js:107
+msgid "June"
+msgstr ""
+
+#: website/static/js/profile.js:108
+msgid "July"
+msgstr ""
+
+#: website/static/js/profile.js:108
+msgid "August"
+msgstr ""
+
+#: website/static/js/profile.js:108
+msgid "September"
+msgstr ""
+
+#: website/static/js/profile.js:108
+msgid "October"
+msgstr ""
+
+#: website/static/js/profile.js:108
+msgid "November"
+msgstr ""
+
+#: website/static/js/profile.js:108
+msgid "December"
+msgstr ""
+
+#: website/static/js/profile.js:113
+msgid "ongoing"
+msgstr ""
+
+#: website/static/js/profile.js:153
+msgid "Please enter a year for the start date."
+msgstr ""
+
+#: website/static/js/profile.js:166
+msgid "Please enter an end date or mark as ongoing."
+msgstr ""
+
+#: website/static/js/profile.js:169
+msgid "Please enter a year for the end date."
+msgstr ""
+
+#: website/static/js/profile.js:266 website/static/js/profile.js:275
+msgid "There are unsaved changes to your settings."
+msgstr ""
+
+#: website/static/js/profile.js:276
+msgid "Please save or discard your changes before switching "
+msgstr ""
+
+#: website/static/js/profile.js:277
+msgid "tabs."
+msgstr ""
+
+#: website/static/js/profile.js:342
+msgid "Could not fetch data"
+msgstr ""
+
+#: website/static/js/profile.js:359
+msgid "Are you sure you want to discard your unsaved changes?"
+msgstr ""
+
+#: website/static/js/profile.js:721
+msgid "Remove website?"
+msgstr ""
+
+#: website/static/js/profile.js:722
+msgid "Are you sure you want to remove this website from your profile?"
+msgstr ""
+
+#: website/static/js/profile.js:729
+msgid "Website removed"
+msgstr ""
+
+#: website/static/js/profile.js:816
+msgid "Please update your website"
+msgstr ""
+
+#: website/static/js/profile.js:954
+msgid "Remove Institution?"
+msgstr ""
+
+#: website/static/js/profile.js:955
+msgid "Are you sure you want to remove this institution?"
+msgstr ""
+
+#: website/static/js/profile.js:964
+msgid "Institution Removed"
+msgstr ""
+
+#: website/static/js/profile.js:1079
+msgid "Institution/Employer required"
+msgstr ""
+
+#: website/static/js/profile.js:1133
+msgid "Institution required"
+msgstr ""
+
+#: website/static/js/components/publicNodes.js:105
+#: website/static/js/project-organizer.js:101
+msgid "A contributor"
+msgstr ""
+
+#: website/static/js/project-organizer.js:196
+msgid "Contributors"
+msgstr ""
+
+#: website/static/js/project-organizer.js:415
+msgid ""
+"input.form-control[placeholder=\"Filter displayed "
+"projects\"][type=\"text\"]"
+msgstr ""
+
+#: website/static/js/project.js:30
+msgid "<h4>Are you sure you want to fork this project?</h4>"
+msgstr ""
+
+#: website/static/js/project.js:38 website/static/js/project.js:117
+msgid "Fork"
+msgstr ""
+
+#: website/static/js/project.js:52
+msgid "Fork created successfully!"
+msgstr ""
+
+#: website/static/js/project.js:60
+msgid "Go to new fork"
+msgstr ""
+
+#: website/static/js/project.js:89
+msgid "Your fork is being created. You'll receive an email when it is complete."
+msgstr ""
+
+#: website/static/js/project.js:95
+msgid "Fork this project?"
+msgstr ""
+
+#: website/static/js/project.js:96
+msgid "Are you sure you want to fork this project?"
+msgstr ""
+
+#: website/static/js/project.js:111
+msgid "Could not fork link."
+msgstr ""
+
+#: website/static/js/project.js:128
+msgid ""
+"<h4>Are you sure you want to create a new project using this project as a"
+" template?</h4>"
+msgstr ""
+
+#: website/static/js/project.js:129
+msgid ""
+"<p>Any add-ons configured for this project will not be authenticated in "
+"the new project.</p>"
+msgstr ""
+
+#: website/static/js/project.js:131
+msgid ""
+"<h4>Are you sure you want to create a new project using this registration"
+" as a template?</h4>"
+msgstr ""
+
+#: website/static/js/project.js:207
+msgid "<dt>Read</dt>"
+msgstr ""
+
+#: website/static/js/project.js:208
+msgid "<dd><ul><li>View project content and comment</li></ul></dd>"
+msgstr ""
+
+#: website/static/js/project.js:209
+msgid "<dt>Read + Write</dt>"
+msgstr ""
+
+#: website/static/js/project.js:210
+msgid "<dd><ul><li>Read privileges</li> "
+msgstr ""
+
+#: website/static/js/project.js:211
+msgid "<li>Add and configure components</li> "
+msgstr ""
+
+#: website/static/js/project.js:212
+msgid "<li>Add and edit content</li></ul></dd>"
+msgstr ""
+
+#: website/static/js/project.js:213
+msgid "<dt>Administrator</dt><dd><ul>"
+msgstr ""
+
+#: website/static/js/project.js:214
+msgid "<li>Read and write privileges</li>"
+msgstr ""
+
+#: website/static/js/project.js:215
+msgid "<li>Manage contributor</li>"
+msgstr ""
+
+#: website/static/js/project.js:216
+msgid ""
+"<li>Delete and register project</li><li>Public-private "
+"settings</li></ul></dd>"
+msgstr ""
+
+#: website/static/js/project.js:225
+msgid ""
+"Only bibliographic contributors will be displayed in the Contributors "
+"list and in project citations. Non-bibliographic contributors can read "
+"and modify the project as normal."
+msgstr ""
+
+#: website/static/js/project.js:240
+msgid "Remove this link?"
+msgstr ""
+
+#: website/static/js/project.js:241
+msgid ""
+"Are you sure you want to remove this link? This will not remove the "
+"project this link refers to."
+msgstr ""
+
+#: website/static/js/projectSettingsTreebeardBase.js:98
+msgid "Editing Toggle"
+msgstr ""
+
+#: website/static/js/requestAccess.js:69
+msgid "Access request failed. Please contact %1$s if the problem persists."
+msgstr ""
+
+#: website/static/js/requestAccess.js:72
+msgid "Error requesting project access"
+msgstr ""
+
+#: website/static/js/requestAccess.js:85
+msgid "If this should not have occurred, please contact %1$s."
+msgstr ""
+
+#: website/static/js/saveManager.js:26
+msgid "You have unsaved changes."
+msgstr ""
+
+#: website/static/js/search.js:192
+msgid "Page %1$s of %2$s"
+msgstr ""
+
+#: website/static/js/search.js:272
+msgid "Search help"
+msgstr ""
+
+#: website/static/js/search.js:273
+msgid "<h4>Queries</h4>"
+msgstr ""
+
+#: website/static/js/search.js:274
+msgid ""
+"<p>Search uses the <a "
+"href=\"http://extensions.xwiki.org/xwiki/bin/view/Extension/Search+Application+Query+Syntax\">Lucene"
+" search syntax</a>. "
+msgstr ""
+
+#: website/static/js/search.js:275
+msgid "This gives you many options, but can be very simple as well. "
+msgstr ""
+
+#: website/static/js/search.js:276
+msgid "Examples of valid searches include:"
+msgstr ""
+
+#: website/static/js/search.js:580 website/static/js/search.js:607
+msgid "GakuNin RDM | Search"
+msgstr ""
+
+#: website/static/js/wikiSettingsTreebeard.js:27
+msgid "Make publicly editable"
+msgstr ""
+
+#: website/static/js/wikiSettingsTreebeard.js:28
+msgid ""
+"Are you sure you want to make the wiki of <b>%1$s</b> publicly editable? "
+"This will allow any logged in user to edit the content of this wiki. "
+msgstr ""
+
+#: website/static/js/wikiSettingsTreebeard.js:29
+msgid ""
+"<b>Note</b>: Users without write access will not be able to add, delete, "
+"or rename pages."
+msgstr ""
+
+#: website/static/js/wikiSettingsTreebeard.js:37
+msgid "Apply"
+msgstr ""
+
+#: website/static/js/wikiSettingsTreebeard.js:115
+msgid "Only admins may change permissions of this wiki."
+msgstr ""
+
+#: website/static/js/wikiSettingsTreebeard.js:117
+msgid "Select who can edit"
+msgstr ""
+
+#: website/static/js/wikiSettingsTreebeard.js:117
+msgid "This feature is disabled for wikis of private %1$s"
+msgid_plural "This feature is disabled for wikis of private %1$ss"
+msgstr[0] ""
+msgstr[1] ""
+
+#: website/static/js/wikiSettingsTreebeard.js:134
+msgid "Contributors (with write access)"
+msgstr ""
+
+#: website/static/js/wikiSettingsTreebeard.js:135
+msgid "All GakuNin RDM users"
+msgstr ""
+
+#: website/static/js/components/autocomplete.js:86
+msgid "Could not GET autocomplete data"
+msgstr ""
+
+#: website/static/js/components/autocomplete.js:152
+msgid "Initiated by: "
+msgstr ""
+
+#: website/static/js/components/autocomplete.js:158
+msgid "Initiated: "
+msgstr ""
+
+#: website/static/js/components/autocomplete.js:164
+msgid "Last updated: "
+msgstr ""
+
+#: website/static/js/components/publicNodes.js:70
+msgid "Error retrieving projects"
+msgstr ""
+
+#: website/static/js/components/publicNodes.js:122
+msgid " more"
+msgstr ""
+
+#: website/static/js/components/publicNodes.js:154
+msgid "-- private project -- / "
+msgstr ""
+
+#: website/static/js/components/publicNodes.js:192
+msgid "Unable to retrieve public %1$s"
+msgstr ""
+
+#: website/static/js/components/publicNodes.js:192
+msgid " at this time. Please refresh the page or contact "
+msgstr ""
+
+#: website/static/js/components/publicNodes.js:206
+msgid "You have no public %1$s."
+msgstr ""
+
+#: website/static/js/components/publicNodes.js:208
+msgid "Find out how to make your %1$s"
+msgstr ""
+
+#: website/static/js/components/publicNodes.js:209
+msgid "public"
+msgstr ""
+
+#: website/static/js/components/publicNodes.js:213
+msgid "This user has no public %1$s."
+msgstr ""
+
+#: website/static/js/components/quickFiles.js:56
+msgid "Error retrieving quickfiles"
+msgstr ""
+
+#: website/static/js/components/quickFiles.js:123
+msgid ""
+"Unable to retrieve quickfiles at this time. Please refresh the page or "
+"contact "
+msgstr ""
+
+#: website/static/js/components/quickFiles.js:136
+msgid "You have no public quickfiles"
+msgstr ""
+
+#: website/static/js/components/quickFiles.js:137
+msgid "This user has no public quickfiles."
+msgstr ""
+
+#: website/static/js/components/utils.js:17
+msgid "Missing required option: "
+msgstr ""
+
+#: website/static/js/filepage/editor.js:85
+msgid "The file content could not be loaded."
+msgstr ""
+
+#: website/static/js/filepage/editor.js:86
+msgid "Could not GET file contents."
+msgstr ""
+
+#: website/static/js/filepage/editor.js:116
+msgid "Could not update file. Insufficient storage space in your Dropbox."
+msgstr ""
+
+#: website/static/js/filepage/editor.js:118
+msgid "The file could not be updated."
+msgstr ""
+
+#: website/static/js/filepage/editor.js:125
+msgid "Could not PUT file content."
+msgstr ""
+
+#: website/static/js/filepage/editor.js:181
+msgid "Revert"
+msgstr ""
+
+#: website/static/js/filepage/index.js:91
+msgid "Direct iframe with fixed height and width"
+msgstr ""
+
+#: website/static/js/filepage/index.js:133
+#: website/static/js/filepage/index.js:138
+msgid "File is checked out."
+msgstr ""
+
+#: website/static/js/filepage/index.js:134
+msgid ""
+" This file has been checked out by a COS Preregistration Challenge "
+"Reviewer and will become available when review is complete."
+msgstr ""
+
+#: website/static/js/filepage/index.js:139
+msgid " This file has been checked out by a "
+msgstr ""
+
+#: website/static/js/filepage/index.js:140
+msgid "collaborator"
+msgstr ""
+
+#: website/static/js/filepage/index.js:141
+msgid ". It needs to be checked in before any changes can be made."
+msgstr ""
+
+#: website/static/js/filepage/index.js:186
+msgid "Delete file?"
+msgstr ""
+
+#: website/static/js/filepage/index.js:188
+msgid "Are you sure you want to delete <strong>%1$s</strong>?"
+msgstr ""
+
+#: website/static/js/filepage/index.js:206
+msgid "Could not delete file."
+msgstr ""
+
+#: website/static/js/filepage/index.js:222
+msgid "Confirm file check out?"
+msgstr ""
+
+#: website/static/js/filepage/index.js:225
+msgid "as long as it is checked out. You can check it back in at anytime."
+msgstr ""
+
+#: website/static/js/filepage/index.js:245
+msgid "Unable to check out file"
+msgstr ""
+
+#: website/static/js/filepage/index.js:272
+msgid "Unable to check in file"
+msgstr ""
+
+#: website/static/js/filepage/index.js:277
+msgid "Force check in file?"
+msgstr ""
+
+#: website/static/js/filepage/index.js:278
+msgid ""
+"This will check in the file for all users, allowing it to be edited. Are "
+"you sure?"
+msgstr ""
+
+#: website/static/js/filepage/index.js:281
+#: website/static/js/filepage/index.js:504
+msgid "Force check in"
+msgstr ""
+
+#: website/static/js/filepage/index.js:304
+msgid "Unable to force check in file. Make sure you have admin privileges."
+msgstr ""
+
+#: website/static/js/filepage/index.js:345
+msgid "Live editing mode "
+msgstr ""
+
+#: website/static/js/filepage/index.js:346
+msgid "Attempting to connect "
+msgstr ""
+
+#: website/static/js/filepage/index.js:347
+msgid "Unsupported browser "
+msgstr ""
+
+#: website/static/js/filepage/index.js:348
+msgid "Saving... "
+msgstr ""
+
+#: website/static/js/filepage/index.js:349
+msgid "Unavailable: Live editing "
+msgstr ""
+
+#: website/static/js/filepage/index.js:472
+msgid "View this file on "
+msgstr ""
+
+#: website/static/js/filepage/index.js:507
+msgid "Check out"
+msgstr ""
+
+#: website/static/js/filepage/index.js:510
+msgid "Check in"
+msgstr ""
+
+#: website/static/js/filepage/index.js:516
+msgid "Request Trusted Timestamp"
+msgstr ""
+
+#: website/static/js/filepage/index.js:533
+msgid "Toggle view: "
+msgstr ""
+
+#: website/static/js/filepage/index.js:572
+#: website/static/js/filepage/revisions.js:176
+msgid "Revisions"
+msgstr ""
+
+#: website/static/js/filepage/revisions.js:75
+#: website/static/js/filepage/revisions.js:76
+msgid "Unable to fetch versions"
+msgstr ""
+
+#: website/static/js/filepage/revisions.js:111
+msgid "Version ID"
+msgstr ""
+
+#: website/static/js/filepage/revisions.js:113
+msgid "User"
+msgstr ""
+
+#: website/static/js/filepage/revisions.js:116
+msgid ""
+".fa.fa-question-circle[data-content=\"MD5 is an algorithm used to verify "
+"data integrity.\"][rel=\"popover\"]"
+msgstr ""
+
+#: website/static/js/filepage/revisions.js:119
+msgid ""
+".fa.fa-question-circle[data-content=\"SHA-2 is a cryptographic hash "
+"function designed by the NSA used to verify data "
+"integrity.\"][rel=\"popover\"]"
+msgstr ""
+
+#: website/static/js/filepage/revisions.js:136
+msgid "Anonymous Contributor"
+msgstr ""
+
+#: website/static/js/filepage/util.js:38
+msgid " Loading... "
+msgstr ""
+
+#: website/static/js/home-page/scheduledBannerPlugin.js:27
+msgid "Error in request to %1$s"
+msgstr ""
+
+#: website/static/js/pages/base-page.js:132
+msgid "Merge account"
+msgstr ""
+
+#: website/static/js/pages/base-page.js:133
+msgid "Would you like to merge <b>%1$s</b> into your account?  "
+msgstr ""
+
+#: website/static/js/pages/base-page.js:135
+msgid "<b>%1$s</b> has been merged into your account."
+msgstr ""
+
+#: website/static/js/pages/base-page.js:136
+msgid "You have chosen to not merge <b>%1$s</b>  into your account. "
+msgstr ""
+
+#: website/static/js/pages/base-page.js:137
+#: website/static/js/pages/base-page.js:144
+msgid ""
+"If you change your mind, visit the <a href=\"/settings/account/\">user "
+"settings page</a>."
+msgstr ""
+
+#: website/static/js/pages/base-page.js:140
+#: website/static/js/pages/base-page.js:190
+msgid "Add email"
+msgstr ""
+
+#: website/static/js/pages/base-page.js:141
+msgid "Would you like to add <b>%1$s</b> to your account?"
+msgstr ""
+
+#: website/static/js/pages/base-page.js:142
+msgid "<b>%1$s</b> has been added into your account."
+msgstr ""
+
+#: website/static/js/pages/base-page.js:143
+msgid "You have chosen not to add <b>%1$s</b> to your account. "
+msgstr ""
+
+#: website/static/js/pages/base-page.js:147
+msgid "There was a problem adding <b>"
+msgstr ""
+
+#: website/static/js/pages/base-page.js:148
+#: website/static/js/pages/base-page.js:151
+msgid "</b>. Please contact %1$s if the problem persists."
+msgstr ""
+
+#: website/static/js/pages/base-page.js:150
+msgid "There was a problem removing <b>"
+msgstr ""
+
+#: website/static/js/pages/base-page.js:162
+msgid "Do not add email"
+msgstr ""
+
+#: website/static/js/pages/base-page.js:175
+msgid "Could not remove email"
+msgstr ""
+
+#: website/static/js/pages/base-page.js:200
+msgid "Could not add email"
+msgstr ""
+
+#: website/static/js/pages/base-page.js:293
+msgid " and "
+msgstr ""
+
+#: website/static/js/pages/dashboard-page.js:37
+msgid "Could not set user timezone or locale"
+msgstr ""
+
+#: website/static/js/pages/dashboard-page.js:55
+msgid ""
+"This is taking longer than normal. <br>  Try reloading the page. If the "
+"problem persist, please contact us at %1$s"
+msgstr ""
+
+#: website/static/js/pages/file-page.js:23
+msgid "Add a file tag to enhance discoverability"
+msgstr ""
+
+#: website/static/js/pages/file-page.js:28
+msgid "Could not add tag."
+msgstr ""
+
+#: website/static/js/pages/file-page.js:29
+#: website/static/js/pages/project-dashboard-page.js:478
+msgid "Failed to add tag"
+msgstr ""
+
+#: website/static/js/pages/file-page.js:43
+msgid "Could not remove tag."
+msgstr ""
+
+#: website/static/js/pages/file-page.js:44
+#: website/static/js/pages/project-dashboard-page.js:514
+msgid "Failed to remove tag"
+msgstr ""
+
+#: website/static/js/pages/file-page.js:89
+msgid "The file title cannot be empty."
+msgstr ""
+
+#: website/static/js/pages/file-page.js:91
+msgid "The file title cannot be more than 100 characters."
+msgstr ""
+
+#: website/static/js/pages/file-page.js:102
+msgid ""
+"Your file was successfully renamed. To view the new filename in the file "
+"tree below, refresh the page."
+msgstr ""
+
+#: website/static/js/pages/institution-page.js:32
+msgid "All Projects"
+msgstr ""
+
+#: website/static/js/pages/institution-page.js:45
+msgid ""
+"This is taking longer than normal. <br>  Try reloading the page. If the "
+"problem persist, please contact us at %1$s."
+msgstr ""
+
+#: website/static/js/pages/notifications-config-page.js:23
+#: website/static/js/pages/project-settings-page.js:35
+msgid "Could not retrieve notification settings."
+msgstr ""
+
+#: website/static/js/pages/profile-settings-addons-page.js:68
+#: website/static/js/pages/project-addons-page.js:17
+msgid ""
+"Sorry, we had trouble saving your settings. If this persists please "
+"contact "
+msgstr ""
+
+#: website/static/js/pages/profile-settings-addons-page.js:70
+msgid "Request failed"
+msgstr ""
+
+#: website/static/js/pages/profile-settings-addons-page.js:88
+msgid "Are you sure you want to remove the add-ons you have deselected? "
+msgstr ""
+
+#: website/static/js/pages/profile-settings-addons-page.js:131
+msgid "The changes on addon setting are not submitted!"
+msgstr ""
+
+#: website/static/js/pages/project-addons-page.js:12
+msgid "Your add-on settings have been successfully changed."
+msgstr ""
+
+#: website/static/js/pages/project-addons-page.js:28
+msgid "Disable Add-on?"
+msgstr ""
+
+#: website/static/js/pages/project-addons-page.js:29
+msgid "Are you sure you want to disable this add-on?"
+msgstr ""
+
+#: website/static/js/pages/project-addons-page.js:39
+msgid "Disable"
+msgstr ""
+
+#: website/static/js/pages/project-dashboard-page.js:122
+msgid "Add Component"
+msgstr ""
+
+#: website/static/js/pages/project-dashboard-page.js:124
+msgid "Create new component"
+msgstr ""
+
+#: website/static/js/pages/project-dashboard-page.js:331
+msgid "no user matched"
+msgstr ""
+
+#: website/static/js/pages/project-dashboard-page.js:436
+msgid "Error retrieving filebrowser"
+msgstr ""
+
+#: website/static/js/pages/project-dashboard-page.js:453
+msgid "Add a project tag to enhance discoverability"
+msgstr ""
+
+#: website/static/js/pages/project-dashboard-page.js:513
+msgid "Could not remove tag"
+msgstr ""
+
+#: website/static/js/pages/project-settings-page.js:36
+msgid "Could not GET notification settings."
+msgstr ""
+
+#: website/static/js/pages/project-settings-page.js:56
+msgid "Could not retrieve wiki settings."
+msgstr ""
+
+#: website/static/js/pages/project-settings-page.js:57
+msgid "Could not GET wiki settings."
+msgstr ""
+
+#: website/static/js/pages/project-settings-page.js:106
+msgid "Successfully updated settings."
+msgstr ""
+
+#: website/static/js/pages/project-settings-page.js:117
+msgid "Could not set commenting configuration. Please try again."
+msgstr ""
+
+#: website/static/js/pages/project-settings-page.js:153
+msgid "Unable to update settings"
+msgstr ""
+
+#: website/static/js/pages/project-settings-page.js:154
+msgid "Could not update settings."
+msgstr ""
+
+#: website/static/js/pages/rdm-profile-settings-addons-page.js:33
+msgid "Import Account from Admin"
+msgstr ""
+
+#: website/static/js/pages/rdm-profile-settings-addons-page.js:54
+#: website/static/js/pages/rdm-profile-settings-addons-page.js:56
+msgid "Successfully imported the account."
+msgstr ""
+
+#: website/static/js/pages/rdm-profile-settings-addons-page.js:61
+#: website/static/js/pages/rdm-profile-settings-addons-page.js:63
+msgid "Failed to import the account."
+msgstr ""
+
+#: website/static/js/pages/timestamp-common.js:172
+msgid "A verify request is being processed!"
+msgstr ""
+
+#: website/static/js/pages/timestamp-common.js:175
+msgid "Something went wrong with the Verify request."
+msgstr ""
+
+#: website/static/js/pages/timestamp-common.js:191
+msgid "Using the checkbox, please select the files to request timestamp."
+msgstr ""
+
+#: website/static/js/pages/timestamp-common.js:214
+msgid "Timestamp is being added to the selected files!"
+msgstr ""
+
+#: website/static/js/pages/timestamp-common.js:217
+msgid "Something went wrong with the Request Trusted Timestamp request."
+msgstr ""
+
+#: website/static/js/pages/timestamp-common.js:222
+msgid "The task has been cancelled."
+msgstr ""
+
+#: website/static/js/pages/timestamp-common.js:231
+msgid "The task already finished."
+msgstr ""
+
+#: website/static/js/pages/timestamp-common.js:234
+msgid "Something went wrong in the cancel request."
+msgstr ""
+
+#: website/static/js/pages/timestamp-common.js:288
+msgid "Using the checkbox, please select the files to download."
+msgstr ""
+
+#: website/static/js/pages/wiki-edit-page.js:66
+msgid "The wiki page name cannot be empty."
+msgstr ""
+
+#: website/static/js/pages/wiki-edit-page.js:68
+msgid "The wiki page name cannot be more than 100 characters."
+msgstr ""
+
+#: website/static/js/pages/wiki-edit-page.js:83
+msgid "Error in renaming wiki"
+msgstr ""
+
+#: website/static/js/pages/wiki-edit-page.js:90
+msgid "An unexpected error occurred. Please try again."
+msgstr ""
+
+#: website/static/js/pages/wiki-edit-page.js:110
+msgid "<p>Could not retrieve wiki pages. If this issue persists, "
+msgstr ""
+
+#: website/static/js/pages/wiki-edit-page.js:111
+msgid "please report it to %1$s"
+msgstr ""
+
+#: website/static/js/pages/wiki-edit-page.js:112
+msgid "Could not GET wiki menu pages"
+msgstr ""
+

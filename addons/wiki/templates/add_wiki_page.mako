@@ -5,17 +5,17 @@
             <form class="form">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                    <h3 class="modal-title">Add new wiki page</h3>
+                    <h3 class="modal-title">${_("Add new wiki page")}</h3>
                 </div><!-- end modal-header -->
                 <div class="modal-body">
                     <div class='form-group'>
-                        <input id="data" placeholder="New Wiki Name" type="text" class='form-control'>
+                        <input id="data" placeholder="${_('New Wiki Name')}" type="text" class='form-control'>
                     </div>
                     <p id="alert" class="text-danger"> </p>
                 </div><!-- end modal-body -->
                 <div class="modal-footer">
-                    <a id="close" href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
-                    <button id="add-wiki-submit" type="submit" class="btn btn-success">Add</button>
+                    <a id="close" href="#" class="btn btn-default" data-dismiss="modal">${_("Cancel")}</a>
+                    <button id="add-wiki-submit" type="submit" class="btn btn-success">${_("Add")}</button>
                 </div><!-- end modal-footer -->
             </form>
         </div><!-- end modal- content -->
@@ -38,18 +38,18 @@
                 .text('Creating new wiki page');
 
             if ($.trim($data.val()) === '') {
-                $alert.text('The new wiki page name cannot be empty');
+                $alert.text('${_("The new wiki page name cannot be empty")}');
                 $submitForm
                     .removeAttr('disabled', 'disabled')
                     .text('Add');
             } else if ($data.val().length > 100) {
-                $alert.text('The new wiki page name cannot be more than 100 characters.');
+                $alert.text('${_("The new wiki page name cannot be more than 100 characters.")}');
                 $submitForm
                     .removeAttr('disabled', 'disabled')
                     .text('Add');
 
             } else if ($data.val().indexOf('/') != -1) {
-                $alert.text('The new wiki page name cannot contain forward slashes.');
+                $alert.text('${_("The new wiki page name cannot contain forward slashes.")}');
                 $submitForm
                     .removeAttr('disabled', 'disabled')
                     .text('Add');
@@ -67,11 +67,11 @@
                 });
                 request.fail(function (response, textStatus, error) {
                     if (response.status === 409) {
-                        $alert.text('A wiki page with that name already exists.');
+                        $alert.text('${_("A wiki page with that name already exists.")}');
                     }
                     else if (response.status === 403){
-                        $alert.text('You do not have permission to perform this action.');
-                        Raven.captureMessage('Unauthorized user can view wiki add button', {
+                        $alert.text('${_("You do not have permission to perform this action.")}');
+                        Raven.captureMessage('${_("Unauthorized user can view wiki add button")}', {
                             extra: {
                                 url: ${ urls['api']['base'] | sjson, n } + encodeURIComponent(wikiName) + '/validate/',
                                 textStatus: textStatus,
@@ -80,8 +80,8 @@
                         });
                     }
                     else {
-                        $alert.text('Could not validate wiki page. Please try again.'+response.status);
-                        Raven.captureMessage('Error occurred while validating page', {
+                        $alert.text('${_("Could not validate wiki page. Please try again.")}'+response.status);
+                        Raven.captureMessage('${_("Error occurred while validating page")}', {
                             extra: {
                                 url: ${ urls['api']['base'] | sjson, n } + encodeURIComponent(wikiName) + '/validate/',
                                 textStatus: textStatus,

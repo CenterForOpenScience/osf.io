@@ -9,6 +9,10 @@ var oop = require('js/oop');
 
 var $osf = require('js/osfHelpers');
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 var ConnectedProject = function(data) {
     var self = this;
@@ -42,7 +46,7 @@ var ExternalAccount = oop.defclass({
                 self.connectedNodes.remove(node);
             })
             .fail(function(xhr, status, error) {
-                Raven.captureMessage('Error deauthorizing node: ' + node.id, {
+                Raven.captureMessage(_('Error deauthorizing node: ') + node.id, {
                     extra: {
                         url: url,
                         status: status,
@@ -54,8 +58,8 @@ var ExternalAccount = oop.defclass({
     deauthorizeNode: function(node) {
         var self = this;
         bootbox.confirm({
-            title: 'Remove addon?',
-            message: 'Are you sure you want to remove the ' + $osf.htmlEscape(self.providerName) + ' authorization from this project?',
+            title: _('Remove addon?'),
+            message: agh.sprintf(_('Are you sure you want to remove the %1$s authorization from this project?'),$osf.htmlEscape(self.providerName)),
             callback: function(confirm) {
                 if (confirm) {
                     self._deauthorizeNodeConfirm(node);
@@ -63,8 +67,11 @@ var ExternalAccount = oop.defclass({
             },
             buttons:{
                 confirm:{
-                    label:'Remove',
+                    label:_('Remove'),
                     className:'btn-danger'
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });
@@ -93,16 +100,16 @@ var OAuthAddonSettingsViewModel = oop.defclass({
             self.updateAccounts().done( function() {
                 if (self.accounts().length > 0 && self.accounts().length >= accountCount) {  // If there's more than 1 and the count stays the same, probably reauthorizing
                     if (self.name === 'dropbox') {
-                        self.setMessage('Add-on successfully authorized. If you wish to link a different account, log out of dropbox.com before attempting to connect to a second Dropbox account on the GakuNin RDM. This will clear the credentials stored in your browser.', 'text-success');
+                        self.setMessage(_('Add-on successfully authorized. If you wish to link a different account, log out of dropbox.com before attempting to connect to a second Dropbox account on the GakuNin RDM. This will clear the credentials stored in your browser.'), 'text-success');
                     } else if (self.name === 'bitbucket') {
-                        self.setMessage('Add-on successfully authorized. If you wish to link a different account, log out of bitbucket.org before attempting to connect to a second Bitbucket account on the GakuNin RDM. This will clear the credentials stored in your browser.', 'text-success');
+                        self.setMessage(_('Add-on successfully authorized. If you wish to link a different account, log out of bitbucket.org before attempting to connect to a second Bitbucket account on the GakuNin RDM. This will clear the credentials stored in your browser.'), 'text-success');
                     } else if (self.name === 'onedrive') {
-                        self.setMessage('Add-on successfully authorized. If you wish to link a different account, log out of onedrive.live.com before attempting to connect to a second OneDrive account on the GakuNin RDM. This will clear the credentials stored in your browser.', 'text-success');
+                        self.setMessage(_('Add-on successfully authorized. If you wish to link a different account, log out of onedrive.live.com before attempting to connect to a second OneDrive account on the GakuNin RDM. This will clear the credentials stored in your browser.'), 'text-success');
                     } else {
-                        self.setMessage('Add-on successfully authorized. To link this add-on to an OSF project, go to the settings page of the project, enable ' + self.properName + ', and choose content to connect.', 'text-success');
+                        self.setMessage(agh.sprintf(_('Add-on successfully authorized. To link this add-on to an GakuNin RDM project, go to the settings page of the project, enable %1$s, and choose content to connect.'),self.properName), 'text-success');
                     }
                 } else {
-                    self.setMessage('Error while authorizing add-on. Please log in to your ' + self.properName + ' account and grant access to the GakuNin RDM to enable this add-on.', 'text-danger');
+                    self.setMessage(agh.sprintf(_('Error while authorizing add-on. Please log in to your %1$s account and grant access to the GakuNin RDM to enable this add-on.'),self.properName), 'text-danger');
                 }
             });
         };
@@ -111,10 +118,9 @@ var OAuthAddonSettingsViewModel = oop.defclass({
     askDisconnect: function(account) {
         var self = this;
         bootbox.confirm({
-            title: 'Disconnect Account?',
+            title: _('Disconnect Account?'),
             message: '<p class="overflow">' +
-                'Are you sure you want to disconnect the ' + $osf.htmlEscape(self.properName) + ' account <strong>' +
-                $osf.htmlEscape(account.name) + '</strong>? This will revoke access to ' + $osf.htmlEscape(self.properName) + ' for all projects you have authorized.' +
+                agh.sprintf(_('Are you sure you want to disconnect the %1$s account <strong>%2$s</strong>? This will revoke access to %1$s for all projects you have authorized.'),$osf.htmlEscape(self.properName),$osf.htmlEscape(account.name)) +
                 '</p>',
             callback: function(confirm) {
                 if (confirm) {
@@ -124,8 +130,11 @@ var OAuthAddonSettingsViewModel = oop.defclass({
             },
             buttons:{
                 confirm:{
-                    label:'Disconnect',
+                    label:_('Disconnect'),
                     className:'btn-danger'
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });
@@ -141,7 +150,7 @@ var OAuthAddonSettingsViewModel = oop.defclass({
             self.updateAccounts();
         });
         request.fail(function(xhr, status, error) {
-            Raven.captureMessage('Error while removing addon authorization for ' + account.id, {
+            Raven.captureMessage(agh.sprintf(_('Error while removing addon authorization for %1$s') , account.id), {
                 extra: {
                     url: url,
                     status: status,
@@ -162,7 +171,7 @@ var OAuthAddonSettingsViewModel = oop.defclass({
             $('#' + self.name + '-header').osfToggleHeight({height: 160});
         });
         request.fail(function(xhr, status, error) {
-            Raven.captureMessage('Error while updating addon account', {
+            Raven.captureMessage(_('Error while updating addon account'), {
                 extra: {
                     url: url,
                     status: status,

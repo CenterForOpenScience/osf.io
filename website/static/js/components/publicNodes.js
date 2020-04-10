@@ -8,6 +8,10 @@ var mHelpers = require('js/mithrilHelpers');
 var Raven = require('raven-js');
 var withPagination = require('js/components/pagination.js').withPagination;
 
+var rdmGettext = require('js/rdmGettext');
+var gt = rdmGettext.rdmGettext();
+var _ = function(msgid) { return gt.gettext(msgid); };
+var agh = require('agh.sprintf');
 
 var PROJECTS_PAGE_SIZE = 5;
 
@@ -63,7 +67,7 @@ var _getNextItems = function(ctrl, url, updatePagination) {
             ctrl.failed = true;
             ctrl.requestPending(false);
             m.redraw();
-            Raven.captureMessage('Error retrieving projects', {extra: {url: url, textStatus: textStatus, error: error}});
+            Raven.captureMessage(_('Error retrieving projects'), {extra: {url: url, textStatus: textStatus, error: error}});
         }
     );
 };
@@ -98,7 +102,7 @@ function _formatContributors(item) {
         } else if(fullName){
             name = fullName;
         } else {
-            name = 'A contributor';
+            name = _('A contributor');
         }
         var comma;
         if (index === 0) {
@@ -115,7 +119,7 @@ function _formatContributors(item) {
             // We already show names of the two
             return m('span', {}, [
                 ' & ',
-                m('a', {'href': item.links.html}, (totalContributors - 3) + ' more')
+                m('a', {'href': item.links.html}, (totalContributors - 3) + _(' more'))
             ]);
         }
         return m('span', {}, [
@@ -147,7 +151,7 @@ var PublicNode = {
                     ])
                 ]),
                 ctrl.nodeType === 'components' ? m('div', {style: 'padding-bottom: 10px;'}, [
-                    ctrl.parent ? $osf.decodeText(ctrl.parent.title) + ' / ': m('em', '-- private project -- / '),
+                    ctrl.parent ? $osf.decodeText(ctrl.parent.title) + ' / ': m('em', _('-- private project -- / ')),
                     m('b', $osf.decodeText(ctrl.node.attributes.title))
                 ]) : '',
                 m('div.project-authors', {}, _formatContributors(ctrl.node)),
@@ -185,9 +189,9 @@ var PublicNodes = {
         return m('ul.list-group m-md', [
             // Error message if the request fails
             ctrl.failed ? m('p', [
-                'Unable to retrieve public ' + ctrl.nodeType + ' at this time. Please refresh the page or contact ',
+                agh.sprintf(_('Unable to retrieve public %1$s') , ctrl.nodeType) + _(' at this time. Please refresh the page or contact '),
                 m('a', {'href': 'mailto:' + OSF_SUPPORT_EMAIL}, OSF_SUPPORT_EMAIL),
-                ' if the problem persists.'
+                _(' if the problem persists.')
             ]) :
 
             // Show laoding icon while there is a pending request
@@ -199,14 +203,14 @@ var PublicNodes = {
                     return m.component(PublicNode, {nodeType: ctrl.nodeType, node: node});
                 }) : ctrl.isProfile ?
                     m('div.help-block', {}, [
-                        'You have no public ' + ctrl.nodeType + '.',
+                        agh.sprintf(_('You have no public %1$s.') , ctrl.nodeType),
                         m('p', {}, [
-                            'Find out how to make your ' + ctrl.nodeType + ' ',
-                            m('a', {'href': 'https://openscience.zendesk.com/hc/en-us/articles/360018981414', 'target': '_blank'}, 'public'),
+                            agh.sprintf(_('Find out how to make your %1$s') , ctrl.nodeType) + ' ',
+                            m('a', {'href': 'https://openscience.zendesk.com/hc/en-us/articles/360018981414', 'target': '_blank'}, _('public')),
                             '.'
                         ])
                     ])
-                : m('div.help-block', {}, 'This user has no public ' + ctrl.nodeType + '.')
+                : m('div.help-block', {}, agh.sprintf(_('This user has no public %1$s.') , ctrl.nodeType ))
 
             ]
         ]);

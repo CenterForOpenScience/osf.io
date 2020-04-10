@@ -3,7 +3,7 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h3>Connect an Amazon S3 Account</h3>
+                <h3>${ _("Connect an Amazon S3 Account")}</h3>
             </div>
 
             <form>
@@ -14,11 +14,11 @@
 
                         <div class="col-sm-6">
                             <div class="form-group">
-                                <label for="s3Addon">Access Key</label>
+                                <label for="s3Addon">${ _("Access Key")}</label>
                                 <input class="form-control" data-bind="value: accessKey" id="access_key" name="access_key" ${'disabled' if disabled else ''} />
                             </div>
                             <div class="form-group">
-                                <label for="s3Addon">Secret Key</label>
+                                <label for="s3Addon">${ _("Secret Key")}</label>
                                 <input type="password" class="form-control" data-bind="value: secretKey" id="secret_key" name="secret_key" ${'disabled' if disabled else ''} />
                             </div>
                         </div>
@@ -33,10 +33,10 @@
 
                 <div class="modal-footer">
 
-                    <a href="#" class="btn btn-default" data-bind="click: clearModal" data-dismiss="modal">Cancel</a>
+                    <a href="#" class="btn btn-default" data-bind="click: clearModal" data-dismiss="modal">${ _("Cancel")}</a>
 
                     <!-- Save Button -->
-                    <button data-bind="click: connectAccount" class="btn btn-success">Save</button>
+                    <button data-bind="click: connectAccount" class="btn btn-success">${ _("Save")}</button>
 
                 </div><!-- end modal-footer -->
 
