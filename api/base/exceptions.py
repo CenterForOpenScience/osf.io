@@ -187,7 +187,7 @@ class InvalidFilterValue(JSONAPIParameterException):
 
     def __init__(self, detail=None, value=None, field_type=None):
         if not detail:
-            detail = "Value '{0}' is not valid".format(value)
+            detail = u"Value '{0}' is not valid".format(value)
             if field_type:
                 detail += ' for a filter on type {0}'.format(
                     field_type,
