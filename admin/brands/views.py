@@ -81,8 +81,13 @@ class BrandDetail(PermissionRequiredMixin, View):
         view = BrandChangeForm.as_view()
         primary_color = request.POST.get('primary_color')
         secondary_color = request.POST.get('secondary_color')
-        if not is_a11y(primary_color, secondary_color):
-            messages.warning(request, 'The two selected colors are not a11y compliant.')
+
+        if not is_a11y(primary_color):
+            messages.warning(request, """The selected primary color is not a11y compliant.
+                For more information, visit https://color.a11y.com/""")
+        if not is_a11y(secondary_color):
+            messages.warning(request, """The selected secondary color is not a11y compliant.
+                For more information, visit https://color.a11y.com/""")
         return view(request, *args, **kwargs)
 
 
