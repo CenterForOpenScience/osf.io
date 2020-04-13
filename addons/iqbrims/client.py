@@ -691,25 +691,22 @@ class SpreadsheetClient(BaseClient):
     def _to_file_list(self, target, blank):
         ret = []
         col = target['depth'] + 1
-        for i, d in enumerate(sorted(target['dirs'], key=lambda x: x['name'])):
-            is_last = i == len(target['dirs']) - 1
+        for i, f in enumerate(sorted(target['files'])):
+            is_last = i == len(target['files']) - 1
             r = ['' for i in range(0, col + 1)]
             for j in range(col):
                 if j == col - 1:
-                    if is_last and 0 == len(target['files']):
+                    if is_last and 0 == len(target['dirs']):
                         r[j] = '└−−'
                     else:
                         r[j] = '├−−'
                 else:
                     if not blank[j]:
                         r[j] = '│'
-            r[col] = d['name']
-            ret.append((r, 'directory'))
-            next_blank = list(blank)
-            next_blank.append(is_last and 0 == len(target['files']))
-            ret += self._to_file_list(d, next_blank)
-        for i, f in enumerate(sorted(target['files'])):
-            is_last = i == len(target['files']) - 1
+            r[col] = f
+            ret.append((r, 'file'))
+        for i, d in enumerate(sorted(target['dirs'], key=lambda x: x['name'])):
+            is_last = i == len(target['dirs']) - 1
             r = ['' for i in range(0, col + 1)]
             for j in range(col):
                 if j == col - 1:
@@ -720,8 +717,11 @@ class SpreadsheetClient(BaseClient):
                 else:
                     if not blank[j]:
                         r[j] = '│'
-            r[col] = f
-            ret.append((r, 'file'))
+            r[col] = d['name']
+            ret.append((r, 'directory'))
+            next_blank = list(blank)
+            next_blank.append(is_last)
+            ret += self._to_file_list(d, next_blank)
         return ret
 
 
