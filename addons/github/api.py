@@ -40,7 +40,9 @@ class GitHubClient(object):
         :return dict: GitHub API response
         """
         if user is None:
-            return self.gh3.me()
+            url = self.gh3._build_url('user')
+            json = self.gh3._json(self.gh3._get(url), 200)
+            return self.gh3._instance_or_null(github3.users.User, json)
         return self.gh3.user(user)
 
     def repo(self, user, repo):
