@@ -189,28 +189,27 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
 
     def process_response(self, request, response):
         waffles = getattr(request, 'waffles', None)
-        if request.path == '/v2/':
-            user = getattr(request, 'user', None)
-            referer_url = request.environ.get('HTTP_REFERER', '')
-            provider = self.get_provider_from_url(referer_url)
+        user = getattr(request, 'user', None)
+        referer_url = request.environ.get('HTTP_REFERER', '')
+        provider = self.get_provider_from_url(referer_url)
 
-            if provider and provider.in_sloan_study:
-                for sloan_flag_name in SLOAN_FLAGS:
-                    active = self.override_flag_activity(sloan_flag_name, waffles, user)
+        if provider and provider.in_sloan_study:
+            for sloan_flag_name in SLOAN_FLAGS:
+                active = self.override_flag_activity(sloan_flag_name, waffles, user)
 
-                    if active is not None:
-                        self.set_sloan_tags(user, sloan_flag_name, active)
-                        self.set_sloan_cookie(f'dwf_{sloan_flag_name}', active, request, response)
+                if active is not None:
+                    self.set_sloan_tags(user, sloan_flag_name, active)
+                    self.set_sloan_cookie(f'dwf_{sloan_flag_name}', active, request, response)
 
-                        if provider.domain_redirect_enabled and provider.domain:
-                            self.set_sloan_cookie(
-                                f'dwf_{sloan_flag_name}_custom_domain',
-                                active,
-                                request,
-                                response,
-                                custom_domain=provider.domain,
-                            )
-
+                    if provider.domain_redirect_enabled and provider.domain:
+                        self.set_sloan_cookie(
+                            f'dwf_{sloan_flag_name}_custom_domain',
+                            active,
+                            request,
+                            response,
+                            custom_domain=provider.domain,
+                        )
+                if request.path == '/v2/':
                     response.data['meta']['active_flags'].append(sloan_flag_name)
 
         # `set_sloan_cookies` has set the cookies, make sure WaffleMiddleware doesn't try to set them again.
