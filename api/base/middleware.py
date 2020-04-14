@@ -189,28 +189,37 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
 
     def process_response(self, request, response):
         waffles = getattr(request, 'waffles', None)
-        user = getattr(request, 'user', None)
-        referer_url = request.environ.get('HTTP_REFERER', '')
-        provider = self.get_provider_from_url(referer_url)
+        if request.path == '/v2/':
+            user = getattr(request, 'user', None)
+            referer_url = request.environ.get('HTTP_REFERER', '')
+            provider = self.get_provider_from_url(referer_url)
 
-        if provider and provider.in_sloan_study:
-            for sloan_flag_name in SLOAN_FLAGS:
-                active = self.override_flag_activity(sloan_flag_name, waffles, user)
+            if provider and provider.in_sloan_study:
+                for sloan_flag_name in SLOAN_FLAGS:
+                    active = self.override_flag_activity(sloan_flag_name, waffles, user)
 
-                if active is not None:
-                    self.set_sloan_tags(user, sloan_flag_name, active)
+                    if active is not None:
+                        self.set_sloan_tags(user, sloan_flag_name, active)
+                        self.set_sloan_cookie(f'dwf_{sloan_flag_name}', active, request, response)
+
+                        if provider.domain_redirect_enabled and provider.domain:
+                            self.set_sloan_cookie(
+                                f'dwf_{sloan_flag_name}_custom_domain',
+                                active,
+                                request,
+                                response,
+                                custom_domain=provider.domain,
+                            )
+
+                    if active:
+                        response.data['meta']['active_flags'].append(sloan_flag_name)
+
+            if user and not user.is_anonymous:
+                for sloan_flag_name in SLOAN_FLAGS:
+                    active = self.set_based_on_tags(user, sloan_flag_name)
                     self.set_sloan_cookie(f'dwf_{sloan_flag_name}', active, request, response)
-
-                    if provider.domain_redirect_enabled and provider.domain:
-                        self.set_sloan_cookie(
-                            f'dwf_{sloan_flag_name}_custom_domain',
-                            active,
-                            request,
-                            response,
-                            custom_domain=provider.domain,
-                        )
-                if request.path == '/v2/':
-                    response.data['meta']['active_flags'].append(sloan_flag_name)
+                    if active:
+                        response.data['meta']['active_flags'].append(sloan_flag_name)
 
         # `set_sloan_cookies` has set the cookies, make sure WaffleMiddleware doesn't try to set them again.
         if waffles:
@@ -220,9 +229,15 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
 
         # Give all users a unique id 'sloan_id` cookie, logged in or not.
         if not request.COOKIES.get(settings.SLOAN_ID_COOKIE_NAME):
-            self.set_sloan_cookie(settings.SLOAN_ID_COOKIE_NAME, str(uuid.uuid4()), request, response)
+            self.set_sloan_cookie(
+                settings.SLOAN_ID_COOKIE_NAME,
+                str(uuid.uuid4()),
+                request,
+                response,
+                request.environ.get('HTTP_REFERER') or request.build_absolute_uri(),
+            )
 
-        return super(SloanOverrideWaffleMiddleware, self).process_response(request, response)
+        return super().process_response(request, response)
 
     @staticmethod
     def get_domain(url: str) -> str:
@@ -326,6 +341,21 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
                 user.add_system_tag(tag_name)
             else:
                 user.add_system_tag(f'no_{tag_name}')
+
+    @staticmethod
+    def set_based_on_tags(user, flag_name: str):
+        """
+        This sets user tags for Sloan study, it can be deleted when the study is complete.
+        """
+        tag_name = SLOAN_FEATURES[flag_name]
+        if user.all_tags.filter(name=tag_name).exists():
+            active = True
+        elif user.all_tags.filter(name=f'no_{tag_name}').exists():
+            active = False
+        else:
+            active = None
+
+        return active
 
     def set_sloan_cookie(self, name: str, value, request, resp, custom_domain=None):
         """
