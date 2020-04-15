@@ -1527,7 +1527,6 @@ class TestSendEmails(NotificationTestCase):
             template=None,
             new_mentions=[node.creator._id],
             is_creator=(user == node.creator),
-            is_admin=node.has_permission(user, permissions.ADMIN)
         )
 
     @mock.patch('website.notifications.emails.store_emails')
