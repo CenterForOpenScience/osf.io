@@ -490,6 +490,7 @@ class CeleryConfig:
         'scripts.premigrate_created_modified',
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.deactivate_requested_accounts',
+        'osf.management.commands.update_institution_project_counts',
     )
 
     # Modules that need metrics and release requirements
