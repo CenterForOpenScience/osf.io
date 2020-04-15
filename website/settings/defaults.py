@@ -628,10 +628,10 @@ class CeleryConfig:
                 'task': 'management.commands.check_crossref_dois',
                 'schedule': crontab(minute=0, hour=4),  # Daily 11:00 p.m.
             },
-            # 'update_institutional_metrics': {
-            #     'task': 'management.commands.update_institution_project_counts',
-            #     'schedule': crontab(minute=0, hour=9), # Daily 05:00 a.m. EDT
-            # },
+            'update_institutional_metrics': {
+                'task': 'management.commands.update_institution_project_counts',
+                'schedule': crontab(minute=0, hour=9), # Daily 05:00 a.m. EDT
+            },
         }
 
         # Tasks that need metrics and release requirements
