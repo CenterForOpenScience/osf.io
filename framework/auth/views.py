@@ -35,7 +35,6 @@ from osf.exceptions import ValidationValueError, BlacklistedEmailError
 from osf.models.provider import PreprintProvider
 from osf.utils.requests import check_select_for_update
 from osf import features
-from api.base.middleware import SloanOverrideWaffleMiddleware
 
 @block_bing_preview
 @collect_auth
@@ -328,10 +327,6 @@ def auth_login(auth):
 
     data = login_and_register_handler(auth, login=True, campaign=campaign, next_url=next_url)
     if data['status_code'] == http_status.HTTP_302_FOUND:
-        provider = SloanOverrideWaffleMiddleware.get_provider_from_url(data['next_url'])
-        if provider:
-            return redirect(web_url_for('dashboard', _absolute=True, _internal=True))
-
         return redirect(data['next_url'])
 
 
