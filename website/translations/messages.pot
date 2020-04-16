@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-15 19:09+0900\n"
-"PO-Revision-Date: 2020-04-15 19:09+0900\n"
+"POT-Creation-Date: 2020-04-16 10:40+0900\n"
+"PO-Revision-Date: 2020-04-16 10:40+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -243,6 +243,28 @@ msgstr ""
 #: addons/weko/templates/weko_user_settings.mako:31
 #: website/templates/profile/user_settings_default.mako:28
 msgid "Private project"
+msgstr ""
+
+#: addons/base/models.py:461
+msgid ""
+"Because you have not configured the {addon} add-on, your authentication "
+"will not be transferred to the forked {category}. You may authorize and "
+"configure the {addon} add-on in the new fork on the settings page."
+msgstr ""
+
+#: addons/base/models.py:469
+msgid ""
+"Because you have authorized the {addon} add-on for this {category}, "
+"forking it will also transfer your authentication to the forked "
+"{category}."
+msgstr ""
+
+#: addons/base/models.py:476
+msgid ""
+"Because the {addon} add-on has been authorized by a different user, "
+"forking it will not transfer authentication to the forked {category}. You"
+" may authorize and configure the {addon} add-on in the new fork on the "
+"settings page."
 msgstr ""
 
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:25

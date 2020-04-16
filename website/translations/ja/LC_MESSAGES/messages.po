@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-15 19:09+0900\n"
-"PO-Revision-Date: 2020-04-15 19:09+0900\n"
+"POT-Creation-Date: 2020-04-16 10:40+0900\n"
+"PO-Revision-Date: 2020-04-16 10:40+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -245,6 +245,28 @@ msgstr "承認者：%(userName)s"
 #: website/templates/profile/user_settings_default.mako:28
 msgid "Private project"
 msgstr "非公開プロジェクト"
+
+#: addons/base/models.py:461
+msgid ""
+"Because you have not configured the {addon} add-on, your authentication "
+"will not be transferred to the forked {category}. You may authorize and "
+"configure the {addon} add-on in the new fork on the settings page."
+msgstr "{addon}アドオンを構成していないため、認証はフォークされた{category}に転送されません。設定ページの新しいフォークで{addon}アドオンを承認して設定できます。"
+
+#: addons/base/models.py:469
+msgid ""
+"Because you have authorized the {addon} add-on for this {category}, "
+"forking it will also transfer your authentication to the forked "
+"{category}."
+msgstr "この{category}の{addon}アドオンを承認したため、これをフォークすると、認証がフォークされた{category}にも転送されます。"
+
+#: addons/base/models.py:476
+msgid ""
+"Because the {addon} add-on has been authorized by a different user, "
+"forking it will not transfer authentication to the forked {category}. You"
+" may authorize and configure the {addon} add-on in the new fork on the "
+"settings page."
+msgstr "{addon}アドオンは別のユーザーによって承認されているため、フォークすると、認証がフォークされた{category}に転送されません。設定ページの新しいフォークで{addon}アドオンを承認して設定できます。"
 
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:25
 #: addons/github/templates/github_node_settings.mako:25
@@ -1562,7 +1584,7 @@ msgstr "許可が必要です"
 
 #: website/templates/request_access.mako:13
 msgid "Ask for access, or switch to an account with permission."
-msgstr "アクセスを要求するか、許可を得てアカウントに切り替えてください。"
+msgstr "アクセス権を要求するか、許可を得てアカウントに切り替えてください。"
 
 #: website/templates/request_access.mako:14
 msgid ""
@@ -1863,7 +1885,9 @@ msgstr "未設定"
 msgid ""
 "<span data-bind=\"text: startMonth\"></span> <span data-bind=\"text: "
 "startYear\"></span>"
-msgstr "<span data-bind="text: startYear"></span>年 <span data-bind="text: startMonth"></span>"
+msgstr ""
+"<span data-bind=\"text: startYear\"></span>年 <span data-bind=\"text: "
+"startMonth\"></span>"
 
 #: website/templates/include/profile/jobs.mako:156
 msgid "Department / Institute:"

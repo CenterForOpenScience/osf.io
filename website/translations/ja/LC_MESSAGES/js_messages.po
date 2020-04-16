@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-16 09:11+0900\n"
-"PO-Revision-Date: 2020-04-16 09:11+0900\n"
+"POT-Creation-Date: 2020-04-16 10:40+0900\n"
+"PO-Revision-Date: 2020-04-16 10:40+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -17,32 +17,6 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.7.0\n"
-
-#: addons/base/models.py:461
-msgid ""
-"Because you have not configured the {addon} add-on, your authentication "
-"will not be transferred to the forked {category}. You may authorize and "
-"configure the {addon} add-on in the new fork on the settings page."
-msgstr ""
-"{addon}アドオンを構成していないため、認証はフォークされた{category}に転送されません。 "
-"設定ページの新しいフォークで{addon}アドオンを承認して設定できます。"
-
-#: addons/base/models.py:469
-msgid ""
-"Because you have authorized the {addon} add-on for this {category}, "
-"forking it will also transfer your authentication to the forked "
-"{category}."
-msgstr "この{category}の{addon}アドオンを承認したため、これをフォークすると、認証がフォークされた{category}にも転送されます。"
-
-#: addons/base/models.py:476
-msgid ""
-"Because the {addon} add-on has been authorized by a different user, "
-"forking it will not transfer authentication to the forked {category}. You"
-" may authorize and configure the {addon} add-on in the new fork on the "
-"settings page."
-msgstr ""
-"{addon}アドオンは別のユーザーによって承認されているため、フォークすると、認証がフォークされた{category}に転送されません。 "
-"設定ページの新しいフォークで{addon}アドオンを承認して設定できます。"
 
 #: addons/twofactor/static/twoFactorUserConfig.js:175
 msgid "Enable Two-factor Authentication"
