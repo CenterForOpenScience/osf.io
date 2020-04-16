@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-09 17:31+0900\n"
-"PO-Revision-Date: 2020-04-09 17:31+0900\n"
+"POT-Creation-Date: 2020-04-15 19:09+0900\n"
+"PO-Revision-Date: 2020-04-15 19:09+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -1568,7 +1568,7 @@ msgstr "アクセスを要求するか、許可を得てアカウントに切り
 msgid ""
 "Your request for access has been sent. You will receive an email if and "
 "when your request is approved."
-msgstr "アクセスのリクエストが送信されました。 リクエストが承認されると、メールが届きます。"
+msgstr "アクセス権のリクエストが送信されました。 リクエストが承認されると、メールが届きます。"
 
 #: website/templates/request_access.mako:23
 msgid "Switch account"
@@ -1855,6 +1855,15 @@ msgstr "保存中"
 #: website/templates/include/profile/social.mako:180
 msgid "Not provided"
 msgstr "未設定"
+
+#: website/templates/include/profile/jobs.mako:149
+#: website/templates/include/profile/jobs.mako:159
+#: website/templates/include/profile/schools.mako:148
+#: website/templates/include/profile/schools.mako:158
+msgid ""
+"<span data-bind=\"text: startMonth\"></span> <span data-bind=\"text: "
+"startYear\"></span>"
+msgstr "<span data-bind="text: startYear"></span>年 <span data-bind="text: startMonth"></span>"
 
 #: website/templates/include/profile/jobs.mako:156
 msgid "Department / Institute:"
