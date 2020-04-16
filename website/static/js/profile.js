@@ -11,6 +11,7 @@ var $osf = require('./osfHelpers');
 var koHelpers = require('./koHelpers');
 require('js/objectCreateShim');
 
+var getBrowserLang = require('js/rdmGettext').getBrowserLang;
 var _ = require('js/rdmGettext')._;
 
 // Adapted from Django URLValidator
@@ -124,11 +125,11 @@ var DateMixin = function() {
     });
     self.end = ko.computed(function() {
         if (self.endMonth() && self.endYear()) {
-            self.displayDate(self.endMonth() + ' ' + self.endYear());
+            self.displayDate(getBrowserLang() === 'ja' ? (self.endYear() + _('Year') + ' ' + self.endMonth()) : (self.endMonth() + ' ' + self.endYear()));
             return new Date(self.endYear(),
                     (self.monthToInt(self.endMonth()) - 1).toString());
         } else if (!self.endMonth() && self.endYear()) {
-            self.displayDate(self.endYear());
+            self.displayDate(getBrowserLang() === 'ja' ? (self.endYear() + _('Year')) : self.endYear());
             var today = new Date();
             var date = new Date(self.endYear(), '11', '31');
             return today > date ? date : today;
