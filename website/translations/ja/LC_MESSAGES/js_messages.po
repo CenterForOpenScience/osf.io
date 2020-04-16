@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-10 11:37+0900\n"
-"PO-Revision-Date: 2020-04-10 11:37+0900\n"
+"POT-Creation-Date: 2020-04-16 09:11+0900\n"
+"PO-Revision-Date: 2020-04-16 09:11+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -17,6 +17,32 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.7.0\n"
+
+#: addons/base/models.py:461
+msgid ""
+"Because you have not configured the {addon} add-on, your authentication "
+"will not be transferred to the forked {category}. You may authorize and "
+"configure the {addon} add-on in the new fork on the settings page."
+msgstr ""
+"{addon}アドオンを構成していないため、認証はフォークされた{category}に転送されません。 "
+"設定ページの新しいフォークで{addon}アドオンを承認して設定できます。"
+
+#: addons/base/models.py:469
+msgid ""
+"Because you have authorized the {addon} add-on for this {category}, "
+"forking it will also transfer your authentication to the forked "
+"{category}."
+msgstr "この{category}の{addon}アドオンを承認したため、これをフォークすると、認証がフォークされた{category}にも転送されます。"
+
+#: addons/base/models.py:476
+msgid ""
+"Because the {addon} add-on has been authorized by a different user, "
+"forking it will not transfer authentication to the forked {category}. You"
+" may authorize and configure the {addon} add-on in the new fork on the "
+"settings page."
+msgstr ""
+"{addon}アドオンは別のユーザーによって承認されているため、フォークすると、認証がフォークされた{category}に転送されません。 "
+"設定ページの新しいフォークで{addon}アドオンを承認して設定できます。"
 
 #: addons/twofactor/static/twoFactorUserConfig.js:175
 msgid "Enable Two-factor Authentication"
@@ -220,8 +246,8 @@ msgstr "次を入力して続行します。<strong>%1$s</ strong><br><br>"
 #: website/static/js/pages/profile-settings-addons-page.js:101
 #: website/static/js/pages/project-addons-page.js:41
 #: website/static/js/pages/project-addons-page.js:66
-#: website/static/js/privateLinkTable.js:119 website/static/js/profile.js:372
-#: website/static/js/profile.js:742 website/static/js/profile.js:974
+#: website/static/js/privateLinkTable.js:119 website/static/js/profile.js:373
+#: website/static/js/profile.js:743 website/static/js/profile.js:975
 #: website/static/js/project.js:39 website/static/js/project.js:143
 #: website/static/js/project.js:253
 #: website/static/js/wikiSettingsTreebeard.js:31
@@ -612,8 +638,8 @@ msgstr "メーリングリストから<em>%1$s</em>を削除してもよろし�
 #: website/static/js/addonPermissions.js:51
 #: website/static/js/addonSettings.js:67
 #: website/static/js/pages/profile-settings-addons-page.js:97
-#: website/static/js/privateLinkTable.js:115 website/static/js/profile.js:738
-#: website/static/js/profile.js:970 website/static/js/project.js:249
+#: website/static/js/privateLinkTable.js:115 website/static/js/profile.js:739
+#: website/static/js/profile.js:971 website/static/js/project.js:249
 msgid "Remove"
 msgstr "削除"
 
@@ -885,7 +911,7 @@ msgstr "テンプレートとして使用するプロジェクトを選択しま
 #: website/static/js/addonHelper.js:37
 #: website/static/js/nodeSelectTreebeard.js:59
 #: website/static/js/notificationsTreebeard.js:59
-#: website/static/js/profile.js:310
+#: website/static/js/profile.js:311
 #: website/static/js/wikiSettingsTreebeard.js:54
 msgid "Settings updated"
 msgstr "設定が更新されました"
@@ -1056,12 +1082,12 @@ msgid "Reset Secret"
 msgstr "シークレットをリセット"
 
 #: website/static/js/apiApplication.js:473
-#: website/static/js/apiPersonalToken.js:412 website/static/js/profile.js:356
+#: website/static/js/apiPersonalToken.js:412 website/static/js/profile.js:357
 msgid "Discard changes?"
 msgstr "変更を破棄しますか？"
 
 #: website/static/js/apiApplication.js:483
-#: website/static/js/apiPersonalToken.js:422 website/static/js/profile.js:368
+#: website/static/js/apiPersonalToken.js:422 website/static/js/profile.js:369
 msgid "Discard"
 msgstr "破棄"
 
@@ -2219,135 +2245,126 @@ msgstr "プレプリント提出の更新時"
 msgid "No license"
 msgstr "ライセンスなし"
 
-#: website/static/js/js_messages.js:17
-msgid ""
-"Because you have not configured the {addon} add-on, your authentication "
-"will not be transferred to the forked {category}. You may authorize and "
-"configure the {addon} add-on in the new fork on the settings page."
-msgstr ""
-"{addon}アドオンを設定していないため、認証は分岐した{category}に転送されません。 "
-"設定ページの新しいフォークで{addon}アドオンを許可および設定できます。"
-
-#: website/static/js/js_messages.js:19 website/static/js/passwordForms.js:178
+#: website/static/js/js_messages.js:17 website/static/js/passwordForms.js:178
 #: website/static/js/passwordForms.js:241
 msgid "This field is required."
 msgstr "この項目は必須です。"
 
-#: website/static/js/js_messages.js:19
+#: website/static/js/js_messages.js:17
 msgid "Please enter a value greater than or equal to {0}."
 msgstr "{0}以上の値を入力してください。"
 
-#: website/static/js/js_messages.js:19
+#: website/static/js/js_messages.js:17
 msgid "Please enter a value less than or equal to {0}."
 msgstr "{0}以下の値を入力してください。"
 
-#: website/static/js/js_messages.js:19
+#: website/static/js/js_messages.js:17
 msgid "Please enter at least {0} characters."
 msgstr "{0}文字以上入力してください。"
 
-#: website/static/js/js_messages.js:19
+#: website/static/js/js_messages.js:17
 msgid "Please enter no more than {0} characters."
 msgstr "{0}文字以下で入力してください。"
 
-#: website/static/js/js_messages.js:19
+#: website/static/js/js_messages.js:17
 msgid "Please check this value."
 msgstr "値を確認してください。"
 
-#: website/static/js/js_messages.js:19
+#: website/static/js/js_messages.js:17
 msgid "The value must increment by {0}."
 msgstr "値は{0}ずつ増加する必要があります。"
 
-#: website/static/js/js_messages.js:19
+#: website/static/js/js_messages.js:17
 msgid "Please enter a proper email address."
 msgstr "正しいメールアドレスを入力してください。"
 
-#: website/static/js/js_messages.js:19
+#: website/static/js/js_messages.js:17
 msgid "Please enter a proper date."
 msgstr "適切な日付を入力してください。"
 
-#: website/static/js/js_messages.js:19
+#: website/static/js/js_messages.js:17
 msgid "Please enter a number."
 msgstr "数字を入力してください。"
 
-#: website/static/js/js_messages.js:19
+#: website/static/js/js_messages.js:17
 msgid "Please enter a digit."
 msgstr "数字を入力してください。"
 
-#: website/static/js/js_messages.js:19
+#: website/static/js/js_messages.js:17
 msgid "Please specify a valid phone number."
 msgstr "有効な電話番号を指定してください。"
 
-#: website/static/js/js_messages.js:19
+#: website/static/js/js_messages.js:17
 msgid "Values must equal."
 msgstr "値は等しくなければなりません。"
 
-#: website/static/js/js_messages.js:19
+#: website/static/js/js_messages.js:17
 msgid "Please choose another value."
 msgstr "別の値を選択してください。"
 
-#: website/static/js/js_messages.js:19
+#: website/static/js/js_messages.js:17
 msgid "Please make sure the value is unique."
 msgstr "値が一意であることを確認してください。"
 
-#: website/static/js/js_messages.js:21
+#: website/static/js/js_messages.js:19
 msgid "Project Wiki Pages"
 msgstr "プロジェクトのWiki"
 
-#: website/static/js/js_messages.js:21
+#: website/static/js/js_messages.js:19
 msgid "Component Wiki Pages"
 msgstr "コンポーネントのWiki"
 
-#: website/static/js/js_messages.js:21
+#: website/static/js/js_messages.js:19
 msgid "Home"
 msgstr "ホーム"
 
-#: website/static/js/js_messages.js:23
+#: website/static/js/js_messages.js:21
 msgid "Projects"
 msgstr "プロジェクト"
 
-#: website/static/js/js_messages.js:23
+#: website/static/js/js_messages.js:21
 msgid "Components"
 msgstr "コンポーネント"
 
-#: website/static/js/js_messages.js:23
+#: website/static/js/js_messages.js:21
 msgid "Registrations"
 msgstr "登録"
 
-#: website/static/js/js_messages.js:23
+#: website/static/js/js_messages.js:21
 msgid "Users"
 msgstr "ユーザー"
 
-#: website/static/js/js_messages.js:23
+#: website/static/js/js_messages.js:21
 msgid "All Results"
 msgstr "全検索結果"
 
-#: website/static/js/js_messages.js:23
+#: website/static/js/js_messages.js:21
 msgid "Files"
 msgstr "ファイル"
 
-#: website/static/js/js_messages.js:23
+#: website/static/js/js_messages.js:21
 msgid "Institutions"
 msgstr "機関"
 
-#: website/static/js/js_messages.js:23
+#: website/static/js/js_messages.js:21
 msgid "Preprints"
 msgstr "プレプリント"
 
-#: website/static/js/js_messages.js:23
+#: website/static/js/js_messages.js:21
 msgid "Groups"
 msgstr "グループ"
 
-#: website/static/js/js_messages.js:25
+#: website/static/js/js_messages.js:23
 msgid "Default Notification Settings"
 msgstr "デフォルトの通知設定"
 
-#: website/static/js/js_messages.js:25
+#: website/static/js/js_messages.js:23
 msgid ""
 "These are default settings for new projects you create or are added to. "
 "Modifying these settings will not modify settings on existing projects."
 msgstr "これらは、作成または追加される新しいプロジェクトのデフォルト設定です。 これらの設定を変更しても、既存のプロジェクトの設定は変更されません。"
 
-#: website/static/js/js_messages.js:25
+#: website/static/js/js_messages.js:23
 msgid "Project Notifications"
 msgstr "プロジェクト通知"
 
@@ -2391,7 +2408,8 @@ msgstr "有効なURLを入力してください。"
 msgid "The field does not match the required input."
 msgstr "フィールドが必要な入力と一致しません。"
 
-#: website/static/js/licensePicker.js:20
+#: website/static/js/licensePicker.js:20 website/static/js/profile.js:128
+#: website/static/js/profile.js:132
 msgid "Year"
 msgstr "年"
 
@@ -2820,7 +2838,7 @@ msgstr "DOIを作成できませんでした。"
 
 #: website/static/js/nodeSelectTreebeard.js:62
 #: website/static/js/notificationsTreebeard.js:62
-#: website/static/js/profile.js:319
+#: website/static/js/profile.js:320
 #: website/static/js/wikiSettingsTreebeard.js:57
 msgid "Could not update settings"
 msgstr "設定を更新できませんでした"
@@ -3271,123 +3289,123 @@ msgstr "プライベートリンクを削除できませんでした。"
 msgid "Edit Link Name"
 msgstr "リンク名を編集"
 
-#: website/static/js/profile.js:105
+#: website/static/js/profile.js:106
 msgid "January"
 msgstr "1月"
 
-#: website/static/js/profile.js:105
+#: website/static/js/profile.js:106
 msgid "February"
 msgstr "2月"
 
-#: website/static/js/profile.js:105
+#: website/static/js/profile.js:106
 msgid "March"
 msgstr "3月"
 
-#: website/static/js/profile.js:105
+#: website/static/js/profile.js:106
 msgid "April"
 msgstr "4月"
 
-#: website/static/js/profile.js:105
+#: website/static/js/profile.js:106
 msgid "May"
 msgstr "5月"
 
-#: website/static/js/profile.js:105
+#: website/static/js/profile.js:106
 msgid "June"
 msgstr "6月"
 
-#: website/static/js/profile.js:106
+#: website/static/js/profile.js:107
 msgid "July"
 msgstr "7月"
 
-#: website/static/js/profile.js:106
+#: website/static/js/profile.js:107
 msgid "August"
 msgstr "8月"
 
-#: website/static/js/profile.js:106
+#: website/static/js/profile.js:107
 msgid "September"
 msgstr "9月"
 
-#: website/static/js/profile.js:106
+#: website/static/js/profile.js:107
 msgid "October"
 msgstr "10月"
 
-#: website/static/js/profile.js:106
+#: website/static/js/profile.js:107
 msgid "November"
 msgstr "11月"
 
-#: website/static/js/profile.js:106
+#: website/static/js/profile.js:107
 msgid "December"
 msgstr "12月"
 
-#: website/static/js/profile.js:111
+#: website/static/js/profile.js:112
 msgid "ongoing"
 msgstr "在籍"
 
-#: website/static/js/profile.js:151
+#: website/static/js/profile.js:152
 msgid "Please enter a year for the start date."
 msgstr "開始日の年を入力してください。"
 
-#: website/static/js/profile.js:164
+#: website/static/js/profile.js:165
 msgid "Please enter an end date or mark as ongoing."
 msgstr "終了日を入力するか、在籍としてマークしてください。"
 
-#: website/static/js/profile.js:167
+#: website/static/js/profile.js:168
 msgid "Please enter a year for the end date."
 msgstr "終了日の年を入力してください。"
 
-#: website/static/js/profile.js:264 website/static/js/profile.js:273
+#: website/static/js/profile.js:265 website/static/js/profile.js:274
 msgid "There are unsaved changes to your settings."
 msgstr "設定に保存されていない変更があります。"
 
-#: website/static/js/profile.js:274
+#: website/static/js/profile.js:275
 msgid "Please save or discard your changes before switching "
 msgstr "タブを切り替える前に変更を保存または破棄して"
 
-#: website/static/js/profile.js:275
+#: website/static/js/profile.js:276
 msgid "tabs."
 msgstr "ください。"
 
-#: website/static/js/profile.js:340
+#: website/static/js/profile.js:341
 msgid "Could not fetch data"
 msgstr "データを取得できませんでした"
 
-#: website/static/js/profile.js:357
+#: website/static/js/profile.js:358
 msgid "Are you sure you want to discard your unsaved changes?"
 msgstr "保存していない変更を破棄してもよろしいですか？"
 
-#: website/static/js/profile.js:719
+#: website/static/js/profile.js:720
 msgid "Remove website?"
 msgstr "ウェブサイトを削除しますか？"
 
-#: website/static/js/profile.js:720
+#: website/static/js/profile.js:721
 msgid "Are you sure you want to remove this website from your profile?"
 msgstr "このウェブサイトをプロフィールから削除してもよろしいですか？"
 
-#: website/static/js/profile.js:727
+#: website/static/js/profile.js:728
 msgid "Website removed"
 msgstr "ウェブサイトを削除しました"
 
-#: website/static/js/profile.js:814
+#: website/static/js/profile.js:815
 msgid "Please update your website"
 msgstr "ウェブサイトを更新してください"
 
-#: website/static/js/profile.js:952
+#: website/static/js/profile.js:953
 msgid "Remove Institution?"
 msgstr "機関を削除しますか？"
 
-#: website/static/js/profile.js:953
+#: website/static/js/profile.js:954
 msgid "Are you sure you want to remove this institution?"
 msgstr "この機関を削除してもよろしいですか？"
 
-#: website/static/js/profile.js:962
+#: website/static/js/profile.js:963
 msgid "Institution Removed"
 msgstr "機関が削除されました"
 
-#: website/static/js/profile.js:1077
+#: website/static/js/profile.js:1078
 msgid "Institution/Employer required"
 msgstr "機関/雇用者が必要です"
 
-#: website/static/js/profile.js:1131
+#: website/static/js/profile.js:1132
 msgid "Institution required"
 msgstr "機関が必要です"
 
@@ -3519,13 +3537,21 @@ msgstr "このリンクを削除してもよろしいですか？このリンク
 msgid "Editing Toggle"
 msgstr "トグルを編集中"
 
+#: website/static/js/requestAccess.js:17
+msgid "Request access"
+msgstr "アクセス権をリクエスト"
+
+#: website/static/js/requestAccess.js:27 website/static/js/requestAccess.js:62
+msgid "Access requested"
+msgstr "アクセス権がリクエストされました"
+
 #: website/static/js/requestAccess.js:67
 msgid "Access request failed. Please contact %1$s if the problem persists."
 msgstr "アクセス要求が失敗しました。 問題が解決しない場合は%1$sにお問い合わせください。"
 
 #: website/static/js/requestAccess.js:70
 msgid "Error requesting project access"
-msgstr "プロジェクトアクセスのリクエストエラー"
+msgstr "プロジェクトアクセス権のリクエストエラー"
 
 #: website/static/js/requestAccess.js:83
 msgid "If this should not have occurred, please contact %1$s."
