@@ -14,7 +14,7 @@ var RequestAccessViewModel = function(currentUserRequestState, nodeId, user) {
     var self = this;
 
     self.user = user;
-    self.requestAccessButton = ko.observable('Request access');
+    self.requestAccessButton = ko.observable(_('Request access'));
     self.accessRequestPendingOrDenied = ko.observable(false);
     self.accessRequestTooltip = ko.observable('');
     self.updateUrl = $osf.apiV2Url('nodes/' +  nodeId + '/requests/');
@@ -24,7 +24,7 @@ var RequestAccessViewModel = function(currentUserRequestState, nodeId, user) {
 
         if (self.requestState() === 'pending' || self.requestState() === 'rejected') {
             self.accessRequestPendingOrDenied(true);
-            self.requestAccessButton = ko.observable('Access requested');
+            self.requestAccessButton = ko.observable(_('Access requested'));
         }
         if (self.requestState() === 'rejected') {
             self.accessRequestTooltip('Request declined');
@@ -59,7 +59,7 @@ var RequestAccessViewModel = function(currentUserRequestState, nodeId, user) {
         );
 
         request.done(function() {
-            self.requestAccessButton('Access requested');
+            self.requestAccessButton(_('Access requested'));
         }.bind(this));
         request.fail(function(xhr, status, error) {
             self.accessRequestPendingOrDenied(false);
