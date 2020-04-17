@@ -315,4 +315,7 @@ class InstitutionProjectCounts(MetricMixin, metrics.Metric):
 
     @classmethod
     def get_latest_institution_project_document(cls, institution):
-        return cls.search().filter('match', institution_id=institution._id).sort('-timestamp')[:1]
+        search = cls.search().filter('match', institution_id=institution._id).sort('-timestamp')[:1]
+        response = search.execute()
+        if response:
+            return response[0]
