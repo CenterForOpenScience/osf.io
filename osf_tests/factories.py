@@ -1080,5 +1080,5 @@ class BrandFactory(DjangoModelFactory):
     topnav_logo_image = factory.Faker('url')
     hero_background_image = factory.Faker('url')
 
-    primary_color = factory.Faker('color')
-    secondary_color = factory.Faker('color')
+    primary_color = factory.Faker('hex_color')
+    secondary_color = factory.Faker('hex_color')
