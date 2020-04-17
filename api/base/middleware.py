@@ -211,6 +211,15 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
                                 custom_domain=provider.domain,
                             )
 
+                            if not request.COOKIES.get(settings.SLOAN_ID_COOKIE_NAME):
+                                self.set_sloan_cookie(
+                                    settings.SLOAN_ID_COOKIE_NAME,
+                                    str(uuid.uuid4()),
+                                    request,
+                                    response,
+                                    custom_domain=provider.domain,
+                                )
+
                     response.data['meta']['active_flags'].append(sloan_flag_name)
 
         # `set_sloan_cookies` has set the cookies, make sure WaffleMiddleware doesn't try to set them again.
