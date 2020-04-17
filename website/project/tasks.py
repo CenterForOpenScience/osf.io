@@ -25,7 +25,7 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
 
     need_update = bool(node.SEARCH_UPDATE_FIELDS.intersection(saved_fields))
     # due to async nature of call this can issue a search update for a new record (acceptable trade-off)
-    if bool({'spam_status', 'is_deleted'}.intersection(saved_fields)):
+    if bool({'spam_status', 'is_deleted', 'deleted'}.intersection(saved_fields)):
         need_update = True
     elif not node.is_public and 'is_public' not in saved_fields:
         need_update = False
@@ -44,7 +44,7 @@ def update_collecting_metadata(node, saved_fields):
         if node.is_public:
             update_collected_metadata(node._id)
         else:
-            if 'is_public' in saved_fields:
+            if set(saved_fields).intersection({'spam_status', 'is_deleted', 'deleted', 'is_public'}):
                 update_collected_metadata(node._id, op='delete')
 
 def update_node_share(node):
