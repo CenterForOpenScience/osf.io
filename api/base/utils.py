@@ -231,6 +231,16 @@ class MockQueryset(list):
     """
     This class is meant to convert a simple list into a filterable queryset look-a-like.
     """
+
+    def __len__(self, *args, **kwargs):
+        if kwargs.get('total'):
+            self.total = kwargs.get('total')
+
+        if hasattr(self, 'total'):
+            return self.total
+
+        return len(self)
+
     def add_dict_as_item(self, dict):
         item = type('item', (object,), dict)
         self.append(item)

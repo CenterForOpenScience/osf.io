@@ -202,7 +202,7 @@ class InstitutionSummaryMetricSerializer(JSONAPISerializer):
         )
 
 
-class InstitutionDepartmentSerializer(JSONAPISerializer):
+class InstitutionDepartmentMetricsSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'institution-departments'
