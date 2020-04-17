@@ -238,8 +238,8 @@ class MockQueryset(list):
 
         if hasattr(self, 'total'):
             return self.total
-
-        return len(self)
+        else:
+            return super().__len__()
 
     def add_dict_as_item(self, dict):
         item = type('item', (object,), dict)
