@@ -27,18 +27,18 @@ def flip(flag):
     try:
         waffle_tag = Tag.all_tags.get(system=True, name=WAFFLE.format(flag))
         waffle_tag.osfuser_set.clear()
-        print(f'Tag {WAFFLE.format(flag)} cleared')
+        logger.info(f'Tag {WAFFLE.format(flag)} cleared')
     except Tag.DoesNotExist:
-        print(f'Tag {WAFFLE.format(flag)} not found')
+        logger.info(f'Tag {WAFFLE.format(flag)} not found')
         pass
     try:
         no_waffle_tag = Tag.all_tags.get(system=True, name=NO_WAFFLE.format(flag))
         no_waffle_tag.osfuser_set.clear()
-        print(f'Tag {NO_WAFFLE.format(flag)} cleared')
+        logger.info(f'Tag {NO_WAFFLE.format(flag)} cleared')
     except Tag.DoesNotExist:
-        print(f'Tag {NO_WAFFLE.format(flag)} not found')
+        logger.info(f'Tag {NO_WAFFLE.format(flag)} not found')
         pass
-    waffle_flag, created = Flag.objects.get_or_create(name=FLAG_NAME.format(flag), percent=50.0, everyone=None)
+    waffle_flag, created = Flag.objects.get_or_create(name=FLAG_NAME.format(flag))
     waffle_flag.percent = 50
     waffle_flag.everyone = None
     waffle_flag.save()
@@ -47,10 +47,11 @@ def flip(flag):
     waffle_switch.active = True
     waffle_switch.save()
 
-    print(f'Enabled {waffle_flag} at {timezone.now()}')
+    logger.info(f'Enabled {waffle_flag} at {timezone.now()}')
 
 
 def main(flag, dry_run):
+    assert flag in AVAILABLE_FLAGS, f'the given flag : \'{flag}\' was invalid'
     with transaction.atomic():
         flip(flag)
         if dry_run:

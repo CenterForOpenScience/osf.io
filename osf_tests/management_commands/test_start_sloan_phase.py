@@ -34,3 +34,9 @@ class TestStartSloanPhase:
         assert switch.active
         assert f'no_waffle:sloan|{feature}' not in user.all_tags
         assert f'waffle:sloan|{feature}' not in user.all_tags
+
+    def test_start_phase_invalid(self, user):
+        with pytest.raises(AssertionError) as e:
+            call_command('start_sloan_phase', '--flag=notright')
+
+        assert str(e.value) == 'the given flag : \'notright\' was invalid'
