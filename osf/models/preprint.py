@@ -1086,7 +1086,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.why_no_data == why_no_data:
             return
 
-        if not self.has_data_links == 'available':
+        if not self.has_data_links == 'no':
             raise PreprintStateError('You cannot edit this statement while your data links availability is set to true or'
                                   ' is unanswered.')
         else:

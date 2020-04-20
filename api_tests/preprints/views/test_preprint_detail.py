@@ -870,7 +870,7 @@ class TestPreprintUpdate:
         assert res.json['errors'][0]['detail'] == 'You cannot edit this statement while your data links availability' \
                                                   ' is set to true or is unanswered.'
 
-        preprint.has_data_links = 'available'
+        preprint.has_data_links = 'no'
         preprint.save()
         with override_switch(features.SLOAN_DATA_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth)
