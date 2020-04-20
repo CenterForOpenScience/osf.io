@@ -1,3 +1,4 @@
+import time
 import pytest
 import datetime
 
@@ -34,30 +35,7 @@ class TestInstitutionDepartmentList:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def admin(self, institution):
-        user = AuthUserFactory()
-        group = institution.get_group('institutional_admins')
-        group.user_set.add(user)
-        group.save()
-        return user
-
-    @pytest.fixture()
-    def url(self, institution):
-        return f'/{API_BASE}institutions/{institution._id}/metrics/departments/'
-
-    def test_get(self, app, url, user, user2, user3, user4, admin, institution):
-
-        resp = app.get(url, expect_errors=True)
-        assert resp.status_code == 401
-
-        resp = app.get(url, auth=user.auth, expect_errors=True)
-        assert resp.status_code == 403
-
-        resp = app.get(url, auth=admin.auth)
-        assert resp.status_code == 200
-
-        assert resp.json['data'] == []
-
+    def populate_counts(self, user, user2, user3, user4, admin, institution):
         # This represents a Department that had a user, but no longer has any users, so does not appear in results.
         UserInstitutionProjectCounts.record(
             user_id=user._id,
@@ -102,10 +80,34 @@ class TestInstitutionDepartmentList:
             public_project_count=1,
             private_project_count=1
         ).save()
+        time.sleep(5)  # ES is slow
 
-        import time
-        time.sleep(2)  # ES is slow
+    @pytest.fixture()
+    def admin(self, institution):
+        user = AuthUserFactory()
+        group = institution.get_group('institutional_admins')
+        group.user_set.add(user)
+        group.save()
+        return user
 
+    @pytest.fixture()
+    def url(self, institution):
+        return f'/{API_BASE}institutions/{institution._id}/metrics/departments/'
+
+    def test_auth(self, app, url, user, admin):
+
+        resp = app.get(url, expect_errors=True)
+        assert resp.status_code == 401
+
+        resp = app.get(url, auth=user.auth, expect_errors=True)
+        assert resp.status_code == 403
+
+        resp = app.get(url, auth=admin.auth)
+        assert resp.status_code == 200
+
+        assert resp.json['data'] == []
+
+    def test_get(self, app, url, admin, institution, populate_counts):
         resp = app.get(url, auth=admin.auth)
 
         assert resp.json['data'] == [{
@@ -134,6 +136,7 @@ class TestInstitutionDepartmentList:
             'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
         }]
 
+    def test_pagination(self, app, url, admin, institution, populate_counts):
         resp = app.get(f'{url}?filter[name]=New Department', auth=admin.auth)
 
         assert resp.json['data'] == [{
@@ -145,3 +148,13 @@ class TestInstitutionDepartmentList:
             },
             'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
         }]
+
+        resp = app.get(f'{url}?page[size]=2', auth=admin.auth)
+        assert len(resp.json['data']) == 2
+        assert resp.json['links']['meta']['per_page'] == 2
+        assert resp.json['links']['meta']['total'] == 3
+
+        resp = app.get(f'{url}?page[size]=2&page=2', auth=admin.auth)
+        assert len(resp.json['data']) == 1
+        assert resp.json['links']['meta']['per_page'] == 2
+        assert resp.json['links']['meta']['total'] == 3
