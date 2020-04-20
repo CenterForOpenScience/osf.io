@@ -2,6 +2,10 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.5.0 (2020-04-20)
+===================
+- Fixes for Sloan Signals of Trust
+
 20.4.0 (2020-03-23)
 ===================
 - Add DraftNode Model and improve DraftRegistrations
