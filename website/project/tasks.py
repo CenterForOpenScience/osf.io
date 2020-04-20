@@ -44,8 +44,7 @@ def update_collecting_metadata(node, saved_fields):
         if node.is_public:
             update_collected_metadata(node._id)
         else:
-            if set(saved_fields).intersection({'spam_status', 'is_deleted', 'deleted', 'is_public'}):
-                update_collected_metadata(node._id, op='delete')
+            update_collected_metadata(node._id, op='delete')
 
 def update_node_share(node):
     # Wrapper that ensures share_url and token exist

@@ -3906,33 +3906,15 @@ class TestOnNodeUpdate:
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.search.search.update_collected_metadata')
     @mock.patch('website.project.tasks.requests')
-    def test_update_collection_elasticsearch_deleted(self, requests, node_in_collection, collection, user, request_context):
-        now = datetime.datetime.now()
-
-        node_in_collection.deleted = now
-
-        on_node_updated(node_in_collection._id, user._id, False, {'deleted'})
-
-        kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['data']['attributes']['data']['@graph']
-        assert graph[1]['is_deleted']
-
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
-    @mock.patch('website.project.tasks.requests')
-    def test_update_collection_elasticsearch_make_private(self, requests, node_in_collection, collection, user, request_context):
-        node_in_collection.is_public = True
-        node_in_collection.save()
-
+    def test_update_collection_elasticsearch_make_private(self, requests, mock_update_collected_metadata, node_in_collection, collection, user, request_context):
         node_in_collection.is_public = False
         node_in_collection.save()
 
         on_node_updated(node_in_collection._id, user._id, False, {'is_public'})
 
-        kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['data']['attributes']['data']['@graph']
-        assert graph[1]['is_deleted']
+        mock_update_collected_metadata.assert_called_with(node_in_collection._id, op='delete')
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
