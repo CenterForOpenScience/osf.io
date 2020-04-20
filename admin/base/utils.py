@@ -111,6 +111,11 @@ def get_defaultlicense_choices():
     licenses = NodeLicense.objects.exclude(license_id='OTHER')
     return [no_default] + [(lic.id, lic.__unicode__) for lic in licenses]
 
+def get_brand_choices():
+    no_default = ('', '---------')
+    brands = Brand.objects.all()
+    return [no_default] + [(brand.id, brand.name) for brand in brands]
+
 def get_toplevel_subjects():
     return Subject.objects.filter(parent__isnull=True, provider___id='osf').values_list('id', 'text')
 
