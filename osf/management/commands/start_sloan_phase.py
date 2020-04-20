@@ -50,14 +50,6 @@ def flip(flag):
     logger.info(f'Enabled {waffle_flag} at {timezone.now()}')
 
 
-def main(flag, dry_run):
-    assert flag in AVAILABLE_FLAGS, f'the given flag : \'{flag}\' was invalid'
-    with transaction.atomic():
-        flip(flag)
-        if dry_run:
-            raise Exception('[Dry Run] Transactions rolledback.')
-
-
 class Command(BaseCommand):
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
@@ -77,4 +69,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         dry_run = options.get('dry_run', True)
         flag = options.get('flag', None)
-        main(flag, dry_run)
+        assert flag in AVAILABLE_FLAGS, f'the given flag : \'{flag}\' was invalid'
+        with transaction.atomic():
+            flip(flag)
+            if dry_run:
+                raise Exception('[Dry Run] Transactions rolledback.')
