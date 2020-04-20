@@ -3791,7 +3791,7 @@ class TestOnNodeUpdate:
 
     @pytest.fixture()
     def node_in_collection(self, collection):
-        node = ProjectFactory()
+        node = ProjectFactory(is_public=True)
         CollectionSubmission(
             guid=node.guids.first(),
             collection=collection,
