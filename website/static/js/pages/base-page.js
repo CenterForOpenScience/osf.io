@@ -23,10 +23,8 @@ var KeenTracker = require('js/keen');
 var DevModeControls = require('js/devModeControls');
 var bootbox = require('bootbox');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
+var _ = require('js/rdmGettext')._;
+var sprintf = require('agh.sprintf').sprintf;
 
 // Prevent IE from caching responses
 $.ajaxSetup({cache: false});
@@ -130,25 +128,25 @@ function confirmEmails(emailsToAdd) {
         var nopeMessage;
         if (email.user_merge) {
             title = _('Merge account');
-            requestMessage = agh.sprintf(_('Would you like to merge \<b>%1$s\</b> into your account?  ') , email.address ) +
+            requestMessage = sprintf(_('Would you like to merge \<b>%1$s\</b> into your account?  ') , email.address ) +
                 _('This action is irreversible.');
-            confirmMessage = agh.sprintf(_('\<b>%1$s\</b> has been merged into your account.') , email.address);
-            nopeMessage = agh.sprintf(_('You have chosen to not merge \<b>%1$s\</b>  into your account. '),email.address) +
+            confirmMessage = sprintf(_('\<b>%1$s\</b> has been merged into your account.') , email.address);
+            nopeMessage = sprintf(_('You have chosen to not merge \<b>%1$s\</b>  into your account. '),email.address) +
                 _('If you change your mind, visit the \<a href="/settings/account/">user settings page</a>.');
         }
         else {
             title = _('Add email');
-            requestMessage = agh.sprintf(_('Would you like to add \<b>%1$s\</b> to your account?'),email.address);
-            confirmMessage = agh.sprintf(_('\<b>%1$s\</b> has been added into your account.'),email.address);
-            nopeMessage = agh.sprintf(_('You have chosen not to add \<b>%1$s\</b> to your account. '),email.address) +
+            requestMessage = sprintf(_('Would you like to add \<b>%1$s\</b> to your account?'),email.address);
+            confirmMessage = sprintf(_('\<b>%1$s\</b> has been added into your account.'),email.address);
+            nopeMessage = sprintf(_('You have chosen not to add \<b>%1$s\</b> to your account. '),email.address) +
                 _('If you change your mind, visit the \<a href="/settings/account/">user settings page</a>.');
         }
 
         var confirmFailMessage = _('There was a problem adding \<b>') + email.address +
-            agh.sprintf(_('\</b>. Please contact %1$s if the problem persists.'),$osf.osfSupportLink());
+            sprintf(_('\</b>. Please contact %1$s if the problem persists.'),$osf.osfSupportLink());
 
         var cancelFailMessage = _('There was a problem removing \<b>') + email.address +
-            agh.sprintf(_('\</b>. Please contact %1$s if the problem persists.'),$osf.osfSupportLink());
+            sprintf(_('\</b>. Please contact %1$s if the problem persists.'),$osf.osfSupportLink());
 
         bootbox.dialog({
             title: title,

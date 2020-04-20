@@ -3,9 +3,7 @@
 var $ = require('jquery');
 var Clipboard = require('clipboard');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 var setTooltip = function (elm, message) {
     $(elm).tooltip('hide')

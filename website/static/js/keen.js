@@ -8,10 +8,8 @@ var Cookie = require('js-cookie');
 var lodashGet = require('lodash.get');
 var keenTracking = require('keen-tracking');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
+var _ = require('js/rdmGettext')._;
+var sprintf = require('agh.sprintf').sprintf;
 
 var KeenTracker = (function() {
 
@@ -113,7 +111,7 @@ var KeenTracker = (function() {
                 var adBlockError = document.getElementsByTagName('iframe').item(0) === null;
                 var uselessError = 'An error occurred!' === err;
                 if(!adBlockError || !uselessError) {
-                    Raven.captureMessage(agh.sprintf(_('Error sending Keen data to %1$s:<%2$s>') , collection , err ), {
+                    Raven.captureMessage(sprintf(_('Error sending Keen data to %1$s:<%2$s>') , collection , err ), {
                         extra: {payload: eventData}
                     });
                 }
@@ -131,7 +129,7 @@ var KeenTracker = (function() {
                 var adBlockError = document.getElementsByTagName('iframe').item(0) === null;
                 var uselessError = 'An error occurred!' === err;
                 if(!adBlockError || !uselessError) {
-                    Raven.captureMessage(agh.sprintf(_('Error sending Keen data for multiple events: <%1$s>') , err ), {
+                    Raven.captureMessage(sprintf(_('Error sending Keen data for multiple events: <%1$s>') , err ), {
                         extra: {payload: events}
                     });
                 }
@@ -140,7 +138,7 @@ var KeenTracker = (function() {
                     var results = res[collection];
                     for (var idx in results) {
                         if (!results[idx].success) {
-                            Raven.captureMessage(agh.sprintf(_('Error sending Keen data to %1$s.') , collection ), {
+                            Raven.captureMessage(sprintf(_('Error sending Keen data to %1$s.') , collection ), {
                                 extra: {payload: events[collection][idx]}
                             });
                         }

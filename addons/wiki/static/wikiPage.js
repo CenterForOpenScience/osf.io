@@ -9,9 +9,7 @@ var mdQuick = require('js/markdown').quick;
 var mdOld = require('js/markdown').old;
 var diffTool = require('js/diffTool');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 var THROTTLE = 500;
 

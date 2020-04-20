@@ -7,9 +7,7 @@ var ko = require('knockout');
 var Treebeard = require('treebeard');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 function expandOnLoad() {
     var tb = this;  // jshint ignore: line

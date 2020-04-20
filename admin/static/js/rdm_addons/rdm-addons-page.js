@@ -9,10 +9,8 @@ var $osf = require('js/osfHelpers');
 var AddonPermissionsTable = require('js/addonPermissions');
 var addonSettings = require('./rdmAddonSettings');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
+var _ = require('js/rdmGettext')._;
+var sprintf = require('agh.sprintf').sprintf;
 
 /***************
 * OAuth addons *
@@ -63,10 +61,10 @@ $('.is_allowed input').on('change', function() {
         var deletionKey = Math.random().toString(36).slice(-8);
         var id = addonName + "DeleteKey";
         bootbox.confirm({
-            title: agh.sprintf(_("Disallow %s?"),$osf.htmlEscape(addonFullName)),
-            message: agh.sprintf(_("Are you sure you want to disallow the %1$s?<br>"),$osf.htmlEscape(addonFullName)) +
-                     agh.sprintf(_("This will revoke access to %1$s for all projects using the accounts.<br><br>"),$osf.htmlEscape(addonFullName)) +
-                     agh.sprintf(_("Type the following to continue: <strong>%1$s</strong><br><br>"),$osf.htmlEscape(deletionKey)) +
+            title: sprintf(_("Disallow %s?"),$osf.htmlEscape(addonFullName)),
+            message: sprintf(_("Are you sure you want to disallow the %1$s?<br>"),$osf.htmlEscape(addonFullName)) +
+                     sprintf(_("This will revoke access to %1$s for all projects using the accounts.<br><br>"),$osf.htmlEscape(addonFullName)) +
+                     sprintf(_("Type the following to continue: <strong>%1$s</strong><br><br>"),$osf.htmlEscape(deletionKey)) +
                      "<input id='" + $osf.htmlEscape(id) + "' type='text' class='bootbox-input bootbox-input-text form-control'>",
             buttons: {
                 cancel: {

@@ -8,9 +8,7 @@ new NotificationsConfig('#selectLists', window.contextVars.mailingLists);
 var ProjectNotifications = require('../notificationsTreebeard.js');
 var $notificationsMsg = $('#configureNotificationsMessage');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 $.ajax({
     url: '/api/v1/subscriptions',

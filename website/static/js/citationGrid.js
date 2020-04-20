@@ -11,10 +11,8 @@ var apaStyle = require('raw-loader!styles/apa.csl');
 
 var errorPage = require('raw-loader!citations_load_error.html');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
+var _ = require('js/rdmGettext')._;
+var sprintf = require('agh.sprintf').sprintf;
 
 require('css/fangorn.css');
 
@@ -201,7 +199,7 @@ var renderActions = function(item, col) {
                 name: '',
                 icon: 'fa fa-link',
                 css: 'btn btn-default btn-xs',
-                tooltip: agh.sprintf(_('View on %1$s') , self.provider),
+                tooltip: sprintf(_('View on %1$s') , self.provider),
                 onclick: function(event) {
                     window.open(item.data.serviceUrl);
                 }

@@ -10,11 +10,8 @@ var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var FolderPickerViewModel = require('js/folderPickerNodeConfig');
-
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
+var _ = require('js/rdmGettext')._;
+var sprintf = require('agh.sprintf').sprintf;
 
 /**
  * View model to support instances of AddonNodeConfig (folder picker widget)
@@ -39,8 +36,8 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         });
         self.messages.submitSettingsSuccess =  ko.pureComputed(function() {
             var name = self.options.decodeFolder($osf.htmlEscape(self.folder().name));
-            return agh.sprintf(_('Successfully linked "%1$s"') , name ) +
-            agh.sprintf(_(' Go to the <a href="%1$s">Files page</a> to view your content.'),self.urls().files);
+            return sprintf(_('Successfully linked "%1$s"') , name ) +
+            sprintf(_(' Go to the <a href="%1$s">Files page</a> to view your content.'),self.urls().files);
         });
         // Overrides
         var defaults = {

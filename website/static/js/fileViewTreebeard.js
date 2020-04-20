@@ -2,10 +2,8 @@ var Fangorn = require('js/fangorn').Fangorn;
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
+var _ = require('js/rdmGettext')._;
+var sprintf = require('agh.sprintf').sprintf;
 
 function FileViewTreebeard(data) {
 
@@ -119,7 +117,7 @@ function FileViewTreebeard(data) {
                         folderIcons: true,
                         filter: true,
                         custom: function () {
-                            return m('span.text-muted', agh.sprintf(_('Uploading %1$s...'), item.data.name ));
+                            return m('span.text-muted', sprintf(_('Uploading %1$s...'), item.data.name ));
                         }
                     }
                 ];

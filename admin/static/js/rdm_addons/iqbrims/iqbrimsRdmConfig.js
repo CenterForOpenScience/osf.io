@@ -6,10 +6,7 @@ var Raven = require('raven-js');
 var OAuthAddonSettingsViewModel = require('../rdmAddonSettings.js').OAuthAddonSettingsViewModel;
 var oop = require('js/oop');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
+var _ = require('js/rdmGettext')._;
 
 var projectUrlRegex = /^https?:\/\/[^\/]+?\/([^\/]+?)\/?$/;
 

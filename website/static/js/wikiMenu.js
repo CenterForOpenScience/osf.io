@@ -3,9 +3,7 @@ var m = require('mithril');
 var iconmap = require('js/iconmap');
 var Treebeard = require('treebeard');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 require('../css/fangorn.css');
 
@@ -77,7 +75,7 @@ function WikiMenu(data, wikiID, canEdit) {
                 columns.push({
                     folderIcons: true,
                     custom: function() {
-                        return m('b', item.data.title);
+                        return m('b', _(item.data.title));
                     }
                 });
             } else {
@@ -88,7 +86,7 @@ function WikiMenu(data, wikiID, canEdit) {
                 columns.push({
                     folderIcons: true,
                     custom: function() {
-                        return m('a.fg-file-links', {href: item.data.page.url}, item.data.page.name);
+                        return m('a.fg-file-links', {href: item.data.page.url}, _(item.data.page.name));
                     }
                 });
             }

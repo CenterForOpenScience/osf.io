@@ -11,10 +11,7 @@ require('jquery-qrcode');
 var osfHelpers = require('js/osfHelpers');
 var ChangeMessageMixin = require('js/changeMessage');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
+var _ = require('js/rdmGettext')._;
 
 function ViewModel(settingsUrl, qrCodeSelector) {
     var self = this;

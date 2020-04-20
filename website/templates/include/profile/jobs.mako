@@ -146,7 +146,7 @@
                                 <div class="header-content break-word">
                                     <h5 class="institution" data-bind="text: institution"></h5>
                                     <span data-bind="if: startYear()" class="subheading">
-                                        <span data-bind="text: startMonth"></span> <span data-bind="text: startYear"></span> - <span data-bind="text: endView"></span>
+                                        ${_('<span data-bind="text: startMonth"></span> <span data-bind="text: startYear"></span>') | n} - <span data-bind="text: endView"></span>
                                     </span>
                                 </div>
                                 <span data-bind="attr: {class: expanded() ? 'fa toggle-icon fa-angle-down' : 'fa toggle-icon fa-angle-up'}"></span>
@@ -156,7 +156,7 @@
                                     <span data-bind="if: department().length"><h5>${_("Department / Institute:")}</h5> <span data-bind="text: department"></span></span>
                                     <span data-bind="if: title().length"><h5>${_("Title:")}</h5> <span data-bind="text: title"></span></span>
                                     <span data-bind="if: startYear()"><h5>${_("Dates:")}</h5>
-                                        <span data-bind="text: startMonth"></span> <span data-bind="text: startYear"></span> - <span data-bind="text: endView"></span>
+                                        ${_('<span data-bind="text: startMonth"></span> <span data-bind="text: startYear"></span>') | n} - <span data-bind="text: endView"></span>
                                     </span>
                                 </div>
                             </div>

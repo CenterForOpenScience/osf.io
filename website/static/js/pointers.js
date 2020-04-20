@@ -22,10 +22,8 @@ var nodeLinksUrl = $osf.apiV2Url(
   }
 );
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
+var _ = require('js/rdmGettext')._;
+var sprintf = require('agh.sprintf').sprintf;
 
 var SEARCH_ALL_SUBMIT_TEXT = _('Search all projects');
 var SEARCH_MY_PROJECTS_SUBMIT_TEXT = _('Search my projects');

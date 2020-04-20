@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-03-12 22:46+0900\n"
-"PO-Revision-Date: 2020-03-23 17:37+0900\n"
+"POT-Creation-Date: 2020-04-16 10:40+0900\n"
+"PO-Revision-Date: 2020-04-16 10:40+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -66,7 +66,7 @@ msgstr "アカウントキー"
 #: website/templates/project/modal_remove_contributor.mako:122
 #: website/templates/project/nodes_delete.mako:89
 #: website/templates/project/nodes_privacy.mako:104
-#: website/templates/project/project.mako:567
+#: website/templates/project/project.mako:568
 #: website/templates/project/settings.mako:131
 #: website/templates/project/timestamp.mako:71
 #: website/templates/util/render_addon_widget.mako:98
@@ -110,7 +110,8 @@ msgstr "キャンセル"
 #: website/templates/profile/personal_tokens_detail.mako:55
 #: website/templates/project/addon/node_settings_default.mako:74
 #: website/templates/project/addon/user_settings.mako:13
-#: website/templates/project/project.mako:569
+#: website/templates/project/project.mako:570
+#: website/templates/project/settings.mako:338
 msgid "Save"
 msgstr "保存"
 
@@ -244,6 +245,28 @@ msgstr "承認者：%(userName)s"
 #: website/templates/profile/user_settings_default.mako:28
 msgid "Private project"
 msgstr "非公開プロジェクト"
+
+#: addons/base/models.py:461
+msgid ""
+"Because you have not configured the {addon} add-on, your authentication "
+"will not be transferred to the forked {category}. You may authorize and "
+"configure the {addon} add-on in the new fork on the settings page."
+msgstr "{addon}アドオンを構成していないため、認証はフォークされた{category}に転送されません。設定ページの新しいフォークで{addon}アドオンを承認して設定できます。"
+
+#: addons/base/models.py:469
+msgid ""
+"Because you have authorized the {addon} add-on for this {category}, "
+"forking it will also transfer your authentication to the forked "
+"{category}."
+msgstr "この{category}の{addon}アドオンを承認したため、これをフォークすると、認証がフォークされた{category}にも転送されます。"
+
+#: addons/base/models.py:476
+msgid ""
+"Because the {addon} add-on has been authorized by a different user, "
+"forking it will not transfer authentication to the forked {category}. You"
+" may authorize and configure the {addon} add-on in the new fork on the "
+"settings page."
+msgstr "{addon}アドオンは別のユーザーによって承認されているため、フォークすると、認証がフォークされた{category}に転送されません。設定ページの新しいフォークで{addon}アドオンを承認して設定できます。"
 
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:25
 #: addons/github/templates/github_node_settings.mako:25
@@ -812,7 +835,7 @@ msgstr "メニュー"
 msgid "Loading wiki pages..."
 msgstr "Wikiページをロード中"
 
-#: addons/wiki/templates/edit.mako:82
+#: addons/wiki/templates/edit.mako:75 addons/wiki/templates/edit.mako:82
 msgid "View"
 msgstr "ビュー"
 
@@ -833,10 +856,10 @@ msgstr "最新"
 msgid "Add important information, links, or images here to describe your project."
 msgstr "重要な情報、リンク、または画像をここに追加して、プロジェクトを説明します。"
 
-#: addons/wiki/templates/edit.mako:134
+#: addons/wiki/templates/edit.mako:126 addons/wiki/templates/edit.mako:134
 #: website/templates/include/profile/schools.mako:180
 #: website/templates/include/profile/social.mako:184
-#: website/templates/project/project.mako:538
+#: website/templates/project/project.mako:539
 msgid "Edit"
 msgstr "編集"
 
@@ -848,7 +871,7 @@ msgstr "ロード中..."
 msgid "Revert"
 msgstr "元に戻す"
 
-#: addons/wiki/templates/edit.mako:212
+#: addons/wiki/templates/edit.mako:205 addons/wiki/templates/edit.mako:212
 msgid "Compare"
 msgstr "比較"
 
@@ -980,26 +1003,6 @@ msgstr "ライブラリ"
 msgid "Select"
 msgstr "選択"
 
-#: framework/auth/oauth_scopes.py:294
-msgid ""
-"View all information associated with this account, including for private "
-"projects."
-msgstr "プライベートプロジェクトを含む、このアカウントに関連付けられているすべての情報を表示します。"
-
-#: framework/auth/oauth_scopes.py:297
-msgid ""
-"View and edit all information associated with this account, including for"
-" private projects."
-msgstr "プライベートプロジェクトを含む、このアカウントに関連付けられているすべての情報を表示および編集します。"
-
-#: framework/auth/oauth_scopes.py:300
-msgid "Read your profile data."
-msgstr "プロフィールデータを読込む"
-
-#: framework/auth/oauth_scopes.py:303
-msgid "Read your primary email address."
-msgstr "プライマリメールアドレスを読込む"
-
 #: website/templates/base.mako:110
 msgid "Title"
 msgstr "タイトル"
@@ -1090,7 +1093,7 @@ msgid ""
 "contributor to the project described in the email invitation, please "
 "email <a href=%(mailtoOsfContactEmail)s>%(osfContactEmail)s</a>"
 msgstr ""
-"あなたが%(fullname)sでない場合、または招待メールに記載されているプロジェクトへのコントリビュータとして誤って追加された場合は、<a "
+"あなたが%(fullname)sでない場合、または招待メールに記載されているプロジェクトへのメンバーとして誤って追加された場合は、<a "
 "href=%(mailtoOsfContactEmail)s>%(osfContactEmail)s</a>にメールしてください"
 
 #: website/templates/claim_account_eppn.mako:2
@@ -1098,7 +1101,7 @@ msgstr ""
 #: website/templates/claim_account_registered.mako:2
 #: website/templates/claim_account_registered.mako:4
 msgid "Claim Contributor"
-msgstr "コントリビュータを請求"
+msgstr "メンバーを請求"
 
 #: website/templates/claim_account_eppn.mako:9
 msgid "Please confirm to continue."
@@ -1240,6 +1243,76 @@ msgstr "手順"
 #: website/templates/messages.mako:14
 msgid "Software"
 msgstr "ソフトウェア"
+
+#: website/templates/messages.mako:15
+msgid "Component has been successfully deleted."
+msgstr "コンポーネントは正常に削除されました。"
+
+#: website/templates/messages.mako:16
+msgid "Project has been successfully deleted."
+msgstr "プロジェクトは正常に削除されました。"
+
+#: website/templates/messages.mako:17
+msgid ""
+"View all information associated with this account, including for private "
+"projects."
+msgstr "プライベートプロジェクトを含む、このアカウントに関連付けられているすべての情報を表示します。"
+
+#: website/templates/messages.mako:18
+msgid ""
+"View and edit all information associated with this account, including for"
+" private projects."
+msgstr "プライベートプロジェクトを含む、このアカウントに関連付けられているすべての情報を表示および編集します。"
+
+#: website/templates/messages.mako:19
+msgid "Read your profile data."
+msgstr "プロフィールデータを読込む"
+
+#: website/templates/messages.mako:20
+msgid "Read your primary email address."
+msgstr "プライマリメールアドレスを読込む"
+
+# ##Please translate carefully with html.
+#: website/templates/messages.mako:22
+msgid ""
+"\n"
+"<div style=\"text-align: center\">\n"
+"<div>\n"
+"<h4>We've updated our <a target=\"_blank\" "
+"href=\"https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419\">Terms"
+" of Use</a> and <a target=\"_blank\" "
+"href=\"https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422\">Privacy"
+" Policy</a>. Please read them carefully.</h4>"
+msgstr ""
+"\n"
+"<div style=\"text-align: center\">\n"
+"<div>\n"
+"<h4><a target=\"_blank\" "
+"href=\"https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419\">利用規約</a>と<a"
+" target=\"_blank\" "
+"href=\"https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422\">プライバシーポリシー</a>を更新しました。注意深くお読みください。</h4>"
+
+# ##Please translate carefully with html.
+#: website/templates/messages.mako:26
+msgid ""
+"<h5><input type=\"checkbox\" id=\"accept\" style=\"margin-right: 5px\">I "
+"have read and agree to these terms.</input></h5>\n"
+"    </div>"
+msgstr ""
+"<h5><input type=\"checkbox\" id=\"accept\" style=\"margin-right: "
+"5px\">これらの規約を読み、同意します</input></h5>\n"
+"    </div>"
+
+# ##Please translate carefully with html.
+#: website/templates/messages.mako:28
+msgid ""
+"<button class=\"btn btn-primary\" data-dismiss=\"alert\" id=\"continue\" "
+"disabled>Continue</button>\n"
+"</div>"
+msgstr ""
+"<button class=\"btn btn-primary\" data-dismiss=\"alert\" id=\"continue\" "
+"disabled>続ける</button>\n"
+"</div>"
 
 #: website/templates/my_projects.mako:2 website/templates/nav.mako:51
 msgid "My Projects"
@@ -1511,13 +1584,13 @@ msgstr "許可が必要です"
 
 #: website/templates/request_access.mako:13
 msgid "Ask for access, or switch to an account with permission."
-msgstr "アクセスを要求するか、許可を得てアカウントに切り替えてください。"
+msgstr "アクセス権を要求するか、許可を得てアカウントに切り替えてください。"
 
 #: website/templates/request_access.mako:14
 msgid ""
 "Your request for access has been sent. You will receive an email if and "
 "when your request is approved."
-msgstr "アクセスのリクエストが送信されました。 リクエストが承認されると、メールが届きます。"
+msgstr "アクセス権のリクエストが送信されました。 リクエストが承認されると、メールが届きます。"
 
 #: website/templates/request_access.mako:23
 msgid "Switch account"
@@ -1580,7 +1653,7 @@ msgstr ""
 
 #: website/templates/search.mako:240
 msgid " Contributors:"
-msgstr "コントリビュータ:"
+msgstr "メンバー:"
 
 #: website/templates/search.mako:262
 msgid "Affiliated institutions:"
@@ -1599,7 +1672,7 @@ msgstr "ファイル</a>へ移動"
 msgid "(Preprint)"
 msgstr "(プレプリント)"
 
-#: website/templates/project/project.mako:264
+#: website/templates/project/project.mako:265
 #: website/templates/project/settings.mako:107
 #: website/templates/search.mako:292 website/templates/search.mako:348
 msgid "Description:"
@@ -1608,7 +1681,7 @@ msgstr "説明:"
 #: website/templates/project/project.mako:165 website/templates/search.mako:295
 #: website/templates/search.mako:352
 msgid "Contributors:"
-msgstr "コントリビュータ:"
+msgstr "メンバー:"
 
 #: website/templates/search.mako:314
 msgid "Managers:"
@@ -1616,7 +1689,7 @@ msgstr "マネージャ:"
 
 #: website/templates/search.mako:327
 msgid "Members:"
-msgstr "メンバー:"
+msgstr "グループメンバー:"
 
 #: website/templates/search.mako:341 website/templates/search.mako:344
 msgid "Registration"
@@ -1656,7 +1729,7 @@ msgstr "コメント"
 #: website/templates/include/comment_pane_template.mako:18
 #: website/templates/project/files.mako:2
 #: website/templates/project/files.mako:5
-#: website/templates/project/project.mako:440
+#: website/templates/project/project.mako:441
 #: website/templates/project/project_header.mako:40
 msgid "Files"
 msgstr "ファイル"
@@ -1720,7 +1793,7 @@ msgstr "ポジション"
 #: website/templates/project/modal_remove_contributor.mako:96
 #: website/templates/project/modal_remove_contributor.mako:105
 #: website/templates/project/modal_remove_contributor.mako:114
-#: website/templates/project/project.mako:568
+#: website/templates/project/project.mako:569
 #: website/templates/project/settings.mako:498
 #: website/templates/project/settings.mako:501
 msgid "Remove"
@@ -1804,6 +1877,17 @@ msgstr "保存中"
 #: website/templates/include/profile/social.mako:180
 msgid "Not provided"
 msgstr "未設定"
+
+#: website/templates/include/profile/jobs.mako:149
+#: website/templates/include/profile/jobs.mako:159
+#: website/templates/include/profile/schools.mako:148
+#: website/templates/include/profile/schools.mako:158
+msgid ""
+"<span data-bind=\"text: startMonth\"></span> <span data-bind=\"text: "
+"startYear\"></span>"
+msgstr ""
+"<span data-bind=\"text: startYear\"></span>年 <span data-bind=\"text: "
+"startMonth\"></span>"
 
 #: website/templates/include/profile/jobs.mako:156
 msgid "Department / Institute:"
@@ -2344,7 +2428,7 @@ msgstr "クライアントID"
 
 #: website/templates/profile/personal_tokens_detail.mako:2
 msgid "Personal Token Detail"
-msgstr "個人トークンの詳細"
+msgstr "パーソナルトークンの詳細"
 
 #: website/templates/profile/personal_tokens_detail.mako:16
 msgid "Return to list of registered tokens"
@@ -2491,7 +2575,7 @@ msgstr "ご質問がある場合は、<a %(mailtoRdmSupport)s>rdm_support@nii.ac
 #: website/templates/project/project.mako:163
 #: website/templates/project/project_header.mako:72
 msgid "Contributors"
-msgstr "コントリビュータ"
+msgstr "メンバー"
 
 #: website/templates/project/contributors.mako:13
 msgid "Filter by name"
@@ -2531,14 +2615,14 @@ msgstr "読込み"
 #: website/templates/project/contributors.mako:242
 #: website/templates/project/modal_add_contributor.mako:218
 msgid "Bibliographic Contributor"
-msgstr "目録表示コントリビュータ"
+msgstr "目録表示メンバー"
 
 #: website/templates/project/contributors.mako:36
 #: website/templates/project/contributors.mako:199
 #: website/templates/project/contributors.mako:245
 #: website/templates/project/modal_add_contributor.mako:221
 msgid "Bibliographic Contributor Information"
-msgstr "目録表示コントリビュータの情報"
+msgstr "目録表示メンバーの情報"
 
 #: website/templates/project/contributors.mako:43
 msgid "Bibliographic"
@@ -2550,11 +2634,11 @@ msgstr "目録で非表示"
 
 #: website/templates/project/contributors.mako:63
 msgid "Drag and drop contributors to change listing order."
-msgstr "コントリビュータをドラッグ&ドロップして、リストの順序を変更します。"
+msgstr "メンバーをドラッグ&ドロップして、リストの順序を変更します。"
 
 #: website/templates/project/contributors.mako:106
 msgid "No contributors found"
-msgstr "コントリビュータが見つかりません"
+msgstr "メンバーが見つかりません"
 
 #: website/templates/project/contributors.mako:111
 msgid "Admins on Parent Projects"
@@ -2590,7 +2674,7 @@ msgid "Save Changes"
 msgstr "変更を保存"
 
 #: website/templates/project/files.mako:8
-#: website/templates/project/project.mako:448
+#: website/templates/project/project.mako:449
 msgid "Click on a storage provider or drag and drop to upload"
 msgstr "ストレージプロバイダーをクリックするか、ドラッグ&ドロップしてファイルをアップロードします"
 
@@ -2600,7 +2684,7 @@ msgstr "名前またはユーザープロフィール情報で検索する"
 
 #: website/templates/project/modal_add_contributor.mako:25
 msgid "Invite new contributor by e-mail"
-msgstr "メールで新規コントリビュータを招待する"
+msgstr "メールで新規メンバーを招待する"
 
 #: website/templates/project/modal_add_contributor.mako:46
 msgid "Results"
@@ -2612,7 +2696,7 @@ msgstr "全て追加する"
 
 #: website/templates/project/modal_add_contributor.mako:63
 msgid "Add contributor"
-msgstr "コントリビュータを追加"
+msgstr "メンバーを追加"
 
 #: website/templates/project/modal_add_contributor.mako:66
 msgid "Already added"
@@ -2629,12 +2713,12 @@ msgid ""
 "<a %(gotoInvite)s>Add <strong><em %(textQuery)s></em></strong> as an "
 "unregistered contributor</a>."
 msgstr ""
-"<a %(gotoInvite)s>未登録のコントリビュータとして<strong><em "
+"<a %(gotoInvite)s>未登録のメンバーとして<strong><em "
 "%(textQuery)s></em></strong>を追加します。</a>"
 
 #: website/templates/project/modal_add_contributor.mako:186
 msgid "Searching contributors..."
-msgstr "コントリビュータを検索しています..."
+msgstr "メンバーを検索しています..."
 
 #: website/templates/project/modal_add_contributor.mako:190
 msgid "No results found. Try a more specific search."
@@ -2654,7 +2738,7 @@ msgid ""
 "<a %(gotoInvite)s>add <strong><em %(textQuery)s></em></strong> as an "
 "unregistered contributor</a>."
 msgstr ""
-"<a %(gotoInvite)s>未登録のコントリビュータとして<strong><em "
+"<a %(gotoInvite)s>未登録のメンバーとして<strong><em "
 "%(textQuery)s></em></strong>を追加します。</a>"
 
 #: website/templates/project/modal_add_contributor.mako:200
@@ -2664,7 +2748,7 @@ msgid ""
 "users without GakuNin RDM accounts as unregistered contributors."
 msgstr ""
 "メールアドレスで検索しようとしているようです。 共同編集者の名前を使用して検索を再試行してください。 GakuNin "
-"RDMアカウントを持たないユーザーを未登録のコントリビュータとして追加できます。"
+"RDMアカウントを持たないユーザーを未登録のメンバーとして追加できます。"
 
 #: website/templates/project/modal_add_contributor.mako:207
 msgid "Adding"
@@ -2676,17 +2760,17 @@ msgstr "全て削除"
 
 #: website/templates/project/modal_add_contributor.mako:241
 msgid "Remove contributor"
-msgstr "コントリビュータを削除"
+msgstr "メンバーを削除"
 
 #: website/templates/project/modal_add_contributor.mako:281
 msgid "Adding contributor(s)"
-msgstr "コントリビュータを追加中"
+msgstr "メンバーを追加中"
 
 #: website/templates/project/modal_add_contributor.mako:289
 msgid ""
 "You can also add the contributor(s) to any components on which you are an"
 " admin."
-msgstr "管理者であるコンポーネントにコントリビュータを追加することもできます。"
+msgstr "管理者であるコンポーネントにメンバーを追加することもできます。"
 
 #: website/templates/project/modal_add_contributor.mako:294
 #: website/templates/project/modal_generate_private_link.mako:71
@@ -2860,7 +2944,7 @@ msgid ""
 "contributor, and registered user."
 msgstr ""
 "<b "
-"%(removedContributor)s></b>はコントリビュータとして削除できません。少なくとも1人の管理者、目録表示コントリビュータ、および登録ユーザーが必要です。"
+"%(removedContributor)s></b>はメンバーとして削除できません。少なくとも1人の管理者、目録表示メンバー、および登録ユーザーが必要です。"
 
 #: website/templates/project/modal_remove_contributor.mako:82
 msgid ""
@@ -2874,7 +2958,7 @@ msgstr ""
 msgid ""
 "Please save or discard your existing changes before removing a "
 "contributor."
-msgstr "コントリビュータを削除する前に、既存の変更を保存または破棄してください。"
+msgstr "メンバーを削除する前に、既存の変更を保存または破棄してください。"
 
 #: website/templates/project/nodes_delete.mako:66
 #: website/templates/project/nodes_delete.mako:77
@@ -2932,199 +3016,208 @@ msgstr "ログインしてアクセスをリクエスト"
 
 #: website/templates/project/project.mako:169
 msgid "Anonymous Contributors"
-msgstr "匿名コントリビュータ"
+msgstr "匿名メンバー"
 
 #: website/templates/project/project.mako:192
 #: website/templates/project/settings.mako:488
 msgid "Affiliated Institutions:"
 msgstr "所属機関:"
 
-#: website/templates/project/project.mako:224
+#: website/templates/project/project.mako:218
+#, python-format
+msgid ""
+"Forked from <a %(forkedFromId)s>%(forkedFromDisplayAbsoluteUrl)s</a> on"
+"                    <span %(dateForked)s></span>"
+msgstr ""
+"<a %(forkedFromId)s>%(forkedFromDisplayAbsoluteUrl)s</a>からフォーク(<span "
+"%(dateForked)s></span>)"
+
+#: website/templates/project/project.mako:225
 msgid "Date registered:"
 msgstr "登録日"
 
-#: website/templates/project/project.mako:229
+#: website/templates/project/project.mako:230
 msgid "Date created:"
 msgstr "作成日時"
 
-#: website/templates/project/project.mako:232
+#: website/templates/project/project.mako:233
 msgid "| Last Updated:"
 msgstr "| 最終更新日時"
 
-#: website/templates/project/project.mako:247
+#: website/templates/project/project.mako:248
 msgid "Creating DOI. Please wait..."
 msgstr "DOIを作成しています。お待ち下さい..."
 
-#: website/templates/project/project.mako:253
+#: website/templates/project/project.mako:254
 msgid "Create DOI"
 msgstr "DOIを作成"
 
-#: website/templates/project/project.mako:258
+#: website/templates/project/project.mako:259
 #: website/templates/project/settings.mako:81
 msgid "Category:"
 msgstr "カテゴリー："
 
 # 変数のためmsgstrを""にしておく
-#: website/templates/project/project.mako:259
+#: website/templates/project/project.mako:260
 msgid "category"
 msgstr ""
 
-#: website/templates/project/project.mako:281
+#: website/templates/project/project.mako:282
 msgid "License:"
 msgstr "ライセンス："
 
 # 変数のためmsgstrを""にしておく
-#: website/templates/project/project.mako:282
+#: website/templates/project/project.mako:283
 msgid "license"
 msgstr ""
 
-#: website/templates/project/project.mako:290
+#: website/templates/project/project.mako:291
 msgid "View Registration Form"
 msgstr "登録フォームを表示"
 
-#: website/templates/project/project.mako:295
+#: website/templates/project/project.mako:296
 msgid "View Registration Forms"
 msgstr "登録フォームを表示"
 
-#: website/templates/project/project.mako:340
+#: website/templates/project/project.mako:341
 msgid "Type:"
 msgstr "タイプ:"
 
-#: website/templates/project/project.mako:344
-#: website/templates/project/project.mako:395
+#: website/templates/project/project.mako:345
+#: website/templates/project/project.mako:396
 msgid "Status:"
 msgstr "ステータス:"
 
-#: website/templates/project/project.mako:348
+#: website/templates/project/project.mako:349
 msgid "Volume:"
 msgstr "ボリューム:"
 
-#: website/templates/project/project.mako:352
+#: website/templates/project/project.mako:353
 msgid "Issue:"
 msgstr "イシュー:"
 
-#: website/templates/project/project.mako:356
+#: website/templates/project/project.mako:357
 msgid "Program Area:"
 msgstr "プログラムエリア"
 
-#: website/templates/project/project.mako:362
+#: website/templates/project/project.mako:363
 msgid "Subjects:"
 msgstr "学科:"
 
-#: website/templates/project/project.mako:398
+#: website/templates/project/project.mako:399
 msgid "Withdrawn"
 msgstr "取り下げ"
 
-#: website/templates/project/project.mako:407
+#: website/templates/project/project.mako:408
 msgid ""
 "This {preprint_word} is publicly available and searchable but is subject "
 "to removal by a moderator."
 msgstr "この{preprint_word}は一般公開されており検索可能ですが、モデレーターによる削除の対象となります。"
 
-#: website/templates/project/project.mako:410
+#: website/templates/project/project.mako:411
 msgid ""
 "This {preprint_word} is not publicly available or searchable until "
 "approved by a moderator."
 msgstr "この{preprint_word}は、モデレーターによって承認されるまで公開または検索できません。"
 
-#: website/templates/project/project.mako:414
+#: website/templates/project/project.mako:415
 msgid "This {preprint_word} is publicly available and searchable."
 msgstr "この{preprint_word}は公開されており、検索可能です。"
 
-#: website/templates/project/project.mako:416
+#: website/templates/project/project.mako:417
 msgid "This {preprint_word} is not publicly available or searchable."
 msgstr "この{preprint_word}は一般公開も検索もできません。"
 
-#: website/templates/project/project.mako:460
+#: website/templates/project/project.mako:461
 #: website/templates/project/view_file.mako:57
 msgid "Loading files..."
 msgstr "ファイルをロード中"
 
-#: website/templates/project/project.mako:501
+#: website/templates/project/project.mako:502
 #: website/templates/util/render_addon_widget.mako:70
 msgid "Citation"
 msgstr "引用"
 
 #: website/templates/project/addon/citations_widget.mako:16
-#: website/templates/project/project.mako:513
+#: website/templates/project/project.mako:514
 #: website/templates/util/render_addon_widget.mako:136
 msgid "Loading citations..."
 msgstr "引用をロード中..."
 
-#: website/templates/project/project.mako:518
+#: website/templates/project/project.mako:519
 msgid "Customize"
 msgstr "カスタマイズ"
 
-#: website/templates/project/project.mako:526
+#: website/templates/project/project.mako:527
 msgid "Chicago"
 msgstr "シカゴ"
 
-#: website/templates/project/project.mako:530
+#: website/templates/project/project.mako:531
 msgid "Get more citations"
 msgstr "より多くの引用スタイルを取得"
 
-#: website/templates/project/project.mako:548
+#: website/templates/project/project.mako:549
 #, python-format
 msgid ""
 "<div %(f_x_xl)s>Cite as:</div>                                         "
 "<span %(textCustomCitation)s></span>"
 msgstr "<span %(textCustomCitation)s></span>として<div %(f_x_xl)s>引用：</div>"
 
-#: website/templates/project/project.mako:559
+#: website/templates/project/project.mako:560
 msgid "Enter custom citation"
 msgstr "カスタム引用の入力"
 
-#: website/templates/project/project.mako:586
+#: website/templates/project/project.mako:587
 #: website/templates/project/view_file.mako:76
 msgid "Tags"
 msgstr "タグ"
 
-#: website/templates/project/project.mako:600
+#: website/templates/project/project.mako:601
 msgid "Recent Activity"
 msgstr "最近の活動"
 
-#: website/templates/project/project.mako:601
+#: website/templates/project/project.mako:602
 msgid "Refresh"
 msgstr "更新"
 
-#: website/templates/project/project.mako:607
+#: website/templates/project/project.mako:608
 msgid "Parts of User's Fullname"
 msgstr "ユーザ氏名の一部"
 
-#: website/templates/project/project.mako:612
+#: website/templates/project/project.mako:613
 msgid "Start Date[yyyy-mm-dd]"
 msgstr "開始日 [yyyy-mm-dd]"
 
-#: website/templates/project/project.mako:615
+#: website/templates/project/project.mako:616
 msgid "End Date[yyyy-mm-dd]"
 msgstr "終了日 [yyyy-mm-dd]"
 
-#: website/templates/project/project.mako:623
+#: website/templates/project/project.mako:624
 msgid "Loading logs..."
 msgstr "ログをロード中..."
 
-#: website/templates/project/project.mako:629
+#: website/templates/project/project.mako:630
 msgid "Download as file"
 msgstr "ファイルをダウンロード"
 
-#: website/templates/project/project.mako:630
+#: website/templates/project/project.mako:631
 #: website/templates/project/timestamp.mako:206
 msgid "Download"
 msgstr "ダウンロード"
 
-#: website/templates/project/project.mako:643
+#: website/templates/project/project.mako:644
 msgid "Components"
 msgstr "コンポーネント"
 
-#: website/templates/project/project.mako:647
+#: website/templates/project/project.mako:648
 msgid "Add Component"
 msgstr "コンポーネントを追加"
 
-#: website/templates/project/project.mako:649
+#: website/templates/project/project.mako:650
 msgid "Link Projects"
 msgstr "プロジェクトをリンク"
 
-#: website/templates/project/project.mako:659
+#: website/templates/project/project.mako:660
 msgid "Add components to organize your project."
 msgstr "コンポーネントを追加して、プロジェクトを整理します。"
 
@@ -3242,7 +3335,7 @@ msgid ""
 "If you want to view it as a contributor, click <a "
 "%(redirectUrl)s>here</a>."
 msgstr ""
-"この%(nodeType)sは、匿名化された参照専用リンクを介して表示されています。コントリビュータとして表示する場合は、<a "
+"この%(nodeType)sは、匿名化された参照専用リンクを介して表示されています。メンバーとして表示する場合は、<a "
 "%(redirectUrl)s>こちら</a>をクリックしてください。"
 
 #: website/templates/project/project_header.mako:196
@@ -3376,7 +3469,7 @@ msgstr "ウィキの設定をロード中..."
 
 #: website/templates/project/settings.mako:328
 msgid "Only contributors can post comments"
-msgstr "コントリビュータのみがコメントを投稿できます"
+msgstr "メンバーのみがコメントを投稿できます"
 
 #: website/templates/project/settings.mako:334
 #, python-format
@@ -3387,7 +3480,7 @@ msgstr "%(nodeType)sが公開の場合、GakuNin RDMユーザーはコメント�
 msgid ""
 "These notification settings only apply to you. They do NOT affect any "
 "other contributor on this project."
-msgstr "これらの通知設定は自分にのみ適用されます。 このプロジェクトの他のコントリビュータには影響しません。"
+msgstr "これらの通知設定は自分にのみ適用されます。 このプロジェクトの他のメンバーには影響しません。"
 
 #: website/templates/project/settings.mako:402
 msgid "Redirect visitors from your project page to an external webpage"
@@ -3419,7 +3512,7 @@ msgid ""
 "<strong>withdrawn</strong> tag."
 msgstr ""
 "登録を取り消すと、コンテンツがGakuNin RDMから削除されますが、基本的なメタデータは残されます。 "
-"取り下げられた登録のタイトルとそのコントリビュータリストは、引き取りの正当化または説明と同様に、もしあなたがそれを提供したいなら、残ります。 "
+"取り下げられた登録のタイトルとそのメンバーリストは、引き取りの正当化または説明と同様に、もしあなたがそれを提供したいなら、残ります。 "
 "取り下げられた登録には、<strong>取り下げられた</strong>タグが付いています。"
 
 #: website/templates/project/settings.mako:451
@@ -3430,7 +3523,7 @@ msgstr "この登録は既に取り下げが保留されています。"
 msgid ""
 "Contributors with read-only permissions to this project cannot add or "
 "remove institutional affiliations."
-msgstr "このプロジェクトの参照専用権限を持つコントリビュータは、所属機関を追加または削除できません。"
+msgstr "このプロジェクトの参照専用権限を持つメンバーは、所属機関を追加または削除できません。"
 
 #: website/templates/project/settings.mako:477
 msgid ""
@@ -3488,11 +3581,11 @@ msgstr "適用"
 
 #: website/templates/project/timestamp.mako:69
 msgid "Verify"
-msgstr "確認"
+msgstr "タイムスタンプ確認"
 
 #: website/templates/project/timestamp.mako:70
 msgid "Request Trusted Timestamp"
-msgstr "打刻"
+msgstr "タイムスタンプ取得"
 
 #: website/templates/project/timestamp.mako:81
 msgid "Processing, please wait..."
@@ -3547,7 +3640,7 @@ msgid ""
 "real time. Changes will be stored          but not published until you "
 "click the \"Save\" button."
 msgstr ""
-"このページは現在、共有ファイル編集に接続されています。 行われたすべての編集は、書き込み許可を持つコントリビュータにリアルタイムで表示されます。 "
+"このページは現在、共有ファイル編集に接続されています。 行われたすべての編集は、書き込み許可を持つメンバーにリアルタイムで表示されます。 "
 "変更は保存されますが、[保存]ボタンをクリックするまで公開されません。"
 
 #: website/templates/project/view_file.mako:128
@@ -3705,5 +3798,5 @@ msgstr "%(summaryTitle)sのフォークを作成"
 
 #: website/templates/util/render_node.mako:66
 msgid "Manage Contributors"
-msgstr "コントリビュータ管理"
+msgstr "メンバー管理"
 

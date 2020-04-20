@@ -1,9 +1,7 @@
 var $ = require('jquery');
 var m = require('mithril');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 function Panel(title, header, inner, args, selected) {
     panel = m.component(Panel, title, header, inner, args);
