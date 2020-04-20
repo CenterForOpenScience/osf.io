@@ -196,13 +196,13 @@ class InstitutionSummaryMetricSerializer(JSONAPISerializer):
         return absolute_reverse(
             'institutions:institution-summary-metrics',
             kwargs={
-                'institution_id': obj.institution_id,
+                'institution_id': self.context['request'].parser_context['kwargs']['institution_id'],
                 'version': 'v2',
             },
         )
 
 
-class InstitutionDepartmentSerializer(JSONAPISerializer):
+class InstitutionDepartmentMetricsSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'institution-departments'
@@ -225,7 +225,7 @@ class InstitutionDepartmentSerializer(JSONAPISerializer):
         return absolute_reverse(
             'institutions:institution-department-metrics',
             kwargs={
-                'institution_id': obj.id,
+                'institution_id': self.context['request'].parser_context['kwargs']['institution_id'],
                 'version': 'v2',
             },
         )
@@ -255,7 +255,7 @@ class InstitutionUserMetricsSerializer(JSONAPISerializer):
         return absolute_reverse(
             'institutions:institution-user-metrics',
             kwargs={
-                'institution_id': obj.institution_id,
+                'institution_id': self.context['request'].parser_context['kwargs']['institution_id'],
                 'version': 'v2',
             },
         )

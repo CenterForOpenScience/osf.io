@@ -42,10 +42,6 @@ class TestInstitutionSummaryMetrics:
         resp = app.get(url, auth=user.auth, expect_errors=True)
         assert resp.status_code == 403
 
-        # Tests authorized user with institution without any metrics
-        resp = app.get(url, auth=admin.auth, expect_errors=True)
-        assert resp.status_code == 404
-
         # Record latest institutional metrics to ES
         public_project_count_latest = 24
         private_project_count_latest = 26

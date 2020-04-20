@@ -36,11 +36,11 @@ from api.institutions.serializers import (
     InstitutionNodesRelationshipSerializer,
     InstitutionRegistrationsRelationshipSerializer,
     InstitutionSummaryMetricSerializer,
-    InstitutionDepartmentSerializer,
+    InstitutionDepartmentMetricsSerializer,
     InstitutionUserMetricsSerializer,
 )
 from api.institutions.permissions import UserIsAffiliated
-
+from django.conf import settings
 
 class InstitutionMixin(object):
     """Mixin with convenience method get_institution
@@ -394,37 +394,41 @@ class InstitutionSummaryMetrics(JSONAPIBaseView, generics.RetrieveAPIView, Insti
     view_name = 'institution-summary-metrics'
 
     serializer_class = InstitutionSummaryMetricSerializer
-    metrics_class = InstitutionProjectCounts
 
     # overrides RetrieveAPIView
     def get_object(self):
         institution = self.get_institution()
-        try:
-            es_doc = self.metrics_class.get_latest_institution_project_document(institution)
-        except IndexError:
-            raise exceptions.NotFound()
-
-        return es_doc
+        return InstitutionProjectCounts.get_latest_institution_project_document(institution)
 
 
-class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, InstitutionMixin):
+class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, InstitutionMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         IsInstitutionalMetricsUser,
     )
 
-    serializer_class = InstitutionDepartmentSerializer
-
     required_read_scopes = [CoreScopes.INSTITUTION_METRICS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
     view_category = 'institutions'
-    view_name = 'institution-department-metrics'
 
-    ordering = ('-number_of_users', 'name',)
+    def _format_search(self, search):
+        raise NotImplementedError()
 
-    def _make_elasticsearch_results_filterable(self, departments: dict) -> MockQueryset:
+    def _paginate(self, search):
+        page = self.request.query_params.get('page')
+        page_size = self.request.query_params.get('page[size]')
+
+        if page_size:
+            search = search.extra(size=int(page_size))
+
+        if page:
+            search = search.extra(from_=int(page) * int(page_size or settings.MAX_PAGE_SIZE))
+
+        return search
+
+    def _make_elasticsearch_results_filterable(self, search, **kwargs) -> MockQueryset:
         """
         Since ES returns a list obj instead of a awesome filterable queryset we are faking the filter feature used by
         querysets by create a mock queryset with limited filterbility.
@@ -432,56 +436,65 @@ class InstitutionDepartmentList(JSONAPIBaseView, ListFilterMixin, generics.ListA
         :param departments: Dict {'Department Name': 3} means "Department Name" has 3 users.
         :return: mock_queryset
         """
-
         queryset = MockQueryset()
+        queryset.__len__(total=search.count())
 
-        institution_id = self.get_institution()._id
-        for department in departments:
-            department.update({'id': institution_id})
-            queryset.add_dict_as_item(department)
+        search = self._paginate(search)
+
+        items = self._format_search(search)
+        for item in items:
+            item.update(kwargs)
+            queryset.add_dict_as_item(item)
 
         return queryset
 
-    def get_default_queryset(self):
-        institution = self.get_institution()
-        department_counts = UserInstitutionProjectCounts.get_department_counts(institution)
-        return self._make_elasticsearch_results_filterable(department_counts)
-
-    # overrides RetrieveAPIView
+    # overrides RetrieveApiView
     def get_queryset(self):
         return self.get_queryset_from_request()
 
-class InstitutionUserMetricsList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, InstitutionMixin):
 
-    permission_classes = {
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-        IsInstitutionalMetricsUser,
-    }
+class InstitutionDepartmentList(InstitutionImpactList):
+    view_name = 'institution-department-metrics'
 
-    required_read_scopes = [CoreScopes.INSTITUTION_METRICS_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    serializer_class = InstitutionDepartmentMetricsSerializer
 
-    serializer_class = InstitutionUserMetricsSerializer
+    ordering = ('-number_of_users', 'name',)
 
-    view_category = 'institutions'
-    view_name = 'institution-user-metrics'
+    def _format_search(self, search):
+        results = search.execute()
+
+        if results.aggregations:
+            buckets = results.aggregations['date_range']['departments'].buckets
+            department_data = [{'name': bucket['key'], 'number_of_users': bucket['doc_count']} for bucket in buckets]
+            return department_data
+        else:
+            return []
 
     def get_default_queryset(self):
         institution = self.get_institution()
-        queryset = MockQueryset()
+        search = UserInstitutionProjectCounts.get_department_counts(institution)
+        return self._make_elasticsearch_results_filterable(search, id=institution._id)
 
-        results = UserInstitutionProjectCounts.get_current_user_metrics(institution)
+
+class InstitutionUserMetricsList(InstitutionImpactList):
+    view_name = 'institution-user-metrics'
+
+    serializer_class = InstitutionUserMetricsSerializer
+
+    def _format_search(self, search):
+        results = search.execute()
+
+        users = []
         for user_record in results:
             record_dict = user_record.to_dict()
             user_id = user_record.user_id
             fullname = OSFUser.objects.get(guids___id=user_id).fullname
             record_dict['user'] = f'({user_id}) {fullname}'
+            users.append(record_dict)
 
-            queryset.add_dict_as_item(record_dict)
+        return users
 
-        return queryset
-
-    #overrides RetrieveApiView
-    def get_queryset(self):
-        return self.get_queryset_from_request()
+    def get_default_queryset(self):
+        institution = self.get_institution()
+        search = UserInstitutionProjectCounts.get_current_user_metrics(institution)
+        return self._make_elasticsearch_results_filterable(search, id=institution._id)
