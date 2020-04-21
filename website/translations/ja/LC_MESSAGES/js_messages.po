@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-16 10:40+0900\n"
-"PO-Revision-Date: 2020-04-16 10:40+0900\n"
+"POT-Creation-Date: 2020-04-21 12:04+0900\n"
+"PO-Revision-Date: 2020-04-21 12:04+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -848,7 +848,8 @@ msgid ""
 msgstr "そのプロジェクトのコンテンツをインポートすることなく、新しいプロジェクトでその構造が複製されます。"
 
 #: website/static/js/addProjectPlugin.js:351
-#: website/static/js/nodeControl.js:224 website/static/js/project.js:140
+#: website/static/js/nodeControl.js:224
+#: website/static/js/privateLinkManager.js:31 website/static/js/project.js:140
 msgid "Create"
 msgstr "作成"
 
@@ -1142,15 +1143,15 @@ msgstr "問題が解決しない場合は%1$sにお問い合わせください�
 msgid " if the problem persists."
 msgstr " "
 
-#: website/static/js/citationWidget.js:72
+#: website/static/js/citationWidget.js:73
 msgid "Citation render failed"
 msgstr "引用のレンダリングに失敗しました"
 
-#: website/static/js/citationWidget.js:73
+#: website/static/js/citationWidget.js:74
 msgid "The requested citation format generated an error."
 msgstr "要求された引用形式はエラーを生成しました。"
 
-#: website/static/js/citationWidget.js:76
+#: website/static/js/citationWidget.js:77
 msgid "Unexpected error when fetching citation"
 msgstr "引用を取得する際の予期しないエラー"
 
@@ -3600,9 +3601,8 @@ msgid "Select who can edit"
 msgstr "編集できるユーザーを選択"
 
 #: website/static/js/wikiSettingsTreebeard.js:116
-msgid "This feature is disabled for wikis of private %1$s"
-msgid_plural "This feature is disabled for wikis of private %1$ss"
-msgstr[0] "この機能はプライベート%1$sのWikiでは無効になっています"
+msgid "This feature is disabled for wikis of private %1$ss"
+msgstr "この機能はプライベート%1$sのWikiでは無効になっています"
 
 #: website/static/js/wikiSettingsTreebeard.js:133
 msgid "Contributors (with write access)"
@@ -4167,4 +4167,5 @@ msgstr "%1$sに報告してください"
 #: website/static/js/pages/wiki-edit-page.js:110
 msgid "Could not GET wiki menu pages"
 msgstr "Wikiメニューページを取得できませんでした"
+
 
