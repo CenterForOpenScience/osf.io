@@ -3820,7 +3820,7 @@ msgstr "チェックイン"
 
 #: website/static/js/filepage/index.js:514
 msgid "Request Trusted Timestamp"
-msgstr "打刻"
+msgstr "タイムスタンプ取得"
 
 #: website/static/js/filepage/index.js:531
 msgid "Toggle view: "
