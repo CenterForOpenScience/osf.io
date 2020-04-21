@@ -1469,6 +1469,17 @@ class TestSetPreprintFile(OsfTestCase):
         assert(self.preprint.created)
         assert_not_equal(self.project.created, self.preprint.created)
 
+    def test_cant_save_without_file(self):
+        with assert_raises(ValidationError):
+            self.preprint.save()
+
+    def test_cant_update_without_file(self):
+        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
+        self.preprint.set_published(True, auth=self.auth, save=True)
+        self.preprint.primary_file = None
+        with assert_raises(ValidationError):
+            self.preprint.save()
+
 
 class TestPreprintPermissions(OsfTestCase):
     def setUp(self):
