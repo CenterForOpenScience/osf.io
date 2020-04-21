@@ -33,7 +33,6 @@ function CitationWidget(inputSelector, displaySelector) {
 
 CitationWidget.prototype.init = function() {
     var self = this;
-    self.$input.select2.locales = ['ja'];
 
     // Initialize select2 for selecting citation style
     self.$input.select2({
@@ -42,6 +41,7 @@ CitationWidget.prototype.init = function() {
         formatSelection: formatSelection,
         placeholder: _('Enter citation style (e.g. "APA")'),
         minimumInputLength: 1,
+        language: "ja",
         ajax: {
             url: '/api/v1/citations/styles/',
             quietMillis: 200,
