@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
 "POT-Creation-Date: 2020-04-23 12:37+0900\n"
-"PO-Revision-Date: 2020-04-23 12:37+0900\n"
+"PO-Revision-Date: 2020-04-23 12:37+0900\n"t
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -839,7 +839,8 @@ msgid ""
 msgstr ""
 
 #: website/static/js/addProjectPlugin.js:351
-#: website/static/js/nodeControl.js:224 website/static/js/project.js:140
+#: website/static/js/nodeControl.js:224
+#: website/static/js/privateLinkManager.js:31 website/static/js/project.js:140
 msgid "Create"
 msgstr ""
 
@@ -1118,15 +1119,15 @@ msgstr ""
 msgid " if the problem persists."
 msgstr ""
 
-#: website/static/js/citationWidget.js:72
+#: website/static/js/citationWidget.js:73
 msgid "Citation render failed"
 msgstr ""
 
-#: website/static/js/citationWidget.js:73
+#: website/static/js/citationWidget.js:74
 msgid "The requested citation format generated an error."
 msgstr ""
 
-#: website/static/js/citationWidget.js:76
+#: website/static/js/citationWidget.js:77
 msgid "Unexpected error when fetching citation"
 msgstr ""
 
@@ -3560,10 +3561,8 @@ msgid "Select who can edit"
 msgstr ""
 
 #: website/static/js/wikiSettingsTreebeard.js:116
-msgid "This feature is disabled for wikis of private %1$s"
-msgid_plural "This feature is disabled for wikis of private %1$ss"
-msgstr[0] ""
-msgstr[1] ""
+msgid "This feature is disabled for wikis of private %1$ss"
+msgstr ""
 
 #: website/static/js/wikiSettingsTreebeard.js:133
 msgid "Contributors (with write access)"
