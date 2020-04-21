@@ -41,7 +41,7 @@ CitationWidget.prototype.init = function() {
         formatSelection: formatSelection,
         placeholder: _('Enter citation style (e.g. "APA")'),
         minimumInputLength: 1,
-        language: "ja",
+        language: 'ja',
         ajax: {
             url: '/api/v1/citations/styles/',
             quietMillis: 200,
