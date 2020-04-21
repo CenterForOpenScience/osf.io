@@ -1,7 +1,7 @@
-# Translations template for PROJECT.
-# Copyright (C) 2020 ORGANIZATION
-# This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 # 1.{% trans "XXX" %} is extracted by the command 'django-admin makemessages --keep-pot -l ja'
 # 2.edit the header to babel extracting form.
 #
@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-21 10:18+0900\n"
-"PO-Revision-Date: 2020-04-21 10:53+0900\n"
+"POT-Creation-Date: 2020-04-21 17:25+0900\n"
+"PO-Revision-Date: 2020-04-21 17:25+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -2631,4 +2631,32 @@ msgstr ""
 #: .\templates\util\pagination.html:25
 #, python-format
 msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
+msgstr ""
+
+#: .\admin\rdm_statistics\views.py:198
+msgid "Number of files"
+msgstr ""
+
+#: .\admin\rdm_statistics\views.py:199 .\admin\rdm_statistics\views.py:218
+msgid "File Numbers"
+msgstr ""
+
+#: .\admin\rdm_statistics\views.py:200
+msgid "number"
+msgstr ""
+
+#: .\admin\rdm_statistics\views.py:209
+msgid "Subtotal of file sizes"
+msgstr ""
+
+#: .\admin\rdm_statistics\views.py:210
+msgid "File Sizes"
+msgstr ""
+
+#: .\admin\rdm_statistics\views.py:211
+msgid "size"
+msgstr ""
+
+#: .\admin\rdm_statistics\views.py:217
+msgid "Number of files by extension type"
 msgstr ""
