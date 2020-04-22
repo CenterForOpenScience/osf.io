@@ -652,20 +652,20 @@ function doItemOp(operation, to, from, rename, conflict) {
         }
         if (xhr.status === 202) {
             var mithrilContent = m('div', [
-                m('h3.break-word', sprintf(_('%1$s "%2$s" to "%3$s" is taking a bit longer than expected.'),operation.action,(from.data.materialized || '/'),(to.data.materialized || '/'))),
-                m('p', _('We\'ll send you an email when it has finished.')),
-                m('p', sprintf(_('In the mean time you can leave this page; your %1$s will still be completed.'),operation.status))
+                m('h3.break-word', operation.action + ' "' + (from.data.materialized || '/') + '" to "' + (to.data.materialized || '/') + '" is taking a bit longer than expected.'),
+                m('p', 'We\'ll send you an email when it has finished.'),
+                m('p', 'In the mean time you can leave this page; your ' + operation.status + ' will still be completed.')
             ]);
             var mithrilButtons = m('div', [
                 m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); }}, 'Close')
             ]);
-            var header =  m('h3.modal-title.break-word', _('Operation Information'));
+            var header =  m('h3.modal-title.break-word', 'Operation Information');
             tb.modal.update(mithrilContent, mithrilButtons, header);
             return;
         }
         from.data = tb.options.lazyLoadPreprocess.call(this, resp).data;
         from.data.status = undefined;
-        from.notify.update(sprintf(_('Successfully %1$s.') , operation.passed), 'success', null, 1000);
+        from.notify.update('Successfully ' + operation.passed + '.', 'success', null, 1000);
 
         if (xhr.status === 200) {
             to.children.forEach(function(child) {
@@ -712,12 +712,12 @@ function doItemOp(operation, to, from, rename, conflict) {
         } else if (xhr.status === 503) {
             message = textStatus;
         } else {
-            message = sprintf(_('Please refresh the page or contact %1$s if the problem persists.'),$osf.osfSupportLink());
+            message = 'Please refresh the page or contact ' + $osf.osfSupportLink() + ' if the problem persists.';
         }
 
         $osf.growl(operation.verb + ' failed.', message);
 
-        Raven.captureMessage(_('Failed to move or copy file'), {
+        Raven.captureMessage('Failed to move or copy file', {
             extra: {
                 xhr: xhr,
                 requestData: moveSpec
