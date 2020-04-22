@@ -86,6 +86,8 @@ NOT_ANALYZED_PROPERTY = {'type': 'string', 'index': 'not_analyzed'}
 # Perform stemming on the field it's applied to.
 ENGLISH_ANALYZER_PROPERTY = {'type': 'string', 'analyzer': 'english',
                              'term_vector': 'with_positions_offsets'}
+GRDM_JA_ANALYZER_PROPERTY = {'type': 'string', 'analyzer': 'grdm_ja_analyzer',
+                             'term_vector': 'with_positions_offsets'}
 # with_positions_offsets: adjust highlighted fields to the middle position.
 
 # INDEX is modified by tests. (TODO: INDEX is unnecessary for GRDM ver.)
@@ -1385,7 +1387,68 @@ def create_index(index=None):
     project_like_types = PROJECT_LIKE_TYPES
     analyzed_fields = ['title', 'description']  # for project_like_types
 
-    client().indices.create(index, ignore=[400])  # HTTP 400 if index already exists
+    index_settings_ja = {
+        'settings': {
+            'analysis': {
+                'tokenizer': {
+                    'kuromoji_tokenizer_search': {
+                        'type': 'kuromoji_tokenizer',
+                        'mode': 'search'
+                    }
+                },
+                'filter': {
+                    'kuromoji_part_of_speech_search': {
+                        'type': 'kuromoji_part_of_speech'
+                    }
+                },
+                # 'char_filter': {
+                #     'nfkd_normalizer' : {
+                #         'type' : 'icu_normalizer',
+                #         'name' : 'nfkc_cf',
+                #         'mode' : 'decompose'
+                #     }
+                # },
+                'analyzer': {
+                    'grdm_ja_analyzer': {
+                        'type': 'custom',
+                        'tokenizer': 'kuromoji_tokenizer',
+                        'char_filter': [
+                            #'nfkd_normalizer'
+                            'icu_normalizer',
+                            'kuromoji_iteration_mark',
+                        ],
+                        'filter': [
+                            'lowercase',
+                            'kuromoji_baseform',
+                            'kuromoji_part_of_speech_search',
+                            'ja_stop',
+                            #'kuromoji_number', ES6 or later
+                            'kuromoji_stemmer',
+
+                        ],
+                    }
+                }
+            }
+        },
+        'mappings': {
+            '_default_': {
+                '_all': {
+                    'analyzer': 'grdm_ja_analyzer',
+                }
+            }
+        }
+    }
+
+    if settings.SEARCH_ANALYZER == settings.SEARCH_ANALYZER_JAPANESE:
+        analyzer = GRDM_JA_ANALYZER_PROPERTY
+        index_settings = index_settings_ja
+    else:
+        analyzer = ENGLISH_ANALYZER_PROPERTY
+        index_settings = None
+
+    client().indices.create(index, body=index_settings,
+                            ignore=[400])  # HTTP 400 if index already exists
+
     for type_ in document_types:
         if type_ == 'collectionSubmission':
             mapping = {
@@ -1397,8 +1460,8 @@ def create_index(index=None):
                     'volume': NOT_ANALYZED_PROPERTY,
                     'programArea': NOT_ANALYZED_PROPERTY,
                     'provider': NOT_ANALYZED_PROPERTY,
-                    'title': ENGLISH_ANALYZER_PROPERTY,
-                    'abstract': ENGLISH_ANALYZER_PROPERTY
+                    'title': analyzer,
+                    'abstract': analyzer
                 }
             }
         else:
@@ -1425,26 +1488,26 @@ def create_index(index=None):
                 }
             }
             if type_ in project_like_types:
-                analyzers = {field: ENGLISH_ANALYZER_PROPERTY
+                analyzers = {field: analyzer
                              for field in analyzed_fields}
                 mapping['properties'].update(analyzers)
                 mapping['dynamic_templates'] = [
                     {
                         'comments_fields': {
                             'path_match': 'comments.*',
-                            'mapping': ENGLISH_ANALYZER_PROPERTY
+                            'mapping': analyzer
                         }
                     }, {
                         'wikis_fields': {
                             'path_match': 'wikis.*',
-                            'mapping': ENGLISH_ANALYZER_PROPERTY
+                            'mapping': analyzer
                         }
                     }
                 ]
 
             if type_ == 'user':
                 fields = {
-                    'uesr': ENGLISH_ANALYZER_PROPERTY,
+                    'user': analyzer,
                     'job': {
                         'type': 'string',
                         'boost': '1',
@@ -1461,37 +1524,37 @@ def create_index(index=None):
                         'type': 'string',
                         'boost': '0.01'
                     },
-                    'ongoing_job': ENGLISH_ANALYZER_PROPERTY,
-                    'ongoing_job_department': ENGLISH_ANALYZER_PROPERTY,
-                    'ongoing_job_title': ENGLISH_ANALYZER_PROPERTY,
-                    'ongoing_school': ENGLISH_ANALYZER_PROPERTY,
-                    'ongoing_school_department': ENGLISH_ANALYZER_PROPERTY,
-                    'ongoing_school_degree': ENGLISH_ANALYZER_PROPERTY,
+                    'ongoing_job': analyzer,
+                    'ongoing_job_department': analyzer,
+                    'ongoing_job_title': analyzer,
+                    'ongoing_school': analyzer,
+                    'ongoing_school_department': analyzer,
+                    'ongoing_school_degree': analyzer,
                 }
                 mapping['properties'].update(fields)
             elif type_ == 'file' or type_ == 'wiki':
                 fields = {
-                    'name': ENGLISH_ANALYZER_PROPERTY,
-                    'text': ENGLISH_ANALYZER_PROPERTY,
+                    'name': analyzer,
+                    'text': analyzer,
                 }
                 mapping['properties'].update(fields)
                 mapping['dynamic_templates'] = [
                     {
                         'comments_fields': {
                             'path_match': 'comments.*',
-                            'mapping': ENGLISH_ANALYZER_PROPERTY
+                            'mapping': analyzer
                         }
                     }
                 ]
             elif type_ == 'comment':
                 fields = {
-                    'page_name': ENGLISH_ANALYZER_PROPERTY,
-                    'text': ENGLISH_ANALYZER_PROPERTY,
+                    'page_name': analyzer,
+                    'text': analyzer,
                 }
                 mapping['properties'].update(fields)
             elif type_ == 'institution':
                 fields = {
-                    'name': ENGLISH_ANALYZER_PROPERTY,
+                    'name': analyzer,
                 }
                 mapping['properties'].update(fields)
 

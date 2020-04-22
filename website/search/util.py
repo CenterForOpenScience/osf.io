@@ -254,8 +254,9 @@ def replace_normalized_field(qs):
     return qs
 
 def convert_query_string(qs, normalize=False):
-    qs = quote_query_string(qs)
-    qs = replace_normalized_field(qs)
+    if settings.SEARCH_ANALYZER == settings.SEARCH_ANALYZER_ENGLISH:
+        qs = quote_query_string(qs)
+        qs = replace_normalized_field(qs)
     logger.debug(u'convert_query_string: {}'.format(qs))
     if normalize:
         return unicode_normalize(qs)
@@ -543,6 +544,8 @@ def sort_query(sort):
 def unicode_normalize(text):
     if text is None:
         return None
+    if settings.SEARCH_ANALYZER == settings.SEARCH_ANALYZER_JAPANESE:
+        return text
     if not isinstance(text, unicode):
         text = text.decode('utf-8')
     normalized = unicodedata.normalize('NFKD', text)

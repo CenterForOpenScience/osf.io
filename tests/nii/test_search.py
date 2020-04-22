@@ -164,6 +164,17 @@ def enable_private_search(func):
 
     return wrapped
 
+def use_ja_analyzer(func):
+    @mock.patch('website.search.elastic_search.settings.SEARCH_ANALYZER',
+                settings.SEARCH_ANALYZER_JAPANESE)
+    @mock.patch('website.search.util.settings.SEARCH_ANALYZER',
+                settings.SEARCH_ANALYZER_JAPANESE)
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    return wrapped
+
 def setup(cls, self, create_obj=True):
     super(cls, self).setUp()
     search.delete_all()
@@ -280,6 +291,7 @@ def query_private_search(self, qs, user, category=None, version=1, sort=None):
         auth=user.auth,
         expect_errors=True
     )
+    DEBUG('query_private_search: res=', res)
     return res, res.json.get('results')
 
 def query_public_search(self, qs, user):
@@ -335,8 +347,8 @@ def nfd(text):
     return normalize('NFD', text)
 
 @retry_assertion(retries=10)
-def retry_call_func(func):
-    func()
+def retry_call_func(func, **kwargs):
+    func(**kwargs)
 
 @enable_private_search
 def rebuild_search(self_):
@@ -345,15 +357,15 @@ def rebuild_search(self_):
         migrate(delete=False, remove=False,
                 index=None, app=self_.app.app)
 
-def run_after_rebuild_search(self_, func):
+def run_after_rebuild_search(self_, func, **kwargs):
     # run_test_all_after_rebuild_search から呼ばれたテスト内で
     # rebuild_search を実行したい場合に利用する。
     if self_._use_migrate:
         rebuild_search(self_)
         # migrate() may not update elasticsearch-data immediately.
-        retry_call_func(func)
+        retry_call_func(func, **kwargs)
     else:
-        func()
+        func(**kwargs)
 
 @enable_private_search
 def run_test_all_after_rebuild_search(self_, my_method_name, clear_index=False):
@@ -377,6 +389,380 @@ def run_test_all_after_rebuild_search(self_, my_method_name, clear_index=False):
 
 
 ###### tests #####
+
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
+class TestSearchJapanese(OsfTestCase):
+    """
+    SEARCH_ANALYZER_JAPANESEを使う場合のテスト
+    """
+
+    _use_migrate = False
+
+    @enable_private_search
+    @use_ja_analyzer
+    def setUp(self):
+        setup(TestSearchJapanese, self, create_obj=False)
+
+    @enable_private_search
+    @use_ja_analyzer
+    def tearDown(self):
+        tear_down(TestSearchJapanese, self)
+
+    @enable_private_search
+    @use_ja_analyzer
+    def test_normalize_all(self):
+        """
+        Unicode正規化のテスト。
+        結合文字<->合成済み文字 の相互検索できることを確認する。
+        rebuild_search相当実行後も検索できることを確認する。
+        各フィールドごとに検索できることを確認する。
+        削除して影響ないことを確認する。
+        """
+        nfd_str = nfd(u'がぎぐげご')  # 結合文字
+        nfc_str = nfc(nfd_str)  # 合成済み文字
+        search_user = factories.AuthUserFactory()
+
+        def _save_username(val):
+            user = factories.AuthUserFactory(fullname=val)
+            return user
+
+        def _set_job(inst, depart, title, ongoing):
+            return {
+                'institution': inst,
+                'department': depart,
+                'title': title,
+                'ongoing': ongoing,
+            }
+
+        def _save_ongoing_job_institution(val):
+            user = factories.AuthUserFactory()
+            user.jobs = []
+            user.jobs.append(_set_job(val, None, None, True))
+            user.save()
+            return user
+
+        def _save_ongoing_job_department(val):
+            user = factories.AuthUserFactory()
+            user.jobs = []
+            user.jobs.append(_set_job(None, val, None, True))
+            user.save()
+            return user
+
+        def _save_ongoing_job_title(val):
+            user = factories.AuthUserFactory()
+            user.jobs = []
+            user.jobs.append(_set_job(None, None, val, True))
+            user.save()
+            return user
+
+        def _set_school(inst, depart, degree, ongoing):
+            return {
+                'institution': inst,
+                'department':depart,
+                'degree': degree,
+                'ongoing': ongoing,
+            }
+
+        def _save_ongoing_school_institution(val):
+            user = factories.AuthUserFactory()
+            user.schools = []
+            user.schools.append(_set_school(val, None, None, True))
+            user.save()
+            return user
+
+        def _save_ongoing_school_department(val):
+            user = factories.AuthUserFactory()
+            user.schools = []
+            user.schools.append(_set_school(None, val, None, True))
+            user.save()
+            return user
+
+        def _save_ongoing_school_degree(val):
+            user = factories.AuthUserFactory()
+            user.schools = []
+            user.schools.append(_set_school(None, None, val, True))
+            user.save()
+            return user
+
+        def _del_user(user):
+            user.gdpr_delete()
+            user.save()
+
+        def _save_project_title(val):
+            project = factories.ProjectFactory(
+                title=val, creator=search_user, is_public=False)
+            project.save()
+            return project
+
+        def _save_project_description(val):
+            project = factories.ProjectFactory(
+                description=val, creator=search_user, is_public=False)
+            project.save()
+            return project
+
+        def _save_project_comment(val):
+            project = factories.ProjectFactory(
+                creator=search_user, is_public=False)
+            c_old = factories.CommentFactory(
+                node=project, user=search_user, page=Comment.OVERVIEW,
+                content=val)
+            project.save()
+            return project
+
+        def _save_project_tag(val):
+            project = factories.ProjectFactory(
+                creator=search_user, is_public=False)
+            project.add_tag(val, Auth(search_user), save=True)
+            return project
+
+        def _save_project_contributor(val):
+            project = factories.ProjectFactory(
+                creator=search_user, is_public=False)
+            user1 = factories.AuthUserFactory(fullname=val)
+            project.add_contributor(
+                user1, auth=Auth(search_user))
+            return (project, user1)
+
+        def _save_project_creator(val):
+            user1 = factories.AuthUserFactory(fullname=val)
+            project = factories.ProjectFactory(
+                creator=user1, is_public=False)
+            project.add_contributor(
+                search_user, auth=Auth(user1))
+            return (project, user1)
+
+        def _save_project_modifier(val):
+            project = factories.ProjectFactory(
+                creator=search_user, is_public=False)
+            user1 = factories.AuthUserFactory(fullname=val)
+            project.add_contributor(
+                user1, auth=Auth(search_user))
+            project.add_tag('dummy_tag_name', Auth(user1), save=True)
+            return (project, user1)
+
+        def _del_project(project):
+            project.remove_node(auth=Auth(project.creator))
+            # Do not call project.save()
+
+        def _del_project2(project_user):
+            project = project_user[0]
+            user = project_user[1]
+            _del_project(project)
+            _del_user(user)
+
+        def _update_file(filename, project, user, count):
+            osfstorage = project.get_addon('osfstorage')
+            root_node = osfstorage.get_root()
+            test_file = update_dummy_file(user, root_node, filename, count)
+            assert_equal(test_file.versions.count(), count)
+            # first() of file.versions is latest
+            assert_equal(test_file.versions.all().first().creator, user)
+            return test_file
+
+        def _save_file_name(val):
+            project = factories.ProjectFactory(
+                creator=search_user, is_public=False)
+            _update_file(val, project, search_user, 1)
+            return project
+
+        def _save_file_comment(val):
+            project = factories.ProjectFactory(
+                creator=search_user, is_public=False)
+            file1 = _update_file('dummy_filename', project, search_user, 1)
+            comment = factories.CommentFactory(
+                node=project, user=search_user, page=Comment.FILES,
+                target=file1.get_guid(create=True),
+                content=val)
+            return project
+
+        def _save_file_tag(val):
+            project = factories.ProjectFactory(
+                creator=search_user, is_public=False)
+            file1 = _update_file('dummy_filename', project, search_user, 1)
+            file1.add_tag(val, Auth(search_user), save=True)
+            return project
+
+        def _save_file_creator(val):
+            project = factories.ProjectFactory(
+                creator=search_user, is_public=False)
+            user1 = factories.AuthUserFactory(fullname=val)
+            project.add_contributor(
+                user1, auth=Auth(search_user))
+            _update_file('dummy_filename', project, user1, 1)
+            return (project, user1)
+
+        def _save_file_modifier(val):
+            project = factories.ProjectFactory(
+                creator=search_user, is_public=False)
+            user1 = factories.AuthUserFactory(fullname=val)
+            project.add_contributor(
+                user1, auth=Auth(search_user))
+            _update_file('dummy_filename', project, search_user, 1)
+            _update_file('dummy_filename', project, user1, 2)
+            return (project, user1)
+
+        def _update_wiki(wikiname, content, project, user, count):
+            wiki = WikiPage.objects.get_for_node(project, wikiname)
+            if wiki:
+                wiki.update(user, content)
+            else:
+                wiki = WikiPage.objects.create_for_node(
+                    project, wikiname, content, Auth(user))
+            assert_equal(wiki.versions.count(), count)
+            # latest
+            assert_equal(wiki.get_versions().first().user, user)
+            return wiki
+
+        def _save_wiki_name(val):
+            project = factories.ProjectFactory(
+                creator=search_user, is_public=False)
+            _update_wiki(val, 'dummy_content', project, search_user, 1)
+            return project
+
+        def _save_wiki_content(val):
+            project = factories.ProjectFactory(
+                creator=search_user, is_public=False)
+            _update_wiki('dummy_wikiname', val, project, search_user, 1)
+            return project
+
+        def _save_wiki_comment(val):
+            project = factories.ProjectFactory(
+                creator=search_user, is_public=False)
+            wiki1 = _update_wiki('dummy_wikiname', 'dummy_content',
+                                 project, search_user, 1)
+            comment = factories.CommentFactory(
+                node=project, user=search_user, page=Comment.WIKI,
+                target=Guid.load(wiki1._id), content=val)
+            return project
+
+        def _save_wiki_creator(val):
+            project = factories.ProjectFactory(
+                creator=search_user, is_public=False)
+            user1 = factories.AuthUserFactory(fullname=val)
+            project.add_contributor(user1, auth=Auth(search_user))
+            _update_wiki('dummy_wikiname', 'dummy_content',
+                         project, user1, 1)
+            return (project, user1)
+
+        def _save_wiki_modifier(val):
+            project = factories.ProjectFactory(
+                creator=search_user, is_public=False)
+            user1 = factories.AuthUserFactory(fullname=val)
+            project.add_contributor(user1, auth=Auth(search_user))
+            _update_wiki('dummy_wikiname', 'dummy_content1',
+                         project, search_user, 1)
+            _update_wiki('dummy_wikiname', 'dummy_content2',
+                         project, user1, 2)
+            return (project, user1)
+
+        def _save_institution_name(val):
+            inst = factories.InstitutionFactory(name=val)
+            return inst
+
+        def _del_institution(inst):
+            inst.is_deleted = True
+            inst.save()
+
+        def _search(_id, qs):
+            res, results = query_for_normalize_tests(
+                self, u'{}'.format(qs), user=search_user, version=2)
+            DEBUG('results()', results)
+            try:
+                assert_equal(len(results), 1)
+            except Exception:
+                print('test ID={}: error'.format(_id), file=sys.stderr)
+                raise
+
+        patterns = (
+            # user
+            (1, _save_username, _del_user, None),
+            (2, _save_ongoing_job_institution, _del_user, None),
+            (3, _save_ongoing_job_department, _del_user, None),
+            (4, _save_ongoing_job_title, _del_user, None),
+            (5, _save_ongoing_school_institution, _del_user, None),
+            (6, _save_ongoing_school_department, _del_user, None),
+            (7, _save_ongoing_school_degree, _del_user, None),
+
+            # project
+            (8, _save_project_title, _del_project, None),
+            (9, _save_project_description, _del_project, None),
+            (10, _save_project_comment, _del_project, None),
+            (11, _save_project_tag, _del_project, None),
+            (12, _save_project_contributor, _del_project2,
+             u'{} AND category:project'),
+            (13, _save_project_creator, _del_project2,
+             u'{} AND category:project'),
+            (14, _save_project_modifier, _del_project2,
+             u'{} AND category:project'),
+
+            # file
+            (15, _save_file_name, _del_project,
+             u'{} AND category:file'),
+            (16, _save_file_comment, _del_project,
+             u'{} AND category:file'),
+            (17, _save_file_tag, _del_project,
+             u'{} AND category:file'),
+            (18, _save_file_creator, _del_project2,
+             u'{} AND category:file'),
+            (19, _save_file_modifier, _del_project2,
+             u'{} AND category:file'),
+
+            # wiki
+            (20, _save_wiki_name, _del_project,
+             u'{} AND category:wiki'),
+            (21, _save_wiki_content, _del_project,
+             u'{} AND category:wiki'),
+            (22, _save_wiki_comment, _del_project,
+             u'{} AND category:wiki'),
+            (23, _save_wiki_creator, _del_project2,
+             u'{} AND category:wiki'),
+            (24, _save_wiki_modifier, _del_project2,
+             u'{} AND category:wiki'),
+
+            # institution
+            (24, _save_institution_name, _del_institution, None),
+        )
+
+        for pattern in patterns:
+            _id = pattern[0]
+            save_func = pattern[1]
+            del_func = pattern[2]
+            qs_fmt = pattern[3]
+
+            # 結合文字 を 合成済み文字 で検索
+            i='{}(NFD->NFC)'.format(_id)
+            with run_celery_tasks():
+                obj = save_func(nfd_str)
+            if qs_fmt:
+                qs = qs_fmt.format(nfc_str)
+            else:
+                qs = nfc_str
+            _search(_id=i, qs=qs)
+            run_after_rebuild_search(
+                self, _search,
+                _id='{}(after rebuild_search)'.format(i),
+                qs=qs)
+            with run_celery_tasks():
+                del_func(obj)
+
+            # 合成済み文字 を 結合文字 で検索
+            i='{}(NFC->NFD)'.format(_id)
+            with run_celery_tasks():
+                obj = save_func(nfc_str)
+            if qs_fmt:
+                qs = qs_fmt.format(nfd_str)
+            else:
+                qs = nfd_str
+            _search(_id=i, qs=qs)
+            run_after_rebuild_search(
+                self, _search,
+                _id='{}(after rebuild_search)'.format(i),
+                qs=qs)
+            with run_celery_tasks():
+                del_func(obj)
+
+
 
 # see osf_tests/test_search_views.py
 @pytest.mark.enable_search

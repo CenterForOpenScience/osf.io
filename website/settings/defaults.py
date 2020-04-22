@@ -1966,12 +1966,18 @@ ENABLE_PRIVATE_SEARCH = False
 # maximum length for snippet
 SEARCH_HIGHLIGHT_FRAGMENT_SIZE = 200
 
+# select analyzer: 'english'(default) or 'japanese'
+SEARCH_ANALYZER_ENGLISH = 'english'
+SEARCH_ANALYZER_JAPANESE = 'japanese'
+SEARCH_ANALYZER = SEARCH_ANALYZER_ENGLISH
+
 # Support searching multilingual (multibyte) string.
 # When default analizer is used, the multibyte words are tokenized
 # for each character, and querying "OR" for each character.
 # (see: https://www.elastic.co/jp/blog/how-to-search-ch-jp-kr-part-1)
 # When this flag is True, each words are surrounded with double quotes
 # instead of using other analyzer for simplicity.
+# This is ineffective when SEARCH_ANALYZER = SEARCH_ANALYZER_JAPANESE.
 #
 # Elasticsearchを用いた全文検索で英数字以外の文字の検索を実用可能にする
 # オプション。
@@ -1980,10 +1986,9 @@ SEARCH_HIGHLIGHT_FRAGMENT_SIZE = 200
 # 多言語検索には対応する自然言語のアナライザーを用いて対応するのが一般
 # 的である。
 # 参考: https://www.elastic.co/jp/blog/how-to-search-ch-jp-kr-part-1
-# しかし、他のアナライザーを用いる方式は多くの改修が必要であるため、現
-# 状では比較的簡単な別の方法で幾らかの精度の向上を図っている。具体的に
-# は、englishアナライザーのまま漢字などをダブルクオートで囲ってひとま
-# とめにして検索する。
+# Trueの場合、englishアナライザーのまま漢字などをダブルクオートで囲って
+# スペース区切り単位でひとまとめにして検索する。
+# SEARCH_ANALYZER = SEARCH_ANALYZER_JAPANESE の場合は効果が無い。
 ENABLE_MULTILINGUAL_SEARCH = False
 
 BABEL_TRANSLATION_DIRECTORIES = os.path.join(BASE_PATH, 'translations')
