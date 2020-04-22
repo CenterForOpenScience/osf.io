@@ -717,7 +717,7 @@ function doItemOp(operation, to, from, rename, conflict) {
 
         $osf.growl(operation.verb + ' failed.', message);
 
-        Raven.captureMessage(gettext('Failed to move or copy file'), {
+        Raven.captureMessage(gettext('Failed to move or copy file'), {)
             extra: {
                 xhr: xhr,
                 requestData: moveSpec
