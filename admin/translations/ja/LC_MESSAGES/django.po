@@ -1,17 +1,14 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) 2020 THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
+# Japanese translations for .
+# Copyright (C) 2020 ORGANIZATION
+# This file is distributed under the same license as the  project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
-# 1.{% trans "XXX" %} is extracted by the command 'django-admin makemessages
-# --keep-pot -l ja'
-# 2.edit the header to babel extracting form.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version:  0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-21 17:25+0900\n"
-"PO-Revision-Date: 2020-04-21 17:25+0900\n"
+"POT-Creation-Date: 2020-04-21 10:18+0900\n"
+"PO-Revision-Date: 2020-04-21 10:53+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -222,8 +219,8 @@ msgid "RDM Subjects"
 msgstr "RDMサブジェクト"
 
 #: .\templates\base.html:246
-msgid "OSF Groups"
-msgstr ""
+msgid "RDM Groups"
+msgstr "RDMグループ"
 
 #: .\templates\base.html:250
 msgid "Search"
@@ -2674,33 +2671,8 @@ msgstr "選択したユーザーはスパムですか？"
 msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
 msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
 
-#: .\admin\rdm_statistics\views.py:198
-msgid "Number of files"
-msgstr "ファイル数"
-
-#: .\admin\rdm_statistics\views.py:199 .\admin\rdm_statistics\views.py:218
-msgid "File Numbers"
-msgstr "ファイル数"
-
-#: .\admin\rdm_statistics\views.py:200
-msgid "number"
-msgstr "数"
-
-#: .\admin\rdm_statistics\views.py:209
-msgid "Subtotal of file sizes"
-msgstr "ファイルサイズの小計"
-
-#: .\admin\rdm_statistics\views.py:210
-msgid "File Sizes"
-msgstr "ファイルサイズ"
-
-#: .\admin\rdm_statistics\views.py:211
-msgid "size"
-msgstr "サイズ"
-
-#: .\admin\rdm_statistics\views.py:217
-msgid "Number of files by extension type"
-msgstr "拡張子タイプごとのファイル数"
+#~ msgid "Monthly Growth of MAU%"
+#~ msgstr "MAU%の毎月の成長"
 
 #, python-format
 msgid "Email"
