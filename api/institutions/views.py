@@ -442,8 +442,12 @@ class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIVi
         search = self._paginate(search)
 
         items = self._format_search(search)
-        queryset = MockQueryset(items, search, default_attrs=kwargs)
 
+        if search._extra.get('from'):
+            for _ in range(0, search._extra['from']):
+                items.insert(0, {})
+
+        queryset = MockQueryset(items, search, default_attrs=kwargs)
         return queryset
 
     # overrides RetrieveApiView

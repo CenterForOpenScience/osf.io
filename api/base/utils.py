@@ -233,10 +233,15 @@ class MockQueryset(list):
     """
 
     def __init__(self, items, search, *args, default_attrs=None, **kwargs):
+        self.search = search
+
         for item in items:
             if default_attrs:
                 item.update(default_attrs)
             self.add_dict_as_item(item)
+
+    def __len__(self):
+        return self.search.count()
 
     def add_dict_as_item(self, dict):
         item = type('item', (object,), dict)
