@@ -21,25 +21,25 @@
                 <div class="panel-heading clearfix"><h3 class="panel-title">Twitter</h3></div>
                 <div class="panel-body">
                     <div class="form-group">
-                        <label for="id_{{ form.twitter_api_key.name }}" class="col-sm-2 control-label">{% blocktrans with twitterApiKey=form.twitter_api_key.label %}{{ twitterApiKey }}{% endblocktrans %}</label>
+                        <label for="id_{{ form.twitter_api_key.name }}" class="col-sm-2 control-label">{{ form.twitter_api_key.label }}</label>
                         <div class="col-sm-10">
                             {{ form.twitter_api_key }}
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="id_{{ form.twitter_api_secret.name }}" class="col-sm-2 control-label">{% blocktrans with twitterApiSecret=form.twitter_api_secret.label %}{{ twitterApiSecret }}{% endblocktrans %}</label>
+                        <label for="id_{{ form.twitter_api_secret.name }}" class="col-sm-2 control-label">{{ form.twitter_api_secret.label }}</label>
                         <div class="col-sm-10">
                             {{ form.twitter_api_secret }}
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="id_{{ form.twitter_access_token.name }}" class="col-sm-2 control-label">{% blocktrans with twitterAccessToken=form.twitter_access_token.label %}{{ twitterAccessToken }}{% endblocktrans %}</label>
+                        <label for="id_{{ form.twitter_access_token.name }}" class="col-sm-2 control-label">{{ form.twitter_access_token.label }}</label>
                         <div class="col-sm-10">
                             {{ form.twitter_access_token }}
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="id_{{ form.twitter_access_token_secret.name }}" class="col-sm-2 control-label">{% blocktrans with twitterAccessTokenSecret=form.twitter_access_token_secret.label %}{{ twitterAccessTokenSecret }}{% endblocktrans %}</label>
+                        <label for="id_{{ form.twitter_access_token_secret.name }}" class="col-sm-2 control-label">{{ form.twitter_access_token_secret.label }}</label>
                         <div class="col-sm-10">
                             {{ form.twitter_access_token_secret }}
                         </div>
@@ -75,13 +75,13 @@
                 <div class="panel-heading clearfix"><h3 class="panel-title">Redmine</h3></div>
                 <div class="panel-body">
                     <div class="form-group">
-                        <label for="id_{{ form.redmine_api_url.name }}" class="col-sm-2 control-label">{% blocktrans with redmineApiUrl=form.redmine_api_url.label %}{{ redmineApiUrl }}{% endblocktrans %}</label>
+                        <label for="id_{{ form.redmine_api_url.name }}" class="col-sm-2 control-label">{{ form.redmine_api_url.label }}</label>
                         <div class="col-sm-10">
                             {{ form.redmine_api_url }}
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="id_{{ form.redmine_api_key.name }}" class="col-sm-2 control-label">{% blocktrans with redmineApiKey=form.redmine_api_key.label %}{{ form.redmine_api_key.label }}{% endblocktrans %}</label>
+                        <label for="id_{{ form.redmine_api_key.name }}" class="col-sm-2 control-label">{{ form.redmine_api_key.label }}</label>
                         <div class="col-sm-10">
                             {{ form.redmine_api_key }}
                         </div>
@@ -90,7 +90,7 @@
             </div>
             <div class="text-center">
                 {# if perms.rdm.change_rdmannouncementoption #}
-                <input type="submit" class="btn btn-primary" value="{% trans 'Save' %}">
+                <input type="submit" class="btn btn-primary" value="Save">
                 <a role="button" href="{% url 'announcement:index' %}" class="btn btn-default">{% trans "Cancel" %}</a>
                 {# endif #}
             </div>
