@@ -92,10 +92,10 @@
                     {{ node.public }}
                 </td>
                 <td>
-                    {% blocktrans with nodeRetraction=node.retraction %}{{ node.retraction }}{% endblocktrans %}
+                    {{ node.retraction }}
                 </td>
                 <td>
-                    {% blocktrans with nodeEmbargo=node.embargo %}{{ node.embargo }}{% endblocktrans %}
+                    {{ node.embargo }}
                 </td>
                 <td>
                     {% for user in node.contributors %}
