@@ -422,13 +422,12 @@ class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIVi
         page_size = self.request.query_params.get('page[size]')
 
         if page_size:
-            search = search.extra(size=int(page_size))
+            page_size = int(page_size)
         else:
             page_size = api_settings.PAGE_SIZE
 
         if page:
-            start = int(page) * int(page_size) - int(page_size)
-            search = search.extra(from_=start)
+            search = search.extra(size=int(page) * page_size)
         return search
 
     def _make_elasticsearch_results_filterable(self, search, **kwargs) -> MockQueryset:
@@ -443,17 +442,12 @@ class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIVi
 
         items = self._format_search(search)
 
-        if search._extra.get('from'):
-            for _ in range(0, search._extra['from']):
-                items.insert(0, {})
-
         queryset = MockQueryset(items, search, default_attrs=kwargs)
         return queryset
 
     # overrides RetrieveApiView
     def get_queryset(self):
-        return self.get_default_queryset()
-
+        return self.get_queryset_from_request()
 
 class InstitutionDepartmentList(InstitutionImpactList):
     view_name = 'institution-department-metrics'

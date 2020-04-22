@@ -232,7 +232,7 @@ class MockQueryset(list):
     This class is meant to convert a simple list into a filterable queryset look-a-like.
     """
 
-    def __init__(self, items, search, *args, default_attrs=None, **kwargs):
+    def __init__(self, items, search, default_attrs=None, **kwargs):
         self.search = search
 
         for item in items:
