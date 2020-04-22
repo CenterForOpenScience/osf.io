@@ -33,7 +33,6 @@ function CitationWidget(inputSelector, displaySelector) {
 
 CitationWidget.prototype.init = function() {
     var self = this;
-    self.$input.select2.locales = ['ja'];
 
     // Initialize select2 for selecting citation style
     self.$input.select2({
