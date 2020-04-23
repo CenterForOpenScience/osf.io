@@ -43,10 +43,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        source_provider_guid = options.get('source_provider', False)
-        destination_provider_guid = options.get('destination_provider', False)
+        source_provider_guid = options.get('source_provider')
+        destination_provider_guid = options.get('destination_provider')
 
-        if source_provider_guid and destination_provider_guid:
-            migration_count = migrate_preprint_providers(source_provider_guid, destination_provider_guid)
+        migration_count = migrate_preprint_providers(source_provider_guid, destination_provider_guid)
 
         logger.info(f'{migration_count} preprints were migrated from {source_provider_guid} to {destination_provider_guid}')
