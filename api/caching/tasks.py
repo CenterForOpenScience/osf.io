@@ -135,5 +135,5 @@ def update_storage_usage_cache(target_id, target_guid, per_page=5000):
 def update_storage_usage(target):
     Preprint = apps.get_model('osf.preprint')
 
-    if not isinstance(target, Preprint) and not target.is_quickfiles:
+    if settings.ENABLE_STORAGE_USAGE_CACHE and not isinstance(target, Preprint) and not target.is_quickfiles:
         enqueue_postcommit_task(update_storage_usage_cache, (target.id, target._id,), {}, celery=True)
