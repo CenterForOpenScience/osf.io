@@ -419,6 +419,10 @@ class CeleryConfig:
         'scripts.triggered_mails',
         'website.mailchimp_utils',
         'website.notifications.tasks',
+        'website.collections.tasks',
+        'website.identifier.tasks',
+        'website.preprints.tasks',
+        'website.project.tasks',
     }
 
     high_pri_modules = {
@@ -659,6 +663,8 @@ assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft r
 
 # TODO: Remove references to this flag
 ENABLE_INSTITUTIONS = True
+
+ENABLE_STORAGE_USAGE_CACHE = True
 
 ENABLE_VARNISH = False
 ENABLE_ESI = False
