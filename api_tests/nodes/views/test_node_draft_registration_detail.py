@@ -118,20 +118,6 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         errors = res.json['errors'][0]
         assert errors['detail'] == 'This draft registration is not created from the given node.'
 
-    def test_reviewer_can_see_draft_registration(
-            self, app, schema, draft_registration, url_draft_registrations):
-        user = AuthUserFactory()
-        administer_permission = Permission.objects.get(
-            codename='administer_prereg')
-        user.user_permissions.add(administer_permission)
-        user.save()
-        res = app.get(url_draft_registrations, auth=user.auth)
-        assert res.status_code == 200
-        data = res.json['data']
-        assert schema._id in data['relationships']['registration_schema']['links']['related']['href']
-        assert data['id'] == draft_registration._id
-        assert data['attributes']['registration_metadata'] == {}
-
     def test_draft_registration_serializer_usage(self, app, user, project_public, draft_registration):
         # Tests the usage of DraftRegistrationDetailSerializer for version 2.20
         url_draft_registrations = '/{}nodes/{}/draft_registrations/{}/?{}'.format(
