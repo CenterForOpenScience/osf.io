@@ -416,7 +416,7 @@ class PreprintContributorDetail(NodeContributorDetail, PreprintMixin):
         return context
 
 
-class PreprintBibliographicContributorsList(PreprintContributorsList, generics.ListAPIView):
+class PreprintBibliographicContributorsList(PreprintContributorsList):
     permission_classes = (
         AdminOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
