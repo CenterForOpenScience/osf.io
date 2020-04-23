@@ -87,6 +87,8 @@ before_install:
 
       mkdir -p /tmp/elasticsearch
       tar xzf $ELASTICSEARCH_ARCHIVE -C /tmp/elasticsearch --strip-components=1
+      /tmp/elasticsearch/bin/plugin install analysis-kuromoji
+      /tmp/elasticsearch/bin/plugin install analysis-icu
     - /tmp/elasticsearch/bin/elasticsearch > /dev/null & export ELASTICSEARCH_PID=$!
     # Wait for elasticsearch to come online
     - |-
