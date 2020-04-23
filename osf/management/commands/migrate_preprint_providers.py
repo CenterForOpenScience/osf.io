@@ -1,3 +1,5 @@
+import logging
+
 from django.core.management.base import BaseCommand
 
 from osf.models import Preprint, PreprintProvider
@@ -8,6 +10,9 @@ A management command to migrate preperints from one provider to another.
 
 i.e. docker-compose run --rm web python3 manage.py migrate_preprint_providers --source_provider lawarxiv --destination_provider osf
 """
+
+
+logger = logging.getLogger(__name__)
 
 
 def migrate_preprint_providers(source_provider_guid, destination_provider_guid):
@@ -28,11 +33,13 @@ class Command(BaseCommand):
         super(Command, self).add_arguments(parser)
         parser.add_argument(
             '--source_provider',
-            help='The preprint provider to migrate from',
+            help='Guid of the preprint provider to migrate from',
+            required=True,
         )
         parser.add_argument(
             '--destination_provider',
-            help='The preprint provider to migrate to',
+            help='Guid of the preprint provider to migrate to',
+            required=True,
         )
 
     def handle(self, *args, **options):
@@ -42,4 +49,4 @@ class Command(BaseCommand):
         if source_provider_guid and destination_provider_guid:
             migration_count = migrate_preprint_providers(source_provider_guid, destination_provider_guid)
 
-        print(f'{migration_count} preprints were migrated from {source_provider_guid} to {destination_provider_guid}')
+        logger.info(f'{migration_count} preprints were migrated from {source_provider_guid} to {destination_provider_guid}')
