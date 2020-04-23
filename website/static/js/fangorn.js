@@ -665,7 +665,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         }
         from.data = tb.options.lazyLoadPreprocess.call(this, resp).data;
         from.data.status = undefined;
-        from.notify.update(sprintf(gettext('Successfully %1$s.') , operation.passed), 'success', null, 1000);
+        from.notify.update(sprintf(gettext('Successfully %1$s.') , gettext(operation.passed)), 'success', null, 1000);
 
         if (xhr.status === 200) {
             to.children.forEach(function(child) {
