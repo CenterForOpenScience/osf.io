@@ -43,7 +43,8 @@ from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Contributor, MaintenanceState, BaseFileNode
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, READ, WRITE, ADMIN
 from waffle.models import Flag, Switch, Sample
-from waffle import flag_is_active, sample_is_active
+from waffle import sample_is_active, flag_is_active
+
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
@@ -438,6 +439,7 @@ def root(request, format=None, **kwargs):
         return_val['meta']['admin'] = True
 
     return Response(return_val)
+
 
 @api_view(('GET',))
 @throttle_classes([RootAnonThrottle, UserRateThrottle])

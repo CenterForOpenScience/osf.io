@@ -1,4 +1,3 @@
-import waffle
 from rest_framework import generics, permissions as drf_permissions
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -8,7 +7,6 @@ from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 from api.base.filters import ListFilterMixin
 
-from osf.features import ENABLE_INACTIVE_SCHEMAS
 from osf.models import RegistrationSchemaBlock, RegistrationSchema, FileMetadataSchema
 from api.schemas.serializers import (
     RegistrationSchemaSerializer,
@@ -36,10 +34,7 @@ class RegistrationSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMi
     ordering = ('-id',)
 
     def get_default_queryset(self):
-        if waffle.switch_is_active(ENABLE_INACTIVE_SCHEMAS):
-            return RegistrationSchema.objects.get_latest_versions(only_active=False)
-        else:
-            return RegistrationSchema.objects.get_latest_versions()
+        return RegistrationSchema.objects.get_latest_versions(self.request)
 
     # overrides ListAPIView
     def get_queryset(self):

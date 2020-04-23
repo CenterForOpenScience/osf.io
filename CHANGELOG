@@ -2,6 +2,19 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.5.0 (2020-04-20)
+===================
+- Fixes for Sloan Signals of Trust
+
+20.4.0 (2020-03-23)
+===================
+- Add DraftNode Model and improve DraftRegistrations
+- Add Sloan Signals of Trust functionality
+- Add waffle flag for EGAP Registration Schema
+- Upgrade werkzeug to 1.0
+- Fix opening two pages in ember-osf-web would log user out
+- Fix API not found error upon logging in
+
 20.3.0 (2020-02-04)
 ===================
 - Fix typo in waffle flag pages

@@ -5,7 +5,7 @@ import pytest
 from . import factories
 from osf.models import DraftRegistration
 from osf.models.registrations import DraftRegistrationGroupObjectPermission
-from osf.migrations import (
+from osf.migrations.sql.draft_nodes_migration import (
     add_draft_read_write_admin_auth_groups,
     remove_draft_auth_groups,
     add_permissions_to_draft_registration_groups,

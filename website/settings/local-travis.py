@@ -56,6 +56,7 @@ MAIL_PASSWORD = 'CHANGEME'
 COOKIE_NAME = 'osf'
 SECRET_KEY = 'CHANGEME'
 SESSION_COOKIE_SECURE = SECURE_MODE
+SESSION_COOKIE_SAMESITE = 'None'
 OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None
 
@@ -102,3 +103,5 @@ POPULAR_LINKS_REGISTRATIONS = 'woooo'
 logging.getLogger('celery.app.trace').setLevel(logging.FATAL)
 
 DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'
+
+TRAVIS_MODE = True

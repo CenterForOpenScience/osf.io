@@ -70,6 +70,7 @@ COOKIE_NAME = 'osf'
 OSF_COOKIE_DOMAIN = None
 SECRET_KEY = 'CHANGEME'
 SESSION_COOKIE_SECURE = SECURE_MODE
+SESSION_COOKIE_SAMESITE = 'None'
 OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None
 
@@ -136,3 +137,5 @@ CHRONOS_FAKE_FILE_URL = 'https://staging2.osf.io/r2t5v/download'
 
 # Show sent emails in console
 logging.getLogger('website.mails.mails').setLevel(logging.DEBUG)
+
+TRAVIS_MODE = False

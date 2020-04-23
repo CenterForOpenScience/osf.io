@@ -12,7 +12,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     RegistrationFactory,
 )
-from osf.utils.permissions import WRITE, READ
+from osf.utils.permissions import WRITE, READ, ADMIN
 from rest_framework import exceptions
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
 
@@ -42,8 +42,8 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def url_draft_registrations(self, project_public, draft_registration):
-        return '/{}nodes/{}/draft_registrations/{}/'.format(
-            API_BASE, project_public._id, draft_registration._id)
+        return '/{}nodes/{}/draft_registrations/{}/?{}'.format(
+            API_BASE, project_public._id, draft_registration._id, 'version=2.19')
 
     def test_admin_can_view_draft(
             self, app, user, draft_registration, project_public,
@@ -55,7 +55,10 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         assert data['id'] == draft_registration._id
         assert data['attributes']['registration_metadata'] == {}
 
-    #   test_group_mem_admin_can_view
+    def test_admin_group_member_can_view(
+        self, app, user, draft_registration, project_public,
+            schema, url_draft_registrations, group_mem):
+
         res = app.get(url_draft_registrations, auth=group_mem.auth)
         assert res.status_code == 200
 
@@ -115,6 +118,42 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         errors = res.json['errors'][0]
         assert errors['detail'] == 'This draft registration is not created from the given node.'
 
+    def test_reviewer_can_see_draft_registration(
+            self, app, schema, draft_registration, url_draft_registrations):
+        user = AuthUserFactory()
+        administer_permission = Permission.objects.get(
+            codename='administer_prereg')
+        user.user_permissions.add(administer_permission)
+        user.save()
+        res = app.get(url_draft_registrations, auth=user.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert schema._id in data['relationships']['registration_schema']['links']['related']['href']
+        assert data['id'] == draft_registration._id
+        assert data['attributes']['registration_metadata'] == {}
+
+    def test_draft_registration_serializer_usage(self, app, user, project_public, draft_registration):
+        # Tests the usage of DraftRegistrationDetailSerializer for version 2.20
+        url_draft_registrations = '/{}nodes/{}/draft_registrations/{}/?{}'.format(
+            API_BASE, project_public._id, draft_registration._id, 'version=2.20')
+
+        res = app.get(url_draft_registrations, auth=user.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+
+        # Set of fields that DraftRegistrationDetailLegacySerializer does not provide
+        assert data['attributes']['title']
+        assert data['attributes']['description']
+        assert data['relationships']['affiliated_institutions']
+
+    def test_can_view_after_added(
+            self, app, schema, draft_registration, url_draft_registrations):
+        user = AuthUserFactory()
+        project = draft_registration.branched_from
+        project.add_contributor(user, ADMIN)
+        res = app.get(url_draft_registrations, auth=user.auth)
+        assert res.status_code == 200
+
 
 @pytest.mark.django_db
 class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
@@ -159,8 +198,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def url_draft_registrations(self, project_public, draft_registration):
-        return '/{}nodes/{}/draft_registrations/{}/'.format(
-            API_BASE, project_public._id, draft_registration._id)
+        return '/{}nodes/{}/draft_registrations/{}/?{}'.format(
+            API_BASE, project_public._id, draft_registration._id, 'version=2.19')
 
     @pytest.fixture()
     def payload(self, draft_registration):
@@ -258,14 +297,6 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 403
 
-    #   test_read_write_contributor_cannot_update_draft
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload,
-            auth=user_write_contrib.auth,
-            expect_errors=True)
-        assert res.status_code == 403
-
     #   test_logged_in_non_contributor_cannot_update_draft
         res = app.put_json_api(
             url_draft_registrations,
@@ -297,6 +328,16 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             auth=group_mem.auth
         )
         assert res.status_code == 403
+
+    def test_registration_metadata_does_not_need_to_be_supplied(
+            self, app, user, payload, url_draft_registrations):
+        payload['data']['attributes'] = {}
+
+        res = app.put_json_api(
+            url_draft_registrations,
+            payload, auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 200
 
     def test_registration_metadata_must_be_a_dictionary(
             self, app, user, payload, url_draft_registrations):
@@ -544,8 +585,8 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def url_draft_registrations(self, project_public, draft_registration):
-        return '/{}nodes/{}/draft_registrations/{}/'.format(
-            API_BASE, project_public._id, draft_registration._id)
+        return '/{}nodes/{}/draft_registrations/{}/?{}'.format(
+            API_BASE, project_public._id, draft_registration._id, 'version=2.19')
 
     @pytest.fixture()
     def payload(self, draft_registration):
@@ -590,14 +631,6 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
             url_draft_registrations,
             payload,
             auth=user_read_contrib.auth,
-            expect_errors=True)
-        assert res.status_code == 403
-
-    #   test_read_write_contributor_cannot_update_draft
-        res = app.patch_json_api(
-            url_draft_registrations,
-            payload,
-            auth=user_write_contrib.auth,
             expect_errors=True)
         assert res.status_code == 403
 
@@ -646,8 +679,8 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def url_draft_registrations(self, project_public, draft_registration):
-        return '/{}nodes/{}/draft_registrations/{}/'.format(
-            API_BASE, project_public._id, draft_registration._id)
+        return '/{}nodes/{}/draft_registrations/{}/?{}'.format(
+            API_BASE, project_public._id, draft_registration._id, 'version=2.19')
 
     def test_admin_can_delete_draft(self, app, user, url_draft_registrations, project_public):
         res = app.delete_json_api(url_draft_registrations, auth=user.auth)
@@ -746,8 +779,8 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
     def url_draft_registrations(
             self, project_public,
             draft_registration_prereg):
-        return '/{}nodes/{}/draft_registrations/{}/'.format(
-            API_BASE, project_public._id, draft_registration_prereg._id)
+        return '/{}nodes/{}/draft_registrations/{}/?{}'.format(
+            API_BASE, project_public._id, draft_registration_prereg._id, 'version=2.19')
 
     @pytest.fixture()
     def payload(self, draft_registration_prereg):

@@ -35,13 +35,10 @@ from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from addons.osfstorage.models import Region
 from osf.exceptions import NodeStateError
 from osf.models import (
-    Comment, DraftRegistration, Institution,
-    RegistrationSchema, AbstractNode, PrivateLink,
-    RegistrationProvider, OSFGroup,
+    Comment, DraftRegistration, ExternalAccount, Institution,
+    RegistrationSchema, AbstractNode, PrivateLink, Preprint,
+    RegistrationProvider, OSFGroup, NodeLicense,
 )
-from osf.models.external import ExternalAccount
-from osf.models.licenses import NodeLicense
-from osf.models.preprint import Preprint
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
@@ -54,29 +51,6 @@ class RegistrationProviderRelationshipField(RelationshipField):
     def to_internal_value(self, data):
         provider = self.get_object(data)
         return {'provider': provider}
-
-
-def get_or_add_license_to_serializer_context(serializer, node):
-    """
-    Returns license, and adds license to serializer context with format
-    serializer.context['licenses'] = {<node_id>: <NodeLicenseRecord object>}
-
-    Used for both node_license field and license relationship in the NodeSerializer.
-    Prevents license from having to be fetched 2x per node.
-    """
-    license_context = serializer.context.get('licenses', {})
-    if license_context and node._id in license_context:
-        return license_context.get(node._id)
-    else:
-        license = node.license
-        if license_context:
-            license_context[node._id] = {}
-            license_context[node._id] = license
-        else:
-            serializer.context['licenses'] = {}
-            serializer.context['licenses'][node._id] = license
-        return license
-
 
 def get_institutions_to_add_remove(institutions, new_institutions):
     diff = relationship_diff(
@@ -137,6 +111,26 @@ class NodeTagField(ser.Field):
 
     def to_internal_value(self, data):
         return data
+
+
+def get_or_add_license_to_serializer_context(serializer, node):
+    """
+    Returns license, and adds license to serializer context with format
+    serializer.context['licenses'] = {<node_id>: <NodeLicenseRecord object>}
+    Used for both node_license field and license relationship.
+    Prevents license from having to be fetched 2x per node.
+    """
+    license_context = serializer.context.get('licenses', {})
+    if license_context and node._id in license_context:
+        return license_context.get(node._id)
+    else:
+        license = node.license
+        if license_context:
+            license_context[node._id] = license
+        else:
+            serializer.context['licenses'] = {}
+            serializer.context['licenses'][node._id] = license
+        return license
 
 
 class NodeLicenseSerializer(BaseAPISerializer):
@@ -306,6 +300,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text='Choices: ' + category_choices_string)
+
     custom_citation = ser.CharField(allow_blank=True, required=False)
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
@@ -458,6 +453,16 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view_kwargs={'node_id': '<_id>'},
     )
 
+    affiliated_institutions = RelationshipField(
+        related_view='nodes:node-institutions',
+        related_view_kwargs={'node_id': '<_id>'},
+        self_view='nodes:node-relationships-institutions',
+        self_view_kwargs={'node_id': '<_id>'},
+        read_only=False,
+        many=True,
+        required=False,
+    )
+
     draft_registrations = HideIfRegistration(RelationshipField(
         related_view='nodes:node-draft-registrations',
         related_view_kwargs={'node_id': '<_id>'},
@@ -474,16 +479,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view='regions:region-detail',
         related_view_kwargs={'region_id': 'get_region_id'},
         read_only=False,
-    )
-
-    affiliated_institutions = RelationshipField(
-        related_view='nodes:node-institutions',
-        related_view_kwargs={'node_id': '<_id>'},
-        self_view='nodes:node-relationships-institutions',
-        self_view_kwargs={'node_id': '<_id>'},
-        read_only=False,
-        many=True,
-        required=False,
     )
 
     root = RelationshipField(
@@ -1193,9 +1188,11 @@ class NodeContributorsSerializer(JSONAPISerializer):
         )
 
     def get_unregistered_contributor(self, obj):
-        # SerializerMethodField works for both Node and Preprint contributors
+        # SerializerMethodField works for Node/DraftRegistration/Preprint contributors
         if hasattr(obj, 'preprint'):
             unclaimed_records = obj.user.unclaimed_records.get(obj.preprint._id, None)
+        elif hasattr(obj, 'draft_registration'):
+            unclaimed_records = obj.user.unclaimed_records.get(obj.draft_registration._id, None)
         else:
             unclaimed_records = obj.user.unclaimed_records.get(obj.node._id, None)
         if unclaimed_records:
@@ -1459,13 +1456,13 @@ class RegistrationSchemaRelationshipField(RelationshipField):
 
     def to_internal_value(self, registration_schema_id):
         schema = get_object_or_error(RegistrationSchema, registration_schema_id, self.context['request'])
-        latest_version = RegistrationSchema.objects.get_latest_version(schema.name, only_active=False).schema_version
+        latest_version = RegistrationSchema.objects.get_latest_version(schema.name).schema_version
         if latest_version != schema.schema_version or not schema.active:
             raise exceptions.ValidationError('Registration supplement must be an active schema.')
         return {'registration_schema': schema}
 
 
-class DraftRegistrationSerializer(JSONAPISerializer):
+class DraftRegistrationLegacySerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
@@ -1475,14 +1472,14 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     datetime_initiated = VersionedDateTimeField(read_only=True)
     datetime_updated = VersionedDateTimeField(read_only=True)
 
-    branched_from = RelationshipField(
-        related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<branched_from._id>'},
-    )
-
     initiator = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<initiator._id>'},
+    )
+
+    branched_from = RelationshipField(
+        related_view=lambda n: 'draft_nodes:draft-node-detail' if getattr(n, 'type', False) == 'osf.draftnode' else 'nodes:node-detail',
+        related_view_kwargs={'node_id': '<branched_from._id>'},
     )
 
     registration_schema = RegistrationSchemaRelationshipField(
@@ -1532,12 +1529,14 @@ class DraftRegistrationSerializer(JSONAPISerializer):
                 ' `registration_responses` as `registration_metadata` will be deprecated in the future.',
             )
 
+    def get_node(self, validated_data=None):
+        return self.context['view'].get_node()
+
     def create(self, validated_data):
         initiator = get_user_auth(self.context['request']).user
-        node = self.context['view'].get_node()
+        node = self.get_node(validated_data)
         # Old workflow - deeply nested
         metadata = validated_data.pop('registration_metadata', None)
-        # New workflow - less nesting
         registration_responses = validated_data.pop('registration_responses', None)
         schema = validated_data.pop('registration_schema')
 
@@ -1564,9 +1563,9 @@ class DraftRegistrationSerializer(JSONAPISerializer):
             return get_kebab_snake_case_field(request.version, 'draft-registrations')
 
 
-class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
+class DraftRegistrationDetailLegacySerializer(DraftRegistrationLegacySerializer):
     """
-    Overrides DraftRegistrationSerializer to make id required.
+    Overrides DraftRegistrationLegacySerializer to make id required.
     registration_supplement cannot be changed after draft has been created.
 
     Also makes registration_supplement read-only.

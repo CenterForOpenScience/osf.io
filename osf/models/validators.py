@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import re
+import waffle
 import jsonschema
 
 from django.core.validators import URLValidator, validate_email as django_validate_email
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.deconstruct import deconstructible
 from past.builtins import basestring
+from rest_framework import exceptions
 
 from website.notifications.constants import NOTIFICATION_TYPES
 
@@ -13,6 +15,7 @@ from osf.utils.registrations import FILE_VIEW_URL_REGEX
 from osf.utils.sanitize import strip_html
 from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors, BlacklistedEmailError
 
+from website.language import SWITCH_VALIDATOR_ERROR
 
 def validate_history_item(items):
     for value in items or []:
@@ -55,17 +58,20 @@ def validate_subscription_type(value):
         raise ValidationValueError
 
 
-def validate_title(value):
+def validate_title(value, allow_blank=False):
     """Validator for Node#title. Makes sure that the value exists and is not
     above 512 characters.
     """
-    if value is None or not value.strip():
-        raise ValidationValueError('Title cannot be blank.')
+
+    if not allow_blank:
+        if value is None or not value.strip():
+            raise ValidationValueError('Title cannot be blank.')
 
     value = strip_html(value)
 
-    if value is None or not value.strip():
-        raise ValidationValueError('Invalid title.')
+    if not allow_blank:
+        if value is None or not value.strip():
+            raise ValidationValueError('Invalid title.')
 
     if len(value) > 512:
         raise ValidationValueError('Title cannot exceed 512 characters.')
@@ -404,3 +410,28 @@ class RegistrationResponsesValidator:
                 }
 
         raise ValueError('Unexpected `block_type`: {}'.format(question.block_type))
+
+
+class SwitchValidator(object):
+    def __init__(self, switch_name: str, message: str = SWITCH_VALIDATOR_ERROR, should_be: bool = True):
+        """
+        This throws a validation error if a switched off field is prematurely used. This the on/off state of the field
+        is determined by the validators `should_be` value, if the switch's active value is `not` what it `should_be` a
+        validation error is thrown.
+
+        Remember turning a switch off (to active to False) can mean turning a feature on and vice versa, so use the
+        `should_be` value appropriately.
+
+        :param switch_name: String The switch's name
+        :param message: String The error message to be displayed if validation fails
+        :param should_be: Boolean The value that must match the switch value to avoid a validation error
+        """
+        self.switch_name = switch_name
+        self.should_be = should_be
+        self.message = message
+
+    def __call__(self, value):
+        if waffle.switch_is_active(self.switch_name) != self.should_be:
+            raise exceptions.ValidationError(detail=self.message)
+
+        return value
