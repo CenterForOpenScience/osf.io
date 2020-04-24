@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-24 10:32+0900\n"
-"PO-Revision-Date: 2020-04-24 10:32+0900\n"
+"POT-Creation-Date: 2020-04-24 14:11+0900\n"
+"PO-Revision-Date: 2020-04-24 14:11+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -1090,7 +1090,7 @@ msgstr ""
 msgid "Only 200 citations may be displayed"
 msgstr ""
 
-#: website/static/js/citationGrid.js:311 website/static/js/citationWidget.js:42
+#: website/static/js/citationGrid.js:311 website/static/js/citationWidget.js:43
 msgid "Enter citation style (e.g. \"APA\")"
 msgstr ""
 
@@ -1119,23 +1119,28 @@ msgstr ""
 msgid " if the problem persists."
 msgstr ""
 
-#: website/static/js/citationWidget.js:44 website/static/js/pointers.js:30
+#: website/static/js/citationWidget.js:45
+#, python-format
+msgid "Please enter %s or more characters"
+msgstr ""
+
+#: website/static/js/citationWidget.js:46 website/static/js/pointers.js:30
 msgid "Searching..."
 msgstr ""
 
-#: website/static/js/citationWidget.js:45
+#: website/static/js/citationWidget.js:47
 msgid "No matches found."
 msgstr ""
 
-#: website/static/js/citationWidget.js:74
+#: website/static/js/citationWidget.js:76
 msgid "Citation render failed"
 msgstr ""
 
-#: website/static/js/citationWidget.js:75
+#: website/static/js/citationWidget.js:77
 msgid "The requested citation format generated an error."
 msgstr ""
 
-#: website/static/js/citationWidget.js:78
+#: website/static/js/citationWidget.js:80
 msgid "Unexpected error when fetching citation"
 msgstr ""
 
