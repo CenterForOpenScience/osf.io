@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-23 12:37+0900\n"
-"PO-Revision-Date: 2020-04-23 12:37+0900\n"t
+"POT-Creation-Date: 2020-04-24 10:32+0900\n"
+"PO-Revision-Date: 2020-04-24 10:32+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -1119,15 +1119,23 @@ msgstr ""
 msgid " if the problem persists."
 msgstr ""
 
-#: website/static/js/citationWidget.js:73
-msgid "Citation render failed"
+#: website/static/js/citationWidget.js:44 website/static/js/pointers.js:30
+msgid "Searching..."
+msgstr ""
+
+#: website/static/js/citationWidget.js:45
+msgid "No matches found."
 msgstr ""
 
 #: website/static/js/citationWidget.js:74
+msgid "Citation render failed"
+msgstr ""
+
+#: website/static/js/citationWidget.js:75
 msgid "The requested citation format generated an error."
 msgstr ""
 
-#: website/static/js/citationWidget.js:77
+#: website/static/js/citationWidget.js:78
 msgid "Unexpected error when fetching citation"
 msgstr ""
 
@@ -3145,10 +3153,6 @@ msgstr ""
 
 #: website/static/js/pointers.js:29
 msgid "Search my projects"
-msgstr ""
-
-#: website/static/js/pointers.js:30
-msgid "Searching..."
 msgstr ""
 
 #: website/static/js/pointers.js:133

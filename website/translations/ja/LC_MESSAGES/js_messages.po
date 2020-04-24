@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-23 12:37+0900\n"
-"PO-Revision-Date: 2020-04-23 12:37+0900\n"
+"POT-Creation-Date: 2020-04-24 10:32+0900\n"
+"PO-Revision-Date: 2020-04-24 10:32+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -1143,15 +1143,23 @@ msgstr "問題が解決しない場合は%1$sにお問い合わせください�
 msgid " if the problem persists."
 msgstr " "
 
-#: website/static/js/citationWidget.js:73
+#: website/static/js/citationWidget.js:44 website/static/js/pointers.js:30
+msgid "Searching..."
+msgstr "検索中..."
+
+#: website/static/js/citationWidget.js:45
+msgid "No matches found."
+msgstr "該当なし"
+
+#: website/static/js/citationWidget.js:74
 msgid "Citation render failed"
 msgstr "引用のレンダリングに失敗しました"
 
-#: website/static/js/citationWidget.js:74
+#: website/static/js/citationWidget.js:75
 msgid "The requested citation format generated an error."
 msgstr "要求された引用形式はエラーを生成しました。"
 
-#: website/static/js/citationWidget.js:77
+#: website/static/js/citationWidget.js:78
 msgid "Unexpected error when fetching citation"
 msgstr "引用を取得する際の予期しないエラー"
 
@@ -3183,10 +3191,6 @@ msgstr "すべてのプロジェクトの検索"
 #: website/static/js/pointers.js:29
 msgid "Search my projects"
 msgstr "マイプロジェクトの検索"
-
-#: website/static/js/pointers.js:30
-msgid "Searching..."
-msgstr "検索中..."
 
 #: website/static/js/pointers.js:133
 msgid "No results found."
