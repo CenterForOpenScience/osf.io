@@ -10,7 +10,7 @@ from osf.management.commands.migrate_preprint_providers import (
     migrate_preprint_providers
 )
 
-from osf.models import Preprint
+from osf.models import Preprint, PreprintProvider
 
 
 @pytest.fixture()
@@ -67,3 +67,22 @@ class TestPreprintProviderMigration:
         empty_migration_count = migrate_preprint_providers(empty_provider._id, destination_provider._id)
         assert empty_migration_count == 0
         assert Preprint.objects.filter(provider=destination_provider).count() == 5
+
+    def test_preprint_provider_migration_dry_run(self, source_provider, destination_provider, preprint1, preprint2):
+        assert Preprint.objects.filter(provider=source_provider).count() == 2
+        assert Preprint.objects.filter(provider=destination_provider).count() == 0
+
+        migrate_preprint_providers(source_provider._id, destination_provider._id, dry_run=True)
+
+        assert Preprint.objects.filter(provider=source_provider).count() == 2
+        assert Preprint.objects.filter(provider=destination_provider).count() == 0
+
+    def test_preprint_provider_migration_deletion(self, source_provider, destination_provider, preprint1, preprint2):
+        assert Preprint.objects.filter(provider=source_provider).count() == 2
+        assert Preprint.objects.filter(provider=destination_provider).count() == 0
+        assert PreprintProvider.objects.filter(_id=source_provider._id).count() == 1
+
+        migrate_preprint_providers(source_provider._id, destination_provider._id, delete_source_provider=True)
+
+        assert Preprint.objects.filter(provider=destination_provider).count() == 2
+        assert PreprintProvider.objects.filter(_id=source_provider._id).count() == 0
