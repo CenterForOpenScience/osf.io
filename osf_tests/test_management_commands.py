@@ -22,6 +22,11 @@ from osf.management.commands.data_storage_usage import (
     process_usages,
 )
 
+from website.settings import (
+    CANADA,
+    GERMANY,
+    AUSTRALIA
+)
 
 # Using powers of two so that any combination of file sizes will give a unique total
 # If a summary value is incorrect, subtract out the values that are correct and convert
@@ -107,13 +112,29 @@ class TestDataStorageUsage(DbTestCase):
             ('australia_sydney', 0),
             ('germany_frankfurt', 0),
             ('united_states', 0),
+            ('num_nodes_usa', 0),
+            ('num_quickfiles_usa', 0),
+            ('num_preprints_usa', 0),
+            ('num_registrations_usa', 0),
+            ('num_nodes_germany', 0),
+            ('num_quickfiles_germany', 0),
+            ('num_preprints_germany', 0),
+            ('num_registrations_germany', 0),
+            ('num_nodes_canada', 0),
+            ('num_quickfiles_canada', 0),
+            ('num_preprints_canada', 0),
+            ('num_registrations_canada', 0),
+            ('num_nodes_australia', 0),
+            ('num_quickfiles_australia', 0),
+            ('num_preprints_australia', 0),
+            ('num_registrations_australia', 0),
         ])
         user = UserFactory()
         user_addon = user.get_addon('osfstorage')
         user_addon.default_region_id = self.region_us
-        region_ca = RegionFactory(_id='CA-1', name=u'Canada - Montréal')
-        region_de = RegionFactory(_id='DE-1', name='Germany - Frankfurt')
-        region_au = RegionFactory(_id='AU-1', name='Australia - Sydney')
+        region_ca = RegionFactory(_id='CA-1', name=CANADA)
+        region_de = RegionFactory(_id='DE-1', name=GERMANY)
+        region_au = RegionFactory(_id='AU-1', name=AUSTRALIA)
 
         project_public_us = self.project(creator=user, is_public=True)
         small_size = next_file_size()
@@ -137,6 +158,10 @@ class TestDataStorageUsage(DbTestCase):
         expected_summary_data['total'] += file_size
         expected_summary_data['nd_public_nodes'] += file_size
         expected_summary_data['united_states'] += file_size
+        expected_summary_data['num_nodes_usa'] += 2
+        expected_summary_data['num_quickfiles_usa'] += 1
+        expected_summary_data['num_preprints_usa'] += 2
+        expected_summary_data['num_registrations_usa'] += 2
 
         project_private_au = self.project(creator=user, is_public=False, region=region_au)
         file_size = next(small_size)
@@ -149,6 +174,7 @@ class TestDataStorageUsage(DbTestCase):
         expected_summary_data['total'] += file_size
         expected_summary_data['nd_private_nodes'] += file_size
         expected_summary_data['australia_sydney'] += file_size
+        expected_summary_data['num_nodes_australia'] += 2
 
         component_private_small_deleted_de = self.project(
             creator=user,
@@ -170,6 +196,8 @@ class TestDataStorageUsage(DbTestCase):
         expected_summary_data['total'] += file_size
         expected_summary_data['deleted'] += file_size
         expected_summary_data['germany_frankfurt'] += file_size
+        expected_summary_data['num_nodes_germany'] += 1
+
         logger.debug('After deletion: {}'.format(deleted_file.target.title))
 
         file_size = next(small_size)
@@ -189,6 +217,8 @@ class TestDataStorageUsage(DbTestCase):
         expected_summary_data['total'] += file_size
         expected_summary_data['nd_preprints'] += file_size
         expected_summary_data['canada_montreal'] += file_size
+        expected_summary_data['num_preprints_canada'] += 1
+
         user_addon.default_region_id = self.region_us
         user_addon.save()
         supplementary_node_public_au = self.project(creator=user, is_public=True, region=region_au)

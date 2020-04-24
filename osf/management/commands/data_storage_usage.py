@@ -20,7 +20,21 @@ except ImportError:
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
-from website.settings import DS_METRICS_BASE_FOLDER, DS_METRICS_OSF_TOKEN
+from website.settings import (
+    DS_METRICS_BASE_FOLDER,
+    DS_METRICS_OSF_TOKEN,
+    USA,
+    CANADA,
+    GERMANY,
+    AUSTRALIA,
+)
+
+from osf.models import (
+    QuickFilesNode,
+    Registration,
+    Preprint,
+    Node
+)
 
 DEFAULT_API_VERSION = '2.14'
 TEMP_FOLDER = tempfile.mkdtemp(suffix='/')
@@ -230,6 +244,22 @@ REGIONAL_PREPRINT_SIZE_SUM_SQL = """
     """
 
 logger = logging.getLogger(__name__)
+
+
+def get_node_count_by_region(region_name):
+    return Node.objects.filter(addons_osfstorage_node_settings__region__name=region_name).count()
+
+
+def get_quickfile_count_by_region(region_name):
+    return QuickFilesNode.objects.filter(addons_osfstorage_node_settings__region__name=region_name).count()
+
+
+def get_preprint_count_by_region(region_name):
+    return Preprint.objects.filter(region__name=region_name).count()
+
+
+def get_registrations_count_by_region(region_name):
+    return Registration.objects.filter(addons_osfstorage_node_settings__region__name=region_name).count()
 
 
 # 1. Get content types for nodes, registration, preprints,
@@ -565,10 +595,28 @@ def process_usages(
     summary_data['nd_private_nodes'] = summary_totals.get('osf.private-node', 0)
     summary_data['nd_preprints'] = summary_totals.get('nd_preprints', 0)
     summary_data['nd_supp_nodes'] = summary_totals.get('nd_supplement', 0)
-    summary_data['canada_montreal'] = summary_totals.get(u'Canada - Montréal', 0)
-    summary_data['australia_sydney'] = summary_totals.get('Australia - Sydney', 0)
-    summary_data['germany_frankfurt'] = summary_totals.get('Germany - Frankfurt', 0)
-    summary_data['united_states'] = summary_totals.get('United States', 0)
+    summary_data['canada_montreal'] = summary_totals.get(CANADA, 0)
+    summary_data['australia_sydney'] = summary_totals.get(AUSTRALIA, 0)
+    summary_data['germany_frankfurt'] = summary_totals.get(GERMANY, 0)
+    summary_data['united_states'] = summary_totals.get(USA, 0)
+    # International Data
+    summary_data['num_nodes_usa'] = get_node_count_by_region(USA)
+    summary_data['num_quickfiles_usa'] = get_quickfile_count_by_region(USA)
+    summary_data['num_preprints_usa'] = get_preprint_count_by_region(USA)
+    summary_data['num_registrations_usa'] = get_registrations_count_by_region(USA)
+    summary_data['num_nodes_germany'] = get_node_count_by_region(GERMANY)
+    summary_data['num_quickfiles_germany'] = get_quickfile_count_by_region(GERMANY)
+    summary_data['num_preprints_germany'] = get_preprint_count_by_region(GERMANY)
+    summary_data['num_registrations_germany'] = get_registrations_count_by_region(GERMANY)
+    summary_data['num_nodes_canada'] = get_node_count_by_region(CANADA)
+    summary_data['num_quickfiles_canada'] = get_quickfile_count_by_region(CANADA)
+    summary_data['num_preprints_canada'] = get_preprint_count_by_region(CANADA)
+    summary_data['num_registrations_canada'] = get_registrations_count_by_region(CANADA)
+    summary_data['num_nodes_australia'] = get_node_count_by_region(AUSTRALIA)
+    summary_data['num_quickfiles_australia'] = get_quickfile_count_by_region(AUSTRALIA)
+    summary_data['num_preprints_australia'] = get_preprint_count_by_region(AUSTRALIA)
+    summary_data['num_registrations_australia'] = get_registrations_count_by_region(AUSTRALIA)
+
     if not dry_run:
         write_summary_data(
             filename='osf_storage_metrics.csv',

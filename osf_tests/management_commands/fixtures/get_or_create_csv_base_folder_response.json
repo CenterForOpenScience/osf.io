@@ -1,0 +1,75 @@
+{
+    "data": {
+        "relationships": {
+            "files": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/fdx7t/files/osfstorage/5dfa59bd68c81e0cd373cea5/",
+                        "meta": {}
+                    }
+                }
+            },
+            "parent_folder": {
+                "data": {
+                    "type": "files",
+                    "id": "5df39e4b5f40c00015088d40"
+                },
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/files/5df39e4b5f40c00015088d40/",
+                        "meta": {}
+                    }
+                }
+            },
+            "target": {
+                "data": {
+                    "type": "node",
+                    "id": "fdx7t"
+                },
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/fdx7t/",
+                        "meta": {
+                            "type": "node"
+                        }
+                    }
+                }
+            }
+        },
+        "links": {
+            "info": "http://localhost:8000/v2/files/5dfa59bd68c81e0cd373cea5/",
+            "new_folder": "http://localhost:7777/v1/resources/fdx7t/providers/osfstorage/5dfa59bd68c81e0cd373cea5/?kind=folder",
+            "self": "http://localhost:8000/v2/files/5dfa59bd68c81e0cd373cea5/",
+            "move": "http://localhost:7777/v1/resources/fdx7t/providers/osfstorage/5dfa59bd68c81e0cd373cea5/",
+            "upload": "http://localhost:7777/v1/resources/fdx7t/providers/osfstorage/5dfa59bd68c81e0cd373cea5/",
+            "delete": "http://localhost:7777/v1/resources/fdx7t/providers/osfstorage/5dfa59bd68c81e0cd373cea5/"
+        },
+        "attributes": {
+            "extra": {
+                "hashes": {
+                    "sha256": null,
+                    "md5": null
+                }
+            },
+            "kind": "folder",
+            "name": "Storage Data",
+            "last_touched": null,
+            "materialized_path": "/Storage Data/",
+            "date_modified": null,
+            "current_version": 1,
+            "date_created": null,
+            "provider": "osfstorage",
+            "path": "/5dfa59bd68c81e0cd373cea5/",
+            "current_user_can_comment": true,
+            "guid": null,
+            "checkout": null,
+            "tags": [],
+            "size": null
+        },
+        "type": "files",
+        "id": "5dfa59bd68c81e0cd373cea5"
+    },
+    "meta": {
+        "version": "2.19"
+    }
+}

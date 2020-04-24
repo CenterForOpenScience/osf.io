@@ -1,0 +1,100 @@
+{
+    "data": [
+        {
+            "relationships": {
+                "metadata_records": {
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/files/5dfa607b68c81e0de2f53cc7/metadata_records/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "parent_folder": {
+                    "data": {
+                        "type": "files",
+                        "id": "5dfa59bd68c81e0cd373cea5"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/files/5dfa59bd68c81e0cd373cea5/",
+                            "meta": {}
+                        }
+                    }
+                },
+                "target": {
+                    "data": {
+                        "type": "node",
+                        "id": "fdx7t"
+                    },
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/nodes/fdx7t/",
+                            "meta": {
+                                "type": "node"
+                            }
+                        }
+                    }
+                },
+                "comments": {
+                    "data": null
+                },
+                "versions": {
+                    "links": {
+                        "related": {
+                            "href": "http://localhost:8000/v2/files/5dfa607b68c81e0de2f53cc7/versions/",
+                            "meta": {}
+                        }
+                    }
+                }
+            },
+            "links": {
+                "info": "http://localhost:8000/v2/files/5dfa607b68c81e0de2f53cc7/",
+                "render": "http://localhost:7778/render?url=http://localhost:5000/download/5dfa607b68c81e0de2f53cc7/?direct%26mode=render",
+                "self": "http://localhost:8000/v2/files/5dfa607b68c81e0de2f53cc7/",
+                "move": "http://localhost:7777/v1/resources/fdx7t/providers/osfstorage/5dfa607b68c81e0de2f53cc7",
+                "upload": "http://localhost:7777/v1/resources/fdx7t/providers/osfstorage/5dfa607b68c81e0de2f53cc7",
+                "html": "http://localhost:5000/fdx7t/files/osfstorage/5dfa607b68c81e0de2f53cc7",
+                "download": "http://localhost:5000/download/5dfa607b68c81e0de2f53cc7/",
+                "delete": "http://localhost:7777/v1/resources/fdx7t/providers/osfstorage/5dfa607b68c81e0de2f53cc7"
+            },
+            "attributes": {
+                "extra": {
+                    "hashes": {
+                        "sha256": "4b32a5d6389ef3654d4d6fbd82d795b87aa1dfa400ece769ee9e8bee8d163daa",
+                        "md5": "419179eee155429fe3b0c2423d28965b"
+                    },
+                    "downloads": 0
+                },
+                "kind": "file",
+                "name": "TD-receptions-in-SB-by-QB.csv",
+                "last_touched": null,
+                "materialized_path": "/Storage Data/TD-receptions-in-SB-by-QB.csv",
+                "date_modified": "2019-12-18T17:23:07.401306Z",
+                "current_version": 1,
+                "date_created": "2019-12-18T17:23:07.401306Z",
+                "provider": "osfstorage",
+                "path": "/5dfa607b68c81e0de2f53cc7",
+                "current_user_can_comment": true,
+                "guid": null,
+                "checkout": null,
+                "tags": [],
+                "size": 91
+            },
+            "type": "files",
+            "id": "5dfa607b68c81e0de2f53cc7"
+        }
+    ],
+    "meta": {
+        "total": 1,
+        "per_page": 10,
+        "version": "2.19"
+    },
+    "links": {
+        "self": "http://localhost:8000/v2/nodes/fdx7t/files/osfstorage/5dfa59bd68c81e0cd373cea5/",
+        "first": null,
+        "last": null,
+        "prev": null,
+        "next": null
+    }
+}
