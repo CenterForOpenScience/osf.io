@@ -103,7 +103,9 @@ def ban_url(instance):
 
 
 @app.task(max_retries=5, default_retry_delay=10)
-def update_storage_usage_cache(target_id, target_guid, per_page=5000):
+def update_storage_usage_cache(target_id, target_guid, per_page=500000):
+    if not settings.ENABLE_STORAGE_USAGE_CACHE:
+        return
     sql = """
         SELECT count(size), sum(size) from
         (SELECT size FROM osf_basefileversionsthrough AS obfnv
@@ -122,11 +124,11 @@ def update_storage_usage_cache(target_id, target_guid, per_page=5000):
     storage_usage_total = 0
     with connection.cursor() as cursor:
         while count:
-                cursor.execute(sql, [target_id, per_page, offset])
-                result = cursor.fetchall()
-                storage_usage_total += int(result[0][1]) if result[0][1] else 0
-                count = int(result[0][0]) if result[0][0] else 0
-                offset += count
+            cursor.execute(sql, [target_id, per_page, offset])
+            result = cursor.fetchall()
+            storage_usage_total += int(result[0][1]) if result[0][1] else 0
+            count = int(result[0][0]) if result[0][0] else 0
+            offset += count
 
     key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_guid)
     storage_usage_cache.set(key, storage_usage_total, cache_settings.FIVE_MIN_TIMEOUT)
