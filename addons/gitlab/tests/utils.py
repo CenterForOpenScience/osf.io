@@ -108,9 +108,55 @@ def create_mock_gitlab(user='osfio', private=False):
         u'protected': True
     })
 
+    branch_2 = mock.Mock(**{
+        u'commit': {u'author_email': u'{}@yahoo.com'.format(user),
+            u'author_name': u''.format(user),
+            u'authored_date': u'2017-03-05T16:43:04.000+00:00',
+            u'committed_date': u'2017-09-05T16:43:04.000+00:00',
+            u'committer_email': u'{}@yahoo.com'.format(user),
+            u'committer_name': u'{}'.format(user),
+            u'created_at': u'2017-011-05T16:43:04.000+00:00',
+            u'id': u'f064566f133ddfad636ceec72c5937cc0044c371',
+            u'message': u'Fixing tests',
+            u'parent_ids': [],
+            u'short_id': u'f0633345',
+            u'title': u'Add readme.md'},
+        u'developers_can_merge': False,
+        u'developers_can_push': False,
+        u'merged': False,
+        u'protected': True
+    })
+
     # Hack because 'name' is a reserved keyword in a Mock object
     type(branch).name = 'master'
 
     gitlab_mock.branches.return_value = [branch]
 
     return gitlab_mock
+
+"""Below mock session functions come from github3.py library: tests.unit.helper.py"""
+
+def get_build_url_proxy(*args, **kwargs):
+    return github3.session.GitHubSession().build_url(*args, **kwargs)
+
+def create_mocked_session():
+    """Use mock to auto-spec a GitHubSession and return an instance."""
+    MockedSession = mock.create_autospec(github3.session.GitHubSession)
+    return MockedSession()
+
+def create_session_mock(*args):
+    """Create a mocked session and add headers and auth attributes."""
+    session = create_mocked_session()
+    base_attrs = ['headers', 'auth']
+    attrs = dict(
+        (key, mock.Mock()) for key in set(args).union(base_attrs)
+    )
+    session.configure_mock(**attrs)
+    session.delete.return_value = None
+    session.get.return_value = None
+    session.patch.return_value = None
+    session.post.return_value = None
+    session.put.return_value = None
+    session.has_auth.return_value = True
+    session.build_url = get_build_url_proxy
+    return session

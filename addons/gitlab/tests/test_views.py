@@ -23,7 +23,7 @@ from addons.gitlab import utils
 from addons.gitlab.api import GitLabClient
 from addons.gitlab.serializer import GitLabSerializer
 from addons.gitlab.utils import check_permissions
-from addons.gitlab.tests.utils import create_mock_gitlab, GitLabAddonTestCase
+from addons.gitlab.tests.utils import create_mock_gitlab, GitLabAddonTestCase, create_session_mock
 from addons.gitlab.tests.factories import GitLabAccountFactory
 
 pytestmark = pytest.mark.django_db
@@ -452,6 +452,7 @@ class TestGitLabSettings(OsfTestCase):
         self.project = ProjectFactory()
         self.auth = self.project.creator.auth
         self.consolidated_auth = Auth(user=self.project.creator)
+        self.session = create_session_mock()
 
         self.project.add_addon('gitlab', auth=self.consolidated_auth)
         self.project.creator.add_addon('gitlab')
@@ -535,20 +536,8 @@ class TestGitLabSettings(OsfTestCase):
     def test_link_repo_registration(self, mock_branches):
 
         mock_branches.return_value = [
-            Branch.from_json(dumps({
-                'name': 'master',
-                'commit': {
-                    'sha': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-                    'url': 'https://api.gitlab.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc',
-                }
-            })),
-            Branch.from_json(dumps({
-                'name': 'develop',
-                'commit': {
-                    'sha': '6dcb09b5b57875asdasedawedawedwedaewdwdass',
-                    'url': 'https://api.gitlab.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
-                }
-            }))
+            Branch.from_json(self.gitlab.branch, self.session),
+            Branch.from_json(self.gitlab.branch_2, self.session)
         ]
 
         registration = self.project.register_node(
