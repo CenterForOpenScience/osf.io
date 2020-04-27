@@ -3585,7 +3585,7 @@ msgstr "タイムスタンプ確認"
 
 #: website/templates/project/timestamp.mako:70
 msgid "Request Trusted Timestamp"
-msgstr "タイムスタンプ取得"
+msgstr "タイムスタンプを打つ"
 
 #: website/templates/project/timestamp.mako:81
 msgid "Processing, please wait..."
