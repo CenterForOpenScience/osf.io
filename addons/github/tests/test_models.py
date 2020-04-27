@@ -23,8 +23,9 @@ from framework.auth import Auth
 from addons.base import exceptions
 from addons.github.exceptions import NotFoundError
 
-from .utils import create_mock_github
+from .utils import create_mock_github, create_session_mock
 mock_github = create_mock_github()
+session = create_session_mock()
 
 pytestmark = pytest.mark.django_db
 
@@ -102,12 +103,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
     @mock.patch('addons.github.api.GitHubClient.repos')
     @mock.patch('addons.github.api.GitHubClient.check_authorization')
     def test_get_folders(self, mock_check_authorization, mock_repos):
-        mock_repos.return_value = [Repository.from_json(dumps({'name': 'test',
-                                                         'id': '12345',
-                                                         'owner':
-                                                             {'login': 'test name'}
-                                                         }))
-                                   ]
+        mock_repos.return_value = [mock_repos.repo.return_value]
         result = self.node_settings.get_folders()
 
         assert_equal(len(result), 1)
@@ -120,12 +116,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
     @mock.patch('addons.github.api.GitHubClient.repos')
     @mock.patch('addons.github.api.GitHubClient.check_authorization')
     def test_get_folders_not_have_auth(self, mock_repos, mock_check_authorization):
-        mock_repos.return_value = [Repository.from_json(dumps({'name': 'test',
-                                                         'id': '12345',
-                                                         'owner':
-                                                             {'login': 'test name'}
-                                                         }))
-                                   ]
+        mock_repos.return_value = [mock_repos.repo.return_value]
         self.node_settings.user_settings = None
         with pytest.raises(exceptions.InvalidAuthError):
             self.node_settings.get_folders()
@@ -185,7 +176,7 @@ class TestCallbacks(OsfTestCase):
     def test_before_page_load_osf_public_gh_public(self, mock_repo):
         self.project.is_public = True
         self.project.save()
-        mock_repo.return_value = Repository.from_json(dumps({'private': False}))
+        mock_repo.return_value = mock_repo.repo.return_value
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -197,7 +188,7 @@ class TestCallbacks(OsfTestCase):
     def test_before_page_load_osf_public_gh_private(self, mock_repo):
         self.project.is_public = True
         self.project.save()
-        mock_repo.return_value = Repository.from_json(dumps({'private': True}))
+        mock_repo.return_value = mock_repo.repo.return_value
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -207,7 +198,7 @@ class TestCallbacks(OsfTestCase):
 
     @mock.patch('addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_private_gh_public(self, mock_repo):
-        mock_repo.return_value = Repository.from_json(dumps({'private': False}))
+        mock_repo.return_value = mock_repo.repo.return_value
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -217,7 +208,7 @@ class TestCallbacks(OsfTestCase):
 
     @mock.patch('addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_private_gh_private(self, mock_repo):
-        mock_repo.return_value = Repository.from_json(dumps({'private': True}))
+        mock_repo.return_value = mock_repo.repo.return_value
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
