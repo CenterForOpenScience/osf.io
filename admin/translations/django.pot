@@ -19,6 +19,34 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.7.0\n"
 
+#: .\admin\rdm_statistics\views.py:198
+msgid "Number of files"
+msgstr ""
+
+#: .\admin\rdm_statistics\views.py:199 .\admin\rdm_statistics\views.py:218
+msgid "File Numbers"
+msgstr ""
+
+#: .\admin\rdm_statistics\views.py:200
+msgid "number"
+msgstr ""
+
+#: .\admin\rdm_statistics\views.py:209
+msgid "Subtotal of file sizes"
+msgstr ""
+
+#: .\admin\rdm_statistics\views.py:210
+msgid "File Sizes"
+msgstr ""
+
+#: .\admin\rdm_statistics\views.py:211
+msgid "size"
+msgstr ""
+
+#: .\admin\rdm_statistics\views.py:217
+msgid "Number of files by extension type"
+msgstr ""
+
 #: .\templates\banners\confirm_delete.html:4
 msgid "GakuNin RDM Admin | Delete banner"
 msgstr ""
@@ -218,7 +246,7 @@ msgid "RDM Subjects"
 msgstr ""
 
 #: .\templates\base.html:246
-msgid "OSF Groups"
+msgid "RDM Groups"
 msgstr ""
 
 #: .\templates\base.html:250
@@ -1930,7 +1958,7 @@ msgstr ""
 
 #: .\templates\rdm_announcement\settings.html:84
 #, python-format
-msgid "%(form.redmine_api_key.label)s"
+msgid "%(redmineApiKey)s"
 msgstr ""
 
 #: .\templates\rdm_custom_storage_location\institutional_storage.html:20
@@ -2159,12 +2187,12 @@ msgstr ""
 
 #: .\templates\rdm_timestampadd\node_list.html:95
 #, python-format
-msgid "%(node.retraction)s"
+msgid "%(nodeRetraction)s"
 msgstr ""
 
 #: .\templates\rdm_timestampadd\node_list.html:98
 #, python-format
-msgid "%(node.embargo)s"
+msgid "%(nodeEmbargo)s"
 msgstr ""
 
 #: .\templates\rdm_timestampadd\timestampadd.html:16
@@ -2371,14 +2399,6 @@ msgstr ""
 
 #: .\templates\spam\user.html:15 .\templates\users\user.html:157
 msgid "User details"
-msgstr ""
-
-#: .\templates\testIndex.html:10
-msgid "Hello"
-msgstr ""
-
-#: .\templates\testIndex.html:10
-msgid "Click here"
 msgstr ""
 
 #: .\templates\users\GDPR_delete_user.html:5
