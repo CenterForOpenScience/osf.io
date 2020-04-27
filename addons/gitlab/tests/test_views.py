@@ -6,6 +6,7 @@ import datetime
 import pytest
 import unittest
 from json import dumps
+import github3
 
 from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase, get_default_metaschema

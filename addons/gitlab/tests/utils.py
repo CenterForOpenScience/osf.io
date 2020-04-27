@@ -1,5 +1,6 @@
 import mock
 from addons.gitlab.api import GitLabClient
+import github3
 
 from addons.base.tests.base import OAuthAddonTestCaseMixin, AddonTestCase
 from addons.gitlab.models import GitLabProvider

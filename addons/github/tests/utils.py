@@ -68,7 +68,7 @@ def create_mock_github(user='octo-cat', private=False):
      u'forks': 89,
      u'forks_count': 89,
      u'forks_url': u'https://api.github.com/repos/{user}/mock-repo/forks',
-     u'full_name': u'{user}/mock-repo',
+     u'full_name': u'{user}/mock-repo'.format(user=user),
      u'git_commits_url': u'https://api.github.com/repos/{user}/mock-repo/git/commits{{/sha}}'.format(user=user),
      u'git_refs_url': u'https://api.github.com/repos/{user}/mock-repo/git/refs{{/sha}}'.format(user=user),
      u'git_tags_url': u'https://api.github.com/repos/{user}/mock-repo/git/tags{{/sha}}'.format(user=user),
