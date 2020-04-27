@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-21 10:18+0900\n"
-"PO-Revision-Date: 2020-04-21 10:53+0900\n"
+"POT-Creation-Date: 2020-04-27 18:23+0900\n"
+"PO-Revision-Date: 2020-04-27 18:52+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -48,6 +48,10 @@ msgstr "サイズ"
 #: .\admin\rdm_statistics\views.py:217
 msgid "Number of files by extension type"
 msgstr "拡張子タイプごとのファイル数"
+
+#: .\admin\rdm_statistics\views.py:282 .\admin\rdm_statistics\views.py:430
+msgid "%1$s in %2$s"
+msgstr "%2$sの%1$s"
 
 #: .\templates\banners\confirm_delete.html:4
 msgid "GakuNin RDM Admin | Delete banner"
@@ -2696,3 +2700,4 @@ msgstr "選択したユーザーはスパムですか？"
 #, python-format
 msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
 msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
+
