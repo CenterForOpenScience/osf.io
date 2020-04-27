@@ -200,12 +200,19 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
 
                     if active is not None:
                         self.set_sloan_tags(user, sloan_flag_name, active)
-                        self.set_sloan_cookie(f'dwf_{sloan_flag_name}', active, request, response)
+                        self.set_sloan_cookie(
+                            f'dwf_{sloan_flag_name}',
+                            active,
+                            request.environ['HTTP_REFERER'],
+                            request,
+                            response,
+                        )
 
                         if provider.domain_redirect_enabled and provider.domain:
                             self.set_sloan_cookie(
                                 f'dwf_{sloan_flag_name}_custom_domain',
                                 active,
+                                request.environ['HTTP_REFERER'],
                                 request,
                                 response,
                                 custom_domain=provider.domain,
@@ -215,10 +222,33 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
                                 self.set_sloan_cookie(
                                     settings.SLOAN_ID_COOKIE_NAME,
                                     str(uuid.uuid4()),
+                                    request.environ['HTTP_REFERER'],
                                     request,
                                     response,
                                     custom_domain=provider.domain,
                                 )
+
+            elif user:
+                for sloan_flag_name in SLOAN_FLAGS:
+                    tag = SLOAN_FEATURES[sloan_flag_name]
+                    if user.all_tags.filter(name=tag).exists():
+                        response.data['meta']['active_flags'].append(sloan_flag_name)
+                        self.set_sloan_cookie(
+                            f'dwf_{sloan_flag_name}',
+                            True,
+                            request.environ['SERVER_NAME'],
+                            request,
+                            response,
+                        )
+
+                    elif user.all_tags.filter(name=f'no_{tag}').exists():
+                        self.set_sloan_cookie(
+                            f'dwf_{sloan_flag_name}',
+                            False,
+                            request.environ['SERVER_NAME'],
+                            request,
+                            response,
+                        )
 
                     response.data['meta']['active_flags'].append(sloan_flag_name)
 
@@ -230,7 +260,13 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
 
         # Give all users a unique id 'sloan_id` cookie, logged in or not.
         if not request.COOKIES.get(settings.SLOAN_ID_COOKIE_NAME):
-            self.set_sloan_cookie(settings.SLOAN_ID_COOKIE_NAME, str(uuid.uuid4()), request, response)
+            self.set_sloan_cookie(
+                settings.SLOAN_ID_COOKIE_NAME,
+                str(uuid.uuid4()),
+                request.environ['SERVER_NAME'] or request.environ.get('HTTP_REFERER'),
+                request,
+                response,
+            )
 
         return super(SloanOverrideWaffleMiddleware, self).process_response(request, response)
 
@@ -337,7 +373,7 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
             else:
                 user.add_system_tag(f'no_{tag_name}')
 
-    def set_sloan_cookie(self, name: str, value, request, resp, custom_domain=None):
+    def set_sloan_cookie(self, name: str, value, url, request, resp, custom_domain=None):
         """
         Set sloan cookies to sloan study specifications
         :param name: The name of the flag that will get a cookie
@@ -352,10 +388,7 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
 
         resp.cookies[name]['path'] = '/'
 
-        if request.environ.get('HTTP_REFERER') is None:
-            resp.cookies[name]['domain'] = settings.CSRF_COOKIE_DOMAIN
-        else:
-            resp.cookies[name]['domain'] = self.get_domain(request.environ['HTTP_REFERER'])
+        resp.cookies[name]['domain'] = self.get_domain(url)
 
         if custom_domain:
             resp.cookies[name]['domain'] = '.' + urlparse(custom_domain).netloc
