@@ -2,9 +2,6 @@
 # Copyright (C) 2020 ORGANIZATION
 # This file is distributed under the same license as the  project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
-# 1.{% trans "XXX" %} is extracted by the command 'django-admin makemessages
-# --keep-pot -l ja'
-# 2.edit the header to babel extracting form.
 #
 msgid ""
 msgstr ""
@@ -20,34 +17,6 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.7.0\n"
-
-#: .\admin\rdm_statistics\views.py:198
-msgid "Number of files"
-msgstr "ファイル数"
-
-#: .\admin\rdm_statistics\views.py:199 .\admin\rdm_statistics\views.py:218
-msgid "File Numbers"
-msgstr "ファイル数"
-
-#: .\admin\rdm_statistics\views.py:200
-msgid "number"
-msgstr "数"
-
-#: .\admin\rdm_statistics\views.py:209
-msgid "Subtotal of file sizes"
-msgstr "ファイルサイズの小計"
-
-#: .\admin\rdm_statistics\views.py:210
-msgid "File Sizes"
-msgstr "ファイルサイズ"
-
-#: .\admin\rdm_statistics\views.py:211
-msgid "size"
-msgstr "サイズ"
-
-#: .\admin\rdm_statistics\views.py:217
-msgid "Number of files by extension type"
-msgstr "拡張子タイプごとのファイル数"
 
 #: .\templates\banners\confirm_delete.html:4
 msgid "GakuNin RDM Admin | Delete banner"
@@ -1983,8 +1952,7 @@ msgid "%(redmineApiUrl)s"
 msgstr ""
 
 #: .\templates\rdm_announcement\settings.html:84
-#, python-format
-msgid "%(redmineApiKey)s"
+msgid "%(form.redmine_api_key.label)s"
 msgstr ""
 
 #: .\templates\rdm_custom_storage_location\institutional_storage.html:20
@@ -2225,13 +2193,11 @@ msgid "download CSV"
 msgstr "CSVダウンロード"
 
 #: .\templates\rdm_timestampadd\node_list.html:95
-#, python-format
-msgid "%(nodeRetraction)s"
+msgid "%(node.retraction)s"
 msgstr ""
 
 #: .\templates\rdm_timestampadd\node_list.html:98
-#, python-format
-msgid "%(nodeEmbargo)s"
+msgid "%(node.embargo)s"
 msgstr ""
 
 #: .\templates\rdm_timestampadd\timestampadd.html:16
@@ -2443,6 +2409,14 @@ msgstr "スパムのユーザーのリスト"
 #: .\templates\spam\user.html:15 .\templates\users\user.html:157
 msgid "User details"
 msgstr "ユーザ詳細"
+
+#: .\templates\testIndex.html:10
+msgid "Hello"
+msgstr "こんにちは"
+
+#: .\templates\testIndex.html:10
+msgid "Click here"
+msgstr "ここをクリック"
 
 # | msgid "Are you sure you want to delete this user? %(guid)s"
 #: .\templates\users\GDPR_delete_user.html:5
@@ -2696,3 +2670,38 @@ msgstr "選択したユーザーはスパムですか？"
 #, python-format
 msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
 msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
+
+#~ msgid "Monthly Growth of MAU%"
+#~ msgstr "MAU%の毎月の成長"
+
+#, python-format
+msgid "Email"
+msgstr "eメール"
+
+#, python-format
+msgid "API Key"
+msgstr "APIキー"
+
+#, python-format
+msgid "API Secret"
+msgstr "APIシークレット"
+
+#, python-format
+msgid "Access Token"
+msgstr "アクセストークン"
+
+#, python-format
+msgid "Access Token Secret"
+msgstr "アクセストークンシークレット"
+
+#, python-format
+msgid "API URL"
+msgstr "API URL"
+
+#, python-format
+msgid "API Key"
+msgstr "APIキー"
+
+#, python-format
+msgid "None"
+msgstr "無し"
