@@ -3833,7 +3833,7 @@ msgstr "チェックイン"
 
 #: website/static/js/filepage/index.js:514
 msgid "Request Trusted Timestamp"
-msgstr "タイムスタンプ取得"
+msgstr "タイムスタンプを打つ"
 
 #: website/static/js/filepage/index.js:531
 msgid "Toggle view: "
