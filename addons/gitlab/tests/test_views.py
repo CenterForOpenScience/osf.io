@@ -535,11 +535,9 @@ class TestGitLabSettings(OsfTestCase):
 
     @mock.patch('addons.gitlab.api.GitLabClient.branches')
     def test_link_repo_registration(self, mock_branches):
+        mock_gitlab = create_mock_gitlab()
 
-        mock_branches.return_value = [
-            Branch.from_json(self.gitlab.branch, self.session),
-            Branch.from_json(self.gitlab.branch_2, self.session)
-        ]
+        mock_branches.return_value = mock_gitlab.branches.return_value
 
         registration = self.project.register_node(
             schema=get_default_metaschema(),

@@ -2,6 +2,8 @@ import mock
 from addons.gitlab.api import GitLabClient
 import github3
 
+from github3.repos.branch import Branch
+
 from addons.base.tests.base import OAuthAddonTestCaseMixin, AddonTestCase
 from addons.gitlab.models import GitLabProvider
 from addons.gitlab.tests.factories import GitLabAccountFactory
@@ -38,6 +40,7 @@ def create_mock_gitlab(user='osfio', private=False):
     :return: An autospecced GitLab Mock object
     """
     gitlab_mock = mock.create_autospec(GitLabClient)
+    session = create_session_mock()
 
     gitlab_mock.repo = mock.Mock(**{
         u'approvals_before_merge': 0,
@@ -131,7 +134,7 @@ def create_mock_gitlab(user='osfio', private=False):
     # Hack because 'name' is a reserved keyword in a Mock object
     type(branch).name = 'master'
 
-    gitlab_mock.branches.return_value = [branch]
+    gitlab_mock.branches.return_value = [branch, branch_2]
 
     return gitlab_mock
 

@@ -317,7 +317,7 @@ def create_mock_github(user='octo-cat', private=False):
         },
         u'protected': False,
         u'protection_url': u'https://api.github.com/repos/{user}/github3.py/branches/master/protection'.format(user=user),
-        u'name': u'dev'
+        u'name': u'master'
     }), session)
 
     branch_3 = Branch.from_json(dumps({
@@ -406,7 +406,7 @@ def create_mock_github(user='octo-cat', private=False):
         },
         u'protected': False,
         u'protection_url': u'https://api.github.com/repos/{user}/github3.py/branches/master/protection'.format(user=user),
-        u'name': u'dev'
+        u'name': u'1.3.0'
     }), session)
 
     github_mock.branches.return_value =[branch_1, branch_2, branch_3]

@@ -129,7 +129,7 @@ class TestGithubViews(OsfTestCase):
     def _get_sha_for_branch(self, branch=None, mock_branches=None):
         github_mock = self.github
         if mock_branches is None:
-            mock_branches = github_mock.branches
+            mock_branches = self.github.branches
         if branch is None:  # Get default branch name
             branch = self.github.repo.return_value.default_branch
         for each in mock_branches.return_value:
