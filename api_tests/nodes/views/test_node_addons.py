@@ -743,11 +743,11 @@ class TestNodeGitHubAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
 
     @property
     def _mock_folder_result(self):
-        return {u'path': u'test name/test',
+        return {u'path': u'octo-cat/mock-repo',
                 u'kind': u'repo',
-                u'name': u'test',
+                u'name': u'mock-repo',
                 u'provider': u'github',
-                u'id': u'12345'}
+                u'id': u'11075275'}
 
 
 class TestNodeMendeleyAddon(
