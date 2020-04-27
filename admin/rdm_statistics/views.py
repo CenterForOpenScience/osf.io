@@ -45,7 +45,7 @@ from admin.rdm.utils import RdmPermissionMixin, get_dummy_institution
 from admin.rdm_addons import utils
 import logging
 
-from flask_babel import lazy_gettext as _
+from django.utils.translation import ugettext_lazy as _
 
 logger = logging.getLogger(__name__)
 
