@@ -242,3 +242,16 @@ class TestSloanStudyWaffling:
     def test_get_domain(self, url, expected_domain):
         actual_domain = SloanOverrideWaffleMiddleware.get_domain(url)
         assert actual_domain == expected_domain
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_user_override_cookie(self, app, user, preprint):
+        user.add_system_tag(SLOAN_COI)
+        cookies = {
+            SLOAN_COI_DISPLAY: 'False',
+        }
+
+        resp = app.get('/v2/', auth=user.auth, cookies=cookies)
+
+        cookies = resp.headers.getall('Set-Cookie')
+
+        assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=.osf.io; Path=/; samesite=None; Secure' in cookies
