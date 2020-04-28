@@ -1959,6 +1959,6 @@ REG_METRICS_BASE_FOLDER = None
 
 # Region names
 USA = 'United States'
-GERMANY = 'Germany - Franfrut'
+GERMANY = 'Germany - Frankfurt'
 CANADA = u'Canada - Montréal'
 AUSTRALIA = 'Australia - Sydney'
