@@ -313,17 +313,18 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
 
     @staticmethod
     def override_flag_activity(sloan_flag_name, waffles_data, user):
+        active = None
         if waffles_data and waffles_data.get(sloan_flag_name):
             active = Flag.objects.get(name=sloan_flag_name).everyone or waffles_data[sloan_flag_name][0]
 
-            if user and not user.is_anonymous:
-                tag_name = SLOAN_FEATURES[sloan_flag_name]
-                if user.all_tags.filter(name=tag_name).exists():
-                    active = True
-                elif user.all_tags.filter(name=f'no_{tag_name}').exists():
-                    active = False
+        if user and not user.is_anonymous:
+            tag_name = SLOAN_FEATURES[sloan_flag_name]
+            if user.all_tags.filter(name=tag_name).exists():
+                active = True
+            elif user.all_tags.filter(name=f'no_{tag_name}').exists():
+                active = False
 
-            return active
+        return active
 
     @staticmethod
     def set_sloan_tags(user, flag_name: str, flag_value: bool):
