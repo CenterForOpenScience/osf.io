@@ -445,7 +445,7 @@
             </div>
             % if not node['is_registration'] and not node['anonymous'] and permissions.WRITE in user['permissions']:
                 <div class="row">
-                    <div class="col-sm-12 m-t-sm m-l-md" style="padding-right:30px">
+                    <div class="col-sm-12 m-t-sm m-l-md" style="padding-right:60px">
                         <span class="f-w-xl">${_("Click on a storage provider or drag and drop to upload")}</span>
                     </div>
                 </div>
