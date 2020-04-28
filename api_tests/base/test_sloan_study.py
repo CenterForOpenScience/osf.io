@@ -3,7 +3,7 @@ import pytest
 from decimal import Decimal
 
 from waffle.models import Flag
-from website.settings import DOMAIN, TRAVIS_MODE
+from website.settings import DOMAIN
 from api.base.middleware import SloanOverrideWaffleMiddleware
 
 from osf_tests.factories import (
@@ -40,7 +40,6 @@ def inactive(*args, **kwargs):
 
 
 @pytest.mark.django_db
-@pytest.mark.skipif(TRAVIS_MODE, reason='Travis is balking at the idea of sending secure cookies via the testing app.')
 class TestSloanStudyWaffling:
     """
     DEV_MODE is mocked so cookies they behave as if they were using https.
