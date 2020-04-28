@@ -1535,6 +1535,7 @@ def create_index(index=None):
             elif type_ == 'file' or type_ == 'wiki':
                 fields = {
                     'name': analyzer,
+                    'node_title': analyzer,
                     'text': analyzer,
                 }
                 mapping['properties'].update(fields)

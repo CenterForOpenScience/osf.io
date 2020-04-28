@@ -263,7 +263,7 @@ def convert_query_string(qs, normalize=False):
     else:
         return qs
 
-def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
+def build_private_search_query(user, qs='*', start=0, size=10, sort=None, highlight=None):
     match_node = {
         'bool': {
             'must': [
@@ -416,17 +416,40 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
         }
     }
 
+    highlight_fields = {}
+    # Example:
+    # highlight='title:30,comments.*:30'
+    #   ->
+    # highlight_fields = {
+    #     'title': {
+    #         'fragment_size': 30,
+    #     },
+    #     'comments.*': {
+    #         'fragment_size': 124,
+    #     },
+    # }
+    if highlight:
+        fields = highlight.split(',')
+        for field in fields:
+            key_val = field.split(':')
+            if len(key_val) >= 1:
+                key = key_val[0]
+                if len(key_val) == 2:
+                    try:
+                        val = int(key_val[1])
+                    except Exception:
+                        val = settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE
+                else:
+                    val = settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE
+                highlight_fields[key] = {'fragment_size': val}
+
     query = {
         'query': query_body,
         'highlight': {
-            'fragment_size': settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE,
             'number_of_fragments': 1,
             'pre_tags': ['<b>'],
             'post_tags': ['</b>'],
-            'fields': {
-                #'text': {},
-                '*': {},
-            },
+            'fields': highlight_fields,
             'require_field_match': False,
             'highlight_query': inner_query,
         },

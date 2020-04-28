@@ -60,8 +60,10 @@ def build_query(query_string):
         'size': 100
     }
 
+HIGHLIGHT_SIZE_TITLE = 30
+HIGHLIGHT_SIZE_TEXT = 124
 
-def build_private_search_query(query_string, version=1, sort=None):
+def build_private_search_query(query_string, version=1, sort=None, highlight=None):
     q = {
         'api_version': {
             'version': version,
@@ -71,6 +73,9 @@ def build_private_search_query(query_string, version=1, sort=None):
     }
     if sort:
         q['sort'] = sort
+    if highlight is None:
+        q['highlight'] = 'title:{},name:{},user:{},text:{},comments.*:{}'.format(HIGHLIGHT_SIZE_TITLE, HIGHLIGHT_SIZE_TITLE, HIGHLIGHT_SIZE_TITLE, HIGHLIGHT_SIZE_TEXT, HIGHLIGHT_SIZE_TEXT)
+
     DEBUG('build_private_search_query', q)
     return q
 
@@ -1913,10 +1918,8 @@ class TestSearchHighlight(OsfTestCase):
             assert_equal(comment['replyto_user_name'], None)
             assert_in(self._tagged(qs), comment['text'])
             size = len(comment['text'])
-            assert_greater_equal(size,
-                                 settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE)
-            assert_less_equal(size,
-                              settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE + self.taglen)
+            assert_greater_equal(size, HIGHLIGHT_SIZE_TEXT)
+            assert_less_equal(size, HIGHLIGHT_SIZE_TEXT + self.taglen)
 
             qs = u'じずぜ'
             res, results = _search(qs)
@@ -1929,10 +1932,9 @@ class TestSearchHighlight(OsfTestCase):
             assert_equal(comment['replyto_user_id'], u1._id)
             assert_equal(comment['replyto_user_name'], u1.fullname)
             assert_in(self._tagged(qs), comment['text'])
-            assert_greater_equal(len(comment['text']),
-                                 settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE)
-            assert_less_equal(len(comment['text']),
-                              settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE + self.taglen)
+            size = len(comment['text'])
+            assert_greater_equal(size, HIGHLIGHT_SIZE_TEXT)
+            assert_less_equal(size, HIGHLIGHT_SIZE_TEXT + self.taglen)
 
         run_after_rebuild_search(self, test1)
 
@@ -1981,10 +1983,8 @@ class TestSearchHighlight(OsfTestCase):
             assert_equal(comment['replyto_user_name'], None)
             assert_in(self._tagged(qs), comment['text'])
             size = len(comment['text'])
-            assert_greater_equal(size,
-                                 settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE)
-            assert_less_equal(size,
-                              settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE + self.taglen)
+            assert_greater_equal(size, HIGHLIGHT_SIZE_TEXT)
+            assert_less_equal(size, HIGHLIGHT_SIZE_TEXT + self.taglen)
 
             qs = u'じずぜ'
             res, results = _search(qs)
@@ -1997,10 +1997,9 @@ class TestSearchHighlight(OsfTestCase):
             assert_equal(comment['replyto_user_id'], u1._id)
             assert_equal(comment['replyto_user_name'], u1.fullname)
             assert_in(self._tagged(qs), comment['text'])
-            assert_greater_equal(len(comment['text']),
-                                 settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE)
-            assert_less_equal(len(comment['text']),
-                              settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE + self.taglen)
+            size = len(comment['text'])
+            assert_greater_equal(size, HIGHLIGHT_SIZE_TEXT)
+            assert_less_equal(size, HIGHLIGHT_SIZE_TEXT + self.taglen)
 
         run_after_rebuild_search(self, test1)
 
@@ -2049,10 +2048,8 @@ class TestSearchHighlight(OsfTestCase):
             assert_equal(comment['replyto_user_name'], None)
             assert_in(self._tagged(qs), comment['text'])
             size = len(comment['text'])
-            assert_greater_equal(size,
-                                 settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE)
-            assert_less_equal(size,
-                              settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE + self.taglen)
+            assert_greater_equal(size, HIGHLIGHT_SIZE_TEXT)
+            assert_less_equal(size, HIGHLIGHT_SIZE_TEXT + self.taglen)
 
             qs = u'じずぜ'
             res, results = _search(qs)
@@ -2065,12 +2062,70 @@ class TestSearchHighlight(OsfTestCase):
             assert_equal(comment['replyto_user_id'], u1._id)
             assert_equal(comment['replyto_user_name'], u1.fullname)
             assert_in(self._tagged(qs), comment['text'])
-            assert_greater_equal(len(comment['text']),
-                                 settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE)
-            assert_less_equal(len(comment['text']),
-                              settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE + self.taglen)
+            size = len(comment['text'])
+            assert_greater_equal(size, HIGHLIGHT_SIZE_TEXT)
+            assert_less_equal(size, HIGHLIGHT_SIZE_TEXT + self.taglen)
 
         run_after_rebuild_search(self, test1)
+
+    @enable_private_search
+    def test_highlight_project_title(self):
+        """
+        プロジェクト名のスニペットが返ることを確認する。
+        """
+        with run_celery_tasks():
+            u1 = factories.AuthUserFactory()
+            p1 = factories.ProjectFactory(
+                title=self._gen_text(u'だぢづでど', 100),
+                creator=u1, is_public=False)
+
+        def _search(qs):
+            return query_private_search(
+                self, qs, u1, category='project', version=2)
+
+        def test1():
+            qs = u'ぢづで'
+            res, results = _search(qs)
+            DEBUG('results', results)
+            assert_equal(len(results), 1)
+            r = results[0]
+            assert_equal(r['id'], p1._id)
+            title = r['highlight']['title'][0]
+            assert_in(self._tagged(qs), title)
+            size = len(title)
+            assert_greater_equal(size, HIGHLIGHT_SIZE_TITLE)
+            assert_less_equal(size, HIGHLIGHT_SIZE_TITLE + self.taglen)
+
+    @enable_private_search
+    def test_highlight_file_name(self):
+        """
+        ファイル名のスニペットが返ることを確認する。
+        """
+        with run_celery_tasks():
+            u1 = factories.AuthUserFactory()
+            p1 = factories.ProjectFactory(creator=u1, is_public=False)
+            rootdir = p1.get_addon('osfstorage').get_root()
+            f1 = api_utils.create_test_file(
+                p1, u1,
+                filename=self._gen_text(u'だぢづでど', 100),
+                create_guid=True)
+
+        def _search(qs):
+            return query_private_search(
+                self, qs, u1, category='file', version=2)
+
+        def test1():
+            qs = u'ぢづで'
+            res, results = _search(qs)
+            DEBUG('results', results)
+            assert_equal(len(results), 1)
+            r = results[0]
+            assert_equal(r['id'], f1._id)
+            title = r['highlight']['name'][0]
+            assert_in(self._tagged(qs), title)
+            size = len(title)
+            assert_greater_equal(size, HIGHLIGHT_SIZE_TITLE)
+            assert_less_equal(size, HIGHLIGHT_SIZE_TITLE + self.taglen)
 
     @enable_private_search
     def test_highlight_wiki_title_text(self):
@@ -2079,7 +2134,6 @@ class TestSearchHighlight(OsfTestCase):
         """
         with run_celery_tasks():
             u1 = factories.AuthUserFactory()
-            u2 = factories.AuthUserFactory()
             p1 = factories.ProjectFactory(creator=u1, is_public=False)
             w1 = WikiPage.objects.create_for_node(
                 p1,
@@ -2100,7 +2154,9 @@ class TestSearchHighlight(OsfTestCase):
             assert_equal(r['id'], w1._id)
             title = r['highlight']['name'][0]
             assert_in(self._tagged(qs), title)
-            ### title length < highlight fragment size
+            size = len(title)
+            assert_greater_equal(size, HIGHLIGHT_SIZE_TITLE)
+            assert_less_equal(size, HIGHLIGHT_SIZE_TITLE + self.taglen)
 
             qs = u'びぶべ'
             res, results = _search(qs)
@@ -2111,12 +2167,62 @@ class TestSearchHighlight(OsfTestCase):
             text = r['highlight']['text'][0]
             assert_in(self._tagged(qs), text)
             size = len(text)
-            assert_greater_equal(size,
-                                 settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE)
-            assert_less_equal(size,
-                              settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE + self.taglen)
+            assert_greater_equal(size, HIGHLIGHT_SIZE_TEXT)
+            assert_less_equal(size, HIGHLIGHT_SIZE_TEXT + self.taglen)
 
         run_after_rebuild_search(self, test1)
+
+    @enable_private_search
+    def test_highlight_user_name(self):
+        """
+        ユーザーのfullnameのスニペットが返ることを確認する。
+        """
+        with run_celery_tasks():
+            u1 = factories.AuthUserFactory(
+                fullname=self._gen_text(u'だぢづでど', 100))
+
+        def _search(qs):
+            return query_private_search(
+                self, qs, u1, category='user', version=2)
+
+        def test1():
+            qs = u'ぢづで'
+            res, results = _search(qs)
+            DEBUG('results', results)
+            assert_equal(len(results), 1)
+            r = results[0]
+            assert_equal(r['id'], u1._id)
+            title = r['highlight']['user'][0]
+            assert_in(self._tagged(qs), title)
+            size = len(title)
+            assert_greater_equal(size, HIGHLIGHT_SIZE_TITLE)
+            assert_less_equal(size, HIGHLIGHT_SIZE_TITLE + self.taglen)
+
+    @enable_private_search
+    def test_highlight_institution_name(self):
+        """
+        機関名のスニペットが返ることを確認する。
+        """
+        with run_celery_tasks():
+            i1 = factories.InstitutionFactory(
+                name=self._gen_text(u'だぢづでど', 100))
+
+        def _search(qs):
+            return query_private_search(
+                self, qs, u1, category='institution', version=2)
+
+        def test1():
+            qs = u'ぢづで'
+            res, results = _search(qs)
+            DEBUG('results', results)
+            assert_equal(len(results), 1)
+            r = results[0]
+            assert_equal(r['id'], i1._id)
+            title = r['highlight']['name'][0]
+            assert_in(self._tagged(qs), title)
+            size = len(title)
+            assert_greater_equal(size, HIGHLIGHT_SIZE_TITLE)
+            assert_less_equal(size, HIGHLIGHT_SIZE_TITLE + self.taglen)
 
     _use_migrate = False
 

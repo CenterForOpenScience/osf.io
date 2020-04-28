@@ -142,6 +142,7 @@ def _private_search(doc_type, auth, raw=False):
         start = es_dsl['from']
         size = es_dsl['size']
         sort = json.get('sort', None)
+        highlight = json.get('highlight', None)
     elif request.method == 'GET':
         version = toint(request.args.get('version', None))
         vendor = request.args.get('vendor', None)
@@ -155,13 +156,14 @@ def _private_search(doc_type, auth, raw=False):
         start = request.args.get('from', '0')
         size = request.args.get('size', '10')
         sort = request.args.get('sort', None)
+        highlight = request.args.get('highlight', None)
 
     if qs is not None:
         ext = False
         if version == SEARCH_API_VERSION_2:
             ext = True  # include extended doc_types
         try:
-            es_dsl = build_private_search_query(user, qs, start, size, sort)
+            es_dsl = build_private_search_query(user, qs, start, size, sort, highlight)
         except Exception as e:
             raise HTTPError(http.BAD_REQUEST, data={
                 'message_short': e.message,

@@ -1963,7 +1963,7 @@ MAPCORE_SECRET = None
 # allow logged-in-user to search private projects
 ENABLE_PRIVATE_SEARCH = False
 
-# maximum length for snippet
+# default length for snippet
 SEARCH_HIGHLIGHT_FRAGMENT_SIZE = 200
 
 # select analyzer: 'english'(default) or 'japanese'
