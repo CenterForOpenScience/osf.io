@@ -15,6 +15,7 @@ from framework import sentry
 from website import language
 from osf import features
 from osf.models import OSFUser, AbstractNode
+from osf.models.session import Session
 from website import settings
 from website.project.views.contributor import get_node_contributors_abbrev
 from website.ember_osf_web.decorators import ember_flag_is_active
@@ -98,6 +99,17 @@ def search_search_raw(**kwargs):
     return search_search(**kwargs)
 
 
+def get_user_session(user):
+    user_session = Session.objects.filter(
+        data__auth_user_id=user._id
+    ).order_by(
+        '-modified'
+    ).first()
+    if user_session and user_session.data:
+        return user_session
+    return None
+
+
 def _private_search(doc_type, auth, raw=False):
     results = {}
 
@@ -157,6 +169,17 @@ def _private_search(doc_type, auth, raw=False):
             })
         results = search.search(es_dsl, doc_type=doc_type,
                                 private=True, ext=ext, raw=raw)
+
+    user_session = get_user_session(user)
+    if user_session:
+        try:
+            size = int(size)
+        except Exception:
+            size = None
+        user_session.data['search_size'] = size
+        user_session.data['search_sort'] = sort
+        user_session.save()
+
     return results
 
 def _default_search(doc_type):
@@ -184,7 +207,20 @@ def must_be_logged_in_for_private_search(func):
 @ember_flag_is_active(features.EMBER_SEARCH_PAGE)
 @must_be_logged_in_for_private_search
 def search_view(**kwargs):
-    return {'shareUrl': settings.SHARE_URL},
+    sort = None
+    size = None
+    auth = kwargs.get('auth')
+    if auth:
+        user = auth.user
+        user_session = get_user_session(user)
+        if user_session:
+            sort = user_session.data.get('search_sort')
+            size = user_session.data.get('search_size')
+    return {
+        'shareUrl': settings.SHARE_URL,
+        'search_sort': sort,
+        'search_size': size,
+    },
 
 def conditionally_add_query_item(query, item, condition, value):
     """ Helper for the search_projects_by_title function which will add a condition to a query
