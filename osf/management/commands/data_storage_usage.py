@@ -247,7 +247,10 @@ logger = logging.getLogger(__name__)
 
 
 def get_node_count_by_region(region_name):
-    return Node.objects.filter(addons_osfstorage_node_settings__region__name=region_name).count()
+    return Node.objects.filter(
+        deleted=None,
+        addons_osfstorage_node_settings__region__name=region_name,
+    ).count()
 
 
 def get_quickfile_count_by_region(region_name):
@@ -255,11 +258,19 @@ def get_quickfile_count_by_region(region_name):
 
 
 def get_preprint_count_by_region(region_name):
-    return Preprint.objects.filter(region__name=region_name).count()
+    return Preprint.objects.filter(
+        deleted=None,
+        date_withdrawn=None,
+        region__name=region_name
+    ).count()
 
 
 def get_registrations_count_by_region(region_name):
-    return Registration.objects.filter(addons_osfstorage_node_settings__region__name=region_name).count()
+    return Registration.objects.filter(
+        deleted=None,
+        retraction=None,
+        addons_osfstorage_node_settings__region__name=region_name,
+    ).count()
 
 
 # 1. Get content types for nodes, registration, preprints,

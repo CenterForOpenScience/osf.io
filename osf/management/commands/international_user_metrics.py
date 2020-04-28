@@ -31,7 +31,11 @@ FILENAME = 'osf_international_user_metrics.csv'
 
 
 def get_user_count_by_region(region_name):
-    return UserSettings.objects.filter(default_region__name=region_name).count()
+    return UserSettings.objects.filter(
+        default_region__name=region_name,
+        owner__is_active=True,
+        owner__merged_by=None,
+    ).count()
 
 
 def append_to_csv(url, rows, token):
