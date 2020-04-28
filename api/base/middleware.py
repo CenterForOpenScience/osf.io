@@ -26,7 +26,7 @@ from api.base import settings as api_settings
 from waffle.middleware import WaffleMiddleware
 from waffle.models import Flag
 
-from website.settings import DOMAIN
+from website.settings import DOMAIN, TRAVIS_MODE
 from osf.models import (
     Preprint,
     PreprintProvider,
@@ -362,5 +362,6 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
             resp.cookies[name]['domain'] = '.' + urlparse(custom_domain).netloc
 
         # Browsers won't allow use to use these cookie attributes unless you're sending the data over https.
-        resp.cookies[name]['secure'] = True
-        resp.cookies[name]['samesite'] = 'None'
+        if not TRAVIS_MODE:
+            resp.cookies[name]['secure'] = True
+            resp.cookies[name]['samesite'] = 'None'
