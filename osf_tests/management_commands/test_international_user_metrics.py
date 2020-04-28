@@ -6,6 +6,8 @@ import datetime
 import responses
 
 from website.settings import USA
+from api_tests.utils import create_test_file
+from osf.models import QuickFilesNode
 
 from osf_tests.factories import (
     AuthUserFactory,
@@ -34,6 +36,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestInternationalStorageMetrics:
 
     @pytest.fixture()
@@ -66,6 +69,8 @@ class TestInternationalStorageMetrics:
         usersettings = user.get_addon('osfstorage')
         usersettings.default_region = region
         usersettings.save()
+        quickfile = QuickFilesNode.objects.filter(creator=user).first()
+        create_test_file(quickfile, user)
         return user
 
     @pytest.fixture()

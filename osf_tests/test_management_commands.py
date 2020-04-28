@@ -117,15 +117,15 @@ class TestDataStorageUsage(DbTestCase):
             ('num_preprints_usa', 0),
             ('num_registrations_usa', 0),
             ('num_nodes_germany', 0),
-            ('num_quickfiles_germany', 0),
+            ('num_quickfiles_germany', 6),
             ('num_preprints_germany', 0),
             ('num_registrations_germany', 0),
             ('num_nodes_canada', 0),
-            ('num_quickfiles_canada', 0),
+            ('num_quickfiles_canada', 6),
             ('num_preprints_canada', 0),
             ('num_registrations_canada', 0),
             ('num_nodes_australia', 0),
-            ('num_quickfiles_australia', 0),
+            ('num_quickfiles_australia', 6),
             ('num_preprints_australia', 0),
             ('num_registrations_australia', 0),
         ])
@@ -159,9 +159,9 @@ class TestDataStorageUsage(DbTestCase):
         expected_summary_data['nd_public_nodes'] += file_size
         expected_summary_data['united_states'] += file_size
         expected_summary_data['num_nodes_usa'] += 2
-        expected_summary_data['num_quickfiles_usa'] += 1
-        expected_summary_data['num_preprints_usa'] += 2
-        expected_summary_data['num_registrations_usa'] += 2
+        expected_summary_data['num_quickfiles_usa'] = 6
+        expected_summary_data['num_preprints_usa'] += 1
+        expected_summary_data['num_registrations_usa'] += 1
 
         project_private_au = self.project(creator=user, is_public=False, region=region_au)
         file_size = next(small_size)

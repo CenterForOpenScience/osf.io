@@ -258,7 +258,10 @@ def get_node_count_by_region(region_name):
 
 def get_quickfile_count_by_region(region_name):
     quickfiles_node_content_type = ContentType.objects.get_for_model(QuickFilesNode)
-    return OsfStorageFile.objects.filter(target_content_type=quickfiles_node_content_type).count()
+    return OsfStorageFile.objects.filter(
+        target_content_type=quickfiles_node_content_type,
+        deleted=None
+    ).count()
 
 
 def get_preprint_count_by_region(region_name):
