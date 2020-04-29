@@ -233,7 +233,8 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(metadata, self.draft.registration_metadata)
 
     def test_update_draft_registration_special_filename(self):
-        self.maxDiff = None
+        # Metadata dict is copied from the PUT request to /project/<pid>/drafts/<draft_id>/
+        # when adding a file as a supplemental file to a draft registration
         metadata = {
             'summary': {
                 'value': None,
