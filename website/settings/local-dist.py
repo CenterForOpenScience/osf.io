@@ -137,5 +137,3 @@ CHRONOS_FAKE_FILE_URL = 'https://staging2.osf.io/r2t5v/download'
 
 # Show sent emails in console
 logging.getLogger('website.mails.mails').setLevel(logging.DEBUG)
-
-TRAVIS_MODE = False
