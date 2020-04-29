@@ -40,7 +40,8 @@ from api.institutions.serializers import (
     InstitutionUserMetricsSerializer,
 )
 from api.institutions.permissions import UserIsAffiliated
-from django.conf import settings
+from rest_framework.settings import api_settings
+
 
 class InstitutionMixin(object):
     """Mixin with convenience method get_institution
@@ -421,11 +422,12 @@ class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIVi
         page_size = self.request.query_params.get('page[size]')
 
         if page_size:
-            search = search.extra(size=int(page_size))
+            page_size = int(page_size)
+        else:
+            page_size = api_settings.PAGE_SIZE
 
         if page:
-            search = search.extra(from_=int(page) * int(page_size or settings.MAX_PAGE_SIZE))
-
+            search = search.extra(size=int(page) * page_size)
         return search
 
     def _make_elasticsearch_results_filterable(self, search, **kwargs) -> MockQueryset:
@@ -436,22 +438,16 @@ class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIVi
         :param departments: Dict {'Department Name': 3} means "Department Name" has 3 users.
         :return: mock_queryset
         """
-        queryset = MockQueryset()
-        queryset.__len__(total=search.count())
-
         search = self._paginate(search)
 
         items = self._format_search(search)
-        for item in items:
-            item.update(kwargs)
-            queryset.add_dict_as_item(item)
 
+        queryset = MockQueryset(items, search, default_attrs=kwargs)
         return queryset
 
     # overrides RetrieveApiView
     def get_queryset(self):
         return self.get_queryset_from_request()
-
 
 class InstitutionDepartmentList(InstitutionImpactList):
     view_name = 'institution-department-metrics'
