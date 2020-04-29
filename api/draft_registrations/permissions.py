@@ -25,7 +25,7 @@ class IsContributorOrAdminContributor(permissions.BasePermission):
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
 
-        if isinstance(obj.branched_from, Node):
+        if isinstance(obj, DraftRegistration) and isinstance(obj.branched_from, Node):
             obj = obj.branched_from
 
         if request.method in permissions.SAFE_METHODS:
