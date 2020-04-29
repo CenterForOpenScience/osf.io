@@ -2156,6 +2156,8 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
         but the alternative_resource will be a Node.  DraftRegistration fields will trump Node fields.
         TODO, add optional logging parameter
         """
+        from osf.models import DraftRegistration
+
         self.set_editable_attribute('title', resource, alternative_resource)
         self.set_editable_attribute('description', resource, alternative_resource)
         self.set_editable_attribute('category', resource, alternative_resource)
@@ -2163,7 +2165,8 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
 
         # Contributors will always come from "resource", as contributor constraints
         # will require contributors to be present on the resource
-        self.copy_contributors_from(resource)
+        if not isinstance(self, DraftRegistration):
+            self.copy_contributors_from(resource)
         # Copy unclaimed records for unregistered users
         self.copy_unclaimed_records(resource)
 

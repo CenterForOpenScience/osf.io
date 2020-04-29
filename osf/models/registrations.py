@@ -1009,6 +1009,10 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         )
         self.registered_node = register
         self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)
+
+        if isinstance(node, Node):
+            self.copy_contributors_from(node)
+
         if save:
             self.save()
         return register
