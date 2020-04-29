@@ -232,6 +232,95 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(open_ended_schema, self.draft.registration_schema)
         assert_equal(metadata, self.draft.registration_metadata)
 
+    def test_update_draft_registration_special_filename(self):
+        self.maxDiff = None
+        metadata = {
+            'summary': {
+                'value': None,
+                'comments': [],
+                'extra': []
+            },
+            'uploader': {
+                'value': 'Cafe&LunchMenu.pdf',
+                'comments': [],
+                'extra': [{
+                    'fileId': 'h8zsj',
+                    'data': {
+                        'id': 'osfstorage/5ea6ff395288ad0d931c17f5',
+                        'type': 'files',
+                        'links': {
+                            'move': 'http://localhost:7777/v1/resources/vdbcr/providers/osfstorage/5ea6ff395288ad0d931c17f5',
+                            'upload': 'http://localhost:7777/v1/resources/vdbcr/providers/osfstorage/5ea6ff395288ad0d931c17f5?kind=file',
+                            'delete': 'http://localhost:7777/v1/resources/vdbcr/providers/osfstorage/5ea6ff395288ad0d931c17f5',
+                            'download': 'http://localhost:7777/v1/resources/vdbcr/providers/osfstorage/5ea6ff395288ad0d931c17f5'
+                        },
+                        'extra': {
+                            'guid': None,
+                            'version': 1,
+                            'downloads': 0,
+                            'checkout': None,
+                            'latestVersionSeen': {
+                                'user': 'bd53u',
+                                'seen': True
+                            },
+                            'hashes': {
+                                'md5': '2919727d545c2a93ea89c3442d2545c5',
+                                'sha256': '2161a32cfe1cbbfbd73aa541fdcb8c407523a8828bfd7a031362e1763a74e8ad'
+                            }
+                        },
+                        'kind': 'file',
+                        'name': 'Cafe&LunchMenu.pdf',
+                        'path': '/5ea6ff395288ad0d931c17f5',
+                        'provider': 'osfstorage',
+                        'materialized': '/Cafe&LunchMenu.pdf',
+                        'etag': 'c9248ce917b428c7cae6a7fd45a42b83952db882c4009f0bdf9603a43eab663b',
+                        'contentType': None,
+                        'modified': '2020-04-27T15:50:18.365664+00:00',
+                        'modified_utc': '2020-04-27T15:50:18.365664+00:00',
+                        'created_utc': '2020-04-27T15:50:18.365664+00:00',
+                        'size': 805847,
+                        'sizeInt': 805847,
+                        'resource': 'vdbcr',
+                        'permissions': {
+                            'view': True,
+                            'edit': True
+                        },
+                        'nodeId': 'vdbcr',
+                        'nodeUrl': '/vdbcr/',
+                        'nodeApiUrl': '/api/v1/project/vdbcr/',
+                        'accept': {
+                            'maxSize': 5120,
+                            'acceptedFiles': True
+                        },
+                        'waterbutlerURL': 'http://localhost:7777'
+                    },
+                    'selectedFileName': 'Cafe&LunchMenu.pdf',
+                    'nodeId': 'vdbcr',
+                    'viewUrl': '/project/vdbcr/files/osfstorage/5ea6ff395288ad0d931c17f5',
+                    'sha256': '2161a32cfe1cbbfbd73aa541fdcb8c407523a8828bfd7a031362e1763a74e8ad',
+                    'descriptionValue': ''
+                }]
+            }
+        }
+        assert_not_equal(metadata, self.draft.registration_metadata)
+        payload = {
+            'schema_data': metadata,
+            'schema_name': 'Open-Ended Registration',
+            'schema_version': 2
+        }
+        url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
+
+        res = self.app.put_json(url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
+
+        open_ended_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
+
+        self.draft.reload()
+        assert_equal(open_ended_schema, self.draft.registration_schema)
+        assert_equal(metadata['uploader']['value'], self.draft.registration_metadata['uploader']['value'])
+        assert_equal(metadata['uploader']['extra'][0]['selectedFileName'], self.draft.registration_metadata['uploader']['extra'][0]['selectedFileName'])
+
+
     def test_update_draft_registration_non_admin(self):
         metadata = {
             'summary': {
