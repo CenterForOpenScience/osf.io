@@ -1,6 +1,7 @@
 import re
 import gc
 import uuid
+import json
 from io import StringIO
 from urllib.parse import urlparse
 import cProfile
@@ -190,6 +191,10 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
     def process_response(self, request, response):
         waffles = getattr(request, 'waffles', None)
         if request.path == '/v2/':
+            # clear flags initially
+            if response.data['meta'].get('active_flags'):
+                response.data['meta']['active_flags'] = [flag for flag in response.data['meta']['active_flags'] if flag not in SLOAN_FLAGS]
+
             user = getattr(request, 'user', None)
             referer_url = request.environ.get('HTTP_REFERER', '')
             provider = self.get_provider_from_url(referer_url)
@@ -228,6 +233,9 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
                                     custom_domain=provider.domain,
                                 )
 
+                        if active:
+                            response.data['meta']['active_flags'].append(sloan_flag_name)
+
             elif user and not user.is_anonymous:
                 for sloan_flag_name in SLOAN_FLAGS:
                     tag = SLOAN_FEATURES[sloan_flag_name]
@@ -250,7 +258,7 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
                             response,
                         )
 
-                    response.data['meta']['active_flags'].append(sloan_flag_name)
+            response.content = json.dumps(response.data).encode()
 
         # `set_sloan_cookies` has set the cookies, make sure WaffleMiddleware doesn't try to set them again.
         if waffles:

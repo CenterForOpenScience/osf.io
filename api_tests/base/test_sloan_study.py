@@ -252,6 +252,20 @@ class TestSloanStudyWaffling:
 
         resp = app.get('/v2/', auth=user.auth, cookies=cookies)
 
+        assert SLOAN_COI_DISPLAY in resp.json['meta']['active_flags']
         cookies = resp.headers.getall('Set-Cookie')
 
         assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=.osf.io; Path=/; samesite=None; Secure' in cookies
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_user_override_cookie_false(self, app, user, preprint):
+        user.add_system_tag(f'no_{SLOAN_COI}')
+        cookies = {
+            SLOAN_COI_DISPLAY: 'True',
+        }
+
+        resp = app.get('/v2/', auth=user.auth, cookies=cookies)
+        assert SLOAN_COI_DISPLAY not in resp.json['meta']['active_flags']
+        cookies = resp.headers.getall('Set-Cookie')
+
+        assert f' dwf_{SLOAN_COI_DISPLAY}=False; Domain=.osf.io; Path=/; samesite=None; Secure' in cookies
