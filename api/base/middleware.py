@@ -190,10 +190,12 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
 
     def process_response(self, request, response):
         waffles = getattr(request, 'waffles', None)
-        if request.path == '/v2/':
+        if request.path == '/v2/' and not request.GET.get('format') == 'api':  # exclude browserable api
+            content_data = json.loads(response.content.decode())
+
             # clear flags initially
-            if response.data['meta'].get('active_flags'):
-                response.data['meta']['active_flags'] = [flag for flag in response.data['meta']['active_flags'] if flag not in SLOAN_FLAGS]
+            if content_data['meta'].get('active_flags'):
+                content_data['meta']['active_flags'] = [flag for flag in content_data['meta']['active_flags'] if flag not in SLOAN_FLAGS]
 
             user = getattr(request, 'user', None)
             referer_url = request.environ.get('HTTP_REFERER', '')
@@ -234,13 +236,13 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
                                 )
 
                         if active:
-                            response.data['meta']['active_flags'].append(sloan_flag_name)
+                            content_data['meta']['active_flags'].append(sloan_flag_name)
 
             elif user and not user.is_anonymous:
                 for sloan_flag_name in SLOAN_FLAGS:
                     tag = SLOAN_FEATURES[sloan_flag_name]
                     if user.all_tags.filter(name=tag).exists():
-                        response.data['meta']['active_flags'].append(sloan_flag_name)
+                        content_data['meta']['active_flags'].append(sloan_flag_name)
                         self.set_sloan_cookie(
                             f'dwf_{sloan_flag_name}',
                             True,
@@ -258,7 +260,7 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
                             response,
                         )
 
-            response.content = json.dumps(response.data).encode()
+            response.content = json.dumps(content_data).encode()
 
         # `set_sloan_cookies` has set the cookies, make sure WaffleMiddleware doesn't try to set them again.
         if waffles:
