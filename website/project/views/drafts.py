@@ -232,9 +232,9 @@ def update_draft_registration(auth, node, draft, *args, **kwargs):
     schema_data = rapply(schema_data, strip_html)
 
     # Unencodes HTML special characters in filenames
-    if schema_data.get('uploader').get('value'):
+    if schema_data.get('uploader', {}).get('value'):
         schema_data['uploader']['value'] = html.unescape(schema_data['uploader']['value'])
-    if schema_data.get('uploader').get('extra'):
+    if schema_data.get('uploader', {}).get('extra'):
         for extra in schema_data['uploader']['extra']:
             extra['selectedFileName'] = html.unescape(extra['selectedFileName'])
 
