@@ -197,7 +197,7 @@ class ProviderData(object):
             number_sum_list = list(number_df_sum['height'].values.flatten())
             statistics_data.title = _('Number of files')
             statistics_data.y_label = _('File Numbers')
-            statistics_data.add(_('number'), number_sum_list)
+            statistics_data.add('数', number_sum_list)
             statistics_data.graphstyle = 'whitegrid'
             statistics_data.background = '#EEEEFF'
             statistics_data.image_string = create_image_string(statistics_data.provider,
@@ -339,7 +339,7 @@ def convert_to_pdf(html_string, file=False):
         'margin-right': '0.60in',
         'margin-bottom': '0.60in',
         'margin-left': '0.60in',
-        'encoding': "UTF-8",
+        'encoding': 'UTF-8',
     }
     current_date = get_current_date()
     if file:
