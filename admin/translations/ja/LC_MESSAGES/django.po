@@ -2271,7 +2271,7 @@ msgstr "確認"
 
 #: .\templates\rdm_timestampadd\timestampadd.html:57
 msgid "Request Trusted Timestamp"
-msgstr "打刻"
+msgstr "タイムスタンプを打つ"
 
 #: .\templates\rdm_timestampadd\timestampadd.html:68
 msgid "Processing, please wait..."
