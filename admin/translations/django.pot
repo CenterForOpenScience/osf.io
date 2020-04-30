@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-27 18:23+0900\n"
-"PO-Revision-Date: 2020-04-21 18:23+0900\n"
+"POT-Creation-Date: 2020-04-30 19:20+0900\n"
+"PO-Revision-Date: 2020-04-30 19:20+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -549,6 +549,10 @@ msgstr ""
 
 #: .\templates\emails\password_reset_email.html:13
 msgid "-GakuNin RDM Admin"
+msgstr ""
+
+#: .\templates\home.html:5
+msgid "Hello"
 msgstr ""
 
 #: .\templates\home.html:8
