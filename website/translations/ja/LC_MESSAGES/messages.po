@@ -3622,7 +3622,7 @@ msgstr "バージョン:"
 #: website/templates/project/view_file.mako:34
 #: website/templates/project/view_file.mako:36
 msgid "Timestamp verification:"
-msgstr "タイムスタンプの検証"
+msgstr "タイムスタンプの検証："
 
 #: website/templates/project/view_file.mako:52
 msgid "No files"
