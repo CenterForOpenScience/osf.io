@@ -2147,7 +2147,7 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
         else:
             return []
 
-    def copy_editable_fields(self, resource, auth=None, alternative_resource=None, save=True):
+    def copy_editable_fields(self, resource, auth=None, alternative_resource=None, save=True, contributors=True):
         """
         Copy various editable fields from the 'resource' object to the current object.
         Includes, title, description, category, contributors, node_license, tags, subjects, and affiliated_institutions
@@ -2156,7 +2156,6 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
         but the alternative_resource will be a Node.  DraftRegistration fields will trump Node fields.
         TODO, add optional logging parameter
         """
-        from osf.models import DraftRegistration
 
         self.set_editable_attribute('title', resource, alternative_resource)
         self.set_editable_attribute('description', resource, alternative_resource)
@@ -2165,7 +2164,7 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
 
         # Contributors will always come from "resource", as contributor constraints
         # will require contributors to be present on the resource
-        if not isinstance(self, DraftRegistration):
+        if contributors:
             self.copy_contributors_from(resource)
         # Copy unclaimed records for unregistered users
         self.copy_unclaimed_records(resource)
