@@ -338,7 +338,8 @@ def convert_to_pdf(html_string, file=False):
         'margin-top': '0.50in',
         'margin-right': '0.60in',
         'margin-bottom': '0.60in',
-        'margin-left': '0.60in'
+        'margin-left': '0.60in',
+        'encoding': "UTF-8",
     }
     current_date = get_current_date()
     if file:
