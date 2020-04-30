@@ -195,9 +195,9 @@ class ProviderData(object):
             number_df_sum = self.number_df.groupby('left', as_index=False).sum()
             statistics_data.df = self.number_df
             number_sum_list = list(number_df_sum['height'].values.flatten())
-            statistics_data.title = _(u'Number of files')
-            statistics_data.y_label = _(u'File Numbers')
-            statistics_data.add(_(u'number'), number_sum_list)
+            statistics_data.title = _('Number of files')
+            statistics_data.y_label = _('File Numbers')
+            statistics_data.add(_('number'), number_sum_list)
             statistics_data.graphstyle = 'whitegrid'
             statistics_data.background = '#EEEEFF'
             statistics_data.image_string = create_image_string(statistics_data.provider,
@@ -206,16 +206,16 @@ class ProviderData(object):
             size_df_sum = self.size_df.groupby('left', as_index=False).sum()
             statistics_data.df = self.size_df
             size_sum_list = list(size_df_sum['height'].values.flatten())
-            statistics_data.title = _(u'Subtotal of file sizes')
-            statistics_data.y_label = _(u'File Sizes')
-            statistics_data.add(_(u'size'), map(lambda x: approximate_size(x, True), size_sum_list))
+            statistics_data.title = _('Subtotal of file sizes')
+            statistics_data.y_label = _('File Sizes')
+            statistics_data.add(_('size'), map(lambda x: approximate_size(x, True), size_sum_list))
             statistics_data.graphstyle = 'whitegrid'
             statistics_data.background = '#EEFFEE'
             statistics_data.image_string = create_image_string(statistics_data.provider, statistics_data=statistics_data)
         else:
             statistics_data.df = self.number_df
-            statistics_data.title = _(u'Number of files by extension type')
-            statistics_data.y_label = _(u'File Numbers')
+            statistics_data.title = _('Number of files by extension type')
+            statistics_data.y_label = _('File Numbers')
             statistics_data.graphstyle = 'whitegrid'
             statistics_data.background = '#FFEEEE'
             for ext in self.ext_list:
@@ -279,7 +279,7 @@ def create_image_string(provider, statistics_data):
     ax.set_xticklabels(labels=statistics_data.label, rotation=20)
     ax.set_xlabel(xlabel=statistics_data.x_label)
     ax.set_ylabel(ylabel=statistics_data.y_label)
-    ax.set_title((_(u'%(statisticsData)s in %(provider)s') % dict(statisticsData=statistics_data.title, provider=provider)))
+    ax.set_title((_('%(statisticsData)s in %(provider)s') % dict(statisticsData=statistics_data.title, provider=provider)))
     ax.tick_params(labelsize=9)
     ax.yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
     plt.legend(loc='upper right', bbox_to_anchor=(1.1255555, 1), ncol=1, borderaxespad=1, shadow=True)
@@ -428,7 +428,7 @@ class ImageView(RdmPermissionMixin, UserPassesTestMixin, View):
         ax.set_xticklabels(labels=statistics_data.label, rotation=20)
         ax.set_xlabel(xlabel=statistics_data.x_label)
         ax.set_ylabel(ylabel=statistics_data.y_label)
-        ax.set_title((_(u'%(statisticsData)s in %(provider)s') % dict(statisticsData=statistics_data.title, provider=provider)))
+        ax.set_title((_('%(statisticsData)s in %(provider)s') % dict(statisticsData=statistics_data.title, provider=provider)))
         ax.tick_params(labelsize=9)
         ax.yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
         plt.legend(loc='upper right', bbox_to_anchor=(1.1255555, 1), ncol=1, borderaxespad=1, shadow=True)
