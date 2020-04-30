@@ -22,7 +22,7 @@
             {% endif %}
 
             <span class="current">
-                {% blocktrans itemsNumber=items.number paginatorNumPage=items.paginator.num_pages %}Page {{ itemsNumber }} of {{ paginatorNumPage }}{% endblocktrans %}
+                {% blocktrans with itemsNumber=items.number paginatorNumPage=items.paginator.num_pages %}Page {{ itemsNumber }} of {{ paginatorNumPage }}{% endblocktrans %}
             </span>
 
             {% if items.has_next %}
