@@ -40,9 +40,7 @@ class TestDraftRegistrationListNewWorkflow(TestDraftRegistrationList):
             auth=user_read_contrib.auth,
             expect_errors=True)
         assert res.status_code == 200
-        assert len(res.json['data']) == 1
-        assert res.json['data'][0]['id'] == draft_registration._id
-        assert draft_registration.get_permissions(user_read_contrib) == [READ]
+        assert len(res.json['data']) == 0
 
         #   test_read_write_contributor_can_view_draft_list
         res = app.get(
@@ -50,9 +48,7 @@ class TestDraftRegistrationListNewWorkflow(TestDraftRegistrationList):
             auth=user_write_contrib.auth,
             expect_errors=True)
         assert res.status_code == 200
-        assert len(res.json['data']) == 1
-        assert res.json['data'][0]['id'] == draft_registration._id
-        assert draft_registration.get_permissions(user_write_contrib) == [READ, WRITE]
+        assert len(res.json['data']) == 0
 
         #   test_logged_in_non_contributor_can_view_draft_list
         res = app.get(

@@ -7,6 +7,7 @@ from api.base.pagination import DraftRegistrationContributorPagination
 from api.draft_registrations.permissions import (
     DraftContributorDetailPermissions,
     IsContributorOrAdminContributor,
+    IsAdminContributor,
 )
 from api.draft_registrations.serializers import (
     DraftRegistrationSerializer,
@@ -49,7 +50,7 @@ class DraftRegistrationMixin(DraftMixin):
 
 class DraftRegistrationList(NodeDraftRegistrationsList):
     permission_classes = (
-        IsContributorOrAdminContributor,
+        IsAdminContributor,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -72,7 +73,7 @@ class DraftRegistrationList(NodeDraftRegistrationsList):
 
 class DraftRegistrationDetail(NodeDraftRegistrationDetail, DraftRegistrationMixin):
     permission_classes = (
-        ContributorOrPublic,
+        IsContributorOrAdminContributor,
         AdminDeletePermissions,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -157,7 +158,7 @@ class DraftSubjectsRelationship(SubjectRelationshipBaseView, DraftRegistrationMi
 
 class DraftContributorsList(NodeContributorsList, DraftRegistrationMixin):
     permission_classes = (
-        IsContributorOrAdminContributor,
+        IsAdminContributor,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )

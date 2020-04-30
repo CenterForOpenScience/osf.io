@@ -123,27 +123,27 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         project_public.add_contributor(node_admin, ADMIN)
         assert project_public.has_permission(node_admin, ADMIN) is True
         assert draft_registration.has_permission(node_admin, ADMIN) is False
-        res = app.get(url_draft_registrations, auth=node_admin.auth, expect_errors=True)
-        assert res.status_code == 403
+        res = app.get(url_draft_registrations, auth=node_admin.auth)
+        assert res.status_code == 200
 
         # Admin on draft but not node
         draft_admin = AuthUserFactory()
         draft_registration.add_contributor(draft_admin, ADMIN)
         assert project_public.has_permission(draft_admin, ADMIN) is False
         assert draft_registration.has_permission(draft_admin, ADMIN) is True
-        res = app.get(url_draft_registrations, auth=draft_admin.auth)
-        assert res.status_code == 200
+        res = app.get(url_draft_registrations, auth=draft_admin.auth, expect_errors=True)
+        assert res.status_code == 403
 
     # Overwrites TestDraftRegistrationDetail
     def test_can_view_after_added(
             self, app, schema, draft_registration, url_draft_registrations):
-        # Draft Registration permissions should be independent of the branched_from node
+        # Draft Registration permissions are based on the branched from node
 
         user = AuthUserFactory()
         project = draft_registration.branched_from
         project.add_contributor(user, ADMIN)
-        res = app.get(url_draft_registrations, auth=user.auth, expect_errors=True)
-        assert res.status_code == 403
+        res = app.get(url_draft_registrations, auth=user.auth)
+        assert res.status_code == 200
 
     # Overrides TestDraftRegistrationDetail
     def test_reviewer_can_see_draft_registration(

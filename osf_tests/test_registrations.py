@@ -389,11 +389,11 @@ class TestRegisterNodeContributors:
         with mock_archive(project_two, autoapprove=True) as registration:
             return registration
 
-    def test_unregistered_contributors_unclaimed_records_get_copied(self, user, project, component, registration, contributor_unregistered, contributor_unregistered_no_email):
+    def test_unregistered_contributors_unclaimed_records_dont_get_copied(self, user, project, component, registration, contributor_unregistered, contributor_unregistered_no_email):
         contributor_unregistered.refresh_from_db()
         contributor_unregistered_no_email.refresh_from_db()
         assert registration.contributors.filter(id=contributor_unregistered.id).exists()
-        assert registration._id in contributor_unregistered.unclaimed_records
+        assert registration._id not in contributor_unregistered.unclaimed_records
 
         # component
         component_registration = registration.nodes[0]
