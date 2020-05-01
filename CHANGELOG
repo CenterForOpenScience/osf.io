@@ -2,6 +2,10 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.6.0 (2020-05-01)
+===================
+- Additional fixes for Sloan Signals of Trust
+
 20.5.0 (2020-04-20)
 ===================
 - Fixes for Sloan Signals of Trust
