@@ -139,7 +139,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 })
                 name, args, kwargs = mkreq.mock_calls[2]
                 requests = json.loads(kwargs['data'])['requests']
-                assert_equal(len(requests), 4);
+                assert_equal(len(requests), 5);
                 assert_equal(requests[0], {
                   'addProtectedRange': {
                     'protectedRange': {
@@ -196,6 +196,16 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                     }
                   }
                 })
+                assert_equal(requests[4], {
+                  'autoResizeDimensions': {
+                    'dimensions': {
+                      'sheetId': 1,
+                      'dimension': 'COLUMNS',
+                      'startIndex': 0,
+                      'endIndex': 2,
+                    }
+                  }
+                })
 
     def test_add_files_with_dir(self):
         client = SpreadsheetClient('0001')
@@ -227,7 +237,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 assert_equal(json.loads(kwargs['data'])['majorDimension'], 'ROWS')
                 name, args, kwargs = mkreq.mock_calls[2]
                 requests = json.loads(kwargs['data'])['requests']
-                assert_equal(len(requests), 4);
+                assert_equal(len(requests), 5);
                 assert_equal(requests[0], {
                     'addProtectedRange': {
                       'protectedRange': {
@@ -283,6 +293,16 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                         'warningOnly': True
                       }
                     }
+                })
+                assert_equal(requests[4], {
+                  'autoResizeDimensions': {
+                    'dimensions': {
+                      'sheetId': 1,
+                      'dimension': 'COLUMNS',
+                      'startIndex': 0,
+                      'endIndex': 3,
+                    }
+                  }
                 })
 
     def test_add_files_with_dirs(self):
@@ -319,7 +339,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 assert_equal(json.loads(kwargs['data'])['majorDimension'], 'ROWS')
                 name, args, kwargs = mkreq.mock_calls[2]
                 requests = json.loads(kwargs['data'])['requests']
-                assert_equal(len(requests), 4);
+                assert_equal(len(requests), 5);
                 assert_equal(requests[0], {
                     'addProtectedRange': {
                       'protectedRange': {
@@ -375,6 +395,16 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                         'warningOnly': True
                       }
                     }
+                })
+                assert_equal(requests[4], {
+                  'autoResizeDimensions': {
+                    'dimensions': {
+                      'sheetId': 1,
+                      'dimension': 'COLUMNS',
+                      'startIndex': 0,
+                      'endIndex': 3,
+                    }
+                  }
                 })
 
     def test_add_files_with_multibytes_dir(self):
@@ -405,7 +435,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 })
                 name, args, kwargs = mkreq.mock_calls[2]
                 requests = json.loads(kwargs['data'])['requests']
-                assert_equal(len(requests), 4);
+                assert_equal(len(requests), 5);
                 assert_equal(requests[0], {
                     'addProtectedRange': {
                       'protectedRange': {
@@ -462,6 +492,16 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       }
                     }
                 })
+                assert_equal(requests[4], {
+                  'autoResizeDimensions': {
+                    'dimensions': {
+                      'sheetId': 1,
+                      'dimension': 'COLUMNS',
+                      'startIndex': 0,
+                      'endIndex': 3,
+                    }
+                  }
+                })
 
     def test_add_files_with_preset_cols(self):
         client = SpreadsheetClient('0001')
@@ -488,7 +528,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 })
                 name, args, kwargs = mkreq.mock_calls[2]
                 reqs = json.loads(kwargs['data'])['requests']
-                assert_equal(len(reqs), 6)
+                assert_equal(len(reqs), 7)
                 assert_equal(reqs[0], {
                     'addProtectedRange': {
                       'protectedRange': {
@@ -546,6 +586,16 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                     }
                 })
                 assert_equal(reqs[4], {
+                  'autoResizeDimensions': {
+                    'dimensions': {
+                      'sheetId': 1,
+                      'dimension': 'COLUMNS',
+                      'startIndex': 0,
+                      'endIndex': 2,
+                    }
+                  }
+                })
+                assert_equal(reqs[5], {
                     'updateDimensionProperties': {
                       'range': {
                         'sheetId': 1,
@@ -559,7 +609,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'fields': 'hiddenByUser',
                     }
                 })
-                assert_equal(reqs[5], {
+                assert_equal(reqs[6], {
                     'updateDimensionProperties': {
                       'range': {
                         'sheetId': 1,

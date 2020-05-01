@@ -650,6 +650,13 @@ class SpreadsheetClient(BaseClient):
                             'warningOnly': True
                         }
                     }
+                }, {
+                    'autoResizeDimensions': {
+                        'dimensions': {'sheetId': files_sheet_idx,
+                                       'dimension': 'COLUMNS',
+                                       'startIndex': 0,
+                                       'endIndex': max_depth + 2}
+                    }
                 }] + hide_col_reqs
             }),
             expects=(200, ),
