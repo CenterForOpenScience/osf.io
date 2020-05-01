@@ -654,7 +654,7 @@ class SpreadsheetClient(BaseClient):
                     'autoResizeDimensions': {
                         'dimensions': {'sheetId': files_sheet_idx,
                                        'dimension': 'COLUMNS',
-                                       'startIndex': 0,
+                                       'startIndex': 1,
                                        'endIndex': max_depth + 2}
                     }
                 }] + hide_col_reqs

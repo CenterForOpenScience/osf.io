@@ -201,7 +201,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                     'dimensions': {
                       'sheetId': 1,
                       'dimension': 'COLUMNS',
-                      'startIndex': 0,
+                      'startIndex': 1,
                       'endIndex': 2,
                     }
                   }
@@ -299,7 +299,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                     'dimensions': {
                       'sheetId': 1,
                       'dimension': 'COLUMNS',
-                      'startIndex': 0,
+                      'startIndex': 1,
                       'endIndex': 3,
                     }
                   }
@@ -401,7 +401,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                     'dimensions': {
                       'sheetId': 1,
                       'dimension': 'COLUMNS',
-                      'startIndex': 0,
+                      'startIndex': 1,
                       'endIndex': 3,
                     }
                   }
@@ -497,7 +497,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                     'dimensions': {
                       'sheetId': 1,
                       'dimension': 'COLUMNS',
-                      'startIndex': 0,
+                      'startIndex': 1,
                       'endIndex': 3,
                     }
                   }
@@ -590,7 +590,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                     'dimensions': {
                       'sheetId': 1,
                       'dimension': 'COLUMNS',
-                      'startIndex': 0,
+                      'startIndex': 1,
                       'endIndex': 2,
                     }
                   }
