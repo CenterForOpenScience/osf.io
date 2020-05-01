@@ -22,7 +22,7 @@ def _view_registries_landing_page(campaign=None, **kwargs):
     else:
         has_projects = False
 
-    if campaign == 'registered_report':
+    if campaign == 'osf-registered-reports':
         campaign_url_param = 'osf-registered-reports'
     elif campaign == 'prereg_challenge' or campaign == 'prereg':
         campaign_url_param = 'prereg'
@@ -40,7 +40,7 @@ def _view_registries_landing_page(campaign=None, **kwargs):
 
 
 def registered_reports_landing(**kwargs):
-    return _view_registries_landing_page('registered_report', **kwargs)
+    return _view_registries_landing_page('osf-registered-reports', **kwargs)
 
 
 @decorators.must_be_logged_in
