@@ -67,8 +67,6 @@ RUN set -ex \
     ; do \
         pip3 install --no-cache-dir -c /code/requirements/constraints.txt -r "$reqs_file" \
     ; done \
-    && (pip3 uninstall uritemplate.py --yes || true) \
-    && pip3 install --no-cache-dir uritemplate.py==0.3.0 \
     # Fix: https://github.com/CenterForOpenScience/osf.io/pull/6783
     && python3 -m compileall /usr/lib/python3.6 || true \
     && apk del .build-deps
