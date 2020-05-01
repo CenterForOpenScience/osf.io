@@ -813,7 +813,7 @@ def _iqbrims_fill_spreadsheet_values(node, status, folder_link, columns,
         if tcol is None:
             pass
         elif tcol == '_updated':
-            values[i] = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
+            values[i] = datetime.now().strftime('%Y/%m/%d')
         elif tcol == '_node_id':
             values[i] = node._id
         elif tcol == '_node_owner':
