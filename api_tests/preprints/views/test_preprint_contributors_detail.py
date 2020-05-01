@@ -254,29 +254,6 @@ class TestPreprintContributorDetail:
         res = app.get(url_published, auth=user.auth)
         assert res.status_code == 200
 
-    def test_preprint_contributor_orphaned(
-            self, app, user, preprint_published, url_published):
-        preprint_published.primary_file = None
-        preprint_published.save()
-
-        # Unauthenticated
-        res = app.get(url_published, expect_errors=True)
-        assert res.status_code == 401
-
-        # Noncontrib
-        user_two = AuthUserFactory()
-        res = app.get(url_published, auth=user_two.auth, expect_errors=True)
-        assert res.status_code == 403
-
-        # Write contrib
-        preprint_published.add_contributor(user_two, permissions.WRITE, save=True)
-        res = app.get(url_published, auth=user_two.auth)
-        assert res.status_code == 200
-
-        # Admin contrib
-        res = app.get(url_published, auth=user.auth)
-        assert res.status_code == 200
-
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
