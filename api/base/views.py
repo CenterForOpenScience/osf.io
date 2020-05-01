@@ -43,7 +43,7 @@ from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Contributor, MaintenanceState, BaseFileNode
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, READ, WRITE, ADMIN
 from waffle.models import Flag, Switch, Sample
-from waffle import sample_is_active, flag_is_active
+from waffle import sample_is_active
 
 
 class JSONAPIBaseView(generics.GenericAPIView):
@@ -411,7 +411,7 @@ def root(request, format=None, **kwargs):
     else:
         current_user = None
 
-    flags = [name for name in Flag.objects.values_list('name', flat=True) if flag_is_active(request._request, name)]
+    flags = [flag.name for flag in Flag.objects.all() if flag.is_active(request._request)]
     samples = [name for name in Sample.objects.values_list('name', flat=True) if sample_is_active(name)]
     switches = list(Switch.objects.filter(active=True).values_list('name', flat=True))
 
