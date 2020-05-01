@@ -823,7 +823,7 @@ def _iqbrims_fill_spreadsheet_values(node, status, folder_link, columns,
         elif tcol == '_node_title':
             values[i] = node.title
         elif tcol == '_node_contributors':
-            values[i] = [u.username for u in node.contributors]
+            values[i] = ','.join([u.fullname for u in node.contributors])
         elif tcol == '_labo_name':
             labos = [l['text']
                      for l in user_settings.LABO_LIST
