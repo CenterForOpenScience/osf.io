@@ -708,6 +708,7 @@ class PreprintFactory(DjangoModelFactory):
                 mock_create_identifier.side_effect = sync_set_identifiers(instance)
             create_task_patcher.stop()
 
+        instance.machine_state = kwargs.pop('machine_state', 'initial')
         instance.save()
         return instance
 
