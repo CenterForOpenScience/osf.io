@@ -336,6 +336,8 @@ WEBSITE_TESTS = [
 ]
 
 API_TESTS1 = [
+    'api_tests/draft_registrations',
+    'api_tests/draft_nodes',
     'api_tests/identifiers',
     'api_tests/institutions',
     'api_tests/licenses',
@@ -373,6 +375,8 @@ API_TESTS3 = [
     'api_tests/regions',
     'api_tests/search',
     'api_tests/scopes',
+    'api_tests/sloan',
+    'api_tests/subjects',
     'api_tests/taxonomies',
     'api_tests/test',
     'api_tests/tokens',

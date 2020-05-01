@@ -84,6 +84,7 @@ class InstitutionAuthentication(BaseAuthentication):
         family_name = provider['user'].get('familyName')
         middle_names = provider['user'].get('middleNames')
         suffix = provider['user'].get('suffix')
+        department = provider['user'].get('department')
 
         # Use given name and family name to build full name if it is not provided
         if given_name and family_name and not fullname:
@@ -160,6 +161,11 @@ class InstitutionAuthentication(BaseAuthentication):
                 return None, None
         else:
             logger.info('Institution SSO: new user "{}"'.format(username))
+
+        # The `department` field is updated each login when it was changed.
+        if department and user.department != department:
+            user.department = department
+            user.save()
 
         # Both created and activated accounts need to be updated and registered
         if created or activation_required:

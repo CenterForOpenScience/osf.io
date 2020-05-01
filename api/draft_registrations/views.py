@@ -4,7 +4,6 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import permissions as base_permissions
 from api.base.pagination import DraftRegistrationContributorPagination
-from api.base.views import JSONAPIBaseView
 from api.draft_registrations.permissions import (
     DraftContributorDetailPermissions,
     IsContributorOrAdminContributor,
@@ -40,6 +39,12 @@ class DraftRegistrationMixin(DraftMixin):
     def check_branched_from(self, draft):
         # We do not have to check the branched_from relationship. node_id is not a kwarg
         return
+
+    # Overrides DraftMixin
+    def check_resource_permissions(self, resource):
+        # Checks permissions on draft_registration, regardless of whether or not
+        # draft_registration is branched off of a node
+        return self.check_object_permissions(self.request, resource)
 
 
 class DraftRegistrationList(NodeDraftRegistrationsList):
@@ -185,7 +190,7 @@ class DraftContributorsList(NodeContributorsList, DraftRegistrationMixin):
 
     # Overrides NodeContributorsList
     def get_serializer_context(self):
-        context = super(JSONAPIBaseView, self).get_serializer_context()
+        context = super().get_serializer_context()
         context['resource'] = self.get_resource()
         context['default_email'] = 'draft_registration'
         return context
@@ -220,7 +225,7 @@ class DraftContributorDetail(NodeContributorDetail, DraftRegistrationMixin):
             raise exceptions.NotFound('{} cannot be found in the list of contributors.'.format(user))
 
     def get_serializer_context(self):
-        context = super(JSONAPIBaseView, self).get_serializer_context()
+        context = super().get_serializer_context()
         context['resource'] = self.get_draft()
         context['default_email'] = 'draft'
         return context

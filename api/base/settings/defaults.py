@@ -228,8 +228,8 @@ MIDDLEWARE = (
     # 'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'waffle.middleware.WaffleMiddleware',
-    'api.base.middleware.SloanIdMiddleware',
+    # 'waffle.middleware.WaffleMiddleware',
+    'api.base.middleware.SloanOverrideWaffleMiddleware',  # Delete this and uncomment WaffleMiddleware to revert Sloan
 )
 
 TEMPLATES = [
@@ -333,3 +333,5 @@ CACHES = {
 }
 
 SLOAN_ID_COOKIE_NAME = 'sloan_id'
+
+MAX_SIZE_OF_ES_QUERY = 10000

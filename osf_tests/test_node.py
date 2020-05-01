@@ -43,6 +43,7 @@ from osf.models import (
     Registration,
     DraftRegistration,
     DraftRegistrationApproval,
+    CollectionSubmission
 )
 
 from addons.wiki.models import WikiPage, WikiVersion
@@ -3784,6 +3785,21 @@ class TestOnNodeUpdate:
         return s
 
     @pytest.fixture()
+    def collection(self):
+        collection_provider = CollectionProviderFactory()
+        return CollectionFactory(provider=collection_provider)
+
+    @pytest.fixture()
+    def node_in_collection(self, collection):
+        node = ProjectFactory(is_public=True)
+        CollectionSubmission(
+            guid=node.guids.first(),
+            collection=collection,
+            creator=node.creator,
+        ).save()
+        return node
+
+    @pytest.fixture()
     def node(self):
         return ProjectFactory(is_public=True)
 
@@ -3887,6 +3903,18 @@ class TestOnNodeUpdate:
             kwargs = requests.post.call_args[1]
             graph = kwargs['json']['data']['attributes']['data']['@graph']
             assert graph[1]['is_deleted'] == case['is_deleted']
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.search.search.update_collected_metadata')
+    @mock.patch('website.project.tasks.requests')
+    def test_update_collection_elasticsearch_make_private(self, requests, mock_update_collected_metadata, node_in_collection, collection, user, request_context):
+        node_in_collection.is_public = False
+        node_in_collection.save()
+
+        on_node_updated(node_in_collection._id, user._id, False, {'is_public'})
+
+        mock_update_collected_metadata.assert_called_with(node_in_collection._id, op='delete')
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')

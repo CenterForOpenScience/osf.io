@@ -7,7 +7,9 @@ from rest_framework.response import Response
 
 from framework.auth.oauth_scopes import CoreScopes
 
+from osf.metrics import InstitutionProjectCounts
 from osf.models import OSFUser, Node, Institution, Registration
+from osf.metrics import UserInstitutionProjectCounts
 from osf.utils import permissions as osf_permissions
 
 from api.base import permissions as base_permissions
@@ -21,14 +23,25 @@ from api.base.parsers import (
     JSONAPIRelationshipParserForRegularJSON,
 )
 from api.base.exceptions import RelationshipPostMakesNoChanges
+from api.base.utils import MockQueryset
+from api.metrics.permissions import IsInstitutionalMetricsUser
 from api.nodes.serializers import NodeSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.users.serializers import UserSerializer
 from api.registrations.serializers import RegistrationSerializer
 
 from api.institutions.authentication import InstitutionAuthentication
-from api.institutions.serializers import InstitutionSerializer, InstitutionNodesRelationshipSerializer, InstitutionRegistrationsRelationshipSerializer
+from api.institutions.serializers import (
+    InstitutionSerializer,
+    InstitutionNodesRelationshipSerializer,
+    InstitutionRegistrationsRelationshipSerializer,
+    InstitutionSummaryMetricSerializer,
+    InstitutionDepartmentMetricsSerializer,
+    InstitutionUserMetricsSerializer,
+)
 from api.institutions.permissions import UserIsAffiliated
+from rest_framework.settings import api_settings
+
 
 class InstitutionMixin(object):
     """Mixin with convenience method get_institution
@@ -366,3 +379,118 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         except RelationshipPostMakesNoChanges:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return ret
+
+
+class InstitutionSummaryMetrics(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        IsInstitutionalMetricsUser,
+    )
+
+    required_read_scopes = [CoreScopes.INSTITUTION_METRICS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    view_category = 'institutions'
+    view_name = 'institution-summary-metrics'
+
+    serializer_class = InstitutionSummaryMetricSerializer
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        institution = self.get_institution()
+        return InstitutionProjectCounts.get_latest_institution_project_document(institution)
+
+
+class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, InstitutionMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        IsInstitutionalMetricsUser,
+    )
+
+    required_read_scopes = [CoreScopes.INSTITUTION_METRICS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    view_category = 'institutions'
+
+    def _format_search(self, search):
+        raise NotImplementedError()
+
+    def _paginate(self, search):
+        page = self.request.query_params.get('page')
+        page_size = self.request.query_params.get('page[size]')
+
+        if page_size:
+            page_size = int(page_size)
+        else:
+            page_size = api_settings.PAGE_SIZE
+
+        if page:
+            search = search.extra(size=int(page) * page_size)
+        return search
+
+    def _make_elasticsearch_results_filterable(self, search, **kwargs) -> MockQueryset:
+        """
+        Since ES returns a list obj instead of a awesome filterable queryset we are faking the filter feature used by
+        querysets by create a mock queryset with limited filterbility.
+
+        :param departments: Dict {'Department Name': 3} means "Department Name" has 3 users.
+        :return: mock_queryset
+        """
+        search = self._paginate(search)
+
+        items = self._format_search(search)
+
+        queryset = MockQueryset(items, search, default_attrs=kwargs)
+        return queryset
+
+    # overrides RetrieveApiView
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+class InstitutionDepartmentList(InstitutionImpactList):
+    view_name = 'institution-department-metrics'
+
+    serializer_class = InstitutionDepartmentMetricsSerializer
+
+    ordering = ('-number_of_users', 'name',)
+
+    def _format_search(self, search):
+        results = search.execute()
+
+        if results.aggregations:
+            buckets = results.aggregations['date_range']['departments'].buckets
+            department_data = [{'name': bucket['key'], 'number_of_users': bucket['doc_count']} for bucket in buckets]
+            return department_data
+        else:
+            return []
+
+    def get_default_queryset(self):
+        institution = self.get_institution()
+        search = UserInstitutionProjectCounts.get_department_counts(institution)
+        return self._make_elasticsearch_results_filterable(search, id=institution._id)
+
+
+class InstitutionUserMetricsList(InstitutionImpactList):
+    view_name = 'institution-user-metrics'
+
+    serializer_class = InstitutionUserMetricsSerializer
+
+    def _format_search(self, search):
+        results = search.execute()
+
+        users = []
+        for user_record in results:
+            record_dict = user_record.to_dict()
+            user_id = user_record.user_id
+            fullname = OSFUser.objects.get(guids___id=user_id).fullname
+            record_dict['user'] = f'({user_id}) {fullname}'
+            users.append(record_dict)
+
+        return users
+
+    def get_default_queryset(self):
+        institution = self.get_institution()
+        search = UserInstitutionProjectCounts.get_current_user_metrics(institution)
+        return self._make_elasticsearch_results_filterable(search, id=institution._id)
