@@ -54,6 +54,7 @@ from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, 
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
+from website.util.metrics import OsfSourceTags
 
 logger = logging.getLogger(__name__)
 
@@ -1104,6 +1105,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             # User needs to be saved before adding system tags (due to m2m relationship)
             user.save()
             user.add_system_tag(system_tag_for_campaign(campaign))
+        else:
+            user.save()
+            user.add_system_tag(OsfSourceTags.Osf.value)
         return user
 
     @classmethod

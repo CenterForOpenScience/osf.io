@@ -6,6 +6,7 @@ from django.utils import timezone
 from website import mails, settings
 from osf.models import PreprintProvider
 from website.settings import DOMAIN, CAMPAIGN_REFRESH_THRESHOLD
+from website.util.metrics import OsfSourceTags, OsfClaimedTags, CampaignSourceTags, CampaignClaimedTags, provider_source_tag
 from framework.utils import throttle_period_expired
 
 
@@ -24,14 +25,14 @@ def get_campaigns():
             # Native campaigns: PREREG and ERPC
             newest_campaigns = {
                 'prereg': {
-                    'system_tag': 'prereg_challenge_campaign',
+                    'system_tag': CampaignSourceTags.Prereg.value,
                     'redirect_url': furl.furl(DOMAIN).add(path='prereg/').url,
                     'confirmation_email_template': mails.CONFIRM_EMAIL_PREREG,
                     'login_type': 'native',
                     'logo': settings.OSF_PREREG_LOGO
                 },
                 'erpc': {
-                    'system_tag': 'erp_challenge_campaign',
+                    'system_tag': CampaignSourceTags.ErpChallenge.value,
                     'redirect_url': furl.furl(DOMAIN).add(path='erpc/').url,
                     'confirmation_email_template': mails.CONFIRM_EMAIL_ERPC,
                     'login_type': 'native',
@@ -61,7 +62,7 @@ def get_campaigns():
                     url_path = 'preprints/{}'.format(provider._id)
                     external_url = provider.domain
                 campaign = '{}-preprints'.format(provider._id)
-                system_tag = '{}_preprints'.format(provider._id)
+                system_tag = provider_source_tag(provider._id, 'preprint')
                 newest_campaigns.update({
                     campaign: {
                         'system_tag': system_tag,
@@ -78,7 +79,7 @@ def get_campaigns():
             # TODO: refactor for futher branded registries when there is a model for registries providers
             newest_campaigns.update({
                 'osf-registries': {
-                    'system_tag': 'osf_registries',
+                    'system_tag': provider_source_tag('osf', 'registry'),
                     'redirect_url': furl.furl(DOMAIN).add(path='registries/').url,
                     'confirmation_email_template': mails.CONFIRM_EMAIL_REGISTRIES_OSF,
                     'login_type': 'proxy',
@@ -89,7 +90,7 @@ def get_campaigns():
 
             newest_campaigns.update({
                 'osf-registered-reports': {
-                    'system_tag': 'osf_registered_reports',
+                    'system_tag': CampaignSourceTags.OsfRegisteredReports.value,
                     'redirect_url': furl.furl(DOMAIN).add(path='rr/').url,
                     'confirmation_email_template': mails.CONFIRM_EMAIL_REGISTRIES_OSF,
                     'login_type': 'proxy',
@@ -201,3 +202,13 @@ def get_external_domains():
         if external_url:
             external_domains.append(external_url)
     return external_domains
+
+
+NODE_SOURCE_TAG_CLAIMED_TAG_RELATION = {
+    CampaignSourceTags.ErpChallenge.value: CampaignClaimedTags.ErpChallenge.value,
+    CampaignSourceTags.PreregChallenge.value: CampaignClaimedTags.PreregChallenge.value,
+    CampaignSourceTags.Prereg.value: CampaignClaimedTags.Prereg.value,
+    CampaignSourceTags.OsfRegisteredReports.value: CampaignClaimedTags.OsfRegisteredReports.value,
+    CampaignSourceTags.Osf4m.value: CampaignClaimedTags.Osf4m.value,
+    OsfSourceTags.Osf.value: OsfClaimedTags.Osf.value,
+}
