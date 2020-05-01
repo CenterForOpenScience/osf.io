@@ -81,9 +81,6 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
             url_public, url_private, make_contrib_id):
 
         #   test_return_public_contributor_list_logged_in
-        res = app.get(url_public, auth=user.auth)
-        assert res.status_code == 200
-        #   test_return_public_contributor_list_logged_in
         # Since permissions are based on the branched from node, this will not pass
         res = app.get(url_public, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
