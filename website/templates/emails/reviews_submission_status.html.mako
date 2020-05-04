@@ -29,9 +29,6 @@
     % endif
     </p>
 
-    % if has_psyarxiv_chronos_text:
-        <li>Submit your preprint to an APA-published journal. <a href=“https://help.osf.io/hc/en-us/articles/360044820913-Submit-to-APA-Journals-via-PsyArXiv-”>Learn more.</a></li>
-    % endif
 
 
     % if not is_rejected:
@@ -42,6 +39,10 @@
                     <td>
                         Now that you've shared your ${reviewable.provider.preprint_word}, take advantage of more OSF features:
                         <ul>
+                            % if has_psyarxiv_chronos_text:
+                                <li>Submit your preprint to an APA-published journal. <a href=“https://help.osf.io/hc/en-us/articles/360044820913-Submit-to-APA-Journals-via-PsyArXiv”>Learn more</a></li>
+                            % endif
+
                             <li>Upload supplemental, materials, data, and code to the OSF project associated with your ${reviewable.provider.preprint_word}.
                                 <a href="https://openscience.zendesk.com/hc/en-us/articles/360019930533-Upload-a-Preprint#add-supplemental-materials" target="_blank">Learn how</a></li>
                             <li>Preregister your next study. <a href="https://openscience.zendesk.com/hc/en-us/articles/360019930893-Register-Your-Project">Read more</a></li>
