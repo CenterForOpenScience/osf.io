@@ -75,6 +75,7 @@ from osf.utils.permissions import (
     READ_NODE,
     WRITE
 )
+from website.util.metrics import OsfSourceTags, CampaignSourceTags
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 from api.caching.tasks import update_storage_usage
@@ -2367,6 +2368,28 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         else:
             update_storage_usage(self)  # sets cache
             return storage_usage_cache.get(key)
+
+    # Overrides ContributorMixin
+    # TODO: Deprecate this when we emberize contributors management for nodes
+    def add_contributor(self, *args, **kwargs):
+        contributor = super(AbstractNode, self).add_contributor(*args, **kwargs)
+        if contributor and not contributor.is_registered:
+            self._add_related_source_tags(contributor)
+
+        return contributor
+
+    # Overrides ContributorMixin
+    def _add_related_source_tags(self, contributor):
+        osf_provider_tag, created = Tag.all_tags.get_or_create(name=OsfSourceTags.Osf.value, system=True)
+        source_tag = self.all_tags.filter(
+            system=True,
+            name__in=[
+                CampaignSourceTags.Prereg.value,
+                CampaignSourceTags.OsfRegisteredReports.value,
+                CampaignSourceTags.Osf4m.value
+            ]
+        ).first() or osf_provider_tag
+        contributor.add_system_tag(source_tag)
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):

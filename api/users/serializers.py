@@ -211,7 +211,7 @@ class UserSerializer(JSONAPISerializer):
 
     def get_can_view_reviews(self, obj):
         group_qs = AbstractProviderGroupObjectPermission.objects.filter(group__user=obj, permission__codename='view_submissions')
-        return group_qs.exists() or obj.abstractprovideruserobjectpermission_set.filter(permission__codename='view_submissions')
+        return group_qs.exists() or obj.abstractprovideruserobjectpermission_set.filter(permission__codename='view_submissions') or []
 
     def get_default_region_id(self, obj):
         try:

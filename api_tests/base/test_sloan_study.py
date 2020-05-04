@@ -3,7 +3,7 @@ import pytest
 from decimal import Decimal
 
 from waffle.models import Flag
-from website.settings import DOMAIN, TRAVIS_MODE
+from website.settings import DOMAIN
 from api.base.middleware import SloanOverrideWaffleMiddleware
 
 from osf_tests.factories import (
@@ -40,7 +40,6 @@ def inactive(*args, **kwargs):
 
 
 @pytest.mark.django_db
-@pytest.mark.skipif(TRAVIS_MODE, reason='Travis is balking at the idea of sending secure cookies via the testing app.')
 class TestSloanStudyWaffling:
     """
     DEV_MODE is mocked so cookies they behave as if they were using https.
@@ -243,3 +242,30 @@ class TestSloanStudyWaffling:
     def test_get_domain(self, url, expected_domain):
         actual_domain = SloanOverrideWaffleMiddleware.get_domain(url)
         assert actual_domain == expected_domain
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_user_override_cookie(self, app, user, preprint):
+        user.add_system_tag(SLOAN_COI)
+        cookies = {
+            SLOAN_COI_DISPLAY: 'False',
+        }
+
+        resp = app.get('/v2/', auth=user.auth, cookies=cookies)
+
+        assert SLOAN_COI_DISPLAY in resp.json['meta']['active_flags']
+        cookies = resp.headers.getall('Set-Cookie')
+
+        assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=.osf.io; Path=/; samesite=None; Secure' in cookies
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_user_override_cookie_false(self, app, user, preprint):
+        user.add_system_tag(f'no_{SLOAN_COI}')
+        cookies = {
+            SLOAN_COI_DISPLAY: 'True',
+        }
+
+        resp = app.get('/v2/', auth=user.auth, cookies=cookies)
+        assert SLOAN_COI_DISPLAY not in resp.json['meta']['active_flags']
+        cookies = resp.headers.getall('Set-Cookie')
+
+        assert f' dwf_{SLOAN_COI_DISPLAY}=False; Domain=.osf.io; Path=/; samesite=None; Secure' in cookies
