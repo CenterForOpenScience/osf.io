@@ -30,7 +30,7 @@
     </p>
 
     % if has_psyarxiv_chronos_text:
-        <li>Submit your preprint for publication in an APA-published journal. <a href=“https://help.osf.io/hc/en-us/articles/360044820913-Submit-to-APA-Journals-via-PsyArXiv-”>Learn more.</a></li>
+        <li>Submit your preprint to an APA-published journal. <a href=“https://help.osf.io/hc/en-us/articles/360044820913-Submit-to-APA-Journals-via-PsyArXiv-”>Learn more.</a></li>
     % endif
 
 
