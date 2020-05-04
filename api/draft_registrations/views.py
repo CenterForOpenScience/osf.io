@@ -50,7 +50,7 @@ class DraftRegistrationMixin(DraftMixin):
 
 class DraftRegistrationList(NodeDraftRegistrationsList):
     permission_classes = (
-        IsAdminContributor,
+        IsContributorOrAdminContributor,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )

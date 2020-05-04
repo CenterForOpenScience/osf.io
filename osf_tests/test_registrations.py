@@ -398,7 +398,7 @@ class TestRegisterNodeContributors:
         # component
         component_registration = registration.nodes[0]
         assert component_registration.contributors.filter(id=contributor_unregistered_no_email.id).exists()
-        assert component_registration._id in contributor_unregistered_no_email.unclaimed_records
+        assert component_registration._id not in contributor_unregistered_no_email.unclaimed_records
 
 
 # copied from tests/test_registrations

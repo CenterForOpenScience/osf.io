@@ -12,8 +12,8 @@ from api.nodes.permissions import ContributorDetailPermissions
 
 class IsContributorOrAdminContributor(permissions.BasePermission):
     """
-    Need to be a contributor on the draft registration to view and make edits.
-    Need to be an admin contributor on the node to create draft registration.
+    Need to be a contributor on the branched from node to view.
+    Need to have edit permissions on the branched from node to edit.
     """
 
     acceptable_models = (DraftRegistration, AbstractNode, )
@@ -36,8 +36,8 @@ class IsContributorOrAdminContributor(permissions.BasePermission):
 
 class IsAdminContributor(permissions.BasePermission):
     """
-    Need to be a contributor on the draft registration to view and make edits.
-    Need to be an admin contributor on the node to create draft registration.
+    Need to be a contributor on the branched from node to view.
+    Need to be an admin contributor on the branched from node to make edits
     """
 
     acceptable_models = (DraftRegistration, AbstractNode, )

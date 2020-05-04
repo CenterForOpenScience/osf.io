@@ -6,6 +6,7 @@ from api_tests.nodes.views.test_node_draft_registration_list import (
     TestDraftRegistrationCreate
 )
 from api.base.settings.defaults import API_BASE
+from django.contrib.auth.models import Permission
 
 from osf.models import DraftRegistration, NodeLicense
 from osf_tests.factories import (
@@ -149,7 +150,7 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
         project_public.add_contributor(read_contrib, READ)
 
         res = app.post_json_api(url_draft_registrations, payload, auth=write_contrib.auth, expect_errors=True)
-        assert res.status_code == 403
+        assert res.status_code == 201
         res = app.post_json_api(url_draft_registrations, payload, auth=read_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
@@ -168,6 +169,76 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
         assert 'affiliated_institutions' in relationships
         assert 'subjects' in relationships
         assert 'contributors' in relationships
+
+    def test_cannot_create_draft(
+            self, app, user_write_contrib,
+            user_read_contrib, user_non_contrib,
+            project_public, payload, group,
+            url_draft_registrations, group_mem):
+
+        #   test_write_only_contributor_cannot_create_draft
+        assert user_write_contrib in project_public.contributors.all()
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user_write_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 201
+
+    #   test_read_only_contributor_cannot_create_draft
+        assert user_read_contrib in project_public.contributors.all()
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user_read_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_non_authenticated_user_cannot_create_draft
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload, expect_errors=True)
+        assert res.status_code == 401
+
+    #   test_logged_in_non_contributor_cannot_create_draft
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user_non_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_group_admin_cannot_create_draft
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload,
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert res.status_code == 201
+
+    #   test_group_write_contrib_cannot_create_draft
+        project_public.remove_osf_group(group)
+        project_public.add_osf_group(group, WRITE)
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload,
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert res.status_code == 201
+
+    #   test_reviewer_cannot_create_draft_registration
+        user = AuthUserFactory()
+        administer_permission = Permission.objects.get(
+            codename='administer_prereg')
+        user.user_permissions.add(administer_permission)
+        user.save()
+
+        assert user_read_contrib in project_public.contributors.all()
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload, auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 403
 
 
 class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
