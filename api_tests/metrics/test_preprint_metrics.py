@@ -101,7 +101,7 @@ class TestPreprintMetrics:
         return '/{}metrics/preprints/'.format(API_BASE)
 
     @mock.patch('api.metrics.views.PreprintDownloadMetrics.execute_search')
-    def test_custom_metric_misformed_query(self, mock_execute, app, user, base_url):
+    def test_custom_metric_malformed_query(self, mock_execute, app, user, base_url):
         mock_execute.side_effect = RequestError
         post_url = '{}downloads/'.format(base_url)
         post_data = {
@@ -114,19 +114,11 @@ class TestPreprintMetrics:
         }
         res = app.post_json_api(post_url, post_data, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Misformed elasticsearch query.'
+        assert res.json['errors'][0]['detail'] == 'Malformed elasticsearch query.'
 
-    @pytest.mark.skip('Return results will be entirely mocked so does not make a lot of sense to run on travis.')
+    @pytest.mark.es
     def test_agg_query(self, app, user, base_url):
-        """
-        THis test was written to correct a bug where lists in aggregated queries, these would fail before this is just a
-        smoke test because we can't really travis test for accuracy.
-        TODO: Investigate https://pypi.org/project/pytest-elasticsearch/ once we upgrade to Py3
-        :param app:
-        :param user:
-        :param base_url:
-        :return:
-        """
+
         post_url = '{}downloads/'.format(base_url)
 
         payload = {

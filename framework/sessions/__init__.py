@@ -102,7 +102,8 @@ def create_session(response, data=None):
         set_session(new_session)
     if response is not None:
         response.set_cookie(settings.COOKIE_NAME, value=cookie_value, domain=settings.OSF_COOKIE_DOMAIN,
-                            secure=settings.SESSION_COOKIE_SECURE, httponly=settings.SESSION_COOKIE_HTTPONLY)
+                            secure=settings.SESSION_COOKIE_SECURE, httponly=settings.SESSION_COOKIE_HTTPONLY,
+                            samesite=settings.SESSION_COOKIE_SAMESITE)
         return response
 
 

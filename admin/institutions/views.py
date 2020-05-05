@@ -2,18 +2,22 @@ from __future__ import unicode_literals
 
 import json
 
+from django.http import Http404
 from django.core import serializers
 from django.shortcuts import redirect
 from django.forms.models import model_to_dict
-from django.core.urlresolvers import reverse_lazy
+from django.core.urlresolvers import reverse_lazy, reverse
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import ListView, DetailView, View, CreateView, UpdateView, DeleteView, TemplateView
+from django.views.generic.edit import FormView
+from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
 from admin.base import settings
 from admin.base.forms import ImportFileForm
-from admin.institutions.forms import InstitutionForm
-from osf.models import Institution, Node
+from admin.institutions.forms import InstitutionForm, InstitutionalMetricsAdminRegisterForm
+from django.contrib.auth.models import Group
+from osf.models import Institution, Node, OSFUser
 
 
 class InstitutionList(PermissionRequiredMixin, ListView):
@@ -192,3 +196,41 @@ class CannotDeleteInstitution(TemplateView):
         context = super(CannotDeleteInstitution, self).get_context_data(**kwargs)
         context['institution'] = Institution.objects.get(id=self.kwargs['institution_id'])
         return context
+
+class InstitutionalMetricsAdminRegister(PermissionRequiredMixin, FormView):
+    permission_required = 'osf.change_institution'
+    raise_exception = True
+    template_name = 'institutions/register_institutional_admin.html'
+    form_class = InstitutionalMetricsAdminRegisterForm
+
+    def get_form_kwargs(self):
+        kwargs = super(InstitutionalMetricsAdminRegister, self).get_form_kwargs()
+        kwargs['institution_id'] = self.kwargs['institution_id']
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super(InstitutionalMetricsAdminRegister, self).get_context_data(**kwargs)
+        context['institution_name'] = Institution.objects.get(id=self.kwargs['institution_id']).name
+        return context
+
+    def form_valid(self, form):
+        kwargs = self.get_form_kwargs()
+        user_id = form.cleaned_data.get('user_id')
+        osf_user = OSFUser.load(user_id)
+        institution_id = kwargs['institution_id']
+        target_institution = Institution.objects.filter(id=institution_id).first()
+
+        if not osf_user:
+            raise Http404('OSF user with id "{}" not found. Please double check.'.format(user_id))
+
+        group = Group.objects.filter(name__startswith='institution_{}'.format(target_institution._id)).first()
+
+        group.user_set.add(osf_user)
+        group.save()
+
+        osf_user.save()
+        messages.success(self.request, 'Permissions update successful for OSF User {}!'.format(osf_user.username))
+        return super(InstitutionalMetricsAdminRegister, self).form_valid(form)
+
+    def get_success_url(self):
+        return reverse('institutions:register_metrics_admin', kwargs={'institution_id': self.kwargs['institution_id']})

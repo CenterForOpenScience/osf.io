@@ -122,6 +122,7 @@ OSF_SESSION_TIMEOUT = 30 * 24 * 60 * 60  # 30 days in seconds
 # TODO: Override SECRET_KEY in local.py in production
 SECRET_KEY = 'CHANGEME'
 SESSION_COOKIE_SECURE = SECURE_MODE
+SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_HTTPONLY = True
 
 # local path to private key and cert for local development using https, overwrite in local.py
@@ -418,6 +419,10 @@ class CeleryConfig:
         'scripts.triggered_mails',
         'website.mailchimp_utils',
         'website.notifications.tasks',
+        'website.collections.tasks',
+        'website.identifier.tasks',
+        'website.preprints.tasks',
+        'website.project.tasks',
     }
 
     high_pri_modules = {
@@ -489,6 +494,7 @@ class CeleryConfig:
         'scripts.premigrate_created_modified',
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.deactivate_requested_accounts',
+        'osf.management.commands.update_institution_project_counts',
     )
 
     # Modules that need metrics and release requirements
@@ -626,6 +632,10 @@ class CeleryConfig:
                 'task': 'management.commands.check_crossref_dois',
                 'schedule': crontab(minute=0, hour=4),  # Daily 11:00 p.m.
             },
+            'update_institutional_metrics': {
+                'task': 'management.commands.update_institution_project_counts',
+                'schedule': crontab(minute=0, hour=9), # Daily 05:00 a.m. EDT
+            },
         }
 
         # Tasks that need metrics and release requirements
@@ -658,6 +668,8 @@ assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft r
 
 # TODO: Remove references to this flag
 ENABLE_INSTITUTIONS = True
+
+ENABLE_STORAGE_USAGE_CACHE = True
 
 ENABLE_VARNISH = False
 ENABLE_ESI = False

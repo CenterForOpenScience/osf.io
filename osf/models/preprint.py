@@ -36,6 +36,7 @@ from website.notifications import utils
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
 from website.project.licenses import set_license
 from website.util import api_v2_url, api_url_for, web_url_for
+from website.util.metrics import provider_source_tag
 from website.citations.utils import datetime_to_csl
 from website import settings, mails
 from website.preprints.tasks import update_or_enqueue_on_preprint_updated
@@ -133,6 +134,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                                 ('prereg_both', 'Pre-registration of study designs and study analysis')
                                 ]
 
+    HAS_LINKS_CHOICES = [('available', 'Available'),
+                         ('no', 'No'),
+                         ('not_applicable', 'Not applicable')
+                         ]
+
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
                                  related_name='preprints',
@@ -199,7 +205,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         blank=True,
         null=True
     )
-    has_prereg_links = models.NullBooleanField(
+    has_prereg_links = models.TextField(
+        choices=HAS_LINKS_CHOICES,
         null=True,
         blank=True
     )
@@ -220,7 +227,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         null=True,
         blank=True
     )
-    has_data_links = models.NullBooleanField(
+    has_data_links = models.TextField(
+        choices=HAS_LINKS_CHOICES,
         null=True,
         blank=True
     )
@@ -939,12 +947,17 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             params=params
         )
 
-    def update_has_coi(self, auth: tuple, has_coi: bool, log: bool = True, save: bool = True):
+    # Overrides ContributorMixin
+    def _add_related_source_tags(self, contributor):
+        system_tag_to_add, created = Tag.all_tags.get_or_create(name=provider_source_tag(self.provider._id, 'preprint'), system=True)
+        contributor.add_system_tag(system_tag_to_add)
+
+    def update_has_coi(self, auth: Auth, has_coi: bool, log: bool = True, save: bool = True):
         """
         This method sets the field `has_coi` to indicate if there's a conflict interest statement for this preprint
         and logs that change.
 
-        :param auth: Tuple ('username', 'password')
+        :param auth: Auth object
         :param has_coi: Boolean represents if a user has a conflict of interest statement available.
         :param log: Boolean should this be logged?
         :param save: Boolean should this be saved immediately?
@@ -968,11 +981,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    def update_conflict_of_interest_statement(self, auth: tuple, coi_statement: str, log: bool = True, save: bool = True):
+    def update_conflict_of_interest_statement(self, auth: Auth, coi_statement: str, log: bool = True, save: bool = True):
         """
         This method sets the `conflict_of_interest_statement` field for this preprint and logs that change.
 
-        :param auth: Tuple ('username', 'password')
+        :param auth: Auth object
         :param coi_statement: String represents a user's conflict of interest statement for their preprint.
         :param log: Boolean should this be logged?
         :param save: Boolean should this be saved immediately?
@@ -1000,12 +1013,12 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    def update_has_data_links(self, auth: tuple, has_data_links: bool, log: bool = True, save: bool = True):
+    def update_has_data_links(self, auth: Auth, has_data_links: bool, log: bool = True, save: bool = True):
         """
         This method sets the `has_data_links` field that respresent the availability of links to supplementary data
         for this preprint and logs that change.
 
-        :param auth: Tuple ('username', 'password')
+        :param auth: Auth object
         :param has_data_links: Boolean represents the availability of links to supplementary data for this preprint
         :param log: Boolean should this be logged?
         :param save: Boolean should this be saved immediately?
@@ -1030,12 +1043,12 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    def update_data_links(self, auth: tuple, data_links: list, log: bool = True, save: bool = True):
+    def update_data_links(self, auth: Auth, data_links: list, log: bool = True, save: bool = True):
         """
         This method sets the field `data_links` which is a validated list of links to supplementary data for a
         preprint and logs that change.
 
-        :param auth: Tuple ('username', 'password')
+        :param auth: Auth object
         :param data_links: List urls that should link to supplementary data for a preprint.
         :param log: Boolean should this be logged?
         :param save: Boolean should this be saved immediately?
@@ -1046,7 +1059,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.data_links == data_links:
             return
 
-        if not self.has_data_links:
+        if not self.has_data_links == 'available':
             raise PreprintStateError('You cannot edit this statement while your data links availability is set to false'
                                      ' or is unanswered.')
 
@@ -1063,12 +1076,12 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    def update_why_no_data(self, auth: tuple, why_no_data: str, log: bool = True, save: bool = True):
+    def update_why_no_data(self, auth: Auth, why_no_data: str, log: bool = True, save: bool = True):
         """
         This method sets the field `why_no_data` a string that represents a user provided explanation for the
         unavailability of supplementary data for their preprint.
 
-        :param auth: Tuple ('username', 'password')
+        :param auth: Auth object
         :param why_no_data: String a user provided explanation for the unavailability of data links for their preprint.
         :param log: Boolean should this be logged?
         :param save: Boolean should this be saved immediately?
@@ -1079,11 +1092,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.why_no_data == why_no_data:
             return
 
-        if self.has_data_links is False:
-            self.why_no_data = why_no_data
-        else:
+        if not self.has_data_links == 'no':
             raise PreprintStateError('You cannot edit this statement while your data links availability is set to true or'
                                   ' is unanswered.')
+        else:
+            self.why_no_data = why_no_data
 
         if log:
             self.add_log(
@@ -1096,12 +1109,12 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    def update_has_prereg_links(self, auth: tuple, has_prereg_links: bool, log: bool = True, save: bool = True):
+    def update_has_prereg_links(self, auth: Auth, has_prereg_links: bool, log: bool = True, save: bool = True):
         """
         This method updates the `has_prereg_links` field, that indicates availability of links to prereg data and logs
         changes to it.
 
-        :param auth: Tuple ('username', 'password')
+        :param auth: Auth object
         :param has_prereg_links: Boolean indicates whether the user has links to preregistration materials
         :param log: Boolean should this be logged?
         :param save: Boolean should this be saved immediately?
@@ -1126,12 +1139,12 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    def update_why_no_prereg(self, auth: tuple, why_no_prereg: str, log: bool = True, save: bool = True):
+    def update_why_no_prereg(self, auth: Auth, why_no_prereg: str, log: bool = True, save: bool = True):
         """
         This method updates the field `why_no_prereg` that contains a user provided explanation of prereg data
         unavailability and logs changes to it.
 
-        :param auth: Tuple ('username', 'password')
+        :param auth: Auth object
         :param why_no_prereg: String explanation of prereg data unavailability
         :param log: Boolean should this be logged?
         :param save: Boolean should this be saved immediately?
@@ -1142,7 +1155,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if why_no_prereg == self.why_no_prereg:
             return
 
-        if self.has_prereg_links or self.has_prereg_links is None:
+        if self.has_prereg_links == 'available' or self.has_prereg_links is None:
             raise PreprintStateError('You cannot edit this statement while your prereg links '
                                   'availability is set to true or is unanswered.')
 
@@ -1159,12 +1172,12 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    def update_prereg_links(self, auth: tuple, prereg_links: list, log: bool = True, save: bool = True):
+    def update_prereg_links(self, auth: Auth, prereg_links: list, log: bool = True, save: bool = True):
         """
         This method updates the field `prereg_links` that contains a list of validated URLS linking to prereg data
         and logs changes to it.
 
-        :param auth: Tuple ('username', 'password')
+        :param auth: Auth object
         :param prereg_links: List list of validated urls with schemes to links to prereg data
         :param log: Boolean should this be logged?
         :param save: Boolean should this be saved immediately?
@@ -1175,7 +1188,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if prereg_links == self.prereg_links:
             return
 
-        if not self.has_prereg_links:
+        if not self.has_prereg_links == 'available':
             raise PreprintStateError('You cannot edit this field while your prereg links'
                                   ' availability is set to false or is unanswered.')
 
@@ -1192,13 +1205,13 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if save:
             self.save()
 
-    def update_prereg_link_info(self, auth: tuple, prereg_link_info: str, log: bool = True, save: bool = True):
+    def update_prereg_link_info(self, auth: Auth, prereg_link_info: str, log: bool = True, save: bool = True):
         """
         This method updates the field `prereg_link_info` that contains a one of a finite number of choice strings in
         contained in the list in the static member `PREREG_LINK_INFO_CHIOCES` that describe the nature of the preprint's
         prereg links.
 
-        :param auth: Tuple ('username', 'password')
+        :param auth: Auth object
         :param prereg_link_info: String a string describing the nature of the preprint's prereg links.
         :param log: Boolean should this be logged?
         :param save: Boolean should this be saved immediately?
@@ -1209,7 +1222,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.prereg_link_info == prereg_link_info:
             return
 
-        if not self.has_prereg_links:
+        if not self.has_prereg_links == 'available':
             raise PreprintStateError('You cannot edit this field while your prereg links'
                                   ' availability is set to false or is unanswered.')
 

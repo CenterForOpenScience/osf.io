@@ -54,9 +54,10 @@ from website.project.views.contributor import (
 from website.project.views.node import _should_show_wiki_widget, _view_project, abbrev_authors
 from website.util import api_url_for, web_url_for
 from website.util import rubeus
+from website.util.metrics import OsfSourceTags, OsfClaimedTags, provider_source_tag, provider_claimed_tag
 from osf.utils import permissions
 from osf.models import Comment
-from osf.models import OSFUser
+from osf.models import OSFUser, Tag
 from osf.models import Email
 from tests.base import (
     assert_is_redirect,
@@ -2373,8 +2374,24 @@ class TestClaimViews(OsfTestCase):
         super(TestClaimViews, self).setUp()
         self.referrer = AuthUserFactory()
         self.project = ProjectFactory(creator=self.referrer, is_public=True)
+        self.project_with_source_tag = ProjectFactory(creator=self.referrer, is_public=True)
+        self.preprint_with_source_tag = PreprintFactory(creator=self.referrer, is_public=True)
+        osf_source_tag, created = Tag.all_tags.get_or_create(name=OsfSourceTags.Osf.value, system=True)
+        preprint_source_tag, created = Tag.all_tags.get_or_create(name=provider_source_tag(self.preprint_with_source_tag.provider._id, 'preprint'), system=True)
+        self.project_with_source_tag.add_system_tag(osf_source_tag.name)
+        self.preprint_with_source_tag.add_system_tag(preprint_source_tag.name)
         self.given_name = fake.name()
         self.given_email = fake_email()
+        self.project_with_source_tag.add_unregistered_contributor(
+            fullname=self.given_name,
+            email=self.given_email,
+            auth=Auth(user=self.referrer)
+        )
+        self.preprint_with_source_tag.add_unregistered_contributor(
+            fullname=self.given_name,
+            email=self.given_email,
+            auth=Auth(user=self.referrer)
+        )
         self.user = self.project.add_unregistered_contributor(
             fullname=self.given_name,
             email=self.given_email,
@@ -2777,6 +2794,32 @@ class TestClaimViews(OsfTestCase):
         )
         # Response is a 400
         assert_equal(res.status_code, 400)
+
+    def test_claim_user_with_project_id_adds_corresponding_claimed_tag_to_user(self):
+        assert OsfClaimedTags.Osf.value not in self.user.system_tags
+        url = self.user.get_claim_url(self.project_with_source_tag._primary_key)
+        res = self.app.post(url, {
+            'username': self.user.username,
+            'password': 'killerqueen',
+            'password2': 'killerqueen'
+        })
+
+        assert_equal(res.status_code, 302)
+        self.user.reload()
+        assert OsfClaimedTags.Osf.value in self.user.system_tags
+
+    def test_claim_user_with_preprint_id_adds_corresponding_claimed_tag_to_user(self):
+        assert provider_claimed_tag(self.preprint_with_source_tag.provider._id, 'preprint') not in self.user.system_tags
+        url = self.user.get_claim_url(self.preprint_with_source_tag._primary_key)
+        res = self.app.post(url, {
+            'username': self.user.username,
+            'password': 'killerqueen',
+            'password2': 'killerqueen'
+        })
+
+        assert_equal(res.status_code, 302)
+        self.user.reload()
+        assert provider_claimed_tag(self.preprint_with_source_tag.provider._id, 'preprint') in self.user.system_tags
 
 
 @pytest.mark.enable_bookmark_creation

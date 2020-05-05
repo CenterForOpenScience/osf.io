@@ -59,6 +59,7 @@ DEBUG_PROPAGATE_EXCEPTIONS = True
 SESSION_COOKIE_NAME = 'api'
 SESSION_COOKIE_SECURE = osf_settings.SECURE_MODE
 SESSION_COOKIE_HTTPONLY = osf_settings.SESSION_COOKIE_HTTPONLY
+SESSION_COOKIE_SAMESITE = osf_settings.SESSION_COOKIE_SAMESITE
 
 # csrf:
 CSRF_COOKIE_NAME = 'api-csrf'
@@ -229,8 +230,8 @@ MIDDLEWARE = (
     # 'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'waffle.middleware.WaffleMiddleware',
-    'api.base.middleware.SloanIdMiddleware',
+    # 'waffle.middleware.WaffleMiddleware',
+    'api.base.middleware.SloanOverrideWaffleMiddleware',  # Delete this and uncomment WaffleMiddleware to revert Sloan
 )
 
 TEMPLATES = [
@@ -334,3 +335,5 @@ CACHES = {
 }
 
 SLOAN_ID_COOKIE_NAME = 'sloan_id'
+
+MAX_SIZE_OF_ES_QUERY = 10000

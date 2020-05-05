@@ -134,6 +134,17 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         res = app.get(url_draft_registrations, auth=draft_admin.auth)
         assert res.status_code == 200
 
+    # Overwrites TestDraftRegistrationDetail
+    def test_can_view_after_added(
+            self, app, schema, draft_registration, url_draft_registrations):
+        # Draft Registration permissions should be independent of the branched_from node
+
+        user = AuthUserFactory()
+        project = draft_registration.branched_from
+        project.add_contributor(user, ADMIN)
+        res = app.get(url_draft_registrations, auth=user.auth, expect_errors=True)
+        assert res.status_code == 403
+
     # Overrides TestDraftRegistrationDetail
     def test_reviewer_can_see_draft_registration(
             self, app, schema, draft_registration, url_draft_registrations):
@@ -259,7 +270,7 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
 
         res = app.put_json_api(
             url_draft_registrations, editable_fields_payload,
-            auth=user.auth, expect_errors=True)
+            auth=user.auth)
         assert res.status_code == 200
         attributes = res.json['data']['attributes']
 
@@ -309,16 +320,17 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
         # Override - not required
         assert res.status_code == 200
 
-    def test_invalid_editable_title(
-            self, app, user, editable_fields_payload, url_draft_registrations):
+    def test_editable_title(
+            self, app, user, editable_fields_payload, url_draft_registrations, institution_one):
+        # User must have permissions on the institution included in the editable_fields_payload
+        user.affiliated_institutions.add(institution_one)
 
-        # test blank title
+        # test blank title - should be allowed
         editable_fields_payload['data']['attributes']['title'] = ''
         res = app.put_json_api(
             url_draft_registrations, editable_fields_payload,
-            auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'This field may not be blank.'
+            auth=user.auth)
+        assert res.status_code == 200
 
         # test null title
         editable_fields_payload['data']['attributes']['title'] = None
