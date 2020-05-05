@@ -489,7 +489,7 @@ class InstitutionUserMetricsList(InstitutionImpactList):
             record_dict = user_record.to_dict()
             user_id = user_record.user_id
             fullname = OSFUser.objects.get(guids___id=user_id).fullname
-            record_dict['user'] = fullname
+            record_dict['user_name'] = fullname
             users.append(record_dict)
 
         return users

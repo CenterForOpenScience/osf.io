@@ -237,7 +237,7 @@ class InstitutionUserMetricsSerializer(JSONAPISerializer):
         type_ = 'institution-users'
 
     id = IDField(source='user_id', read_only=True)
-    user_name = ser.CharField(source='user', read_only=True)
+    user_name = ser.CharField(read_only=True)
     public_projects = ser.IntegerField(source='public_project_count', read_only=True)
     private_projects = ser.IntegerField(source='private_project_count', read_only=True)
     department = ser.CharField(read_only=True)
