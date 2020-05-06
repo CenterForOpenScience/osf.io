@@ -30,7 +30,7 @@ from api.base.serializers import (
     LinkedNodesRelationshipSerializer,
     LinkedRegistrationsRelationshipSerializer,
 )
-from api.base.throttling import RootAnonThrottle, UserRateThrottle
+from api.base.throttling import RootAnonThrottle, UserRateThrottle, BurstRateThrottle
 from api.base.utils import is_bulk_request, get_user_auth, default_node_list_queryset
 from api.nodes.filters import NodesFilterMixin
 from api.nodes.utils import get_file_object
@@ -399,7 +399,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
 
 
 @api_view(('GET',))
-@throttle_classes([RootAnonThrottle, UserRateThrottle])
+@throttle_classes([RootAnonThrottle, UserRateThrottle, BurstRateThrottle, ])
 def root(request, format=None, **kwargs):
     """
     The documentation for the Open Science Framework API can be found at [developer.osf.io](https://developer.osf.io).
@@ -442,7 +442,7 @@ def root(request, format=None, **kwargs):
 
 
 @api_view(('GET',))
-@throttle_classes([RootAnonThrottle, UserRateThrottle])
+@throttle_classes([RootAnonThrottle, UserRateThrottle, BurstRateThrottle, ])
 def status_check(request, format=None, **kwargs):
     maintenance = MaintenanceState.objects.all().first()
     return Response({
