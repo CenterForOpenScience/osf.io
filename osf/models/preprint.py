@@ -36,6 +36,7 @@ from website.notifications import utils
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
 from website.project.licenses import set_license
 from website.util import api_v2_url, api_url_for, web_url_for
+from website.util.metrics import provider_source_tag
 from website.citations.utils import datetime_to_csl
 from website import settings, mails
 from website.preprints.tasks import update_or_enqueue_on_preprint_updated
@@ -945,6 +946,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             auth=Auth(user),
             params=params
         )
+
+    # Overrides ContributorMixin
+    def _add_related_source_tags(self, contributor):
+        system_tag_to_add, created = Tag.all_tags.get_or_create(name=provider_source_tag(self.provider._id, 'preprint'), system=True)
+        contributor.add_system_tag(system_tag_to_add)
 
     def update_has_coi(self, auth: Auth, has_coi: bool, log: bool = True, save: bool = True):
         """
