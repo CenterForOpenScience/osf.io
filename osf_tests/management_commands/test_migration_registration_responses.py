@@ -29,7 +29,6 @@ prereg_registration_responses = {
     'q12.question': 'these are my measured variables',
     'q1': 'This is my title',
     'q3': 'research questions',
-    'q2': 'Dawn Pattison, James Brown, Carrie Skinner',
     'q5': 'Registration prior to creation of data',
     'q4': 'this is my hypothesis',
     'q6': 'Explanation of existing data',
@@ -135,11 +134,6 @@ prereg_registration_metadata = {
     'q3': {
         'comments': [],
         'value': 'research questions',
-        'extra': []
-    },
-    'q2': {
-        'comments': [],
-        'value': 'Dawn Pattison, James Brown, Carrie Skinner',
         'extra': []
     },
     'q5': {
@@ -464,11 +458,6 @@ prereg_registration_metadata_built = {
     'q3': {
         'comments': [],
         'value': 'research questions',
-        'extra': []
-    },
-    'q2': {
-        'comments': [],
-        'value': 'Dawn Pattison, James Brown, Carrie Skinner',
         'extra': []
     },
     'q5': {
@@ -1722,7 +1711,6 @@ class TestMigrateDraftRegistrationRegistrationResponses:
         assert responses['q12.question'] == 'these are my measured variables'
         assert responses['q1'] == 'This is my title'
         assert responses['q3'] == 'research questions'
-        assert responses['q2'] == 'Dawn Pattison, James Brown, Carrie Skinner'
         assert responses['q5'] == 'Registration prior to creation of data'
         assert responses['q4'] == 'this is my hypothesis'
         assert responses['q6'] == 'Explanation of existing data'
@@ -1956,7 +1944,6 @@ class TestMigrateRegistrationRegistrationResponses:
         assert responses['q12.question'] == 'these are my measured variables'
         assert responses['q1'] == 'This is my title'
         assert responses['q3'] == 'research questions'
-        assert responses['q2'] == reg_prereg.registered_from.visible_contributors.first().fullname
         assert responses['q5'] == 'Registration prior to creation of data'
         assert responses['q4'] == 'this is my hypothesis'
         assert responses['q6'] == 'Explanation of existing data'
