@@ -616,7 +616,7 @@ msgstr "%(node_count)sの関連ノードを表示"
 #: .\templates\institutions\detail.html:35
 #, fuzzy
 msgid "Logo:"
-msgstr "ロゴ"
+msgstr "ロゴ："
 
 #: .\templates\institutions\detail.html:41
 msgid "Banner:"
@@ -1675,7 +1675,7 @@ msgstr "プロバイダーアセットファイル"
 #: .\templates\osf\providerassetfile_form.html:12
 #, fuzzy
 msgid "Delete asset"
-msgstr "バナーを削除"
+msgstr "アセットを削除"
 
 #: .\templates\osf\providerassetfile_form.html:22
 msgid "Uploading a new file will overwrite this asset."
@@ -1834,21 +1834,17 @@ msgstr "管理プロジェクト"
 msgid "Remove"
 msgstr "除外"
 
-# | msgid "Management project"
 #: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:18
-#, fuzzy
 msgid "Management project URL"
-msgstr "管理プロジェクト"
+msgstr "管理プロジェクトURL"
 
 #: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:26
 msgid "Organizational project"
 msgstr "組織プロジェクト"
 
-# | msgid "Organizational project"
 #: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:32
-#, fuzzy
 msgid "Organizational project URL"
-msgstr "組織プロジェクト"
+msgstr "組織プロジェクトURL"
 
 #: .\templates\rdm_addons\addons\owncloud_credentials_modal.html:6
 #: .\templates\rdm_custom_storage_location\providers\owncloud_modal.html:7
@@ -1942,7 +1938,7 @@ msgstr "アナウンス"
 #: .\templates\rdm_announcement\index.html:64
 #, fuzzy
 msgid "Options"
-msgstr "アクション"
+msgstr "オプション"
 
 #: .\templates\rdm_announcement\send.html:18
 #, python-format
@@ -2330,7 +2326,7 @@ msgstr "ユーザーのリストに戻る"
 #: .\templates\spam\detail.html:65
 #, fuzzy
 msgid "Author:"
-msgstr "著者"
+msgstr "著者："
 
 # | msgid "User's profile"
 #: .\templates\spam\detail.html:68
