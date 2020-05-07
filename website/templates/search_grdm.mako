@@ -98,20 +98,11 @@
                         <div class="search-results hidden" data-bind="css: {hidden: totalCount() }">${_("Type your search terms in the box above.")}</div>
                         <!-- /ko -->
                         <!-- ko if: totalCount() -->
+                        <%include file='./search_nav_grdm.mako' />
                         <div data-bind="foreach: results">
                             <div class="search-result" data-bind="template: { name: category, data: $data}"></div>
                         </div>
-                        <ul class="pager">
-                            <li data-bind="css: {disabled: !prevPageExists()}">
-                                <a href="#" data-bind="click: pagePrev">${_("Previous Page")} </a>
-                            </li>
-                            <span data-bind="visible: totalPages() > 0">
-                                <span data-bind="text: navLocation"></span>
-                            </span>
-                            <li data-bind="css: {disabled: !nextPageExists()}">
-                                <a href="#" data-bind="click: pageNext"> ${_("Next Page")}</a>
-                            </li>
-                        </ul>
+                        <%include file='./search_nav_grdm.mako' />
                         <!-- /ko -->
                         <div class="buffer"></div>
                     </div><!--col-->

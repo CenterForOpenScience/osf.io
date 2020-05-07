@@ -101,6 +101,8 @@ var ViewModel = function(params) {
     self.showClose = false;
     self.searchCSS = ko.observable('active');
     self.onSearchPage = true;
+    self.pagesShown = ko.observable(10);
+    self.center = Math.floor(self.pagesShown() / 2) + 1;
     self.resultsPerPageSettings = ko.observableArray([
         {text: '10', value: 10},
         {text: '20', value: 20},
@@ -521,6 +523,57 @@ var ViewModel = function(params) {
     self.pagePrev = self.paginate.bind(self, -1);
     self.pageNext = self.paginate.bind(self, 1);
 
+    self.pageNth = function(val) {
+        window.scrollTo(0, 0);
+        self.currentPage(val);
+        self.search();
+    };
+
+    self.pageFirst = function() {
+        self.pageNth(1);
+    };
+
+    self.pageLast = function() {
+        self.pageNth(self.totalPages());
+    };
+
+    self.pageNthByUser = function() {
+        window.scrollTo(0, 0);
+        self.search();
+    };
+
+    self.listIndices = function() {
+        var pages = [];
+        var i;
+        if (self.totalPages() < self.pagesShown()) {
+            for (i = 1; i <= self.totalPages(); i++) {
+                pages.push(i);
+            }
+            return pages;
+        }
+
+        if (self.currentPage() <= self.center) {
+            for (i = 1; i <= self.pagesShown(); i++) {
+                pages.push(i);
+            }
+            return pages;
+        }
+
+        var linksBeforeCurrent = Math.ceil((self.pagesShown() - 2) / 2);
+        var linksAfterCurrent = Math.floor((self.pagesShown() - 2) / 2);
+        if ((self.currentPage() + linksAfterCurrent + 1) < self.totalPages()) {
+            for (i = self.currentPage() - linksBeforeCurrent; i <= self.currentPage() + linksAfterCurrent; i++) {
+                pages.push(i);
+            }
+            return pages;
+        }
+
+        for (i = self.totalPages() - (self.pagesShown() - 1); i <= self.totalPages(); i++) {
+            pages.push(i);
+        }
+        return pages;
+    };
+
     //History JS callback
     self.pageChange = function() {
         if (self.stateJustPushed) {
@@ -597,6 +650,28 @@ var ViewModel = function(params) {
     self.resultsPerPage.subscribe(function(newValue) {
         self.submit();
     });
+
+    self.currentPage.subscribe(function(newValue) {
+        var value = self.currentPage();
+        if (typeof value === 'string') {
+            var intValue = Number(value);
+            if (Number.isInteger(intValue)) {
+                if (intValue < 1) {
+                    self.currentPage(1);
+                }
+
+                if (intValue > self.totalPages()) {
+                    self.currentPage(self.totalPages());
+                }
+            } else {
+                self.currentPage(1);
+            }
+        }
+    });
+
+    self.isCurrentPage = function(val) {
+        return self.currentPage() === val;
+    };
 
 };
 
