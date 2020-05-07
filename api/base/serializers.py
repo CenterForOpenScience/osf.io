@@ -889,6 +889,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     elif related_type == 'users' and related_class.view_name == 'user_settings':
                         related_id = resolved_url.kwargs['user_id']
                         related_type = 'user-settings'
+                    elif related_type == 'institutions' and related_class.view_name == 'institution-summary-metrics':
+                        related_id = resolved_url.kwargs['institution_id']
+                        related_type = 'institution-summary-metrics'
                     else:
                         related_id = resolved_url.kwargs[related_type[:-1] + '_id']
                 except KeyError:
