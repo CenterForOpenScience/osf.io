@@ -388,7 +388,9 @@
         window.contextVars = $.extend(true, {}, window.contextVars, {
             search:true,
             shareUrl: ${ shareUrl | sjson, n },
-            enablePrivateSearch: ${ enable_private_search | sjson, n }
+            enablePrivateSearch: ${ enable_private_search | sjson, n },
+            searchSort: ${ search_sort | sjson, n },
+            searchSize: ${ search_size | sjson, n }
         });
     </script>
 

@@ -94,6 +94,11 @@ var ViewModel = function(params) {
     self.urlLists = ko.observableArray([]);
     self.searching = ko.observable(false);
     self.resultsPerPage = ko.observable(10);
+    if (window.contextVars.searchSize !== null) {
+        self.resultsPerPage = ko.observable(Number(window.contextVars.searchSize));
+    } else {
+        self.resultsPerPage = ko.observable(10);
+    }
     self.categories = ko.observableArray([]);
     self.shareCategory = ko.observable('');
     self.searchStarted = ko.observable(false);
@@ -101,7 +106,11 @@ var ViewModel = function(params) {
     self.showClose = false;
     self.searchCSS = ko.observable('active');
     self.onSearchPage = true;
-    self.sortOrder = ko.observable('modified_desc');
+    if (window.contextVars.searchSort !== null) {
+        self.sortOrder = ko.observable(window.contextVars.searchSort);
+    } else {
+        self.sortOrder = ko.observable('modified_desc');
+    }
     self.sortOrderSettings = ko.observableArray([
         {text: 'Date Modified(Desc)', value: 'modified_desc', enable: ko.observable(true)},
         {text: 'Date Modified(Asc)', value: 'modified_asc', enable: ko.observable(true)},
