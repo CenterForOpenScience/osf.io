@@ -42,6 +42,10 @@ from api.institutions.serializers import (
 from api.institutions.permissions import UserIsAffiliated
 from rest_framework.settings import api_settings
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class InstitutionMixin(object):
     """Mixin with convenience method get_institution
@@ -485,7 +489,7 @@ class InstitutionUserMetricsList(InstitutionImpactList):
             record_dict = user_record.to_dict()
             user_id = user_record.user_id
             fullname = OSFUser.objects.get(guids___id=user_id).fullname
-            record_dict['user'] = f'({user_id}) {fullname}'
+            record_dict['user_name'] = fullname
             users.append(record_dict)
 
         return users
