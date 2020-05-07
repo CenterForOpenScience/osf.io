@@ -101,6 +101,12 @@ var ViewModel = function(params) {
     self.showClose = false;
     self.searchCSS = ko.observable('active');
     self.onSearchPage = true;
+    self.resultsPerPageSettings = ko.observableArray([
+        {text: '10', value: 10},
+        {text: '20', value: 20},
+        {text: '50', value: 50},
+        {text: '100', value: 100}
+    ]);
 
     self.licenses = ko.observable(
         $.map(licenses, function(license) {
@@ -587,6 +593,10 @@ var ViewModel = function(params) {
             self.category(new Category('total', 0, 'Total'));
         }
     };
+
+    self.resultsPerPage.subscribe(function(newValue) {
+        self.submit();
+    });
 
 };
 
