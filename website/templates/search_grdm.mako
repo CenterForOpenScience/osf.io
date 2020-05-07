@@ -11,78 +11,80 @@
         <div class="row">
             <div class="col-md-12">
                 <div class="row m-t-md">
-                    <!-- ko if: allCategories().length > 0-->
                     <div class="col-md-3">
-                        <div class="row">
-                            <div class="col-md-12">
-                                <ul class="nav nav-pills nav-stacked" data-bind="foreach: allCategories">
+                        <div class="row" data-spy="affix" data-offset-top="0" data-offset-bottom="100">
+                            <!-- ko if: allCategories().length > 0-->
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <ul class="nav nav-pills nav-stacked" data-bind="foreach: allCategories">
 
-                                    <!-- ko if: $parent.category().name === name -->
-                                        <li class="active"> <!-- TODO: simplify markup; only the active class really needs to be conditional -->
-                                            <a data-bind="click: $parent.filter.bind($data)"><span data-bind="text: display"></span><span class="badge pull-right" data-bind="text: count"></span></a>
-                                        </li>
-                                    <!-- /ko -->
-                                    <!-- ko if: $parent.category().name !== name -->
-                                        <li>
-                                            <a data-bind="click: $parent.filter.bind($data)"><span data-bind="text: display"></span><span class="badge pull-right" data-bind="text: count"></span></a>
-                                        </li>
-                                    <!-- /ko -->
-                                </ul>
+                                        <!-- ko if: $parent.category().name === name -->
+                                            <li class="active"> <!-- TODO: simplify markup; only the active class really needs to be conditional -->
+                                                <a data-bind="click: $parent.filter.bind($data)"><span data-bind="text: display"></span><span class="badge pull-right" data-bind="text: count"></span></a>
+                                            </li>
+                                        <!-- /ko -->
+                                        <!-- ko if: $parent.category().name !== name -->
+                                            <li>
+                                                <a data-bind="click: $parent.filter.bind($data)"><span data-bind="text: display"></span><span class="badge pull-right" data-bind="text: count"></span></a>
+                                            </li>
+                                        <!-- /ko -->
+                                    </ul>
+                                </div>
                             </div>
-                        </div>
-                        <!-- ko if: tags().length -->
-                        <div class="row">
-                            <div class="col-md-12">
-                                <h4> ${_("Improve your search:")}</h4>
-                                <span class="tag-cloud" data-bind="foreach: {data: tags, as: 'tag'}">
-                                    <!-- ko if: count === $parent.tagMaxCount() && count > $parent.tagMaxCount()/2  -->
-                                    <span class="tag tag-big tag-container"
-                                          data-bind="click: $root.addTag.bind($parentContext, tag.name)">
-                                        <span class="cloud-text" data-bind="text: name"></span>
-                                        <i class="fa fa-times-circle remove-tag big"
-                                           data-bind="click: $root.removeTag.bind($parentContext, tag.name)"></i>
+                            <!-- ko if: tags().length -->
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h4> ${_("Improve your search:")}</h4>
+                                    <span class="tag-cloud" data-bind="foreach: {data: tags, as: 'tag'}">
+                                        <!-- ko if: count === $parent.tagMaxCount() && count > $parent.tagMaxCount()/2  -->
+                                        <span class="tag tag-big tag-container"
+                                              data-bind="click: $root.addTag.bind($parentContext, tag.name)">
+                                            <span class="cloud-text" data-bind="text: name"></span>
+                                            <i class="fa fa-times-circle remove-tag big"
+                                               data-bind="click: $root.removeTag.bind($parentContext, tag.name)"></i>
+                                        </span>
+                                        <!-- /ko -->
+                                        <!-- ko if: count < $parent.tagMaxCount() && count > $parent.tagMaxCount()/2 -->
+                                        <span class="tag tag-med tag-container"
+                                              data-bind="click: $root.addTag.bind($parentContext, tag.name)">
+                                            <span class="cloud-text" data-bind="text: name"></span>
+                                            <i class="fa fa-times-circle remove-tag med"
+                                               data-bind="click: $root.removeTag.bind($parentContext, tag.name)"></i>
+                                        </span>
+                                        <!-- /ko -->
+                                        <!-- ko if: count <= $parent.tagMaxCount()/2-->
+                                        <span class="tag tag-sm tag-container"
+                                              data-bind="click: $root.addTag.bind($parentContext, tag.name)">
+                                            <span class="cloud-text" data-bind="text: name"></span>
+                                            <i class="fa fa-times-circle remove-tag"
+                                               data-bind="click: $root.removeTag.bind($parentContext, tag.name)"></i>
+                                        </span>
+                                        <!-- /ko -->
                                     </span>
-                                    <!-- /ko -->
-                                    <!-- ko if: count < $parent.tagMaxCount() && count > $parent.tagMaxCount()/2 -->
-                                    <span class="tag tag-med tag-container"
-                                          data-bind="click: $root.addTag.bind($parentContext, tag.name)">
-                                        <span class="cloud-text" data-bind="text: name"></span>
-                                        <i class="fa fa-times-circle remove-tag med"
-                                           data-bind="click: $root.removeTag.bind($parentContext, tag.name)"></i>
-                                    </span>
-                                    <!-- /ko -->
-                                    <!-- ko if: count <= $parent.tagMaxCount()/2-->
-                                    <span class="tag tag-sm tag-container"
-                                          data-bind="click: $root.addTag.bind($parentContext, tag.name)">
-                                        <span class="cloud-text" data-bind="text: name"></span>
-                                        <i class="fa fa-times-circle remove-tag"
-                                           data-bind="click: $root.removeTag.bind($parentContext, tag.name)"></i>
-                                    </span>
-                                    <!-- /ko -->
-                                </span>
+                                </div>
                             </div>
-                        </div>
-                        <br />
-                        <!-- /ko -->
-                        <div class="row hidden-xs" data-bind="if: showLicenses">
-                            <div class="col-md-12">
-                                <h4> ${_("Filter by license:")}</h4>
-                                <span data-bind="if: licenses">
-                                <ul class="nav nav-pills nav-stacked"
-                                    data-bind="foreach: {data: licenses, as: 'license'}">
-                                  <li data-bind="css: {'active': license.active(), 'disabled': !license.count()}">
-                                    <a data-bind="click: license.toggleActive">
-                                      <span style="display: inline-block; max-width: 85%;" data-bind="text: license.name"></span>
-                                      <span data-bind="text: license.count" class="badge pull-right"></span>
-                                    </a>
-                                  </li>
-                                </ul>
-                                </span>
+                            <br />
+                            <!-- /ko -->
+                            <div class="row hidden-xs" data-bind="if: showLicenses">
+                                <div class="col-md-12">
+                                    <h4> ${_("Filter by license:")}</h4>
+                                    <span data-bind="if: licenses">
+                                    <ul class="nav nav-pills nav-stacked"
+                                        data-bind="foreach: {data: licenses, as: 'license'}">
+                                      <li data-bind="css: {'active': license.active(), 'disabled': !license.count()}">
+                                        <a data-bind="click: license.toggleActive">
+                                          <span style="display: inline-block; max-width: 85%;" data-bind="text: license.name"></span>
+                                          <span data-bind="text: license.count" class="badge pull-right"></span>
+                                        </a>
+                                      </li>
+                                    </ul>
+                                    </span>
+                                </div>
                             </div>
+                            <br />
+                            <!-- /ko -->
                         </div>
-                        <br />
                     </div>
-                    <!-- /ko -->
                     <div class="col-md-9">
                         <!-- ko if: searching() -->
                         <div class="panel-body clearfix" data-bind="css: {hidden: !searching()}">
