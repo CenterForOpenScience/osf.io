@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-30 19:20+0900\n"
-"PO-Revision-Date: 2020-04-27 19:20+0900\n"
+"POT-Creation-Date: 2020-05-07 17:31+0900\n"
+"PO-Revision-Date: 2020-05-07 17:31+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -20,6 +20,27 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.7.0\n"
+
+#: .\admin\rdm_announcement\forms.py:74 .\admin\rdm_announcement\forms.py:78
+#: .\admin\rdm_announcement\forms.py:82
+msgid "API Key"
+msgstr "APIキー"
+
+#: .\admin\rdm_announcement\forms.py:75 .\admin\rdm_announcement\forms.py:79
+msgid "API Secret"
+msgstr "APIシークレット"
+
+#: .\admin\rdm_announcement\forms.py:76 .\admin\rdm_announcement\forms.py:80
+msgid "Access Token"
+msgstr "アクセストークン"
+
+#: .\admin\rdm_announcement\forms.py:77
+msgid "Access Token Secret"
+msgstr "アクセストークンシークレット"
+
+#: .\admin\rdm_announcement\forms.py:81
+msgid "API URL"
+msgstr "API URL"
 
 #: .\admin\rdm_statistics\views.py:198
 msgid "Number of files"
@@ -2321,8 +2342,8 @@ msgid "Author:"
 msgstr "著者："
 
 #: .\templates\spam\detail.html:68
-msgid "User's <b>RDM</b> profile"
-msgstr "ユーザーの<b>RDM</b>プロフィール"
+msgid "User's <b>osf</b> profile"
+msgstr ""
 
 #: .\templates\spam\detail.html:70
 msgid "User's profile"
@@ -2440,6 +2461,7 @@ msgid "User details"
 msgstr "ユーザ詳細"
 
 #: .\templates\users\GDPR_delete_user.html:5
+#, python-format
 msgid "Are you sure you want to <b>GDPR</b> delete this user? %(guid)s"
 msgstr "このユーザーを<b>GDPR</b>削除してもよろしいですか？%(guid)s"
 
@@ -2689,4 +2711,7 @@ msgstr "選択したユーザーはスパムですか？"
 #, python-format
 msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
 msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
+
+#~ msgid "User's <b>RDM</b> profile"
+#~ msgstr "ユーザーの<b>RDM</b>プロフィール"
 

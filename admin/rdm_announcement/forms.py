@@ -1,5 +1,6 @@
 from django import forms
 from osf.models.rdm_announcement import RdmAnnouncement, RdmAnnouncementOption
+from django.utils.translation import gettext_lazy as _
 
 
 class PreviewForm(forms.Form):
@@ -70,13 +71,13 @@ class SettingsForm(forms.ModelForm):
     class Meta:
         model = RdmAnnouncementOption
         exclude = ['user']
-        labels = {'twitter_api_key': 'API Key',
-                  'twitter_api_secret': 'API Secret',
-                  'twitter_access_token': 'Access Token',
-                  'twitter_access_token_secret': 'Access Token Secret',
-                  'facebook_api_key': 'API Key',
-                  'facebook_api_secret': 'API Secret',
-                  'facebook_access_token': 'Access Token',
-                  'redmine_api_url': 'API URL',
-                  'redmine_api_key': 'API Key',
+        labels = {'twitter_api_key': _('API Key'),
+                  'twitter_api_secret': _('API Secret'),
+                  'twitter_access_token': _('Access Token'),
+                  'twitter_access_token_secret': _('Access Token Secret'),
+                  'facebook_api_key': _('API Key'),
+                  'facebook_api_secret': _('API Secret'),
+                  'facebook_access_token': _('Access Token'),
+                  'redmine_api_url': _('API URL'),
+                  'redmine_api_key': _('API Key'),
                   }
