@@ -87,7 +87,7 @@ class TestInstitutionUserMetricList:
                 'id': user._id,
                 'type': 'institution-users',
                 'attributes': {
-                    'user_name': f'({user._id}) {user.fullname}',
+                    'user_name': user.fullname,
                     'public_projects': 6,
                     'private_projects': 5,
                     'department': 'Biology dept'
@@ -114,7 +114,7 @@ class TestInstitutionUserMetricList:
                 'id': user2._id,
                 'type': 'institution-users',
                 'attributes': {
-                    'user_name': f'({user2._id}) {user2.fullname}',
+                    'user_name': user2.fullname,
                     'public_projects': 3,
                     'private_projects': 2,
                     'department': 'Psychology dept'
