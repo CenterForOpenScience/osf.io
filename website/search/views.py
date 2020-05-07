@@ -209,6 +209,14 @@ def must_be_logged_in_for_private_search(func):
 @ember_flag_is_active(features.EMBER_SEARCH_PAGE)
 @must_be_logged_in_for_private_search
 def search_view(**kwargs):
+    return search_view_base(**kwargs)
+
+@ember_flag_is_active(features.EMBER_SEARCH_PAGE)
+@must_be_logged_in_for_private_search
+def search_view_cos(**kwargs):
+    return search_view_base(**kwargs)
+
+def search_view_base(**kwargs):
     sort = None
     size = None
     auth = kwargs.get('auth')

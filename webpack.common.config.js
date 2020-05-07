@@ -50,6 +50,7 @@ var entry = {
     'meetings-page': staticPath('js/pages/meetings-page.js'),
     'view-file-tree-page': staticPath('js/pages/view-file-tree-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
+    'search-page-grdm': staticPath('js/pages/search-page-grdm.js'),
     'profile-settings-addons-page': staticPath('js/pages/profile-settings-addons-page.js'),
     'forgotpassword-page': staticPath('js/pages/forgotpassword-page.js'),
     'resetpassword-page': staticPath('js/pages/resetpassword-page.js'),

@@ -1156,7 +1156,7 @@ def make_url_map(app):
             '/search/',
             'get',
             search_views.search_view,
-            OsfWebRenderer('search.mako', trust=False)
+            OsfWebRenderer('search_grdm.mako', trust=False)
         ),
         Rule(
             '/share/registration/',
@@ -1177,6 +1177,17 @@ def make_url_map(app):
         ),
 
     ])
+
+    # Web(COS version)
+    if settings.DEBUG_MODE is True:
+        process_rules(app, [
+            Rule(
+                '/search_cos/',
+                'get',
+                search_views.search_view_cos,
+                OsfWebRenderer('search.mako', trust=False)
+            )
+        ])
 
     # API
 
