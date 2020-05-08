@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.5.2\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-30 19:20+0900\n"
-"PO-Revision-Date: 2020-04-27 19:20+0900\n"
+"POT-Creation-Date: 2020-05-08 10:31+0900\n"
+"PO-Revision-Date: 2020-05-08 10:31+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -330,14 +330,17 @@ msgid "Welcome to the GakuNin RDM Admin Home Page"
 msgstr "GakuNin RDM管理者ホームページへようこそ"
 
 #: .\templates\base.html:313
+#: .\templates\rdm_statistics\statistics_report.html:290
 msgid "National Institute of Informatics"
 msgstr "国立情報学研究所"
 
 #: .\templates\base.html:314
+#: .\templates\rdm_statistics\statistics_report.html:291
 msgid "Terms of Use"
 msgstr "利用規約"
 
 #: .\templates\base.html:315
+#: .\templates\rdm_statistics\statistics_report.html:292
 msgid "Privacy Policy"
 msgstr "プライバシーポリシー"
 
@@ -852,6 +855,26 @@ msgstr "公開プロジェクト"
 #: .\templates\meetings\list.html:24
 msgid "Submissions"
 msgstr "提出"
+
+#: .\templates\messages.html:3
+msgid "API Key"
+msgstr "APIキー"
+
+#: .\templates\messages.html:4
+msgid "API Secret"
+msgstr "APIシークレット"
+
+#: .\templates\messages.html:5
+msgid "Access Token"
+msgstr "アクセストークン"
+
+#: .\templates\messages.html:6
+msgid "Access Token Secret"
+msgstr "アクセストークンシークレット"
+
+#: .\templates\messages.html:7
+msgid "API URL"
+msgstr "API URL"
 
 #: .\templates\metrics\osf_metrics.html:7
 #: .\templates\metrics\osf_metrics.html:26
@@ -1935,11 +1958,6 @@ msgid "Options"
 msgstr "オプション"
 
 #: .\templates\rdm_announcement\send.html:18
-#, python-format
-msgid "%(announcementType)s"
-msgstr ""
-
-#: .\templates\rdm_announcement\send.html:18
 msgid " Preview"
 msgstr "プレビュー"
 
@@ -1955,36 +1973,6 @@ msgstr "RDMアナウンス - オプション"
 #: .\templates\rdm_announcement\settings.html:11
 msgid "RDM Announcement - Options "
 msgstr "RDMアナウンス - オプション"
-
-#: .\templates\rdm_announcement\settings.html:24
-#, python-format
-msgid "%(twitterApiKey)s"
-msgstr ""
-
-#: .\templates\rdm_announcement\settings.html:30
-#, python-format
-msgid "%(twitterApiSecret)s"
-msgstr ""
-
-#: .\templates\rdm_announcement\settings.html:36
-#, python-format
-msgid "%(twitterAccessToken)s"
-msgstr ""
-
-#: .\templates\rdm_announcement\settings.html:42
-#, python-format
-msgid "%(twitterAccessTokenSecret)s"
-msgstr ""
-
-#: .\templates\rdm_announcement\settings.html:78
-#, python-format
-msgid "%(redmineApiUrl)s"
-msgstr ""
-
-#: .\templates\rdm_announcement\settings.html:84
-#, python-format
-msgid "%(redmineApiKey)s"
-msgstr ""
 
 #: .\templates\rdm_custom_storage_location\institutional_storage.html:20
 msgid "Institutional Storage "
@@ -2223,16 +2211,6 @@ msgstr "PDFダウンロード"
 msgid "download CSV"
 msgstr "CSVダウンロード"
 
-#: .\templates\rdm_timestampadd\node_list.html:95
-#, python-format
-msgid "%(nodeRetraction)s"
-msgstr ""
-
-#: .\templates\rdm_timestampadd\node_list.html:98
-#, python-format
-msgid "%(nodeEmbargo)s"
-msgstr ""
-
 #: .\templates\rdm_timestampadd\timestampadd.html:16
 msgid "TimeStampAddList"
 msgstr "タイムスタンプ追加リスト"
@@ -2440,6 +2418,7 @@ msgid "User details"
 msgstr "ユーザ詳細"
 
 #: .\templates\users\GDPR_delete_user.html:5
+#, python-format
 msgid "Are you sure you want to <b>GDPR</b> delete this user? %(guid)s"
 msgstr "このユーザーを<b>GDPR</b>削除してもよろしいですか？%(guid)s"
 

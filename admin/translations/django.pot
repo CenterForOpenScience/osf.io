@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-30 19:20+0900\n"
-"PO-Revision-Date: 2020-04-30 19:20+0900\n"
+"POT-Creation-Date: 2020-05-08 10:31+0900\n"
+"PO-Revision-Date: 2020-05-08 10:31+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -326,14 +326,17 @@ msgid "Welcome to the GakuNin RDM Admin Home Page"
 msgstr ""
 
 #: .\templates\base.html:313
+#: .\templates\rdm_statistics\statistics_report.html:290
 msgid "National Institute of Informatics"
 msgstr ""
 
 #: .\templates\base.html:314
+#: .\templates\rdm_statistics\statistics_report.html:291
 msgid "Terms of Use"
 msgstr ""
 
 #: .\templates\base.html:315
+#: .\templates\rdm_statistics\statistics_report.html:292
 msgid "Privacy Policy"
 msgstr ""
 
@@ -845,6 +848,26 @@ msgstr ""
 
 #: .\templates\meetings\list.html:24
 msgid "Submissions"
+msgstr ""
+
+#: .\templates\messages.html:3
+msgid "API Key"
+msgstr ""
+
+#: .\templates\messages.html:4
+msgid "API Secret"
+msgstr ""
+
+#: .\templates\messages.html:5
+msgid "Access Token"
+msgstr ""
+
+#: .\templates\messages.html:6
+msgid "Access Token Secret"
+msgstr ""
+
+#: .\templates\messages.html:7
+msgid "API URL"
 msgstr ""
 
 #: .\templates\metrics\osf_metrics.html:7
@@ -1919,11 +1942,6 @@ msgid "Options"
 msgstr ""
 
 #: .\templates\rdm_announcement\send.html:18
-#, python-format
-msgid "%(announcementType)s"
-msgstr ""
-
-#: .\templates\rdm_announcement\send.html:18
 msgid " Preview"
 msgstr ""
 
@@ -1938,36 +1956,6 @@ msgstr ""
 
 #: .\templates\rdm_announcement\settings.html:11
 msgid "RDM Announcement - Options "
-msgstr ""
-
-#: .\templates\rdm_announcement\settings.html:24
-#, python-format
-msgid "%(twitterApiKey)s"
-msgstr ""
-
-#: .\templates\rdm_announcement\settings.html:30
-#, python-format
-msgid "%(twitterApiSecret)s"
-msgstr ""
-
-#: .\templates\rdm_announcement\settings.html:36
-#, python-format
-msgid "%(twitterAccessToken)s"
-msgstr ""
-
-#: .\templates\rdm_announcement\settings.html:42
-#, python-format
-msgid "%(twitterAccessTokenSecret)s"
-msgstr ""
-
-#: .\templates\rdm_announcement\settings.html:78
-#, python-format
-msgid "%(redmineApiUrl)s"
-msgstr ""
-
-#: .\templates\rdm_announcement\settings.html:84
-#, python-format
-msgid "%(redmineApiKey)s"
 msgstr ""
 
 #: .\templates\rdm_custom_storage_location\institutional_storage.html:20
@@ -2194,16 +2182,6 @@ msgstr ""
 msgid "download CSV"
 msgstr ""
 
-#: .\templates\rdm_timestampadd\node_list.html:95
-#, python-format
-msgid "%(nodeRetraction)s"
-msgstr ""
-
-#: .\templates\rdm_timestampadd\node_list.html:98
-#, python-format
-msgid "%(nodeEmbargo)s"
-msgstr ""
-
 #: .\templates\rdm_timestampadd\timestampadd.html:16
 msgid "TimeStampAddList"
 msgstr ""
@@ -2292,7 +2270,7 @@ msgid "Author:"
 msgstr ""
 
 #: .\templates\spam\detail.html:68
-msgid "User's <b>osf</b> profile"
+msgid "User's <b>RDM</b> profile"
 msgstr ""
 
 #: .\templates\spam\detail.html:70
