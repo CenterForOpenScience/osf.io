@@ -163,9 +163,11 @@ class InstitutionAuthentication(BaseAuthentication):
             logger.info('Institution SSO: new user "{}"'.format(username))
 
         # The `department` field is updated each login when it was changed.
-        if department and user.department != department:
-            user.department = department
-            user.save()
+        if department:
+            department = '{}-{}'.format(institution._id, department)
+            if user.department != department:
+                user.department = department
+                user.save()
 
         # Both created and activated accounts need to be updated and registered
         if created or activation_required:
