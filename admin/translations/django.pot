@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-08 10:31+0900\n"
-"PO-Revision-Date: 2020-05-08 10:31+0900\n"
+"POT-Creation-Date: 2020-05-08 14:34+0900\n"
+"PO-Revision-Date: 2020-05-08 14:34+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -290,8 +290,8 @@ msgstr ""
 
 #: .\templates\base.html:275 .\templates\rdm_announcement\index.html:6
 #: .\templates\rdm_announcement\index.html:13
-#: .\templates\rdm_announcement\send.html:6
-#: .\templates\rdm_announcement\send.html:13
+#: .\templates\rdm_announcement\send.html:7
+#: .\templates\rdm_announcement\send.html:14
 msgid "RDM Announcement"
 msgstr ""
 
@@ -487,7 +487,8 @@ msgid "Go to Desk"
 msgstr ""
 
 #: .\templates\desk\customer.html:35 .\templates\desk\customer.html:41
-#: .\templates\spam\detail.html:24 .\templates\users\user.html:193
+#: .\templates\messages.html:8 .\templates\spam\detail.html:24
+#: .\templates\users\user.html:193
 msgid "Email"
 msgstr ""
 
@@ -868,6 +869,10 @@ msgstr ""
 
 #: .\templates\messages.html:7
 msgid "API URL"
+msgstr ""
+
+#: .\templates\messages.html:9
+msgid "None"
 msgstr ""
 
 #: .\templates\metrics\osf_metrics.html:7
@@ -1514,8 +1519,8 @@ msgstr ""
 #: .\templates\rdm_addons\addons\dataverse_credentials_modal.html:55
 #: .\templates\rdm_addons\addons\owncloud_credentials_modal.html:62
 #: .\templates\rdm_addons\addons\s3_credentials_modal.html:29
-#: .\templates\rdm_announcement\send.html:34
-#: .\templates\rdm_announcement\settings.html:94
+#: .\templates\rdm_announcement\send.html:35
+#: .\templates\rdm_announcement\settings.html:95
 #: .\templates\rdm_custom_storage_location\institutional_storage.html:62
 #: .\templates\rdm_custom_storage_location\providers\box_modal.html:57
 #: .\templates\rdm_custom_storage_location\providers\googledrive_modal.html:53
@@ -1776,7 +1781,7 @@ msgstr ""
 #: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:38
 #: .\templates\rdm_addons\addons\owncloud_credentials_modal.html:64
 #: .\templates\rdm_addons\addons\s3_credentials_modal.html:31
-#: .\templates\rdm_announcement\settings.html:93
+#: .\templates\rdm_announcement\settings.html:94
 #: .\templates\rdm_custom_storage_location\institutional_storage.html:63
 #: .\templates\rdm_custom_storage_location\providers\box_modal.html:59
 #: .\templates\rdm_custom_storage_location\providers\googledrive_modal.html:55
@@ -1929,7 +1934,7 @@ msgid "Please close this tab."
 msgstr ""
 
 #: .\templates\rdm_announcement\index.html:11
-#: .\templates\rdm_announcement\send.html:11
+#: .\templates\rdm_announcement\send.html:12
 msgid "RDM Announcement "
 msgstr ""
 
@@ -1941,20 +1946,20 @@ msgstr ""
 msgid "Options"
 msgstr ""
 
-#: .\templates\rdm_announcement\send.html:18
+#: .\templates\rdm_announcement\send.html:19
 msgid " Preview"
 msgstr ""
 
-#: .\templates\rdm_announcement\send.html:33
+#: .\templates\rdm_announcement\send.html:34
 msgid "Send"
 msgstr ""
 
-#: .\templates\rdm_announcement\settings.html:6
-#: .\templates\rdm_announcement\settings.html:13
+#: .\templates\rdm_announcement\settings.html:7
+#: .\templates\rdm_announcement\settings.html:14
 msgid "RDM Announcement - Options"
 msgstr ""
 
-#: .\templates\rdm_announcement\settings.html:11
+#: .\templates\rdm_announcement\settings.html:12
 msgid "RDM Announcement - Options "
 msgstr ""
 
@@ -2222,10 +2227,6 @@ msgstr ""
 
 #: .\templates\rdm_timestampadd\timestampadd.html:93
 msgid "per page:"
-msgstr ""
-
-#: .\templates\rdm_timestampadd\timestampadd.html:109
-msgid "Page of "
 msgstr ""
 
 #: .\templates\rdm_timestampadd\timestampadd.html:138
