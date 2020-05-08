@@ -44,9 +44,6 @@ from admin.base import settings
 from admin.rdm.utils import RdmPermissionMixin, get_dummy_institution
 from admin.rdm_addons import utils
 import logging
-
-from django.utils.translation import ugettext_lazy as _
-
 logger = logging.getLogger(__name__)
 
 RANGE_STATISTICS = 10
@@ -197,7 +194,7 @@ class ProviderData(object):
             number_sum_list = list(number_df_sum['height'].values.flatten())
             statistics_data.title = 'Number of files'
             statistics_data.y_label = 'File Numbers'
-            statistics_data.add(_('number'), number_sum_list)
+            statistics_data.add('number', number_sum_list)
             statistics_data.graphstyle = 'whitegrid'
             statistics_data.background = '#EEEEFF'
             statistics_data.image_string = create_image_string(statistics_data.provider,
@@ -208,7 +205,7 @@ class ProviderData(object):
             size_sum_list = list(size_df_sum['height'].values.flatten())
             statistics_data.title = 'Subtotal of file sizes'
             statistics_data.y_label = 'File Sizes'
-            statistics_data.add(_('size'), map(lambda x: approximate_size(x, True), size_sum_list))
+            statistics_data.add('size', map(lambda x: approximate_size(x, True), size_sum_list))
             statistics_data.graphstyle = 'whitegrid'
             statistics_data.background = '#EEFFEE'
             statistics_data.image_string = create_image_string(statistics_data.provider, statistics_data=statistics_data)
@@ -338,8 +335,7 @@ def convert_to_pdf(html_string, file=False):
         'margin-top': '0.50in',
         'margin-right': '0.60in',
         'margin-bottom': '0.60in',
-        'margin-left': '0.60in',
-        'encoding': 'UTF-8',
+        'margin-left': '0.60in'
     }
     current_date = get_current_date()
     if file:

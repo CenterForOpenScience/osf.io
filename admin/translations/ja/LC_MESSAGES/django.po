@@ -21,39 +21,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.7.0\n"
 
-#: .\admin\rdm_statistics\views.py:198
-msgid "Number of files"
-msgstr "ファイル数"
-
-#: .\admin\rdm_statistics\views.py:199 .\admin\rdm_statistics\views.py:218
-msgid "File Numbers"
-msgstr "ファイル数"
-
-#: .\admin\rdm_statistics\views.py:200
-msgid "number"
-msgstr "数"
-
-#: .\admin\rdm_statistics\views.py:209
-msgid "Subtotal of file sizes"
-msgstr "ファイルサイズの小計"
-
-#: .\admin\rdm_statistics\views.py:210
-msgid "File Sizes"
-msgstr "ファイルサイズ"
-
-#: .\admin\rdm_statistics\views.py:211
-msgid "size"
-msgstr "サイズ"
-
-#: .\admin\rdm_statistics\views.py:217
-msgid "Number of files by extension type"
-msgstr "拡張子タイプごとのファイル数"
-
-#: .\admin\rdm_statistics\views.py:282 .\admin\rdm_statistics\views.py:430
-#, python-format
-msgid "%(statisticsData)s in %(provider)s"
-msgstr "%(provider)sの%(statisticsData)s"
-
 #: .\templates\banners\confirm_delete.html:4
 msgid "GakuNin RDM Admin | Delete banner"
 msgstr "GakuNin RDM 管理者 | バナーを削除"
@@ -2257,6 +2224,10 @@ msgstr "処理しています。お待ちください..."
 #: .\templates\rdm_timestampadd\timestampadd.html:93
 msgid "per page:"
 msgstr "1ページあたり："
+
+#: .\templates\rdm_timestampadd\timestampadd.html:109
+msgid "Page of "
+msgstr "ページ"
 
 #: .\templates\rdm_timestampadd\timestampadd.html:138
 msgid "File Path"
