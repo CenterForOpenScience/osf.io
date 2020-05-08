@@ -92,10 +92,10 @@
                     {{ node.public }}
                 </td>
                 <td>
-                    {{ node.retraction }}
+                    {{ node.retraction|transValue }}
                 </td>
                 <td>
-                    {{ node.embargo }}
+                    {{ node.embargo|transValue }}
                 </td>
                 <td>
                     {% for user in node.contributors %}
