@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load i18n %}
+{% load transValue_tag %}
 
 {% block title %}
 <title>{% trans "RDM Announcement - Options" %}</title>
@@ -75,7 +76,7 @@
                 <div class="panel-heading clearfix"><h3 class="panel-title">Redmine</h3></div>
                 <div class="panel-body">
                     <div class="form-group">
-                        <label for="id_{{ form.redmine_api_url.name }}" class="col-sm-2 control-label">{{ form.redmine_api_url.label }}</label>
+                        <label for="id_{{ form.redmine_api_url.name }}" class="col-sm-2 control-label">{{ form.redmine_api_url.label|transValue }}</label>
                         <div class="col-sm-10">
                             {{ form.redmine_api_url }}
                         </div>
