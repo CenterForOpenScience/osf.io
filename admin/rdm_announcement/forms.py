@@ -1,5 +1,6 @@
 from django import forms
 from osf.models.rdm_announcement import RdmAnnouncement, RdmAnnouncementOption
+from django.utils.translation import gettext_lazy as _
 
 
 class PreviewForm(forms.Form):
@@ -12,7 +13,7 @@ class PreviewForm(forms.Form):
                            widget=forms.Textarea(attrs={'class': 'form-control', 'rows': '4'}),
                            label='Body',)
     announcement_type = forms.ChoiceField(
-        choices=[('Email', 'Email'),
+        choices=[('Email', _('Email')),
                  ('SNS (Twitter)', 'SNS (Twitter)'),
                  #('SNS (Facebook)', 'SNS (Facebook)'),   ## GRDM-6902
                  #('Push notification', 'Push notification')
