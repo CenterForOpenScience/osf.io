@@ -197,6 +197,35 @@ class TestInstitutionAuth:
         # Confirm affiliation
         assert institution in user.affiliated_institutions.all()
 
+    def test_department_prefix(self, app, institution, url_auth_institution):
+
+        username, fullname, password = 'user_active@user.edu', 'Foo Bar', 'FuAsKeEr'
+        user = make_user(username, fullname)
+        user.set_password(password)
+        user.save()
+
+        department = '{}-{}'.format(institution._id, 'Fake Department')
+
+        with capture_signals() as mock_signals:
+            res = app.post(
+                url_auth_institution,
+                make_payload(
+                    institution,
+                    username,
+                    family_name='User',
+                    given_name='Fake',
+                    fullname='Fake User',
+                    department=department,
+                )
+            )
+        assert res.status_code == 204
+        assert not mock_signals.signals_sent()
+
+        # Testing that a department with an existing institutional prefix
+        # Isn't overwritten
+        user = OSFUser.objects.filter(username=username).first()
+        assert user.department == department
+
     def test_user_unclaimed(self, app, institution, url_auth_institution):
 
         username, fullname = 'user_nclaimed@user.edu', 'Foo Bar'

@@ -164,7 +164,11 @@ class InstitutionAuthentication(BaseAuthentication):
 
         # The `department` field is updated each login when it was changed.
         if department:
-            department = '{}-{}'.format(institution._id, department)
+            # If the department already has a departmental prefix, don't overwrite it.
+            # We don't want cos-cos-psychology
+            institution_prefix = '{}-'.format(institution._id)
+            if not department.startswith(institution_prefix):
+                department = '{}-{}'.format(institution._id, department)
             if user.department != department:
                 user.department = department
                 user.save()
