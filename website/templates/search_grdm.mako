@@ -208,6 +208,9 @@
         </div>
 
     </script>
+    <script type="text/html" id="wiki">
+        <h4><a data-bind="attr: {href: url}, text: sort_wiki_name"></a></h4>
+    </script>
     <script type="text/html" id="institution">
         <div class="row">
             <div class="col-md-2">

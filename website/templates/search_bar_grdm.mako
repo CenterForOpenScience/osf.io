@@ -16,6 +16,7 @@
             </div>
             <div class="col-md-5">
                 <div style="display: flex; flex-wrap: nowrap; justify-content: flex-end;">
+                    <select id="sortPullDownMenu" style="width: auto;" data-bind="options: sortOrderSettings, optionsText: 'text', optionsValue: 'value', optionsAfterRender: sortOptionCB, value: sortOrder"></select>
                     <select id="resultsPerPagePullDownMenu" style="margin-left: 15px; width: auto;" data-bind="options: resultsPerPageSettings, optionsText: 'text', optionsValue: 'value', value: resultsPerPage"></select>
                     <p style="margin-left: 15px;">results per page</p>
                 </div>

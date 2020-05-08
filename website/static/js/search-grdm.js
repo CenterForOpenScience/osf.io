@@ -101,6 +101,23 @@ var ViewModel = function(params) {
     self.showClose = false;
     self.searchCSS = ko.observable('active');
     self.onSearchPage = true;
+    self.sortOrder = ko.observable('modified_desc');
+    self.sortOrderSettings = ko.observableArray([
+        {text: 'Date Modified(Desc)', value: 'modified_desc', enable: ko.observable(true)},
+        {text: 'Date Modified(Asc)', value: 'modified_asc', enable: ko.observable(true)},
+        {text: 'Date Created(Desc)', value: 'created_desc', enable: ko.observable(true)},
+        {text: 'Date Created(Asc)', value: 'created_asc', enable: ko.observable(true)},
+        {text: 'Project name(Asc)', value: 'project_asc', enable: ko.observable(true)},
+        {text: 'Project name(Desc)', value: 'project_desc', enable: ko.observable(true)},
+        {text: 'File name(Asc)', value: 'file_asc', enable: ko.observable(true)},
+        {text: 'File name(Desc)', value: 'file_desc', enable: ko.observable(true)},
+        {text: 'User name(Asc)', value: 'user_asc', enable: ko.observable(true)},
+        {text: 'User name(Desc)', value: 'user_desc', enable: ko.observable(true)},
+        {text: 'Institution name(Asc)', value: 'institution_asc', enable: ko.observable(true)},
+        {text: 'Institution name(Desc)', value: 'institution_desc', enable: ko.observable(true)},
+        {text: 'Wiki title(Asc)', value: 'wiki_asc', enable: ko.observable(true)},
+        {text: 'Wiki title(Desc)', value: 'wiki_desc', enable: ko.observable(true)}
+    ]);
     self.pagesShown = ko.observable(10);
     self.center = Math.floor(self.pagesShown() / 2) + 1;
     self.resultsPerPageSettings = ko.observableArray([
@@ -293,6 +310,69 @@ var ViewModel = function(params) {
         self.searchStarted(false);
         self.currentPage(1);
         self.category(alias);
+
+        var array = self.sortOrderSettings();
+        var category;
+        for (var i = 0, len = array.length(); i < len; i++) {
+            category = array[i];
+            switch(category.value) {
+            case 'project_asc':
+            case 'project_desc':
+                switch (self.category().name) {
+                case 'project':
+                case 'file':
+                case 'wiki':
+                    category.enable(true);
+                    break;
+
+                default:
+                    category.enable(false);
+                    break;
+                }
+                break;
+
+            case 'file_asc':
+            case 'file_desc':
+                if (self.category().name === 'file') {
+                    category.enable(true);
+                } else {
+                    category.enable(false);
+                }
+                break;
+
+            case 'user_asc':
+            case 'user_desc':
+                if (self.category().name === 'user') {
+                    category.enable(true);
+                } else {
+                    category.enable(false);
+                }
+                break;
+
+            case 'institution_asc':
+            case 'institution_desc':
+                if (self.category().name === 'institution') {
+                    category.enable(true);
+                } else {
+                    category.enable(false);
+                }
+                break;
+
+            case 'wiki_asc':
+            case 'wiki_desc':
+                if (self.category().name === 'wiki') {
+                    category.enable(true);
+                } else {
+                    category.enable(false);
+                }
+                break;
+
+            default:
+                category.enable(true);
+                break;
+            }
+        }
+
         var win = null;
         if (alias.name === 'SHARE') {
             win = window.open(window.contextVars.shareUrl + 'discover?' + $.param({q: self.query()}), '_blank');
@@ -377,8 +457,9 @@ var ViewModel = function(params) {
             jsonData = {
                 'api_version': {
                     'vendor': 'grdm',
-                    'version': 1
+                    'version': 2
                 },
+                'sort': self.sortOrder(),
                 'elasticsearch_dsl': jsonData
             };
         }
@@ -645,6 +726,14 @@ var ViewModel = function(params) {
         } else {
             self.category(new Category('total', 0, 'Total'));
         }
+    };
+
+    self.sortOrder.subscribe(function(newValue) {
+        self.submit();
+    });
+
+    self.sortOptionCB = function(option, item) {
+        ko.applyBindingsToNode(option, {enable: item.enable}, item);
     };
 
     self.resultsPerPage.subscribe(function(newValue) {
