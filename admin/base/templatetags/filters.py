@@ -12,4 +12,4 @@ def jsonify(o):
 
 @register.filter
 def transValue(value1):
-    return _(value1)
+    return _(str(value1))
