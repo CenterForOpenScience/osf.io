@@ -112,20 +112,20 @@ var ViewModel = function(params) {
         self.sortOrder = ko.observable('modified_desc');
     }
     self.sortOrderSettings = ko.observableArray([
-        {text: 'Date Modified(Desc)', value: 'modified_desc', enable: ko.observable(true)},
-        {text: 'Date Modified(Asc)', value: 'modified_asc', enable: ko.observable(true)},
-        {text: 'Date Created(Desc)', value: 'created_desc', enable: ko.observable(true)},
-        {text: 'Date Created(Asc)', value: 'created_asc', enable: ko.observable(true)},
-        {text: 'Project name(Asc)', value: 'project_asc', enable: ko.observable(true)},
-        {text: 'Project name(Desc)', value: 'project_desc', enable: ko.observable(true)},
-        {text: 'File name(Asc)', value: 'file_asc', enable: ko.observable(true)},
-        {text: 'File name(Desc)', value: 'file_desc', enable: ko.observable(true)},
-        {text: 'User name(Asc)', value: 'user_asc', enable: ko.observable(true)},
-        {text: 'User name(Desc)', value: 'user_desc', enable: ko.observable(true)},
-        {text: 'Institution name(Asc)', value: 'institution_asc', enable: ko.observable(true)},
-        {text: 'Institution name(Desc)', value: 'institution_desc', enable: ko.observable(true)},
-        {text: 'Wiki title(Asc)', value: 'wiki_asc', enable: ko.observable(true)},
-        {text: 'Wiki title(Desc)', value: 'wiki_desc', enable: ko.observable(true)}
+        {text: _('Date Modified(Desc)'), value: 'modified_desc', enable: ko.observable(true)},
+        {text: _('Date Modified(Asc)'), value: 'modified_asc', enable: ko.observable(true)},
+        {text: _('Date Created(Desc)'), value: 'created_desc', enable: ko.observable(true)},
+        {text: _('Date Created(Asc)'), value: 'created_asc', enable: ko.observable(true)},
+        {text: _('Project name(Asc)'), value: 'project_asc', enable: ko.observable(true)},
+        {text: _('Project name(Desc)'), value: 'project_desc', enable: ko.observable(true)},
+        {text: _('File name(Asc)'), value: 'file_asc', enable: ko.observable(true)},
+        {text: _('File name(Desc)'), value: 'file_desc', enable: ko.observable(true)},
+        {text: _('User name(Asc)'), value: 'user_asc', enable: ko.observable(true)},
+        {text: _('User name(Desc)'), value: 'user_desc', enable: ko.observable(true)},
+        {text: _('Institution name(Asc)'), value: 'institution_asc', enable: ko.observable(true)},
+        {text: _('Institution name(Desc)'), value: 'institution_desc', enable: ko.observable(true)},
+        {text: _('Wiki title(Asc)'), value: 'wiki_asc', enable: ko.observable(true)},
+        {text: _('Wiki title(Desc)'), value: 'wiki_desc', enable: ko.observable(true)}
     ]);
     self.pagesShown = ko.observable(10);
     self.center = Math.floor(self.pagesShown() / 2) + 1;

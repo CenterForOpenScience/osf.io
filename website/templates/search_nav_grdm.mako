@@ -1,7 +1,7 @@
                         <div>
                             <ul class="pager">
                                 <li data-bind="css: {disabled: !prevPageExists()}">
-                                    <a href="#" data-bind="click: pagePrev">Previous Page </a>
+                                    <a href="#" data-bind="click: pagePrev">${_("Previous Page")} </a>
                                 </li>
                                 <!-- ko if: totalPages() < pagesShown() -->
                                     <!-- ko foreach: listIndices() -->
@@ -56,12 +56,12 @@
                                     <!-- /ko -->
                                 <!-- /ko -->
                                 <li data-bind="css: {disabled: !nextPageExists()}">
-                                    <a href="#" data-bind="click: pageNext"> Next Page</a>
+                                    <a href="#" data-bind="click: pageNext"> ${_("Next Page")}</a>
                                 </li>
                             </ul>
                             <center>
                                 <form data-bind="submit: pageNthByUser">
-                                    Page
+                                    ${_("Page")}
                                     <input type="tel" style="width: 50px;" data-bind="value: currentPage"/>
                                     <button data-bind="visible: false" type="submit"></button>
                                     /
