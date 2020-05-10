@@ -1906,6 +1906,15 @@ def make_url_map(app):
             project_views.timestamp.task_status,
             json_renderer,
         ),
+        Rule(
+            [
+                '/project/<pid>/timestamp/download_errors/',
+                '/project/<pid>/node/<nid>/timestamp/download_errors/',
+            ],
+            ['post'],
+            project_views.timestamp.download_errors,
+            json_renderer,
+        ),
 
         # Quota management
         Rule(

@@ -25,12 +25,14 @@ from osf.models import (
     AbstractNode, BaseFileNode, Guid, RdmFileTimestamptokenVerifyResult, RdmUserKey,
     OSFUser, TimestampTask
 )
+from osf.models.nodelog import NodeLog
 from website import util
 from website import settings
 from website.util import waterbutler
 
 from django.contrib.contenttypes.models import ContentType
 from framework.celery_tasks import app as celery_app
+from framework.auth import Auth
 from inspect import currentframe
 
 logger = logging.getLogger(__name__)
@@ -342,6 +344,76 @@ def check_file_timestamp(uid, node, data, verify_external_only=False):
         logger.exception(err)
         raise
 
+def _get_user(uid, op_name, action):
+    try:
+        return OSFUser.objects.get(id=uid)
+    except Exception:
+        logger.warning('{}: unknown user: uid={}, action={}'.format(op_name, uid, action))
+        return None
+
+def add_log_verify_all(node, uid, save=True):
+    action = NodeLog.TIMESTAMP_ALL_VERIFIED
+    user = _get_user(uid, 'add_log_verify_all', action)
+    if user is None:
+        return
+    logger.debug('add_log_verify_all: uid={}, node._id={}'.format(uid, node._id))
+    node.add_log(
+        action=action,
+        params={
+            'node': node._id,
+        },
+        auth=Auth(user=user),
+        save=save,
+    )
+
+def add_log_a_file(action, node, uid, provider, file_id, save=True):
+    user = _get_user(uid, 'add_log_a_file', action)
+    if user is None:
+        return
+    try:
+        file_node = BaseFileNode.objects.get(_id=file_id)
+    except Exception:
+        logger.warning('add_log_a_file: unknown file: file_id={}, action={}'.format(file_id, action))
+        return
+
+    app_config = settings.ADDONS_AVAILABLE_DICT.get(provider)
+    if app_config:
+        provider_name = app_config.full_name
+    else:
+        provider_name = provider
+    path = u'({}):{}'.format(provider_name, file_node.materialized_path)
+    url = u'/project/{}/files/{}{}/'.format(node._id, provider, file_node.path)
+    logger.debug(u'add_log_a_file: uid={}, url={}'.format(uid, url))
+    node.add_log(
+        action=action,
+        params={
+            'project': node.parent_id,
+            'node': node._id,
+            'path': path,
+            'urls': {
+                'view': url,
+                'download': url + '?action=download',
+            },
+        },
+        auth=Auth(user=user),
+        save=save,
+    )
+
+def add_log_download_errors(node, uid, save=True):
+    action = NodeLog.TIMESTAMP_ERRORS_DOWNLOADED
+    user = _get_user(uid, 'add_log_download_errors', action)
+    if user is None:
+        return
+    logger.debug('add_log_download_errors: uid={}, node._id={}'.format(uid, node._id))
+    node.add_log(
+        action=action,
+        params={
+            'node': node._id,
+        },
+        auth=Auth(user=user),
+        save=save,
+    )
+
 @celery_app.task(bind=True, base=AbortableTask)
 def celery_verify_timestamp_token(self, uid, node_id):
     secs_to_wait = 60.0 / api_settings.TS_REQUESTS_PER_MIN
@@ -350,7 +422,7 @@ def celery_verify_timestamp_token(self, uid, node_id):
     celery_app.current_task.update_state(state='PROGRESS', meta={'progress': 0})
     node = AbstractNode.objects.get(id=node_id)
     celery_app.current_task.update_state(state='PROGRESS', meta={'progress': 50})
-    logger.info('Running timestamp verification...')
+    logger.info('Running timestamp verification...: uid={}, node_guid={}'.format(uid, node._id))
     for provider_dict in get_full_list(uid, node._id, node):
         for p_item in provider_dict['provider_file_list']:
             if self.is_aborted():
@@ -363,6 +435,7 @@ def celery_verify_timestamp_token(self, uid, node_id):
             # Do not let the task run too many requests
             while time.time() < last_run + secs_to_wait:
                 time.sleep(0.1)
+    add_log_verify_all(node, uid, save=True)
     if self.is_aborted():
         logger.warning('Task from project ID {} was cancelled by user ID {}'.format(node_id, uid))
     celery_app.current_task.update_state(state='SUCCESS', meta={'progress': 100})
@@ -375,6 +448,7 @@ def celery_add_timestamp_token(self, uid, node_id, request_data):
     last_run = None
 
     node = AbstractNode.objects.get(id=node_id)
+    logger.info('Running add timestamp token...: uid={}, node_guid={}'.format(uid, node._id))
     for _, data in enumerate(request_data):
         if self.is_aborted():
             break
@@ -382,6 +456,9 @@ def celery_add_timestamp_token(self, uid, node_id, request_data):
         result = add_token(uid, node, data)
         if result is None:
             continue
+        # success
+        add_log_a_file(NodeLog.TIMESTAMP_ADDED, node, uid,
+                       data['provider'], data['file_id'])
         # Do not let the task run too many requests
         while time.time() < last_run + secs_to_wait:
             time.sleep(0.1)

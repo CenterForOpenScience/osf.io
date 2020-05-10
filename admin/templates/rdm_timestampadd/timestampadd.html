@@ -239,7 +239,8 @@
         verify: "{% url 'timestampadd:verify' institution_id=institution_id guid=guid %}",
         addTimestampData: "{% url 'timestampadd:add_timestamp_data' institution_id=institution_id guid=guid %}",
         cancel: "{% url 'timestampadd:cancel_task' institution_id=institution_id guid=guid %}",
-        taskStatusUrl: "{% url 'timestampadd:task_status' institution_id=institution_id guid=guid %}"
+        taskStatusUrl: "{% url 'timestampadd:task_status' institution_id=institution_id guid=guid %}",
+        downloadErrors: "{% url 'timestampadd:download_errors' institution_id=institution_id guid=guid %}"
     };
 </script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tiny-date-picker/3.2.8/tiny-date-picker.min.js"></script>

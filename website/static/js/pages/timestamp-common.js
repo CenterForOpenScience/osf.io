@@ -235,7 +235,7 @@ var cancel = function (url) {
     });
 };
 
-var download = function () {
+var download = function (url) {
     var fileFormat = $('#fileFormat').val();
     var fileList = TIMESTAMP_LIST_OBJECT.items.filter(function (item) {
         var checkbox = item.elm.querySelector('[type=checkbox]');
@@ -304,6 +304,15 @@ var download = function () {
             saveTextFile(DOWNLOAD_FILENAME + '.rdf', fileContent);
             break;
     }
+
+    $.ajax({
+        url: url,
+        method: 'POST'
+    }).done(function (result) {
+        // $osf.growl('Timestamp', _('Log "downloaded errors" into Recent Activity'), 'success'); //TODO
+    }).fail(function () {
+        $osf.growl('Timestamp', _('Failed to log "downloaded errors" into Recent Activity'), 'danger');
+    });
 };
 
 function generateCsv(fileList, headersOrder, headerNames) {

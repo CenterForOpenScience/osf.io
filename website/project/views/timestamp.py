@@ -48,6 +48,11 @@ def add_timestamp_token(auth, node, **kwargs):
     return {'status': 'OK'}
 
 @must_be_contributor_or_public
+def download_errors(auth, node, **kwargs):
+    timestamp.add_log_download_errors(node, auth.user.id)
+    return {'status': 'OK'}
+
+@must_be_contributor_or_public
 def cancel_task(auth, node, **kwargs):
     return timestamp.cancel_celery_task(node)
 
