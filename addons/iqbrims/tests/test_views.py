@@ -913,11 +913,8 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['status'], 'complete')
-        assert_equal(res.json['folder_drive_url'], 'https://google/folderid123/')
+        assert_equal(res.json['folder_drive_url'], 'https://google/folderid456/')
         assert_equal(len(res.json['management']['urls']), 1)
-#        assert_equal(res.json['management']['urls'][0]['path'], u'iqb123/%E6%9C%80%E7%B5%82%E5%8E%9F%E7%A8%BF%E3%83%BB%E7%B5%84%E5%9B%B3/%E3%82%B9%E3%82%AD%E3%83%A3%E3%83%B3%E7%94%BB%E5%83%8F/test.png')
-#        assert_true(res.json['management']['urls'][0]['mfr_url'].startswith('http://localhost:7778/export?url=http://localhost:5000/'))
-#        assert_equal(res.json['management']['urls'][0]['drive_url'], 'https://google/fileid456a/')
         assert_equal(res.json['management']['urls'][0]['path'], u'iqb123/%E6%9C%80%E7%B5%82%E5%8E%9F%E7%A8%BF%E3%83%BB%E7%B5%84%E5%9B%B3/files.txt')
         assert_true(res.json['management']['urls'][0]['mfr_url'].startswith('http://localhost:7778/export?url=http://localhost:5000/'))
         assert_equal(res.json['management']['urls'][0]['drive_url'], 'https://google/fileid456b/')

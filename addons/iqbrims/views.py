@@ -261,6 +261,7 @@ def iqbrims_get_storage(**kwargs):
         validate = _iqbrims_filled_index
     elif folder == 'imagelist':
         folder_name = REVIEW_FOLDERS['paper']
+        sub_folder_name = settings.IMAGELIST_FOLDERNAME
         file_name = settings.IMAGELIST_FILENAME
         urls_for_all_files = True
     else:
@@ -275,13 +276,13 @@ def iqbrims_get_storage(**kwargs):
     folders = client.folders(folder_id=iqbrims.folder_id)
     folders = [f for f in folders if f['title'] == folder_name]
     assert len(folders) > 0
+    sub_folders = []
     if sub_folder_name is not None:
         main_folders = folders
         sub_folders = client.folders(folder_id=main_folders[0]['id'])
         sub_folders = [f for f in sub_folders if f['title'] == sub_folder_name]
         if len(sub_folders) == 0:
             return {'status': 'processing', 'comment': ''}
-        folders = sub_folders
     logger.info(u'Checking Storage: {}, {}, {}'.format(folder, folder_name,
                                                        folders[0]['id']))
     all_files = client.files(folder_id=folders[0]['id'])
@@ -308,10 +309,7 @@ def iqbrims_get_storage(**kwargs):
     management_urls = []
     url_files = all_files if urls_for_all_files else files
     for f in url_files:
-        if sub_folder_name is not None:
-            url_folder_path = u'{}/{}'.format(main_folders[0]['title'], sub_folders[0]['title'])
-        else:
-            url_folder_path = folders[0]['title']
+        url_folder_path = folders[0]['title']
         with transaction.atomic():
             path = u'{}/{}'.format(url_folder_path, f['title'])
             path = urllib.quote(path.encode('utf8'))
@@ -337,8 +335,9 @@ def iqbrims_get_storage(**kwargs):
     status = iqbrims.get_status()
     comment_key = folder + '_comment'
     comment = status[comment_key] if comment_key in status else ''
-    folder_drive_url = folders[0]['alternateLink'] \
-                       if len(folders) > 0 and 'alternateLink' in folders[0] \
+    alt_folders = sub_folders if sub_folders is not None else folders
+    folder_drive_url = alt_folders[0]['alternateLink'] \
+                       if len(alt_folders) > 0 and 'alternateLink' in alt_folders[0] \
                        else None
 
     return {'status': 'complete' if len(files) > 0 else 'processing',
