@@ -119,7 +119,7 @@ class TestInstitutionDepartmentList:
             },
             'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
         }, {
-            'id': institution._id,
+            'id': '{}-{}'.format(institution._id, 'Smaller-Department'),
             'type': 'institution-departments',
             'attributes': {
                 'name': 'Smaller Department',
@@ -127,7 +127,7 @@ class TestInstitutionDepartmentList:
             },
             'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
         }, {
-            'id': institution._id,
+            'id': '{}-{}'.format(institution._id, 'N/A'),
             'type': 'institution-departments',
             'attributes': {
                 'name': 'N/A',

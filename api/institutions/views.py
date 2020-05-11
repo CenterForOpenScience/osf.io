@@ -467,8 +467,9 @@ class InstitutionDepartmentList(InstitutionImpactList):
                 {
                     'institution_id': '{}-{}'.format(institution_id, bucket['key'].replace(' ', '-')),
                     'name': bucket['key'],
-                    'number_of_users': bucket['doc_count']
-                } for bucket in buckets]
+                    'number_of_users': bucket['doc_count'],
+                } for bucket in buckets
+            ]
             return department_data
         else:
             return []
