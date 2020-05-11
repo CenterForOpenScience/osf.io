@@ -2,7 +2,6 @@ import functools
 from rest_framework import status as http_status
 import itertools
 
-import waffle
 from operator import itemgetter
 
 from dateutil.parser import parse as parse_date
@@ -12,23 +11,22 @@ import pytz
 
 from framework.database import autoload
 from framework.exceptions import HTTPError
-from framework.status import push_status_message
 
 from osf import features
 from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN
 from osf.utils.functional import rapply
-from osf.models import NodeLog, RegistrationSchema, DraftRegistration, Sanction
+from osf.models import RegistrationSchema, DraftRegistration
 
 from website.project.decorators import (
     must_be_valid_project,
     must_be_contributor_and_not_group_member,
     must_have_permission,
 )
-from website import language, settings
+from website import settings
 from website.ember_osf_web.decorators import ember_flag_is_active
-from website.prereg import utils as prereg_utils
-from website.project import utils as project_utils
+
+from website.project import utils
 from website.project.metadata.schemas import METASCHEMA_ORDERING
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
@@ -118,76 +116,6 @@ def check_draft_state(draft):
             'message_long': 'This draft has already been approved and cannot be modified.'
         })
 
-@must_have_permission(ADMIN)
-@must_be_contributor_and_not_group_member
-@must_be_branched_from_node
-def submit_draft_for_review(auth, node, draft, *args, **kwargs):
-    """Submit for approvals and/or notifications
-
-    :return: serialized registration
-    :rtype: dict
-    :raises: HTTPError if embargo end date is invalid
-    """
-    if waffle.switch_is_active(features.OSF_PREREGISTRATION):
-        raise HTTPError(http_status.HTTP_410_GONE, data={
-            'message_short': 'The Prereg Challenge has ended',
-            'message_long': 'The Prereg Challenge has ended. No new submissions are accepted at this time.'
-        })
-
-    json_data = request.get_json()
-    if 'data' not in json_data:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(message_long='Payload must include "data".'))
-    data = json_data['data']
-    if 'attributes' not in data:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(message_long='Payload must include "data/attributes".'))
-    attributes = data['attributes']
-    meta = {}
-    registration_choice = attributes['registration_choice']
-    validate_registration_choice(registration_choice)
-    if registration_choice == 'embargo':
-        # Initiate embargo
-        end_date_string = attributes['lift_embargo']
-        validate_embargo_end_date(end_date_string, node)
-        meta['embargo_end_date'] = end_date_string
-    meta['registration_choice'] = registration_choice
-
-    if draft.registered_node and not draft.registered_node.is_deleted:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(message_long='This draft has already been registered, if you wish to '
-                                                              'register it again or submit it for review please create '
-                                                              'a new draft.'))
-
-    # Don't allow resubmission unless submission was rejected
-    if draft.approval and draft.approval.state != Sanction.REJECTED:
-        raise HTTPError(http_status.HTTP_409_CONFLICT, data=dict(message_long='Cannot resubmit previously submitted draft.'))
-
-    draft.submit_for_review(
-        initiated_by=auth.user,
-        meta=meta,
-        save=True
-    )
-
-    if prereg_utils.get_prereg_schema() == draft.registration_schema:
-
-        node.add_log(
-            action=NodeLog.PREREG_REGISTRATION_INITIATED,
-            params={'node': node._primary_key},
-            auth=auth,
-            save=False
-        )
-        node.save()
-
-    push_status_message(language.AFTER_SUBMIT_FOR_REVIEW,
-                        kind='info',
-                        trust=False,
-                        id='registration_submitted')
-    return {
-        'data': {
-            'links': {
-                'html': node.web_url_for('node_registrations', _guid=True)
-            }
-        },
-        'status': 'initiated',
-    }, http_status.HTTP_202_ACCEPTED
 
 @must_have_permission(ADMIN)
 @must_be_contributor_and_not_group_member
@@ -282,7 +210,7 @@ def edit_draft_registration_page(auth, node, draft, **kwargs):
     :rtype: dict
     """
     check_draft_state(draft)
-    ret = project_utils.serialize_node(node, auth, primary=True)
+    ret = utils.serialize_node(node, auth, primary=True)
     ret['draft'] = serialize_draft_registration(draft, auth)
     return ret
 

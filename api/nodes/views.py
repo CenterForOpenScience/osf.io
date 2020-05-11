@@ -78,7 +78,6 @@ from api.nodes.permissions import (
     RegistrationAndPermissionCheckForPointers,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
-    IsAdminContributorOrReviewer,
     NodeGroupDetailPermissions,
     IsContributorOrGroupMember,
     AdminDeletePermissions,
@@ -645,9 +644,9 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
     Use DraftRegistrationDetail endpoint instead.
     """
     permission_classes = (
-        IsAdminContributorOrReviewer,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        IsAdminContributor,
     )
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 

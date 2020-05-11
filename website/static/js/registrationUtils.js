@@ -502,7 +502,6 @@ MetaSchema.prototype.askConsent = function(pre) {
     var message = (pre ? self.messages.preConsentHeader : self.messages.postConsentHeader) + self.messages.consentBody;
 
     var viewModel = {
-        mustAgree: !pre,
         message: message,
         consent: ko.observable(false),
         submit: function() {
@@ -520,14 +519,6 @@ MetaSchema.prototype.askConsent = function(pre) {
             $('.modal').removeClass('modal-scrollable');
         }
     };
-
-    bootbox.dialog({
-        size: 'large',
-        message: function() {
-            ko.renderTemplate('preRegistrationConsent', viewModel, {}, this);
-            $(document.body).addClass('background-unscrollable');
-        }
-    });
 
     $('.bootbox-close-button.close').click(function() {
         $(document.body).removeClass('background-unscrollable');
@@ -706,25 +697,6 @@ Draft.prototype.beforeRegister = function(url) {
     }).fail($osf.unblock);
     return request;
 };
-Draft.prototype.registerWithoutReview = function() {
-    var self = this;
-    bootbox.dialog({
-        title: 'Notice',
-        message: self.metaSchema.messages.beforeSkipReview,
-        buttons: {
-            cancel: {
-                label: 'Cancel',
-                className: 'btn-default',
-                callback: bootbox.hideAll
-            },
-            submit: {
-                label: 'Continue',
-                className: 'btn-warning',
-                callback: self.beforeRegister.bind(self, null)
-            }
-        }
-    });
-};
 Draft.prototype.register = function(url, data) {
     var self = this;
 
@@ -782,22 +754,6 @@ Draft.prototype.register = function(url, data) {
     });
 
     return request;
-};
-Draft.prototype.submitForReview = function() {
-    var self = this;
-
-    var metaSchema = self.metaSchema;
-
-    if (self.metaSchema.requiresConsent) {
-        return self.metaSchema.askConsent()
-            .always(bootbox.hideAll)
-            .then(function() {
-                self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
-            });
-    }
-    else {
-        return self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
-    }
 };
 Draft.prototype.approve = function() {
     return $osf.dialog(
@@ -1165,7 +1121,7 @@ RegistrationEditor.prototype.submit = function() {
                         error: error
                     }
                 });
-                $osf.growl('Error submitting for review', language.submitForReviewFail);
+                $osf.growl('Error submitting for review', language.submitDraftFail);
             });
         }
     });
@@ -1255,34 +1211,6 @@ RegistrationEditor.prototype.save = function() {
     return request;
 };
 
-RegistrationEditor.prototype.approveDraft = function() {
-    var self = this;
-
-    var draft = self.draft();
-    draft.approve().done(function() {
-        $osf.block();
-        $.post(self.urls.approve.replace('{draft_pk}', draft.pk))
-            .done(function() {
-                window.location.assign(self.urls.list);
-            }).fail(function() {
-                bootbox.alert('There was a problem approving this draft.' + osfLanguage.REFRESH_OR_SUPPORT);
-            }).always($osf.unblock);
-    });
-};
-RegistrationEditor.prototype.rejectDraft = function() {
-    var self = this;
-
-    var draft = self.draft();
-    draft.reject().done(function() {
-        $osf.block();
-        $.post(self.urls.reject.replace('{draft_pk}', draft.pk))
-            .done(function() {
-                window.location.assign(self.urls.list);
-            }).fail(function() {
-                bootbox.alert('There was a problem rejecting this draft.' + osfLanguage.REFRESH_OR_SUPPORT);
-            }).always($osf.unblock);
-    });
-};
 
 module.exports = {
     Comment: Comment,

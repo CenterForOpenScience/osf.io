@@ -57,7 +57,6 @@ class TestRegistrationSchemaDetail:
         data = res.json['data']['attributes']
         assert data['name'] == 'Prereg Challenge'
         assert data['schema_version'] == 2
-        assert data['active']
         assert res.json['data']['id'] == schema._id
 
         # test_pass_unauthenticated_user_can_view_schemas
