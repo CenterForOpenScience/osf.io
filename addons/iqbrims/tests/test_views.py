@@ -808,7 +808,8 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         gdsettings.save()
         mock_get_management_node.return_value = management_project
         mock_folders.return_value = [{'id': 'folderid123',
-                                      'title': u'チェックリスト'}]
+                                      'title': u'チェックリスト',
+                                      'alternateLink': 'https://google/folderid123/'}]
         mock_files.return_value = [{'id': 'fileid123',
                                     'title': u'ダミー.txt'},
                                    {'id': 'fileidlist',
@@ -829,6 +830,7 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['status'], 'complete')
+        assert_equal(res.json['folder_drive_url'], 'https://google/folderid123/')
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')

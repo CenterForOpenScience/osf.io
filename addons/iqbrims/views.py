@@ -276,10 +276,9 @@ def iqbrims_get_storage(**kwargs):
     folders = client.folders(folder_id=iqbrims.folder_id)
     folders = [f for f in folders if f['title'] == folder_name]
     assert len(folders) > 0
-    sub_folders = []
+    sub_folders = None
     if sub_folder_name is not None:
-        main_folders = folders
-        sub_folders = client.folders(folder_id=main_folders[0]['id'])
+        sub_folders = client.folders(folder_id=folders[0]['id'])
         sub_folders = [f for f in sub_folders if f['title'] == sub_folder_name]
         if len(sub_folders) == 0:
             return {'status': 'processing', 'comment': ''}
