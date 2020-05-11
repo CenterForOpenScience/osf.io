@@ -322,7 +322,7 @@ var ViewModel = function(params) {
 
         var array = self.sortOrderSettings();
         var category;
-        for (var i = 0, len = array.length(); i < len; i++) {
+        for (var i = 0, len = array.length; i < len; i++) {
             category = array[i];
             switch(category.value) {
             case 'project_asc':
