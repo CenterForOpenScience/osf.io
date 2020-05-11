@@ -650,7 +650,7 @@ var ViewModel = function(params) {
         }
 
         var linksBeforeCurrent = Math.ceil((self.pagesShown() - 2) / 2);
-        var linksAfterCurrent = Math.floor((self.pagesShown() - 2) / 2);
+        var linksAfterCurrent = Math.floor((self.pagesShown() - 2) / 2) + 1;
         if ((self.currentPage() + linksAfterCurrent + 1) < self.totalPages()) {
             for (i = self.currentPage() - linksBeforeCurrent; i <= self.currentPage() + linksAfterCurrent; i++) {
                 pages.push(i);

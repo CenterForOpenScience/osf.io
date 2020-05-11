@@ -27,9 +27,11 @@
                                     <span>
                                         <a data-bind="click: pageFirst, text: 1"></a>
                                     </span>
+                                    <!-- ko if: (listIndices()[0] > 2) -->
                                     <span>
                                     ...
                                     </span>
+                                    <!-- /ko -->
                                     <!-- ko foreach: listIndices() -->
                                     <span data-bind="css: {disabled: $parent.isCurrentPage($data)}">
                                         <a data-bind="click: $parent.pageNth, text: $data"></a>
