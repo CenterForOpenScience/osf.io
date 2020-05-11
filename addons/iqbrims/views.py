@@ -261,7 +261,6 @@ def iqbrims_get_storage(**kwargs):
         validate = _iqbrims_filled_index
     elif folder == 'imagelist':
         folder_name = REVIEW_FOLDERS['paper']
-        sub_folder_name = settings.IMAGELIST_FOLDERNAME
         file_name = settings.IMAGELIST_FILENAME
         urls_for_all_files = True
     else:

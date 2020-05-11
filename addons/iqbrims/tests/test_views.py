@@ -889,12 +889,11 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         def mock_files_effect(folder_id):
             if folder_id == 'folderid123':
-                return []
+                return [{'id': 'fileid456b', 'title': 'files.txt',
+                         'alternateLink': 'https://google/fileid456b/'}]
             if folder_id == 'folderid456':
                 return [{'id': 'fileid456a', 'title': 'test.png',
-                         'alternateLink': 'https://google/fileid456a/'},
-                        {'id': 'fileid456b', 'title': 'files.txt',
-                         'alternateLink': 'https://google/fileid456b/'}]
+                         'alternateLink': 'https://google/fileid456a/'}]
             assert False, folder_id
 
         mock_folders.side_effect = mock_folders_effect
@@ -914,14 +913,14 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['status'], 'complete')
-        assert_equal(res.json['folder_drive_url'], 'https://google/folderid456/')
-        assert_equal(len(res.json['management']['urls']), 2)
-        assert_equal(res.json['management']['urls'][0]['path'], u'iqb123/%E6%9C%80%E7%B5%82%E5%8E%9F%E7%A8%BF%E3%83%BB%E7%B5%84%E5%9B%B3/%E3%82%B9%E3%82%AD%E3%83%A3%E3%83%B3%E7%94%BB%E5%83%8F/test.png')
+        assert_equal(res.json['folder_drive_url'], 'https://google/folderid123/')
+        assert_equal(len(res.json['management']['urls']), 1)
+#        assert_equal(res.json['management']['urls'][0]['path'], u'iqb123/%E6%9C%80%E7%B5%82%E5%8E%9F%E7%A8%BF%E3%83%BB%E7%B5%84%E5%9B%B3/%E3%82%B9%E3%82%AD%E3%83%A3%E3%83%B3%E7%94%BB%E5%83%8F/test.png')
+#        assert_true(res.json['management']['urls'][0]['mfr_url'].startswith('http://localhost:7778/export?url=http://localhost:5000/'))
+#        assert_equal(res.json['management']['urls'][0]['drive_url'], 'https://google/fileid456a/')
+        assert_equal(res.json['management']['urls'][0]['path'], u'iqb123/%E6%9C%80%E7%B5%82%E5%8E%9F%E7%A8%BF%E3%83%BB%E7%B5%84%E5%9B%B3/files.txt')
         assert_true(res.json['management']['urls'][0]['mfr_url'].startswith('http://localhost:7778/export?url=http://localhost:5000/'))
-        assert_equal(res.json['management']['urls'][0]['drive_url'], 'https://google/fileid456a/')
-        assert_equal(res.json['management']['urls'][1]['path'], u'iqb123/%E6%9C%80%E7%B5%82%E5%8E%9F%E7%A8%BF%E3%83%BB%E7%B5%84%E5%9B%B3/%E3%82%B9%E3%82%AD%E3%83%A3%E3%83%B3%E7%94%BB%E5%83%8F/files.txt')
-        assert_true(res.json['management']['urls'][1]['mfr_url'].startswith('http://localhost:7778/export?url=http://localhost:5000/'))
-        assert_equal(res.json['management']['urls'][1]['drive_url'], 'https://google/fileid456b/')
+        assert_equal(res.json['management']['urls'][0]['drive_url'], 'https://google/fileid456b/')
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
