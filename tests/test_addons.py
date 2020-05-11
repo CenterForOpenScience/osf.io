@@ -522,60 +522,6 @@ class TestCheckAuth(OsfTestCase):
         res = views.check_access(component, Auth(user=self.user), 'copyfrom', None)
         assert_true(res)
 
-class TestCheckPreregAuth(OsfTestCase):
-
-    def setUp(self):
-        super(TestCheckPreregAuth, self).setUp()
-
-        self.prereg_challenge_admin_user = AuthUserFactory()
-        administer_permission = Permission.objects.get(codename='administer_prereg')
-        self.prereg_challenge_admin_user.user_permissions.add(administer_permission)
-        self.prereg_challenge_admin_user.save()
-        prereg_schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
-
-        self.user = AuthUserFactory()
-        self.node = factories.ProjectFactory(creator=self.user)
-
-        self.parent = factories.ProjectFactory()
-        self.child = factories.NodeFactory(parent=self.parent)
-
-        self.draft_registration = factories.DraftRegistrationFactory(
-            initiator=self.user,
-            registration_schema=prereg_schema,
-            branched_from=self.parent
-        )
-
-    def test_has_permission_download_prereg_challenge_admin(self):
-        res = views.check_access(self.draft_registration.branched_from,
-            Auth(user=self.prereg_challenge_admin_user), 'download', None)
-        assert_true(res)
-
-    def test_has_permission_download_on_component_prereg_challenge_admin(self):
-        try:
-            res = views.check_access(self.draft_registration.branched_from._nodes.first(),
-                                     Auth(user=self.prereg_challenge_admin_user), 'download', None)
-        except Exception:
-            self.fail()
-        assert_true(res)
-
-    def test_has_permission_download_not_prereg_challenge_admin(self):
-        new_user = AuthUserFactory()
-        with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.draft_registration.branched_from,
-                 Auth(user=new_user), 'download', None)
-            assert_equal(exc_info.exception.code, http_status.HTTP_403_FORBIDDEN)
-
-    def test_has_permission_download_prereg_challenge_admin_not_draft(self):
-        with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.node,
-                 Auth(user=self.prereg_challenge_admin_user), 'download', None)
-            assert_equal(exc_info.exception.code, http_status.HTTP_403_FORBIDDEN)
-
-    def test_has_permission_write_prereg_challenge_admin(self):
-        with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.draft_registration.branched_from,
-            Auth(user=self.prereg_challenge_admin_user), WRITE, None)
-            assert_equal(exc_info.exception.code, http_status.HTTP_403_FORBIDDEN)
 
 class TestCheckOAuth(OsfTestCase):
 
