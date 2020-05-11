@@ -111,7 +111,7 @@ class TestInstitutionDepartmentList:
         resp = app.get(url, auth=admin.auth)
 
         assert resp.json['data'] == [{
-            'id': institution._id,
+            'id': '{}-{}'.format(institution._id, 'New-Department'),
             'type': 'institution-departments',
             'attributes': {
                 'name': 'New Department',
@@ -140,7 +140,7 @@ class TestInstitutionDepartmentList:
         resp = app.get(f'{url}?filter[name]=New Department', auth=admin.auth)
 
         assert resp.json['data'] == [{
-            'id': institution._id,
+            'id': '{}-{}'.format(institution._id, 'New-Department'),
             'type': 'institution-departments',
             'attributes': {
                 'name': 'New Department',

@@ -459,9 +459,16 @@ class InstitutionDepartmentList(InstitutionImpactList):
     def _format_search(self, search):
         results = search.execute()
 
+        institution_id = self.kwargs['institution_id']
+
         if results.aggregations:
             buckets = results.aggregations['date_range']['departments'].buckets
-            department_data = [{'name': bucket['key'], 'number_of_users': bucket['doc_count']} for bucket in buckets]
+            department_data = [
+                {
+                    'institution_id': '{}-{}'.format(institution_id, bucket['key'].replace(' ', '-')),
+                    'name': bucket['key'],
+                    'number_of_users': bucket['doc_count']
+                } for bucket in buckets]
             return department_data
         else:
             return []

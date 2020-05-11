@@ -207,7 +207,7 @@ class InstitutionDepartmentMetricsSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'institution-departments'
 
-    id = IDField(read_only=True)
+    id = IDField(source='institution_id', read_only=True)
     name = ser.CharField(read_only=True)
     number_of_users = ser.IntegerField(read_only=True)
 
