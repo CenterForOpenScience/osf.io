@@ -76,6 +76,93 @@ var User = function(result){
     });
 };
 
+var isValidSort = function (sort_name, filter_name) {
+    switch(sort_name) {
+    case 'project_asc':
+    case 'project_desc':
+        switch (filter_name) {
+        case 'project':
+        case 'file':
+        case 'wiki':
+        case 'total':
+            return true;
+
+        default:
+            return false;
+        }
+        break;
+
+    case 'file_asc':
+    case 'file_desc':
+        if (filter_name === 'file' || filter_name === 'total') {
+            return true;
+        } else {
+            return false;
+        }
+        break;
+
+    case 'user_asc':
+    case 'user_desc':
+        if (filter_name === 'user' || filter_name === 'total') {
+            return true;
+        } else {
+            return false;
+        }
+        break;
+
+    case 'institution_asc':
+    case 'institution_desc':
+        if (filter_name === 'institution' || filter_name === 'total') {
+            return true;
+        } else {
+            return false;
+        }
+        break;
+
+    case 'wiki_asc':
+    case 'wiki_desc':
+        if (filter_name === 'wiki' || filter_name === 'total') {
+            return true;
+        } else {
+            return false;
+        }
+        break;
+
+    default:
+        return true;
+    }
+
+    return false;
+};
+
+var SortOrderSettings = function(category_name) {
+    var settings = [];
+    var allSettings = [
+        {text: _('Date Modified(Desc)'), value: 'modified_desc', enable: ko.observable(true)},
+        {text: _('Date Modified(Asc)'), value: 'modified_asc', enable: ko.observable(true)},
+        {text: _('Date Created(Desc)'), value: 'created_desc', enable: ko.observable(true)},
+        {text: _('Date Created(Asc)'), value: 'created_asc', enable: ko.observable(true)},
+        {text: _('Project name(Asc)'), value: 'project_asc', enable: ko.observable(true)},
+        {text: _('Project name(Desc)'), value: 'project_desc', enable: ko.observable(true)},
+        {text: _('File name(Asc)'), value: 'file_asc', enable: ko.observable(true)},
+        {text: _('File name(Desc)'), value: 'file_desc', enable: ko.observable(true)},
+        {text: _('User name(Asc)'), value: 'user_asc', enable: ko.observable(true)},
+        {text: _('User name(Desc)'), value: 'user_desc', enable: ko.observable(true)},
+        {text: _('Institution name(Asc)'), value: 'institution_asc', enable: ko.observable(true)},
+        {text: _('Institution name(Desc)'), value: 'institution_desc', enable: ko.observable(true)},
+        {text: _('Wiki title(Asc)'), value: 'wiki_asc', enable: ko.observable(true)},
+        {text: _('Wiki title(Desc)'), value: 'wiki_desc', enable: ko.observable(true)}
+    ];
+
+    for (var i = 0, len = allSettings.length; i < len; i++) {
+        if (isValidSort(allSettings[i].value, category_name) === true) {
+            settings.push(allSettings[i]);
+        }
+    }
+
+    return settings;
+};
+
 var ViewModel = function(params) {
     var self = this;
     self.params = params || {};
@@ -93,12 +180,6 @@ var ViewModel = function(params) {
     self.results = ko.observableArray([]);
     self.urlLists = ko.observableArray([]);
     self.searching = ko.observable(false);
-    self.resultsPerPage = ko.observable(10);
-    if (window.contextVars.searchSize !== null) {
-        self.resultsPerPage = ko.observable(Number(window.contextVars.searchSize));
-    } else {
-        self.resultsPerPage = ko.observable(10);
-    }
     self.categories = ko.observableArray([]);
     self.shareCategory = ko.observable('');
     self.searchStarted = ko.observable(false);
@@ -111,22 +192,7 @@ var ViewModel = function(params) {
     } else {
         self.sortOrder = ko.observable('modified_desc');
     }
-    self.sortOrderSettings = ko.observableArray([
-        {text: _('Date Modified(Desc)'), value: 'modified_desc', enable: ko.observable(true)},
-        {text: _('Date Modified(Asc)'), value: 'modified_asc', enable: ko.observable(true)},
-        {text: _('Date Created(Desc)'), value: 'created_desc', enable: ko.observable(true)},
-        {text: _('Date Created(Asc)'), value: 'created_asc', enable: ko.observable(true)},
-        {text: _('Project name(Asc)'), value: 'project_asc', enable: ko.observable(true)},
-        {text: _('Project name(Desc)'), value: 'project_desc', enable: ko.observable(true)},
-        {text: _('File name(Asc)'), value: 'file_asc', enable: ko.observable(true)},
-        {text: _('File name(Desc)'), value: 'file_desc', enable: ko.observable(true)},
-        {text: _('User name(Asc)'), value: 'user_asc', enable: ko.observable(true)},
-        {text: _('User name(Desc)'), value: 'user_desc', enable: ko.observable(true)},
-        {text: _('Institution name(Asc)'), value: 'institution_asc', enable: ko.observable(true)},
-        {text: _('Institution name(Desc)'), value: 'institution_desc', enable: ko.observable(true)},
-        {text: _('Wiki title(Asc)'), value: 'wiki_asc', enable: ko.observable(true)},
-        {text: _('Wiki title(Desc)'), value: 'wiki_desc', enable: ko.observable(true)}
-    ]);
+    self.sortOrderSettings = ko.observableArray(SortOrderSettings('total'));
     self.pagesShown = ko.observable(10);
     self.center = Math.floor(self.pagesShown() / 2) + 1;
     self.resultsPerPageSettings = ko.observableArray([
@@ -135,6 +201,11 @@ var ViewModel = function(params) {
         {text: '50', value: 50},
         {text: '100', value: 100}
     ]);
+    if (window.contextVars.searchSize !== null) {
+        self.resultsPerPage = ko.observable(Number(window.contextVars.searchSize));
+    } else {
+        self.resultsPerPage = ko.observable(10);
+    }
 
     self.licenses = ko.observable(
         $.map(licenses, function(license) {
@@ -319,67 +390,9 @@ var ViewModel = function(params) {
         self.searchStarted(false);
         self.currentPage(1);
         self.category(alias);
-
-        var array = self.sortOrderSettings();
-        var category;
-        for (var i = 0, len = array.length; i < len; i++) {
-            category = array[i];
-            switch(category.value) {
-            case 'project_asc':
-            case 'project_desc':
-                switch (self.category().name) {
-                case 'project':
-                case 'file':
-                case 'wiki':
-                    category.enable(true);
-                    break;
-
-                default:
-                    category.enable(false);
-                    break;
-                }
-                break;
-
-            case 'file_asc':
-            case 'file_desc':
-                if (self.category().name === 'file') {
-                    category.enable(true);
-                } else {
-                    category.enable(false);
-                }
-                break;
-
-            case 'user_asc':
-            case 'user_desc':
-                if (self.category().name === 'user') {
-                    category.enable(true);
-                } else {
-                    category.enable(false);
-                }
-                break;
-
-            case 'institution_asc':
-            case 'institution_desc':
-                if (self.category().name === 'institution') {
-                    category.enable(true);
-                } else {
-                    category.enable(false);
-                }
-                break;
-
-            case 'wiki_asc':
-            case 'wiki_desc':
-                if (self.category().name === 'wiki') {
-                    category.enable(true);
-                } else {
-                    category.enable(false);
-                }
-                break;
-
-            default:
-                category.enable(true);
-                break;
-            }
+        self.sortOrderSettings(SortOrderSettings(self.category().name));
+        if (isValidSort(self.sortOrder(), self.category().name) === false) {
+            self.setSortOrder('modified_desc');
         }
 
         var win = null;
@@ -737,10 +750,6 @@ var ViewModel = function(params) {
         self.submit();
     });
 
-    self.sortOptionCB = function(option, item) {
-        ko.applyBindingsToNode(option, {enable: item.enable}, item);
-    };
-
     self.resultsPerPage.subscribe(function(newValue) {
         self.submit();
     });
@@ -751,12 +760,14 @@ var ViewModel = function(params) {
             var intValue = Number(value);
             if (Number.isInteger(intValue)) {
                 if (intValue < 1) {
-                    self.currentPage(1);
+                    intValue = 1;
                 }
 
                 if (intValue > self.totalPages()) {
-                    self.currentPage(self.totalPages());
+                    intValue = self.totalPages();
                 }
+
+                self.currentPage(intValue);
             } else {
                 self.currentPage(1);
             }

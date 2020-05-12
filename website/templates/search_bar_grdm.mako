@@ -17,7 +17,7 @@
             <div class="col-md-5">
                 <form class="osf-treebeard-minimal">
                     <div style="display: flex; flex-wrap: nowrap; justify-content: flex-end;" class="tb-td tb-col-1">
-                        <select id="sortPullDownMenu" style="width: auto;" class="form-control" data-bind="options: sortOrderSettings, optionsText: 'text', optionsValue: 'value', optionsAfterRender: sortOptionCB, value: sortOrder"></select>
+                        <select id="sortPullDownMenu" style="width: auto;" class="form-control" data-bind="options: sortOrderSettings, optionsText: 'text', optionsValue: 'value', value: sortOrder"></select>
                         <select id="resultsPerPagePullDownMenu" style="margin-left: 15px; width: auto;" class="form-control" data-bind="options: resultsPerPageSettings, optionsText: 'text', optionsValue: 'value', value: resultsPerPage"></select>
                         <p style="margin-left: 15px;">${_("results per page")}</p>
                     </div>
