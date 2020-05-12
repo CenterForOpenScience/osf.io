@@ -185,6 +185,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': (
         'rest_framework.throttling.UserRateThrottle',
         'api.base.throttling.NonCookieAuthThrottle',
+        'api.base.throttling.BurstRateThrottle',
     ),
     'DEFAULT_THROTTLE_RATES': {
         'user': '10000/day',
@@ -195,6 +196,7 @@ REST_FRAMEWORK = {
         'test-user': '2/hour',
         'test-anon': '1/hour',
         'send-email': '2/minute',
+        'burst': '10/second',
     },
 }
 

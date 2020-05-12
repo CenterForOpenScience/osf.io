@@ -119,13 +119,6 @@ class RegistrationSchema(AbstractSchema):
         path = '/schemas/registrations/{}/'.format(self._id)
         return api_v2_url(path)
 
-    @classmethod
-    def get_prereg_schema(cls):
-        return cls.objects.get(
-            name='Prereg Challenge',
-            schema_version=2
-        )
-
     def validate_metadata(self, metadata, reviewer=False, required_fields=False):
         """
         Validates registration_metadata field.

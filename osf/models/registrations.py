@@ -23,8 +23,12 @@ from website import settings
 from website.archiver import ARCHIVER_INITIATED
 
 from osf.models import (
-    OSFUser, RegistrationSchema, Node,
-    Retraction, Embargo, DraftRegistrationApproval,
+    Node,
+    OSFUser,
+    Embargo,
+    Retraction,
+    RegistrationSchema,
+    DraftRegistrationApproval,
     EmbargoTerminationApproval,
     DraftRegistrationContributor,
 )
@@ -907,7 +911,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             provider=provider,
         )
         draft.save()
-        draft.copy_editable_fields(node, Auth(user), save=True)
+        draft.copy_editable_fields(node, Auth(user), save=True, contributors=False)
         draft.update(data)
         return draft
 
@@ -1005,6 +1009,9 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         )
         self.registered_node = register
         self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)
+
+        self.copy_contributors_from(node)
+
         if save:
             self.save()
         return register

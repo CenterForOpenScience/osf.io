@@ -26,7 +26,7 @@ from osf.exceptions import (
 )
 from osf.utils import tokens
 from osf.models import AbstractNode
-from osf.models.sanctions import PreregCallbackMixin, Embargo
+from osf.models.sanctions import SanctionCallbackMixin, Embargo
 from osf.utils import permissions
 from osf.models import Registration, Contributor, OSFUser, SpamStatus
 
@@ -402,7 +402,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             notify_initiator_on_complete=True
         )
         self.registration.save()
-        with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
+        with mock.patch.object(SanctionCallbackMixin, '_notify_initiator') as mock_notify:
             self.registration.embargo._on_complete(self.user)
         assert_equal(mock_notify.call_count, 1)
 
@@ -414,7 +414,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         )
         self.registration.spam_status = SpamStatus.FLAGGED
         self.registration.save()
-        with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
+        with mock.patch.object(SanctionCallbackMixin, '_notify_initiator') as mock_notify:
             with assert_raises(NodeStateError):
                 self.registration.embargo._on_complete(self.user)
         assert_equal(mock_notify.call_count, 0)

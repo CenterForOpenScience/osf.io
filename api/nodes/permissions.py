@@ -16,7 +16,6 @@ from osf.models import (
     PrivateLink,
 )
 from osf.utils import permissions as osf_permissions
-from website.project.metadata.utils import is_prereg_admin
 
 from api.base.utils import get_user_auth, is_deprecated, assert_resource_type
 
@@ -35,6 +34,10 @@ class ContributorOrPublic(permissions.BasePermission):
             obj = obj.get('self', None)
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
+
+        if isinstance(obj, DraftRegistration) and isinstance(obj.branched_from, Node):
+            obj = obj.branched_from
+
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)
         else:
@@ -115,19 +118,6 @@ class IsContributorOrGroupMember(permissions.BasePermission):
             return obj.is_contributor_or_group_member(auth.user)
         else:
             return obj.has_permission(auth.user, osf_permissions.WRITE)
-
-
-class IsAdminContributorOrReviewer(IsAdminContributor):
-    """
-    Prereg admins can update draft registrations.
-    """
-    acceptable_models = (AbstractNode, DraftRegistration,)
-    def has_object_permission(self, request, view, obj):
-        assert_resource_type(obj, self.acceptable_models)
-        auth = get_user_auth(request)
-        if request.method != 'DELETE' and is_prereg_admin(auth.user):
-            return True
-        return super(IsAdminContributorOrReviewer, self).has_object_permission(request, view, obj)
 
 
 class AdminOrPublic(permissions.BasePermission):

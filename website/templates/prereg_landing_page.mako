@@ -1,11 +1,7 @@
 <%inherit file="base.mako"/>
 
 <%def name="title()">
-    %if waffle.switch_is_active(features.OSF_PREREGISTRATION):
-        OSF Preregistration
-    %else:
-        OSF Prereg Challenge
-    %endif
+    OSF Preregistration
 </%def>
 <%def name="stylesheets()">
     ${ parent.stylesheets() }
@@ -45,19 +41,10 @@
 <%def name="content()">
 <div class="prereg-container">
     <h1 class="m-t-xl m-b-lg text-center">
-        %if waffle.switch_is_active(features.OSF_PREREGISTRATION):
-            <img class="reg-landing-page-logo" src="/static/img/registries/osf-prereg-red.png" alt="preregistration_logo">
-        %else:
-            <img class="reg-landing-page-logo" src="/static/img/registries/osf-prereg-challenge-black.png" alt="preregistration_logo">
-        %endif
+        <img class="reg-landing-page-logo" src="/static/img/registries/osf-prereg-red.png" alt="preregistration_logo">
     </h1>
-    %if waffle.switch_is_active(features.OSF_PREREGISTRATION):
-        <p>Improve your research with <a target='_blank' href='http://www.cos.io/prereg/'>preregistration</a>. By writing out specific details such as data collection methods, analysis plans, and rules for data exclusion, you can make important decisions early on and have a clear record of these choices. This can help reduce biases that occur once the data are in front of you.</p>
-        <p>Use <a target='_blank' href='https://osf.io/registries/'>OSF Registries</a> to discover previously registered work.</p>
-    %else:
-        <p><strong> Articles must be published by an <a target='_blank' href='http://cos.io/our-services/prereg-more-information/'>approved</a> journal by December 31, 2018, to be eligible for a prize. Please use this this helpful workflow to preregister, even if you are not seeking a prize. </strong></p>
-        <p> Improve your research with preregistration. The process of creating a <a href='http://www.cos.io/prereg'> preregistration</a> is beneficial to both the scientific field and to you, the scientist. By writing out detailed data collection methods, analysis plans, and rules for excluding or missing data, you can make important decisions that affect your workflow earlier, without the biases that occur once the data are in front of you.</p>
-    %endif
+    <p>Improve your research with <a target='_blank' href='http://www.cos.io/prereg/'>preregistration</a>. By writing out specific details such as data collection methods, analysis plans, and rules for data exclusion, you can make important decisions early on and have a clear record of these choices. This can help reduce biases that occur once the data are in front of you.</p>
+    <p>Use <a target='_blank' href='https://osf.io/registries/'>OSF Registries</a> to discover previously registered work.</p>
     <div class="col-md-12 visible-xs">
       %if is_logged_in:
       <div class="row">
