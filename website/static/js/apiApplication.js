@@ -209,7 +209,7 @@ var ApplicationsListViewModel = oop.defclass({
 
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
-                osfLanguage.trans('dataListFetchError'),
+                osfLanguage.t('dataListFetchError'),
                 'danger');
 
             Raven.captureMessage(_('Error fetching list of registered applications'), {
@@ -224,7 +224,7 @@ var ApplicationsListViewModel = oop.defclass({
     deleteApplication: function (appData) {
         bootbox.confirm({
             title: _('Deactivate application?'),
-            message: osfLanguage.trans('deactivateConfirm'),
+            message: osfLanguage.t('deactivateConfirm'),
             callback: function (confirmed) {
                 if (confirmed) {
                     var request = this.client.deleteOne(appData);
@@ -235,7 +235,7 @@ var ApplicationsListViewModel = oop.defclass({
                     }.bind(this));
                     request.fail(function () {
                             $osf.growl('Error',
-                                       osfLanguage.trans('deactivateError'),
+                                       osfLanguage.t('deactivateError'),
                                        'danger');
                     }.bind(this));
                 }
@@ -303,7 +303,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
             }.bind(this));
             request.fail(function(xhr, status, error) {
                 $osf.growl('Error',
-                             osfLanguage.trans('dataFetchError'),
+                             osfLanguage.t('dataFetchError'),
                             'danger');
 
                 Raven.captureMessage(_('Error fetching application data'), {
@@ -320,7 +320,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
         if (!this.dirty()){
             // No data needs to be sent to the server, but give the illusion that form was submitted
             this.changeMessage(
-                osfLanguage.trans('dataUpdated'),
+                osfLanguage.t('dataUpdated'),
                 'text-success',
                 5000);
             return;
@@ -331,14 +331,14 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
             this.appData(dataObj);
             this.originalValues(dataObj.serialize());
             this.changeMessage(
-                osfLanguage.trans('dataUpdated'),
+                osfLanguage.t('dataUpdated'),
                 'text-success',
                 5000);
         }.bind(this));
 
         request.fail(function (xhr, status, error) {
             $osf.growl('Error',
-                       osfLanguage.trans('dataSendError'),
+                       osfLanguage.t('dataSendError'),
                        'danger');
 
             Raven.captureMessage(_('Error updating instance'), {
@@ -357,14 +357,14 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
             this.appData(dataObj);
             this.originalValues(dataObj.serialize());
 
-            this.changeMessage(osfLanguage.trans('creationSuccess'), 'text-success', 5000);
+            this.changeMessage(osfLanguage.t('creationSuccess'), 'text-success', 5000);
             this.apiDetailUrl(dataObj.apiDetailUrl); // Toggle ViewModel --> act like a display view now.
             historyjs.replaceState({}, '', dataObj.webDetailUrl);  // Update address bar to show new detail page
         }.bind(this));
 
         request.fail(function (xhr, status, error) {
             $osf.growl('Error',
-                       osfLanguage.trans('dataSendError'),
+                       osfLanguage.t('dataSendError'),
                        'danger');
 
             Raven.captureMessage(_('Error registering new OAuth2 application'), {
@@ -394,7 +394,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
         var appData = this.appData();
         bootbox.confirm({
             title: _('Deactivate application?'),
-            message: osfLanguage.trans('deactivateConfirm'),
+            message: osfLanguage.t('deactivateConfirm'),
             callback: function (confirmed) {
                 if (confirmed) {
                     var request = this.client.deleteOne(appData );
@@ -406,7 +406,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                     }.bind(this));
                     request.fail(function () {
                             $osf.growl('Error',
-                                       osfLanguage.trans('deactivateError'),
+                                       osfLanguage.t('deactivateError'),
                                        'danger');
                     }.bind(this));
                 }
@@ -435,7 +435,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                         self.appData().clientSecret(dataObj.clientSecret());
                         self.originalValues(self.appData().serialize());
                         self.changeMessage(
-                            osfLanguage.trans('dataUpdated'),
+                            osfLanguage.t('dataUpdated'),
                             'text-success',
                             5000);
                     }.bind(self));
@@ -471,7 +471,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
         } else {
             bootbox.confirm({
                 title: _('Discard changes?'),
-                message: osfLanguage.trans('discardUnchanged'),
+                message: osfLanguage.t('discardUnchanged'),
                 callback: function(confirmed) {
                     if (confirmed) {
                         this.allowExit(true);
