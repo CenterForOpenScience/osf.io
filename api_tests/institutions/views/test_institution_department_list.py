@@ -111,7 +111,7 @@ class TestInstitutionDepartmentList:
         resp = app.get(url, auth=admin.auth)
 
         assert resp.json['data'] == [{
-            'id': f'{institution._id}-New Department',
+            'id': f'{institution._id}-New-Department',
             'type': 'institution-departments',
             'attributes': {
                 'name': 'New Department',
@@ -119,7 +119,7 @@ class TestInstitutionDepartmentList:
             },
             'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
         }, {
-            'id': f'{institution._id}-Smaller Department',
+            'id': f'{institution._id}-Smaller-Department',
             'type': 'institution-departments',
             'attributes': {
                 'name': 'Smaller Department',
@@ -140,7 +140,7 @@ class TestInstitutionDepartmentList:
         resp = app.get(f'{url}?filter[name]=New Department', auth=admin.auth)
 
         assert resp.json['data'] == [{
-            'id': '{}-{}'.format(institution._id, 'New Department'),
+            'id': '{}-{}'.format(institution._id, 'New-Department'),
             'type': 'institution-departments',
             'attributes': {
                 'name': 'New Department',

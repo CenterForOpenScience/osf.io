@@ -214,6 +214,11 @@ class UniqueDeptIDField(CompoundIDField):
     def _get_resource_id(self):
         return self.context['request'].parser_context['kwargs']['institution_id']
 
+    def to_representation(self, value):
+        resource_id = self._get_resource_id()
+        related_id = super(CompoundIDField, self).to_representation(value).replace(' ', '-')
+        return '{}-{}'.format(resource_id, related_id)
+
 
 class InstitutionDepartmentMetricsSerializer(JSONAPISerializer):
 
