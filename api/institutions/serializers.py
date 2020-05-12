@@ -201,13 +201,38 @@ class InstitutionSummaryMetricSerializer(JSONAPISerializer):
             },
         )
 
+class UniqueDeptIDField(IDField):
+    """Creates a unique department ID of the form "<institution-id>-<dept-id>"."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs['source'] = kwargs.pop('source', 'name')
+        kwargs['help_text'] = kwargs.get('help_text', 'Unique ID that is a compound of two objects. Has the form "<institution-id>-<dept-id>". Example: "cos-psych"')
+        super(UniqueDeptIDField, self).__init__(*args, **kwargs)
+
+    def _get_resource_id(self):
+        return self.context['request'].parser_context['kwargs']['institution_id']
+
+    # override IDField
+    def get_id(self, obj):
+        resource_id = self._get_resource_id()
+        related_id = obj._id.replace(' ', '-')
+        if related_id.startswith(f'{resource_id}-'):
+            return related_id
+        return f'{resource_id}-{related_id}'
+
+    def to_representation(self, value):
+        resource_id = self._get_resource_id()
+        related_id = super(UniqueDeptIDField, self).to_representation(value).replace(' ', '-')
+        if related_id.startswith(f'{resource_id}-'):
+            return related_id
+        return f'{resource_id}-{related_id}'
 
 class InstitutionDepartmentMetricsSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'institution-departments'
 
-    id = IDField(source='institution_id', read_only=True)
+    id = UniqueDeptIDField(source='name', read_only=True)
     name = ser.CharField(read_only=True)
     number_of_users = ser.IntegerField(read_only=True)
 

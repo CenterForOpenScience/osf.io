@@ -68,7 +68,7 @@ class TestInstitutionDepartmentList:
         UserInstitutionProjectCounts.record(
             user_id=user3._id,
             institution_id=institution._id,
-            department='Smaller Department',
+            department=f'{institution._id} Smaller Department',
             public_project_count=1,
             private_project_count=1
         ).save()
@@ -111,7 +111,7 @@ class TestInstitutionDepartmentList:
         resp = app.get(url, auth=admin.auth)
 
         assert resp.json['data'] == [{
-            'id': '{}-{}'.format(institution._id, 'New-Department'),
+            'id': f'{institution._id}-New-Department',
             'type': 'institution-departments',
             'attributes': {
                 'name': 'New Department',
@@ -119,18 +119,18 @@ class TestInstitutionDepartmentList:
             },
             'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
         }, {
-            'id': '{}-{}'.format(institution._id, 'Smaller-Department'),
+            'id': f'{institution._id}-N/A',
             'type': 'institution-departments',
             'attributes': {
-                'name': 'Smaller Department',
+                'name': 'N/A',
                 'number_of_users': 1
             },
             'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
         }, {
-            'id': '{}-{}'.format(institution._id, 'N/A'),
+            'id': f'{institution._id}-Smaller-Department',
             'type': 'institution-departments',
             'attributes': {
-                'name': 'N/A',
+                'name': f'{institution._id} Smaller Department',
                 'number_of_users': 1
             },
             'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
