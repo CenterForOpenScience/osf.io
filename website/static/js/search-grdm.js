@@ -192,9 +192,11 @@ var ViewModel = function(params) {
     } else {
         self.sortOrder = ko.observable('modified_desc');
     }
+    self.syncSortOrder = true;
     self.sortOrderSettings = ko.observableArray(SortOrderSettings('total'));
     self.pagesShown = ko.observable(10);
     self.center = Math.floor(self.pagesShown() / 2) + 1;
+    self.syncResultsPerPage = true;
     self.resultsPerPageSettings = ko.observableArray([
         {text: '10', value: 10},
         {text: '20', value: 20},
@@ -390,7 +392,7 @@ var ViewModel = function(params) {
         self.searchStarted(false);
         self.currentPage(1);
         self.category(alias);
-        self.sortOrderSettings(SortOrderSettings(self.category().name));
+        self.setSortOrderSettings(self.category().name);
         if (isValidSort(self.sortOrder(), self.category().name) === false) {
             self.setSortOrder('modified_desc');
         }
@@ -454,6 +456,7 @@ var ViewModel = function(params) {
         self.searchStarted(false);
         self.totalResults(0);
         self.currentPage(1);
+        self.setSortOrderSettings(self.category().name);
         self.search();
     };
 
@@ -711,6 +714,9 @@ var ViewModel = function(params) {
         var state = History.getState().data;
         self.currentPage(state.page || 1);
         self.setCategory(state.filter);
+        self.setResultsPerPage(state.size || (window.contextVars.searchSize || 10));
+        self.setSortOrderSettings(self.category().name);
+        self.setSortOrder(state.sort || window.contextVars.searchSort);
         self.query(state.query || '');
     };
 
@@ -719,6 +725,8 @@ var ViewModel = function(params) {
         var state = {
             filter: '',
             query: self.query(),
+            sort: self.sortOrder(),
+            size: self.resultsPerPage(),
             page: self.currentPage(),
             scrollTop: $(window).scrollTop()
         };
@@ -728,6 +736,14 @@ var ViewModel = function(params) {
         if (self.category().name !== undefined && self.category().url() !== '') {
             state.filter = self.category().name;
             url += ('&filter=' + self.category().name);
+        }
+
+        if (self.sortOrder() !== undefined) {
+            url += ('&sort=' + self.sortOrder());
+        }
+
+        if (self.resultsPerPage() !== undefined) {
+            url += ('&size=' + self.resultsPerPage());
         }
 
         url += ('&page=' + self.currentPage());
@@ -747,12 +763,44 @@ var ViewModel = function(params) {
     };
 
     self.sortOrder.subscribe(function(newValue) {
-        self.submit();
+        if (self.syncSortOrder === true) {
+            self.submit();
+        }
     });
 
+    self.setSortOrder = function(sort_name) {
+        self.syncSortOrder = false;
+        if (sort_name !== undefined && sort_name !== null && sort_name !== '') {
+            self.sortOrder(sort_name);
+        } else {
+            self.sortOrder('modified_desc');
+        }
+        self.syncSortOrder = true;
+    };
+
+    self.setSortOrderSettings = function(category_name) {
+        self.syncSortOrder = false;
+        self.sortOrderSettings(SortOrderSettings(category_name));
+        self.syncSortOrder = true;
+    };
+
     self.resultsPerPage.subscribe(function(newValue) {
-        self.submit();
+        if (self.syncResultsPerPage === true) {
+            self.submit();
+        }
     });
+
+    self.setResultsPerPage = function(size) {
+        self.syncResultsPerPage = false;
+        if (size !== undefined && size !== null && size !== '') {
+            if (Number.isInteger(size) === true) {
+                self.resultsPerPage(Number(size));
+            } else {
+                self.resultsPerPage(10);
+            }
+        }
+        self.syncResultsPerPage = true;
+    };
 
     self.currentPage.subscribe(function(newValue) {
         var value = self.currentPage();
