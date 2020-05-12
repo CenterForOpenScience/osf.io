@@ -68,7 +68,7 @@ class TestInstitutionDepartmentList:
         UserInstitutionProjectCounts.record(
             user_id=user3._id,
             institution_id=institution._id,
-            department=f'{institution._id} Smaller Department',
+            department='Smaller Department',
             public_project_count=1,
             private_project_count=1
         ).save()
@@ -111,11 +111,19 @@ class TestInstitutionDepartmentList:
         resp = app.get(url, auth=admin.auth)
 
         assert resp.json['data'] == [{
-            'id': f'{institution._id}-New-Department',
+            'id': f'{institution._id}-New Department',
             'type': 'institution-departments',
             'attributes': {
                 'name': 'New Department',
                 'number_of_users': 2
+            },
+            'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
+        }, {
+            'id': f'{institution._id}-Smaller Department',
+            'type': 'institution-departments',
+            'attributes': {
+                'name': 'Smaller Department',
+                'number_of_users': 1
             },
             'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
         }, {
@@ -126,21 +134,13 @@ class TestInstitutionDepartmentList:
                 'number_of_users': 1
             },
             'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
-        }, {
-            'id': f'{institution._id}-Smaller-Department',
-            'type': 'institution-departments',
-            'attributes': {
-                'name': f'{institution._id} Smaller Department',
-                'number_of_users': 1
-            },
-            'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
         }]
 
     def test_pagination(self, app, url, admin, institution, populate_counts):
         resp = app.get(f'{url}?filter[name]=New Department', auth=admin.auth)
 
         assert resp.json['data'] == [{
-            'id': '{}-{}'.format(institution._id, 'New-Department'),
+            'id': '{}-{}'.format(institution._id, 'New Department'),
             'type': 'institution-departments',
             'attributes': {
                 'name': 'New Department',
