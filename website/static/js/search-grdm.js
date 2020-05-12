@@ -391,10 +391,6 @@ var ViewModel = function(params) {
             win = window.open(window.location.origin + '/preprints/discover?' + $.param({q: self.query()}), '_blank');
             win.opener = null;
             win.focus();
-        } else if (alias.name === 'institution') {
-            win = window.open(window.location.origin + '/institutions/', '_blank');
-            win.opener = null;
-            win.focus();
         } else {
             self.search();
         }
