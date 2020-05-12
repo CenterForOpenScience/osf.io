@@ -251,6 +251,14 @@ class InstitutionUserMetricsSerializer(JSONAPISerializer):
         'self': 'get_absolute_url',
     })
 
+    filterable_fields = frozenset([
+        'id',
+        'user_name',
+        'public_projects',
+        'private_projects',
+        'department',
+    ])
+
     def get_absolute_url(self, obj):
         return absolute_reverse(
             'institutions:institution-user-metrics',
