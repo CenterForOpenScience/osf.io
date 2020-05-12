@@ -73,7 +73,7 @@ var ProjectSettings = oop.extend(
         updateAll: function() {
             var self = this;
             if (!self.dirty()){
-                self.changeMessage(osfLanguage.t('updateSuccessMessage'), 'text-success');
+                self.changeMessage(osfLanguage.trans('updateSuccessMessage'), 'text-success');
                 return;
             }
             var request = $osf.ajaxJSON('PATCH', self.updateUrl, {
@@ -93,7 +93,7 @@ var ProjectSettings = oop.extend(
                 self.title(self.titlePlaceholder);
                 self.description(self.descriptionPlaceholder);
                 self.originalProjectSettings(self.serialize());
-                self.changeMessage(osfLanguage.t('updateSuccessMessage'), 'text-success');
+                self.changeMessage(osfLanguage.trans('updateSuccessMessage'), 'text-success');
             });
             request.fail(self.updateError.bind(self));
             return request;

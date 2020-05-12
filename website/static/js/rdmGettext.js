@@ -46,7 +46,7 @@ var OsfLanguage = function() {
         this.languages[acceptLanguages[i]] = language;
     }
 
-    this.t = function() {
+    this.trans = function() {
         var msgid = [].slice.call(arguments);
         var browserlanguage = getBrowserLang();
         var msgstr = this.languages[browserlanguage];

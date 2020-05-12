@@ -188,7 +188,7 @@ var TokensListViewModel = oop.defclass({
 
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
-                osfLanguage.t('dataListFetchError'),
+                osfLanguage.trans('dataListFetchError'),
                 'danger');
 
             Raven.captureMessage(_('Error fetching list of registered personal access tokens'), {
@@ -203,7 +203,7 @@ var TokensListViewModel = oop.defclass({
     deleteToken: function (tokenData) {
         bootbox.confirm({
             title: _('Deactivate personal access token?'),
-            message: osfLanguage.t('deactivateConfirm'),
+            message: osfLanguage.trans('deactivateConfirm'),
             callback: function (confirmed) {
                 if (confirmed) {
                     var request = this.client.deleteOne(tokenData);
@@ -214,7 +214,7 @@ var TokensListViewModel = oop.defclass({
                     }.bind(this));
                     request.fail(function () {
                             $osf.growl('Error',
-                                       osfLanguage.t('deactivateError'),
+                                       osfLanguage.trans('deactivateError'),
                                        'danger');
                     }.bind(this));
                 }
@@ -282,7 +282,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
             }.bind(this));
             request.fail(function(xhr, status, error) {
                 $osf.growl('Error',
-                             osfLanguage.t('dataFetchError'),
+                             osfLanguage.trans('dataFetchError'),
                             'danger');
 
                 Raven.captureMessage(_('Error fetching token data'), {
@@ -299,7 +299,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
         if (!this.dirty()){
             // No data needs to be sent to the server, but give the illusion that form was submitted
             this.changeMessage(
-                osfLanguage.t('dataUpdated'),
+                osfLanguage.trans('dataUpdated'),
                 'text-success',
                 5000);
             return;
@@ -310,14 +310,14 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
             this.tokenData(dataObj);
             this.originalValues(dataObj.serialize());
             this.changeMessage(
-                osfLanguage.t('dataUpdated'),
+                osfLanguage.trans('dataUpdated'),
                 'text-success',
                 5000);
         }.bind(this));
 
         request.fail(function (xhr, status, error) {
             $osf.growl('Error',
-                       osfLanguage.t('dataSendError'),
+                       osfLanguage.trans('dataSendError'),
                        'danger');
 
             Raven.captureMessage(_('Error updating instance'), {
@@ -336,14 +336,14 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
             this.tokenData(dataObj);
             this.originalValues(dataObj.serialize());
             this.showToken(true);
-            this.changeMessage(osfLanguage.t('creationSuccess'), 'text-success');
+            this.changeMessage(osfLanguage.trans('creationSuccess'), 'text-success');
             this.apiDetailUrl(dataObj.apiDetailUrl); // Toggle ViewModel --> act like a display view now.
             historyjs.replaceState({}, '', dataObj.webDetailUrl);  // Update address bar to show new detail page
         }.bind(this));
 
         request.fail(function (xhr, status, error) {
             $osf.growl('Error',
-                       osfLanguage.t('dataSendError'),
+                       osfLanguage.trans('dataSendError'),
                        'danger');
 
             Raven.captureMessage(_('Error registering new OAuth2 personal access token'), {
@@ -373,7 +373,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
         var tokenData = this.tokenData();
         bootbox.confirm({
             title: _('Deactivate token?'),
-            message: osfLanguage.t('deactivateConfirm'),
+            message: osfLanguage.trans('deactivateConfirm'),
             callback: function (confirmed) {
                 if (confirmed) {
                     var request = this.client.deleteOne(tokenData );
@@ -385,7 +385,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
                     }.bind(this));
                     request.fail(function () {
                             $osf.growl('Error',
-                                       osfLanguage.t('deactivateError'),
+                                       osfLanguage.trans('deactivateError'),
                                        'danger');
                     }.bind(this));
                 }
@@ -410,7 +410,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
         } else {
             bootbox.confirm({
                 title: _('Discard changes?'),
-                message: osfLanguage.t('discardUnchanged'),
+                message: osfLanguage.trans('discardUnchanged'),
                 callback: function(confirmed) {
                     if (confirmed) {
                         this.allowExit(true);

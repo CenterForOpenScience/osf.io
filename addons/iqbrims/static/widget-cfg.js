@@ -25,8 +25,8 @@ function IQBRIMSWidget() {
   self.modeCheck = ko.observable(false);
   self.modeAdmin = ko.observable(false);
   self.flowableTaskUrl = ko.observable(undefined);
-  self.depositHelp = ko.observable(osfLanguage.t('depositHelp'));
-  self.checkHelp = ko.observable(osfLanguage.t('checkHelp'));
+  self.depositHelp = ko.observable(osfLanguage.trans('depositHelp'));
+  self.checkHelp = ko.observable(osfLanguage.trans('checkHelp'));
   self.formEntries = ko.observableArray();
 
   self.isSubmitted = ko.observable(false);
