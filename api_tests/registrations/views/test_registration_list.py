@@ -723,6 +723,18 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
         assert data['public'] is False
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_draft_registration_retains_title_after_reg(
+            self, mock_enqueue, app, user, payload, url_registrations, draft_registration):
+        draft_registration.title = 'draft reg title'
+        draft_registration.save()
+        res = app.post_json_api(url_registrations, payload, auth=user.auth)
+        data = res.json['data']['attributes']
+        assert res.status_code == 201
+        assert data['registration'] is True
+        assert data['pending_registration_approval'] is True
+        assert data['title'] == 'draft reg title'
+
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_admin_can_create_registration_with_specific_children(
             self, mock_enqueue, app, user, payload_with_children, project_public, project_public_child, project_public_excluded_sibling, project_public_grandchild, url_registrations):
         res = app.post_json_api(url_registrations, payload_with_children, auth=user.auth)
@@ -762,7 +774,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
         res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 201
         # Assert project updates are transferred to registration, trumping draft registration fields
-        assert res.json['data']['attributes']['title'] == 'Recently updated title'
+        assert res.json['data']['attributes']['title'] != 'Recently updated title'
 
     def test_cannot_create_registration(
             self, app, user_write_contrib, user_read_contrib,
