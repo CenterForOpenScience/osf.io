@@ -36,7 +36,7 @@ class EGAPUploadException(Exception):
 
 
 def ensure_egap_schema():
-    schema = ensure_schema_structure(from_json('egap-registration.json'))
+    schema = ensure_schema_structure(from_json('egap-registration-2.json'))
     schema_obj, created = RegistrationSchema.objects.update_or_create(
         name=schema['name'],
         schema_version=schema.get('version', 1),
@@ -46,7 +46,7 @@ def ensure_egap_schema():
     )
     if created:
         schema_obj.save()
-    return RegistrationSchema.objects.get(name='EGAP Registration')
+    return RegistrationSchema.objects.get(name='EGAP Registration', schema_version=3)
 
 
 def get_creator_auth_header(creator_username):
@@ -258,6 +258,11 @@ def main(guid, creator_username):
         anon_titles = ', '.join([data['data']['attributes']['name'] for data in anon_metadata_dict])
         registration_metadata['q38'] = {'comments': [], 'extra': anon_metadata_dict, 'value': anon_titles}
 
+        try:
+            embargo_date = registration_metadata.pop('q12')
+        except KeyError:
+            embargo_date = None
+
         # DraftRegistration Creation
         draft_registration = DraftRegistration.create_from_node(
             node=node,
@@ -282,9 +287,9 @@ def main(guid, creator_username):
             )
             continue
 
-        if registration_metadata.get('q12'):
-            if bool(registration_metadata['q12'].get('value')):
-                egap_embargo_public_date_string = registration_metadata['q12']['value']
+        if embargo_date:
+            if embargo_date.get('value'):
+                egap_embargo_public_date_string = embargo_date['value']
                 egap_embargo_public_date = dt.strptime(egap_embargo_public_date_string, '%m/%d/%y').replace(tzinfo=pytz.UTC)
             else:
                 egap_embargo_public_date = None
