@@ -115,7 +115,7 @@ from api.osf_groups.views import OSFGroupMixin
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import (
     RegistrationSerializer,
-    RegistrationCreateLegacySerializer,
+    RegistrationCreateSerializer,
 )
 from api.requests.permissions import NodeRequestPermission
 from api.requests.serializers import NodeRequestSerializer, NodeRequestCreateSerializer
@@ -691,7 +691,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
 
     def get_serializer_class(self):
         if self.request.method in ('PUT', 'POST'):
-            return RegistrationCreateLegacySerializer
+            return RegistrationCreateSerializer
         return RegistrationSerializer
 
     # overrides ListCreateAPIView
