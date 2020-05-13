@@ -768,7 +768,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_old_workflow_node_editable_metadata_copied(
             self, mock_enqueue, app, user, url_registrations, payload, project_public, draft_registration):
-        # New workflow allows you to edit fields on draft registration, but old workflow does not.
+        # Ensure that modifying the parent project for the draft registration doesn't affect the title of the draft reg
         project_public.title = 'Recently updated title'
         project_public.save()
         res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)

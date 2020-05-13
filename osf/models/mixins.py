@@ -2160,10 +2160,7 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
         but the alternative_resource will be a Node.  DraftRegistration fields will trump Node fields.
         TODO, add optional logging parameter
         """
-
-        DraftRegistration = apps.get_model('osf.DraftRegistration')
-        if isinstance(self, DraftRegistration):
-            self.set_editable_attribute('title', self.title)
+        self.set_editable_attribute('title', resource, alternative_resource)
         self.set_editable_attribute('description', resource, alternative_resource)
         self.set_editable_attribute('category', resource, alternative_resource)
         self.set_editable_attribute('node_license', resource, alternative_resource)
