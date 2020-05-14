@@ -22,6 +22,10 @@ from osf_tests.factories import (
     CollectionFactory,
     DraftRegistrationFactory,
     OSFGroupFactory,
+    NodeLicenseRecordFactory,
+    TagFactory,
+    SubjectFactory,
+    InstitutionFactory,
 )
 from osf_tests.management_commands.test_migration_registration_responses import prereg_registration_responses
 from rest_framework import exceptions
@@ -723,16 +727,48 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
         assert data['public'] is False
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_draft_registration_retains_title_after_reg(
+    def test_draft_registration_retains_editable_fields_after_reg(
             self, mock_enqueue, app, user, payload, url_registrations, draft_registration):
         draft_registration.title = 'draft reg title'
+        draft_registration.description = 'Life Moves Pretty fast'
+        draft_registration.category = 'hypothesis'
+        node_license_rec = NodeLicenseRecordFactory()
+        draft_registration.node_license = node_license_rec
+        new_tag = TagFactory()
+        draft_registration.tags.add(new_tag)
+        new_subject = SubjectFactory()
+        draft_registration.subjects.add(new_subject)
+        new_institution = InstitutionFactory()
+        draft_registration.affiliated_institutions.add(new_institution)
         draft_registration.save()
+
         res = app.post_json_api(url_registrations, payload, auth=user.auth)
-        data = res.json['data']['attributes']
+        data = res.json['data']
+        attributes = data['attributes']
         assert res.status_code == 201
-        assert data['registration'] is True
-        assert data['pending_registration_approval'] is True
-        assert data['title'] == 'draft reg title'
+        assert attributes['registration'] is True
+        assert attributes['pending_registration_approval'] is True
+        assert attributes['title'] == 'draft reg title'
+        assert attributes['description'] == 'Life Moves Pretty fast'
+        assert attributes['category'] == 'hypothesis'
+        assert attributes['node_license']['copyright_holders'] == node_license_rec.copyright_holders
+        assert attributes['node_license']['year'] == node_license_rec.year
+        assert new_tag.name in attributes['tags']
+
+        registration_id = data['id']
+
+        subjects_url = f'/{API_BASE}registrations/{registration_id}/subjects/'
+        institutions_url = f'/{API_BASE}registrations/{registration_id}/institutions/'
+
+        res = app.get(subjects_url, auth=user.auth)
+        data = res.json['data']
+        assert res.status_code == 200
+        assert data[0]['id'] == new_subject._id
+
+        res = app.get(institutions_url, auth=user.auth)
+        data = res.json['data']
+        assert res.status_code == 200
+        assert data[0]['id'] == new_institution._id
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_admin_can_create_registration_with_specific_children(
