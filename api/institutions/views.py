@@ -4,6 +4,7 @@ from rest_framework import permissions as drf_permissions
 from rest_framework import exceptions
 from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.settings import api_settings
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -40,11 +41,7 @@ from api.institutions.serializers import (
     InstitutionUserMetricsSerializer,
 )
 from api.institutions.permissions import UserIsAffiliated
-from rest_framework.settings import api_settings
-
-import logging
-
-logger = logging.getLogger(__name__)
+from api.institutions.renderers import MetricsCSVRenderer
 
 
 class InstitutionMixin(object):
@@ -480,6 +477,7 @@ class InstitutionUserMetricsList(InstitutionImpactList):
     view_name = 'institution-user-metrics'
 
     serializer_class = InstitutionUserMetricsSerializer
+    renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES) + (MetricsCSVRenderer, )
 
     def _format_search(self, search):
         results = search.execute()
