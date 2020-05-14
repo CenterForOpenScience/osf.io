@@ -928,6 +928,17 @@ class TestPreprintUpdate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "str".'
 
+    @override_switch(features.SLOAN_DATA_INPUT, active=True)
+    def test_invalid_data_links(self, app, user, preprint, url):
+        preprint.has_data_links = 'available'
+        preprint.save()
+
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'data_links': ['thisaintright']})
+
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == ['Enter a valid URL.']
+
     def test_update_has_prereg_links(self, app, user, preprint, url):
         update_payload = build_preprint_update_payload(preprint._id, attributes={'has_prereg_links': 'available'})
 
@@ -952,6 +963,18 @@ class TestPreprintUpdate:
         log = preprint.logs.first()
         assert log.action == PreprintLog.UPDATE_HAS_PREREG_LINKS
         assert log.params == {'value': 'available', 'user': user._id, 'preprint': preprint._id}
+
+    @override_switch(features.SLOAN_PREREG_INPUT, active=True)
+    def test_invalid_prereg_links(self, app, user, preprint, url):
+        preprint.has_prereg_links = 'available'
+        preprint.save()
+
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'prereg_links': ['thisaintright']})
+
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == ['Enter a valid URL.']
 
     def test_update_why_no_prereg(self, app, user, preprint, url):
         update_payload = build_preprint_update_payload(preprint._id, attributes={'why_no_prereg': 'My dog ate it.'})
