@@ -208,6 +208,11 @@ var ViewModel = function(params) {
     } else {
         self.resultsPerPage = ko.observable(10);
     }
+    self.titleLengthLimit = 30;
+    self.nameLengthLimit = 30;
+    self.usernameLnegthLimit = 30;
+    self.textLengthLimit = 124;
+    self.commentLengthLimit = 124;
 
     self.licenses = ko.observable(
         $.map(licenses, function(license) {
@@ -481,6 +486,7 @@ var ViewModel = function(params) {
                     'version': 2
                 },
                 'sort': self.sortOrder(),
+                'highlight': self.getHighlightLimit(),
                 'elasticsearch_dsl': jsonData
             };
         }
@@ -824,6 +830,15 @@ var ViewModel = function(params) {
 
     self.isCurrentPage = function(val) {
         return self.currentPage() === val;
+    };
+
+    self.getHighlightLimit = function() {
+        var limits = ['title:' + self.titleLengthLimit + ',',
+                      'name:' + self.nameLengthLimit + ',',
+                      'user:' + self.usernameLnegthLimit + ',',
+                      'text:' + self.textLengthLimit + ',',
+                      'comments.*:' + self.commentLengthLimit];
+        return limits.join('');
     };
 
 };
