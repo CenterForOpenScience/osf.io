@@ -161,6 +161,7 @@ class PreprintProvider(AbstractProvider):
     access_token = EncryptedTextField(null=True, blank=True)
     doi_prefix = models.CharField(blank=True, max_length=32)
     in_sloan_study = models.NullBooleanField(default=True)
+    chronos_enabled = models.NullBooleanField(default=False)
 
     PREPRINT_WORD_CHOICES = (
         ('preprint', 'Preprint'),

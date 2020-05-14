@@ -39,7 +39,7 @@
                     <td>
                         Now that you've shared your ${reviewable.provider.preprint_word}, take advantage of more OSF features:
                         <ul>
-                            % if has_psyarxiv_chronos_text:
+                            % if has_chronos_text:
                                 <li>Submit your preprint to an APA-published journal. <a href="https://help.osf.io/hc/en-us/articles/360044820913-Submit-to-APA-Journals-via-PsyArXiv">Learn more</a></li>
                             % endif
 

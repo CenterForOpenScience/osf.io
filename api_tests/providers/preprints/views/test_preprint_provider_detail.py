@@ -229,7 +229,15 @@ class TestPreprintProvider:
     def url(self, provider):
         return f'/{API_BASE}providers/preprints/{provider._id}/'
 
-    def test_in_sloan_study(self, app, url):
+    def test_special_attributes(self, app, url):
+        """
+        Any attributes which are simple, but should be tested just because their default state could effect product
+        decisions or partnerships.
+        :param app:
+        :param url:
+        :return:
+        """
         res = app.get(url)
         assert res.status_code == 200
         assert res.json['data']['attributes']['in_sloan_study']
+        assert not res.json['data']['attributes']['chronos_enabled']

@@ -149,6 +149,7 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
     preprint_word = ser.CharField(read_only=True, allow_null=True)
     additional_providers = ser.ListField(read_only=True, child=ser.CharField())
     permissions = ser.SerializerMethodField()
+    chronos_enabled = ser.BooleanField()
 
     # Reviews settings are the only writable fields
     reviews_workflow = ser.ChoiceField(choices=Workflows.choices())

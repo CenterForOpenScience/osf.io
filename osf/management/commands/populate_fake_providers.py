@@ -75,6 +75,7 @@ PREPRINT_PROVIDERS = [
             (['Social and Behavioral Sciences', 'Psychology'], True),
         ],
         'description': 'Basic change to taxonomy showing some simple hierarchy, a custom domain but no redirect, three licenses',
+        'chronos_enabled': True,
     },
     {
         '_id': 'engrxiv',
