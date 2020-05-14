@@ -841,6 +841,65 @@ var ViewModel = function(params) {
         return limits.join('');
     };
 
+    self.toDate = function(val) {
+        var date = new Date(val);
+        return [date.getFullYear(), date.getMonth() + 1, date.getDate()].join('/');
+    };
+
+    self.makeTitle = function(originalStr, highlightArray, limit) {
+        if (highlightArray !== undefined) {
+            var highlightStr = highlightArray[0];
+            var extracted = highlightStr.replace(/<b>/gi,'').replace(/<\/b>/gi, '');
+            if (originalStr === extracted) {
+                return highlightStr;
+            }
+
+            var title = '';
+            var subStrPos = originalStr.indexOf(extracted);
+            if (subStrPos > 0) {
+                title += '...';
+            }
+
+            title += highlightStr;
+
+            if (originalStr.length > (subStrPos + extracted.length)) {
+                title += '...';
+            }
+
+            return title;
+        }
+
+        if (originalStr.length > limit) {
+            return originalStr.substr(0, limit) + '...';
+        }
+
+        return originalStr;
+    };
+
+    self.getProjectName = function(result) {
+        var originalStr = result.title;
+        var highlightArray = result.highlight.title;
+        var lengthLimit = self.titleLengthLimit;
+        return self.makeTitle(originalStr, highlightArray, lengthLimit);
+    };
+
+    self.makeComment = function(comment) {
+        var extracted = comment.replace(/<b>/gi,'').replace(/<\/b>/gi, '');
+        if (extracted.length >= self.commentLengthLimit) {
+            return comment + '...';
+        }
+
+        return comment;
+    };
+
+    self.getGuidText = function(guid) {
+        return guid.toUpperCase().split('/').join('');
+    };
+
+    self.getGuidUrl = function(guid) {
+        return window.location.origin + '/' + guid.split('/').join('') + '/';
+    };
+
 };
 
 function Search(selector, url, appURL) {
