@@ -675,20 +675,6 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         return True
 
 
-class RegistrationCreateLegacySerializer(RegistrationCreateSerializer):
-    """
-    Overrides RegistrationCreateSerializer for the old registration workflow
-    to copy editable fields.
-    """
-
-    def create(self, validated_data):
-        auth = get_user_auth(self.context['request'])
-        draft = validated_data.get('draft', None)
-        draft.copy_editable_fields(draft.branched_from, auth=auth)
-        registration = super(RegistrationCreateLegacySerializer, self).create(validated_data)
-        return registration
-
-
 class RegistrationDetailSerializer(RegistrationSerializer):
     """
     Overrides RegistrationSerializer make _id required and other fields writeable

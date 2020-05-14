@@ -22,6 +22,10 @@ from osf_tests.factories import (
     CollectionFactory,
     DraftRegistrationFactory,
     OSFGroupFactory,
+    NodeLicenseRecordFactory,
+    TagFactory,
+    SubjectFactory,
+    InstitutionFactory,
 )
 from osf_tests.management_commands.test_migration_registration_responses import prereg_registration_responses
 from rest_framework import exceptions
@@ -723,6 +727,50 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
         assert data['public'] is False
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_draft_registration_retains_editable_fields_after_reg(
+            self, mock_enqueue, app, user, payload, url_registrations, draft_registration):
+        draft_registration.title = 'draft reg title'
+        draft_registration.description = 'Life Moves Pretty fast'
+        draft_registration.category = 'hypothesis'
+        node_license_rec = NodeLicenseRecordFactory()
+        draft_registration.node_license = node_license_rec
+        new_tag = TagFactory()
+        draft_registration.tags.add(new_tag)
+        new_subject = SubjectFactory()
+        draft_registration.subjects.add(new_subject)
+        new_institution = InstitutionFactory()
+        draft_registration.affiliated_institutions.add(new_institution)
+        draft_registration.save()
+
+        res = app.post_json_api(url_registrations, payload, auth=user.auth)
+        data = res.json['data']
+        attributes = data['attributes']
+        assert res.status_code == 201
+        assert attributes['registration'] is True
+        assert attributes['pending_registration_approval'] is True
+        assert attributes['title'] == 'draft reg title'
+        assert attributes['description'] == 'Life Moves Pretty fast'
+        assert attributes['category'] == 'hypothesis'
+        assert attributes['node_license']['copyright_holders'] == node_license_rec.copyright_holders
+        assert attributes['node_license']['year'] == node_license_rec.year
+        assert new_tag.name in attributes['tags']
+
+        registration_id = data['id']
+
+        subjects_url = f'/{API_BASE}registrations/{registration_id}/subjects/'
+        institutions_url = f'/{API_BASE}registrations/{registration_id}/institutions/'
+
+        res = app.get(subjects_url, auth=user.auth)
+        data = res.json['data']
+        assert res.status_code == 200
+        assert data[0]['id'] == new_subject._id
+
+        res = app.get(institutions_url, auth=user.auth)
+        data = res.json['data']
+        assert res.status_code == 200
+        assert data[0]['id'] == new_institution._id
+
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_admin_can_create_registration_with_specific_children(
             self, mock_enqueue, app, user, payload_with_children, project_public, project_public_child, project_public_excluded_sibling, project_public_grandchild, url_registrations):
         res = app.post_json_api(url_registrations, payload_with_children, auth=user.auth)
@@ -756,13 +804,13 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_old_workflow_node_editable_metadata_copied(
             self, mock_enqueue, app, user, url_registrations, payload, project_public, draft_registration):
-        # New workflow allows you to edit fields on draft registration, but old workflow does not.
+        # Ensure that modifying the parent project for the draft registration doesn't affect the title of the draft reg
         project_public.title = 'Recently updated title'
         project_public.save()
         res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 201
         # Assert project updates are transferred to registration, trumping draft registration fields
-        assert res.json['data']['attributes']['title'] == 'Recently updated title'
+        assert res.json['data']['attributes']['title'] != 'Recently updated title'
 
     def test_cannot_create_registration(
             self, app, user_write_contrib, user_read_contrib,
