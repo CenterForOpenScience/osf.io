@@ -876,11 +876,95 @@ var ViewModel = function(params) {
         return originalStr;
     };
 
+    self.makeTitleWithExtension = function(originalStr, highlightArray, limit) {
+        var ext = '';
+        var extWithTag = '';
+        var extPos = originalStr.lastIndexOf('.');
+        if (extPos >= 0) {
+            ext = originalStr.substr(extPos);
+            extWithTag = '<font color="#C0C0C0">' + ext + '</font>';
+        }
+
+        if (highlightArray !== undefined) {
+            var highlightStr = highlightArray[0];
+            var extracted = highlightStr.replace(/<b>/gi,'').replace(/<\/b>/gi, '');
+            var highlightExtPos = highlightStr.lastIndexOf('.');
+
+            // check exact match
+            if (originalStr === extracted) {
+                if (highlightExtPos < 0) {
+                    return highlightStr;
+                }
+
+                return highlightStr.substr(0, highlightExtPos) + extWithTag;
+            }
+
+            var title = '';
+            // check forward match
+            var subStrPos = originalStr.indexOf(extracted);
+            if (subStrPos > 0) {
+                title += '...';
+            }
+
+            // check backward match
+            if (originalStr.length === (subStrPos + extracted.length)) {
+                if (highlightExtPos < 0) {
+                    return title + highlightStr;
+                }
+
+                return title + highlightStr.substr(0, highlightExtPos) + extWithTag;
+            }
+
+            // check extension
+            if (extPos < 0) {
+                return title + highlightStr + '...';
+            }
+
+            var diffFromExtPos = (originalStr.length - ext.length) - (subStrPos + extracted.length);
+
+            // words including an extension lack
+            if (diffFromExtPos > 0) {
+                return title + highlightStr + '... ' + extWithTag;
+            }
+
+            // only an extension missed
+            if (diffFromExtPos === 0) {
+                return title + highlightStr + extWithTag;
+            }
+
+            // highlight includes a partial extension
+            return title + highlightStr.substr(0, highlightStr.length + diffFromExtPos) + extWithTag;
+        }
+
+        if (originalStr.length > limit) {
+            // no extension
+            if (extPos < 0) {
+                return originalStr.substr(0, limit) + '...';
+            }
+
+            return originalStr.substr(0, limit) + '... ' + extWithTag;
+        } else {
+            // no extension
+            if (extPos < 0) {
+                return originalStr;
+            }
+
+            return originalStr.substr(0, extPos) + extWithTag;
+        }
+    };
+
     self.getProjectName = function(result) {
         var originalStr = result.title;
         var highlightArray = result.highlight.title;
         var lengthLimit = self.titleLengthLimit;
         return self.makeTitle(originalStr, highlightArray, lengthLimit);
+    };
+
+    self.getFileName = function(result) {
+        var originalStr = result.name;
+        var highlightArray = result.highlight.name;
+        var lengthLimit = self.nameLengthLimit;
+        return self.makeTitleWithExtension(originalStr, highlightArray, lengthLimit);
     };
 
     self.makeComment = function(comment) {

@@ -112,18 +112,54 @@
     </div>
 
     <script type="text/html" id="file">
-        <!-- ko if: guid_url || deep_url -->
-            <h4><a data-bind="attr: {href: guid_url || deep_url}, text: name"></a> (<span class="text-danger" data-bind="if: is_retracted">${_("Withdrawn ")}</span><span data-bind="if: is_registration">${_("Registration  ")}</span>${_("File")})</h4>
-        <!-- /ko-->
-        <!-- ko ifnot: guid_url || deep_url -->
-            <h4> <span data-bind="text:name"></span> ${_("(Preprint File)")}</h4>
-        <!-- /ko-->
-
-        <h5>
-            <!-- ko if: parent_url --> ${_('From: <a %(parentUrlTitle)s></a> <a %(nodeUrlAndTitle)s></a>') %dict(parentUrlTitle='data-bind="attr: {href: parent_url}, text: parent_title || \'\' + \' /\'"',nodeUrlAndTitle='data-bind="attr: {href: node_url}, text: node_title"') | n}<!-- /ko -->
-            <!-- ko if: !parent_url --> ${_('From: <span %(parentTitle)s><span %(textParentTitle)s></span> /</span> <a %(nodeUrlAndTitle)s></a>') % dict(parentTitle='data-bind="if: parent_title"',textParentTitle='data-bind="text: parent_title"',nodeUrlAndTitle='data-bind="attr: {href: node_url}, text: node_title"') | n}<!-- /ko -->
-        </h5>
-        <!-- ko if: tags.length > 0 --> <div data-bind="template: 'tag-cloud'"></div> <!-- /ko -->
+        <span>
+            <div>
+                <span class="tb-expand-icon-holder" style="vertical-align: middle;">
+                    <span class="glyphicon glyphicon-file">
+                    </span>
+                </span>
+                <span style="vertical-align: middle;">
+                    <!-- ko if: guid_url || deep_url -->
+                    <font size="5"><a data-bind="attr: {href: guid_url || deep_url}, html: $root.getFileName($data)"></a></font>
+                    <!-- /ko-->
+                    <!-- ko ifnot: guid_url || deep_url -->
+                    <font size="5"><span data-bind="html: $root.getFileName($data)"></span></font>
+                    <!-- /ko-->
+                </span>
+                <!-- ko if: guid_url -->
+                <span style="vertical-align: middle; margin-left: 5px;">
+                    <font size="5">GUID: <a data-bind="attr: {href: guid_url}, text: $root.getGuidText(guid_url)"></a></font>
+                </span>
+                <!-- /ko -->
+            </div>
+        </span>
+        <!-- ko if: node_title && node_url -->
+        <span>
+            <strong>${_("Project:")}</strong>
+            <a data-bind="attr: {href: node_url}, text: node_title"></a>
+        </span>
+        <br>
+        <!-- /ko -->
+        <!-- ko if: folder_name -->
+        <span>
+            <strong>${_("Path:")}</strong>
+            <span data-bind="text: folder_name"></span>
+        </span>
+        <br>
+        <!-- /ko -->
+        <div>
+            <!-- ko if: modifier_id && modifier_name && date_modified -->
+            <strong>${_("Modified by:")}</strong> <a data-bind="attr: {href: $root.getGuidUrl(modifier_id)}, text: modifier_name + '@' + $root.getGuidText(modifier_id)"></a> at <span data-bind="text: $root.toDate(date_modified)"></span>,
+            <!-- /ko -->
+            <strong>${_("Created by:")}</strong> <a data-bind="attr: {href: $root.getGuidUrl(creator_id)}, text: creator_name + '@' + $root.getGuidText(creator_id)"></a> at <span data-bind="text: $root.toDate(date_created)"></span>
+        </div>
+        <!-- ko if: comment !== null -->
+        <p>
+            <strong>${_("Comment:")}</strong>
+            <span data-bind="html: $root.makeComment(comment.text)"></span>
+            <a data-bind="attr: {href: $root.getGuidUrl(comment.user_id)}, text: comment.user_name + '@' + $root.getGuidText(comment.user_id)"></a>
+        </p>
+        <!-- /ko -->
     </script>
     <script type="text/html" id="user">
 
