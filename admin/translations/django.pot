@@ -1,0 +1,2613 @@
+# Translations template for PROJECT.
+# Copyright (C) 2020 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+# 1.{% trans "XXX" %} is extracted by the command 'django-admin makemessages --keep-pot -l ja'
+# 2.edit the header to babel extracting form.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: 0.6.0\n"
+"Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
+"POT-Creation-Date: 2020-05-08 14:34+0900\n"
+"PO-Revision-Date: 2020-05-08 14:34+0900\n"
+"Last-Translator: Shunta Nishikawa\n"
+"Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.7.0\n"
+
+#: .\templates\banners\confirm_delete.html:4
+msgid "GakuNin RDM Admin | Delete banner"
+msgstr ""
+
+#: .\templates\banners\confirm_delete.html:10
+msgid "Confirm Delete Banner"
+msgstr ""
+
+#: .\templates\banners\confirm_delete.html:13
+#, python-format
+msgid ""
+"Are you sure you want to delete <b>%(objectName)s</b>? It is scheduled for "
+"%(startDate)s -\n"
+"                        %(endDate)s"
+msgstr ""
+
+#: .\templates\banners\create.html:5
+msgid "GakuNin RDM Admin | Schedule banner"
+msgstr ""
+
+#: .\templates\banners\create.html:11
+msgid "Schedule a banner"
+msgstr ""
+
+#: .\templates\banners\detail.html:11
+msgid "Banner"
+msgstr ""
+
+#: .\templates\banners\detail.html:42
+msgid "Modify banner"
+msgstr ""
+
+#: .\templates\banners\list.html:11 .\templates\banners\list.html:14
+msgid "List of Banners"
+msgstr ""
+
+#: .\templates\banners\list.html:20
+#: .\templates\collection_providers\list.html:15
+#: .\templates\desk\customer.html:16
+#: .\templates\institutions\institution_list.html:21
+#: .\templates\institutions\list.html:21 .\templates\meetings\list.html:21
+#: .\templates\osf\providerassetfile_list.html:28
+#: .\templates\rdm_addons\institution_list.html:29
+#: .\templates\rdm_keymanagement\institutions.html:21
+#: .\templates\rdm_statistics\institution_list.html:29
+#: .\templates\rdm_timestampadd\list.html:21
+#: .\templates\rdm_timestampsettings\list.html:21
+#: .\templates\users\user.html:171 .\templates\users\user.html:291
+#: .\templates\users\user_details.html:35
+msgid "Name"
+msgstr ""
+
+#: .\templates\banners\list.html:21
+msgid "Dates"
+msgstr ""
+
+#: .\templates\banners\list.html:22
+msgid "Color"
+msgstr ""
+
+#: .\templates\banners\list.html:23 .\templates\osf\subject_form.html:8
+msgid "Text"
+msgstr ""
+
+#: .\templates\banners\list.html:44
+msgid "Delete banner"
+msgstr ""
+
+#: .\templates\base.html:10
+msgid "RDM Admin | Dashboard"
+msgstr ""
+
+#: .\templates\base.html:56 .\templates\login.html:20
+msgid "Admin"
+msgstr ""
+
+#: .\templates\base.html:69
+#, python-format
+msgid "Logged in as %(getUsername)s"
+msgstr ""
+
+#: .\templates\base.html:77
+msgid "Admin-User Registration"
+msgstr ""
+
+#: .\templates\base.html:83
+msgid "Desk information"
+msgstr ""
+
+#: .\templates\base.html:89
+msgid "Sign out"
+msgstr ""
+
+#: .\templates\base.html:105
+msgid "Menu"
+msgstr ""
+
+#: .\templates\base.html:108 .\templates\base.html:113
+msgid "RDM Nodes"
+msgstr ""
+
+#: .\templates\base.html:114 .\templates\base.html:131
+#: .\templates\base.html:146
+msgid "Flagged Spam"
+msgstr ""
+
+#: .\templates\base.html:115 .\templates\base.html:132
+#: .\templates\base.html:147
+msgid "Known Spam"
+msgstr ""
+
+#: .\templates\base.html:116 .\templates\base.html:133
+#: .\templates\base.html:148
+msgid "Known Ham"
+msgstr ""
+
+#: .\templates\base.html:124 .\templates\base.html:130
+#: .\templates\metrics\osf_metrics.html:36
+msgid "Preprints"
+msgstr ""
+
+#: .\templates\base.html:134
+msgid "Withdrawal Requests"
+msgstr ""
+
+#: .\templates\base.html:141 .\templates\base.html:145
+msgid "RDM Users"
+msgstr ""
+
+#: .\templates\base.html:153
+msgid "RDM Spam"
+msgstr ""
+
+#: .\templates\base.html:157
+msgid "RDM Registrations"
+msgstr ""
+
+#: .\templates\base.html:161
+msgid "All Registrations"
+msgstr ""
+
+#: .\templates\base.html:162
+msgid "Stuck Registrations"
+msgstr ""
+
+#: .\templates\base.html:168
+msgid "RDM Institutions"
+msgstr ""
+
+#: .\templates\base.html:172 .\templates\base.html:185
+#: .\templates\base.html:199 .\templates\base.html:212
+#: .\templates\base.html:225 .\templates\base.html:251
+#: .\templates\base.html:261
+msgid "List"
+msgstr ""
+
+#: .\templates\base.html:174 .\templates\base.html:188
+#: .\templates\base.html:201 .\templates\base.html:214
+#: .\templates\base.html:227 .\templates\base.html:263
+msgid "Create"
+msgstr ""
+
+#: .\templates\base.html:181
+msgid "Preprint Providers"
+msgstr ""
+
+#: .\templates\base.html:186
+msgid "Whitelist"
+msgstr ""
+
+#: .\templates\base.html:195
+msgid "Provider Assets"
+msgstr ""
+
+#: .\templates\base.html:208
+msgid "Collection Providers"
+msgstr ""
+
+#: .\templates\base.html:221
+msgid "Registration Providers"
+msgstr ""
+
+#: .\templates\base.html:233
+msgid "RDM Meetings"
+msgstr ""
+
+#: .\templates\base.html:236
+msgid "RDM Prereg"
+msgstr ""
+
+#: .\templates\base.html:239
+msgid "RDM Metrics"
+msgstr ""
+
+#: .\templates\base.html:242
+msgid "RDM Subjects"
+msgstr ""
+
+#: .\templates\base.html:246
+msgid "RDM Groups"
+msgstr ""
+
+#: .\templates\base.html:250
+msgid "Search"
+msgstr ""
+
+#: .\templates\base.html:257
+msgid "Banners"
+msgstr ""
+
+#: .\templates\base.html:270
+msgid "Maintenance Alerts"
+msgstr ""
+
+#: .\templates\base.html:273 .\templates\rdm_addons\addon_list.html:6
+#: .\templates\rdm_addons\addon_list.html:19
+#: .\templates\rdm_addons\institution_list.html:13
+#: .\templates\rdm_addons\institution_list.html:17
+msgid "RDM Addons"
+msgstr ""
+
+#: .\templates\base.html:274 .\templates\rdm_statistics\crawl.html:6
+#: .\templates\rdm_statistics\crawl.html:9
+#: .\templates\rdm_statistics\index.html:6
+#: .\templates\rdm_statistics\index.html:9
+#: .\templates\rdm_statistics\institution_list.html:13
+#: .\templates\rdm_statistics\institution_list.html:17
+#: .\templates\rdm_statistics\mail.html:11
+#: .\templates\rdm_statistics\mail.html:14
+#: .\templates\rdm_statistics\statistics.html:32
+#: .\templates\rdm_statistics\statistics.html:35
+#: .\templates\rdm_statistics\statistics_report.html:224
+#: .\templates\rdm_statistics\statistics_report.html:228
+msgid "RDM Statistics"
+msgstr ""
+
+#: .\templates\base.html:275 .\templates\rdm_announcement\index.html:6
+#: .\templates\rdm_announcement\index.html:13
+#: .\templates\rdm_announcement\send.html:7
+#: .\templates\rdm_announcement\send.html:14
+msgid "RDM Announcement"
+msgstr ""
+
+#: .\templates\base.html:276
+msgid "Timestamp Control"
+msgstr ""
+
+#: .\templates\base.html:278
+msgid "User Keys Management"
+msgstr ""
+
+#: .\templates\base.html:279
+msgid "RDM Timestamp Environment"
+msgstr ""
+
+#: .\templates\base.html:284
+msgid "Quota for NII Storage"
+msgstr ""
+
+#: .\templates\base.html:287
+#: .\templates\rdm_custom_storage_location\institutional_storage.html:16
+#: .\templates\users\user_details.html:17
+msgid "Institutional Storage"
+msgstr ""
+
+#: .\templates\base.html:288
+msgid "Quota for Institutional Storage"
+msgstr ""
+
+#: .\templates\base.html:303 .\templates\home.html:7
+msgid "Welcome to the GakuNin RDM Admin Home Page"
+msgstr ""
+
+#: .\templates\base.html:313
+#: .\templates\rdm_statistics\statistics_report.html:290
+msgid "National Institute of Informatics"
+msgstr ""
+
+#: .\templates\base.html:314
+#: .\templates\rdm_statistics\statistics_report.html:291
+msgid "Terms of Use"
+msgstr ""
+
+#: .\templates\base.html:315
+#: .\templates\rdm_statistics\statistics_report.html:292
+msgid "Privacy Policy"
+msgstr ""
+
+#: .\templates\collection_providers\cannot_delete.html:7
+msgid "Collection Provider Delete"
+msgstr ""
+
+#: .\templates\collection_providers\cannot_delete.html:13
+#, python-format
+msgid "Cannot Delete %(providerName)s"
+msgstr ""
+
+#: .\templates\collection_providers\cannot_delete.html:14
+#, python-format
+msgid ""
+"%(providerName)s has %(collectionsubmissionSetCount)s submissions associated "
+"with it, and therefore cannot be safely deleted."
+msgstr ""
+
+#: .\templates\collection_providers\confirm_delete.html:5
+msgid "Delete Collection Provider"
+msgstr ""
+
+#: .\templates\collection_providers\confirm_delete.html:12
+#: .\templates\institutions\confirm_delete.html:19
+#, python-format
+msgid "Are you sure you want to delete \"%(objectName)s\"?"
+msgstr ""
+
+#: .\templates\collection_providers\create.html:9
+msgid "Create Collection Provider"
+msgstr ""
+
+#: .\templates\collection_providers\create.html:12
+msgid "Create A Collection Provider"
+msgstr ""
+
+#: .\templates\collection_providers\detail.html:16
+msgid "Export collection provider metadata"
+msgstr ""
+
+#: .\templates\collection_providers\detail.html:17
+msgid "Delete collection provider"
+msgstr ""
+
+#: .\templates\collection_providers\detail.html:28
+msgid "Modify Collection Provider"
+msgstr ""
+
+#: .\templates\collection_providers\list.html:6
+#: .\templates\collection_providers\list.html:9
+msgid "List of Collection Providers"
+msgstr ""
+
+#: .\templates\collection_providers\list.html:16
+#: .\templates\institutions\institution_list.html:22
+#: .\templates\institutions\list.html:22
+#: .\templates\rdm_keymanagement\institutions.html:22
+#: .\templates\rdm_timestampadd\list.html:22
+msgid "Description"
+msgstr ""
+
+#: .\templates\collection_providers\update_collection_provider_form.html:62
+msgid "Collected type choices:"
+msgstr ""
+
+#: .\templates\collection_providers\update_collection_provider_form.html:68
+msgid "Status choices:"
+msgstr ""
+
+#: .\templates\collection_providers\update_collection_provider_form.html:74
+msgid "Volume choices:"
+msgstr ""
+
+#: .\templates\collection_providers\update_collection_provider_form.html:80
+msgid "Issue choices:"
+msgstr ""
+
+#: .\templates\collection_providers\update_collection_provider_form.html:86
+msgid "Program Area choices:"
+msgstr ""
+
+#: .\templates\collection_providers\update_collection_provider_form.html:96
+#: .\templates\institutions\create.html:29
+#: .\templates\institutions\detail.html:80
+msgid "Import from JSON"
+msgstr ""
+
+#: .\templates\desk\cases.html:6
+#, python-format
+msgid "GakuNin RDM user \"%(user_id)s\" up to 50 most recent desk.com cases:"
+msgstr ""
+
+#: .\templates\desk\cases.html:10 .\templates\desk\customer.html:40
+msgid "Type"
+msgstr ""
+
+#: .\templates\desk\cases.html:11
+msgid "Status"
+msgstr ""
+
+#: .\templates\desk\cases.html:12
+msgid "Subject"
+msgstr ""
+
+#: .\templates\desk\cases.html:13
+msgid "Links to Desk"
+msgstr ""
+
+#: .\templates\desk\cases.html:23
+msgid "Link"
+msgstr ""
+
+#: .\templates\desk\cases.html:28
+msgid "No cases"
+msgstr ""
+
+#: .\templates\desk\cases.html:35 .\templates\desk\customer.html:58
+#: .\templates\desk\desk_error.html:14 .\templates\desk\user_not_found.html:13
+#: .\templates\rdm_addons\oauth_complete.html:57 .\templates\spam\email.html:31
+msgid "Close"
+msgstr ""
+
+#: .\templates\desk\customer.html:10 .\templates\users\user.html:165
+#: .\templates\users\user_details.html:23
+msgid "Field"
+msgstr ""
+
+#: .\templates\desk\customer.html:11 .\templates\users\user.html:166
+#: .\templates\users\user_details.html:24
+msgid "Value"
+msgstr ""
+
+#: .\templates\desk\customer.html:20
+msgid "Company"
+msgstr ""
+
+#: .\templates\desk\customer.html:24
+msgid "Background"
+msgstr ""
+
+#: .\templates\desk\customer.html:27
+msgid "Desk id"
+msgstr ""
+
+#: .\templates\desk\customer.html:31 .\templates\desk\user_not_found.html:11
+msgid "Go to Desk"
+msgstr ""
+
+#: .\templates\desk\customer.html:35 .\templates\desk\customer.html:41
+#: .\templates\messages.html:8 .\templates\spam\detail.html:24
+#: .\templates\users\user.html:193
+msgid "Email"
+msgstr ""
+
+#: .\templates\desk\desk_error.html:12
+msgid "Desk Settings"
+msgstr ""
+
+#: .\templates\desk\settings.html:5
+msgid "Desk user settings"
+msgstr ""
+
+#: .\templates\desk\user_not_found.html:7
+msgid ""
+"To add a new desk customer, you can go to Desk in order to complete this."
+msgstr ""
+
+#: .\templates\emails\password_change_done.html:3
+msgid "Documentation"
+msgstr ""
+
+#: .\templates\emails\password_change_done.html:3
+msgid "Change password"
+msgstr ""
+
+#: .\templates\emails\password_change_done.html:3
+msgid "'Log out'"
+msgstr ""
+
+#: .\templates\emails\password_change_done.html:6
+msgid "Home"
+msgstr ""
+
+#: .\templates\emails\password_change_done.html:7
+msgid "Password change"
+msgstr ""
+
+#: .\templates\emails\password_change_done.html:14
+msgid "Your password has been changed."
+msgstr ""
+
+#: .\templates\emails\password_change_done.html:16
+msgid "Return to home"
+msgstr ""
+
+#: .\templates\emails\password_reset_email.html:2
+msgid ""
+"You're receiving this email because you requested a password reset for your "
+"GakuNin RDM Admin user account."
+msgstr ""
+
+#: .\templates\emails\password_reset_email.html:4
+msgid "Please go to this link to reset your password:"
+msgstr ""
+
+#: .\templates\emails\password_reset_email.html:9
+msgid "Your account email is:"
+msgstr ""
+
+#: .\templates\emails\password_reset_email.html:11
+msgid "Thank you."
+msgstr ""
+
+#: .\templates\emails\password_reset_email.html:13
+msgid "-GakuNin RDM Admin"
+msgstr ""
+
+#: .\templates\home.html:5
+msgid "Hello"
+msgstr ""
+
+#: .\templates\home.html:8
+msgid " Use the menu on the left to access admin pages. "
+msgstr ""
+
+#: .\templates\institutions\cannot_delete.html:7
+#: .\templates\institutions\confirm_delete.html:11
+msgid "Institution Delete"
+msgstr ""
+
+#: .\templates\institutions\cannot_delete.html:13
+#, python-format
+msgid "Cannot Delete %(institutionName)s"
+msgstr ""
+
+#: .\templates\institutions\cannot_delete.html:14
+#, python-format
+msgid ""
+"%(institutionName)s has %(institutionNodeCount)s nodes associated with it, "
+"and therefore cannot be safely deleted."
+msgstr ""
+
+#: .\templates\institutions\cannot_delete.html:15
+msgid "View associated nodes here"
+msgstr ""
+
+#: .\templates\institutions\cannot_delete.html:16
+msgid "Back to institution detail"
+msgstr ""
+
+#: .\templates\institutions\confirm_delete.html:17
+msgid "Confirm Institution Delete"
+msgstr ""
+
+#: .\templates\institutions\create.html:10
+msgid "Create Institution"
+msgstr ""
+
+#: .\templates\institutions\create.html:16
+msgid "Create An Institution"
+msgstr ""
+
+#: .\templates\institutions\detail.html:16
+msgid "Export institution metadata"
+msgstr ""
+
+#: .\templates\institutions\detail.html:18
+msgid "Delete institution"
+msgstr ""
+
+#: .\templates\institutions\detail.html:30
+#, python-format
+msgid "View %(node_count)s affiliated nodes"
+msgstr ""
+
+#: .\templates\institutions\detail.html:35
+msgid "Logo:"
+msgstr ""
+
+#: .\templates\institutions\detail.html:41
+msgid "Banner:"
+msgstr ""
+
+#: .\templates\institutions\detail.html:52
+#: .\templates\institutions\detail.html:104
+msgid "Modify Institution"
+msgstr ""
+
+#: .\templates\institutions\detail.html:104
+msgid "Hide Form"
+msgstr ""
+
+#: .\templates\institutions\institution_list.html:11
+#: .\templates\institutions\institution_list.html:14
+#: .\templates\institutions\list.html:11 .\templates\institutions\list.html:14
+#: .\templates\rdm_keymanagement\institutions.html:11
+#: .\templates\rdm_keymanagement\institutions.html:14
+#: .\templates\rdm_timestampadd\list.html:11
+#: .\templates\rdm_timestampadd\list.html:14
+#: .\templates\rdm_timestampsettings\list.html:11
+#: .\templates\rdm_timestampsettings\list.html:14
+msgid "List of Institutions"
+msgstr ""
+
+#: .\templates\institutions\institution_list.html:20
+#: .\templates\institutions\list.html:20
+#: .\templates\rdm_addons\institution_list.html:29
+#: .\templates\rdm_keymanagement\institutions.html:20
+#: .\templates\rdm_statistics\institution_list.html:29
+#: .\templates\rdm_timestampadd\list.html:20
+#: .\templates\rdm_timestampsettings\list.html:20
+#: .\templates\rdm_timestampsettings\list.html:50
+msgid "Logo"
+msgstr ""
+
+#: .\templates\institutions\list_institute.html:10
+#, python-format
+msgid "%(institution_name)s User List - Statistical Status of NII Storage"
+msgstr ""
+
+#: .\templates\institutions\list_institute.html:16
+#: .\templates\institutions\statistical_status_default_storage.html:16
+#: .\templates\rdm_keymanagement\delete_user_list.html:10
+#: .\templates\users\list.html:11
+msgid "No results found"
+msgstr ""
+
+#: .\templates\institutions\node_list.html:11
+#: .\templates\metrics\osf_metrics.html:227
+#: .\templates\metrics\osf_metrics.html:281
+#: .\templates\rdm_timestampadd\node_list.html:11
+#: .\templates\rdm_timestampsettings\node_list.html:11
+msgid "Affiliated Nodes"
+msgstr ""
+
+#: .\templates\institutions\node_list.html:14
+#: .\templates\rdm_timestampadd\node_list.html:14
+#: .\templates\rdm_timestampsettings\node_list.html:14
+#, python-format
+msgid "List of Nodes for %(institutionName)s"
+msgstr ""
+
+#: .\templates\institutions\statistical_status_default_storage.html:10
+#, python-format
+msgid ""
+"%(institution_name)s User List - Statistical Status of Institutional Storage"
+msgstr ""
+
+#: .\templates\institutions\statistical_status_default_storage_user.html:2
+#: .\templates\users\user_details.html:11
+#: .\templates\users\user_details.html:16
+msgid "Statistical Status of Institutional Storage"
+msgstr ""
+
+#: .\templates\institutions\statistical_status_default_storage_user.html:3
+#, python-format
+msgid "Institutional Storage > %(institution_name)s"
+msgstr ""
+
+#: .\templates\institutions\statistical_status_default_storage_user.html:11
+#: .\templates\institutions\user_list_by_institute.html:11
+#: .\templates\rdm_addons\addons\owncloud_credentials_modal.html:42
+#: .\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:38
+#: .\templates\rdm_custom_storage_location\providers\owncloud_modal.html:31
+#: .\templates\rdm_custom_storage_location\providers\swift_modal.html:34
+#: .\templates\rdm_keymanagement\user_list.html:10
+#: .\templates\users\user.html:181 .\templates\users\user_list.html:23
+msgid "Username"
+msgstr ""
+
+#: .\templates\institutions\statistical_status_default_storage_user.html:16
+#: .\templates\institutions\user_list_by_institute.html:16
+#: .\templates\rdm_keymanagement\user_list.html:11
+#: .\templates\users\user_list.html:24
+msgid "Fullname"
+msgstr ""
+
+#: .\templates\institutions\statistical_status_default_storage_user.html:21
+#: .\templates\institutions\user_list_by_institute.html:21
+msgid "Ratio"
+msgstr ""
+
+#: .\templates\institutions\statistical_status_default_storage_user.html:26
+#: .\templates\institutions\user_list_by_institute.html:26
+msgid "Usage"
+msgstr ""
+
+#: .\templates\institutions\statistical_status_default_storage_user.html:31
+#: .\templates\institutions\user_list_by_institute.html:31
+msgid "Remaining"
+msgstr ""
+
+#: .\templates\institutions\statistical_status_default_storage_user.html:36
+#: .\templates\institutions\user_list_by_institute.html:36
+msgid "Quota"
+msgstr ""
+
+#: .\templates\institutions\user_list_by_institute.html:2
+msgid "Statistical Status of NII Storage"
+msgstr ""
+
+#: .\templates\institutions\user_list_by_institute.html:3
+#, python-format
+msgid "NII Storage > %(institution_name)s"
+msgstr ""
+
+#: .\templates\login.html:6
+msgid "GakuNin RDM Admin | Log in"
+msgstr ""
+
+#: .\templates\login.html:20
+msgid "GakuNin RDM"
+msgstr ""
+
+#: .\templates\login.html:23
+msgid "Sign in to start your session"
+msgstr ""
+
+#: .\templates\login.html:35
+msgid "Email:"
+msgstr ""
+
+#: .\templates\login.html:40
+msgid "Password:"
+msgstr ""
+
+#: .\templates\login.html:47
+msgid "Sign In"
+msgstr ""
+
+#: .\templates\maintenance\delete_maintenance.html:5
+msgid "Are you sure you want to take down this maintenance alert?"
+msgstr ""
+
+#: .\templates\maintenance\delete_maintenance.html:8
+msgid "It will be removed from all GakuNin RDM pages."
+msgstr ""
+
+#: .\templates\maintenance\display.html:8
+#: .\templates\maintenance\display.html:11
+msgid "Maintenance State"
+msgstr ""
+
+#: .\templates\maintenance\display.html:16
+msgid "Time"
+msgstr ""
+
+#: .\templates\maintenance\display.html:17
+msgid "Message"
+msgstr ""
+
+#: .\templates\maintenance\display.html:18 .\templates\osf\subject_list.html:18
+msgid "Level"
+msgstr ""
+
+#: .\templates\maintenance\display.html:24
+msgid "Current alert:"
+msgstr ""
+
+#: .\templates\maintenance\display.html:31
+msgid ""
+"The site will undergo maintenance between &lt;localized start time&gt;-&lt;"
+"localized end time&gt;. Thank you for your patience."
+msgstr ""
+
+#: .\templates\maintenance\display.html:37
+msgid "Remove alert"
+msgstr ""
+
+#: .\templates\maintenance\display.html:54
+msgid "Put up an alert:"
+msgstr ""
+
+#: .\templates\maintenance\display.html:63
+msgid "Message:"
+msgstr ""
+
+#: .\templates\maintenance\display.html:64
+msgid "Reminder:"
+msgstr ""
+
+#: .\templates\meetings\create.html:7
+msgid "GakuNIn RDM Admin | Meetings"
+msgstr ""
+
+#: .\templates\meetings\detail.html:7 .\templates\meetings\list.html:7
+msgid "GakuNin RDM Admin | Meetings"
+msgstr ""
+
+#: .\templates\meetings\list.html:12
+msgid "Add meeting"
+msgstr ""
+
+#: .\templates\meetings\list.html:15
+msgid "List of Meetings"
+msgstr ""
+
+#: .\templates\meetings\list.html:20
+msgid "Endpoint"
+msgstr ""
+
+#: .\templates\meetings\list.html:22
+msgid "Active"
+msgstr ""
+
+#: .\templates\meetings\list.html:23 .\templates\metrics\osf_metrics.html:681
+msgid "Public Projects"
+msgstr ""
+
+#: .\templates\meetings\list.html:24
+msgid "Submissions"
+msgstr ""
+
+#: .\templates\messages.html:3
+msgid "API Key"
+msgstr ""
+
+#: .\templates\messages.html:4
+msgid "API Secret"
+msgstr ""
+
+#: .\templates\messages.html:5
+msgid "Access Token"
+msgstr ""
+
+#: .\templates\messages.html:6
+msgid "Access Token Secret"
+msgstr ""
+
+#: .\templates\messages.html:7
+msgid "API URL"
+msgstr ""
+
+#: .\templates\messages.html:9
+msgid "None"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:7
+#: .\templates\metrics\osf_metrics.html:26
+#: .\templates\metrics\osf_statistics.html:6
+msgid "GakuNin RDM Metrics"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:30
+#: .\templates\metrics\osf_metrics.html:45
+msgid "User Data"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:31
+#: .\templates\metrics\osf_metrics.html:216
+msgid "Institution Metrics"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:32
+msgid "Active User Metrics"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:33
+#: .\templates\metrics\osf_metrics.html:573
+msgid "Healthy User Metrics"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:34
+#: .\templates\metrics\osf_metrics.html:636
+msgid "Raw Numbers"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:35
+#: .\templates\metrics\osf_metrics.html:926
+msgid "Addons"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:37
+#: .\templates\metrics\osf_metrics.html:645
+#: .\templates\metrics\osf_metrics.html:977
+#: .\templates\metrics\osf_metrics.html:1011
+msgid "Downloads"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:54
+msgid "User Growth"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:55
+msgid "User gain per day"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:56
+msgid "Registrations by Email Domain"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:57
+msgid "Node Logs by User"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:70
+msgid "User Growth - Previous 800 days"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:76
+msgid "The growth of GakuNin RDM Confirmed Users over the past 800 days."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:83
+msgid "Total Users"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:89
+msgid "This is the total number of GakuNin RDM Users with confirmed accounts."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:99
+msgid "Monthly User Increase"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:105
+#: .\templates\metrics\osf_metrics.html:146
+msgid "The number of users gained in the past month."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:112
+msgid "Daily User Increase"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:118
+msgid "The number of users gained from two days ago until yesterday."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:125
+msgid "Average Daily User Gain"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:131
+msgid "The average daily user gain over the past 7 days."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:140
+msgid "User Gain per Day"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:155
+msgid "Unverified New Users"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:161
+msgid "Users created within the last 7 days that have not been confirmed."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:168
+msgid "User Growth over the Last Seven Days"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:174
+msgid ""
+"The last 7 days of users, organized by status. Click a category in the "
+"legend to resize the axes."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:183
+msgid "Previous 7 days of user registrations by email domain"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:189
+msgid "The last 7 days of users, organized by status."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:198
+msgid "Yesterday's Node logs by user"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:205
+msgid "The last day of node logs by user, if a user had over 100 node logs."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:225
+msgid "Total Institutional Users"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:226
+msgid "Institutional Users Growth"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:228
+#: .\templates\metrics\osf_metrics.html:343
+msgid "Affiliated Projects"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:238
+msgid "Total institutional Users"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:244
+msgid ""
+"Total number of users who have accounts associated with their institutions."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:252
+msgid "Institutional Users / Total GakuNin RDM Users"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:258
+msgid ""
+"The percentage of users who created an account through their institution."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:267
+msgid "Institutional Users over the past 100 Days"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:273
+msgid ""
+"The growth of users who have accounts associated with their institutions. "
+"Click on an institution name in the key to remove its line and resize the "
+"chart axes."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:282
+msgid ""
+"Nodes (at all levels, projects and components) created by each institution "
+"as of yesterday."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:289
+msgid "Affiliated Public Nodes"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:295
+msgid ""
+"Total number of public nodes (at all levels, projects and components) "
+"created by each institution as of yesterday."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:302
+msgid "Affiliated Private Nodes"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:308
+msgid ""
+"Total number of private nodes (at all levels, projects and components) "
+"created by each institution as of yesterday."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:317
+msgid "Affiliated Public Registrations"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:323
+msgid ""
+"Total number of public registered nodes (at all levels, projects and "
+"components) created by each institution as of yesterday."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:330
+msgid "Affiliated Embargoed Registrations"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:336
+msgid ""
+"Total number of private registered nodes (at all levels, projects and "
+"components) created by each institution as of yesterday."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:344
+msgid "Top level projects created by each institution as of yesterday."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:351
+msgid "Affiliated Public Projects"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:357
+msgid ""
+"Total number of public top level projects created by each institution as of "
+"yesterday."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:364
+msgid "Affiliated Private Projects"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:370
+msgid ""
+"Total number of private top level projects created by each institution as of "
+"yesterday."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:379
+msgid "Affiliated Public Project Registrations"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:385
+msgid ""
+"Total number of public registeredtop level projects created by each "
+"institution as of yesterday."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:392
+msgid "Affiliated Embargoed Project Registrations"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:398
+msgid ""
+"Total number of private registered top level projects created by each "
+"institution as of yesterday."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:408
+msgid "Active User Metrics!"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:417
+msgid "Daily Active Users"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:418
+msgid "Monthly and Yearly Users"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:419
+#: .\templates\metrics\osf_metrics.html:540
+msgid "Project to User Ratios"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:430
+msgid "Recent Daily Unique Sessions"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:436
+msgid "The previous 14 days of unique visitor sessions."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:445
+msgid "Daily Active Logged In Users"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:451
+msgid ""
+"This is the number of logged in users with user ids who had at least one "
+"pageview on the GakuNin RDM yesterday."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:458
+msgid "Daily Active Users / Total Users"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:464
+#: .\templates\metrics\osf_metrics.html:717
+msgid "Notes about this chart"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:473
+msgid "Monthly Active Users (MAU)"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:479
+msgid "Users who visited at least one page on the GakuNin RDM from last month."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:486
+msgid "Last Month's Active Users / Total Users"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:492
+msgid "Last month's active users / total confirmed users"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:499
+#, python-format
+msgid "Monthly Growth of MAU%%"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:505
+msgid ""
+"The percent increase from two months ago to one month ago of what percentage "
+"of users with an account were active on the GakuNin RDM."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:514
+msgid "Yearly Active Users"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:520
+msgid "Users who were active on the GakuNin RDM over the past year."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:527
+msgid "Yearly Active Users / Total Users"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:533
+msgid ""
+"The percentage of our yearly active users compared to our total users with "
+"confirmed accounts."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:547
+msgid "Projects / Users"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:553
+msgid ""
+"The number of projects divided by the number of users with active accounts."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:560
+msgid "Projects / Monthly Active Users"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:566
+msgid ""
+"The number of projects divided by the number of people who had accounts and "
+"were active last month."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:579
+msgid "Stickiness Ratio"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:593
+msgid "Stickiness Ratio 1 week ago"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:599
+msgid "Stickiness Ratio for the same day of the week 1 week ago."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:606
+msgid "Stickiness Ratio 4 weeks ago"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:612
+msgid "Stickiness Ratio for the same day of the week 4 weeks ago."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:619
+msgid "Stickiness Ratio 52 weeks ago"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:625
+msgid "Stickiness Ratio for the same day of the week 52 weeks ago."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:646
+msgid "Projects - Top Level"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:647
+msgid "Nodes - Projects & Components"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:648
+#: .\templates\metrics\osf_metrics.html:791
+msgid "Registered Projects"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:649
+#: .\templates\metrics\osf_metrics.html:858
+msgid "Registered Nodes"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:657
+#: .\templates\metrics\osf_statistics.html:24
+#: .\templates\users\user_details.html:29
+msgid "Projects"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:664
+msgid "Total Projects"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:670
+msgid "The total number of all top level projects on the GakuNin RDM"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:687
+msgid "The total number of public top level projects"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:696
+msgid "Private Projects"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:702
+msgid "The total number of private top level projects"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:711
+msgid "Public vs Private Projects"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:724 .\templates\users\user.html:285
+msgid "Nodes"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:731
+msgid "Total Nodes - Projects and Components"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:737
+msgid "The total number of all projects and components on the GakuNin RDM."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:748
+msgid "Public Nodes"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:754
+msgid "The total number of public nodes - including projects and components"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:763
+msgid "Private Nodes"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:769
+msgid "The total number of private nodes - including projects and components"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:778
+msgid "Public vs Private Nodes - Components & Projects"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:784
+msgid ""
+"The percentages of public vs private combined projects and components on the "
+"GakuNin RDM."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:798
+msgid "Total Registered Projects"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:804
+msgid ""
+"The total number of all registered top level projects on the GakuNin RDM."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:815
+msgid "Public Registered Projects"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:821
+msgid "The total number of public registered top level projects"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:830
+msgid "Embargoed Registered Projects"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:836
+msgid "The number of private registered top level projects"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:845
+msgid "Public vs Embargoed Registered Top-Level Projects"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:851
+#: .\templates\metrics\osf_metrics.html:918
+msgid ""
+"The percentages of public vs embargoed top-level project registrations on "
+"the GakuNin RDM."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:865
+msgid "Total Registered Nodes - Projects & Components"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:871
+#: .\templates\metrics\osf_metrics.html:938
+msgid ""
+"The total number of all registered nodes - projects & components on the "
+"GakuNin RDM."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:882
+msgid "Public Registered Nodes"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:888
+msgid "The total number of public registered nodes - projects & components"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:897
+msgid "Embargoed Registered Nodes"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:903
+msgid "The number of embargoed registered projects and components"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:912
+msgid "Public vs Embargoed Registered Nodes"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:932
+msgid "Previous 7 days of addon by name"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:951
+msgid "Previous 30 days of preprints by provider"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:958
+msgid "The total number of preprints grouped by preprint provider."
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:961
+#: .\templates\metrics\osf_metrics.html:993
+msgid "Start date range:"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:965
+#: .\templates\metrics\osf_metrics.html:997
+msgid "End date range:"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:969
+#: .\templates\metrics\osf_metrics.html:1001
+msgid "Enter new date range"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:983
+msgid "Daily download counts"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:990
+msgid "The total number of downloads by non-contribs"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:1017
+msgid "The total number of files downloaded from the GakuNIn RDM"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:1024
+msgid "Unique Downloads"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:1030
+msgid "The number of unique downloads of files on the GakuNin RDM."
+msgstr ""
+
+#: .\templates\metrics\osf_statistics.html:22
+#: .\templates\spam\spam_list.html:44 .\templates\spam\user.html:46
+#: .\templates\users\spam.html:40
+msgid "Date"
+msgstr ""
+
+#: .\templates\metrics\osf_statistics.html:23
+msgid "Users"
+msgstr ""
+
+#: .\templates\metrics\osf_statistics.html:25
+msgid "Public projects"
+msgstr ""
+
+#: .\templates\metrics\osf_statistics.html:26
+msgid "Registered projects"
+msgstr ""
+
+#: .\templates\nodes\confirm_ham.html:5
+#, python-format
+msgid "Are you sure this %(resource_type)s is "
+msgstr ""
+
+#: .\templates\nodes\confirm_ham.html:5
+msgid "not"
+msgstr ""
+
+#: .\templates\nodes\confirm_ham.html:5
+#, python-format
+msgid " spam? %(guid)s"
+msgstr ""
+
+#: .\templates\nodes\confirm_ham.html:11 .\templates\nodes\confirm_spam.html:11
+#: .\templates\nodes\node_list.html:110
+#: .\templates\nodes\remove_contributor.html:18
+#: .\templates\nodes\remove_node.html:15
+#: .\templates\rdm_addons\addons\dataverse_credentials_modal.html:55
+#: .\templates\rdm_addons\addons\owncloud_credentials_modal.html:62
+#: .\templates\rdm_addons\addons\s3_credentials_modal.html:29
+#: .\templates\rdm_announcement\send.html:35
+#: .\templates\rdm_announcement\settings.html:95
+#: .\templates\rdm_custom_storage_location\institutional_storage.html:62
+#: .\templates\rdm_custom_storage_location\providers\box_modal.html:57
+#: .\templates\rdm_custom_storage_location\providers\googledrive_modal.html:53
+#: .\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:61
+#: .\templates\rdm_custom_storage_location\providers\osfstorage_modal.html:21
+#: .\templates\rdm_custom_storage_location\providers\owncloud_modal.html:50
+#: .\templates\rdm_custom_storage_location\providers\s3_modal.html:36
+#: .\templates\rdm_custom_storage_location\providers\s3compat_modal.html:40
+#: .\templates\rdm_custom_storage_location\providers\swift_modal.html:57
+#: .\templates\rdm_timestampadd\node_list.html:123
+#: .\templates\rdm_timestampadd\timestampadd.html:58
+#: .\templates\users\GDPR_delete_user.html:15
+#: .\templates\users\add_system_tag.html:15 .\templates\users\get_link.html:21
+#: .\templates\users\merge_accounts_modal.html:14
+#: .\templates\users\notes.html:18
+#: .\templates\users\reindex_user_elastic.html:11
+#: .\templates\users\remove_2_factor.html:19
+#: .\templates\users\remove_spam_user.html:15
+#: .\templates\users\remove_user.html:15 .\templates\users\reset.html:16
+#: .\templates\users\restore_ham_user.html:15
+#: .\templates\users\user_list.html:73
+msgid "Cancel"
+msgstr ""
+
+#: .\templates\nodes\confirm_spam.html:5
+#, python-format
+msgid "Are you sure this %(resource_type)s is spam? %(guid)s"
+msgstr ""
+
+#: .\templates\nodes\flagged_spam_list.html:5
+msgid "Flagged Spam Nodes"
+msgstr ""
+
+#: .\templates\nodes\known_spam_list.html:5
+msgid "Known Spam Nodes"
+msgstr ""
+
+#: .\templates\nodes\node_list.html:26
+#: .\templates\rdm_timestampadd\node_list.html:40
+#: .\templates\rdm_timestampsettings\node_list.html:38
+msgid "Title"
+msgstr ""
+
+#: .\templates\nodes\node_list.html:29
+#: .\templates\rdm_timestampadd\node_list.html:42
+#: .\templates\rdm_timestampsettings\node_list.html:41
+msgid "Parent"
+msgstr ""
+
+#: .\templates\nodes\node_list.html:30
+#: .\templates\rdm_timestampadd\node_list.html:43
+#: .\templates\rdm_timestampsettings\node_list.html:42
+msgid "Root"
+msgstr ""
+
+#: .\templates\nodes\node_list.html:31
+#: .\templates\rdm_timestampadd\node_list.html:44
+msgid "Date created"
+msgstr ""
+
+#: .\templates\nodes\node_list.html:32
+#: .\templates\rdm_timestampadd\node_list.html:45
+#: .\templates\users\user.html:292
+msgid "Public"
+msgstr ""
+
+#: .\templates\nodes\node_list.html:33
+#: .\templates\rdm_timestampadd\node_list.html:46
+msgid "Withdrawn"
+msgstr ""
+
+#: .\templates\nodes\node_list.html:34
+#: .\templates\rdm_timestampadd\node_list.html:47
+msgid "Embargo"
+msgstr ""
+
+#: .\templates\nodes\node_list.html:35
+#: .\templates\rdm_timestampadd\node_list.html:48
+msgid "Contributors"
+msgstr ""
+
+#: .\templates\nodes\node_list.html:98
+#: .\templates\rdm_timestampadd\node_list.html:111
+#: .\templates\users\user_list.html:61
+msgid "Confirm Spam"
+msgstr ""
+
+#: .\templates\nodes\node_list.html:105
+#: .\templates\rdm_timestampadd\node_list.html:118
+msgid "Are you sure the selected node(s) are spam?"
+msgstr ""
+
+#: .\templates\nodes\remove_contributor.html:6
+#, python-format
+msgid "Removing contributor: %(userName)s"
+msgstr ""
+
+#: .\templates\nodes\remove_contributor.html:9
+#, python-format
+msgid ""
+"User will be removed. Currently only\n"
+"        an admin on the %(resource_type)s will be able to\n"
+"        add them back."
+msgstr ""
+
+#: .\templates\nodes\remove_node.html:5
+#, python-format
+msgid "Are you sure you want to delete this %(resource_type)s? %(guid)s"
+msgstr ""
+
+#: .\templates\nodes\remove_node.html:8 .\templates\users\remove_user.html:8
+msgid "This action will be reversible after the fact."
+msgstr ""
+
+#: .\templates\nodes\search.html:6
+msgid "Node Search"
+msgstr ""
+
+#: .\templates\nodes\search.html:17
+msgid "Node GUID:"
+msgstr ""
+
+#: .\templates\nodes\spam_status.html:3
+#: .\templates\rdm_timestampadd\timestampadd.html:207
+#: .\templates\spam\detail.html:86
+msgid "Unknown"
+msgstr ""
+
+#: .\templates\nodes\spam_status.html:5 .\templates\spam\detail.html:88
+#: .\templates\spam\spam_list.html:15 .\templates\spam\spam_list.html:18
+#: .\templates\spam\user.html:19 .\templates\spam\user.html:22
+#: .\templates\users\spam.html:13 .\templates\users\spam.html:16
+msgid "Flagged"
+msgstr ""
+
+#: .\templates\nodes\spam_status.html:7 .\templates\spam\detail.html:90
+#: .\templates\spam\spam_list.html:22 .\templates\spam\spam_list.html:25
+#: .\templates\spam\user.html:25 .\templates\spam\user.html:28
+#: .\templates\users\spam.html:19 .\templates\users\spam.html:22
+msgid "Spam"
+msgstr ""
+
+#: .\templates\nodes\spam_status.html:9 .\templates\spam\detail.html:92
+#: .\templates\spam\spam_list.html:29 .\templates\spam\spam_list.html:32
+#: .\templates\spam\user.html:31 .\templates\spam\user.html:34
+#: .\templates\users\spam.html:25 .\templates\users\spam.html:28
+msgid "Ham"
+msgstr ""
+
+#: .\templates\osf\providerassetfile_confirm_delete.html:4
+msgid "GakuNin RDM Admin | Delete Asset"
+msgstr ""
+
+#: .\templates\osf\providerassetfile_confirm_delete.html:10
+msgid "Confirm Delete Asset"
+msgstr ""
+
+#: .\templates\osf\providerassetfile_confirm_delete.html:13
+msgid "Are you sure you want to delete "
+msgstr ""
+
+#: .\templates\osf\providerassetfile_confirm_delete.html:13
+msgid "?"
+msgstr ""
+
+#: .\templates\osf\providerassetfile_create.html:6
+#: .\templates\osf\providerassetfile_form.html:6
+msgid "Provider Asset File"
+msgstr ""
+
+#: .\templates\osf\providerassetfile_form.html:12
+msgid "Delete asset"
+msgstr ""
+
+#: .\templates\osf\providerassetfile_form.html:22
+msgid "Uploading a new file will overwrite this asset."
+msgstr ""
+
+#: .\templates\osf\providerassetfile_list.html:11
+#: .\templates\osf\providerassetfile_list.html:15
+msgid "List of Provider Asset Files"
+msgstr ""
+
+#: .\templates\osf\providerassetfile_list.html:29
+msgid "File Link"
+msgstr ""
+
+#: .\templates\osf\providerassetfile_list.html:30
+msgid "Providers"
+msgstr ""
+
+#: .\templates\osf\providerassetfile_list.html:37
+#: .\templates\rdm_announcement\index.html:49
+msgid "Preview"
+msgstr ""
+
+#: .\templates\osf\subject_form.html:5
+msgid "Subject:"
+msgstr ""
+
+#: .\templates\osf\subject_form.html:9 .\templates\osf\subject_list.html:17
+#: .\templates\rdm_timestampadd\timestampadd.html:129
+msgid "Provider"
+msgstr ""
+
+#: .\templates\osf\subject_form.html:10 .\templates\osf\subject_list.html:19
+msgid "Highlighted"
+msgstr ""
+
+#: .\templates\osf\subject_form.html:11
+msgid "Hierarchy"
+msgstr ""
+
+#: .\templates\osf\subject_list.html:16
+msgid "Text "
+msgstr ""
+
+#: .\templates\osf\subject_list.html:20 .\templates\osf\subject_list.html:29
+#: .\templates\rdm_announcement\index.html:75
+msgid "Edit"
+msgstr ""
+
+#: .\templates\rdm_addons\addon_list.html:17
+msgid "RDM Addons "
+msgstr ""
+
+#: .\templates\rdm_addons\addon_list.html:25
+msgid "Configure Add-on Accounts"
+msgstr ""
+
+#: .\templates\rdm_addons\addon_list.html:51
+#: .\templates\rdm_timestampsettings\list.html:51
+msgid "Force to use"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\dataverse_credentials_modal.html:6
+msgid "Connect a Dataverse Account"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\dataverse_credentials_modal.html:14
+msgid "Dataverse Repository"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\dataverse_credentials_modal.html:30
+msgid "Only Dataverse repositories v4.0 or higher are supported."
+msgstr ""
+
+#: .\templates\rdm_addons\addons\dataverse_credentials_modal.html:38
+msgid "API Token"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\dataverse_credentials_modal.html:42
+msgid "(Get from Dataverse <i class=\"fa fa-external-link-square\"></i>)"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\dataverse_credentials_modal.html:57
+#: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:24
+#: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:38
+#: .\templates\rdm_addons\addons\owncloud_credentials_modal.html:64
+#: .\templates\rdm_addons\addons\s3_credentials_modal.html:31
+#: .\templates\rdm_announcement\settings.html:94
+#: .\templates\rdm_custom_storage_location\institutional_storage.html:63
+#: .\templates\rdm_custom_storage_location\providers\box_modal.html:59
+#: .\templates\rdm_custom_storage_location\providers\googledrive_modal.html:55
+#: .\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:63
+#: .\templates\rdm_custom_storage_location\providers\osfstorage_modal.html:22
+#: .\templates\rdm_custom_storage_location\providers\owncloud_modal.html:52
+#: .\templates\rdm_custom_storage_location\providers\s3_modal.html:38
+#: .\templates\rdm_custom_storage_location\providers\s3compat_modal.html:42
+#: .\templates\rdm_custom_storage_location\providers\swift_modal.html:59
+msgid "Save"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\dataverse_institution_settings.html:15
+#: .\templates\rdm_addons\addons\institution_settings_default.html:12
+#: .\templates\rdm_addons\addons\owncloud_institution_settings.html:15
+#: .\templates\rdm_addons\addons\s3_institution_settings.html:15
+msgid "Connect or Reauthorize Account"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\dataverse_institution_settings.html:23
+#: .\templates\rdm_addons\addons\dropboxbusiness_institution_settings.html:23
+#: .\templates\rdm_addons\addons\dropboxbusiness_institution_settings.html:64
+#: .\templates\rdm_addons\addons\institution_settings_default.html:19
+#: .\templates\rdm_addons\addons\owncloud_institution_settings.html:23
+#: .\templates\rdm_addons\addons\s3_institution_settings.html:23
+msgid "Disconnect Account"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\dataverse_institution_settings.html:28
+msgid "Authorized on "
+msgstr ""
+
+#: .\templates\rdm_addons\addons\dropboxbusiness_institution_settings.html:5
+msgid "Team member file access"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\dropboxbusiness_institution_settings.html:12
+#: .\templates\rdm_addons\addons\dropboxbusiness_institution_settings.html:54
+msgid "Connect Account"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\dropboxbusiness_institution_settings.html:15
+#: .\templates\rdm_addons\addons\dropboxbusiness_institution_settings.html:57
+msgid "Reauthorize Account"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\dropboxbusiness_institution_settings.html:29
+#: .\templates\rdm_addons\addons\dropboxbusiness_institution_settings.html:70
+msgid "Authorized by"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\dropboxbusiness_institution_settings.html:47
+msgid "Team member management"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\institution_settings_default.html:25
+#: .\templates\rdm_addons\addons\owncloud_institution_settings.html:28
+#: .\templates\rdm_addons\addons\s3_institution_settings.html:29
+msgid "Authorized by "
+msgstr ""
+
+#: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:12
+msgid "Management project"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:14
+#: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:28
+msgid "Remove"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:18
+msgid "Management project URL"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:26
+msgid "Organizational project"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:32
+msgid "Organizational project URL"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\owncloud_credentials_modal.html:6
+#: .\templates\rdm_custom_storage_location\providers\owncloud_modal.html:7
+msgid "Connect an ownCloud Account"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\owncloud_credentials_modal.html:14
+msgid "ownCloud Instance"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\owncloud_credentials_modal.html:26
+#: .\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:15
+#: .\templates\rdm_custom_storage_location\providers\owncloud_modal.html:13
+msgid "Host URL"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\owncloud_credentials_modal.html:32
+msgid ""
+"Only ownCloud instances supporting <a href=\"https://doc.owncloud.org/"
+"server/9.1/user_manual/files/access_webdav.html\" target=\"_blank\">WebDAV</"
+"a> and <a href=\"https://www.freedesktop.org/wiki/Specifications/open-"
+"collaboration-services-1.7/\" target=\"_blank\">\n"
+"                                        OCS v1.7</a> are supported."
+msgstr ""
+
+#: .\templates\rdm_addons\addons\owncloud_credentials_modal.html:46
+#: .\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:42
+#: .\templates\rdm_custom_storage_location\providers\owncloud_modal.html:35
+#: .\templates\rdm_custom_storage_location\providers\swift_modal.html:42
+msgid "Password"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\owncloud_credentials_modal.html:51
+msgid ""
+" These credentials will be encrypted. However, we <strong>strongly "
+"encourage</strong> using a <a href=\"https://doc.owncloud.org/server/9.1/"
+"user_manual/session_management.html#managing-devices\" target=\"_blank\"> "
+"Device (or App) Password</a>."
+msgstr ""
+
+#: .\templates\rdm_addons\addons\s3_credentials_modal.html:6
+#: .\templates\rdm_custom_storage_location\providers\s3_modal.html:9
+msgid "Connect an Amazon S3 Account"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\s3_credentials_modal.html:14
+#: .\templates\rdm_custom_storage_location\providers\s3_modal.html:17
+#: .\templates\rdm_custom_storage_location\providers\s3compat_modal.html:21
+msgid "Access Key"
+msgstr ""
+
+#: .\templates\rdm_addons\addons\s3_credentials_modal.html:18
+#: .\templates\rdm_custom_storage_location\providers\s3_modal.html:21
+#: .\templates\rdm_custom_storage_location\providers\s3compat_modal.html:25
+msgid "Secret Key"
+msgstr ""
+
+#: .\templates\rdm_addons\oauth_complete.html:17
+msgid "OAuth Complete"
+msgstr ""
+
+#: .\templates\rdm_addons\oauth_complete.html:53
+#, python-format
+msgid "Successfully connected to %(addon_name|title)s Account."
+msgstr ""
+
+#: .\templates\rdm_addons\oauth_complete.html:55
+msgid "Please close this tab."
+msgstr ""
+
+#: .\templates\rdm_announcement\index.html:11
+#: .\templates\rdm_announcement\send.html:12
+msgid "RDM Announcement "
+msgstr ""
+
+#: .\templates\rdm_announcement\index.html:19
+msgid "Announcement"
+msgstr ""
+
+#: .\templates\rdm_announcement\index.html:64
+msgid "Options"
+msgstr ""
+
+#: .\templates\rdm_announcement\send.html:19
+msgid " Preview"
+msgstr ""
+
+#: .\templates\rdm_announcement\send.html:34
+msgid "Send"
+msgstr ""
+
+#: .\templates\rdm_announcement\settings.html:7
+#: .\templates\rdm_announcement\settings.html:14
+msgid "RDM Announcement - Options"
+msgstr ""
+
+#: .\templates\rdm_announcement\settings.html:12
+msgid "RDM Announcement - Options "
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\institutional_storage.html:20
+msgid "Institutional Storage "
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\institutional_storage.html:27
+msgid "Name:"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\institutional_storage.html:35
+msgid "Configure Institutional Storage Accounts"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\box_modal.html:8
+msgid "Connect a Box Account"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\box_modal.html:14
+msgid "Please click \"Get OAuth Permission\" button to connect Box."
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\box_modal.html:16
+msgid "Then you will be redirected to Box authentication page."
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\box_modal.html:28
+#: .\templates\rdm_custom_storage_location\providers\googledrive_modal.html:27
+msgid "Get OAuth permission"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\box_modal.html:32
+#: .\templates\rdm_custom_storage_location\providers\googledrive_modal.html:31
+msgid "Authorized by:"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\box_modal.html:40
+#: .\templates\rdm_custom_storage_location\providers\googledrive_modal.html:37
+msgid "Current token:"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\box_modal.html:46
+#: .\templates\rdm_custom_storage_location\providers\googledrive_modal.html:42
+#: .\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:31
+#: .\templates\rdm_custom_storage_location\providers\owncloud_modal.html:25
+msgid "Folder"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\box_modal.html:48
+msgid "Folder ID (Ex: 0 for root)"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\box_modal.html:58
+#: .\templates\rdm_custom_storage_location\providers\googledrive_modal.html:54
+#: .\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:62
+#: .\templates\rdm_custom_storage_location\providers\owncloud_modal.html:51
+#: .\templates\rdm_custom_storage_location\providers\s3_modal.html:37
+#: .\templates\rdm_custom_storage_location\providers\s3compat_modal.html:41
+#: .\templates\rdm_custom_storage_location\providers\swift_modal.html:58
+msgid "Connect"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\googledrive_modal.html:8
+msgid "Connect a Google Drive Account"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\googledrive_modal.html:14
+msgid "Please click \"Get OAuth Permission\" button to connectGoogle Drive."
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\googledrive_modal.html:16
+msgid "Then you will be redirected to Google authentication page."
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\googledrive_modal.html:44
+msgid "Folder ID (Ex: root)"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:8
+msgid "Connect a Nextcloud Account"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:21
+msgid ""
+"Only Nextcloud instances supporting <a\n"
+"                                            href=\"https://doc.nextcloud.org/"
+"server/9.1/user_manual/files/access_webdav.html\"\n"
+"                                            target=\"_blank\">WebDAV</a> and "
+"<a\n"
+"                                            href=\"https://www.freedesktop."
+"org/wiki/Specifications/open-collaboration-services-1.7/\"\n"
+"                                            target=\"_blank\">\n"
+"                                            OCS v1.7</a> are supported."
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:47
+msgid ""
+" These credentials will be encrypted. However, we <strong>strongly\n"
+"                                        encourage</strong> using a <a\n"
+"                                        href=\"https://doc.nextcloud.org/"
+"server/9.1/user_manual/session_management.html#managing-devices\"\n"
+"                                        target=\"_blank\"> Device (or App) "
+"Password</a>."
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\osfstorage_modal.html:8
+msgid "Connect NII Storage"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\osfstorage_modal.html:14
+msgid "NII Storage is selected as Institutional Storage."
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\s3_modal.html:25
+#: .\templates\rdm_custom_storage_location\providers\s3compat_modal.html:29
+msgid "Bucket"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\s3compat_modal.html:9
+msgid "Connect a S3 Compatible Storage Account"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\s3compat_modal.html:17
+msgid "Endpoint URL"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\swift_modal.html:8
+msgid "Connect an OpenStack Swift Account"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\swift_modal.html:15
+msgid "Authentication(Keystone) Version"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\swift_modal.html:22
+msgid "Authentication URL"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\swift_modal.html:26
+msgid "Tenant name"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\swift_modal.html:30
+msgid "Project Domain name"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\swift_modal.html:38
+msgid "User Domain name"
+msgstr ""
+
+#: .\templates\rdm_custom_storage_location\providers\swift_modal.html:46
+msgid "Container"
+msgstr ""
+
+#: .\templates\rdm_keymanagement\delete_user_list.html:5
+#: .\templates\users\list.html:5
+msgid "User Search Results"
+msgstr ""
+
+#: .\templates\rdm_keymanagement\user_list.html:9
+#: .\templates\rdm_timestampadd\node_list.html:38
+#: .\templates\rdm_timestampsettings\node_list.html:35
+#: .\templates\users\user.html:290 .\templates\users\user_details.html:34
+#: .\templates\users\user_list.html:22
+msgid "GUID"
+msgstr ""
+
+#: .\templates\rdm_keymanagement\user_list.html:12
+#: .\templates\users\user_list.html:25
+msgid "Date confirmed"
+msgstr ""
+
+#: .\templates\rdm_keymanagement\user_list.html:13
+#: .\templates\users\user_list.html:26
+msgid "Date disabled"
+msgstr ""
+
+#: .\templates\rdm_statistics\crawl.html:14
+#: .\templates\rdm_statistics\index.html:14
+msgid "statistics"
+msgstr ""
+
+#: .\templates\rdm_statistics\crawl.html:18
+#: .\templates\rdm_statistics\index.html:18
+msgid "statistics info"
+msgstr ""
+
+#: .\templates\rdm_statistics\index.html:16
+msgid "institution "
+msgstr ""
+
+#: .\templates\rdm_statistics\institution_list.html:27
+msgid "Institution List"
+msgstr ""
+
+#: .\templates\rdm_statistics\mail.html:19
+msgid "Send statistic information mail"
+msgstr ""
+
+#: .\templates\rdm_statistics\mail.html:21
+msgid "sending result "
+msgstr ""
+
+#: .\templates\rdm_statistics\settings.html:6
+#: .\templates\rdm_statistics\settings.html:9
+msgid "RDM Announcements - Options"
+msgstr ""
+
+#: .\templates\rdm_statistics\statistics.html:40
+#: .\templates\rdm_statistics\statistics_report.html:233
+msgid "Institution"
+msgstr ""
+
+#: .\templates\rdm_statistics\statistics.html:68
+#: .\templates\rdm_statistics\statistics_report.html:261
+msgid "date"
+msgstr ""
+
+#: .\templates\rdm_statistics\statistics.html:100
+msgid "download PDF"
+msgstr ""
+
+#: .\templates\rdm_statistics\statistics.html:101
+msgid "download CSV"
+msgstr ""
+
+#: .\templates\rdm_timestampadd\timestampadd.html:16
+msgid "TimeStampAddList"
+msgstr ""
+
+#: .\templates\rdm_timestampadd\timestampadd.html:20
+#, python-format
+msgid "TimeStamp Add (%(project_title)s)"
+msgstr ""
+
+#: .\templates\rdm_timestampadd\timestampadd.html:28
+msgid "Start Date"
+msgstr ""
+
+#: .\templates\rdm_timestampadd\timestampadd.html:34
+msgid "End Date"
+msgstr ""
+
+#: .\templates\rdm_timestampadd\timestampadd.html:40
+#: .\templates\users\user.html:11
+msgid "User"
+msgstr ""
+
+#: .\templates\rdm_timestampadd\timestampadd.html:47
+msgid "Apply"
+msgstr ""
+
+#: .\templates\rdm_timestampadd\timestampadd.html:56
+msgid "Verify"
+msgstr ""
+
+#: .\templates\rdm_timestampadd\timestampadd.html:57
+msgid "Request Trusted Timestamp"
+msgstr ""
+
+#: .\templates\rdm_timestampadd\timestampadd.html:68
+msgid "Processing, please wait..."
+msgstr ""
+
+#: .\templates\rdm_timestampadd\timestampadd.html:93
+msgid "per page:"
+msgstr ""
+
+#: .\templates\rdm_timestampadd\timestampadd.html:109
+msgid "Page of "
+msgstr ""
+
+#: .\templates\rdm_timestampadd\timestampadd.html:138
+msgid "File Path"
+msgstr ""
+
+#: .\templates\rdm_timestampadd\timestampadd.html:147
+msgid "Timestamp by"
+msgstr ""
+
+#: .\templates\rdm_timestampadd\timestampadd.html:156
+msgid "Updated at"
+msgstr ""
+
+#: .\templates\rdm_timestampadd\timestampadd.html:165
+msgid "Timestamp Verification"
+msgstr ""
+
+#: .\templates\rdm_timestampadd\timestampadd.html:229
+msgid "Download"
+msgstr ""
+
+#: .\templates\rdm_timestampsettings\list.html:22
+#: .\templates\rdm_timestampsettings\node_list.html:43
+msgid "Select Timestamp Function"
+msgstr ""
+
+#: .\templates\spam\detail.html:7
+msgid "Comment"
+msgstr ""
+
+#: .\templates\spam\detail.html:14
+msgid "Back to general list"
+msgstr ""
+
+#: .\templates\spam\detail.html:18
+msgid "Back to user's list"
+msgstr ""
+
+#: .\templates\spam\detail.html:65
+msgid "Author:"
+msgstr ""
+
+#: .\templates\spam\detail.html:68
+msgid "User's <b>RDM</b> profile"
+msgstr ""
+
+#: .\templates\spam\detail.html:70
+msgid "User's profile"
+msgstr ""
+
+#: .\templates\spam\detail.html:76
+msgid "Comment ID:"
+msgstr ""
+
+#: .\templates\spam\detail.html:84
+msgid "Status: "
+msgstr ""
+
+#: .\templates\spam\detail.html:103
+msgid "Comment content"
+msgstr ""
+
+#: .\templates\spam\detail.html:104
+msgid "created on:"
+msgstr ""
+
+#: .\templates\spam\detail.html:120
+msgid "Type:"
+msgstr ""
+
+#: .\templates\spam\detail.html:128
+msgid "Reporter:"
+msgstr ""
+
+#: .\templates\spam\detail.html:136
+msgid "Reason:"
+msgstr ""
+
+#: .\templates\spam\detail.html:144
+msgid "No reports!"
+msgstr ""
+
+#: .\templates\spam\email.html:4
+msgid "Suggested Email message for spammer"
+msgstr ""
+
+#: .\templates\spam\email.html:7
+#, python-format
+msgid "Dear %(spamAuthorFullname)s,"
+msgstr ""
+
+#: .\templates\spam\email.html:8
+msgid "A comment you made on a GakuNin RDM (GRDM) project"
+msgstr ""
+
+#: .\templates\spam\email.html:10
+msgid "has been reported as"
+msgstr ""
+
+#: .\templates\spam\email.html:12
+msgid "hate speech"
+msgstr ""
+
+#: .\templates\spam\email.html:14
+msgid "violent or harmful behavior"
+msgstr ""
+
+#: .\templates\spam\email.html:16
+msgid "spam"
+msgstr ""
+
+#: .\templates\spam\email.html:27
+msgid "Best,"
+msgstr ""
+
+#: .\templates\spam\email.html:28
+msgid "The GakuNin RDM Team"
+msgstr ""
+
+#: .\templates\spam\spam_list.html:8 .\templates\spam\spam_list.html:11
+#: .\templates\users\spam.html:7 .\templates\users\spam.html:10
+msgid "List of Spam"
+msgstr ""
+
+#: .\templates\spam\spam_list.html:42 .\templates\spam\user.html:44
+#: .\templates\users\spam.html:38
+msgid "Author"
+msgstr ""
+
+#: .\templates\spam\spam_list.html:43 .\templates\spam\user.html:45
+#: .\templates\users\spam.html:39
+msgid "Reporter"
+msgstr ""
+
+#: .\templates\spam\spam_list.html:45 .\templates\spam\user.html:47
+#: .\templates\users\spam.html:41
+msgid "Content"
+msgstr ""
+
+#: .\templates\spam\spam_list.html:72 .\templates\spam\user.html:74
+#: .\templates\users\spam.html:68
+msgid "Detail"
+msgstr ""
+
+#: .\templates\spam\spam_list.html:78 .\templates\spam\user.html:80
+#: .\templates\users\spam.html:74
+msgid "No more Spam!"
+msgstr ""
+
+#: .\templates\spam\user.html:9
+msgid "User Spam"
+msgstr ""
+
+#: .\templates\spam\user.html:12
+msgid "User's List of Spam"
+msgstr ""
+
+#: .\templates\spam\user.html:15 .\templates\users\user.html:157
+msgid "User details"
+msgstr ""
+
+#: .\templates\users\GDPR_delete_user.html:5
+#, python-format
+msgid "Are you sure you want to <b>GDPR</b> delete this user? %(guid)s"
+msgstr ""
+
+#: .\templates\users\GDPR_delete_user.html:8
+msgid "This is not reversible!"
+msgstr ""
+
+#: .\templates\users\add_system_tag.html:5
+msgid "Add a system tag to this user"
+msgstr ""
+
+#: .\templates\users\flagged_spam_list.html:5
+msgid "Flagged Spam Users"
+msgstr ""
+
+#: .\templates\users\get_link.html:4
+#, python-format
+msgid "%(title)s for user %(username)s"
+msgstr ""
+
+#: .\templates\users\known_spam_list.html:5
+msgid "Known Spam Users"
+msgstr ""
+
+#: .\templates\users\merge_accounts_modal.html:4
+msgid "Merge Accounts"
+msgstr ""
+
+#: .\templates\users\merge_accounts_modal.html:7
+#, python-format
+msgid "Merge this user: <b>%(user)s</b> <b>(%(guid)s)</b>  with:"
+msgstr ""
+
+#: .\templates\users\notes.html:5
+msgid "Notes for GakuNin RDM User"
+msgstr ""
+
+#: .\templates\users\notes.html:8
+#, python-format
+msgid "User: %(osf_id)s"
+msgstr ""
+
+#: .\templates\users\notes.html:11
+msgid "Notes for GakuNIn user:"
+msgstr ""
+
+#: .\templates\users\reindex_user_elastic.html:5
+#, python-format
+msgid "Are you sure you want to reindex this user (Elastic)? %(guid)s"
+msgstr ""
+
+#: .\templates\users\remove_2_factor.html:5
+msgid "This will remove two factor auth."
+msgstr ""
+
+#: .\templates\users\remove_spam_user.html:5
+#, python-format
+msgid ""
+"Are you sure you want to delete this user and mark all their nodes as "
+"private? %(guid)s"
+msgstr ""
+
+#: .\templates\users\remove_spam_user.html:8
+#: .\templates\users\restore_ham_user.html:8
+msgid ""
+"You will be able to re-activate the user, but the admin console does not "
+"currently have the ability to mark nodes as public."
+msgstr ""
+
+#: .\templates\users\remove_user.html:5
+#, python-format
+msgid "Are you sure you want to delete this user? %(guid)s"
+msgstr ""
+
+#: .\templates\users\reset.html:5
+msgid "Choose email to send reset link"
+msgstr ""
+
+#: .\templates\users\reset.html:8
+#, python-format
+msgid "User: %(guid)s"
+msgstr ""
+
+#: .\templates\users\restore_ham_user.html:5
+#, python-format
+msgid "Are you sure you want to re-enable this user? %(guid)s"
+msgstr ""
+
+#: .\templates\users\search.html:9 .\templates\users\search.html:14
+#: .\templates\users\workshop.html:6
+msgid "User Search"
+msgstr ""
+
+#: .\templates\users\search.html:27
+msgid "User Workshop Follow-up"
+msgstr ""
+
+#: .\templates\users\search.html:33
+msgid "Go"
+msgstr ""
+
+#: .\templates\users\user.html:29
+msgid "Related spam"
+msgstr ""
+
+#: .\templates\users\user.html:33
+msgid "Send reset password email"
+msgstr ""
+
+#: .\templates\users\user.html:35
+msgid "Get password reset link"
+msgstr ""
+
+#: .\templates\users\user.html:37 .\templates\users\user.html:42
+msgid "Get confirmation link"
+msgstr ""
+
+#: .\templates\users\user.html:40
+msgid "Get claim links"
+msgstr ""
+
+#: .\templates\users\user.html:47
+msgid "Desk profile"
+msgstr ""
+
+#: .\templates\users\user.html:48
+msgid "Desk cases"
+msgstr ""
+
+#: .\templates\users\user.html:50
+msgid "Merge Account"
+msgstr ""
+
+#: .\templates\users\user.html:58
+msgid "GDPR Delete Account"
+msgstr ""
+
+#: .\templates\users\user.html:62 .\templates\users\user.html:64
+msgid "Requested account deactivation"
+msgstr ""
+
+#: .\templates\users\user.html:66
+msgid "Force disable account"
+msgstr ""
+
+#: .\templates\users\user.html:74
+msgid "Disable Spam account"
+msgstr ""
+
+#: .\templates\users\user.html:76
+msgid "Re-enable Ham account"
+msgstr ""
+
+#: .\templates\users\user.html:79
+msgid "Send reset"
+msgstr ""
+
+#: .\templates\users\user.html:81
+msgid "Elastic Reindex"
+msgstr ""
+
+#: .\templates\users\user.html:175
+msgid "GakuNin RDM account"
+msgstr ""
+
+#: .\templates\users\user.html:185
+msgid "Emails"
+msgstr ""
+
+#: .\templates\users\user.html:190
+msgid "Primary: "
+msgstr ""
+
+#: .\templates\users\user.html:202
+msgid "Registered"
+msgstr ""
+
+#: .\templates\users\user.html:206
+msgid "Confirmed"
+msgstr ""
+
+#: .\templates\users\user.html:210
+msgid "Last login"
+msgstr ""
+
+#: .\templates\users\user.html:214
+msgid "Disabled"
+msgstr ""
+
+#: .\templates\users\user.html:218
+msgid "Two factor"
+msgstr ""
+
+#: .\templates\users\user.html:226
+msgid "Deactivate"
+msgstr ""
+
+#: .\templates\users\user.html:237
+msgid "System tags"
+msgstr ""
+
+#: .\templates\users\user.html:246
+msgid "add system tag"
+msgstr ""
+
+#: .\templates\users\user.html:258
+msgid "GakuNin RDM Groups"
+msgstr ""
+
+#: .\templates\users\user.html:271
+msgid "User is spammy"
+msgstr ""
+
+#: .\templates\users\user.html:277 .\templates\users\user.html:295
+msgid "SPAM Status"
+msgstr ""
+
+#: .\templates\users\user.html:281
+msgid "Profile content checked for spam"
+msgstr ""
+
+#: .\templates\users\user.html:293
+msgid "Registration"
+msgstr ""
+
+#: .\templates\users\user.html:296
+msgid "Actions"
+msgstr ""
+
+#: .\templates\users\user.html:327
+msgid "Delete Node"
+msgstr ""
+
+#: .\templates\users\user.html:346
+msgid "Quota for NII Storage (GB)"
+msgstr ""
+
+#: .\templates\users\user_details.html:60
+msgid "Quota for Institutional Storage (GB)"
+msgstr ""
+
+#: .\templates\users\user_list.html:68
+msgid "Are you sure the selected user(s) are spam?"
+msgstr ""
+
+#: .\templates\util\pagination.html:25
+#, python-format
+msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
+msgstr ""

@@ -113,7 +113,7 @@ function ProjectWiki(data) {
                         if(!item.parent().data.permissions.admin){
                             return _('Only admins may change permissions of this wiki.');
                         } else {
-                            return item.parent().data.node.is_public ? _('Select who can edit') : sprintf(gt.ngettext('This feature is disabled for wikis of private %1$s','This feature is disabled for wikis of private %1$ss',  item.parent().data.nodeType ),item.parent().data.nodeType);
+                            return item.parent().data.node.is_public ? _('Select who can edit') : sprintf(_('This feature is disabled for wikis of private %1$ss'), _(item.parent().data.nodeType));
                         }
                     }
                 },

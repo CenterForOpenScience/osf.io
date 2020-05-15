@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-16 10:40+0900\n"
-"PO-Revision-Date: 2020-04-16 10:40+0900\n"
+"POT-Creation-Date: 2020-04-21 11:58+0900\n"
+"PO-Revision-Date: 2020-04-21 11:58+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -2876,7 +2876,7 @@ msgstr "プライベートリンクを持つユーザーは誰でも、リンク
 #: website/templates/project/modal_generate_private_link.mako:51
 #, python-format
 msgid "(current component<span %(isPublic)s>, public</span>)"
-msgstr "(現在のコンポーネント、<span %(isPublic)s>公開</span>)"
+msgstr "(現在のコンポーネント<span %(isPublic)s>、公開</span>)"
 
 #: website/templates/project/modal_generate_private_link.mako:59
 msgid "Parent needs to be checked"
@@ -3585,7 +3585,7 @@ msgstr "タイムスタンプ確認"
 
 #: website/templates/project/timestamp.mako:70
 msgid "Request Trusted Timestamp"
-msgstr "タイムスタンプ取得"
+msgstr "タイムスタンプを打つ"
 
 #: website/templates/project/timestamp.mako:81
 msgid "Processing, please wait..."
@@ -3622,7 +3622,7 @@ msgstr "バージョン:"
 #: website/templates/project/view_file.mako:34
 #: website/templates/project/view_file.mako:36
 msgid "Timestamp verification:"
-msgstr "タイムスタンプの検証"
+msgstr "タイムスタンプの検証："
 
 #: website/templates/project/view_file.mako:52
 msgid "No files"
