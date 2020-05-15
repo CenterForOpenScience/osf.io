@@ -168,12 +168,35 @@
                 <img class="social-profile-image" data-bind="visible: profileImageUrl(), attr: {src: profileImageUrl()}">
             </div>
             <div class="col-md-10">
-                <h4><a data-bind="attr: {href: url}, text: user"></a></h4>
+                <span>
+                    <span style="vertical-align: middle;">
+                        <font size="5"><a data-bind="attr: {href: url}, html: $root.getUserName($data)"></a></font>
+                    </span>
+                    <span style="vertical-align: middle; margin-left: 5px;">
+                        <font size="5">GUID: <a data-bind="attr: {href: url}, text: $root.getGuidText(id)"></a></font>
+                    </span>
+                </span>
+                <br>
                 <p>
-                    <span data-bind="visible: job_title, text: job_title"></span><!-- ko if: job_title && job --> at <!-- /ko -->
-                    <span data-bind="visible: job, text: job"></span><!-- ko if: job_title || job --><br /><!-- /ko -->
-                    <span data-bind="visible: degree, text: degree"></span><!-- ko if: degree && school --> from <!-- /ko -->
-                    <span data-bind="visible: school, text: school"></span><!-- ko if: degree || school --><br /><!-- /ko -->
+                    <!-- ko if: ongoing_job_title -->
+                    <strong>${_("Employment:")}</strong>
+                    <span data-bind="visible: ongoing_job_title, text: ongoing_job_title"></span>
+                    <!-- ko if: ongoing_job_department || ongoing_job --> at
+                    <span data-bind="visible: ongoing_job_department, text: ongoing_job_department"></span><!-- ko if: ongoing_job_department && ongoing_job -->, <!-- /ko -->
+                    <span data-bind="visible: ongoing_job, text: ongoing_job"></span>
+                    <!-- /ko -->
+                    <br />
+                    <!-- /ko -->
+
+                    <!-- ko if: ongoing_school_degree -->
+                    <strong>${_("Education:")}</strong>
+                    <span data-bind="visible: ongoing_school_degree, text: ongoing_school_degree"></span>
+                    <!-- ko if: ongoing_school_department || ongoing_school --> from
+                    <span data-bind="visible: ongoing_school_department, text: ongoing_school_department"></span><!-- ko if: ongoing_school_department && ongoing_school -->, <!-- /ko -->
+                    <span data-bind="visible: ongoing_school, text: ongoing_school"></span>
+                    <!-- /ko -->
+                    <br />
+                    <!-- /ko -->
                 </p>
                 <!-- ko if: social -->
                 <ul class="list-inline">

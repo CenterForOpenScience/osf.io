@@ -68,6 +68,15 @@ var User = function(result){
     self.school = result.school;
     self.url = result.url;
     self.user = result.user;
+    self.id = result.id;
+    self.comment = result.comment;
+    self.highlight = result.highlight;
+    self.ongoing_job = result.ongoing_job;
+    self.ongoing_job_department = result.ongoing_job_department;
+    self.ongoing_job_title = result.ongoing_job_title;
+    self.ongoing_school = result.ongoing_school;
+    self.ongoing_school_department = result.ongoing_school_department;
+    self.ongoing_school_degree = result.ongoing_school_degree;
 
     $.ajax('/api/v1'+ result.url).done(function(data){
         if (typeof data.profile !== 'undefined') {
@@ -965,6 +974,13 @@ var ViewModel = function(params) {
         var highlightArray = result.highlight.name;
         var lengthLimit = self.nameLengthLimit;
         return self.makeTitleWithExtension(originalStr, highlightArray, lengthLimit);
+    };
+
+    self.getUserName = function(result) {
+        var originalStr = result.user;
+        var highlightArray = result.highlight.user;
+        var lengthLimit = self.titleLengthLimit;
+        return self.makeTitle(originalStr, highlightArray, lengthLimit);
     };
 
     self.makeComment = function(comment) {
