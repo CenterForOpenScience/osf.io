@@ -20,7 +20,6 @@ $(function() {
         maxChars: 128,
         defaultText: _('Add a file tag to enhance discoverability'),
         onAddTag: function (tag) {
-            $('#node-tags_tag').attr('data-default', _('Add a tag'));
             var url = tagUrl;
             var request = $osf.postJSON(url, {'tag': tag });
             request.fail(function (xhr, textStatus, error) {
