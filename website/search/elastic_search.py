@@ -9,6 +9,7 @@ import logging
 import math
 import re
 from framework import sentry
+import os.path
 
 from django.apps import apps
 from django.core.paginator import Paginator
@@ -394,6 +395,17 @@ def set_last_comment(hits):
         s['comment'] = d
     return hits
 
+def get_file_path(file_id):
+    file_node = BaseFileNode.load(file_id)
+    if file_node is None:
+        return None
+    app_config = settings.ADDONS_AVAILABLE_DICT.get(file_node.provider)
+    if app_config:
+        provider_name = app_config.full_name
+    else:
+        provider_name = file_node.provider
+    return u'{}{}'.format(provider_name, file_node.materialized_path)
+
 def format_results(results):
     ret = []
     for result in results:
@@ -434,6 +446,12 @@ def format_results(results):
             else:
                 result['replyto_user_url'] = None
         elif category == 'file':
+            file_path = get_file_path(result.get('id'))
+            if file_path:
+                folder_name = os.path.dirname(file_path)
+            else:
+                folder_name = None
+            result['folder_name'] = folder_name
             parent_info = load_parent(result.get('parent_id'))
             result['parent_url'] = parent_info.get('url') if parent_info else None
             result['parent_title'] = parent_info.get('title') if parent_info else None
