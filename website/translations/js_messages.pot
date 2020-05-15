@@ -8,14 +8,14 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-24 14:11+0900\n"
-"PO-Revision-Date: 2020-04-24 14:11+0900\n"
+"POT-Creation-Date: 2020-05-15 15:54+0900\n"
+"PO-Revision-Date: 2020-05-15 15:54+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.7.0\n"
+"Generated-By: Babel 2.8.0\n"
 
 #: addons/twofactor/static/twoFactorUserConfig.js:175
 msgid "Enable Two-factor Authentication"
@@ -2333,6 +2333,14 @@ msgstr ""
 msgid "moved"
 msgstr ""
 
+#: website/static/js/js_messages.js:27
+msgid "Admin"
+msgstr ""
+
+#: website/static/js/js_messages.js:27
+msgid "Write"
+msgstr ""
+
 #: website/static/js/keen.js:114
 msgid "Error sending Keen data to %1$s:<%2$s>"
 msgstr ""
@@ -3919,33 +3927,38 @@ msgstr ""
 msgid "Add a file tag to enhance discoverability"
 msgstr ""
 
-#: website/static/js/pages/file-page.js:26
-msgid "Could not add tag."
+#: website/static/js/pages/file-page.js:23
+#: website/static/js/pages/project-dashboard-page.js:452
+msgid "Add a tag"
 msgstr ""
 
 #: website/static/js/pages/file-page.js:27
+msgid "Could not add tag."
+msgstr ""
+
+#: website/static/js/pages/file-page.js:28
 #: website/static/js/pages/project-dashboard-page.js:475
 msgid "Failed to add tag"
 msgstr ""
 
-#: website/static/js/pages/file-page.js:41
+#: website/static/js/pages/file-page.js:42
 msgid "Could not remove tag."
 msgstr ""
 
-#: website/static/js/pages/file-page.js:42
+#: website/static/js/pages/file-page.js:43
 #: website/static/js/pages/project-dashboard-page.js:511
 msgid "Failed to remove tag"
 msgstr ""
 
-#: website/static/js/pages/file-page.js:87
+#: website/static/js/pages/file-page.js:88
 msgid "The file title cannot be empty."
 msgstr ""
 
-#: website/static/js/pages/file-page.js:89
+#: website/static/js/pages/file-page.js:90
 msgid "The file title cannot be more than 100 characters."
 msgstr ""
 
-#: website/static/js/pages/file-page.js:100
+#: website/static/js/pages/file-page.js:101
 msgid ""
 "Your file was successfully renamed. To view the new filename in the file "
 "tree below, refresh the page."
@@ -4023,6 +4036,10 @@ msgstr ""
 
 #: website/static/js/pages/project-dashboard-page.js:510
 msgid "Could not remove tag"
+msgstr ""
+
+#: website/static/js/pages/project-dashboard-page.js:566
+msgid "Removing tag"
 msgstr ""
 
 #: website/static/js/pages/project-settings-page.js:34
