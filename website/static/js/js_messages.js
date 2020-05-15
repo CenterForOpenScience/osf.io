@@ -24,4 +24,4 @@ var subscriptionsTitlesAndHelps = [_('Default Notification Settings'),_('These a
 
 var folderMoved = _('moved');
 
-var permissions = [[_('Admin'),_('Write')];
+var permissions = [_('admin'),_('write'),_('read')];

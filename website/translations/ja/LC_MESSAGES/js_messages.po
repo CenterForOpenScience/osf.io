@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-15 15:54+0900\n"
-"PO-Revision-Date: 2020-05-15 15:54+0900\n"
+"POT-Creation-Date: 2020-04-15 17:52+0900\n"
+"PO-Revision-Date: 2020-05-15 17:52+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -69,14 +69,14 @@ msgid "the page now, those changes may be lost."
 msgstr "ここでページを終了すると、これらの変更が失われる可能性があります。"
 
 #: addons/wiki/static/wikiPage.js:94
-#: website/static/js/pages/project-dashboard-page.js:550
+#: website/static/js/pages/project-dashboard-page.js:552
 msgid ""
 "*Add important information, links, or images here to describe your "
 "project.*"
 msgstr "*重要な情報、リンク、または画像をここに追加して、プロジェクトを説明してください。*"
 
 #: addons/wiki/static/wikiPage.js:96
-#: website/static/js/pages/project-dashboard-page.js:552
+#: website/static/js/pages/project-dashboard-page.js:554
 msgid "*No wiki content.*"
 msgstr "* Wikiコンテンツはありません。*"
 
@@ -2361,12 +2361,16 @@ msgid "moved"
 msgstr "移動"
 
 #: website/static/js/js_messages.js:27
-msgid "Admin"
+msgid "admin"
 msgstr "管理者"
 
 #: website/static/js/js_messages.js:27
-msgid "Write"
+msgid "write"
 msgstr "書込み"
+
+#: website/static/js/js_messages.js:27
+msgid "read"
+msgstr "読込み"
 
 #: website/static/js/keen.js:114
 msgid "Error sending Keen data to %1$s:<%2$s>"
@@ -3977,28 +3981,30 @@ msgstr "これには通常より時間がかかります。<br> ページを再�
 msgid "Add a file tag to enhance discoverability"
 msgstr "タグを追加してファイルを発見しやすくする"
 
-#: website/static/js/pages/file-page.js:23
-#: website/static/js/pages/project-dashboard-page.js:452
-msgid "Add a tag"
-msgstr "タグを追加"
-
-#: website/static/js/pages/file-page.js:27
+#: website/static/js/pages/file-page.js:26
 msgid "Could not add tag."
 msgstr "タグを追加できませんでした"
 
-#: website/static/js/pages/file-page.js:28
+#: website/static/js/pages/file-page.js:27
 #: website/static/js/pages/project-dashboard-page.js:475
 msgid "Failed to add tag"
 msgstr "タグの追加に失敗しました"
 
-#: website/static/js/pages/file-page.js:42
+#: website/static/js/pages/file-page.js:41
 msgid "Could not remove tag."
 msgstr "タグを削除できませんでした。"
 
-#: website/static/js/pages/file-page.js:43
+#: website/static/js/pages/file-page.js:42
 #: website/static/js/pages/project-dashboard-page.js:511
 msgid "Failed to remove tag"
 msgstr "タグの削除に失敗しました。"
+
+#: website/static/js/pages/file-page.js:56
+#: website/static/js/pages/file-page.js:58
+#: website/static/js/pages/project-dashboard-page.js:535
+#: website/static/js/pages/project-dashboard-page.js:568
+msgid "Removing tag"
+msgstr "タグを削除"
 
 #: website/static/js/pages/file-page.js:88
 msgid "The file title cannot be empty."
@@ -4084,13 +4090,13 @@ msgstr "ファイルブラウザの取得エラー"
 msgid "Add a project tag to enhance discoverability"
 msgstr "タグを追加してプロジェクトを発見しやすくする"
 
+#: website/static/js/pages/project-dashboard-page.js:452
+msgid "Add a tag"
+msgstr "タグを追加"
+
 #: website/static/js/pages/project-dashboard-page.js:510
 msgid "Could not remove tag"
 msgstr "タグを削除できませんでした"
-
-#: website/static/js/pages/project-dashboard-page.js:566
-msgid "Removing tag"
-msgstr "タグを削除"
 
 #: website/static/js/pages/project-settings-page.js:34
 msgid "Could not GET notification settings."

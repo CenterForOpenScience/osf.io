@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-15 15:54+0900\n"
-"PO-Revision-Date: 2020-05-15 15:54+0900\n"
+"POT-Creation-Date: 2020-04-15 17:52+0900\n"
+"PO-Revision-Date: 2020-04-08 17:52+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -66,14 +66,14 @@ msgid "the page now, those changes may be lost."
 msgstr ""
 
 #: addons/wiki/static/wikiPage.js:94
-#: website/static/js/pages/project-dashboard-page.js:550
+#: website/static/js/pages/project-dashboard-page.js:552
 msgid ""
 "*Add important information, links, or images here to describe your "
 "project.*"
 msgstr ""
 
 #: addons/wiki/static/wikiPage.js:96
-#: website/static/js/pages/project-dashboard-page.js:552
+#: website/static/js/pages/project-dashboard-page.js:554
 msgid "*No wiki content.*"
 msgstr ""
 
@@ -2334,11 +2334,15 @@ msgid "moved"
 msgstr ""
 
 #: website/static/js/js_messages.js:27
-msgid "Admin"
+msgid "admin"
 msgstr ""
 
 #: website/static/js/js_messages.js:27
-msgid "Write"
+msgid "write"
+msgstr ""
+
+#: website/static/js/js_messages.js:27
+msgid "read"
 msgstr ""
 
 #: website/static/js/keen.js:114
@@ -3927,27 +3931,29 @@ msgstr ""
 msgid "Add a file tag to enhance discoverability"
 msgstr ""
 
-#: website/static/js/pages/file-page.js:23
-#: website/static/js/pages/project-dashboard-page.js:452
-msgid "Add a tag"
-msgstr ""
-
-#: website/static/js/pages/file-page.js:27
+#: website/static/js/pages/file-page.js:26
 msgid "Could not add tag."
 msgstr ""
 
-#: website/static/js/pages/file-page.js:28
+#: website/static/js/pages/file-page.js:27
 #: website/static/js/pages/project-dashboard-page.js:475
 msgid "Failed to add tag"
 msgstr ""
 
-#: website/static/js/pages/file-page.js:42
+#: website/static/js/pages/file-page.js:41
 msgid "Could not remove tag."
 msgstr ""
 
-#: website/static/js/pages/file-page.js:43
+#: website/static/js/pages/file-page.js:42
 #: website/static/js/pages/project-dashboard-page.js:511
 msgid "Failed to remove tag"
+msgstr ""
+
+#: website/static/js/pages/file-page.js:56
+#: website/static/js/pages/file-page.js:58
+#: website/static/js/pages/project-dashboard-page.js:535
+#: website/static/js/pages/project-dashboard-page.js:568
+msgid "Removing tag"
 msgstr ""
 
 #: website/static/js/pages/file-page.js:88
@@ -4034,12 +4040,12 @@ msgstr ""
 msgid "Add a project tag to enhance discoverability"
 msgstr ""
 
-#: website/static/js/pages/project-dashboard-page.js:510
-msgid "Could not remove tag"
+#: website/static/js/pages/project-dashboard-page.js:452
+msgid "Add a tag"
 msgstr ""
 
-#: website/static/js/pages/project-dashboard-page.js:566
-msgid "Removing tag"
+#: website/static/js/pages/project-dashboard-page.js:510
+msgid "Could not remove tag"
 msgstr ""
 
 #: website/static/js/pages/project-settings-page.js:34
