@@ -57,7 +57,7 @@ def format_validators_errors(error_description, error_key, context, index):
     if isinstance(error_description, ErrorDetail):
         errors.append({
             'source': {
-                'pointer': '/data/{}{}/'.format(index, get_resource_object_member(error_key, context)) + error_key,
+                'pointer': f'/data/{index}{get_resource_object_member(error_key, context)}/' + error_key,
             },
             'detail': error_description,
         })
