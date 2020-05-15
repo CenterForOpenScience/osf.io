@@ -20,6 +20,7 @@ $(function() {
         maxChars: 128,
         defaultText: _('Add a file tag to enhance discoverability'),
         onAddTag: function (tag) {
+            $('#node-tags_tag').attr('data-default', _('Add a tag'));
             var url = tagUrl;
             var request = $osf.postJSON(url, {'tag': tag });
             request.fail(function (xhr, textStatus, error) {
@@ -49,12 +50,13 @@ $(function() {
 
     // allows inital default message to fit on empty tag
     if(!$('.tag').length){
-        $('#fileTags_tag').css('width', '250px');
+        $('#fileTags_tag').css('width', '280px');
     }
 
     $('#fileTags_tag').attr('maxlength', '128');
+    $('a[title="Removing tag"]').attr('title', _('Removing tag'));
     if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {
-        $('a[title="Removing tag"]').remove();
+        $('a[title="' + _('Removing tag') + '"]').remove();
         $('span.tag span').each(function(idx, elm) {
             $(elm).text($(elm).text().replace(/\s*$/, ''));
         });

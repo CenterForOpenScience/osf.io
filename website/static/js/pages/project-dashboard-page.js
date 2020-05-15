@@ -449,7 +449,7 @@ $(document).ready(function () {
         maxChars: 128,
         defaultText: _('Add a project tag to enhance discoverability'),
         onAddTag: function(tag) {
-            $('#node-tags_tag').attr('data-default', 'Add a tag');
+            $('#node-tags_tag').attr('data-default', _('Add a tag'));
             window.contextVars.node.tags.push(tag);
             var payload = {
                 data: {
@@ -520,7 +520,7 @@ $(document).ready(function () {
 
     // allows inital default message to fit on empty tag
     if(!$('.tag').length){
-        $('#node-tags_tag').css('width', '250px');
+        $('#node-tags_tag').css('width', '300px');
     }
 
     $('#addPointer').on('shown.bs.modal', function(){
@@ -531,6 +531,8 @@ $(document).ready(function () {
 
     // Limit the maximum length that you can type when adding a tag
     $('#node-tags_tag').attr('maxlength', '128');
+    //i18n
+    $('a[title="Removing tag"]').attr('title', _('Removing tag'));
 
     // Wiki widget markdown rendering
     if (ctx.wikiWidget) {
@@ -563,7 +565,7 @@ $(document).ready(function () {
 
     // Remove delete UI if not contributor
     if (!window.contextVars.currentUser.canEditTags) {
-        $('a[title="Removing tag"]').remove();
+        $('a[title="' + _('Removing tag') + '"]').remove();
         $('span.tag span').each(function(idx, elm) {
             $(elm).text($(elm).text().replace(/\s*$/, ''));
         });
