@@ -133,7 +133,7 @@ class TestSparseNodeSerializer:
         assert urlparse(parent_link).path == '/{}sparse/nodes/{}/'.format(API_BASE, parent._id)
         assert 'sparse' not in relationships['detail']['links']['related']['href']
         sparse_children_path = urlparse(relationships['children']['links']['related']['href']).path
-        assert sparse_children_path == '/{}sparse/nodes/{}/children/'.format(API_BASE, node._id)
+        assert sparse_children_path == '/{}nodes/{}/children/'.format(API_BASE, node._id)
 
 
 @pytest.mark.django_db
