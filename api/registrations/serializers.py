@@ -1,5 +1,6 @@
 import pytz
 import json
+from unicodedata import normalize
 
 from distutils.version import StrictVersion
 from django.core.exceptions import ValidationError
@@ -658,7 +659,8 @@ class RegistrationCreateSerializer(RegistrationSerializer):
 
         specified_sha = file_metadata.get('sha256', '')
 
-        file = node.files.filter(name=file_metadata.get('selectedFileName')).first()
+        file = node.files.filter(name=normalize('NFD', file_metadata.get('selectedFileName', ''))).first() or \
+               node.files.filter(name=normalize('NFC', file_metadata.get('selectedFileName', ''))).first()
         if not file:
             # file with this name does not exist on the node
             return False
