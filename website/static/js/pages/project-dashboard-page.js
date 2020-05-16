@@ -142,7 +142,7 @@ $(document).ready(function () {
         $('#contributorsList').osfToggleHeight();
 
         // Recent Activity widget
-        m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));
+        m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node, noTarget: false}));
 
         //Download Log button
 
@@ -293,7 +293,7 @@ $(document).ready(function () {
             var LogSearchName = $('#LogSearchName').val();
             if (LogSearchName === '') {
                 document.getElementById('LogSearchUserKeys').value = '';
-                m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));
+                m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node, noTarget: false}));
             } else {
                 var logSearchNames = splitSearch(LogSearchName);
                 var urlUsers = $osf.apiV2Url('/users/');
@@ -307,7 +307,6 @@ $(document).ready(function () {
                         if (and_list.length === 0) {
                             continue;
                         }
-                        var found = false;
                         var data_i;
                         for (data_i in data.data) {
                             var userAttr = data.data[data_i].attributes;
@@ -324,20 +323,18 @@ $(document).ready(function () {
                             if (match_count === and_list.length) {
                                 // OSFUser.id
                                 userKeyDict[userAttr.uid] = true;
-                                found = true;
                             }
                         }
-                        if (!found) {
-                            $osf.growl(_('no user matched'), '"' + and_list.join(' AND ')  + '"', 'warning');
-                        }
                     }
+                    var noTarget = false;
                     var userKeys = Object.keys(userKeyDict);
-                    //if (userKeys.length === 0) {
-                    //    $osf.growl('no users matched', '"' + logSearchNames.toString() + '"', 'warning');
-                    //}
+                    if (userKeys.length === 0) {
+                        noTarget = true;
+                        // $osf.growl(_('no user matched'), '"' + LogSearchName + '"', 'warning');
+                    }
                     var userKeysStr = userKeys.join(',');
                     document.getElementById('LogSearchUserKeys').value = userKeysStr;
-                    m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));
+                    m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node, noTarget: noTarget}));
                 }, function(xhr, textStatus, error) {
                     Raven.captureMessage('Error retrieving UserList', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});
                 });

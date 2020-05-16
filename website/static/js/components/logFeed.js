@@ -54,9 +54,14 @@ var LogFeed = {
         self.totalPages = m.prop(0);
         self.currentPage = m.prop(0);
         self.pageToGet = m.prop(0);
+        self.noTarget = options.noTarget;
 
         self.getLogs = function _getLogs (url) {
             self.activityLogs([]); // Empty logs from other projects while load is happening;
+            if (self.noTarget) {
+                return self;
+            }
+
             function _processResults (result){
                 result.data.map(function(log){
                     log.attributes.formattableDate = new $osf.FormattableDate(log.attributes.date);
