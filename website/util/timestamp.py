@@ -188,7 +188,7 @@ def get_error_list(pid):
 
         try:
             verify_user = OSFUser.objects.get(id=data.verify_user)
-            error_info['verify_user_id'] = verify_user._id
+            error_info['verify_user_id'] = verify_user._id.upper()
             error_info['verify_user_name'] = verify_user.fullname
         except OSFUser.DoesNotExist:
             logger.warning('Timestamp Control: verify_user not found.')
