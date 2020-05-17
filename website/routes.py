@@ -135,6 +135,7 @@ def get_globals():
         'user_full_name': user.fullname if user else '',
         'user_id': user._id if user else '',
         'user_locale': user.locale if user and user.locale else '',
+        'datepicker_locale': util.datepicker_locale(user),
         'user_timezone': user.timezone if user and user.timezone else '',
         'user_url': user.url if user else '',
         'user_profile_image': get_profile_image_url(user=user, size=25) if user else '',

@@ -31,7 +31,7 @@ function datesToLocal() {
 }
 
 $(document).ready(function () {
-    timestampCommon.init(window.contextVars.node.urls.api + 'timestamp/task_status/');
+    timestampCommon.init(window.contextVars.node.urls.api + 'timestamp/task_status/', window.contextVars.datepickerLocale);
 });
 
 $(function () {

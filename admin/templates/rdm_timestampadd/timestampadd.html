@@ -9,7 +9,6 @@
   <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
   <link rel="stylesheet" type="text/css" href="/static/css/timestampadd.css" />
   <link rel="stylesheet" type="text/css" href="/static/css/carets.css" />
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/tiny-date-picker/3.2.8/tiny-date-picker.min.css" rel="stylesheet" />
 {% endblock %}
 
 {% block title %}
@@ -242,8 +241,10 @@
         taskStatusUrl: "{% url 'timestampadd:task_status' institution_id=institution_id guid=guid %}",
         downloadErrors: "{% url 'timestampadd:download_errors' institution_id=institution_id guid=guid %}"
     };
+    window.contextVars = {
+        datepickerLocale: "{{ datepicker_locale }}"
+    };
 </script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tiny-date-picker/3.2.8/tiny-date-picker.min.js"></script>
 {% endblock content %}
 
 {% block bottom_js %}

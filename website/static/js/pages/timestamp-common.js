@@ -11,6 +11,8 @@ var rdmGettext = require('js/rdmGettext');
 var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
 
+var datepicker = require('js/datepicker');
+
 var dateString = new Date().toLocaleDateString('ja-JP', {
     year: 'numeric',
     month: '2-digit',
@@ -842,7 +844,7 @@ function initList() {
 
 }
 
-function initDatePickers() {
+function initTinyDatePicker() {
 
     var datePickerIds = ['startDateFilter', 'endDateFilter'];
 
@@ -861,6 +863,11 @@ function initDatePickers() {
         });
     });
 
+}
+
+function initBootstrapDatePicker(datepicker_locale) {
+    datepicker.mount('#startDateFilter', datepicker_locale);
+    datepicker.mount('#endDateFilter', datepicker_locale);
 }
 
 function taskStatusUpdater () {
@@ -887,10 +894,10 @@ function checkHasTaskRunning () {
     }
 }
 
-function init(url) {
+function init(url, datepicker_locale) {
     taskStatusUrl = url;
     initList();
-    initDatePickers();
+    initBootstrapDatePicker(datepicker_locale);
     checkHasTaskRunning();
 }
 

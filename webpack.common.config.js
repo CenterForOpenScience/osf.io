@@ -61,6 +61,7 @@ var entry = {
     'institution-page': staticPath('js/pages/institution-page.js'),
     'rdm-firebase': staticPath('js/rdm-firebase.js'),
     'rdmGettext': staticPath('js/rdmGettext.js'),
+    'datepicker': staticPath('js/datepicker.js'),
     // Commons chunk
     'vendor': [
         // Vendor libraries
@@ -70,6 +71,7 @@ var entry = {
         'bootstrap',
         'bootbox',
         'bootstrap-editable',
+        'bootstrap-datepicker',
         'select2',
         'dropzone',
         'knockout-sortable',
@@ -140,6 +142,9 @@ var resolve = {
     alias: {
         'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
         'bootstrap-editable': staticPath('vendor/bootstrap-editable-custom/js/bootstrap-editable.js'),
+        'bootstrap-datepicker': nodePath('bootstrap-datepicker/dist/js/bootstrap-datepicker.js'),
+        'bootstrap-datepicker-ja': nodePath('bootstrap-datepicker/dist/locales/bootstrap-datepicker.ja.min.js'),
+        'bootstrap-datepicker-css': nodePath('bootstrap-datepicker/dist/css/bootstrap-datepicker3.css'),
         'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
         'bootstrap': nodePath('bootstrap/dist/js/bootstrap.js'),
         'Caret.js': staticPath('vendor/bower_components/Caret.js/dist/jquery.caret.min.js'),

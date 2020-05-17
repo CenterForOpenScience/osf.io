@@ -35,6 +35,8 @@ var gt = rdmGettext.rdmGettext();
 var _ = function(msgid) { return gt.gettext(msgid); };
 var agh = require('agh.sprintf');
 
+var datepicker = require('js/datepicker');
+
 // Listen for the nodeLoad event (prevents multiple requests for data)
 $('body').on('nodeLoad', function(event, data) {
     if (!data.node.is_retracted) {
@@ -582,4 +584,7 @@ $(document).ready(function () {
             });
         });
     }
+
+    datepicker.mount('#LogSearchS', window.contextVars.datepickerLocale);
+    datepicker.mount('#LogSearchE', window.contextVars.datepickerLocale);
 });
