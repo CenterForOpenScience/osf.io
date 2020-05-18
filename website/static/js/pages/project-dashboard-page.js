@@ -518,10 +518,10 @@ $(document).ready(function () {
         }
     });
 
-    // allows inital default message to fit on empty tag
-    if(!$('.tag').length){
+    // allows inital default message to fit on empty tag -> allow all default messages width 300px
+    //if(!$('.tag').length){
         $('#node-tags_tag').css('width', '300px');
-    }
+    //}
 
     $('#addPointer').on('shown.bs.modal', function(){
         if(!$osf.isIE()){

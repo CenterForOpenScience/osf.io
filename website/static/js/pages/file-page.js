@@ -20,6 +20,7 @@ $(function() {
         maxChars: 128,
         defaultText: _('Add a file tag to enhance discoverability'),
         onAddTag: function (tag) {
+            $('#fileTags_tag').attr('data-default', _('Add a tag'));
             var url = tagUrl;
             var request = $osf.postJSON(url, {'tag': tag });
             request.fail(function (xhr, textStatus, error) {
@@ -47,10 +48,10 @@ $(function() {
         }
     });
 
-    // allows inital default message to fit on empty tag
-    if(!$('.tag').length){
+    // allows inital default message to fit on empty tag -> allow all default messages width 280px
+    //if(!$('.tag').length){
         $('#fileTags_tag').css('width', '280px');
-    }
+    //}
 
     $('#fileTags_tag').attr('maxlength', '128');
     $('a[title="Removing tag"]').attr('title', _('Removing tag'));
