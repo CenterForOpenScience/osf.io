@@ -492,6 +492,7 @@ class CeleryConfig:
         'scripts.premigrate_created_modified',
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.deactivate_requested_accounts',
+        'osf.management.commands.check_crossref_dois',
         'osf.management.commands.update_institution_project_counts',
     )
 
@@ -630,7 +631,7 @@ class CeleryConfig:
                 'task': 'management.commands.check_crossref_dois',
                 'schedule': crontab(minute=0, hour=4),  # Daily 11:00 p.m.
             },
-            'update_institutional_metrics': {
+            'update_institution_project_counts': {
                 'task': 'management.commands.update_institution_project_counts',
                 'schedule': crontab(minute=0, hour=9), # Daily 05:00 a.m. EDT
             },
