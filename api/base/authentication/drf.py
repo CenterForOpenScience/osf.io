@@ -30,7 +30,7 @@ def get_session_from_cookie(cookie_val):
     """
 
     try:
-        session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie_val)
+        session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie_val).decode()
     except itsdangerous.BadSignature:
         return None
     try:

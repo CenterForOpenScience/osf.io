@@ -841,7 +841,7 @@ class TestPublicNodes(OsfTestCase):
                 creator=self.user,
                 is_public=True,
             )
-            self.registration.archive_job.target_addons = []
+            self.registration.archive_job.target_addons.clear()
             self.registration.archive_job.status = 'SUCCESS'
             self.registration.archive_job.save()
 

@@ -43,10 +43,34 @@ def dict_error_formatting(errors, context, index=None):
             formatted_error_list.extend([{'source': {'pointer': '/data/{}'.format(index) + error_key}, 'detail': reason} for reason in error_description])
         elif error_key == 'non_field_errors':
             formatted_error_list.extend([{'detail': description for description in error_description}])
+        elif isinstance(error_description, list):
+            for error in error_description:
+                formatted_error_list += format_validators_errors(error, error_key, context, index)
         else:
-            formatted_error_list.extend([{'source': {'pointer': '/data/{}{}/'.format(index, get_resource_object_member(error_key, context)) + error_key}, 'detail': reason} for reason in error_description])
+            formatted_error_list += format_validators_errors(error_description, error_key, context, index)
 
     return formatted_error_list
+
+
+def format_validators_errors(error_description, error_key, context, index):
+    errors = []
+    if isinstance(error_description, ErrorDetail):
+        errors.append({
+            'source': {
+                'pointer': f'/data/{index}{get_resource_object_member(error_key, context)}/' + error_key,
+            },
+            'detail': error_description,
+        })
+    else:
+        for key, value in error_description.items():
+            errors.append({
+                'source': {
+                    'pointer': f'/data/{index}{get_resource_object_member(error_key, context)}/' + error_key,
+                },
+                'detail': value,
+            })
+
+    return errors
 
 def json_api_exception_handler(exc, context):
     """

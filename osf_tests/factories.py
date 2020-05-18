@@ -307,7 +307,7 @@ class CollectionFactory(DjangoModelFactory):
         obj = cls._build(*args, **kwargs)
         obj.save()
         # M2M, requires initial save
-        obj.collected_types = collected_types
+        obj.collected_types.add(*collected_types)
         return obj
 
 class BookmarkCollectionFactory(CollectionFactory):
@@ -870,7 +870,7 @@ class ConferenceFactory(DjangoModelFactory):
 
     @factory.post_generation
     def admins(self, create, extracted, **kwargs):
-        self.admins = extracted or [UserFactory()]
+        self.admins.add(*(extracted or [UserFactory()]))
 
 
 class SessionFactory(DjangoModelFactory):
@@ -1017,7 +1017,7 @@ class ProviderAssetFileFactory(DjangoModelFactory):
     def _create(cls, target_class, *args, **kwargs):
         providers = kwargs.pop('providers', [])
         instance = super(ProviderAssetFileFactory, cls)._create(target_class, *args, **kwargs)
-        instance.providers = providers
+        instance.providers.add(*providers)
         instance.save()
         return instance
 

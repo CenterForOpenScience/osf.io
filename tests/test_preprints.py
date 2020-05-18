@@ -2059,7 +2059,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert preprint['date_updated'] == self.preprint.modified.isoformat()
 
     def test_format_preprint_nones(self):
-        self.preprint.tags = []
+        self.preprint.tags.clear()
         self.preprint.date_published = None
         self.preprint.article_doi = None
         self.preprint.set_subjects([], auth=Auth(self.preprint.creator))
