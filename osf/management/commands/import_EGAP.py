@@ -36,7 +36,7 @@ class EGAPUploadException(Exception):
 
 
 def ensure_egap_schema():
-    schema = ensure_schema_structure(from_json('egap-registration-2.json'))
+    schema = ensure_schema_structure(from_json('egap-registration-3.json'))
     schema_obj, created = RegistrationSchema.objects.update_or_create(
         name=schema['name'],
         schema_version=schema.get('version', 1),
@@ -258,10 +258,7 @@ def main(guid, creator_username):
         anon_titles = ', '.join([data['data']['attributes']['name'] for data in anon_metadata_dict])
         registration_metadata['q38'] = {'comments': [], 'extra': anon_metadata_dict, 'value': anon_titles}
 
-        try:
-            embargo_date = registration_metadata.pop('q12')
-        except KeyError:
-            embargo_date = None
+        embargo_date = registration_metadata.pop('q12', None)
 
         # DraftRegistration Creation
         draft_registration = DraftRegistration.create_from_node(
