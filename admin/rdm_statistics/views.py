@@ -271,7 +271,6 @@ def create_image_string(provider, statistics_data):
     # fig properties
     fig = plt.figure(figsize=(STATISTICS_IMAGE_WIDTH, STATISTICS_IMAGE_HEIGHT))
     sns.set_style(statistics_data.graphstyle)
-    sns.set(font=['IPAexGothic'])
     fig.patch.set_facecolor(statistics_data.background)
     ax = sns.pointplot(x='left', y='height', hue='type', data=data)
     ax.set_xticklabels(labels=statistics_data.label, rotation=20)
@@ -420,7 +419,6 @@ class ImageView(RdmPermissionMixin, UserPassesTestMixin, View):
             data = pd.DataFrame({'left': left, 'height': size_sum_list, 'type': statistics_data.data_type})
         fig = plt.figure(figsize=(STATISTICS_IMAGE_WIDTH, STATISTICS_IMAGE_HEIGHT))
         sns.set_style(statistics_data.graphstyle)
-        sns.set(font=['IPAexGothic'])
         fig.patch.set_facecolor(statistics_data.background)
         ax = sns.pointplot(x='left', y='height', hue='type', data=data)
         ax.set_xticklabels(labels=statistics_data.label, rotation=20)

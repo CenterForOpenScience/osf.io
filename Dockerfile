@@ -224,8 +224,6 @@ ENV GIT_COMMIT ${GIT_COMMIT}
 RUN pybabel compile -d ./website/translations
 RUN pybabel compile -D django -d ./admin/translations
 
-COPY ./admin/rdm_statistics/ipaexg.ttf /usr/local/lib/python2.7/site-packages/matplotlib/mpl-data/fonts/ttf
-
 RUN for module in \
         api.base.settings \
         admin.base.settings \
