@@ -19,6 +19,7 @@ var lodashFind = require('lodash.find');
 var iconmap = require('js/iconmap');
 
 var _ = require('js/rdmGettext')._;
+var getBrowserLang = require('js/rdmGettext').getBrowserLang;
 
 var LinkObject;
 var NodeFetcher;
@@ -121,6 +122,8 @@ function _poContributors(item) {
  */
 function _poModified(item) {
     var node = item.data;
+    var lang = getBrowserLang();
+    moment.locale(lang);
     var dateString = moment.utc(node.attributes.date_modified).fromNow();
     return m('span', dateString);
 }
