@@ -212,10 +212,10 @@
                           <span class="panel-title m-r-xs"> <i class="fa fa-exchange"> </i>   ${_("Compare")} </span>
                           <div class="inline" data-bind="css: { 'pull-right' :  $root.singleVis() === 'compare' }">
                             <!-- Version Picker -->
-                            <span class="compare-version-text"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
+                            <span class="compare-version-text"><i> <span data-bind="text: viewVersionDisplay"></span></i>${_(" to")}
                               <select class="form-control" data-bind="value: compareVersion" id="compareVersionSelect">
                                   % if len(versions) > 0:
-                                      <option value="current" ${'selected' if version_settings['compare'] == 'current' else ''}>(Current) ${versions[0]['user_fullname']}: ${versions[0]['date']}</option>
+                                      <option value="current" ${'selected' if version_settings['compare'] == 'current' else ''}>${_("(Current)")} ${versions[0]['user_fullname']}: ${versions[0]['date']}</option>
                                   % else:
                                       <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>${_("Current")}</option>
                                   % endif

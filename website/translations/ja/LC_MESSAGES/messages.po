@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-21 11:58+0900\n"
-"PO-Revision-Date: 2020-04-21 11:58+0900\n"
+"POT-Creation-Date: 2020-05-18 12:08+0900\n"
+"PO-Revision-Date: 2020-05-18 12:08+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -874,6 +874,14 @@ msgstr "元に戻す"
 #: addons/wiki/templates/edit.mako:205 addons/wiki/templates/edit.mako:212
 msgid "Compare"
 msgstr "比較"
+
+#: addons/wiki/templates/edit.mako:215
+msgid " to"
+msgstr " と"
+
+#: addons/wiki/templates/edit.mako:218
+msgid "(Current)"
+msgstr "(現在)"
 
 #: addons/wiki/templates/edit.mako:257
 msgid "Page permissions have changed"

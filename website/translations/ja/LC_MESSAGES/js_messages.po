@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-15 17:52+0900\n"
-"PO-Revision-Date: 2020-05-15 17:52+0900\n"
+"POT-Creation-Date: 2020-05-18 11:53+0900\n"
+"PO-Revision-Date: 2020-05-18 11:53+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -2371,6 +2371,10 @@ msgstr "書込み"
 #: website/static/js/js_messages.js:27
 msgid "read"
 msgstr "読込み"
+
+#: website/static/js/js_messages.js:29
+msgid "home"
+msgstr "ホーム"
 
 #: website/static/js/keen.js:114
 msgid "Error sending Keen data to %1$s:<%2$s>"

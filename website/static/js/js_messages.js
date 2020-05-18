@@ -25,3 +25,5 @@ var subscriptionsTitlesAndHelps = [_('Default Notification Settings'),_('These a
 var folderMoved = _('moved');
 
 var permissions = [_('admin'),_('write'),_('read')];
+
+var pageTitleWikiComment = _('home');

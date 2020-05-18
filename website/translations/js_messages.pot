@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-15 17:52+0900\n"
-"PO-Revision-Date: 2020-04-08 17:52+0900\n"
+"POT-Creation-Date: 2020-05-18 11:53+0900\n"
+"PO-Revision-Date: 2020-05-18 11:58+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -2343,6 +2343,10 @@ msgstr ""
 
 #: website/static/js/js_messages.js:27
 msgid "read"
+msgstr ""
+
+#: website/static/js/js_messages.js:29
+msgid "home"
 msgstr ""
 
 #: website/static/js/keen.js:114
