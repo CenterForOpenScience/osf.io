@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.core import serializers
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.shortcuts import redirect
 from django.views.generic import View, CreateView, ListView, DetailView, UpdateView, DeleteView, TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -294,7 +294,7 @@ class ImportRegistrationProvider(PermissionRequiredMixin, View):
             provider.save()
 
         if licenses:
-            provider.licenses_acceptable = licenses
+            provider.licenses_acceptable.add(*licenses)
         if default_license:
             provider.default_license = NodeLicense.objects.get(license_id=default_license)
 
