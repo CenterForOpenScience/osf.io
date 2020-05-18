@@ -23,6 +23,7 @@ from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
 )
+from api.base.settings import MAX_SIZE_OF_ES_QUERY
 from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.utils import MockQueryset
 from api.metrics.permissions import IsInstitutionalMetricsUser
@@ -415,12 +416,24 @@ class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIVi
 
     view_category = 'institutions'
 
+    csv_export = False
+
+    def initiate_csv_export_settings(self):
+        self.pagination_class = MaxSizePagination
+        self.csv_export = True
+
+    def is_csv_export(self):
+        raise NotImplementedError()
+
     def _format_search(self, search):
         raise NotImplementedError()
 
-    def _paginate(self, search):
+    def _paginate(self, search, max_paginate=False):
         page = self.request.query_params.get('page')
         page_size = self.request.query_params.get('page[size]')
+
+        if max_paginate:
+            return search.extra(size=MAX_SIZE_OF_ES_QUERY)
 
         if page_size:
             page_size = int(page_size)
@@ -439,7 +452,7 @@ class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIVi
         :param departments: Dict {'Department Name': 3} means "Department Name" has 3 users.
         :return: mock_queryset
         """
-        search = self._paginate(search)
+        search = self._paginate(search, max_paginate=self.csv_export)
 
         items = self._format_search(search)
 
@@ -450,6 +463,7 @@ class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIVi
     def get_queryset(self):
         return self.get_queryset_from_request()
 
+
 class InstitutionDepartmentList(InstitutionImpactList):
     view_name = 'institution-department-metrics'
 
@@ -457,6 +471,11 @@ class InstitutionDepartmentList(InstitutionImpactList):
     renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES) + (InstitutionDepartmentMetricsCSVRenderer, )
 
     ordering = ('-number_of_users', 'name',)
+
+    def is_csv_export(self):
+        if isinstance(self.request.accepted_renderer, InstitutionDepartmentMetricsCSVRenderer):
+            return True
+        return False
 
     def _format_search(self, search):
         results = search.execute()
@@ -469,6 +488,9 @@ class InstitutionDepartmentList(InstitutionImpactList):
             return []
 
     def get_default_queryset(self):
+        if self.is_csv_export():
+            self.initiate_csv_export_settings()
+
         institution = self.get_institution()
         search = UserInstitutionProjectCounts.get_department_counts(institution)
         return self._make_elasticsearch_results_filterable(search, id=institution._id)
@@ -479,6 +501,11 @@ class InstitutionUserMetricsList(InstitutionImpactList):
 
     serializer_class = InstitutionUserMetricsSerializer
     renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES) + (InstitutionUserMetricsCSVRenderer, )
+
+    def is_csv_export(self):
+        if isinstance(self.request.accepted_renderer, InstitutionUserMetricsCSVRenderer):
+            return True
+        return False
 
     def _format_search(self, search):
         results = search.execute()
@@ -494,6 +521,9 @@ class InstitutionUserMetricsList(InstitutionImpactList):
         return users
 
     def get_default_queryset(self):
+        if self.is_csv_export():
+            self.initiate_csv_export_settings()
+
         institution = self.get_institution()
         search = UserInstitutionProjectCounts.get_current_user_metrics(institution)
         return self._make_elasticsearch_results_filterable(search, id=institution._id)
