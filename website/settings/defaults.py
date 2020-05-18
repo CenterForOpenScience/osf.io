@@ -409,6 +409,7 @@ class CeleryConfig:
         'osf.management.commands.migrate_deleted_date',
         'osf.management.commands.addon_deleted_date',
         'osf.management.commands.migrate_registration_responses',
+        'osf.management.commands.update_institution_project_counts'
     }
 
     med_pri_modules = {
