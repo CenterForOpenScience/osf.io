@@ -1,6 +1,6 @@
 REG_CAMPAIGNS = {
     'prereg': 'OSF Preregistration',
-    'registered_report': 'Registered Report Protocol Preregistration',
+    'osf-registered-reports': 'Registered Report Protocol Preregistration',
 }
 
 def get_campaign_schema(campaign):
