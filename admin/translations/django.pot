@@ -19,6 +19,39 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.7.0\n"
 
+#: .\admin\rdm_statistics\views.py:198
+msgid "Number of files"
+msgstr ""
+
+#: .\admin\rdm_statistics\views.py:199 .\admin\rdm_statistics\views.py:218
+msgid "File Numbers"
+msgstr ""
+
+#: .\admin\rdm_statistics\views.py:200
+msgid "number"
+msgstr ""
+
+#: .\admin\rdm_statistics\views.py:209
+msgid "Subtotal of file sizes"
+msgstr ""
+
+#: .\admin\rdm_statistics\views.py:210
+msgid "File Sizes"
+msgstr ""
+
+#: .\admin\rdm_statistics\views.py:211
+msgid "size"
+msgstr ""
+
+#: .\admin\rdm_statistics\views.py:217
+msgid "Number of files by extension type"
+msgstr ""
+
+#: .\admin\rdm_statistics\views.py:282 .\admin\rdm_statistics\views.py:430
+#, python-format
+msgid "%(statisticsData)s in %(provider)s"
+msgstr ""
+
 #: .\templates\banners\confirm_delete.html:4
 msgid "GakuNin RDM Admin | Delete banner"
 msgstr ""
