@@ -92,7 +92,7 @@
                                         <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>${_("Preview")}</option>
                                     % endif
                                     % if len(versions) > 0:
-                                        <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>(Current) ${versions[0]['user_fullname']}: ${versions[0]['date']}</option>
+                                        <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>${_("(Current)")} ${versions[0]['user_fullname']}: ${versions[0]['date']}</option>
                                     % else:
                                         <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>${_("Current")}</option>
                                     % endif
