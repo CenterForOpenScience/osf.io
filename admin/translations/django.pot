@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-08 14:34+0900\n"
-"PO-Revision-Date: 2020-05-08 14:34+0900\n"
+"POT-Creation-Date: 2020-05-18 10:44+0900\n"
+"PO-Revision-Date: 2020-05-18 14:44+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -87,8 +87,45 @@ msgstr ""
 msgid "Delete banner"
 msgstr ""
 
+#: .\templates\base.html:10 .\templates\base.html:108 .\templates\base.html:113
+#: .\templates\base.html:141 .\templates\base.html:145
+#: .\templates\base.html:153 .\templates\base.html:157
+#: .\templates\base.html:168 .\templates\base.html:233
+#: .\templates\base.html:236 .\templates\base.html:239
+#: .\templates\base.html:242 .\templates\base.html:246
+#: .\templates\base.html:273 .\templates\base.html:274
+#: .\templates\base.html:275 .\templates\base.html:279
+#: .\templates\rdm_addons\addon_list.html:6
+#: .\templates\rdm_addons\addon_list.html:17
+#: .\templates\rdm_addons\addon_list.html:19
+#: .\templates\rdm_addons\institution_list.html:13
+#: .\templates\rdm_addons\institution_list.html:17
+#: .\templates\rdm_announcement\index.html:6
+#: .\templates\rdm_announcement\index.html:11
+#: .\templates\rdm_announcement\index.html:13
+#: .\templates\rdm_announcement\send.html:7
+#: .\templates\rdm_announcement\send.html:12
+#: .\templates\rdm_announcement\send.html:14
+#: .\templates\rdm_announcement\settings.html:7
+#: .\templates\rdm_announcement\settings.html:12
+#: .\templates\rdm_announcement\settings.html:14
+#: .\templates\rdm_statistics\crawl.html:6
+#: .\templates\rdm_statistics\crawl.html:9
+#: .\templates\rdm_statistics\index.html:6
+#: .\templates\rdm_statistics\index.html:9
+#: .\templates\rdm_statistics\institution_list.html:13
+#: .\templates\rdm_statistics\institution_list.html:17
+#: .\templates\rdm_statistics\mail.html:11
+#: .\templates\rdm_statistics\mail.html:14
+#: .\templates\rdm_statistics\settings.html:6
+#: .\templates\rdm_statistics\settings.html:9
+#: .\templates\rdm_statistics\statistics.html:32
+#: .\templates\rdm_statistics\statistics.html:35
+msgid "RDM"
+msgstr ""
+
 #: .\templates\base.html:10
-msgid "RDM Admin | Dashboard"
+msgid "Admin | Dashboard"
 msgstr ""
 
 #: .\templates\base.html:56 .\templates\login.html:20
@@ -117,7 +154,8 @@ msgid "Menu"
 msgstr ""
 
 #: .\templates\base.html:108 .\templates\base.html:113
-msgid "RDM Nodes"
+#: .\templates\metrics\osf_metrics.html:724 .\templates\users\user.html:285
+msgid "Nodes"
 msgstr ""
 
 #: .\templates\base.html:114 .\templates\base.html:131
@@ -145,15 +183,20 @@ msgid "Withdrawal Requests"
 msgstr ""
 
 #: .\templates\base.html:141 .\templates\base.html:145
-msgid "RDM Users"
+#: .\templates\metrics\osf_statistics.html:23
+msgid "Users"
 msgstr ""
 
-#: .\templates\base.html:153
-msgid "RDM Spam"
+#: .\templates\base.html:153 .\templates\nodes\spam_status.html:7
+#: .\templates\spam\detail.html:90 .\templates\spam\spam_list.html:22
+#: .\templates\spam\spam_list.html:25 .\templates\spam\user.html:25
+#: .\templates\spam\user.html:28 .\templates\users\spam.html:19
+#: .\templates\users\spam.html:22
+msgid "Spam"
 msgstr ""
 
 #: .\templates\base.html:157
-msgid "RDM Registrations"
+msgid "Registrations"
 msgstr ""
 
 #: .\templates\base.html:161
@@ -165,7 +208,7 @@ msgid "Stuck Registrations"
 msgstr ""
 
 #: .\templates\base.html:168
-msgid "RDM Institutions"
+msgid "Institutions"
 msgstr ""
 
 #: .\templates\base.html:172 .\templates\base.html:185
@@ -202,23 +245,23 @@ msgid "Registration Providers"
 msgstr ""
 
 #: .\templates\base.html:233
-msgid "RDM Meetings"
+msgid "Meetings"
 msgstr ""
 
 #: .\templates\base.html:236
-msgid "RDM Prereg"
+msgid "Prereg"
 msgstr ""
 
 #: .\templates\base.html:239
-msgid "RDM Metrics"
+msgid "Metrics"
 msgstr ""
 
 #: .\templates\base.html:242
-msgid "RDM Subjects"
+msgid "Subjects"
 msgstr ""
 
 #: .\templates\base.html:246
-msgid "RDM Groups"
+msgid "Groups"
 msgstr ""
 
 #: .\templates\base.html:250
@@ -233,11 +276,13 @@ msgstr ""
 msgid "Maintenance Alerts"
 msgstr ""
 
-#: .\templates\base.html:273 .\templates\rdm_addons\addon_list.html:6
+#: .\templates\base.html:273 .\templates\metrics\osf_metrics.html:35
+#: .\templates\metrics\osf_metrics.html:926
+#: .\templates\rdm_addons\addon_list.html:6
 #: .\templates\rdm_addons\addon_list.html:19
 #: .\templates\rdm_addons\institution_list.html:13
 #: .\templates\rdm_addons\institution_list.html:17
-msgid "RDM Addons"
+msgid "Addons"
 msgstr ""
 
 #: .\templates\base.html:274 .\templates\rdm_statistics\crawl.html:6
@@ -250,14 +295,15 @@ msgstr ""
 #: .\templates\rdm_statistics\mail.html:14
 #: .\templates\rdm_statistics\statistics.html:32
 #: .\templates\rdm_statistics\statistics.html:35
-msgid "RDM Statistics"
+msgid "Statistics"
 msgstr ""
 
 #: .\templates\base.html:275 .\templates\rdm_announcement\index.html:6
 #: .\templates\rdm_announcement\index.html:13
+#: .\templates\rdm_announcement\index.html:19
 #: .\templates\rdm_announcement\send.html:7
 #: .\templates\rdm_announcement\send.html:14
-msgid "RDM Announcement"
+msgid "Announcement"
 msgstr ""
 
 #: .\templates\base.html:276
@@ -269,7 +315,7 @@ msgid "User Keys Management"
 msgstr ""
 
 #: .\templates\base.html:279
-msgid "RDM Timestamp Environment"
+msgid "Timestamp Environment"
 msgstr ""
 
 #: .\templates\base.html:284
@@ -868,11 +914,6 @@ msgstr ""
 msgid "Raw Numbers"
 msgstr ""
 
-#: .\templates\metrics\osf_metrics.html:35
-#: .\templates\metrics\osf_metrics.html:926
-msgid "Addons"
-msgstr ""
-
 #: .\templates\metrics\osf_metrics.html:37
 #: .\templates\metrics\osf_metrics.html:645
 #: .\templates\metrics\osf_metrics.html:977
@@ -1291,10 +1332,6 @@ msgstr ""
 msgid "Public vs Private Projects"
 msgstr ""
 
-#: .\templates\metrics\osf_metrics.html:724 .\templates\users\user.html:285
-msgid "Nodes"
-msgstr ""
-
 #: .\templates\metrics\osf_metrics.html:731
 msgid "Total Nodes - Projects and Components"
 msgstr ""
@@ -1447,10 +1484,6 @@ msgstr ""
 #: .\templates\spam\spam_list.html:44 .\templates\spam\user.html:46
 #: .\templates\users\spam.html:40
 msgid "Date"
-msgstr ""
-
-#: .\templates\metrics\osf_statistics.html:23
-msgid "Users"
 msgstr ""
 
 #: .\templates\metrics\osf_statistics.html:25
@@ -1619,13 +1652,6 @@ msgstr ""
 msgid "Flagged"
 msgstr ""
 
-#: .\templates\nodes\spam_status.html:7 .\templates\spam\detail.html:90
-#: .\templates\spam\spam_list.html:22 .\templates\spam\spam_list.html:25
-#: .\templates\spam\user.html:25 .\templates\spam\user.html:28
-#: .\templates\users\spam.html:19 .\templates\users\spam.html:22
-msgid "Spam"
-msgstr ""
-
 #: .\templates\nodes\spam_status.html:9 .\templates\spam\detail.html:92
 #: .\templates\spam\spam_list.html:29 .\templates\spam\spam_list.html:32
 #: .\templates\spam\user.html:31 .\templates\spam\user.html:34
@@ -1707,7 +1733,7 @@ msgid "Edit"
 msgstr ""
 
 #: .\templates\rdm_addons\addon_list.html:17
-msgid "RDM Addons "
+msgid "Addons "
 msgstr ""
 
 #: .\templates\rdm_addons\addon_list.html:25
@@ -1898,11 +1924,7 @@ msgstr ""
 
 #: .\templates\rdm_announcement\index.html:11
 #: .\templates\rdm_announcement\send.html:12
-msgid "RDM Announcement "
-msgstr ""
-
-#: .\templates\rdm_announcement\index.html:19
-msgid "Announcement"
+msgid "Announcement "
 msgstr ""
 
 #: .\templates\rdm_announcement\index.html:64
@@ -1919,11 +1941,11 @@ msgstr ""
 
 #: .\templates\rdm_announcement\settings.html:7
 #: .\templates\rdm_announcement\settings.html:14
-msgid "RDM Announcement - Options"
+msgid "Announcement - Options"
 msgstr ""
 
 #: .\templates\rdm_announcement\settings.html:12
-msgid "RDM Announcement - Options "
+msgid "Announcement - Options "
 msgstr ""
 
 #: .\templates\rdm_custom_storage_location\institutional_storage.html:20
@@ -2129,7 +2151,7 @@ msgstr ""
 
 #: .\templates\rdm_statistics\settings.html:6
 #: .\templates\rdm_statistics\settings.html:9
-msgid "RDM Announcements - Options"
+msgid "Announcements - Options"
 msgstr ""
 
 #: .\templates\rdm_statistics\statistics.html:40

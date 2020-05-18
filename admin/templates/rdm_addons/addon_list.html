@@ -3,7 +3,7 @@
 {% load i18n %}
 
 {% block title %}
-<title>{% trans "RDM Addons" %}</title>
+<title>{% trans "RDM" %} {% trans "Addons" %}</title>
 {% endblock title %}
 
 {% block top_includes %}
@@ -14,9 +14,9 @@
 {% block content %}
 
     {% if institution.id %}
-        <h2>{% trans "RDM Addons " %}<small>({{ institution.name }})</small></h2>
+        <h2>{% trans "RDM" %} {% trans "Addons " %}<small>({{ institution.name }})</small></h2>
     {% else %}
-        <h2>{% trans "RDM Addons" %}</h2>
+        <h2>{% trans "RDM" %} {% trans "Addons" %}</h2>
     {% endif %}
 
 <div id="addonSettings" class="row">
