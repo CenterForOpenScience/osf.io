@@ -97,7 +97,7 @@ msgstr ""
 
 #: .\templates\base.html:69
 #, python-format
-msgid "Logged in as %(getUsername)s"
+msgid "Logged in as %(username)s"
 msgstr ""
 
 #: .\templates\base.html:77
@@ -250,8 +250,6 @@ msgstr ""
 #: .\templates\rdm_statistics\mail.html:14
 #: .\templates\rdm_statistics\statistics.html:32
 #: .\templates\rdm_statistics\statistics.html:35
-#: .\templates\rdm_statistics\statistics_report.html:224
-#: .\templates\rdm_statistics\statistics_report.html:228
 msgid "RDM Statistics"
 msgstr ""
 
@@ -293,17 +291,14 @@ msgid "Welcome to the GakuNin RDM Admin Home Page"
 msgstr ""
 
 #: .\templates\base.html:313
-#: .\templates\rdm_statistics\statistics_report.html:290
 msgid "National Institute of Informatics"
 msgstr ""
 
 #: .\templates\base.html:314
-#: .\templates\rdm_statistics\statistics_report.html:291
 msgid "Terms of Use"
 msgstr ""
 
 #: .\templates\base.html:315
-#: .\templates\rdm_statistics\statistics_report.html:292
 msgid "Privacy Policy"
 msgstr ""
 
@@ -523,7 +518,8 @@ msgid "-GakuNin RDM Admin"
 msgstr ""
 
 #: .\templates\home.html:5
-msgid "Hello"
+#, python-format
+msgid "Hello %(username)s, "
 msgstr ""
 
 #: .\templates\home.html:8
@@ -635,13 +631,13 @@ msgstr ""
 #: .\templates\institutions\node_list.html:11
 #: .\templates\metrics\osf_metrics.html:227
 #: .\templates\metrics\osf_metrics.html:281
-#: .\templates\rdm_timestampadd\node_list.html:11
+#: .\templates\rdm_timestampadd\node_list.html:12
 #: .\templates\rdm_timestampsettings\node_list.html:11
 msgid "Affiliated Nodes"
 msgstr ""
 
 #: .\templates\institutions\node_list.html:14
-#: .\templates\rdm_timestampadd\node_list.html:14
+#: .\templates\rdm_timestampadd\node_list.html:15
 #: .\templates\rdm_timestampsettings\node_list.html:14
 #, python-format
 msgid "List of Nodes for %(institutionName)s"
@@ -1497,7 +1493,7 @@ msgstr ""
 #: .\templates\rdm_custom_storage_location\providers\s3_modal.html:36
 #: .\templates\rdm_custom_storage_location\providers\s3compat_modal.html:40
 #: .\templates\rdm_custom_storage_location\providers\swift_modal.html:57
-#: .\templates\rdm_timestampadd\node_list.html:123
+#: .\templates\rdm_timestampadd\node_list.html:124
 #: .\templates\rdm_timestampadd\timestampadd.html:58
 #: .\templates\users\GDPR_delete_user.html:15
 #: .\templates\users\add_system_tag.html:15 .\templates\users\get_link.html:21
@@ -1526,57 +1522,57 @@ msgid "Known Spam Nodes"
 msgstr ""
 
 #: .\templates\nodes\node_list.html:26
-#: .\templates\rdm_timestampadd\node_list.html:40
+#: .\templates\rdm_timestampadd\node_list.html:41
 #: .\templates\rdm_timestampsettings\node_list.html:38
 msgid "Title"
 msgstr ""
 
 #: .\templates\nodes\node_list.html:29
-#: .\templates\rdm_timestampadd\node_list.html:42
+#: .\templates\rdm_timestampadd\node_list.html:43
 #: .\templates\rdm_timestampsettings\node_list.html:41
 msgid "Parent"
 msgstr ""
 
 #: .\templates\nodes\node_list.html:30
-#: .\templates\rdm_timestampadd\node_list.html:43
+#: .\templates\rdm_timestampadd\node_list.html:44
 #: .\templates\rdm_timestampsettings\node_list.html:42
 msgid "Root"
 msgstr ""
 
 #: .\templates\nodes\node_list.html:31
-#: .\templates\rdm_timestampadd\node_list.html:44
+#: .\templates\rdm_timestampadd\node_list.html:45
 msgid "Date created"
 msgstr ""
 
 #: .\templates\nodes\node_list.html:32
-#: .\templates\rdm_timestampadd\node_list.html:45
+#: .\templates\rdm_timestampadd\node_list.html:46
 #: .\templates\users\user.html:292
 msgid "Public"
 msgstr ""
 
 #: .\templates\nodes\node_list.html:33
-#: .\templates\rdm_timestampadd\node_list.html:46
+#: .\templates\rdm_timestampadd\node_list.html:47
 msgid "Withdrawn"
 msgstr ""
 
 #: .\templates\nodes\node_list.html:34
-#: .\templates\rdm_timestampadd\node_list.html:47
+#: .\templates\rdm_timestampadd\node_list.html:48
 msgid "Embargo"
 msgstr ""
 
 #: .\templates\nodes\node_list.html:35
-#: .\templates\rdm_timestampadd\node_list.html:48
+#: .\templates\rdm_timestampadd\node_list.html:49
 msgid "Contributors"
 msgstr ""
 
 #: .\templates\nodes\node_list.html:98
-#: .\templates\rdm_timestampadd\node_list.html:111
+#: .\templates\rdm_timestampadd\node_list.html:112
 #: .\templates\users\user_list.html:61
 msgid "Confirm Spam"
 msgstr ""
 
 #: .\templates\nodes\node_list.html:105
-#: .\templates\rdm_timestampadd\node_list.html:118
+#: .\templates\rdm_timestampadd\node_list.html:119
 msgid "Are you sure the selected node(s) are spam?"
 msgstr ""
 
@@ -2088,7 +2084,7 @@ msgid "User Search Results"
 msgstr ""
 
 #: .\templates\rdm_keymanagement\user_list.html:9
-#: .\templates\rdm_timestampadd\node_list.html:38
+#: .\templates\rdm_timestampadd\node_list.html:39
 #: .\templates\rdm_timestampsettings\node_list.html:35
 #: .\templates\users\user.html:290 .\templates\users\user_details.html:34
 #: .\templates\users\user_list.html:22
@@ -2137,12 +2133,10 @@ msgid "RDM Announcements - Options"
 msgstr ""
 
 #: .\templates\rdm_statistics\statistics.html:40
-#: .\templates\rdm_statistics\statistics_report.html:233
 msgid "Institution"
 msgstr ""
 
 #: .\templates\rdm_statistics\statistics.html:68
-#: .\templates\rdm_statistics\statistics_report.html:261
 msgid "date"
 msgstr ""
 
