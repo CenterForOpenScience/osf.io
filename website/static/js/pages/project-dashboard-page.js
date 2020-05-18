@@ -449,6 +449,7 @@ $(document).ready(function () {
         maxChars: 128,
         defaultText: _('Add a project tag to enhance discoverability'),
         onAddTag: function(tag) {
+            $('a[title="Removing tag"]').attr('title', _('Removing tag'));
             $('#node-tags_tag').attr('data-default', _('Add a tag'));
             window.contextVars.node.tags.push(tag);
             var payload = {

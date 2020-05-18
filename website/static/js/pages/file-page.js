@@ -20,6 +20,7 @@ $(function() {
         maxChars: 128,
         defaultText: _('Add a file tag to enhance discoverability'),
         onAddTag: function (tag) {
+            $('a[title="Removing tag"]').attr('title', _('Removing tag'));
             $('#fileTags_tag').attr('data-default', _('Add a tag'));
             var url = tagUrl;
             var request = $osf.postJSON(url, {'tag': tag });
