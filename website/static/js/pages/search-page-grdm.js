@@ -36,6 +36,8 @@ $(window).on('load', function() {
     }
 });
 
+var makeClient = require('js/clipboard');
+makeClient('.btn');
 var Search = require('../search-grdm.js');
 require('../../css/search-bar.css');
 new Search('#searchControls', '/api/v1/search/', '');

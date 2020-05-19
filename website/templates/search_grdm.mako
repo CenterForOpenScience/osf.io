@@ -130,6 +130,11 @@
                 <span style="vertical-align: middle; margin-left: 5px;">
                     <font size="5">GUID: <a data-bind="attr: {href: guid_url}, text: $root.getGuidText(guid_url)"></a></font>
                 </span>
+                <span style="vertical-align: middle; margin-left: 5px;">
+                    <button type="button" class="btn btn-default btn-sm" data-bind="attr: {'data-clipboard-text': $root.getGuidUrl(guid_url)}">
+                        <div class="fa fa-copy"></div>
+                    </button>
+                </span>
                 <!-- /ko -->
             </div>
         </span>
@@ -174,6 +179,11 @@
                     </span>
                     <span style="vertical-align: middle; margin-left: 5px;">
                         <font size="5">GUID: <a data-bind="attr: {href: url}, text: $root.getGuidText(id)"></a></font>
+                    </span>
+                    <span style="vertical-align: middle; margin-left: 5px;">
+                        <button type="button" class="btn btn-default btn-sm" data-bind="attr: {'data-clipboard-text': $root.getGuidUrl(id)}">
+                            <div class="fa fa-copy"></div>
+                        </button>
                     </span>
                 </span>
                 <br>
@@ -279,6 +289,11 @@
                 </span>
                 <span style="vertical-align: middle; margin-left: 5px;">
                     <font size="5">GUID: <a data-bind="attr: {href: $root.getGuidUrl(id)}, text: id.toUpperCase()"></a></font>
+                </span>
+                <span style="vertical-align: middle; margin-left: 5px;">
+                    <button type="button" class="btn btn-default btn-sm" data-bind="attr: {'data-clipboard-text': $root.getGuidUrl(id)}">
+                        <div class="fa fa-copy"></div>
+                    </button>
                 </span>
             </div>
         </span>
@@ -386,6 +401,11 @@
                 </span>
                 <span style="vertical-align: middle; margin-left: 5px;">
                     <font size="5">GUID: <a data-bind="attr: {href: url}, text: $root.getGuidText(url)"></a></font>
+                </span>
+                <span style="vertical-align: middle; margin-left: 5px;">
+                    <button type="button" class="btn btn-default btn-sm" data-bind="attr: {'data-clipboard-text': $root.getGuidUrl(url)}">
+                        <div class="fa fa-copy"></div>
+                    </button>
                 </span>
             </div>
         </span>
