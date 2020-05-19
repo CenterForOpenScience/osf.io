@@ -194,7 +194,8 @@ class DownloadErrors(RdmPermissionMixin, View):
 
     def post(self, request, *args, **kwargs):
         node = AbstractNode.objects.get(id=self.kwargs['guid'])
-        timestamp.add_log_download_errors(node, self.request.user.id)
+        data = json.loads(self.request.body)
+        timestamp.add_log_download_errors(node, self.request.user.id, data)
         return HttpResponse(
             json.dumps({'status': 'OK'}),
             content_type='application/json'

@@ -818,6 +818,12 @@ var LogPieces = {
             return m('span', '');
         }
     },
+
+    timestamp_errors_file_format: {
+        view: function(ctrl, logObject) {
+            return returnTextParams('file_format', 'unknown format', logObject);
+        }
+    },
 };
 
 module.exports = {

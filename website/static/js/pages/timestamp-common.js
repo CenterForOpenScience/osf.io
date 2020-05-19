@@ -291,27 +291,36 @@ var download = function (url) {
         return false;
     }
 
+    var fileFormatStr;
     var fileContent;
     switch (fileFormat) {
         case 'csv':
+            fileFormatStr = 'CSV';
             fileContent = generateCsv(fileList, HEADERS_ORDER, HEADER_NAMES);
             saveTextFile(DOWNLOAD_FILENAME + '.csv', fileContent);
             break;
         case 'json-ld':
+            fileFormatStr = 'JSON/LD';
             fileContent = generateJson(fileList);
             saveTextFile(DOWNLOAD_FILENAME + '.json', fileContent);
             break;
         case 'rdf-xml':
+            fileFormatStr = 'RDF/XML';
             fileContent = generateRdf(fileList);
             saveTextFile(DOWNLOAD_FILENAME + '.rdf', fileContent);
             break;
     }
 
+    var postData = {
+        'file_format': fileFormatStr
+    };
     $.ajax({
+        type: 'POST',
         url: url,
-        method: 'POST'
+        data: JSON.stringify(postData),
+        contentType: 'application/json; charset=utf-8',
+        dataType: 'json'
     }).done(function (result) {
-        // $osf.growl('Timestamp', _('Log "downloaded errors" into Recent Activity'), 'success'); //TODO
     }).fail(function () {
         $osf.growl('Timestamp', _('Failed to log "downloaded errors" into Recent Activity'), 'danger');
     });

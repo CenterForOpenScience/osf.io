@@ -2828,8 +2828,8 @@ msgid "${user} added timestamp ${path} in ${node}"
 msgstr "${user}が${node}にあるファイル${path}にタイムスタンプを打刻"
 
 #: website/static/js/logActionsList_extract.js:92
-msgid "${user} downloaded timestamp error status in ${node}"
-msgstr "${user}が${node}のタイムスタンプエラー状態をダウンロード"
+msgid "${user} downloaded a file of timestamp errors as a ${timestamp_errors_file_format}"
+msgstr "${user}がタイムスタンプエラーのファイルを${timestamp_errors_file_format}形式でダウンロード"
 
 #: website/static/js/logActionsList_extract.js:93
 msgid ""

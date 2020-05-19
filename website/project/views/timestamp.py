@@ -49,7 +49,7 @@ def add_timestamp_token(auth, node, **kwargs):
 
 @must_be_contributor_or_public
 def download_errors(auth, node, **kwargs):
-    timestamp.add_log_download_errors(node, auth.user.id)
+    timestamp.add_log_download_errors(node, auth.user.id, request.json)
     return {'status': 'OK'}
 
 @must_be_contributor_or_public

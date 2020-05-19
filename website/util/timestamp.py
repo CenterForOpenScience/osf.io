@@ -399,16 +399,18 @@ def add_log_a_file(action, node, uid, provider, file_id, save=True):
         save=save,
     )
 
-def add_log_download_errors(node, uid, save=True):
+def add_log_download_errors(node, uid, data, save=True):
     action = NodeLog.TIMESTAMP_ERRORS_DOWNLOADED
     user = _get_user(uid, 'add_log_download_errors', action)
     if user is None:
         return
-    logger.debug('add_log_download_errors: uid={}, node._id={}'.format(uid, node._id))
+    file_format = data['file_format']
+    logger.debug('add_log_download_errors: uid={}, node._id={}, file_format={}'.format(uid, node._id, file_format))
     node.add_log(
         action=action,
         params={
             'node': node._id,
+            'file_format': file_format,
         },
         auth=Auth(user=user),
         save=save,
