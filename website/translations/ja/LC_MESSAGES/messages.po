@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-18 12:08+0900\n"
-"PO-Revision-Date: 2020-05-18 12:08+0900\n"
+"POT-Creation-Date: 2020-05-19 14:13+0900\n"
+"PO-Revision-Date: 2020-05-19 14:13+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -245,6 +245,15 @@ msgstr "承認者：%(userName)s"
 #: website/templates/profile/user_settings_default.mako:28
 msgid "Private project"
 msgstr "非公開プロジェクト"
+
+#: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:36
+#: addons/s3/templates/s3_user_settings.mako:36
+#: addons/s3compat/templates/s3compat_user_settings.mako:36
+#: addons/swift/templates/swift_user_settings.mako:36
+#: addons/weko/templates/weko_user_settings.mako:35
+#: website/templates/profile/user_settings_default.mako:32
+msgid "disconnect Project"
+msgstr "プロジェクトを切断する"
 
 #: addons/base/models.py:461
 msgid ""
@@ -847,6 +856,10 @@ msgstr "WIkiバージョン"
 msgid "Preview"
 msgstr "プレビュー"
 
+#: addons/wiki/templates/edit.mako:95 addons/wiki/templates/edit.mako:218
+msgid "(Current)"
+msgstr "(現在)"
+
 #: addons/wiki/templates/edit.mako:97 addons/wiki/templates/edit.mako:220
 msgid "Current"
 msgstr "最新"
@@ -878,10 +891,6 @@ msgstr "比較"
 #: addons/wiki/templates/edit.mako:215
 msgid " to"
 msgstr " と"
-
-#: addons/wiki/templates/edit.mako:218
-msgid "(Current)"
-msgstr "(現在)"
 
 #: addons/wiki/templates/edit.mako:257
 msgid "Page permissions have changed"
