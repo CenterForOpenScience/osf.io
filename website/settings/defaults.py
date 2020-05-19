@@ -400,17 +400,16 @@ class CeleryConfig:
         'scripts.populate_popular_projects_and_registrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
-        'scripts.generate_prereg_csv',
         'scripts.analytics.run_keen_summaries',
         'scripts.analytics.run_keen_snapshots',
         'scripts.analytics.run_keen_events',
         'scripts.clear_sessions',
-        'scripts.remove_after_use.end_prereg_challenge',
         'osf.management.commands.check_crossref_dois',
         'osf.management.commands.migrate_pagecounter_data',
         'osf.management.commands.migrate_deleted_date',
         'osf.management.commands.addon_deleted_date',
         'osf.management.commands.migrate_registration_responses',
+        'osf.management.commands.update_institution_project_counts'
     }
 
     med_pri_modules = {
@@ -494,6 +493,7 @@ class CeleryConfig:
         'scripts.premigrate_created_modified',
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.deactivate_requested_accounts',
+        'osf.management.commands.check_crossref_dois',
         'osf.management.commands.update_institution_project_counts',
     )
 
@@ -632,7 +632,7 @@ class CeleryConfig:
                 'task': 'management.commands.check_crossref_dois',
                 'schedule': crontab(minute=0, hour=4),  # Daily 11:00 p.m.
             },
-            'update_institutional_metrics': {
+            'update_institution_project_counts': {
                 'task': 'management.commands.update_institution_project_counts',
                 'schedule': crontab(minute=0, hour=9), # Daily 05:00 a.m. EDT
             },

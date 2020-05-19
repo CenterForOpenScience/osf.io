@@ -194,12 +194,7 @@ class OsfStorageFileNode(BaseFileNode):
         target = self.target
         if isinstance(target, AbstractNode) and self.is_checked_out and self.checkout != user:
             # Allow project admins to force check in
-            if target.has_permission(user, permissions.ADMIN):
-                # But don't allow force check in for prereg admin checked out files
-                if self.checkout.has_perm('osf.view_prereg') and target.draft_registrations_active.filter(
-                        registration_schema__name='Prereg Challenge').exists():
-                    raise exceptions.FileNodeCheckedOutError()
-            else:
+            if not target.has_permission(user, permissions.ADMIN):
                 raise exceptions.FileNodeCheckedOutError()
 
         if not target.has_permission(user, permissions.WRITE):

@@ -23,8 +23,12 @@ from website import settings
 from website.archiver import ARCHIVER_INITIATED
 
 from osf.models import (
-    OSFUser, RegistrationSchema, Node,
-    Retraction, Embargo, DraftRegistrationApproval,
+    Node,
+    OSFUser,
+    Embargo,
+    Retraction,
+    RegistrationSchema,
+    DraftRegistrationApproval,
     EmbargoTerminationApproval,
     DraftRegistrationContributor,
 )
@@ -57,7 +61,12 @@ class Registration(AbstractNode):
         'node_license',
         'category',
     ]
-    provider = models.ForeignKey('RegistrationProvider', related_name='registrations', null=True)
+    provider = models.ForeignKey(
+        'RegistrationProvider',
+        related_name='registrations',
+        null=True,
+        on_delete=models.SET_NULL
+    )
     registered_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
     # This is a NullBooleanField because of inheritance issues with using a BooleanField
@@ -577,7 +586,12 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
                                       null=True, on_delete=models.CASCADE)
 
     initiator = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
-    provider = models.ForeignKey('RegistrationProvider', related_name='draft_registrations', null=True)
+    provider = models.ForeignKey(
+        'RegistrationProvider',
+        related_name='draft_registrations',
+        null=True,
+        on_delete=models.CASCADE,
+    )
 
     # Dictionary field mapping question id to a question's comments and answer
     # {
@@ -907,7 +921,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             provider=provider,
         )
         draft.save()
-        draft.copy_editable_fields(node, Auth(user), save=True)
+        draft.copy_editable_fields(node, Auth(user), save=True, contributors=False)
         draft.update(data)
         return draft
 
@@ -1005,6 +1019,9 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         )
         self.registered_node = register
         self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)
+
+        self.copy_contributors_from(node)
+
         if save:
             self.save()
         return register

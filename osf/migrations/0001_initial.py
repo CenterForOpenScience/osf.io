@@ -409,7 +409,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(osf.models.sanctions.PreregCallbackMixin, models.Model),
+            bases=(osf.models.sanctions.SanctionCallbackMixin, models.Model),
         ),
         migrations.CreateModel(
             name='EmbargoTerminationApproval',
@@ -740,7 +740,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(osf.models.sanctions.PreregCallbackMixin, models.Model),
+            bases=(osf.models.sanctions.SanctionCallbackMixin, models.Model),
         ),
         migrations.CreateModel(
             name='Retraction',

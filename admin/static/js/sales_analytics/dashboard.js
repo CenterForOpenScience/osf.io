@@ -165,7 +165,6 @@ var SalesAnalytics = function() {
 
         var chartMoreThanTwo = self.prepareChart('keen-chart-osf-product-usage-mt2');
         var chartMeetings = self.prepareChart('keen-chart-osf-product-usage-mee');
-        var chartPrereg = self.prepareChart('keen-chart-osf-product-usage-pre');
         var chartInstitutions = self.prepareChart('keen-chart-osf-product-usage-ins');
 
         var request = self.keenClient.run(query, function(error, response) {
@@ -182,10 +181,6 @@ var SalesAnalytics = function() {
                     {products: 'No Meetings', count: userProductMap.osf.length - userProductMap.meetings.length},
                     {products: 'Meetings', count: userProductMap.meetings.length}
                 ]);
-                self.drawChart(chartPrereg, 'piechart', '', [
-                    {products: 'No Prereg', count: userProductMap.osf.length - userProductMap.prereg.length},
-                    {products: 'Prereg', count: userProductMap.prereg.length}
-                ]);
                 self.drawChart(chartInstitutions, 'piechart', '', [
                     {products: 'No Institutions', count: userProductMap.osf.length - userProductMap.institutions.length},
                     {products: 'Institutions', count: userProductMap.institutions.length}
@@ -194,7 +189,7 @@ var SalesAnalytics = function() {
         });
     };
     self.getUserCount = function(userCount) {
-        // User count for each peroduct (osf, osf4m, prereg, institution)
+        // User count for each peroduct (osf, osf4m, institution)
         var chart = c3.generate({
             bindto: '#db-chart-user-count',
             data: {
@@ -376,7 +371,6 @@ var SalesAnalytics = function() {
         var userProductMap = {
             'osf': [],
             'meetings': [],
-            'prereg': [],
             'institutions': [],
             'moreThanTwo': []
         };
@@ -387,17 +381,12 @@ var SalesAnalytics = function() {
                     userProductMap.osf.push(session['user.id']);
                     var paths = session.result;
                     var numberOfProducts = 0;
-                    var meetings, prereg, institutions;
-                    meetings = prereg = institutions = false;
+                    var meetings, institutions;
+                    meetings = institutions = false;
                     for (var j in paths) {
                         if (meetings === false && paths[j].startsWith('/meetings/')) {
                             userProductMap.meetings.push(session['user.id']);
                             meetings = true;
-                            numberOfProducts ++;
-                        }
-                        else if (prereg === false && paths[j].startsWith('/prereg/')) {
-                            userProductMap.prereg.push(session['user.id']);
-                            prereg = true;
                             numberOfProducts ++;
                         }
                         else if (institutions === false && paths[j].startsWith('/institutions/')) {

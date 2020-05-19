@@ -6,7 +6,7 @@ import requests
 from django.http import Http404
 from django.core import serializers
 from django.core.exceptions import ValidationError
-from django.core.urlresolvers import reverse_lazy, reverse
+from django.urls import reverse_lazy, reverse
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import ListView, DetailView, View, CreateView, DeleteView, TemplateView, UpdateView
 from django.views.generic.edit import FormView
@@ -331,7 +331,8 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
         provider.save()
 
         if licenses:
-            provider.licenses_acceptable = licenses
+            provider.licenses_acceptable.clear()
+            provider.licenses_acceptable.add(*licenses)
         if default_license:
             provider.default_license = NodeLicense.objects.get(license_id=default_license)
         # Only adds the JSON taxonomy if there is no existing taxonomy data

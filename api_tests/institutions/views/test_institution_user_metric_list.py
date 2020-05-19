@@ -34,22 +34,7 @@ class TestInstitutionUserMetricList:
         return user
 
     @pytest.fixture()
-    def url(self, institution):
-        return f'/{API_BASE}institutions/{institution._id}/metrics/users/'
-
-    def test_get(self, app, url, user, user2, admin, institution):
-
-        resp = app.get(url, expect_errors=True)
-        assert resp.status_code == 401
-
-        resp = app.get(url, auth=user.auth, expect_errors=True)
-        assert resp.status_code == 403
-
-        resp = app.get(url, auth=admin.auth)
-        assert resp.status_code == 200
-
-        assert resp.json['data'] == []
-
+    def populate_counts(self, institution, user, user2):
         # Old data that shouldn't appear in responses
         UserInstitutionProjectCounts.record(
             user_id=user._id,
@@ -80,6 +65,24 @@ class TestInstitutionUserMetricList:
         import time
         time.sleep(2)
 
+    @pytest.fixture()
+    def url(self, institution):
+        return f'/{API_BASE}institutions/{institution._id}/metrics/users/'
+
+    def test_auth(self, app, url, user, admin):
+
+        resp = app.get(url, expect_errors=True)
+        assert resp.status_code == 401
+
+        resp = app.get(url, auth=user.auth, expect_errors=True)
+        assert resp.status_code == 403
+
+        resp = app.get(url, auth=admin.auth)
+        assert resp.status_code == 200
+
+        assert resp.json['data'] == []
+
+    def test_get(self, app, url, user, user2, admin, institution, populate_counts):
         resp = app.get(url, auth=admin.auth)
 
         assert resp.json['data'] == [
@@ -154,3 +157,7 @@ class TestInstitutionUserMetricList:
         assert response_body_split[9] == user2.fullname
         assert response_body_split[10] == '3'
         assert response_body_split[11] == '2'
+
+    def test_filter(self, app, url, admin, populate_counts):
+        resp = app.get(f'{url}?filter[department]=Psychology dept', auth=admin.auth)
+        assert resp.json['data'][0]['attributes']['department'] == 'Psychology dept'

@@ -2,10 +2,12 @@ import datetime as dt
 
 from django.core.management.base import BaseCommand
 
+from framework.celery_tasks import app as celery_app
 from osf.metrics import InstitutionProjectCounts, UserInstitutionProjectCounts
 from osf.models import Institution, Node
 
 
+@celery_app.task(name='management.commands.update_institution_project_counts')
 def update_institution_project_counts():
     now = dt.datetime.now()
 

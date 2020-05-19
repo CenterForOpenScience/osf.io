@@ -2,6 +2,14 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.8.0 (2020-05-12)
+===================
+- Fix permissions for draft registrations when branched from node
+- Add burst rate throttling
+- Fix institutional metrics user name
+- Fix type of summary_metrics relationship from institutions
+- Remove unused code from prereg challenge
+
 20.7.0 (2020-05-05)
 ===================
 - Added Institutional Dashboard api and models
