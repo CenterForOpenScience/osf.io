@@ -821,7 +821,7 @@ var LogPieces = {
 
     timestamp_errors_file_format: {
         view: function(ctrl, logObject) {
-            return returnTextParams('file_format', 'unknown format', logObject);
+            return returnTextParams('file_format', _('unknown format'), logObject);
         }
     },
 };

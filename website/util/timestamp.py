@@ -351,12 +351,11 @@ def _get_user(uid, op_name, action):
         logger.warning('{}: unknown user: uid={}, action={}'.format(op_name, uid, action))
         return None
 
-def add_log_verify_all(node, uid, save=True):
-    action = NodeLog.TIMESTAMP_ALL_VERIFIED
-    user = _get_user(uid, 'add_log_verify_all', action)
+def _add_log_common(op_name, action, node, uid, save=True):
+    user = _get_user(uid, op_name, action)
     if user is None:
         return
-    logger.debug('add_log_verify_all: uid={}, node._id={}'.format(uid, node._id))
+    logger.debug('{}: uid={}, node._id={}'.format(op_name, uid, node._id))
     node.add_log(
         action=action,
         params={
@@ -365,6 +364,14 @@ def add_log_verify_all(node, uid, save=True):
         auth=Auth(user=user),
         save=save,
     )
+
+def add_log_verify_all(node, uid, save=True):
+    action = NodeLog.TIMESTAMP_ALL_VERIFIED
+    _add_log_common('add_log_verify_all', action, node, uid, save=True)
+
+def add_log_add_all(node, uid, save=True):
+    action = NodeLog.TIMESTAMP_ALL_ADDED
+    _add_log_common('add_log_add_all', action, node, uid, save=True)
 
 def add_log_a_file(action, node, uid, provider, file_id, save=True):
     user = _get_user(uid, 'add_log_a_file', action)
@@ -437,7 +444,7 @@ def celery_verify_timestamp_token(self, uid, node_id):
             # Do not let the task run too many requests
             while time.time() < last_run + secs_to_wait:
                 time.sleep(0.1)
-    add_log_verify_all(node, uid, save=True)
+    add_log_verify_all(node, uid)
     if self.is_aborted():
         logger.warning('Task from project ID {} was cancelled by user ID {}'.format(node_id, uid))
     celery_app.current_task.update_state(state='SUCCESS', meta={'progress': 100})
@@ -459,11 +466,15 @@ def celery_add_timestamp_token(self, uid, node_id, request_data):
         if result is None:
             continue
         # success
-        add_log_a_file(NodeLog.TIMESTAMP_ADDED, node, uid,
-                       data['provider'], data['file_id'])
+
+        ### log per a file
+        # add_log_a_file(NodeLog.TIMESTAMP_ADDED, node, uid,
+        #                data['provider'], data['file_id'])
+
         # Do not let the task run too many requests
         while time.time() < last_run + secs_to_wait:
             time.sleep(0.1)
+    add_log_add_all(node, uid)
     if self.is_aborted():
         logger.warning('Task from project ID {} was cancelled by user ID {}'.format(node_id, uid))
 

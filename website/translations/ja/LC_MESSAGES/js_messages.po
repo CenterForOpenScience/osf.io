@@ -2820,16 +2820,22 @@ msgid "${user} removed ${anonymous_link} view-only link to ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:90
-msgid "${user} verified timestamp of all files in ${node}"
-msgstr "${user}が${node}にある全ファイルのタイムスタンプを確認"
+msgid "${user} verified timestamp"
+msgstr "${user}がタイムスタンプ確認"
+
+msgid "${user} requested trusted timestamp"
+msgstr "${user}がタイムスタンプを打つ"
 
 #: website/static/js/logActionsList_extract.js:91
-msgid "${user} added timestamp ${path} in ${node}"
-msgstr "${user}が${node}にあるファイル${path}にタイムスタンプを打刻"
+msgid "${user} requested trusted timestamp file ${path}"
+msgstr "${user}がファイル${path}にタイムスタンプを打つ"
 
 #: website/static/js/logActionsList_extract.js:92
 msgid "${user} downloaded a file of timestamp errors as a ${timestamp_errors_file_format}"
-msgstr "${user}がタイムスタンプエラーのファイルを${timestamp_errors_file_format}形式でダウンロード"
+msgstr "${user}がタイムスタンプエラーのファイルを${timestamp_errors_file_format}でダウンロード"
+
+msgid "unknown format"
+msgstr "不明な形式"
 
 #: website/static/js/logActionsList_extract.js:93
 msgid ""
