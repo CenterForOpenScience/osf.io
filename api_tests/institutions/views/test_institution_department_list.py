@@ -136,6 +136,22 @@ class TestInstitutionDepartmentList:
             'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
         }]
 
+        # Tests CSV Export
+        headers = {
+            'accept': 'text/csv'
+        }
+        resp = app.get(url, auth=admin.auth, headers=headers)
+        assert resp.status_code == 200
+        # Note: The response body does not reflect the new lines actually in the CSV
+        response_body = resp.unicode_normal_body
+        response_body_split = response_body.split(',')
+        assert response_body_split[4] == 'New Department'
+        assert response_body_split[5] == '2'
+        assert response_body_split[7] == 'Smaller Department'
+        assert response_body_split[8] == '1'
+        assert response_body_split[10] == 'N/A'
+        assert response_body_split[11] == '1'
+
     def test_pagination(self, app, url, admin, institution, populate_counts):
         resp = app.get(f'{url}?filter[name]=New Department', auth=admin.auth)
 

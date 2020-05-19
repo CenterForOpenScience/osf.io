@@ -138,3 +138,19 @@ class TestInstitutionUserMetricList:
                 }
             }
         ]
+
+        # Tests CSV Export
+        headers = {
+            'accept': 'text/csv'
+        }
+        resp = app.get(url, auth=admin.auth, headers=headers)
+        assert resp.status_code == 200
+        # Note: The response body does not reflect the new lines actually in the CSV
+        response_body = resp.unicode_normal_body
+        response_body_split = response_body.split(',')
+        assert response_body_split[5] == user.fullname
+        assert response_body_split[6] == '6'
+        assert response_body_split[7] == '5'
+        assert response_body_split[9] == user2.fullname
+        assert response_body_split[10] == '3'
+        assert response_body_split[11] == '2'
