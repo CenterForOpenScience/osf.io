@@ -143,6 +143,9 @@ ViewModel.prototype.disableTwofactor = function() {
             confirm:{
                 label:'Disable',
                 className:'btn-danger'
+            },
+            cancel:{
+                label:_('Cancel')
             }
         }
     });
@@ -182,6 +185,9 @@ ViewModel.prototype.enableTwofactor = function() {
         buttons:{
             confirm:{
                 label:_('Enable'),
+            },
+            cancel:{
+                label:_('Cancel')
             }
         }
     });
