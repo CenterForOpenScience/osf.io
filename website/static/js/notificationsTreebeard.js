@@ -6,10 +6,8 @@ var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
+var _ = require('js/rdmGettext')._;
+var sprintf = require('agh.sprintf').sprintf;
 
 function expandOnLoad() {
     var tb = this;  // jshint ignore: line
@@ -227,7 +225,7 @@ function ProjectNotifications(data) {
                                 [
                                     m('option', {value: 'adopt_parent',
                                                  selected: item.data.event.notificationType === 'adopt_parent' ? 'selected' : ''},
-                                                 agh.sprintf(_('Adopt setting from parent project %1$s') , displayParentNotificationType(item) )),
+                                                 sprintf(_('Adopt setting from parent project %1$s') , displayParentNotificationType(item) )),
                                     m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, _('Never')),
                                     m('option', {value: 'email_transactional',  selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, _('Instantly')),
                                     m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, _('Daily'))

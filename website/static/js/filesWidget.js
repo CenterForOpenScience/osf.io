@@ -5,9 +5,7 @@ var $osf = require('js/osfHelpers');
 var osfLanguage = require('js/osfLanguage');
 var Fangorn = require('js/fangorn').Fangorn;
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 /**
  * @class FilesWidget

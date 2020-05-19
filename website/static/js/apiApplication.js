@@ -18,12 +18,9 @@ var koHelpers = require('./koHelpers');  // URL validators etc
 var $osf = require('./osfHelpers');
 var oop = require('js/oop');
 var language = require('js/osfLanguage');
-
 var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
-
+var _ = require('js/rdmGettext')._;
+var sprintf = require('agh.sprintf').sprintf;
 var defaultDomain = 'apiOauth2Application';
 var osfLanguage = new rdmGettext.OsfLanguage(defaultDomain);
 
@@ -34,6 +31,23 @@ var ApplicationData = oop.defclass({
     constructor: function (data) {  // Read in API data and store as object
         data = data || {};
         var attributes = data.attributes || {};
+
+        ko.validation.rules.required.message = _(ko.validation.rules.required.message);
+        ko.validation.rules.min.message = _(ko.validation.rules.min.message);
+        ko.validation.rules.max.message = _(ko.validation.rules.max.message);
+        ko.validation.rules.minLength.message = _(ko.validation.rules.minLength.message);
+        ko.validation.rules.maxLength.message = _(ko.validation.rules.maxLength.message);
+        ko.validation.rules.pattern.message = _(ko.validation.rules.pattern.message);
+        ko.validation.rules.step.message = _(ko.validation.rules.step.message);
+        ko.validation.rules.email.message = _(ko.validation.rules.email.message);
+        ko.validation.rules.date.message = _(ko.validation.rules.date.message);
+        ko.validation.rules.dateISO.message = _(ko.validation.rules.dateISO.message);
+        ko.validation.rules.number.message = _(ko.validation.rules.number.message);
+        ko.validation.rules.digit.message = _(ko.validation.rules.digit.message);
+        ko.validation.rules.phoneUS.message = _(ko.validation.rules.phoneUS.message);
+        ko.validation.rules.equal.message = _(ko.validation.rules.equal.message);
+        ko.validation.rules.notEqual.message = _(ko.validation.rules.notEqual.message);
+        ko.validation.rules.unique.message = _(ko.validation.rules.unique.message);
 
         // User-editable fields
         this.name = ko.observable(attributes.name)

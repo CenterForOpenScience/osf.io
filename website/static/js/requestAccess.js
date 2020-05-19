@@ -7,16 +7,14 @@ var ko = require('knockout');
 var Raven = require('raven-js');
 var ChangeMessageMixin = require('js/changeMessage');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
+var _ = require('js/rdmGettext')._;
+var sprintf = require('agh.sprintf').sprintf;
 
 var RequestAccessViewModel = function(currentUserRequestState, nodeId, user) {
     var self = this;
 
     self.user = user;
-    self.requestAccessButton = ko.observable('Request access');
+    self.requestAccessButton = ko.observable(_('Request access'));
     self.accessRequestPendingOrDenied = ko.observable(false);
     self.accessRequestTooltip = ko.observable('');
     self.updateUrl = $osf.apiV2Url('nodes/' +  nodeId + '/requests/');
@@ -26,7 +24,7 @@ var RequestAccessViewModel = function(currentUserRequestState, nodeId, user) {
 
         if (self.requestState() === 'pending' || self.requestState() === 'rejected') {
             self.accessRequestPendingOrDenied(true);
-            self.requestAccessButton = ko.observable('Access requested');
+            self.requestAccessButton = ko.observable(_('Access requested'));
         }
         if (self.requestState() === 'rejected') {
             self.accessRequestTooltip('Request declined');
@@ -61,12 +59,12 @@ var RequestAccessViewModel = function(currentUserRequestState, nodeId, user) {
         );
 
         request.done(function() {
-            self.requestAccessButton('Access requested');
+            self.requestAccessButton(_('Access requested'));
         }.bind(this));
         request.fail(function(xhr, status, error) {
             self.accessRequestPendingOrDenied(false);
             $osf.growl('Error',
-                agh.sprintf(_('Access request failed. Please contact %1$s if the problem persists.') , $osf.osfSupportLink() ),
+                sprintf(_('Access request failed. Please contact %1$s if the problem persists.') , $osf.osfSupportLink() ),
                 'danger'
             );
             Raven.captureMessage(_('Error requesting project access'), {
@@ -82,7 +80,7 @@ var RequestAccessViewModel = function(currentUserRequestState, nodeId, user) {
 
     self.init = function() {
         self.checkRequestStatus();
-        self.supportMessage = agh.sprintf(_('If this should not have occurred, please contact %1$s.') , $osf.osfSupportLink() );
+        self.supportMessage = sprintf(_('If this should not have occurred, please contact %1$s.') , $osf.osfSupportLink() );
     };
 
     self.init();

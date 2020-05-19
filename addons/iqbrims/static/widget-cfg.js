@@ -7,6 +7,11 @@ var Raven = require('raven-js');
 var osfHelpers = require('js/osfHelpers');
 var language = require('js/osfLanguage').Addons.iqbrims;
 
+var rdmGettext = require('js/rdmGettext');
+var addonsDomain = 'Addons';
+var iqbrimsDomain = 'iqbrims';
+var osfLanguage = new rdmGettext.OsfLanguage(addonsDomain,iqbrimsDomain);
+
 var logPrefix = '[iqbrims] ';
 
 
@@ -20,8 +25,8 @@ function IQBRIMSWidget() {
   self.modeCheck = ko.observable(false);
   self.modeAdmin = ko.observable(false);
   self.flowableTaskUrl = ko.observable(undefined);
-  self.depositHelp = ko.observable(language.depositHelp);
-  self.checkHelp = ko.observable(language.checkHelp);
+  self.depositHelp = ko.observable(osfLanguage.t('depositHelp'));
+  self.checkHelp = ko.observable(osfLanguage.t('checkHelp'));
   self.formEntries = ko.observableArray();
 
   self.isSubmitted = ko.observable(false);

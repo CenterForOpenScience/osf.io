@@ -16,10 +16,8 @@ var $osf = require('js/osfHelpers');
 
 var oop = require('js/oop');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
+var _ = require('js/rdmGettext')._;
+var sprintf = require('agh.sprintf').sprintf;
 
 /**
  * @class FolderPickerViewModel
@@ -107,30 +105,30 @@ var FolderPickerViewModel = oop.defclass({
 
         self.messages = {
             invalidCredOwner: ko.pureComputed(function() {
-                return agh.sprintf(_('Could not retrieve %1$s settings at this time. The credentials associated with this %1$s account may no longer be valid.'),addonSafeName) +
-                    agh.sprintf(_(' Try disconnecting and reconnecting the %1$s account on your <a href="%2$s">account settings page</a>.'),addonSafeName,self.urls().settings);
+                return sprintf(_('Could not retrieve %1$s settings at this time. The credentials associated with this %1$s account may no longer be valid.'),addonSafeName) +
+                    sprintf(_(' Try disconnecting and reconnecting the %1$s account on your <a href="%2$s">account settings page</a>.'),addonSafeName,self.urls().settings);
             }),
             invalidCredNotOwner: ko.pureComputed(function() {
-                return agh.sprintf(_('Could not retrieve %1$s settings at this time. The %1$s addon credentials may no longer be valid.'),addonSafeName) +
-                    agh.sprintf(_(' Contact %1$s to verify.') , $osf.htmlEscape(self.ownerName()));
+                return sprintf(_('Could not retrieve %1$s settings at this time. The %1$s addon credentials may no longer be valid.'),addonSafeName) +
+                    sprintf(_(' Contact %1$s to verify.') , $osf.htmlEscape(self.ownerName()));
             }),
             cantRetrieveSettings: ko.pureComputed(function() {
-                return agh.sprintf(_('Could not retrieve %1$s settings at this time. Please refresh the page. If the problem persists, email %2$s.'),addonSafeName,$osf.osfSupportLink());
+                return sprintf(_('Could not retrieve %1$s settings at this time. Please refresh the page. If the problem persists, email %2$s.'),addonSafeName,$osf.osfSupportLink());
             }),
             updateAccountsError: ko.pureComputed(function() {
-                return agh.sprintf(_('Could not retrieve %1$s account list at this time. Please refresh the page. If the problem persists, email %2$s.'),addonSafeName,$osf.osfSupportLink());
+                return sprintf(_('Could not retrieve %1$s account list at this time. Please refresh the page. If the problem persists, email %2$s.'),addonSafeName,$osf.osfSupportLink());
             }),
             deauthorizeSuccess: ko.pureComputed(function() {
-                return agh.sprintf(_('Disconnected %1$s.') , addonSafeName );
+                return sprintf(_('Disconnected %1$s.') , addonSafeName );
             }),
             deauthorizeFail: ko.pureComputed(function() {
-                return agh.sprintf(_('Could not disconnect %1$s account because of an error. Please try again later.'),addonSafeName);
+                return sprintf(_('Could not disconnect %1$s account because of an error. Please try again later.'),addonSafeName);
             }),
             connectAccountSuccess: ko.pureComputed(function() {
-                return agh.sprintf(_('Successfully connected a %1$s account'),addonSafeName);
+                return sprintf(_('Successfully connected a %1$s account'),addonSafeName);
             }),
             connectAccountDenied: ko.pureComputed(function() {
-                return agh.sprintf(_('Error while authorizing addon. Please log in to your %1$s account and grant access to the GakuNin RDM to enable this addon.'),addonSafeName);
+                return sprintf(_('Error while authorizing addon. Please log in to your %1$s account and grant access to the GakuNin RDM to enable this addon.'),addonSafeName);
             }),
             submitSettingsSuccess: ko.pureComputed(function() {
                 throw new Error('Subclasses of FolderPickerViewModel must provide a message for successful settings updates. ' +
@@ -138,25 +136,25 @@ var FolderPickerViewModel = oop.defclass({
                                 '{PAGE_NAME} to view your {CONTENT_TYPE}.');
             }),
             submitSettingsError: ko.pureComputed(function() {
-                return agh.sprintf(_('Could not change %1$s settings. Please try again later.'),addonSafeName);
+                return sprintf(_('Could not change %1$s settings. Please try again later.'),addonSafeName);
             }),
             confirmDeauth: ko.pureComputed(function() {
-                return agh.sprintf(_('Are you sure you want to remove this %1$s account?'),addonSafeName);
+                return sprintf(_('Are you sure you want to remove this %1$s account?'),addonSafeName);
             }),
             confirmAuth: ko.pureComputed(function() {
-                return agh.sprintf(_('Are you sure you want to link your %1$s account with this project?'),addonSafeName);
+                return sprintf(_('Are you sure you want to link your %1$s account with this project?'),addonSafeName);
             }),
             tokenImportSuccess: ko.pureComputed(function() {
-                return agh.sprintf(_('Successfully imported %1$s account from profile.'),addonSafeName);
+                return sprintf(_('Successfully imported %1$s account from profile.'),addonSafeName);
             }),
             tokenImportError: ko.pureComputed(function() {
-                return agh.sprintf(_('Error occurred while importing %1$s account.'),addonSafeName);
+                return sprintf(_('Error occurred while importing %1$s account.'),addonSafeName);
             }),
             libraryImportError: ko.pureComputed(function() {
-                return agh.sprintf(_('Error occurred while importing %1$s group libraries.'),addonSafeName);
+                return sprintf(_('Error occurred while importing %1$s group libraries.'),addonSafeName);
             }),
             connectError: ko.pureComputed(function() {
-                return agh.sprintf(_('Could not connect to %1$s at this time. Please try again later.'),addonSafeName);
+                return sprintf(_('Could not connect to %1$s at this time. Please try again later.'),addonSafeName);
             })
         };
 
@@ -320,7 +318,7 @@ var FolderPickerViewModel = oop.defclass({
         });
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.cantRetrieveSettings(), 'text-danger');
-            Raven.captureMessage(agh.sprintf(_('Could not GET %1$s settings'),self.addonName), {
+            Raven.captureMessage(sprintf(_('Could not GET %1$s settings'),self.addonName), {
                 extra: {
                     url: self.url,
                     textStatus: textStatus,
@@ -348,7 +346,7 @@ var FolderPickerViewModel = oop.defclass({
         }
         function onSubmitError(xhr, status, error) {
             self.changeMessage(self.messages.submitSettingsError(), 'text-danger');
-            Raven.captureMessage(agh.sprintf(_('Failed to update %1$s settings.'),self.addonName), {
+            Raven.captureMessage(sprintf(_('Failed to update %1$s settings.'),self.addonName), {
                 extra: {
                     xhr: xhr,
                     status: status,
@@ -381,7 +379,7 @@ var FolderPickerViewModel = oop.defclass({
         }
         function onSubmitError(xhr, status, error) {
             self.changeMessage(self.messages.submitSettingsError(), 'text-danger');
-            Raven.captureMessage(agh.sprintf(_('Failed to update %1$s settings.'),self.addonName), {
+            Raven.captureMessage(sprintf(_('Failed to update %1$s settings.'),self.addonName), {
                 extra: {
                     xhr: xhr,
                     status: status,
@@ -430,7 +428,7 @@ var FolderPickerViewModel = oop.defclass({
     onImportError: function(xhr, status, error) {
         var self = this;
         self.changeMessage(self.messages.tokenImportError(), 'text-danger');
-        Raven.captureMessage(agh.sprintf(_('Failed to import %1$s access token.'),self.addonName), {
+        Raven.captureMessage(sprintf(_('Failed to import %1$s access token.'),self.addonName), {
             extra: {
                 xhr: xhr,
                 status: status,
@@ -442,7 +440,7 @@ var FolderPickerViewModel = oop.defclass({
         var self = this;
         self.pendingLibraryRequest(false);
         self.changeMessage(self.messages.libraryImportError(), 'text-danger');
-        Raven.captureMessage(agh.sprintf(_('Failed to import %1$s group libraries.'),self.addonName), {
+        Raven.captureMessage(sprintf(_('Failed to import %1$s group libraries.'),self.addonName), {
             extra: {
                 xhr: xhr,
                 status: status,
@@ -496,7 +494,7 @@ var FolderPickerViewModel = oop.defclass({
     importAuth: function() {
         var self = this;
         bootbox.confirm({
-            title: agh.sprintf(_('Import %1$s Account?'),$osf.htmlEscape(self.addonName)),
+            title: sprintf(_('Import %1$s Account?'),$osf.htmlEscape(self.addonName)),
             message: self.messages.confirmAuth(),
             callback: function(confirmed) {
                 if (confirmed) {
@@ -535,7 +533,7 @@ var FolderPickerViewModel = oop.defclass({
         });
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.deauthorizeFail(), 'text-danger');
-            Raven.captureMessage(agh.sprintf(_('Could not deauthorize %1$s account from node'),self.addonName), {
+            Raven.captureMessage(sprintf(_('Could not deauthorize %1$s account from node'),self.addonName), {
                 extra: {
                     url: self.urls().deauthorize,
                     textStatus: textStatus,
@@ -551,7 +549,7 @@ var FolderPickerViewModel = oop.defclass({
     deauthorize: function() {
         var self = this;
         bootbox.confirm({
-            title: agh.sprintf(_('Disconnect %1$s Account?'),$osf.htmlEscape(self.addonName)),
+            title: sprintf(_('Disconnect %1$s Account?'),$osf.htmlEscape(self.addonName)),
             message: self.messages.confirmDeauth(),
             callback: function(confirmed) {
                 if (confirmed) {
@@ -644,7 +642,7 @@ var FolderPickerViewModel = oop.defclass({
             ondataloaderror: function(xhr) {
                 self.loading(false);
                 self.changeMessage(self.messages.connectError(), 'text-danger');
-                Raven.captureMessage(agh.sprintf(_('Could not GET get %1$s contents.'),self.addonName), {
+                Raven.captureMessage(sprintf(_('Could not GET get %1$s contents.'),self.addonName), {
                     extra: {
                         textStatus: xhr.statusText,
                         error: xhr.status
@@ -655,7 +653,7 @@ var FolderPickerViewModel = oop.defclass({
                 error: function(xhr, textStatus, error) {
                     self.loading(false);
                     self.changeMessage(self.messages.connectError(), 'text-danger');
-                    Raven.captureMessage(agh.sprintf(_('Could not GET get %1$s contents.'), self.addonName ), {
+                    Raven.captureMessage(sprintf(_('Could not GET get %1$s contents.'), self.addonName ), {
                         extra: {
                             textStatus: textStatus,
                             error: error

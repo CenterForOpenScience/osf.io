@@ -11,10 +11,8 @@ var osfHelpers = require('js/osfHelpers');
 var m = require('mithril');
 var NodesPrivacyTreebeard = require('js/nodesPrivacySettingsTreebeard');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
+var _ = require('js/rdmGettext')._;
+var sprintf = require('agh.sprintf').sprintf;
 
 var MESSAGES = {
     makeProjectPublicWarning:
@@ -154,7 +152,7 @@ var NodesPrivacyViewModel = function(node, onSetPrivacy) {
 
         return {
             warning: self.parentIsPublic ?
-                agh.sprintf(_('Make %1$s private'),self.parentNodeType) :
+                sprintf(_('Make %1$s private'),self.parentNodeType) :
                 _('Warning'),
             select: _('Change privacy settings'),
             confirm: _('Projects and components affected')

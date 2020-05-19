@@ -7,9 +7,7 @@ var vkbeautify = require('vkbeautify');
 var taskStatusUpdaterIntervalId = null;
 var taskStatusUrl = null;
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 var datepicker = require('js/datepicker');
 

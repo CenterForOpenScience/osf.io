@@ -15,10 +15,8 @@ var AddProject = require('js/addProjectPlugin');
 var mC = require('js/mithrilComponents');
 var lodashGet = require('lodash.get');
 var lodashFind = require('lodash.find');
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
+var _ = require('js/rdmGettext')._;
+var sprintf = require('agh.sprintf').sprintf;
 
 var MOBILE_WIDTH = 767; // Mobile view break point for responsiveness
 var NODE_PAGE_SIZE = 10; // Load 10 nodes at a time from server
@@ -1382,7 +1380,7 @@ var Collections = {
                           }
                           else {
                               var name = projectName ? projectName : args.selected()[index] ? args.selected()[index].data.name : 'Item ';
-                              var message = '"' + name + agh.sprintf(_('" is already in "%1$s"') , collection.label ) ;
+                              var message = '"' + name + sprintf(_('" is already in "%1$s"') , collection.label ) ;
                               $osf.growl(message,null, 'warning', 4000);
                               save(index + 1, data);
                           }
@@ -1623,7 +1621,7 @@ var Collections = {
                         }}, [
                             m('span[aria-hidden="true"]','×')
                         ]),
-                        m('h3.modal-title', agh.sprintf(_('Delete collection "%1$s"?') , ctrl.collectionMenuObject().item.label))
+                        m('h3.modal-title', sprintf(_('Delete collection "%1$s"?') , ctrl.collectionMenuObject().item.label))
                     ]),
                     body: m('.modal-body', [
                         m('p', _('This will delete your collection, but your projects will not be deleted.'))

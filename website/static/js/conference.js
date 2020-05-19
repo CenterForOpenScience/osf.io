@@ -2,9 +2,7 @@ var m = require('mithril');
 var osfHelpers = require('js/osfHelpers');
 var Treebeard = require('treebeard');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 function Meeting(data) {
     //  Treebeard version

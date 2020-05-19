@@ -39,32 +39,31 @@ from website.search import exceptions
 from website.search.util import build_query, clean_splitters, es_escape, convert_query_string, unicode_normalize, quote
 from website.views import validate_page_num
 
-from django.utils.translation import ugettext_lazy as _
-
 logger = logging.getLogger(__name__)
 
 # True: use ALIASES_COMMENT
 ENABLE_DOC_TYPE_COMMENT = False
 
 # These are the doc_types that exist in the search database
+# If changes of ALIASES text happen, please change js_messages.js text as well.
 ALIASES_BASE = {
-    'project': unicode(_('Projects')),
-    'component': unicode(_('Components')),
-    'registration': unicode(_('Registrations')),
-    'user': unicode(_('Users')),
-    'total': unicode(_('All GakuNin RDM Results')),
-    'file': unicode(_('Files')),
-    'institution': unicode(_('Institutions')),
-    'preprint': unicode(_('Preprints')),
-    'group': unicode(_('Groups')),
+    'project': 'Projects',
+    'component': 'Components',
+    'registration': 'Registrations',
+    'user': 'Users',
+    'total': 'All Results',
+    'file': 'Files',
+    'institution': 'Institutions',
+    'preprint': 'Preprints',
+    'group': 'Groups',
 }
 
 ALIASES_EXT = {
-    'wiki': unicode(_('Wiki')),
+    'wiki': 'Wiki',
 }
 
 ALIASES_COMMENT = {
-    'comment': unicode(_('Comments')),
+    'comment': 'Comments',
 }
 
 ALIASES = {}

@@ -215,8 +215,9 @@
                 % endif
                 % if node['is_fork']:
                     <p>
-                    Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
-                    <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
+                    ${_('Forked from <a %(forkedFromId)s>%(forkedFromDisplayAbsoluteUrl)s</a> on\
+                    <span %(dateForked)s></span>') % dict(forkedFromId='class="node-forked-from"' + ' href=/' + h(node['forked_from_id']) + '/',\
+                    forkedFromDisplayAbsoluteUrl=h(node['forked_from_display_absolute_url']),dateForked='data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"') | n}
                     </p>
                 % endif
                 % if node['is_registration']:
@@ -444,7 +445,7 @@
             </div>
             % if not node['is_registration'] and not node['anonymous'] and permissions.WRITE in user['permissions']:
                 <div class="row">
-                    <div class="col-sm-12 m-t-sm m-l-md">
+                    <div class="col-sm-12 m-t-sm m-l-md" style="padding-right:60px">
                         <span class="f-w-xl">${_("Click on a storage provider or drag and drop to upload")}</span>
                     </div>
                 </div>

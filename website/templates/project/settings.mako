@@ -83,7 +83,7 @@
                             <div class="dropdown generic-dropdown category-list">
                                 <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">
                                     <span data-bind="getIcon: selectedCategory"></span>
-                                    <span data-bind="text: selectedCategory" class="text-capitalize"></span>
+                                    <span data-bind="text: selectedCategoryLabel" class="text-capitalize"></span>
                                     <span data-bind="ifnot: selectedCategory">${_("Uncategorized")}</span>
                                     <i class="fa fa-sort"></i>
                                 </button>
@@ -331,11 +331,11 @@
                             <div class="radio">
                                 <label>
                                     <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
-                                    ${_("When the %(nodeType)s is public, any GakuNin RDM user can post comments") % dict(nodeType=h(node['node_type']))}
+                                    ${_("When the %(nodeType)s is public, any GakuNin RDM user can post comments") % dict(nodeType=_(h(node['node_type'])))}
                                 </label>
                             </div>
 
-                            <button class="btn btn-success">Save</button>
+                            <button class="btn btn-success">${_("Save")}</button>
 
                             <!-- Flashed Messages -->
                             <div class="help-block">

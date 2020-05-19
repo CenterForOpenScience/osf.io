@@ -18,6 +18,8 @@ from website import settings
 from addons.base import logger, serializer
 from website.oauth.signals import oauth_complete
 
+from flask_babel import lazy_gettext as _
+
 lookup = TemplateLookup(
     directories=[
         settings.TEMPLATES_PATH
@@ -456,32 +458,25 @@ class BaseNodeSettings(BaseAddonSettings):
         if hasattr(self, 'user_settings'):
             if self.user_settings is None:
                 return (
-                    u'Because you have not configured the {addon} add-on, your authentication will not be '
-                    u'transferred to the forked {category}. You may authorize and configure the {addon} add-on '
-                    u'in the new fork on the settings page.'
+                    _(u'Because you have not configured the {addon} add-on, your authentication will not be transferred to the forked {category}. You may authorize and configure the {addon} add-on in the new fork on the settings page.')
                 ).format(
                     addon=self.config.full_name,
-                    category=node.project_or_component,
+                    category=_(node.project_or_component),
                 )
 
             elif self.user_settings and self.user_settings.owner == user:
                 return (
-                    u'Because you have authorized the {addon} add-on for this '
-                    u'{category}, forking it will also transfer your authentication to '
-                    u'the forked {category}.'
+                    _(u'Because you have authorized the {addon} add-on for this {category}, forking it will also transfer your authentication to the forked {category}.')
                 ).format(
                     addon=self.config.full_name,
-                    category=node.project_or_component,
+                    category=_(node.project_or_component),
                 )
             else:
                 return (
-                    u'Because the {addon} add-on has been authorized by a different '
-                    u'user, forking it will not transfer authentication to the forked '
-                    u'{category}. You may authorize and configure the {addon} add-on '
-                    u'in the new fork on the settings page.'
+                    _(u'Because the {addon} add-on has been authorized by a different user, forking it will not transfer authentication to the forked {category}. You may authorize and configure the {addon} add-on in the new fork on the settings page.')
                 ).format(
                     addon=self.config.full_name,
-                    category=node.project_or_component,
+                    category=_(node.project_or_component),
                 )
 
     def after_fork(self, node, fork, user, save=True):

@@ -11,11 +11,8 @@ var $osf = require('js/osfHelpers');
 var mHelpers = require('js/mithrilHelpers');
 var institutionComponents = require('js/components/institution');
 var SelectableInstitution = institutionComponents.SelectableInstitution;
-
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
+var _ = require('js/rdmGettext')._;
+var sprintf = require('agh.sprintf').sprintf;
 
 var AddProject = {
     controller : function (options) {
@@ -198,7 +195,7 @@ var AddProject = {
                                     //  This will not be reliably running!
                                     $osf.trackClick(options.trackingCategory, options.trackingAction, 'type-project-name');
                                 },
-                                placeholder : agh.sprintf(_('Enter %1$s title'),_(ctrl.nodeType)),
+                                placeholder : sprintf(_('Enter %1$s title'),_(ctrl.nodeType)),
                                 name : 'projectName'
                             })
                         ]),
@@ -295,7 +292,7 @@ var AddProject = {
                                         $osf.trackClick(options.trackingCategory, options.trackingAction, 'type-project-description');
                                     },
                                     name : 'projectDesc',
-                                    placeholder : agh.sprintf(_('Enter %1$s description'),_(ctrl.nodeType))
+                                    placeholder : sprintf(_('Enter %1$s description'),_(ctrl.nodeType))
                                 })
                             ]),
                             ctrl.options.parentID !== null ? [
@@ -307,7 +304,7 @@ var AddProject = {
                                         type: 'button'
                                       }, [
                                         m('i', { className : mHelpers.getIcon(ctrl.newProjectCategory()) }),
-                                        m('span.text-capitalize', ctrl.newProjectCategory() || _('Uncategorized')),
+                                        m('span.text-capitalize', ctrl.newProjectCategory() ? _(ctrl.newProjectCategory()) : ctrl.newProjectCategory() || _('Uncategorized')),
                                         m('i.fa.fa-sort')
                                       ]),
                                     m('ul.dropdown-menu', [
@@ -320,7 +317,7 @@ var AddProject = {
                                                             }
                                                   }, [
                                                     m('i', { className : mHelpers.getIcon(cat.value) }),
-                                                    m('span', _(cat.display_name) || _('(Empty category)'))
+                                                    m('span', cat.display_name ? _(cat.display_name) : cat.display_name || _('(Empty category)'))
                                                   ]
                                                 )
                                             );
@@ -376,7 +373,7 @@ var AddProject = {
                             }}, [
                                 m('span[aria-hidden="true"]','×')
                             ]),
-                            m('h4.add-project-success.text-success', agh.sprintf(_('New %1$s created successfully!'),_(ctrl.nodeType)))
+                            m('h4.add-project-success.text-success', sprintf(_('New %1$s created successfully!'),_(ctrl.nodeType)))
                         ]
                     ),
                     m('.modal-footer', [
@@ -392,7 +389,7 @@ var AddProject = {
                             onclick: function(){
                             $osf.trackClick(options.trackingCategory, options.trackingAction, 'go-to-new-project');
                             }
-                        },agh.sprintf(_('Go to new %1$s'),_(ctrl.nodeType)))
+                        },sprintf(_('Go to new %1$s'),_(ctrl.nodeType)))
                     ])
                 )
             ]),
@@ -405,7 +402,7 @@ var AddProject = {
                                 }}, [
                                 m('span[aria-hidden="true"]','×')
                             ]),
-                            m('h4.add-project-error.text-danger', agh.sprintf(_('Couldn\'t create your %1$s'),ctrl.nodeType)),
+                            m('h4.add-project-error.text-danger', sprintf(_('Couldn\'t create your %1$s'),ctrl.nodeType)),
                             m('p', ctrl.errorMessage[ctrl.errorMessageType()])
                         ]
                     ),
@@ -424,7 +421,7 @@ var AddProject = {
                                 }}, [
                                 m('span[aria-hidden="true"]','×')
                             ]),
-                            m('h4.add-project-error.text-danger', agh.sprintf(_('Could not add institution affiliation to your new %1$s') , ctrl.nodeType)),
+                            m('h4.add-project-error.text-danger', sprintf(_('Could not add institution affiliation to your new %1$s') , ctrl.nodeType)),
                             m('p', ctrl.errorMessage[ctrl.errorMessageType()])
                         ]
                     ),
@@ -437,7 +434,7 @@ var AddProject = {
                         },  _('Keep working here')),
                         m('a.btn.btn-success', {
                             href : ctrl.goToProjectLink()
-                        },agh.sprintf(_('Go to new %1$s') , _(ctrl.nodeType)))
+                        },sprintf(_('Go to new %1$s') , _(ctrl.nodeType)))
                     ])
                 )
             ])

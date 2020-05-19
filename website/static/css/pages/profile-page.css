@@ -31,6 +31,10 @@ table.table.table-plain th, table.table.table-plain td {
     padding-left: 10px;
 }
 
+.footBanners {
+    z-index: auto !important;
+}
+
 /* Social Links
 -------------------------------------------------- */
 

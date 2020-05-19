@@ -14,7 +14,7 @@
         % if trust:
           <p>${ message | unicode, n }</p>
         % else:
-          <p>${message}</p>
+          <p>${_(message)}</p>
         % endif
         %if jumbotron:
         </div>

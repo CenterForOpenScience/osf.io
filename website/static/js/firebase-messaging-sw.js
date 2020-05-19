@@ -3,9 +3,7 @@ firebase.initializeApp({
   'messagingSenderId': '340702114761'
 });
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 const messaging = firebase.messaging();
 messaging.setBackgroundMessageHandler(function(payload) {

@@ -9,11 +9,8 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 
 var $osf = require('js/osfHelpers');
-
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
+var _ = require('js/rdmGettext')._;
+var sprintf = require('agh.sprintf').sprintf;
 
 var AddonPermissionsTable = {
     init: function(addonShortName, addonFullname) {
@@ -22,7 +19,7 @@ var AddonPermissionsTable = {
             var apiUrl = $(this).attr('api-url')+ addonShortName + '/config/';
             bootbox.confirm({
                 title: _('Remove addon?'),
-                message: agh.sprintf(_('Are you sure you want to disconnnect the %1$s account from this project?'),$osf.htmlEscape(addonFullname)),
+                message: sprintf(_('Are you sure you want to disconnnect the %1$s account from this project?'),$osf.htmlEscape(addonFullname)),
                 callback: function (confirm) {
                     if (confirm) {
                         $.ajax({
@@ -44,7 +41,7 @@ var AddonPermissionsTable = {
 
                             error: function () {
                                 $osf.growl(_('An error occurred, the account is still connected to the project. '),
-                                    agh.sprintf(_('If the issue persists, please report it to %1$s.') , $osf.osfSupportLink()));
+                                    sprintf(_('If the issue persists, please report it to %1$s.') , $osf.osfSupportLink()));
                             }
                         });
                     }

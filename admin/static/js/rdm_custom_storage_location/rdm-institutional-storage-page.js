@@ -4,10 +4,7 @@ var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Cookie = require('js-cookie');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
+var _ = require('js/rdmGettext')._;
 
 $('[name=options]').change(function () {
     $('#storage_name').attr('disabled', this.value === 'osfstorage');

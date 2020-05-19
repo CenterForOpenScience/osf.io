@@ -12,10 +12,8 @@ var DEFAULT_LICENSE = siteLicenses.DEFAULT_LICENSE;
 
 var $osf = require('js/osfHelpers');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
-var agh = require('agh.sprintf');
+var _ = require('js/rdmGettext')._;
+var sprintf = require('agh.sprintf').sprintf;
 
 // Disable IE Caching of JSON
 $.ajaxSetup({ cache: false });
@@ -189,7 +187,7 @@ var ViewModel = function(params) {
     });
 
     self.navLocation = ko.pureComputed(function() {
-        return agh.sprintf(_('Page %1$s of %2$s') ,self.currentPage(),self.totalPages());
+        return sprintf(_('Page %1$s of %2$s') ,self.currentPage(),self.totalPages());
     });
 
     self.queryObject = ko.pureComputed(function(){

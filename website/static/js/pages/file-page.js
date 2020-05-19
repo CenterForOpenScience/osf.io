@@ -6,9 +6,7 @@ var Raven = require('raven-js');
 
 require('jquery-tagsinput');
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 m.mount(document.getElementsByClassName('file-view-panels')[0], FileViewPage(window.contextVars));
 

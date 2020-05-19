@@ -4,9 +4,7 @@ var bootbox = require('bootbox');
 var $osf = require('js/osfHelpers');
 var ctx = window.contextVars;
 
-var rdmGettext = require('js/rdmGettext');
-var gt = rdmGettext.rdmGettext();
-var _ = function(msgid) { return gt.gettext(msgid); };
+var _ = require('js/rdmGettext')._;
 
 var changeAddonSettingsSuccess = function () {
     $osf.growl('Success', _('Your add-on settings have been successfully changed.'), 'success');
