@@ -429,11 +429,11 @@ class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIVi
         raise NotImplementedError()
 
     def _paginate(self, search, max_paginate=False):
-        page = self.request.query_params.get('page')
-        page_size = self.request.query_params.get('page[size]')
-
         if max_paginate:
             return search.extra(size=MAX_SIZE_OF_ES_QUERY)
+
+        page = self.request.query_params.get('page')
+        page_size = self.request.query_params.get('page[size]')
 
         if page_size:
             page_size = int(page_size)
@@ -468,7 +468,7 @@ class InstitutionDepartmentList(InstitutionImpactList):
     view_name = 'institution-department-metrics'
 
     serializer_class = InstitutionDepartmentMetricsSerializer
-    renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES) + (InstitutionDepartmentMetricsCSVRenderer, )
+    renderer_classes = (api_settings.DEFAULT_RENDERER_CLASSES, InstitutionDepartmentMetricsCSVRenderer, )
 
     ordering = ('-number_of_users', 'name',)
 
@@ -500,7 +500,7 @@ class InstitutionUserMetricsList(InstitutionImpactList):
     view_name = 'institution-user-metrics'
 
     serializer_class = InstitutionUserMetricsSerializer
-    renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES) + (InstitutionUserMetricsCSVRenderer, )
+    renderer_classes = (api_settings.DEFAULT_RENDERER_CLASSES, InstitutionUserMetricsCSVRenderer, )
 
     def is_csv_export(self):
         if isinstance(self.request.accepted_renderer, InstitutionUserMetricsCSVRenderer):
