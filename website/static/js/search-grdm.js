@@ -983,6 +983,22 @@ var ViewModel = function(params) {
         return self.makeTitle(originalStr, highlightArray, lengthLimit);
     };
 
+    self.getWikiName = function(result) {
+        var originalStr = result.name;
+        var highlightArray = result.highlight.name;
+        var lengthLimit = self.titleLengthLimit;
+        return self.makeTitle(originalStr, highlightArray, lengthLimit);
+    };
+
+    self.makeText = function(text) {
+        var extracted = text.replace(/<b>/gi,'').replace(/<\/b>/gi, '');
+        if (extracted.length >= self.textLengthLimit) {
+            return text + '...';
+        }
+
+        return text;
+    };
+
     self.makeComment = function(comment) {
         var extracted = comment.replace(/<b>/gi,'').replace(/<\/b>/gi, '');
         if (extracted.length >= self.commentLengthLimit) {

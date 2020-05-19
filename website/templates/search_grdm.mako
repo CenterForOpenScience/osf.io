@@ -268,7 +268,45 @@
 
     </script>
     <script type="text/html" id="wiki">
-        <h4><a data-bind="attr: {href: url}, text: sort_wiki_name"></a></h4>
+        <span>
+            <div>
+                <span class="tb-expand-icon-holder" style="vertical-align: middle;">
+                    <span class="glyphicon glyphicon-list-alt">
+                    </span>
+                </span>
+                <span style="vertical-align: middle;">
+                    <font size="5"><a data-bind="attr: {href: url}, html: $root.getWikiName($data)"></a></font>
+                </span>
+                <span style="vertical-align: middle; margin-left: 5px;">
+                    <font size="5">GUID: <a data-bind="attr: {href: $root.getGuidUrl(id)}, text: id.toUpperCase()"></a></font>
+                </span>
+            </div>
+        </span>
+        <!-- ko if: node_title && node_url -->
+        <span>
+            <strong>${_("Project:")}</strong>
+            <a data-bind="attr: {href: node_url}, text: node_title"></a>
+        </span>
+        <br>
+        <!-- /ko -->
+        <div>
+            <!-- ko if: modifier_id && modifier_name && date_modified -->
+            <strong>${_("Modified by:")}</strong> <a data-bind="attr: {href: $root.getGuidUrl(modifier_id)}, text: modifier_name + '@' + $root.getGuidText(modifier_id)"></a> at <span data-bind="text: $root.toDate(date_modified)"></span>,
+            <!-- /ko -->
+            <strong>${_("Created by:")}</strong> <a data-bind="attr: {href: $root.getGuidUrl(creator_id)}, text: creator_name + '@' + $root.getGuidText(creator_id)"></a> at <span data-bind="text: $root.toDate(date_created)"></span>
+        </div>
+        <!-- ko if: highlight.text !== undefined -->
+        <p>
+            <span data-bind="html: $root.makeText(highlight.text[0])"></span>
+        </p>
+        <!-- /ko -->
+        <!-- ko if: comment !== null -->
+        <p>
+            <strong>${_("Comment:")}</strong>
+            <span data-bind="html: $root.makeComment(comment.text)"></span>
+            <a data-bind="attr: {href: $root.getGuidUrl(comment.user_id)}, text: comment.user_name + '@' + $root.getGuidText(creator_id)"></a>
+        </p>
+        <!-- /ko -->
     </script>
     <script type="text/html" id="institution">
         <div class="row">
