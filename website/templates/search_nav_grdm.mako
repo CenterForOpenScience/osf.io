@@ -1,4 +1,4 @@
-                        <div>
+                        <div style="display: flex; flex-wrap: nowrap; justify-content: center; align-items: center;">
                             <ul class="pager">
                                 <li data-bind="css: {disabled: !prevPageExists()}">
                                     <a href="#" data-bind="click: pagePrev">${_("Previous Page")} </a>
@@ -61,14 +61,11 @@
                                     <a href="#" data-bind="click: pageNext"> ${_("Next Page")}</a>
                                 </li>
                             </ul>
-                            <center>
-                                <form data-bind="submit: pageNthByUser">
-                                    ${_("Page")}
-                                    <input type="tel" style="width: 50px;" data-bind="value: currentPage"/>
-                                    <button data-bind="visible: false" type="submit"></button>
-                                    /
-                                    <span data-bind="text: totalPages()"></span>
-                                </form>
-                            </center>
-                            <br>
+                            <form style="margin-left: 15px;" data-bind="submit: pageNthByUser">
+                                ${_("Page")}
+                                <input type="tel" style="width: 50px;" data-bind="value: currentPage"/>
+                                <button data-bind="visible: false" type="submit"></button>
+                                /
+                                <span data-bind="text: totalPages()"></span>
+                            </form>
                         </div>
