@@ -3,7 +3,7 @@ from copy import deepcopy
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.views.generic import ListView, FormView
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import Http404
 
 from framework.auth.core import get_user
@@ -113,7 +113,7 @@ class MeetingCreateFormView(PermissionRequiredMixin, FormView):
             **data
         )
         new_conf.save()
-        new_conf.admins = admin_users
+        new_conf.admins.add(*admin_users)
         new_conf.field_names.update(custom_fields)
         new_conf.save()
         return super(MeetingCreateFormView, self).form_valid(form)

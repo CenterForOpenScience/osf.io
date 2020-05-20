@@ -61,14 +61,6 @@ def get_admin_write_permissions():
     ])
 
 
-def get_admin_prereg_permissions():
-    from django.contrib.auth.models import Permission
-    return Permission.objects.filter(codename__in=[
-        'view_prereg',
-        'administer_prereg',
-    ])
-
-
 def update_admin_permissions(verbosity=0):
     from django.contrib.auth.models import Group, Permission
     should_log = verbosity > 0
@@ -90,15 +82,6 @@ def update_admin_permissions(verbosity=0):
     group.save()
     if should_log:
         logger.info('Administrator permissions added to admin group')
-
-    # Create and add permissions for Prereg Admin group
-    prereg_group, created = Group.objects.get_or_create(name='prereg_admin')
-    if created and should_log:
-        logger.info('Prereg admin group created')
-    [prereg_group.permissions.add(perm) for perm in get_admin_prereg_permissions()]
-    prereg_group.save()
-    if should_log:
-        logger.info('Prereg read and administer permissions added to the prereg_admin group')
 
     # Add a metrics_only Group and permissions
     metrics_group, created = Group.objects.get_or_create(name='metrics_only')

@@ -307,12 +307,12 @@ class TestDraftRegistrations:
         assert draft.description == description
         assert draft.category == category
         assert user in draft.contributors.all()
-        assert write_contrib in draft.contributors.all()
+        assert write_contrib not in draft.contributors.all()
         assert member not in draft.contributors.all()
         assert not draft.has_permission(member, 'read')
 
         assert draft.get_permissions(user) == [READ, WRITE, ADMIN]
-        assert draft.get_permissions(write_contrib) == [READ, WRITE]
+        assert draft.get_permissions(write_contrib) == []
 
         assert draft.node_license.license_id == GPL3.license_id
         assert draft.node_license.name == GPL3.name

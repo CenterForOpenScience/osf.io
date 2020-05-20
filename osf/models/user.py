@@ -229,7 +229,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     group_connected_email_records = DateTimeAwareJSONField(default=dict, blank=True)
 
     # The user into which this account was merged
-    merged_by = models.ForeignKey('self', null=True, blank=True, related_name='merger')
+    merged_by = models.ForeignKey('self', null=True, blank=True, related_name='merger', on_delete=models.CASCADE)
 
     # verification key v1: only the token string, no expiration time
     # used for cas login with username and verification key
@@ -561,8 +561,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def osfstorage_region(self):
         from addons.osfstorage.models import Region
         osfs_settings = self._settings_model('osfstorage')
-        default_region_subquery = osfs_settings.objects.filter(owner=self.id).values('default_region_id')
-        return Region.objects.get(id=default_region_subquery)
+        region_subquery = osfs_settings.objects.get(owner=self.id).default_region_id
+        return Region.objects.get(id=region_subquery)
 
     @property
     def contributor_to(self):

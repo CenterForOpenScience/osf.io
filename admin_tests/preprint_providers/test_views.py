@@ -177,7 +177,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
         self.import_view = views.ImportPreprintProvider()
         self.import_view = setup_user_view(self.import_view, self.import_request, user=self.user)
 
-        self.preprint_provider.licenses_acceptable = [NodeLicense.objects.get(license_id='NONE')]
+        self.preprint_provider.licenses_acceptable.add(*[NodeLicense.objects.get(license_id='NONE')])
         self.subject = SubjectFactory(provider=self.preprint_provider)
 
     def test_post(self):

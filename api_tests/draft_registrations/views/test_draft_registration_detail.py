@@ -34,8 +34,7 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
         assert res.status_code == 403
 
-    # Overrides TestDraftRegistrationDetail
-    def test_cannot_view_draft(
+    def test_can_view_draft(
             self, app, user_write_contrib, project_public,
             user_read_contrib, user_non_contrib,
             url_draft_registrations, group, group_mem):
@@ -47,21 +46,25 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
             expect_errors=True)
         assert res.status_code == 200
 
-    #   test_read_write_contributor_can_view_draft
+        #   test_read_write_contributor_can_view_draft
         res = app.get(
             url_draft_registrations,
             auth=user_write_contrib.auth,
             expect_errors=True)
         assert res.status_code == 200
 
-    #   test_logged_in_non_contributor_cannot_view_draft
+    def test_cannot_view_draft(
+            self, app, project_public,
+            user_non_contrib, url_draft_registrations):
+
+        #   test_logged_in_non_contributor_cannot_view_draft
         res = app.get(
             url_draft_registrations,
             auth=user_non_contrib.auth,
             expect_errors=True)
         assert res.status_code == 403
 
-    #   test_unauthenticated_user_cannot_view_draft
+        #   test_unauthenticated_user_cannot_view_draft
         res = app.get(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
 
@@ -123,27 +126,27 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         project_public.add_contributor(node_admin, ADMIN)
         assert project_public.has_permission(node_admin, ADMIN) is True
         assert draft_registration.has_permission(node_admin, ADMIN) is False
-        res = app.get(url_draft_registrations, auth=node_admin.auth, expect_errors=True)
-        assert res.status_code == 403
+        res = app.get(url_draft_registrations, auth=node_admin.auth)
+        assert res.status_code == 200
 
         # Admin on draft but not node
         draft_admin = AuthUserFactory()
         draft_registration.add_contributor(draft_admin, ADMIN)
         assert project_public.has_permission(draft_admin, ADMIN) is False
         assert draft_registration.has_permission(draft_admin, ADMIN) is True
-        res = app.get(url_draft_registrations, auth=draft_admin.auth)
-        assert res.status_code == 200
+        res = app.get(url_draft_registrations, auth=draft_admin.auth, expect_errors=True)
+        assert res.status_code == 403
 
     # Overwrites TestDraftRegistrationDetail
     def test_can_view_after_added(
             self, app, schema, draft_registration, url_draft_registrations):
-        # Draft Registration permissions should be independent of the branched_from node
+        # Draft Registration permissions are based on the branched from node
 
         user = AuthUserFactory()
         project = draft_registration.branched_from
         project.add_contributor(user, ADMIN)
-        res = app.get(url_draft_registrations, auth=user.auth, expect_errors=True)
-        assert res.status_code == 403
+        res = app.get(url_draft_registrations, auth=user.auth)
+        assert res.status_code == 200
 
     # Overrides TestDraftRegistrationDetail
     def test_reviewer_can_see_draft_registration(

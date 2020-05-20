@@ -36,7 +36,7 @@ SESSION_COOKIE_HTTPONLY = osf_settings.SESSION_COOKIE_HTTPONLY
 # csrf:
 CSRF_COOKIE_NAME = 'admin-csrf'
 CSRF_COOKIE_SECURE = osf_settings.SECURE_MODE
-# set to False: prereg uses a SPA and ajax and grab the token to use it in the requests
+# set to False for admin draft registration uses a SPA and ajax and grab the token to use it in the requests
 CSRF_COOKIE_HTTPONLY = False
 
 ALLOWED_HOSTS = [
@@ -101,7 +101,6 @@ INSTALLED_APPS = (
     # Internal apps
     'admin.common_auth',
     'admin.base',
-    'admin.pre_reg',
     'admin.spam',
     'admin.metrics',
     'admin.nodes',
@@ -229,9 +228,6 @@ if KEEN_CREDENTIALS['keen_ready']:
         'keen_write_key': KEEN_WRITE_KEY
     })
 
-
-ENTRY_POINTS = {'osf4m': 'osf4m', 'prereg_challenge_campaign': 'prereg',
-                'institution_campaign': 'institution'}
 
 # Set in local.py
 DESK_KEY = ''

@@ -14,6 +14,7 @@ from api.base.serializers import (
     IDField,
 )
 
+from api.nodes.serializers import CompoundIDField
 from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.utils import absolute_reverse
 
@@ -202,12 +203,29 @@ class InstitutionSummaryMetricSerializer(JSONAPISerializer):
         )
 
 
+class UniqueDeptIDField(CompoundIDField):
+    """Creates a unique department ID of the form "<institution-id>-<dept-id>"."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs['source'] = kwargs.pop('source', 'name')
+        kwargs['help_text'] = kwargs.get('help_text', 'Unique ID that is a compound of two objects. Has the form "<institution-id>-<dept-id>". Example: "cos-psych"')
+        super().__init__(*args, **kwargs)
+
+    def _get_resource_id(self):
+        return self.context['request'].parser_context['kwargs']['institution_id']
+
+    def to_representation(self, value):
+        resource_id = self._get_resource_id()
+        related_id = super(CompoundIDField, self).to_representation(value).replace(' ', '-')
+        return '{}-{}'.format(resource_id, related_id)
+
+
 class InstitutionDepartmentMetricsSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'institution-departments'
 
-    id = IDField(read_only=True)
+    id = UniqueDeptIDField(source='name', read_only=True)
     name = ser.CharField(read_only=True)
     number_of_users = ser.IntegerField(read_only=True)
 
@@ -250,6 +268,14 @@ class InstitutionUserMetricsSerializer(JSONAPISerializer):
     links = LinksField({
         'self': 'get_absolute_url',
     })
+
+    filterable_fields = frozenset([
+        'id',
+        'user_name',
+        'public_projects',
+        'private_projects',
+        'department',
+    ])
 
     def get_absolute_url(self, obj):
         return absolute_reverse(

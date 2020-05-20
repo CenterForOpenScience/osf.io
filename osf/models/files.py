@@ -839,8 +839,8 @@ class FileVersion(ObjectIDMixin, BaseModel):
 
 
 class BaseFileVersionsThrough(models.Model):
-    basefilenode = models.ForeignKey(BaseFileNode, db_index=True)
-    fileversion = models.ForeignKey(FileVersion, db_index=True)
+    basefilenode = models.ForeignKey(BaseFileNode, db_index=True, on_delete=models.CASCADE)
+    fileversion = models.ForeignKey(FileVersion, db_index=True, on_delete=models.CASCADE)
     version_name = models.TextField(blank=True)
 
     class Meta:
