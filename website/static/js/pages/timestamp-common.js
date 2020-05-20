@@ -872,9 +872,9 @@ function initTinyDatePicker() {
 
 }
 
-function initBootstrapDatePicker(datepicker_locale) {
-    datepicker.mount('#startDateFilter', datepicker_locale);
-    datepicker.mount('#endDateFilter', datepicker_locale);
+function initBootstrapDatePicker() {
+    datepicker.mount('#startDateFilter', null);
+    datepicker.mount('#endDateFilter', null);
 }
 
 function taskStatusUpdater () {
@@ -901,10 +901,10 @@ function checkHasTaskRunning () {
     }
 }
 
-function init(url, datepicker_locale) {
+function init(url) {
     taskStatusUrl = url;
     initList();
-    initBootstrapDatePicker(datepicker_locale);
+    initBootstrapDatePicker();
     checkHasTaskRunning();
 }
 

@@ -3,7 +3,12 @@ require('bootstrap-datepicker');
 require('bootstrap-datepicker-ja');
 require('bootstrap-datepicker-css');
 
+var gt = require('js/rdmGettext');
+
 function mount(selector, datepicker_locale) {
+    if (datepicker_locale === null || datepicker_locale.length === 0) {
+        datepicker_locale = gt.getBrowserLang();
+    }
     var show_func = function(e) {
         $('.datepicker-dropdown').css('background-color', '#FFF');
     };

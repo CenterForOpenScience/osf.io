@@ -9,7 +9,7 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.views.generic import ListView, View, TemplateView
 from osf.models import Institution, Node, AbstractNode, TimestampTask
-from website.util import timestamp, datepicker_locale
+from website.util import timestamp
 import json
 
 
@@ -94,7 +94,6 @@ class TimeStampAddList(RdmPermissionMixin, TemplateView):
         ctx['guid'] = self.kwargs['guid']
         ctx['institution_id'] = self.kwargs['institution_id']
         ctx['async_task'] = timestamp.get_async_task_data(absNodeData)
-        ctx['datepicker_locale'] = datepicker_locale(self.request.user)
         return ctx
 
 class VerifyTimestamp(RdmPermissionMixin, View):

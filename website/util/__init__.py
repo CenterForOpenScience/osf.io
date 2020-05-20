@@ -112,12 +112,3 @@ def is_json_request():
     """Return True if the current request is a JSON/AJAX request."""
     content_type = request.content_type
     return content_type and ('application/json' in content_type)
-
-
-def datepicker_locale(user):
-    if user is None \
-       or not hasattr(user, 'locale') \
-       or user.locale is None \
-       or user.locale == 'en_US':
-        return 'en'
-    return user.locale

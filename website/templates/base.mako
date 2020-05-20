@@ -248,7 +248,6 @@
                 analyticsMeta: {},
                 osfSupportEmail: ${osf_support_email | sjson, n },
                 csrfCookieName: ${ csrf_cookie_name | sjson, n },
-                datepickerLocale: ${ datepicker_locale | sjson, n },
             });
         </script>
 

@@ -3,7 +3,6 @@
 var $ = require('jquery');
 var Cookie = require('js-cookie');
 var urls = window.timestampaddUrls;
-var context = window.contextVars;
 var timestampCommon = require('js/pages/timestamp-common.js');  // website/static/js/pages
 timestampCommon.setWebOrAdmin('admin');
 
@@ -98,7 +97,7 @@ $(function () {
     });
 
     $(document).ready(function () {
-        timestampCommon.init(urls.taskStatusUrl, context.datepickerLocale);
+        timestampCommon.init(urls.taskStatusUrl);
         $('#btn-verify').on('click', btnVerify_onclick).focus();
         $('#btn-addtimestamp').on('click', btnAddtimestamp_onclick).focus();
         $('#btn-cancel').on('click', function () {

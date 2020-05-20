@@ -582,6 +582,6 @@ $(document).ready(function () {
         });
     }
 
-    datepicker.mount('#LogSearchS', window.contextVars.datepickerLocale);
-    datepicker.mount('#LogSearchE', window.contextVars.datepickerLocale);
+    datepicker.mount('#LogSearchS', null);
+    datepicker.mount('#LogSearchE', null);
 });
