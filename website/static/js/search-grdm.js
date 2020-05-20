@@ -147,20 +147,20 @@ var isValidSort = function (sort_name, filter_name) {
 var SortOrderSettings = function(category_name) {
     var settings = [];
     var allSettings = [
-        {text: _('Date Modified(Desc)'), value: 'modified_desc', enable: ko.observable(true)},
-        {text: _('Date Modified(Asc)'), value: 'modified_asc', enable: ko.observable(true)},
-        {text: _('Date Created(Desc)'), value: 'created_desc', enable: ko.observable(true)},
-        {text: _('Date Created(Asc)'), value: 'created_asc', enable: ko.observable(true)},
-        {text: _('Project name(Asc)'), value: 'project_asc', enable: ko.observable(true)},
-        {text: _('Project name(Desc)'), value: 'project_desc', enable: ko.observable(true)},
-        {text: _('File name(Asc)'), value: 'file_asc', enable: ko.observable(true)},
-        {text: _('File name(Desc)'), value: 'file_desc', enable: ko.observable(true)},
-        {text: _('User name(Asc)'), value: 'user_asc', enable: ko.observable(true)},
-        {text: _('User name(Desc)'), value: 'user_desc', enable: ko.observable(true)},
-        {text: _('Institution name(Asc)'), value: 'institution_asc', enable: ko.observable(true)},
-        {text: _('Institution name(Desc)'), value: 'institution_desc', enable: ko.observable(true)},
-        {text: _('Wiki title(Asc)'), value: 'wiki_asc', enable: ko.observable(true)},
-        {text: _('Wiki title(Desc)'), value: 'wiki_desc', enable: ko.observable(true)}
+        {text: _('Date Modified (Desc)'), value: 'modified_desc', enable: ko.observable(true)},
+        {text: _('Date Modified (Asc)'), value: 'modified_asc', enable: ko.observable(true)},
+        {text: _('Date Created (Desc)'), value: 'created_desc', enable: ko.observable(true)},
+        {text: _('Date Created (Asc)'), value: 'created_asc', enable: ko.observable(true)},
+        {text: _('Project name (Asc)'), value: 'project_asc', enable: ko.observable(true)},
+        {text: _('Project name (Desc)'), value: 'project_desc', enable: ko.observable(true)},
+        {text: _('File name (Asc)'), value: 'file_asc', enable: ko.observable(true)},
+        {text: _('File name (Desc)'), value: 'file_desc', enable: ko.observable(true)},
+        {text: _('User name (Asc)'), value: 'user_asc', enable: ko.observable(true)},
+        {text: _('User name (Desc)'), value: 'user_desc', enable: ko.observable(true)},
+        {text: _('Institution name (Asc)'), value: 'institution_asc', enable: ko.observable(true)},
+        {text: _('Institution name (Desc)'), value: 'institution_desc', enable: ko.observable(true)},
+        {text: _('Wiki title (Asc)'), value: 'wiki_asc', enable: ko.observable(true)},
+        {text: _('Wiki title (Desc)'), value: 'wiki_desc', enable: ko.observable(true)}
     ];
 
     for (var i = 0, len = allSettings.length; i < len; i++) {
