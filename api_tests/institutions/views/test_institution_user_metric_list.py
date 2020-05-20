@@ -26,6 +26,10 @@ class TestInstitutionUserMetricList:
         return AuthUserFactory()
 
     @pytest.fixture()
+    def user3(self):
+        return AuthUserFactory(fullname='Zedd')
+
+    @pytest.fixture()
     def admin(self, institution):
         user = AuthUserFactory()
         group = institution.get_group('institutional_admins')
@@ -64,6 +68,17 @@ class TestInstitutionUserMetricList:
 
         import time
         time.sleep(2)
+
+    @pytest.fixture()
+    def populate_more_counts(self, institution, user, user2, user3, populate_counts):
+
+        UserInstitutionProjectCounts.record(
+            user_id=user3._id,
+            institution_id=institution._id,
+            department='Psychology dept',
+            public_project_count=6,
+            private_project_count=1,
+        ).save()
 
     @pytest.fixture()
     def url(self, institution):
@@ -145,3 +160,10 @@ class TestInstitutionUserMetricList:
     def test_filter(self, app, url, admin, populate_counts):
         resp = app.get(f'{url}?filter[department]=Psychology dept', auth=admin.auth)
         assert resp.json['data'][0]['attributes']['department'] == 'Psychology dept'
+
+    def test_sort_and_pagination(self, app, url, admin, populate_more_counts):
+        resp = app.get(f'{url}?sort=user_name&page[size]=1&page=2', auth=admin.auth)
+        assert resp.status_code == 200
+        assert resp.json['links']['meta']['total'] == 3
+        resp = app.get(f'{url}?sort=user_name&page[size]=1&page=3', auth=admin.auth)
+        assert resp.json['data'][0]['attributes']['user_name'] == 'Zedd'
