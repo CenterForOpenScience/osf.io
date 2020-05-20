@@ -468,7 +468,7 @@ class InstitutionDepartmentList(InstitutionImpactList):
     view_name = 'institution-department-metrics'
 
     serializer_class = InstitutionDepartmentMetricsSerializer
-    renderer_classes = (api_settings.DEFAULT_RENDERER_CLASSES, InstitutionDepartmentMetricsCSVRenderer, )
+    renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionDepartmentMetricsCSVRenderer, )
 
     ordering = ('-number_of_users', 'name',)
 
@@ -500,7 +500,7 @@ class InstitutionUserMetricsList(InstitutionImpactList):
     view_name = 'institution-user-metrics'
 
     serializer_class = InstitutionUserMetricsSerializer
-    renderer_classes = (api_settings.DEFAULT_RENDERER_CLASSES, InstitutionUserMetricsCSVRenderer, )
+    renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionUserMetricsCSVRenderer, )
 
     def is_csv_export(self):
         if isinstance(self.request.accepted_renderer, InstitutionUserMetricsCSVRenderer):

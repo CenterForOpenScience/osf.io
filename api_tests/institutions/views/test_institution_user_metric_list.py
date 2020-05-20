@@ -145,12 +145,14 @@ class TestInstitutionUserMetricList:
         }
         resp = app.get(url, auth=admin.auth, headers=headers)
         assert resp.status_code == 200
-        # Note: The response body does not reflect the new lines actually in the CSV
-        response_body = resp.unicode_normal_body
-        response_body_split = response_body.split(',')
-        assert response_body_split[5] == user.fullname
-        assert response_body_split[6] == '6'
-        assert response_body_split[7] == '5'
-        assert response_body_split[9] == user2.fullname
-        assert response_body_split[10] == '3'
-        assert response_body_split[11] == '2'
+        assert resp.headers['Content-Type'] == 'text/csv; charset=utf-8'
+
+        response_body = resp.text
+        rows = response_body.split('\r\n')
+        header_row = rows[0].split(',')
+        user_row = rows[1].split(',')
+        user2_row = rows[2].split(',')
+
+        assert header_row == ['id', 'user_name', 'public_projects', 'private_projects', 'type']
+        assert user_row == [user._id, user.fullname, '6', '5', 'institution-users']
+        assert user2_row == [user2._id, user2.fullname, '3', '2', 'institution-users']

@@ -141,16 +141,20 @@ class TestInstitutionDepartmentList:
             'accept': 'text/csv'
         }
         resp = app.get(url, auth=admin.auth, headers=headers)
+
         assert resp.status_code == 200
-        # Note: The response body does not reflect the new lines actually in the CSV
-        response_body = resp.unicode_normal_body
-        response_body_split = response_body.split(',')
-        assert response_body_split[4] == 'New Department'
-        assert response_body_split[5] == '2'
-        assert response_body_split[7] == 'Smaller Department'
-        assert response_body_split[8] == '1'
-        assert response_body_split[10] == 'N/A'
-        assert response_body_split[11] == '1'
+        assert resp.headers['Content-Type'] == 'text/csv; charset=utf-8'
+        response_body = resp.text
+        rows = response_body.split('\r\n')
+        header_row = rows[0].split(',')
+        new_department_row = rows[1].split(',')
+        smaller_department_row = rows[2].split(',')
+        na_row = rows[3].split(',')
+
+        assert header_row == ['id', 'name', 'number_of_users', 'type']
+        assert new_department_row == [institution._id, 'New Department', '2', 'institution-departments']
+        assert smaller_department_row == [institution._id, 'Smaller Department', '1', 'institution-departments']
+        assert na_row == [institution._id, 'N/A', '1', 'institution-departments']
 
     def test_pagination(self, app, url, admin, institution, populate_counts):
         resp = app.get(f'{url}?filter[name]=New Department', auth=admin.auth)
