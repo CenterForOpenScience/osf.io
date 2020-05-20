@@ -275,17 +275,21 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
         """
         last_record_time = cls.get_recent_datetime(institution)
 
-        return cls.filter_institution(
+        search = cls.filter_institution(
             institution
-        ).sort(
-            'timestamp'
         ).filter(
             'range',
             timestamp={
                 'gte': last_record_time
             }
+        ).sort(
+            'user_id'
         )
+        search.update_from_dict({
+            'size': 1000
+        })
 
+        return search
 
 class InstitutionProjectCounts(MetricMixin, metrics.Metric):
     institution_id = metrics.Keyword(index=True, doc_values=True, required=True)

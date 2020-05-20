@@ -442,7 +442,6 @@ class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIVi
         :param departments: Dict {'Department Name': 3} means "Department Name" has 3 users.
         :return: mock_queryset
         """
-
         items = self._format_search(search)
 
         search = self._paginate(search)
@@ -481,6 +480,8 @@ class InstitutionUserMetricsList(InstitutionImpactList):
     view_name = 'institution-user-metrics'
 
     serializer_class = InstitutionUserMetricsSerializer
+
+    ordering = ('user_name',)
 
     def _format_search(self, search):
         results = search.execute()

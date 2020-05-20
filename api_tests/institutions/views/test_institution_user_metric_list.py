@@ -79,6 +79,8 @@ class TestInstitutionUserMetricList:
             public_project_count=6,
             private_project_count=1,
         ).save()
+        import time
+        time.sleep(2)
 
     @pytest.fixture()
     def url(self, institution):
