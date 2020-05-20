@@ -152,9 +152,9 @@ class TestInstitutionDepartmentList:
         na_row = rows[3].split(',')
 
         assert header_row == ['id', 'name', 'number_of_users', 'type']
-        assert new_department_row == [institution._id, 'New Department', '2', 'institution-departments']
-        assert smaller_department_row == [institution._id, 'Smaller Department', '1', 'institution-departments']
-        assert na_row == [institution._id, 'N/A', '1', 'institution-departments']
+        assert new_department_row == [f'{institution._id}-New-Department', 'New Department', '2', 'institution-departments']
+        assert smaller_department_row == [f'{institution._id}-Smaller-Department', 'Smaller Department', '1', 'institution-departments']
+        assert na_row == [f'{institution._id}-N/A', 'N/A', '1', 'institution-departments']
 
     def test_pagination(self, app, url, admin, institution, populate_counts):
         resp = app.get(f'{url}?filter[name]=New Department', auth=admin.auth)
