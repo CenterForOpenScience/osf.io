@@ -6,7 +6,7 @@ from distutils.version import StrictVersion
 from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
-from api.base.exceptions import Conflict, InvalidModelValueError
+from api.base.exceptions import Conflict, InvalidModelValueError, JSONAPIException
 from api.base.serializers import is_anonymized
 from api.base.utils import absolute_reverse, get_user_auth, is_truthy
 from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
@@ -549,9 +549,9 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         """
         if self.expect_cleaner_attributes(self.context['request']):
             if validated_data.get('registration_choice'):
-                raise exceptions.ValidationError(
-                    f'The field registration_choice was '
-                    f'deprecated in version {CREATE_REGISTRATION_FIELD_CHANGE_VERSION}. Use embargo_end_date instead.',
+                raise JSONAPIException(
+                    source={'pointer': '/data/attributes/registration_choice'},
+                    detail=f'Deprecated in version {CREATE_REGISTRATION_FIELD_CHANGE_VERSION}. Use embargo_end_date instead.',
                 )
             return 'embargo' if validated_data.get('embargo_end_date', None) else 'immediate'
         return validated_data.get('registration_choice', 'immediate')
@@ -563,9 +563,9 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         """
         if self.expect_cleaner_attributes(self.context['request']):
             if validated_data.get('lift_embargo'):
-                raise exceptions.ValidationError(
-                    f'The field lift_embargo was '
-                    f'deprecated in version {CREATE_REGISTRATION_FIELD_CHANGE_VERSION}. Use embargo_end_date instead.',
+                raise JSONAPIException(
+                    source={'pointer': '/data/attributes/lift_embargo'},
+                    detail=f'Deprecated in version {CREATE_REGISTRATION_FIELD_CHANGE_VERSION}. Use embargo_end_date instead.',
                 )
             return validated_data.get('embargo_end_date', None)
         return validated_data.get('lift_embargo')

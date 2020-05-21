@@ -1287,8 +1287,9 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert (res.json['errors'][0]['detail'] == f'The field lift_embargo was '
-            f'deprecated in version {CREATE_REGISTRATION_FIELD_CHANGE_VERSION}. Use embargo_end_date instead.')
+        assert (res.json['errors'][0]['detail'] ==
+            f'Deprecated in version {CREATE_REGISTRATION_FIELD_CHANGE_VERSION}. Use embargo_end_date instead.')
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/lift_embargo'
 
     def test_new_API_version_errors_on_registration_choice(
             self, app, user, draft_registration, url_registrations_ver):
@@ -1307,8 +1308,9 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert (res.json['errors'][0]['detail'] == f'The field registration_choice was '
-            f'deprecated in version {CREATE_REGISTRATION_FIELD_CHANGE_VERSION}. Use embargo_end_date instead.')
+        assert (res.json['errors'][0]['detail'] ==
+            f'Deprecated in version {CREATE_REGISTRATION_FIELD_CHANGE_VERSION}. Use embargo_end_date instead.')
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/registration_choice'
 
     def test_new_API_version_uses_included_node_ids_instead_of_children(
             self, app, user, draft_registration, url_registrations_ver, project_public,
