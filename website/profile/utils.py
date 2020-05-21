@@ -32,6 +32,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
     fullname = user.display_full_name(node=node)
     ret = {
         'id': str(user._id),
+        'primary_key': user.id,
         'registered': user.is_registered,
         'surname': user.family_name,
         'fullname': fullname,

@@ -62,6 +62,7 @@ var entry = {
     'rdm-firebase': staticPath('js/rdm-firebase.js'),
     'rdmGettext': staticPath('js/rdmGettext.js'),
     'datepicker': staticPath('js/datepicker.js'),
+    'rdmSelect2': staticPath('js/rdmSelect2.js'),
     // Commons chunk
     'vendor': [
         // Vendor libraries
@@ -145,6 +146,7 @@ var resolve = {
         'bootstrap-datepicker': nodePath('bootstrap-datepicker/dist/js/bootstrap-datepicker.js'),
         'bootstrap-datepicker-ja': nodePath('bootstrap-datepicker/dist/locales/bootstrap-datepicker.ja.min.js'),
         'bootstrap-datepicker-css': nodePath('bootstrap-datepicker/dist/css/bootstrap-datepicker3.css'),
+        'select2-ja': nodePath('select2/select2_locale_ja.js'),
         'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
         'bootstrap': nodePath('bootstrap/dist/js/bootstrap.js'),
         'Caret.js': staticPath('vendor/bower_components/Caret.js/dist/jquery.caret.min.js'),

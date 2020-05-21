@@ -31,8 +31,10 @@ var nodeCategories = ctx.nodeCategories || [];
 var currentUserRequestState = ctx.currentUserRequestState;
 
 var _ = require('js/rdmGettext')._;
+var sprintf = require('agh.sprintf').sprintf;
 
 var datepicker = require('js/datepicker');
+require('js/rdmSelect2');
 
 // Listen for the nodeLoad event (prevents multiple requests for data)
 $('body').on('nodeLoad', function(event, data) {
@@ -103,9 +105,279 @@ var institutionLogos = {
     }
 };
 
-
 var ArrangeLogDownload = function (){};
 var RefreshLog = function(){};
+
+var placeholder_user_fullname = _('User Full name');
+
+var commonDropdownSuggestOptions = {
+    sortResults: function(results, container, query) {
+        return results.sort(function(a, b) {
+            if (a.text > b.text) {
+                return 1;
+            } else if (a.text < b.text) {
+                return -1;
+            } else {
+                return 0;
+            }
+        });
+    },
+    multiple: true,
+    allowClear: true,
+    cache: true,
+    placeholder: placeholder_user_fullname,
+    width: '100%'
+};
+
+var initDropdownSuggestAllUsers = function () {
+    var options = {
+        ajax: {
+	    url: $osf.apiV2Url('/users/'),
+	    dataType: 'json',
+	    data: function (term, page) {
+		return {
+		  'filter[full_name][contains]': term
+		};
+	    },
+	    results: function (data, page, query) {
+		var users = [];
+		for (var i in data.data) {
+		    var d = data.data[i];
+		    var userAttr = d.attributes;
+		    var guid = d.id.toUpperCase();
+		    // OSFUser.fullname
+		    var name = userAttr.full_name + ' @' + guid;
+		    users.push({id: userAttr.uid, text: name});
+		}
+		return {
+		    results: users
+		};
+	    }
+	},
+        minimumInputLength: 1,
+        formatInputTooShort: function (input, min) {
+           var n = min - input.length;
+           return sprintf(_('Please enter %s or more characters'), n);
+        }
+    };
+    $.extend(true, options, commonDropdownSuggestOptions);
+    $('#LogSearchName').select2(options);
+};
+
+var initDropdownSuggestContributors = function () {
+    var contributors = window.contextVars.node.contributors;
+    var makeData = function (user) {
+        var full_name = user.fullname;
+        if (full_name === null) {
+            full_name = '';
+        }
+        var guid = user.id.toUpperCase();
+        var name = full_name + ' @' + guid;
+        return {id: user.primary_key, text: name};
+    };
+    var options = {
+        data: $.map(contributors, makeData),
+    };
+    $.extend(true, options, commonDropdownSuggestOptions);
+    $('#LogSearchName').select2(options);
+};
+
+// old implementation to search users for Recent Activity
+var getUserKeysByPartialMatch = function (inputStr, updateLog, urlFilesGrid) {
+    var splitSearch = function(searchStr) {
+        // Examples:
+	// a b c de -> [['a'], ['b'], ['c'], ['de']]
+	// "a b c" de -> [['a b c'], ['de']]
+	// "a\ b c" de -> [['a\ b c'], ['de']]
+	// "a b c de -> [['a b c de']]
+	// a\ b\ c de -> [['a b c'], ['de']]
+	// "a b" AND c de -> [['a b', 'c'], ['de']]
+	// "a b" "AND" c de -> [['a b', 'c'], ['de']]
+	// a \"AND\" \b \\ \" -> [['a'], ['AND'], ['b'], ['\'], ['"']]
+	var words = [];
+	var all = Array.from(searchStr);
+	var len = all.length;
+	var i;
+	var escape = false;
+	var quote = false;
+	var tmp = [];
+
+	var confirm = function() {
+	    if (tmp.length > 0) {
+		words.push(tmp.join(''));
+		tmp = [];
+	    }
+	};
+
+	for (i = 0; i < len; i++) {
+	    var c = all[i];
+	    if (quote) {
+		if (c === '"') {
+		   confirm();
+		   quote = false;
+		} else {
+		    tmp.push(c);
+		}
+	    } else if (escape) {
+		tmp.push(c);
+		escape = false;
+	    } else if (c === ' ') {
+		confirm();
+		escape = false;
+	    } else if (c === '\\') {
+		escape = true;
+	    } else if (c === '"') {
+		confirm();
+		quote = true;
+	    } else {
+		tmp.push(c);
+		escape = false;
+	    }
+	}
+	confirm();
+
+	var results = [];
+	var and_list = [];
+	len = words.length;
+	for (i = 0; i < len; i++) {
+	    var word = words[i];
+	    var next = null;
+	    if (i < len - 1) {
+		next = words[i+1];
+	    }
+	    if (word === 'AND') {
+		continue;
+	    } else {
+		if (word === '"AND"') {
+		    word = 'AND';
+		}
+		if (word !== '') {
+		  and_list.push(word);
+		}
+		if (next !== 'AND') {
+		   if (and_list.length > 0) {
+		     results.push(and_list);
+		     and_list = [];
+		   }
+		}
+	    }
+	}
+	return results;
+    };
+
+    var logSearchNames = splitSearch(inputStr);
+    var urlUsers = $osf.apiV2Url('/users/');
+    var userKeyDict = {};
+    var promise = m.request({
+        method: 'GET',
+        config: $osf.setXHRAuthorization,
+        url: urlUsers});
+    promise.then(function (data) {
+        var total = Number(data.links.meta.total);
+        var name_i;
+        for (name_i in logSearchNames) {
+            var and_list = logSearchNames[name_i];
+            if (and_list.length === 0) {
+                continue;
+            }
+            var data_i;
+            for (data_i in data.data) {
+                var userAttr = data.data[data_i].attributes;
+                // OSFUser.fullname
+                var fullName = userAttr.full_name;
+                var j;
+                var match_count = 0;
+                for (j = 0; j < and_list.length; j++) {
+                    var word = and_list[j];
+                    if (fullName.includes(word)) {
+                        match_count++;
+                    }
+                }
+                if (match_count === and_list.length) {
+                    // OSFUser.id
+                    userKeyDict[userAttr.uid] = true;
+                }
+            }
+        }
+        var userKeysList = Object.keys(userKeyDict);
+        if (userKeysList.length === 0) {
+            // $osf.growl(_('no user matched'), '"' + LogSearchName + '"', 'warning');
+            updateLog(null);  // show empty log
+        } else {
+            updateLog(userKeysList.join(','));
+        }
+    }, function(xhr, textStatus, error) {
+        Raven.captureMessage('Error retrieving UserList', {extra:
+           {url: urlFilesGrid, textStatus: textStatus, error: error}});
+    });
+};
+
+var enableSuggestUserDropdown = true;
+var enableSuggestAllUsers = false;
+
+var initUserKeysForRecentActivity = function () {
+    var init = function () {
+        $('#LogSearchName').select2('destroy');
+        if (enableSuggestUserDropdown) {
+            if (enableSuggestAllUsers) {
+                initDropdownSuggestAllUsers();
+            } else {
+                initDropdownSuggestContributors();
+            }
+        } else {
+            $('#LogSearchName').css('width', '100%');
+            $('#LogSearchName').attr('placeholder', placeholder_user_fullname);
+        }
+    };
+
+    var clearLogFilter = function () {
+        if (enableSuggestUserDropdown) {
+            $('#LogSearchName').select2('val', '');
+        } else {
+            $('#LogSearchName').val(null);
+        }
+        $('#LogSearchS').val(null);
+        $('#LogSearchE').val(null);
+        RefreshLog();
+    };
+    $('#ClearLogFilterBtn').on('click', clearLogFilter);
+
+    $('#RefreshLog').on('click', RefreshLog);
+    $('#LogSearchName').on('change', RefreshLog);
+    $('#LogSearchName,#LogSearchE,#LogSearchS').on('keypress', function(e){
+        var key = e.which;
+        if (key === 13) {  // Enter Key
+            new RefreshLog();
+            return false;
+        }
+    });
+
+    // set defaults
+    $('#dropDownSelectUsers').prop('checked', true);
+    $('#allUsers').prop('checked', false);
+    init();
+
+    $('#dropDownSelectUsers').change(function() {
+        enableSuggestUserDropdown = $('#dropDownSelectUsers').is(':checked');
+        $('#allUsersCheckboxGroup').toggle(enableSuggestUserDropdown);
+        init();
+        clearLogFilter();
+    });
+    $('#allUsers').change(function() {
+        enableSuggestAllUsers = $('#allUsers').is(':checked');
+        init();
+        clearLogFilter();
+    });
+};
+
+var updateUserKeysForRecentActivity = function (LogSearchName, updateLog, urlFilesGrid) {
+    if (enableSuggestUserDropdown) {
+        updateLog(LogSearchName);
+    } else { // old implementation
+        getUserKeysByPartialMatch(LogSearchName, updateLog, urlFilesGrid);
+    }
+};
+
 $(document).ready(function () {
     // Allows dropdown elements to persist after being clicked
     // Used for the "Share" button in the more actions menu
@@ -204,149 +476,34 @@ $(document).ready(function () {
             }, function(xhr, textStatus, error) {
                 Raven.captureMessage('Error retrieving DownloadLog', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});
             });
-         });
-
-        var splitSearch = function(searchStr) {
-            // Examples:
-            // a b c de -> [['a'], ['b'], ['c'], ['de']]
-            // "a b c" de -> [['a b c'], ['de']]
-            // "a\ b c" de -> [['a\ b c'], ['de']]
-            // "a b c de -> [['a b c de']]
-            // a\ b\ c de -> [['a b c'], ['de']]
-            // "a b" AND c de -> [['a b', 'c'], ['de']]
-            // "a b" "AND" c de -> [['a b', 'c'], ['de']]
-            // a \"AND\" \b \\ \" -> [['a'], ['AND'], ['b'], ['\'], ['"']]
-            var words = [];
-            var all = Array.from(searchStr);
-            var len = all.length;
-            var i;
-            var escape = false;
-            var quote = false;
-            var tmp = [];
-
-            var confirm = function() {
-                if (tmp.length > 0) {
-                    words.push(tmp.join(''));
-                    tmp = [];
-                }
-            };
-
-            for (i = 0; i < len; i++) {
-                var c = all[i];
-                if (quote) {
-                    if (c === '"') {
-                       confirm();
-                       quote = false;
-                    } else {
-                        tmp.push(c);
-                    }
-                } else if (escape) {
-                    tmp.push(c);
-                    escape = false;
-                } else if (c === ' ') {
-                    confirm();
-                    escape = false;
-                } else if (c === '\\') {
-                    escape = true;
-                } else if (c === '"') {
-                    confirm();
-                    quote = true;
-                } else {
-                    tmp.push(c);
-                    escape = false;
-                }
-            }
-            confirm();
-
-            var results = [];
-            var and_list = [];
-            len = words.length;
-            for (i = 0; i < len; i++) {
-                var word = words[i];
-                var next = null;
-                if (i < len - 1) {
-                    next = words[i+1];
-                }
-                if (word === 'AND') {
-                    continue;
-                } else {
-                    if (word === '"AND"') {
-                        word = 'AND';
-                    }
-                    if (word !== '') {
-                      and_list.push(word);
-                    }
-                    if (next !== 'AND') {
-                       if (and_list.length > 0) {
-                         results.push(and_list);
-                         and_list = [];
-                       }
-                    }
-                }
-            }
-            return results;
-        };
+        });
 
         // Refresh button
-        RefreshLog =function (){
+        RefreshLog = function () {
             var LogSearchName = $('#LogSearchName').val();
             if (LogSearchName === '') {
-                document.getElementById('LogSearchUserKeys').value = '';
-                m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node, noTarget: false}));
+                $('#LogSearchUserKeys').val('');
+                m.mount(document.getElementById('logFeed'),
+                         m.component(LogFeed.LogFeed,
+                                     {node: node, noTarget: false}));
             } else {
-                var logSearchNames = splitSearch(LogSearchName);
-                var urlUsers = $osf.apiV2Url('/users/');
-                var promise = m.request({ method: 'GET', config: $osf.setXHRAuthorization, url: urlUsers});
-                promise.then(function (data) {
-                    var userKeyDict = {};
-                    var total = Number(data.links.meta.total);
-                    var name_i;
-                    for (name_i in logSearchNames) {
-                        var and_list = logSearchNames[name_i];
-                        if (and_list.length === 0) {
-                            continue;
-                        }
-                        var data_i;
-                        for (data_i in data.data) {
-                            var userAttr = data.data[data_i].attributes;
-                            // OSFUser.fullname
-                            var fullName = userAttr.full_name;
-                            var j;
-                            var match_count = 0;
-                            for (j = 0; j < and_list.length; j++) {
-                                var word = and_list[j];
-                                if (fullName.includes(word)) {
-                                    match_count++;
-                                }
-                            }
-                            if (match_count === and_list.length) {
-                                // OSFUser.id
-                                userKeyDict[userAttr.uid] = true;
-                            }
-                        }
-                    }
+                // $osf.growl('DEBUG', '"' + LogSearchName + '"', 'warning', 10000);
+                var updateLog = function (userKeys) {
                     var noTarget = false;
-                    var userKeys = Object.keys(userKeyDict);
-                    if (userKeys.length === 0) {
+                    if (userKeys === null) {
                         noTarget = true;
-                        // $osf.growl(_('no user matched'), '"' + LogSearchName + '"', 'warning');
                     }
-                    var userKeysStr = userKeys.join(',');
-                    document.getElementById('LogSearchUserKeys').value = userKeysStr;
-                    m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node, noTarget: noTarget}));
-                }, function(xhr, textStatus, error) {
-                    Raven.captureMessage('Error retrieving UserList', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});
-                });
+                    // userKeys === '' ... not filtered (get all users)
+                    $('#LogSearchUserKeys').val(userKeys);
+                    m.mount(document.getElementById('logFeed'),
+                        m.component(LogFeed.LogFeed,
+                                    {node: node, noTarget: noTarget}));
+                };
+                updateUserKeysForRecentActivity(LogSearchName, updateLog, urlFilesGrid);
             }
         };
-        $('#RefreshLog').on('click', RefreshLog);
-        $('#LogSearchName,#LogSearchE,#LogSearchS').on('keypress', function(e){
-            var key = e.which;
-            if (key === 13){
-                new RefreshLog();
-                return false;
-            }
-        });
+
+        initUserKeysForRecentActivity();
 
         // Treebeard Files view
         var urlFilesGrid = nodeApiUrl + 'files/grid/';
@@ -582,6 +739,21 @@ $(document).ready(function () {
         });
     }
 
-    datepicker.mount('#LogSearchS', null);
-    datepicker.mount('#LogSearchE', null);
+    var logSearchChangeOldDict = {};
+    var logSearchChange = function (selector) {
+        var old = logSearchChangeOldDict[selector];
+        var val = $(selector).val();
+        if (old !== val) {
+            RefreshLog();
+        }
+        logSearchChangeOldDict[selector] = val;
+    };
+    var initDatepicker = function (selector) {
+        var _event = function () {
+            logSearchChange(selector);
+        };
+        datepicker.mount(selector, null).on('hide', _event);
+    };
+    initDatepicker('#LogSearchS');
+    initDatepicker('#LogSearchE');
 });

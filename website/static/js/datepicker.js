@@ -16,10 +16,11 @@ function mount(selector, datepicker_locale) {
         format: 'yyyy-mm-dd',
         language: datepicker_locale,
         zIndexOffset: 1050,
+        clearBtn: false,
         todayBtn: true,
         todayHighlight: true
     };
-    $(selector).datepicker(opt).on('show', show_func);
+    return $(selector).datepicker(opt).on('show', show_func);
 }
 
 module.exports = {

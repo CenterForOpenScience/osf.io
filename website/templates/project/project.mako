@@ -598,23 +598,32 @@
         <!-- Recent Activity (Logs) -->
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
-                <h3 class="panel-title">${_("Recent Activity")}</h3>
+                <h3 class="panel-title" style="padding-bottom: 5px; padding-top: 5px;">${_("Recent Activity")}</h3>
+                <div id="ClearLogFilterBtn" class="btn btn-sm btn-default pull-right" style="margin-left: 5px">${_("Clear Filters")}</div>
                 <div id="RefreshLog" class="btn btn-sm btn-default pull-right">${_("Refresh")}</div>
             </div>
             <div class="panel-body">
-                <div class="db-poFilter m-r-xs row">
-                     <div class="db-buttonRow col-xs-10 col-sm-6 col-lg-4">
-                         <form>
-                             <input type="text" id="LogSearchName" placeholder='${_("Parts of User's Fullname")}'>
-                         </form>
-                         <input type="hidden" id="LogSearchUserKeys">
-                     </div>
-                     <div class="db-buttonRow col-xs-10 col-sm-6 col-lg-4">
-                         <input type="text" id="LogSearchS" placeholder='${_("Start Date[yyyy-mm-dd]")}'>
-                     </div>
-                     <div class="db-buttonRow col-xs-10 col-sm-6 col-lg-4">
-                         <input type="text" id="LogSearchE" placeholder='${_("End Date[yyyy-mm-dd]")}'>
-                     </div>
+                <input type="hidden" id="LogSearchUserKeys">
+                <div class="container-fluid" style="padding: 0px">
+                    <div style="margin-bottom: 7px">
+                        <input type="text" id="LogSearchName">
+                    </div>
+                    <div class="" style="padding: 0px">
+                        <div class="pull-left" style="margin-left: 0px;">
+                            <input type="text" id="LogSearchS" placeholder='${_("Start date")}' size="10">
+                        </div>
+                        <div class="pull-left" style="margin-left: 10px;">
+                            <input type="text" id="LogSearchE" placeholder='${_("End date")}' size="10">
+                        </div>
+                        <div class="pull-left form-check" style="margin-left: 10px; padding-top: 2px;">
+                            <input class="form-check-input" type="checkbox" id="dropDownSelectUsers">
+                            <label class="form-check-label" for="dropDownSelectUsers">${_("Choices")}</label>
+                        </div>
+                        <div id="allUsersCheckboxGroup" class="pull-left form-check" style="margin-left: 10px; padding-top: 2px;">
+                            <input class="form-check-input" type="checkbox" id="allUsers">
+                            <label class="form-check-label" for="allUsers">${_("From all users")}</label>
+                        </div>
+                    </div>
                 </div>
                 <div id="logFeed">
                     <div class="spinner-loading-wrapper">
