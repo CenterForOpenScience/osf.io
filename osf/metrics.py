@@ -6,6 +6,8 @@ from django.db import models
 from django.utils import timezone
 import pytz
 
+from api.base.settings import MAX_SIZE_OF_ES_QUERY
+
 
 class MetricMixin(object):
 
@@ -286,7 +288,7 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
             'user_id'
         )
         search.update_from_dict({
-            'size': 1000
+            'size': MAX_SIZE_OF_ES_QUERY
         })
 
         return search

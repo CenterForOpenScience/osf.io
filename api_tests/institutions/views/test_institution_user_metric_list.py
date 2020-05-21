@@ -1,5 +1,7 @@
 import pytest
 import datetime
+from random import random
+import time
 
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
@@ -66,20 +68,33 @@ class TestInstitutionUserMetricList:
             private_project_count=2,
         ).save()
 
-        import time
         time.sleep(2)
 
     @pytest.fixture()
     def populate_more_counts(self, institution, user, user2, user3, populate_counts):
+        # Creates 9 more user records to test pagination with
+
+        users = []
+        for i in range(0, 8):
+            users.append(AuthUserFactory())
+
+        for test_user in users:
+            UserInstitutionProjectCounts.record(
+                user_id=test_user._id,
+                institution_id=institution._id,
+                department='Psychology dept',
+                public_project_count=int(10 * random()),
+                private_project_count=int(10 * random()),
+            ).save()
 
         UserInstitutionProjectCounts.record(
             user_id=user3._id,
             institution_id=institution._id,
             department='Psychology dept',
-            public_project_count=6,
-            private_project_count=1,
+            public_project_count=int(10 * random()),
+            private_project_count=int(10 * random()),
         ).save()
-        import time
+
         time.sleep(2)
 
     @pytest.fixture()
@@ -166,6 +181,9 @@ class TestInstitutionUserMetricList:
     def test_sort_and_pagination(self, app, url, admin, populate_more_counts):
         resp = app.get(f'{url}?sort=user_name&page[size]=1&page=2', auth=admin.auth)
         assert resp.status_code == 200
-        assert resp.json['links']['meta']['total'] == 3
-        resp = app.get(f'{url}?sort=user_name&page[size]=1&page=3', auth=admin.auth)
+        assert resp.json['links']['meta']['total'] == 11
+        resp = app.get(f'{url}?sort=user_name&page[size]=1&page=11', auth=admin.auth)
         assert resp.json['data'][0]['attributes']['user_name'] == 'Zedd'
+        resp = app.get(f'{url}?sort=user_name&page=2', auth=admin.auth)
+        assert resp.json['links']['meta']['total'] == 11
+        assert resp.json['data'][-1]['attributes']['user_name'] == 'Zedd'
