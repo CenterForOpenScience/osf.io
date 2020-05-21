@@ -1796,30 +1796,6 @@ class TestPreprintDetailPermissions:
         res = app.get(private_url, expect_errors=True)
         assert res.status_code == 401
 
-    def test_preprint_is_orphaned_detail(
-            self, app, admin, write_contrib, non_contrib,
-            published_preprint):
-        published_preprint.primary_file = None
-        published_preprint.save()
-
-        url = '/{}preprints/{}/'.format(API_BASE, published_preprint._id)
-
-    #   test_orphaned_visible_to_admins
-        res = app.get(url, auth=admin.auth)
-        assert res.json['data']['id'] == published_preprint._id
-
-    #   test_orphaned_visible_to_write_contribs
-        res = app.get(url, auth=write_contrib.auth)
-        assert res.status_code == 200
-
-    #   test_orphaned_invisible_to_non_contribs
-        res = app.get(url, auth=non_contrib.auth, expect_errors=True)
-        assert res.status_code == 403
-
-    #   test_orphaned_invisible_to_public
-        res = app.get(url, expect_errors=True)
-        assert res.status_code == 401
-
     def test_preprint_is_abandoned_detail(
             self, app, admin, write_contrib,
             non_contrib, abandoned_private_preprint,

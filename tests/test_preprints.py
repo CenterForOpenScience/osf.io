@@ -123,12 +123,6 @@ class TestPreprintProperties:
         assert preprint.deleted is not None
         assert preprint.is_deleted is True
 
-    def test_is_preprint_orphan(self, preprint):
-        assert preprint.is_preprint_orphan is False
-        preprint.primary_file = None
-        preprint.save()
-        assert preprint.is_preprint_orphan is True
-
     def test_has_submitted_preprint(self, preprint):
         preprint.machine_state = 'initial'
         preprint.save()
@@ -1468,6 +1462,23 @@ class TestSetPreprintFile(OsfTestCase):
 
         assert(self.preprint.created)
         assert_not_equal(self.project.created, self.preprint.created)
+
+    def test_cant_save_without_file(self):
+        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
+        self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
+        self.preprint.set_published(True, auth=self.auth, save=False)
+        self.preprint.primary_file = None
+
+        with assert_raises(ValidationError):
+            self.preprint.save()
+
+    def test_cant_update_without_file(self):
+        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
+        self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
+        self.preprint.set_published(True, auth=self.auth, save=True)
+        self.preprint.primary_file = None
+        with assert_raises(ValidationError):
+            self.preprint.save()
 
 
 class TestPreprintPermissions(OsfTestCase):

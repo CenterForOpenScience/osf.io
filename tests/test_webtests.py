@@ -1129,32 +1129,6 @@ class TestPreprintBannerView(OsfTestCase):
         res = self.app.get(url)
         assert_not_in('Has supplemental materials for', res.body.decode())
 
-    def test_public_project_orphaned_preprint(self):
-        self.preprint.primary_file = None
-        self.preprint.save()
-
-        url = self.project_one.web_url_for('view_project')
-
-        # Admin - preprint
-        res = self.app.get(url, auth=self.admin.auth)
-        assert_in('Has supplemental materials for', res.body.decode())
-
-        # Write - preprint
-        res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('Has supplemental materials for', res.body.decode())
-
-        # Read - preprint
-        res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('Has supplemental materials for', res.body.decode())
-
-        # Noncontrib - preprint
-        res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_not_in('Has supplemental materials for', res.body.decode())
-
-        # Unauthenticated - preprint
-        res = self.app.get(url)
-        assert_not_in('Has supplemental materials for', res.body.decode())
-
     def test_public_project_unpublished_preprint(self):
         self.preprint.is_published = False
         self.preprint.save()

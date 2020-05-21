@@ -103,27 +103,6 @@ class TestPreprintProvidersList(ApiTestCase):
         res = self.app.get(self.url, auth=self.user.auth)
         assert res.status_code == 200
 
-    def test_orphaned_preprint_files(self):
-        self.preprint.primary_file = None
-        self.preprint.save()
-
-        # Unauthenticated
-        res = self.app.get(self.url, expect_errors=True)
-        assert res.status_code == 401
-
-        # Noncontrib
-        res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
-        assert res.status_code == 403
-
-        # Write contributor
-        self.preprint.add_contributor(self.user_two, WRITE, save=True)
-        res = self.app.get(self.url, auth=self.user_two.auth)
-        assert res.status_code == 200
-
-        # Admin contrib
-        res = self.app.get(self.url, auth=self.user.auth)
-        assert res.status_code == 200
-
     def test_deleted_preprint_files(self):
         self.preprint.deleted = timezone.now()
         self.preprint.save()
@@ -305,27 +284,6 @@ class TestPreprintFilesList(ApiTestCase):
         self.preprint.add_contributor(self.user_two, WRITE, save=True)
         res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
         assert res.status_code == 403
-
-        # Admin contrib
-        res = self.app.get(self.url, auth=self.user.auth)
-        assert res.status_code == 200
-
-    def test_orphaned_preprint_files(self):
-        self.preprint.primary_file = None
-        self.preprint.save()
-
-        # Unauthenticated
-        res = self.app.get(self.url, expect_errors=True)
-        assert res.status_code == 401
-
-        # Noncontrib
-        res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
-        assert res.status_code == 403
-
-        # Write contributor
-        self.preprint.add_contributor(self.user_two, WRITE, save=True)
-        res = self.app.get(self.url, auth=self.user_two.auth)
-        assert res.status_code == 200
 
         # Admin contrib
         res = self.app.get(self.url, auth=self.user.auth)
