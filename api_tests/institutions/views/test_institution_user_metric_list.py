@@ -187,3 +187,8 @@ class TestInstitutionUserMetricList:
         resp = app.get(f'{url}?sort=user_name&page=2', auth=admin.auth)
         assert resp.json['links']['meta']['total'] == 11
         assert resp.json['data'][-1]['attributes']['user_name'] == 'Zedd'
+
+    def test_filter_and_pagination(self, app, url, admin, populate_more_counts):
+        resp = app.get(f'{url}?filter[user_name]=Zedd', auth=admin.auth)
+        assert resp.json['links']['meta']['total'] == 1
+        assert resp.json['data'][0]['attributes']['user_name'] == 'Zedd'
