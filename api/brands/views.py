@@ -19,6 +19,12 @@ class BrandMixin(object):
     def get_brand(self):
         brand_id = self.kwargs[self.brand_lookup_url_kwarg]
 
+        # This conditional intended to be temporary until we can address issues that are causing brand_id to be
+        # stringified IRL but not in the test app. Remove this comment if test app does no longer gives false positive
+        # for this function when registration provider with `.brand is None` is embedded or issue is conclusively fixed.
+        if self.kwargs.get('is_embedded') and brand_id == 'None':
+            raise NotFound
+
         try:
             inst = Brand.objects.get(id=int(brand_id))
         except ObjectDoesNotExist:
