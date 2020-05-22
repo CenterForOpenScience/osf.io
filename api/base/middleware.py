@@ -190,7 +190,7 @@ class SloanOverrideWaffleMiddleware(WaffleMiddleware):
 
     def process_response(self, request, response):
         waffles = getattr(request, 'waffles', None)
-        if request.path == '/v2/' and not request.GET.get('format') == 'api':  # exclude browserable api
+        if request.path == '/v2/' and not getattr(response, 'accepted_media_type', None) == 'text/html':  # exclude browserable api
             content_data = json.loads(response.content.decode())
 
             # clear flags initially
