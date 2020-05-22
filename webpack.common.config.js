@@ -61,7 +61,7 @@ var entry = {
     'institution-page': staticPath('js/pages/institution-page.js'),
     'rdm-firebase': staticPath('js/rdm-firebase.js'),
     'rdmGettext': staticPath('js/rdmGettext.js'),
-    'datepicker': staticPath('js/datepicker.js'),
+    'rdmDatepicker': staticPath('js/rdmDatepicker.js'),
     'rdmSelect2': staticPath('js/rdmSelect2.js'),
     // Commons chunk
     'vendor': [

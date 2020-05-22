@@ -33,7 +33,7 @@ var currentUserRequestState = ctx.currentUserRequestState;
 var _ = require('js/rdmGettext')._;
 var sprintf = require('agh.sprintf').sprintf;
 
-var datepicker = require('js/datepicker');
+var datepicker = require('js/rdmDatepicker');
 require('js/rdmSelect2');
 
 // Listen for the nodeLoad event (prevents multiple requests for data)

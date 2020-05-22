@@ -9,7 +9,7 @@ var taskStatusUrl = null;
 
 var _ = require('js/rdmGettext')._;
 
-var datepicker = require('js/datepicker');
+var datepicker = require('js/rdmDatepicker');
 
 var dateString = new Date().toLocaleDateString('ja-JP', {
     year: 'numeric',
