@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-20 12:20+0900\n"
-"PO-Revision-Date: 2020-05-20 12:20+0900\n"
+"POT-Creation-Date: 2020-05-23 10:00+0900\n"
+"PO-Revision-Date: 2020-05-23 10:00+0900\n"
 "Last-Translator: Takuya Ishibashi\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -66,14 +66,14 @@ msgid "the page now, those changes may be lost."
 msgstr ""
 
 #: addons/wiki/static/wikiPage.js:94
-#: website/static/js/pages/project-dashboard-page.js:550
+#: website/static/js/pages/project-dashboard-page.js:729
 msgid ""
 "*Add important information, links, or images here to describe your "
 "project.*"
 msgstr ""
 
 #: addons/wiki/static/wikiPage.js:96
-#: website/static/js/pages/project-dashboard-page.js:552
+#: website/static/js/pages/project-dashboard-page.js:731
 msgid "*No wiki content.*"
 msgstr ""
 
@@ -453,174 +453,7 @@ msgstr ""
 msgid "Institutional Storage set successfully"
 msgstr ""
 
-#: api/base/exceptions.py:103
-msgid "This endpoint is not yet implemented."
-msgstr ""
-
-#: api/base/exceptions.py:108
-msgid "Service is unavailable at this time."
-msgstr ""
-
-#: api/base/exceptions.py:201
-msgid "Query string contains a malformed filter."
-msgstr ""
-
-#: api/base/exceptions.py:210
-msgid "Comparison operators are only supported for dates and numbers."
-msgstr ""
-
-#: api/base/exceptions.py:216
-msgid "Match operators are only supported for strings and lists."
-msgstr ""
-
-#: api/base/exceptions.py:222
-msgid "Query contained one or more filters for invalid fields."
-msgstr ""
-
-#: api/base/exceptions.py:233
-msgid "Please confirm your account before using the API."
-msgstr ""
-
-#: api/base/exceptions.py:238
-msgid "Please claim your account before using the API."
-msgstr ""
-
-#: api/base/exceptions.py:243
-msgid ""
-"Making API requests with credentials associated with a deactivated "
-"account is not allowed."
-msgstr ""
-
-#: api/base/exceptions.py:248
-msgid ""
-"Making API requests with credentials associated with a merged account is "
-"not allowed."
-msgstr ""
-
-#: api/base/exceptions.py:253
-msgid ""
-"Making API requests with credentials associated with an invalid account "
-"is not allowed."
-msgstr ""
-
-#: api/base/exceptions.py:257
-msgid "Must specify two-factor authentication OTP code."
-msgstr ""
-
-#: api/base/exceptions.py:263
-msgid "Invalid value in POST/PUT/PATCH request."
-msgstr ""
-
-#: api/base/exceptions.py:278
-msgid ""
-"The node {0} cannot be affiliated with this View Only Link because the "
-"node you're trying to affiliate is not descended from the node that the "
-"View Only Link is attached to."
-msgstr ""
-
-#: api/base/authentication/drf.py:165
-msgid "Invalid username/password."
-msgstr ""
-
-#: api/base/authentication/drf.py:192
-msgid "Invalid two-factor authentication OTP code."
-msgstr ""
-
-#: api/base/authentication/drf.py:223
-msgid "User provided an invalid OAuth2 access token"
-msgstr ""
-
-#: api/base/authentication/drf.py:226
-msgid "CAS server failed to authenticate this token"
-msgstr ""
-
-#: api/base/authentication/drf.py:230
-msgid "Could not find the user associated with this token"
-msgstr ""
-
-#: framework/auth/oauth_scopes.py:294
-msgid ""
-"View all information associated with this account, including for private "
-"projects."
-msgstr ""
-
-#: framework/auth/oauth_scopes.py:297
-msgid ""
-"View and edit all information associated with this account, including for"
-" private projects."
-msgstr ""
-
-#: framework/auth/oauth_scopes.py:300
-msgid "Read your profile data."
-msgstr ""
-
-#: framework/auth/oauth_scopes.py:303
-msgid "Read your primary email address."
-msgstr ""
-
-#: website/notifications/utils.py:502
-msgid "Default Notification Settings"
-msgstr ""
-
-#: website/notifications/utils.py:503
-msgid ""
-"These are default settings for new projects you create or are added to. "
-"Modifying these settings will not modify settings on existing projects."
-msgstr ""
-
-#: website/notifications/utils.py:511
-msgid "Project Notifications"
-msgstr ""
-
-#: website/project/__init__.py:64
-msgid "Bookmarks"
-msgstr ""
-
-#: website/search/elastic_search.py:50
-msgid "Projects"
-msgstr ""
-
-#: website/search/elastic_search.py:51
-msgid "Components"
-msgstr ""
-
-#: website/search/elastic_search.py:52
-msgid "Registrations"
-msgstr ""
-
-#: website/search/elastic_search.py:53
-msgid "Users"
-msgstr ""
-
-#: website/search/elastic_search.py:54
-msgid "All GakuNin RDM Results"
-msgstr ""
-
-#: website/search/elastic_search.py:55
-msgid "Files"
-msgstr ""
-
-#: website/search/elastic_search.py:56
-msgid "Institutions"
-msgstr ""
-
-#: website/search/elastic_search.py:57
-msgid "Preprints"
-msgstr ""
-
-#: website/search/elastic_search.py:58
-msgid "Groups"
-msgstr ""
-
-#: website/search/elastic_search.py:62
-msgid "Wiki"
-msgstr ""
-
-#: website/search/elastic_search.py:66
-msgid "Comments"
-msgstr ""
-
-#: website/static/js/accessRequestManager.js:88
+#: website/static/js/accessRequestManager.js:85
 msgid "There was a problem trying to %1$s the request from the user. %2$s"
 msgstr ""
 
@@ -1257,7 +1090,7 @@ msgstr ""
 msgid "Only 200 citations may be displayed"
 msgstr ""
 
-#: website/static/js/citationGrid.js:311 website/static/js/citationWidget.js:43
+#: website/static/js/citationGrid.js:311 website/static/js/citationWidget.js:44
 msgid "Enter citation style (e.g. \"APA\")"
 msgstr ""
 
@@ -1286,28 +1119,29 @@ msgstr ""
 msgid " if the problem persists."
 msgstr ""
 
-#: website/static/js/citationWidget.js:45
+#: website/static/js/citationWidget.js:46
+#: website/static/js/pages/project-dashboard-page.js:169
 #, python-format
 msgid "Please enter %s or more characters"
 msgstr ""
 
-#: website/static/js/citationWidget.js:46 website/static/js/pointers.js:30
+#: website/static/js/citationWidget.js:47 website/static/js/pointers.js:30
 msgid "Searching..."
 msgstr ""
 
-#: website/static/js/citationWidget.js:47
+#: website/static/js/citationWidget.js:48
 msgid "No matches found."
 msgstr ""
 
-#: website/static/js/citationWidget.js:76
+#: website/static/js/citationWidget.js:77
 msgid "Citation render failed"
 msgstr ""
 
-#: website/static/js/citationWidget.js:77
+#: website/static/js/citationWidget.js:78
 msgid "The requested citation format generated an error."
 msgstr ""
 
-#: website/static/js/citationWidget.js:80
+#: website/static/js/citationWidget.js:81
 msgid "Unexpected error when fetching citation"
 msgstr ""
 
@@ -1826,7 +1660,7 @@ msgstr ""
 
 #: website/static/js/fangorn.js:1670 website/static/js/fileViewTreebeard.js:63
 #: website/static/js/filesWidget.js:34 website/static/js/meetings.js:18
-#: website/static/js/pages/project-dashboard-page.js:369
+#: website/static/js/pages/project-dashboard-page.js:548
 #: website/static/js/project-organizer.js:189
 #: website/static/js/project-organizer.js:205 website/static/js/wikiMenu.js:58
 msgid "Name"
@@ -1841,7 +1675,7 @@ msgid "Version"
 msgstr ""
 
 #: website/static/js/fangorn.js:1687
-#: website/static/js/pages/project-dashboard-page.js:375
+#: website/static/js/pages/project-dashboard-page.js:554
 #: website/static/js/project-organizer.js:198
 msgid "Modified"
 msgstr ""
@@ -2482,6 +2316,14 @@ msgstr ""
 msgid "Groups"
 msgstr ""
 
+#: website/static/js/js_messages.js:21
+msgid "Wiki"
+msgstr ""
+
+#: website/static/js/js_messages.js:21
+msgid "Comments"
+msgstr ""
+
 #: website/static/js/js_messages.js:23
 msgid "Default Notification Settings"
 msgstr ""
@@ -2967,42 +2809,52 @@ msgid "${user} removed ${anonymous_link} view-only link to ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:90
-msgid "${user} verified timestamp of all files in ${node}"
+msgid "${user} verified timestamp"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:91
-msgid "${user} added timestamp ${path} in ${node}"
+msgid "${user} requested trusted timestamp"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:92
-msgid "${user} downloaded timestamp error status in ${node}"
+msgid "${user} requested trusted timestamp file ${path}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:93
+msgid ""
+"${user} downloaded a file of timestamp errors as a "
+"${timestamp_errors_file_format}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:94
 msgid ""
 "[MAPCORE_SYNC:ERROR] ${user} cannot create a new mAP group for GRDM "
 "project <${node}> (See logs for details)"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:94
+#: website/static/js/logActionsList_extract.js:95
 msgid ""
 "[MAPCORE_SYNC:ERROR] mAP group for GRDM project <${node}> cannot be "
 "updated (See logs for details)"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:95
+#: website/static/js/logActionsList_extract.js:96
 msgid ""
 "[MAPCORE_SYNC:ERROR] GRDM project <${node}> cannot be updated with mAP "
 "group (See logs for details)"
 msgstr ""
 
-#: website/static/js/logActionsList_extract.js:96
+#: website/static/js/logActionsList_extract.js:97
 msgid ""
 "[MAPCORE_SYNC:NOTICE] Unknown (unregistered in GRDM) users belong to mAP "
 "group <${node}> (ignored) (See logs for details)"
 msgstr ""
 
-#: website/static/js/meetings.js:26
+#: website/static/js/logTextParser.js:824
+msgid "unknown format"
+msgstr ""
+
+#: website/static/js/meetings.js:24
 msgid "Submissions"
 msgstr ""
 
@@ -4068,91 +3920,91 @@ msgstr ""
 msgid "You have unsaved changes."
 msgstr ""
 
-#: website/static/js/search-grdm.js:115
-msgid "Date Modified(Desc)"
+#: website/static/js/search-grdm.js:150
+msgid "Date Modified (Desc)"
 msgstr ""
 
-#: website/static/js/search-grdm.js:116
-msgid "Date Modified(Asc)"
+#: website/static/js/search-grdm.js:151
+msgid "Date Modified (Asc)"
 msgstr ""
 
-#: website/static/js/search-grdm.js:117
-msgid "Date Created(Desc)"
+#: website/static/js/search-grdm.js:152
+msgid "Date Created (Desc)"
 msgstr ""
 
-#: website/static/js/search-grdm.js:118
-msgid "Date Created(Asc)"
+#: website/static/js/search-grdm.js:153
+msgid "Date Created (Asc)"
 msgstr ""
 
-#: website/static/js/search-grdm.js:119
-msgid "Project name(Asc)"
+#: website/static/js/search-grdm.js:154
+msgid "Project name (Asc)"
 msgstr ""
 
-#: website/static/js/search-grdm.js:120
-msgid "Project name(Desc)"
+#: website/static/js/search-grdm.js:155
+msgid "Project name (Desc)"
 msgstr ""
 
-#: website/static/js/search-grdm.js:121
-msgid "File name(Asc)"
+#: website/static/js/search-grdm.js:156
+msgid "File name (Asc)"
 msgstr ""
 
-#: website/static/js/search-grdm.js:122
-msgid "File name(Desc)"
+#: website/static/js/search-grdm.js:157
+msgid "File name (Desc)"
 msgstr ""
 
-#: website/static/js/search-grdm.js:123
-msgid "User name(Asc)"
+#: website/static/js/search-grdm.js:158
+msgid "User name (Asc)"
 msgstr ""
 
-#: website/static/js/search-grdm.js:124
-msgid "User name(Desc)"
+#: website/static/js/search-grdm.js:159
+msgid "User name (Desc)"
 msgstr ""
 
-#: website/static/js/search-grdm.js:125
-msgid "Institution name(Asc)"
+#: website/static/js/search-grdm.js:160
+msgid "Institution name (Asc)"
 msgstr ""
 
-#: website/static/js/search-grdm.js:126
-msgid "Institution name(Desc)"
+#: website/static/js/search-grdm.js:161
+msgid "Institution name (Desc)"
 msgstr ""
 
-#: website/static/js/search-grdm.js:127
-msgid "Wiki title(Asc)"
+#: website/static/js/search-grdm.js:162
+msgid "Wiki title (Asc)"
 msgstr ""
 
-#: website/static/js/search-grdm.js:128
-msgid "Wiki title(Desc)"
+#: website/static/js/search-grdm.js:163
+msgid "Wiki title (Desc)"
 msgstr ""
 
-#: website/static/js/search-grdm.js:226 website/static/js/search.js:192
+#: website/static/js/search-grdm.js:313 website/static/js/search.js:190
 msgid "Page %1$s of %2$s"
 msgstr ""
 
-#: website/static/js/search-grdm.js:306 website/static/js/search.js:272
+#: website/static/js/search-grdm.js:393 website/static/js/search.js:270
 msgid "Search help"
 msgstr ""
 
-#: website/static/js/search-grdm.js:307 website/static/js/search.js:273
+#: website/static/js/search-grdm.js:394 website/static/js/search.js:271
 msgid "<h4>Queries</h4>"
 msgstr ""
 
-#: website/static/js/search-grdm.js:308 website/static/js/search.js:274
+#: website/static/js/search-grdm.js:395 website/static/js/search.js:272
 msgid ""
 "<p>Search uses the <a "
 "href=\"http://extensions.xwiki.org/xwiki/bin/view/Extension/Search+Application+Query+Syntax\">Lucene"
 " search syntax</a>. "
 msgstr ""
 
-#: website/static/js/search-grdm.js:309 website/static/js/search.js:275
+#: website/static/js/search-grdm.js:396 website/static/js/search.js:273
 msgid "This gives you many options, but can be very simple as well. "
 msgstr ""
 
-#: website/static/js/search-grdm.js:310 website/static/js/search.js:276
+#: website/static/js/search-grdm.js:397 website/static/js/search.js:274
 msgid "Examples of valid searches include:"
 msgstr ""
 
-#: website/static/js/search-grdm.js:729 website/static/js/search-grdm.js:790
-#: website/static/js/search.js:580 website/static/js/search.js:607
+#: website/static/js/search-grdm.js:769 website/static/js/search-grdm.js:1035
+#: website/static/js/search.js:578 website/static/js/search.js:605
 msgid "GakuNin RDM | Search"
 msgstr ""
 
@@ -4539,7 +4391,7 @@ msgid "Could not add tag."
 msgstr ""
 
 #: website/static/js/pages/file-page.js:27
-#: website/static/js/pages/project-dashboard-page.js:475
+#: website/static/js/pages/project-dashboard-page.js:654
 msgid "Failed to add tag"
 msgstr ""
 
@@ -4548,7 +4400,7 @@ msgid "Could not remove tag."
 msgstr ""
 
 #: website/static/js/pages/file-page.js:42
-#: website/static/js/pages/project-dashboard-page.js:511
+#: website/static/js/pages/project-dashboard-page.js:690
 msgid "Failed to remove tag"
 msgstr ""
 
@@ -4616,27 +4468,39 @@ msgstr ""
 msgid "Disable"
 msgstr ""
 
+#: website/static/js/pages/project-dashboard-page.js:117
+msgid "Filter by users"
+msgstr ""
+
+#: website/static/js/pages/project-dashboard-page.js:118
+msgid "Select from contributors"
+msgstr ""
+
 #: website/static/js/pages/project-dashboard-page.js:119
+msgid "Select from all users"
+msgstr ""
+
+#: website/static/js/pages/project-dashboard-page.js:120
+msgid "Use dropdown menu"
+msgstr ""
+
+#: website/static/js/pages/project-dashboard-page.js:416
 msgid "Add Component"
 msgstr ""
 
-#: website/static/js/pages/project-dashboard-page.js:121
+#: website/static/js/pages/project-dashboard-page.js:418
 msgid "Create new component"
 msgstr ""
 
-#: website/static/js/pages/project-dashboard-page.js:328
-msgid "no user matched"
-msgstr ""
-
-#: website/static/js/pages/project-dashboard-page.js:433
+#: website/static/js/pages/project-dashboard-page.js:612
 msgid "Error retrieving filebrowser"
 msgstr ""
 
-#: website/static/js/pages/project-dashboard-page.js:450
+#: website/static/js/pages/project-dashboard-page.js:629
 msgid "Add a project tag to enhance discoverability"
 msgstr ""
 
-#: website/static/js/pages/project-dashboard-page.js:510
+#: website/static/js/pages/project-dashboard-page.js:689
 msgid "Could not remove tag"
 msgstr ""
 
@@ -4682,47 +4546,47 @@ msgstr ""
 msgid "Failed to import the account."
 msgstr ""
 
-#: website/static/js/pages/timestamp-common.js:170
+#: website/static/js/pages/timestamp-common.js:172
 msgid "A verify request is being processed!"
 msgstr ""
 
-#: website/static/js/pages/timestamp-common.js:173
+#: website/static/js/pages/timestamp-common.js:175
 msgid "Something went wrong with the Verify request."
 msgstr ""
 
-#: website/static/js/pages/timestamp-common.js:189
+#: website/static/js/pages/timestamp-common.js:191
 msgid "Using the checkbox, please select the files to request timestamp."
 msgstr ""
 
-#: website/static/js/pages/timestamp-common.js:212
+#: website/static/js/pages/timestamp-common.js:214
 msgid "Timestamp is being added to the selected files!"
 msgstr ""
 
-#: website/static/js/pages/timestamp-common.js:215
+#: website/static/js/pages/timestamp-common.js:217
 msgid "Something went wrong with the Request Trusted Timestamp request."
 msgstr ""
 
-#: website/static/js/pages/timestamp-common.js:220
+#: website/static/js/pages/timestamp-common.js:222
 msgid "The task has been cancelled."
 msgstr ""
 
-#: website/static/js/pages/timestamp-common.js:229
+#: website/static/js/pages/timestamp-common.js:231
 msgid "The task already finished."
 msgstr ""
 
-#: website/static/js/pages/timestamp-common.js:232
+#: website/static/js/pages/timestamp-common.js:234
 msgid "Something went wrong in the cancel request."
 msgstr ""
 
-#: website/static/js/pages/timestamp-common.js:286
+#: website/static/js/pages/timestamp-common.js:288
 msgid "Using the checkbox, please select the files to download."
 msgstr ""
 
-#: website/static/js/pages/timestamp-common.js:314
+#: website/static/js/pages/timestamp-common.js:323
 msgid "Failed to log \"downloaded errors\" into Recent Activity"
 msgstr ""
 
-#: website/static/js/pages/wiki-edit-page.js:66
+#: website/static/js/pages/wiki-edit-page.js:64
 msgid "The wiki page name cannot be empty."
 msgstr ""
 
