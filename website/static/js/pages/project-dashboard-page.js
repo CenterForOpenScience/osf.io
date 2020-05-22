@@ -108,7 +108,16 @@ var institutionLogos = {
 var ArrangeLogDownload = function (){};
 var RefreshLog = function(){};
 
-var placeholder_user_fullname = _('User Full name');
+var useDropdownUsers = true;
+var selectFromAllUsers = false;
+
+// NOTE: The feature of free input style to filter users is hidden.
+$('#useDropdown').hide();
+
+var message_filter_by_users = _('Filter by users');
+var message_select_from_contributors = _('Select from contributors');
+var message_select_from_all_users = _('Select from all users');
+var message_use_dropdown_menu = _('Use dropdown menu');
 
 var commonDropdownSuggestOptions = {
     sortResults: function(results, container, query) {
@@ -125,18 +134,17 @@ var commonDropdownSuggestOptions = {
     multiple: true,
     allowClear: true,
     cache: true,
-    placeholder: placeholder_user_fullname,
     width: '100%'
 };
 
-var initDropdownSuggestAllUsers = function () {
+var initDropdownSuggestAllUsers = function (placeholder) {
     var options = {
         ajax: {
 	    url: $osf.apiV2Url('/users/'),
 	    dataType: 'json',
 	    data: function (term, page) {
 		return {
-		  'filter[full_name][contains]': term
+		  'filter[id,full_name][icontains]': term,
 		};
 	    },
 	    results: function (data, page, query) {
@@ -152,7 +160,8 @@ var initDropdownSuggestAllUsers = function () {
 		return {
 		    results: users
 		};
-	    }
+	    },
+            placeholder: placeholder
 	},
         minimumInputLength: 1,
         formatInputTooShort: function (input, min) {
@@ -164,7 +173,7 @@ var initDropdownSuggestAllUsers = function () {
     $('#LogSearchName').select2(options);
 };
 
-var initDropdownSuggestContributors = function () {
+var initDropdownSuggestContributors = function (placeholder) {
     var contributors = window.contextVars.node.contributors;
     var makeData = function (user) {
         var full_name = user.fullname;
@@ -177,6 +186,7 @@ var initDropdownSuggestContributors = function () {
     };
     var options = {
         data: $.map(contributors, makeData),
+        placeholder: placeholder
     };
     $.extend(true, options, commonDropdownSuggestOptions);
     $('#LogSearchName').select2(options);
@@ -312,27 +322,36 @@ var getUserKeysByPartialMatch = function (inputStr, updateLog, urlFilesGrid) {
     });
 };
 
-var enableSuggestUserDropdown = true;
-var enableSuggestAllUsers = false;
-
 var initUserKeysForRecentActivity = function () {
     var init = function () {
+        var makePlaceholder = function (a, b) {
+            return a + ' (' + b + ')';
+        };
+        var placeholder = '';
+
         $('#LogSearchName').select2('destroy');
-        if (enableSuggestUserDropdown) {
-            if (enableSuggestAllUsers) {
-                initDropdownSuggestAllUsers();
+        if (useDropdownUsers) {
+            if (selectFromAllUsers) {
+                placeholder = makePlaceholder(message_filter_by_users, message_select_from_all_users);
+                initDropdownSuggestAllUsers(placeholder);
             } else {
-                initDropdownSuggestContributors();
+                placeholder = makePlaceholder(message_filter_by_users, message_select_from_contributors);
+                initDropdownSuggestContributors(placeholder);
             }
         } else {
             $('#LogSearchName').css('width', '100%');
-            $('#LogSearchName').attr('placeholder', placeholder_user_fullname);
+            placeholder = message_filter_by_users;
         }
+        $('#LogSearchName').attr('placeholder', placeholder);
+    };
+
+    var clearLogFilterUsers = function () {
+        $('#LogSearchName').select2('val', '');
     };
 
     var clearLogFilter = function () {
-        if (enableSuggestUserDropdown) {
-            $('#LogSearchName').select2('val', '');
+        if (useDropdownUsers) {
+            clearLogFilterUsers();
         } else {
             $('#LogSearchName').val(null);
         }
@@ -352,26 +371,30 @@ var initUserKeysForRecentActivity = function () {
         }
     });
 
+    $('#useDropdownLabel').text(message_use_dropdown_menu);
+    $('#fromAllUsersLabel').text(message_select_from_all_users);
+
     // set defaults
-    $('#dropDownSelectUsers').prop('checked', true);
-    $('#allUsers').prop('checked', false);
+    $('#useDropdownCheckbox').prop('checked', true);
+    $('#fromAllUsersCheckbox').prop('checked', false);
     init();
 
-    $('#dropDownSelectUsers').change(function() {
-        enableSuggestUserDropdown = $('#dropDownSelectUsers').is(':checked');
-        $('#allUsersCheckboxGroup').toggle(enableSuggestUserDropdown);
+    $('#useDropdownCheckbox').change(function() {
+        useDropdownUsers = $('#useDropdownCheckbox').is(':checked');
+        $('#fromAllUsers').toggle(useDropdownUsers);
         init();
         clearLogFilter();
     });
-    $('#allUsers').change(function() {
-        enableSuggestAllUsers = $('#allUsers').is(':checked');
+    $('#fromAllUsersCheckbox').change(function() {
+        selectFromAllUsers = $('#fromAllUsersCheckbox').is(':checked');
         init();
-        clearLogFilter();
+        clearLogFilterUsers();
+        RefreshLog();
     });
 };
 
 var updateUserKeysForRecentActivity = function (LogSearchName, updateLog, urlFilesGrid) {
-    if (enableSuggestUserDropdown) {
+    if (useDropdownUsers) {
         updateLog(LogSearchName);
     } else { // old implementation
         getUserKeysByPartialMatch(LogSearchName, updateLog, urlFilesGrid);

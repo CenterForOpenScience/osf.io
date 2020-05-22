@@ -606,22 +606,22 @@
                 <input type="hidden" id="LogSearchUserKeys">
                 <div class="container-fluid" style="padding: 0px">
                     <div style="margin-bottom: 7px">
-                        <input type="text" id="LogSearchName">
+                        <input type="text" id="LogSearchName" autocomplete="off">
                     </div>
                     <div class="" style="padding: 0px">
                         <div class="pull-left" style="margin-left: 0px;">
-                            <input type="text" id="LogSearchS" placeholder='${_("Start date")}' size="10">
+                            <input type="text" id="LogSearchS" placeholder='${_("Start date")}' size="10" autocomplete="off">
                         </div>
                         <div class="pull-left" style="margin-left: 10px;">
-                            <input type="text" id="LogSearchE" placeholder='${_("End date")}' size="10">
+                            <input type="text" id="LogSearchE" placeholder='${_("End date")}' size="10" autocomplete="off">
                         </div>
-                        <div class="pull-left form-check" style="margin-left: 10px; padding-top: 2px;">
-                            <input class="form-check-input" type="checkbox" id="dropDownSelectUsers">
-                            <label class="form-check-label" for="dropDownSelectUsers">${_("Choices")}</label>
+                        <div class="pull-left form-check" style="margin-left: 10px; padding-top: 2px;" id="useDropdown">
+                            <input class="form-check-input" type="checkbox" id="useDropdownCheckbox">
+                            <label class="form-check-label" for="useDropdownCheckbox" id="useDropdownLabel"></label>
                         </div>
-                        <div id="allUsersCheckboxGroup" class="pull-left form-check" style="margin-left: 10px; padding-top: 2px;">
-                            <input class="form-check-input" type="checkbox" id="allUsers">
-                            <label class="form-check-label" for="allUsers">${_("From all users")}</label>
+                        <div class="pull-left form-check" style="margin-left: 10px; padding-top: 2px;" id="fromAllUsers">
+                            <input class="form-check-input" type="checkbox" id="fromAllUsersCheckbox">
+                            <label class="form-check-label" for="fromAllUsersCheckbox" id="fromAllUsersLabel"></label>
                         </div>
                     </div>
                 </div>
