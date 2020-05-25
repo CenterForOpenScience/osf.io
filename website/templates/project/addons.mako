@@ -125,7 +125,7 @@
                                         <span aria-hidden="true">&times;</span>
                                     </button>
                                     <div>
-                                        <h4>${_("Don’t see your GitHub organization repositories?")}</h4>
+                                        <h4>${_("Don't see your GitHub organization repositories?")}</h4>
                                         <p>
                                             ${_("You may need to reauthorize your GitHub access token.")}
                                             ${_('Follow the steps in the <a %(osfHelp)s>help guide</a> to resolve the issue.') % \

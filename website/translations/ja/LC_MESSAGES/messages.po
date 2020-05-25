@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-19 14:13+0900\n"
-"PO-Revision-Date: 2020-05-19 14:13+0900\n"
+"POT-Creation-Date: 2020-05-25 10:19+0900\n"
+"PO-Revision-Date: 2020-05-25 10:19+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -2565,7 +2565,7 @@ msgid "Enable"
 msgstr "有効にする"
 
 #: website/templates/project/addons.mako:128
-msgid "Don’t see your GitHub organization repositories?"
+msgid "Don't see your GitHub organization repositories?"
 msgstr "GitHub組織のリポジトリが表示されませんか？"
 
 #: website/templates/project/addons.mako:130
