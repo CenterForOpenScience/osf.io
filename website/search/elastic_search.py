@@ -197,7 +197,7 @@ def get_aggregations(query, index, doc_type):
 
 
 @requires_search
-def get_counts(count_query, index, doc_type, clean=True):
+def get_counts(count_query, index, clean=True):
     count_query['aggregations'] = {
         'counts': {
             'terms': {
@@ -206,7 +206,7 @@ def get_counts(count_query, index, doc_type, clean=True):
         }
     }
 
-    res = client().search(index=index, doc_type=doc_type, search_type='count', body=count_query)
+    res = client().search(index=index, doc_type=None, search_type='count', body=count_query)
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
     counts['total'] = sum([val for val in counts.values()])
@@ -214,14 +214,14 @@ def get_counts(count_query, index, doc_type, clean=True):
 
 
 @requires_search
-def get_tags(query, index, doc_type):
+def get_tags(query, index):
     query['aggregations'] = {
         'tag_cloud': {
             'terms': {'field': 'tags'}
         }
     }
 
-    results = client().search(index=index, doc_type=doc_type, body=query)
+    results = client().search(index=index, doc_type=None, body=query)
     tags = results['aggregations']['tag_cloud']['buckets']
 
     return tags
@@ -324,14 +324,14 @@ def search(query, index=None, doc_type=None, raw=False, normalize=True, private=
     aggs_query = copy.deepcopy(tag_query)
     count_query = copy.deepcopy(tag_query)
 
-    tags = get_tags(tag_query, index, doc_type)
+    tags = get_tags(tag_query, index)
     try:
         del aggs_query['query']['filtered']['filter']
         del count_query['query']['filtered']['filter']
     except KeyError:
         pass
     aggregations = get_aggregations(aggs_query, index, doc_type)
-    counts = get_counts(count_query, index, doc_type)
+    counts = get_counts(count_query, index)
 
     # Run the real query and get the results
     raw_results = client().search(index=index, doc_type=doc_type, body=query)
