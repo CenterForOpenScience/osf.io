@@ -3977,7 +3977,7 @@ msgstr "作成日時の古い順"
 
 #: website/static/js/search-grdm.js:154
 msgid "Project name (Asc)"
-msgstr "プロジェクト名の正準"
+msgstr "プロジェクト名の正順"
 
 #: website/static/js/search-grdm.js:155
 msgid "Project name (Desc)"
@@ -4009,11 +4009,11 @@ msgstr "機関名の逆順"
 
 #: website/static/js/search-grdm.js:162
 msgid "Wiki title (Asc)"
-msgstr "Wiki タイトルの正順"
+msgstr "Wikiタイトルの正順"
 
 #: website/static/js/search-grdm.js:163
 msgid "Wiki title (Desc)"
-msgstr "Wiki タイトルの逆順"
+msgstr "Wikiタイトルの逆順"
 
 #: website/static/js/search-grdm.js:313 website/static/js/search.js:190
 msgid "Page %1$s of %2$s"
