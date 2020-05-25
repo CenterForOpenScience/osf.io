@@ -97,7 +97,7 @@
                         <!-- ko if: searchStarted() && !totalCount() && query() === "" -->
                         <div class="search-results hidden" data-bind="css: {hidden: totalCount() }">${_("Type your search terms in the box above.")}</div>
                         <!-- /ko -->
-                        <!-- ko if: && totalCount() -->
+                        <!-- ko if: !searching() && totalCount() -->
                         <%include file='./search_nav_grdm.mako' />
                         <div data-bind="foreach: results">
                             <div class="search-result" data-bind="template: { name: category, data: $data}"></div>
