@@ -97,7 +97,7 @@
                         <!-- ko if: searchStarted() && !totalCount() && query() === "" -->
                         <div class="search-results hidden" data-bind="css: {hidden: totalCount() }">${_("Type your search terms in the box above.")}</div>
                         <!-- /ko -->
-                        <!-- ko if: totalCount() -->
+                        <!-- ko if: && totalCount() -->
                         <%include file='./search_nav_grdm.mako' />
                         <div data-bind="foreach: results">
                             <div class="search-result" data-bind="template: { name: category, data: $data}"></div>
@@ -152,12 +152,9 @@
         </span>
         <br>
         <!-- /ko -->
-        <div>
-            <!-- ko if: modifier_id && modifier_name && date_modified -->
-            <strong>${_("Modified by:")}</strong> <a data-bind="attr: {href: $root.getGuidUrl(modifier_id)}, text: modifier_name + '@' + $root.getGuidText(modifier_id)"></a> at <span data-bind="text: $root.toDate(date_modified)"></span>,
-            <!-- /ko -->
-            <strong>${_("Created by:")}</strong> <a data-bind="attr: {href: $root.getGuidUrl(creator_id)}, text: creator_name + '@' + $root.getGuidText(creator_id)"></a> at <span data-bind="text: $root.toDate(date_created)"></span>
-        </div>
+        <!-- ko if: (modifier_id && modifier_name && date_modified) || (creator_id && creator_name && date_created) -->
+        <div data-bind="template: {name: 'updated-time', data: $data}"></div>
+        <!-- /ko -->
         <!-- ko if: comment !== null -->
         <p>
             <strong>${_("Comment:")}</strong>
@@ -175,8 +172,14 @@
             <div class="col-md-10">
                 <span>
                     <span style="vertical-align: middle;">
+                        <!-- ko if: url -->
                         <font size="5"><a data-bind="attr: {href: url}, html: $root.getUserName($data)"></a></font>
+                        <!-- /ko -->
+                        <!-- ko ifnot: url -->
+                        <font size="5"><span data-bind="html: $root.getUserName($data)"></span></font>
+                        <!-- /ko -->
                     </span>
+                    <!-- ko if: url -->
                     <span style="vertical-align: middle; margin-left: 5px;">
                         <font size="5">GUID: <a data-bind="attr: {href: url}, text: $root.getGuidText(id)"></a></font>
                     </span>
@@ -185,6 +188,7 @@
                             <div class="fa fa-copy"></div>
                         </button>
                     </span>
+                    <!-- /ko -->
                 </span>
                 <br>
                 <p>
@@ -202,8 +206,12 @@
                     <strong>${_("Education:")}</strong>
                     <span data-bind="visible: ongoing_school_degree, text: ongoing_school_degree"></span>
                     <!-- ko if: ongoing_school_department || ongoing_school --> from
+                    <!-- ko if: ongoing_school_department -->
                     <span data-bind="visible: ongoing_school_department, text: ongoing_school_department"></span><!-- ko if: ongoing_school_department && ongoing_school -->, <!-- /ko -->
+                    <!-- /ko -->
+                    <!-- ko if: ongoing_school -->
                     <span data-bind="visible: ongoing_school, text: ongoing_school"></span>
+                    <!-- /ko -->
                     <!-- /ko -->
                     <br />
                     <!-- /ko -->
@@ -285,8 +293,14 @@
                     </span>
                 </span>
                 <span style="vertical-align: middle;">
+                    <!-- ko if: url -->
                     <font size="5"><a data-bind="attr: {href: url}, html: $root.getWikiName($data)"></a></font>
+                    <!-- /ko -->
+                    <!-- ko ifnot: url -->
+                    <font size="5"><span data-bind="html: $root.getWikiName($data)"></span></font>
+                    <!-- /ko -->
                 </span>
+                <!-- ko if: id -->
                 <span style="vertical-align: middle; margin-left: 5px;">
                     <font size="5">GUID: <a data-bind="attr: {href: $root.getGuidUrl(id)}, text: id.toUpperCase()"></a></font>
                 </span>
@@ -295,6 +309,7 @@
                         <div class="fa fa-copy"></div>
                     </button>
                 </span>
+                <!-- /ko -->
             </div>
         </span>
         <!-- ko if: node_title && node_url -->
@@ -304,12 +319,9 @@
         </span>
         <br>
         <!-- /ko -->
-        <div>
-            <!-- ko if: modifier_id && modifier_name && date_modified -->
-            <strong>${_("Modified by:")}</strong> <a data-bind="attr: {href: $root.getGuidUrl(modifier_id)}, text: modifier_name + '@' + $root.getGuidText(modifier_id)"></a> at <span data-bind="text: $root.toDate(date_modified)"></span>,
-            <!-- /ko -->
-            <strong>${_("Created by:")}</strong> <a data-bind="attr: {href: $root.getGuidUrl(creator_id)}, text: creator_name + '@' + $root.getGuidText(creator_id)"></a> at <span data-bind="text: $root.toDate(date_created)"></span>
-        </div>
+        <!-- ko if: (modifier_id && modifier_name && date_modified) || (creator_id && creator_name && date_created) -->
+        <div data-bind="template: {name: 'updated-time', data: $data}"></div>
+        <!-- /ko -->
         <!-- ko if: highlight.text !== undefined -->
         <p>
             <span data-bind="html: $root.makeText(highlight.text[0])"></span>
@@ -397,8 +409,14 @@
                     </span>
                 </span>
                 <span style="vertical-align: middle;">
+                    <!-- ko if: url -->
                     <font size="5"><a data-bind="attr: {href: url}, html: $root.getProjectName($data)"></a></font>
+                    <!-- /ko -->
+                    <!-- ko ifnot: url -->
+                    <font size="5"><span data-bind="html: $root.getProjectName($data)"></span></font>
+                    <!-- /ko -->
                 </span>
+                <!-- ko if: url -->
                 <span style="vertical-align: middle; margin-left: 5px;">
                     <font size="5">GUID: <a data-bind="attr: {href: url}, text: $root.getGuidText(url)"></a></font>
                 </span>
@@ -407,6 +425,7 @@
                         <div class="fa fa-copy"></div>
                     </button>
                 </span>
+                <!-- /ko -->
             </div>
         </span>
         <!-- ko if: description -->
@@ -458,12 +477,9 @@
         </span>
         <br>
         <!-- /ko -->
-        <div>
-            <!-- ko if: modifier_id && modifier_name && date_modified -->
-            <strong>${_("Modified by:")}</strong> <a data-bind="attr: {href: $root.getGuidUrl(modifier_id)}, text: modifier_name + '@' + $root.getGuidText(modifier_id)"></a> at <span data-bind="text: $root.toDate(date_modified)"></span>,
-            <!-- /ko -->
-            <strong>${_("Created by:")}</strong> <a data-bind="attr: {href: $root.getGuidUrl(creator_id)}, text: creator_name + '@' + $root.getGuidText(creator_id)"></a> at <span data-bind="text: $root.toDate(date_created)"></span>
-        </div>
+        <!-- ko if: (modifier_id && modifier_name && date_modified) || (creator_id && creator_name && date_created) -->
+        <div data-bind="template: {name: 'updated-time', data: $data}"></div>
+        <!-- /ko -->
         <!-- ko if: comment !== null -->
         <p>
             <strong>${_("Comment:")}</strong>
@@ -572,6 +588,16 @@
                 </span>
             </div>
         </p>
+    </script>
+    <script type="text/html" id="updated-time">
+        <div>
+            <!-- ko if: modifier_id && modifier_name && date_modified -->
+            <strong>${_("Modified by:")}</strong> <a data-bind="attr: {href: $root.getGuidUrl(modifier_id)}, text: modifier_name + '@' + $root.getGuidText(modifier_id)"></a> at <span data-bind="text: $root.toDate(date_modified)"></span>,
+            <!-- /ko -->
+            <!-- ko if: creator_id && creator_name && date_created -->
+            <strong>${_("Created by:")}</strong> <a data-bind="attr: {href: $root.getGuidUrl(creator_id)}, text: creator_name + '@' + $root.getGuidText(creator_id)"></a> at <span data-bind="text: $root.toDate(date_created)"></span>
+            <!-- /ko -->
+        </div>
     </script>
 </%def>
 
