@@ -1,17 +1,18 @@
-# Translations template for PROJECT.
+# English translations for PROJECT.
 # Copyright (C) 2020 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
 #
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: 0.6.0\n"
+"Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-26 01:00+0900\n"
+"POT-Creation-Date: 2020-05-25 15:31+0000\n"
 "PO-Revision-Date: 2020-05-26 01:00+0900\n"
 "Last-Translator: Takuya Ishibashi\n"
+"Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
+"Plural-Forms: nplurals=1; plural=0\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -1707,11 +1708,11 @@ msgstr ""
 
 #: website/templates/search_grdm.mako:196
 msgid "Employment@search"
-msgstr ""
+msgstr "Employment"
 
 #: website/templates/search_grdm.mako:206
 msgid "Education@search"
-msgstr ""
+msgstr "Education"
 
 #: website/templates/search_grdm.mako:595
 msgid "Modified by"
@@ -3731,4 +3732,7 @@ msgstr ""
 #: website/templates/util/render_node.mako:66
 msgid "Manage Contributors"
 msgstr ""
+
+#~ msgid "Path"
+#~ msgstr ""
 

@@ -34,7 +34,7 @@
                             <!-- ko if: tags().length -->
                             <div class="row">
                                 <div class="col-md-12">
-                                    <h4> ${_("Improve your search:")}</h4>
+                                    <h4> ${_("Improve your search")}:</h4>
                                     <span class="tag-cloud" data-bind="foreach: {data: tags, as: 'tag'}">
                                         <!-- ko if: count === $parent.tagMaxCount() && count > $parent.tagMaxCount()/2  -->
                                         <span class="tag tag-big tag-container"
@@ -67,7 +67,7 @@
                             <!-- /ko -->
                             <div class="row hidden-xs" data-bind="if: showLicenses">
                                 <div class="col-md-12">
-                                    <h4> ${_("Filter by license:")}</h4>
+                                    <h4> ${_("Filter by license")}:</h4>
                                     <span data-bind="if: licenses">
                                     <ul class="nav nav-pills nav-stacked"
                                         data-bind="foreach: {data: licenses, as: 'license'}">
@@ -140,14 +140,14 @@
         </span>
         <!-- ko if: node_title && node_url -->
         <span>
-            <strong>${_("Project:")}</strong>
+            <strong>${_("Project")}:</strong>
             <a data-bind="attr: {href: node_url}, text: node_title"></a>
         </span>
         <br>
         <!-- /ko -->
         <!-- ko if: folder_name -->
         <span>
-            <strong>${_("Path:")}</strong>
+            <strong>${_("Folder")}:</strong>
             <span data-bind="text: folder_name"></span>
         </span>
         <br>
@@ -157,7 +157,7 @@
         <!-- /ko -->
         <!-- ko if: comment !== null -->
         <p>
-            <strong>${_("Comment:")}</strong>
+            <strong>${_("Comment")}:</strong>
             <span data-bind="html: $root.makeComment(comment.text)"></span>
             <a data-bind="attr: {href: $root.getGuidUrl(comment.user_id)}, text: comment.user_name + '@' + $root.getGuidText(comment.user_id)"></a>
         </p>
@@ -193,7 +193,7 @@
                 <br>
                 <p>
                     <!-- ko if: ongoing_job_title -->
-                    <strong>${_("Employment:")}</strong>
+                    <strong>${_("Employment@search")}:</strong>
                     <span data-bind="visible: ongoing_job_title, text: ongoing_job_title"></span>
                     <!-- ko if: ongoing_job_department || ongoing_job --> at
                     <span data-bind="visible: ongoing_job_department, text: ongoing_job_department"></span><!-- ko if: ongoing_job_department && ongoing_job -->, <!-- /ko -->
@@ -203,7 +203,7 @@
                     <!-- /ko -->
 
                     <!-- ko if: ongoing_school_degree -->
-                    <strong>${_("Education:")}</strong>
+                    <strong>${_("Education@search")}:</strong>
                     <span data-bind="visible: ongoing_school_degree, text: ongoing_school_degree"></span>
                     <!-- ko if: ongoing_school_department || ongoing_school --> from
                     <!-- ko if: ongoing_school_department -->
@@ -314,7 +314,7 @@
         </span>
         <!-- ko if: node_title && node_url -->
         <span>
-            <strong>${_("Project:")}</strong>
+            <strong>${_("Project")}:</strong>
             <a data-bind="attr: {href: node_url}, text: node_title"></a>
         </span>
         <br>
@@ -329,7 +329,7 @@
         <!-- /ko -->
         <!-- ko if: comment !== null -->
         <p>
-            <strong>${_("Comment:")}</strong>
+            <strong>${_("Comment")}:</strong>
             <span data-bind="html: $root.makeComment(comment.text)"></span>
             <a data-bind="attr: {href: $root.getGuidUrl(comment.user_id)}, text: comment.user_name + '@' + $root.getGuidText(creator_id)"></a>
         </p>
@@ -357,7 +357,7 @@
 
         <!-- ko if: contributors.length > 0 -->
         <p>
-            <strong>${_(" Contributors:")}</strong> <span data-bind="foreach: contributors">
+            <strong>${_(" Contributors")}:</strong> <span data-bind="foreach: contributors">
                 <!-- ko if: url -->
                     <a data-bind="attr: {href: url}, text: fullname"></a>
                 <!-- /ko-->
@@ -379,7 +379,7 @@
         </p>
         <!-- /ko -->
       <!-- ko if: affiliated_institutions ? affiliated_institutions.length > 0 : false -->
-        <p><strong>${_("Affiliated institutions:")}</strong>
+        <p><strong>${_("Affiliated institutions")}:</strong>
             <!-- ko foreach: {data: affiliated_institutions, as: 'item'} -->
                 <!-- ko if: item == $parent.affiliated_institutions[$parent.affiliated_institutions.length -1] -->
                 <span data-bind="text: item"></span>
@@ -430,13 +430,13 @@
         </span>
         <!-- ko if: description -->
         <span data-bind="visible: description">
-            <strong>${_("Description:")}</strong> <span data-bind="fitText: {text: description, length: 500}"></span>
+            <strong>${_("Description")}:</strong> <span data-bind="fitText: {text: description, length: 500}"></span>
         </span>
         <br>
         <!-- /ko -->
         <!-- ko if: contributors.length > 0 -->
         <span>
-            <strong>${_("Contributors:")}</strong>
+            <strong>${_("Contributors")}:</strong>
             <span data-bind="foreach: contributors">
                 <!-- ko if: $index() > 0 && $index() < ($parent.contributors.length) -->, <!-- /ko -->
                 <!-- ko if: url -->
@@ -451,7 +451,7 @@
         <!-- /ko -->
         <!-- ko if: affiliated_institutions.length > 0 -->
         <span>
-            <strong>${_("Affiliated institutions:")}</strong>
+            <strong>${_("Affiliated institutions")}:</strong>
             <!-- ko foreach: {data: affiliated_institutions, as: 'item'} -->
                 <!-- ko if: item == $parent.affiliated_institutions[$parent.affiliated_institutions.length -1] -->
                 <span data-bind="text: item"></span>
@@ -465,7 +465,7 @@
         <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
         <span data-bind="visible: tags.length">
-            <strong>${_("Tags:")}</strong>
+            <strong>${_("Tags")}:</strong>
             <!-- ko foreach: {data: tags, as: 'tags'} -->
                 <span class="tag pointer tag-container"
                       data-bind="click: $root.addTag.bind($parentContext, tags)">
@@ -482,7 +482,7 @@
         <!-- /ko -->
         <!-- ko if: comment !== null -->
         <p>
-            <strong>${_("Comment:")}</strong>
+            <strong>${_("Comment")}:</strong>
             <span data-bind="html: $root.makeComment(comment.text)"></span>
             <a data-bind="attr: {href: $root.getGuidUrl(comment.user_id)}, text: comment.user_name  + '@' + $root.getGuidText(creator_id)"></a>
         </p>
@@ -493,10 +493,10 @@
     </script>
     <script type="text/html" id="preprint">
         <h4><a data-bind="attr: {href: url}, text: title"></a> ${_("(Preprint)")}</h4>
-        <p data-bind="visible: description"><strong>${_("Description:")}</strong> <span data-bind="fitText: {text: description, length: 500}"></span></p>
+        <p data-bind="visible: description"><strong>${_("Description")}:</strong> <span data-bind="fitText: {text: description, length: 500}"></span></p>
         <!-- ko if: contributors.length > 0 -->
         <p>
-            <strong>${_("Contributors:")}</strong> <span data-bind="foreach: contributors">
+            <strong>${_("Contributors")}:</strong> <span data-bind="foreach: contributors">
                 <!-- ko if: url -->
                     <a data-bind="attr: {href: url}, text: fullname"></a>
                 <!-- /ko-->
@@ -515,7 +515,7 @@
         <h4><span data-bind="text: title"></span></h4>
         <!-- ko if: managers.length > 0 -->
         <p>
-            <strong>${_("Managers:")}</strong> <span data-bind="foreach: managers">
+            <strong>${_("Managers")}:</strong> <span data-bind="foreach: managers">
                 <!-- ko if: url -->
                     <a data-bind="attr: {href: url}, text: fullname"></a>
                 <!-- /ko-->
@@ -528,7 +528,7 @@
         <!-- /ko -->
         <!-- ko if: members.length > 0 -->
         <p>
-            <strong>${_("Members:")}</strong> <span data-bind="foreach: members">
+            <strong>${_("Members")}:</strong> <span data-bind="foreach: members">
                 <!-- ko if: url -->
                     <a data-bind="attr: {href: url}, text: fullname"></a>
                 <!-- /ko-->
@@ -549,11 +549,11 @@
         <!-- /ko -->
         <strong><span data-bind="text: 'Date Registered: ' + dateRegistered['local'], tooltip: {title: dateRegistered['utc']}"></span></strong>
 
-        <p data-bind="visible: description"><strong>${_("Description:")}</strong> <span data-bind="fitText: {text: description, length: 500}"></span></p>
+        <p data-bind="visible: description"><strong>${_("Description")}:</strong> <span data-bind="fitText: {text: description, length: 500}"></span></p>
 
         <!-- ko if: contributors.length > 0 -->
         <p>
-            <strong>${_("Contributors:")}</strong> <span data-bind="foreach: contributors">
+            <strong>${_("Contributors")}:</strong> <span data-bind="foreach: contributors">
                 <!-- ko if: url -->
                     <a data-bind="attr: {href: url}, text: fullname"></a>
                 <!-- /ko-->
@@ -578,7 +578,7 @@
         </p>
     </script>
     <script id="tag-cloud" type="text/html">
-        <p data-bind="visible: tags.length"><strong>${_("Tags:")}</strong>
+        <p data-bind="visible: tags.length"><strong>${_("Tags")}:</strong>
             <div data-bind="foreach: tags">
                 <span class="tag pointer tag-container"
                       data-bind="click: $root.addTag.bind($parentContext, $data)">
@@ -592,10 +592,10 @@
     <script type="text/html" id="updated-time">
         <div>
             <!-- ko if: modifier_id && modifier_name && date_modified -->
-            <strong>${_("Modified by:")}</strong> <a data-bind="attr: {href: $root.getGuidUrl(modifier_id)}, text: modifier_name + '@' + $root.getGuidText(modifier_id)"></a> at <span data-bind="text: $root.toDate(date_modified)"></span>,
+            <strong>${_("Modified by")}:</strong> <a data-bind="attr: {href: $root.getGuidUrl(modifier_id)}, text: modifier_name + '@' + $root.getGuidText(modifier_id)"></a> at <span data-bind="text: $root.toDate(date_modified)"></span>,
             <!-- /ko -->
             <!-- ko if: creator_id && creator_name && date_created -->
-            <strong>${_("Created by:")}</strong> <a data-bind="attr: {href: $root.getGuidUrl(creator_id)}, text: creator_name + '@' + $root.getGuidText(creator_id)"></a> at <span data-bind="text: $root.toDate(date_created)"></span>
+            <strong>${_("Created by")}:</strong> <a data-bind="attr: {href: $root.getGuidUrl(creator_id)}, text: creator_name + '@' + $root.getGuidText(creator_id)"></a> at <span data-bind="text: $root.toDate(date_created)"></span>
             <!-- /ko -->
         </div>
     </script>

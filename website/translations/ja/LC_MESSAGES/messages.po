@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-23 10:00+0900\n"
-"PO-Revision-Date: 2020-05-23 10:00+0900\n"
+"POT-Creation-Date: 2020-05-25 15:31+0000\n"
+"PO-Revision-Date: 2020-05-26 01:00+0900\n"
 "Last-Translator: Takuya Ishibashi\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -824,8 +824,8 @@ msgstr "削除"
 #: website/templates/project/settings.mako:36
 #: website/templates/project/settings.mako:257
 #: website/templates/search.mako:278 website/templates/search.mako:370
-#: website/templates/search_grdm.mako:386
-#: website/templates/search_grdm.mako:558
+#: website/templates/search_grdm.mako:398
+#: website/templates/search_grdm.mako:574
 msgid "Wiki"
 msgstr "Wiki"
 
@@ -1599,11 +1599,11 @@ msgid "Switch account"
 msgstr "アカウントを切り替える"
 
 #: website/templates/search.mako:36 website/templates/search_grdm.mako:37
-msgid "Improve your search:"
+msgid "Improve your search"
 msgstr "検索結果をしぼる"
 
 #: website/templates/search.mako:69 website/templates/search_grdm.mako:70
-msgid "Filter by license:"
+msgid "Filter by license"
 msgstr "ライセンスでフィルタ"
 
 #: website/templates/search.mako:93 website/templates/search_grdm.mako:95
@@ -1623,8 +1623,8 @@ msgid "Next Page"
 msgstr "次のページ"
 
 #: website/templates/search.mako:123 website/templates/search.mako:341
-#: website/templates/search.mako:344 website/templates/search_grdm.mako:529
-#: website/templates/search_grdm.mako:532
+#: website/templates/search.mako:344 website/templates/search_grdm.mako:545
+#: website/templates/search_grdm.mako:548
 msgid "Withdrawn "
 msgstr "取り下げられた"
 
@@ -1654,65 +1654,70 @@ msgstr ""
 "<a %(nodeUrlAndTitle)s></a> <span %(parentTitle)s><span "
 "%(textParentTitle)s></span> /</span>より"
 
-#: website/templates/search.mako:240 website/templates/search_grdm.mako:348
-msgid " Contributors:"
-msgstr "メンバー:"
+#: website/templates/search.mako:240 website/templates/search_grdm.mako:360
+msgid " Contributors"
+msgstr "メンバー"
 
-#: website/templates/search.mako:262 website/templates/search_grdm.mako:370
-#: website/templates/search_grdm.mako:435
-msgid "Affiliated institutions:"
-msgstr "所属機関："
+#: website/templates/search.mako:262 website/templates/search_grdm.mako:382
+#: website/templates/search_grdm.mako:454
+msgid "Affiliated institutions"
+msgstr "所属機関"
 
 #: website/templates/search.mako:276 website/templates/search.mako:368
-#: website/templates/search_grdm.mako:384
-#: website/templates/search_grdm.mako:556
+#: website/templates/search_grdm.mako:396
+#: website/templates/search_grdm.mako:572
 msgid "<p><strong>Jump to:</strong>"
 msgstr "<p>"
 
 # コードの都合上、[Jump to:]の翻訳を組み込む
 #: website/templates/search.mako:280 website/templates/search.mako:372
-#: website/templates/search_grdm.mako:388
-#: website/templates/search_grdm.mako:560
+#: website/templates/search_grdm.mako:400
+#: website/templates/search_grdm.mako:576
 msgid "Files</a>"
 msgstr "ファイル</a>へ移動"
 
-#: website/templates/search.mako:291 website/templates/search_grdm.mako:479
+#: website/templates/search.mako:291 website/templates/search_grdm.mako:495
 msgid "(Preprint)"
 msgstr "(プレプリント)"
 
-#: website/templates/project/project.mako:265
-#: website/templates/project/settings.mako:107
 #: website/templates/search.mako:292 website/templates/search.mako:348
-#: website/templates/search_grdm.mako:414
-#: website/templates/search_grdm.mako:480
-#: website/templates/search_grdm.mako:536
-msgid "Description:"
-msgstr "説明:"
+#: website/templates/search_grdm.mako:433
+#: website/templates/search_grdm.mako:496
+#: website/templates/search_grdm.mako:552
+msgid "Description"
+msgstr ""
 
-#: website/templates/project/project.mako:165 website/templates/search.mako:295
-#: website/templates/search.mako:352 website/templates/search_grdm.mako:420
-#: website/templates/search_grdm.mako:483
-#: website/templates/search_grdm.mako:540
-msgid "Contributors:"
-msgstr "メンバー:"
+#: website/templates/project/contributors.mako:2
+#: website/templates/project/contributors.mako:8
+#: website/templates/project/contributors.mako:54
+#: website/templates/project/project.mako:163
+#: website/templates/project/project_header.mako:72
+#: website/templates/search.mako:295 website/templates/search.mako:352
+#: website/templates/search_grdm.mako:439
+#: website/templates/search_grdm.mako:499
+#: website/templates/search_grdm.mako:556
+msgid "Contributors"
+msgstr "メンバー"
 
-#: website/templates/search.mako:314 website/templates/search_grdm.mako:502
-msgid "Managers:"
-msgstr "マネージャ:"
+#: website/templates/search.mako:314 website/templates/search_grdm.mako:518
+msgid "Managers"
+msgstr "マネージャ"
 
-#: website/templates/search.mako:327 website/templates/search_grdm.mako:515
-msgid "Members:"
-msgstr "グループメンバー:"
+#: website/templates/search.mako:327 website/templates/search_grdm.mako:531
+msgid "Members"
+msgstr "グループメンバー"
 
 #: website/templates/search.mako:341 website/templates/search.mako:344
-#: website/templates/search_grdm.mako:529
-#: website/templates/search_grdm.mako:532
+#: website/templates/search_grdm.mako:545
+#: website/templates/search_grdm.mako:548
 msgid "Registration"
 msgstr "登録"
 
-#: website/templates/search.mako:377 website/templates/search_grdm.mako:449
-#: website/templates/search_grdm.mako:565
-msgid "Tags:"
+#: website/templates/project/project.mako:587
+#: website/templates/project/view_file.mako:76
+#: website/templates/search.mako:377 website/templates/search_grdm.mako:468
+#: website/templates/search_grdm.mako:581
+msgid "Tags"
 msgstr "タグ"
 
 #: website/templates/search_bar.mako:7 website/templates/search_bar.mako:8
@@ -1747,40 +1752,37 @@ msgstr ""
 "<p>検索では<a "
 "%(searchQuerySyntaxUrl)s>Lucene検索構文</a>を使用します。これにより多くのオプションが提供されますが、非常にシンプルにすることもできます。有効な検索の例は次のとおりです。</p>"
 
+#: website/templates/project/project_header.mako:16
 #: website/templates/search_grdm.mako:143
-#: website/templates/search_grdm.mako:302
-msgid "Project:"
-msgstr "プロジェクト:"
+#: website/templates/search_grdm.mako:317
+msgid "Project"
+msgstr "プロジェクト"
 
 #: website/templates/search_grdm.mako:150
-msgid "Path:"
-msgstr ""
+msgid "Folder"
+msgstr "フォルダ"
 
-#: website/templates/search_grdm.mako:157
-#: website/templates/search_grdm.mako:309
-#: website/templates/search_grdm.mako:463
-msgid "Modified by:"
-msgstr "更新者:"
+#: website/templates/search_grdm.mako:160
+#: website/templates/search_grdm.mako:332
+#: website/templates/search_grdm.mako:485
+msgid "Comment"
+msgstr "コメント"
 
-#: website/templates/search_grdm.mako:159
-#: website/templates/search_grdm.mako:311
-#: website/templates/search_grdm.mako:465
-msgid "Created by:"
-msgstr "作成者:"
+#: website/templates/search_grdm.mako:196
+msgid "Employment@search"
+msgstr "所属(勤務先)"
 
-#: website/templates/search_grdm.mako:163
-#: website/templates/search_grdm.mako:320
-#: website/templates/search_grdm.mako:469
-msgid "Comment:"
-msgstr "コメント:"
+#: website/templates/search_grdm.mako:206
+msgid "Education@search"
+msgstr "所属(学校)"
 
-#: website/templates/search_grdm.mako:192
-msgid "Employment:"
-msgstr ""
+#: website/templates/search_grdm.mako:595
+msgid "Modified by"
+msgstr "更新者"
 
-#: website/templates/search_grdm.mako:202
-msgid "Education:"
-msgstr ""
+#: website/templates/search_grdm.mako:598
+msgid "Created by"
+msgstr "作成者"
 
 #: website/templates/search_nav_grdm.mako:65
 msgid "Page"
@@ -2636,14 +2638,6 @@ msgid ""
 "have questions."
 msgstr "ご質問がある場合は、<a %(mailtoRdmSupport)s>rdm_support@nii.ac.jp</a>までご連絡ください。"
 
-#: website/templates/project/contributors.mako:2
-#: website/templates/project/contributors.mako:8
-#: website/templates/project/contributors.mako:54
-#: website/templates/project/project.mako:163
-#: website/templates/project/project_header.mako:72
-msgid "Contributors"
-msgstr "メンバー"
-
 #: website/templates/project/contributors.mako:13
 msgid "Filter by name"
 msgstr "氏名でフィルタ"
@@ -3081,6 +3075,10 @@ msgstr "共有"
 msgid "Log in to request access"
 msgstr "ログインしてアクセスをリクエスト"
 
+#: website/templates/project/project.mako:165
+msgid "Contributors:"
+msgstr "メンバー:"
+
 #: website/templates/project/project.mako:169
 msgid "Anonymous Contributors"
 msgstr "匿名メンバー"
@@ -3128,6 +3126,11 @@ msgstr "カテゴリー："
 #: website/templates/project/project.mako:260
 msgid "category"
 msgstr ""
+
+#: website/templates/project/project.mako:265
+#: website/templates/project/settings.mako:107
+msgid "Description:"
+msgstr "説明:"
 
 #: website/templates/project/project.mako:282
 msgid "License:"
@@ -3234,11 +3237,6 @@ msgstr "<span %(textCustomCitation)s></span>として<div %(f_x_xl)s>引用：</
 msgid "Enter custom citation"
 msgstr "カスタム引用の入力"
 
-#: website/templates/project/project.mako:587
-#: website/templates/project/view_file.mako:76
-msgid "Tags"
-msgstr "タグ"
-
 #: website/templates/project/project.mako:601
 msgid "Recent Activity"
 msgstr "最近の活動"
@@ -3279,10 +3277,6 @@ msgstr "プロジェクトをリンク"
 #: website/templates/project/project.mako:669
 msgid "Add components to organize your project."
 msgstr "コンポーネントを追加して、プロジェクトを整理します。"
-
-#: website/templates/project/project_header.mako:16
-msgid "Project"
-msgstr "プロジェクト"
 
 #: website/templates/project/project_header.mako:16
 msgid "Component"
@@ -3858,4 +3852,3 @@ msgstr "%(summaryTitle)sのフォークを作成"
 #: website/templates/util/render_node.mako:66
 msgid "Manage Contributors"
 msgstr "メンバー管理"
-
