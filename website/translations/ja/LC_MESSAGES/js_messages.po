@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-23 10:00+0900\n"
+"POT-Creation-Date: 2020-05-25 21:45+0000\n"
 "PO-Revision-Date: 2020-05-23 10:00+0900\n"
 "Last-Translator: Takuya Ishibashi\n"
 "Language: ja\n"
@@ -69,14 +69,14 @@ msgid "the page now, those changes may be lost."
 msgstr "ここでページを終了すると、これらの変更が失われる可能性があります。"
 
 #: addons/wiki/static/wikiPage.js:94
-#: website/static/js/pages/project-dashboard-page.js:729
+#: website/static/js/pages/project-dashboard-page.js:730
 msgid ""
 "*Add important information, links, or images here to describe your "
 "project.*"
 msgstr "*重要な情報、リンク、または画像をここに追加して、プロジェクトを説明してください。*"
 
 #: addons/wiki/static/wikiPage.js:96
-#: website/static/js/pages/project-dashboard-page.js:731
+#: website/static/js/pages/project-dashboard-page.js:732
 msgid "*No wiki content.*"
 msgstr "* Wikiコンテンツはありません。*"
 
@@ -1144,7 +1144,7 @@ msgid " if the problem persists."
 msgstr " "
 
 #: website/static/js/citationWidget.js:46
-#: website/static/js/pages/project-dashboard-page.js:169
+#: website/static/js/pages/project-dashboard-page.js:170
 #, python-format
 msgid "Please enter %s or more characters"
 msgstr "後%s文字入力してください"
@@ -1683,7 +1683,7 @@ msgstr "である可能性があります。"
 
 #: website/static/js/fangorn.js:1670 website/static/js/fileViewTreebeard.js:63
 #: website/static/js/filesWidget.js:34 website/static/js/meetings.js:18
-#: website/static/js/pages/project-dashboard-page.js:548
+#: website/static/js/pages/project-dashboard-page.js:549
 #: website/static/js/project-organizer.js:189
 #: website/static/js/project-organizer.js:205 website/static/js/wikiMenu.js:58
 msgid "Name"
@@ -1698,7 +1698,7 @@ msgid "Version"
 msgstr "バージョン"
 
 #: website/static/js/fangorn.js:1687
-#: website/static/js/pages/project-dashboard-page.js:554
+#: website/static/js/pages/project-dashboard-page.js:555
 #: website/static/js/project-organizer.js:198
 msgid "Modified"
 msgstr "最終更新日時"
@@ -4441,7 +4441,7 @@ msgid "Could not add tag."
 msgstr "タグを追加できませんでした"
 
 #: website/static/js/pages/file-page.js:27
-#: website/static/js/pages/project-dashboard-page.js:654
+#: website/static/js/pages/project-dashboard-page.js:655
 msgid "Failed to add tag"
 msgstr "タグの追加に失敗しました"
 
@@ -4450,7 +4450,7 @@ msgid "Could not remove tag."
 msgstr "タグを削除できませんでした。"
 
 #: website/static/js/pages/file-page.js:42
-#: website/static/js/pages/project-dashboard-page.js:690
+#: website/static/js/pages/project-dashboard-page.js:691
 msgid "Failed to remove tag"
 msgstr "タグの削除に失敗しました。"
 
@@ -4520,37 +4520,41 @@ msgstr "無効にする"
 
 #: website/static/js/pages/project-dashboard-page.js:117
 msgid "Filter by users"
-msgstr "ユーザーでフィルタ"
+msgstr "ユーザでフィルタ"
 
 #: website/static/js/pages/project-dashboard-page.js:118
-msgid "Select from contributors"
-msgstr "メンバーから選択"
+msgid "Select from current contributors"
+msgstr "現在のメンバーから選択"
 
 #: website/static/js/pages/project-dashboard-page.js:119
-msgid "Select from all users"
-msgstr "全ユーザーから選択"
+msgid "Select including past contributors"
+msgstr "過去のメンバーも含めて選択"
 
 #: website/static/js/pages/project-dashboard-page.js:120
+msgid "Include past project contributors in your search"
+msgstr "過去のプロジェクトメンバーも含めて検索する"
+
+#: website/static/js/pages/project-dashboard-page.js:121
 msgid "Use dropdown menu"
 msgstr "ドロップダウンメニュー使用"
 
-#: website/static/js/pages/project-dashboard-page.js:416
+#: website/static/js/pages/project-dashboard-page.js:417
 msgid "Add Component"
 msgstr "コンポーネントを追加"
 
-#: website/static/js/pages/project-dashboard-page.js:418
+#: website/static/js/pages/project-dashboard-page.js:419
 msgid "Create new component"
 msgstr "新しいコンポーネントを作成する"
 
-#: website/static/js/pages/project-dashboard-page.js:612
+#: website/static/js/pages/project-dashboard-page.js:613
 msgid "Error retrieving filebrowser"
 msgstr "ファイルブラウザの取得エラー"
 
-#: website/static/js/pages/project-dashboard-page.js:629
+#: website/static/js/pages/project-dashboard-page.js:630
 msgid "Add a project tag to enhance discoverability"
 msgstr "タグを追加してプロジェクトを発見しやすくする"
 
-#: website/static/js/pages/project-dashboard-page.js:689
+#: website/static/js/pages/project-dashboard-page.js:690
 msgid "Could not remove tag"
 msgstr "タグを削除できませんでした"
 

@@ -605,23 +605,25 @@
             <div class="panel-body">
                 <input type="hidden" id="LogSearchUserKeys">
                 <div class="container-fluid" style="padding: 0px">
-                    <div style="margin-bottom: 7px">
-                        <input type="text" id="LogSearchName" autocomplete="off">
-                    </div>
-                    <div class="" style="padding: 0px">
-                        <div class="pull-left" style="margin-left: 0px;">
+                    <div>
+                        <div class="pull-left" style="margin-bottom: 5px">
                             <input type="text" id="LogSearchS" placeholder='${_("Start date")}' size="10" autocomplete="off">
                         </div>
-                        <div class="pull-left" style="margin-left: 10px;">
+                        <div class="pull-left" style="margin-left: 10px; margin-bottom: 5px">
                             <input type="text" id="LogSearchE" placeholder='${_("End date")}' size="10" autocomplete="off">
                         </div>
                         <div class="pull-left form-check" style="margin-left: 10px; padding-top: 2px;" id="useDropdown">
                             <input class="form-check-input" type="checkbox" id="useDropdownCheckbox">
                             <label class="form-check-label" for="useDropdownCheckbox" id="useDropdownLabel"></label>
                         </div>
+                    </div>
+                    <div style="margin-top: 7px; margin-bottom: 0px">
+                        <input type="text" id="LogSearchName" autocomplete="off">
+                    </div>
+                    <div style="margin-bottom: 0px">
                         <div class="pull-left form-check" style="margin-left: 10px; padding-top: 2px;" id="fromAllUsers">
                             <input class="form-check-input" type="checkbox" id="fromAllUsersCheckbox">
-                            <label class="form-check-label" for="fromAllUsersCheckbox" id="fromAllUsersLabel"></label>
+                            <label class="form-check-label" for="fromAllUsersCheckbox" id="fromAllUsersLabel" style="margin-bottom: 0px"></label>
                         </div>
                     </div>
                 </div>

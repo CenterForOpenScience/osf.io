@@ -115,8 +115,9 @@ var selectFromAllUsers = false;
 $('#useDropdown').hide();
 
 var message_filter_by_users = _('Filter by users');
-var message_select_from_contributors = _('Select from contributors');
-var message_select_from_all_users = _('Select from all users');
+var message_select_from_contributors = _('Select from current contributors');
+var message_select_from_all_users = _('Select including past contributors')
+var message_select_from_all_users_checkbox = _('Include past project contributors in your search');
 var message_use_dropdown_menu = _('Use dropdown menu');
 
 var commonDropdownSuggestOptions = {
@@ -372,7 +373,7 @@ var initUserKeysForRecentActivity = function () {
     });
 
     $('#useDropdownLabel').text(message_use_dropdown_menu);
-    $('#fromAllUsersLabel').text(message_select_from_all_users);
+    $('#fromAllUsersLabel').text(message_select_from_all_users_checkbox);
 
     // set defaults
     $('#useDropdownCheckbox').prop('checked', true);
