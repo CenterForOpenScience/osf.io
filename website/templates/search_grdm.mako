@@ -100,7 +100,7 @@
                         <!-- ko if: !searching() && totalCount() -->
                         <%include file='./search_nav_grdm.mako' />
                         <div data-bind="foreach: results">
-                            <div class="search-result" data-bind="template: { name: category, data: $data}"></div>
+                            <div style="margin-bottom: 0px;" class="search-result" data-bind="template: { name: category, data: $data}"></div>
                         </div>
                         <%include file='./search_nav_grdm.mako' />
                         <!-- /ko -->
