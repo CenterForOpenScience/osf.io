@@ -711,7 +711,12 @@ class TestNodeSettingsModel(StorageTestCase):
         assert_equal(list(cloned_record.versions.all()), list(record.versions.all()))
         assert_true(fork_node_settings.root_node)
 
-    def test_fork_reverts_to_using_user_storage_default(self):
+    def test_storage_region_doesnt_change_on_fork(self):
+        """
+        Ensures node files don't change region when forked, A user's default storage region shouldn't mean a fork is
+        copying files into that region. This goes for components as well, the region stays the same when forked.
+        :return:
+        """
         user = UserFactory()
         user2 = UserFactory()
         us = RegionFactory()
@@ -731,16 +736,16 @@ class TestNodeSettingsModel(StorageTestCase):
         child_settings.save()
 
         fork = project.fork_node(Auth(user))
-        child_fork = models.Node.objects.get_children(fork).first()
-        assert fork.get_addon('osfstorage').region_id == us.id
-        assert fork.get_addon('osfstorage').user_settings == user.get_addon('osfstorage')
-        assert child_fork.get_addon('osfstorage').region_id == us.id
+        fork_region_id = fork.get_addon('osfstorage').region_id
 
-        fork = project.fork_node(Auth(user2))
         child_fork = models.Node.objects.get_children(fork).first()
-        assert fork.get_addon('osfstorage').region_id == canada.id
-        assert fork.get_addon('osfstorage').user_settings == user2.get_addon('osfstorage')
-        assert child_fork.get_addon('osfstorage').region_id == canada.id
+        child_fork_region_id = child_fork.get_addon('osfstorage').region_id
+
+        assert fork_region_id == project.get_addon('osfstorage').region_id
+        assert fork_region_id == us.id
+
+        assert child_fork_region_id == child_fork.get_addon('osfstorage').region_id
+        assert child_fork_region_id == canada.id
 
     def test_region_wb_url_from_creators_defaults(self):
         user = UserFactory()
