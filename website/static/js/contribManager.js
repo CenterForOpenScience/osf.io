@@ -428,6 +428,9 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
                 confirm:{
                     label:_('Save'),
                     className:'btn-success'
+                },
+                cancel:{
+                    label:_('Cancel')
                 }
             }
         });

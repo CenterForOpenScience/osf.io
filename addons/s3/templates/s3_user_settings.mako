@@ -33,7 +33,7 @@
                         </td>
                         <td>
                             <a data-bind="click: $parent.deauthorizeNode.bind($parent)">
-                                <i class="fa fa-times text-danger pull-right" title="disconnect Project"></i>
+                                <i class="fa fa-times text-danger pull-right" title="${_('disconnect Project')}"></i>
                             </a>
                         </td>
                     </tr>

@@ -23,3 +23,7 @@ var searchDocTypes = [_('Projects'),_('Components'),_('Registrations'),_('Users'
 var subscriptionsTitlesAndHelps = [_('Default Notification Settings'),_('These are default settings for new projects you create or are added to. Modifying these settings will not modify settings on existing projects.'),_('Project Notifications')];
 
 var folderMoved = _('moved');
+
+var permissions = [_('admin'),_('write'),_('read')];
+
+var pageTitleWikiComment = _('home');

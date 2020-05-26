@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-21 11:58+0900\n"
-"PO-Revision-Date: 2020-03-21 11:58+0900\n"
+"POT-Creation-Date: 2020-05-25 10:19+0900\n"
+"PO-Revision-Date: 2020-05-25 10:19+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -243,6 +243,15 @@ msgstr ""
 #: addons/weko/templates/weko_user_settings.mako:31
 #: website/templates/profile/user_settings_default.mako:28
 msgid "Private project"
+msgstr ""
+
+#: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:36
+#: addons/s3/templates/s3_user_settings.mako:36
+#: addons/s3compat/templates/s3compat_user_settings.mako:36
+#: addons/swift/templates/swift_user_settings.mako:36
+#: addons/weko/templates/weko_user_settings.mako:35
+#: website/templates/profile/user_settings_default.mako:32
+msgid "disconnect Project"
 msgstr ""
 
 #: addons/base/models.py:461
@@ -828,6 +837,10 @@ msgstr ""
 msgid "Preview"
 msgstr ""
 
+#: addons/wiki/templates/edit.mako:95 addons/wiki/templates/edit.mako:218
+msgid "(Current)"
+msgstr ""
+
 #: addons/wiki/templates/edit.mako:97 addons/wiki/templates/edit.mako:220
 msgid "Current"
 msgstr ""
@@ -854,6 +867,10 @@ msgstr ""
 
 #: addons/wiki/templates/edit.mako:205 addons/wiki/templates/edit.mako:212
 msgid "Compare"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:215
+msgid " to"
 msgstr ""
 
 #: addons/wiki/templates/edit.mako:257
@@ -2466,7 +2483,7 @@ msgid "Enable"
 msgstr ""
 
 #: website/templates/project/addons.mako:128
-msgid "Don’t see your GitHub organization repositories?"
+msgid "Don't see your GitHub organization repositories?"
 msgstr ""
 
 #: website/templates/project/addons.mako:130

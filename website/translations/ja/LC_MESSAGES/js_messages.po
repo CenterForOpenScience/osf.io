@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-04-24 14:11+0900\n"
-"PO-Revision-Date: 2020-04-24 14:11+0900\n"
+"POT-Creation-Date: 2020-05-19 13:52+0900\n"
+"PO-Revision-Date: 2020-05-19 13:52+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -18,11 +18,55 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.7.0\n"
 
-#: addons/twofactor/static/twoFactorUserConfig.js:175
+#: addons/twofactor/static/twoFactorUserConfig.js:148
+#: addons/twofactor/static/twoFactorUserConfig.js:190
+#: admin/static/js/rdm_addons/rdm-addons-page.js:71
+#: website/static/js/accountSettings.js:286
+#: website/static/js/accountSettings.js:351
+#: website/static/js/accountSettings.js:477
+#: website/static/js/accountSettings.js:549
+#: website/static/js/addProjectPlugin.js:347
+#: website/static/js/addonPermissions.js:55
+#: website/static/js/addonSettings.js:71 website/static/js/addonSettings.js:134
+#: website/static/js/apiApplication.js:249
+#: website/static/js/apiApplication.js:420
+#: website/static/js/apiApplication.js:487
+#: website/static/js/apiPersonalToken.js:228
+#: website/static/js/apiPersonalToken.js:399
+#: website/static/js/apiPersonalToken.js:426
+#: website/static/js/citationsNodeConfig.js:169
+#: website/static/js/citationsNodeConfig.js:187
+#: website/static/js/contribManager.js:433 website/static/js/fangorn.js:537
+#: website/static/js/fangorn.js:542 website/static/js/fangorn.js:1212
+#: website/static/js/fangorn.js:1235 website/static/js/fangorn.js:1288
+#: website/static/js/fangorn.js:1307 website/static/js/fangorn.js:2006
+#: website/static/js/filepage/index.js:213
+#: website/static/js/folderPickerNodeConfig.js:510
+#: website/static/js/folderPickerNodeConfig.js:566
+#: website/static/js/institutionProjectSettings.js:102
+#: website/static/js/licensePicker.js:243 website/static/js/myProjects.js:1560
+#: website/static/js/myProjects.js:1608 website/static/js/myProjects.js:1632
+#: website/static/js/nodeControl.js:227
+#: website/static/js/oauthAddonNodeConfig.js:156
+#: website/static/js/oauthAddonNodeConfig.js:174
+#: website/static/js/osfHelpers.js:796 website/static/js/osfHelpers.js:897
+#: website/static/js/pages/profile-settings-addons-page.js:35
+#: website/static/js/pages/profile-settings-addons-page.js:101
+#: website/static/js/pages/project-addons-page.js:41
+#: website/static/js/pages/project-addons-page.js:66
+#: website/static/js/privateLinkTable.js:119 website/static/js/profile.js:373
+#: website/static/js/profile.js:743 website/static/js/profile.js:975
+#: website/static/js/project.js:39 website/static/js/project.js:143
+#: website/static/js/project.js:253
+#: website/static/js/wikiSettingsTreebeard.js:31
+msgid "Cancel"
+msgstr "キャンセル"
+
+#: addons/twofactor/static/twoFactorUserConfig.js:178
 msgid "Enable Two-factor Authentication"
 msgstr "２要素認証を有効にする"
 
-#: addons/twofactor/static/twoFactorUserConfig.js:176
+#: addons/twofactor/static/twoFactorUserConfig.js:179
 msgid ""
 "Enabling two-factor authentication will not immediately activate this "
 "feature for your account. You will need to follow the steps that appear "
@@ -32,7 +76,7 @@ msgstr ""
 "２要素認証を有効にしても、アカウントのこの機能はすぐには有効になりません。 "
 "アカウントの２要素認証のアクティベーションを完了するには、以下に表示される手順に従う必要があります。"
 
-#: addons/twofactor/static/twoFactorUserConfig.js:184
+#: addons/twofactor/static/twoFactorUserConfig.js:187
 msgid "Enable"
 msgstr "有効にする"
 
@@ -69,14 +113,14 @@ msgid "the page now, those changes may be lost."
 msgstr "ここでページを終了すると、これらの変更が失われる可能性があります。"
 
 #: addons/wiki/static/wikiPage.js:94
-#: website/static/js/pages/project-dashboard-page.js:550
+#: website/static/js/pages/project-dashboard-page.js:553
 msgid ""
 "*Add important information, links, or images here to describe your "
 "project.*"
 msgstr "*重要な情報、リンク、または画像をここに追加して、プロジェクトを説明してください。*"
 
 #: addons/wiki/static/wikiPage.js:96
-#: website/static/js/pages/project-dashboard-page.js:552
+#: website/static/js/pages/project-dashboard-page.js:555
 msgid "*No wiki content.*"
 msgstr "* Wikiコンテンツはありません。*"
 
@@ -186,47 +230,6 @@ msgstr "これにより、アカウントを使用するすべてのプロジェ
 #: admin/static/js/rdm_addons/rdm-addons-page.js:67
 msgid "Type the following to continue: <strong>%1$s</strong><br><br>"
 msgstr "次を入力して続行します。<strong>%1$s</ strong><br><br>"
-
-#: admin/static/js/rdm_addons/rdm-addons-page.js:71
-#: website/static/js/accountSettings.js:286
-#: website/static/js/accountSettings.js:351
-#: website/static/js/accountSettings.js:477
-#: website/static/js/accountSettings.js:549
-#: website/static/js/addProjectPlugin.js:347
-#: website/static/js/addonPermissions.js:55
-#: website/static/js/addonSettings.js:71 website/static/js/addonSettings.js:134
-#: website/static/js/apiApplication.js:249
-#: website/static/js/apiApplication.js:420
-#: website/static/js/apiApplication.js:487
-#: website/static/js/apiPersonalToken.js:228
-#: website/static/js/apiPersonalToken.js:399
-#: website/static/js/apiPersonalToken.js:426
-#: website/static/js/citationsNodeConfig.js:169
-#: website/static/js/citationsNodeConfig.js:187
-#: website/static/js/fangorn.js:537 website/static/js/fangorn.js:542
-#: website/static/js/fangorn.js:1212 website/static/js/fangorn.js:1235
-#: website/static/js/fangorn.js:1288 website/static/js/fangorn.js:1307
-#: website/static/js/fangorn.js:2006 website/static/js/filepage/index.js:213
-#: website/static/js/folderPickerNodeConfig.js:510
-#: website/static/js/folderPickerNodeConfig.js:566
-#: website/static/js/institutionProjectSettings.js:102
-#: website/static/js/licensePicker.js:243 website/static/js/myProjects.js:1560
-#: website/static/js/myProjects.js:1608 website/static/js/myProjects.js:1632
-#: website/static/js/nodeControl.js:227
-#: website/static/js/oauthAddonNodeConfig.js:156
-#: website/static/js/oauthAddonNodeConfig.js:174
-#: website/static/js/osfHelpers.js:796 website/static/js/osfHelpers.js:897
-#: website/static/js/pages/profile-settings-addons-page.js:35
-#: website/static/js/pages/profile-settings-addons-page.js:101
-#: website/static/js/pages/project-addons-page.js:41
-#: website/static/js/pages/project-addons-page.js:66
-#: website/static/js/privateLinkTable.js:119 website/static/js/profile.js:373
-#: website/static/js/profile.js:743 website/static/js/profile.js:975
-#: website/static/js/project.js:39 website/static/js/project.js:143
-#: website/static/js/project.js:253
-#: website/static/js/wikiSettingsTreebeard.js:31
-msgid "Cancel"
-msgstr "キャンセル"
 
 #: admin/static/js/rdm_addons/rdm-addons-page.js:74
 msgid "Disallow"
@@ -1683,8 +1686,8 @@ msgstr "である可能性があります。"
 #: website/static/js/fangorn.js:1670 website/static/js/fileViewTreebeard.js:63
 #: website/static/js/filesWidget.js:34 website/static/js/meetings.js:18
 #: website/static/js/pages/project-dashboard-page.js:369
-#: website/static/js/project-organizer.js:189
-#: website/static/js/project-organizer.js:205 website/static/js/wikiMenu.js:58
+#: website/static/js/project-organizer.js:192
+#: website/static/js/project-organizer.js:208 website/static/js/wikiMenu.js:58
 msgid "Name"
 msgstr "名前"
 
@@ -1698,7 +1701,7 @@ msgstr "バージョン"
 
 #: website/static/js/fangorn.js:1687
 #: website/static/js/pages/project-dashboard-page.js:375
-#: website/static/js/project-organizer.js:198
+#: website/static/js/project-organizer.js:201
 msgid "Modified"
 msgstr "最終更新日時"
 
@@ -2359,6 +2362,22 @@ msgstr "プロジェクト通知"
 #: website/static/js/js_messages.js:25
 msgid "moved"
 msgstr "移動"
+
+#: website/static/js/js_messages.js:27
+msgid "admin"
+msgstr "管理者"
+
+#: website/static/js/js_messages.js:27
+msgid "write"
+msgstr "書込み"
+
+#: website/static/js/js_messages.js:27
+msgid "read"
+msgstr "読込み"
+
+#: website/static/js/js_messages.js:29
+msgid "home"
+msgstr "ホーム"
 
 #: website/static/js/keen.js:114
 msgid "Error sending Keen data to %1$s:<%2$s>"
@@ -3398,15 +3417,15 @@ msgid "Institution required"
 msgstr "機関が必要です"
 
 #: website/static/js/components/publicNodes.js:103
-#: website/static/js/project-organizer.js:99
+#: website/static/js/project-organizer.js:100
 msgid "A contributor"
 msgstr "一人のメンバー"
 
-#: website/static/js/project-organizer.js:194
+#: website/static/js/project-organizer.js:197
 msgid "Contributors"
 msgstr "メンバー"
 
-#: website/static/js/project-organizer.js:413
+#: website/static/js/project-organizer.js:416
 msgid ""
 "input.form-control[placeholder=\"Filter displayed "
 "projects\"][type=\"text\"]"
@@ -3969,33 +3988,47 @@ msgstr "これには通常より時間がかかります。<br> ページを再�
 msgid "Add a file tag to enhance discoverability"
 msgstr "タグを追加してファイルを発見しやすくする"
 
-#: website/static/js/pages/file-page.js:26
+#: website/static/js/pages/file-page.js:23
+#: website/static/js/pages/file-page.js:58
+#: website/static/js/pages/file-page.js:60
+#: website/static/js/pages/project-dashboard-page.js:452
+#: website/static/js/pages/project-dashboard-page.js:536
+#: website/static/js/pages/project-dashboard-page.js:569
+msgid "Removing tag"
+msgstr "タグを削除"
+
+#: website/static/js/pages/file-page.js:24
+#: website/static/js/pages/project-dashboard-page.js:453
+msgid "Add a tag"
+msgstr "タグを追加"
+
+#: website/static/js/pages/file-page.js:28
 msgid "Could not add tag."
 msgstr "タグを追加できませんでした"
 
-#: website/static/js/pages/file-page.js:27
-#: website/static/js/pages/project-dashboard-page.js:475
+#: website/static/js/pages/file-page.js:29
+#: website/static/js/pages/project-dashboard-page.js:476
 msgid "Failed to add tag"
 msgstr "タグの追加に失敗しました"
 
-#: website/static/js/pages/file-page.js:41
+#: website/static/js/pages/file-page.js:43
 msgid "Could not remove tag."
 msgstr "タグを削除できませんでした。"
 
-#: website/static/js/pages/file-page.js:42
-#: website/static/js/pages/project-dashboard-page.js:511
+#: website/static/js/pages/file-page.js:44
+#: website/static/js/pages/project-dashboard-page.js:512
 msgid "Failed to remove tag"
 msgstr "タグの削除に失敗しました。"
 
-#: website/static/js/pages/file-page.js:87
+#: website/static/js/pages/file-page.js:90
 msgid "The file title cannot be empty."
 msgstr "ファイルのタイトルを空にすることはできません。"
 
-#: website/static/js/pages/file-page.js:89
+#: website/static/js/pages/file-page.js:92
 msgid "The file title cannot be more than 100 characters."
 msgstr "ファイルのタイトルは100文字を超えることはできません。"
 
-#: website/static/js/pages/file-page.js:100
+#: website/static/js/pages/file-page.js:103
 msgid ""
 "Your file was successfully renamed. To view the new filename in the file "
 "tree below, refresh the page."
@@ -4071,7 +4104,7 @@ msgstr "ファイルブラウザの取得エラー"
 msgid "Add a project tag to enhance discoverability"
 msgstr "タグを追加してプロジェクトを発見しやすくする"
 
-#: website/static/js/pages/project-dashboard-page.js:510
+#: website/static/js/pages/project-dashboard-page.js:511
 msgid "Could not remove tag"
 msgstr "タグを削除できませんでした"
 
