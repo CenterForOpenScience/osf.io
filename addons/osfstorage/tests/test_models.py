@@ -741,10 +741,7 @@ class TestNodeSettingsModel(StorageTestCase):
         child_fork = models.Node.objects.get_children(fork).first()
         child_fork_region_id = child_fork.get_addon('osfstorage').region_id
 
-        assert fork_region_id == project.get_addon('osfstorage').region_id
         assert fork_region_id == us.id
-
-        assert child_fork_region_id == child_fork.get_addon('osfstorage').region_id
         assert child_fork_region_id == canada.id
 
     def test_region_wb_url_from_creators_defaults(self):
