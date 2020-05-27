@@ -294,7 +294,7 @@ class ImportRegistrationProvider(PermissionRequiredMixin, View):
             provider.save()
 
         if licenses:
-            provider.licenses_acceptable.set(*licenses)
+            provider.licenses_acceptable.set(licenses)
         if default_license:
             provider.default_license = NodeLicense.objects.get(license_id=default_license)
 
