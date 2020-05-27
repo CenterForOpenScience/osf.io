@@ -18,7 +18,7 @@ from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.serializers import JSONAPISerializer
 from api.base.utils import get_object_or_error, get_user_auth
-from api.base.pagination import MaxSizePagination
+from api.base.pagination import JSONAPIPagination, MaxSizePagination
 from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
@@ -42,7 +42,7 @@ from api.institutions.serializers import (
     InstitutionUserMetricsSerializer,
 )
 from api.institutions.permissions import UserIsAffiliated
-from api.institutions.renderers import InstitutionDepartmentMetricsCSVRenderer, InstitutionUserMetricsCSVRenderer
+from api.institutions.renderers import InstitutionDepartmentMetricsCSVRenderer, InstitutionUserMetricsCSVRenderer, MetricsCSVRenderer
 
 
 class InstitutionMixin(object):
@@ -416,20 +416,23 @@ class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIVi
 
     view_category = 'institutions'
 
-    csv_export = False
-
-    def initiate_csv_export_settings(self):
-        self.pagination_class = MaxSizePagination
-        self.csv_export = True
-
+    @property
     def is_csv_export(self):
-        raise NotImplementedError()
+        if isinstance(self.request.accepted_renderer, MetricsCSVRenderer):
+            return True
+        return False
+
+    @property
+    def pagination_class(self):
+        if self.is_csv_export:
+            return MaxSizePagination
+        return JSONAPIPagination
 
     def _format_search(self, search):
         raise NotImplementedError()
 
-    def _paginate(self, search, max_paginate=False):
-        if max_paginate:
+    def _paginate(self, search):
+        if self.pagination_class is MaxSizePagination:
             return search.extra(size=MAX_SIZE_OF_ES_QUERY)
 
         page = self.request.query_params.get('page')
@@ -452,7 +455,7 @@ class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIVi
         :param departments: Dict {'Department Name': 3} means "Department Name" has 3 users.
         :return: mock_queryset
         """
-        search = self._paginate(search, max_paginate=self.csv_export)
+        search = self._paginate(search)
 
         items = self._format_search(search)
 
@@ -472,11 +475,6 @@ class InstitutionDepartmentList(InstitutionImpactList):
 
     ordering = ('-number_of_users', 'name',)
 
-    def is_csv_export(self):
-        if isinstance(self.request.accepted_renderer, InstitutionDepartmentMetricsCSVRenderer):
-            return True
-        return False
-
     def _format_search(self, search):
         results = search.execute()
 
@@ -488,9 +486,6 @@ class InstitutionDepartmentList(InstitutionImpactList):
             return []
 
     def get_default_queryset(self):
-        if self.is_csv_export():
-            self.initiate_csv_export_settings()
-
         institution = self.get_institution()
         search = UserInstitutionProjectCounts.get_department_counts(institution)
         return self._make_elasticsearch_results_filterable(search, id=institution._id)
@@ -501,11 +496,6 @@ class InstitutionUserMetricsList(InstitutionImpactList):
 
     serializer_class = InstitutionUserMetricsSerializer
     renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionUserMetricsCSVRenderer, )
-
-    def is_csv_export(self):
-        if isinstance(self.request.accepted_renderer, InstitutionUserMetricsCSVRenderer):
-            return True
-        return False
 
     def _format_search(self, search):
         results = search.execute()
@@ -521,9 +511,6 @@ class InstitutionUserMetricsList(InstitutionImpactList):
         return users
 
     def get_default_queryset(self):
-        if self.is_csv_export():
-            self.initiate_csv_export_settings()
-
         institution = self.get_institution()
         search = UserInstitutionProjectCounts.get_current_user_metrics(institution)
         return self._make_elasticsearch_results_filterable(search, id=institution._id)
