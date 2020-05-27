@@ -165,28 +165,6 @@ class TestPreprintCitationsPermissions(PreprintCitationsMixin, ApiTestCase):
         res = self.app.get(self.published_preprint_url, auth=self.admin_contributor.auth)
         assert_equal(res.status_code, 200)
 
-    def test_orphaned_preprint_citations(self):
-        self.published_preprint.primary_file = None
-        self.published_preprint.save()
-
-        # Unauthenticated
-        res = self.app.get(self.published_preprint_url, expect_errors=True)
-        assert_equal(res.status_code, 401)
-
-        # Non contrib
-        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-
-        # Write contrib
-        self.published_preprint.add_contributor(self.other_contrib, WRITE, save=True)
-        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth)
-        # Really because preprint is in initial machine state
-        assert_equal(res.status_code, 200)
-
-        # Admin contrib
-        res = self.app.get(self.published_preprint_url, auth=self.admin_contributor.auth)
-        assert_equal(res.status_code, 200)
-
 
 class TestPreprintCitationContent(PreprintCitationsMixin, ApiTestCase):
 
@@ -305,28 +283,6 @@ class TestPreprintCitationsContentPermissions(PreprintCitationsMixin, ApiTestCas
         res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
         # Really because preprint is in initial machine state
         assert_equal(res.status_code, 403)
-
-        # Admin contrib
-        res = self.app.get(self.published_preprint_url, auth=self.admin_contributor.auth)
-        assert_equal(res.status_code, 200)
-
-    def test_orphaned_preprint_citations(self):
-        self.published_preprint.primary_file = None
-        self.published_preprint.save()
-
-        # Unauthenticated
-        res = self.app.get(self.published_preprint_url, expect_errors=True)
-        assert_equal(res.status_code, 401)
-
-        # Non contrib
-        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-
-        # Write contrib
-        self.published_preprint.add_contributor(self.other_contrib, WRITE, save=True)
-        res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth)
-        # Really because preprint is in initial machine state
-        assert_equal(res.status_code, 200)
 
         # Admin contrib
         res = self.app.get(self.published_preprint_url, auth=self.admin_contributor.auth)
