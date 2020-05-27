@@ -4,7 +4,7 @@
         <div class="row">
             <div class="col-md-7">
                 <form class="input-group" data-bind="submit: submit">
-                    <input id="searchPageFullBar" style="background-color: white;" name="search-placeholder" type="text" class="osf-search-input form-control" placeholder="${_('GakuNin RDM Search')}" data-bind="value: query, hasFocus: true">
+                    <input id="searchPageFullBar" name="search-placeholder" type="text" class="form-control" placeholder="${_('GakuNin RDM Search')}" data-bind="value: query, hasFocus: true">
                     <label id="searchBarLabel" class="search-label-placeholder" for="search-placeholder">${_("GakuNin RDM Search")}</label>
                     <span class="input-group-btn">
                         <button type=button class="btn osf-search-btn" data-bind="click: submit"><i class="fa fa-circle-arrow-right fa-lg"></i></button>
