@@ -380,9 +380,9 @@ var ViewModel = function(params) {
     };
 
     self.sortCategories = function(a, b) {
-        if(a.name === 'Total') {
+        if(a.name === 'total') {
             return -1;
-        } else if (b.name === 'Total') {
+        } else if (b.name === 'total') {
             return 1;
         }
         return a.count >  b.count ? -1 : 1;
