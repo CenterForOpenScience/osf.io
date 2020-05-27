@@ -510,7 +510,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     root_node = models.ForeignKey(OsfStorageFolder, null=True, blank=True, on_delete=models.CASCADE)
 
     region = models.ForeignKey(Region, null=True, on_delete=models.CASCADE)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.SET_NULL)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def folder_name(self):

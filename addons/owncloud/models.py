@@ -64,7 +64,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     serializer = OwnCloudSerializer
 
     folder_id = models.TextField(blank=True, null=True)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.SET_NULL)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     _api = None
 
