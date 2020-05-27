@@ -83,7 +83,7 @@
 }
 
 div.search-result  {
-    margin-bottom: 10pt;
+    margin-bottom: 0px;
     padding: 10px;
     border-bottom: 1px solid #d3d3d3;
     overflow-x: hidden;
