@@ -2,7 +2,7 @@
 <%def name="title()">${_("Search")}</%def>
 <%def name="stylesheets()">
     ${parent.stylesheets()}
-    <link rel="stylesheet" href="/static/css/pages/search-page.css">
+    <link rel="stylesheet" href="/static/css/pages/search-page-grdm.css">
 </%def>
 
 <%def name="content()">
