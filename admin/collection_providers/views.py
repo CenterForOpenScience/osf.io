@@ -317,7 +317,7 @@ class ImportCollectionProvider(PermissionRequiredMixin, View):
             provider.primary_collection.program_area_choices = primary_collection['fields']['program_area_choices']
             provider.primary_collection.save()
         if licenses:
-            provider.licenses_acceptable.add(*licenses)
+            provider.licenses_acceptable.set(*licenses)
         if default_license:
             provider.default_license = NodeLicense.objects.get(license_id=default_license)
         return provider

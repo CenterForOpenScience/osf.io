@@ -45,7 +45,7 @@ def _create_provider(cls, data, state):
     default_license = data.pop('default_license', False)
     provider = cls.objects.create(**data)
     if licenses:
-        provider.licenses_acceptable.add(*licenses)
+        provider.licenses_acceptable.set(*licenses)
     if default_license:
         provider.default_license = get_license(default_license)
     provider.save()
