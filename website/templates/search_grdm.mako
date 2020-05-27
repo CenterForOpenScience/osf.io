@@ -113,7 +113,7 @@
 
     <script type="text/html" id="file">
         <span>
-            <div>
+            <div class="search-result-title">
                 <span class="tb-expand-icon-holder" style="vertical-align: middle;">
                     <span class="glyphicon glyphicon-file">
                     </span>
@@ -170,7 +170,7 @@
                 <img class="social-profile-image" data-bind="visible: profileImageUrl(), attr: {src: profileImageUrl()}">
             </div>
             <div class="col-md-10">
-                <span>
+                <div class="search-result-title">
                     <span style="vertical-align: middle;">
                         <!-- ko if: url -->
                         <font size="5"><a data-bind="attr: {href: url}, html: $root.getUserName($data)"></a></font>
@@ -189,7 +189,7 @@
                         </button>
                     </span>
                     <!-- /ko -->
-                </span>
+                </div>
                 <br>
                 <p>
                     <!-- ko if: ongoing_job_title -->
@@ -287,7 +287,7 @@
     </script>
     <script type="text/html" id="wiki">
         <span>
-            <div>
+            <div class="search-result-title">
                 <span class="tb-expand-icon-holder" style="vertical-align: middle;">
                     <span class="glyphicon glyphicon-list-alt">
                     </span>
@@ -403,7 +403,7 @@
     </script>
     <script type="text/html" id="project">
         <span>
-            <div>
+            <div class="search-result-title">
                 <span class="tb-expand-icon-holder"  style="vertical-align: middle;">
                     <span class="fa fa-cube po-icon">
                     </span>

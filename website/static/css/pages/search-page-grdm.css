@@ -114,3 +114,10 @@ div.search-result  {
 #searchControls .osf-search {
     z-index: 1029; /* No larger than 1030 */
 }
+
+.search-result-title {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+}
