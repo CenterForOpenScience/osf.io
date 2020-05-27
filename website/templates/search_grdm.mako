@@ -434,7 +434,7 @@
         </span>
         <br>
         <!-- /ko -->
-        <!-- ko if: contributors.length > 0 -->
+        <!-- ko if: contributors ? contributors.length > 0 : false -->
         <span>
             <strong>${_("Contributors")}:</strong>
             <span data-bind="foreach: contributors">
@@ -449,7 +449,7 @@
         </span>
         <br>
         <!-- /ko -->
-        <!-- ko if: affiliated_institutions.length > 0 -->
+        <!-- ko if: affiliated_institutions ? affiliated_institutions.length > 0 : false -->
         <span>
             <strong>${_("Affiliated institutions")}:</strong>
             <!-- ko foreach: {data: affiliated_institutions, as: 'item'} -->
@@ -463,7 +463,7 @@
         </span>
         <br>
         <!-- /ko -->
-        <!-- ko if: tags.length > 0 -->
+        <!-- ko if: tags ? tags.length > 0 : false -->
         <span data-bind="visible: tags.length">
             <strong>${_("Tags")}:</strong>
             <!-- ko foreach: {data: tags, as: 'tags'} -->
