@@ -8,7 +8,7 @@
 <%def name="content()">
     <div id="searchControls" class="scripted">
         <%include file='./search_bar_grdm.mako' />
-        <div class="row">
+        <div id="resultDisplay" class="row">
             <div class="col-md-12">
                 <div class="row m-t-md">
                     <div class="col-md-3">

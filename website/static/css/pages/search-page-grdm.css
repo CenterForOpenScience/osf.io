@@ -121,3 +121,9 @@ div.search-result  {
     justify-content: flex-start;
     align-items: center;
 }
+
+@media (max-width: 991px) {
+    #resultDisplay {
+        margin-top: 25px;
+    }
+}
