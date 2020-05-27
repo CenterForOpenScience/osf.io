@@ -156,7 +156,6 @@ class TestInstitutionUserMetricList:
         assert resp.headers['Content-Type'] == 'text/csv; charset=utf-8'
 
         response_body = resp.text
-        # raise Exception(response_body)
 
         expected_response = [['id', 'user_name', 'public_projects', 'private_projects', 'type'],
             [user._id, user.fullname, '6', '5', 'institution-users'],
