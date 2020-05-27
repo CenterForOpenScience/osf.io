@@ -131,7 +131,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     serializer = DropboxSerializer
 
     folder = models.TextField(null=True, blank=True)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.SET_NULL)
 
     _api = None
 
