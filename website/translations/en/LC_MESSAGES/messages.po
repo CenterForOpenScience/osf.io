@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-28 04:45+0000\n"
+"POT-Creation-Date: 2020-05-28 08:56+0000\n"
 "PO-Revision-Date: 2020-05-26 01:00+0900\n"
 "Last-Translator: Takuya Ishibashi\n"
 "Language: ja\n"
@@ -806,8 +806,8 @@ msgstr ""
 #: website/templates/project/settings.mako:36
 #: website/templates/project/settings.mako:257
 #: website/templates/search.mako:278 website/templates/search.mako:370
-#: website/templates/search_grdm.mako:398
-#: website/templates/search_grdm.mako:574
+#: website/templates/search_grdm.mako:400
+#: website/templates/search_grdm.mako:576
 msgid "Wiki"
 msgstr ""
 
@@ -1564,8 +1564,8 @@ msgid "Next Page"
 msgstr ""
 
 #: website/templates/search.mako:123 website/templates/search.mako:341
-#: website/templates/search.mako:344 website/templates/search_grdm.mako:545
-#: website/templates/search_grdm.mako:548
+#: website/templates/search.mako:344 website/templates/search_grdm.mako:547
+#: website/templates/search_grdm.mako:550
 msgid "Withdrawn "
 msgstr ""
 
@@ -1593,35 +1593,35 @@ msgid ""
 " %(nodeUrlAndTitle)s></a>"
 msgstr ""
 
-#: website/templates/search.mako:240 website/templates/search_grdm.mako:360
+#: website/templates/search.mako:240 website/templates/search_grdm.mako:362
 msgid " Contributors"
 msgstr ""
 
-#: website/templates/search.mako:262 website/templates/search_grdm.mako:382
-#: website/templates/search_grdm.mako:454
+#: website/templates/search.mako:262 website/templates/search_grdm.mako:384
+#: website/templates/search_grdm.mako:456
 msgid "Affiliated institutions"
 msgstr ""
 
 #: website/templates/search.mako:276 website/templates/search.mako:368
-#: website/templates/search_grdm.mako:396
-#: website/templates/search_grdm.mako:572
+#: website/templates/search_grdm.mako:398
+#: website/templates/search_grdm.mako:574
 msgid "<p><strong>Jump to:</strong>"
 msgstr ""
 
 #: website/templates/search.mako:280 website/templates/search.mako:372
-#: website/templates/search_grdm.mako:400
-#: website/templates/search_grdm.mako:576
+#: website/templates/search_grdm.mako:402
+#: website/templates/search_grdm.mako:578
 msgid "Files</a>"
 msgstr ""
 
-#: website/templates/search.mako:291 website/templates/search_grdm.mako:495
+#: website/templates/search.mako:291 website/templates/search_grdm.mako:497
 msgid "(Preprint)"
 msgstr ""
 
 #: website/templates/search.mako:292 website/templates/search.mako:348
-#: website/templates/search_grdm.mako:433
-#: website/templates/search_grdm.mako:496
-#: website/templates/search_grdm.mako:552
+#: website/templates/search_grdm.mako:435
+#: website/templates/search_grdm.mako:498
+#: website/templates/search_grdm.mako:554
 msgid "Description"
 msgstr ""
 
@@ -1631,30 +1631,30 @@ msgstr ""
 #: website/templates/project/project.mako:163
 #: website/templates/project/project_header.mako:72
 #: website/templates/search.mako:295 website/templates/search.mako:352
-#: website/templates/search_grdm.mako:439
-#: website/templates/search_grdm.mako:499
-#: website/templates/search_grdm.mako:556
+#: website/templates/search_grdm.mako:441
+#: website/templates/search_grdm.mako:501
+#: website/templates/search_grdm.mako:558
 msgid "Contributors"
 msgstr ""
 
-#: website/templates/search.mako:314 website/templates/search_grdm.mako:518
+#: website/templates/search.mako:314 website/templates/search_grdm.mako:520
 msgid "Managers"
 msgstr ""
 
-#: website/templates/search.mako:327 website/templates/search_grdm.mako:531
+#: website/templates/search.mako:327 website/templates/search_grdm.mako:533
 msgid "Members"
 msgstr ""
 
 #: website/templates/search.mako:341 website/templates/search.mako:344
-#: website/templates/search_grdm.mako:545
-#: website/templates/search_grdm.mako:548
+#: website/templates/search_grdm.mako:547
+#: website/templates/search_grdm.mako:550
 msgid "Registration"
 msgstr ""
 
 #: website/templates/project/project.mako:587
 #: website/templates/project/view_file.mako:76
-#: website/templates/search.mako:377 website/templates/search_grdm.mako:468
-#: website/templates/search_grdm.mako:581
+#: website/templates/search.mako:377 website/templates/search_grdm.mako:470
+#: website/templates/search_grdm.mako:583
 msgid "Tags"
 msgstr ""
 
@@ -1699,8 +1699,8 @@ msgid "Folder"
 msgstr ""
 
 #: website/templates/search_grdm.mako:160
-#: website/templates/search_grdm.mako:332
-#: website/templates/search_grdm.mako:485
+#: website/templates/search_grdm.mako:334
+#: website/templates/search_grdm.mako:487
 msgid "Comment"
 msgstr ""
 
@@ -1712,11 +1712,15 @@ msgstr "Employment"
 msgid "Education@search"
 msgstr "Education"
 
-#: website/templates/search_grdm.mako:595
+#: website/templates/search_grdm.mako:327
+msgid "Body of Wiki"
+msgstr ""
+
+#: website/templates/search_grdm.mako:597
 msgid "Modified by"
 msgstr ""
 
-#: website/templates/search_grdm.mako:598
+#: website/templates/search_grdm.mako:600
 msgid "Created by"
 msgstr ""
 
