@@ -323,9 +323,11 @@
         <div data-bind="template: {name: 'updated-time', data: $data}"></div>
         <!-- /ko -->
         <!-- ko if: highlight.text !== undefined -->
-        <p>
+        <span>
+            <strong>${_("Body of Wiki")}:</strong>
             <span data-bind="html: $root.makeText(highlight.text[0])"></span>
-        </p>
+        </span>
+        <br>
         <!-- /ko -->
         <!-- ko if: comment !== null -->
         <p>
