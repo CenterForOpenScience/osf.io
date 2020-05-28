@@ -993,7 +993,7 @@ var ViewModel = function(params) {
     self.makeText = function(text) {
         var extracted = text.replace(/<b>/gi,'').replace(/<\/b>/gi, '');
         if (extracted.length >= self.textLengthLimit) {
-            return text + '...';
+            return text.substr(0, self.textLengthLimit) + '...';
         }
 
         return text;
@@ -1002,7 +1002,7 @@ var ViewModel = function(params) {
     self.makeComment = function(comment) {
         var extracted = comment.replace(/<b>/gi,'').replace(/<\/b>/gi, '');
         if (extracted.length >= self.commentLengthLimit) {
-            return comment + '...';
+            return comment.substr(0, self.commentLengthLimit) + '...';
         }
 
         return comment;
