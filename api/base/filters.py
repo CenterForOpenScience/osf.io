@@ -12,6 +12,7 @@ from api.base.exceptions import (
     InvalidFilterValue,
 )
 from api.base.serializers import RelationshipField, ShowIfVersion, TargetField
+from api.base.settings import DEFAULT_ES_NULL_VALUE
 from dateutil import parser as date_parser
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet as DjangoQuerySet
@@ -521,7 +522,7 @@ class ListFilterMixin(FilterMixin):
                 # TODO: What is {}.lower()? Possible bug
                 return_val = [
                     item for item in default_queryset
-                    if params['value'].lower() in getattr(item, source_field_name, '').lower()
+                    if params['value'].lower() in getattr(item, source_field_name, DEFAULT_ES_NULL_VALUE).lower()
                 ]
         elif isinstance(field, ser.ListField):
             return_val = [

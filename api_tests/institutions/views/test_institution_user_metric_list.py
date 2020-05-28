@@ -3,7 +3,7 @@ import datetime
 from random import random
 import time
 
-from api.base.settings.defaults import API_BASE
+from api.base.settings.defaults import API_BASE, DEFAULT_ES_NULL_VALUE
 from osf_tests.factories import (
     InstitutionFactory,
     AuthUserFactory,
@@ -30,6 +30,10 @@ class TestInstitutionUserMetricList:
     @pytest.fixture()
     def user3(self):
         return AuthUserFactory(fullname='Zedd')
+
+    @pytest.fixture()
+    def user4(self):
+        return AuthUserFactory()
 
     @pytest.fixture()
     def admin(self, institution):
@@ -95,8 +99,12 @@ class TestInstitutionUserMetricList:
             private_project_count=int(10 * random()),
         ).save()
 
+        time.sleep(2)
+
+    @pytest.fixture()
+    def populate_na_department(self, institution, user4):
         UserInstitutionProjectCounts.record(
-            user_id=user._id,
+            user_id=user4._id,
             institution_id=institution._id,
             public_project_count=1,
             private_project_count=1,
@@ -203,7 +211,7 @@ class TestInstitutionUserMetricList:
         assert resp.json['links']['meta']['total'] == 1
         assert resp.json['data'][0]['attributes']['user_name'] == 'Zedd'
 
-    def test_filter_and_sort(self, app, url, admin, populate_more_counts):
+    def test_filter_and_sort(self, app, url, admin, user4, populate_counts, populate_na_department):
         """
         Testing for bug where sorting and filtering would throw 502.
         :param app:
@@ -212,5 +220,10 @@ class TestInstitutionUserMetricList:
         :param populate_more_counts:
         :return:
         """
-        resp = app.get(f'{url}?page=1&page%5Bsize%5D=10&filter%5Bdepartment%5D=N%2FA&sort=user_name', auth=admin.auth)
+        resp = app.get(f'{url}?page=1&page[size]=10&filter[department]={DEFAULT_ES_NULL_VALUE}&sort=user_name', auth=admin.auth)
         assert resp.status_code == 200
+
+        data = resp.json['data']
+        assert len(data) == 1
+        assert resp.json['links']['meta']['total'] == 1
+        assert data[0]['id'] == user4._id
