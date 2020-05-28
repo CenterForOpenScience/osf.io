@@ -384,13 +384,22 @@ def set_last_comment(hits):
         d['text'] = last_text
         d['user_id'] = last_comment.user._id
         d['user_name'] = last_comment.user.fullname
+        d['date_created'] = last_comment.created.isoformat()
+        d['date_modified'] = last_comment.modified.isoformat()
         replyto_user_id = None
         replyto_username = None
-        if isinstance(last_comment.target.referent, Comment):
-            replyto_user_id = last_comment.target.referent.user._id
-            replyto_username = last_comment.target.referent.user.fullname
+        replyto_date_created = None
+        replyto_date_modified = None
+        replyto = last_comment.target.referent
+        if isinstance(replyto, Comment):
+            replyto_user_id = replyto.user._id
+            replyto_username = replyto.user.fullname
+            replyto_date_created = replyto.created.isoformat()
+            replyto_date_modified = replyto.modified.isoformat()
         d['replyto_user_id'] = replyto_user_id
         d['replyto_user_name'] = replyto_username
+        d['replyto_date_created'] = replyto_date_created
+        d['replyto_date_modified'] = replyto_date_modified
         s['comment'] = d
     return hits
 
