@@ -237,6 +237,8 @@ def forgot_password_form():
 # GUID ###
 
 def _build_guid_url(base, suffix=None):
+    if not isinstance(base, unicode):
+        base = unicode(base, 'utf-8')
     url = '/'.join([
         each.strip('/') for each in [base, suffix]
         if each

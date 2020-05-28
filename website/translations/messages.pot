@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-05-28 08:56+0000\n"
+"POT-Creation-Date: 2020-05-28 13:23+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -243,6 +243,15 @@ msgstr ""
 #: addons/weko/templates/weko_user_settings.mako:31
 #: website/templates/profile/user_settings_default.mako:28
 msgid "Private project"
+msgstr ""
+
+#: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:36
+#: addons/s3/templates/s3_user_settings.mako:36
+#: addons/s3compat/templates/s3compat_user_settings.mako:36
+#: addons/swift/templates/swift_user_settings.mako:36
+#: addons/weko/templates/weko_user_settings.mako:35
+#: website/templates/profile/user_settings_default.mako:32
+msgid "disconnect Project"
 msgstr ""
 
 #: addons/base/models.py:461
@@ -805,8 +814,8 @@ msgstr ""
 #: website/templates/project/settings.mako:36
 #: website/templates/project/settings.mako:257
 #: website/templates/search.mako:278 website/templates/search.mako:370
-#: website/templates/search_grdm.mako:400
-#: website/templates/search_grdm.mako:576
+#: website/templates/search_grdm.mako:405
+#: website/templates/search_grdm.mako:581
 msgid "Wiki"
 msgstr ""
 
@@ -828,6 +837,10 @@ msgstr ""
 
 #: addons/wiki/templates/edit.mako:92
 msgid "Preview"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:95 addons/wiki/templates/edit.mako:218
+msgid "(Current)"
 msgstr ""
 
 #: addons/wiki/templates/edit.mako:97 addons/wiki/templates/edit.mako:220
@@ -856,6 +869,10 @@ msgstr ""
 
 #: addons/wiki/templates/edit.mako:205 addons/wiki/templates/edit.mako:212
 msgid "Compare"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:215
+msgid " to"
 msgstr ""
 
 #: addons/wiki/templates/edit.mako:257
@@ -1565,8 +1582,8 @@ msgid "Next Page"
 msgstr ""
 
 #: website/templates/search.mako:123 website/templates/search.mako:341
-#: website/templates/search.mako:344 website/templates/search_grdm.mako:547
-#: website/templates/search_grdm.mako:550
+#: website/templates/search.mako:344 website/templates/search_grdm.mako:552
+#: website/templates/search_grdm.mako:555
 msgid "Withdrawn "
 msgstr ""
 
@@ -1594,35 +1611,35 @@ msgid ""
 " %(nodeUrlAndTitle)s></a>"
 msgstr ""
 
-#: website/templates/search.mako:240 website/templates/search_grdm.mako:362
+#: website/templates/search.mako:240 website/templates/search_grdm.mako:367
 msgid " Contributors"
 msgstr ""
 
-#: website/templates/search.mako:262 website/templates/search_grdm.mako:384
-#: website/templates/search_grdm.mako:456
+#: website/templates/search.mako:262 website/templates/search_grdm.mako:389
+#: website/templates/search_grdm.mako:461
 msgid "Affiliated institutions"
 msgstr ""
 
 #: website/templates/search.mako:276 website/templates/search.mako:368
-#: website/templates/search_grdm.mako:398
-#: website/templates/search_grdm.mako:574
+#: website/templates/search_grdm.mako:403
+#: website/templates/search_grdm.mako:579
 msgid "<p><strong>Jump to:</strong>"
 msgstr ""
 
 #: website/templates/search.mako:280 website/templates/search.mako:372
-#: website/templates/search_grdm.mako:402
-#: website/templates/search_grdm.mako:578
+#: website/templates/search_grdm.mako:407
+#: website/templates/search_grdm.mako:583
 msgid "Files</a>"
 msgstr ""
 
-#: website/templates/search.mako:291 website/templates/search_grdm.mako:497
+#: website/templates/search.mako:291 website/templates/search_grdm.mako:502
 msgid "(Preprint)"
 msgstr ""
 
 #: website/templates/search.mako:292 website/templates/search.mako:348
-#: website/templates/search_grdm.mako:435
-#: website/templates/search_grdm.mako:498
-#: website/templates/search_grdm.mako:554
+#: website/templates/search_grdm.mako:440
+#: website/templates/search_grdm.mako:503
+#: website/templates/search_grdm.mako:559
 msgid "Description"
 msgstr ""
 
@@ -1632,30 +1649,30 @@ msgstr ""
 #: website/templates/project/project.mako:163
 #: website/templates/project/project_header.mako:72
 #: website/templates/search.mako:295 website/templates/search.mako:352
-#: website/templates/search_grdm.mako:441
-#: website/templates/search_grdm.mako:501
-#: website/templates/search_grdm.mako:558
+#: website/templates/search_grdm.mako:446
+#: website/templates/search_grdm.mako:506
+#: website/templates/search_grdm.mako:563
 msgid "Contributors"
 msgstr ""
 
-#: website/templates/search.mako:314 website/templates/search_grdm.mako:520
+#: website/templates/search.mako:314 website/templates/search_grdm.mako:525
 msgid "Managers"
 msgstr ""
 
-#: website/templates/search.mako:327 website/templates/search_grdm.mako:533
+#: website/templates/search.mako:327 website/templates/search_grdm.mako:538
 msgid "Members"
 msgstr ""
 
 #: website/templates/search.mako:341 website/templates/search.mako:344
-#: website/templates/search_grdm.mako:547
-#: website/templates/search_grdm.mako:550
+#: website/templates/search_grdm.mako:552
+#: website/templates/search_grdm.mako:555
 msgid "Registration"
 msgstr ""
 
 #: website/templates/project/project.mako:587
 #: website/templates/project/view_file.mako:76
-#: website/templates/search.mako:377 website/templates/search_grdm.mako:470
-#: website/templates/search_grdm.mako:583
+#: website/templates/search.mako:377 website/templates/search_grdm.mako:475
+#: website/templates/search_grdm.mako:588
 msgid "Tags"
 msgstr ""
 
@@ -1700,8 +1717,8 @@ msgid "Folder"
 msgstr ""
 
 #: website/templates/search_grdm.mako:160
-#: website/templates/search_grdm.mako:334
-#: website/templates/search_grdm.mako:487
+#: website/templates/search_grdm.mako:339
+#: website/templates/search_grdm.mako:492
 msgid "Comment"
 msgstr ""
 
@@ -1717,11 +1734,11 @@ msgstr ""
 msgid "Body of Wiki"
 msgstr ""
 
-#: website/templates/search_grdm.mako:597
+#: website/templates/search_grdm.mako:602
 msgid "Modified by"
 msgstr ""
 
-#: website/templates/search_grdm.mako:600
+#: website/templates/search_grdm.mako:605
 msgid "Created by"
 msgstr ""
 
@@ -2539,7 +2556,7 @@ msgid "Enable"
 msgstr ""
 
 #: website/templates/project/addons.mako:128
-msgid "Don’t see your GitHub organization repositories?"
+msgid "Don't see your GitHub organization repositories?"
 msgstr ""
 
 #: website/templates/project/addons.mako:130

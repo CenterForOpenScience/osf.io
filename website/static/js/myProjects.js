@@ -2006,9 +2006,9 @@ var Information = {
                                 m('', [
                                   m('span', _('Category: ')),
                                   m('span', { className : mHelpers.getIcon(category) }),
-                                  m('span.text-capitalize', ' ' + category)
+                                  m('span.text-capitalize', ' ' + _(category))
                                 ]),
-                                m('.text-capitalize', _('Permission: ') + permission),
+                                m('.text-capitalize', _('Permission: ') + _(permission)),
                                 m('', _('Last Modified on: ') + (item.date ? item.date.local : ''))
                             ]),
                             m('p', [

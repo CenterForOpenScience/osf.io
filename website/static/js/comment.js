@@ -764,7 +764,7 @@ var CommentListModel = function(options) {
     self.nodeApiUrl = options.nodeApiUrl;
     self.nodeType = options.isRegistration ? 'registrations' : 'nodes';
     self.page(options.page);
-    self.pageTitle = options.pageTitle;
+    self.pageTitle = _(options.pageTitle);
     self.id = ko.observable(options.rootId);
     self.rootId = ko.observable(options.rootId);
     self.fileId = options.fileId || '';
