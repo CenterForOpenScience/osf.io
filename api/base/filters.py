@@ -521,7 +521,7 @@ class ListFilterMixin(FilterMixin):
                 # TODO: What is {}.lower()? Possible bug
                 return_val = [
                     item for item in default_queryset
-                    if params['value'].lower() in getattr(item, source_field_name, {}).lower()
+                    if params['value'].lower() in getattr(item, source_field_name, '').lower()
                 ]
         elif isinstance(field, ser.ListField):
             return_val = [

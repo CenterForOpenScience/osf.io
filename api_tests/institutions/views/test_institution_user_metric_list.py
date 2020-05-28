@@ -95,6 +95,13 @@ class TestInstitutionUserMetricList:
             private_project_count=int(10 * random()),
         ).save()
 
+        UserInstitutionProjectCounts.record(
+            user_id=user._id,
+            institution_id=institution._id,
+            public_project_count=1,
+            private_project_count=1,
+        ).save()
+
         time.sleep(2)
 
     @pytest.fixture()
@@ -195,3 +202,15 @@ class TestInstitutionUserMetricList:
         resp = app.get(f'{url}?filter[user_name]=Zedd', auth=admin.auth)
         assert resp.json['links']['meta']['total'] == 1
         assert resp.json['data'][0]['attributes']['user_name'] == 'Zedd'
+
+    def test_filter_and_sort(self, app, url, admin, populate_more_counts):
+        """
+        Testing for bug where sorting and filtering would throw 502.
+        :param app:
+        :param url:
+        :param admin:
+        :param populate_more_counts:
+        :return:
+        """
+        resp = app.get(f'{url}?page=1&page%5Bsize%5D=10&filter%5Bdepartment%5D=N%2FA&sort=user_name', auth=admin.auth)
+        assert resp.status_code == 200
