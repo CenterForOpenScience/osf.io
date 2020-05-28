@@ -322,10 +322,15 @@
         <!-- ko if: (modifier_id && modifier_name && date_modified) || (creator_id && creator_name && date_created) -->
         <div data-bind="template: {name: 'updated-time', data: $data}"></div>
         <!-- /ko -->
-        <!-- ko if: highlight.text !== undefined -->
+        <!-- ko if: highlight.text !== undefined || text !== undefined -->
         <span>
             <strong>${_("Body of Wiki")}:</strong>
+            <!-- ko if: highlight.text !== undefined -->
             <span data-bind="html: $root.makeText(highlight.text[0])"></span>
+            <!-- /ko -->
+            <!-- ko if: highlight.text === undefined -->
+            <span data-bind="html: $root.makeText(text)"></span>
+            <!-- /ko -->
         </span>
         <br>
         <!-- /ko -->
