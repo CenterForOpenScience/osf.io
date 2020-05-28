@@ -122,6 +122,10 @@ div.search-result  {
     align-items: center;
 }
 
+.tag {
+    margin-bottom: 0px;
+}
+
 @media (max-width: 991px) {
     #resultDisplay {
         margin-top: 25px;
