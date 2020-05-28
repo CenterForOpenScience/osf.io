@@ -159,7 +159,7 @@
         <p>
             <strong>${_("Comment")}:</strong>
             <span data-bind="html: $root.makeComment(comment.text)"></span>
-            <a data-bind="attr: {href: $root.getGuidUrl(comment.user_id)}, text: comment.user_name + '@' + $root.getGuidText(comment.user_id)"></a>
+            <a data-bind="attr: {href: $root.getGuidUrl(comment.user_id)}, text: comment.user_name + '@' + $root.getGuidText(comment.user_id)"></a> at <span data-bind="text: $root.toDate(comment.date_created)"></span>
         </p>
         <!-- /ko -->
     </script>
@@ -338,7 +338,7 @@
         <p>
             <strong>${_("Comment")}:</strong>
             <span data-bind="html: $root.makeComment(comment.text)"></span>
-            <a data-bind="attr: {href: $root.getGuidUrl(comment.user_id)}, text: comment.user_name + '@' + $root.getGuidText(creator_id)"></a>
+            <a data-bind="attr: {href: $root.getGuidUrl(comment.user_id)}, text: comment.user_name + '@' + $root.getGuidText(creator_id)"></a> at <span data-bind="text: $root.toDate(comment.date_created)"></span>
         </p>
         <!-- /ko -->
     </script>
@@ -491,7 +491,7 @@
         <p>
             <strong>${_("Comment")}:</strong>
             <span data-bind="html: $root.makeComment(comment.text)"></span>
-            <a data-bind="attr: {href: $root.getGuidUrl(comment.user_id)}, text: comment.user_name  + '@' + $root.getGuidText(creator_id)"></a>
+            <a data-bind="attr: {href: $root.getGuidUrl(comment.user_id)}, text: comment.user_name  + '@' + $root.getGuidText(creator_id)"></a> at <span data-bind="text: $root.toDate(comment.date_created)"></span>
         </p>
         <!-- /ko -->
     </script>
