@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-25 15:31+0000\n"
-"PO-Revision-Date: 2020-05-26 01:00+0900\n"
+"POT-Creation-Date: 2020-05-28 04:45+0000\n"
+"PO-Revision-Date: 2020-05-28 13:00+0900\n"
 "Last-Translator: Takuya Ishibashi\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.5.1\n"
+"Generated-By: Babel 2.7.0\n"
 
 #: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:6
 msgid "Connect an Azure Blob Storage Account"
@@ -1685,7 +1685,7 @@ msgstr "(プレプリント)"
 #: website/templates/search_grdm.mako:496
 #: website/templates/search_grdm.mako:552
 msgid "Description"
-msgstr ""
+msgstr "説明"
 
 #: website/templates/project/contributors.mako:2
 #: website/templates/project/contributors.mako:8
@@ -1894,7 +1894,7 @@ msgstr "職名"
 
 #: website/templates/include/profile/jobs.mako:54
 #: website/templates/include/profile/schools.mako:54
-#: website/templates/project/project.mako:613
+#: website/templates/project/project.mako:610
 msgid "Start date"
 msgstr "開始日"
 
@@ -1914,7 +1914,7 @@ msgstr "年"
 
 #: website/templates/include/profile/jobs.mako:69
 #: website/templates/include/profile/schools.mako:69
-#: website/templates/project/project.mako:616
+#: website/templates/project/project.mako:613
 msgid "End date"
 msgstr "終了日"
 
@@ -3249,32 +3249,32 @@ msgstr "フィルタをクリア"
 msgid "Refresh"
 msgstr "更新"
 
-#: website/templates/project/project.mako:633
+#: website/templates/project/project.mako:635
 msgid "Loading logs..."
 msgstr "ログをロード中..."
 
-#: website/templates/project/project.mako:639
+#: website/templates/project/project.mako:641
 msgid "Download as file"
 msgstr "ファイルをダウンロード"
 
-#: website/templates/project/project.mako:640
+#: website/templates/project/project.mako:642
 #: website/templates/project/timestamp.mako:206
 msgid "Download"
 msgstr "ダウンロード"
 
-#: website/templates/project/project.mako:653
+#: website/templates/project/project.mako:655
 msgid "Components"
 msgstr "コンポーネント"
 
-#: website/templates/project/project.mako:657
+#: website/templates/project/project.mako:659
 msgid "Add Component"
 msgstr "コンポーネントを追加"
 
-#: website/templates/project/project.mako:659
+#: website/templates/project/project.mako:661
 msgid "Link Projects"
 msgstr "プロジェクトをリンク"
 
-#: website/templates/project/project.mako:669
+#: website/templates/project/project.mako:671
 msgid "Add components to organize your project."
 msgstr "コンポーネントを追加して、プロジェクトを整理します。"
 
@@ -3852,3 +3852,4 @@ msgstr "%(summaryTitle)sのフォークを作成"
 #: website/templates/util/render_node.mako:66
 msgid "Manage Contributors"
 msgstr "メンバー管理"
+

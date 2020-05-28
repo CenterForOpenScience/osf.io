@@ -1,13 +1,13 @@
-# English translations for PROJECT.
+# Japanese translations for .
 # Copyright (C) 2020 ORGANIZATION
-# This file is distributed under the same license as the PROJECT project.
+# This file is distributed under the same license as the  project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-25 15:31+0000\n"
+"POT-Creation-Date: 2020-05-28 04:45+0000\n"
 "PO-Revision-Date: 2020-05-26 01:00+0900\n"
 "Last-Translator: Takuya Ishibashi\n"
 "Language: ja\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.5.1\n"
+"Generated-By: Babel 2.7.0\n"
 
 #: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:6
 msgid "Connect an Azure Blob Storage Account"
@@ -1479,7 +1479,6 @@ msgstr ""
 msgid "activity point"
 msgid_plural "activity points"
 msgstr[0] ""
-msgstr[1] ""
 
 #: website/templates/profile.mako:70
 msgid "project"
@@ -1489,7 +1488,6 @@ msgstr ""
 msgid " "
 msgid_plural "s"
 msgstr[0] ""
-msgstr[1] ""
 
 #: website/templates/profile.mako:73
 msgid "Usage of storage"
@@ -1832,7 +1830,7 @@ msgstr ""
 
 #: website/templates/include/profile/jobs.mako:54
 #: website/templates/include/profile/schools.mako:54
-#: website/templates/project/project.mako:613
+#: website/templates/project/project.mako:610
 msgid "Start date"
 msgstr ""
 
@@ -1852,7 +1850,7 @@ msgstr ""
 
 #: website/templates/include/profile/jobs.mako:69
 #: website/templates/include/profile/schools.mako:69
-#: website/templates/project/project.mako:616
+#: website/templates/project/project.mako:613
 msgid "End date"
 msgstr ""
 
@@ -3150,32 +3148,32 @@ msgstr ""
 msgid "Refresh"
 msgstr ""
 
-#: website/templates/project/project.mako:633
+#: website/templates/project/project.mako:635
 msgid "Loading logs..."
 msgstr ""
 
-#: website/templates/project/project.mako:639
+#: website/templates/project/project.mako:641
 msgid "Download as file"
 msgstr ""
 
-#: website/templates/project/project.mako:640
+#: website/templates/project/project.mako:642
 #: website/templates/project/timestamp.mako:206
 msgid "Download"
 msgstr ""
 
-#: website/templates/project/project.mako:653
+#: website/templates/project/project.mako:655
 msgid "Components"
 msgstr ""
 
-#: website/templates/project/project.mako:657
+#: website/templates/project/project.mako:659
 msgid "Add Component"
 msgstr ""
 
-#: website/templates/project/project.mako:659
+#: website/templates/project/project.mako:661
 msgid "Link Projects"
 msgstr ""
 
-#: website/templates/project/project.mako:669
+#: website/templates/project/project.mako:671
 msgid "Add components to organize your project."
 msgstr ""
 
