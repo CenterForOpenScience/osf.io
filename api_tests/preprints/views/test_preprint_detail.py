@@ -937,7 +937,7 @@ class TestPreprintUpdate:
 
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == ['Enter a valid URL.']
+        assert res.json['errors'][0]['detail'] == 'Enter a valid URL.'
 
     def test_update_has_prereg_links(self, app, user, preprint, url):
         update_payload = build_preprint_update_payload(preprint._id, attributes={'has_prereg_links': 'available'})
@@ -974,7 +974,21 @@ class TestPreprintUpdate:
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == ['Enter a valid URL.']
+        assert res.json['errors'][0]['detail'] == 'Enter a valid URL.'
+
+    @override_switch(features.SLOAN_DATA_INPUT, active=True)
+    def test_no_data_links_clears_links(self, app, user, preprint, url):
+        preprint.has_data_links = 'available'
+        preprint.data_links = 'http://www.apple.com'
+        preprint.save()
+
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'has_data_links': 'no'})
+
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+
+        assert res.status_code == 400
+        assert res.json['data']['attributes']['has_data_links'] == 'no'
+        assert res.json['data']['attributes']['data_links'] == []
 
     def test_update_why_no_prereg(self, app, user, preprint, url):
         update_payload = build_preprint_update_payload(preprint._id, attributes={'why_no_prereg': 'My dog ate it.'})

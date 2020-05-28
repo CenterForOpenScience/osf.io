@@ -1048,6 +1048,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                 },
                 auth=auth
             )
+        if has_data_links != 'available':
+            self.update_data_links(auth, data_links=[], log=False)
         if save:
             self.save()
 
@@ -1067,7 +1069,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.data_links == data_links:
             return
 
-        if not self.has_data_links == 'available':
+        if not self.has_data_links == 'available' and data_links:
             raise PreprintStateError('You cannot edit this statement while your data links availability is set to false'
                                      ' or is unanswered.')
 

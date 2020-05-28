@@ -1527,7 +1527,13 @@ class JSONAPISerializer(BaseAPISerializer):
         Exclude 'type' and '_id' from validated_data.
 
         """
-        ret = super(JSONAPISerializer, self).is_valid(**kwargs)
+        try:
+            ret = super(JSONAPISerializer, self).is_valid(**kwargs)
+        except exceptions.ValidationError as e:
+            for key in e.detail.keys():
+                if isinstance(e.detail[key], dict):
+                    e.detail[key] = e.detail[key][0]
+            raise e
 
         if clean_html is True:
             self._validated_data = self.sanitize_data()
