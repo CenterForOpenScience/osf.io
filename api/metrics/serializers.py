@@ -12,4 +12,4 @@ class PreprintMetricSerializer(BaseAPISerializer):
 
 class RawMetricsSerializer():
 
-	query = ser.DictField()
+    query = ser.DictField()
