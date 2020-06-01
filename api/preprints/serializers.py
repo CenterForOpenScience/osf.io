@@ -260,7 +260,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     prereg_link_info = DisableIfSwitch(
         SLOAN_PREREG_INPUT,
         ser.ChoiceField(
-            Preprint.PREREG_LINK_INFO_CHIOCES,
+            Preprint.PREREG_LINK_INFO_CHOICES,
             required=False,
         ),
     )

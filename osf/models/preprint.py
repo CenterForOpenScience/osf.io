@@ -129,7 +129,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         'tags',
     }
 
-    PREREG_LINK_INFO_CHIOCES = [('prereg_designs', 'Pre-registration of study designs'),
+    PREREG_LINK_INFO_CHOICES = [('prereg_designs', 'Pre-registration of study designs'),
                                 ('prereg_analysis', 'Pre-registration of study analysis'),
                                 ('prereg_both', 'Pre-registration of study designs and study analysis')
                                 ]
@@ -229,7 +229,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         null=True
     )
     prereg_link_info = models.TextField(
-        choices=PREREG_LINK_INFO_CHIOCES,
+        choices=PREREG_LINK_INFO_CHOICES,
         null=True,
         blank=True
     )
@@ -1005,7 +1005,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             return
 
         if not self.has_coi:
-            raise PreprintStateError('You do not have ability to edit a conflict of interest while the has_coi field is '
+            raise PreprintStateError('You do not have the ability to edit a conflict of interest while the has_coi field is '
                                   'set to false or unanswered')
 
         self.conflict_of_interest_statement = coi_statement
@@ -1144,6 +1144,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                 },
                 auth=auth
             )
+        if has_prereg_links != 'available':
+            self.update_prereg_links(auth, prereg_links=[], log=False)
+            self.update_prereg_link_info(auth, prereg_link_info=None, log=False)
         if save:
             self.save()
 
@@ -1196,7 +1199,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if prereg_links == self.prereg_links:
             return
 
-        if not self.has_prereg_links == 'available':
+        if not self.has_prereg_links == 'available' and prereg_links:
             raise PreprintStateError('You cannot edit this field while your prereg links'
                                   ' availability is set to false or is unanswered.')
 
@@ -1216,7 +1219,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     def update_prereg_link_info(self, auth: Auth, prereg_link_info: str, log: bool = True, save: bool = True):
         """
         This method updates the field `prereg_link_info` that contains a one of a finite number of choice strings in
-        contained in the list in the static member `PREREG_LINK_INFO_CHIOCES` that describe the nature of the preprint's
+        contained in the list in the static member `PREREG_LINK_INFO_CHOICES` that describe the nature of the preprint's
         prereg links.
 
         :param auth: Auth object
@@ -1230,7 +1233,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.prereg_link_info == prereg_link_info:
             return
 
-        if not self.has_prereg_links == 'available':
+        if not self.has_prereg_links == 'available' and prereg_link_info:
             raise PreprintStateError('You cannot edit this field while your prereg links'
                                   ' availability is set to false or is unanswered.')
 

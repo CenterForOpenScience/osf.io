@@ -807,7 +807,7 @@ class TestPreprintUpdate:
             res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You do not have ability to edit a conflict of interest while the ' \
+        assert res.json['errors'][0]['detail'] == 'You do not have the ability to edit a conflict of interest while the ' \
                                                   'has_coi field is set to false or unanswered'
 
         preprint.has_coi = True
@@ -975,6 +975,22 @@ class TestPreprintUpdate:
 
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == ['Enter a valid URL.']
+
+    @override_switch(features.SLOAN_PREREG_INPUT, active=True)
+    def test_no_prereg_links_clears_links(self, app, user, preprint, url):
+        preprint.has_prereg_links = 'available'
+        preprint.prereg_links = ['http://example.com']
+        preprint.prereg_link_info = 'prereg_analysis'
+        preprint.save()
+
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'has_prereg_links': 'no'})
+
+        res = app.patch_json_api(url, update_payload, auth=user.auth)
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['has_prereg_links'] == 'no'
+        assert res.json['data']['attributes']['prereg_links'] == []
+        assert not res.json['data']['attributes']['prereg_link_info']
 
     def test_update_why_no_prereg(self, app, user, preprint, url):
         update_payload = build_preprint_update_payload(preprint._id, attributes={'why_no_prereg': 'My dog ate it.'})
