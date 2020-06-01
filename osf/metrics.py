@@ -6,7 +6,7 @@ from django.db import models
 from django.utils import timezone
 import pytz
 
-from api.base.settings import MAX_SIZE_OF_ES_QUERY
+from api.base.settings import MAX_SIZE_OF_ES_QUERY, DEFAULT_ES_NULL_VALUE
 
 
 class MetricMixin(object):
@@ -241,7 +241,7 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
                         'departments': {
                             'terms': {
                                 'field': 'department',
-                                'missing': 'N/A',
+                                'missing': DEFAULT_ES_NULL_VALUE,
                                 'size': 250
                             },
                             'aggs': {
@@ -262,7 +262,7 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
         return cls.record(
             user_id=user._id,
             institution_id=institution._id,
-            department=getattr(user, 'department', None),
+            department=getattr(user, 'department', DEFAULT_ES_NULL_VALUE),
             public_project_count=public_project_count,
             private_project_count=private_project_count,
             **kwargs
