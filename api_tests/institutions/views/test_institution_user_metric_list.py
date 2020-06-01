@@ -227,3 +227,13 @@ class TestInstitutionUserMetricList:
         assert len(data) == 1
         assert resp.json['links']['meta']['total'] == 1
         assert data[0]['id'] == user4._id
+
+        resp = app.get(f'{url}?page=1&page[size]=10&sort=department', auth=admin.auth)
+        assert resp.status_code == 200
+
+        data = resp.json['data']
+        assert len(data) == 3
+        assert resp.json['links']['meta']['total'] == 3
+        assert data[0]['attributes']['department'] == 'Biology dept'
+        assert data[1]['attributes']['department'] == 'N/A'
+        assert data[2]['attributes']['department'] == 'Psychology dept'
