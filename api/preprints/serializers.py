@@ -262,6 +262,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         ser.ChoiceField(
             Preprint.PREREG_LINK_INFO_CHOICES,
             required=False,
+            allow_blank=True,
         ),
     )
 
