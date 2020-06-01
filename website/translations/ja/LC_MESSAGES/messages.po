@@ -1040,7 +1040,7 @@ msgstr "OSFはInternet Explorerの使用をサポートしていません。 最
 
 #: website/templates/base.mako:148 website/templates/base.mako:161
 msgid "Accept"
-msgstr "同意"
+msgstr "同意する"
 
 #: website/templates/base.mako:154
 #, python-format
@@ -1055,7 +1055,7 @@ msgid ""
 "please change your browser settings to disable cookies or stop using our "
 "website.                  Please be aware that you may not be able to use"
 " some functions on our website when you have cookies disabled."
-msgstr "国立情報学研究所では、NII Research Data Cloudサービスの運営およびユーザ体験の向上を目的にクッキーを利用しております。GakuNin RDMをご利用されるお客様には、<a %(meatwikiUrl)s>プライバシーポリシー</a>、および<a %(meatwikiUrl)s>クッキー使用に関する情報</a>をご覧ください。同意をクリックまたは当サイトの利用を継続されることで、弊所がクッキーを使用することにご同意いただいたものとさせていただきます。ご同意いただけない場合には、お客様のブラウザ設定でクッキーを無効化していただくか、または当サイトの利用を中止して下さい。クッキーを利用しないことで、当サイトの一部の機能がご利用いただけない可能性がございますがご了承ください。"
+msgstr "国立情報学研究所では、NII Research Data Cloudサービスの運営およびユーザ体験の向上を目的にクッキーを利用しております。GakuNin RDMをご利用されるお客様には、<a %(meatwikiUrl)s>プライバシーポリシー</a>、および<a %(meatwikiUrl)s>クッキー使用に関する情報</a>をご覧ください。「同意する」をクリックまたは当サイトの利用を継続されることで、弊所がクッキーを使用することにご同意いただいたものとさせていただきます。ご同意いただけない場合には、お客様のブラウザ設定でクッキーを無効化していただくか、または当サイトの利用を中止して下さい。クッキーを利用しないことで、当サイトの一部の機能がご利用いただけない可能性がございますがご了承ください。"
 
 #: website/templates/base.mako:172
 msgid "Start managing your projects on the GakuNin RDM today."
