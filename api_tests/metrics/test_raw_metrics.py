@@ -130,9 +130,9 @@ class TestRawMetrics:
         res = app.post_json_api(post_url, post_data, auth=user.auth)
         assert res.json == post_return
 
-        time.sleep(2)
+        time.sleep(3)
 
-        get_url = '{}customer/'.format(base_url)
+        get_url = '{}_search?q=*'.format(base_url)
         res = app.get(get_url, auth=user.auth)
 
         assert res.json['hits']['total'] == 1
