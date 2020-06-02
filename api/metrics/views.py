@@ -189,13 +189,13 @@ class RawMetricsView(GenericAPIView):
     @require_switch(ENABLE_RAW_METRICS)
     def post(self, request, *args, **kwargs):
         connection = get_connection()
-        params = kwargs['params']
+        url_path = kwargs['url_path']
         body = json.loads(request.body)
-        return JsonResponse(connection.transport.perform_request('POST', f'/{params}', body=body))
+        return JsonResponse(connection.transport.perform_request('POST', f'/{url_path}', body=body))
 
     @require_switch(ENABLE_RAW_METRICS)
     def put(self, request, *args, **kwargs):
         connection = get_connection()
-        params = kwargs['params']
+        url_path = kwargs['url_path']
         body = json.loads(request.body)
-        return JsonResponse(connection.transport.perform_request('PUT', f'/{params}', body=body))
+        return JsonResponse(connection.transport.perform_request('PUT', f'/{url_path}', body=body))
