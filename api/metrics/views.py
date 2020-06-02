@@ -184,7 +184,8 @@ class RawMetricsView(GenericAPIView):
     @require_switch(ENABLE_RAW_METRICS)
     def get(self, request, *args, **kwargs):
         connection = get_connection()
-        return JsonResponse(connection.search())
+        url_path = kwargs['url_path']
+        return JsonResponse(connection.transport.perform_request('GET', f'/{url_path}'))
 
     @require_switch(ENABLE_RAW_METRICS)
     def post(self, request, *args, **kwargs):
