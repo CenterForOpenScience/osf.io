@@ -170,7 +170,7 @@ class ReviewActionListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFi
     # overrides ListFilterMixin
     def get_default_queryset(self):
         provider_queryset = get_objects_for_user(self.request.user, 'view_actions', PreprintProvider)
-        return get_review_actions_queryset().filter(target__node__is_public=True, target__provider__in=provider_queryset)
+        return get_review_actions_queryset().filter(target__provider__in=provider_queryset)
 
     # overrides ListAPIView
     def get_queryset(self):

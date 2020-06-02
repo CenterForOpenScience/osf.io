@@ -5,6 +5,8 @@ from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
     PreprintProviderFactory,
+    DraftNodeFactory,
+    ReviewActionFactory
 )
 from osf.utils import permissions as osf_permissions
 
@@ -30,8 +32,8 @@ class TestReviewActionCreateRoot(object):
         return payload
 
     @pytest.fixture()
-    def url(self, preprint):
-        return '/{}actions/reviews/'.format(API_BASE)
+    def url(self):
+        return f'/{API_BASE}actions/reviews/'
 
     @pytest.fixture()
     def provider(self):
@@ -40,6 +42,24 @@ class TestReviewActionCreateRoot(object):
     @pytest.fixture()
     def node_admin(self):
         return AuthUserFactory()
+
+    @pytest.fixture()
+    def preprint_with_draft_node(self, moderator, provider):
+        draft_node = DraftNodeFactory(creator=moderator)
+        preprint = PreprintFactory(
+            provider=provider,
+            node=draft_node,
+            creator=moderator
+        )
+        preprint.save()
+        ReviewActionFactory(
+            target=preprint,
+            creator=moderator,
+            trigger='submit',
+            from_state='initial',
+            to_state='accepted'
+        ).save()
+        return preprint
 
     @pytest.fixture()
     def preprint(self, node_admin, provider):
@@ -132,6 +152,17 @@ class TestReviewActionCreateRoot(object):
         preprint.refresh_from_db()
         assert preprint.machine_state == 'accepted'
         assert preprint.is_published
+
+    def test_preprint_with_draft_node(self, app, url, preprint_with_draft_node, moderator):
+        res = app.get(url, auth=moderator.auth)
+        assert res.status_code == 200
+
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == preprint_with_draft_node.actions.first()._id
+
+        preprint_with_draft_node.refresh_from_db()
+        assert preprint_with_draft_node.machine_state == 'accepted'
+        assert preprint_with_draft_node.is_published
 
     def test_cannot_create_actions_for_unmoderated_provider(
             self, app, url, preprint, provider, node_admin
