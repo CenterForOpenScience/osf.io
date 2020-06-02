@@ -137,3 +137,8 @@ class TestRawMetrics:
 
         assert res.json['hits']['total'] == 1
         assert res.json['hits']['hits'][0]['_source']['name'] == 'Beyonce'
+
+        get_url = '{}customer/_doc/1/'.format(base_url)
+        res = app.get(get_url, auth=user.auth)
+
+        assert res.json['_source']['name'] == 'Beyonce'
