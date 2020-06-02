@@ -13,6 +13,7 @@ from framework.exceptions import HTTPError
 from oauthlib.oauth2 import InvalidGrantError
 from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
+from osf.utils.fields import ensure_str
 from urllib3.exceptions import MaxRetryError
 from addons.base import exceptions
 from addons.box import settings
@@ -20,12 +21,6 @@ from addons.box.serializer import BoxSerializer
 from website.util import api_v2_url
 
 logger = logging.getLogger(__name__)
-
-
-def ensure_str(value):
-    if isinstance(value, bytes):
-        return value.decode()
-    return value
 
 
 class BoxFileNode(BaseFileNode):
