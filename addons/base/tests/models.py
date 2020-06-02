@@ -264,7 +264,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         assert_is_none(node_settings.folder_id)
 
     def test_has_auth(self):
-        self.user.external_accounts = []
+        self.user.external_accounts.clear()
         self.user_settings.reload()
         node = ProjectFactory()
         settings = self.NodeSettingsClass(user_settings=self.user_settings, owner=node)

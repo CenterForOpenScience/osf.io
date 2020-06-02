@@ -1900,8 +1900,8 @@ class TestUserMerging(OsfTestCase):
         self.user.notifications_configured = {'abc12': True}
         other_user.notifications_configured = {'123ab': True}
 
-        self.user.external_accounts = [ExternalAccountFactory()]
-        other_user.external_accounts = [ExternalAccountFactory()]
+        self.user.external_accounts.add(ExternalAccountFactory())
+        other_user.external_accounts.add(ExternalAccountFactory())
 
         self.user.mailchimp_mailing_lists = {
             'user': True,

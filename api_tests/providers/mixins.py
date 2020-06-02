@@ -975,7 +975,7 @@ class ProviderLicensesViewTestBaseMixin(ProviderMixinBase):
         return licenses[2]
 
     def test_provider_has_no_acceptable_licenses_and_no_default(self, app, provider, licenses, url, license_one):
-        provider.licenses_acceptable = []
+        provider.licenses_acceptable.clear()
         provider.default_license = None
         provider.save()
         res = app.get(url)
@@ -989,7 +989,7 @@ class ProviderLicensesViewTestBaseMixin(ProviderMixinBase):
         assert res.json['data'][0]['id'] == license_one._id
 
     def test_provider_has_a_default_license_but_no_acceptable_licenses(self, app, provider, licenses, license_two, url):
-        provider.licenses_acceptable = []
+        provider.licenses_acceptable.clear()
         provider.default_license = license_two
         provider.save()
         res = app.get(url)

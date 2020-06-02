@@ -9,7 +9,7 @@ from django.views.defaults import page_not_found
 from django.views.generic import FormView, DeleteView, ListView, TemplateView
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.http import Http404, HttpResponse

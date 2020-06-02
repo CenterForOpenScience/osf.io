@@ -1093,6 +1093,15 @@ def make_url_map(app):
         Rule('/institutions/<inst_id>/', 'get', institution_views.view_institution, OsfWebRenderer('institution.mako', trust=False))
     ])
 
+    process_rules(app, [
+        Rule([
+            '/institutions/<inst_id>/dashboard/',
+        ],
+            'get',
+            institution_views.view_institution_dashboard,
+            notemplate)
+    ])
+
     # Project
 
     # Web

@@ -2,7 +2,7 @@ import time
 import pytest
 import datetime
 
-from api.base.settings.defaults import API_BASE
+from api.base.settings.defaults import API_BASE, DEFAULT_ES_NULL_VALUE
 from osf_tests.factories import (
     InstitutionFactory,
     AuthUserFactory,
@@ -111,7 +111,7 @@ class TestInstitutionDepartmentList:
         resp = app.get(url, auth=admin.auth)
 
         assert resp.json['data'] == [{
-            'id': institution._id,
+            'id': f'{institution._id}-New-Department',
             'type': 'institution-departments',
             'attributes': {
                 'name': 'New Department',
@@ -119,7 +119,7 @@ class TestInstitutionDepartmentList:
             },
             'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
         }, {
-            'id': institution._id,
+            'id': f'{institution._id}-Smaller-Department',
             'type': 'institution-departments',
             'attributes': {
                 'name': 'Smaller Department',
@@ -127,10 +127,10 @@ class TestInstitutionDepartmentList:
             },
             'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
         }, {
-            'id': institution._id,
+            'id': f'{institution._id}-{DEFAULT_ES_NULL_VALUE}',
             'type': 'institution-departments',
             'attributes': {
-                'name': 'N/A',
+                'name': DEFAULT_ES_NULL_VALUE,
                 'number_of_users': 1
             },
             'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
@@ -140,7 +140,7 @@ class TestInstitutionDepartmentList:
         resp = app.get(f'{url}?filter[name]=New Department', auth=admin.auth)
 
         assert resp.json['data'] == [{
-            'id': institution._id,
+            'id': '{}-{}'.format(institution._id, 'New-Department'),
             'type': 'institution-departments',
             'attributes': {
                 'name': 'New Department',

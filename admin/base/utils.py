@@ -4,7 +4,7 @@ Utility functions and classes
 from osf.models import Subject, NodeLicense
 
 from django.core.exceptions import ValidationError, PermissionDenied
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.validators import RegexValidator, _lazy_re_compile
 from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _

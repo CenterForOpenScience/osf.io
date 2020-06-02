@@ -5,7 +5,7 @@ from datetime import timedelta
 
 from django.shortcuts import redirect
 from django.forms.models import model_to_dict
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, View, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib import messages

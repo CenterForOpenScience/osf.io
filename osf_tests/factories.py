@@ -307,7 +307,7 @@ class CollectionFactory(DjangoModelFactory):
         obj = cls._build(*args, **kwargs)
         obj.save()
         # M2M, requires initial save
-        obj.collected_types = collected_types
+        obj.collected_types.add(*collected_types)
         return obj
 
 class BookmarkCollectionFactory(CollectionFactory):
@@ -602,6 +602,8 @@ class SubjectFactory(DjangoModelFactory):
 
 
 class PreprintProviderFactory(DjangoModelFactory):
+    _id = factory.Sequence(lambda n: f'slug{n}')
+
     name = factory.Faker('company')
     description = factory.Faker('bs')
     external_url = factory.Faker('url')
@@ -671,7 +673,6 @@ class PreprintFactory(DjangoModelFactory):
         subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
         instance.article_doi = doi
 
-        instance.machine_state = kwargs.pop('machine_state', 'initial')
         user = kwargs.pop('creator', None) or instance.creator
         instance.save()
 
@@ -682,6 +683,7 @@ class PreprintFactory(DjangoModelFactory):
             name=filename,
             materialized_path='/{}'.format(filename))
 
+        instance.machine_state = kwargs.pop('machine_state', 'initial')
         preprint_file.save()
         from addons.osfstorage import settings as osfstorage_settings
 
@@ -870,7 +872,7 @@ class ConferenceFactory(DjangoModelFactory):
 
     @factory.post_generation
     def admins(self, create, extracted, **kwargs):
-        self.admins = extracted or [UserFactory()]
+        self.admins.add(*(extracted or [UserFactory()]))
 
 
 class SessionFactory(DjangoModelFactory):
@@ -1017,7 +1019,7 @@ class ProviderAssetFileFactory(DjangoModelFactory):
     def _create(cls, target_class, *args, **kwargs):
         providers = kwargs.pop('providers', [])
         instance = super(ProviderAssetFileFactory, cls)._create(target_class, *args, **kwargs)
-        instance.providers = providers
+        instance.providers.add(*providers)
         instance.save()
         return instance
 

@@ -24,6 +24,7 @@ from api.base.parsers import (
 )
 from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.utils import MockQueryset
+from api.base.settings import DEFAULT_ES_NULL_VALUE
 from api.metrics.permissions import IsInstitutionalMetricsUser
 from api.nodes.serializers import NodeSerializer
 from api.nodes.filters import NodesFilterMixin
@@ -418,7 +419,7 @@ class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIVi
 
     view_category = 'institutions'
 
-    def _format_search(self, search):
+    def _format_search(self, search, default_kwargs=None):
         raise NotImplementedError()
 
     def _paginate(self, search):
@@ -442,11 +443,11 @@ class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIVi
         :param departments: Dict {'Department Name': 3} means "Department Name" has 3 users.
         :return: mock_queryset
         """
+        items = self._format_search(search, default_kwargs=kwargs)
+
         search = self._paginate(search)
 
-        items = self._format_search(search)
-
-        queryset = MockQueryset(items, search, default_attrs=kwargs)
+        queryset = MockQueryset(items, search)
         return queryset
 
     # overrides RetrieveApiView
@@ -460,7 +461,7 @@ class InstitutionDepartmentList(InstitutionImpactList):
 
     ordering = ('-number_of_users', 'name',)
 
-    def _format_search(self, search):
+    def _format_search(self, search, default_kwargs=None):
         results = search.execute()
 
         if results.aggregations:
@@ -481,12 +482,16 @@ class InstitutionUserMetricsList(InstitutionImpactList):
 
     serializer_class = InstitutionUserMetricsSerializer
 
-    def _format_search(self, search):
+    ordering = ('user_name',)
+
+    def _format_search(self, search, default_kwargs=None):
         results = search.execute()
 
         users = []
         for user_record in results:
-            record_dict = user_record.to_dict()
+            record_dict = {}
+            record_dict.update(default_kwargs)
+            record_dict.update(user_record.to_dict())
             user_id = user_record.user_id
             fullname = OSFUser.objects.get(guids___id=user_id).fullname
             record_dict['user_name'] = fullname
@@ -497,4 +502,4 @@ class InstitutionUserMetricsList(InstitutionImpactList):
     def get_default_queryset(self):
         institution = self.get_institution()
         search = UserInstitutionProjectCounts.get_current_user_metrics(institution)
-        return self._make_elasticsearch_results_filterable(search, id=institution._id)
+        return self._make_elasticsearch_results_filterable(search, id=institution._id, department=DEFAULT_ES_NULL_VALUE)

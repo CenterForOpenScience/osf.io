@@ -269,3 +269,8 @@ class TestSloanStudyWaffling:
         cookies = resp.headers.getall('Set-Cookie')
 
         assert f' dwf_{SLOAN_COI_DISPLAY}=False; Domain=.osf.io; Path=/; samesite=None; Secure' in cookies
+
+    def test_browseable_api(self, app):
+        headers = {'accept': 'text/html'}
+        resp = app.get('/v2/', headers=headers)
+        assert resp.status_code == 200
