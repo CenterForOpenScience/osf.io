@@ -19,6 +19,10 @@ class NodesListFilteringMixin(object):
         return AuthUserFactory()
 
     @pytest.fixture()
+    def user2(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
     def contrib(self):
         return AuthUserFactory()
 
@@ -81,6 +85,14 @@ class NodesListFilteringMixin(object):
         return NodeFactory(parent=grandchild_node_two, creator=user)
 
     @pytest.fixture()
+    def private_user2_node(self, user2, parent_project):
+        return NodeFactory(creator=user2, parent=parent_project, is_public=False)
+
+    @pytest.fixture()
+    def deleted_node(self, user2, parent_project):
+        return NodeFactory(creator=user2, parent=parent_project, is_deleted=True)
+
+    @pytest.fixture()
     def parent_url(self, url):
         return '{}filter[parent]='.format(url)
 
@@ -112,7 +124,8 @@ class NodesListFilteringMixin(object):
             great_grandchild_node_two,
             root_ne_url, parent_url, root_url,
             contributors_url, parent_project_one,
-            child_project_one, parent_url_ne
+            child_project_one, parent_url_ne,
+            private_user2_node, deleted_node
     ):
 
         #   test_parent_filter_null

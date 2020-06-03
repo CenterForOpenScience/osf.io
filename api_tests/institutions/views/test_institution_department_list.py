@@ -2,7 +2,7 @@ import time
 import pytest
 import datetime
 
-from api.base.settings.defaults import API_BASE
+from api.base.settings.defaults import API_BASE, DEFAULT_ES_NULL_VALUE
 from osf_tests.factories import (
     InstitutionFactory,
     AuthUserFactory,
@@ -127,10 +127,10 @@ class TestInstitutionDepartmentList:
             },
             'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
         }, {
-            'id': f'{institution._id}-N/A',
+            'id': f'{institution._id}-{DEFAULT_ES_NULL_VALUE}',
             'type': 'institution-departments',
             'attributes': {
-                'name': 'N/A',
+                'name': DEFAULT_ES_NULL_VALUE,
                 'number_of_users': 1
             },
             'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
