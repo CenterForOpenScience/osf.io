@@ -6,6 +6,8 @@ from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
     PreprintProviderFactory,
+    ProjectFactory,
+    ReviewActionFactory
 )
 from osf.utils import permissions as osf_permissions
 
@@ -19,14 +21,32 @@ class TestReviewActionFilters(ReviewActionFilterMixin):
         return '/{}actions/reviews/'.format(API_BASE)
 
     @pytest.fixture()
+    def providers(self):
+        return [
+            PreprintProviderFactory(
+                reviews_workflow='pre-moderation'
+            ) for _ in range(5)]
+
+    @pytest.fixture()
+    def all_actions(self, providers):
+        actions = []
+        for provider in providers:
+            preprint = PreprintFactory(
+                provider=provider,
+                project=ProjectFactory(is_public=True)
+            )
+            for _ in range(5):
+                actions.append(ReviewActionFactory(target=preprint))
+        return actions
+
+    @pytest.fixture()
+    def allowed_providers(self, providers):
+        return providers
+
+    @pytest.fixture()
     def expected_actions(self, all_actions, allowed_providers):
-        actions = super(
-            TestReviewActionFilters, self
-        ).expected_actions(all_actions, allowed_providers)
-        node = actions[0].target.node
-        node.is_public = False
-        node.save()
-        return [a for a in actions if a.target.node.is_public]
+        provider_ids = set([p.id for p in allowed_providers])
+        return [a for a in all_actions if a.target.provider_id in provider_ids]
 
     def test_no_permission(self, app, url, expected_actions):
         res = app.get(url, expect_errors=True)

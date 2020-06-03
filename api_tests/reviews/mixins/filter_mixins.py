@@ -175,7 +175,7 @@ class ReviewActionFilterMixin:
         action_data = {item['id'] for item in data}
         assert action_data == {action2._id}
 
-    def test_no_permission(self, app, url, expected_actions):
+    def test_no_permission(self, app, url, action):
         res = app.get(url, expect_errors=True)
         assert res.status_code == 401
 
