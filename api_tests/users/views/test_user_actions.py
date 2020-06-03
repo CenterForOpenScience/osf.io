@@ -11,11 +11,10 @@ from osf_tests.factories import (
 )
 from osf.utils import permissions as osf_permissions
 
-from api_tests.reviews.mixins.filter_mixins import ReviewActionFilterMixin
 
-
+@pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
-class TestReviewActionFilters(ReviewActionFilterMixin):
+class TestReviewActionFilters:
     @pytest.fixture()
     def url(self):
         return '/{}actions/reviews/'.format(API_BASE)
@@ -53,8 +52,11 @@ class TestReviewActionFilters(ReviewActionFilterMixin):
         assert res.status_code == 401
 
         some_rando = AuthUserFactory()
-        res = app.get(url, auth=some_rando.auth)
-        assert not res.json['data']
+        res = app.get(url, auth=some_rando.auth, expect_errors=True)
+        if res.status_code == 200:
+            assert res.json['data'] == []
+        else:
+            assert res.status_code == 403
 
 
 @pytest.mark.django_db
